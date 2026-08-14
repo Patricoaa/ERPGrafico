@@ -38,7 +38,7 @@ export function BankCheckSection({ data, bankId }: Props) {
                             key={chk.id}
                             onClick={() => router.push(`/treasury/bank-center/${bankId}/checks?selected=${chk.id}`)}
                             className={cn(
-                                "w-full text-left rounded-lg border border-border/50 bg-card p-3 border-l-4",
+                                "w-full text-left rounded-md border border-border/50 bg-card p-3 border-l-4",
                                 isOverdue ? "border-l-warning" : "border-l-muted-foreground/30",
                                 "hover:bg-accent hover:border-border transition-all",
                             )}
@@ -47,10 +47,10 @@ export function BankCheckSection({ data, bankId }: Props) {
                                 <div className="flex items-center gap-2 min-w-0">
                                     <span className="text-xs font-semibold font-mono">N° {chk.check_number}</span>
                                 </div>
-                                <MoneyDisplay amount={chk.amount} className="text-sm font-bold" />
+                                <MoneyDisplay amount={chk.amount} className="text-sm font-medium" />
                             </div>
 
-                            <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                            <div className="flex items-center gap-3 text-3xs text-muted-foreground">
                                 <span>
                                     Emitido: {parseDateOnly(chk.issue_date).toLocaleDateString("es-CL", { day: "numeric", month: "short" })}
                                 </span>
@@ -61,7 +61,7 @@ export function BankCheckSection({ data, bankId }: Props) {
                             </div>
 
                             {chk.counterparty_name && (
-                                <div className="text-[10px] text-muted-foreground mt-1">
+                                <div className="text-3xs text-muted-foreground mt-1">
                                     A nombre de: <span className="font-medium text-foreground/80">{chk.counterparty_name}</span>
                                 </div>
                             )}

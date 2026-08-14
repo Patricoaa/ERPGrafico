@@ -12,7 +12,7 @@ export function OtTypeChooser({ onChoose }: OtTypeChooserProps) {
         <div className="flex flex-col items-center justify-center space-y-6 py-12 max-w-lg mx-auto animate-in fade-in zoom-in duration-500">
             <div className="text-center space-y-2 mb-4">
                 <h3 className="text-xl font-black uppercase tracking-widest text-foreground/80">Configuración de Flujo</h3>
-                <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-tight opacity-70">
+                <p className="text-2xs text-muted-foreground font-medium uppercase tracking-tight opacity-70">
                     Seleccione el origen y protocolo de fabricación
                 </p>
             </div>
@@ -32,7 +32,7 @@ export function OtTypeChooser({ onChoose }: OtTypeChooserProps) {
                     </div>
                     <div className="flex flex-col items-start">
                         <span className="font-black text-xs uppercase tracking-widest text-foreground/80">Vincular a Venta</span>
-                        <span className="text-[10px] text-muted-foreground font-medium mt-0.5">Fabricación bajo demanda para una Orden de Venta (OV)</span>
+                        <span className="text-3xs text-muted-foreground font-medium mt-0.5">Fabricación bajo demanda para una Orden de Venta (OV)</span>
                     </div>
                 </Button>
 
@@ -51,7 +51,7 @@ export function OtTypeChooser({ onChoose }: OtTypeChooserProps) {
                     </div>
                     <div className="flex flex-col items-start">
                         <span className="font-black text-xs uppercase tracking-widest text-foreground/80">Producción para Stock</span>
-                        <span className="text-[10px] text-muted-foreground font-medium mt-0.5">Fabricación manual para inventario o reposición</span>
+                        <span className="text-3xs text-muted-foreground font-medium mt-0.5">Fabricación manual para inventario o reposición</span>
                     </div>
                 </Button>
             </div>

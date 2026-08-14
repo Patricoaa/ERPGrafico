@@ -9,9 +9,9 @@ export const absenceFields = createEntityFields<Absence>()({
     },
     absenceType: {
         key: "absence_type",
-        type: "status",
+        type: "chip-category",
+        domain: "absence_type",
         label: "Tipo",
-        get: (a) => a.absence_type,
     },
     startDate: {
         key: "start_date",
@@ -25,7 +25,7 @@ export const absenceFields = createEntityFields<Absence>()({
     },
     days: {
         key: "days",
-        type: "code",
+        type: "number",
         label: "Días",
     },
 })

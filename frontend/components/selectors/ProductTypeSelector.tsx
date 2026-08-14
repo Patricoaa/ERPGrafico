@@ -60,10 +60,10 @@ export function ProductTypeSelector({
                         {selectedType ? (
                             <div className="flex items-center gap-1.5 min-w-0 flex-1 h-full">
                                 <selectedType.icon className={cn("h-3 w-3 shrink-0", selectedType.color)} />
-                                <span className="font-bold text-[11px] truncate uppercase tracking-tight leading-none">{selectedType.label}</span>
+                                <span className="font-bold text-2xs truncate uppercase tracking-tight leading-none">{selectedType.label}</span>
                             </div>
                         ) : (
-                            <span className="text-[11px] text-muted-foreground opacity-50 leading-none">Seleccionar tipo...</span>
+                            <span className="text-2xs text-muted-foreground opacity-50 leading-none">Seleccionar tipo...</span>
                         )}
                     </div>
                 </SelectTrigger>

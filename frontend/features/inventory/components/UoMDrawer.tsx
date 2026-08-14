@@ -2,7 +2,8 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect, useRef } from "react"
+import { useState } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -71,45 +72,29 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
 
     const width = formDrawerWidth("simple", !!initialData?.id)
 
-    const lastResetId = useRef<number | undefined>(undefined)
-    const wasOpen = useRef(false)
-
-    useEffect(() => {
-        if (!open) {
-            wasOpen.current = false
-            return
-        }
-
-        const currentId = initialData?.id
-        const isNewOpen = !wasOpen.current
-        const isNewData = currentId !== lastResetId.current
-
-        if (isNewOpen || isNewData) {
-            if (initialData && Object.keys(initialData).length > 0) {
-                form.reset({
-                    name: initialData.name || "",
-                    name_singular: initialData.name_singular || "",
-                    name_plural: initialData.name_plural || "",
-                    abbreviation: initialData.abbreviation || "",
-                    category: initialData.category,
-                    uom_type: initialData.uom_type,
-                    ratio: initialData.ratio ? parseFloat(initialData.ratio) : undefined,
-                })
-            } else {
-                form.reset({
-                    name: "",
-                    name_singular: "",
-                    name_plural: "",
-                    abbreviation: "",
-                    category: undefined,
-                    uom_type: undefined,
-                    ratio: undefined,
-                })
-            }
-            lastResetId.current = currentId
-            wasOpen.current = true
-        }
-    }, [open, initialData, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData,
+        mapData: (data) => ({
+            name: data.name || "",
+            name_singular: data.name_singular || "",
+            name_plural: data.name_plural || "",
+            abbreviation: data.abbreviation || "",
+            category: data.category,
+            uom_type: data.uom_type,
+            ratio: data.ratio ? parseFloat(data.ratio) : undefined,
+        }),
+        defaultValues: () => ({
+            name: "",
+            name_singular: "",
+            name_plural: "",
+            abbreviation: "",
+            category: undefined,
+            uom_type: undefined,
+            ratio: undefined,
+        }),
+    })
 
     async function onSubmit(data: UoMFormValues) {
         try {
@@ -151,7 +136,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                     title="UoM"
                     displayId={`#${initialData.id}`}
                 >
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{initialData?.name ?? '-'}</span>

@@ -38,7 +38,7 @@ function MetricCard({ title, value, icon: Icon, subtitle }: { title: string, val
             <div>
                 <p className="text-xs font-bold uppercase text-muted-foreground">{title}</p>
                 <div className="text-lg font-black tracking-tight mt-0.5">{value}</div>
-                {subtitle && <p className="text-[10px] uppercase text-muted-foreground mt-0.5">{subtitle}</p>}
+                {subtitle && <p className="text-3xs uppercase text-muted-foreground mt-0.5">{subtitle}</p>}
             </div>
         </div>
     )

@@ -125,7 +125,7 @@ export function OutsourcingAssignmentStep({
                 <Truck className="h-4 w-4 text-muted-foreground" />
                 <div className="space-y-0.5">
                   <p className="text-sm font-bold">{m.component_name}</p>
-                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold">
+                  <div className="flex items-center gap-2 text-3xs text-muted-foreground uppercase font-bold">
                     <span>{m.supplier_name}</span>
                     <span>•</span>
                     <span>Cant: {m.quantity_planned} {m.uom_name}</span>
@@ -136,7 +136,7 @@ export function OutsourcingAssignmentStep({
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right mr-2">
-                  <p className="text-[10px] font-bold uppercase text-muted-foreground">Total Estimado</p>
+                  <p className="text-3xs font-bold uppercase text-muted-foreground">Total Estimado</p>
                   <p className="text-sm font-bold text-primary">
                     {formatCurrency(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price ?? '0') * vatMultiplier)}
                   </p>
@@ -149,7 +149,7 @@ export function OutsourcingAssignmentStep({
                 )}
                 <div className="flex items-center gap-2">
                   <Chip size="xs">OCS-{m.purchase_order_number}</Chip>
-                  <span className="text-[10px] font-medium text-muted-foreground">({m.supplier_name})</span>
+                  <span className="text-3xs font-medium text-muted-foreground">({m.supplier_name})</span>
                 </div>
               </div>
             </div>

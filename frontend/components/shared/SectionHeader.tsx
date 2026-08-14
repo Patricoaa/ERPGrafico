@@ -28,7 +28,7 @@ export function SectionHeader({
     const router = useRouter()
 
     const heading = (
-        <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground flex items-center gap-1.5">
+        <h2 className="text-3xs font-bold uppercase tracking-[0.25em] text-muted-foreground flex items-center gap-1.5">
             <Icon className="h-3 w-3" />
             {title}
             {count != null && (
@@ -43,7 +43,7 @@ export function SectionHeader({
             {totalAmount != null && (
                 <>
                     <span className="font-normal text-border/60 mx-1">·</span>
-                    <MoneyDisplay amount={totalAmount} showColor={false} className="text-[11px]" />
+                    <MoneyDisplay amount={totalAmount} showColor={false} className="text-2xs" />
                 </>
             )}
         </h2>
@@ -58,7 +58,7 @@ export function SectionHeader({
                 className="w-full flex items-center justify-between group mb-3 text-muted-foreground hover:text-foreground"
             >
                 {heading}
-                <span className="text-[10px] font-medium text-muted-foreground/0 group-hover:text-muted-foreground transition-all flex items-center gap-0.5">
+                <span className="text-3xs font-medium text-muted-foreground/0 group-hover:text-muted-foreground transition-all flex items-center gap-0.5">
                     Ver todas <ArrowRight className="h-3 w-3" />
                 </span>
             </Button>
@@ -73,7 +73,7 @@ export function SectionHeader({
                     variant="ghost"
                     size="sm"
                     onClick={() => router.push(href)}
-                    className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-3xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                     Ver todos →
                 </Button>

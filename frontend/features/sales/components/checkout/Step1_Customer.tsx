@@ -72,7 +72,7 @@ export function Step1_Customer({
                                     key={debt.id}
                                     size="sm"
                                     variant="outline"
-                                    className="h-6 px-2 border-warning/20 text-warning-foreground hover:bg-warning/10 text-[10px] gap-1 font-medium bg-card"
+                                    className="h-6 px-2 border-warning/20 text-warning-foreground hover:bg-warning/10 text-3xs gap-1 font-medium bg-card"
                                     onClick={() => onDebtClick?.(debt)}
                                 >
                                     <span className="font-mono">{formatEntityDisplay('sales.saleorder', debt)}</span>
@@ -80,14 +80,14 @@ export function Step1_Customer({
                                         <MoneyDisplay amount={debt.balance} inline />
                                     </span>
                                     {(debt.days_overdue ?? 0) > 0 && (
-                                        <span className="text-destructive font-bold ml-0.5">
+                                        <span className="text-destructive font-medium ml-0.5">
                                             {debt.days_overdue}d
                                         </span>
                                     )}
                                 </Button>
                             ))}
                             {pendingDebts.length > 4 && (
-                                <div className="text-[10px] text-warning/70 py-1 px-1.5 bg-warning/5 rounded border border-warning/10">
+                                <div className="text-3xs text-warning/70 py-1 px-1.5 bg-warning/5 rounded border border-warning/10">
                                     +{pendingDebts.length - 4}
                                 </div>
                             )}

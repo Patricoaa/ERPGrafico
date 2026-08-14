@@ -65,7 +65,7 @@ export function InventoryDocumentDrawer({ documentId, id, open, onOpenChange, on
                 <div className="flex flex-col">
                     <span className="font-medium text-foreground">{row.original.product_name}</span>
                     {row.original.product_internal_code && (
-                        <span className="text-[10px] text-muted-foreground font-mono">{row.original.product_internal_code}</span>
+                        <span className="text-3xs text-muted-foreground font-mono">{row.original.product_internal_code}</span>
                     )}
                 </div>
             )
@@ -109,7 +109,7 @@ export function InventoryDocumentDrawer({ documentId, id, open, onOpenChange, on
                     if (!doc) return null
                     return (
                         <>
-                            <div className="text-[9px] space-y-1 mb-2 border-b pb-2">
+                            <div className="text-4xs space-y-1 mb-2 border-b pb-2">
                                 <div className="flex justify-between">
                                     <span>Tipo:</span>
                                     <span>{doc.document_type_display}</span>
@@ -132,7 +132,7 @@ export function InventoryDocumentDrawer({ documentId, id, open, onOpenChange, on
                                 )}
                             </div>
                             {doc.details?.map((line, idx) => (
-                                <div key={idx} className="flex justify-between text-[10px]">
+                                <div key={idx} className="flex justify-between text-3xs">
                                     <span className="flex-1">{line.product_name}</span>
                                     <span className="w-24 text-right">
                                         {line.source_warehouse_name ? `${line.source_warehouse_name} ➔ ` : ''}{line.warehouse_name}

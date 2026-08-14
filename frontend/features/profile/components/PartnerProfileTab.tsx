@@ -129,7 +129,7 @@ export function PartnerProfileTab({ contactId }: Props) {
             accessorKey: "balance_after",
             header: () => <div className="text-right">Saldo</div>,
             cell: ({ row }) => (
-                <div className="text-right font-mono text-[11px] font-black text-foreground px-2 py-1">
+                <div className="text-right font-mono text-2xs font-bold text-foreground px-2 py-1">
                     {formatCurrency(row.getValue("balance_after"))}
                 </div>
             ),

@@ -224,49 +224,49 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
                     </>
                 ) : (
                     <>
-                        <Card className="bg-success/10 border-success/20 shadow-card rounded-sm">
+                        <Card className="bg-success/10 border-success/20 shadow-card rounded-md">
                             <CardContent className="p-4 flex items-center gap-4">
                                 <div className="p-2 bg-success/10 rounded-sm">
                                     <LogIn className="h-5 w-5 text-success" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-success font-black uppercase tracking-tight">Logins (Sesión)</p>
+                                    <p className="text-3xs text-success font-bold uppercase tracking-tight">Logins (Sesión)</p>
                                     <p className="text-2xl font-black text-success tabular-nums">{logs.filter(l => l.action_type === 'LOGIN').length}</p>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-primary/5 border-primary/10 shadow-card rounded-sm">
+                        <Card className="bg-primary/5 border-primary/10 shadow-card rounded-md">
                             <CardContent className="p-4 flex items-center gap-4">
                                 <div className="p-2 bg-primary/10 rounded-sm">
                                     <Activity className="h-5 w-5 text-primary" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-primary font-black uppercase tracking-tight">Cambios Datos</p>
+                                    <p className="text-3xs text-primary font-bold uppercase tracking-tight">Cambios Datos</p>
                                     <p className="text-2xl font-black text-primary tabular-nums">{logs.filter(l => l.source === 'history').length}</p>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-info/5 border-info/10 shadow-card rounded-sm">
+                        <Card className="bg-info/5 border-info/10 shadow-card rounded-md">
                             <CardContent className="p-4 flex items-center gap-4">
                                 <div className="p-2 bg-info/10 rounded-sm">
                                     <Settings className="h-5 w-5 text-info" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-info font-black uppercase tracking-tight">Configuración</p>
+                                    <p className="text-3xs text-info font-bold uppercase tracking-tight">Configuración</p>
                                     <p className="text-2xl font-black text-info tabular-nums">{logs.filter(l => l.action_type === 'SETTINGS_CHANGE').length}</p>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-destructive/5 border-destructive/10 shadow-card rounded-sm">
+                        <Card className="bg-destructive/5 border-destructive/10 shadow-card rounded-md">
                             <CardContent className="p-4 flex items-center gap-4">
                                 <div className="p-2 bg-destructive/10 rounded-sm">
                                     <ShieldAlert className="h-5 w-5 text-destructive" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-destructive font-black uppercase tracking-tight">Incidentes</p>
+                                    <p className="text-3xs text-destructive font-bold uppercase tracking-tight">Incidentes</p>
                                     <p className="text-2xl font-black text-destructive tabular-nums">{logs.filter(l => l.action_type === 'SECURITY').length}</p>
                                 </div>
                             </CardContent>

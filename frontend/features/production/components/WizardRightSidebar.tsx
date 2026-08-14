@@ -62,7 +62,7 @@ export function WizardRightSidebar({
                             <div className="space-y-3">
                                 {order?.prepress_archive && (
                                     <div className="bg-primary/10/50 border border-primary/20 rounded-md p-3 space-y-2">
-                                        <p className="font-bold text-[10px] uppercase text-primary flex items-center gap-1.5">
+                                        <p className="font-bold text-3xs uppercase text-primary flex items-center gap-1.5">
                                             <FileText className="h-3 w-3" />
                                             Archivo de Diseño
                                         </p>
@@ -82,7 +82,7 @@ export function WizardRightSidebar({
                                         spec.label === "Diseño Requerido" && spec.value === "SÍ" ? "bg-primary/10/50 border-primary/20" : "bg-background"
                                     )}>
                                         <p className={cn(
-                                            "font-bold text-[10px] uppercase flex items-center gap-1.5",
+                                            "font-bold text-3xs uppercase flex items-center gap-1.5",
                                             spec.label === "Diseño Requerido" && spec.value === "SÍ" ? "text-primary" : "text-muted-foreground"
                                         )}>
                                             <FileText className="h-3 w-3" />
@@ -116,7 +116,7 @@ export function WizardRightSidebar({
 
                                 {order?.start_date && (
                                     <div className="p-3 space-y-1">
-                                        <p className="font-bold text-[10px] uppercase text-muted-foreground">Fecha de Inicio</p>
+                                        <p className="font-bold text-3xs uppercase text-muted-foreground">Fecha de Inicio</p>
                                         <div className="flex items-center gap-2">
                                             <CalendarIcon className="h-3.5 w-3.5 text-primary" />
                                             <p className="text-sm font-medium">
@@ -128,7 +128,7 @@ export function WizardRightSidebar({
 
                                 {order?.sale_order_delivery_date && (
                                     <div className="p-3 space-y-1">
-                                        <p className="font-bold text-[10px] uppercase text-muted-foreground">Fecha de Entrega</p>
+                                        <p className="font-bold text-3xs uppercase text-muted-foreground">Fecha de Entrega</p>
                                         <div className="flex items-center gap-2">
                                             <CalendarIcon className="h-3.5 w-3.5 text-primary" />
                                             <p className="text-sm font-medium">
@@ -140,7 +140,7 @@ export function WizardRightSidebar({
 
                                 {(stageData?.contact_name || order?.sale_customer_name) && (
                                     <div className="p-3 space-y-1">
-                                        <p className="font-bold text-[10px] uppercase text-muted-foreground">
+                                        <p className="font-bold text-3xs uppercase text-muted-foreground">
                                             Contacto Relacionado
                                         </p>
                                         <div className="flex items-start gap-3 pt-0.5">
@@ -151,7 +151,7 @@ export function WizardRightSidebar({
                                                 <p className="text-sm font-semibold truncate leading-tight">
                                                     {stageData?.contact_name || order?.sale_customer_name}
                                                 </p>
-                                                <p className="text-[11px] text-muted-foreground truncate">
+                                                <p className="text-2xs text-muted-foreground truncate">
                                                     {stageData?.contact_tax_id || order?.sale_customer_rut}
                                                 </p>
                                             </div>

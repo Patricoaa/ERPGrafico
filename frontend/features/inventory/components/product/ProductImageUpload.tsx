@@ -93,7 +93,7 @@ export function ProductImageUpload({ form, imagePreview, setImagePreview }: Prod
                                 </label>
                             )}
                         </div>
-                        {fieldState.error && <p className="text-[10px] text-destructive">{fieldState.error.message}</p>}
+                        {fieldState.error && <p className="text-3xs text-destructive">{fieldState.error.message}</p>}
                     </div>
                 )}
             />

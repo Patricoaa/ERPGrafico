@@ -132,9 +132,8 @@ export function OutsourcedServiceForm({
               set({ productId: p?.id?.toString() ?? null, productObj: p as ProductMinimal, uomId })
             }}
             disabled={productLocked}
-            customFilter={(p: Product) =>
-              p.product_type === 'SERVICE' && !!p.can_be_purchased
-            }
+            productTypes={['SERVICE']}
+            canBePurchased
           />
         </div>
 
@@ -183,7 +182,7 @@ export function OutsourcedServiceForm({
             onFocus={(e) => e.target.select()}
           />
           {parseFloat(value.grossPrice) > 0 && (
-            <p className="text-[10px] text-muted-foreground font-mono">
+            <p className="text-3xs text-muted-foreground font-mono">
               Neto: {formatCurrency(parseFloat(value.netPrice))}
             </p>
           )}

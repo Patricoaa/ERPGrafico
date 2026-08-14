@@ -116,7 +116,7 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
                     title="Libro Mayor"
                     displayId={`${accountCode} - ${accountName}`}
                 >
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Desde:</span>
                             <span>{startStr ? format(new Date(startStr + 'T00:00:00'), 'dd/MM/yyyy') : '-'}</span>
@@ -126,7 +126,7 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
                             <span>{endStr ? format(new Date(endStr + 'T00:00:00'), 'dd/MM/yyyy') : '-'}</span>
                         </div>
                     </div>
-                    <div className="text-[9px]">
+                    <div className="text-4xs">
                         <div className="grid grid-cols-[60px,1fr,50px,50px,50px] gap-1 font-bold border-b mb-1 pb-1">
                             <span>Fecha</span>
                             <span>Descripción</span>
@@ -236,60 +236,60 @@ function LedgerContent({
         <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden gap-4 p-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0">
                 {/* Black/Base — Saldo Inicial */}
-                <div className="rounded-lg border border-foreground/20 bg-foreground/5 px-3 py-2.5 flex items-start gap-2.5">
-                    <div className="rounded-md bg-foreground/10 p-1.5 shrink-0">
+                <div className="rounded-md border border-foreground/20 bg-foreground/5 px-3 py-2.5 flex items-start gap-2.5">
+                    <div className="rounded-sm bg-foreground/10 p-1.5 shrink-0">
                         <Calculator className="h-3.5 w-3.5 text-foreground" />
                     </div>
                     <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-foreground/80">Saldo Inicial</p>
+                        <p className="text-3xs font-semibold uppercase tracking-widest text-foreground/80">Saldo Inicial</p>
                         <p className="text-sm font-bold text-foreground font-mono truncate">
                             <MoneyDisplay amount={data?.opening_balance} showColor={false} />
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                        <p className="text-3xs text-muted-foreground mt-0.5">
                             Al {dateRange?.from ? format(dateRange.from, 'dd/MM/yy', { locale: es }) : '-'}
                         </p>
                     </div>
                 </div>
 
                 {/* Cyan — Cargos (Debe) */}
-                <div className="rounded-lg border border-cyan/30 bg-cyan/10 px-3 py-2.5 flex items-start gap-2.5">
-                    <div className="rounded-md bg-cyan/20 p-1.5 shrink-0">
+                <div className="rounded-md border border-cyan/30 bg-cyan/10 px-3 py-2.5 flex items-start gap-2.5">
+                    <div className="rounded-sm bg-cyan/20 p-1.5 shrink-0">
                         <ArrowUpRight className="h-3.5 w-3.5 text-cyan" />
                     </div>
                     <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-cyan">Cargos (Debe)</p>
+                        <p className="text-3xs font-semibold uppercase tracking-widest text-cyan">Cargos (Debe)</p>
                         <p className="text-sm font-bold text-foreground font-mono truncate">
                             <MoneyDisplay amount={data?.period_debit} showColor={false} />
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">Total del periodo</p>
+                        <p className="text-3xs text-muted-foreground mt-0.5">Total del periodo</p>
                     </div>
                 </div>
 
                 {/* Magenta — Abonos (Haber) */}
-                <div className="rounded-lg border border-magenta/30 bg-magenta/10 px-3 py-2.5 flex items-start gap-2.5">
-                    <div className="rounded-md bg-magenta/20 p-1.5 shrink-0">
+                <div className="rounded-md border border-magenta/30 bg-magenta/10 px-3 py-2.5 flex items-start gap-2.5">
+                    <div className="rounded-sm bg-magenta/20 p-1.5 shrink-0">
                         <ArrowDownRight className="h-3.5 w-3.5 text-magenta" />
                     </div>
                     <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-magenta">Abonos (Haber)</p>
+                        <p className="text-3xs font-semibold uppercase tracking-widest text-magenta">Abonos (Haber)</p>
                         <p className="text-sm font-bold text-foreground font-mono truncate">
                             <MoneyDisplay amount={data?.period_credit} showColor={false} />
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">Total del periodo</p>
+                        <p className="text-3xs text-muted-foreground mt-0.5">Total del periodo</p>
                     </div>
                 </div>
 
                 {/* Yellow — Saldo Final */}
-                <div className="rounded-lg border border-yellow/40 bg-yellow/10 px-3 py-2.5 flex items-start gap-2.5">
-                    <div className="rounded-md bg-yellow/20 p-1.5 shrink-0">
+                <div className="rounded-md border border-yellow/40 bg-yellow/10 px-3 py-2.5 flex items-start gap-2.5">
+                    <div className="rounded-sm bg-yellow/20 p-1.5 shrink-0">
                         <Scale className="h-3.5 w-3.5 text-yellow" />
                     </div>
                     <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-yellow">Saldo Final</p>
+                        <p className="text-3xs font-semibold uppercase tracking-widest text-yellow">Saldo Final</p>
                         <p className="text-sm font-bold text-foreground font-mono truncate">
                             <MoneyDisplay amount={data?.closing_balance} showColor={false} />
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                        <p className="text-3xs text-muted-foreground mt-0.5">
                             Al {dateRange?.to ? format(dateRange.to, 'dd/MM/yy', { locale: es }) : '-'}
                         </p>
                     </div>

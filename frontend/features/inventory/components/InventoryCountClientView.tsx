@@ -260,7 +260,7 @@ export function InventoryCountClientView() {
                 <div className="flex flex-col">
                     <DataCell.Text>{row.original.product_name}</DataCell.Text>
                     {row.original.product_internal_code && (
-                        <span className="text-[10px] text-muted-foreground font-mono">{row.original.product_internal_code}</span>
+                        <span className="text-3xs text-muted-foreground font-mono">{row.original.product_internal_code}</span>
                     )}
                 </div>
             ),

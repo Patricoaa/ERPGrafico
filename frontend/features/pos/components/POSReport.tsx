@@ -127,14 +127,14 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
                     {title || (type === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)')}
                 </h1>
                 <div className="flex justify-center items-center gap-2 mt-1">
-                    <span className="text-[11px] font-mono font-bold text-muted-foreground">Sesión #{data.session_id}</span>
-                    <span className="text-[11px] font-mono font-bold text-muted-foreground/40">•</span>
-                    <span className="text-[11px] font-mono font-bold text-muted-foreground">{data.user_name || 'Sistema'}</span>
+                    <span className="text-2xs font-mono font-bold text-muted-foreground">Sesión #{data.session_id}</span>
+                    <span className="text-2xs font-mono font-bold text-muted-foreground/40">•</span>
+                    <span className="text-2xs font-mono font-bold text-muted-foreground">{data.user_name || 'Sistema'}</span>
                 </div>
                 {data.terminal_name && (
-                    <p className="text-[11px] font-bold text-muted-foreground">{data.terminal_name}</p>
+                    <p className="text-2xs font-bold text-muted-foreground">{data.terminal_name}</p>
                 )}
-                <p className="text-[11px] font-bold text-muted-foreground">{formatSessionTime(data.opened_at, data.closed_at)}</p>
+                <p className="text-2xs font-bold text-muted-foreground">{formatSessionTime(data.opened_at, data.closed_at)}</p>
             </div>
 
             {/* SECCIÓN A: CONTROL DE CAJA */}
@@ -144,7 +144,7 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
                     <h4 className=" font-black text-xs uppercase tracking-widest text-foreground">Control de Sesión</h4>
                 </div>
 
-                <div className="space-y-1.5 text-[11px] leading-tight">
+                <div className="space-y-1.5 text-2xs leading-tight">
                     <div className="flex justify-between">
                         <span className="font-bold text-muted-foreground">Fondo inicial:</span>
                         <span className="font-bold font-mono">{formatCurrency(data.opening_balance)}</span>
@@ -170,7 +170,7 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
                     )}
 
                     <div className="flex justify-between items-center pt-1 border-t border-dashed border-border/30 mt-1">
-                        <span className="font-black text-[11px] uppercase tracking-tight">Efectivo Esperado:</span>
+                        <span className="font-bold text-2xs uppercase tracking-tight">Efectivo Esperado:</span>
                         <span className="font-bold text-sm font-mono tracking-tighter">{formatCurrency(calculatedExpected)}</span>
                     </div>
                 </div>
@@ -184,8 +184,8 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
                         <h4 className=" font-black text-xs uppercase tracking-widest text-foreground">Ventas</h4>
                     </div>
 
-                    <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Por Método de Pago</div>
-                    <div className="space-y-1.5 text-[11px] leading-tight mb-4">
+                    <div className="text-2xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Por Método de Pago</div>
+                    <div className="space-y-1.5 text-2xs leading-tight mb-4">
                         {data.total_cash_sales > 0 && (
                             <div className="flex justify-between">
                                 <span className="font-bold text-muted-foreground">Efectivo:</span>
@@ -235,15 +235,15 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
                         )}
 
                         <div className="flex justify-between items-center pt-1 border-t border-dashed border-border/30 mt-1">
-                            <span className="font-black text-[11px] uppercase tracking-tight">Total Ventas:</span>
+                            <span className="font-bold text-2xs uppercase tracking-tight">Total Ventas:</span>
                             <span className="font-black text-sm font-mono tracking-tighter">{formatCurrency(data.total_sales)}</span>
                         </div>
                     </div>
 
                     {data.sale_order_count !== undefined && (
                         <>
-                            <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Por Documentos Emitidos</div>
-                            <div className="space-y-1.5 text-[11px] leading-tight mb-4">
+                            <div className="text-2xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Por Documentos Emitidos</div>
+                            <div className="space-y-1.5 text-2xs leading-tight mb-4">
                                 {data.sale_order_count > 0 && (
                                     <div className="flex justify-between">
                                         <span className="font-bold text-muted-foreground">Ordenes de venta:</span>
@@ -266,7 +266,7 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
             <div className="mt-6 flex justify-center gap-3 print:hidden">
                 <Button
                     onClick={handlePrint}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-sm shadow-elevated border-2 border-primary/20"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium uppercase tracking-widest text-3xs h-10 px-6 rounded-sm shadow-elevated border-2 border-primary/20"
                 >
                     <Printer className="mr-2 h-4 w-4" />
                     Imprimir
@@ -274,7 +274,7 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
                 <Button
                     onClick={handleDownloadPdf}
                     variant="outline"
-                    className="font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-sm"
+                    className="font-medium uppercase tracking-widest text-3xs h-10 px-6 rounded-sm"
                 >
                     <Download className="mr-2 h-4 w-4" />
                     PDF

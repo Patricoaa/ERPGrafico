@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -89,50 +90,35 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
         },
     })
 
-    const lastResetId = useRef<number | undefined>(undefined)
-    const wasOpen = useRef(false)
-
     useEffect(() => {
-        if (!open) {
-            wasOpen.current = false
-            return
-        }
-
-        const currentId = terminal?.id
-        const isNewOpen = !wasOpen.current
-        const isNewData = currentId !== lastResetId.current
-
-        if (isNewOpen) {
+        if (open) {
             fetchTreasuryAccounts()
         }
+    }, [open])
 
-        if (isNewOpen || isNewData) {
-            if (terminal) {
-                const allowedIds = terminal.allowed_treasury_accounts?.map(acc => acc.id) || []
-                form.reset({
-                    name: terminal.name || "",
-                    code: terminal.code || "",
-                    location: terminal.location || "",
-                    serial_number: terminal.serial_number || "",
-                    ip_address: terminal.ip_address || "",
-                    allowed_treasury_account_ids: allowedIds,
-                    default_treasury_account: terminal.default_treasury_account?.toString() || "",
-                })
-            } else {
-                form.reset({
-                    name: "",
-                    code: "",
-                    location: "",
-                    serial_number: "",
-                    ip_address: "",
-                    allowed_treasury_account_ids: [],
-                    default_treasury_account: "",
-                })
-            }
-            lastResetId.current = currentId
-            wasOpen.current = true
-        }
-    }, [open, terminal, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: terminal,
+        defaultValues: () => ({
+            name: "",
+            code: "",
+            location: "",
+            serial_number: "",
+            ip_address: "",
+            allowed_treasury_account_ids: [],
+            default_treasury_account: "",
+        }),
+        mapData: (data) => ({
+            name: data.name || "",
+            code: data.code || "",
+            location: data.location || "",
+            serial_number: data.serial_number || "",
+            ip_address: data.ip_address || "",
+            allowed_treasury_account_ids: data.allowed_treasury_accounts?.map((acc: TreasuryAccount) => acc.id) || [],
+            default_treasury_account: data.default_treasury_account?.toString() || "",
+        })
+    })
 
     const isFetchingInitialData = open && isFetchingDeps
 
@@ -212,7 +198,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
         <>
             {isView && terminal?.id && (
                 <PrintableLayout ref={printRef} title="Terminal" displayId={`#${terminal.id}`}>
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{terminal.name ?? '-'}</span>
@@ -382,16 +368,16 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                                                             label: acc.name,
                                                             suffix: (
                                                                 <div className="flex gap-1.5">
-                                                                    {acc.allows_cash && <span className="text-[10px] font-black text-success uppercase tracking-widest">Efectivo</span>}
-                                                                    {acc.allows_card && <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">Tarjeta</span>}
-                                                                    {acc.allows_transfer && <span className="text-[10px] font-bold text-primary/60 uppercase tracking-tighter">Transf</span>}
+                                                                    {acc.allows_cash && <span className="text-3xs font-bold text-success uppercase tracking-widest">Efectivo</span>}
+                                                                    {acc.allows_card && <span className="text-3xs font-bold text-primary uppercase tracking-tighter">Tarjeta</span>}
+                                                                    {acc.allows_transfer && <span className="text-3xs font-bold text-primary/60 uppercase tracking-tighter">Transf</span>}
                                                                 </div>
                                                             ),
                                                         }))}
                                                         value={field.value || []}
                                                         onChange={handleChange}
                                                         suffix={
-                                                            <span className="px-1.5 py-0.5 rounded-full bg-muted/50 text-[9px] font-mono font-black text-muted-foreground uppercase">
+                                                            <span className="px-1.5 py-0.5 rounded-full bg-muted/50 text-4xs font-mono font-bold text-muted-foreground uppercase">
                                                                 {field.value.length} SELECCIONADAS
                                                             </span>
                                                         }

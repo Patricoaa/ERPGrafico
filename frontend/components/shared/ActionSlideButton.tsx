@@ -44,7 +44,7 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                 size={size}
                 className={cn(
                     "relative flex items-center justify-center overflow-hidden transition-all duration-300 ease-out cursor-pointer",
-                    isLg ? "h-12 px-6 text-xs" : "h-9 px-4 text-[10px]",
+                    isLg ? "h-12 px-6 text-xs" : "h-9 px-4 text-3xs",
                     "font-black tracking-widest uppercase rounded-sm shadow-card",
                     "border",
                     isPrimary && "text-primary hover:text-primary-foreground bg-primary/5 border-primary",

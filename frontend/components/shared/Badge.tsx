@@ -38,22 +38,22 @@ const badgeVariants = cva(
     {
         variants: {
             /**
-             * intent — semantic color. Maps to design token pairs (bg/text/border).
+             * intent — semantic color. Maps to design token pairs (bg/text).
              * Never pass raw colors to Badge — use intent.
              */
             intent: {
-                neutral:     'bg-muted/60 text-muted-foreground border-border/40',
-                info:        'bg-info/10 text-info border-info/20',
-                success:     'bg-success/10 text-success border-success/20',
-                warning:     'bg-warning/10 text-warning border-warning/20',
-                destructive: 'bg-destructive/10 text-destructive border-destructive/20',
-                primary:     'bg-primary/10 text-primary border-primary/20',
+                neutral:     'bg-muted/60 text-muted-foreground',
+                info:        'bg-info/10 text-info',
+                success:     'bg-success/10 text-success',
+                warning:     'bg-warning/10 text-warning',
+                destructive: 'bg-destructive/10 text-destructive',
+                primary:     'bg-primary/10 text-primary',
                 /* Layer 1 categorical intents (ADR-0064) — fixed process inks,
                    only for categorical chips (e.g. payment_method), never for state. */
-                cyan:        'bg-cyan/10 text-cyan border-cyan/20',
-                magenta:     'bg-magenta/10 text-magenta border-magenta/20',
-                yellow:      'bg-yellow/10 text-yellow border-yellow/20',
-                black:       'bg-black/10 text-black border-black/20',
+                cyan:        'bg-cyan/10 text-cyan',
+                magenta:     'bg-magenta/10 text-magenta',
+                yellow:      'bg-yellow/10 text-yellow',
+                black:       'bg-black/10 text-black',
             },
 
             /**
@@ -61,11 +61,11 @@ const badgeVariants = cva(
              * xs/sm follow Chip scale. md/lg follow StatusBadge scale.
              */
             size: {
-                xs: 'h-[18px] px-2 text-[9px] gap-1',
-                sm: 'h-[22px] px-2.5 text-[10px] gap-1',
+                xs: 'h-[18px] px-2 text-xs gap-1',
+                sm: 'h-[22px] px-2.5 text-xs gap-1',
                 md: 'px-2 py-0.5 text-xs gap-1',
-                lg: 'h-8 px-4 text-[14px] gap-2',
-                xl: 'h-10 px-6 text-base gap-2.5',
+                lg: 'h-8 px-4 text-sm gap-1.5',
+                xl: 'h-10 px-6 text-base gap-2',
             },
 
             /**
@@ -92,7 +92,6 @@ const badgeVariants = cva(
 
             /**
              * appearance — solid (default) or ghost (transparent background).
-             * ghost removes the background tint only; badges are borderless (ADR-0068).
              */
             appearance: {
                 solid: '',
@@ -119,12 +118,22 @@ const ICON_SIZES: Record<string, string> = {
     xl: 'h-5 w-5',
 }
 
+const DOT_SIZES: Record<string, string> = {
+    xs: 'h-1.5 w-1.5',
+    sm: 'h-1.5 w-1.5',
+    md: 'h-2 w-2',
+    lg: 'h-2 w-2',
+    xl: 'h-2.5 w-2.5',
+}
+
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
 export interface BadgeProps extends VariantProps<typeof badgeVariants> {
     children?: React.ReactNode
     /** Leading icon — same color as text, size controlled by `size` */
     icon?: LucideIcon
+    /** Optional leading dot (inherits text color) */
+    dot?: boolean
     /** layout/position only — never override typography or colors */
     className?: string
 }
@@ -157,6 +166,7 @@ export interface BadgeHubProps
 export function Badge({
     children,
     icon: Icon,
+    dot,
     intent,
     size,
     tracking,
@@ -164,9 +174,13 @@ export function Badge({
     className,
 }: BadgeProps) {
     const iconSize = ICON_SIZES[size ?? 'md']
+    const dotSize = DOT_SIZES[size ?? 'md']
 
     return (
         <span className={cn(badgeVariants({ intent, size, tracking, shape }), className)}>
+            {dot && (
+                <span className={cn('inline-block rounded-full shrink-0 bg-current', dotSize)} />
+            )}
             {Icon && (
                 <Icon
                     className={cn(iconSize, 'shrink-0')}
@@ -202,7 +216,7 @@ Badge.Dot = function BadgeDot({ intent = 'neutral', size = 'md', children, class
             <div className={cn('h-2 w-2 rounded-full animate-pulse', dotColor[intent ?? 'neutral'])} />
             <span className={cn(
                 'font-sans font-medium tracking-tight leading-none',
-                size === 'xs' || size === 'sm' ? 'text-[10px]' : 'text-[11px] text-muted-foreground',
+                size === 'xs' || size === 'sm' ? 'text-xs' : 'text-xs text-muted-foreground',
             )}>
                 {children}
             </span>
@@ -299,7 +313,7 @@ Badge.Hub = function BadgeHub({ intent = 'neutral', icon: Icon, tooltip, size = 
                 <TooltipTrigger asChild>{hubEl}</TooltipTrigger>
                 <TooltipContent
                     side="top"
-                    className=" font-extrabold uppercase text-[10px] tracking-tighter"
+                    className=" font-extrabold uppercase text-3xs tracking-tighter"
                 >
                     {tooltip}
                 </TooltipContent>

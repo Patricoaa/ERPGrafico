@@ -34,7 +34,7 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
                 <Button
                     type="button"
                     className={cn(
-                        "px-3 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
+                        "px-3 py-1 rounded-md text-3xs font-medium transition-all flex items-center gap-1.5",
                         mode === 'user' ? "bg-background text-foreground shadow-card" : "text-muted-foreground hover:text-foreground"
                     )}
                     onClick={() => {
@@ -48,7 +48,7 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
                 <Button
                     type="button"
                     className={cn(
-                        "px-3 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
+                        "px-3 py-1 rounded-md text-3xs font-medium transition-all flex items-center gap-1.5",
                         mode === 'group' ? "bg-background text-foreground shadow-card" : "text-muted-foreground hover:text-foreground"
                     )}
                     onClick={() => {
@@ -170,7 +170,7 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                                                                 <LabeledInput
                                                                     label="Crédito Preaprobado POS (%)"
                                                                     hint="% asignado por defecto si el cliente no tiene línea de crédito."
-                                                                    suffix={<span className="text-[10px] text-muted-foreground font-bold font-mono">%</span>}
+                                                                    suffix={<span className="text-3xs text-muted-foreground font-bold font-mono">%</span>}
                                                                     type="number"
                                                                     {...field}
                                                                     className="font-bold text-center max-w-[150px]"
@@ -194,7 +194,7 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                                                                 <LabeledInput
                                                                     label="Días de Mora para Auto-Bloqueo"
                                                                     hint="Días máximos permitidos antes de restringir el crédito automáticamente."
-                                                                    suffix={<span className="text-[10px] text-muted-foreground font-bold font-mono">D</span>}
+                                                                    suffix={<span className="text-3xs text-muted-foreground font-bold font-mono">D</span>}
                                                                     type="number"
                                                                     {...field}
                                                                     value={field.value ?? ""}
@@ -250,7 +250,7 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
 
                                                     {watchedValues.pos_enable_line_discounts && (
                                                         <div className="pt-2 space-y-3 border-t border-dashed">
-                                                            <div className="text-[10px] font-bold text-muted-foreground uppercase">Permiso para aplicar</div>
+                                                            <div className="text-3xs font-bold text-muted-foreground uppercase">Permiso para aplicar</div>
                                                             <DiscountPermissionControl
                                                                 form={form}
                                                                 userField="pos_line_discount_user"
@@ -280,7 +280,7 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
 
                                                     {watchedValues.pos_enable_total_discounts && (
                                                         <div className="pt-2 space-y-3 border-t border-dashed">
-                                                            <div className="text-[10px] font-bold text-muted-foreground uppercase">Permiso para aplicar</div>
+                                                            <div className="text-3xs font-bold text-muted-foreground uppercase">Permiso para aplicar</div>
                                                             <DiscountPermissionControl
                                                                 form={form}
                                                                 userField="pos_global_discount_user"

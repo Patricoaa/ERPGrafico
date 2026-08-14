@@ -118,7 +118,7 @@ function DTEConfigCard({ form, name, title, description }: DTEConfigCardProps) {
                                         </div>
                                         <div className="flex-1">
                                             <div className="text-sm font-bold leading-none">{type.label}</div>
-                                            <div className="text-[10px] text-muted-foreground mt-1">Código SII: {type.code}</div>
+                                            <div className="text-3xs text-muted-foreground mt-1">Código SII: {type.code}</div>
                                         </div>
                                     </div>
                                 ))}

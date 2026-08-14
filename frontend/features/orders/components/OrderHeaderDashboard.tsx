@@ -85,6 +85,7 @@ export function OrderHeaderDashboard({
                 value={formatCurrency(totalAmount)}
                 icon={TrendingUp}
                 accent="primary"
+                className="card-flat border shadow-none bg-card/50 backdrop-blur-sm"
             />
             <StatCard
                 label="Estado Financiero"
@@ -94,9 +95,10 @@ export function OrderHeaderDashboard({
                     </span>
                 }
                 accent="primary"
+                className="card-flat border shadow-none bg-card/50 backdrop-blur-sm"
             >
                 <div className="mt-3 space-y-1">
-                    <div className="flex justify-between text-[11px] font-medium text-foreground/80">
+                    <div className="flex justify-between text-xs font-medium text-foreground/80">
                         <span>Pagado: {formatCurrency(paidAmount)}</span>
                         <span className="text-muted-foreground/50">{Math.round(paymentProgress)}%</span>
                     </div>
@@ -105,7 +107,7 @@ export function OrderHeaderDashboard({
             </StatCard>
 
             {/* Visual Stepper / Timeline */}
-            <Card className="lg:col-span-2 bg-card/50 border-border backdrop-blur-sm flex flex-col justify-center">
+            <Card variant="flat" className="lg:col-span-2 bg-card/50 backdrop-blur-sm flex flex-col justify-center">
                 <CardContent className="p-4 py-3">
                     <div className="flex items-center justify-between relative">
                         {/* Connecting Line */}
@@ -133,7 +135,7 @@ export function OrderHeaderDashboard({
                                         )}
                                     </div>
                                     <span className={cn(
-                                        "text-[10px] font-bold uppercase tracking-wider transition-colors duration-300 hidden sm:block",
+                                        "text-3xs font-bold uppercase tracking-wider transition-colors duration-300 hidden sm:block",
                                         isActive ? "text-primary" : "text-muted-foreground/70",
                                         step.status === 'success' && "text-success/80"
                                     )}>
@@ -141,7 +143,7 @@ export function OrderHeaderDashboard({
                                     </span>
 
                                     {/* Mobile Label (only for active step) */}
-                                    <span className={cn("sm:hidden text-[9px] font-bold absolute -bottom-5 whitespace-nowrap", isActive ? "text-primary block" : "hidden")}>
+                                    <span className={cn("sm:hidden text-4xs font-bold absolute -bottom-5 whitespace-nowrap", isActive ? "text-primary block" : "hidden")}>
                                         {step.label}
                                     </span>
                                 </div>

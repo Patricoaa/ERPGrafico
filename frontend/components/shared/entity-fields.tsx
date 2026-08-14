@@ -102,6 +102,14 @@ const TYPE_TO_ROLE: Record<FieldType, FieldRole> = {
 }
 
 /**
+ * FieldTypes that render numeric readouts in tables.
+ * Numeric columns default their header to right alignment so header and cell content align
+ * (cell content is right-aligned by DataCell.Number/Currency/Variance). Explicit
+ * `tableOptions.align` in a FieldDef always overrides this default.
+ */
+const NUMERIC_TYPES: ReadonlySet<FieldType> = new Set(['number', 'currency', 'numericFlow', 'currencyFlow'])
+
+/**
  * FieldRole → default Placement mapping.
  * Explicit placement in FieldDef always overrides this.
  *
@@ -209,7 +217,10 @@ type FieldDef<T> = SharedFieldDef<T> & (
     | { type: 'status'; getLabel?: (entity: T) => string }
 
     // ── Relation ─────────────────────────────────────────────────────────────
-    | { type: 'contact' }
+    // `contact` renders a registered person/company via DataCell.ContactLink.
+    // The field value is the contact id; `getDisplay` overrides the visible text
+    // when it differs from the id (e.g. supplier_id + supplier_name).
+    | { type: 'contact'; getDisplay?: (entity: T) => string }
 
     // ── Tags ─────────────────────────────────────────────────────────────────
     | {
@@ -291,6 +302,13 @@ export interface KanbanField {
 
 export type EntityFieldsReturn<T> = {
     toColumns: (opts?: { exclude?: string[] }) => ColumnDef<T>[]
+    /**
+     * Returns the table column for a single field, selected by data key.
+     * Preferred over positional destructuring of `toColumns()` — its output is
+     * ordered by placement zones (ADR-0059/0067), so slot index does NOT map to
+     * a field. Throws if the field is not defined or has no `table` surface.
+     */
+    column: (key: string) => ColumnDef<T>
     toCardFields: (entity: T, opts?: { only?: string[] }) => CardField[]
     toKanbanFields: (entity: T, opts?: { only?: string[] }) => KanbanField[]
     render: (fieldKey: string, entity: T) => ReactNode
@@ -470,7 +488,7 @@ function renderCell<T>(def: FieldDef<T>, entity: T, opts?: { weight?: DataCellWe
         }
 
         case "contact":
-            return <DataCell.ContactLink contactId={value as number | string} className={resolvedClassName}>{toDisplayValue(value)}</DataCell.ContactLink>
+            return <DataCell.ContactLink contactId={value as number | string} className={resolvedClassName}>{def.getDisplay ? def.getDisplay(entity) : toDisplayValue(value)}</DataCell.ContactLink>
 
         case "chip": {
             const intentValue = typeof def.intent === "function" ? def.intent(entity) : def.intent
@@ -751,6 +769,84 @@ function computeAutoComposeKeys<T>(
 }
 
 /**
+ * Pre-resolves the effective placement per table field (mirrors toCardFields auto-title logic).
+ * Resolution: explicit placement → fieldRole → TYPE_TO_ROLE → auto-title promotion.
+ * Shared by toColumns() and column() so both surfaces apply the same zone-driven weight.
+ * Keyed by data key (def.key), NOT by the definition object key (fieldKey).
+ */
+function resolveTablePlacementMap<T>(tableEntries: [string, FieldDef<T>][]): Map<string, Placement> {
+    const resolvedPlacements = new Map<string, Placement>()
+    let titleAssigned = false
+
+    for (const [, def] of tableEntries) {
+        if (def.placement) {
+            resolvedPlacements.set(def.key, def.placement)
+            if (def.placement === 'title') titleAssigned = true
+            continue
+        }
+        const role = def.fieldRole ?? TYPE_TO_ROLE[def.type]
+        let placement: Placement = ROLE_TO_PLACEMENT[role]
+
+        // Auto-title: first identifier with code/id/display in key → title
+        if (!titleAssigned && role === 'identifier' && /number|code|id|display/i.test(def.key)) {
+            placement = 'title'
+            titleAssigned = true
+        }
+        resolvedPlacements.set(def.key, placement)
+    }
+
+    // Fallback: if no title assigned, first identifier or first field gets title
+    if (!titleAssigned && tableEntries.length > 0) {
+        const fallback =
+            tableEntries.find(([, d]) => (d.fieldRole ?? TYPE_TO_ROLE[d.type]) === 'identifier')
+            ?? tableEntries[0]
+        resolvedPlacements.set(fallback[1].key, 'title')
+    }
+
+    return resolvedPlacements
+}
+
+/**
+ * Builds a single ColumnDef from a field definition — shared by toColumns() and column().
+ * The `zone` drives the cell weight (semibold in the header zone, matching card headers).
+ */
+function buildColumn<T>(
+    fieldKey: string,
+    def: FieldDef<T>,
+    zone: Placement | undefined,
+): ColumnDef<T> {
+    const headerLabel = def.header ?? def.label
+    const enableSorting = def.tableOptions?.enableSorting ?? true
+    const align = def.tableOptions?.align ?? (NUMERIC_TYPES.has(def.type) ? "right" : "center")
+    const headerAlign = align === "center" ? "justify-center" : align === "right" ? "justify-end" : "justify-start"
+    const hasAccessorFn = !!def.tableOptions?.accessorFn
+
+    return {
+        ...(hasAccessorFn
+            ? { id: fieldKey, accessorFn: (row: T) => def.tableOptions?.accessorFn?.(row) ?? null }
+            : { accessorKey: def.key }
+        ),
+        header: ({ column }) => (
+            <DataTableColumnHeader
+                column={column}
+                title={headerLabel}
+                className={cn(headerAlign)}
+            />
+        ),
+        cell: ({ row }) => {
+            return renderCell(def, row.original, {
+                weight: zone === 'header' ? 'semibold' : undefined,
+            })
+        },
+        meta: { title: headerLabel },
+        enableSorting,
+        size: def.tableOptions?.width,
+        ...(def.tableOptions?.sortingFn && { sortingFn: def.tableOptions.sortingFn as never }),
+        ...(def.tableOptions?.filterFn && { filterFn: def.tableOptions.filterFn as never }),
+    }
+}
+
+/**
  * createEntityFields — Generic factory for entity field definitions shared between
  * DataTable (ColumnDef), EntityCard (Field), and Kanban card surfaces.
  *
@@ -780,6 +876,9 @@ function computeAutoComposeKeys<T>(
  * // DataTable — columns sorted by `order`
  * const columns = orderFields.toColumns()
  *
+ * // Single column by data key (prefer over positional destructuring of toColumns())
+ * const folioCol = orderFields.column('display_id')
+ *
  * // EntityCard — title/subtitle auto-resolved from meta
  * const title = orderFields.resolveTitle(order)
  * const subtitle = orderFields.resolveSubtitle(order)
@@ -802,38 +901,11 @@ export function createEntityFields<T>(): (
                 title: 0, subtitle: 1, detail: 2, header: 3,
             }
 
-            // Pre-resolve effective placement per field (mirrors toCardFields auto-title logic).
-            // Resolution: explicit placement → fieldRole → TYPE_TO_ROLE → auto-title promotion.
-            const resolvedPlacements = new Map<string, Placement>()
-            let titleAssigned = false
             const tableEntries = Object.entries(defs).filter(
                 ([k, d]) => isPresentOnSurface(d, "table") && !excluded.has(k),
             )
 
-            for (const [, def] of tableEntries) {
-                if (def.placement) {
-                    resolvedPlacements.set(def.key, def.placement)
-                    if (def.placement === 'title') titleAssigned = true
-                    continue
-                }
-                const role = def.fieldRole ?? TYPE_TO_ROLE[def.type]
-                let placement: Placement = ROLE_TO_PLACEMENT[role]
-
-                // Auto-title: first identifier with code/id/display in key → title
-                if (!titleAssigned && role === 'identifier' && /number|code|id|display/i.test(def.key)) {
-                    placement = 'title'
-                    titleAssigned = true
-                }
-                resolvedPlacements.set(def.key, placement)
-            }
-
-            // Fallback: if no title assigned, first identifier or first field gets title
-            if (!titleAssigned && tableEntries.length > 0) {
-                const fallback =
-                    tableEntries.find(([, d]) => (d.fieldRole ?? TYPE_TO_ROLE[d.type]) === 'identifier')
-                    ?? tableEntries[0]
-                resolvedPlacements.set(fallback[1].key, 'title')
-            }
+            const resolvedPlacements = resolveTablePlacementMap(tableEntries)
 
             // Mirror the card's auto-composed subtitle (role priority) so the list follows
             // the same ordering criteria as the card. Static mode — no entity available.
@@ -858,38 +930,22 @@ export function createEntityFields<T>(): (
                 })
                 .sort((a, b) => a.zone - b.zone || a.rank - b.rank || a.index - b.index)
                 .map(({ entry }) => entry)
-                .map(([fieldKey, def]): ColumnDef<T> => {
-                    const headerLabel = def.header ?? def.label
-                    const enableSorting = def.tableOptions?.enableSorting ?? true
-                    const align = def.tableOptions?.align ?? "center"
-                    const headerAlign = align === "center" ? "justify-center" : align === "right" ? "justify-end" : "justify-start"
-                    const hasAccessorFn = !!def.tableOptions?.accessorFn
+                .map(([fieldKey, def]) => buildColumn(fieldKey, def, resolvedPlacements.get(def.key)))
+        },
 
-                    return {
-                        ...(hasAccessorFn
-                            ? { id: fieldKey, accessorFn: (row: T) => def.tableOptions?.accessorFn?.(row) ?? null }
-                            : { accessorKey: def.key }
-                        ),
-                        header: ({ column }) => (
-                            <DataTableColumnHeader
-                                column={column}
-                                title={headerLabel}
-                                className={cn(headerAlign)}
-                            />
-                        ),
-                        cell: ({ row }) => {
-                            const zone = resolvedPlacements.get(def.key)
-                            return renderCell(def, row.original, {
-                                weight: zone === 'header' ? 'semibold' : undefined,
-                            })
-                        },
-                        meta: { title: headerLabel },
-                        enableSorting,
-                        size: def.tableOptions?.width,
-                        ...(def.tableOptions?.sortingFn && { sortingFn: def.tableOptions.sortingFn as never }),
-                        ...(def.tableOptions?.filterFn && { filterFn: def.tableOptions.filterFn as never }),
-                    }
-                })
+        column: (key: string): ColumnDef<T> => {
+            const tableEntries = Object.entries(defs).filter(
+                ([, d]) => isPresentOnSurface(d, "table"),
+            )
+            const entry = tableEntries.find(([, d]) => d.key === key)
+            if (!entry) {
+                throw new Error(
+                    `createEntityFields.column('${key}'): campo no definido o sin superficie 'table' en Fields.ts`,
+                )
+            }
+            const [fieldKey, def] = entry
+            const resolvedPlacements = resolveTablePlacementMap(tableEntries)
+            return buildColumn(fieldKey, def, resolvedPlacements.get(def.key))
         },
 
         /**
@@ -1009,23 +1065,23 @@ export function createEntityFields<T>(): (
             if (meta?.title?.field) {
                 const titleField = meta.title.field
                 const def = Object.values(defs).find(d => d.key === titleField)
-                if (def) return renderCell(def, entity, { weight: 'bold' })
+                if (def) return renderCell(def, entity)
                 // Fallback: raw value from entity
                 const raw = entity[meta.title.field as keyof T]
                 if (raw != null) return String(raw)
             }
             // Priority 3: field with placement:'title' (backwards compat)
             const cardTitleField = Object.values(defs).find(d => d.placement === 'title')
-            if (cardTitleField) return renderCell(cardTitleField, entity, { weight: 'bold' })
+            if (cardTitleField) return renderCell(cardTitleField, entity)
             // Priority 4: first identifier field
             const identifier = Object.values(defs).find(d => {
                 const role = d.fieldRole ?? TYPE_TO_ROLE[d.type]
                 return role === 'identifier'
             })
-            if (identifier) return renderCell(identifier, entity, { weight: 'bold' })
+            if (identifier) return renderCell(identifier, entity)
             // Priority 5: first field
             const first = Object.values(defs)[0]
-            if (first) return renderCell(first, entity, { weight: 'bold' })
+            if (first) return renderCell(first, entity)
             return '---'
         },
 

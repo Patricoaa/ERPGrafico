@@ -215,7 +215,7 @@ export function resolveEntity(label: string, data: Record<string, unknown>): Res
 // CATEGORY & ENUM MAPPINGS (for Chip.Category)
 // ----------------------------------------------------------------------
 
-export type CategoryDomain = 'product_type' | 'tax_type' | 'transaction_type' | 'dte_type' | 'contact_type' | 'payment_method'
+export type CategoryDomain = 'product_type' | 'tax_type' | 'transaction_type' | 'dte_type' | 'contact_type' | 'payment_method' | 'account_type' | 'channel' | 'absence_type'
 
 interface CategoryEntry {
     intent: BadgeIntent
@@ -263,6 +263,23 @@ const CATEGORY_MAP: Record<CategoryDomain, Record<string, CategoryEntry>> = {
         'TRANSFER':      { intent: 'yellow', label: 'Transferencia', icon: 'Landmark' },
         'CHECK':         { intent: 'black', label: 'Cheque', icon: 'FileCheck' },
         'OTHER':         { intent: 'neutral', label: 'Otro', icon: 'MoreHorizontal' },
+    },
+    account_type: {
+        'ASSET':    { intent: 'info',       label: 'Activo' },
+        'LIABILITY':{ intent: 'warning',    label: 'Pasivo' },
+        'EQUITY':   { intent: 'neutral',    label: 'Patrimonio' },
+        'INCOME':   { intent: 'success',    label: 'Ingresos' },
+        'EXPENSE':  { intent: 'destructive',label: 'Gastos' },
+    },
+    channel: {
+        'SYSTEM': { intent: 'neutral', label: 'Sistema' },
+        'POS':    { intent: 'primary', label: 'Punto de Venta (POS)' },
+    },
+    absence_type: {
+        'AUSENTISMO':       { intent: 'destructive', label: 'Ausentismo' },
+        'LICENCIA':         { intent: 'info',        label: 'Licencia' },
+        'PERMISO_SIN_GOCE': { intent: 'warning',     label: 'Permiso s/Goce' },
+        'AUSENCIA_HORAS':   { intent: 'neutral',     label: 'Horas' },
     }
 }
 

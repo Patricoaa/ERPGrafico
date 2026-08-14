@@ -1,7 +1,8 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm, useWatch } from "react-hook-form"
 import { type PaymentInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -112,17 +113,25 @@ export function PaymentDrawer({
         return results
     }, [allInvoicesData, customerId, supplierId, paymentType])
 
-    useEffect(() => {
-        if (isViewMode && paymentData) {
-            form.reset({
-                payment_type: (paymentData.payment_type ?? paymentData.payment_type_new ?? "INBOUND") as "INBOUND" | "OUTBOUND",
-                customer_id: (paymentData.payment_type === "INBOUND" ? (paymentData.contact?.toString() ?? paymentData.customer?.toString() ?? paymentData.customer_id?.toString()) : "") ?? "",
-                supplier_id: (paymentData.payment_type === "OUTBOUND" ? (paymentData.contact?.toString() ?? paymentData.supplier?.toString() ?? paymentData.supplier_id?.toString()) : "") ?? "",
-                invoice_id: paymentData.invoice?.toString() ?? paymentData.invoice_id?.toString() ?? "",
-                reference: paymentData.reference ?? "",
-            })
-        }
-    }, [isViewMode, paymentData, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: paymentData ?? initialData,
+        defaultValues: () => ({
+            payment_type: "INBOUND" as const,
+            customer_id: "",
+            supplier_id: "",
+            invoice_id: "",
+            reference: "",
+        }),
+        mapData: (data) => ({
+            payment_type: (data.payment_type ?? (data as { payment_type_new?: string }).payment_type_new ?? "INBOUND") as "INBOUND" | "OUTBOUND",
+            customer_id: (data.payment_type === "INBOUND" ? (data.contact?.toString() ?? data.customer?.toString() ?? (data as { customer_id?: number | string }).customer_id?.toString()) : "") ?? "",
+            supplier_id: (data.payment_type === "OUTBOUND" ? (data.contact?.toString() ?? data.supplier?.toString() ?? (data as { supplier_id?: number | string }).supplier_id?.toString()) : "") ?? "",
+            invoice_id: data.invoice?.toString() ?? (data as { invoice_id?: number | string }).invoice_id?.toString() ?? "",
+            reference: data.reference ?? "",
+        }),
+    })
 
     async function onSubmit(data: PaymentFormValues) {
         setLoading(true)
@@ -180,7 +189,7 @@ export function PaymentDrawer({
                     title="Comprobante de Pago"
                     displayId={`#${entityId}`}
                 >
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Monto:</span>
                             <span>{formatCurrency(Number(paymentDataState.amount ?? 0))}</span>

@@ -144,7 +144,7 @@ function AssignmentModeToggle({
                 variant="ghost"
                 type="button"
                 className={cn(
-                    "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5 h-auto border-none shadow-none",
+                    "px-2 py-1 rounded-md text-3xs font-medium transition-all flex items-center gap-1.5 h-auto border-none shadow-none",
                     mode === "user" ? "bg-background text-foreground shadow-card" : "text-muted-foreground hover:text-foreground",
                 )}
                 onClick={() => onSwitch("user")}
@@ -155,7 +155,7 @@ function AssignmentModeToggle({
                 variant="ghost"
                 type="button"
                 className={cn(
-                    "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5 h-auto border-none shadow-none",
+                    "px-2 py-1 rounded-md text-3xs font-medium transition-all flex items-center gap-1.5 h-auto border-none shadow-none",
                     mode === "group" ? "bg-background text-foreground shadow-card" : "text-muted-foreground hover:text-foreground",
                 )}
                 onClick={() => onSwitch("group")}
@@ -230,7 +230,7 @@ function RowShell({
                                 {isRecurrent ? "RECURRENTE" : badgeLabel}
                             </Chip>
                         </div>
-                        <p className="text-[10px] text-muted-foreground line-clamp-1">{description}</p>
+                        <p className="text-3xs text-muted-foreground line-clamp-1">{description}</p>
                     </div>
                 </div>
                 {children}
@@ -393,7 +393,7 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
             <div className="flex flex-col sm:flex-row items-center gap-3">
                 {/* Day input */}
                 <div className="flex items-center gap-2 px-3 py-1 bg-muted/30 rounded-md border border-border/50">
-                    <span className="text-[10px] whitespace-nowrap text-muted-foreground font-medium">Día Gen:</span>
+                    <span className="text-3xs whitespace-nowrap text-muted-foreground font-medium">Día Gen:</span>
                     <Controller
                         control={dayForm.control}
                         name="value"
@@ -460,8 +460,8 @@ const MarginThresholdInput = React.memo(function MarginThresholdInput({ initialV
     return (
         <div className="flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-md border border-border/50">
             <div className="space-y-0.5">
-                <p className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">Umbral Mínimo (%)</p>
-                <p className="text-[9px] text-muted-foreground leading-none text-right">0 = Apagado</p>
+                <p className="text-3xs font-bold uppercase tracking-tight text-muted-foreground">Umbral Mínimo (%)</p>
+                <p className="text-4xs text-muted-foreground leading-none text-right">0 = Apagado</p>
             </div>
             <div className="flex items-center gap-1 relative w-[72px]">
                 <Controller
@@ -480,7 +480,7 @@ const MarginThresholdInput = React.memo(function MarginThresholdInput({ initialV
                         />
                     )}
                 />
-                <span className="absolute right-2 text-muted-foreground text-[10px] font-medium">%</span>
+                <span className="absolute right-2 text-muted-foreground text-3xs font-medium">%</span>
             </div>
             <RowSaveIndicator status={status} />
         </div>
@@ -554,8 +554,8 @@ const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule
                     {type.id === "POS_CREDIT_APPROVAL" && (
                         <div className="flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-md border border-border/50">
                             <div className="space-y-0.5">
-                                <Label className="text-[10px] font-bold uppercase tracking-tight">Notificar Creador</Label>
-                                <p className="text-[9px] text-muted-foreground leading-none">Quien inició acción</p>
+                                <Label className="text-3xs font-bold uppercase tracking-tight">Notificar Creador</Label>
+                                <p className="text-4xs text-muted-foreground leading-none">Quien inició acción</p>
                             </div>
                             <Controller
                                 control={form.control}
@@ -571,7 +571,7 @@ const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule
                     <div className="flex items-center gap-3">
                         {type.id === "POS_CREDIT_APPROVAL" && (
                             <div className="space-y-0.5 min-w-[120px]">
-                                <Label className="text-[10px] font-bold uppercase tracking-tight">Notificadores Extra</Label>
+                                <Label className="text-3xs font-bold uppercase tracking-tight">Notificadores Extra</Label>
                             </div>
                         )}
                         <div className="flex items-center gap-2">
@@ -650,7 +650,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
 
                     <TabsContent value="tasks" className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-6">
                         <div>
-                            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">Tareas por Etapa (HUB)</h4>
+                            <h4 className="text-3xs font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">Tareas por Etapa (HUB)</h4>
                             <div className="grid gap-2">
                                 {HUB_TASK_TYPES.map((type) => (
                                     <AssignmentRuleRow key={type.id} taskType={type} rule={ruleByType[type.id]} />
@@ -659,7 +659,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                         </div>
 
                         <div className="pt-4 border-t border-border/50">
-                            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">Tareas Recurrentes mensuales</h4>
+                            <h4 className="text-3xs font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">Tareas Recurrentes mensuales</h4>
                             <div className="grid gap-2">
                                 {RECURRENT_TASK_TYPES.map((type) => (
                                     <RecurrentRuleRow
@@ -675,7 +675,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                         <Card className="border-dashed border-2 bg-muted/5 mt-4">
                             <CardHeader className="py-4">
                                 <CardTitle className="text-xs">Automatización de Tareas</CardTitle>
-                                <CardDescription className="text-[10px]">
+                                <CardDescription className="text-3xs">
                                     Las tareas se generan y completan automáticamente según el flujo del sistema.
                                     <br />
                                     Para tareas recurrentes, el <strong>Día Gen</strong> indica cuándo se creará la tarea para el periodo anterior.
@@ -686,7 +686,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
 
                     <TabsContent value="notif" className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-6">
                         <div className="space-y-1 px-1">
-                            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Reglas de Notificación</h4>
+                            <h4 className="text-3xs font-bold text-muted-foreground uppercase tracking-wider">Reglas de Notificación</h4>
                             <p className="text-xs text-muted-foreground">Configure quién recibe las alertas de campana para eventos clave del sistema.</p>
                         </div>
 
@@ -707,7 +707,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                                     <UserCheck className="h-4 w-4 text-primary" />
                                     Lógica de Notificaciones
                                 </CardTitle>
-                                <CardDescription className="text-[10px] space-y-2">
+                                <CardDescription className="text-3xs space-y-2">
                                     <p>
                                         Si activa <strong>Notificar Creador</strong>, el usuario que inició el proceso recibirá la respuesta (ej: el cajero que solicitó crédito).
                                     </p>

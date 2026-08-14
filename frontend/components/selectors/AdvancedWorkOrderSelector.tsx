@@ -124,11 +124,11 @@ export function AdvancedWorkOrderSelector({
                             <div className="flex flex-col overflow-hidden flex-1">
                                 <div className="flex items-center justify-between">
                                     <span className="truncate font-bold text-xs">{formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)}</span>
-                                    <span className="text-[9px] font-mono text-muted-foreground">
+                                    <span className="text-4xs font-mono text-muted-foreground">
                                         {format(new Date(order.created_at), "dd/MM/yyyy")}
                                     </span>
                                 </div>
-                                <span className="text-[10px] text-muted-foreground uppercase font-black truncate">
+                                <span className="text-3xs text-muted-foreground uppercase font-bold truncate">
                                     {order.product_name}
                                 </span>
                             </div>

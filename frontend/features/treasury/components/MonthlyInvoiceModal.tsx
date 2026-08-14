@@ -146,7 +146,7 @@ export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalP
                 {/* Standardized Separator */}
                 <div className="flex items-center gap-2 pt-2 pb-2">
                     <div className="flex-1 h-px bg-border" />
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Datos del Documento</span>
+                    <span className="text-3xs font-semibold uppercase tracking-widest text-muted-foreground">Datos del Documento</span>
                     <div className="flex-1 h-px bg-border" />
                 </div>
 

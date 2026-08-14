@@ -102,7 +102,7 @@ const alignClass: Record<NonNullable<FormLineItemColumn["align"]>, string> = {
  * if needed, but the add button in the footer remains accessible at all times.
  *
  * Visual standard: aesthetic inherited from
- * `AccountingLinesTable` — compact headers (`text-[10px] uppercase
+ * `AccountingLinesTable` — compact headers (`text-3xs uppercase
  * tracking-widest`), centered by default, hover `primary/5`, ghost add
  * button, `IconButton` delete affordance per row.
  *
@@ -153,12 +153,12 @@ export function FormLineItemsTable({
                     {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />}
                     <div>
                         {title && (
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/70">
+                            <span className="text-3xs font-bold uppercase tracking-widest text-foreground/70">
                                 {title}
                             </span>
                         )}
                         {subtitle && (
-                            <span className="ml-2 text-[10px] font-medium text-muted-foreground/60 uppercase tracking-tight">
+                            <span className="ml-2 text-3xs font-medium text-muted-foreground/60 uppercase tracking-tight">
                                 {subtitle}
                             </span>
                         )}
@@ -176,7 +176,7 @@ export function FormLineItemsTable({
                                     <TableHead
                                         key={i}
                                         className={cn(
-                                            "text-[10px] font-bold uppercase tracking-widest text-muted-foreground table-cell",
+                                            "text-3xs font-bold uppercase tracking-widest text-muted-foreground table-cell",
                                             col.width,
                                             /* default: center — override per column with align prop */
                                             col.align ? alignClass[col.align] : "text-center",
@@ -216,7 +216,7 @@ export function FormLineItemsTable({
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/5 h-7 px-2"
+                                className="text-3xs font-medium uppercase tracking-widest text-primary hover:bg-primary/5 h-7 px-2"
                                 onClick={onAdd}
                                 disabled={isLoading || disabledAdd}
                             >

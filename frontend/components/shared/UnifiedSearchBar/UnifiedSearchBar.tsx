@@ -137,7 +137,7 @@ export function UnifiedSearchBar({
                       <span
                         key={chip.id}
                         className={cn(
-                          "inline-flex items-center gap-1 h-5 px-1.5 rounded-sm text-[11px] font-medium whitespace-nowrap shrink-0 max-w-[180px]",
+                          "inline-flex items-center gap-1 h-5 px-1.5 rounded-sm text-2xs font-medium whitespace-nowrap shrink-0 max-w-[180px]",
                           chip.variant === 'search' && "bg-muted text-muted-foreground",
                           chip.variant === 'filter' && "bg-primary/10 text-primary",
                           chip.variant === 'date' && "bg-info/10 text-info",

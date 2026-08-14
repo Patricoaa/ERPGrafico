@@ -187,10 +187,10 @@ export function Drawer({
 
     // Render classes for side specific logic
     const sideStyles = {
-        bottom: "rounded-t-xl! rounded-b-none! border-t-0! bottom-0! top-auto! w-full! left-0! right-0! m-0!",
-        top: "rounded-b-xl! rounded-t-none! border-b-0! top-0! bottom-auto! w-full! left-0! right-0! m-0!",
-        right: "rounded-l-xl! rounded-r-none! border-l-0! h-full! right-0! left-auto! top-0! bottom-0! sm:max-w-none! m-0!",
-        left: "rounded-r-xl! rounded-l-none! border-r-0! h-full! left-0! right-auto! top-0! bottom-0! sm:max-w-none! m-0!",
+        bottom: "rounded-none! border-t-0! bottom-0! top-auto! w-full! left-0! right-0! m-0!",
+        top: "rounded-none! border-b-0! top-0! bottom-auto! w-full! left-0! right-0! m-0!",
+        right: "rounded-none! border-l-0! h-full! right-0! left-auto! top-0! bottom-0! sm:max-w-none! m-0!",
+        left: "rounded-none! border-r-0! h-full! left-0! right-auto! top-0! bottom-0! sm:max-w-none! m-0!",
     }
 
     const iconElement: React.ReactNode = icon
@@ -217,18 +217,37 @@ export function Drawer({
                     maxWidth: isHorizontal ? (maxSize ?? '100vw') : undefined,
                     minHeight: !isHorizontal ? minSize : undefined,
                     maxHeight: !isHorizontal ? (maxSize ?? '100vh') : undefined,
-                    ...(side === "right" ? { right: 0, top: 0, bottom: 0, height: '100%' } : {}),
-                    ...(side === "left" ? { left: 0, top: 0, bottom: 0, height: '100%' } : {}),
+                    ...(boundary === "embedded" ? { position: 'absolute' } : {}),
+                    ...(side === "right" ? { 
+                        right: 0, 
+                        top: boundary === "embedded" ? 0 : 'var(--header-height)', 
+                        bottom: 0, 
+                        height: boundary === "embedded" ? '100%' : 'calc(100vh - var(--header-height))' 
+                    } : {}),
+                    ...(side === "left" ? { 
+                        left: 0, 
+                        top: boundary === "embedded" ? 0 : 'var(--header-height)', 
+                        bottom: 0, 
+                        height: boundary === "embedded" ? '100%' : 'calc(100vh - var(--header-height))' 
+                    } : {}),
                     ...(side === "bottom" ? { left: 0, right: 0, bottom: 0, width: '100%' } : {}),
-                    ...(side === "top" ? { left: 0, right: 0, top: 0, width: '100%' } : {})
+                    ...(side === "top" ? { left: 0, right: 0, top: boundary === "embedded" ? 0 : 'var(--header-height)', width: '100%' } : {})
                 }}
                 className={cn(
-                    "p-0 flex flex-col overflow-hidden panel-surface",
-                    boundary === "embedded" ? "absolute!" : "fixed!",
+                    "p-0 flex flex-col overflow-hidden text-foreground rounded-none!",
+                    // Drawer surface = main content background (bg-card, ADR-0074)
+                    boundary === "embedded"
+                        ? "absolute! border border-border/40 bg-card"
+                        : "fixed! bg-card",
                     sideStyles[side],
+                    // Fixed panels: hairline border, no shadow, no rounding
+                    boundary !== "embedded" && side === "right" && "rounded-none! border-l border-border/40",
+                    boundary !== "embedded" && side === "left" && "rounded-none! border-r border-border/40",
                     boundary === "embedded" && isHorizontal
-                        ? (side === "right" ? "border-l! border-border/15! border-t-0! border-r-0! border-b-0!" : "border-r! border-border/15! border-t-0! border-l-0! border-b-0!")
-                        : undefined,
+                        ? "h-full"
+                        : boundary === "embedded" && !isHorizontal
+                        ? "w-full"
+                        : "",
                     className
                 )}
             >
@@ -261,7 +280,7 @@ export function Drawer({
                 )}
 
                 {(title || subtitle || headerActions || icon) && (
-                    <SheetHeader className={cn("px-6 py-3 border-b shrink-0", headerClassName)}>
+                    <SheetHeader className={cn("px-6 py-3 border-b border-border shrink-0 bg-card", headerClassName)}>
                         <PanelHeader
                             icon={iconElement}
                             title={
@@ -273,7 +292,7 @@ export function Drawer({
                             headerActions={
                                 <>
                                     {mode === "view" && (
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 border border-border/30 rounded-md px-2 py-0.5 select-none">
+                                        <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/50 border border-border/30 rounded-md px-2 py-0.5 select-none">
                                             Vista
                                         </span>
                                     )}
@@ -304,7 +323,7 @@ export function Drawer({
                 )}
 
                 {footer && (
-                    <div className={cn("border-t px-6 py-3 flex-shrink-0", footerClassName)}>
+                    <div className={cn("border-t border-border px-6 py-3 flex-shrink-0 bg-card", footerClassName)}>
                         {footer}
                     </div>
                 )}

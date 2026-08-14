@@ -162,7 +162,7 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
                                     name="name"
                                     render={({ field, fieldState }) => (
                                         <div className="space-y-1">
-                                            <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground px-1">
+                                            <label className="text-3xs font-bold uppercase tracking-loose text-muted-foreground px-1">
                                                 Nombre del Atributo
                                                 <span className="text-destructive ml-0.5">*</span>
                                             </label>
@@ -173,7 +173,7 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
                                                 {...field}
                                             />
                                             {fieldState.error && (
-                                                <p className="text-[10px] font-medium text-destructive pl-1">
+                                                <p className="text-3xs font-medium text-destructive pl-1">
                                                     {fieldState.error.message}
                                                 </p>
                                             )}

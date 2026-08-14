@@ -96,7 +96,6 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
     }
 
     const columns = useMemo<ColumnDef<Warehouse>[]>(() => {
-        const [nameCol, codeCol, addressCol] = warehouseFields.toColumns()
         return [
             {
                 id: "select",
@@ -120,9 +119,9 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                 enableHiding: false,
                 size: 40,
             },
-            nameCol,
-            codeCol,
-            addressCol,
+            warehouseFields.column("name"),
+            warehouseFields.column("code"),
+            warehouseFields.column("address"),
             warehouseActions.auto(actionsCtx),
         ]
     }, [actionsCtx])
@@ -205,7 +204,7 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                         <p className="text-sm font-medium">
                             ¿Confirma la eliminación del almacén <span className="font-black text-foreground underline">{warehouseToDelete?.name}</span>?
                         </p>
-                        <p className="text-[11px] text-muted-foreground bg-destructive/5 border border-destructive/10 p-3 rounded-md">
+                        <p className="text-2xs text-muted-foreground bg-destructive/5 border border-destructive/10 p-3 rounded-md">
                             <strong className="text-destructive uppercase">Advertencia:</strong> Esta acción es irreversible y podría afectar la integridad de los stocks registrados en esta ubicación.
                         </p>
                     </div>

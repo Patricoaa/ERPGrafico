@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
+import { useInitializeDrawerForm } from '@/hooks/useInitializeDrawerForm'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { Resolver } from 'react-hook-form'
@@ -59,11 +60,19 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
         defaultValues,
     })
 
-    useEffect(() => {
-        if (open) {
-            form.reset(defaultValues)
-        }
-    }, [open, defaultValues, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: loan,
+        defaultValues: () => defaultValues,
+        mapData: (l) => ({
+            date: dateString || new Date().toISOString().slice(0, 10),
+            opening_fee: l.opening_fee ?? '0',
+            stamp_tax: l.stamp_tax ?? '0',
+            commission_expense_account: '',
+            stamp_tax_expense_account: '',
+        }),
+    })
 
     // Detección reactiva: ¿hay cargos > 0 sin setting definido?
     const openingFee = parseFloat(form.watch('opening_fee') ?? '0')

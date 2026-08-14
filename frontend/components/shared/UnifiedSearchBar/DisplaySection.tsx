@@ -28,7 +28,7 @@ interface DisplaySectionProps {
 
 function SectionHeader({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
-    <div className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/60">
+    <div className="flex items-center gap-1.5 px-3 py-2 text-2xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/60">
       <Icon className="h-3 w-3" />
       {label}
     </div>

@@ -199,11 +199,9 @@ export function UnbilledChargesClientView({
         toast.success('Cargos facturados exitosamente')
     }
 
-    const [dateCol, amountCol, cuotaCol] = unbilledChargeFields.toColumns()
-
     const columns: ColumnDef<UnbilledItemRow, unknown>[] = [
-        dateCol,
-        cuotaCol,
+        unbilledChargeFields.column("date"),
+        unbilledChargeFields.column("installmentNumber"),
         {
             id: 'compra',
             header: ({ column }) => (
@@ -216,7 +214,7 @@ export function UnbilledChargesClientView({
                 return (
                     <div className="flex flex-col items-center gap-0.5 w-full">
                         {inst.partner_name && (
-                            <span className="text-[10px] text-muted-foreground truncate max-w-[140px] leading-tight">
+                            <span className="text-3xs text-muted-foreground truncate max-w-[140px] leading-tight">
                                 {inst.partner_name}
                             </span>
                         )}
@@ -229,7 +227,7 @@ export function UnbilledChargesClientView({
                                     openHub({ orderId: inst.purchase_order_id, type: 'purchase' })
                                 }
                             }}
-                            className="inline-block outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md transition-shadow h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none"
+                            className="inline-block outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-sm transition-shadow h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none"
                         >
                             <StatusBadge
                                 status={inst.purchase_order_display_id ? 'info' : 'muted'}
@@ -242,7 +240,7 @@ export function UnbilledChargesClientView({
             enableSorting: false,
         },
         {
-            ...amountCol,
+            ...unbilledChargeFields.column("amount"),
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
                     <DataCell.Currency

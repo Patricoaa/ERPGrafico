@@ -109,12 +109,12 @@ export function PaymentReferenceModal({
                                     onClick={() => setSelectedPaymentId(p.id)}
                                 >
                                     <div className="flex w-full justify-between items-center">
-                                        <MoneyDisplay amount={p.amount} className="font-bold" />
-                                        <span className="text-[10px] font-bold uppercase text-muted-foreground opacity-60">
+                                        <MoneyDisplay amount={p.amount} className="font-medium" />
+                                        <span className="text-3xs font-medium uppercase text-muted-foreground opacity-60">
                                             {p.payment_method === 'BANK' || p.payment_method === 'TRANSFER' ? 'Transferencia' : 'Tarjeta'}
                                         </span>
                                     </div>
-                                    <span className="text-[10px] opacity-70">{formatPlainDate(p.date || p.created_at)}</span>
+                                    <span className="text-3xs opacity-70">{formatPlainDate(p.date || p.created_at)}</span>
                                 </Button>
                             ))}
                         </div>
@@ -148,7 +148,7 @@ export function PaymentReferenceModal({
                                 className="text-lg font-bold h-12"
                                 autoFocus
                             />
-                            <p className="text-[10px] text-muted-foreground italic mt-1">
+                            <p className="text-3xs text-muted-foreground italic mt-1">
                                 * Esto completará el registro del pago y lo marcará como validado.
                             </p>
                         </div>

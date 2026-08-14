@@ -9,9 +9,11 @@ export const salesOrderFields = createEntityFields<SaleOrder>()({
         get: (o) => o.display_id ?? o.number,
     },
     contactDisplayName: {
-        key: "customer_name",
-        type: "text",
+        key: "customer",
+        type: "contact",
         label: "Cliente",
+        get: (o) => o.customer,
+        getDisplay: (o) => o.customer_name,
     },
     orderDate: {
         key: "date",
@@ -42,8 +44,9 @@ export const salesOrderFields = createEntityFields<SaleOrder>()({
         },
     },
     channel: {
-        key: "channel_display",
-        type: "chip",
+        key: "channel",
+        type: "chip-category",
+        domain: "channel",
         label: "Canal",
     },
     workflow: {

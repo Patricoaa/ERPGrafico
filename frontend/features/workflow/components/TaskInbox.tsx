@@ -3,8 +3,8 @@ import { useState, useEffect } from "react"
 import { type Task } from '@/features/workflow/api/workflowApi'
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { TabBar, TabBarContent, type TabItem, SkeletonShell } from "@/components/shared"
-import { CheckCircle2, ListTodo, ChevronDown, ChevronRight, Package, FileText, Wallet, TrendingUp, ArrowRight, CreditCard, Wrench, ShoppingCart, Receipt, CalendarX2, ClipboardList } from "lucide-react"
+import { DataCell, TabBar, TabBarContent, type TabItem, SkeletonShell, EmptyState } from "@/components/shared"
+import { CheckCircle2, ListTodo, ChevronDown, ChevronRight, Package, FileText, Wallet, TrendingUp, CreditCard, Wrench, ShoppingCart, Receipt, CalendarX2, ClipboardList } from "lucide-react"
 import { toast } from "sonner"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -39,7 +39,7 @@ const CollapsibleSection = ({
         <Button
             variant="ghost"
             onClick={onToggle}
-            className="flex items-center justify-between w-full p-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors rounded-sm hover:bg-muted/50"
+            className="flex items-center justify-between w-full p-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors rounded-sm hover:bg-muted/50"
         >
             <span>{title} ({count})</span>
             {expanded ? (
@@ -66,7 +66,7 @@ interface TaskInboxProps {
 export function TaskInbox({ onCountChange }: TaskInboxProps) {
     const { approvalTasks, operationalTasks, isLoading, refetch } = useTasks()
     const [actioningTask, setActioningTask] = useState<number | null>(null)
-    const [activeTab, setActiveTab] = useState("approvals")
+    const [activeTab, setActiveTab] = useState("tasks")
     const [approvalsExpanded, setApprovalsExpanded] = useState(true)
     const [completedExpanded, setCompletedExpanded] = useState(false)
     const { openEntity } = useGlobalModalActions()
@@ -193,16 +193,16 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
         return (
             <Card
                 key={task.id}
+                variant="flat"
                 className={cn(
-                    "card-base rounded-sm px-3 py-2.5 cursor-pointer group flex flex-col gap-2 w-full",
-                    "transition-all duration-150 ease-out hover:shadow-sm hover:bg-muted/40",
+                    "px-3 py-2.5 cursor-pointer group flex flex-col gap-2 w-full",
                     isRejected && "opacity-40 grayscale-[0.5]"
                 )}
                 onClick={() => navigateToTask(task)}
             >
                 {/* Title + arrow */}
                 <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-xs font-medium text-foreground line-clamp-2 flex-1 group-hover:text-primary transition-colors flex items-center gap-1.5">
+                    <h3 className="text-sm font-medium tracking-tight text-foreground line-clamp-2 flex-1 group-hover:text-primary transition-colors flex items-center gap-1.5">
                         {(() => { const Icon = getTaskIcon(task); return <Icon className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" /> })()}
                         {task.task_type === 'CREDIT_POS_REQUEST' ? (
                             `Aprobación Crédito: ${task.data?.customer_name || task.title.replace('Aprobación Crédito: ', '') || 'Cliente'}`
@@ -214,7 +214,10 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                             task.title
                         )}
                     </h3>
-                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-60 transition-all duration-150 -translate-x-1 group-hover:translate-x-0 shrink-0" />
+                    <DataCell.ActionSingle
+                        title="Abrir"
+                        onClick={() => navigateToTask(task)}
+                    />
                 </div>
 
                 {/* Credit: approve/reject buttons only */}
@@ -224,7 +227,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                         <Button
                             size="sm"
                             variant="outline"
-                            className="flex-1 text-xs h-7 border-destructive/50 text-destructive hover:bg-destructive/10"
+                            className="flex-1 text-xs h-8 border-destructive/50 text-destructive hover:bg-destructive/10"
                             onClick={(e) => handleCreditAction(e, task, 'REJECT')}
                             disabled={actioningTask === task.id}
                         >
@@ -232,7 +235,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                         </Button>
                         <Button
                             size="sm"
-                            className="flex-1 text-xs h-7 bg-success/90 hover:bg-success text-success-foreground font-bold"
+                            className="flex-1 text-xs h-8 bg-success/90 hover:bg-success text-success-foreground font-medium"
                             onClick={(e) => handleCreditAction(e, task, 'APPROVE')}
                             disabled={actioningTask === task.id}
                         >
@@ -245,8 +248,8 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
     }
 
     const tabItems: TabItem[] = [
-        { value: 'approvals', label: 'Aprobaciones', icon: CheckCircle2, badge: approvalsPending.length },
-        { value: 'tasks', label: 'Tareas', icon: ListTodo, badge: operationalTasks.length },
+        { value: 'tasks', label: 'Tareas', badge: operationalTasks.length },
+        { value: 'approvals', label: 'Aprobaciones', badge: approvalsPending.length },
     ]
 
     return (
@@ -256,9 +259,9 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                 value={activeTab}
                 onValueChange={setActiveTab}
                 orientation="horizontal"
+                variant="underline"
                 dense
                 className="w-full px-4"
-                containerClassName="w-full justify-start"
                 contentClassName="mt-3 bg-transparent flex flex-col"
             >
                 <TabBarContent value="approvals" className="h-full flex flex-col mt-0">
@@ -287,10 +290,12 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                             )}
 
                              {approvalTasks.length === 0 && (
-                                 <div className="flex flex-1 flex-col items-center justify-center text-center bg-muted/30 rounded-sm border border-dashed text-muted-foreground">
-                                     <CheckCircle2 className="h-8 w-8 mb-2 opacity-20" />
-                                     <p className="text-xs">No tienes aprobaciones</p>
-                                 </div>
+                                 <EmptyState
+                                     variant="compact"
+                                     icon={CheckCircle2}
+                                     title="No tienes aprobaciones"
+                                     className="flex-1 bg-muted/30 rounded-md border border-dashed"
+                                 />
                              )}
                          </div>
                      </SkeletonShell>
@@ -299,10 +304,12 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                  <TabBarContent value="tasks" className="h-full flex flex-col mt-0">
                      <SkeletonShell isLoading={isLoading} ariaLabel="Cargando tareas">
                          {operationalTasks.length === 0 ? (
-                             <div className="flex flex-1 flex-col items-center justify-center text-center bg-muted/10 rounded-sm border border-dashed text-muted-foreground">
-                                 <ListTodo className="h-8 w-8 mb-2 opacity-20" />
-                                 <p className="text-xs">No tienes tareas pendientes</p>
-                             </div>
+                             <EmptyState
+                                 variant="compact"
+                                 icon={ListTodo}
+                                 title="No tienes tareas pendientes"
+                                 className="flex-1 bg-muted/10 rounded-md border border-dashed"
+                             />
                           ) : (
                               <div className="space-y-2">
                                   {operationalTasks.map(task => renderTaskCard(task))}

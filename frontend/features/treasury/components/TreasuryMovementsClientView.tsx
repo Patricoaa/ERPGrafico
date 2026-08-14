@@ -393,7 +393,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         paramValues={search.paramValues}
                         placeholder="Buscar movimiento..."
                         prefix={isAccountFiltered ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-info/10 text-info border border-info/20 text-[10px] font-black uppercase tracking-wider font-mono shrink-0">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-info/10 text-info border border-info/20 text-3xs font-bold uppercase tracking-wider font-mono shrink-0">
                                 Cta. #{treasuryAccountFromUrl}
                                 <Button
                                      variant="ghost"

@@ -198,7 +198,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                     <div className="flex flex-col py-1">
                                                         <span className="font-medium text-xs leading-tight">{line.product_name || line.description}</span>
                                                         {!isEligible && (
-                                                            <span className="text-[10px] text-warning font-bold uppercase tracking-tighter mt-0.5">Requiere Producción</span>
+                                                            <span className="text-3xs text-warning font-bold uppercase tracking-tighter mt-0.5">Requiere Producción</span>
                                                         )}
                                                     </div>
                                             </TableCell>

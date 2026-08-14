@@ -59,7 +59,7 @@ export function FiscalYearCard({
                 title={
                     <div className="flex items-center gap-3">
                         <CalendarRange className="w-5 h-5 text-muted-foreground" />
-                        <span className=" font-extrabold text-xl uppercase tracking-tighter">
+                        <span className=" font-bold text-xl uppercase tracking-tighter">
                             Ejercicio {year}
                         </span>
                         <StatusBadge status={status} />
@@ -100,7 +100,7 @@ export function FiscalYearCard({
                                 onClick={() => onPreviewClosing(year)}
                                 disabled={!canCloseFiscalYear}
                                 loading={isFiscalYearLoading}
-                                className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold uppercase tracking-widest text-[10px] h-8 px-3"
+                                className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium uppercase tracking-widest text-3xs h-8 px-3"
                                 icon={<ShieldAlert className="w-3.5 h-3.5 mr-1.5" />}
                             >
                                 Cerrar Ejercicio

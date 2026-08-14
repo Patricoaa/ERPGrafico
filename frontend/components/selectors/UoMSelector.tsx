@@ -172,7 +172,7 @@ export function UoMSelector({
                             </div>
                         ))}
                         {filteredAndSearchedUoMs.length === 0 && (
-                            <div className="p-3 text-[10px] text-center text-muted-foreground italic">
+                            <div className="p-3 text-3xs text-center text-muted-foreground italic">
                                 {product || categoryId ? "No se encontraron unidades" : "Seleccione producto primero"}
                             </div>
                         )}

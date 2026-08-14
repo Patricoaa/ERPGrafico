@@ -101,7 +101,7 @@ export function WorkOrderTimeline({ orders, onManage, isLoading }: TimelineProps
                                             </Chip>
                                         )}
                                         <p className="text-sm font-semibold line-clamp-2 leading-snug">{order.description}</p>
-                                        <div className="space-y-1 text-[11px] text-muted-foreground">
+                                        <div className="space-y-1 text-2xs text-muted-foreground">
                                             <div className="flex items-center gap-1">
                                                 <User className="h-3 w-3" />
                                                 <span className="truncate">{order.sale_customer_name || 'Manual'}</span>
@@ -114,7 +114,7 @@ export function WorkOrderTimeline({ orders, onManage, isLoading }: TimelineProps
                                             )}
                                         </div>
                                         <div className="pt-1 flex justify-between items-center border-t border-dashed">
-                                            <span className="text-[10px] text-muted-foreground">{order.current_stage?.replace(/_/g, ' ')}</span>
+                                            <span className="text-3xs text-muted-foreground">{order.current_stage?.replace(/_/g, ' ')}</span>
                                             <ChevronRight className="h-3 w-3 text-primary" />
                                         </div>
                                     </CardContent>

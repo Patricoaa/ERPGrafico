@@ -2,7 +2,8 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect, useRef } from "react"
+import { useState } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -56,33 +57,17 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
         },
     })
 
-    const lastResetId = useRef<number | undefined>(undefined)
-    const wasOpen = useRef(false)
-
-    useEffect(() => {
-        if (!open) {
-            wasOpen.current = false
-            return
-        }
-
-        const currentId = initialData?.id
-        const isNewOpen = !wasOpen.current
-        const isNewData = currentId !== lastResetId.current
-
-        if (isNewOpen || isNewData) {
-            if (initialData && Object.keys(initialData).length > 0) {
-                form.reset({
-                    name: initialData.name || "",
-                })
-            } else {
-                form.reset({
-                    name: "",
-                })
-            }
-            lastResetId.current = currentId
-            wasOpen.current = true
-        }
-    }, [open, initialData, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData,
+        mapData: (data) => ({
+            name: data.name || "",
+        }),
+        defaultValues: () => ({
+            name: "",
+        }),
+    })
 
     async function onSubmit(data: CategoryFormValues) {
         setIsSaving(true)
@@ -145,7 +130,7 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
                     title="UoM Category"
                     displayId={`#${initialData.id}`}
                 >
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{initialData?.name ?? '-'}</span>

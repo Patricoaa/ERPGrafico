@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useEmployeeFormDeps } from "../hooks/useEmployees"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
@@ -108,56 +109,56 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
     const afps = hrData?.afps || []
     const availableConcepts = hrData?.concepts || []
 
-    useEffect(() => {
-        if (employee) {
-            form.reset({
-                contact: String(employee.contact),
-                position: employee.position || "",
-                department: employee.department || "",
-                start_date: (employee.start_date || "").split("T")[0] || "",
-                base_salary: String(employee.base_salary),
-                status: employee.status,
-                contract_type: employee.contract_type,
-                afp: employee.afp ? String(employee.afp) : "",
-                salud_type: employee.salud_type,
-                isapre_amount_uf: String(employee.isapre_amount_uf || "0"),
-                jornada_type: (employee.jornada_type as EmployeeFormValues["jornada_type"]) || "ORDINARIA_22",
-                jornada_hours: String(employee.jornada_hours || "44.0"),
-                trabajo_pesado: !!employee.trabajo_pesado,
-                trabajo_agricola: !!employee.trabajo_agricola,
-                gratificacion: !!employee.gratificacion,
-                dias_pactados: employee.dias_pactados || 30,
-                asignacion_familiar: (employee.asignacion_familiar as EmployeeFormValues["asignacion_familiar"]) || "D",
-                cargas_familiares: employee.cargas_familiares || 0,
-                concept_amounts: (employee.concept_amounts || []).reduce((acc: Record<string, string>, curr: EmployeeConceptAmount) => {
-                    acc[String(curr.concept)] = String(curr.amount)
-                    return acc
-                }, {}) || {},
-            })
-        } else {
-            form.reset({
-                contact: "",
-                position: "",
-                department: "",
-                start_date: dateString,
-                base_salary: "0",
-                status: "ACTIVE",
-                contract_type: "INDEFINIDO",
-                afp: "",
-                salud_type: "FONASA",
-                isapre_amount_uf: "0",
-                jornada_type: "ORDINARIA_22",
-                jornada_hours: "44.0",
-                trabajo_pesado: false,
-                trabajo_agricola: false,
-                gratificacion: true,
-                dias_pactados: 30,
-                asignacion_familiar: "D",
-                cargas_familiares: 0,
-                concept_amounts: {},
-            })
-        }
-    }, [employee, form, open])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: employee,
+        defaultValues: () => ({
+            contact: "",
+            position: "",
+            department: "",
+            start_date: dateString,
+            base_salary: "0",
+            status: "ACTIVE" as const,
+            contract_type: "INDEFINIDO" as const,
+            afp: "",
+            salud_type: "FONASA" as const,
+            isapre_amount_uf: "0",
+            jornada_type: "ORDINARIA_22" as const,
+            jornada_hours: "44.0",
+            trabajo_pesado: false,
+            trabajo_agricola: false,
+            gratificacion: true,
+            dias_pactados: 30,
+            asignacion_familiar: "D" as const,
+            cargas_familiares: 0,
+            concept_amounts: {},
+        }),
+        mapData: (emp) => ({
+            contact: String(emp.contact),
+            position: emp.position || "",
+            department: emp.department || "",
+            start_date: (emp.start_date || "").split("T")[0] || "",
+            base_salary: String(emp.base_salary),
+            status: emp.status,
+            contract_type: emp.contract_type,
+            afp: emp.afp ? String(emp.afp) : "",
+            salud_type: emp.salud_type,
+            isapre_amount_uf: String(emp.isapre_amount_uf || "0"),
+            jornada_type: (emp.jornada_type as EmployeeFormValues["jornada_type"]) || "ORDINARIA_22",
+            jornada_hours: String(emp.jornada_hours || "44.0"),
+            trabajo_pesado: !!emp.trabajo_pesado,
+            trabajo_agricola: !!emp.trabajo_agricola,
+            gratificacion: !!emp.gratificacion,
+            dias_pactados: emp.dias_pactados || 30,
+            asignacion_familiar: (emp.asignacion_familiar as EmployeeFormValues["asignacion_familiar"]) || "D",
+            cargas_familiares: emp.cargas_familiares || 0,
+            concept_amounts: (emp.concept_amounts || []).reduce((acc: Record<string, string>, curr: EmployeeConceptAmount) => {
+                acc[String(curr.concept)] = String(curr.amount)
+                return acc
+            }, {}) || {},
+        })
+    })
 
     const onSubmit = async (data: EmployeeFormValues) => {
         try {
@@ -265,7 +266,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
         <>
             {isView && employee?.id && (
                 <PrintableLayout ref={printRef} title="Employee" displayId={`${employee.display_id}`}>
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{employee.contact_detail?.name ?? '-'}</span>
@@ -478,7 +479,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                         "flex items-center justify-between p-3.5 rounded-md border transition-all",
                                                                         field.value ? "bg-primary/5 border-primary/20" : "bg-background border-dashed"
                                                                     )}>
-                                                                        <label className="text-[10px] font-black uppercase tracking-widest">{sw.label}</label>
+                                                                        <label className="text-xs font-medium text-muted-foreground">{sw.label}</label>
                                                                         <Switch checked={field.value} onCheckedChange={field.onChange} />
                                                                     </div>
                                                                 )} />
@@ -598,7 +599,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                         <div className="py-20 border-4 border-dashed rounded-md flex flex-col items-center justify-center text-center px-10 bg-muted/5">
                                                             <Plus className="h-10 w-10 text-muted-foreground/20 mb-4" />
                                                             <h4 className="font-black uppercase tracking-widest text-muted-foreground/80 text-xs">Sin Conceptos Definidos</h4>
-                                                            <p className="text-[10px] text-muted-foreground/50 max-w-xs mt-2 font-medium leading-relaxed italic">
+                                                            <p className="text-3xs text-muted-foreground/50 max-w-xs mt-2 font-medium leading-relaxed italic">
                                                                 No existen haberes específicos pactados para este perfil de empleado.
                                                             </p>
                                                         </div>

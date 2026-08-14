@@ -157,7 +157,7 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hide
     }, [periodLabel, onPeriodLabelChange])
 
     return (
-        <PageContainer className="px-0 pt-0 flex flex-col gap-0 space-y-0">
+        <PageContainer className="px-0 pt-2 flex flex-col gap-0 space-y-0">
             {isError && <StaleDataBanner onRetry={() => refetch()} className="mx-4 mb-2" />}
             {!hideToolbar && (
                 <div className="shrink-0">

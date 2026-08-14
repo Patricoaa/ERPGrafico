@@ -939,7 +939,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
               <span className="text-muted-foreground text-xs">{desc}</span>
               <div className="flex gap-1 shrink-0">
                 {keys.map((k) => (
-                  <kbd key={k} className="px-2 py-0.5 text-[10px] font-mono font-bold bg-muted border border-border rounded">
+                  <kbd key={k} className="px-2 py-0.5 text-3xs font-mono font-bold bg-muted border border-border rounded">
                     {k}
                   </kbd>
                 ))}

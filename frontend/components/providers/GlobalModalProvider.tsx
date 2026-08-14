@@ -89,7 +89,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         for (let i = 0; i < index; i++) {
             const sheet = sheetStack[i]
             if (!sheet.forced) {
-                totalOffset += sheet.width + 16
+                totalOffset += sheet.width
             }
         }
 
@@ -112,7 +112,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         let total = 0
         sheetStack.forEach((sheet) => {
             if (!sheet.forced) {
-                total += sheet.width + 16
+                total += sheet.width
             }
         })
 

@@ -1,6 +1,7 @@
 "use client"
 
-import {useState, useEffect} from "react"
+import { useState } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -61,36 +62,36 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
         }
     })
 
-    useEffect(() => {
-        if (open) {
-            requestAnimationFrame(() => {
-                if (terminal) {
-                    form.reset({
-                        name: terminal.name,
-                        code: terminal.code,
-                        location: terminal.location || "",
-                        serial_number: terminal.serial_number || "",
-                        ip_address: terminal.ip_address || "",
-                        device_id: (() => {
-                            const dId = terminal.payment_terminal_device;
-                            return typeof dId === 'object' && dId !== null ? (dId as { id: number }).id.toString() : dId?.toString() || "";
-                        })(),
-                    })
-                    setSelectedMethodIds(terminal.allowed_payment_methods.map(m => m.id))
-                } else {
-                    form.reset({
-                        name: "",
-                        code: "",
-                        location: "",
-                        serial_number: "",
-                        ip_address: "",
-                        device_id: "",
-                    })
-                    setSelectedMethodIds([])
-                }
-            })
-        }
-    }, [open, terminal, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: terminal,
+        mapData: (data) => {
+            setSelectedMethodIds(data.allowed_payment_methods?.map(m => m.id) ?? [])
+            return {
+                name: data.name,
+                code: data.code,
+                location: data.location || "",
+                serial_number: data.serial_number || "",
+                ip_address: data.ip_address || "",
+                device_id: (() => {
+                    const dId = data.payment_terminal_device;
+                    return typeof dId === 'object' && dId !== null ? (dId as { id: number }).id.toString() : dId?.toString() || "";
+                })(),
+            }
+        },
+        defaultValues: () => {
+            setSelectedMethodIds([])
+            return {
+                name: "",
+                code: "",
+                location: "",
+                serial_number: "",
+                ip_address: "",
+                device_id: "",
+            }
+        },
+    })
 
     const toggleMethod = (methodId: number) => {
         if (isView) return
@@ -197,7 +198,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                     title="Terminal"
                     displayId={terminal.code ? `#${terminal.code}` : `#${terminal.id}`}
                 >
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{terminal?.name ?? '-'}</span>
@@ -341,7 +342,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                                         {type === 'CARD' && <CreditCard className="h-4 w-4" />}
                                                         {type === 'TRANSFER' && <Landmark className="h-4 w-4" />}
                                                         {type === 'CHECK' && <FileCheck className="h-4 w-4" />}
-                                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em]">
+                                                        <h4 className="text-2xs font-bold uppercase tracking-looser">
                                                             {getTypeLabel(type)}
                                                         </h4>
                                                     </div>
@@ -374,7 +375,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                                                         )}>
                                                                             {method.name}
                                                                         </span>
-                                                                        <span className="text-[10px] text-muted-foreground/70 font-medium">
+                                                                        <span className="text-3xs text-muted-foreground/70 font-medium">
                                                                             {`Cta: ${method.treasury_account_name}`}
                                                                         </span>
                                                                     </div>

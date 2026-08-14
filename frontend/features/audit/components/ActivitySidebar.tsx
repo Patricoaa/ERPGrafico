@@ -121,12 +121,12 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
             <div className={cn("flex flex-col h-full p-4 bg-background select-none", className)}>
                 {/* Encabezado del Módulo (Capa L1 - FormSection) */}
                 <div className="pb-3 mb-4 shrink-0 flex items-center justify-between border-b border-border/40">
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.25em] text-muted-foreground/70 flex items-center gap-2">
+                    <h3 className="text-2xs font-bold uppercase tracking-[0.25em] text-muted-foreground/70 flex items-center gap-2">
                         <Clock className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
                         {title}
                     </h3>
                     {history.length > 0 && (
-                        <span className="text-[10px] font-medium text-muted-foreground/50 lowercase tracking-normal">
+                        <span className="text-3xs font-medium text-muted-foreground/50 lowercase tracking-normal">
                             ({history.length} {history.length === 1 ? 'registro' : 'registros'})
                         </span>
                     )}
@@ -137,16 +137,16 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                     {loading ? (
                         <div className="flex flex-col items-center justify-center h-48 gap-3">
                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/55" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">Cargando Archivo...</span>
+                            <span className="text-xs font-medium text-muted-foreground/60">Cargando Archivo...</span>
                         </div>
                     ) : error ? (
                         <div className="text-center py-12 border border-dashed border-destructive/25 rounded-md bg-destructive/5">
-                            <p className="text-xs font-black uppercase tracking-wider text-destructive px-4">{error}</p>
+                            <p className="text-xs font-medium text-destructive px-4">{error}</p>
                         </div>
                     ) : history.length === 0 ? (
                         <div className="text-center py-16 border border-dashed border-border/60 rounded-md bg-muted/10">
                             <User className="h-8 w-8 text-muted-foreground/20 mx-auto mb-3" />
-                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">
+                            <p className="text-xs font-medium text-muted-foreground/60">
                                 Sin actividad registrada
                             </p>
                         </div>
@@ -198,7 +198,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
 
                                                     {/* Timestamp */}
                                                     <time
-                                                        className="whitespace-nowrap sm:ml-auto text-[9px] font-medium tracking-normal text-muted-foreground/60 group-hover:text-muted-foreground transition-colors duration-normal"
+                                                        className="whitespace-nowrap sm:ml-auto text-4xs font-medium tracking-normal text-muted-foreground/60 group-hover:text-muted-foreground transition-colors duration-normal"
                                                         title={new Date(record.history_date).toISOString()}
                                                     >
                                                         {formatDistanceToNow(new Date(record.history_date), {
@@ -220,7 +220,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                                                                 toggleRecord(record.history_id);
                                                             }
                                                         }}
-                                                        className="w-fit text-[9px] font-bold text-muted-foreground/50 hover:text-primary flex items-center gap-1 cursor-pointer mt-1.5 uppercase tracking-wider transition-colors duration-normal select-none outline-none"
+                                                        className="w-fit text-4xs font-bold text-muted-foreground/50 hover:text-primary flex items-center gap-1 cursor-pointer mt-1.5 uppercase tracking-wider transition-colors duration-normal select-none outline-none"
                                                     >
                                                         {isExpanded ? 'Ocultar cambios' : 'Ver cambios'}
                                                         <ChevronDown className={cn("h-2.5 w-2.5 transition-transform duration-200", isExpanded && "rotate-180")} />
@@ -258,14 +258,14 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
 
                                                                 return (
                                                                     <li key={field} className="text-xs flex items-baseline gap-2 py-0.5 text-muted-foreground/90 flex-wrap sm:flex-nowrap">
-                                                                        <span className="text-[10px] font-medium tracking-normal text-muted-foreground/50 lowercase shrink-0">
+                                                                        <span className="text-3xs font-medium tracking-normal text-muted-foreground/50 lowercase shrink-0">
                                                                             {formatFieldName(field)}:
                                                                         </span>
-                                                                        <span className="font-mono text-[11px] text-muted-foreground/70 line-through truncate max-w-[120px] sm:max-w-none">
+                                                                        <span className="font-mono text-2xs text-muted-foreground/70 line-through truncate max-w-[120px] sm:max-w-none">
                                                                             {formatValue(field, oldValue)}
                                                                         </span>
                                                                         <ArrowRight className="h-2.5 w-2.5 text-muted-foreground/30 shrink-0 self-center" />
-                                                                        <span className="font-mono text-[11px] text-foreground font-medium truncate max-w-[120px] sm:max-w-none">
+                                                                        <span className="font-mono text-2xs text-foreground font-medium truncate max-w-[120px] sm:max-w-none">
                                                                             {formatValue(field, newValue)}
                                                                         </span>
                                                                     </li>

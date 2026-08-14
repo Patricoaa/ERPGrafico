@@ -134,7 +134,7 @@ export function AdvancedManufacturingDrawer({
                     </div>
                     <div className="space-y-1">
                         <div className="text-3xl font-black tracking-tighter uppercase  text-foreground">Fabricación</div>
-                        <p className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground">
+                        <p className="text-xs font-mono uppercase tracking-looser text-muted-foreground">
                             {p.name as string} {"// REF:"} {p.code as string}
                         </p>
                     </div>
@@ -157,7 +157,7 @@ export function AdvancedManufacturingDrawer({
                 <div className="grid gap-8 p-8 py-6">
                     {/* Contact */}
                     <div className="space-y-1">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">01. Contacto / Referencia</span>
+                        <span className="text-3xs font-bold uppercase tracking-widest text-primary">01. Contacto / Referencia</span>
                         {contact ? (
                             <div className="flex items-center justify-between p-2 bg-primary/5 border-l-4 border-primary">
                                 <div className="flex items-center gap-3 overflow-hidden">

@@ -918,7 +918,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                                                     setIsWaitingApproval(false)
                                                     setCreditApprovalRequired(false)
                                                 }}
-                                                className="h-8 border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0 uppercase font-bold text-[10px]"
+                                                className="h-8 border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0 uppercase font-medium text-3xs"
                                             >
                                                 Entendido
                                             </Button>
@@ -990,7 +990,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                 size="sm"
             >
                 <div className="flex flex-col items-center gap-6 py-4">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-sm border border-destructive/30 bg-destructive/10">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-md border border-destructive/30 bg-destructive/10">
                         <FileWarning className="h-8 w-8 text-destructive" />
                     </div>
                     <div className="text-center space-y-2">
@@ -1006,7 +1006,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                     <div className="w-full pt-4">
                         <Button
                             variant="default"
-                            className="w-full h-12 font-bold uppercase tracking-widest text-xs rounded-sm "
+                            className="w-full h-12 font-medium uppercase tracking-widest text-xs rounded-sm "
                             onClick={() => {
                                 setShowInvoiceReminder(false)
                                 if (isSessionHost) {

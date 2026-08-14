@@ -46,12 +46,12 @@ function UoMSelector({ line: l, currentUom, onUomChange }: { line: Record<string
 
     return (
         <Select value={currentUom?.toString()} onValueChange={(val) => onUomChange(parseInt(val))}>
-            <SelectTrigger className="h-7 text-[10px] w-24">
+            <SelectTrigger className="h-7 text-3xs w-24">
                 <SelectValue />
             </SelectTrigger>
             <SelectContent>
                 {allowedUoms.map((u: Record<string, unknown>) => (
-                    <SelectItem key={u.id as number} value={(u.id as number).toString()} className="text-[10px]">
+                    <SelectItem key={u.id as number} value={(u.id as number).toString()} className="text-3xs">
                         {u.name as string}
                     </SelectItem>
                 ))}
@@ -228,10 +228,10 @@ export function Step2_Logistics({
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-muted/50">
-                                        <TableHead className="w-[45%] text-[10px] font-bold uppercase tracking-wider">Producto</TableHead>
-                                        <TableHead className="w-[15%] text-right text-[10px] font-bold uppercase tracking-wider">Total</TableHead>
-                                        <TableHead className="w-[20%] text-[10px] font-bold uppercase tracking-wider">A Procesar</TableHead>
-                                        <TableHead className="w-[20%] text-[10px] font-bold uppercase tracking-wider">Unidad</TableHead>
+                                        <TableHead className="w-[45%] text-3xs font-bold uppercase tracking-wider">Producto</TableHead>
+                                        <TableHead className="w-[15%] text-right text-3xs font-bold uppercase tracking-wider">Total</TableHead>
+                                        <TableHead className="w-[20%] text-3xs font-bold uppercase tracking-wider">A Procesar</TableHead>
+                                        <TableHead className="w-[20%] text-3xs font-bold uppercase tracking-wider">Unidad</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -265,7 +265,7 @@ export function Step2_Logistics({
                                                     <div className="flex flex-col gap-1 py-1">
                                                         <span className="font-medium text-xs leading-tight">{productName}</span>
                                                         {!isEligible && (
-                                                            <span className="text-[10px] text-warning font-bold uppercase tracking-tighter">
+                                                            <span className="text-3xs text-warning font-bold uppercase tracking-tighter">
                                                                 {isRestricted ? "Requiere Producción" : "Sin control de stock"}
                                                             </span>
                                                         )}

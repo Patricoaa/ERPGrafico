@@ -34,7 +34,7 @@ export const creditLedgerEntryFields = createEntityFields<CreditLedgerEntry>()({
             <div className="flex items-center gap-1.5 w-full">
                 <DataCell.Date value={h.due_date} />
                 {h.days_overdue > 0 && (
-                    <span className="text-destructive font-bold text-[11px]">({h.days_overdue}d)</span>
+                    <span className="text-destructive font-bold text-2xs">({h.days_overdue}d)</span>
                 )}
             </div>
         ),

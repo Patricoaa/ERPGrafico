@@ -12,7 +12,7 @@ interface DataTableColumnHeaderProps<TData, TValue>
     title: string
 }
 
-const headerTextClass = "text-[10px] uppercase tracking-widest"
+const headerTextClass = "text-xs font-medium text-muted-foreground"
 
 export function DataTableColumnHeader<TData, TValue>({
     column,

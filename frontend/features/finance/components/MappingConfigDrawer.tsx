@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useEffect, useCallback, useMemo } from "react"
+import React, { useCallback, useMemo } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { DataTable, ActionDock, Chip, DataCell, Drawer, AutoSaveStatusBadge, SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
@@ -51,18 +52,22 @@ export function MappingConfigDrawer({
         defaultValues: {}
     })
 
-    // Pre-register and reset form values when relevant accounts are loaded
-    useEffect(() => {
-        if (accounts.length > 0) {
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: accounts,
+        getEntityId: (accs) => `${mappingType}-${accs.length}`,
+        mapData: (accs) => {
             const defaults: MappingValues = {}
-            accounts.forEach(a => {
+            accs.forEach(a => {
                 const val = (a[fieldName as keyof Account] as string | null) || "none"
                 defaults[a.id.toString()] = val
                 form.register(a.id.toString())
             })
-            form.reset(defaults)
-        }
-    }, [accounts, fieldName, form])
+            return defaults
+        },
+        defaultValues: () => ({}),
+    })
 
     const searchConfig: UnifiedSearchConfig = useMemo(() => ({
         searchFields: [
@@ -243,7 +248,7 @@ export function MappingConfigDrawer({
                                         onValueChange={field.onChange}
                                     >
                                         <SelectTrigger className={cn(
-                                            "h-8 text-[11px] font-medium w-[200px]",
+                                            "h-8 text-2xs font-medium w-[200px]",
                                             isModified && "ring-1 ring-primary/50 border-primary/50 bg-primary/5",
                                             (!fieldValue || fieldValue === "none") && !isModified && "text-warning border-warning/30 bg-warning/5"
                                         )}>

@@ -126,7 +126,7 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
                             <MoneyDisplay amount={totalPrincipal + totalInterest} />
                         </div>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-2xs text-muted-foreground">
                         Capital e interés se pagan completos (no editables).
                     </p>
                 </div>

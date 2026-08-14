@@ -91,7 +91,7 @@ export function DateFilterAccordion({ def, activeParams, onApply, onRemove }: Da
       >
         <ChevronRight className={cn("h-3 w-3 transition-transform", expanded && "rotate-90")} />
         <span>{def.label}</span>
-        {hasActiveOption && <span className="ml-auto text-[10px] text-muted-foreground">✓</span>}
+        {hasActiveOption && <span className="ml-auto text-3xs text-muted-foreground">✓</span>}
       </Button>
 
       {expanded && (

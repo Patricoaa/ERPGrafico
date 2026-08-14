@@ -73,11 +73,11 @@ export function KPIValue({
         <div className="flex flex-col gap-1.5 mt-1">
             <div className="flex items-baseline gap-2 leading-none">
                 <span>{fmt(current)}</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Actual</span>
+                <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/70">Actual</span>
             </div>
             <div className="flex items-baseline gap-2 text-lg text-muted-foreground/90 leading-none">
                 <span>{fmt(previous)}</span>
-                <span className="text-[9px] font-bold uppercase tracking-widest">Anterior</span>
+                <span className="text-4xs font-bold uppercase tracking-widest">Anterior</span>
             </div>
         </div>
     )
@@ -102,7 +102,7 @@ export function DeltaBadge({ current, previous, inverse = false, className }: De
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-0.5 text-[10px] font-bold',
+                'inline-flex items-center gap-0.5 text-3xs font-bold',
                 isGood ? 'text-success' : 'text-destructive',
                 className,
             )}

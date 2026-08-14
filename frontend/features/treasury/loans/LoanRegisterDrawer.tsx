@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
+import { useInitializeDrawerForm } from '@/hooks/useInitializeDrawerForm'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { Resolver } from 'react-hook-form'
@@ -80,11 +81,31 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
         },
     })
 
-    useEffect(() => {
-        if (open && bankId) {
-            form.setValue('lender', String(bankId))
-        }
-    }, [open, bankId, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: undefined,
+        getEntityId: () => bankId,
+        defaultValues: () => ({
+            lender: bankId ? String(bankId) : '',
+            loan_number: '',
+            currency: 'CLP' as const,
+            principal: '',
+            interest_rate: '',
+            rate_basis: 'MONTHLY' as const,
+            amortization_system: 'FRENCH' as const,
+            term_months: '12',
+            start_date: '',
+            first_due_date: '',
+            insurance_monthly: '0',
+            opening_fee: '0',
+            stamp_tax: '0',
+            penalty_rate: '0',
+            disbursement_account: '',
+            liability_account: '',
+            notes: '',
+        }),
+    })
 
     // Filtrar cuentas de desembolso: sólo CHECKING o CASH, y si hay bankId
     // acotamos a las del banco seleccionado.

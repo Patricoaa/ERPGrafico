@@ -35,7 +35,7 @@ export function BankFilter() {
                         variant="ghost"
                         size="sm"
                         className={cn(
-                            'h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 rounded-sm shrink-0',
+                            'h-7 px-2 text-3xs uppercase font-medium tracking-widest gap-1 rounded-sm shrink-0',
                             bankParam
                                 ? 'bg-accent/50 text-foreground'
                                 : 'text-muted-foreground hover:text-foreground',
@@ -53,14 +53,14 @@ export function BankFilter() {
                         value={bankParam ?? ''}
                         onValueChange={handleChange}
                     >
-                        <DropdownMenuRadioItem value="" className="text-[10px] uppercase tracking-widest">
+                        <DropdownMenuRadioItem value="" className="text-3xs uppercase tracking-widest">
                             Todos
                         </DropdownMenuRadioItem>
                         {!isLoading && banks.map((bank) => (
                             <DropdownMenuRadioItem
                                 key={bank.id}
                                 value={String(bank.id)}
-                                className="text-[10px] uppercase tracking-widest"
+                                className="text-3xs uppercase tracking-widest"
                             >
                                 {bank.name}
                             </DropdownMenuRadioItem>

@@ -137,14 +137,14 @@ export function ProductionPhase({
             >
                 {totalOTs > 0 ? (
                     <div className="space-y-1 px-1">
-                        <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground/60">
+                        <div className="flex items-center justify-between text-3xs font-bold text-muted-foreground/60">
                             <span>PROGRESO</span>
                             <span className="text-primary">{Math.round(showAnimations ? totalOTProgress : 0)}%</span>
                         </div>
                         <Progress value={showAnimations ? totalOTProgress : 0} className="h-1 bg-muted transition-all duration-1000" />
                     </div>
                 ) : (
-                    <div className="py-2 text-center text-[9px] text-muted-foreground/30 italic">Sin inicio</div>
+                    <div className="py-2 text-center text-4xs text-muted-foreground/30 italic">Sin inicio</div>
                 )}
             </PhaseCard>
 

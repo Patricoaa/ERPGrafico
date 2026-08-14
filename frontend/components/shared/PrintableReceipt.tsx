@@ -53,18 +53,18 @@ export const PrintableReceipt = forwardRef<HTMLDivElement, PrintableReceiptProps
                         />
                     )}
                     <p className="font-bold text-sm">{mainTitle}</p>
-                    <p className="text-[10px] text-muted-foreground">{displayId}</p>
+                    <p className="text-3xs text-muted-foreground">{displayId}</p>
                     {formattedDate && (
-                        <p className="text-[9px] text-muted-foreground/80">{formattedDate}</p>
+                        <p className="text-4xs text-muted-foreground/80">{formattedDate}</p>
                     )}
                     {terminalName && (
-                        <p className="text-[9px] text-muted-foreground/80">Terminal: {terminalName}</p>
+                        <p className="text-4xs text-muted-foreground/80">Terminal: {terminalName}</p>
                     )}
-                    <p className="text-[10px] mt-1">{customerName}</p>
+                    <p className="text-3xs mt-1">{customerName}</p>
                 </div>
 
                 {/* Line Items Header */}
-                <div className="flex font-bold border-b border-dashed pb-1 mb-1 text-[9px]">
+                <div className="flex font-bold border-b border-dashed pb-1 mb-1 text-4xs">
                     <span className="flex-1">Producto</span>
                     <span className="w-10 text-right">Cant</span>
                     <span className="w-16 text-right">Precio</span>
@@ -81,7 +81,7 @@ export const PrintableReceipt = forwardRef<HTMLDivElement, PrintableReceiptProps
                     const discount = Number(line?.discount_amount ?? 0)
 
                     return (
-                        <div key={idx} className="flex mb-1 text-[9px]">
+                        <div key={idx} className="flex mb-1 text-4xs">
                             <div className="flex-1 min-w-0">
                                 <p className="truncate font-medium">{name || code || "—"}</p>
                                 {discount > 0 && (
@@ -96,7 +96,7 @@ export const PrintableReceipt = forwardRef<HTMLDivElement, PrintableReceiptProps
                 })}
 
                 {/* Totals */}
-                <div className="border-t border-dashed pt-2 mt-2 space-y-1 text-[10px]">
+                <div className="border-t border-dashed pt-2 mt-2 space-y-1 text-3xs">
                     <div className="flex justify-between">
                         <span>Neto</span>
                         <span>{formatCurrency(totalNet)}</span>
@@ -120,7 +120,7 @@ export const PrintableReceipt = forwardRef<HTMLDivElement, PrintableReceiptProps
                 </div>
 
                 {/* Footer */}
-                <div className="text-center border-t border-dashed pt-2 mt-3 text-[9px] text-muted-foreground/80">
+                <div className="text-center border-t border-dashed pt-2 mt-3 text-4xs text-muted-foreground/80">
 
                     <p>Generado por ERPGrafico</p>
                 </div>

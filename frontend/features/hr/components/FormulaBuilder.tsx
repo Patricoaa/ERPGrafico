@@ -70,7 +70,7 @@ export function FormulaBuilder({ value, onChange }: FormulaBuilderProps) {
                     <div>
                         <div className="flex items-center gap-2 mb-2">
                             <Variable className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-[10px] font-semibold text-muted-foreground uppercase">Variables</span>
+                            <span className="text-3xs font-semibold text-muted-foreground uppercase">Variables</span>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                             {VARIABLES.map((v) => (
@@ -104,7 +104,7 @@ export function FormulaBuilder({ value, onChange }: FormulaBuilderProps) {
                         <div>
                             <div className="flex items-center gap-2 mb-2">
                                 <FunctionSquare className="h-3 w-3 text-muted-foreground" />
-                                <span className="text-[10px] font-semibold text-muted-foreground uppercase">Funciones</span>
+                                <span className="text-3xs font-semibold text-muted-foreground uppercase">Funciones</span>
                             </div>
                             <div className="flex flex-wrap gap-1.5">
                                 {FUNCTIONS.map((f) => (
@@ -113,7 +113,7 @@ export function FormulaBuilder({ value, onChange }: FormulaBuilderProps) {
                                             <Button 
                                                 variant="outline" 
                                                 size="sm" 
-                                                className="h-7 px-2 text-[10px] font-mono hover:border-primary hover:text-primary"
+                                                className="h-7 px-2 text-3xs font-mono hover:border-primary hover:text-primary"
                                                 onClick={() => insert(f.val)}
                                             >
                                                 {f.label}
@@ -130,7 +130,7 @@ export function FormulaBuilder({ value, onChange }: FormulaBuilderProps) {
                         <div>
                             <div className="flex items-center gap-2 mb-2">
                                 <Calculator className="h-3 w-3 text-muted-foreground" />
-                                <span className="text-[10px] font-semibold text-muted-foreground uppercase">Operadores</span>
+                                <span className="text-3xs font-semibold text-muted-foreground uppercase">Operadores</span>
                             </div>
                             <div className="flex flex-wrap gap-1">
                                 {OPERATORS.map((op) => (
@@ -138,7 +138,7 @@ export function FormulaBuilder({ value, onChange }: FormulaBuilderProps) {
                                         key={op.label}
                                         variant="ghost" 
                                         size="sm" 
-                                        className="h-7 w-7 p-0 flex items-center justify-center font-bold text-xs ring-1 ring-border"
+                                        className="h-7 w-7 p-0 flex items-center justify-center font-medium text-xs ring-1 ring-border"
                                         onClick={() => insert(op.val)}
                                     >
                                         {op.icon ? <op.icon className="h-3 w-3" /> : op.label}
@@ -152,12 +152,12 @@ export function FormulaBuilder({ value, onChange }: FormulaBuilderProps) {
                     <div className="border-t pt-2 mt-2">
                          <div className="flex items-center gap-2 mb-2">
                             <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-[10px] font-semibold text-muted-foreground uppercase">Lógica Condicional</span>
+                            <span className="text-3xs font-semibold text-muted-foreground uppercase">Lógica Condicional</span>
                         </div>
                         <Button 
                             variant="secondary" 
                             size="sm" 
-                            className="w-full h-8 text-[10px] font-mono gap-2 border border-dashed border-primary/40 bg-transparent text-primary hover:bg-primary/10"
+                            className="w-full h-8 text-3xs font-mono gap-2 border border-dashed border-primary/40 bg-transparent text-primary hover:bg-primary/10"
                             onClick={() => insert(" VALOR if CONDICION else OTRO_VALOR")}
                         >
                             IF TERNARIO: [Ture] if [Cond] else [False]

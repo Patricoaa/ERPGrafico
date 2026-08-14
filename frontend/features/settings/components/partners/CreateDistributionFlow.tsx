@@ -282,7 +282,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                             <Calculator className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                             <div className="absolute right-4 top-1/2 -translate-y-1/2">
                                 <span className={cn(
-                                    "text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-sm",
+                                    "text-3xs font-bold uppercase tracking-widest px-2 py-1 rounded-sm",
                                     parseFloat(formData.net_result) >= 0 ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"
                                 )}>
                                     {parseFloat(formData.net_result) >= 0 ? "Utilidad" : "Pérdida"}
@@ -307,8 +307,8 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                     </div>
 
                     <Alert variant="primary">
-                        <AlertTitle className="font-bold uppercase text-[10px]">Automatización Activa</AlertTitle>
-                        <AlertDescription className="text-foreground/80 font-medium text-[10px] leading-relaxed">
+                        <AlertTitle className="font-bold uppercase text-3xs">Automatización Activa</AlertTitle>
+                        <AlertDescription className="text-foreground/80 font-medium text-3xs leading-relaxed">
                             El sistema calculará la participación exacta a la fecha de resolución y descontará automáticamente los <strong>retiros provisorios</strong> detectados en la contabilidad del ejercicio.
                         </AlertDescription>
                     </Alert>
@@ -330,18 +330,18 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <Card className="rounded-none border-dashed bg-card/50 shadow-card p-4 bg-muted/20">
-                            <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Monto a Distribuir</p>
+                            <p className="text-3xs font-bold uppercase text-muted-foreground tracking-widest mb-1">Monto a Distribuir</p>
                             <DataCell.Currency value={draftResolution?.net_result || 0} weight="bold" className="justify-start text-xl text-primary" />
                         </Card>
                         <Card className="rounded-none border-dashed bg-card/50 shadow-card p-4 bg-muted/20">
-                            <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Ejercicio</p>
+                            <p className="text-3xs font-bold uppercase text-muted-foreground tracking-widest mb-1">Ejercicio</p>
                             <p className="text-xl  font-black">{draftResolution?.fiscal_year}</p>
                         </Card>
                     </div>
 
                     <div className="border rounded-sm overflow-hidden min-h-[300px]">
-                        <table className="w-full text-[11px] text-left">
-                            <thead className="bg-muted text-[10px] font-black uppercase text-muted-foreground tracking-wider border-b">
+                        <table className="w-full text-2xs text-left">
+                            <thead className="bg-muted text-3xs font-bold uppercase text-muted-foreground tracking-wider border-b">
                                 <tr>
                                     <th className="px-3 py-3">Socio</th>
                                     <th className="px-3 py-3 text-right">Torta (%)</th>
@@ -389,30 +389,30 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                                 <span className="font-bold text-muted-foreground">{line.percentage_at_date}%</span>
                                             </td>
                                             <td className="px-3 py-2 text-right">
-                                                <div className="flex flex-col text-[10px] items-end">
+                                                <div className="flex flex-col text-3xs items-end">
                                                     <span className="text-success flex items-center gap-1">
-                                                        Bruto: <DataCell.Currency value={line.gross_amount} className="w-auto p-0 inline-flex font-mono text-[10px] text-success" />
+                                                        Bruto: <DataCell.Currency value={line.gross_amount} className="w-auto p-0 inline-flex font-mono text-3xs text-success" />
                                                     </span>
                                                     <span className="text-destructive flex items-center gap-1">
                                                         Retiros: {parseFloat(line.provisional_withdrawals_offset) > 0 ? (
-                                                            <DataCell.Currency value={-parseFloat(line.provisional_withdrawals_offset)} className="w-auto p-0 inline-flex font-mono text-[10px] text-destructive" />
+                                                            <DataCell.Currency value={-parseFloat(line.provisional_withdrawals_offset)} className="w-auto p-0 inline-flex font-mono text-3xs text-destructive" />
                                                         ) : '0'}
                                                     </span>
-                                                    <span className="font-bold text-primary text-[11px] flex items-center gap-1">
-                                                        Neto: <DataCell.Currency value={line.net_amount} weight="bold" className="w-auto p-0 inline-flex font-mono text-[11px] text-primary" />
+                                                    <span className="font-bold text-primary text-2xs flex items-center gap-1">
+                                                        Neto: <DataCell.Currency value={line.net_amount} weight="bold" className="w-auto p-0 inline-flex font-mono text-2xs text-primary" />
                                                     </span>
                                                 </div>
                                             </td>
                                             {isCompensated ? (
                                                 <td colSpan={draftResolution?.is_profit ? 4 : 1} className="px-3 py-2 text-center">
-                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Retiros Compensan Totalmente Utilidad Bruta</span>
+                                                    <span className="text-3xs font-bold text-muted-foreground uppercase">Retiros Compensan Totalmente Utilidad Bruta</span>
                                                 </td>
                                             ) : draftResolution?.is_profit ? (
                                                 <>
                                                     <td className="px-2 py-2">
                                                         <Input
                                                             type="number"
-                                                            className="h-8 text-[11px] font-mono text-right"
+                                                            className="h-8 text-2xs font-mono text-right"
                                                             value={getAmount('DIVIDEND') || ''}
                                                             onChange={(e) => handleAmountChange('DIVIDEND', e.target.value)}
                                                             placeholder="0"
@@ -421,7 +421,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                                     <td className="px-2 py-2">
                                                         <Input
                                                             type="number"
-                                                            className="h-8 text-[11px] font-mono text-right"
+                                                            className="h-8 text-2xs font-mono text-right"
                                                             value={getAmount('REINVEST') || ''}
                                                             onChange={(e) => handleAmountChange('REINVEST', e.target.value)}
                                                             placeholder="0"
@@ -430,21 +430,21 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                                     <td className="px-2 py-2">
                                                         <Input
                                                             type="number"
-                                                            className="h-8 text-[11px] font-mono text-right"
+                                                            className="h-8 text-2xs font-mono text-right"
                                                             value={getAmount('RETAINED') || ''}
                                                             onChange={(e) => handleAmountChange('RETAINED', e.target.value)}
                                                             placeholder="0"
                                                         />
                                                     </td>
                                                     <td className="px-3 py-2 text-right">
-                                                        <div className={cn("font-mono text-[11px] flex items-center justify-end gap-0.5", Math.abs(remaining) <= 0.01 ? "text-success" : remaining < 0 ? "text-destructive" : "text-muted-foreground")}>
+                                                        <div className={cn("font-mono text-2xs flex items-center justify-end gap-0.5", Math.abs(remaining) <= 0.01 ? "text-success" : remaining < 0 ? "text-destructive" : "text-muted-foreground")}>
                                                             {remaining > 0 ? '+' : ''}
-                                                            <DataCell.Currency value={remaining} className="w-auto p-0 inline-flex font-mono text-[11px] text-current" />
+                                                            <DataCell.Currency value={remaining} className="w-auto p-0 inline-flex font-mono text-2xs text-current" />
                                                         </div>
                                                     </td>
                                                 </>
                                             ) : (
-                                                <td className="px-3 py-2 text-[10px] font-bold text-muted-foreground">
+                                                <td className="px-3 py-2 text-3xs font-bold text-muted-foreground">
                                                     <div className="flex items-center gap-2">
                                                         <span>Monto Automático a Absorber: </span>
                                                         <DataCell.Currency value={Math.abs(parseFloat(line.net_amount))} className="w-auto p-0 inline-flex text-muted-foreground" />
@@ -477,7 +477,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                     </div>
 
                     <div className="grid gap-3 bg-muted/40 p-5 rounded-sm border">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Impactos Contables Automatizados</p>
+                        <p className="text-3xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Impactos Contables Automatizados</p>
                         {[
                             `Cierre de la cuenta "Utilidades del Ejercicio"`,
                             `Liquidación contable de retiros provisorios de socios`,

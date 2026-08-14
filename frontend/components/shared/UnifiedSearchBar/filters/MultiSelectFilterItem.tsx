@@ -72,12 +72,12 @@ export function MultiSelectFilterItem({
         <ChevronRight className={cn("h-3 w-3 transition-transform shrink-0", expanded && "rotate-90")} />
         <span>{def.label}</span>
         {selectedValues.length > 0 && (
-          <span className="ml-auto text-[10px] text-muted-foreground">
+          <span className="ml-auto text-3xs text-muted-foreground">
             {selectedValues.length} seleccionados
           </span>
         )}
         {isActive && selectedValues.length === 0 && (
-          <span className="ml-auto text-[10px] text-muted-foreground">✓</span>
+          <span className="ml-auto text-3xs text-muted-foreground">✓</span>
         )}
       </Button>
 

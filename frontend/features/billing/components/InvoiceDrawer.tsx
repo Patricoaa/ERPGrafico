@@ -37,7 +37,7 @@ export function InvoiceDrawer({ id, open, onOpenChange, invoiceId }: InvoiceDraw
                 displayId={displayId}
                 subtitle={partnerName}
             >
-                <div className="text-[9px] space-y-1 mb-2">
+                <div className="text-4xs space-y-1 mb-2">
                     <div className="flex justify-between">
                         <span>Folio:</span>
                         <span>{(invoice as unknown as Record<string, unknown>)?.folio_number as string ?? (invoice as unknown as Record<string, unknown>)?.folio as string ?? 'S/N'}</span>
@@ -48,7 +48,7 @@ export function InvoiceDrawer({ id, open, onOpenChange, invoiceId }: InvoiceDraw
                     </div>
                 </div>
                 {invoice?.lines?.map((line, idx) => (
-                    <div key={idx} className="flex justify-between text-[10px]">
+                    <div key={idx} className="flex justify-between text-3xs">
                         <span className="flex-1">{line.product_name ?? line.description ?? '-'}</span>
                         <span className="w-12 text-right">{Math.round(Number(line.quantity ?? 0))}</span>
                         <span className="w-16 text-right">{formatCurrency(Number((line as Record<string, unknown>).unit_price ?? 0))}</span>

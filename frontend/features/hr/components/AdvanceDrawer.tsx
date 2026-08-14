@@ -1,6 +1,6 @@
 "use client"
 
-import {useEffect} from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -61,25 +61,25 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
         }
     })
 
-    useEffect(() => {
-        if (advance) {
-            form.reset({
-                employee: advance.employee.toString(),
-                amount: advance.amount.toString(),
-                date: advance.date,
-                payroll: advance.payroll ? advance.payroll.toString() : "",
-                notes: advance.notes || "",
-            })
-        } else if (open) {
-            form.reset({
-                employee: "",
-                amount: "",
-                date: dateString,
-                payroll: "",
-                notes: "",
-            })
-        }
-    }, [advance, open, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: advance,
+        mapData: (data) => ({
+            employee: data.employee.toString(),
+            amount: data.amount.toString(),
+            date: data.date,
+            payroll: data.payroll ? data.payroll.toString() : "",
+            notes: data.notes || "",
+        }),
+        defaultValues: () => ({
+            employee: "",
+            amount: "",
+            date: dateString,
+            payroll: "",
+            notes: "",
+        }),
+    })
 
     const onSubmit = async (data: AdvanceFormValues) => {
         try {
@@ -115,7 +115,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
         <>
             {(mode === 'view' || mode === 'edit') && advance?.id && (
                 <PrintableLayout ref={printRef} title="Anticipo" displayId={`#${advance.id}`}>
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Empleado:</span>
                             <span>{advance?.employee_name ?? '-'}</span>

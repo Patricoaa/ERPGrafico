@@ -244,7 +244,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => append({ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: rate })}
-                                                className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-primary/30 hover:bg-primary/5 shadow-card"
+                                                className="h-9 px-4 text-3xs font-medium uppercase tracking-widest border-primary/30 hover:bg-primary/5 shadow-card"
                                             >
                                                 <Plus className="mr-2 h-4 w-4" />
                                                 Agregar Producto
@@ -275,7 +275,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                                                     <div className="space-y-1">
                                                                         <ProductSelector
                                                                             value={field.value}
-                                                                            context="purchase"
+                                                                            canBePurchased
                                                                             excludeVariantTemplates={true}
                                                                             onChange={(val) => {
                                                                                 field.onChange(val)
@@ -401,7 +401,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                             variant="outline"
                                             size="sm"
                                             onClick={() => append({ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: rate })}
-                                            className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-primary/30 hover:bg-primary/5 shadow-card"
+                                            className="h-9 px-4 text-3xs font-medium uppercase tracking-widest border-primary/30 hover:bg-primary/5 shadow-card"
                                         >
                                             <Plus className="mr-2 h-4 w-4" />
                                             Agregar Producto
@@ -432,7 +432,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                                                 <div className="space-y-1">
                                                                     <ProductSelector
                                                                         value={field.value}
-                                                                        context="purchase"
+                                                                        canBePurchased
                                                                         excludeVariantTemplates={true}
                                                                         onChange={(val) => {
                                                                             field.onChange(val)

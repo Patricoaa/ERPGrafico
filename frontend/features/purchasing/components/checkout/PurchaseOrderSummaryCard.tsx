@@ -28,7 +28,7 @@ export function PurchaseOrderSummaryCard({
             <div className="flex-1 overflow-auto custom-scrollbar">
                 <div className="p-6 space-y-6">
                     <div className="space-y-4">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 flex items-center gap-2">
+                        <h3 className="text-4xs font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-2">
                             <ShoppingBag className="h-4 w-4" />
                             Detalle de Productos
                         </h3>
@@ -39,7 +39,7 @@ export function PurchaseOrderSummaryCard({
                                     <div className="space-y-1.5 flex-1 min-w-0">
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <p className="font-bold text-sm leading-tight text-foreground/90 truncate mr-2">
+                                                <p className="font-medium text-sm leading-tight text-foreground/90 truncate mr-2">
                                                     {line.name}
                                                 </p>
                                             </TooltipTrigger>
@@ -51,7 +51,7 @@ export function PurchaseOrderSummaryCard({
                                             </Chip>
                                         </div>
                                     </div>
-                                    <p className="font-mono text-xs font-black whitespace-nowrap pt-0.5">
+                                    <p className="text-xs font-medium whitespace-nowrap pt-0.5">
                                         {formatCurrency(Math.round((line.qty || line.quantity) * (line.unit_cost || 0)))}
                                     </p>
                                 </div>
@@ -64,18 +64,18 @@ export function PurchaseOrderSummaryCard({
             <div className="p-6 bg-transparent border-t shadow-[0_-4px_20px_-10px_oklch(0.12_0.02_240_/_0.1)] space-y-3">
                 <div className="flex justify-between text-xs font-bold text-muted-foreground/80">
                     <span>Subtotal Neto</span>
-                    <span className="whitespace-nowrap font-mono">{formatCurrency(net)}</span>
+                    <span className="whitespace-nowrap">{formatCurrency(net)}</span>
                 </div>
                 {!isExempt && (
                     <div className="flex justify-between text-xs font-bold text-muted-foreground/80">
                         <span>IVA (19%)</span>
-                        <span className="whitespace-nowrap font-mono">{formatCurrency(tax)}</span>
+                        <span className="whitespace-nowrap">{formatCurrency(tax)}</span>
                     </div>
                 )}
                 <Separator className="my-2 opacity-50" />
                 <div className="flex justify-between items-center pt-1">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Total Compra</span>
-                    <span className="text-2xl font-black text-destructive tracking-tighter whitespace-nowrap">
+                    <span className="text-4xs font-bold uppercase tracking-widest text-muted-foreground/60">Total Compra</span>
+                    <span className="text-2xl font-bold text-destructive tracking-tighter whitespace-nowrap">
                         {formatCurrency(total)}
                     </span>
                 </div>

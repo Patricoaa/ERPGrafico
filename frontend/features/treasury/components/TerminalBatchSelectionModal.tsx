@@ -291,7 +291,7 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
                                                     type="button"
                                                     variant="link"
                                                     onClick={handleAutoCalculate}
-                                                    className="text-primary hover:underline font-bold transition-all p-0 h-auto"
+                                                    className="text-primary hover:underline font-medium transition-all p-0 h-auto"
                                                 >
                                                     Modificar Ventas
                                                 </Button>

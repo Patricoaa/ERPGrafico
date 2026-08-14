@@ -91,13 +91,13 @@ export default function SettingsPageClient() {
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="font-bold tracking-tight text-sm text-foreground">{mod.label}</span>
-                                        <span className="text-[11px] text-muted-foreground line-clamp-1">{mod.description}</span>
+                                        <span className="text-2xs text-muted-foreground line-clamp-1">{mod.description}</span>
                                     </div>
                                 </div>
                             </div>
                             
                             <div className="flex items-center gap-2 mt-auto">
-                                <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${mod.statusColor}`}>
+                                <div className={`px-2 py-0.5 rounded-full text-3xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${mod.statusColor}`}>
                                     <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
                                     {/* eslint-disable-next-line status/must-use-statusbadge -- module config label, not entity status */}
                                     {mod.status}
@@ -120,7 +120,7 @@ export default function SettingsPageClient() {
                     <div className="space-y-3">
                         <div className="flex items-center gap-2">
                             <Terminal className="w-3.5 h-3.5 text-primary" />
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Frontend</span>
+                            <span className="text-2xs font-bold uppercase tracking-wider text-muted-foreground">Frontend</span>
                         </div>
                         <div className="space-y-2">
                             <div className="flex justify-between items-center text-xs">
@@ -138,7 +138,7 @@ export default function SettingsPageClient() {
                     <div className="space-y-3">
                         <div className="flex items-center gap-2">
                             <Building2 className="w-3.5 h-3.5 text-info" />
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Backend / API</span>
+                            <span className="text-2xs font-bold uppercase tracking-wider text-muted-foreground">Backend / API</span>
                         </div>
                         <div className="space-y-2">
                             <div className="flex justify-between items-center text-xs">
@@ -163,14 +163,14 @@ export default function SettingsPageClient() {
                     <div className="space-y-3">
                         <div className="flex items-center gap-2">
                             <GitBranch className="w-3.5 h-3.5 text-warning" />
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Despliegue</span>
+                            <span className="text-2xs font-bold uppercase tracking-wider text-muted-foreground">Despliegue</span>
                         </div>
                         <div className="space-y-2">
                             <div className="flex justify-between items-center text-xs">
                                 <span className="text-muted-foreground">Entorno</span>
                                 <span className="font-bold capitalize">{status?.environment || "development"}</span>
                             </div>
-                            <div className="flex justify-between items-center text-xs text-[10px]">
+                            <div className="flex justify-between items-center text-xs text-3xs">
                                 <span className="text-muted-foreground">Último Build</span>
                                 <span className="text-muted-foreground/70">
                                     {format(new Date(buildDate), "dd MMM, HH:mm", { locale: es })}

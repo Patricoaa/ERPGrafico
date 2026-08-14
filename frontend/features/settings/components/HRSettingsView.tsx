@@ -103,7 +103,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
             header: "Concepto de Nómina",
             cell: ({ row }) => (
                 <div className="flex items-center gap-2 py-1">
-                    <span className="font-black text-[12px] tracking-tight uppercase leading-none">{row.getValue("name")}</span>
+                    <span className="font-black text-xs tracking-tight uppercase leading-none">{row.getValue("name")}</span>
                     {row.original.is_system && (
                         <Chip size="xs" intent="primary">SYSTEM</Chip>
                     )}
@@ -129,7 +129,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
             accessorKey: "formula_type_display",
             header: "Lógica / Fórmula",
             cell: ({ row }) => (
-                <span className="text-[10px] font-medium text-muted-foreground italic">
+                <span className="text-3xs font-medium text-muted-foreground italic">
                     {row.getValue("formula_type_display")}
                 </span>
             ),
@@ -227,7 +227,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                         <div className="flex justify-between items-center px-1">
                             <div>
                                 <h3 className="text-sm font-black uppercase text-primary tracking-widest">Conceptos de Nómina</h3>
-                                <p className="text-[10px] uppercase font-bold text-muted-foreground">Gestión de haberes, descuentos y aportes</p>
+                                <p className="text-3xs uppercase font-bold text-muted-foreground">Gestión de haberes, descuentos y aportes</p>
                             </div>
                             <ConceptDialog onSaved={() => refetch()} onCreate={createConcept} onUpdate={updateConcept} />
                         </div>
@@ -249,7 +249,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                         <div className="flex justify-between items-center px-1">
                             <div>
                                 <h3 className="text-sm font-black uppercase text-primary tracking-widest">Instituciones Previsionales (AFP)</h3>
-                                <p className="text-[10px] uppercase font-bold text-muted-foreground">Gestión de comisiones para cálculo individual</p>
+                                <p className="text-3xs uppercase font-bold text-muted-foreground">Gestión de comisiones para cálculo individual</p>
                             </div>
                             <AFPDialog onSaved={() => refetch()} onCreate={createAfp} onUpdate={updateAfp} />
                         </div>
@@ -267,11 +267,11 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-[9px] uppercase text-muted-foreground font-black mb-1 opacity-60">Pasivo de Pago</div>
-                                        <div className="text-[10px] truncate font-mono bg-primary/5 p-1.5 rounded-sm border border-primary/10 inline-block max-w-full text-primary font-bold">
+                                        <div className="text-4xs uppercase text-muted-foreground font-bold mb-1 opacity-60">Pasivo de Pago</div>
+                                        <div className="text-3xs truncate font-mono bg-primary/5 p-1.5 rounded-sm border border-primary/10 inline-block max-w-full text-primary font-bold">
                                             {afp.account ? "CENTRALIZADA" : "SIN CUENTA"}
                                         </div>
-                                        <Button variant="ghost" size="sm" className="mt-4 w-full text-[9px] font-black uppercase text-destructive hover:bg-destructive/10 rounded-sm"
+                                        <Button variant="ghost" size="sm" className="mt-4 w-full text-4xs font-medium uppercase text-destructive hover:bg-destructive/10 rounded-sm"
                                             onClick={() => afpDeleteConfirm.requestConfirm(afp.id)}>
                                             Eliminar Institución
                                         </Button>
@@ -395,7 +395,7 @@ function ConceptDialog({ concept, onSaved, open: controlledOpen, onOpenChange: s
                 description="Defina el comportamiento y la cuenta contable de este ítem de nómina."
                 footer={
                     <div className="flex w-full gap-3 justify-end pt-2 border-t">
-                        <ActionSlideButton type="submit" form="concept-form" loading={saving} disabled={saving} className="w-full h-10 font-black uppercase tracking-widest text-[11px]">
+                        <ActionSlideButton type="submit" form="concept-form" loading={saving} disabled={saving} className="w-full h-10 font-bold uppercase tracking-widest text-2xs">
                             Validar y Guardar Cambios
                         </ActionSlideButton>
                     </div>
@@ -483,14 +483,14 @@ function ConceptDialog({ concept, onSaved, open: controlledOpen, onOpenChange: s
                                 name="formula"
                                 render={({ field, fieldState }) => (
                                     <div className="bg-primary/5 p-3 rounded-md border border-dashed border-primary/20 space-y-3">
-                                        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-primary">
+                                        <span className="flex items-center gap-2 text-4xs font-bold uppercase tracking-widest text-primary">
                                             Constructor de Fórmula
                                             <Chip size="xs">ADVANCED</Chip>
                                         </span>
                                         <LabeledInput
                                             label="Expresión"
                                             placeholder="BASE * 0.25"
-                                            className="font-mono text-[11px]"
+                                            className="font-mono text-2xs"
                                             error={fieldState.error?.message}
                                             {...field}
                                         />
@@ -588,7 +588,7 @@ function AFPDialog({ afp, onSaved, onCreate, onUpdate }: { afp?: AFP, onSaved: (
                 description="Configure las tasas vigentes para las cotizaciones previsionales."
                 footer={
                     <div className="flex w-full gap-3 justify-end pt-2 border-t">
-                        <ActionSlideButton type="submit" form="afp-form" loading={saving} disabled={saving} className="w-full h-10 font-black uppercase tracking-widest text-[11px] bg-primary hover:bg-primary/90 text-primary-foreground">
+                        <ActionSlideButton type="submit" form="afp-form" loading={saving} disabled={saving} className="w-full h-10 font-bold uppercase tracking-widest text-2xs bg-primary hover:bg-primary/90 text-primary-foreground">
                             Guardar Institución
                         </ActionSlideButton>
                     </div>

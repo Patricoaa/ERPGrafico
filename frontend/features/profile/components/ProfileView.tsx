@@ -145,7 +145,7 @@ function ThemeSelectionCard() {
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-lg text-primary">Tema & Apariencia</CardTitle>
                     {isSyncing && (
-                        <span className="text-[9px] uppercase tracking-widest font-black text-primary animate-pulse">
+                        <span className="text-4xs uppercase tracking-widest font-bold text-primary animate-pulse">
                             Sincronizando...
                         </span>
                     )}
@@ -161,7 +161,7 @@ function ThemeSelectionCard() {
                         onClick={() => changeTheme('light')}
                         onKeyDown={(e) => handleThemeKeyDown(e, 'light')}
                         className={cn(
-                            "card-focus-spin-cmyk cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
+                            "cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
                             theme === 'light'
                                 ? "border-primary bg-primary/5 scale-[1.01] shadow-card accent-visible"
                                 : "border-border hover:border-muted-foreground/30 bg-muted/5"
@@ -170,7 +170,7 @@ function ThemeSelectionCard() {
                         <Sun className={cn("h-8 w-8 transition-transform duration-normal ease-premium", theme === 'light' ? "text-warning scale-110" : "text-muted-foreground")} />
                         <div className="text-center space-y-1">
                             <span className="font-black text-xs uppercase tracking-wider block">Modo Claro</span>
-                            <span className="text-[9px] text-muted-foreground block font-bold leading-snug">Colores limpios y legibilidad óptima para luz diurna</span>
+                            <span className="text-4xs text-muted-foreground block font-bold leading-snug">Colores limpios y legibilidad óptima para luz diurna</span>
                         </div>
                     </div>
 
@@ -181,7 +181,7 @@ function ThemeSelectionCard() {
                         onClick={() => changeTheme('dark')}
                         onKeyDown={(e) => handleThemeKeyDown(e, 'dark')}
                         className={cn(
-                            "card-focus-spin-cmyk cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
+                            "cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
                             theme === 'dark'
                                 ? "border-primary bg-primary/5 scale-[1.01] shadow-card accent-visible"
                                 : "border-border hover:border-muted-foreground/30 bg-muted/5"
@@ -190,7 +190,7 @@ function ThemeSelectionCard() {
                         <Moon className={cn("h-8 w-8 transition-transform duration-normal ease-premium", theme === 'dark' ? "text-primary scale-110" : "text-muted-foreground")} />
                         <div className="text-center space-y-1">
                             <span className="font-black text-xs uppercase tracking-wider block">Modo Oscuro</span>
-                            <span className="text-[9px] text-muted-foreground block font-bold leading-snug">Gris industrial desaturado para reducir fatiga visual</span>
+                            <span className="text-4xs text-muted-foreground block font-bold leading-snug">Gris industrial desaturado para reducir fatiga visual</span>
                         </div>
                     </div>
 
@@ -201,7 +201,7 @@ function ThemeSelectionCard() {
                         onClick={() => changeTheme('system')}
                         onKeyDown={(e) => handleThemeKeyDown(e, 'system')}
                         className={cn(
-                            "card-focus-spin-cmyk cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
+                            "cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
                             theme === 'system'
                                 ? "border-primary bg-primary/5 scale-[1.01] shadow-card accent-visible"
                                 : "border-border hover:border-muted-foreground/30 bg-muted/5"
@@ -210,7 +210,7 @@ function ThemeSelectionCard() {
                         <Monitor className={cn("h-8 w-8 transition-transform duration-normal ease-premium", theme === 'system' ? "text-primary scale-110" : "text-muted-foreground")} />
                         <div className="text-center space-y-1">
                             <span className="font-black text-xs uppercase tracking-wider block">Preferencia del Sistema</span>
-                            <span className="text-[9px] text-muted-foreground block font-bold leading-snug">Sincroniza automáticamente según su sistema operativo</span>
+                            <span className="text-4xs text-muted-foreground block font-bold leading-snug">Sincroniza automáticamente según su sistema operativo</span>
                         </div>
                     </div>
                 </div>
@@ -222,7 +222,7 @@ function ThemeSelectionCard() {
 function InfoField({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
     return (
         <fieldset className="notched-field pointer-events-none" aria-disabled="true">
-            <legend className="px-1.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+            <legend className="px-1.5 text-3xs font-bold uppercase tracking-widest text-muted-foreground">
                 {label}
             </legend>
             <div className="flex items-center gap-2 h-5 px-2 text-sm font-medium text-foreground">
@@ -534,7 +534,7 @@ function PersonalTab({
                             {/* Section: Employment Data */}
                             <div className="flex items-center gap-2 pt-6 pb-2">
                                 <div className="flex-1 h-px bg-border" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
+                                <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/60">
                                     Información Laboral
                                 </span>
                                 <div className="flex-1 h-px bg-border" />
@@ -550,7 +550,7 @@ function PersonalTab({
                             {/* Previsional */}
                             <div className="flex items-center gap-2 pt-6 pb-2">
                                 <div className="flex-1 h-px bg-border" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
+                                <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/60">
                                     Información Previsional
                                 </span>
                                 <div className="flex-1 h-px bg-border" />
@@ -560,7 +560,7 @@ function PersonalTab({
                                 <InfoField icon={<ShieldCheck className="h-3.5 w-3.5" />} label="AFP" value={employee.afp_detail?.name || "—"} />
                                 <InfoField icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Sistema Salud" value={employee.salud_type_display || "—"} />
                                 <fieldset className="notched-field pointer-events-none" aria-disabled="true">
-                                    <legend className="px-1.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                                    <legend className="px-1.5 text-3xs font-bold uppercase tracking-widest text-muted-foreground">
                                         Sueldo Base
                                     </legend>
                                     <div className="flex items-center gap-2 h-5 px-2 text-sm font-bold text-foreground">

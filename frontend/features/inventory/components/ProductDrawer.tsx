@@ -3,6 +3,7 @@
 import {type UoM, type Product} from "@/types/entities"
 
 import { useState, useEffect, useMemo } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm, type FieldErrors, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
@@ -265,131 +266,131 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
     // arriba. No hace falta fetch imperativo ni Promise.all — TanStack Query
     // re-fetchea automáticamente cuando productId / initialData.id cambia.
 
-    useEffect(() => {
-        if (open) {
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData,
+        mapData: (data) => {
             setActiveTab("general")
-
-            if (initialData) {
-                const getId = (val: unknown): string => {
-                    if (val == null) return ""
-                    if (typeof val === "object" && val !== null && "id" in val) return String((val as { id: unknown }).id)
-                    return String(val)
-                }
-
-                form.reset({
-                    code: initialData.code || "",
-                    internal_code: initialData.internal_code || "",
-                    name: initialData.name || "",
-                    category: getId(initialData.category),
-                    product_type: initialData.product_type || "STORABLE",
-                    sale_price: Number(initialData.sale_price) || 0,
-                    sale_price_gross: Number(initialData.sale_price_gross) || 0,
-                    is_dynamic_pricing: initialData.is_dynamic_pricing ?? false,
-                    uom: getId(initialData.uom),
-                    sale_uom: getId(initialData.sale_uom) || getId(initialData.uom),
-                    purchase_uom: getId(initialData.purchase_uom) || getId(initialData.uom),
-                    allowed_sale_uoms: (initialData.allowed_sale_uoms && initialData.allowed_sale_uoms.length > 0)
-                        ? initialData.allowed_sale_uoms.map(u => getId(u))
-                        : (initialData.uom ? [getId(initialData.uom)] : []),
-                    receiving_warehouse: getId(initialData.receiving_warehouse),
-                    track_inventory: initialData.track_inventory ?? true,
-                    can_be_sold: initialData.can_be_sold ?? true,
-                    can_be_purchased: initialData.can_be_purchased ?? true,
-                    has_bom: initialData.has_bom ?? false,
-                    requires_advanced_manufacturing: initialData.requires_advanced_manufacturing ?? false,
-                    mfg_enable_prepress: initialData.mfg_enable_prepress ?? false,
-                    mfg_enable_press: initialData.mfg_enable_press ?? false,
-                    mfg_enable_postpress: initialData.mfg_enable_postpress ?? false,
-                    mfg_prepress_design: initialData.mfg_prepress_design ?? false,
-                    mfg_prepress_specs: initialData.mfg_prepress_specs ?? false,
-                    mfg_prepress_folio: initialData.mfg_prepress_folio ?? false,
-                    mfg_press_offset: initialData.mfg_press_offset ?? false,
-                    mfg_press_digital: initialData.mfg_press_digital ?? false,
-                    mfg_postpress_finishing: initialData.mfg_postpress_finishing ?? false,
-                    mfg_postpress_binding: initialData.mfg_postpress_binding ?? false,
-                    mfg_auto_finalize: initialData.mfg_auto_finalize ?? false,
-                    has_variants: initialData.has_variants ?? false,
-                    parent_template: initialData.parent_template?.toString() || null,
-                    attribute_values: initialData.attribute_values?.map((v: unknown) => String(v)) || [],
-                    variant_display_name: initialData.variant_display_name || "",
-                    boms: initialData.boms?.map(b => ({
-                        id: b.id,
-                        name: b.name || "",
-                        active: b.active || false,
-                        lines: b.lines.map(l => ({
-                            id: l.id,
-                            component: l.component?.toString() || "",
-                            quantity: parseFloat(String(l.quantity)) || 0,
-                            uom: l.uom?.toString() || undefined,
-                            notes: l.notes || ""
-                        }))
-                    })) || [],
-                    uom_prices: initialData.uom_prices?.map(p => ({
-                        id: p.id,
-                        uom: typeof p.uom === 'object' ? p.uom.id : Number(p.uom),
-                        price_net: Number(p.price_net) || 0,
-                        price_gross: Number(p.price_gross) || 0,
-                    })) || [],
-                    recurrence_period: initialData.recurrence_period || "MONTHLY",
-                    renewal_notice_days: initialData.renewal_notice_days || 30,
-                    is_variable_amount: initialData.is_variable_amount ?? false,
-                    payment_day_type: initialData.payment_day_type || undefined,
-                    payment_day: initialData.payment_day || undefined,
-                    payment_interval_days: initialData.payment_interval_days || undefined,
-                    default_invoice_type: initialData.default_invoice_type || undefined,
-                    subscription_supplier: getId(initialData.subscription_supplier),
-                    subscription_amount: initialData.subscription_amount || undefined,
-                    subscription_start_date: initialData.subscription_start_date || "",
-                    auto_activate_subscription: initialData.auto_activate_subscription ?? true,
-                    is_indefinite: initialData.is_indefinite ?? true,
-                    contract_end_date: initialData.contract_end_date || "",
-                    preferred_supplier: getId(initialData.preferred_supplier),
-                } as Partial<ProductFormValues>)
-                setImagePreview(resolveMediaUrl(initialData.image) || null)
-            } else {
-                form.reset({
-                    code: "",
-                    internal_code: "",
-                    name: "",
-                    category: "",
-                    product_type: lockedType || "STORABLE",
-                    sale_price: 0,
-                    sale_price_gross: 0,
-                    uom: "",
-                    sale_uom: "",
-                    purchase_uom: "",
-                    allowed_sale_uoms: [],
-                    track_inventory: true,
-                    can_be_sold: true,
-                    can_be_purchased: true,
-                    image: undefined,
-                    has_bom: false,
-                    requires_advanced_manufacturing: false,
-                    mfg_enable_prepress: false,
-                    mfg_enable_press: false,
-                    mfg_enable_postpress: false,
-                    mfg_prepress_design: false,
-                    mfg_prepress_specs: false,
-                    mfg_prepress_folio: false,
-                    mfg_press_offset: false,
-                    mfg_press_digital: false,
-                    mfg_postpress_finishing: false,
-                    mfg_postpress_binding: false,
-                    mfg_auto_finalize: false,
-                    boms: [],
-                    has_variants: false,
-                    is_dynamic_pricing: false,
-                    parent_template: null,
-                    attribute_values: [],
-                    variant_display_name: "",
-                    preferred_supplier: "",
-                })
-                setImagePreview(null)
-                // pricingRules viene de useProductPricingRules — al crear un
-                // producto nuevo (sin initialData.id) el hook ya devuelve [].
+            setImagePreview(resolveMediaUrl(data.image) || null)
+            const getId = (val: unknown): string => {
+                if (val == null) return ""
+                if (typeof val === "object" && val !== null && "id" in val) return String((val as { id: unknown }).id)
+                return String(val)
             }
-        }
-    }, [open, initialData, form, lockedType])
+
+            return {
+                code: data.code || "",
+                internal_code: data.internal_code || "",
+                name: data.name || "",
+                category: getId(data.category),
+                product_type: data.product_type || "STORABLE",
+                sale_price: Number(data.sale_price) || 0,
+                sale_price_gross: Number(data.sale_price_gross) || 0,
+                is_dynamic_pricing: data.is_dynamic_pricing ?? false,
+                uom: getId(data.uom),
+                sale_uom: getId(data.sale_uom) || getId(data.uom),
+                purchase_uom: getId(data.purchase_uom) || getId(data.uom),
+                allowed_sale_uoms: (data.allowed_sale_uoms && data.allowed_sale_uoms.length > 0)
+                    ? data.allowed_sale_uoms.map(u => getId(u))
+                    : (data.uom ? [getId(data.uom)] : []),
+                receiving_warehouse: getId(data.receiving_warehouse),
+                track_inventory: data.track_inventory ?? true,
+                can_be_sold: data.can_be_sold ?? true,
+                can_be_purchased: data.can_be_purchased ?? true,
+                has_bom: data.has_bom ?? false,
+                requires_advanced_manufacturing: data.requires_advanced_manufacturing ?? false,
+                mfg_enable_prepress: data.mfg_enable_prepress ?? false,
+                mfg_enable_press: data.mfg_enable_press ?? false,
+                mfg_enable_postpress: data.mfg_enable_postpress ?? false,
+                mfg_prepress_design: data.mfg_prepress_design ?? false,
+                mfg_prepress_specs: data.mfg_prepress_specs ?? false,
+                mfg_prepress_folio: data.mfg_prepress_folio ?? false,
+                mfg_press_offset: data.mfg_press_offset ?? false,
+                mfg_press_digital: data.mfg_press_digital ?? false,
+                mfg_postpress_finishing: data.mfg_postpress_finishing ?? false,
+                mfg_postpress_binding: data.mfg_postpress_binding ?? false,
+                mfg_auto_finalize: data.mfg_auto_finalize ?? false,
+                has_variants: data.has_variants ?? false,
+                parent_template: data.parent_template?.toString() || null,
+                attribute_values: data.attribute_values?.map((v: unknown) => String(v)) || [],
+                variant_display_name: data.variant_display_name || "",
+                boms: data.boms?.map(b => ({
+                    id: b.id,
+                    name: b.name || "",
+                    active: b.active || false,
+                    lines: b.lines.map(l => ({
+                        id: l.id,
+                        component: l.component?.toString() || "",
+                        quantity: parseFloat(String(l.quantity)) || 0,
+                        uom: l.uom?.toString() || undefined,
+                        notes: l.notes || ""
+                    }))
+                })) || [],
+                uom_prices: data.uom_prices?.map(p => ({
+                    id: p.id,
+                    uom: typeof p.uom === 'object' ? p.uom.id : Number(p.uom),
+                    price_net: Number(p.price_net) || 0,
+                    price_gross: Number(p.price_gross) || 0,
+                })) || [],
+                recurrence_period: data.recurrence_period || "MONTHLY",
+                renewal_notice_days: data.renewal_notice_days || 30,
+                is_variable_amount: data.is_variable_amount ?? false,
+                payment_day_type: data.payment_day_type || undefined,
+                payment_day: data.payment_day || undefined,
+                payment_interval_days: data.payment_interval_days || undefined,
+                default_invoice_type: data.default_invoice_type || undefined,
+                subscription_supplier: getId(data.subscription_supplier),
+                subscription_amount: data.subscription_amount || undefined,
+                subscription_start_date: data.subscription_start_date || "",
+                auto_activate_subscription: data.auto_activate_subscription ?? true,
+                is_indefinite: data.is_indefinite ?? true,
+                contract_end_date: data.contract_end_date || "",
+                preferred_supplier: getId(data.preferred_supplier),
+            } as Partial<ProductFormValues>
+        },
+        defaultValues: () => {
+            setActiveTab("general")
+            setImagePreview(null)
+            return {
+                code: "",
+                internal_code: "",
+                name: "",
+                category: "",
+                product_type: lockedType || "STORABLE",
+                sale_price: 0,
+                sale_price_gross: 0,
+                uom: "",
+                sale_uom: "",
+                purchase_uom: "",
+                allowed_sale_uoms: [],
+                track_inventory: true,
+                can_be_sold: true,
+                can_be_purchased: true,
+                image: undefined,
+                has_bom: false,
+                requires_advanced_manufacturing: false,
+                mfg_enable_prepress: false,
+                mfg_enable_press: false,
+                mfg_enable_postpress: false,
+                mfg_prepress_design: false,
+                mfg_prepress_specs: false,
+                mfg_prepress_folio: false,
+                mfg_press_offset: false,
+                mfg_press_digital: false,
+                mfg_postpress_finishing: false,
+                mfg_postpress_binding: false,
+                mfg_auto_finalize: false,
+                boms: [],
+                has_variants: false,
+                is_dynamic_pricing: false,
+                parent_template: null,
+                attribute_values: [],
+                variant_display_name: "",
+                preferred_supplier: "",
+            }
+        },
+    })
 
     const FIELD_LABELS: Record<string, string> = {
         name: "Nombre Comercial",
@@ -772,7 +773,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                     title="Product"
                     displayId={`#${initialData.id}`}
                 >
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{initialData?.name ?? '-'}</span>

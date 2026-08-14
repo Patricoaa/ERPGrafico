@@ -169,7 +169,7 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
                                                 variant="ghost"
                                                 size="sm"
                                                 className={cn(
-                                                    'h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 rounded-sm shrink-0',
+                                                    'h-7 px-2 text-3xs uppercase font-medium tracking-widest gap-1 rounded-sm shrink-0',
                                                     usageFilter.length > 0
                                                         ? 'bg-accent/50 text-foreground'
                                                         : 'text-muted-foreground hover:text-foreground',
@@ -431,10 +431,10 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                                     )}
                                 />
                                 {watchedType !== "CARD_TERMINAL" && (
-                                    <p className="text-[9px] text-muted-foreground italic mt-1">Cuenta destino contable real. Para terminales integrados se auto-gestiona desde el proveedor.</p>
+                                    <p className="text-4xs text-muted-foreground italic mt-1">Cuenta destino contable real. Para terminales integrados se auto-gestiona desde el proveedor.</p>
                                 )}
                                 {watchedType === "CARD_TERMINAL" && (
-                                    <p className="text-[9px] text-muted-foreground italic mt-1">Gestionado automáticamente por el proveedor del terminal.</p>
+                                    <p className="text-4xs text-muted-foreground italic mt-1">Gestionado automáticamente por el proveedor del terminal.</p>
                                 )}
                             </div>
 
@@ -443,13 +443,13 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                                     variant="ghost"
                                     type="button"
                                     onClick={() => setShowAdvanced((v) => !v)}
-                                    className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none"
+                                    className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none"
                                 >
                                     <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showAdvanced && "rotate-180")} />
                                     Avanzado · Permisos de uso
                                 </Button>
                                 {!showAdvanced && (
-                                    <p className="text-[11px] text-muted-foreground mt-1 ml-5">
+                                    <p className="text-2xs text-muted-foreground mt-1 ml-5">
                                         Por defecto se deriva del tipo. Ábrelo solo si necesitas restringir ventas/compras.
                                     </p>
                                 )}

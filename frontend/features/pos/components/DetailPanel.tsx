@@ -103,7 +103,7 @@ function SaleOrderDetail({ order }: { order: NonNullable<ReturnType<typeof useSa
                 <StatusBadge status={order.status} size="sm" />
             </div>
 
-            <div className="text-[10px] text-muted-foreground space-y-0.5 border-b pb-2">
+            <div className="text-3xs text-muted-foreground space-y-0.5 border-b pb-2">
                 <p>Fecha: {formatPlainDate(order.date)}</p>
                 {order.pos_session_display && <p>Sesión: {order.pos_session_display}</p>}
                 <p>Estado de despacho: {order.delivery_status || '-'}</p>
@@ -111,9 +111,9 @@ function SaleOrderDetail({ order }: { order: NonNullable<ReturnType<typeof useSa
 
             {order.lines && order.lines.length > 0 && (
                 <div className="space-y-1">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Productos</p>
+                    <p className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/70">Productos</p>
                     {order.lines.slice(0, 10).map((line, idx) => (
-                        <div key={idx} className="flex items-start justify-between text-[11px] gap-2 border-b border-border/30 pb-1 last:border-0">
+                        <div key={idx} className="flex items-start justify-between text-2xs gap-2 border-b border-border/30 pb-1 last:border-0">
                             <span className="flex-1 line-clamp-1">{line.product_name || line.description}</span>
                             <span className="shrink-0 text-right">
                                 {Math.round(Number(line.quantity))} × {formatCurrency(Number(line.unit_price))}
@@ -121,7 +121,7 @@ function SaleOrderDetail({ order }: { order: NonNullable<ReturnType<typeof useSa
                         </div>
                     ))}
                     {order.lines.length > 10 && (
-                        <p className="text-[9px] text-muted-foreground italic">...y {order.lines.length - 10} productos más</p>
+                        <p className="text-4xs text-muted-foreground italic">...y {order.lines.length - 10} productos más</p>
                     )}
                 </div>
             )}
@@ -131,18 +131,18 @@ function SaleOrderDetail({ order }: { order: NonNullable<ReturnType<typeof useSa
                     <span>Total</span>
                     <span>{formatCurrency(Number(order.total))}</span>
                 </div>
-                <div className="flex justify-between text-[10px] text-muted-foreground">
+                <div className="flex justify-between text-3xs text-muted-foreground">
                     <span>Pagado</span>
                     <span>{formatCurrency(Number(order.total_paid))}</span>
                 </div>
-                <div className="flex justify-between text-[10px] text-muted-foreground">
+                <div className="flex justify-between text-3xs text-muted-foreground">
                     <span>Pendiente</span>
                     <span>{formatCurrency(Number(order.pending_amount))}</span>
                 </div>
             </div>
 
             {order.related_documents && (
-                <div className="border-t pt-2 text-[10px] text-muted-foreground space-y-0.5">
+                <div className="border-t pt-2 text-3xs text-muted-foreground space-y-0.5">
                     {order.related_documents.invoices?.length > 0 && (
                         <p>Documentos DTE: {order.related_documents.invoices.length}</p>
                     )}
@@ -169,16 +169,16 @@ function InvoiceDetail({ invoice }: { invoice: NonNullable<ReturnType<typeof use
                 <StatusBadge status={invoice.status} size="sm" />
             </div>
 
-            <div className="text-[10px] text-muted-foreground space-y-0.5 border-b pb-2">
+            <div className="text-3xs text-muted-foreground space-y-0.5 border-b pb-2">
                 <p>Fecha: {formatPlainDate(invoice.date)}</p>
                 <p>Tipo: {invoice.dte_type_display || invoice.dte_type}</p>
             </div>
 
             {invoice.lines && invoice.lines.length > 0 && (
                 <div className="space-y-1">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Líneas</p>
+                    <p className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/70">Líneas</p>
                     {invoice.lines.map((line, idx) => (
-                        <div key={idx} className="flex items-start justify-between text-[11px] gap-2 border-b border-border/30 pb-1 last:border-0">
+                        <div key={idx} className="flex items-start justify-between text-2xs gap-2 border-b border-border/30 pb-1 last:border-0">
                             <span className="flex-1 line-clamp-1">{(line as Record<string, unknown>).product_name as string || line.description || '-'}</span>
                             <span className="shrink-0 text-right">
                                 {Math.round(Number(line.quantity))} × {formatCurrency(Number((line as Record<string, unknown>).unit_price as number || 0))}
@@ -194,7 +194,7 @@ function InvoiceDetail({ invoice }: { invoice: NonNullable<ReturnType<typeof use
             </div>
 
             {Number(invoice.pending_amount) > 0 && (
-                <div className="flex justify-between text-[10px] text-muted-foreground">
+                <div className="flex justify-between text-3xs text-muted-foreground">
                     <span>Pendiente</span>
                     <span>{formatCurrency(Number(invoice.pending_amount))}</span>
                 </div>

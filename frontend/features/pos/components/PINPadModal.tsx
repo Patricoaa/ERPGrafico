@@ -68,7 +68,7 @@ export function PINPadModal({
                     className="border-none shadow-none p-0 w-full max-w-none bg-transparent"
                 />
                 
-                <p className="text-[10px] text-muted-foreground text-center uppercase tracking-widest font-medium opacity-60">
+                <p className="text-3xs text-muted-foreground text-center uppercase tracking-widest font-medium opacity-60">
                     El uso de su PIN equivale a una firma electrónica de responsabilidad
                 </p>
             </div>

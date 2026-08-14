@@ -16,9 +16,9 @@ export const accountFields = createEntityFields<Account>()({
     },
     accountType: {
         key: "account_type",
-        type: "status",
+        type: "chip-category",
+        domain: "account_type",
         label: "Tipo",
-        getLabel: (a) => a.account_type_display,
     },
     debitTotal: {
         key: "debit_total",

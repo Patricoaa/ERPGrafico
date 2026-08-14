@@ -296,7 +296,7 @@ function NoteTable({ notes, onOpenHub }: { notes: NoteHistoryEntry[]; onOpenHub:
             cell: ({ row }) => (
                 <div className="flex flex-col">
                     <span className="font-black text-sm text-primary">{row.original.display_id}</span>
-                    <span className="text-[9px] text-muted-foreground font-bold uppercase">{row.original.dte_type.replace('_', ' ')}</span>
+                    <span className="text-4xs text-muted-foreground font-bold uppercase">{row.original.dte_type.replace('_', ' ')}</span>
                 </div>
             ),
         },

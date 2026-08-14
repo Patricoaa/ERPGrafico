@@ -35,7 +35,7 @@ export function StockReportCategorySelector() {
                         variant="ghost"
                         size="sm"
                         className={cn(
-                            'h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 rounded-sm shrink-0',
+                            'h-7 px-2 text-3xs uppercase font-medium tracking-widest gap-1 rounded-sm shrink-0',
                             categoryParam
                                 ? 'bg-accent/50 text-foreground'
                                 : 'text-muted-foreground hover:text-foreground',
@@ -53,14 +53,14 @@ export function StockReportCategorySelector() {
                         value={categoryParam ?? ''}
                         onValueChange={handleChange}
                     >
-                        <DropdownMenuRadioItem value="" className="text-[10px] uppercase tracking-widest">
+                        <DropdownMenuRadioItem value="" className="text-3xs uppercase tracking-widest">
                             Todas
                         </DropdownMenuRadioItem>
                         {!isLoading && categories.map((cat) => (
                             <DropdownMenuRadioItem
                                 key={cat.id}
                                 value={String(cat.id)}
-                                className="text-[10px] uppercase tracking-widest"
+                                className="text-3xs uppercase tracking-widest"
                             >
                                 {cat.name}
                             </DropdownMenuRadioItem>
@@ -93,7 +93,7 @@ export function StockReportWarehouseSelector() {
                         variant="ghost"
                         size="sm"
                         className={cn(
-                            'h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 rounded-sm shrink-0',
+                            'h-7 px-2 text-3xs uppercase font-medium tracking-widest gap-1 rounded-sm shrink-0',
                             warehouseParam
                                 ? 'bg-accent/50 text-foreground'
                                 : 'text-muted-foreground hover:text-foreground',
@@ -111,14 +111,14 @@ export function StockReportWarehouseSelector() {
                         value={warehouseParam ?? ''}
                         onValueChange={handleChange}
                     >
-                        <DropdownMenuRadioItem value="" className="text-[10px] uppercase tracking-widest">
+                        <DropdownMenuRadioItem value="" className="text-3xs uppercase tracking-widest">
                             Todas
                         </DropdownMenuRadioItem>
                         {!isLoading && warehouses.map((wh) => (
                             <DropdownMenuRadioItem
                                 key={wh.id}
                                 value={String(wh.id)}
-                                className="text-[10px] uppercase tracking-widest"
+                                className="text-3xs uppercase tracking-widest"
                             >
                                 {wh.name}
                             </DropdownMenuRadioItem>

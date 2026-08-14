@@ -168,7 +168,7 @@ export function TreasuryAccountSelector({
                             <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                 <span className="text-primary shrink-0">{getIcon(selectedAccount.account_type)}</span>
                                 <span className="font-medium text-sm truncate">{selectedAccount.name}</span>
-                                <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
+                                <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">
                                     • {formatCurrency(selectedAccount.current_balance || 0)}
                                 </span>
                             </div>
