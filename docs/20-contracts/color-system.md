@@ -374,7 +374,7 @@ The following are authorized to use process colors (Layer 1), the chart palette,
 | `ColorBar.tsx` | CMYK printing process control strip | `var(--color-cyan)`, `var(--color-magenta)`, etc. |
 | Charts (recharts) | Categorical data-viz series | `var(--chart-1…6)` (§4.4) |
 | Categorical chips (`Chip.Category`) | Category identity — fixed inks (ADR-0064) | Layer 1 `BadgeIntent` (`cyan` / `magenta` / `yellow` / `black`) via `bg-{ink}/10 text-{ink} border-{ink}/20` (§4.5) |
-| Tab underline + module rail (navigation) | Positional process-ink accents — C→M→Y→K by position (hover/active), decorative (ADR-0076) | `text-{ink}` / `bg-{ink}` on `--color-cyan` / `--color-magenta` / `--color-yellow` / `--color-black` |
+| Tab underline + module rail + page navbar (TabBar toolbar) (navigation) | Positional process-ink accents — C→M→Y→K by position (hover/active), decorative (ADR-0076) | `text-{ink}` / `bg-{ink}` on `--color-cyan` / `--color-magenta` / `--color-yellow` / `--color-black` |
 | Company branding settings | User-configurable brand colors stored as **data** | `primary_color` / `secondary_color` hex defaults |
 | `components/ui/*` overlays | Shadcn base primitives (Dialog/Sheet/AlertDialog) | stock `bg-black/{N}` scrim — do not modify (rule 22) |
 
@@ -423,5 +423,5 @@ The 3-layer form system uses a fixed set of color tokens (defined in `component-
 - **Adding a new Layer 1 token requires an ADR.**
 - **Adding a new Layer 2 or Layer 3 token** must be documented in this file and approved by the frontend team lead.
 - **Adding a Layer 1 `BadgeIntent` for categorical chips** (cyan / magenta / yellow / black) requires an ADR (see ADR-0064); it must be listed in §4.5 and the `color-system.contract.test.ts` known-intent set.
-- **Positional Layer 1 navigation accents** (Tab underline + module rail, C→M→Y→K by position) are authorized by ADR-0076 and documented in §8.
+- **Positional Layer 1 navigation accents** (Tab underline, module rail + page navbar/TabBar toolbar, C→M→Y→K by position) are authorized by ADR-0076 and documented in §8.
 - **Violations** of the forbidden patterns (§8) block PR merge (Governance rule 12).

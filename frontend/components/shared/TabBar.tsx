@@ -13,10 +13,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
  * Layer-1 consumer by ADR-0076 — restricted to navigation decoration.
  */
 export const CMYK_ACCENT = [
-    { text: "text-cyan", hoverText: "hover:text-cyan", bar: "bg-cyan" },
-    { text: "text-magenta", hoverText: "hover:text-magenta", bar: "bg-magenta" },
-    { text: "text-yellow", hoverText: "hover:text-yellow", bar: "bg-yellow" },
-    { text: "text-black", hoverText: "hover:text-black", bar: "bg-black" },
+    { text: "text-cyan", activeText: "data-[state=active]:text-cyan", hoverText: "hover:text-cyan", bar: "bg-cyan" },
+    { text: "text-magenta", activeText: "data-[state=active]:text-magenta", hoverText: "hover:text-magenta", bar: "bg-magenta" },
+    { text: "text-yellow", activeText: "data-[state=active]:text-yellow", hoverText: "hover:text-yellow", bar: "bg-yellow" },
+    { text: "text-black", activeText: "data-[state=active]:text-black", hoverText: "hover:text-black", bar: "bg-black" },
 ] as const
 
 export interface TabItem {
@@ -70,9 +70,8 @@ export function TabBar({
     const triggerStyles = isToolbar
         ? cn(
             TAB_TOOLBAR_TRIGGER,
-            "data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm",
-            "data-[state=inactive]:text-muted-foreground hover:text-foreground hover:bg-accent/30",
-            "transition-all duration-150",
+            "group relative transition-all duration-200",
+            "data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-sm",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
             "disabled:opacity-40 disabled:pointer-events-none",
             "inline-flex items-center justify-center whitespace-nowrap"
@@ -108,7 +107,7 @@ export function TabBar({
                     isVertical
                         ? "h-auto w-auto flex-col items-start justify-start gap-3 col-start-1 overflow-visible max-h-full"
                         : isToolbar
-                            ? "h-7 p-0 gap-0 bg-transparent items-center"
+                            ? "h-auto p-0 gap-0 bg-transparent items-center"
                             : isUnderline
                                 ? "h-full w-auto flex-row items-end justify-start gap-0 px-0 pb-0"
                                 : "h-auto w-auto flex-row items-end justify-center gap-1 px-1 pb-0",
@@ -123,7 +122,7 @@ export function TabBar({
                 {visible.map((item, index) => {
                     const Icon = item.icon
                     const isActive = value === item.value
-                    const accent = isUnderline ? CMYK_ACCENT[index % CMYK_ACCENT.length] : null
+                    const accent = (isUnderline || isToolbar) ? CMYK_ACCENT[index % CMYK_ACCENT.length] : null
                     return (
                         <TabsTrigger
                             key={item.value}
@@ -132,8 +131,8 @@ export function TabBar({
                             className={cn(
                                 triggerStyles,
                                 accent && cn(
-                                    isActive ? accent.text : cn("text-foreground/60", accent.hoverText),
-                                    isActive ? "font-bold" : "font-medium hover:font-bold"
+                                    isActive ? accent.activeText : cn(isUnderline ? "text-foreground/60" : "text-muted-foreground", accent.hoverText),
+                                    isUnderline && (isActive ? "font-bold" : "font-medium hover:font-bold")
                                 )
                             )}
                         >
@@ -159,8 +158,8 @@ export function TabBar({
                                     <span className={cn(
                                         "shrink-0 flex px-1 items-center justify-center rounded border border-border bg-muted/50 text-muted-foreground font-bold tabular-nums leading-none h-4 min-w-[1rem] text-xs",
                                         isVertical && "rotate-90",
-                                        isToolbar && "border-transparent bg-accent/30",
                                         "group-data-[state=active]:bg-primary-foreground/20 group-data-[state=active]:text-primary-foreground group-data-[state=active]:border-primary-foreground/30",
+                                        isToolbar && "group-data-[state=active]:bg-muted/50 group-data-[state=active]:text-muted-foreground group-data-[state=active]:border-border",
                                         isVertical && "group-data-[state=inactive]:hidden group-hover:!flex"
                                     )}>
                                         {item.badge}
@@ -180,9 +179,11 @@ export function TabBar({
                                     </span>
                                 )}
                             </span>
-                            {isUnderline && accent && (
+                            {(isUnderline || isToolbar) && accent && (
                                 <div className={cn(
-                                    "absolute bottom-[-1px] w-full h-[5px] rounded-t-sm transition-opacity duration-200",
+                                    isUnderline
+                                        ? "absolute bottom-[-1px] w-full h-[5px] rounded-t-sm transition-opacity duration-200"
+                                        : "absolute bottom-0 left-0 w-full h-[4px] rounded-t-sm transition-opacity duration-200",
                                     accent.bar,
                                     isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                                 )} />
@@ -198,7 +199,7 @@ export function TabBar({
         if (isToolbar) {
             return (
                 <div className={cn(
-                    "flex items-center justify-center shrink-0 bg-background rounded-sm px-1 h-9",
+                    "flex items-center justify-center shrink-0 bg-transparent p-0",
                     containerClassName
                 )}>
                     {list}

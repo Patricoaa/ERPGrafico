@@ -30,4 +30,4 @@ export const TOOLBAR_MENU_ITEM =
   'relative flex cursor-pointer select-none items-center rounded-sm px-3 py-1.5 text-xs font-semibold outline-none transition-colors'
 
 export const TAB_TOOLBAR_TRIGGER =
-  'h-7 px-2.5 text-xs font-medium gap-1.5'
+  'h-8 px-3 text-xs font-medium gap-1.5'
