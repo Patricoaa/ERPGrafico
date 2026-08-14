@@ -480,16 +480,19 @@ class ContactSelector:
         from datetime import timedelta
         from decimal import Decimal
         from django.utils import timezone
-        from sales.serializers import SaleOrderSerializer
 
         today = timezone.now().date()
         payment_term = contact.credit_days or 30
 
-        orders = contact.sale_orders.exclude(status__in=["DRAFT", "CANCELLED"]).order_by("-date")
+        orders = (
+            contact.sale_orders.exclude(status__in=["DRAFT", "CANCELLED"])
+            .order_by("-date")
+            .prefetch_related("payments", "invoices")
+        )
 
         ledger_data = []
         for order in orders:
-            payments = order.payments.filter(is_pending_registration=False)
+            payments = [p for p in order.payments.all() if not p.is_pending_registration]
             paid_in = sum(
                 (p.amount for p in payments if p.movement_type in ["INBOUND", "ADJUSTMENT"]),
                 Decimal("0"),
@@ -500,7 +503,7 @@ class ContactSelector:
             payments_net = paid_in - paid_out
             balance = order.effective_total - payments_net
 
-            is_written_off = payments.filter(payment_method="WRITE_OFF").exists()
+            is_written_off = any(p.payment_method == "WRITE_OFF" for p in payments)
 
             if balance > 0 or (is_written_off and include_all):
                 order_date = order.date
@@ -524,12 +527,22 @@ class ContactSelector:
 
                 ledger_data.append(
                     {
-                        **SaleOrderSerializer(order).data,
+                        "id": order.id,
+                        "number": order.number,
+                        "date": order.date,
+                        "effective_total": str(order.effective_total),
+                        "paid_amount": str(payments_net),
+                        "balance": str(balance),
                         "due_date": due_date,
                         "days_overdue": max(0, days_overdue),
                         "aging_bucket": aging_bucket,
-                        "balance": str(balance),
-                        "paid_amount": str(payments_net),
+                        "status": order.status,
+                        "credit_assignment_origin": order.credit_assignment_origin,
+                        "credit_assignment_origin_display": (
+                            order.get_credit_assignment_origin_display()
+                            if order.credit_assignment_origin
+                            else None
+                        ),
                     }
                 )
         return ledger_data
@@ -561,13 +574,59 @@ class ContactSelector:
         )
 
     @staticmethod
+    def list_partner_payloads():
+        partners = list(Contact.objects.filter(is_partner=True).order_by("name"))
+        metrics = _partner_metrics_map([p.id for p in partners])
+        payload = []
+        for partner in partners:
+            m = metrics.get(partner.id, {})
+            payload.append(
+                {
+                    "id": partner.id,
+                    "name": partner.name,
+                    "tax_id": partner.tax_id,
+                    "partner_equity_percentage": (
+                        str(partner.partner_equity_percentage)
+                        if partner.partner_equity_percentage is not None
+                        else None
+                    ),
+                    "partner_since": partner.partner_since.isoformat() if partner.partner_since else None,
+                    "partner_total_contributions": str(
+                        m.get("partner_total_contributions", Decimal("0"))
+                    ),
+                    "partner_total_paid_in": str(m.get("partner_total_paid_in", Decimal("0"))),
+                    "partner_pending_capital": str(m.get("partner_pending_capital", Decimal("0"))),
+                    "partner_excess_capital": str(m.get("partner_excess_capital", Decimal("0"))),
+                    "partner_provisional_withdrawals_balance": str(
+                        m.get("partner_provisional_withdrawals_balance", Decimal("0"))
+                    ),
+                    "partner_total_withdrawals": str(
+                        m.get("partner_total_withdrawals", Decimal("0"))
+                    ),
+                    "partner_earnings_balance": str(
+                        m.get("partner_earnings_balance", Decimal("0"))
+                    ),
+                    "partner_dividends_payable_balance": str(
+                        m.get("partner_dividends_payable_balance", Decimal("0"))
+                    ),
+                    "partner_net_equity": str(m.get("partner_net_equity", Decimal("0"))),
+                }
+            )
+        return payload
+
+    @staticmethod
     def get_credit_history(contact):
         from sales.models import SaleOrder
         from sales.serializers import SaleOrderSerializer
 
-        history = SaleOrder.objects.filter(
-            customer=contact, credit_assignment_origin__isnull=False
-        ).order_by("-date", "-created_at")
+        history = (
+            SaleOrder.objects.filter(
+                customer=contact, credit_assignment_origin__isnull=False
+            )
+            .order_by("-date", "-created_at")
+            .select_related("pos_session", "credit_approval_task")
+            .prefetch_related("payments", "invoices", "lines", "deliveries", "work_orders")
+        )
         return SaleOrderSerializer(history, many=True).data
 
     @staticmethod
@@ -586,6 +645,123 @@ class ContactSelector:
         if partner_id:
             qs = qs.filter(partner_id=partner_id)
         return PartnerEquityStakeSerializer(qs, many=True).data
+
+
+def _partner_metrics_map(partner_ids) -> dict:
+    """
+    Calcula todas las métricas de socio (equity, aportes, retiros, utilidades)
+    para los contactos `partner_ids` en UNA consulta agrupada por transaction_type,
+    replicando las fórmulas de `Contact.partner_*` sin sus ~4-5 agregados por propiedad.
+    """
+    from django.db.models import Q
+
+    from .partner_models import PartnerTransaction
+
+    if not partner_ids:
+        return {}
+
+    T = PartnerTransaction.Type
+
+    def _sum(filters):
+        return Sum("amount", filter=Q(**filters))
+
+    rows = (
+        PartnerTransaction.objects.filter(partner_id__in=list(partner_ids))
+        .values("partner_id")
+        .annotate(
+            subs=_sum({"transaction_type": T.EQUITY_SUBSCRIPTION}),
+            reds=_sum({"transaction_type": T.EQUITY_REDUCTION}),
+            trans_out=_sum({"transaction_type": T.EQUITY_TRANSFER_OUT}),
+            trans_in=_sum({"transaction_type": T.EQUITY_TRANSFER_IN}),
+            reinvest=_sum({"transaction_type": T.REINVESTMENT}),
+            paid_in_total=_sum(
+                {
+                    "transaction_type__in": [
+                        T.CAPITAL_CONTRIBUTION_CASH,
+                        T.CAPITAL_CONTRIBUTION_INVENTORY,
+                        T.REINVESTMENT,
+                        T.CAPITAL_CONTRIBUTION_TRANSFER_IN,
+                    ]
+                }
+            ),
+            paid_out_total=_sum({"transaction_type": T.CAPITAL_CONTRIBUTION_TRANSFER_OUT}),
+            provisional=_sum(
+                {
+                    "transaction_type": T.PROVISIONAL_WITHDRAWAL,
+                    "distribution_resolution__isnull": True,
+                }
+            ),
+            dividends=_sum({"transaction_type": T.DIVIDEND}),
+            dividends_paid=_sum({"transaction_type": T.DIVIDEND_PAYMENT}),
+            retained=_sum({"transaction_type": T.RETAINED}),
+            losses=_sum(
+                {
+                    "transaction_type__in": [
+                        T.LOSS_ABSORPTION,
+                        T.RETAINED_MOBILIZATION,
+                    ]
+                }
+            ),
+            balance_in=_sum(
+                {
+                    "transaction_type__in": [
+                        T.CAPITAL_CONTRIBUTION_CASH,
+                        T.CAPITAL_CONTRIBUTION_INVENTORY,
+                        T.LOAN_TO_COMPANY,
+                    ]
+                }
+            ),
+            balance_out=_sum(
+                {
+                    "transaction_type__in": [
+                        T.PROVISIONAL_WITHDRAWAL,
+                        T.WITHDRAWAL,
+                        T.LOAN_FROM_COMPANY,
+                        T.CAPITAL_RETURN,
+                        T.DIVIDEND_PAYMENT,
+                    ]
+                }
+            ),
+            formal_withdrawals=_sum(
+                {
+                    "transaction_type__in": [
+                        T.WITHDRAWAL,
+                        T.CAPITAL_RETURN,
+                        T.DIVIDEND_PAYMENT,
+                    ]
+                }
+            ),
+        )
+    )
+
+    def _d(value):
+        return Decimal(value) if value is not None else Decimal("0")
+
+    result = {}
+    for row in rows:
+        contrib = (
+            _d(row["subs"])
+            - _d(row["reds"])
+            - _d(row["trans_out"])
+            + _d(row["trans_in"])
+            + _d(row["reinvest"])
+        )
+        paid_in = _d(row["paid_in_total"]) - _d(row["paid_out_total"])
+        provisional = _d(row["provisional"])
+        earnings = _d(row["retained"]) - _d(row["losses"])
+        result[row["partner_id"]] = {
+            "partner_balance": _d(row["balance_in"]) - _d(row["balance_out"]),
+            "partner_total_contributions": contrib,
+            "partner_total_paid_in": paid_in,
+            "partner_pending_capital": max(Decimal("0"), contrib - paid_in),
+            "partner_excess_capital": max(Decimal("0"), paid_in - contrib),
+            "partner_provisional_withdrawals_balance": provisional,
+            "partner_total_withdrawals": _d(row["formal_withdrawals"]),
+            "partner_earnings_balance": earnings,
+            "partner_dividends_payable_balance": _d(row["dividends"]) - _d(row["dividends_paid"]),
+            "partner_net_equity": paid_in - provisional + earnings,
+        }
+    return result
 
 
 def _order_balance(order) -> Decimal:
@@ -752,23 +928,28 @@ class ContactSelectorExt:
         from .partner_models import PartnerTransaction
         from .serializers import PartnerTransactionSerializer
         from .partner_service import PartnerService
-        transactions = PartnerTransaction.objects.filter(partner=contact).order_by('-date', '-created_at')
+        transactions = (
+            PartnerTransaction.objects.filter(partner=contact)
+            .select_related("partner", "journal_entry", "created_by")
+            .order_by("-date", "-created_at")
+        )
         try:
             account = PartnerService._resolve_partner_receivable_account(contact)
             account_detail = {'id': account.id, 'name': account.name, 'code': account.code} if account else None
         except Exception:
             account_detail = None
+        metrics = _partner_metrics_map([contact.id]).get(contact.id, {})
         return {
             'contact': serializer_class(contact).data,
             'summary': {
                 'equity_percentage': str(contact.partner_equity_percentage or 0),
-                'balance': str(contact.partner_balance),
-                'total_contributions': str(contact.partner_total_contributions),
-                'total_paid_in': str(contact.partner_total_paid_in),
-                'pending_capital': str(contact.partner_pending_capital),
-                'provisional_withdrawals': str(contact.partner_provisional_withdrawals_balance),
-                'total_formal_withdrawals': str(contact.partner_total_withdrawals),
-                'earnings_balance': str(contact.partner_earnings_balance),
+                'balance': str(metrics.get("partner_balance", Decimal("0"))),
+                'total_contributions': str(metrics.get("partner_total_contributions", Decimal("0"))),
+                'total_paid_in': str(metrics.get("partner_total_paid_in", Decimal("0"))),
+                'pending_capital': str(metrics.get("partner_pending_capital", Decimal("0"))),
+                'provisional_withdrawals': str(metrics.get("partner_provisional_withdrawals_balance", Decimal("0"))),
+                'total_formal_withdrawals': str(metrics.get("partner_total_withdrawals", Decimal("0"))),
+                'earnings_balance': str(metrics.get("partner_earnings_balance", Decimal("0"))),
             },
             'partner_account_detail': account_detail,
             'transactions': PartnerTransactionSerializer(transactions, many=True).data

@@ -147,9 +147,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=False, methods=["get"])
     def partners(self, request):
-        contacts = ContactSelector.list_partners()
-        serializer = self.get_serializer(contacts, many=True)
-        return Response(serializer.data)
+        return Response(ContactSelector.list_partner_payloads())
 
     @action(detail=True, methods=['get'])
     def partner_statement(self, request, pk=None):

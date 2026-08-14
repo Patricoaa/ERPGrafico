@@ -1115,20 +1115,18 @@ class PartnerService:
     @staticmethod
     def get_global_summary() -> dict:
         """Calculates global metrics for the partner dashboard using aggregated contact properties."""
-        partners = Contact.objects.filter(is_partner=True)
+        from .selectors import _partner_metrics_map
 
-        # Subscribed Capital Sum
-        total_subscribed = sum([p.partner_total_contributions for p in partners])
-        # Paid-in Capital Sum
-        total_paid_in = sum([p.partner_total_paid_in for p in partners])
-        # Pending Capital (Receivable from partners)
-        total_pending = sum([p.partner_pending_capital for p in partners])
-        # Provisional Withdrawals (Advances)
-        total_prov_withdrawals = sum([p.partner_provisional_withdrawals_balance for p in partners])
-        # Accumulated Earnings (Retained)
-        total_earnings = sum([p.partner_earnings_balance for p in partners])
-        # Net Equity Book Value
-        total_net_equity = sum([p.partner_net_equity for p in partners])
+        partners = Contact.objects.filter(is_partner=True)
+        metrics = _partner_metrics_map([p.id for p in partners])
+        totals = metrics.values()
+
+        total_subscribed = sum((m.get("partner_total_contributions", Decimal("0")) for m in totals), Decimal("0"))
+        total_paid_in = sum((m.get("partner_total_paid_in", Decimal("0")) for m in totals), Decimal("0"))
+        total_pending = sum((m.get("partner_pending_capital", Decimal("0")) for m in totals), Decimal("0"))
+        total_prov_withdrawals = sum((m.get("partner_provisional_withdrawals_balance", Decimal("0")) for m in totals), Decimal("0"))
+        total_earnings = sum((m.get("partner_earnings_balance", Decimal("0")) for m in totals), Decimal("0"))
+        total_net_equity = sum((m.get("partner_net_equity", Decimal("0")) for m in totals), Decimal("0"))
 
         return {
             "total_capital": total_subscribed,
