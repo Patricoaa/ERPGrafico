@@ -1,10 +1,15 @@
-from django.db.models import Count, Q, QuerySet, Sum
+from decimal import Decimal
+
+from django.db.models import Count, F, Q, QuerySet, Sum, Window
 
 from .models import Account, AccountType, JournalEntry
 
 
 def balance_affecting_statuses():
     return JournalEntry.balance_affecting_statuses()
+
+
+DEFAULT_LEDGER_LIMIT = 200
 
 
 def list_accounts(*, params: dict) -> QuerySet:
@@ -60,24 +65,32 @@ def list_budgetable_accounts(*, account_types: str | None) -> QuerySet:
     return queryset.filter(children__isnull=True).order_by("code")
 
 
-def get_account_ledger(*, account: Account, start_date: str | None, end_date: str | None) -> dict:
+def get_account_ledger(
+    *, account: Account, start_date: str | None, end_date: str | None, limit: int | None = None
+) -> dict:
     """
     Computes the libro mayor for an account.
     Returns opening_balance, period_debit, period_credit, closing_balance, movements list.
     """
+    page_size = DEFAULT_LEDGER_LIMIT
+    if limit is not None:
+        try:
+            page_size = min(max(int(limit), 1), DEFAULT_LEDGER_LIMIT)
+        except (TypeError, ValueError):
+            page_size = DEFAULT_LEDGER_LIMIT
+
     base_items = account.journal_items.filter(
         entry__status__in=balance_affecting_statuses()
-    ).select_related("entry")
+    ).select_related("entry", "partner")
 
-    opening_balance = 0
+    opening_balance = Decimal("0")
     if start_date:
-        opening_items = base_items.filter(entry__date__lt=start_date)
-        totals = opening_items.aggregate(
+        totals = base_items.filter(entry__date__lt=start_date).aggregate(
             total_debit=Sum("debit"),
             total_credit=Sum("credit"),
         )
-        debit = totals.get("total_debit") or 0
-        credit = totals.get("total_credit") or 0
+        debit = totals.get("total_debit") or Decimal("0")
+        credit = totals.get("total_credit") or Decimal("0")
         if account.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
             opening_balance = debit - credit
         else:
@@ -89,21 +102,33 @@ def get_account_ledger(*, account: Account, start_date: str | None, end_date: st
     if end_date:
         items = items.filter(entry__date__lte=end_date)
 
-    balance = float(opening_balance)
-    period_debit = 0
-    period_credit = 0
+    totals = items.aggregate(total_debit=Sum("debit"), total_credit=Sum("credit"))
+    period_debit = totals.get("total_debit") or Decimal("0")
+    period_credit = totals.get("total_credit") or Decimal("0")
+
+    if account.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
+        closing_balance = opening_balance + period_debit - period_credit
+    else:
+        closing_balance = opening_balance + period_credit - period_debit
+
+    full_count = items.count()
+
+    windowed = items.annotate(
+        _cum_debit=Window(
+            Sum("debit"), order_by=[F("entry__date"), F("entry__id"), F("id")]
+        ),
+        _cum_credit=Window(
+            Sum("credit"), order_by=[F("entry__date"), F("entry__id"), F("id")]
+        ),
+    )
+    page_items = windowed[:page_size]
+
     movements = []
-
-    for item in items:
-        d = float(item.debit)
-        c = float(item.credit)
-        period_debit += d
-        period_credit += c
-
+    for item in page_items:
         if account.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
-            balance += d - c
+            balance = opening_balance + item._cum_debit - item._cum_credit
         else:
-            balance += c - d
+            balance = opening_balance + item._cum_credit - item._cum_debit
 
         movements.append(
             {
@@ -113,8 +138,8 @@ def get_account_ledger(*, account: Account, start_date: str | None, end_date: st
                 "created_at": item.entry.created_at,
                 "reference": item.entry.reference,
                 "description": item.entry.description,
-                "debit": d,
-                "credit": c,
+                "debit": float(item.debit),
+                "credit": float(item.credit),
                 "balance": float(balance),
                 "partner": item.partner.name if item.partner else "",
                 "label": item.label or "",
@@ -126,6 +151,7 @@ def get_account_ledger(*, account: Account, start_date: str | None, end_date: st
         "opening_balance": float(opening_balance),
         "period_debit": float(period_debit),
         "period_credit": float(period_credit),
-        "closing_balance": float(balance),
+        "closing_balance": float(closing_balance),
         "movements": movements,
+        "truncated": full_count > page_size,
     }
