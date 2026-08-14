@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.2](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.1...v0.3.2) (2026-08-14)
+
+
+### 🚀 Maintenance
+
+* add gstack skill routing rules to CLAUDE.md ([8d1e665](https://github.com/Patricoaa/ERPGrafico/commit/8d1e66574618bd5177401c6b0b4a915a85c6cf3e))
+
+
+### 📚 Documentation
+
+* **quality:** add Big O complexity map (issue [#161](https://github.com/Patricoaa/ERPGrafico/issues/161) audit) ([03f36ed](https://github.com/Patricoaa/ERPGrafico/commit/03f36ed7c2fc99ded6a892a99e97108475830575))
+* **quality:** fix dead design reference and P0-P3 count in complexity map ([560d735](https://github.com/Patricoaa/ERPGrafico/commit/560d7356dbdcd5fd6c674380229f0e1c83671c24))
+
 ### [0.3.1](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.0...v0.3.1) (2026-08-14)
 
 
