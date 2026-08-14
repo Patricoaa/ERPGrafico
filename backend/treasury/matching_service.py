@@ -302,7 +302,10 @@ class MatchingService:
 
     @staticmethod
     def _calculate_match_score(
-        line: BankStatementLine, payment: TreasuryMovement, settings=None
+        line: BankStatementLine,
+        payment: TreasuryMovement,
+        settings=None,
+        include_payment_data: bool = True,
     ) -> Dict[str, Any]:
         """
         Calcula score de matching entre línea y pago usando pesos configurables.
@@ -404,10 +407,12 @@ class MatchingService:
             + (contact_score * settings.contact_weight)
         ) / total_weight
 
-        # Serializar payment data
-        from .serializers import TreasuryMovementSerializer
+        if include_payment_data:
+            from .serializers import TreasuryMovementSerializer
 
-        payment_data = TreasuryMovementSerializer(payment).data
+            payment_data = TreasuryMovementSerializer(payment).data
+        else:
+            payment_data = None
 
         return {
             "payment_data": payment_data,

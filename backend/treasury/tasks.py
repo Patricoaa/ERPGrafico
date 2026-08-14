@@ -23,6 +23,8 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+AUTO_MATCH_MAX_CANDIDATES = 3000
+
 
 # ── F2.10: Alertas de vencimiento de cuotas ──────────────────────────────
 
@@ -388,7 +390,7 @@ def auto_match_statement_task(self, statement_id: int, confidence_threshold: flo
             & (Q(to_account=account) | Q(from_account=account))
         ).select_related("contact", "from_account", "to_account")
 
-        all_candidates = list(candidates_qs)
+        all_candidates = list(candidates_qs[:AUTO_MATCH_MAX_CANDIDATES])
 
         already_matched_payment_ids: set = set()
         matched_count = 0
@@ -514,7 +516,9 @@ def auto_match_statement_task(self, statement_id: int, confidence_threshold: flo
                 best_score: float = 0.0
 
                 for p in line_candidates:
-                    score_data = MatchingService._calculate_match_score(line, p, settings=settings)
+                    score_data = MatchingService._calculate_match_score(
+                        line, p, settings=settings, include_payment_data=False
+                    )
                     if score_data["score"] > best_score:
                         best_score = score_data["score"]
                         best_suggestion = {"payment": p, "score": score_data["score"]}
