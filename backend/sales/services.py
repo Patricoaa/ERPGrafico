@@ -1403,13 +1403,14 @@ class SaleOrderService(DocumentService):
             # Express products (mfg_auto_finalize=True) will have OTs created at dispatch time
             from production.services import WorkOrderService
 
-            for i, line in enumerate(order.lines.all()):
+            lines = order.lines.select_related("product").prefetch_related("work_orders")
+            for i, line in enumerate(lines):
                 if line.product and line.product.strategy.requires_manufacturing_profile:
                     # IMPORTANT: Only create OT if requires advanced manufacturing
                     # Express products: OT will be created during delivery confirmation
                     if line.product.requires_advanced_manufacturing:
                         # Check if an OT already exists for this line to avoid duplicates
-                        if not line.work_orders.exists():
+                        if not any(line.work_orders.all()):
                             print(
                                 f"DEBUG: Triggering auto-OT for ADVANCED product {line.product.internal_code} on SaleOrder {order.number}"
                             )
