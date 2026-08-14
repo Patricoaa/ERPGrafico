@@ -684,16 +684,23 @@ class SalesService:
             
             # Map lines to generated moves for PATH A
             tracked_lines = [l for l in delivery.lines.all() if l.product.track_inventory]
-            # Since generated_moves has details in the same order as details_to_create, we can find the matching moves.
-            # But the generated_moves include PATH B components too. We just match the first len(tracked_lines) moves
-            # Wait, `details_to_create` appends PATH A details first, then PATH B details. But PATH A details are added per line.
-            # Actually, let's just match them by finding the corresponding move.
+            moves_by_key = {}
+            for move in generated_moves:
+                key = (move.product_id, move.quantity)
+                if key not in moves_by_key:
+                    moves_by_key[key] = move
+
             for l in tracked_lines:
-                for move in generated_moves:
-                    if move.product_id == l.product_id and move.quantity == -UoMService.convert_quantity(l.quantity, from_uom=l.uom or l.sale_line.uom, to_uom=l.product.uom):
-                        l.stock_move = move
-                        l.save()
-                        break
+                key = (
+                    l.product_id,
+                    -UoMService.convert_quantity(
+                        l.quantity, from_uom=l.uom or l.sale_line.uom, to_uom=l.product.uom
+                    ),
+                )
+                move = moves_by_key.get(key)
+                if move is not None:
+                    l.stock_move = move
+                    l.save()
                         
             created_moves.extend(generated_moves)
         else:
