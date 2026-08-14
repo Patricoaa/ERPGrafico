@@ -3,7 +3,7 @@ layer: 40-quality
 doc: complexity-map
 status: active
 owner: platform-team
-last_review: 2026-08-13
+last_review: 2026-08-14
 ---
 
 # Mapa de complejidad (Big O)
@@ -48,7 +48,7 @@ Fuente: `wc -l` + conteo de entry points (def/class) por archivo, `grep @action`
 
 ## §1. Metodología y glosario
 
-Convenciones arriba; el diseño de la auditoría se aprobó previamente y no se conserva en el repo (esta sección es la referencia durable). Trabajo resuelto: el aging de `contacts/selectors.py:146-205` es **Θ(C+O) round-trips / Θ(C+O+P) row-scan** (N+1 en dos niveles, **lineal en la suma**, no Θ(C×O×P)); `results[:limit]` es un slice posterior al trabajo (no límite duro). Para walks de árbol donde cada nodo consulta su subárbol: Σ(tamaños de subárbol) = O(n×depth), peor O(n²) en cadena (`finances`).
+Convenciones arriba; el diseño de la auditoría se aprobó previamente y no se conserva en el repo (esta sección es la referencia durable). Trabajo resuelto: el aging de `contacts/selectors.py:146-205` es **Θ(C+O) round-trips / Θ(C+O+P) row-scan** (N+1 en dos niveles, **lineal en la suma**, no Θ(C×O×P)); `results[:limit]` es un slice posterior al trabajo (no límite duro). Para walks de árbol donde cada nodo consulta su subárbol: Σ(tamaños de subárbol) = O(n×depth), peor O(n²) en cadena (`finances`) — resuelto en P1-6 con pase único en memoria (chart 1 query + balances preagregados + agregador memoizado).
 
 ## §2. Mapa por entry point
 
@@ -58,32 +58,34 @@ Formato de fila: `clave (archivo:línea) | n | bounded-ness | round-trips | row-
 
 | Entry point | n | bounded-ness | round-trips | row-scan | clase | remediación |
 |---|---|---|---|---|---|---|
-| `contacts/selectors.py:117` `customer_aging_report` | C+O+P (toda la cartera) | unbounded | Θ(C+O) | Θ(C+O+P) | Θ(n) | bucketizar saldo en SQL (Subquery Sum) y `LIMIT 20` en la query |
-| `contacts/selectors.py:208` `supplier_aging_report` | C+O+P | unbounded | Θ(C+O) | Θ(C+O+P) | Θ(n) | idem customer_aging |
-| `contacts/selectors.py:318` `get_credit_portfolio_data` | C+ΣO+ΣP | unbounded (cache 120s solo aplaza) | Θ(C+ΣO+ΣP) ×2-3 | Θ(C+O+P) | Θ(n) | annotations (Subquery Sum) + prefetch + devolver páginas |
-| `contacts/selectors.py:423` `get_credit_ledger` | O (órdenes del contacto, sin tope) | unbounded | Θ(O) | Θ(O+P) | Θ(n) | annotate paid/pending + Prefetch('payments') + paginar |
-| `contacts/selectors.py:512` `get_credit_history` | H×L×B | unbounded | Θ(H×k) | Θ(H×L×B) | Θ(n) | paginar + queryset base con prefetches + serializer ligero |
-| `contacts/selectors.py:573` `get_partner_statement` | T | unbounded | Θ(T×2)+~10 | Θ(T) | Θ(n) | select_related('journal_entry','created_by') + annotate summary |
-| `contacts/views.py:71,77,149,155,164` `customers/suppliers/partners/partner_statement/partners_summary` | C/S/P | unbounded | Θ(n × 2-20 aggregates) | Θ(n) | Θ(n) | paginar + serializers ligeros con annotations |
-| `finances/services.py:72` `_get_aggregated_balance` | nodos×depth | unbounded | Θ(nodos) | O(n×depth) peor O(n²) | Θ(n×depth) | CTE `WITH RECURSIVE` o pase único en memoria |
-| `finances/services.py:103` `build_account_tree` | nodos×depth, k roots | unbounded | Θ(n×depth) | O(n×depth) | Θ(n×depth) | 1 query de accounts con parent + memoizar balance por nodo + GROUP BY account_id |
-| `finances/services.py:211,299,415,675,791` `get_balance_sheet/income_statement/cash_flow/financial_analysis/trial_balance` | árbol×I+E/J | unbounded | 3-6×build_account_tree + Θ(A) | Θ(J) | Θ(n×depth) | precomputar balances por cuenta una vez; trial balance con 1 GROUP BY condicional |
+| `contacts/selectors.py:117` `customer_aging_report` | C+O+P (toda la cartera) | unbounded | Θ(C+O) | Θ(C+O+P) | Θ(n) | ✅ P1-5: prefetch de órdenes+items+payments + bucketización por bucket en Python; `LIMIT 20` tras bucketizar (SaleOrder.effective_total es property Python → slice posterior al trabajo, no límite duro) |
+| `contacts/selectors.py:208` `supplier_aging_report` | C+O+P | unbounded | Θ(C+O) | Θ(C+O+P) | Θ(n) | ✅ P1-5: idem customer_aging (prefetch + buckets compartidos) |
+| `contacts/selectors.py:318` `get_credit_portfolio_data` | C+ΣO+ΣP | unbounded (cache 120s solo aplaza) | Θ(C+ΣO+ΣP) ×2-3 | Θ(C+O+P) | Θ(n) | ✅ P1-5: annotations Subquery Sum + prefetch + paginación estándar; `credit_balance_used` cuantizado salvo blacklist (compat) |
+| `contacts/selectors.py:475` `get_credit_ledger` | O (órdenes del contacto, sin tope) | unbounded | Θ(O) | Θ(O+P) | Θ(n) | ✅ P1-8: prefetch('payments','invoices') + payload ligero (sin SaleOrderSerializer) → O(1) round-trips |
+| `contacts/selectors.py:618` `get_credit_history` | H×L×B | unbounded | Θ(H×k) | Θ(H×L×B) | Θ(n) | ✅ P1-8: select_related(pos_session, credit_approval_task) + prefetch(payments, invoices, lines, deliveries, work_orders) — el serializer consume relations prefetched |
+| `contacts/selectors.py:925` `get_partner_statement` | T | unbounded | Θ(T×2)+~10 | Θ(T) | Θ(n) | ✅ P1-8: summary vía `_partner_metrics_map` (1 query agrupada) + select_related(partner, journal_entry, created_by); contacto aún vía ContactSerializer (bounded: 1 contacto) |
+| `contacts/selectors.py:577` + `views.py:149` `list_partner_payloads`/`partners` | P socios | unbounded | Θ(P×~25) | Θ(P) | Θ(n) | ✅ P1-8: `_partner_metrics_map` = 1 query agrupada por transaction_type (todas las métricas partner_*) → O(1) round-trips |
+| `contacts/partner_service.py:1116` `get_global_summary` (+ `views.py:164` partners_summary) | P socios | unbounded | Θ(P×~25) | Θ(P) | Θ(n) | ✅ P1-8: métricas desde `_partner_metrics_map` (1 query) |
+| `contacts/views.py:71,77` `customers/suppliers` | C/S | unbounded | Θ(n×2-20 aggregates) | Θ(n) | Θ(n) | ⚠️ pendiente — endpoints sin consumidor frontend; no tocar shape, esperar deprecación |
+| `finances/services.py:72` `_get_aggregated_balance` | nodos×depth | unbounded | Θ(nodos) | O(n×depth) peor O(n²) | Θ(n×depth) | ✅ P1-6: pase único en memoria (`_leaf_balance_map` + `_make_aggregator` memoizado, 0 queries) |
+| `finances/services.py:103` `build_account_tree` | nodos×depth, k roots | unbounded | Θ(n×depth) | O(n×depth) | Θ(n×depth) | ✅ P1-6: chart en 1 query + balances preagregados + agregador memoizado; categorías resueltas en memoria (vivo con herencia, fiscal sin herencia) |
+| `finances/services.py:211,299,415,675,791` `get_balance_sheet/income_statement/cash_flow/financial_analysis/trial_balance` | árbol×I+E/J | unbounded | 3-6×build_account_tree + Θ(A) | Θ(J) | Θ(n×depth) | ✅ P1-6: reportes comparten chart/balances preagregados (7/9/20/3/18 queries vs 475/416/595/27/893); trial balance con 2 GROUP BY agrupados |
 | `finances/bi_analytics.py:13` `get_bi_analytics` | P productos | unbounded | Θ(P) | Θ(StockMove por producto) | Θ(P) | 1 GROUP BY product_id en StockMove |
 | `finances/tasks.py:24` `generate_report_task` | árbol/A/P | unbounded (sin cap, sin chunking) | Θ(n×depth) | Θ(J) | Θ(n×depth) | chunking por período o preagregación |
-| `tax/selectors.py:18` + `tax/views.py:142` `get_declaration_documents`/`documents` | I_month (4-8k invoices) | unbounded | 1 + Θ(I) (InvoiceSerializer con ~10 SMF con ORM) | Θ(I) + N+1 profundo | Θ(n) const. altísima | serializador ligero plano + prefetch completo, o export paginado — **peor entry point del repo** |
+| `tax/selectors.py:18` + `tax/views.py:142` `get_declaration_documents`/`documents` | I_month (4-8k invoices) | unbounded | 1 + Θ(I) (InvoiceSerializer con ~10 SMF con ORM) | Θ(I) + N+1 profundo | Θ(n) const. altísima | ✅ P1-4: paginación estándar + queryset con `select_related`/`prefetch` (fix `closed_by` pre-existente); el export de toda la serie queda paginado |
 | `tax/services.py:23` `calculate_f29_for_period` | I_month + J | unbounded | ~6-7 | Θ(I) + 2 scans full-history | Θ(n) | SQL aggregates (values().annotate) + 1 query carryforward SUM(CASE) |
-| `accounting/selectors.py:63` + `accounting/views.py:118` `get_account_ledger`/`ledger` | items del account | unbounded | 2+P (partner N+1) | Θ(histórico) | Θ(n) | paginar + select_related('partner') + saldo en window-function |
-| `accounting/services.py:1599` `get_variance_report` | J_año + A cuentas | unbounded | 6 + Θ(A) | Θ(J) + scans por cuenta | Θ(J+A) | accounts prefetch en memoria (0 queries por nodo) + mantener agregados SQL |
-| `accounting/services.py:1794` `get_execution_report` | B (~50-100) | unbounded | 1+2B | Θ(J por cuenta) | Θ(n) | 1 .values('account').annotate() agrupado |
-| `accounting/fiscal_year_service.py:38,96,370,523` `preview_closing/close_fiscal_year/generate_opening_entry/_get_pl_account_balances` | A_pl×J | unbounded | 2×A_pl … ~150-250 | Θ(J) | Θ(n) const. alta | agregados agrupados únicos + balance en 1 query |
-| `hr/services.py:355` `generate_proforma_payroll` | C conceptos | unbounded (sync en POST) | Θ(C) por payroll | ≤1 fila/concepto | Θ(C) | 1 filter(employee__in, concept__in) + dict lookup + bulk_create |
-| `hr/views.py:177` `PayrollViewSet.perform_create` | C | unbounded (request síncrono) | Θ(C) | Θ(C) | Θ(C) | delegar proforma a Celery o lazy en retrieve |
-| `treasury/selectors.py:411` + `views.py:1035` `get_cash_flows`/`Dashboard.list` | movimientos filtrados | unbounded | 1 | Θ(n) completo + sort Python | Θ(n log n) | ORDER BY + LIMIT 50 en el queryset (hoy slice post-materialización) |
-| `treasury/selectors.py:25` `BankSelector.get_overview` | cuentas del banco | unbounded | 1 + n(N+1 credit_line) + ~35 | n + ~80 | Θ(n) | prefetch credit_line + SUM/COUNT en DB |
-| `treasury/views.py:670` `BankStatementLineViewSet` | 50 líneas × grupos | page+dataset | 1 + 50×(5 + N+1 movimientos) | ~300+ queries/página | Θ(50×g) | prefetch group_data + select_related movements en el queryset |
-| `treasury/selectors.py:949` `ReconciliationMatchSelector.get_group_data` | movimientos del grupo | bounded-por-dataset | 5 + N+1 serializer | Θ(n) | Θ(n) | select_related/prefetch movements y batches |
-| `inventory/selectors.py:202` `get_stock_report_data` | P (catálogo trackable) | unbounded | 6P+1 | Θ(P×histórico) | Θ(P) | resolver en 1 SQL con subqueries + annotate qty_reserved |
-| `inventory/services.py:1697` `check_availability` | L líneas | unbounded (payload) | L×(5+3C) | Θ(L×componentes) | Θ(L) | bulk_annotate_reserved_qty + prefetch BOMs + 1 query |
+| `accounting/selectors.py:63` + `accounting/views.py:118` `get_account_ledger`/`ledger` | items del account | unbounded | 2+P (partner N+1) | Θ(histórico) | Θ(n) | ✅ P1-7: cap duro SQL (`limit` ≤ 200, default 200) + running balance por window function sobre el rango completo (exacto bajo cap); `select_related('entry','partner')`; saldos/totales por agregados exactos; flag `truncated` |
+| `accounting/services.py:1599` `get_variance_report` | J_año + A cuentas | unbounded | 6 + Θ(A) | Θ(J) + scans por cuenta | Θ(J+A) | ✅ P1-10: account_map + children_map en memoria (0 queries por nodo); walks de árbol y sumas por mapa |
+| `accounting/services.py:1794` `get_execution_report` | B (~50-100) | unbounded | 1+2B | Θ(J por cuenta) | Θ(n) | ✅ P1-10: 1 .values('account').annotate() agrupado (2B+1 → 3 queries fijas) |
+| `accounting/fiscal_year_service.py:38,96,370,523` `preview_closing/close_fiscal_year/generate_opening_entry/_get_pl_account_balances` | A_pl×J | unbounded | 2×A_pl … ~150-250 | Θ(J) | Θ(n) const. alta | ✅ P1-10: _get_pl_account_balances 1 query agrupada; generate_opening_entry balance_map 1 query + hojas materializadas ordenadas |
+| `hr/services.py:355` `generate_proforma_payroll` | C conceptos | unbounded (sync en POST) | Θ(C) por payroll | ≤1 fila/concepto | Θ(C) | ✅ P1-12: conceptos 1 query (`list` + dict lookup), EmployeeConceptAmount 1 query → dict por concept_id, `GlobalHRSettings.get_solo()` cacheado (1 query), select_related("afp"), `PayrollItem.bulk_create` → O(1) round-trips (bounded test: 23→fijo vs 45 en HEAD) |
+| `hr/views.py:177` `PayrollViewSet.perform_create` | C | unbounded (request síncrono) | Θ(C) | Θ(C) | Θ(C) | ✅ P1-12 (decisión Opción A): se mantiene síncrono; el costo ahora es O(1) tras optimizar generate_proforma_payroll. Delegación a Celery queda para P2 batch (item 11 del mapa) |
+| `treasury/selectors.py:411` + `views.py:1035` `get_cash_flows`/`Dashboard.list` | movimientos filtrados | unbounded | 1 | Θ(n) completo + sort Python | Θ(n log n) | ✅ P1-9: ORDER BY -date + LIMIT 50 en el queryset; además se corrigió select_related("treasury_account") inválido (property) → from_account/to_account |
+| `treasury/selectors.py:25` `BankSelector.get_overview` | cuentas del banco | unbounded | 1 + n(N+1 credit_line) + ~35 | n + ~80 | Θ(n) | ✅ P1-9: select_related(account, credit_line) + balance contable de todas las cuentas en 1 query agrupada (annotated_debit/credit_total por cuenta) → O(1) por cuenta |
+| `treasury/views.py:670` `BankStatementLineViewSet` | 50 líneas × grupos | page+dataset | 1 + 50×(5 + N+1 movimientos) | ~300+ queries/página | Θ(50×g) | ✅ P1-9: prefetch_related completo de movements (invoice/order/jos/terminal_batch/card_group/…) para ambos lados del match → por página |
+| `treasury/selectors.py:949` `ReconciliationMatchSelector.get_group_data` | movimientos del grupo | bounded-por-dataset | 5 + N+1 serializer | Θ(n) | Θ(n) | ✅ P1-9: resuelve desde relations prefetched (dedupe + partición en Python), 0 queries extra con prefetch; fallback intacto sin prefetch |
+| `inventory/selectors.py:202` `get_stock_report_data` | P (catálogo trackable) | unbounded | 6P+1 | Θ(P×histórico) | Θ(P) | ✅ P1-11: 2 queries agrupadas (Stock + StockMove con CASE in/out) + `bulk_annotate_reserved_qty` (3 fijas) + UoMs smart-display precargadas por categoría → ~6-7 queries fijas |
+| `inventory/services.py:1697` `check_availability` | L líneas | unbounded (payload) | L×(5+3C) | Θ(L×componentes) | Θ(L) | ✅ P1-11: fetch por ids + BOMs con `lines__component` prefetch + componentes con stock/reserved anotados en bulk → O(1) round-trips; fix bug pre-existente `product.manufacturable_quantity` (AttributeError) → `get_manufacturable_quantity()` |
 | `inventory/services.py:1776` `generate_variants` | ∏valores | unbounded **multiplicativo** | Θ(combos) | Θ(combos) | Θ(V1×…×Vk) | bulk_create + cap explícito (combos>500 → error) |
 | `inventory/selectors.py:20` `list_products` | página + BOMs globales | page+dataset (memoria unbounded) | ~10 | prefetch TODAS las BOMs del dataset | O(1) q, O(dataset BOMs) memoria | prefetch de BOMs solo en contexto stock planning o filtrar por página |
 | `production/selectors.py:20` `get_stock_available` | componentes BOM | bounded-por-dataset | N+1 (get_manufacturable_quantity por componente) | Θ(B×L) | Θ(n) | mover manufacturabilidad a la parte anotada/prefetch |
@@ -111,7 +113,9 @@ Formato de fila: `clave (archivo:línea) | n | bounded-ness | round-trips | row-
 
 ### 2.3 @action sin paginar (listado explícito — el whitelist del test de contrato solo cubre la clase del viewset)
 
-**Unbounded real (riesgo alto):** `accounting: ledger:118, variance:221, preview_closing:313, generate_opening:362, execution:256, previous_year_actuals:269, export_csv:281, close:331` · `tax: documents:142, calculate:109` · `contacts: customers:71, suppliers:77, credit_ledger:88, credit_portfolio:102, credit_history:119, partners:149, partner_statement:155, partners_summary:164` · `inventory: stock_report:138, check_availability:278, generate_variants:197` · `treasury: Dashboard.list:1035, overview:88, CheckViewSet.portfolio:985/in_transit:994, unbilled_charges:1421`.
+**Unbounded real (riesgo alto, sin remediar):** `accounting: previous_year_actuals:269, export_csv:281` · `tax: calculate:109` · `contacts: customers:71, suppliers:77` · `inventory: generate_variants:197` · `treasury: CheckViewSet.portfolio:985/in_transit:994, unbilled_charges:1421`.
+
+**Remediados en P1 (filas ✅ de §2.1):** accounting `ledger`/`variance`/`preview_closing`/`generate_opening`/`execution`/`close` (P1-7/P1-10) · contacts `credit_ledger`/`credit_portfolio`/`credit_history`/`partners`/`partner_statement`/`partners_summary` (P1-8) · inventory `stock_report`/`check_availability` (P1-11) · treasury `Dashboard.list`/`overview` (P1-9) · tax `documents` (P1-4).
 
 **Bounded/triviales (sin riesgo):** el resto (todos los @action de billing, workflow, core, production `bulk_transition:300` y `bulk_print:310` bounded-por-payload, etc.).
 
@@ -184,14 +188,14 @@ Ancla de volumen real: `seed_benchmark_data` (50k contactos / 100k movimientos) 
 Matriz 2×2 por endpoint (empírico × asintótico); rollup por app = peor fila. **Plano empírico: PARCIAL** — no se midió en esta iteración; se apoya en baselines históricos (2026-05, search `superseded_by: ADR-0018`) y tests existentes (`test_pagination_contract` solo a nivel clase; `assertNumQueries` es deuda pendiente). Se declara explícitamente para no fingir evidencia que no existe.
 
 | App | Empírico | Asintótico | Detalle del peor caso |
-|---|---|---|---|
-| contacts | parcial | ✗ | aging/portfolio/partners Θ(n) unbounded en request |
-| finances | parcial | ✗ | árbol y balance sheets Θ(n×depth) sync (mitigado cache 90s/async) |
-| tax | parcial | ✗ | documents Θ(n) const. altísima + signals write-amplification |
-| accounting | parcial | ✗ | ledger/variance/cierre Θ(n) unbounded |
-| hr | parcial | ✗ | proforma Θ(C) en POST síncrono + batch Θ(E×C) |
-| treasury | parcial | ✗ | dashboard list materialización completa + statement lines ~300q |
-| inventory | parcial | ✗ | stock_report 6P+1, check_availability N+1, generate_variants multiplicativo |
+|---|---|---|---|---|
+| contacts | parcial | △ | aging/portfolio/partners mitigados (P1-5/P1-8); residual `customers`/`suppliers` sin consumidor |
+| finances | parcial | ✓ | árbol y balance sheets O(1) round-trips (P1-6); `generate_report_task` queda P2 |
+| tax | parcial | △ | `documents` paginado+prefetch (P1-4); `calculate_f29_for_period` pendiente + signals P2 |
+| accounting | parcial | △ | ledger/variance/ejecución/cierre O(1) (P1-7/P1-10); residual `previous_year_actuals`/`export_csv` |
+| hr | parcial | △ | proforma Θ(C) → O(1) round-trips (P1-12); batch Θ(E×C) queda P2 |
+| treasury | parcial | △ | dashboard/overview/reconciliación mitigados (P1-9); residual portfolio/in_transit/unbilled_charges |
+| inventory | parcial | △ | stock_report/check_availability O(1) (P1-11); residual `generate_variants` multiplicativo + `get_insights` |
 | production | parcial | ✗ | get_stock_available N+1 + signal auto_create_work_orders |
 | purchasing | parcial | ✗ | create_note Θ(I×R) + task subscription LIKE scan |
 | sales | parcial | ✗ | confirm_delivery Θ(T×M) RAM + list Θ(page×L×B) |
@@ -199,7 +203,7 @@ Matriz 2×2 por endpoint (empírico × asintótico); rollup por app = peor fila.
 | workflow | parcial | ✓ | batch bounded, master data chica |
 | core | parcial | △ | audit log limit sin clamp |
 
-**Resumen**: 10/13 apps no cumplen el plano asintótico interactivo. El plano empírico es parcial y no valida (ni desmiente) el cumplimiento; ningún presupuesto interactivo tiene medición nueva. Umbral adoptado: **300ms** (decisión del usuario); `performance.md` mantiene 400ms — tensión documentada, reconciliar en próxima revisión.
+**Resumen**: 3/13 apps mantienen riesgo asintótico interactivo alto (production, purchasing, sales); las demás quedaron mitigadas o con residual acotado y priorizado en P1 (4-12 remiten a §5). El plano empírico sigue **parcial**: ningún presupuesto interactivo tiene medición nueva en esta iteración (baselines históricos + tests `assertNumQueries` por P1). Umbral adoptado: **300ms** (decisión del usuario); `performance.md` mantiene 400ms — tensión documentada, reconciliar en próxima revisión.
 
 ## §5. Lista priorizada de remediación
 
@@ -211,13 +215,13 @@ Prioridad = riesgo × radio de impacto (riesgo {bajo,medio,alto} = clase × boun
 3. Consumidores sin page_size (getPurchasableProducts, getContacts, useVariants) → truncado silencioso. **Implementado 2026-08-13** (page_size 200).
 
 **P1 — unbounded interactivo de mayor impacto:**
-4. Tax `documents`/`get_declaration_documents` (selectors.py:18): serializador ligero + prefetch o export paginado.
-5. Aging/portfolio (contacts selectors 117/208/318): SQL aggregates + LIMIT en query.
-6. Árbol de cuentas (finances 72/103): CTE recursivo o pase único en memoria; reportes reutilizan balances preagregados.
-7. Accounting ledger + fiscal year (preview/close/generate_opening): agregados agrupados + select_related.
-8. Treasury Dashboard.list/get_cash_flows: ORDER BY+LIMIT en el queryset.
-9. Inventory stock_report (6P+1) + check_availability: resolver en 1 SQL con annotate.
-10. HR proforma Θ(C): batch query + delegar POST a Celery.
+4. Tax `documents`/`get_declaration_documents` (selectors.py:18): serializador ligero + prefetch o export paginado. **Implementado P1-4** (2026-08-13).
+5. Aging/portfolio (contacts selectors 117/208/318): SQL aggregates + LIMIT en query. **Implementado P1-5** (2026-08-13).
+6. Árbol de cuentas (finances 72/103): CTE recursivo o pase único en memoria; reportes reutilizan balances preagregados. **Implementado P1-6** (2026-08-13).
+7. Accounting ledger + fiscal year (preview/close/generate_opening): agregados agrupados + select_related. **Implementado P1-7/P1-10** (2026-08-13/14).
+8. Treasury Dashboard.list/get_cash_flows: ORDER BY+LIMIT en el queryset. **Implementado P1-9** (2026-08-14).
+9. Inventory stock_report (6P+1) + check_availability: resolver en 1 SQL con annotate. **Implementado P1-11** (2026-08-14).
+10. HR proforma Θ(C): batch query + delegar POST a Celery. **Optimizado P1-12** (2026-08-14): O(1) round-trips; delegación a Celery queda P2 (item 11).
 
 **P2 — batch/tasks/signals:**
 11. Tasks: hr E×C, treasury auto_match n·m, contacts portfolio → chunking + caps + bulk_create.

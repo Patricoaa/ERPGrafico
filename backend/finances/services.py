@@ -1,13 +1,140 @@
 import datetime
 from decimal import Decimal
 
-from django.db.models import Count, Q, Sum
-from django.db.models.functions import TruncMonth
-from django.utils import timezone
+from django.db.models import Q, Sum
 
 from accounting.models import Account, AccountType, JournalEntry, JournalItem
 
 MAPPING_TYPE_MAP = {"is": "is_category", "cf": "cf_category", "bs": "bs_category"}
+
+def _load_account_chart(accounts_qs=None):
+    """Carga el plan de cuentas (1 query) y construye índices en memoria."""
+    from accounting.models import Account as _ChartAccount
+
+    qs = accounts_qs if accounts_qs is not None else _ChartAccount.objects.all()
+    accounts = list(qs)
+    by_id = {acc.id: acc for acc in accounts}
+    children = {}
+    for acc in accounts:
+        children.setdefault(acc.parent_id, []).append(acc)
+    for acc_list in children.values():
+        acc_list.sort(key=lambda acc: acc.code)
+    return by_id, children
+
+
+def _item_balances_by_account(account_ids, start_date=None, end_date=None):
+    """Totales debit/credit por cuenta (1 query; statuses balance_affecting)."""
+    qs = JournalItem.objects.filter(
+        entry__status__in=JournalEntry.balance_affecting_statuses(),
+        account_id__in=account_ids,
+    )
+    if end_date:
+        qs = qs.filter(entry__date__lte=end_date)
+    if start_date:
+        qs = qs.filter(entry__date__gte=start_date)
+    rows = qs.values("account_id").annotate(d=Sum("debit"), c=Sum("credit"))
+    return {
+        row["account_id"]: (row["d"] or Decimal("0.00"), row["c"] or Decimal("0.00"))
+        for row in rows
+    }
+
+
+def _leaf_balance_map(by_id, start_date=None, end_date=None):
+    """Balance propio por cuenta (sin agregar descendientes). 1-2 queries."""
+    ids = list(by_id)
+    to_end = _item_balances_by_account(ids, end_date=end_date)
+    before = {}
+    if start_date:
+        pnl_ids = [
+            acc_id
+            for acc_id, acc in by_id.items()
+            if acc.account_type in (AccountType.INCOME, AccountType.EXPENSE)
+        ]
+        before = _item_balances_by_account(
+            pnl_ids, end_date=start_date - datetime.timedelta(days=1)
+        )
+    balances = {}
+    for acc_id, acc in by_id.items():
+        d, c = to_end.get(acc_id, (Decimal("0.00"), Decimal("0.00")))
+        if acc.account_type in (AccountType.INCOME, AccountType.EXPENSE) and start_date:
+            pre_d, pre_c = before.get(acc_id, (Decimal("0.00"), Decimal("0.00")))
+            d, c = d - pre_d, c - pre_c
+        if acc.account_type in (AccountType.ASSET, AccountType.EXPENSE):
+            balances[acc_id] = d - c
+        else:
+            balances[acc_id] = c - d
+    return balances
+
+
+def _make_category_resolver(by_id, report_type, fiscal_year_id=None):
+    """Resuelve la categoría efectiva por cuenta sin queries (vivo o fiscal).
+
+    Modo vivo: hereda del ancestro más cercano con categoría propia (como las
+    properties `effective_*_category`). Modo fiscal: solo el mapeo propio de la
+    cuenta (sin herencia), igual que `_resolve_category` con fiscal_year_id.
+    """
+    field = MAPPING_TYPE_MAP[report_type]
+    fy_map = None
+    if fiscal_year_id is not None:
+        from accounting.models import FiscalYearAccountMapping
+
+        fy_map = {
+            mapping.account_id: getattr(mapping, field)
+            for mapping in FiscalYearAccountMapping.objects.filter(
+                fiscal_year_id=fiscal_year_id
+            )
+        }
+    cache = {}
+
+    def resolve(account_id):
+        if account_id in cache:
+            return cache[account_id]
+        if fy_map is not None:
+            cache[account_id] = fy_map.get(account_id)
+            return cache[account_id]
+        value = None
+        acc = by_id.get(account_id)
+        while acc:
+            own = getattr(acc, field, None)
+            if own:
+                value = own
+                break
+            acc = by_id.get(acc.parent_id)
+        cache[account_id] = value
+        return value
+
+    return resolve
+
+
+def _make_aggregator(by_id, children, leaf_balances, category_resolve=None):
+    """Devuelve agg(account_id, category_type, category_value) memoizado (0 queries).
+
+    Semántica idéntica a `_get_aggregated_balance`: en hojas suma el balance
+    propio (filtrado por categoría si `category_type`); en grupos suma el
+    agregado de sus hijos. Pase único en memoria: Θ(n) como peor caso de tiempo
+    con la caché, sin round-trips a la BD.
+    """
+    cache = {}
+
+    def agg(account_id, category_type, category_value):
+        key = (account_id, category_type, category_value)
+        if key in cache:
+            return cache[key]
+        child_ids = children.get(account_id) or []
+        if child_ids:
+            total = Decimal("0.00")
+            for child in child_ids:
+                total += agg(child.id, category_type, category_value)
+        else:
+            total = leaf_balances.get(account_id, Decimal("0.00"))
+            if category_type and category_resolve is not None:
+                if category_resolve(account_id) != category_value:
+                    total = Decimal("0.00")
+        cache[key] = total
+        return total
+
+    return agg
+
 
 
 class FinanceService:
@@ -78,26 +205,15 @@ class FinanceService:
         If category_type is provided, ONLY adds up accounts that resolve to category_value.
         If category_type is NOT provided, adds up all descendants.
         """
-        total = Decimal("0.00")
-
-        # If it's a leaf account, just get its balance
-        if not account.children.exists():
-            if category_type:
-                eff = FinanceService._resolve_category(account, category_type, fiscal_year_id)
-                if eff == category_value:
-                    return FinanceService._get_account_balance(account, start_date, end_date)
-                return Decimal("0.00")
-            else:
-                return FinanceService._get_account_balance(account, start_date, end_date)
-
-        # If it's a group, sum up children
-        for child in account.children.all():
-            total += FinanceService._get_aggregated_balance(
-                child, category_type, category_value, start_date, end_date,
-                fiscal_year_id=fiscal_year_id,
-            )
-
-        return total
+        by_id, children = _load_account_chart()
+        balances = _leaf_balance_map(by_id, start_date=start_date, end_date=end_date)
+        resolver = (
+            _make_category_resolver(by_id, category_type, fiscal_year_id)
+            if category_type
+            else None
+        )
+        agg = _make_aggregator(by_id, children, balances, resolver)
+        return agg(account.id, category_type, category_value)
 
     @staticmethod
     def build_account_tree(
@@ -109,25 +225,57 @@ class FinanceService:
         comp_start=None,
         comp_end=None,
         fiscal_year_id=None,
+        _chart=None,
+        _balances=None,
+        _comp_balances=None,
+        _category_resolve=None,
     ):
         """
         Builds a hierarchical tree of accounts.
         If category_type/value are provided, filters/maps by category.
         Otherwise, uses the natural hierarchy of 'accounts'.
+
+        Parámetros internos `_chart`/`_balances`/`_comp_balances`/`_category_resolve`
+        permiten a los reportes precalcular el plan de cuentas y los balances
+        agregados UNA vez y reutilizarlos en las 3-6 llamadas de build_account_tree
+        que hacen (mapa de complejidad: "reportes reutilizan balances preagregados").
         """
-        tree = []
+        if _chart is None:
+            by_id, children = _load_account_chart()
+        else:
+            by_id, children = _chart
+
+        if _balances is None:
+            leaf_balances = _leaf_balance_map(by_id, start_date=start_date, end_date=end_date)
+        else:
+            leaf_balances = _balances
+
+        if _comp_balances is None:
+            comp_balances = (
+                _leaf_balance_map(by_id, start_date=comp_start, end_date=comp_end)
+                if comp_end
+                else {}
+            )
+        else:
+            comp_balances = _comp_balances
+
+        if _category_resolve is None:
+            category_resolve = (
+                _make_category_resolver(by_id, category_type, fiscal_year_id)
+                if category_type
+                else None
+            )
+        else:
+            category_resolve = _category_resolve
+
+        agg = _make_aggregator(by_id, children, leaf_balances, category_resolve)
+        agg_comp = _make_aggregator(by_id, children, comp_balances, category_resolve)
 
         def process_account(account):
-            balance = FinanceService._get_aggregated_balance(
-                account, category_type, category_value, start_date, end_date,
-                fiscal_year_id=fiscal_year_id,
-            )
+            balance = agg(account.id, category_type, category_value)
             comp_balance = Decimal("0.00")
             if comp_end:
-                comp_balance = FinanceService._get_aggregated_balance(
-                    account, category_type, category_value, comp_start, comp_end,
-                    fiscal_year_id=fiscal_year_id,
-                )
+                comp_balance = agg_comp(account.id, category_type, category_value)
 
             node = {
                 "id": account.id,
@@ -140,15 +288,11 @@ class FinanceService:
                 "children": [],
             }
 
-            # Recursively process children
-            for child in account.children.all().order_by("code"):
+            for child in children.get(account.id) or []:
                 # In category mode, only include if child or descendants are in category
                 if category_type:
-                    child_balance = FinanceService._get_aggregated_balance(
-                        child, category_type, category_value, start_date, end_date,
-                        fiscal_year_id=fiscal_year_id,
-                    )
-                    explicit_cat = FinanceService._resolve_category(child, category_type, fiscal_year_id)
+                    child_balance = agg(child.id, category_type, category_value)
+                    explicit_cat = category_resolve(child.id)
 
                     if child_balance != 0 or (explicit_cat == category_value):
                         if explicit_cat and explicit_cat != category_value:
@@ -156,23 +300,16 @@ class FinanceService:
                         node["children"].append(process_account(child))
                 else:
                     # In normal mode (Balance Sheet), only include if there's a balance or comparison balance
-                    b = FinanceService._get_aggregated_balance(
-                        child, start_date=start_date, end_date=end_date,
-                        fiscal_year_id=fiscal_year_id,
-                    )
+                    b = agg(child.id, None, None)
                     cb = Decimal("0.00")
                     if comp_end:
-                        cb = FinanceService._get_aggregated_balance(
-                            child, start_date=comp_start, end_date=comp_end,
-                            fiscal_year_id=fiscal_year_id,
-                        )
+                        cb = agg_comp(child.id, None, None)
 
                     if b != 0 or cb != 0:
                         node["children"].append(process_account(child))
 
             return node
 
-        # Identify starting accounts
         if category_type:
             if fiscal_year_id is not None:
                 from accounting.models import FiscalYearAccountMapping
@@ -182,26 +319,28 @@ class FinanceService:
                 ).values_list("account_id", flat=True)
                 all_in_cat = accounts.filter(id__in=account_ids)
             else:
-                all_in_cat = accounts.filter(
-                    **{f"{'is_category' if category_type == 'is' else 'cf_category'}": category_value}
-                )
+                field = MAPPING_TYPE_MAP[category_type]
+                all_in_cat = accounts.filter(**{field: category_value})
 
             start_accounts = []
             for acc in all_in_cat:
                 has_parent_mapped_same = False
-                curr = acc.parent
-                while curr:
-                    parent_cat = FinanceService._resolve_category(curr, category_type, fiscal_year_id)
-                    if parent_cat == category_value:
+                curr_id = acc.parent_id
+                while curr_id:
+                    curr_acc = by_id.get(curr_id)
+                    if curr_acc is None:
+                        break
+                    if category_resolve(curr_id) == category_value:
                         has_parent_mapped_same = True
                         break
-                    curr = curr.parent
+                    curr_id = curr_acc.parent_id
                 if not has_parent_mapped_same:
                     start_accounts.append(acc)
         else:
             # BS Mode: Top-level accounts in this set
             start_accounts = accounts.filter(parent__isnull=True)
 
+        tree = []
         for account in sorted(start_accounts, key=lambda x: x.code):
             tree.append(process_account(account))
 
@@ -212,11 +351,20 @@ class FinanceService:
         """
         Returns the Balance Sheet structure.
         """
+        by_id, children = _load_account_chart()
+        balances = _leaf_balance_map(by_id, end_date=end_date)
+        comp_balances = (
+            _leaf_balance_map(by_id, start_date=comp_start, end_date=comp_end)
+            if comp_end
+            else {}
+        )
+
         # Assets
         assets = Account.objects.filter(account_type=AccountType.ASSET)
         asset_tree = FinanceService.build_account_tree(
             assets, end_date=end_date, comp_start=comp_start, comp_end=comp_end,
             fiscal_year_id=fiscal_year_id,
+            _chart=(by_id, children), _balances=balances, _comp_balances=comp_balances,
         )
         total_assets = sum(node["balance"] for node in asset_tree)
         total_assets_comp = sum(node["comp_balance"] for node in asset_tree)
@@ -226,6 +374,7 @@ class FinanceService:
         liability_tree = FinanceService.build_account_tree(
             liabilities, end_date=end_date, comp_start=comp_start, comp_end=comp_end,
             fiscal_year_id=fiscal_year_id,
+            _chart=(by_id, children), _balances=balances, _comp_balances=comp_balances,
         )
         total_liabilities = sum(node["balance"] for node in liability_tree)
         total_liabilities_comp = sum(node["comp_balance"] for node in liability_tree)
@@ -235,34 +384,36 @@ class FinanceService:
         equity_tree = FinanceService.build_account_tree(
             equity, end_date=end_date, comp_start=comp_start, comp_end=comp_end,
             fiscal_year_id=fiscal_year_id,
+            _chart=(by_id, children), _balances=balances, _comp_balances=comp_balances,
         )
 
         # Calculate Current Year Earnings (Net Income)
         if not start_date:
             start_date = end_date.replace(month=1, day=1)
 
-        income_accs = Account.objects.filter(account_type=AccountType.INCOME)
-        expense_accs = Account.objects.filter(account_type=AccountType.EXPENSE)
+        earn_map = _leaf_balance_map(by_id, start_date=start_date, end_date=end_date)
+        earn_comp_map = (
+            _leaf_balance_map(by_id, start_date=comp_start, end_date=comp_end)
+            if comp_end
+            else {}
+        )
 
-        def get_earnings(s_date, e_date):
+        def get_earnings(s_date, e_date, leaf_map):
             t_income = 0
-            for acc in income_accs:
-                t_income += float(
-                    FinanceService._get_account_balance(acc, start_date=s_date, end_date=e_date)
-                )
             t_expenses = 0
-            for acc in expense_accs:
-                t_expenses += float(
-                    FinanceService._get_account_balance(acc, start_date=s_date, end_date=e_date)
-                )
+            for acc_id, acc in by_id.items():
+                if acc.account_type == AccountType.INCOME:
+                    t_income += float(leaf_map.get(acc_id, Decimal("0.00")))
+                elif acc.account_type == AccountType.EXPENSE:
+                    t_expenses += float(leaf_map.get(acc_id, Decimal("0.00")))
             return t_income - t_expenses
 
-        current_earnings = get_earnings(start_date, end_date)
+        current_earnings = get_earnings(start_date, end_date, earn_map)
         comp_earnings = 0
         if comp_end:
             if not comp_start:
                 comp_start = comp_end.replace(month=1, day=1)
-            comp_earnings = get_earnings(comp_start, comp_end)
+            comp_earnings = get_earnings(comp_start, comp_end, earn_comp_map)
 
         # Append "Resultado del Ejercicio" to Equity Tree artificially
         equity_tree.append(
@@ -302,11 +453,22 @@ class FinanceService:
         """
         from accounting.models import ISCategory
 
+        by_id, children = _load_account_chart()
+        balances = _leaf_balance_map(by_id, start_date=start_date, end_date=end_date)
+        comp_balances = (
+            _leaf_balance_map(by_id, start_date=comp_start, end_date=comp_end)
+            if comp_end
+            else {}
+        )
+        category_resolve = _make_category_resolver(by_id, "is", fiscal_year_id)
+
         def get_cat_data(cat):
             accounts = Account.objects.all()  # We need all to find mapping roots
             tree = FinanceService.build_account_tree(
                 accounts, "is", cat, start_date, end_date, comp_start, comp_end,
                 fiscal_year_id=fiscal_year_id,
+                _chart=(by_id, children), _balances=balances,
+                _comp_balances=comp_balances, _category_resolve=category_resolve,
             )
             total = sum(item["balance"] for item in tree)
             total_comp = sum(item["comp_balance"] for item in tree)
@@ -421,6 +583,15 @@ class FinanceService:
 
         from accounting.models import Account, AccountType, CFCategory
 
+        by_id, children = _load_account_chart()
+        balances = _leaf_balance_map(by_id, start_date=start_date, end_date=end_date)
+        comp_balances = (
+            _leaf_balance_map(by_id, start_date=comp_start, end_date=comp_end)
+            if comp_end
+            else {}
+        )
+        category_resolve = _make_category_resolver(by_id, "cf", fiscal_year_id)
+
         # 0. Identify Cash Pool (The source of truth for liquid assets)
         cash_pool_accs = Account.get_cash_pool_accounts()
         cash_pool_ids = set(cash_pool_accs.values_list("id", flat=True))
@@ -428,9 +599,10 @@ class FinanceService:
         def get_pool_balance(date):
             if not date:
                 return Decimal("0")
+            pool_map = _leaf_balance_map(by_id, end_date=date)
             total = Decimal("0")
-            for acc in cash_pool_accs:
-                total += FinanceService._get_account_balance(acc, end_date=date)
+            for acc_id in cash_pool_ids:
+                total += pool_map.get(acc_id, Decimal("0"))
             return total
 
         # Baseline Balances
@@ -467,10 +639,10 @@ class FinanceService:
         # Adjustments to Net Income (Non-cash)
         dep_accs = FinanceService._get_accounts_by_cf_category(CFCategory.DEP_AMORT, fiscal_year_id)
         for acc in dep_accs:
-            val = float(FinanceService._get_account_balance(acc, start_date, end_date))
+            val = float(balances.get(acc.id, Decimal("0.00")))
             val_comp = 0
             if comp_start and comp_end:
-                val_comp = float(FinanceService._get_account_balance(acc, comp_start, comp_end))
+                val_comp = float(comp_balances.get(acc.id, Decimal("0.00")))
             if val != 0 or val_comp != 0:
                 operating_activities.append(
                     {
@@ -481,37 +653,64 @@ class FinanceService:
                 )
 
         # Working Capital & Other Operating
+        agg = _make_aggregator(by_id, children, balances, category_resolve)
+        agg_comp = _make_aggregator(by_id, children, comp_balances, category_resolve)
+
+        def _roots_for(category):
+            cat_accs = FinanceService._get_accounts_by_cf_category(
+                category, fiscal_year_id
+            ).exclude(id__in=cash_pool_ids)
+            roots = []
+            for acc in cat_accs:
+                has_parent = False
+                curr_id = acc.parent_id
+                while curr_id:
+                    curr_acc = by_id.get(curr_id)
+                    if curr_acc is None:
+                        break
+                    if category_resolve(curr_id) == category:
+                        has_parent = True
+                        break
+                    curr_id = curr_acc.parent_id
+                if not has_parent:
+                    roots.append(acc)
+            return roots
+
+        def _activity_amounts(category):
+            vals = []
+            for acc in _roots_for(category):
+                val = float(agg(acc.id, "cf", category))
+                val_comp = 0
+                if comp_start and comp_end:
+                    val_comp = float(agg_comp(acc.id, "cf", category))
+                if val != 0 or val_comp != 0:
+                    vals.append((acc, val, val_comp))
+            return vals
+
         op_accs = FinanceService._get_accounts_by_cf_category(CFCategory.OPERATING, fiscal_year_id).exclude(
             id__in=cash_pool_ids
         )
         op_roots = []
         for acc in op_accs:
             has_parent = False
-            curr = acc.parent
-            while curr:
-                if FinanceService._resolve_category(curr, "cf", fiscal_year_id) == CFCategory.OPERATING:
+            curr_id = acc.parent_id
+            while curr_id:
+                curr_acc = by_id.get(curr_id)
+                if curr_acc is None:
+                    break
+                if category_resolve(curr_id) == CFCategory.OPERATING:
                     has_parent = True
                     break
-                curr = curr.parent
+                curr_id = curr_acc.parent_id
             if not has_parent:
                 op_roots.append(acc)
 
         for acc in op_roots:
             # We use aggregated balance but ensuring we don't include cash pool internals
-            val = float(
-                FinanceService._get_aggregated_balance(
-                    acc, "cf", CFCategory.OPERATING, start_date, end_date,
-                    fiscal_year_id=fiscal_year_id,
-                )
-            )
+            val = float(agg(acc.id, "cf", CFCategory.OPERATING))
             val_comp = 0
             if comp_start and comp_end:
-                val_comp = float(
-                    FinanceService._get_aggregated_balance(
-                        acc, "cf", CFCategory.OPERATING, comp_start, comp_end,
-                        fiscal_year_id=fiscal_year_id,
-                    )
-                )
+                val_comp = float(agg_comp(acc.id, "cf", CFCategory.OPERATING))
 
             if val != 0 or val_comp != 0:
                 # Assets: Increase is use of cash (-) / Liabilities: Increase is source of cash (+)
@@ -531,30 +730,23 @@ class FinanceService:
         inv_roots = []
         for acc in inv_accs:
             has_parent = False
-            curr = acc.parent
-            while curr:
-                if FinanceService._resolve_category(curr, "cf", fiscal_year_id) == CFCategory.INVESTING:
+            curr_id = acc.parent_id
+            while curr_id:
+                curr_acc = by_id.get(curr_id)
+                if curr_acc is None:
+                    break
+                if category_resolve(curr_id) == CFCategory.INVESTING:
                     has_parent = True
                     break
-                curr = curr.parent
+                curr_id = curr_acc.parent_id
             if not has_parent:
                 inv_roots.append(acc)
 
         for acc in inv_roots:
-            val = float(
-                FinanceService._get_aggregated_balance(
-                    acc, "cf", CFCategory.INVESTING, start_date, end_date,
-                    fiscal_year_id=fiscal_year_id,
-                )
-            )
+            val = float(agg(acc.id, "cf", CFCategory.INVESTING))
             val_comp = 0
             if comp_start and comp_end:
-                val_comp = float(
-                    FinanceService._get_aggregated_balance(
-                        acc, "cf", CFCategory.INVESTING, comp_start, comp_end,
-                        fiscal_year_id=fiscal_year_id,
-                    )
-                )
+                val_comp = float(agg_comp(acc.id, "cf", CFCategory.INVESTING))
             if val != 0 or val_comp != 0:
                 amount = -val if acc.account_type == AccountType.ASSET else val
                 amount_comp = -val_comp if acc.account_type == AccountType.ASSET else val_comp
@@ -576,30 +768,23 @@ class FinanceService:
         fin_roots = []
         for acc in fin_accs:
             has_parent = False
-            curr = acc.parent
-            while curr:
-                if FinanceService._resolve_category(curr, "cf", fiscal_year_id) == CFCategory.FINANCING:
+            curr_id = acc.parent_id
+            while curr_id:
+                curr_acc = by_id.get(curr_id)
+                if curr_acc is None:
+                    break
+                if category_resolve(curr_id) == CFCategory.FINANCING:
                     has_parent = True
                     break
-                curr = curr.parent
+                curr_id = curr_acc.parent_id
             if not has_parent:
                 fin_roots.append(acc)
 
         for acc in fin_roots:
-            val = float(
-                FinanceService._get_aggregated_balance(
-                    acc, "cf", CFCategory.FINANCING, start_date, end_date,
-                    fiscal_year_id=fiscal_year_id,
-                )
-            )
+            val = float(agg(acc.id, "cf", CFCategory.FINANCING))
             val_comp = 0
             if comp_start and comp_end:
-                val_comp = float(
-                    FinanceService._get_aggregated_balance(
-                        acc, "cf", CFCategory.FINANCING, comp_start, comp_end,
-                        fiscal_year_id=fiscal_year_id,
-                    )
-                )
+                val_comp = float(agg_comp(acc.id, "cf", CFCategory.FINANCING))
             if val != 0 or val_comp != 0:
                 amount = -val if acc.account_type == AccountType.ASSET else val
                 amount_comp = -val_comp if acc.account_type == AccountType.ASSET else val_comp
@@ -640,7 +825,7 @@ class FinanceService:
             for acc in unmapped_accs:
                 if not acc.is_selectable:
                     continue  # parent accounts logic
-                variation = float(FinanceService._get_account_balance(acc, start_date, end_date))
+                variation = float(balances.get(acc.id, Decimal("0.00")))
                 if abs(variation) > 0.01:
                     culprit_accounts.append(
                         {
@@ -822,6 +1007,28 @@ class FinanceService:
         active_accounts = (
             Account.objects.filter(journal_items__isnull=False).distinct().order_by("code")
         )
+        active_ids = [acc.id for acc in active_accounts]
+
+        def _collect(qs):
+            return {
+                row["account_id"]: (row["d"] or Decimal("0.00"), row["c"] or Decimal("0.00"))
+                for row in qs.values("account_id")
+                .annotate(d=Sum("debit"), c=Sum("credit"))
+            }
+
+        base_qs = JournalItem.objects.filter(
+            entry__status="POSTED", account_id__in=active_ids
+        )
+        period_qs = base_qs
+        init_qs = JournalItem.objects.none()
+        if start:
+            period_qs = period_qs.filter(entry__date__gte=start)
+            init_qs = base_qs.filter(entry__date__lt=start)
+        if end:
+            period_qs = period_qs.filter(entry__date__lte=end)
+
+        period_map = _collect(period_qs)
+        init_map = _collect(init_qs) if start else {}
 
         trial_balance = []
         total_global_debit = Decimal("0.00")
@@ -833,27 +1040,18 @@ class FinanceService:
             # ---------------------------------------------
             # 1. Movimientos del Período
             # ---------------------------------------------
-            period_qs = JournalItem.objects.filter(account=account, entry__status="POSTED")
-            if start:
-                period_qs = period_qs.filter(entry__date__gte=start)
-            if end:
-                period_qs = period_qs.filter(entry__date__lte=end)
-
-            period_agg = period_qs.aggregate(debit=Sum("debit"), credit=Sum("credit"))
-            p_debit = period_agg["debit"] or Decimal("0.00")
-            p_credit = period_agg["credit"] or Decimal("0.00")
+            p_debit, p_credit = period_map.get(
+                account.id, (Decimal("0.00"), Decimal("0.00"))
+            )
 
             # ---------------------------------------------
             # 2. Saldo Inicial
             # ---------------------------------------------
             initial_balance = Decimal("0.00")
             if start:
-                init_qs = JournalItem.objects.filter(
-                    account=account, entry__status="POSTED", entry__date__lt=start
+                i_debit, i_credit = init_map.get(
+                    account.id, (Decimal("0.00"), Decimal("0.00"))
                 )
-                init_agg = init_qs.aggregate(debit=Sum("debit"), credit=Sum("credit"))
-                i_debit = init_agg["debit"] or Decimal("0.00")
-                i_credit = init_agg["credit"] or Decimal("0.00")
 
                 if account.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
                     initial_balance = i_debit - i_credit

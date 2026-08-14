@@ -24,7 +24,33 @@ class BankSelector:
     @staticmethod
     def get_overview(bank: Bank) -> dict:
         # Cuentas de tesorería del banco
-        accounts = TreasuryAccount.objects.filter(bank=bank).order_by("account_type", "name")
+        accounts = (
+            TreasuryAccount.objects.filter(bank=bank)
+            .select_related("account", "credit_line")
+            .order_by("account_type", "name")
+        )
+
+        # Balance contable de todas las cuentas en una sola consulta agrupada
+        from accounting.models import JournalEntry, JournalItem
+
+        account_ids = [a.account_id for a in accounts if a.account_id]
+        balance_map = {}
+        if account_ids:
+            balance_map = {
+                r["account_id"]: (r["d"] or Decimal("0"), r["c"] or Decimal("0"))
+                for r in JournalItem.objects.filter(
+                    account_id__in=account_ids,
+                    entry__status__in=JournalEntry.balance_affecting_statuses(),
+                )
+                .values("account_id")
+                .annotate(d=Sum("debit"), c=Sum("credit"))
+            }
+        for acc in accounts:
+            d, c = balance_map.get(acc.account_id, (Decimal("0"), Decimal("0")))
+            if acc.account:
+                acc.account.annotated_debit_total = d
+                acc.account.annotated_credit_total = c
+
         accounts_data = []
         for acc in accounts:
             try:
@@ -411,7 +437,7 @@ class TreasuryDashboardSelector:
     def get_cash_flows(flow_type: str = "all", date_from=None, date_to=None, treasury_account_id=None) -> list:
         # Build Query
         query = TreasuryMovement.objects.select_related(
-            "treasury_account", "from_account", "to_account", "contact", "invoice__contact"
+            "from_account", "to_account", "contact", "invoice__contact"
         ).exclude(journal_entry__status="CANCELLED")
 
         if date_from:
@@ -434,7 +460,7 @@ class TreasuryDashboardSelector:
             query = query.filter(movement_type__in=["TRANSFER", "ADJUSTMENT"])
 
         results = []
-        for mv in query:
+        for mv in query.order_by("-date")[:50]:
             # Determine partner name
             partner_name = None
             if mv.contact:
@@ -475,8 +501,6 @@ class TreasuryDashboardSelector:
                 }
             )
 
-        results.sort(key=lambda x: x["date"], reverse=True)
-        results = results[:50]
         return results
 
 
@@ -947,15 +971,23 @@ class BankStatementSelector:
 class ReconciliationMatchSelector:
     @staticmethod
     def get_group_data(obj) -> dict | None:
-        if not obj.reconciliation_match: return None
+        if not obj.reconciliation_match:
+            return None
         match = obj.reconciliation_match
-        all_movements = (match.movements.all() | obj.matched_movements.all()).distinct()
-        batch_ids = all_movements.filter(terminal_batch__isnull=False).values_list("terminal_batch_id", flat=True).distinct()
-        
-        from .models import TerminalBatch
-        batches = TerminalBatch.objects.filter(id__in=batch_ids)
-        standalone_movements = all_movements.filter(terminal_batch__isnull=True)
-        
+
+        seen = set()
+        movements = []
+        for m in list(match.movements.all()) + list(obj.matched_movements.all()):
+            if m.id not in seen:
+                seen.add(m.id)
+                movements.append(m)
+
+        batches = sorted(
+            {m.terminal_batch for m in movements if m.terminal_batch is not None},
+            key=lambda b: b.id,
+        )
+        standalone_movements = [m for m in movements if m.terminal_batch is None]
+
         from .serializers import TreasuryMovementSerializer, TerminalBatchSerializer
         return {
             "id": match.id,

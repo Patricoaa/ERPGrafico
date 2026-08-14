@@ -1641,6 +1641,14 @@ class BudgetService:
 
         all_relevant_accounts = Account.objects.filter(id__in=hierarchy_accounts_ids)
 
+        # Build id/children maps once so the tree walk is memory-based (no queries per node)
+        relevant_list = list(all_relevant_accounts)
+        account_map = {a.id: a for a in relevant_list}
+        children_map = {}
+        for a in relevant_list:
+            if a.parent_id is not None:
+                children_map.setdefault(a.parent_id, []).append(a)
+
         # 3. Pre-fetch Data for performance
         # Monthly Actuals
         m_actuals_qs = (
@@ -1684,7 +1692,7 @@ class BudgetService:
 
         # 4. Tree Building Logic
         def get_node_data(account_id):
-            acc = all_relevant_accounts.get(id=account_id)
+            acc = account_map[account_id]
 
             # Helper to calculate balance based on type
             def calc_bal(data):
@@ -1697,7 +1705,7 @@ class BudgetService:
                 return c - d
 
             # If leaf, direct data. If group, sum of children.
-            if not acc.children.exists():
+            if not children_map.get(account_id):
                 ma = calc_bal(m_actuals.get(account_id))
                 mb = m_budget.get(account_id, 0.0)
                 ya = calc_bal(y_actuals.get(account_id))
@@ -1705,10 +1713,7 @@ class BudgetService:
             else:
                 # Recurse children
                 ma = mb = ya = yb = 0.0
-                # We only sum children that are path of our 'all_account_ids' descendants
-                # Or just sum all children from our prefetched relevant set
-                children = all_relevant_accounts.filter(parent_id=account_id)
-                for child in children:
+                for child in children_map[account_id]:
                     cma, cmb, cya, cyb = get_node_sums(child.id)
                     ma += cma
                     mb += cmb
@@ -1744,8 +1749,8 @@ class BudgetService:
             if account_id in memo_sums:
                 return memo_sums[account_id]
 
-            acc = all_relevant_accounts.get(id=account_id)
-            if not acc.children.exists():
+            acc = account_map[account_id]
+            if not children_map.get(account_id):
 
                 def calc_bal(data):
                     if not data:
@@ -1764,7 +1769,7 @@ class BudgetService:
                 )
             else:
                 ma = mb = ya = yb = 0.0
-                for child in all_relevant_accounts.filter(parent_id=account_id):
+                for child in children_map[account_id]:
                     cma, cmb, cya, cyb = get_node_sums(child.id)
                     ma += cma
                     mb += cmb
@@ -1778,14 +1783,15 @@ class BudgetService:
         def build_recursive_tree(account_id):
             data = get_node_data(account_id)
             node = {**data, "children": []}
-            for child in all_relevant_accounts.filter(parent_id=account_id).order_by("code"):
+            for child in sorted(children_map.get(account_id, []), key=lambda c: c.code):
                 node["children"].append(build_recursive_tree(child.id))
             return node
 
         # Start from top-level accounts in our relevant set
         tree = []
-        roots = all_relevant_accounts.filter(parent__isnull=True).order_by("code")
-        for root in roots:
+        for root in sorted(
+            (a for a in relevant_list if a.parent_id is None), key=lambda a: a.code
+        ):
             tree.append(build_recursive_tree(root.id))
 
         return tree
@@ -1796,33 +1802,37 @@ class BudgetService:
         Calculates the execution status of the budget.
         Groups by account to show total execution vs total budgeted for the period.
         """
-        from django.db.models import Q, Sum
+        from django.db.models import Sum
 
         # Aggregate budgeted amounts by account (considering all years in the budget period)
-        budgeted_qs = budget.items.values("account").annotate(total_budgeted=Sum("amount"))
+        budgeted_qs = list(budget.items.values("account").annotate(total_budgeted=Sum("amount")))
+        account_ids = [b["account"] for b in budgeted_qs]
+        accounts = {a.id: a for a in Account.objects.filter(id__in=account_ids)}
+
+        # Single grouped query for actuals across all budgeted accounts
+        actual_rows = (
+            JournalItem.objects.filter(
+                entry__status__in=balance_affecting_statuses(),
+                entry__date__gte=budget.start_date,
+                entry__date__lte=budget.end_date,
+                account_id__in=account_ids,
+            )
+            .values("account_id")
+            .annotate(debit=Sum("debit"), credit=Sum("credit"))
+        )
+        actuals = {r["account_id"]: r for r in actual_rows}
 
         report = []
         total_budgeted = 0
         total_actual = 0
 
         for b_item in budgeted_qs:
-            account = Account.objects.get(id=b_item["account"])
+            account = accounts[b_item["account"]]
             budgeted_amount = float(b_item["total_budgeted"])
 
-            # Filter actual items for the entire budget period
-            filters = Q(
-                entry__status__in=balance_affecting_statuses(),
-                entry__date__gte=budget.start_date,
-                entry__date__lte=budget.end_date,
-                account=account,
-            )
-
-            result = JournalItem.objects.filter(filters).aggregate(
-                debit=Sum("debit"), credit=Sum("credit")
-            )
-
-            debit = result["debit"] or 0
-            credit = result["credit"] or 0
+            result = actuals.get(account.id, {})
+            debit = result.get("debit") or 0
+            credit = result.get("credit") or 0
 
             if account.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
                 actual = float(debit - credit)

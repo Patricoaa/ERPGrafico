@@ -406,10 +406,26 @@ class FiscalYearClosingService:
 
         # Get all balance sheet leaf accounts with non-zero balances
         balance_types = [AccountType.ASSET, AccountType.LIABILITY, AccountType.EQUITY]
-        leaf_accounts = Account.objects.filter(
-            account_type__in=balance_types,
-            children__isnull=True,  # Only leaf accounts
+        leaf_accounts = list(
+            Account.objects.filter(
+                account_type__in=balance_types,
+                children__isnull=True,  # Only leaf accounts
+            ).order_by("code")
         )
+
+        if leaf_accounts:
+            balance_map = {
+                r["account_id"]: r
+                for r in JournalItem.objects.filter(
+                    account_id__in=[a.id for a in leaf_accounts],
+                    entry__status__in=JournalEntry.balance_affecting_statuses(),
+                    entry__date__lte=end_date,
+                )
+                .values("account_id")
+                .annotate(total_debit=Sum("debit"), total_credit=Sum("credit"))
+            }
+        else:
+            balance_map = {}
 
         opening_entry = JournalEntry(
             date=opening_date,
@@ -429,17 +445,10 @@ class FiscalYearClosingService:
 
         for account in leaf_accounts:
             # Calculate accumulated balance up to end_date
-            result = JournalItem.objects.filter(
-                account=account,
-                entry__status__in=JournalEntry.balance_affecting_statuses(),
-                entry__date__lte=end_date,
-            ).aggregate(
-                total_debit=Sum("debit"),
-                total_credit=Sum("credit"),
-            )
+            result = balance_map.get(account.id) or {}
 
-            total_debit = result["total_debit"] or Decimal("0")
-            total_credit = result["total_credit"] or Decimal("0")
+            total_debit = result.get("total_debit") or Decimal("0")
+            total_credit = result.get("total_credit") or Decimal("0")
 
             if total_debit == 0 and total_credit == 0:
                 continue
@@ -527,25 +536,32 @@ class FiscalYearClosingService:
 
         Returns: [{id, code, name, balance}, ...]
         """
-        leaf_accounts = Account.objects.filter(
-            account_type=account_type,
-            children__isnull=True,
-        ).order_by("code")
+        leaf_accounts = list(
+            Account.objects.filter(
+                account_type=account_type,
+                children__isnull=True,
+            ).order_by("code")
+        )
+        if not leaf_accounts:
+            return []
 
-        results = []
-        for account in leaf_accounts:
-            agg = JournalItem.objects.filter(
-                account=account,
+        agg_map = {
+            r["account_id"]: r
+            for r in JournalItem.objects.filter(
+                account_id__in=[a.id for a in leaf_accounts],
                 entry__status__in=JournalEntry.balance_affecting_statuses(),
                 entry__date__gte=start_date,
                 entry__date__lte=end_date,
-            ).aggregate(
-                total_debit=Sum("debit"),
-                total_credit=Sum("credit"),
             )
+            .values("account_id")
+            .annotate(total_debit=Sum("debit"), total_credit=Sum("credit"))
+        }
 
-            debit = agg["total_debit"] or Decimal("0")
-            credit = agg["total_credit"] or Decimal("0")
+        results = []
+        for account in leaf_accounts:
+            agg = agg_map.get(account.id) or {}
+            debit = agg.get("total_debit") or Decimal("0")
+            credit = agg.get("total_credit") or Decimal("0")
 
             # Calculate balance based on account nature
             if account_type == AccountType.INCOME:

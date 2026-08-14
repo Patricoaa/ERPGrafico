@@ -121,6 +121,7 @@ class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
             account=account,
             start_date=request.query_params.get("start_date"),
             end_date=request.query_params.get("end_date"),
+            limit=request.query_params.get("limit"),
         )
         return Response({"account": AccountSerializer(account).data, **data})
 

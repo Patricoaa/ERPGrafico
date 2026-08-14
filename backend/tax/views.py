@@ -84,7 +84,7 @@ class TaxPeriodViewSet(viewsets.ModelViewSet):
 
 class F29DeclarationViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
-    queryset = F29Declaration.objects.select_related("tax_period", "closed_by").all()
+    queryset = F29Declaration.objects.select_related("tax_period").all()
     serializer_class = F29DeclarationSerializer
     permission_classes = [IsAuthenticated]
     filterset_fields = ["tax_period__year", "tax_period__month", "tax_period__status"]
@@ -140,8 +140,14 @@ class F29DeclarationViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def documents(self, request, pk=None):
+        from billing.serializers import InvoiceListSerializer
         from .selectors import TaxSelectorExt
-        return Response(TaxSelectorExt.get_declaration_documents(self.get_object()))
+        queryset = TaxSelectorExt.get_declaration_documents_queryset(self.get_object())
+        page = self.paginate_queryset(queryset)
+        serializer = InvoiceListSerializer(page if page is not None else queryset, many=True)
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
 
     @method_decorator(csrf_exempt)
     @action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])

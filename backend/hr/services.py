@@ -371,8 +371,10 @@ class PayrollService:
             month = payroll.period_month
             created = False
         else:
-            employee = Employee.objects.get(pk=employee_id)
-            settings, _ = GlobalHRSettings.objects.get_or_create(pk=1)
+            employee = (
+                Employee.objects.select_related("afp").get(pk=employee_id)
+            )
+            settings = GlobalHRSettings.get_solo()
 
             # 1. Crear o limpiar Payroll borrador
             payroll, created = Payroll.objects.get_or_create(
@@ -382,7 +384,7 @@ class PayrollService:
                 defaults={"status": Payroll.Status.DRAFT, "base_salary": employee.base_salary},
             )
 
-        settings, _ = GlobalHRSettings.objects.get_or_create(pk=1)
+        settings = GlobalHRSettings.get_solo()
 
         if not created:
             if payroll.status == Payroll.Status.POSTED:
@@ -456,13 +458,20 @@ class PayrollService:
         }
 
         # PASS 1: Haberes (Para determinar el IMPONIBLE)
-        concepts = PayrollConcept.objects.all()
+        concepts = list(PayrollConcept.objects.all())
         haberes_imponibles = []
         haberes_no_imponibles = []
 
         # Primero, el Sueldo Base si no está como concepto explícito
         # Buscamos si existe un concepto de sistema para Sueldo Base
-        sb_concept = concepts.filter(name__icontains="Sueldo Base", is_system=True).first()
+        sb_concept = next(
+            (
+                c
+                for c in concepts
+                if c.is_system and "sueldo base" in c.name.lower()
+            ),
+            None,
+        )
         if not sb_concept:
             # Buscar una cuenta contable apropiada (Gasto de Sueldos/Remuneraciones)
             from accounting.models import Account
@@ -480,7 +489,7 @@ class PayrollService:
                     )
                 )
 
-            sb_concept, _ = PayrollConcept.objects.get_or_create(
+            sb_concept, _sb_created = PayrollConcept.objects.get_or_create(
                 name="Sueldo Base",
                 defaults={
                     "category": PayrollConcept.Category.HABER_IMPONIBLE,
@@ -493,12 +502,16 @@ class PayrollService:
         context["IMPONIBLE"] = sueldo_base_prorrateado
 
         # Otros haberes dinámicos o de ficha
-        for concept in concepts.filter(
-            category__in=[
+        emp_amounts = {
+            eca.concept_id: eca.amount
+            for eca in EmployeeConceptAmount.objects.filter(employee=employee)
+        }
+        for concept in concepts:
+            if concept.category not in [
                 PayrollConcept.Category.HABER_IMPONIBLE,
                 PayrollConcept.Category.HABER_NO_IMPONIBLE,
-            ]
-        ):
+            ]:
+                continue
             if concept == sb_concept:
                 continue
 
@@ -506,11 +519,9 @@ class PayrollService:
             if concept.formula_type == PayrollConcept.FormulaType.FIXED:
                 amount = concept.default_amount
             elif concept.formula_type == PayrollConcept.FormulaType.EMPLOYEE_SPECIFIC:
-                emp_amount = EmployeeConceptAmount.objects.filter(
-                    employee=employee, concept=concept
-                ).first()
+                emp_amount = emp_amounts.get(concept.id)
                 if emp_amount:
-                    amount = emp_amount.amount
+                    amount = emp_amount
             elif concept.formula_type == PayrollConcept.FormulaType.FORMULA:
                 amount = PayrollService.evaluate_formula(concept.formula, context)
 
@@ -531,24 +542,22 @@ class PayrollService:
         descuentos_legales = []
         otros_descuentos = []
 
-        for concept in concepts.filter(
-            category__in=[
+        for concept in concepts:
+            if concept.category not in [
                 PayrollConcept.Category.DESCUENTO_LEGAL_TRABAJADOR,
                 PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
                 PayrollConcept.Category.OTRO_DESCUENTO,
-            ]
-        ):
+            ]:
+                continue
             amount = Decimal("0")
 
             # Lógica estándar de tipos de cálculo
             if concept.formula_type == PayrollConcept.FormulaType.FIXED:
                 amount = concept.default_amount
             elif concept.formula_type == PayrollConcept.FormulaType.EMPLOYEE_SPECIFIC:
-                emp_amount = EmployeeConceptAmount.objects.filter(
-                    employee=employee, concept=concept
-                ).first()
+                emp_amount = emp_amounts.get(concept.id)
                 if emp_amount:
-                    amount = emp_amount.amount
+                    amount = emp_amount
             elif concept.formula_type == PayrollConcept.FormulaType.FORMULA:
                 amount = PayrollService.evaluate_formula(concept.formula, context)
             elif concept.formula_type == PayrollConcept.FormulaType.PERCENTAGE:
@@ -570,15 +579,21 @@ class PayrollService:
                     otros_descuentos.append({"concept": concept, "amount": amount})
 
         # PERSISTENCIA: Guardar todos los items
-        for item_data in (
-            haberes_imponibles + haberes_no_imponibles + descuentos_legales + otros_descuentos
-        ):
-            PayrollItem.objects.create(
+        items_to_create = [
+            PayrollItem(
                 payroll=payroll,
                 concept=item_data["concept"],
                 amount=item_data["amount"],
                 description=item_data["concept"].name,
             )
+            for item_data in (
+                haberes_imponibles
+                + haberes_no_imponibles
+                + descuentos_legales
+                + otros_descuentos
+            )
+        ]
+        PayrollItem.objects.bulk_create(items_to_create)
 
         # Actualizar totales
         PayrollService.update_payroll_totals(payroll)
