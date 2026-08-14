@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.4](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.3...v0.3.4) (2026-08-14)
+
+
+### ⚡ Performance
+
+* **accounting:** aggregate PL balances and budget reports in one query (P1-10) ([dd1e23c](https://github.com/Patricoaa/ERPGrafico/commit/dd1e23cb8eb208a4b1c0933fb3ddbe2309d1821f))
+* **accounting:** bound account ledger with window-function running balance (P1-7) ([2b2db32](https://github.com/Patricoaa/ERPGrafico/commit/2b2db32db4941a56c10da95404f37ebd5429af98))
+* **contacts:** bound credit ledger, partner metrics in one query (P1-8) ([155000a](https://github.com/Patricoaa/ERPGrafico/commit/155000ac8bf81241e3a71bb796f24c1782cb661d))
+* **contacts:** kill N+1 in aging reports and credit portfolio (P1-5) ([f9d5fba](https://github.com/Patricoaa/ERPGrafico/commit/f9d5fba1f02c676f9a63e1d2cac2d47d5ffca6cd))
+* **finances:** single-pass account tree with pre-aggregated balances (P1-6) ([6243905](https://github.com/Patricoaa/ERPGrafico/commit/62439056c15c586742d8931a500077f4eb58712e))
+* **hr:** flatten proforma payroll generation to O(1) round-trips (P1-12) ([8f6bd81](https://github.com/Patricoaa/ERPGrafico/commit/8f6bd81452537779317e086c51c5d6c7acd7d5f4))
+* **inventory:** bulk stock report and availability check in O(1) queries (P1-11) ([544a534](https://github.com/Patricoaa/ERPGrafico/commit/544a534688b893a3dc50e32136f647b41b82ddf1))
+* **treasury:** cap cash flows in SQL, aggregate overview balance, prefetch reconciliation groups (P1-9) ([b8d4f92](https://github.com/Patricoaa/ERPGrafico/commit/b8d4f9241b3dadc25f9ef7b490ec6dd979c1e46c))
+
+
+### 📚 Documentation
+
+* **quality:** refresh complexity-map veredicto, §2.3 y P1 status tras P1-7..P1-12 ([77939d2](https://github.com/Patricoaa/ERPGrafico/commit/77939d2a9dabad5db10b11ba28234696c8d003d2))
+
+
+### 🐛 Bug Fixes
+
+* **tax:** paginate and flatten F29 declaration documents (P1-4) ([f5c82a4](https://github.com/Patricoaa/ERPGrafico/commit/f5c82a4a76deed05e42c358d36b64909c5f3aa71))
+* **tests:** scope get_cash_pool_accounts mock to treasury/core tests ([a25dd74](https://github.com/Patricoaa/ERPGrafico/commit/a25dd746e36de7e20abbe73e39317b43d571e9a1))
+
 ### [0.3.3](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.2...v0.3.3) (2026-08-14)
 
 
