@@ -3,7 +3,7 @@ layer: 40-quality
 doc: complexity-map
 status: active
 owner: platform-team
-last_review: 2026-08-13
+last_review: 2026-08-14
 ---
 
 # Mapa de complejidad (Big O)
@@ -113,7 +113,9 @@ Formato de fila: `clave (archivo:línea) | n | bounded-ness | round-trips | row-
 
 ### 2.3 @action sin paginar (listado explícito — el whitelist del test de contrato solo cubre la clase del viewset)
 
-**Unbounded real (riesgo alto):** `accounting: ledger:118, variance:221, preview_closing:313, generate_opening:362, execution:256, previous_year_actuals:269, export_csv:281, close:331` · `tax: documents:142, calculate:109` · `contacts: customers:71, suppliers:77, credit_ledger:88, credit_portfolio:102, credit_history:119, partners:149, partner_statement:155, partners_summary:164` · `inventory: stock_report:138, check_availability:278, generate_variants:197` · `treasury: Dashboard.list:1035, overview:88, CheckViewSet.portfolio:985/in_transit:994, unbilled_charges:1421`.
+**Unbounded real (riesgo alto, sin remediar):** `accounting: previous_year_actuals:269, export_csv:281` · `tax: calculate:109` · `contacts: customers:71, suppliers:77` · `inventory: generate_variants:197` · `treasury: CheckViewSet.portfolio:985/in_transit:994, unbilled_charges:1421`.
+
+**Remediados en P1 (filas ✅ de §2.1):** accounting `ledger`/`variance`/`preview_closing`/`generate_opening`/`execution`/`close` (P1-7/P1-10) · contacts `credit_ledger`/`credit_portfolio`/`credit_history`/`partners`/`partner_statement`/`partners_summary` (P1-8) · inventory `stock_report`/`check_availability` (P1-11) · treasury `Dashboard.list`/`overview` (P1-9) · tax `documents` (P1-4).
 
 **Bounded/triviales (sin riesgo):** el resto (todos los @action de billing, workflow, core, production `bulk_transition:300` y `bulk_print:310` bounded-por-payload, etc.).
 
@@ -186,14 +188,14 @@ Ancla de volumen real: `seed_benchmark_data` (50k contactos / 100k movimientos) 
 Matriz 2×2 por endpoint (empírico × asintótico); rollup por app = peor fila. **Plano empírico: PARCIAL** — no se midió en esta iteración; se apoya en baselines históricos (2026-05, search `superseded_by: ADR-0018`) y tests existentes (`test_pagination_contract` solo a nivel clase; `assertNumQueries` es deuda pendiente). Se declara explícitamente para no fingir evidencia que no existe.
 
 | App | Empírico | Asintótico | Detalle del peor caso |
-|---|---|---|---|
-| contacts | parcial | ✗ | aging/portfolio/partners Θ(n) unbounded en request |
-| finances | parcial | ✗ | árbol y balance sheets Θ(n×depth) sync (mitigado cache 90s/async) |
-| tax | parcial | ✗ | documents Θ(n) const. altísima + signals write-amplification |
-| accounting | parcial | ✗ | ledger/variance/cierre Θ(n) unbounded |
-| hr | parcial | ✗ | proforma Θ(C) en POST síncrono + batch Θ(E×C) |
-| treasury | parcial | ✗ | dashboard list materialización completa + statement lines ~300q |
-| inventory | parcial | ✗ | stock_report 6P+1, check_availability N+1, generate_variants multiplicativo |
+|---|---|---|---|---|
+| contacts | parcial | △ | aging/portfolio/partners mitigados (P1-5/P1-8); residual `customers`/`suppliers` sin consumidor |
+| finances | parcial | ✓ | árbol y balance sheets O(1) round-trips (P1-6); `generate_report_task` queda P2 |
+| tax | parcial | △ | `documents` paginado+prefetch (P1-4); `calculate_f29_for_period` pendiente + signals P2 |
+| accounting | parcial | △ | ledger/variance/ejecución/cierre O(1) (P1-7/P1-10); residual `previous_year_actuals`/`export_csv` |
+| hr | parcial | △ | proforma Θ(C) → O(1) round-trips (P1-12); batch Θ(E×C) queda P2 |
+| treasury | parcial | △ | dashboard/overview/reconciliación mitigados (P1-9); residual portfolio/in_transit/unbilled_charges |
+| inventory | parcial | △ | stock_report/check_availability O(1) (P1-11); residual `generate_variants` multiplicativo + `get_insights` |
 | production | parcial | ✗ | get_stock_available N+1 + signal auto_create_work_orders |
 | purchasing | parcial | ✗ | create_note Θ(I×R) + task subscription LIKE scan |
 | sales | parcial | ✗ | confirm_delivery Θ(T×M) RAM + list Θ(page×L×B) |
@@ -201,7 +203,7 @@ Matriz 2×2 por endpoint (empírico × asintótico); rollup por app = peor fila.
 | workflow | parcial | ✓ | batch bounded, master data chica |
 | core | parcial | △ | audit log limit sin clamp |
 
-**Resumen**: 10/13 apps no cumplen el plano asintótico interactivo. El plano empírico es parcial y no valida (ni desmiente) el cumplimiento; ningún presupuesto interactivo tiene medición nueva. Umbral adoptado: **300ms** (decisión del usuario); `performance.md` mantiene 400ms — tensión documentada, reconciliar en próxima revisión.
+**Resumen**: 3/13 apps mantienen riesgo asintótico interactivo alto (production, purchasing, sales); las demás quedaron mitigadas o con residual acotado y priorizado en P1 (4-12 remiten a §5). El plano empírico sigue **parcial**: ningún presupuesto interactivo tiene medición nueva en esta iteración (baselines históricos + tests `assertNumQueries` por P1). Umbral adoptado: **300ms** (decisión del usuario); `performance.md` mantiene 400ms — tensión documentada, reconciliar en próxima revisión.
 
 ## §5. Lista priorizada de remediación
 
@@ -213,13 +215,13 @@ Prioridad = riesgo × radio de impacto (riesgo {bajo,medio,alto} = clase × boun
 3. Consumidores sin page_size (getPurchasableProducts, getContacts, useVariants) → truncado silencioso. **Implementado 2026-08-13** (page_size 200).
 
 **P1 — unbounded interactivo de mayor impacto:**
-4. Tax `documents`/`get_declaration_documents` (selectors.py:18): serializador ligero + prefetch o export paginado.
-5. Aging/portfolio (contacts selectors 117/208/318): SQL aggregates + LIMIT en query.
-6. Árbol de cuentas (finances 72/103): CTE recursivo o pase único en memoria; reportes reutilizan balances preagregados.
-7. Accounting ledger + fiscal year (preview/close/generate_opening): agregados agrupados + select_related.
-8. Treasury Dashboard.list/get_cash_flows: ORDER BY+LIMIT en el queryset.
-9. Inventory stock_report (6P+1) + check_availability: resolver en 1 SQL con annotate.
-10. HR proforma Θ(C): batch query + delegar POST a Celery.
+4. Tax `documents`/`get_declaration_documents` (selectors.py:18): serializador ligero + prefetch o export paginado. **Implementado P1-4** (2026-08-13).
+5. Aging/portfolio (contacts selectors 117/208/318): SQL aggregates + LIMIT en query. **Implementado P1-5** (2026-08-13).
+6. Árbol de cuentas (finances 72/103): CTE recursivo o pase único en memoria; reportes reutilizan balances preagregados. **Implementado P1-6** (2026-08-13).
+7. Accounting ledger + fiscal year (preview/close/generate_opening): agregados agrupados + select_related. **Implementado P1-7/P1-10** (2026-08-13/14).
+8. Treasury Dashboard.list/get_cash_flows: ORDER BY+LIMIT en el queryset. **Implementado P1-9** (2026-08-14).
+9. Inventory stock_report (6P+1) + check_availability: resolver en 1 SQL con annotate. **Implementado P1-11** (2026-08-14).
+10. HR proforma Θ(C): batch query + delegar POST a Celery. **Optimizado P1-12** (2026-08-14): O(1) round-trips; delegación a Celery queda P2 (item 11).
 
 **P2 — batch/tasks/signals:**
 11. Tasks: hr E×C, treasury auto_match n·m, contacts portfolio → chunking + caps + bulk_create.
