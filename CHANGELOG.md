@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.3](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.2...v0.3.3) (2026-08-14)
+
+
+### 🐛 Bug Fixes
+
+* **frontend:** P0 correctness from Big O audit ([3979eff](https://github.com/Patricoaa/ERPGrafico/commit/3979eff8bd79fa653db80050bfff116c595e8f07))
+
 ### [0.3.2](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.1...v0.3.2) (2026-08-14)
 
 
