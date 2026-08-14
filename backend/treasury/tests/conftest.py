@@ -74,12 +74,19 @@ def setup_cash_group_account(db):
 
         )
 
-import sys
-if "pytest" in sys.modules:
-    # Patch get_cash_pool_accounts in Account to return all accounts during testing
-    # to bypass the CASH_GROUP_CODE prefix check, which is too cumbersome for tests.
+@pytest.fixture(autouse=True)
+def mock_cash_pool_accounts(monkeypatch):
+    """Return all accounts as the cash pool for treasury tests, then restore.
+
+    Replaces the previous session-wide class patch, which leaked into other
+    apps' tests (e.g. finances cash-flow) once this conftest was collected.
+    """
     from accounting.models import Account
+
     @classmethod
-    def mock_get_cash_pool_accounts(cls):
+    def _mock_get_cash_pool_accounts(cls):
         return cls.objects.all()
-    Account.get_cash_pool_accounts = mock_get_cash_pool_accounts
+
+    monkeypatch.setattr(
+        Account, "get_cash_pool_accounts", _mock_get_cash_pool_accounts
+    )

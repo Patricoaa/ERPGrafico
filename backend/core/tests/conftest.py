@@ -1,4 +1,3 @@
-import sys
 import pytest
 from datetime import date
 from decimal import Decimal
@@ -8,15 +7,21 @@ from core.models import User
 
 # ---------------------------------------------------------------------------
 #  Patch get_cash_pool_accounts to avoid prefix-check during tests
+#  (per-test autouse fixture: restored after each test so the session-wide
+#  patch does not leak into other apps' tests, e.g. finances cash-flow).
 # ---------------------------------------------------------------------------
-if "pytest" in sys.modules:
+
+@pytest.fixture(autouse=True)
+def mock_cash_pool_accounts(monkeypatch):
     from accounting.models import Account
 
     @classmethod
     def _mock_get_cash_pool_accounts(cls):
         return cls.objects.all()
 
-    Account.get_cash_pool_accounts = _mock_get_cash_pool_accounts
+    monkeypatch.setattr(
+        Account, "get_cash_pool_accounts", _mock_get_cash_pool_accounts
+    )
 
 
 @pytest.fixture(autouse=True)
