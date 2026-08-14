@@ -352,10 +352,13 @@ class PayrollService:
 
     @staticmethod
     @transaction.atomic
-    def generate_proforma_payroll(employee_id=None, year=None, month=None, payroll=None):
+    def generate_proforma_payroll(
+        employee_id=None, year=None, month=None, payroll=None, concepts=None
+    ):
         """
         Genera una propuesta de liquidación basada en legislación chilena y fórmulas dinámicas.
         Puede recibir un payroll ya creado o los parámetros para buscar/crear uno.
+        `concepts` permite hoistear la lista de conceptos (1 query) en loops batch.
         """
         from .models import (
             Employee,
@@ -458,7 +461,10 @@ class PayrollService:
         }
 
         # PASS 1: Haberes (Para determinar el IMPONIBLE)
-        concepts = list(PayrollConcept.objects.all())
+        if concepts is None:
+            concepts = list(PayrollConcept.objects.all())
+        else:
+            concepts = list(concepts)
         haberes_imponibles = []
         haberes_no_imponibles = []
 

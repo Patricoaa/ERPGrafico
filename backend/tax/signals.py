@@ -1,7 +1,17 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from .models import AccountingPeriod, TaxPeriod
+
+
+@receiver(pre_save, sender=TaxPeriod)
+def _capture_tax_period_status(sender, instance, **kwargs):
+    if instance.pk:
+        instance._old_status = (
+            TaxPeriod.objects.filter(pk=instance.pk).values_list("status", flat=True).first()
+        )
+    else:
+        instance._old_status = None
 
 
 @receiver(post_save, sender=TaxPeriod)
@@ -10,6 +20,8 @@ def mark_invoices_as_closed(sender, instance, **kwargs):
     When a tax period is closed, mark all invoices from that period
     as tax_period_closed=True to prevent modifications.
     """
+    if getattr(instance, "_old_status", None) == instance.status:
+        return
     if instance.status == TaxPeriod.Status.CLOSED:
         from datetime import date
 
@@ -44,6 +56,18 @@ def mark_invoices_as_closed(sender, instance, **kwargs):
         )
 
 
+@receiver(pre_save, sender=AccountingPeriod)
+def _capture_accounting_period_status(sender, instance, **kwargs):
+    if instance.pk:
+        instance._old_status = (
+            AccountingPeriod.objects.filter(pk=instance.pk)
+            .values_list("status", flat=True)
+            .first()
+        )
+    else:
+        instance._old_status = None
+
+
 @receiver(post_save, sender=AccountingPeriod)
 def mark_journal_entries_as_closed(sender, instance, **kwargs):
     """
@@ -51,6 +75,8 @@ def mark_journal_entries_as_closed(sender, instance, **kwargs):
     as period_closed=True and their status to CLOSED to prevent modifications.
     When reopened, revert to POSTED and unlock.
     """
+    if getattr(instance, "_old_status", None) == instance.status:
+        return
     from datetime import date
 
     from accounting.models import JournalEntry

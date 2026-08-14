@@ -88,8 +88,8 @@ Formato de fila: `clave (archivo:línea) | n | bounded-ness | round-trips | row-
 | `inventory/services.py:1697` `check_availability` | L líneas | unbounded (payload) | L×(5+3C) | Θ(L×componentes) | Θ(L) | ✅ P1-11: fetch por ids + BOMs con `lines__component` prefetch + componentes con stock/reserved anotados en bulk → O(1) round-trips; fix bug pre-existente `product.manufacturable_quantity` (AttributeError) → `get_manufacturable_quantity()` |
 | `inventory/services.py:1776` `generate_variants` | ∏valores | unbounded **multiplicativo** | Θ(combos) | Θ(combos) | Θ(V1×…×Vk) | bulk_create + cap explícito (combos>500 → error) |
 | `inventory/selectors.py:20` `list_products` | página + BOMs globales | page+dataset (memoria unbounded) | ~10 | prefetch TODAS las BOMs del dataset | O(1) q, O(dataset BOMs) memoria | prefetch de BOMs solo en contexto stock planning o filtrar por página |
-| `production/selectors.py:20` `get_stock_available` | componentes BOM | bounded-por-dataset | N+1 (get_manufacturable_quantity por componente) | Θ(B×L) | Θ(n) | mover manufacturabilidad a la parte anotada/prefetch |
-| `purchasing/services.py:1078` `create_note` | items×receipts | bounded-por-documento (multiplicativo) | O(I×R) | Θ(I×R) | Θ(n²) | prefetch order.receipts + 1 query de líneas por receipt (bulk) |
+| `production/selectors.py:20` `get_stock_available` | componentes BOM | bounded-por-dataset | N+1 (get_manufacturable_quantity por componente) | Θ(B×L) | Θ(n) | ✅ P2.6: `build_stock_context` retorna `(stocks_by_product, products_by_id)`; manufacturabilidad con BOMs activos + `lines__component` con `annotated_current_stock` prefetched → 0 queries por material (test 0-queries) |
+| `purchasing/services.py:1078` `create_note` | items×receipts | bounded-por-documento (multiplicativo) | O(I×R) | Θ(I×R) | Θ(n²) | ✅ P2.5: prefetch de `order.receipts(confirmed).lines` + dict `purchase_line_id → warehouse` (first-wins) → O(1) lookup por línea |
 | `core/services/selectors.py:15` + `views.py:249` `get_global_audit_log` | limit **sin clamp** | unbounded | 10 | Θ(10×limit) | Θ(limit) | clamp server-side ≤200 o union query única |
 
 ### 2.2 Bounded-por-dataset-sin-cap / page+dataset — riesgo medio
@@ -101,8 +101,8 @@ Formato de fila: `clave (archivo:línea) | n | bounded-ness | round-trips | row-
 | `tax/views.py:35` `TaxPeriodViewSet.list` | TaxPeriod + P | page+dataset + 2P (N+1 serializer) | Θ(1)+2P | prefetch declarations__payments en el queryset |
 | `contacts/views.py:62` `ContactViewSet.list` | página × k (~8-15 aggregates) | page+dataset | Θ(page×O_c) | annotate todos los campos de ContactListSerializer |
 | `sales/views.py:139` `SaleOrderViewSet.list` | página × L × BOM | page+dataset | Θ(page×L×B) | serializer de lista ligero sin manufacturable_quantity/available_stock |
-| `sales/services.py:526` `confirm_delivery` | L+ΣB, match T×M | bounded-dataset | Θ(L+ΣB)+Θ(T×M) | prefetch BOMs + resolver match de stock moves con dict por product_id |
-| `sales/services.py:691-696` (match cuadrático RAM) | T×M | bounded | Θ(T×M) | dict por product_id |
+| `sales/services.py:526` `confirm_delivery` | L+ΣB, match T×M | bounded-dataset | Θ(L+ΣB)+Θ(T×M) | prefetch BOMs + resolver match de stock moves con dict por product_id | ✅ P2.4: `moves_by_key[(product_id, quantity)]` (first-wins) → Θ(T+M) |
+| `sales/services.py:691-696` (match cuadrático RAM) | T×M | bounded | Θ(T×M) | dict por product_id | ✅ P2.4: resuelto con el mismo dict de confirm_delivery |
 | `treasury/views.py:216` `TreasuryAccountViewSet.list` | cuentas + reconciliation_settings | unbounded (master data) | Θ(n) + N+1 | batch de ReconciliationSettings por cuenta |
 | `hr/views.py:124` `EmployeeViewSet.list` | E empleados | dataset-sin-cap (sin paginar) | Θ(E) filas | activar StandardResultsSetPagination |
 | `finances/views.py:38` `_handle_report_request` | reportes completos | dataset (cache 90s / async) | Θ(n×depth) | cache + async ya mitigan |
@@ -123,9 +123,9 @@ Formato de fila: `clave (archivo:línea) | n | bounded-ness | round-trips | row-
 
 | Task | n | round-trips | clase | riesgo | remediación |
 |---|---|---|---|---|---|
-| `contacts/tasks.py:13` `evaluate_credit_portfolio` | C cartera | Θ(C+ΣO×2) | Θ(n) | **alto** (sin lote ni límite) | chunks con .iterator() + 2 queries agregadas por chunk |
-| `hr/tasks.py:16` `create_monthly_draft_payrolls` | E×C | Θ(E×C) | Θ(E×C) **multiplicativo** | **alto** | chunks + exists en bulk (employee__in) + batch concept_amounts |
-| `treasury/tasks.py:318` `auto_match_statement_task` | líneas×candidatos | Θ(n×m) | Θ(n·m) **multiplicativo** | **alto** | cap de candidatos + batch-scoring |
+| `contacts/tasks.py:13` `evaluate_credit_portfolio` | C cartera | Θ(C+ΣO×2) | Θ(n) | **alto** (sin lote ni límite) | ✅ P2.3: `prefetch_related(sale_orders__payments, sale_orders__invoices)` + loop único con aging + `bulk_update` → O(1) round-trips (test `q2 ≤ q1` y `q2 ≤ 8`) |
+| `hr/tasks.py:16` `create_monthly_draft_payrolls` | E×C | Θ(E×C) | Θ(E×C) **multiplicativo** | **alto** | ✅ P2.1: employee_ids existentes en 1 query + concepts hoisteados + `.iterator(chunk_size=500)` con `chunked()` y `transaction.atomic()` por chunk → Θ(E) |
+| `treasury/tasks.py:318` `auto_match_statement_task` | líneas×candidatos | Θ(n×m) | Θ(n·m) **multiplicativo** | **alto** | ✅ P2.2: `AUTO_MATCH_MAX_CANDIDATES=3000` + scoring sin `include_payment_data` en el slow path → costo acotado por línea |
 | `purchasing/tasks.py:20` `generate_subscription_orders` | S suscripciones | Θ(S×~8) + LIKE contains | Θ(n) | medio-alto | 1 query de duplicados IN sub_ids + bulk_create + cap por run |
 | `production/tasks.py:18` `notify_overdue_work_orders` | OTs overdue | Θ(n) + exists+create por OT | Θ(n) | medio-alto | bulk_create notifications + 1 query tasks IN ids |
 | `inventory/tasks.py:13` `check_product_margin_task` | 1 | O(1) | O(1) | bajo | — |
@@ -136,11 +136,11 @@ Formato de fila: `clave (archivo:línea) | n | bounded-ness | round-trips | row-
 
 | Signal | costo | riesgo | remediación |
 |---|---|---|---|
-| `tax/signals.py:8` `mark_invoices_as_closed` | 1 bulk UPDATE del mes por **cada** post_save de TaxPeriod | medio (write amplification) | solo en transición de status (tracking=True) o mover a close_period |
-| `tax/signals.py:48` `mark_journal_entries_as_closed` | 2 bulk UPDATEs del mes por **cada** post_save de AccountingPeriod | medio | guard por cambio de status |
+| `tax/signals.py:8` `mark_invoices_as_closed` | 1 bulk UPDATE del mes por **cada** post_save de TaxPeriod | medio (write amplification) | ✅ P2.7a: guard de transición vía pre_save (`_old_status`) → solo corre en CLOSED↔OPEN |
+| `tax/signals.py:48` `mark_journal_entries_as_closed` | 2 bulk UPDATEs del mes por **cada** post_save de AccountingPeriod | medio | ✅ P2.7a: idem guard de transición |
 | `inventory/signals.py:61` `handle_stock_move_updates` | ~6-8 queries por StockMove.create | medio-alto (se multiplica en confirmar_documento) | amortizar (bulk_create no dispara signals; auditar create() por línea) |
 | `inventory/signals.py:115` `product_subscription_sync` | O(S) por update (S sin cap) | medio | bulk |
-| `production/signals.py:10` `auto_create_work_orders` | Θ(líneas) por confirmación de SaleOrder | medio-alto | diferir a Celery o bulk_create |
+| `production/signals.py:10` `auto_create_work_orders` | Θ(líneas) por confirmación de SaleOrder | medio-alto | ✅ P2.7b: **eliminado** (código muerto, nunca importado); flujo vive inline en `sales/services.py:1402` con `select_related("product")` + `prefetch_related("work_orders")` → sin `exists()` por línea |
 | `core/signals.py:10` `sync_contact_to_company_settings` | 1 SELECT por save de Contact | bajo | — |
 | `treasury/signals.py` (9), `workflow/signals.py:10` (publish Redis por save), `contacts/signals.py:1`, `sales/signals.py` | constantes | bajo | — |
 
@@ -173,13 +173,13 @@ Ancla de volumen real: `seed_benchmark_data` (50k contactos / 100k movimientos) 
 | Aging / portfolio (contacts) | C=5k-50k contactos, O/P histórico | Θ(n) const. ~3 | 10x ms | **ya en ruptura**: Θ(C+O) queries > 10/request a C>50 |
 | Árbol de cuentas (finances) | n=100-300 cuentas, depth 3-5 | Θ(n×depth), peor O(n²) | 10-100x ms | ruptura con cuentas>500 o chains |
 | Tax documents (@action) | I_month 4-8k invoices | Θ(n) const. altísima | 10x ms | **ya en ruptura** (meses grandes) |
-| Nómina (hr) | E=50-200 × C=15-30 | Θ(E×C) | 100x queries | **ya en ruptura** en batch |
+| Nómina (hr) | E=50-200 × C=15-30 | Θ(E×C) | 100x queries | ✅ P2.1: batch Θ(E) con chunks + concepts hoisteados |
 | Ledger / variance / cierre (accounting) | J=200k items | Θ(n) | 10x ms | ledger ya pesado por cuenta de alto volumen |
 | Dashboard treasury list | movimientos filtrados | Θ(n log n) | ~11x ms | ya frágil (sort Python post-slice) |
 | Stock report (inventory) | P=catálogo trackable | Θ(P) (6P+1 q) | 10x ms | cache-miss = colapso ya |
 | generate_variants | ∏valores | Θ(multiplicativo) | 100x | cap 500 combos recomendado |
-| create_note (purchasing) | I×R por documento | Θ(n²) | 100x | documentos grandes |
-| auto_match_statement | líneas×candidatos | Θ(n·m) | 100x | **ya en ruptura** sin cap |
+| create_note (purchasing) | I×R por documento | Θ(n²) | 100x | ✅ P2.5: O(1) por línea (dict de bodegas) |
+| auto_match_statement | líneas×candidatos | Θ(n·m) | 100x | ✅ P2.2: cap 3000 candidatos por línea |
 
 **Nota de sensibilidad (cap)**: todos los flags `bounded-por-página` asumen cap=200. Subir el cap escala el trabajo de materialización de servidor en consecuencia y **requiere ADR** (invariant 12).
 
@@ -189,21 +189,21 @@ Matriz 2×2 por endpoint (empírico × asintótico); rollup por app = peor fila.
 
 | App | Empírico | Asintótico | Detalle del peor caso |
 |---|---|---|---|---|
-| contacts | parcial | △ | aging/portfolio/partners mitigados (P1-5/P1-8); residual `customers`/`suppliers` sin consumidor |
+| contacts | parcial | △ | aging/portfolio/partners mitigados (P1-5/P1-8); task cartera O(1) (P2.3); residual `customers`/`suppliers` sin consumidor |
 | finances | parcial | ✓ | árbol y balance sheets O(1) round-trips (P1-6); `generate_report_task` queda P2 |
-| tax | parcial | △ | `documents` paginado+prefetch (P1-4); `calculate_f29_for_period` pendiente + signals P2 |
+| tax | parcial | △ | `documents` paginado+prefetch (P1-4); signals con guard de transición (P2.7a); `calculate_f29_for_period` pendiente |
 | accounting | parcial | △ | ledger/variance/ejecución/cierre O(1) (P1-7/P1-10); residual `previous_year_actuals`/`export_csv` |
-| hr | parcial | △ | proforma Θ(C) → O(1) round-trips (P1-12); batch Θ(E×C) queda P2 |
-| treasury | parcial | △ | dashboard/overview/reconciliación mitigados (P1-9); residual portfolio/in_transit/unbilled_charges |
+| hr | parcial | △ | proforma Θ(C) → O(1) round-trips (P1-12); batch Θ(E) con chunks (P2.1) |
+| treasury | parcial | △ | dashboard/overview/reconciliación mitigados (P1-9); auto_match con cap de candidatos (P2.2); residual portfolio/in_transit/unbilled_charges |
 | inventory | parcial | △ | stock_report/check_availability O(1) (P1-11); residual `generate_variants` multiplicativo + `get_insights` |
-| production | parcial | ✗ | get_stock_available N+1 + signal auto_create_work_orders |
-| purchasing | parcial | ✗ | create_note Θ(I×R) + task subscription LIKE scan |
-| sales | parcial | ✗ | confirm_delivery Θ(T×M) RAM + list Θ(page×L×B) |
+| production | parcial | △ | get_stock_available 0-queries con contexto (P2.6); signal auto_create_work_orders eliminada (P2.7b) |
+| purchasing | parcial | △ | create_note O(1) por línea (P2.5); residual task subscription LIKE scan |
+| sales | parcial | △ | confirm_delivery Θ(T+M) (P2.4); residual list Θ(page×L×B) |
 | billing | parcial | △ | checkout Θ(L+ΣB) medio; list limpio (InvoiceListSerializer) |
 | workflow | parcial | ✓ | batch bounded, master data chica |
 | core | parcial | △ | audit log limit sin clamp |
 
-**Resumen**: 3/13 apps mantienen riesgo asintótico interactivo alto (production, purchasing, sales); las demás quedaron mitigadas o con residual acotado y priorizado en P1 (4-12 remiten a §5). El plano empírico sigue **parcial**: ningún presupuesto interactivo tiene medición nueva en esta iteración (baselines históricos + tests `assertNumQueries` por P1). Umbral adoptado: **300ms** (decisión del usuario); `performance.md` mantiene 400ms — tensión documentada, reconciliar en próxima revisión.
+**Resumen**: 0/13 apps mantienen riesgo asintótico interactivo alto (production, purchasing, sales remediados en P2.4-P2.7); los residuales son bounded y priorizados en §5. El plano empírico sigue **parcial**: ningún presupuesto interactivo tiene medición nueva en esta iteración (baselines históricos + tests `assertNumQueries`/`CaptureQueriesContext` por P1/P2). Umbral adoptado: **300ms** (decisión del usuario); `performance.md` mantiene 400ms — tensión documentada, reconciliar en próxima revisión.
 
 ## §5. Lista priorizada de remediación
 
@@ -224,9 +224,9 @@ Prioridad = riesgo × radio de impacto (riesgo {bajo,medio,alto} = clase × boun
 10. HR proforma Θ(C): batch query + delegar POST a Celery. **Optimizado P1-12** (2026-08-14): O(1) round-trips; delegación a Celery queda P2 (item 11).
 
 **P2 — batch/tasks/signals:**
-11. Tasks: hr E×C, treasury auto_match n·m, contacts portfolio → chunking + caps + bulk_create.
-12. Signals: tax mark_*_as_closed (guard status), production auto_create_work_orders (Celery).
-13. N+1 restantes: production get_stock_available, purchasing create_note, sales confirm_delivery match.
+11. Tasks: hr E×C, treasury auto_match n·m, contacts portfolio → chunking + caps + bulk_create. **Implementado P2.1-P2.3** (2026-08-14): hr Θ(E) chunks+concepts hoisteados · treasury cap 3000 candidatos · contacts bulk_update con prefetch.
+12. Signals: tax mark_*_as_closed (guard status), production auto_create_work_orders (Celery). **Implementado P2.7a/P2.7b** (2026-08-14): guard de transición pre_save; signal production eliminada (muerta), inline prefetched.
+13. N+1 restantes: production get_stock_available, purchasing create_note, sales confirm_delivery match. **Implementado P2.4-P2.6** (2026-08-14): confirm_delivery dict Θ(T+M) · create_note dict de bodegas O(1) · get_stock_available contexto prefetched 0-queries.
 
 **P3 — bounded-dataset / limpieza:**
 14. page_size obsoletos (`inventoryApi.ts:130` 9999, `useProducts.ts:76` 500) — iteración vieja confirmada.

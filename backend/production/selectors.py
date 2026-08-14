@@ -22,7 +22,12 @@ class ProductionSelectorExt:
         from inventory.services import UoMService
         c = obj.component
         if c.product_type == 'SERVICE': return 999999
-        if c.strategy.can_have_bom and not c.requires_advanced_manufacturing: return c.get_manufacturable_quantity() or 0.0
+        if c.strategy.can_have_bom and not c.requires_advanced_manufacturing:
+            products_by_id = context.get('products_by_id') or {}
+            prefetched = products_by_id.get(c.id)
+            if prefetched is not None:
+                return prefetched.get_manufacturable_quantity() or 0.0
+            return c.get_manufacturable_quantity() or 0.0
         w = obj.work_order.warehouse
         if not w: return 0.0
         
@@ -36,9 +41,9 @@ class ProductionSelectorExt:
                 key = (w.id, c.id)
                 if key in req._stock_cache: stock = req._stock_cache[key]
                 else:
-                    stock = req._stock_cache[key] = c.stock_moves.filter(warehouse=w).aggregate(t=Sum('quantity'))['t'] or 0.0
+                    stock = req._stock_cache[key] = c.stocks.filter(warehouse=w).aggregate(t=Sum('quantity'))['t'] or 0.0
             else:
-                stock = c.stock_moves.filter(warehouse=w).aggregate(t=Sum('quantity'))['t'] or 0.0
+                stock = c.stocks.filter(warehouse=w).aggregate(t=Sum('quantity'))['t'] or 0.0
 
         try:
             if c.uom and obj.uom and c.uom != obj.uom: stock = UoMService.convert_quantity(stock, c.uom, obj.uom)

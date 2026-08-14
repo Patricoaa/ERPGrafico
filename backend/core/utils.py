@@ -1,5 +1,6 @@
 import os
 import uuid
+from collections.abc import Iterable, Iterator
 from io import BytesIO
 
 from django.core.files.base import ContentFile
@@ -14,6 +15,23 @@ def get_current_date():
     Used as default for DateFields to avoid AssertionError with DRF serialization.
     """
     return timezone.now().date()
+
+
+def chunked(iterable: Iterable, size: int = 500) -> Iterator[list]:
+    """
+    Yield successive chunks of `size` from any iterable without materializing it.
+
+    For large Django querysets pass `queryset.iterator()` to stream rows
+    server-side instead of loading the full result set into memory.
+    """
+    chunk: list = []
+    for item in iterable:
+        chunk.append(item)
+        if len(chunk) >= size:
+            yield chunk
+            chunk = []
+    if chunk:
+        yield chunk
 
 
 @deconstructible

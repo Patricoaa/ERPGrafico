@@ -1862,30 +1862,54 @@ class WorkOrderService:
     @staticmethod
     def build_stock_context(work_order):
         """
-        Returns a dict {product_id: stock_float} for all storable materials in this OT,
-        computed in a single aggregated query against the OT's warehouse.
+        Returns (stocks_by_product, products_by_id) for the storable materials of
+        this OT. Stocks are aggregated in a single query against the OT warehouse;
+        manufacturable components are prefetched with their active BOMs and
+        annotated component stock so get_manufacturable_quantity() runs in-memory.
         """
-        from django.db.models import Sum
-        from inventory.models import StockMove
+        from django.db.models import Prefetch, Sum
+        from inventory.models import Product, Stock
+        from production.models import BillOfMaterials
 
         warehouse = work_order.warehouse
         if not warehouse:
-            return {}
+            return {}, {}
 
-        component_ids = list(
-            work_order.materials.exclude(component__product_type="SERVICE").values_list(
-                "component_id", flat=True
-            )
-        )
+        material_qs = work_order.materials.exclude(component__product_type="SERVICE")
+        component_ids = list(material_qs.values_list("component_id", flat=True))
         if not component_ids:
-            return {}
+            return {}, {}
 
         rows = (
-            StockMove.objects.filter(warehouse=warehouse, product_id__in=component_ids)
+            Stock.objects.filter(warehouse=warehouse, product_id__in=component_ids)
             .values("product_id")
             .annotate(total=Sum("quantity"))
         )
-        return {row["product_id"]: float(row["total"] or 0.0) for row in rows}
+        stocks = {row["product_id"]: float(row["total"] or 0.0) for row in rows}
+
+        manufacturable_ids = list(
+            material_qs.filter(
+                component__product_type=Product.Type.MANUFACTURABLE,
+                component__requires_advanced_manufacturing=False,
+            ).values_list("component_id", flat=True)
+        )
+        products_by_id = {}
+        if manufacturable_ids:
+            boms = BillOfMaterials.objects.filter(active=True).prefetch_related(
+                Prefetch(
+                    "lines__component",
+                    queryset=Product.objects.annotate(
+                        annotated_current_stock=Sum("stocks__quantity")
+                    ),
+                ),
+                "lines__uom",
+                "lines__component__uom",
+            )
+            products = Product.objects.filter(id__in=manufacturable_ids).prefetch_related(
+                Prefetch("boms", queryset=boms)
+            )
+            products_by_id = {p.id: p for p in products}
+        return stocks, products_by_id
 
     @staticmethod
     def validate_update_allowed(work_order, data_keys):
@@ -1967,7 +1991,8 @@ class WorkOrderService:
 
         # Validate stock availability via service
         from .serializers import WorkOrderSerializer
-        ctx = {"stocks_by_product": WorkOrderService.build_stock_context(work_order)}
+        stocks, products_by_id = WorkOrderService.build_stock_context(work_order)
+        ctx = {"stocks_by_product": stocks, "products_by_id": products_by_id}
         serializer = WorkOrderSerializer(work_order, context=ctx)
         WorkOrderService.validate_transition_stock(
             work_order, next_stage, serializer.data.get("materials", [])
