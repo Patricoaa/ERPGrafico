@@ -1039,6 +1039,15 @@ class PurchasingService:
             )
             details_to_create = []
 
+            warehouse_by_purchase_line = {}
+            confirmed_receipts = order.receipts.filter(
+                status=PurchaseReceipt.Status.CONFIRMED
+            ).prefetch_related("lines")
+            for receipt in confirmed_receipts:
+                for receipt_line in receipt.lines.all():
+                    if receipt_line.purchase_line_id not in warehouse_by_purchase_line:
+                        warehouse_by_purchase_line[receipt_line.purchase_line_id] = receipt.warehouse
+
             for item in return_items:
                 product_id = item.get("product_id")
                 quantity = Decimal(str(item.get("quantity", 0)))
@@ -1074,13 +1083,7 @@ class PurchasingService:
                         )
 
                 # Determine Warehouse
-                warehouse = None
-                for receipt in order.receipts.filter(status=PurchaseReceipt.Status.CONFIRMED):
-                    receipt_line = receipt.lines.filter(purchase_line=purchase_line).first()
-                    if receipt_line:
-                        warehouse = receipt.warehouse
-                        break
-
+                warehouse = warehouse_by_purchase_line.get(purchase_line.id)
                 if not warehouse:
                     warehouse = order.warehouse
 
