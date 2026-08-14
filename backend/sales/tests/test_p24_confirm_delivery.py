@@ -9,10 +9,8 @@ from decimal import Decimal
 
 import pytest
 
-from accounting.models import Account, AccountType
 from contacts.models import Contact
 from inventory.models import (
-    InventoryDocument,
     Location,
     Product,
     ProductCategory,
