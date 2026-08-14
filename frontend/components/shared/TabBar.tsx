@@ -13,10 +13,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
  * Layer-1 consumer by ADR-0076 — restricted to navigation decoration.
  */
 export const CMYK_ACCENT = [
-    { text: "text-cyan", activeText: "data-[state=active]:text-cyan", hoverText: "hover:text-cyan", bar: "bg-cyan" },
-    { text: "text-magenta", activeText: "data-[state=active]:text-magenta", hoverText: "hover:text-magenta", bar: "bg-magenta" },
-    { text: "text-yellow", activeText: "data-[state=active]:text-yellow", hoverText: "hover:text-yellow", bar: "bg-yellow" },
-    { text: "text-black", activeText: "data-[state=active]:text-black", hoverText: "hover:text-black", bar: "bg-black" },
+    { text: "text-cyan", activeText: "data-[state=active]:text-cyan", openText: "data-[state=open]:text-cyan", hoverText: "hover:text-cyan", bar: "bg-cyan" },
+    { text: "text-magenta", activeText: "data-[state=active]:text-magenta", openText: "data-[state=open]:text-magenta", hoverText: "hover:text-magenta", bar: "bg-magenta" },
+    { text: "text-yellow", activeText: "data-[state=active]:text-yellow", openText: "data-[state=open]:text-yellow", hoverText: "hover:text-yellow", bar: "bg-yellow" },
+    { text: "text-black", activeText: "data-[state=active]:text-black", openText: "data-[state=open]:text-black", hoverText: "hover:text-black", bar: "bg-black" },
 ] as const
 
 export interface TabItem {

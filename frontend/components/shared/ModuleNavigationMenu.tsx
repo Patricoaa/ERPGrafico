@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { DynamicIcon } from '@/components/shared'
+import { CMYK_ACCENT, DynamicIcon } from '@/components/shared'
 import {
     NavigationMenu,
     NavigationMenuContent,
@@ -43,9 +43,23 @@ export function ModuleNavigationMenu({ navigation }: ModuleNavigationMenuProps) 
         <div className="flex items-center gap-0 min-w-0 h-full">
             <NavigationMenu className="h-full max-w-full justify-start">
                 <NavigationMenuList className="h-full space-x-1">
-                    {visibleItems.map((item) => {
+                    {visibleItems.map((item, index) => {
+                        const accent = CMYK_ACCENT[index % CMYK_ACCENT.length]
                         const isActive = item.value === activeValue
                         const hasSubTabs = item.subTabs && item.subTabs.length > 0
+                        const itemText = isActive
+                            ? cn(accent.text, accent.hoverText)
+                            : cn("text-muted-foreground", accent.hoverText, accent.openText)
+                        const itemBar = (
+                            <div
+                                aria-hidden
+                                className={cn(
+                                    "absolute bottom-0 left-0 w-full h-[4px] rounded-t-sm transition-opacity duration-200",
+                                    accent.bar,
+                                    isActive ? "opacity-100" : "opacity-0 group-hover/tab:opacity-100 group-data-[state=open]/tab:opacity-100"
+                                )}
+                            />
+                        )
 
                         if (hasSubTabs) {
                             // Filter subtabs by permission too
@@ -55,8 +69,10 @@ export function ModuleNavigationMenu({ navigation }: ModuleNavigationMenuProps) 
                                 <NavigationMenuItem key={item.value}>
                                     <NavigationMenuTrigger 
                                         className={cn(
-                                            "h-8 px-3 bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50 transition-colors",
-                                            isActive && "text-primary bg-primary/5 hover:bg-primary/10 data-[state=open]:bg-primary/10"
+                                            "group/tab relative h-full px-3 bg-transparent transition-all duration-200",
+                                            "hover:bg-transparent focus:bg-transparent data-[state=open]:bg-transparent",
+                                            "data-[state=open]:hover:bg-transparent data-[state=open]:focus:bg-transparent",
+                                            itemText
                                         )}
                                     >
                                         <div className="flex items-center gap-2">
@@ -65,6 +81,7 @@ export function ModuleNavigationMenu({ navigation }: ModuleNavigationMenuProps) 
                                             )}
                                             <span className="font-medium text-sm tracking-tight">{item.label}</span>
                                         </div>
+                                        {itemBar}
                                     </NavigationMenuTrigger>
                                     <NavigationMenuContent>
                                         <ul className="grid w-[400px] gap-1 p-2 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
@@ -89,8 +106,9 @@ export function ModuleNavigationMenu({ navigation }: ModuleNavigationMenuProps) 
                                 <NavigationMenuLink asChild
                                         className={cn(
                                             navigationMenuTriggerStyle(),
-                                            "h-8 px-3 bg-transparent hover:bg-muted/50 transition-colors",
-                                            isActive && "text-primary bg-primary/5 hover:bg-primary/10"
+                                            "group/tab relative h-full px-3 bg-transparent transition-all duration-200",
+                                            "hover:bg-transparent focus:bg-transparent",
+                                            itemText
                                         )}
                                 >
                                     <Link href={item.href}>
@@ -100,6 +118,7 @@ export function ModuleNavigationMenu({ navigation }: ModuleNavigationMenuProps) 
                                             )}
                                             <span className="font-medium text-sm tracking-tight">{item.label}</span>
                                         </div>
+                                        {itemBar}
                                     </Link>
                                 </NavigationMenuLink>
                             </NavigationMenuItem>
