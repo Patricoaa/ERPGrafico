@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 
-const MAX_GROUP_BY_RECORDS = 5000
+const MAX_GROUP_BY_RECORDS = 200
 
 interface UseGroupByPaginationOptions {
   totalCount: number

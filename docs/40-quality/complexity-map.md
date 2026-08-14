@@ -144,9 +144,9 @@ Formato de fila: `clave (archivo:línea) | n | bounded-ness | round-trips | row-
 
 | Archivo | patrón | riesgo | remediación |
 |---|---|---|---|
-| `features/pos/hooks/useProducts.ts:49` `page_size:2000` | **bug de correctitud**: el backend capa a 200 → la búsqueda POS solo ve ~200 productos | **alto** | quitar page_size o añadir búsqueda server-side |
-| `SalesOrdersView.tsx:67,74`, `ProductClientView.tsx:118`, `TreasuryMovementsClientView.tsx:50`, `DocumentsClientView.tsx:39`, `BankMovementsClientView.tsx:41`, `MovementClientView.tsx:37` `page_size:5000` (grouping) | grouping client-side capado a 200 → conteos de grupo incorrectos entre 201-5000 | medio (correctness) | grouping server-side o deshabilitarlo cuando count>200 |
-| `purchasingApi.ts:139` (`getPurchasableProducts`), `contactsApi.ts:19`, `useVariants.ts:41` | consumen list paginado sin page_size → truncado silencioso a página 1 | medio (correctness) | page_size explícito + búsqueda server-side |
+| `features/pos/hooks/useProducts.ts:49` `page_size:2000` | **bug de correctitud**: el backend capa a 200 → la búsqueda POS solo ve ~200 productos | **alto** | **corregido** — búsqueda server-side (`search`/`category` debounced) + `page_size:200` (2026-08-13) |
+| `SalesOrdersView.tsx:67,74`, `ProductClientView.tsx:118`, `TreasuryMovementsClientView.tsx:50`, `DocumentsClientView.tsx:39`, `BankMovementsClientView.tsx:41`, `MovementClientView.tsx:37` `page_size:5000` (grouping) | grouping client-side capado a 200 → conteos de grupo incorrectos entre 201-5000 | medio (correctness) | **corregido** — guard recalibrado a `count>200` (cap real) en las 6 vistas + `useGroupByPagination.ts:4` (2026-08-13); grouping server-side sigue pendiente (P1) |
+| `purchasingApi.ts:139` (`getPurchasableProducts`), `contactsApi.ts:19`, `useVariants.ts:41` | consumen list paginado sin page_size → truncado silencioso a página 1 | medio (correctness) | **corregido** — `page_size:200` explícito (2026-08-13) |
 | `accountingApi.ts:6` `getAccounts`, `treasuryApi.ts:129` `getAccounts`, `hrApi.ts:68` `getEmployees` | datasets sin paginar, render O(n) | medio (crecen) | paginar o search server-side |
 | `useAttributes.ts:38-49` | join `attrs.map(vals.filter)` = O(a·v) sin cap | bajo-medio | Map por attribute |
 | `.find`/`.indexOf` en `.map` (PurchaseOrderModal:315, Step4_Receipt:243, BOMDrawer:585, ActionCategory:225, CostCalculatorDrawer:146, PosTerminalDrawer:103, entity-fields:940, DataTable:260, ProductGrid:87) | O(n²) sobre arrays ≤200 | bajo (etiqueta O(1) efectivo) | — |
@@ -206,9 +206,9 @@ Matriz 2×2 por endpoint (empírico × asintótico); rollup por app = peor fila.
 Prioridad = riesgo × radio de impacto (riesgo {bajo,medio,alto} = clase × bounded-ness; impacto 1-5 = endpoints × frecuencia). Fix de una frase; issues aparte.
 
 **P0 — correctitud (frontend):**
-1. Bug POS: `useProducts.ts:49` (page_size 2000 → 200). 
-2. Grouping `page_size:5000` (6 views) → agrupación incompleta 201-5000.
-3. Consumidores sin page_size (getPurchasableProducts, getContacts, useVariants) → truncado silencioso.
+1. Bug POS: `useProducts.ts:49` (page_size 2000 → 200). **Implementado 2026-08-13** (búsqueda server-side). 
+2. Grouping `page_size:5000` (6 views) → agrupación incompleta 201-5000. **Implementado 2026-08-13** (guard >200).
+3. Consumidores sin page_size (getPurchasableProducts, getContacts, useVariants) → truncado silencioso. **Implementado 2026-08-13** (page_size 200).
 
 **P1 — unbounded interactivo de mayor impacto:**
 4. Tax `documents`/`get_declaration_documents` (selectors.py:18): serializador ligero + prefetch o export paginado.

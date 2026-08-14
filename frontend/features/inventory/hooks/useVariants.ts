@@ -31,6 +31,7 @@ export function useVariants({ productId, enabled = true, activeOnly = true, extr
             if (activeOnly) {
                 params.append('is_active', 'true')
             }
+            params.append('page_size', '200')
 
             Object.entries(extraParams).forEach(([key, value]) => {
                 if (value !== undefined && value !== null) {

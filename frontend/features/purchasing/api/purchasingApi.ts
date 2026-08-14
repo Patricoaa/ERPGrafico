@@ -137,7 +137,7 @@ export const purchasingApi = {
     // ========== Inventory ==========
 
     getPurchasableProducts: async (): Promise<Record<string, unknown>[]> => {
-        const res = await api.get<{ results: Record<string, unknown>[] }>('/inventory/products/?can_be_purchased=true')
+        const res = await api.get<{ results: Record<string, unknown>[] }>('/inventory/products/?can_be_purchased=true&page_size=200')
         return res.data.results
     },
 

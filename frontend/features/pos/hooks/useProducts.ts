@@ -11,6 +11,7 @@ import { useRealtime, useEntitySubscription } from '@/features/realtime'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { inventoryApi } from '@/features/inventory'
+import { useDebounce } from '@/hooks/useDebounce'
 import { POS_KEYS } from './queryKeys'
 
 const EMPTY_ARRAY: Product[] = []
@@ -39,19 +40,23 @@ export function useProducts() {
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
     const [limits, setLimits] = useState<StockLimits>({})
 
+    const debouncedSearchTerm = useDebounce(searchTerm, 300)
+
     // 1. Fetch Products with React Query (Shared Cache)
     const { data: products = EMPTY_ARRAY, isLoading: loadingProducts } = useQuery({
-        queryKey: POS_KEYS.products.list({ is_active: true, can_be_sold: true }),
+        queryKey: POS_KEYS.products.list({ is_active: true, can_be_sold: true, search: debouncedSearchTerm, category: selectedCategoryId ?? undefined }),
         queryFn: async () => {
             const page = await inventoryApi.getProducts({
                 is_active: true,
                 can_be_sold: true,
-                page_size: 2000, // Ensure we get all sellable items in one go for instant search
+                search: debouncedSearchTerm || undefined,
+                category: selectedCategoryId ?? undefined,
+                page_size: 200,
                 fields: 'id,name,sale_price,sale_price_gross,image,uom_name,internal_code,barcode,product_type,track_inventory,requires_advanced_manufacturing,category,uom,available_uoms,is_favorite,has_bom,mfg_auto_finalize,mfg_enable_prepress,mfg_enable_press,mfg_enable_postpress,qty_available,manufacturable_quantity'
             })
             return (page.results ?? []) as unknown as Product[]
         },
-        staleTime: 1000 * 60 * 5, 
+        staleTime: 1000 * 60 * 5,
     })
 
     // Sync global state if needed (though we should ideally use React Query data directly)
@@ -88,11 +93,9 @@ export function useProducts() {
         }
     }, [loadingProducts, loadingCategories, loadingUoms, setLoading])
 
-    // Filtered products based on search and category
     const filteredProducts = useMemo(() => {
-        let filtered = [...products]
+        const filtered = [...products]
 
-        // 1. Sort by favorite status first (Frontend fallback for optimistic updates)
         filtered.sort((a, b) => {
             const aFav = a.is_favorite
             const bFav = b.is_favorite
@@ -101,27 +104,8 @@ export function useProducts() {
             return 0
         })
 
-        // 2. Filter by category
-        if (selectedCategoryId !== null) {
-            filtered = filtered.filter(p => {
-                const pCat = p.category
-                const catId = typeof pCat === 'object' ? pCat?.id : pCat
-                return catId === selectedCategoryId
-            })
-        }
-
-        // 3. Filter by search term
-        if (searchTerm.trim()) {
-            const term = searchTerm.toLowerCase()
-            filtered = filtered.filter(p =>
-                (p.name && p.name.toLowerCase().includes(term)) ||
-                (p.code && p.code.toLowerCase().includes(term)) ||
-                (p.internal_code && p.internal_code.toLowerCase().includes(term))
-            )
-        }
-
         return filtered
-    }, [products, searchTerm, selectedCategoryId])
+    }, [products])
 
     const refreshProducts = useCallback(async (silent = false) => {
         if (!silent) setLoading(true)

@@ -15,6 +15,7 @@ export const contactsApi = {
         if (filters?.tax_id) params.append('tax_id', filters.tax_id)
         if (filters?.is_default_customer !== undefined) params.append('is_default_customer', String(filters.is_default_customer))
         if (filters?.is_default_vendor !== undefined) params.append('is_default_vendor', String(filters.is_default_vendor))
+        params.set('page_size', '200')
 
         const { data } = await api.get<{ results: Contact[] }>('/contacts/', { params })
         return data.results
