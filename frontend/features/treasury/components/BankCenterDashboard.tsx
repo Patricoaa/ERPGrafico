@@ -88,7 +88,6 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
                             </div>
                         </div>
                     </section>
-                    <div className="border-b border-border/40" />
                     <section className="py-4">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                             <BankUpcomingMaturitiesPanel data={overviewData} bankId={bankId} />
@@ -154,11 +153,9 @@ function OverviewSkeleton() {
                     </div>
                 </div>
             </div>
-            <div className="border-b border-border/40" />
             <div className="py-4">
                 <EntityCard.ListItemSkeleton count={5} />
             </div>
-            <div className="border-b border-border/40" />
             <div className="py-4">
                 <EntityCard.ListItemSkeleton count={4} />
             </div>

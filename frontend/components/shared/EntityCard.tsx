@@ -567,7 +567,7 @@ const METRIC_VARIANT_CLASSES: Record<MetricVariant, string> = {
 
 function EntityCardMetrics({ metrics, defaultVariant = 'default', className }: EntityCardMetricsProps) {
     return (
-        <div className={cn("flex items-stretch gap-px border-t border-border/30 mt-1", className)}>
+        <div className={cn("flex items-stretch gap-px border-t border-border mt-1", className)}>
             {metrics.map((item, idx) => {
                 const variant = item.variant ?? defaultVariant
                 return (
@@ -575,7 +575,7 @@ function EntityCardMetrics({ metrics, defaultVariant = 'default', className }: E
                         key={idx}
                         className={cn(
                             "flex-1 flex flex-col gap-0.5 px-4 py-2",
-                            "relative after:absolute after:inset-y-1 after:right-0 after:w-px after:bg-border/20 last:after:hidden"
+                            "relative after:absolute after:inset-y-1 after:right-0 after:w-px after:bg-border/50 last:after:hidden"
                         )}
                     >
                         {item.icon && (
