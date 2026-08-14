@@ -96,12 +96,13 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         return WorkOrderSerializer
 
     def _build_stock_context(self, work_order):
-        return WorkOrderService.build_stock_context(work_order)
+        stocks, products_by_id = WorkOrderService.build_stock_context(work_order)
+        return {"stocks_by_product": stocks, "products_by_id": products_by_id}
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         context = self.get_serializer_context()
-        context["stocks_by_product"] = self._build_stock_context(instance)
+        context.update(self._build_stock_context(instance))
         serializer = self.get_serializer(instance, context=context)
         return Response(serializer.data)
 
