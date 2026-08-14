@@ -17,7 +17,7 @@ function AvailabilityBadges({ product, inline = false }: { product: Product; inl
 
 export const productFields = createEntityFields<Product>()({
     internal_code: { key: 'internal_code', type: 'code', label: 'Código Interno' },
-    code: { key: 'code', type: 'code', label: 'SKU' },
+    code: { key: 'code', type: 'secondary', label: 'SKU' },
     name: {
         key: 'name',
         type: 'text',
