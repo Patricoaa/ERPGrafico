@@ -54,7 +54,7 @@ export function SingleSelectFilterItem({
         <ChevronRight className={cn("h-3 w-3 transition-transform shrink-0", expanded && "rotate-90")} />
         <span>{def.label}</span>
         {selectedValue && (
-          <span className="ml-auto text-[10px] text-muted-foreground truncate max-w-[100px]">
+          <span className="ml-auto text-3xs text-muted-foreground truncate max-w-[100px]">
             {currentLabel}
           </span>
         )}

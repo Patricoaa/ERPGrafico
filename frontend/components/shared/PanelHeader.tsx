@@ -52,7 +52,7 @@ export function PanelHeader({
     subtitle,
     headerActions,
     className,
-    titleClassName,
+    titleClassName = "text-sm font-semibold tracking-tight",
     onClose,
     closeTooltip,
     closeButtonClassName,
@@ -60,7 +60,7 @@ export function PanelHeader({
 }: PanelHeaderProps) {
     const resolvedIcon = React.isValidElement(icon)
         ? icon
-        : icon && React.createElement(icon as React.ComponentType<{ className?: string }>, { className: "h-8 w-8" })
+        : icon && React.createElement(icon as React.ComponentType<{ className?: string }>, { className: "h-6 w-6" })
 
     if (centered) {
         return (

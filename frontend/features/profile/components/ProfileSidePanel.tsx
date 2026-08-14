@@ -47,7 +47,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                                         <div className="h-3 w-full opacity-60" />
                                         <div className="h-3 w-2/3 opacity-40" />
                                     </div>
-                                    <div className="pt-2 border-t border-border/20 flex justify-end">
+                                    <div className="pt-2 border-t border-border flex justify-end">
                                         <div className="h-8 w-24 rounded" />
                                     </div>
                                 </div>
@@ -60,7 +60,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                                         <div className="h-3 w-full opacity-60" />
                                         <div className="h-3 w-2/3 opacity-40" />
                                     </div>
-                                    <div className="pt-2 border-t border-border/20 flex justify-end">
+                                    <div className="pt-2 border-t border-border flex justify-end">
                                         <div className="h-8 w-24 rounded" />
                                     </div>
                                 </div>
@@ -73,7 +73,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                                         <div className="h-3 w-full opacity-60" />
                                         <div className="h-3 w-2/3 opacity-40" />
                                     </div>
-                                    <div className="pt-2 border-t border-border/20 flex justify-end">
+                                    <div className="pt-2 border-t border-border flex justify-end">
                                         <div className="h-8 w-24 rounded" />
                                     </div>
                                 </div>
@@ -143,7 +143,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                     <div className="space-y-6 flex flex-col items-center w-full">
                         <div className="flex items-center gap-2 w-full pt-2">
                             <div className="flex-1 h-px bg-border/50" />
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 whitespace-nowrap">
+                            <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/60 whitespace-nowrap">
                                 Datos de Usuario
                             </span>
                             <div className="flex-1 h-px bg-border/50" />
@@ -153,7 +153,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                             {/* Rol Principal */}
                             <div className="flex flex-col items-center text-center space-y-1.5">
                                 <div className="flex flex-col items-center">
-                                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1">Rol Principal</span>
+                                    <span className="text-3xs text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1">Rol Principal</span>
                                     <span className="font-semibold text-sm leading-none">{primaryRole}</span>
                                 </div>
                             </div>
@@ -161,7 +161,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                             {/* Equipos Funcionales */}
                             <div className="flex flex-col items-center text-center space-y-1.5">
                                 <div className="flex flex-col items-center min-w-0">
-                                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1.5">Equipos Funcionales</span>
+                                    <span className="text-3xs text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1.5">Equipos Funcionales</span>
                                     <div className="flex flex-wrap justify-center gap-1.5">
                                         {functionalGroups.length > 0 ? functionalGroups.map(g => (
                                             <Chip key={g} size="xs" intent="neutral">{g}</Chip>
@@ -178,7 +178,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                     <div className="space-y-6 flex flex-col items-center w-full">
                         <div className="flex items-center gap-2 w-full pt-2">
                             <div className="flex-1 h-px bg-border/50" />
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 whitespace-nowrap">
+                            <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/60 whitespace-nowrap">
                                 Información de Contacto
                             </span>
                             <div className="flex-1 h-px bg-border/50" />
@@ -188,7 +188,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                             {/* Email */}
                             <div className="flex flex-col items-center text-center space-y-1.5">
                                 <div className="flex flex-col items-center min-w-0">
-                                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1">Email</span>
+                                    <span className="text-3xs text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1">Email</span>
                                     <span className="font-semibold text-sm truncate max-w-[280px]">{email || "Sin email"}</span>
                                 </div>
                             </div>
@@ -196,7 +196,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                             {/* Teléfono */}
                             <div className="flex flex-col items-center text-center space-y-1.5">
                                 <div className="flex flex-col items-center min-w-0">
-                                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1">Teléfono</span>
+                                    <span className="text-3xs text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1">Teléfono</span>
                                     <span className="font-semibold text-sm truncate">{phone}</span>
                                 </div>
                             </div>

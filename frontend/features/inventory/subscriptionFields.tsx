@@ -1,5 +1,4 @@
 import { createEntityFields } from "@/components/shared"
-import { DataCell } from "@/components/shared"
 import type { Subscription } from "./hooks/useSubscriptions"
 
 function getPaymentScheduleText(sub: Subscription) {
@@ -29,15 +28,11 @@ export const subscriptionFields = createEntityFields<Subscription>()({
         label: "Monto",
     },
     supplierName: {
-        key: "supplier_name",
-        type: "computed",
-        fieldRole: "relation",
+        key: "supplier_id",
+        type: "contact",
         label: "Proveedor",
-        render: (s) => (
-            <DataCell.ContactLink contactId={s.supplier_id}>
-                {s.supplier_name}
-            </DataCell.ContactLink>
-        ),
+        get: (s) => s.supplier_id,
+        getDisplay: (s) => s.supplier_name,
     },
     nextPaymentDate: {
         key: "next_payment_date",

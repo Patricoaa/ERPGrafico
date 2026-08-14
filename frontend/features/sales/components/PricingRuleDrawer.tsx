@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from "react"
+import React, { useState } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
 import { type PricingRuleInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -98,66 +99,52 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
     const ruleType = form.watch("rule_type")
     const operator = form.watch("operator")
 
-    const lastResetId = useRef<number | undefined>(undefined)
-    const wasOpen = useRef(false)
-
-    useEffect(() => {
-        if (!open) {
-            wasOpen.current = false
-            return
-        }
-
-        const currentId = initialData?.id
-        const isNewOpen = !wasOpen.current
-        const isNewData = currentId !== lastResetId.current
-
-        if (isNewOpen || isNewData) {
-            if (initialData) {
-                const getProductId = (p: unknown): number | null => {
-                    if (typeof p === 'number') return p
-                    if (typeof p === 'string') return parseInt(p) || null
-                    if (p && typeof p === 'object' && 'id' in p) return (p as { id: number }).id || null
-                    return null
-                }
-
-                form.reset({
-                    name: initialData.name || "",
-                    rule_type: initialData.rule_type || "FIXED",
-                    operator: initialData.operator ?? "GE",
-                    min_quantity: initialData.min_quantity !== undefined ? String(initialData.min_quantity) : "1",
-                    max_quantity: initialData.max_quantity ? String(initialData.max_quantity) : null,
-                    fixed_price: initialData.fixed_price ? String(initialData.fixed_price) : null,
-                    fixed_price_gross: initialData.fixed_price_gross ? String(initialData.fixed_price_gross) : null,
-                    discount_percentage: initialData.discount_percentage ? String(initialData.discount_percentage) : null,
-                    priority: initialData.priority ?? 0,
-                    active: initialData.active ?? true,
-                    product: getProductId(initialData.product) || productId || null,
-                    uom: getProductId(initialData.uom) || null,
-                    start_date: initialData.start_date || null,
-                    end_date: initialData.end_date || null,
-                })
-            } else {
-                form.reset({
-                    name: "",
-                    rule_type: "FIXED",
-                    min_quantity: "1",
-                    priority: 0,
-                    active: true,
-                    product: productId || null,
-                    uom: null,
-                    operator: "GE",
-                    max_quantity: null,
-                    fixed_price: null,
-                    fixed_price_gross: null,
-                    discount_percentage: null,
-                    start_date: null,
-                    end_date: null,
-                })
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData,
+        mapData: (data) => {
+            const getProductId = (p: unknown): number | null => {
+                if (typeof p === 'number') return p
+                if (typeof p === 'string') return parseInt(p) || null
+                if (p && typeof p === 'object' && 'id' in p) return (p as { id: number }).id || null
+                return null
             }
-            lastResetId.current = currentId
-            wasOpen.current = true
-        }
-    }, [open, initialData, productId, form])
+
+            return {
+                name: data.name || "",
+                rule_type: data.rule_type || "FIXED",
+                operator: data.operator ?? "GE",
+                min_quantity: data.min_quantity !== undefined ? String(data.min_quantity) : "1",
+                max_quantity: data.max_quantity ? String(data.max_quantity) : null,
+                fixed_price: data.fixed_price ? String(data.fixed_price) : null,
+                fixed_price_gross: data.fixed_price_gross ? String(data.fixed_price_gross) : null,
+                discount_percentage: data.discount_percentage ? String(data.discount_percentage) : null,
+                priority: data.priority ?? 0,
+                active: data.active ?? true,
+                product: getProductId(data.product) || productId || null,
+                uom: getProductId(data.uom) || null,
+                start_date: data.start_date || null,
+                end_date: data.end_date || null,
+            }
+        },
+        defaultValues: () => ({
+            name: "",
+            rule_type: "FIXED" as const,
+            min_quantity: "1",
+            priority: 0,
+            active: true,
+            product: productId || null,
+            uom: null,
+            operator: "GE" as const,
+            max_quantity: null,
+            fixed_price: null,
+            fixed_price_gross: null,
+            discount_percentage: null,
+            start_date: null,
+            end_date: null,
+        }),
+    })
 
     // uoms vienen reactivos de useUoMs (declarado al inicio del componente).
 
@@ -215,7 +202,6 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                             disabled={!!productId}
                             placeholder="Si no se selecciona, aplica a todos"
                             shouldResolveVariants={false}
-                            customFilter={(p: Product) => !p.parent_template}
                         />
                     )}
                 />
@@ -449,7 +435,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                     title="Pricing Rule"
                     displayId={`#${initialData.id}`}
                 >
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{initialData?.name ?? '-'}</span>

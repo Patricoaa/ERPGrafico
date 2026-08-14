@@ -175,7 +175,7 @@ export function MovementWizard({
                                     <Banknote className="h-6 w-6" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="font-bold">{variant === 'partners' ? 'Aporte de Socio' : 'Depósito'}</span>
+                                    <span className="font-medium">{variant === 'partners' ? 'Aporte de Socio' : 'Depósito'}</span>
                                     <span className="text-xs text-muted-foreground">{variant === 'partners' ? 'Ingreso de capital' : 'Carga de efectivo'}</span>
                                 </div>
                             </Button>
@@ -196,7 +196,7 @@ export function MovementWizard({
                                     <LogOut className="h-6 w-6" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="font-bold">{variant === 'partners' ? 'Retiro de Socio' : 'Retiro'}</span>
+                                    <span className="font-medium">{variant === 'partners' ? 'Retiro de Socio' : 'Retiro'}</span>
                                     <span className="text-xs text-muted-foreground">{variant === 'partners' ? 'Salida de capital' : 'Salida de efectivo'}</span>
                                 </div>
                             </Button>
@@ -218,7 +218,7 @@ export function MovementWizard({
                                         <ArrowRightLeft className="h-6 w-6" />
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="font-bold">Traspaso</span>
+                                        <span className="font-medium">Traspaso</span>
                                         <span className="text-xs text-muted-foreground">Mover a otra caja</span>
                                     </div>
                                 </Button>
@@ -245,7 +245,7 @@ export function MovementWizard({
                                             onClick={() => setTransferDirection('OUT')}
                                         >
                                             <LogOut className="h-4 w-4 mb-1 text-info" />
-                                            <span className="text-xs font-bold">Enviar/Retirar</span>
+                                            <span className="text-xs font-medium">Enviar/Retirar</span>
                                         </Button>
                                         <Button
                                             variant="outline"
@@ -253,7 +253,7 @@ export function MovementWizard({
                                             onClick={() => setTransferDirection('IN')}
                                         >
                                             <Banknote className="h-4 w-4 mb-1 text-info" />
-                                            <span className="text-xs font-bold">Recibir/Ingresar</span>
+                                            <span className="text-xs font-medium">Recibir/Ingresar</span>
                                         </Button>
                                     </div>
                                     <div className="space-y-2">
@@ -384,7 +384,7 @@ export function MovementWizard({
                     <div className="space-y-4 pt-2">
                         <div className="flex justify-center">
                             <div className={cn(
-                                "uppercase font-black border rounded-sm px-4 py-1 text-[10px] tracking-[0.15em] text-center min-w-[120px]",
+                                "uppercase font-bold border rounded-sm px-4 py-1 text-3xs tracking-loose text-center min-w-[120px]",
                                 impact === "IN" ? "border-income/40 text-income bg-income/5" :
                                     impact === "OUT" ? "border-warning/40 text-warning bg-warning/5" :
                                         "border-info/40 text-info bg-info/5"
@@ -483,7 +483,7 @@ export function MovementWizard({
                                 <div className="p-4 flex justify-between items-center text-sm">
                                     <span className="text-muted-foreground font-medium">Operación:</span>
                                     <span className={cn(
-                                        "font-black uppercase tracking-[0.15em] px-3 py-1 rounded-sm border text-[10px]",
+                                        "font-bold uppercase tracking-loose px-3 py-1 rounded-sm border text-3xs",
                                         impact === "IN" ? "bg-income/10 text-income border-income/30" :
                                             impact === "OUT" ? "bg-warning/10 text-warning border-warning/30" :
                                                 "bg-info/10 text-info border-info/30"

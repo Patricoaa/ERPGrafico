@@ -73,7 +73,7 @@ export function LabeledContainer({
             >
                 {label && (
                     <legend className={cn(
-                        "px-1.5 text-[10px] font-black uppercase tracking-widest transition-colors duration-200 flex items-center gap-1",
+                        "px-1.5 text-3xs font-bold uppercase tracking-widest transition-colors duration-200 flex items-center gap-1",
                         hasError ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary",
                         labelClassName
                     )}>
@@ -117,11 +117,11 @@ export function LabeledContainer({
             {(error || hint) && (
                 <div className="px-1 pt-1 min-h-[1.25rem]">
                     {error ? (
-                        <div className="text-[10px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200">
+                        <div className="text-3xs font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200">
                             {error}
                         </div>
                     ) : hint ? (
-                        <div className="text-[10px] text-muted-foreground">
+                        <div className="text-3xs text-muted-foreground">
                             {hint}
                         </div>
                     ) : null}

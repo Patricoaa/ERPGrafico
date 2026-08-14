@@ -163,7 +163,7 @@ export function PayrollDetailView({
                     </div>
                 ),
                 subtitle: (
-                    <div className="flex items-center gap-3 text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">
+                    <div className="flex items-center gap-3 text-3xs sm:text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">
                         <span className="font-bold text-primary/80">{payroll.display_id}</span>
                         <span className="opacity-30">|</span>
                         <span className="hidden sm:inline">{payroll.period_label}</span>
@@ -179,7 +179,7 @@ export function PayrollDetailView({
                                 <ActionSlideButton
                                     variant="primary"
                                     size="sm"
-                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
+                                    className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
                                     onClick={handleGenerateProforma}
                                     loading={generating}
                                     icon={Sparkles}
@@ -190,7 +190,7 @@ export function PayrollDetailView({
 
                                 <ActionSlideButton
                                     size="sm"
-                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
+                                    className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
                                     loading={posting}
                                     onClick={() => setPostConfirmOpen(true)}
                                     icon={BookOpen}
@@ -205,7 +205,7 @@ export function PayrollDetailView({
                                     variant="outline"
                                     size="sm"
                                     className={cn(
-                                        "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
+                                        "rounded-sm text-3xs sm:text-xs font-medium gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
                                         salaroPaid
                                             ? "bg-success/10 text-success border-success/20"
                                             : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/10"
@@ -220,7 +220,7 @@ export function PayrollDetailView({
                                     variant="outline"
                                     size="sm"
                                     className={cn(
-                                        "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
+                                        "rounded-sm text-3xs sm:text-xs font-medium gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
                                         previredPaid
                                             ? "bg-success/10 text-success border-success/20"
                                             : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
@@ -278,7 +278,7 @@ export function PayrollDetailView({
                                         variant="badge"
                                     />
                                 </div>
-                                <div className="flex items-center gap-3 text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">
+                                <div className="flex items-center gap-3 text-3xs sm:text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">
                                     <span className="font-bold text-primary/80">{payroll.display_id}</span>
                                     <span className="opacity-30">|</span>
                                     <span className="hidden sm:inline">{payroll.period_label}</span>
@@ -295,7 +295,7 @@ export function PayrollDetailView({
                                 <ActionSlideButton
                                     variant="primary"
                                     size="sm"
-                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
+                                    className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
                                     onClick={handleGenerateProforma}
                                     loading={generating}
                                     icon={Sparkles}
@@ -306,7 +306,7 @@ export function PayrollDetailView({
 
                                 <ActionSlideButton
                                     size="sm"
-                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
+                                    className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
                                     loading={posting}
                                     onClick={() => setPostConfirmOpen(true)}
                                     icon={BookOpen}
@@ -321,7 +321,7 @@ export function PayrollDetailView({
                                     variant="outline"
                                     size="sm"
                                     className={cn(
-                                        "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
+                                        "rounded-sm text-3xs sm:text-xs font-medium gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
                                         salaroPaid
                                             ? "bg-success/10 text-success border-success/20"
                                             : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/10"
@@ -336,7 +336,7 @@ export function PayrollDetailView({
                                     variant="outline"
                                     size="sm"
                                     className={cn(
-                                        "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
+                                        "rounded-sm text-3xs sm:text-xs font-medium gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
                                         previredPaid
                                             ? "bg-success/10 text-success border-success/20"
                                             : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"

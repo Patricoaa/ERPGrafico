@@ -45,7 +45,7 @@ const FieldLabel = ({ title, tooltip }: { title: string; tooltip: string }) => (
             <TooltipTrigger asChild>
                 <Info className="h-3 w-3 text-muted-foreground/60 cursor-help hover:text-primary transition-colors" />
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-[220px] text-[11px] leading-relaxed">
+            <TooltipContent side="top" className="max-w-[220px] text-2xs leading-relaxed">
                 {tooltip}
             </TooltipContent>
         </Tooltip>
@@ -161,7 +161,7 @@ export function ReconciliationIntelligencePanel({ externalOpen }: { externalOpen
                                         <Brain className="h-4 w-4 text-primary" />
                                         Pesos de Matching
                                     </h3>
-                                    <p className="text-[10px] text-muted-foreground">Importancia de cada dato para el score.</p>
+                                    <p className="text-3xs text-muted-foreground">Importancia de cada dato para el score.</p>
                                 </div>
                                 <Chip
                                     intent={totalWeight === 100 ? "success" : "warning"}
@@ -229,7 +229,7 @@ export function ReconciliationIntelligencePanel({ externalOpen }: { externalOpen
                                             onClick={() => field.onChange(!field.value)}>
                                             <div className="space-y-1">
                                                 <p className="text-sm font-bold">Auto-Confirmación</p>
-                                                <p className="text-[11px] text-muted-foreground leading-tight max-w-[200px]">
+                                                <p className="text-2xs text-muted-foreground leading-tight max-w-[200px]">
                                                     Conciliar automáticamente si el score supera el {form.watch("confidence_threshold")}%.
                                                 </p>
                                             </div>

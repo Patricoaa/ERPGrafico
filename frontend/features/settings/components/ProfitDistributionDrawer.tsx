@@ -32,14 +32,14 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
         title="Distribución de Resultados"
         displayId={displayId}
       >
-        <div className="text-[9px] space-y-1 mb-2">
+        <div className="text-4xs space-y-1 mb-2">
           <div className="flex justify-between">
             <span>Resultado:</span>
             <span>{formatCurrency(Number(distribution?.net_result ?? 0))}</span>
           </div>
         </div>
         {distribution?.lines?.map((line: Record<string, unknown>, idx: number) => (
-          <div key={(line.id as number) ?? idx} className="flex justify-between text-[10px]">
+          <div key={(line.id as number) ?? idx} className="flex justify-between text-3xs">
             <span className="flex-1">{line.partner_name as string}</span>
             <span className="w-16 text-right">{formatCurrency(Number(line.net_amount as string))}</span>
           </div>

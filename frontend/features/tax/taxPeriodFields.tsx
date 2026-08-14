@@ -19,7 +19,7 @@ export const taxPeriodFields = createEntityFields<TaxPeriod>()({
         render: (e) => (
             <div className="flex items-center justify-center gap-3 w-full">
                 <div className="w-10 h-10 rounded-sm bg-primary/5 flex flex-col items-center justify-center border border-primary/10">
-                    <span className="text-[9px] font-bold text-primary/60">{e.year}</span>
+                    <span className="text-4xs font-bold text-primary/60">{e.year}</span>
                     <span className="text-xs font-bold text-primary">{e.month_display?.substring(0, 3)}</span>
                 </div>
                 <div>

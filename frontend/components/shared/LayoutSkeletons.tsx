@@ -147,9 +147,9 @@ export function AppShellSkeleton() {
             </div>
 
             <div className="flex-1 flex flex-col">
-                <div className="h-16 border-b px-6 flex items-center justify-between shrink-0">
+                <div className="h-12 border-b px-6 flex items-center justify-between shrink-0">
                     <Skeleton className="h-6 w-40" />
-                    <Skeleton className="h-10 w-10 rounded-md" />
+                    <Skeleton className="h-8 w-8 rounded-md" />
                 </div>
                 <div className="flex-1 p-8 space-y-4">
                     <div className="flex items-center justify-between">

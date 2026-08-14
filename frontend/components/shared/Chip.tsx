@@ -15,7 +15,7 @@ export interface ChipProps {
     appearance?: 'solid' | 'ghost'
 }
 
-export function Chip({ children, intent = 'neutral', size = 'sm', icon, className, appearance }: ChipProps) {
+export function Chip({ children, intent = 'neutral', size = 'md', icon, className, appearance }: ChipProps) {
     return (
         <Badge
             intent={intent}
@@ -41,7 +41,7 @@ export function Chip({ children, intent = 'neutral', size = 'sm', icon, classNam
 Chip.Category = function ChipCategory({
     domain,
     value,
-    size = 'sm',
+    size = 'md',
     className
 }: {
     domain: CategoryDomain
@@ -70,7 +70,7 @@ Chip.Flag = function ChipFlag({
     falseLabel,
     trueIntent = 'success',
     falseIntent = 'neutral',
-    size = 'sm',
+    size = 'md',
     className
 }: {
     isTrue: boolean

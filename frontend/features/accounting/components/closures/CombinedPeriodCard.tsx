@@ -56,20 +56,20 @@ export function CombinedPeriodCard({
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                         <Calendar className="w-3 h-3 text-muted-foreground" />
-                        <span className=" font-bold text-xs uppercase">{MONTHS[month - 1]}</span>
+                        <span className=" font-medium text-xs uppercase">{MONTHS[month - 1]}</span>
                     </div>
                 </div>
 
                 <div className="space-y-1">
                     {/* Contable row */}
-                    <div className="flex items-center justify-between py-1 px-1.5 rounded-sm min-h-[28px]">
+                    <div className="flex items-center justify-between py-1 px-1.5 rounded-md min-h-[28px]">
                         <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground w-11 shrink-0">Cont</span>
+                            <span className="text-3xs font-bold uppercase tracking-wider text-muted-foreground w-11 shrink-0">Cont</span>
                             {acct ? (
                                 <StatusBadge status={acct.status} label={acct.status_display} variant="dot" size="xs" />
                             ) : (
                                 <Button
-                                    className="inline-flex items-center justify-center rounded-sm text-[9px] font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-5 px-1.5 text-muted-foreground/60 border border-dashed border-border"
+                                    className="inline-flex items-center justify-center rounded-sm text-4xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-5 px-1.5 text-muted-foreground/60 border border-dashed border-border"
                                     onClick={() => onCreatePeriod(year, month)}
                                     disabled={isPeriodActionLoading}
                                 >
@@ -110,9 +110,9 @@ export function CombinedPeriodCard({
                     </div>
 
                     {/* F29 row */}
-                    <div className="flex items-center justify-between py-1 px-1.5 rounded-sm min-h-[28px]">
+                    <div className="flex items-center justify-between py-1 px-1.5 rounded-md min-h-[28px]">
                         <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground w-11 shrink-0">F29</span>
+                            <span className="text-3xs font-bold uppercase tracking-wider text-muted-foreground w-11 shrink-0">F29</span>
                             {tax ? (
                                 <StatusBadge
                                     status={taxClosed ? 'CLOSED' : hasDeclaration ? (isFullyPaid && requiresPayment ? 'PAID' : 'UNDER_REVIEW') : 'OPEN'}
@@ -121,7 +121,7 @@ export function CombinedPeriodCard({
                                     size="xs"
                                 />
                             ) : (
-                                <span className="text-[9px] text-muted-foreground/40 italic">—</span>
+                                <span className="text-4xs text-muted-foreground/40 italic">—</span>
                             )}
                         </div>
                         {(!tax || (!taxClosed && !hasDeclaration)) && (
@@ -173,7 +173,7 @@ export function CombinedPeriodCard({
                         {tax?.declaration_summary?.document && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <a href={tax.declaration_summary.document} target="_blank" rel="noopener noreferrer" className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground text-muted-foreground transition-colors">
+                                    <a href={tax.declaration_summary.document} target="_blank" rel="noopener noreferrer" className="h-7 w-7 inline-flex items-center justify-center rounded-sm hover:bg-accent hover:text-accent-foreground text-muted-foreground transition-colors">
                                         <FileText className="w-3.5 h-3.5" />
                                     </a>
                                 </TooltipTrigger>

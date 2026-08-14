@@ -2,6 +2,7 @@
 
 import {useEffect, useState, useMemo} from "react"
 import { useFormWithToast } from "@/hooks/useFormWithToast"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import * as z from "zod"
 import {ActionConfirmModal, DomainHubStatus, Drawer, StatCard} from '@/components/shared'
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -105,21 +106,33 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
 
     const isFetchingInitialData = open && (loadingInsights || isLoadingContact)
 
-    useEffect(() => {
-        if (contactDetails) {
-            form.reset({
-                name: contactDetails.name || "",
-                tax_id: contactDetails.tax_id || "",
-                email: contactDetails.email || "",
-                phone: contactDetails.phone || "",
-                address: contactDetails.address || "",
-                city: contactDetails.city || "",
-                payment_terms: contactDetails.payment_terms || "CONTADO",
-                is_default_customer: !!contactDetails.is_default_customer,
-                is_default_vendor: !!contactDetails.is_default_vendor,
-            })
-        }
-    }, [contactDetails, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: contactDetails || (c?.name ? c : null),
+        defaultValues: () => ({
+            name: "",
+            tax_id: "",
+            email: "",
+            phone: "",
+            address: "",
+            city: "",
+            payment_terms: "CONTADO",
+            is_default_customer: false,
+            is_default_vendor: false,
+        }),
+        mapData: (data) => ({
+            name: data.name || "",
+            tax_id: data.tax_id || "",
+            email: data.email || "",
+            phone: data.phone || "",
+            address: data.address || "",
+            city: data.city || "",
+            payment_terms: data.payment_terms || "CONTADO",
+            is_default_customer: !!data.is_default_customer,
+            is_default_vendor: !!data.is_default_vendor,
+        })
+    })
 
     const { data: ledgerData = [], isLoading: loadingLedger } = useContactCreditLedger(c?.id && activeTab === "credit" ? c.id : undefined)
 
@@ -128,36 +141,8 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
             requestAnimationFrame(() => {
                 setActiveTab("profile")
             })
-            return
         }
-        requestAnimationFrame(() => {
-            if (c && c.name) {
-                form.reset({
-                    name: c.name,
-                    tax_id: c.tax_id || "",
-                    email: c.email || "",
-                    phone: c.phone || "",
-                    address: c.address || "",
-                    city: c.city || "",
-                    payment_terms: c.payment_terms || "CONTADO",
-                    is_default_customer: !!c.is_default_customer,
-                    is_default_vendor: !!c.is_default_vendor,
-                })
-            } else if (!c?.id) {
-                form.reset({
-                    name: "",
-                    tax_id: "",
-                    email: "",
-                    phone: "",
-                    address: "",
-                    city: "",
-                    payment_terms: "CONTADO",
-                    is_default_customer: false,
-                    is_default_vendor: false,
-                })
-            }
-        })
-    }, [c, open, form.reset])
+    }, [open])
 
     const saveContact = async (values: z.infer<typeof contactSchema>) => {
         try {
@@ -237,7 +222,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                     title="Contact"
                     displayId={`#${contact.id}`}
                 >
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{contact?.name ?? '-'}</span>

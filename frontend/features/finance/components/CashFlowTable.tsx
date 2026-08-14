@@ -148,23 +148,23 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                 <div className="pt-4 border-t-2 border-muted/30">
                     <div className="flex items-center gap-2 mb-3">
                         <Calendar className="h-4 w-4 text-primary" />
-                        <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Vencimientos Futuros (Proyectado)</span>
+                        <span className="text-3xs font-bold uppercase text-muted-foreground tracking-widest">Vencimientos Futuros (Proyectado)</span>
                     </div>
                     <div className="rounded-md border overflow-hidden">
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/30">
-                                    <TableHead className="text-[10px] font-black uppercase">Tipo</TableHead>
-                                    <TableHead className="text-[10px] font-black uppercase">Descripción</TableHead>
-                                    <TableHead className="text-[10px] font-black uppercase">Vencimiento</TableHead>
-                                    <TableHead className="text-right text-[10px] font-black uppercase">Monto</TableHead>
+                                    <TableHead className="text-3xs font-bold uppercase">Tipo</TableHead>
+                                    <TableHead className="text-3xs font-bold uppercase">Descripción</TableHead>
+                                    <TableHead className="text-3xs font-bold uppercase">Vencimiento</TableHead>
+                                    <TableHead className="text-right text-3xs font-bold uppercase">Monto</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {futureMaturities.map((item, idx) => (
                                     <TableRow key={idx}>
                                         <TableCell>
-                                            <span className={`text-[10px] font-bold uppercase ${
+                                            <span className={`text-3xs font-bold uppercase ${
                                                 item.direction === 'INBOUND' ? 'text-success' : 'text-destructive'
                                             }`}>
                                                 {item.type === 'LOAN_INSTALLMENT' ? 'Cuota' :
@@ -207,7 +207,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                         variant="destructive" 
                         size="sm" 
                         onClick={() => setAuditModalOpen(true)}
-                        className="font-bold uppercase tracking-widest text-[10px] h-8"
+                        className="font-medium uppercase tracking-widest text-3xs h-8"
                     >
                         Auditar Diferencia
                     </Button>
@@ -244,7 +244,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                 <div className="space-y-4">
                     <div className="p-4 bg-muted/50 rounded-md border border-dashed flex justify-between items-center">
                         <div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase">Diferencia Total</p>
+                            <p className="text-3xs font-bold text-muted-foreground uppercase">Diferencia Total</p>
                             <MoneyDisplay amount={data.discrepancy} className="text-2xl font-black text-destructive" />
                         </div>
                         <Info className="h-8 w-8 text-muted-foreground opacity-30" />
@@ -254,8 +254,8 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/30">
-                                    <TableHead className="text-[10px] font-black uppercase">Cuenta</TableHead>
-                                    <TableHead className="text-right text-[10px] font-black uppercase">Variación</TableHead>
+                                    <TableHead className="text-3xs font-bold uppercase">Cuenta</TableHead>
+                                    <TableHead className="text-right text-3xs font-bold uppercase">Variación</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -263,7 +263,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                                     <TableRow key={i}>
                                         <TableCell>
                                             <div className="flex flex-col">
-                                                <span className="font-mono text-[10px] text-muted-foreground">{acc.code}</span>
+                                                <span className="font-mono text-3xs text-muted-foreground">{acc.code}</span>
                                                 <span className="font-bold text-xs">{acc.name}</span>
                                             </div>
                                         </TableCell>
@@ -276,7 +276,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                         </Table>
                     </div>
 
-                    <p className="text-[10px] text-muted-foreground leading-relaxed italic">
+                    <p className="text-3xs text-muted-foreground leading-relaxed italic">
                         Tip: Para eliminar esta diferencia, accede a &quot;Configurar Mapeo&quot; y asigna estas cuentas a una de las categorías 
                         (Operación, Inversión o Financiamiento) según corresponda.
                     </p>

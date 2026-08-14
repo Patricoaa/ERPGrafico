@@ -2,6 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm, type Control, type FieldValues } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { type JournalEntryInitialData } from "@/types/forms"
@@ -165,42 +166,30 @@ export function JournalEntryDrawer({
 
 
 
-    const lastResetKey = useRef<string | null>(null)
-
-    useEffect(() => {
-        if (!open) {
-            lastResetKey.current = null
-            setIsViewSynced(false)
-            return
-        }
-        const resetKey = initialData?.id ? `edit-${initialData.id}` : `new-${serverDate?.getTime() ?? 'pending'}`
-        if (lastResetKey.current === resetKey) return
-        lastResetKey.current = resetKey
-
-        if (!initialData) {
-            form.reset({
-                date: serverDate || new Date(),
-                description: "",
-                items: [
-                    { account: "", label: "", debit: 0, credit: 0 },
-                    { account: "", label: "", debit: 0, credit: 0 },
-                ]
-            })
-            setSourceDocument(null)
-        } else {
-            form.reset({
-                date: toDate(initialData.date),
-                description: initialData.description,
-                items: initialData.items.map((item) => ({
-                    account: item.account?.toString() ?? '',
-                    partner: item.partner?.toString() ?? '',
-                    label: item.label ?? '',
-                    debit: Number(item.debit ?? 0),
-                    credit: Number(item.credit ?? 0),
-                })),
-            })
-        }
-    }, [open, initialData, serverDate, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData,
+        defaultValues: () => ({
+            date: serverDate || new Date(),
+            description: "",
+            items: [
+                { account: "", label: "", debit: 0, credit: 0 },
+                { account: "", label: "", debit: 0, credit: 0 },
+            ],
+        }),
+        mapData: (data) => ({
+            date: toDate(data.date),
+            description: data.description,
+            items: data.items.map((item) => ({
+                account: item.account?.toString() ?? '',
+                partner: item.partner?.toString() ?? '',
+                label: item.label ?? '',
+                debit: Number(item.debit ?? 0),
+                credit: Number(item.credit ?? 0),
+            })),
+        }),
+    })
 
     // Sync sourceDocument from initialData (outside lastResetKey guard)
     useEffect(() => {
@@ -481,7 +470,7 @@ export function JournalEntryDrawer({
                     title="Asiento Contable"
                     displayId={`#${entityId}`}
                 >
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Descripción:</span>
                             <span>{formValues.description || '-'}</span>
@@ -501,7 +490,7 @@ export function JournalEntryDrawer({
                             <span>{formValues.date ? format(formValues.date, 'dd/MM/yyyy') : '-'}</span>
                         </div>
                     </div>
-                    <div className="text-[9px]">
+                    <div className="text-4xs">
                         <div className="grid grid-cols-[1fr,50px,50px] gap-1 font-bold border-b mb-1 pb-1">
                             <span>Cuenta</span>
                             <span className="text-right">Debe</span>

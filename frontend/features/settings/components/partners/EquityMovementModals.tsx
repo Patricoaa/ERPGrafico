@@ -175,7 +175,7 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
                             placeholder="0"
                         />
                         {isReduction && selectedPartner && amountNum > 0 && (
-                            <p className={`text-[10px] font-medium mt-1 ${exceedsCapital ? 'text-destructive' : 'text-muted-foreground'}`}>
+                            <p className={`text-3xs font-medium mt-1 ${exceedsCapital ? 'text-destructive' : 'text-muted-foreground'}`}>
                                 {exceedsCapital
                                     ? `⚠ Excede el capital suscrito (${formatCurrency(subscribedCapital)})`
                                     : `Capital resultante: ${formatCurrency(subscribedCapital - amountNum)}`
@@ -336,7 +336,7 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
                             options={partners.map(p => ({ value: p.id.toString(), label: p.name }))}
                         />
                         {seller && (
-                            <p className="text-[10px] text-muted-foreground font-medium mt-1">
+                            <p className="text-3xs text-muted-foreground font-medium mt-1">
                                 Capital suscrito: <span className="font-mono font-bold text-primary">{formatCurrency(sellerCapital)}</span> — Participación: <span className="font-bold">{equityPctById[seller.id] ?? "0"}%</span>
                             </p>
                         )}
@@ -353,7 +353,7 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
                             options={partners.map(p => ({ value: p.id.toString(), label: p.name }))}
                         />
                         {buyer && (
-                            <p className="text-[10px] text-muted-foreground font-medium mt-1">
+                            <p className="text-3xs text-muted-foreground font-medium mt-1">
                                 Capital actual: <span className="font-mono font-bold">{formatCurrency(buyer.partner_total_contributions || 0)}</span> — Participación: <span className="font-bold">{equityPctById[buyer.id] ?? "0"}%</span>
                             </p>
                         )}
@@ -368,7 +368,7 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
                             placeholder="0"
                         />
                         {seller && amountNum > 0 && (
-                            <p className={`text-[10px] font-medium mt-1 ${exceedsCapital ? 'text-destructive' : 'text-muted-foreground'}`}>
+                            <p className={`text-3xs font-medium mt-1 ${exceedsCapital ? 'text-destructive' : 'text-muted-foreground'}`}>
                                 {exceedsCapital
                                     ? `⚠ Excede el capital suscrito del vendedor (${formatCurrency(sellerCapital)})`
                                     : `Capital restante del vendedor: ${formatCurrency(sellerCapital - amountNum)}`
@@ -527,7 +527,7 @@ export function CapitalContributionModal({ open, onOpenChange, onSuccess }: Moda
                         options={partners.map(p => ({ value: p.id.toString(), label: p.name }))}
                     />
                     {selectedPartner && (
-                        <p className="text-[10px] text-muted-foreground font-medium mt-1">
+                        <p className="text-3xs text-muted-foreground font-medium mt-1">
                             Capital Pendiente (por cobrar): <DataCell.CurrencyFlow value={pendingCapital} direction="inflow" showIcon={false} className="font-bold" />
                         </p>
                     )}
@@ -660,7 +660,7 @@ export function ProvisionalWithdrawalModal({ open, onOpenChange, onSuccess }: Mo
                         options={partners.map(p => ({ value: p.id.toString(), label: p.name }))}
                     />
                     {selectedPartner && (
-                        <p className="text-[10px] text-muted-foreground font-medium mt-1">
+                        <p className="text-3xs text-muted-foreground font-medium mt-1">
                             Acumulado en Retiros Provisorios (Deuda del Socio): <DataCell.CurrencyFlow value={withdrawalsBalance} direction="outflow" showIcon={false} className="font-bold" />
                         </p>
                     )}
@@ -798,7 +798,7 @@ export function DividendPaymentModal({ open, onOpenChange, onSuccess, initialPar
                         options={partners.map(p => ({ value: p.id.toString(), label: p.name }))}
                     />
                     {selectedPartner && (
-                        <p className="text-[10px] text-muted-foreground font-medium mt-1">
+                        <p className="text-3xs text-muted-foreground font-medium mt-1">
                             Saldo de Dividendos por Pagar: <span className="font-mono font-bold text-primary">{formatCurrency(dividendBalance)}</span>
                         </p>
                     )}
@@ -820,7 +820,7 @@ export function DividendPaymentModal({ open, onOpenChange, onSuccess, initialPar
                     />
                     {isOverflow && (
                         <Alert variant="warning">
-                            <AlertDescription className="text-[9px] text-warning leading-tight">
+                            <AlertDescription className="text-4xs text-warning leading-tight">
                                 El monto excede el saldo de dividendos. El excedente de <strong>{formatCurrency(amountNum - dividendBalance)}</strong> se registrará como un <strong>Retiro Provisorio</strong>.
                             </AlertDescription>
                         </Alert>

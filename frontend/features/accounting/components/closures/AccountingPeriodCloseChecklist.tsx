@@ -145,7 +145,7 @@ export function AccountingPeriodCloseChecklistModal({
                         onClick={onConfirm}
                         disabled={!canClose || isLoading || isFetching}
                         loading={isLoading}
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest text-[11px] h-10 px-6"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest text-2xs h-10 px-6"
                     >
                         {canClose ? 'Confirmar Cierre' : 'Revisar Pendientes'}
                     </SubmitButton>
@@ -171,7 +171,7 @@ export function AccountingPeriodCloseChecklistModal({
                                 <div
                                     key={idx}
                                     className={cn(
-                                        "flex items-start gap-3 p-3 border rounded-sm transition-colors",
+                                        "flex items-start gap-3 p-3 border rounded-md transition-colors",
                                         item.passed
                                             ? "border-success/30 bg-success/5"
                                             : item.critical
@@ -203,7 +203,7 @@ export function AccountingPeriodCloseChecklistModal({
                                             )}
                                         </div>
                                         {item.detail && (
-                                            <p className="text-[10px] text-muted-foreground mt-0.5">{item.detail}</p>
+                                            <p className="text-3xs text-muted-foreground mt-0.5">{item.detail}</p>
                                         )}
                                     </div>
                                 </div>
@@ -214,7 +214,7 @@ export function AccountingPeriodCloseChecklistModal({
                             <Alert variant="success" className="mt-2">
 
                                 <AlertTitle className="text-xs font-bold uppercase">Listo para cerrar</AlertTitle>
-                                <AlertDescription className="text-[10px]">
+                                <AlertDescription className="text-3xs">
                                     Todos los requisitos obligatorios están cumplidos. Puede proceder con el cierre del período contable.
                                 </AlertDescription>
                             </Alert>
@@ -222,7 +222,7 @@ export function AccountingPeriodCloseChecklistModal({
                             <Alert variant="warning" className="mt-2">
 
                                 <AlertTitle className="text-xs font-bold uppercase">Hay pendientes que resolver</AlertTitle>
-                                <AlertDescription className="text-[10px]">
+                                <AlertDescription className="text-3xs">
                                     Complete los items obligatorios marcados en rojo antes de cerrar el período.
                                     Los items sugeridos son recomendaciones y no bloquean el cierre.
                                 </AlertDescription>

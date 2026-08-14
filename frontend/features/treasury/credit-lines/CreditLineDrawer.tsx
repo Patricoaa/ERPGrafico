@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useInitializeDrawerForm } from '@/hooks/useInitializeDrawerForm'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -77,43 +78,59 @@ export function CreditLineDrawer({ open, onOpenChange, creditLine, creditLineId,
         },
     })
 
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: creditLine,
+        defaultValues: () => ({
+            treasury_account: treasuryAccountId ?? 0,
+            code: '',
+            currency: 'CLP' as const,
+            credit_limit: '',
+            interest_rate: '',
+            rate_basis: 'MONTHLY' as const,
+            spread: '0',
+            commitment_fee: '0',
+            valid_from: '',
+            valid_until: null,
+            auto_renewal: false,
+            renewal_term_months: null,
+            collateral_notes: '',
+            notes: '',
+            status: 'ACTIVE' as const,
+        }),
+        mapData: (data) => ({
+            treasury_account: data.treasury_account,
+            code: data.code || '',
+            currency: data.currency,
+            credit_limit: data.credit_limit,
+            interest_rate: data.interest_rate,
+            rate_basis: data.rate_basis ?? 'MONTHLY',
+            spread: data.spread,
+            commitment_fee: data.commitment_fee,
+            valid_from: data.valid_from,
+            valid_until: data.valid_until,
+            auto_renewal: data.auto_renewal,
+            renewal_term_months: data.renewal_term_months,
+            collateral_notes: data.collateral_notes,
+            notes: data.notes,
+            status: data.status,
+        }),
+    })
+
     useEffect(() => {
         if (!open) return
         const load = async () => {
-            // Load CHECKING accounts for selector
             const accounts = await treasuryApi.getAccounts({ account_type: 'CHECKING' })
             setCheckingAccounts(accounts)
-
-            // If editing, load credit line data
-            if (creditLine) {
-                const taId = creditLine.treasury_account
+            const taId = creditLine?.treasury_account ?? treasuryAccountId
+            if (taId) {
                 const acc = accounts.find((a: TreasuryAccount) => a.id === taId)
                 setAccountName(acc?.name ?? '')
-                form.reset({
-                    treasury_account: taId,
-                    code: creditLine.code || '',
-                    currency: creditLine.currency,
-                    credit_limit: creditLine.credit_limit,
-                    interest_rate: creditLine.interest_rate,
-                    rate_basis: creditLine.rate_basis ?? 'MONTHLY',
-                    spread: creditLine.spread,
-                    commitment_fee: creditLine.commitment_fee,
-                    valid_from: creditLine.valid_from,
-                    valid_until: creditLine.valid_until,
-                    auto_renewal: creditLine.auto_renewal,
-                    renewal_term_months: creditLine.renewal_term_months,
-                    collateral_notes: creditLine.collateral_notes,
-                    notes: creditLine.notes,
-                    status: creditLine.status,
-                })
-            } else if (treasuryAccountId) {
-                const acc = accounts.find((a: TreasuryAccount) => a.id === treasuryAccountId)
-                setAccountName(acc?.name ?? '')
-                form.reset({ treasury_account: treasuryAccountId })
             }
         }
         load()
-    }, [open, creditLine, treasuryAccountId, form])
+    }, [open, creditLine, treasuryAccountId])
 
     const onSubmit = async (values: FormValues) => {
         if (isEditing && resolvedCreditLine) {

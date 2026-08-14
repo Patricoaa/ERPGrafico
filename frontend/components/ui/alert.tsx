@@ -5,7 +5,7 @@ import { Info, AlertTriangle, CheckCircle2 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
 const alertVariants = cva(
-    "relative w-full rounded-sm border p-4 flex items-start gap-3 ",
+    "relative w-full rounded-md border p-4 flex items-start gap-3 ",
     {
         variants: {
             variant: {

@@ -1,6 +1,7 @@
 "use client"
 
-import React, {useState, useEffect} from "react"
+import React, { useState } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { type ProductCategory } from "@/types/entities"
 import { cn } from "@/lib/utils"
 import { showApiError } from "@/lib/errors"
@@ -214,48 +215,28 @@ export function CategoryDrawer({
 
     const width = formDrawerWidth("medium", !!initialData?.id)
 
-    const lastResetId = React.useRef<number | undefined>(undefined)
-    const wasOpen = React.useRef(false)
-
-    useEffect(() => {
-        if (!open) {
-            wasOpen.current = false
-            return
-        }
-
-        const currentId = initialData?.id
-        const isNewOpen = !wasOpen.current
-        const isNewData = currentId !== lastResetId.current
-
-        if (isNewOpen) {
-            fetchData()
-        }
-
-        if (isNewOpen || isNewData) {
-            if (initialData) {
-                form.reset({
-                    ...initialData,
-                    parent: (initialData.parent as { id?: number } | undefined)?.id?.toString() || initialData.parent?.toString() || "none",
-                    has_custom_accounting: !!(initialData.asset_account || initialData.income_account || initialData.expense_account),
-                    asset_account: (initialData.asset_account as { id?: number } | undefined)?.id?.toString() || initialData.asset_account?.toString() || "none",
-                    income_account: (initialData.income_account as { id?: number } | undefined)?.id?.toString() || initialData.income_account?.toString() || "none",
-                    expense_account: (initialData.expense_account as { id?: number } | undefined)?.id?.toString() || initialData.expense_account?.toString() || "none",
-                })
-            } else {
-                form.reset({
-                    name: "",
-                    prefix: "",
-                    parent: "none",
-                    has_custom_accounting: false,
-                    asset_account: undefined,
-                    income_account: undefined,
-                    expense_account: undefined,
-                })
-            }
-            lastResetId.current = currentId
-            wasOpen.current = true
-        }
-    }, [open, initialData, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData,
+        mapData: (data) => ({
+            ...data,
+            parent: (data.parent as { id?: number } | undefined)?.id?.toString() || data.parent?.toString() || "none",
+            has_custom_accounting: !!(data.asset_account || data.income_account || data.expense_account),
+            asset_account: (data.asset_account as { id?: number } | undefined)?.id?.toString() || data.asset_account?.toString() || "none",
+            income_account: (data.income_account as { id?: number } | undefined)?.id?.toString() || data.income_account?.toString() || "none",
+            expense_account: (data.expense_account as { id?: number } | undefined)?.id?.toString() || data.expense_account?.toString() || "none",
+        }),
+        defaultValues: () => ({
+            name: "",
+            prefix: "",
+            parent: "none",
+            has_custom_accounting: false,
+            asset_account: undefined,
+            income_account: undefined,
+            expense_account: undefined,
+        }),
+    })
 
     async function onSubmit(data: CategoryFormValues) {
         setLoading(true)
@@ -456,7 +437,7 @@ export function CategoryDrawer({
                     title="ProductCategory"
                     displayId={`#${initialData.id}`}
                 >
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{initialData?.name ?? '-'}</span>

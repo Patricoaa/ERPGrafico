@@ -32,7 +32,7 @@ export function AttributeValuesSummary({ attribute }: { attribute: Attribute }) 
             {values.map((val) => (
                 <span
                     key={val.id}
-                    className="inline-flex items-center gap-1 h-[22px] px-2.5 text-[10px] font-mono font-black uppercase tracking-widest rounded-full border border-border/50 bg-muted/60 text-muted-foreground"
+                    className="inline-flex items-center gap-1 h-[22px] px-2.5 text-3xs font-mono font-bold uppercase tracking-widest rounded-full border border-border/50 bg-muted/60 text-muted-foreground"
                 >
                     {val.value}
                     <IconButton

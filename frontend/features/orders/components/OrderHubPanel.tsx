@@ -111,13 +111,12 @@ export function OrderHubPanel({
                 <div className="flex flex-col h-full overflow-hidden">
                     {/* ── Panel Header (only in panel context) ──────────────────── */}
                     {showHeader && (
-                        <div className="border-b shrink-0 px-6 pt-6 pb-4">
+                        <div className="border-b border-border shrink-0 px-4 pt-4 pb-3">
                             <PanelHeader
                                 title={activeDoc ? (activeDoc.display_id || activeDoc.folio || `#${activeDoc.id}`) : ''}
                                 icon={TopLeftIcon}
                                 onClose={onClose}
                                 closeTooltip="Cerrar Hub"
-                                titleClassName="text-mdc font-black tracking-tight"
                             />
                         </div>
                     )}

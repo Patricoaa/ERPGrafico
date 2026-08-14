@@ -146,7 +146,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
                 return (
                     <div className="flex flex-col items-center">
                         <span className="font-bold text-sm tracking-tight">{dist.fiscal_year}</span>
-                        <span className="text-[9px] text-muted-foreground font-mono uppercase">ID: {dist.display_id}</span>
+                        <span className="text-4xs text-muted-foreground font-mono uppercase">ID: {dist.display_id}</span>
                     </div>
                 )
             }
@@ -208,8 +208,8 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
                 const dist = row.original
                 return (
                     <div className="flex flex-col items-center gap-1">
-                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">{dist.acta_number || 'Sin Acta'}</span>
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
+                        <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider">{dist.acta_number || 'Sin Acta'}</span>
+                        <div className="flex items-center gap-1 text-3xs text-muted-foreground font-medium">
                             <Calendar className="h-3 w-3" />
                             {formatPlainDate(dist.resolution_date)}
                         </div>
@@ -232,7 +232,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
                             {formatCurrency(Math.abs(amount))}
                         </span>
                         {status === 'EXECUTED' && (
-                            <span className="text-[9px] text-muted-foreground uppercase font-black italic tracking-widest leading-none">Asentado</span>
+                            <span className="text-4xs text-muted-foreground uppercase font-bold italic tracking-widest leading-none">Asentado</span>
                         )}
                     </div>
                 )

@@ -56,12 +56,12 @@ export function NumpadModal({
         >
             <div className="flex flex-col items-center gap-2">
                 {(maxValue !== undefined && maxValue !== Infinity) && (
-                    <div className="lg:text-xs text-[10px] font-bold text-warning uppercase tracking-wider mb-1">
+                    <div className="lg:text-xs text-3xs font-bold text-warning uppercase tracking-wider mb-1">
                         Máximo permitido: {maxValue} unidades
                     </div>
                 )}
                 {netValue !== undefined && (
-                    <div className="lg:text-xs text-[10px] font-bold text-primary uppercase tracking-wider mb-1">
+                    <div className="lg:text-xs text-3xs font-bold text-primary uppercase tracking-wider mb-1">
                         Valor Neto: {typeof netValue === 'number' ? formatCurrency(netValue) : netValue}
                     </div>
                 )}

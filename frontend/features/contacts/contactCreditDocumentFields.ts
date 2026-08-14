@@ -21,7 +21,7 @@ export const contactCreditDocumentFields = createEntityFields<ContactCreditDocum
     },
     number: {
         key: 'number',
-        type: 'text',
+        type: 'code',
         label: 'Número',
     },
     balance: {

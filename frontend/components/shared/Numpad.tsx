@@ -140,7 +140,7 @@ export function Numpad({
                         <Button
                             key={qa.label}
                             variant="outline"
-                            className="h-12 lg:h-14 text-sm lg:text-base font-bold active:scale-95 transition-transform"
+                            className="h-12 lg:h-14 text-sm lg:text-base font-medium active:scale-95 transition-transform"
                             onClick={() => {
                                 if (onQuickAmountAction) {
                                     onQuickAmountAction(qa)
@@ -160,7 +160,7 @@ export function Numpad({
                     <Button
                         key={key}
                         variant="outline"
-                        className="h-12 lg:h-14 text-sm lg:text-base font-bold active:scale-95 transition-transform"
+                        className="h-12 lg:h-14 text-sm lg:text-base font-medium active:scale-95 transition-transform"
                         onClick={() => handleNumber(key)}
                     >
                         {key}
@@ -170,7 +170,7 @@ export function Numpad({
                 {/* Row 4 */}
                 <Button
                     variant="destructive"
-                    className="h-12 lg:h-14 text-sm lg:text-base font-bold active:scale-95 transition-transform bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20"
+                    className="h-12 lg:h-14 text-sm lg:text-base font-medium active:scale-95 transition-transform bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20"
                     onClick={handleClear}
                 >
                     C
@@ -178,7 +178,7 @@ export function Numpad({
 
                 <Button
                     variant="outline"
-                    className="h-12 lg:h-14 text-sm lg:text-base font-bold active:scale-95 transition-transform"
+                    className="h-12 lg:h-14 text-sm lg:text-base font-medium active:scale-95 transition-transform"
                     onClick={() => handleNumber("0")}
                 >
                     0
@@ -187,7 +187,7 @@ export function Numpad({
                 {allowDecimal ? (
                     <Button
                         variant="outline"
-                        className="h-12 lg:h-14 text-sm lg:text-base font-bold active:scale-95 transition-transform"
+                        className="h-12 lg:h-14 text-sm lg:text-base font-medium active:scale-95 transition-transform"
                         onClick={() => handleNumber(".")}
                     >
                         .
@@ -195,7 +195,7 @@ export function Numpad({
                 ) : (
                     <Button
                         variant="outline"
-                        className="h-12 lg:h-14 text-warning font-bold active:scale-95 transition-transform"
+                        className="h-12 lg:h-14 text-warning font-medium active:scale-95 transition-transform"
                         onClick={handleDelete}
                     >
                         <Delete className="lg:h-5 lg:w-5 h-4 w-4" />
@@ -206,7 +206,7 @@ export function Numpad({
             {onExactAmount && (
                 <Button
                     variant="outline"
-                    className="w-full h-12 lg:h-14 font-bold text-sm lg:text-base bg-success/10 text-success hover:bg-success/20 hover:text-success border-success/20"
+                    className="w-full h-12 lg:h-14 font-medium text-sm lg:text-base bg-success/10 text-success hover:bg-success/20 hover:text-success border-success/20"
                     onClick={onExactAmount}
                 >
                     {exactAmountLabel || "MONTO EXACTO"}

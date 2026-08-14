@@ -20,7 +20,7 @@ export const salesInvoiceFields = createEntityFields<Invoice>()({
     },
     contactDisplayName: {
         key: "partner_name",
-        type: "text",
+        type: "secondary",
         label: "Cliente",
     },
     domainStatus: {
@@ -35,7 +35,7 @@ export const salesInvoiceFields = createEntityFields<Invoice>()({
     },
     dteType: {
         key: "dte_type_display",
-        type: "chip",
+        type: "secondary",
         label: "Tipo DTE",
     },
     totalWithTax: {

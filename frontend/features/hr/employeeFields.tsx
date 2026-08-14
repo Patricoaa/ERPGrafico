@@ -1,5 +1,4 @@
 import { createEntityFields } from "@/components/shared"
-import { DataCell } from "@/components/shared"
 import type { Employee } from "@/types/hr"
 
 export const employeeFields = createEntityFields<Employee>()({
@@ -9,14 +8,11 @@ export const employeeFields = createEntityFields<Employee>()({
         label: "Código",
     },
     contact: {
-        key: "contact_detail",
-        type: "computed",
+        key: "contact",
+        type: "contact",
         label: "Contacto",
-        render: (e) => (
-            <DataCell.ContactLink contactId={e.contact}>
-                {e.contact_detail?.name}
-            </DataCell.ContactLink>
-        ),
+        get: (e) => e.contact,
+        getDisplay: (e) => e.contact_detail?.name ?? "—",
     },
     position: {
         key: "position",

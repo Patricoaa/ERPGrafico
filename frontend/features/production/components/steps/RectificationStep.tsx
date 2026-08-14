@@ -87,17 +87,17 @@ function CostImpactPanel({
             </p>
             <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="space-y-0.5">
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Costo planificado</p>
+                    <p className="text-3xs text-muted-foreground uppercase font-bold">Costo planificado</p>
                     <p className="text-sm font-bold">${plannedTotal.toFixed(0)}</p>
                 </div>
                 <div className="space-y-0.5">
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Costo real</p>
+                    <p className="text-3xs text-muted-foreground uppercase font-bold">Costo real</p>
                     <p className={cn("text-sm font-bold", isIncrease ? "text-destructive" : "text-success")}>
                         ${actualTotal.toFixed(0)}
                     </p>
                 </div>
                 <div className="space-y-0.5">
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Δ Total</p>
+                    <p className="text-3xs text-muted-foreground uppercase font-bold">Δ Total</p>
                     <p className={cn("text-sm font-bold flex items-center justify-center gap-1", isIncrease ? "text-destructive" : "text-success")}>
                         {isIncrease ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                         {isIncrease ? '+' : ''}{delta.toFixed(0)}
@@ -107,14 +107,14 @@ function CostImpactPanel({
             {isManualWithInventory && (
                 <div className="border-t border-primary/10 pt-3 grid grid-cols-2 gap-3 text-center">
                     <div className="space-y-0.5">
-                        <p className="text-[10px] text-muted-foreground uppercase font-bold">Costo unit. planif.</p>
+                        <p className="text-3xs text-muted-foreground uppercase font-bold">Costo unit. planif.</p>
                         <p className="text-sm font-bold">${plannedUnitCost.toFixed(2)}</p>
                     </div>
                     <div className="space-y-0.5">
-                        <p className="text-[10px] text-muted-foreground uppercase font-bold">Costo unit. real</p>
+                        <p className="text-3xs text-muted-foreground uppercase font-bold">Costo unit. real</p>
                         <p className={cn("text-sm font-bold", unitDelta > 0 ? "text-destructive" : "text-success")}>
                             ${actualUnitCost.toFixed(2)}
-                            <span className="text-[10px] ml-1">({unitDelta > 0 ? '+' : ''}{unitDelta.toFixed(2)})</span>
+                            <span className="text-3xs ml-1">({unitDelta > 0 ? '+' : ''}{unitDelta.toFixed(2)})</span>
                         </p>
                     </div>
                 </div>

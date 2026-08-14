@@ -20,12 +20,12 @@ export const purchaseInvoiceFields = createEntityFields<Invoice>()({
     },
     contactDisplayName: {
         key: "partner_name",
-        type: "text",
+        type: "secondary",
         label: "Proveedor",
     },
     dteType: {
         key: "dte_type_display",
-        type: "chip",
+        type: "secondary",
         label: "Tipo DTE",
     },
     domainStatus: {

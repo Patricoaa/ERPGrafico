@@ -104,7 +104,7 @@ export function PieChart({
         return (
             <div className="flex h-full w-full items-center justify-center">
                 <div className="text-center">
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    <div className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">
                         Sin datos
                     </div>
                 </div>
@@ -154,7 +154,7 @@ export function PieChart({
                             {centerLabel.value}
                         </div>
                         {centerLabel.label && (
-                            <div className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">
+                            <div className="text-4xs font-bold uppercase tracking-widest text-muted-foreground">
                                 {centerLabel.label}
                             </div>
                         )}

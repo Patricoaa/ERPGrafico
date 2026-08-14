@@ -89,7 +89,7 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                     <div className="space-y-4">
                         <div className="flex justify-between items-end mb-2">
                             <div>
-                                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Suma a Pagar</p>
+                                <p className="text-3xs font-bold uppercase text-muted-foreground tracking-widest">Suma a Pagar</p>
                                 <DataCell.Currency value={totalToPay} weight="bold" className="justify-start text-2xl text-success mt-1" />
                             </div>
                             <div className="flex gap-4">
@@ -100,14 +100,14 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                                         pendingLines.forEach(l => next[l.partner] = l.pendingAmount)
                                         setPayments(next)
                                     }}
-                                    className="text-[10px] font-bold text-primary p-0 h-auto"
+                                    className="text-3xs font-medium text-primary p-0 h-auto"
                                 >
                                     Pagar Totalidad
                                 </Button>
                                 <Button
                                     variant="link"
                                     onClick={() => setPayments({})}
-                                    className="text-[10px] font-bold text-muted-foreground p-0 h-auto"
+                                    className="text-3xs font-medium text-muted-foreground p-0 h-auto"
                                 >
                                     Limpiar Todo
                                 </Button>
@@ -115,8 +115,8 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                         </div>
 
                         <div className="border rounded-sm overflow-x-auto max-h-[300px] overflow-y-auto">
-                            <table className="w-full text-[11px] text-left">
-                                <thead className="bg-muted text-[10px] font-black uppercase text-muted-foreground tracking-wider border-b sticky top-0 z-10">
+                            <table className="w-full text-2xs text-left">
+                                <thead className="bg-muted text-3xs font-bold uppercase text-muted-foreground tracking-wider border-b sticky top-0 z-10">
                                     <tr>
                                         <th className="px-3 py-3">Socio</th>
                                         <th className="px-3 py-3 text-right">Pendiente ($)</th>
@@ -126,7 +126,7 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                                 <tbody className="divide-y relative z-0">
                                     {pendingLines.length === 0 && (
                                         <tr>
-                                            <td colSpan={3} className="px-3 py-8 text-center text-muted-foreground text-[11px] font-bold">
+                                            <td colSpan={3} className="px-3 py-8 text-center text-muted-foreground text-2xs font-bold">
                                                 No hay dividendos pendientes de pago
                                             </td>
                                         </tr>
@@ -145,7 +145,7 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                                                 <td className="px-3 py-2">
                                                     <Input
                                                         type="number"
-                                                        className={`h-8 text-[11px] font-mono text-right ${isOver ? 'border-destructive text-destructive focus-visible:ring-destructive' : ''}`}
+                                                        className={`h-8 text-2xs font-mono text-right ${isOver ? 'border-destructive text-destructive focus-visible:ring-destructive' : ''}`}
                                                         value={payments[line.partner] !== undefined ? payments[line.partner] : ''}
                                                         onChange={(e) => {
                                                             const val = e.target.value === '' ? 0 : parseFloat(e.target.value)
@@ -169,7 +169,7 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                 component: (
                     <div className="space-y-4">
                         <div className="bg-success/5 border border-success/20 rounded-sm p-4 flex flex-col items-center justify-center">
-                            <span className="text-[10px] uppercase font-black text-success tracking-widest opacity-80 mb-1">Monto de la Transacción ({partnersCount} pagos)</span>
+                            <span className="text-3xs uppercase font-bold text-success tracking-widest opacity-80 mb-1">Monto de la Transacción ({partnersCount} pagos)</span>
                             <DataCell.Currency value={totalToPay} weight="bold" className="justify-center text-3xl text-success w-auto" />
                         </div>
 
@@ -181,7 +181,7 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                                 placeholder="Seleccione banco o caja"
                                 options={treasuryAccounts.map(a => ({ value: a.id.toString(), label: `${a.name} (${a.identifier})` }))}
                             />
-                            <p className="text-[10px] text-muted-foreground mt-1 pl-1 font-medium">
+                            <p className="text-3xs text-muted-foreground mt-1 pl-1 font-medium">
                                 Esta será la cuenta bancaria de donde se extraerán los fondos para liquidar los dividendos seleccionados.
                             </p>
                         </div>

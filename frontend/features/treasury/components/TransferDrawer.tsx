@@ -2,6 +2,7 @@
 
 import React, {useState, useEffect} from "react"
 import { useForm, useWatch } from "react-hook-form"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { showApiError } from "@/lib/errors"
@@ -54,6 +55,18 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
             amount: "",
             notes: "",
         }
+    })
+
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: null,
+        defaultValues: () => ({
+            from_account_id: "",
+            to_account_id: "",
+            amount: "",
+            notes: "",
+        })
     })
 
     const fromAccountId = useWatch({ control: form.control, name: "from_account_id" })
@@ -143,7 +156,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                                                     />
                                                     {sourceAccount && (
                                                         <div className="absolute -bottom-5 right-1 px-1.5 py-0.5 rounded bg-muted/30 border border-muted/50">
-                                                            <p className="text-[10px] font-mono leading-none">
+                                                            <p className="text-3xs font-mono leading-none">
                                                                 DISP: <span className="text-success"><MoneyDisplay amount={sourceAccount.current_balance} weight="bold" /></span>
                                                             </p>
                                                         </div>
@@ -202,8 +215,8 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                                         />
                                         {sourceAccount && toAccountId && amount && !isNaN(parseFloat(amount)) && (
                                             <div className="p-2.5 rounded-md bg-warning/5 border border-warning/20 flex flex-col items-center justify-center animate-in zoom-in-95 duration-300">
-                                                <p className="text-[10px] text-warning font-black uppercase tracking-widest mb-1">Impacto en Origen</p>
-                                                <p className="text-xs font-black text-warning">
+                                                <p className="text-xs font-medium text-warning mb-1">Impacto en Origen</p>
+                                                <p className="text-xs font-bold text-warning">
                                                     <MoneyDisplay amount={(sourceAccount.current_balance ?? 0) - parseFloat(amount)} />
                                                 </p>
                                             </div>

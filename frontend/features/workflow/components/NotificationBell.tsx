@@ -132,7 +132,7 @@ export function NotificationBell() {
                                         <p className={cn("text-sm font-medium leading-none", !notif.read && "text-primary")}>
                                             {notif.title}
                                         </p>
-                                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                        <span className="text-3xs text-muted-foreground whitespace-nowrap">
                                             {formatPlainDate(notif.created_at)}
                                         </span>
                                     </div>
@@ -142,7 +142,7 @@ export function NotificationBell() {
 
                                     {notif.link && (
                                         <div className="mt-2 flex justify-end">
-                                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider hover:bg-primary/20 transition-colors">
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-3xs font-bold uppercase tracking-wider hover:bg-primary/20 transition-colors">
                                                 Ver producto <ArrowRight className="h-3 w-3" />
                                             </span>
                                         </div>

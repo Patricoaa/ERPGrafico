@@ -105,7 +105,7 @@ export function BankUpcomingMaturitiesPanel({ data, bankId, maxItems = 10 }: Ban
                     variant="link"
                     size="sm"
                     onClick={() => router.push(`/treasury/bank-center/${bankId}/movements`)}
-                    className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors mt-1.5 ml-[28px]"
+                    className="text-2xs font-medium text-muted-foreground hover:text-foreground transition-colors mt-1.5 ml-[28px]"
                 >
                     y {remaining} más →
                 </Button>

@@ -122,7 +122,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                                             <div className="flex flex-col">
                                                 <span className="font-bold text-sm">{rule.name}</span>
                                                 {(rule.start_date || rule.end_date) && (
-                                                    <span className="text-[10px] text-muted-foreground font-medium flex gap-2">
+                                                    <span className="text-3xs text-muted-foreground font-medium flex gap-2">
                                                         <span>📅 {rule.start_date || '∞'}</span>
                                                         <span>➜</span>
                                                         <span>{rule.end_date || '∞'}</span>

@@ -63,13 +63,13 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                             className="w-full"
                         >
                             <div className="flex items-center gap-2 h-full px-3">
-                                <span className="text-muted-foreground text-[10px] font-mono">#</span>
+                                <span className="text-muted-foreground text-3xs font-mono">#</span>
                                 {isEditing ? (
                                     <span className="font-mono font-black text-primary text-xs">
                                         {form.getValues("internal_code")}
                                     </span>
                                 ) : (
-                                    <span className="text-[10px] font-bold text-primary/40 uppercase tracking-tighter italic">Auto</span>
+                                    <span className="text-3xs font-bold text-primary/40 uppercase tracking-tighter italic">Auto</span>
                                 )}
                             </div>
                         </LabeledContainer>

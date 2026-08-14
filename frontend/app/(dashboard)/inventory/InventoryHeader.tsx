@@ -92,7 +92,6 @@ export function InventoryHeader() {
         tabs,
         activeValue,
         subActiveValue,
-        subSubActiveValue,
     }
 
     const getHeaderConfig = () => {

@@ -1,30 +1,14 @@
 "use client"
 
 import React from "react"
-import { EntityCard, headerPriorityIndex } from "@/components/shared"
+import { EntityCard, headerPriorityIndex, Badge } from "@/components/shared"
 import type { LucideIcon } from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { getEntityMetadata, getEntityIcon, type SubtitleItem } from "@/lib/entity-registry"
 import { resolveStatus } from "@/lib/badge-resolvers"
 import type { CardField, EntityFieldsMeta, SubtitleItem as FieldsSubtitleItem } from "@/components/shared"
 
-const SUBTITLE_DOT_COLORS: Record<string, string> = {
-    neutral:     'bg-muted-foreground',
-    info:        'bg-info',
-    success:     'bg-success',
-    warning:     'bg-warning',
-    destructive: 'bg-destructive',
-    primary:     'bg-primary',
-}
 
-const SUBTITLE_INTENT_BORDER: Record<string, string> = {
-    neutral:     'border-border/40 text-muted-foreground',
-    info:        'border-info text-info',
-    success:     'border-success text-success',
-    warning:     'border-warning text-warning',
-    destructive: 'border-destructive text-destructive',
-    primary:     'border-primary text-primary',
-}
 
 export interface AutoEntityCardProps<TData> {
     /** The raw entity data */
@@ -80,7 +64,8 @@ export interface AutoEntityCardProps<TData> {
     variant?: 'highlights' | 'summary' | 'full' | 'workflow' | 'overview'
     /**
      * Hub status renderer — called for summary/full/workflow variants to render domain-specific
-     * status content in the header center area.
+     * status content in the header center area. Composes with the centerDetail fields
+     * (placement 'detail' → center header); it never replaces them.
      */
     hubStatusRenderer?: (data: TData) => React.ReactNode
     /**
@@ -335,8 +320,8 @@ export function AutoEntityCard<TData>({
                 const isEmpty = f.value == null || f.value === '' || (Array.isArray(f.value) && f.value.length === 0)
                 return (
                     <div key={f.key} className={cn(showHeaderLabels ? "flex flex-col items-end" : "flex items-end gap-1.5", f.cardClassName)}>
-                        {showHeaderLabels && <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold">{f.label}</span>}
-                        <span className="text-xs font-bold">{isEmpty ? <span className="opacity-40">—</span> : f.value}</span>
+                        {showHeaderLabels && <span className="text-4xs uppercase tracking-widest text-muted-foreground/60 font-bold">{f.label}</span>}
+                        <span>{isEmpty ? <span className="text-xs text-muted-foreground/50">—</span> : f.value}</span>
                     </div>
                 )
             })}
@@ -350,26 +335,36 @@ export function AutoEntityCard<TData>({
         </div>
     ) : undefined
 
-    // 5. Build Center content: explicit prop → hubStatusRenderer → centerDetail fields
+    // 5. Build Center content: explicit prop wins; otherwise compose hubStatusRenderer content
+    //    with the centerDetail fields. Both live in the header center zone, so detail-placed
+    //    fields (secondary, temporal, etc.) must never be dropped when a hub status renderer
+    //    is present — they coexist in the same center slot.
     const showCenterLabels = classified.centerDetail.length > 1
-    const centerDetailNode = classified.centerDetail.length > 0 && (
+    const centerDetailNode = classified.centerDetail.length > 0 ? (
         <div className="flex items-center gap-4 min-w-0">
             {classified.centerDetail.map(f => {
                 const isEmpty = f.value == null || f.value === '' || (Array.isArray(f.value) && f.value.length === 0)
                 return (
                     <div key={f.key} className={cn(showCenterLabels ? "flex flex-col items-end min-w-0" : "flex items-end gap-1.5 min-w-0", f.cardClassName)}>
-                        {showCenterLabels && <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold whitespace-nowrap">{f.label}</span>}
-                        <span className="text-xs font-normal truncate min-w-0 [&>*]:text-xs [&>*]:font-normal">{isEmpty ? <span className="opacity-40">—</span> : f.value}</span>
+                        {showCenterLabels && <span className="text-4xs uppercase tracking-widest text-muted-foreground/60 font-bold whitespace-nowrap">{f.label}</span>}
+                        <span className="truncate min-w-0">{isEmpty ? <span className="text-xs text-muted-foreground/50">—</span> : f.value}</span>
                     </div>
                 )
             })}
         </div>
-    )
+    ) : null
+
+    const hubStatusNode = hubStatusRenderer && (effectiveVariant === 'summary' || effectiveVariant === 'full' || effectiveVariant === 'workflow')
+        ? hubStatusRenderer(data)
+        : null
 
     const centerContent = center ?? (
-        hubStatusRenderer && (effectiveVariant === 'summary' || effectiveVariant === 'full' || effectiveVariant === 'workflow')
-            ? hubStatusRenderer(data)
-            : centerDetailNode || undefined
+        (hubStatusNode != null || centerDetailNode != null) ? (
+            <div className="flex items-center gap-4 min-w-0">
+                {hubStatusNode}
+                {centerDetailNode}
+            </div>
+        ) : undefined
     )
 
     // 6. Render subtitle items
@@ -382,18 +377,20 @@ export function AutoEntityCard<TData>({
             if (item.kind === 'status') {
                 const { intent } = resolveStatus(item.status)
                 return (
-                    <span key={i} className={cn('inline-flex items-center gap-1 rounded-full border px-1.5 py-px leading-none align-middle', SUBTITLE_INTENT_BORDER[intent])}>
-                        <span className={cn('inline-block h-1 w-1 rounded-full', SUBTITLE_DOT_COLORS[intent])} />
+                    <Badge key={i} intent={intent} size="sm" dot className="align-middle">
                         {item.label}
-                    </span>
+                    </Badge>
                 )
             }
             if (item.kind === 'chip') {
                 return (
-                    <span key={i} className={cn('inline-flex items-center rounded-full border px-1.5 py-px leading-none align-middle', SUBTITLE_INTENT_BORDER[item.intent as string])}>
+                    <Badge key={i} intent={item.intent as any} size="sm" tracking="wide" className="align-middle">
                         {item.content}
-                    </span>
+                    </Badge>
                 )
+            }
+            if (item.kind === 'node') {
+                return <React.Fragment key={i}>{item.content}</React.Fragment>
             }
             return null
         })

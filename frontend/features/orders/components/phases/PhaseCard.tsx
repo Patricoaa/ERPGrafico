@@ -112,11 +112,14 @@ export function PhaseCard({
     })()
 
     return (
-        <Card className={cn(
-            "card-base flex flex-col duration-300 relative group/card bg-card/50 backdrop-blur-sm py-2 gap-2",
-            open && collapsible && "accent-visible",
-            className
-        )}>
+        <Card
+            variant="flat"
+            className={cn(
+                "flex flex-col duration-300 relative group/card py-2 gap-2",
+                open && collapsible && "accent-visible",
+                className
+            )}
+        >
 
             {/* HEADER — Clickable when collapsible */}
             <div
@@ -138,8 +141,8 @@ export function PhaseCard({
                     collapsible && "cursor-pointer select-none"
                 )}
             >
-                <div className="relative flex items-center justify-center w-7 h-7 shrink-0">
-                    <Icon className={cn("h-4 w-4", iconStyles[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')])} />
+                <div className="relative flex items-center justify-center w-6 h-6 shrink-0">
+                    <Icon className={cn("h-3.5 w-3.5", iconStyles[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')])} />
                     {progressValue > 0 && (
                         <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 24 24">
                             <circle
@@ -160,8 +163,8 @@ export function PhaseCard({
                 </div>
                 <div className="flex-1 flex items-center gap-2">
                     <h3 className={cn(
-                        " font-black uppercase tracking-[0.2em] text-foreground leading-none",
-                        "text-[11.5px]"
+                        "font-semibold uppercase text-muted-foreground leading-none",
+                        "text-xs tracking-wider"
                     )}>
                         {title}
                     </h3>
@@ -215,12 +218,12 @@ export function PhaseCard({
                                         <div className="flex items-center gap-3 overflow-hidden">
                                             <div className="flex flex-col overflow-hidden">
                                                 <div className="flex flex-col justify-center">
-                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase">{doc.type}</span>
+                                                    <span className="text-xs font-medium text-muted-foreground uppercase">{doc.type}</span>
                                                     <div className="flex items-center gap-2">
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
                                                                 <span className={cn(
-                                                                    "font-black text-foreground/90 truncate",
+                                                                    "font-medium text-foreground/90 truncate",
                                                                     "text-sm max-w-full"
                                                                 )}>
                                                                     {doc.number}
@@ -274,7 +277,7 @@ export function PhaseCard({
                                 ))
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-1.5 border border-dashed border-border/10 rounded-md">
-                                    <span className="text-[9px] text-muted-foreground/30 font-black uppercase tracking-widest">{emptyMessage}</span>
+                                    <span className="text-xs font-medium text-muted-foreground">{emptyMessage}</span>
                                 </div>
                             )}
                         </div>
@@ -283,7 +286,7 @@ export function PhaseCard({
                         {children && (
                             <div className={cn(
                                 "flex-1 flex flex-col justify-center",
-                                "px-1 text-[12px]"
+                                "px-1 text-xs"
                             )}>
                                 {children}
                             </div>
@@ -320,7 +323,7 @@ export function PhaseCard({
                                                         triggerAction(action.id);
                                                     }}
                                                 >
-                                                    <action.icon className="h-4 w-4 shrink-0" />
+                                                    <action.icon className="h-3.5 w-3.5 shrink-0" />
                                                     <span className="truncate">{action.label}</span>
                                                 </Button>
                                             </div>
@@ -362,7 +365,7 @@ export function PhaseCard({
                                                         triggerAction(action.id);
                                                     }}
                                                 >
-                                                    <action.icon className="h-4 w-4 shrink-0" />
+                                                    <action.icon className="h-3.5 w-3.5 shrink-0" />
                                                     <span className="truncate">{action.label}</span>
                                                 </Button>
                                             </div>

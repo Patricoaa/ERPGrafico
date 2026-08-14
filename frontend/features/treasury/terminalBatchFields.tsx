@@ -13,7 +13,7 @@ export const terminalBatchFields = createEntityFields<TerminalBatch>()({
             <div className="flex flex-col justify-center w-full items-center text-xs">
                 <DataCell.Date value={b.sales_date} />
                 {b.sales_date_end && b.sales_date_end !== b.sales_date && (
-                    <span className="text-[10px] text-muted-foreground leading-none mt-1">
+                    <span className="text-3xs text-muted-foreground leading-none mt-1">
                         al {format(new Date(b.sales_date_end + "T12:00:00"), "dd/MM/yyyy")}
                     </span>
                 )}
@@ -35,7 +35,7 @@ export const terminalBatchFields = createEntityFields<TerminalBatch>()({
                     <Building2 className="h-3.5 w-3.5 text-primary" />
                     {b.provider_name}
                 </span>
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wide text-center">
+                <span className="text-3xs text-muted-foreground uppercase tracking-wide text-center">
                     {b.payment_method_name} (Depósito)
                 </span>
             </div>

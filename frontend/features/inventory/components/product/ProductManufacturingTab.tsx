@@ -176,7 +176,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                     {hasVariants && (
                         <div className="flex items-start gap-3 p-3 rounded-md bg-info/5 border border-info/20 mb-4">
                             <Info className="h-3.5 w-3.5 text-info mt-0.5 shrink-0" />
-                            <p className="text-[10px] text-info/80 font-medium leading-relaxed">
+                            <p className="text-3xs text-info/80 font-medium leading-relaxed">
                                 Esta receta aplica al <strong>producto plantilla</strong>.
                                 Para gestionar las recetas de las variantes, use <strong>&quot;Clonar BOM&quot;</strong> en el Tab Variantes.
                             </p>

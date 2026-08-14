@@ -516,7 +516,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     <span className="font-mono font-bold text-xs">
                         {format(parseDateOnly(row.original.transaction_date), 'dd MMM yy', { locale: es })}
                     </span>
-                    <span className="text-[10px] font-black uppercase text-muted-foreground opacity-50"> {/* intentional: badge density */} L{row.original.line_number}</span>
+                    <span className="text-3xs font-bold uppercase text-muted-foreground opacity-50"> {/* intentional: badge density */} L{row.original.line_number}</span>
                 </div>
             ),
             size: 80,
@@ -537,12 +537,12 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             </Chip>
                         )}
                         {row.original.reference && (
-                            <span className="text-[10px] font-mono text-muted-foreground truncate opacity-70"> REF: {row.original.reference}</span>
+                            <span className="text-3xs font-mono text-muted-foreground truncate opacity-70"> REF: {row.original.reference}</span>
                         )}
                         {isSuggested && (
                             <div className="flex items-center gap-1 mt-0.5">
                                 <Sparkles className="h-2.5 w-2.5 text-warning" />
-                                <span className="text-[10px] font-black uppercase text-warning"> {/* intentional: badge density */} Match Sugerido</span>
+                                <span className="text-3xs font-bold uppercase text-warning"> {/* intentional: badge density */} Match Sugerido</span>
                             </div>
                         )}
                     </div>
@@ -608,7 +608,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     <span className="font-mono font-bold text-xs">
                         {row.original.display_id || row.original.code || 'PEND'}
                     </span>
-                    <span className="text-[10px] font-medium text-muted-foreground"> {/* intentional: badge density */}
+                    <span className="text-3xs font-medium text-muted-foreground"> {/* intentional: badge density */}
                         {format(parseDateOnly(row.original.date), 'dd/MM/yy', { locale: es })}
                     </span>
                 </div>
@@ -635,7 +635,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         {isSuggested && (
                             <div className="flex items-center gap-1 mt-0.5">
                                 <Sparkles className="h-2.5 w-2.5 text-warning shadow-card" />
-                                <span className="text-[10px] font-black uppercase text-warning"> {/* intentional: badge density */} Match Sugerido</span>
+                                <span className="text-3xs font-bold uppercase text-warning"> {/* intentional: badge density */} Match Sugerido</span>
                             </div>
                         )}
                     </div>
@@ -788,7 +788,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
                                             </Button>
                                         </div>
-                                        <span className="text-[10px] font-mono text-muted-foreground">{bankData?.count || 0} pendientes</span>
+                                        <span className="text-3xs font-mono text-muted-foreground">{bankData?.count || 0} pendientes</span>
                                     </div>
                                     <div className="flex-1 min-h-0">
                                         <DataTable
@@ -852,7 +852,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                 <Plus className="h-4 w-4" />
                                             </Button>
                                         </div>
-                                        <span className="text-[10px] font-mono text-muted-foreground">{systemData?.count || 0} disponibles</span>
+                                        <span className="text-3xs font-mono text-muted-foreground">{systemData?.count || 0} disponibles</span>
                                     </div>
                                     <div className="flex-1 min-h-0">
                                         <DataTable
@@ -939,7 +939,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
                                             <div className="space-y-4">
                                                 <div className="flex items-center justify-between px-1">
-                                                    <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Cartola Bancaria ({lines.length})</span>
+                                                    <span className="text-4xs font-bold uppercase text-muted-foreground tracking-widest">Cartola Bancaria ({lines.length})</span>
                                                 </div>
 
                                                 <div className="space-y-2">
@@ -954,13 +954,13 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                                         <FileText className="h-4 w-4" />
                                                                     </div>
                                                                     <div className="flex flex-col min-w-0">
-                                                                        <span className="text-[9px] font-mono font-black uppercase text-muted-foreground opacity-60">Línea: {line.line_number}</span>
+                                                                        <span className="text-4xs font-mono font-bold uppercase text-muted-foreground opacity-60">Línea: {line.line_number}</span>
                                                                         <h3 className="text-xs font-bold leading-tight text-foreground/90 truncate max-w-[200px]">{line.description}</h3>
                                                                     </div>
                                                                 </div>
 
                                                                 <div className="text-right shrink-0">
-                                                                    <span className="text-[9px] font-mono font-bold text-muted-foreground/60 uppercase block mb-0.5">
+                                                                    <span className="text-4xs font-mono font-bold text-muted-foreground/60 uppercase block mb-0.5">
                                                                         {format(parseDateOnly(line.transaction_date), 'dd MMM yyyy', { locale: es })}
                                                                     </span>
                                                                     <span className={cn(
@@ -980,7 +980,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         <div className="flex-1 p-6">
                                             <div className="space-y-2">
                                                 <div className="flex items-center justify-between px-1">
-                                                    <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Movimientos del Sistema ({movements.length + batches.length})</span>
+                                                    <span className="text-4xs font-bold uppercase text-muted-foreground tracking-widest">Movimientos del Sistema ({movements.length + batches.length})</span>
                                                 </div>
 
                                                 <div className="space-y-1.5">
@@ -998,7 +998,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                                     <span className="text-xs font-bold uppercase tracking-tight text-foreground/80">
                                                                         {m.movement_type_display || 'Movimiento'} #{m.id}
                                                                     </span>
-                                                                    <span className="text-[10px] text-muted-foreground font-medium truncate max-w-[200px]">
+                                                                    <span className="text-3xs text-muted-foreground font-medium truncate max-w-[200px]">
                                                                         {m.notes || m.reference || 'Sin concepto'}
                                                                     </span>
                                                                 </div>
@@ -1021,7 +1021,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                                 </div>
                                                                 <div className="flex flex-col">
                                                                     <span className="text-xs font-black uppercase tracking-widest text-primary">Lote Terminal</span>
-                                                                    <span className="text-[10px] text-primary/70 font-bold">{b.terminal_name || 'Terminal'} - {b.display_id}</span>
+                                                                    <span className="text-3xs text-primary/70 font-bold">{b.terminal_name || 'Terminal'} - {b.display_id}</span>
                                                                 </div>
                                                             </div>
                                                             <span className="text-sm font-mono font-bold text-primary">
@@ -1041,7 +1041,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                                 </div>
                                                                 <div className="flex flex-col">
                                                                     <span className="text-xs font-black uppercase tracking-widest text-warning">{diffType}</span>
-                                                                    <span className="text-[10px] text-warning/70 font-bold italic">Ajuste automático de diferencia</span>
+                                                                    <span className="text-3xs text-warning/70 font-bold italic">Ajuste automático de diferencia</span>
                                                                 </div>
                                                             </div>
                                                             <span className="text-sm font-mono font-bold text-warning">
@@ -1129,7 +1129,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     onChange={(e) => setConfidenceThreshold(parseInt(e.target.value))}
                                     className="w-full h-1.5 bg-muted rounded-sm appearance-none cursor-pointer accent-primary"
                                 />
-                                <div className="flex justify-between text-[10px] font-bold text-muted-foreground uppercase opacity-50">
+                                <div className="flex justify-between text-3xs font-bold text-muted-foreground uppercase opacity-50">
                                     <span>Flexible (50%)</span>
                                     <span>Estricto (100%)</span>
                                 </div>
@@ -1151,8 +1151,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             <div className="bg-destructive/5 border border-destructive/20 rounded-md p-3 flex items-start gap-3">
                                 <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                                 <div className="space-y-1">
-                                    <p className="text-[11px] font-black uppercase text-destructive leading-none">Acción Irreversible</p>
-                                    <p className="text-[10px] text-destructive/80 font-medium">Una vez confirmada, esta conciliación y su ajuste contable no podrán ser revertidos desde este workbench.</p>
+                                    <p className="text-2xs font-bold uppercase text-destructive leading-none">Acción Irreversible</p>
+                                    <p className="text-3xs text-destructive/80 font-medium">Una vez confirmada, esta conciliación y su ajuste contable no podrán ser revertidos desde este workbench.</p>
                                 </div>
                             </div>
                         </div>
@@ -1283,7 +1283,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         }}
                                         className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-all rounded-full py-1 pl-3 pr-1 group shadow-card hover:shadow-elevated"
                                     >
-                                        <span className="text-xs font-bold truncate max-w-[150px]">{suggestions[0].payment_data?.contact_name || suggestions[0].batch_data?.display_id || suggestions[0].batch_data?.name}</span>
+                                        <span className="text-xs font-medium truncate max-w-[150px]">{suggestions[0].payment_data?.contact_name || suggestions[0].batch_data?.display_id || suggestions[0].batch_data?.name}</span>
                                         <div className="h-5 w-5 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-all duration-300">
                                             <ChevronRight className="h-3 w-3 text-warning group-hover:translate-x-0.5 transition-transform" />
                                         </div>
@@ -1319,7 +1319,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     <div className="h-5 w-5 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-all duration-300">
                                         <ChevronLeft className="h-3 w-3 text-warning group-hover:-translate-x-0.5 transition-transform" />
                                     </div>
-                                    <span className="text-xs font-bold truncate max-w-[150px]">{lineSuggestions[0].line_data?.description}</span>
+                                    <span className="text-xs font-medium truncate max-w-[150px]">{lineSuggestions[0].line_data?.description}</span>
                                     </Button>
                                 ) : (
                                     <div className="bg-warning/10 border border-warning/20 rounded-full py-1 px-3 shadow-card">
@@ -1415,8 +1415,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             <div className="bg-destructive/5 border border-destructive/20 rounded-md p-3 flex items-start gap-3">
                                 <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                                 <div className="space-y-1">
-                                    <p className="text-[11px] font-black uppercase text-destructive leading-none">Acción Irreversible</p>
-                                    <p className="text-[10px] text-destructive/80 font-medium">Esta acción es permanente. Asegúrate de que los montos coincidan correctamente antes de continuar.</p>
+                                    <p className="text-2xs font-bold uppercase text-destructive leading-none">Acción Irreversible</p>
+                                    <p className="text-3xs text-destructive/80 font-medium">Esta acción es permanente. Asegúrate de que los montos coincidan correctamente antes de continuar.</p>
                                 </div>
                             </div>
                         </div>
@@ -1448,14 +1448,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     fullWidth={400}
                 >
                     <div className="flex flex-col h-full bg-background rounded-md overflow-hidden text-foreground">
-                        <div className="p-4 border-b bg-muted/30 flex justify-between items-center shrink-0">
+                        <div className="p-4 border-b border-border bg-muted/30 flex justify-between items-center shrink-0">
                             <div className="flex items-center gap-2">
                                 <div className="bg-primary/10 p-1.5 rounded-sm">
                                     <Brain className="h-4 w-4 text-primary" />
                                 </div>
                                 <div className="flex flex-col">
                                     <h2 className="text-xs font-bold uppercase tracking-wider text-foreground/90 leading-tight">Inteligencia</h2>
-                                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Configuración de Matching</span>
+                                    <span className="text-3xs text-muted-foreground font-medium uppercase tracking-tighter">Configuración de Matching</span>
                                 </div>
                             </div>
                             <Button

@@ -110,7 +110,7 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                                 onClick={() => handleSave(false)}
                                 disabled={isAllocating || fields.length === 0}
                                 type="button"
-                                className="h-9 px-5 text-[10px] font-black tracking-widest uppercase rounded-sm shadow-card"
+                                className="h-9 px-5 text-3xs font-medium tracking-widest uppercase rounded-sm shadow-card"
                             >
                                 Guardar Borrador
                             </Button>

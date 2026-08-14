@@ -90,12 +90,12 @@ export function SourceDocumentSelector({
                         <div className="flex flex-col overflow-hidden flex-1">
                             <div className="flex items-center justify-between">
                                 <span className="truncate font-medium">{result.display}</span>
-                                <span className="text-[10px] text-muted-foreground ml-2">
+                                <span className="text-3xs text-muted-foreground ml-2">
                                     {result.title}
                                 </span>
                             </div>
                             {result.subtitle && (
-                                <span className="text-[10px] text-muted-foreground truncate">
+                                <span className="text-3xs text-muted-foreground truncate">
                                     {result.subtitle}
                                 </span>
                             )}

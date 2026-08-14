@@ -98,7 +98,7 @@ export function LoginForm() {
 
                     {/* Error message */}
                     {error && (
-                        <div className="animate-in fade-in slide-in-from-top-1 duration-200 fill-mode-both flex items-center gap-2 p-3 rounded-sm bg-destructive/10 border border-destructive/20"
+                        <div className="animate-in fade-in slide-in-from-top-1 duration-200 fill-mode-both flex items-center gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20"
                         >
                             <div className="w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
                             <p className="text-xs font-medium text-destructive">{error}</p>

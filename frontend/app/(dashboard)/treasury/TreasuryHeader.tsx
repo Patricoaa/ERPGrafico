@@ -36,11 +36,6 @@ export function TreasuryHeader() {
         return undefined
     }, [activeValue, segments])
 
-    const subSubActiveValue = useMemo(() => {
-        if (activeValue === 'bank-center') return segments[3] || 'overview'
-        return undefined
-    }, [activeValue, segments])
-
     const bankSubTabs = useMemo(() => buildBankSubTabs(banks), [banks])
 
     const tabs = [
@@ -73,7 +68,6 @@ export function TreasuryHeader() {
         tabs,
         activeValue,
         subActiveValue,
-        subSubActiveValue,
     }
 
     const getHeaderConfig = () => {

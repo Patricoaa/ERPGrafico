@@ -128,7 +128,7 @@ export default function JobsView() {
                 }
                 if (job.status === "FAILED" && job.error_message) {
                     return (
-                        <span className="text-[11px] text-destructive max-w-[150px] line-clamp-1 truncate block" title={job.error_message}>
+                        <span className="text-2xs text-destructive max-w-[150px] line-clamp-1 truncate block" title={job.error_message}>
                             {job.error_message}
                         </span>
                     )

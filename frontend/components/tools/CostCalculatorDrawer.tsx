@@ -202,7 +202,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                         <span className="text-base font-black text-primary">
                                             {formatCurrency(p.cost_price || 0)}
                                         </span>
-                                        <span className="text-[10px] text-muted-foreground ml-1 uppercase">
+                                        <span className="text-3xs text-muted-foreground ml-1 uppercase">
                                             /{uomLabel}
                                         </span>
                                     </>
@@ -225,7 +225,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                     </div>
                                     <div className="space-y-1">
                                         <p className="font-bold text-sm">Tu lista está vacía</p>
-                                        <p className="max-w-[200px] text-[11px] italic opacity-70">
+                                        <p className="max-w-[200px] text-2xs italic opacity-70">
                                             Agrega productos del catálogo para calcular costos.
                                         </p>
                                     </div>
@@ -237,7 +237,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                             <div className="grid grid-cols-[1fr_auto_1fr_auto_auto_auto] gap-x-1 items-start">
                                                 <div className="flex flex-col">
                                                     <span className="text-xs font-bold truncate">{item.product.name}</span>
-                                                    <span className="text-[10px] text-muted-foreground font-medium">{formatCurrency(item.unit_cost)}/u</span>
+                                                    <span className="text-3xs text-muted-foreground font-medium">{formatCurrency(item.unit_cost)}/u</span>
                                                 </div>
 
                                                 <div className="flex flex-col items-center">
@@ -266,12 +266,12 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                                     </div>
                                                     <div className="flex justify-center mt-0.5">
                                                         <Select value={String(item.uom_id ?? '')} onValueChange={val => updateUom(item.id, parseInt(val))}>
-                                                            <SelectTrigger className="h-5 text-[9px] border-muted-foreground/20 px-1.5 py-0 bg-background min-w-0">
+                                                            <SelectTrigger className="h-5 text-4xs border-muted-foreground/20 px-1.5 py-0 bg-background min-w-0">
                                                                 <SelectValue />
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 {(item.product.available_uoms || []).map(uom => (
-                                                                    <SelectItem key={uom.id} value={String(uom.id)} className="text-[9px] py-0.5">
+                                                                    <SelectItem key={uom.id} value={String(uom.id)} className="text-4xs py-0.5">
                                                                         {uom.name}
                                                                     </SelectItem>
                                                                 ))}
@@ -328,7 +328,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
 
                             <div className="bg-primary/5 border border-primary/10 rounded-sm p-3 flex items-start gap-3">
                                 <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                                <p className="text-[10px] text-primary/80 leading-relaxed font-medium uppercase tracking-tight">
+                                <p className="text-3xs text-primary/80 leading-relaxed font-medium uppercase tracking-tight">
                                     Esta es una simulación de costos de producción basada en el precio de costo de los materiales seleccionados. No afecta movimientos de stock ni genera registros comerciales.
                                 </p>
                             </div>

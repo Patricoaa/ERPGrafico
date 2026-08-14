@@ -145,19 +145,19 @@ export function OriginPhase({
         >
             <div className="flex flex-col gap-1">
                 {(activeDoc?.lines || activeDoc?.items || []).slice(0, 3).map((line: OrderLine, idx: number) => (
-                    <div key={idx} className="flex items-start justify-between text-[10px] gap-2 py-0.5 border-b border-border last:border-0">
-                        <span className="text-foreground/70 line-clamp-1 leading-tight flex-1">
+                    <div key={idx} className="flex items-start justify-between text-xs gap-2 py-0.5 border-b border-border last:border-0">
+                        <span className="text-foreground/70 line-clamp-1 leading-tight flex-1 font-medium">
                             {line.product_name || line.description}
                         </span>
-                        <span className="shrink-0 font-black text-primary text-[11px]">
+                        <span className="shrink-0 font-bold text-primary text-xs">
                             {Math.round(parseFloat(String(line.quantity || 0)))} {line.uom_name || line.unit_name || 'un'}
                         </span>
                     </div>
                 ))}
                 {(activeDoc?.lines || activeDoc?.items || []).length > 3 && (
-                    <div className="text-[9px] text-muted-foreground/60 italic pt-1 flex justify-between items-center border-t border-border/10 mt-1">
+                    <div className="text-4xs text-muted-foreground/60 italic pt-1 flex justify-between items-center border-t border-border/10 mt-1">
                         <span>Y {(activeDoc?.lines || activeDoc?.items || []).length - 3} productos más...</span>
-                        <span className="font-bold text-primary/60 text-[9px] uppercase tracking-widest">Total {(activeDoc?.lines || activeDoc?.items || []).length} ítems</span>
+                        <span className="font-bold text-primary/60 text-xs uppercase tracking-widest">Total {(activeDoc?.lines || activeDoc?.items || []).length} ítems</span>
                     </div>
                 )}
             </div>

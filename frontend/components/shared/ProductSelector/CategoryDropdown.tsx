@@ -30,7 +30,7 @@ export function CategoryDropdown({ categories, selectedCategoryId, onSelectCateg
                 >
                     <ListFilter className="size-3.5" />
                     {selectedCategory && (
-                        <span className="hidden md:inline text-[10px] uppercase tracking-widest font-medium">
+                        <span className="hidden md:inline text-3xs uppercase tracking-widest font-medium">
                             {selectedCategory.name}
                         </span>
                     )}
@@ -46,9 +46,9 @@ export function CategoryDropdown({ categories, selectedCategoryId, onSelectCateg
                         variant="ghost"
                         onClick={() => onSelectCategory(null)}
                         className={cn(
-                            "w-full flex items-center gap-2 px-2.5 py-2 text-left rounded-md transition-colors text-[10px] uppercase tracking-widest shadow-none",
+                            "w-full flex items-center gap-2 px-2.5 py-2 text-left rounded-md transition-colors text-3xs uppercase tracking-widest shadow-none",
                             selectedCategoryId === null
-                                ? "bg-primary/10 text-primary font-bold"
+                                ? "bg-primary/10 text-primary font-medium"
                                 : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                         )}
                     >
@@ -63,7 +63,7 @@ export function CategoryDropdown({ categories, selectedCategoryId, onSelectCateg
                                 className={cn(
                                     "w-full flex items-center gap-2 px-2.5 py-2 text-left rounded-md transition-colors text-xs shadow-none",
                                     selectedCategoryId === cat.id
-                                        ? "bg-primary/10 text-primary font-bold"
+                                        ? "bg-primary/10 text-primary font-medium"
                                         : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                                 )}
                             >

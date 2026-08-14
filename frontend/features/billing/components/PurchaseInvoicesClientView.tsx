@@ -149,6 +149,7 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
                     isLoading={isLoading}
                     onRowClick={(row: Invoice) => toggleHub(row)}
                     variant="embedded"
+                    hidePagination={isLoading}
                     unifiedSearch={<UnifiedSearchBar
                         config={purchaseInvoiceUnifiedSearchDef}
                         chips={search.chips}
@@ -169,8 +170,6 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
                     onReset={search.clearAll}
                     defaultPageSize={20}
                     createAction={createAction}
-                    isSelected={(inv: Invoice) => hubConfig?.invoiceId === inv.id}
-                    isHubOpen={isHubOpen}
                     isFiltered={search.isFiltered}
                     emptyState={{
                         context: "purchase",
@@ -187,10 +186,7 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
                             iconClassName="text-info bg-info/10"
                             isSelected={hubConfig?.invoiceId === data.id}
                             onClick={() => toggleHub(data)}
-                            hubTrigger={{
-                                isSelected: hubConfig?.invoiceId === data.id,
-                                onToggle: () => toggleHub(data),
-                            }}
+                            actions={purchaseInvoiceActions.render(data, actionsCtx)}
                         />
                     )}
                 />

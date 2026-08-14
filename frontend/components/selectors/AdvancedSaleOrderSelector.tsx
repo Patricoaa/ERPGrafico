@@ -128,11 +128,11 @@ export function AdvancedSaleOrderSelector({
                             <div className="flex flex-col overflow-hidden flex-1">
                                 <div className="flex items-center justify-between">
                                     <span className="truncate font-bold">{formatEntityDisplay('sales.saleorder', order as unknown as Record<string, unknown>)}</span>
-                                    <span className="text-[10px] font-mono text-muted-foreground">
+                                    <span className="text-3xs font-mono text-muted-foreground">
                                         {format(new Date(order.created_at), "dd/MM/yyyy")}
                                     </span>
                                 </div>
-                                <span className="text-[10px] text-muted-foreground uppercase font-black truncate">
+                                <span className="text-3xs text-muted-foreground uppercase font-bold truncate">
                                     {order.customer_name}
                                 </span>
                             </div>

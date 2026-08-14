@@ -65,7 +65,7 @@ export function OutsourcingVerificationStep({
                 )} />
                 <div className="space-y-0.5">
                   <p className="text-sm font-bold">{m.component_name}</p>
-                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold">
+                  <div className="flex items-center gap-2 text-3xs text-muted-foreground uppercase font-bold">
                     <span className={cn(isReceived ? 'text-success' : 'text-warning')}>{statusLabel}</span>
                     <span>•</span>
                     <span>{m.supplier_name}</span>

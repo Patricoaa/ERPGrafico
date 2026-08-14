@@ -27,7 +27,7 @@ export function PrepressStep({
         <div className="space-y-4">
           {order.checkout_files && order.checkout_files.length > 0 && (
             <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase text-primary flex items-center gap-1.5">
+              <Label className="text-3xs font-bold uppercase text-primary flex items-center gap-1.5">
                 <Package className="h-3 w-3" />
                 Archivos del Checkout (Compra)
               </Label>
@@ -43,7 +43,7 @@ export function PrepressStep({
                       </TooltipTrigger>
                       <TooltipContent side="top">{att.original_filename}</TooltipContent>
                     </Tooltip>
-                    <div className="text-[10px] text-muted-foreground shrink-0">
+                    <div className="text-3xs text-muted-foreground shrink-0">
                       {formatBytes(Number(att.file_size ?? 0))}
                     </div>
                     <DataCell.Action
@@ -58,7 +58,7 @@ export function PrepressStep({
 
           {order.attachments && order.attachments.length > 0 && (
             <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase text-primary flex items-center gap-1.5">
+              <Label className="text-3xs font-bold uppercase text-primary flex items-center gap-1.5">
                 <Layers className="h-3 w-3" />
                 Archivos Adjuntos a la OT
               </Label>
@@ -76,7 +76,7 @@ export function PrepressStep({
                         </TooltipTrigger>
                         <TooltipContent side="top">{att.original_filename}</TooltipContent>
                       </Tooltip>
-                      <div className="text-[10px] text-muted-foreground shrink-0">
+                      <div className="text-3xs text-muted-foreground shrink-0">
                         {formatBytes(Number(att.file_size ?? 0))}
                       </div>
                       <DataCell.Action

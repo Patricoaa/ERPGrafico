@@ -309,16 +309,16 @@ export const ActionCategory = forwardRef(({
         <>
             {!headless && (
                 <div className={cn(
-                    layout === 'grid' ? "space-y-0" : (ghost || layout === 'flex' ? "space-y-2" : "p-4 space-y-4 rounded-md border bg-card/50 hover:shadow-elevated transition-shadow")
+                    layout === 'grid' ? "space-y-0" : (ghost || layout === 'flex' ? "space-y-2" : "card-flat p-4 space-y-4")
                 )}>
                     {layout === 'list' && (category.icon || category.label) && (
                         <div className="flex items-center gap-2 pb-2 border-b border-border">
                             {category.icon && (
                                 <div className="p-1.5 rounded bg-primary/10 text-primary border border-primary/10">
-                                    <category.icon className="h-4 w-4" />
+                                    <category.icon className="h-3.5 w-3.5" />
                                 </div>
                             )}
-                            {category.label && <h3 className=" font-extrabold uppercase text-xs tracking-wider">{category.label}</h3>}
+                            {category.label && <h3 className=" font-bold uppercase text-xs tracking-wider">{category.label}</h3>}
                             {categoryBadgeCount > 0 && (
                                 <Chip.Count value={categoryBadgeCount} size="sm" intent="neutral" className="ml-auto rounded" />
                             )}

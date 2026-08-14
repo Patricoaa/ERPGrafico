@@ -29,7 +29,7 @@ export function SalesCheckoutWizard({
                     <div>
                         <span className="font-black tracking-tighter uppercase block">Cerrar Venta</span>
                         {initialDraftId && (
-                            <span className="text-[10px] font-mono text-muted-foreground font-normal tracking-wider">
+                            <span className="text-3xs font-mono text-muted-foreground font-normal tracking-wider">
                                 Borrador <span className="text-primary/80 font-bold">#{initialDraftId}</span>
                             </span>
                         )}

@@ -24,7 +24,7 @@ export function FormSection({ title, icon: Icon, className }: FormSectionProps) 
                 {Icon && (
                     <Icon className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
                 )}
-                <span className="text-[11px] font-black uppercase tracking-[0.25em] text-muted-foreground/70 whitespace-nowrap">
+                <span className="text-2xs font-bold uppercase tracking-[0.25em] text-muted-foreground/70 whitespace-nowrap">
                     {title}
                 </span>
             </div>

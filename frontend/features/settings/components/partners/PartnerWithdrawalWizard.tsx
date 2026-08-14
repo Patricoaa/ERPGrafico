@@ -200,24 +200,24 @@ export function PartnerWithdrawalWizard({
                             label: (
                                 <span>
                                     {p.name}
-                                    {p.tax_id && <span className="text-muted-foreground ml-2 font-mono text-[10px]">{p.tax_id}</span>}
+                                    {p.tax_id && <span className="text-muted-foreground ml-2 font-mono text-3xs">{p.tax_id}</span>}
                                 </span>
                             ),
                         }))}
                     />
                     {selectedPartner && (
                         <div className="p-3 bg-destructive/5 border-2 border-dashed border-destructive/20 rounded-md space-y-2 animate-in fade-in zoom-in-95 duration-300">
-                            <div className="flex justify-between items-center text-[10px] text-muted-foreground uppercase font-black">
+                            <div className="flex justify-between items-center text-3xs text-muted-foreground uppercase font-bold">
                                 <span>Pasivo con el Socio</span>
                                 <Chip size="xs" intent="destructive">Deuda del Socio</Chip>
                             </div>
                             <div className="grid grid-cols-2 gap-4 pt-1">
                                 <div className="space-y-0.5">
-                                    <p className="text-[9px] text-muted-foreground font-medium uppercase">Retiros Acumulados</p>
+                                    <p className="text-4xs text-muted-foreground font-medium uppercase">Retiros Acumulados</p>
                                     <p className="text-sm font-black font-mono"><DataCell.CurrencyFlow value={selectedPartner.partner_provisional_withdrawals_balance} direction="outflow" showIcon={false} /></p>
                                 </div>
                                 <div className="space-y-0.5">
-                                    <p className="text-[9px] text-muted-foreground font-medium uppercase">Utilidades x Distribuir</p>
+                                    <p className="text-4xs text-muted-foreground font-medium uppercase">Utilidades x Distribuir</p>
                                     <p className="text-sm font-black font-mono"><DataCell.CurrencyFlow value={selectedPartner.partner_earnings_balance} direction="inflow" showIcon={false} /></p>
                                 </div>
                             </div>
@@ -316,8 +316,10 @@ export function PartnerWithdrawalWizard({
                             <ProductSelector
                                 value={assetData.productId}
                                 onChange={(val) => setAssetData(prev => ({ ...prev, productId: val || "" }))}
-                                allowedTypes={["STORABLE", "MANUFACTURABLE"]}
-                                simpleOnly={true}
+                                productTypes={["STORABLE", "MANUFACTURABLE"]}
+                                customFilter={(p) =>
+                                    !(p.product_type === 'MANUFACTURABLE' && (p.requires_advanced_manufacturing || p.mfg_auto_finalize))
+                                }
                             />
                         </LabeledContainer>
                     </div>
@@ -332,7 +334,7 @@ export function PartnerWithdrawalWizard({
                             placeholder="0.00"
                         />
                         <div className="space-y-1.5 font-mono">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Stock Actual</span>
+                            <span className="text-3xs font-bold uppercase tracking-wider text-muted-foreground">Stock Actual</span>
                             <div className="h-10 px-3 flex items-center bg-muted/50 rounded-md border border-border/50 text-sm font-medium">
                                 {productDetails?.qty_on_hand ?? '0'} {productDetails?.uom_name ?? ''}
                             </div>
@@ -349,7 +351,7 @@ export function PartnerWithdrawalWizard({
                     <Alert variant="destructive" className="py-2" icon={null}>
                         <div className="flex items-center gap-2 text-destructive">
                             <AlertTriangle className="h-4 w-4" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Atención: Esta operación disminuye el stock disponible.</span>
+                            <span className="text-3xs font-bold uppercase tracking-widest">Atención: Esta operación disminuye el stock disponible.</span>
                         </div>
                     </Alert>
                 </div>

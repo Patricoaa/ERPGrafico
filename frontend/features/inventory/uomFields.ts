@@ -48,7 +48,7 @@ export const uomFields = createEntityFields<UoM>()({
     },
     ratio: {
         key: "ratio",
-        type: "text",
+        type: "number",
         label: "Ratio",
     },
 })

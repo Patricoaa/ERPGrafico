@@ -63,11 +63,11 @@ export function AttachmentList({
                             <TooltipContent side="top">{file.original_filename}</TooltipContent>
                         </Tooltip>
                         <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[10px] text-muted-foreground font-medium">
+                            <span className="text-3xs text-muted-foreground font-medium">
                                 {file.file_size_formatted}
                             </span>
-                            <span className="text-[10px] text-muted-foreground/50 h-1 w-1 rounded-full bg-muted-foreground/30" />
-                            <span className="text-[10px] text-muted-foreground font-medium">
+                            <span className="text-3xs text-muted-foreground/50 h-1 w-1 rounded-full bg-muted-foreground/30" />
+                            <span className="text-3xs text-muted-foreground font-medium">
                                 {formatPlainDate(file.uploaded_at)}
                             </span>
                         </div>

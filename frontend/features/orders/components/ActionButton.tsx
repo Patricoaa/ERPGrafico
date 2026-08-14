@@ -59,13 +59,13 @@ export function ActionButton({
                 <div className="flex flex-col flex-1 min-w-0">
                     <span className={cn(
                         "leading-tight block",
-                        compact ? "text-[9px]" : "text-xs",
-                        ghost ? " font-extrabold uppercase tracking-widest text-[9px]" : "font-semibold"
+                        compact ? "text-4xs" : "text-xs",
+                        ghost ? " uppercase tracking-widest text-4xs font-medium" : "font-medium"
                     )} style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
                         {action.label}
                     </span>
                     {action.description && !compact && !ghost && (
-                        <span className="text-[9px] text-muted-foreground font-normal truncate mt-0.5">
+                        <span className="text-4xs text-muted-foreground font-normal truncate mt-0.5">
                             {action.description}
                         </span>
                     )}

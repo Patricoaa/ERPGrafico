@@ -161,7 +161,7 @@ export function ManufacturingSpecsEditor({
           <FormSection title="Pre-Impresión" icon={Paintbrush} className="pt-0 pb-4" />
 
           <div className="flex items-center justify-between mb-4 mt-1">
-            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight">Habilitar Fase</span>
+            <span className="text-3xs text-muted-foreground font-bold uppercase tracking-tight">Habilitar Fase</span>
             <Switch
               checked={value.phases.prepress}
               onCheckedChange={v => setPhase('prepress', v)}
@@ -183,7 +183,7 @@ export function ManufacturingSpecsEditor({
               />
 
               <div className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/20 border border-border/40">
-                <span className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">Diseño Requerido</span>
+                <span className="text-3xs font-bold uppercase tracking-tight text-muted-foreground">Diseño Requerido</span>
                 <Switch
                   checked={value.design_needed}
                   onCheckedChange={v => set({ design_needed: v })}
@@ -196,10 +196,10 @@ export function ManufacturingSpecsEditor({
                 <div className="space-y-3 pt-2 border-t border-dashed">
                   {value.existing_design_files.length > 0 && (
                     <div className="space-y-1.5">
-                      <Label className="text-[9px] uppercase text-muted-foreground/80 font-black tracking-widest pl-1">Archivos Originales</Label>
+                      <Label className="text-4xs uppercase text-muted-foreground/80 font-bold tracking-widest pl-1">Archivos Originales</Label>
                       <div className="space-y-1">
                         {value.existing_design_files.map((file, idx) => (
-                          <div key={`existing-${idx}`} className="flex items-center justify-between px-2 py-1.5 bg-primary/5 rounded-md text-[11px] border border-primary/20">
+                          <div key={`existing-${idx}`} className="flex items-center justify-between px-2 py-1.5 bg-primary/5 rounded-md text-2xs border border-primary/20">
                             <div className="flex items-center gap-2 truncate">
                               <FileIcon className="h-3 w-3 shrink-0 text-primary" />
                               <span className="truncate font-bold">{file}</span>
@@ -216,10 +216,10 @@ export function ManufacturingSpecsEditor({
                   )}
 
                   <div className="space-y-1.5">
-                    {value.design_files.length > 0 && <Label className="text-[9px] uppercase text-muted-foreground/80 font-black tracking-widest pl-1">Nuevos Archivos</Label>}
+                    {value.design_files.length > 0 && <Label className="text-4xs uppercase text-muted-foreground/80 font-bold tracking-widest pl-1">Nuevos Archivos</Label>}
                     <div className="space-y-1">
                       {value.design_files.map((file, idx) => (
-                        <div key={`new-${idx}`} className="flex items-center justify-between px-2 py-1.5 bg-muted/40 rounded-md text-[11px] border border-border/40">
+                        <div key={`new-${idx}`} className="flex items-center justify-between px-2 py-1.5 bg-muted/40 rounded-md text-2xs border border-border/40">
                           <div className="flex items-center gap-2 truncate">
                             <Upload className="h-3 w-3 shrink-0 text-muted-foreground" />
                             <span className="truncate">{file.name}</span>
@@ -233,7 +233,7 @@ export function ManufacturingSpecsEditor({
                       ))}
                     </div>
                     {!disabled && (
-                      <label className="flex items-center justify-center gap-2 py-2 border border-dashed border-primary/30 rounded-md text-[10px] text-primary font-black uppercase tracking-widest cursor-pointer hover:bg-primary/5 transition-all">
+                      <label className="flex items-center justify-center gap-2 py-2 border border-dashed border-primary/30 rounded-md text-3xs text-primary font-bold uppercase tracking-widest cursor-pointer hover:bg-primary/5 transition-all">
                         <Plus className="h-3 w-3" /> Adjuntar Diseño
                         <input type="file" multiple className="hidden" onChange={handleFileChange} />
                       </label>
@@ -244,7 +244,7 @@ export function ManufacturingSpecsEditor({
 
               <div className="space-y-3 pt-2 border-t border-dashed">
                 <div className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/20 border border-border/40">
-                  <span className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">Numeración (Folio)</span>
+                  <span className="text-3xs font-bold uppercase tracking-tight text-muted-foreground">Numeración (Folio)</span>
                   <Switch
                     checked={value.folio_enabled}
                     onCheckedChange={v => set({ folio_enabled: v })}
@@ -274,7 +274,7 @@ export function ManufacturingSpecsEditor({
           <FormSection title="Impresión" icon={Printer} className="pt-0 pb-4" />
 
           <div className="flex items-center justify-between mb-4 mt-1">
-            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight">Habilitar Fase</span>
+            <span className="text-3xs text-muted-foreground font-bold uppercase tracking-tight">Habilitar Fase</span>
             <Switch
               checked={value.phases.press}
               onCheckedChange={v => setPhase('press', v)}
@@ -296,7 +296,7 @@ export function ManufacturingSpecsEditor({
               />
 
               <div className="space-y-2">
-                <span className="text-[9px] uppercase text-muted-foreground font-black tracking-widest pl-1">Tecnología</span>
+                <span className="text-4xs uppercase text-muted-foreground font-bold tracking-widest pl-1">Tecnología</span>
                 <div className="grid grid-cols-3 gap-1.5 p-1 bg-muted/30 rounded-md border border-border/40">
                   {(['offset', 'digital', 'especial'] as const).map(type => (
                     <Button
@@ -306,7 +306,7 @@ export function ManufacturingSpecsEditor({
                       size="sm"
                       disabled={disabled}
                       className={cn(
-                        "h-7 text-[10px] uppercase font-black tracking-tight transition-all",
+                        "h-7 text-3xs uppercase font-medium tracking-tight transition-all",
                         value.print_type === type
                           ? "bg-primary text-primary-foreground shadow-card"
                           : "text-muted-foreground hover:bg-primary/5 hover:text-primary"
@@ -327,7 +327,7 @@ export function ManufacturingSpecsEditor({
           <FormSection title="Post-Impresión" icon={FileText} className="pt-0 pb-4" />
 
           <div className="flex items-center justify-between mb-4 mt-1">
-            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight">Habilitar Fase</span>
+            <span className="text-3xs text-muted-foreground font-bold uppercase tracking-tight">Habilitar Fase</span>
             <Switch
               checked={value.phases.postpress}
               onCheckedChange={v => setPhase('postpress', v)}

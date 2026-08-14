@@ -21,7 +21,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useProductSearch, useSingleProduct } from "@/features/inventory/hooks/useProductSearch"
 
-import { type Product, type ProductVariant, type ProductAttributeValue } from "@/types/entities"
+import { type Product, type ProductType, type ProductVariant, type ProductAttributeValue } from "@/types/entities"
 import { BaseModal, CardSkeleton, EmptyState, LabeledContainer, MoneyDisplay, Badge } from '@/components/shared'
 
 const ProductIcon = getEntityIcon('inventory.product')
@@ -30,19 +30,18 @@ interface ProductSelectorProps {
     value?: string | number | null
     onChange: (value: string | null) => void
     placeholder?: string
-    productType?: string
-    allowedTypes?: string[]
+    productTypes?: ProductType[]
     disabled?: boolean
     restrictStock?: boolean
     excludeIds?: (string | number)[]
-    context?: 'sale' | 'purchase'
+    canBePurchased?: boolean
+    canBeSold?: boolean
     excludeVariantTemplates?: boolean
     onSelect?: (product: Product) => void
     customFilter?: (product: Product) => boolean
     customDisabled?: (product: Product) => boolean
     className?: string
     shouldResolveVariants?: boolean
-    simpleOnly?: boolean
     label?: string
     error?: string
     required?: boolean
@@ -53,19 +52,18 @@ export function ProductSelector({
     value,
     onChange,
     placeholder = "Seleccionar producto...",
-    productType,
-    allowedTypes = [],
+    productTypes,
     disabled = false,
     restrictStock = false,
     excludeIds = [],
-    context,
+    canBePurchased = false,
+    canBeSold = false,
     excludeVariantTemplates = false,
     onSelect,
     customFilter,
     customDisabled,
     className,
     shouldResolveVariants = true,
-    simpleOnly = false,
     label,
     error,
     required = false,
@@ -79,9 +77,10 @@ export function ProductSelector({
     const shouldFetchProducts = open || searchTerm.length > 0
     const { products: fetchedProducts, loading: searchLoading } = useProductSearch({
         search: searchTerm,
-        productType,
+        productTypes,
         limit: 200, // Preload more to allow local filtering
-        context,
+        canBePurchased,
+        canBeSold,
         excludeVariantTemplates
     }, shouldFetchProducts)
 
@@ -105,17 +104,6 @@ export function ProductSelector({
     useEffect(() => {
         let allProducts = [...fetchedProducts]
 
-        if (allowedTypes && allowedTypes.length > 0) {
-            allProducts = allProducts.filter(p => allowedTypes.includes(p.product_type))
-        }
-
-        if (simpleOnly) {
-            allProducts = allProducts.filter(p => {
-                return p.product_type === 'STORABLE' ||
-                    (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing && !p.mfg_auto_finalize);
-            });
-        }
-
         if (excludeIds && excludeIds.length > 0) {
             const excludedStrIds = excludeIds
                 .filter(id => id !== null && id !== undefined)
@@ -129,7 +117,7 @@ export function ProductSelector({
         }
 
         requestAnimationFrame(() => setFilteredProducts(allProducts))
-    }, [fetchedProducts, allowedTypes, simpleOnly, excludeIds, customFilter])
+    }, [fetchedProducts, excludeIds, customFilter])
 
     // Load more entries when scrolling down
     const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -220,7 +208,7 @@ export function ProductSelector({
                                 <ProductIcon className={cn("h-3.5 w-3.5 shrink-0 text-primary", variant === 'inline' && "h-3 w-3")} />
                                 <span className={cn("font-medium text-sm truncate", variant === 'inline' && "text-xs")}>{selectedProduct.name}</span>
                             </div>
-                            <span className={cn("text-muted-foreground shrink-0 pr-1 text-right", variant === 'inline' ? "text-[10px]" : "text-xs")}>
+                            <span className={cn("text-muted-foreground shrink-0 pr-1 text-right", variant === 'inline' ? "text-3xs" : "text-xs")}>
                                 {PricingUtils.formatCurrency(Number(selectedProduct.sale_price_gross ?? selectedProduct.sale_price))}
                             </span>
                         </div>
@@ -303,10 +291,10 @@ export function ProductSelector({
                                             <div className="flex gap-1 flex-wrap">
                                                 {['STORABLE', 'MANUFACTURABLE'].includes(product.product_type) && (
                                                     <>
-                                                        <Badge intent={(product.current_stock || 0) > 0 ? "success" : "destructive"} size="xs">
+                                                        <Badge intent={(product.current_stock || 0) > 0 ? "success" : "destructive"} size="xs" className={(product.current_stock || 0) > 0 ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"}>
                                                             Stock: {product.current_stock || 0}
                                                         </Badge>
-                                                        <Badge intent={(product.qty_available || 0) > 0 ? "success" : "destructive"} size="xs">
+                                                        <Badge intent={(product.qty_available || 0) > 0 ? "success" : "destructive"} size="xs" className={(product.qty_available || 0) > 0 ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"}>
                                                             Disp: {product.qty_available || 0}
                                                         </Badge>
                                                     </>
@@ -331,13 +319,13 @@ export function ProductSelector({
                                                 ) : null}
                                             </div>
 
-                                            <span className="text-[10px] font-bold whitespace-nowrap ml-2">
+                                            <span className="text-3xs font-bold whitespace-nowrap ml-2">
                                                 {product.is_dynamic_pricing ? (
                                                     <Badge intent="warning" size="xs">Precio Dinámico</Badge>
                                                 ) : (
                                                     <>
                                                         <MoneyDisplay amount={Number(product.sale_price_gross) || PricingUtils.netToGross(Number(product.sale_price))} inline />
-                                                        <span className="text-[9px] text-muted-foreground ml-0.5">IVA Inc.</span>
+                                                        <span className="text-4xs text-muted-foreground ml-0.5">IVA Inc.</span>
                                                     </>
                                                 )}
                                             </span>

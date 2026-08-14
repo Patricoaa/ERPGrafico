@@ -101,7 +101,7 @@ export function Cart({
 
     return (
         <div className="flex flex-col flex-1 min-h-0 gap-2">
-            <Card className="flex-1 flex flex-col overflow-hidden border border-border/60 bg-card dot-grid-surface shadow-lg shadow-black/10 rounded-lg p-2 flex-shrink-0">
+            <Card className="flex-1 flex flex-col overflow-hidden border border-border/60 bg-card shadow-lg shadow-black/10 rounded-lg p-2 flex-shrink-0">
                 <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                     {/* Header */}
                     <div className={cn("px-2 border-b border-border/40 bg-transparent shrink-0 flex justify-between items-center gap-2", isTouchPOS ? "pb-2 mb-2" : "pb-1.5 mb-1.5")}>
@@ -211,7 +211,7 @@ export function Cart({
             </Card>
 
             {/* Floating Action Buttons */}
-            <div className="bg-card dot-grid-surface border border-border/60 rounded-lg shadow-lg shadow-black/10 p-2 space-y-2">
+            <div className="bg-card border border-border/60 rounded-lg shadow-lg shadow-black/10 p-2 space-y-2">
                 {posMode === 'SHOPPING' && (
                     <>
                         <div className="flex gap-2">

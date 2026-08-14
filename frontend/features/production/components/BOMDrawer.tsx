@@ -1,7 +1,8 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm, useFieldArray, type Resolver, type Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -26,6 +27,14 @@ import { useVatRate } from "@/hooks/useVatRate"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 const tableInputClass = "h-9 w-full bg-background border border-border/80 rounded-sm px-2 text-xs focus:border-primary/40 focus:outline-none transition-all disabled:opacity-50"
+
+function MaterialSelector(props: React.ComponentProps<typeof ProductSelector>) {
+    return <ProductSelector productTypes={['STORABLE']} shouldResolveVariants={false} {...props} />
+}
+
+function ServiceSelector(props: React.ComponentProps<typeof ProductSelector>) {
+    return <ProductSelector productTypes={['SERVICE']} canBePurchased shouldResolveVariants={false} {...props} />
+}
 
 // Schema for material lines (stock components)
 const materialLineSchema = z.object({
@@ -172,74 +181,62 @@ export function BOMDrawer({
         name: "service_lines"
     })
 
-    const lastResetId = useRef<number | undefined>(undefined)
-    const wasOpen = useRef(false)
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: bomToEdit,
+        defaultValues: () => ({
+            name: "Nueva Lista de Materiales",
+            active: true,
+            yield_quantity: 1,
+            yield_uom: "",
+            estimated_prepress_min: 0,
+            estimated_press_min: 0,
+            estimated_postpress_min: 0,
+            lines: [],
+            service_lines: []
+        }),
+        mapData: (data) => {
+            const allLines: BOMLine[] = data.lines || []
+            const stockLines = allLines.filter((l: BOMLine) => !l.is_outsourced)
+            const outsourcedLines = allLines.filter((l: BOMLine) => l.is_outsourced)
 
-    // Reset form when dialog opens/closes or bomToEdit changes
-    useEffect(() => {
-        if (!open) {
-            wasOpen.current = false
-            return
-        }
-
-        const currentId = bomToEdit?.id
-        const isNewOpen = !wasOpen.current
-        const isNewData = currentId !== lastResetId.current
-
-        if (isNewOpen || isNewData) {
-            if (bomToEdit) {
-                const allLines: BOMLine[] = bomToEdit.lines || []
-                const stockLines = allLines.filter((l: BOMLine) => !l.is_outsourced)
-                const outsourcedLines = allLines.filter((l: BOMLine) => l.is_outsourced)
-
-                form.reset({
-                    name: bomToEdit.name,
-                    active: bomToEdit.active,
-                    yield_quantity: bomToEdit.yield_quantity || 1,
-                    yield_uom: bomToEdit.yield_uom?.toString() || "",
-                    estimated_prepress_min: bomToEdit.estimated_prepress_min ?? 0,
-                    estimated_press_min: bomToEdit.estimated_press_min ?? 0,
-                    estimated_postpress_min: bomToEdit.estimated_postpress_min ?? 0,
-                    lines: stockLines.map((l: BOMLine) => ({
-                        component: l.component.toString(),
-                        component_code: l.component_code,
-                        component_name: l.component_name,
-                        component_cost: l.component_cost || 0,
-                        base_cost: l.component_cost || 0, // Fallback
-                        base_uom: l.uom?.toString() || "", // Fallback
-                        quantity: l.quantity,
-                        uom: l.uom?.toString() || "",
-                        uom_name: l.uom_name || "",
-                        component_uom_category: l.uom_category,
-                        notes: l.notes || ""
-                    })),
-                    service_lines: outsourcedLines.map((l: BOMLine) => ({
-                        component: l.component.toString(),
-                        component_name: l.component_name,
-                        quantity: l.quantity,
-                        uom: l.uom?.toString() || "",
-                        uom_name: l.uom_name || "",
-                        supplier: l.supplier?.toString() || "",
-                        supplier_name: l.supplier_name || "",
-                        gross_price: l.unit_price ? parseFloat(l.unit_price) * vatMultiplier : 0,
-                        document_type: l.document_type || "FACTURA",
-                        notes: l.notes || ""
-                    }))
-                })
-            } else {
-                form.reset({
-                    name: "Nueva Lista de Materiales",
-                    active: true,
-                    yield_quantity: 1,
-                    yield_uom: "",
-                    lines: [],
-                    service_lines: []
-                })
+            return {
+                name: data.name,
+                active: data.active,
+                yield_quantity: data.yield_quantity || 1,
+                yield_uom: data.yield_uom?.toString() || "",
+                estimated_prepress_min: data.estimated_prepress_min ?? 0,
+                estimated_press_min: data.estimated_press_min ?? 0,
+                estimated_postpress_min: data.estimated_postpress_min ?? 0,
+                lines: stockLines.map((l: BOMLine) => ({
+                    component: l.component.toString(),
+                    component_code: l.component_code,
+                    component_name: l.component_name,
+                    component_cost: l.component_cost || 0,
+                    base_cost: l.component_cost || 0,
+                    base_uom: l.uom?.toString() || "",
+                    quantity: l.quantity,
+                    uom: l.uom?.toString() || "",
+                    uom_name: l.uom_name || "",
+                    component_uom_category: l.uom_category,
+                    notes: l.notes || ""
+                })),
+                service_lines: outsourcedLines.map((l: BOMLine) => ({
+                    component: l.component.toString(),
+                    component_name: l.component_name,
+                    quantity: l.quantity,
+                    uom: l.uom?.toString() || "",
+                    uom_name: l.uom_name || "",
+                    supplier: l.supplier?.toString() || "",
+                    supplier_name: l.supplier_name || "",
+                    gross_price: l.unit_price ? parseFloat(l.unit_price) * vatMultiplier : 0,
+                    document_type: l.document_type || "FACTURA",
+                    notes: l.notes || ""
+                }))
             }
-            lastResetId.current = currentId
-            wasOpen.current = true
         }
-    }, [open, bomToEdit, form])
+    })
 
     const onSubmit = async (data: BOMFormValues) => {
         if (!selectedProduct) {
@@ -319,7 +316,7 @@ export function BOMDrawer({
         <>
             {isView && bomToEdit?.id && (
                 <PrintableLayout ref={printRef} title="BOM" displayId={`#${bomToEdit.id}`}>
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{bomToEdit.name ?? '-'}</span>
@@ -422,7 +419,7 @@ export function BOMDrawer({
                                                                 if (!val) setSelectedProduct(null)
                                                             }}
                                                             placeholder="Seleccionar producto..."
-                                                            allowedTypes={['MANUFACTURABLE']}
+                                                            productTypes={['MANUFACTURABLE']}
                                                             shouldResolveVariants={false}
                                                             className="!rounded-sm"
                                                         />
@@ -460,10 +457,10 @@ export function BOMDrawer({
                                                         <Box className="h-3.5 w-3.5 text-primary" />
                                                     </div>
                                                     <div className="flex flex-col min-w-0">
-                                                        <span className="text-[9px] font-black uppercase text-primary/60 tracking-widest leading-none mb-0.5">
+                                                        <span className="text-4xs font-bold uppercase text-primary/60 tracking-widest leading-none mb-0.5">
                                                             {selectedVariant ? "Variante" : (selectedProduct?.has_variants ? "Plantilla Base" : "Producto")}
                                                         </span>
-                                                        <span className="text-[10px] font-black text-foreground truncate uppercase">
+                                                        <span className="text-3xs font-bold text-foreground truncate uppercase">
                                                             {selectedVariant ? (selectedVariant.variant_display_name || selectedVariant.name) : (selectedProduct?.name || "")}
                                                         </span>
                                                     </div>
@@ -532,14 +529,14 @@ export function BOMDrawer({
             const totalUnitCost = materials.reduce((sum: number, m: z.infer<typeof materialLineSchema>) => sum + (Number(m.component_cost) || 0), 0)
             const totalLineCost = materials.reduce((sum: number, m: z.infer<typeof materialLineSchema>) => sum + ((Number(m.quantity) || 0) * (Number(m.component_cost) || 0)), 0)
                                             return (
-                                                <div className="flex flex-col items-end text-[10px] font-black uppercase text-foreground/80 pr-12 gap-1">
+                                                <div className="flex flex-col items-end text-3xs font-bold uppercase text-foreground/80 pr-12 gap-1">
                                                     <div className="flex items-center gap-4">
                                                         <span className="text-muted-foreground">Total Unitarios:</span>
-                                                        <DataCell.Currency value={totalUnitCost} weight="bold" className="text-primary w-auto justify-end text-[10px]" />
+                                                        <DataCell.Currency value={totalUnitCost} weight="bold" className="text-primary w-auto justify-end text-3xs" />
                                                     </div>
                                                     <div className="flex items-center gap-4 pt-1">
                                                         <span className="text-muted-foreground">Total Receta:</span>
-                                                        <DataCell.Currency value={totalLineCost} weight="bold" className="text-primary w-auto justify-end text-[10px]" />
+                                                        <DataCell.Currency value={totalLineCost} weight="bold" className="text-primary w-auto justify-end text-3xs" />
                                                     </div>
                                                 </div>
                                             )
@@ -560,7 +557,7 @@ export function BOMDrawer({
 
                                                                 if (!hasVars) {
                                                                     return (
-                                                                        <ProductSelector
+                                                                        <MaterialSelector
                                                                             value={propField.value}
                                                                             onSelect={(p) => {
                                                                                 propField.onChange(p.id.toString())
@@ -592,13 +589,7 @@ export function BOMDrawer({
                                                                             }}
                                                                             onChange={(val) => propField.onChange(val)}
                                                                             placeholder="Buscar componente..."
-                                                                            allowedTypes={['STORABLE', 'MANUFACTURABLE']}
-                                                                            customFilter={(p: Product) =>
-                                                                                !!(p.product_type === 'STORABLE' ||
-                                                                                    (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing))
-                                                                            }
                                                                             excludeIds={selectedProduct ? [selectedProduct.id] : []}
-                                                                            shouldResolveVariants={false}
                                                                             variant="inline"
                                                                             className={cn(tableInputClass, "w-full text-left font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                                         />
@@ -607,7 +598,7 @@ export function BOMDrawer({
 
                                                                 return (
                                                                     <div className="flex items-center gap-1">
-                                                                        <ProductSelector
+                                                                        <MaterialSelector
                                                                             value={propField.value}
                                                                             onSelect={(p) => {
                                                                                 propField.onChange(p.id.toString())
@@ -639,13 +630,7 @@ export function BOMDrawer({
                                                                             }}
                                                                             onChange={(val) => propField.onChange(val)}
                                                                             placeholder="Buscar..."
-                                                                            allowedTypes={['STORABLE', 'MANUFACTURABLE']}
-                                                                            customFilter={(p: Product) =>
-                                                                                !!(p.product_type === 'STORABLE' ||
-                                                                                    (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing))
-                                                                            }
                                                                             excludeIds={selectedProduct ? [selectedProduct.id] : []}
-                                                                            shouldResolveVariants={false}
                                                                             variant="inline"
                                                                             className={cn(tableInputClass, "flex-1 text-left font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                                         />
@@ -737,7 +722,7 @@ export function BOMDrawer({
                                                     <TableCell className="py-1 px-3">
                                                         <DataCell.Currency
                                                             value={form.watch(`lines.${index}.component_cost`) || 0}
-                                                            className="justify-end text-muted-foreground pr-1 text-[10px]"
+                                                            className="justify-end text-muted-foreground pr-1 text-3xs"
                                                             weight="medium"
                                                         />
                                                     </TableCell>
@@ -746,7 +731,7 @@ export function BOMDrawer({
                                                     <TableCell className="py-1 px-3">
                                                         <DataCell.Currency
                                                             value={(Number(form.watch(`lines.${index}.quantity`)) || 0) * (Number(form.watch(`lines.${index}.component_cost`)) || 0)}
-                                                            className="justify-end text-primary pr-1 text-[10px]"
+                                                            className="justify-end text-primary pr-1 text-3xs"
                                                             weight="bold"
                                                         />
                                                     </TableCell>
@@ -804,11 +789,11 @@ export function BOMDrawer({
                                             const services = form.watch("service_lines") || []
                                             const totalGrossPrice = services.reduce((sum: number, s: z.infer<typeof serviceLineSchema>) => sum + (Number(s.gross_price) || 0), 0)
                                             return (
-                                                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-foreground/80 pr-24">
+                                                <div className="flex items-center gap-4 text-3xs font-bold uppercase tracking-widest text-foreground/80 pr-24">
                                                     <span className="text-muted-foreground">Total Bruto Unit.:</span>
                                                     <DataCell.Currency
                                                         value={totalGrossPrice}
-                                                        className="w-auto text-primary text-[10px]"
+                                                        className="w-auto text-primary text-3xs"
                                                         weight="black"
                                                     />
                                                 </div>
@@ -830,7 +815,7 @@ export function BOMDrawer({
 
                                                                 if (!hasVars) {
                                                                     return (
-                                                                        <ProductSelector
+                                                                        <ServiceSelector
                                                                             value={propField.value}
                                                                             onSelect={(p) => {
                                                                                 propField.onChange(p.id.toString())
@@ -843,9 +828,7 @@ if (p.has_variants) fetchLineVariants(p.id)
                                                                              }}
                                                                             onChange={(val) => propField.onChange(val)}
                                                                             placeholder="Buscar servicio..."
-                                                                            shouldResolveVariants={false}
                                                                             variant="inline"
-                                                                            customFilter={(p: Product) => !!(p.product_type === 'SERVICE' && p.can_be_purchased)}
                                                                             className={cn(tableInputClass, "w-full text-left font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                                         />
                                                                     )
@@ -853,7 +836,7 @@ if (p.has_variants) fetchLineVariants(p.id)
 
                                                                 return (
                                                                     <div className="flex items-center gap-1">
-                                                                        <ProductSelector
+                                                                        <ServiceSelector
                                                                             value={propField.value}
                                                                             onSelect={(p) => {
                                                                                 propField.onChange(p.id.toString())
@@ -866,9 +849,7 @@ if (p.has_variants) fetchLineVariants(p.id)
                                                                              }}
                                                                             onChange={(val) => propField.onChange(val)}
                                                                             placeholder="Buscar..."
-                                                                            shouldResolveVariants={false}
                                                                             variant="inline"
-                                                                            customFilter={(p: Product) => !!(p.product_type === 'SERVICE' && p.can_be_purchased)}
                                                                             className={cn(tableInputClass, "flex-1 text-left font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                                         />
                                                                         <LabeledSelect

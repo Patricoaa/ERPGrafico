@@ -45,14 +45,14 @@ export function CommentSystem({
                 {comments.length > 0 ? comments.map((comment, i) => (
                     <div key={i} className="flex gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
                         <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <span className="text-[10px] font-bold text-primary">
+                            <span className="text-3xs font-bold text-primary">
                                 {comment.user.substring(0, 2).toUpperCase()}
                             </span>
                         </div>
                         <div className="flex-1 bg-background rounded-md border p-2 space-y-1 shadow-card">
                             <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-1 mb-1">
-                                <span className="text-[10px] font-bold truncate">{comment.user}</span>
-                                <span className="text-[9px] text-muted-foreground whitespace-nowrap">
+                                <span className="text-3xs font-bold truncate">{comment.user}</span>
+                                <span className="text-4xs text-muted-foreground whitespace-nowrap">
                                     {new Date(comment.timestamp).toLocaleTimeString('es-CL', {
                                         hour: '2-digit',
                                         minute: '2-digit',

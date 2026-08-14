@@ -69,7 +69,7 @@ function KanbanCard({ order, onManage, onDuplicate, onAnnul, onDelete }: { order
                     )}
                 </div>
                 {order.status === 'FINISHED' && (
-                    <div className="flex items-center gap-1.5 text-success font-bold text-[10px] uppercase">
+                    <div className="flex items-center gap-1.5 text-success font-bold text-3xs uppercase">
                         <CheckCircle2 className="h-3 w-3" />
                         Completada
                     </div>
@@ -78,11 +78,11 @@ function KanbanCard({ order, onManage, onDuplicate, onAnnul, onDelete }: { order
                     <p className="text-sm font-semibold line-clamp-2 leading-snug">{order.description}</p>
                 </div>
                 <div className="space-y-1.5 pt-1">
-                    <div className="flex items-center text-[11px] text-muted-foreground">
+                    <div className="flex items-center text-2xs text-muted-foreground">
                         <User className="mr-1.5 h-3 w-3" />
                         <span className="truncate">{order.sale_customer_name || "Manual / Interno"}</span>
                     </div>
-                    <div className={cn("flex items-center text-[11px]", isWorkOrderOverdue(order) ? "text-destructive font-medium" : "text-muted-foreground")}>
+                    <div className={cn("flex items-center text-2xs", isWorkOrderOverdue(order) ? "text-destructive font-medium" : "text-muted-foreground")}>
                         <Clock className="mr-1.5 h-3 w-3" />
                         <span>{order.sale_order_date || order.due_date || "Sin fecha"}</span>
                     </div>

@@ -30,7 +30,7 @@ export const NotchedButton = forwardRef<HTMLButtonElement, NotchedButtonProps>(
                 data-disabled={disabled || undefined}
             >
                 {label && (
-                    <legend className="px-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">
+                    <legend className="px-1.5 text-3xs font-bold uppercase tracking-loose text-muted-foreground">
                         {label}
                     </legend>
                 )}

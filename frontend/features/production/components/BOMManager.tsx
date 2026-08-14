@@ -98,7 +98,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             <div className="p-12 text-center border-2 border-dashed rounded-md bg-muted/5 text-muted-foreground animate-in fade-in zoom-in-95 duration-500">
                 <Box className="h-10 w-10 mx-auto mb-4 opacity-30 text-primary" />
                 <h3 className="text-sm font-black uppercase text-primary tracking-widest leading-none mb-1">Producto no guardado</h3>
-                <p className="text-[10px] font-medium uppercase tracking-tight">Guarde los cambios iniciales para gestionar su estructura técnica.</p>
+                <p className="text-3xs font-medium uppercase tracking-tight">Guarde los cambios iniciales para gestionar su estructura técnica.</p>
             </div>
         )
     }
@@ -115,9 +115,9 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             header: ({ column }) => <DataTableColumnHeader column={column} title="Lista de Materiales (Receta)" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex flex-col items-center py-1 text-center w-full">
-                    <DataCell.Text className="font-black text-[12px] tracking-tight uppercase leading-none">{row.original.name}</DataCell.Text>
+                    <DataCell.Text className="font-black text-xs tracking-tight uppercase leading-none">{row.original.name}</DataCell.Text>
                     {row.original.notes && (
-                        <DataCell.Secondary className="text-[10px] italic truncate max-w-[200px] mt-1">{row.original.notes}</DataCell.Secondary>
+                        <DataCell.Secondary className="text-3xs italic truncate max-w-[200px] mt-1">{row.original.notes}</DataCell.Secondary>
                     )}
                 </div>
             )
@@ -134,7 +134,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                         ) : (
                             <div className="flex flex-col items-center gap-0.5">
                                 <DataCell.Code>{row.original.product_internal_code || 'VAR'}</DataCell.Code>
-                                <DataCell.Text className="text-[10px] truncate max-w-[120px]">{row.original.product_name}</DataCell.Text>
+                                <DataCell.Text className="text-3xs truncate max-w-[120px]">{row.original.product_name}</DataCell.Text>
                             </div>
                         )}
                     </div>
@@ -188,7 +188,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             header: ({ column }) => <DataTableColumnHeader column={column} title="Actualizado" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Date value={row.original.updated_at} showTime className="text-[10px] font-medium opacity-50" />
+                    <DataCell.Date value={row.original.updated_at} showTime className="text-3xs font-medium opacity-50" />
                 </div>
             )
         },
@@ -206,7 +206,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                     <Workflow className="h-4 w-4 text-primary opacity-50" />
                                     Estructuras Técnicas (BOM)
                                 </h3>
-                                <p className="text-[10px] font-bold uppercase text-muted-foreground mt-1.5 opacity-60">
+                                <p className="text-3xs font-bold uppercase text-muted-foreground mt-1.5 opacity-60">
                                     Gestión de fórmulas y procesos de fabricación
                                 </p>
                             </div>
@@ -218,7 +218,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                         e.stopPropagation()
                                         handleCreate()
                                     }}
-                                    className="h-9 px-5 gap-2 rounded-sm font-black uppercase tracking-widest text-[10px] shadow-card transition-all hover:-translate-y-0.5"
+                                    className="h-9 px-5 gap-2 rounded-sm font-medium uppercase tracking-widest text-3xs shadow-card transition-all hover:-translate-y-0.5"
                                 >
                                     <Plus className="h-4 w-4" />
                                     Nueva Lista
@@ -243,7 +243,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                                 value: v.id.toString(),
                                                 label: (
                                                     <div className="flex items-center gap-3 font-bold uppercase">
-                                                        <span className="font-mono bg-muted text-[9px] px-1.5 py-0.5 rounded-sm border">{v.internal_code || v.code}</span>
+                                                        <span className="font-mono bg-muted text-4xs px-1.5 py-0.5 rounded-sm border">{v.internal_code || v.code}</span>
                                                         <span className="opacity-80">{v.variant_display_name || v.name}</span>
                                                     </div>
                                                 )
@@ -256,7 +256,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                             e.stopPropagation()
                                             handleCreate()
                                         }}
-                                        className="w-full md:w-auto h-10 px-6 gap-2 rounded-sm font-black uppercase tracking-widest text-[11px]  transition-all hover:-translate-y-0.5"
+                                        className="w-full md:w-auto h-10 px-6 gap-2 rounded-sm font-medium uppercase tracking-widest text-2xs  transition-all hover:-translate-y-0.5"
                                         disabled={selectedVariantId === "all"}
                                     >
                                         <Plus className="h-4 w-4" />
@@ -272,7 +272,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                     <div className="flex justify-between items-center py-4 px-6 border-b bg-background/50">
                         <div className="flex items-center gap-2">
                             <Workflow className="h-4 w-4 text-primary opacity-50" />
-                            <span className="font-black uppercase text-[10px] tracking-widest text-primary">Recetas de esta variante</span>
+                            <span className="font-bold uppercase text-3xs tracking-widest text-primary">Recetas de esta variante</span>
                         </div>
                         <Button
                             type="button"
@@ -280,7 +280,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                 e.stopPropagation()
                                 handleCreate()
                             }}
-                            className="h-8 gap-2 rounded-sm text-[10px] font-black uppercase tracking-widest border-2 border-primary/20 hover:bg-primary/5 text-primary"
+                            className="h-8 gap-2 rounded-sm text-3xs font-medium uppercase tracking-widest border-2 border-primary/20 hover:bg-primary/5 text-primary"
                             variant="outline"
                         >
                             <Plus className="h-3.5 w-3.5" />
@@ -362,7 +362,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                         <p className="text-sm font-bold uppercase tracking-tight">
                             ¿Está seguro de que desea eliminar la receta <strong>{bomToDelete?.name}</strong>?
                         </p>
-                        <p className="text-[11px] font-medium text-muted-foreground bg-destructive/5 p-3 border-l-4 border-destructive">
+                        <p className="text-2xs font-medium text-muted-foreground bg-destructive/5 p-3 border-l-4 border-destructive">
                             Esta acción no se puede deshacer y el producto perderá esta definición técnica de fabricación.
                         </p>
                     </div>

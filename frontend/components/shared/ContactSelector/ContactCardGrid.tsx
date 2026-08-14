@@ -86,7 +86,7 @@ export function ContactCardGrid({ selectedId, onSelect, placeholder = "Buscar co
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <span className="font-bold text-xs truncate leading-tight block">{contact.name}</span>
-                                            <span className="text-[10px] font-mono text-muted-foreground truncate block mt-0.5">
+                                            <span className="text-3xs font-mono text-muted-foreground truncate block mt-0.5">
                                                 {contact.tax_id ? formatRUT(contact.tax_id) : 'S/Rut'}
                                             </span>
                                         </div>
@@ -95,7 +95,7 @@ export function ContactCardGrid({ selectedId, onSelect, placeholder = "Buscar co
                                         <Checkbox variant="circle" checked={isSelected} readOnly />
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-1.5 px-2.5 pb-2 pt-1.5 border-t border-border/30 text-[10px] text-muted-foreground mt-auto">
+                                <div className="flex items-center gap-1.5 px-2.5 pb-2 pt-1.5 border-t border-border/30 text-3xs text-muted-foreground mt-auto">
                                     {contactType === 'SUPPLIER' ? (
                                         <>
                                             <span className="font-semibold text-foreground/80">{formatCurrency(Number(contact.credit_available ?? 0))}</span>

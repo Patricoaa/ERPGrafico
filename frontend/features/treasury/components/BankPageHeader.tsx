@@ -1,6 +1,5 @@
 "use client"
 
-import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { useBanks } from "@/features/treasury"
 import type { PageHeaderStatus } from "@/components/shared"
@@ -17,9 +16,6 @@ interface BankPageHeaderProps {
 
 export function BankPageHeader({ bankId, breadcrumbs, title = "", description, status, titleActions }: BankPageHeaderProps) {
     const { banks } = useBanks()
-    const pathname = usePathname()
-    const segments = pathname.split('/').filter(Boolean)
-    const subSubActiveValue = segments[3] || 'overview'
 
     const bankSubTabs = buildBankSubTabs(banks)
 
@@ -33,7 +29,6 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
         ],
         activeValue: "bank-center",
         subActiveValue: `bank-${bankId}`,
-        subSubActiveValue,
         breadcrumbs,
     }
 

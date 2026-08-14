@@ -76,7 +76,7 @@ const VarianceCell = ({ value, percentage, type }: { value: number, percentage: 
                     )}
                 />
                 <span className={cn(
-                    "text-[10px] opacity-70",
+                    "text-3xs opacity-70",
                     value === 0 ? "" : (isGood ? "text-success font-bold" : "text-destructive font-bold")
                 )}>
                     {percentage.toFixed(1)}%
@@ -110,7 +110,7 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
                         ) : (
                             <div className="w-7" />
                         )}
-                        <DataCell.Code className="mr-2 text-muted-foreground font-mono text-[10px] w-12 shrink-0 justify-start">{node.code}</DataCell.Code>
+                        <DataCell.Code className="mr-2 text-muted-foreground font-mono text-3xs w-12 shrink-0 justify-start">{node.code}</DataCell.Code>
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <span className="truncate max-w-[200px]">
@@ -170,14 +170,14 @@ function BudgetVarianceTableBase({ data, loading }: BudgetVarianceTableProps) {
                             <TableHead className="w-[300px]  text-xs uppercase tracking-wider">Cuenta Contable</TableHead>
 
                             {/* Month Group */}
-                            <TableHead className="text-right  text-[10px] uppercase text-primary border-l">Real Mes</TableHead>
-                            <TableHead className="text-right  text-[10px] uppercase border-r/50">Ppto Mes</TableHead>
-                            <TableHead className="text-right  text-[10px] uppercase">Var Mes</TableHead>
+                            <TableHead className="text-right  text-3xs uppercase text-primary border-l">Real Mes</TableHead>
+                            <TableHead className="text-right  text-3xs uppercase border-r/50">Ppto Mes</TableHead>
+                            <TableHead className="text-right  text-3xs uppercase">Var Mes</TableHead>
 
                             {/* YTD Group */}
-                            <TableHead className="text-right  text-[10px] uppercase text-primary border-l bg-muted/20">Real YTD</TableHead>
-                            <TableHead className="text-right  text-[10px] uppercase border-r/50 bg-muted/20">Ppto YTD</TableHead>
-                            <TableHead className="text-right  text-[10px] uppercase bg-muted/20">Var YTD</TableHead>
+                            <TableHead className="text-right  text-3xs uppercase text-primary border-l bg-muted/20">Real YTD</TableHead>
+                            <TableHead className="text-right  text-3xs uppercase border-r/50 bg-muted/20">Ppto YTD</TableHead>
+                            <TableHead className="text-right  text-3xs uppercase bg-muted/20">Var YTD</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>

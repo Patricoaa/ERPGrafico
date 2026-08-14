@@ -291,7 +291,7 @@ export function SessionOpenModal({
                         >
                             <Unlock className="h-6 w-6" />
                             <div className="text-center">
-                                <span className="font-bold text-lg block">Abrir Punto de Venta</span>
+                                <span className="font-medium text-lg block">Abrir Punto de Venta</span>
                                 <span className="text-xs text-muted-foreground">
                                     {freeTerminals.length} puntos de venta libres
                                 </span>
@@ -306,7 +306,7 @@ export function SessionOpenModal({
                         >
                             <Users className="h-6 w-6" />
                             <div className="text-center">
-                                <span className="font-bold text-lg block">Unirse a Punto de Venta</span>
+                                <span className="font-medium text-lg block">Unirse a Punto de Venta</span>
                                 <span className="text-xs text-muted-foreground">
                                     {availableSessions.length > 0
                                         ? `${availableSessions.length} puntos de venta activos`
@@ -357,7 +357,7 @@ export function SessionOpenModal({
                         }}
                     >
                         <div className="text-left">
-                            <div className="font-bold">{t.name}</div>
+                            <div className="font-medium">{t.name}</div>
                             <div className="text-xs opacity-70">{t.location}</div>
                         </div>
                         {t.default_treasury_account_balance > 0 && (
@@ -552,7 +552,7 @@ export function SessionOpenModal({
                         onClick={() => setSelectedSharedSessionId(session.id.toString())}
                     >
                         <div className="text-left w-full">
-                                <div className="font-bold flex justify-between">
+                                <div className="font-medium flex justify-between">
                                     <span>{session.treasury_account_name}</span>
                                     <Chip size="xs" intent="neutral" className="ml-auto">{session.user_name}</Chip>
                                 </div>

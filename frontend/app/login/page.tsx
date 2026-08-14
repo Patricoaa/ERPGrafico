@@ -18,7 +18,7 @@ export default function LoginPage() {
                 <div
                     className="w-full max-w-sm relative z-10 mx-6 animate-in fade-in slide-in-from-bottom-3 ease-premium fill-mode-both duration-[600ms]"
                 >
-                    <PrepressPanel className="rounded-xl border bg-card shadow-card p-8 card-cmyk-animated-border">
+                    <PrepressPanel className="rounded-xl border bg-card shadow-card p-8">
                         {/* Logo */}
                         <div className="mb-8 flex flex-col items-center">
                             {logo ? (
@@ -47,7 +47,7 @@ export default function LoginPage() {
 
                         {/* Version footer */}
                         <div className="mt-10 pt-6 border-t border-border/40">
-                            <p className="text-[10px] text-muted-foreground/50 text-center font-mono uppercase tracking-widest">
+                            <p className="text-3xs text-muted-foreground/50 text-center font-mono uppercase tracking-widest">
                                 v{getFrontendVersion()}
                             </p>
                         </div>

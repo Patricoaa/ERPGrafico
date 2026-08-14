@@ -25,7 +25,7 @@ export function DataTablePagination<TData>({
 }: DataTablePaginationProps<TData>) {
     return (
         <div className="flex items-center justify-between px-1.5">
-            <div className="flex-1 text-[10px] uppercase tracking-widest text-muted-foreground/60">
+            <div className="flex-1 text-xs font-medium text-muted-foreground">
                 Mostrando {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} a{" "}
                 {Math.min(
                     (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
@@ -35,7 +35,7 @@ export function DataTablePagination<TData>({
             </div>
             <div className="flex items-center space-x-6 lg:space-x-8">
                 <div className="flex items-center space-x-2">
-                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground/60 hidden sm:inline">Registros por página</p>
+                    <p className="text-xs font-medium text-muted-foreground hidden sm:inline">Registros por página</p>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
@@ -61,7 +61,7 @@ export function DataTablePagination<TData>({
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
-                <div className="flex w-[100px] items-center justify-center text-[10px] uppercase tracking-widest text-muted-foreground/60">
+                <div className="flex w-[100px] items-center justify-center text-xs font-medium text-muted-foreground">
                     Página {table.getState().pagination.pageIndex + 1} de{" "}
                     {table.getPageCount()}
                 </div>

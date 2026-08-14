@@ -123,9 +123,9 @@ export function UniversalSearch() {
                 type="button"
                 onClick={() => setOpen(true)}
                 aria-label="Búsqueda universal (Ctrl+K)"
-                className="group rounded-md text-foreground/50 transition-all hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                className="group h-8 w-8 rounded-md text-foreground/50 transition-all hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
             >
-                <Search className="h-5 w-5 shrink-0 transition-colors group-hover:text-foreground" aria-hidden />
+                <Search className="h-4 w-4 shrink-0 transition-colors group-hover:text-foreground" aria-hidden />
             </Button>
 
             <Dialog open={open} onOpenChange={setOpen}>
@@ -183,7 +183,7 @@ export function UniversalSearch() {
                                         variant={!selectedType ? "default" : "ghost"}
                                         onClick={() => setSelectedType(null)}
                                         className={cn(
-                                            "flex shrink-0 items-center gap-2 rounded-sm px-4 py-2 text-[10px] uppercase tracking-widest transition-all",
+                                            "flex shrink-0 items-center gap-2 rounded-sm px-4 py-2 text-3xs uppercase tracking-widest transition-all",
                                             !selectedType
                                                 ? ""
                                                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -197,7 +197,7 @@ export function UniversalSearch() {
                                             variant={selectedType === type.label ? "default" : "ghost"}
                                             onClick={() => setSelectedType(type.label)}
                                             className={cn(
-                                                "flex shrink-0 items-center gap-2 rounded-sm px-4 py-2 text-[10px] uppercase tracking-widest transition-all",
+                                                "flex shrink-0 items-center gap-2 rounded-sm px-4 py-2 text-3xs uppercase tracking-widest transition-all",
                                                 selectedType === type.label
                                                     ? ""
                                                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -308,7 +308,7 @@ export function UniversalSearch() {
                                         </div>
 
                                         <div className="flex items-center gap-3">
-                                            <span className="hidden text-[10px] uppercase tracking-widest text-muted-foreground/40 sm:block">
+                                            <span className="hidden text-3xs uppercase tracking-widest text-muted-foreground/40 sm:block">
                                                 {result.title}
                                             </span>
                                             <ArrowRight className={cn(
@@ -322,20 +322,20 @@ export function UniversalSearch() {
                         </ScrollArea>
 
                         {/* Footer */}
-                        <div className="flex items-center justify-between border-t border-border bg-overlay/40 px-4 py-2 text-[10px]">
+                        <div className="flex items-center justify-between border-t border-border bg-overlay/40 px-4 py-2 text-3xs">
                             <div className="flex items-center gap-4 text-muted-foreground">
                                 <span className="flex items-center gap-1.5">
-                                    <kbd className="rounded bg-muted px-1 py-0.5 text-[9px] font-medium text-foreground">↑↓</kbd>
+                                    <kbd className="rounded bg-muted px-1 py-0.5 text-4xs font-medium text-foreground">↑↓</kbd>
                                     Navegar
                                 </span>
                                 <span className="flex items-center gap-1.5">
-                                    <kbd className="rounded bg-muted px-1 py-0.5 text-[9px] font-medium text-foreground flex items-center justify-center w-5">
+                                    <kbd className="rounded bg-muted px-1 py-0.5 text-4xs font-medium text-foreground flex items-center justify-center w-5">
                                         <CornerDownLeft className="size-2.5" />
                                     </kbd>
                                     Seleccionar
                                 </span>
                                 <span className="flex items-center gap-1.5">
-                                    <kbd className="rounded bg-muted px-2 py-0.5 text-[9px] font-medium text-foreground">⌘K</kbd>
+                                    <kbd className="rounded bg-muted px-2 py-0.5 text-4xs font-medium text-foreground">⌘K</kbd>
                                     Cerrar
                                 </span>
                             </div>

@@ -85,7 +85,7 @@ export function CollapsibleSheet({
     // PERF-07: DOM Pruning Engine
     // Detaches the subtree from CSS layout calculations without unmounting React instances immediately.
     const [isHidden, setIsHidden] = useState(!open && !isCollapsed)
-    // Deferred unmount to let 500ms CSS exit transition finish before Radix destroys the DOM Node
+    // Deferred unmount to let the 200ms CSS exit keyframe finish before Radix destroys the DOM Node
     const [shouldMount, setShouldMount] = useState(open || isCollapsed)
 
     useEffect(() => {
@@ -98,13 +98,14 @@ export function CollapsibleSheet({
                 setIsHidden(false)
             })
         } else {
-            // Give 500ms for slide-out before removing from CSS tree and completely unmounting
+            // Give 240ms for slide-out (200ms keyframe + buffer) before removing from the
+            // CSS tree and completely unmounting
             hideTimeout = setTimeout(() => {
                 requestAnimationFrame(() => setIsHidden(true))
-            }, 500)
+            }, 240)
             unmountTimeout = setTimeout(() => {
                 requestAnimationFrame(() => setShouldMount(false))
-            }, 500)
+            }, 260)
         }
 
         return () => {
@@ -127,9 +128,8 @@ export function CollapsibleSheet({
             side={side}
             data-sheet-id={sheetId}
             className={cn(
-                "p-0 h-full panel-surface",
-                "top-[var(--page-padding-top)] bottom-[var(--page-gap-bottom)] right-4 h-[calc(100vh-var(--page-padding-top)-var(--page-gap-bottom))]",
-                "data-[state=open]:animate-none data-[state=closed]:animate-none duration-0 sm:duration-500",
+                "p-0 rounded-none! border-l border-border/40 bg-card text-foreground",
+                "top-[var(--header-height)] bottom-0 h-[calc(100dvh-var(--header-height))]",
                 (!open || isCollapsed) ? "border-primary/10" : "translate-x-0",
                 allowOverflow ? "overflow-visible" : "overflow-hidden",
                 ((!open || isCollapsed) && !forceCollapse) ? "opacity-0 pointer-events-none" : "opacity-100",
@@ -142,11 +142,12 @@ export function CollapsibleSheet({
             onFocusOutside={(e) => e.preventDefault()}
             onInteractOutside={(e) => e.preventDefault()}
             style={{
-                transform: (!open || isCollapsed) ? `translateX(calc(100% - ${offset}px))` : 'translateX(0)',
+                right: offset,
+                transform: (!open || isCollapsed) ? `translateX(100%)` : 'translateX(0)',
                 zIndex: 40 + (!open || isCollapsed ? 0 : 5), // Below action modals (z-50) but above page content
                 // If full size, use 100vw but keep offset for layering if needed
-                maxWidth: size === "full" ? '100vw' : calculatedWidth,
-                width: size === "full" ? '100vw' : calculatedWidth,
+                maxWidth: size === "full" ? '100vw' : (typeof calculatedWidth === 'number' ? `${calculatedWidth}px` : calculatedWidth),
+                width: size === "full" ? '100vw' : (typeof calculatedWidth === 'number' ? `${calculatedWidth}px` : calculatedWidth),
                 '--stack-offset': `${offset}px`
             } as React.CSSProperties}
         >
@@ -174,13 +175,13 @@ export function CollapsibleSheet({
                         <div className="relative">
                             <Icon className="h-6 w-6 text-primary-foreground/90 group-hover:scale-110 transition-transform" />
                             {badge !== undefined && badge > 0 && (
-                                <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] flex items-center justify-center bg-destructive text-destructive-foreground text-[8px] font-black rounded-full px-1 shadow-card border-2 border-primary/95">
+                                <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] flex items-center justify-center bg-destructive text-destructive-foreground text-4xs font-bold rounded-full px-1 shadow-card border-2 border-primary/95">
                                     {badge > 99 ? '99+' : badge}
                                 </span>
                             )}
                         </div>
                         <div className="flex flex-col items-center whitespace-nowrap">
-                            <span className="text-[13px] font-black text-primary-foreground [writing-mode:vertical-rl] rotate-180 tracking-widest leading-none">
+                            <span className="text-xs font-bold text-primary-foreground [writing-mode:vertical-rl] rotate-180 tracking-looser leading-none">
                                 {tabLabel}
                             </span>
                         </div>
@@ -188,7 +189,19 @@ export function CollapsibleSheet({
                 </div>
             )}
 
-            {children}
+            {/* Content with staggered premium entrance — GPU-only (opacity + transform), reduced-motion safe */}
+            <div
+                className={cn(
+                    "flex-1 flex flex-col min-h-0",
+                    open && !isCollapsed && "animate-in fade-in slide-in-from-right-4 ease-premium fill-mode-both motion-reduce:animate-none motion-reduce:opacity-100"
+                )}
+                style={open && !isCollapsed ? ({
+                    animationDuration: "0.2s",
+                    animationDelay: "0.06s",
+                } as React.CSSProperties) : undefined}
+            >
+                {children}
+            </div>
         </SheetContent>
         </Sheet>
     )

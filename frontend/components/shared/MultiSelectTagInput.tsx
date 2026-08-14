@@ -118,7 +118,7 @@ export function MultiSelectTagInput({
                     >
                         {label && (
                             <legend className={cn(
-                                "px-1.5 text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-200",
+                                "px-1.5 text-3xs font-bold uppercase tracking-loose transition-colors duration-200",
                                 hasError ? "text-destructive" : (open ? "text-primary" : "text-muted-foreground"),
                             )}>
                                 {label}
@@ -151,7 +151,7 @@ export function MultiSelectTagInput({
                                 <input
                                     ref={inputRef}
                                     type="text"
-                                    className="flex-1 bg-transparent border-none outline-none text-[11px] uppercase font-bold placeholder:text-muted-foreground/40 placeholder:normal-case placeholder:font-medium min-w-[80px] h-7"
+                                    className="flex-1 bg-transparent border-none outline-none text-2xs uppercase font-bold placeholder:text-muted-foreground/40 placeholder:normal-case placeholder:font-medium min-w-[80px] h-7"
                                     placeholder={selectedOptions.length === 0 ? placeholder : ""}
                                     value={searchQuery}
                                     onChange={(e) => {
@@ -188,7 +188,7 @@ export function MultiSelectTagInput({
                         <div className="max-h-[250px] overflow-y-auto p-1 custom-scrollbar">
                             {showCreate && (
                                 <div
-                                    className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-[10px] uppercase font-bold tracking-tight outline-none hover:bg-accent hover:text-accent-foreground transition-colors text-primary bg-primary/5"
+                                    className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-3xs uppercase font-bold tracking-tight outline-none hover:bg-accent hover:text-accent-foreground transition-colors text-primary bg-primary/5"
                                     onMouseDown={(e) => e.preventDefault()}
                                     onClick={() => {
                                         onCreateOption?.(searchQuery.trim())
@@ -206,7 +206,7 @@ export function MultiSelectTagInput({
                                         <div
                                             key={option.value}
                                             className={cn(
-                                                "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-[10px] uppercase font-bold tracking-tight outline-none hover:bg-accent hover:text-accent-foreground transition-colors",
+                                                "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-3xs uppercase font-bold tracking-tight outline-none hover:bg-accent hover:text-accent-foreground transition-colors",
                                                 isSelected ? "bg-primary/5 text-primary" : "text-muted-foreground"
                                             )}
                                             onMouseDown={(e) => e.preventDefault()}
@@ -228,7 +228,7 @@ export function MultiSelectTagInput({
                                     )
                                 })
                             ) : !showCreate && (
-                                <div className="py-6 px-2 text-center text-[10px] font-bold uppercase text-muted-foreground/40 italic">
+                                <div className="py-6 px-2 text-center text-3xs font-bold uppercase text-muted-foreground/40 italic">
                                     No se encontraron resultados
                                 </div>
                             )}
@@ -240,7 +240,7 @@ export function MultiSelectTagInput({
                                 <div className="p-1">
                                     <div
                                         role="button"
-                                        className="w-full flex items-center justify-center text-[9px] font-black uppercase tracking-[0.1em] h-8 hover:bg-destructive/10 hover:text-destructive transition-colors rounded-sm text-muted-foreground/60 cursor-pointer"
+                                        className="w-full flex items-center justify-center text-4xs font-bold uppercase tracking-widest h-8 hover:bg-destructive/10 hover:text-destructive transition-colors rounded-sm text-muted-foreground/60 cursor-pointer"
                                         onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => onChange([])}
                                     >
@@ -254,13 +254,13 @@ export function MultiSelectTagInput({
             </Popover>
 
             {hasError && (
-                <p role="alert" className="text-[10px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200 pl-1">
+                <p role="alert" className="text-3xs font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200 pl-1">
                     {error}
                 </p>
             )}
 
             {hint && !hasError && (
-                <p className="text-[10px] text-muted-foreground pl-1">
+                <p className="text-3xs text-muted-foreground pl-1">
                     {hint}
                 </p>
             )}

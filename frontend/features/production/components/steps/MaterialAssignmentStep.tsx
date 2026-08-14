@@ -107,7 +107,7 @@ export function MaterialAssignmentStep({
       cell: ({ row }) => (
         <div>
           <p className="font-medium">{row.original.component_name}</p>
-          <p className="text-[10px] text-muted-foreground uppercase">{row.original.component_code}</p>
+          <p className="text-3xs text-muted-foreground uppercase">{row.original.component_code}</p>
         </div>
       ),
     },
@@ -130,7 +130,7 @@ export function MaterialAssignmentStep({
             )}>
               {m.stock_available ?? 0} {m.uom_name}
             </p>
-            <p className="text-[10px] text-muted-foreground">Disponible</p>
+            <p className="text-3xs text-muted-foreground">Disponible</p>
           </div>
         )
       },
@@ -205,6 +205,7 @@ export function MaterialAssignmentStep({
                             }}
                             disabled={!!editingMaterialId}
                             shouldResolveVariants={false}
+                            productTypes={['STORABLE', 'MANUFACTURABLE']}
                             customFilter={(p: Product) => {
                               if (order.main_product_id && p.id.toString() === order.main_product_id.toString()) return false
                               if (p.product_type === 'CONSUMABLE') return false
@@ -285,13 +286,13 @@ export function MaterialAssignmentStep({
                       <Truck className="h-4 w-4 text-muted-foreground" />
                       <div className="space-y-0.5">
                         <p className="text-sm font-bold">{m.component_name}</p>
-                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold">
+                        <div className="flex items-center gap-2 text-3xs text-muted-foreground uppercase font-bold">
                           <span>{m.supplier_name}</span>
                           <span>•</span>
                           <span>Cant: {m.quantity_planned} {m.uom_name}</span>
                           <span>•</span>
                           <span className="inline-flex items-center gap-1">
-                            <DataCell.Currency value={parseFloat(m.unit_price ?? '0') * vatMultiplier} weight="bold" className="w-auto justify-start text-[10px] text-muted-foreground p-0 inline-flex" />
+                            <DataCell.Currency value={parseFloat(m.unit_price ?? '0') * vatMultiplier} weight="bold" className="w-auto justify-start text-3xs text-muted-foreground p-0 inline-flex" />
                             <span>(Bruto) c/u</span>
                           </span>
                         </div>
@@ -299,7 +300,7 @@ export function MaterialAssignmentStep({
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right mr-2 flex flex-col items-end">
-                        <p className="text-[10px] font-bold uppercase text-muted-foreground">Total Estimado</p>
+                        <p className="text-3xs font-bold uppercase text-muted-foreground">Total Estimado</p>
                         <DataCell.Currency
                           value={parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price ?? '0') * vatMultiplier}
                           className="justify-end text-sm text-primary w-auto p-0 inline-flex"
@@ -315,7 +316,7 @@ export function MaterialAssignmentStep({
                       {m.purchase_order_number && (
                         <div className="flex items-center gap-2">
                           <Chip size="xs">OCS-{m.purchase_order_number}</Chip>
-                          <span className="text-[10px] font-medium text-muted-foreground">({m.supplier_name})</span>
+                          <span className="text-3xs font-medium text-muted-foreground">({m.supplier_name})</span>
                         </div>
                       )}
                     </div>

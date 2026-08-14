@@ -130,7 +130,7 @@ export function PaymentModal({
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
                             <Button
-                                className="bg-success hover:bg-success/90 h-10 text-sm font-bold"
+                                className="bg-success hover:bg-success/90 h-10 text-sm font-medium"
                                 onClick={() => onConfirm({
                                     paymentMethod: paymentData.amount === 0 ? 'CREDIT' : paymentData.method || 'CASH',
                                     amount: paymentData.amount,
@@ -184,7 +184,7 @@ export function PaymentModal({
                                 ]}
                             />
                             {existingInvoice && (
-                                <p className="text-[10px] text-warning font-medium px-1">
+                                <p className="text-3xs text-warning font-medium px-1">
                                     * Documento ya registrado anteriormente
                                 </p>
                             )}
@@ -210,7 +210,7 @@ export function PaymentModal({
                             )}
 
                             <div className={`grid gap-2 ${isDocumentPending ? 'opacity-50' : ''}`}>
-                                <Label className="text-[10px] font-bold uppercase flex items-center gap-1">
+                                <Label className="text-3xs font-bold uppercase flex items-center gap-1">
                                     <Calendar className="h-3 w-3" /> Fecha de Emisión
                                 </Label>
                                 <div>
@@ -258,7 +258,7 @@ export function PaymentModal({
                                     />
                                 ) : (
                                     <div className="flex flex-col gap-2">
-                                        <Label className="text-[10px] font-bold uppercase flex items-center gap-1">
+                                        <Label className="text-3xs font-bold uppercase flex items-center gap-1">
                                             <FileUp className="h-3 w-3" /> Documento Adjunto
                                         </Label>
                                         <div className="flex items-center gap-2 text-xs text-primary font-medium p-2 bg-primary/5 rounded border border-primary/20">

@@ -17,7 +17,7 @@ interface PrepressPanelProps {
  */
 export function PrepressPanel({ children, className, id }: PrepressPanelProps) {
   return (
-    <div id={id} className={cn("canvas-prepress", className)}>
+    <div id={id} className={cn("relative", className)}>
       {children}
     </div>
   )

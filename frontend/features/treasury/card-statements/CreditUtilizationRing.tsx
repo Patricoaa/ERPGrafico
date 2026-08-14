@@ -47,17 +47,17 @@ export function CreditUtilizationRing({
             </svg>
 
             <div className="space-y-2 min-w-0">
-                <div className="flex items-center gap-2 text-[11px]">
+                <div className="flex items-center gap-2 text-2xs">
                     <span className="w-2 h-2 rounded-full bg-warning shrink-0" />
                     <span className="text-muted-foreground">No facturado</span>
                     <span className="font-bold tabular-nums ml-auto">{format(unbilled)}</span>
                 </div>
-                <div className="flex items-center gap-2 text-[11px]">
+                <div className="flex items-center gap-2 text-2xs">
                     <span className="w-2 h-2 rounded-full bg-muted-foreground/40 shrink-0" />
                     <span className="text-muted-foreground">Disponible</span>
                     <span className="font-bold tabular-nums ml-auto">{format(available)}</span>
                 </div>
-                <div className="pt-1 border-t border-border/40 text-[10px] text-muted-foreground">
+                <div className="pt-1 border-t border-border/40 text-3xs text-muted-foreground">
                     Límite: {format(limit)}
                 </div>
             </div>

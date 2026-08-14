@@ -2,7 +2,8 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect, useRef } from "react"
+import { useState } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { type WarehouseInitialData } from "@/types/forms"
@@ -60,34 +61,16 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
         },
     })
 
-    const lastResetId = useRef<number | undefined>(undefined)
-    const wasOpen = useRef(false)
-
-    // Reset form when initialData changes or modal opens
-    useEffect(() => {
-        if (!open) {
-            wasOpen.current = false
-            return
-        }
-
-        const currentId = initialData?.id
-        const isNewOpen = !wasOpen.current
-        const isNewData = currentId !== lastResetId.current
-
-        if (isNewOpen || isNewData) {
-            if (initialData) {
-                form.reset(initialData)
-            } else {
-                form.reset({
-                    name: "",
-                    code: "",
-                    address: "",
-                })
-            }
-            lastResetId.current = currentId
-            wasOpen.current = true
-        }
-    }, [open, initialData, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData,
+        defaultValues: () => ({
+            name: "",
+            code: "",
+            address: "",
+        }),
+    })
 
     async function onSubmit(data: WarehouseFormValues) {
         setLoading(true)
@@ -196,7 +179,7 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
                     title="Warehouse"
                     displayId={`#${initialData.id}`}
                 >
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{initialData?.name ?? '-'}</span>

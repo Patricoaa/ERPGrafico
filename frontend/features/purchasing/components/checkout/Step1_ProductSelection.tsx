@@ -50,7 +50,7 @@ function GrossToNetCalculator({ rate, multiplier }: { rate: number; multiplier: 
             <PopoverTrigger asChild>
                 <Button
                     type="button"
-                    className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 hover:text-primary transition-colors"
+                    className="flex items-center gap-1 text-3xs font-medium uppercase tracking-widest text-muted-foreground/60 hover:text-primary transition-colors"
                     title="Calculadora bruto a neto"
                 >
                     <Calculator className="h-3 w-3" />
@@ -61,14 +61,14 @@ function GrossToNetCalculator({ rate, multiplier }: { rate: number; multiplier: 
                 <div className="space-y-3">
                     <div className="flex items-center gap-2">
                         <Calculator className="h-4 w-4 text-primary" />
-                        <p className="text-[12px] font-bold uppercase tracking-wide">Conversor Bruto → Neto</p>
+                        <p className="text-xs font-bold uppercase tracking-wide">Conversor Bruto → Neto</p>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-2xs text-muted-foreground">
                         Útil para boletas. Ingresa el precio bruto (IVA incluido) para obtener el neto.
                     </p>
                     <div className="space-y-1.5">
                         <div className="space-y-1.5">
-                            <span className="text-[10px] uppercase font-bold text-muted-foreground px-0.5">Monto Bruto (c/IVA)</span>
+                            <span className="text-3xs uppercase font-bold text-muted-foreground px-0.5">Monto Bruto (c/IVA)</span>
                             <Input
                                 type="number"
                                 placeholder="Ej: 11.900"
@@ -78,7 +78,7 @@ function GrossToNetCalculator({ rate, multiplier }: { rate: number; multiplier: 
                             />
                         </div>
                         {netResult !== null && (
-                            <div className="rounded-md bg-muted/60 border p-3 space-y-1.5 text-[12px]">
+                            <div className="rounded-md bg-muted/60 border p-3 space-y-1.5 text-xs">
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Neto (sin IVA)</span>
                                     <span className="font-bold text-success">
@@ -230,7 +230,7 @@ export function Step1_ProductSelection({
                             <TableCell className="py-2 px-3">
                                 <ProductSelector
                                     value={lineProductId}
-                                    context="purchase"
+                                    canBePurchased
                                     onChange={(val) => handleProductChange(index, val)}
                                     variant="inline"
                                     placeholder="Seleccionar..."
@@ -244,7 +244,7 @@ export function Step1_ProductSelection({
                                     )
                                     if (product && prefSupplierId && selectedSupplierId && prefSupplierId.toString() !== selectedSupplierId) {
                                         return (
-                                            <div className="flex items-center gap-1 mt-1 text-[10px] text-warning font-medium">
+                                            <div className="flex items-center gap-1 mt-1 text-3xs text-warning font-medium">
                                                 <AlertTriangle className="h-3 w-3" />
                                                 Sugerido: {product.preferred_supplier_name}
                                             </div>

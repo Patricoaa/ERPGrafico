@@ -81,8 +81,7 @@ function EntityCardRoot({
                     }
                 }}
                 className={cn(
-                    "card-base group flex flex-col relative transition-all duration-300",
-                    "bg-background text-foreground",
+                    "card-flat border-border group flex flex-col relative transition-all duration-300",
                     variant === "compact" ? "gap-1.5 p-3" : "gap-3 p-4",
                     isSelected && "accent-visible",
                     checked && "border-primary/40 bg-primary/5 shadow-sm",
@@ -154,11 +153,11 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
                         </div>
                     ) : null}
                     <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-bold leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
+                        <div className="truncate text-sm font-medium leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
                             {title}
                         </div>
                         {subtitle && (
-                            <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                            <div className="mt-0.5 truncate text-xs font-medium text-muted-foreground">
                                 {subtitle}
                             </div>
                         )}
@@ -189,11 +188,11 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
                     </div>
                 ) : null}
                 <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-bold leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
+                    <div className="truncate text-sm font-medium leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
                         {title}
                     </div>
                     {subtitle && (
-                        <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                        <div className="mt-0.5 truncate text-xs font-medium text-muted-foreground">
                             {subtitle}
                         </div>
                     )}
@@ -261,10 +260,10 @@ interface EntityCardFieldProps {
 function EntityCardField({ label, value, full, className, icon: Icon }: EntityCardFieldProps) {
     return (
         <div className={cn("flex flex-col gap-0.5 min-w-0", full && "col-span-2", className)}>
-            <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/60">
+            <span className="text-3xs font-medium uppercase tracking-widest text-muted-foreground/60">
                 {label}
             </span>
-            <span className="flex items-center gap-1 text-xs font-medium text-foreground/80">
+            <span className="flex items-center gap-1 text-xs font-medium text-foreground">
                 {Icon && <Icon className="h-3 w-3 shrink-0 text-muted-foreground/50" />}
                 {value ?? <span className="text-muted-foreground/40">—</span>}
             </span>
@@ -429,7 +428,7 @@ function EntityCardWorkflowBody({ lines, total, pending, deliveryDate, dateLabel
         <EntityCardBody className={cn("flex items-start justify-between gap-4 pt-2 border-t border-border/30 mt-1", className)}>
             <div className="flex flex-wrap gap-x-6 gap-y-1.5 flex-1">
                 {lines.map((line, idx) => (
-                    <div key={idx} className="text-sm text-foreground/70 flex flex-col leading-tight min-w-0">
+                    <div key={idx} className="text-xs text-foreground/70 flex flex-col leading-tight min-w-0">
                         <span>
                             <span className="font-medium text-foreground">{Math.round(parseFloat(String(line.quantity || 0)))}</span>
                             <span className="text-muted-foreground/40 mx-1">×</span>
@@ -441,19 +440,19 @@ function EntityCardWorkflowBody({ lines, total, pending, deliveryDate, dateLabel
             <div className="flex items-start gap-4 shrink-0 pr-9">
                 {deliveryDate ? (
                     <div className="flex flex-col items-end min-w-[80px]">
-                        <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">{dateLabel}</span>
-                        <span className="text-sm tracking-tight whitespace-nowrap">{formatPlainDate(deliveryDate)}</span>
+                        <span className="text-4xs text-muted-foreground uppercase tracking-widest font-bold mb-0.5">{dateLabel}</span>
+                        <span className="text-xs font-medium tracking-tight whitespace-nowrap">{formatPlainDate(deliveryDate)}</span>
                     </div>
                 ) : null}
                 {pending != null && pending > 0 && (
                     <div className="flex flex-col items-end min-w-[80px]">
-                        <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">Pendiente</span>
-                        <MoneyDisplay amount={pending} showColor={false} className="text-sm tracking-tight text-warning" />
+                        <span className="text-4xs text-warning/80 uppercase tracking-widest font-bold mb-0.5">Pendiente</span>
+                        <MoneyDisplay amount={pending} showColor={false} className="text-xs font-medium tracking-tight text-warning" />
                     </div>
                 )}
                 <div className="flex flex-col items-end min-w-[80px]">
-                    <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">Total</span>
-                    <MoneyDisplay amount={total} showColor={false} className="text-sm tracking-tight" />
+                    <span className="text-4xs text-muted-foreground uppercase tracking-widest font-bold mb-0.5">Total</span>
+                    <MoneyDisplay amount={total} showColor={false} className="text-xs font-medium tracking-tight" />
                 </div>
             </div>
         </EntityCardBody>
@@ -487,7 +486,7 @@ function EntityCardListItem({ icon: Icon, iconClassName, label, sublabel, value,
             onClick={onClick}
             className={cn(
                 "w-full flex items-center gap-3 py-2 px-2 text-left justify-start",
-                "card-base",
+                "card-base border border-border",
                 "transition-all group",
                 onClick && "cursor-pointer",
                 className
@@ -499,11 +498,11 @@ function EntityCardListItem({ icon: Icon, iconClassName, label, sublabel, value,
             <div className="flex-1 min-w-0">
                 <span className="text-xs font-medium truncate block">{label}</span>
                 {sublabel && (
-                    <span className="text-[10px] text-muted-foreground truncate block">{sublabel}</span>
+                    <span className="text-3xs text-muted-foreground truncate block">{sublabel}</span>
                 )}
             </div>
             {trailing ?? (value != null && (
-                <span className="text-xs font-bold tabular-nums shrink-0">{value}</span>
+                <span className="text-xs font-medium tabular-nums shrink-0">{value}</span>
             ))}
             {onClick && (
                 <ArrowRight className="h-3 w-3 text-muted-foreground/0 group-hover:text-muted-foreground transition-all shrink-0" />
@@ -568,24 +567,21 @@ const METRIC_VARIANT_CLASSES: Record<MetricVariant, string> = {
 
 function EntityCardMetrics({ metrics, defaultVariant = 'default', className }: EntityCardMetricsProps) {
     return (
-        <div className={cn("flex items-stretch gap-px border-t border-border/30 mt-1", className)}>
+        <div className={cn("flex items-stretch justify-start border-t border-border mt-1", className)}>
             {metrics.map((item, idx) => {
                 const variant = item.variant ?? defaultVariant
                 return (
                     <div
                         key={idx}
-                        className={cn(
-                            "flex-1 flex flex-col gap-0.5 px-4 py-2",
-                            "relative after:absolute after:inset-y-1 after:right-0 after:w-px after:bg-border/20 last:after:hidden"
-                        )}
+                        className={cn("shrink-0 flex flex-col gap-0.5 px-4 py-2")}
                     >
                         {item.icon && (
                             <item.icon className={cn("h-3 w-3 mb-0.5", METRIC_VARIANT_CLASSES[variant])} />
                         )}
-                        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/60">
+            <span className="text-4xs font-bold uppercase tracking-looser text-muted-foreground/60">
                             {item.label}
                         </span>
-                        <span className={cn("text-sm font-bold tabular-nums tracking-tight", METRIC_VARIANT_CLASSES[variant])}>
+                        <span className={cn("text-xs font-sans font-medium tabular-nums tracking-tight", METRIC_VARIANT_CLASSES[variant])}>
                             {item.value}
                         </span>
                     </div>

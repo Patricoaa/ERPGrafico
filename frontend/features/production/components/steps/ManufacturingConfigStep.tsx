@@ -416,7 +416,7 @@ export function ManufacturingConfigStep({
               {/* Product info (read-only) */}
               {otType === "LINKED" ? (
                 <div className="p-4 bg-muted/20 border rounded-md">
-                  <Label className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
+                  <Label className="text-3xs uppercase text-muted-foreground font-bold flex items-center gap-1">
                     <FileText className="h-3.5 w-3.5" /> Producto de la Orden de Venta
                   </Label>
                   <div className="space-y-3">
@@ -441,7 +441,7 @@ export function ManufacturingConfigStep({
                 </div>
               ) : (
                 <div className="p-4 bg-muted/20 border rounded-md">
-                  <Label className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
+                  <Label className="text-3xs uppercase text-muted-foreground font-bold flex items-center gap-1">
                     <FileText className="h-3.5 w-3.5" /> Producto Seleccionado
                   </Label>
                   <div className="space-y-3 mt-2">
@@ -510,7 +510,7 @@ export function ManufacturingConfigStep({
                       <User className="h-3.5 w-3.5 text-primary shrink-0" />
                       <span className="font-semibold text-sm truncate">{selectedContact.name}</span>
                       {selectedContact.tax_id && (
-                        <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
+                        <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">
                           [{selectedContact.tax_id}]
                         </span>
                       )}

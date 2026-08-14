@@ -1,14 +1,14 @@
 import {useQuery} from '@tanstack/react-query'
 import api from '@/lib/api'
-import type { Product } from '@/types/entities'
+import type { Product, ProductType } from '@/types/entities'
 
 export interface ProductSearchParams {
     search?: string
-    productType?: string
+    productTypes?: ProductType[]
     limit?: number
-    context?: 'sale' | 'purchase'
+    canBeSold?: boolean
+    canBePurchased?: boolean
     excludeVariantTemplates?: boolean
-    fetchSingleId?: string | number | null
 }
 
 export const PRODUCT_KEYS = {
@@ -36,25 +36,26 @@ const resolveVariants = async (productList: Product[], limit?: number): Promise<
 }
 
 export function useProductSearch(params: ProductSearchParams = {}, enabled: boolean = true) {
-    const { search = "", productType, limit = 20, context, excludeVariantTemplates } = params
+    const { search = "", productTypes, limit = 20, canBeSold, canBePurchased, excludeVariantTemplates } = params
 
     const query = useQuery({
-        queryKey: PRODUCT_KEYS.search({ search, productType, limit, context, excludeVariantTemplates }),
+        queryKey: PRODUCT_KEYS.search({ search, productTypes, limit, canBeSold, canBePurchased, excludeVariantTemplates }),
         queryFn: async ({ signal }) => {
             const q = new URLSearchParams()
             if (search) q.append("search", search)
             q.append("parent_template__isnull", "true")
 
-            if (productType) q.append("product_type", productType)
-
-            if (context === 'sale') {
-                q.append('can_be_sold', 'true')
-            } else if (context === 'purchase') {
-                q.append('can_be_purchased', 'true')
-                if (excludeVariantTemplates) {
-                    q.append('exclude_variant_templates', 'true')
+            if (productTypes && productTypes.length > 0) {
+                if (productTypes.length === 1) {
+                    q.append("product_type", productTypes[0])
+                } else {
+                    q.append("product_type__in", productTypes.join(","))
                 }
             }
+
+            if (canBeSold) q.append('can_be_sold', 'true')
+            if (canBePurchased) q.append('can_be_purchased', 'true')
+            if (excludeVariantTemplates) q.append('exclude_variant_templates', 'true')
 
             const res = await api.get<{ results: Product[] }>(`/inventory/products/?${q.toString()}`, { signal })
             const results = res.data.results

@@ -54,7 +54,7 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
                     const lines = r.lines as Array<Record<string, unknown>> | undefined
                     return (
                         <>
-                            <div className="text-[9px] space-y-1 mb-2 border-b pb-2">
+                            <div className="text-4xs space-y-1 mb-2 border-b pb-2">
                                 <div className="flex justify-between">
                                     <span>Proveedor:</span>
                                     <span>{String(r.supplier_name ?? '-')}</span>
@@ -69,7 +69,7 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
                                 </div>
                             </div>
                             {lines?.map((line: Record<string, unknown>, idx: number) => (
-                                <div key={idx} className="flex justify-between text-[10px]">
+                                <div key={idx} className="flex justify-between text-3xs">
                                     <span className="flex-1">{String(line.product_name)}</span>
                                     <span className="w-12 text-right">{String(line.quantity_returned)}</span>
                                 </div>

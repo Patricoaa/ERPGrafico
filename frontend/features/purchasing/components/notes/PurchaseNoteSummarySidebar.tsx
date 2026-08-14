@@ -80,7 +80,7 @@ export function PurchaseNoteSummarySidebar({
                 <>
                     {/* Order Details */}
                     <div className="space-y-4">
-                        <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                        <h4 className="text-3xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                             <FileText className="h-3 w-3" />
                             Detalles de Origen
                         </h4>
@@ -90,7 +90,7 @@ export function PurchaseNoteSummarySidebar({
                                 <div className="flex items-start gap-3">
                                     <Building2 className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                                     <div>
-                                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Proveedor</p>
+                                        <p className="text-3xs uppercase font-bold text-muted-foreground">Proveedor</p>
                                         <p className="text-sm font-semibold text-foreground leading-tight">{supplierName}</p>
                                     </div>
                                 </div>
@@ -100,7 +100,7 @@ export function PurchaseNoteSummarySidebar({
                                 <div className="flex items-start gap-3">
                                     <Box className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                                     <div>
-                                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Bodega</p>
+                                        <p className="text-3xs uppercase font-bold text-muted-foreground">Bodega</p>
                                         <p className="text-sm font-semibold text-foreground leading-tight">{warehouseName}</p>
                                     </div>
                                 </div>
@@ -109,7 +109,7 @@ export function PurchaseNoteSummarySidebar({
                             <div className="flex items-start gap-3">
                                 <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                                 <div>
-                                    <p className="text-[10px] uppercase font-bold text-muted-foreground">Fecha Emisión</p>
+                                    <p className="text-3xs uppercase font-bold text-muted-foreground">Fecha Emisión</p>
                                     <p className="text-sm font-semibold text-foreground leading-tight">
                                         {formatPlainDate(new Date())}
                                     </p>

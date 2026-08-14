@@ -75,7 +75,6 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
         onDelete: (id) => handleDelete(id),
     }
     const columns = useMemo<ColumnDef<UoM>[]>(() => {
-        const [idCol, nameCol, categoryCol, , ratioCol] = uomFields.toColumns()
         return [
             {
                 id: "select",
@@ -99,9 +98,9 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                 enableHiding: false,
                 size: 40,
             },
-            idCol,
-            nameCol,
-            categoryCol,
+            uomFields.column("id"),
+            uomFields.column("name"),
+            uomFields.column("category_name"),
             {
                 accessorKey: "uom_type",
                 header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
@@ -115,7 +114,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                     )
                 },
             },
-            ratioCol,
+            uomFields.column("ratio"),
             uomActions.auto(actionsCtx),
         ]
     }, [actionsCtx])

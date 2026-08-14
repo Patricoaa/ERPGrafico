@@ -152,6 +152,7 @@ export * from './DataTableView';
 export * from './DataTableToolbar';
 export * from './DataTablePagination';
 export * from './DataTableColumnHeader';
+export * from './DataTableExpandHeader';
 export * from './DataTableFacetedFilter';
 export * from './DataTableColumnToggle';
 export * from './DataTableCells';

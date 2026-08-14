@@ -465,7 +465,7 @@ export function POSClientView() {
                                             variant="outline"
                                             size="sm"
                                             className={cn(
-                                                "h-10 min-w-[40px] px-2 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative rounded-sm",
+                                                "h-10 min-w-[40px] px-2 text-3xs font-mono font-medium transition-all duration-300 gap-1.5 relative rounded-sm",
                                                 currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-card border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
                                                 isSaving && currentDraftId === d.id && "animate-pulse opacity-70",
                                                 lockedByOther && "border-destructive/40 opacity-60",
@@ -489,7 +489,7 @@ export function POSClientView() {
                                     )
                                 })}
                                 {currentDraftId === null && items.length > 0 && (
-                                    <span className="h-10 border border-dashed border-muted-foreground/30 text-[9px] px-2 opacity-50 bg-muted/20 flex items-center justify-center rounded-sm text-muted-foreground uppercase font-bold tracking-widest">
+                                    <span className="h-10 border border-dashed border-muted-foreground/30 text-4xs px-2 opacity-50 bg-muted/20 flex items-center justify-center rounded-sm text-muted-foreground uppercase font-bold tracking-widest">
                                         Nuevo...
                                     </span>
                                 )}
@@ -507,7 +507,7 @@ export function POSClientView() {
                                         className="relative rounded-md hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-border/60"
                                     >
                                         <Avatar className="h-full w-full rounded-md bg-transparent">
-                                            <AvatarFallback className="bg-transparent text-current font-black text-[10px] rounded-md">
+                                            <AvatarFallback className="bg-transparent text-current font-medium text-3xs rounded-md">
                                                 {user?.username?.substring(0, 2).toUpperCase() || 'US'}
                                             </AvatarFallback>
                                         </Avatar>
@@ -522,9 +522,9 @@ export function POSClientView() {
                             <DropdownMenuLabel className="font-normal py-3">
                                 <div className="flex flex-col">
                                     <p className="text-sm font-bold text-foreground">{user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user?.username || 'Usuario')}</p>
-                                    <p className="text-[10px] uppercase text-muted-foreground">{user?.groups?.[0] || ''}</p>
+                                    <p className="text-3xs uppercase text-muted-foreground">{user?.groups?.[0] || ''}</p>
                                     {currentSession?.id && (
-                                        <p className="text-[10px] font-mono font-bold text-primary mt-1">Sesión #{currentSession.id}</p>
+                                        <p className="text-3xs font-mono font-bold text-primary mt-1">Sesión #{currentSession.id}</p>
                                     )}
                                 </div>
                             </DropdownMenuLabel>
@@ -573,7 +573,7 @@ export function POSClientView() {
                 <div className="md:col-span-12 lg:col-span-7 flex flex-col min-h-0">
                     {posMode === 'SHOPPING' ? (
                         <div key="shop" className="flex-1 flex flex-col min-h-0 animate-in fade-in slide-in-from-left-2 ease-premium duration-300 fill-mode-both">
-                            <Card className="flex-1 flex flex-col overflow-hidden bg-card dot-grid-surface border border-border/60 shadow-lg shadow-black/10 rounded-lg p-2">
+                            <Card className="flex-1 flex flex-col overflow-hidden bg-card border border-border/60 shadow-lg shadow-black/10 rounded-lg p-2">
                                 <div className={cn("px-2 border-b border-border/40 space-y-2", isTouchMode ? "pb-2 mb-2" : "pb-1.5 mb-1.5")}>
                                     <SearchBar
                                         className="bg-muted/50 hover:bg-muted/70 focus-within:bg-muted/70"
@@ -600,7 +600,7 @@ export function POSClientView() {
                             </Card>
                         </div>
                     ) : (
-                        <div key={currentDraftId || 'checkout-new'} className="flex-1 flex flex-col min-h-0 bg-card dot-grid-surface border border-border/50 rounded-md shadow-card shadow-black/5 overflow-hidden relative animate-in fade-in slide-in-from-right-2 ease-premium duration-300 fill-mode-both">
+                        <div key={currentDraftId || 'checkout-new'} className="flex-1 flex flex-col min-h-0 bg-card border border-border/50 rounded-md shadow-card shadow-black/5 overflow-hidden relative animate-in fade-in slide-in-from-right-2 ease-premium duration-300 fill-mode-both">
                             <SalesCheckoutWizardView
                                 ref={checkoutWizardRef}
                                 key={currentDraftId || 'checkout-new'}
@@ -713,7 +713,7 @@ export function POSClientView() {
                         </Button>
                         <Button
                             variant="outline"
-                            className="flex-1 h-14 border-primary/20 text-primary hover:bg-primary/5 rounded-sm text-lg font-bold"
+                            className="flex-1 h-14 border-primary/20 text-primary hover:bg-primary/5 rounded-sm text-lg font-medium"
                             onClick={() => setCompletedSaleData(null)}
                         >
                             Cerrar

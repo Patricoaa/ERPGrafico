@@ -433,7 +433,7 @@ export function createSimpleFooterView<TData>(
     })
 
     return React.createElement("tr", { className: cn("border-t-2", options?.className) },
-      React.createElement("td", { className: "font-black uppercase tracking-widest text-[10px] table-cell" }, label),
+      React.createElement("td", { className: "font-bold uppercase tracking-widest text-3xs table-cell" }, label),
       ...totalCells
     )
   }
@@ -465,7 +465,7 @@ export function createExportToolbarAction(config: {
       React.createElement(Button, {
         variant: "outline",
         size: "sm",
-        className: "h-9 gap-2 text-[10px] font-black uppercase tracking-widest"
+        className: "h-9 gap-2 text-3xs font-bold uppercase tracking-widest"
       },
         "Acciones",
         React.createElement(ChevronDown, { className: "h-3.5 w-3.5" })

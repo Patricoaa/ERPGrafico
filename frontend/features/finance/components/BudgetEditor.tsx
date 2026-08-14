@@ -66,7 +66,7 @@ const BudgetAccountRow = React.memo(({
                                 </TooltipTrigger>
                                 <TooltipContent side="top">{account.code} - {account.name}</TooltipContent>
                             </Tooltip>
-                    <div className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">{account.account_type_display}</div>
+                    <div className="text-3xs font-bold uppercase tracking-wider text-muted-foreground">{account.account_type_display}</div>
                 </div>
 
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -81,7 +81,7 @@ const BudgetAccountRow = React.memo(({
                 <div key={m} className="flex-1 border-r p-1 bg-card/10">
                     <Input
                         type="number"
-                        className="h-8 text-[11px] text-right px-1 border-none bg-transparent focus-visible:bg-accent/40 font-medium"
+                        className="h-8 text-2xs text-right px-1 border-none bg-transparent focus-visible:bg-accent/40 font-medium"
                         placeholder="0"
                         value={monthlyData?.[m] || ''}
                         onChange={e => onAmountChange(account.id, m, e.target.value)}
@@ -245,7 +245,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
-                            <Button onClick={handleSave} className="px-8 font-bold ">
+                            <Button onClick={handleSave} className="px-8 font-medium">
                                 Guardar Presupuesto
                             </Button>
                         </>
@@ -299,7 +299,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                 <div className="flex-1 overflow-hidden p-4">
                     <ScrollArea className="h-full border rounded-md overflow-hidden shadow-card">
                         <div className="min-w-[1200px]">
-                            <div className="flex bg-muted/50 border-b sticky top-0 z-10 font-bold text-[11px] uppercase tracking-wider text-muted-foreground">
+                            <div className="flex bg-muted/50 border-b sticky top-0 z-10 font-bold text-2xs uppercase tracking-wider text-muted-foreground">
                                 <div className="w-[300px] p-3 border-r bg-muted/50">Cuenta Contable</div>
                                 {monthNames.map(m => (
                                     <div key={m} className="flex-1 p-3 text-center border-r bg-muted/50">{m}</div>

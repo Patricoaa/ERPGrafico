@@ -11,6 +11,7 @@ const cardVariants = cva(
         default: "bg-card text-card-foreground rounded-md border py-6 shadow-card",
         dashed: "rounded-md border border-dashed p-8 bg-muted/20 shadow-card",
         transparent: "bg-transparent text-card-foreground rounded-md border py-6 shadow-none",
+        flat: "card-flat text-card-foreground",
       },
     },
     defaultVariants: {

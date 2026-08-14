@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -77,24 +78,23 @@ export function CardPendingChargeDrawer({
         },
     })
 
-    useEffect(() => {
-        if (!open) return
-        if (charge) {
-            form.reset({
-                amount: String(Number(charge.amount)),
-                charge_type: charge.charge_type || 'OTHER',
-                date: charge.date?.split('T')[0] ?? '',
-                description: charge.description ?? '',
-            })
-        } else {
-            form.reset({
-                amount: "",
-                charge_type: "OTHER",
-                date: serverDate ? toDateOnlyISO(serverDate) : new Date().toISOString().split('T')[0],
-                description: "",
-            })
-        }
-    }, [open, charge, form, serverDate])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: charge,
+        defaultValues: () => ({
+            amount: "",
+            charge_type: "OTHER",
+            date: serverDate ? toDateOnlyISO(serverDate) : new Date().toISOString().split('T')[0],
+            description: "",
+        }),
+        mapData: (data) => ({
+            amount: String(Number(data.amount)),
+            charge_type: data.charge_type || 'OTHER',
+            date: data.date?.split('T')[0] ?? '',
+            description: data.description ?? '',
+        }),
+    })
 
     const onSubmit = async (values: ChargeFormValues) => {
         try {

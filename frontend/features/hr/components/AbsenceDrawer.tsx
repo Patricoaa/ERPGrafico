@@ -1,6 +1,6 @@
 "use client"
 
-import {useEffect} from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -58,27 +58,27 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
         }
     })
 
-    useEffect(() => {
-        if (absence) {
-            form.reset({
-                employee: absence.employee.toString(),
-                absence_type: absence.absence_type,
-                start_date: absence.start_date,
-                end_date: absence.end_date,
-                days: Number(absence.days),
-                notes: absence.notes || "",
-            })
-        } else {
-            form.reset({
-                employee: "",
-                absence_type: "AUSENTISMO",
-                start_date: "",
-                end_date: "",
-                days: 1,
-                notes: "",
-            })
-        }
-    }, [absence, form, open])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: absence,
+        mapData: (data) => ({
+            employee: data.employee.toString(),
+            absence_type: data.absence_type,
+            start_date: data.start_date,
+            end_date: data.end_date,
+            days: Number(data.days),
+            notes: data.notes || "",
+        }),
+        defaultValues: () => ({
+            employee: "",
+            absence_type: "AUSENTISMO" as const,
+            start_date: "",
+            end_date: "",
+            days: 1,
+            notes: "",
+        }),
+    })
 
     const onSubmit = async (data: AbsenceFormValues) => {
         try {
@@ -120,7 +120,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
         <>
             {(mode === 'view' || mode === 'edit') && absence?.id && (
                 <PrintableLayout ref={printRef} title="Inasistencia" displayId={`#${absence.id}`}>
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Empleado:</span>
                             <span>{absence?.employee_name ?? '-'}</span>

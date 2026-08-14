@@ -38,7 +38,7 @@ export function POSApprovalCard({
                         <CheckCircle2 className="h-5 w-5 text-success" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="font-black uppercase tracking-tight text-xs text-primary">
+                        <p className="font-bold uppercase tracking-tight text-xs text-primary">
                             Crédito Aprobado
                         </p>
                         <p className="text-sm text-success-foreground/80 leading-relaxed mt-0.5">
@@ -64,7 +64,7 @@ export function POSApprovalCard({
                 </div>
 
                 <div className="flex-1 min-w-0">
-                    <p className="font-black uppercase tracking-tight text-xs text-primary">
+                    <p className="font-bold uppercase tracking-tight text-xs text-primary">
                         {isWaiting ? "Esperando Autorización..." : "Autorización Requerida"}
                     </p>
                     <p className="text-sm text-warning-foreground/80 leading-relaxed mt-0.5">
@@ -83,8 +83,8 @@ export function POSApprovalCard({
                             <Button
                                 variant="outline"
                                 onClick={onCancel}
-                                className={cn(
-                                    "rounded-sm font-black uppercase tracking-tight border-magenta/30 text-magenta hover:bg-magenta/10",
+                                    className={cn(
+                                        "rounded-sm font-medium uppercase tracking-tight border-magenta/30 text-magenta hover:bg-magenta/10",
                                     isTouchMode ? "h-11 text-sm" : "h-11 text-sm"
                                 )}
                             >
@@ -94,7 +94,7 @@ export function POSApprovalCard({
                                 <Button
                                     onClick={() => onVerify(approvalTaskId)}
                                     className={cn(
-                                        "rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-magenta hover:bg-magenta/90 text-white",
+                                        "rounded-sm font-medium uppercase tracking-tight shadow-card border-none bg-magenta hover:bg-magenta/90 text-white",
                                         isTouchMode ? "h-11 text-sm" : "h-11 text-sm"
                                     )}
                                 >
@@ -107,7 +107,7 @@ export function POSApprovalCard({
                             <Button
                                 onClick={onAdjust}
                                 className={cn(
-                                    "rounded-sm font-black uppercase tracking-tight shadow-card border-2 border-magenta bg-magenta hover:bg-magenta/90 text-white",
+                                    "rounded-sm font-medium uppercase tracking-tight shadow-card border-2 border-magenta bg-magenta hover:bg-magenta/90 text-white",
                                     isTouchMode ? "h-11 text-sm" : "h-11 text-sm"
                                 )}
                             >
@@ -117,7 +117,7 @@ export function POSApprovalCard({
                                 <Button
                                     onClick={onDirectApprove}
                                     className={cn(
-                                        "rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-yellow hover:bg-yellow/90 text-black",
+                                        "rounded-sm font-medium uppercase tracking-tight shadow-card border-none bg-yellow hover:bg-yellow/90 text-black",
                                         isTouchMode ? "h-11 text-sm" : "h-11 text-sm"
                                     )}
                                 >
@@ -127,7 +127,7 @@ export function POSApprovalCard({
                             <Button
                                 onClick={onRequest}
                                 className={cn(
-                                    "rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-cyan hover:bg-cyan/90 text-white",
+                                    "rounded-sm font-medium uppercase tracking-tight shadow-card border-none bg-cyan hover:bg-cyan/90 text-white",
                                     isTouchMode ? "h-11 text-sm" : "h-11 text-sm"
                                 )}
                             >

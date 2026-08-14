@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { type UserInitialData } from "@/types/forms"
@@ -116,20 +117,14 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
 
     const isFetchingInitialData = open && (isFetchingDeps || userLoading)
 
-    // Sync form values with initialData when modal opens or initialData changes
-    const lastResetId = useRef<string | number | undefined>(undefined)
-    const wasOpen = useRef(false)
-
-    useEffect(() => {
-        const shouldReset = (open && !wasOpen.current) || (open && initialData?.id !== lastResetId.current)
-
-        if (shouldReset) {
-            form.reset(parsedInitialValues)
-            lastResetId.current = initialData?.id
-        }
-
-        wasOpen.current = open
-    }, [open, initialData?.id, form, parsedInitialValues])
+    useInitializeDrawerForm({
+        form,
+        open: open && !userLoading,
+        initialData: apiUser ?? initialData,
+        getEntityId: () => initialData?.id,
+        defaultValues: parsedInitialValues,
+        mapData: () => parsedInitialValues,
+    })
 
     async function onSubmit(data: UserFormValues) {
         setLoading(true)
@@ -235,7 +230,7 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
 
             {(mode === 'view' || mode === 'edit') && initialData?.id && (
                 <PrintableLayout ref={printRef} title="Ficha de Usuario" displayId={`#${initialData.id}`}>
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Usuario:</span>
                             <span>{initialData?.username ?? '-'}</span>

@@ -141,9 +141,9 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                             <Link
                                 href="/pos"
                                 target="_blank"
-                                className="h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200"
+                                className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200"
                             >
-                                <Store className="h-5 w-5" />
+                                <Store className="h-4 w-4" />
                             </Link>
                         </TooltipTrigger>
                         <TooltipContent side="bottom">
@@ -160,13 +160,13 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                             size="icon"
                             onClick={() => setIsCalculatorOpen(true)}
                             className={cn(
-                                "rounded-md transition-all duration-200 active:scale-95",
+                                "h-8 w-8 rounded-md transition-all duration-200 active:scale-95",
                                 isCalculatorOpen
                                     ? ""
                                     : "text-foreground/50 hover:bg-accent hover:text-accent-foreground"
                             )}
                         >
-                            <Calculator className="h-5 w-5" />
+                            <Calculator className="h-4 w-4" />
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
@@ -182,15 +182,15 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                             size="icon"
                             onClick={onInboxToggle}
                             className={cn(
-                                "relative rounded-md transition-all duration-200 active:scale-95",
+                                "relative h-8 w-8 rounded-md transition-all duration-200 active:scale-95",
                                 isInboxOpen
                                     ? ""
                                     : "text-foreground/50 hover:bg-accent hover:text-accent-foreground"
                             )}
                         >
-                            <Inbox className="h-5 w-5" />
+                            <Inbox className="h-4 w-4" />
                             {pendingTasksCount > 0 && !isInboxOpen && (
-                                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-destructive-foreground text-[9px] font-black rounded-full px-1 shadow-card border-2 border-background">
+                                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-destructive-foreground text-4xs font-medium rounded-full px-1 shadow-card border-2 border-background">
                                     {pendingTasksCount > 99 ? '99+' : pendingTasksCount}
                                 </span>
                             )}
@@ -201,7 +201,6 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                     </TooltipContent>
                 </Tooltip>
 
-                <div className="w-px h-6 bg-border mx-1" />
 
                 {/* Notifications */}
                 <DropdownMenu>
@@ -211,9 +210,9 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="relative rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95"
+                                    className="relative h-8 w-8 rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95"
                                 >
-                                    <Bell className="h-5 w-5" />
+                                    <Bell className="h-4 w-4" />
                                     {unreadCount > 0 && (
                                         <span className="absolute top-1 right-1 flex h-2 w-2">
                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
@@ -233,7 +232,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                                 <span className="font-bold text-sm tracking-tight text-foreground">Notificaciones</span>
                             </div>
                             {unreadCount > 0 && (
-                                <Button variant="ghost" size="sm" className="h-7 text-[11px] font-bold uppercase" onClick={handleMarkAllRead}>
+                                <Button variant="ghost" size="sm" className="h-7 text-2xs font-medium uppercase" onClick={handleMarkAllRead}>
                                     Leer Todo
                                 </Button>
                             )}
@@ -246,7 +245,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                                     <DropdownMenuItem key={n.id} className="p-3 cursor-pointer" onClick={() => handleNotificationClick(n)}>
                                         <div className="flex flex-col gap-1">
                                             <span className="font-bold text-xs">{n.title}</span>
-                                            <p className="text-[11px] text-muted-foreground line-clamp-2">{n.message}</p>
+                                            <p className="text-2xs text-muted-foreground line-clamp-2">{n.message}</p>
                                         </div>
                                     </DropdownMenuItem>
                                 ))
@@ -255,62 +254,6 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                {/* User Menu */}
-                <DropdownMenu>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="relative rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-border/60"
-                                >
-                                    <Avatar className="h-full w-full rounded-md bg-transparent">
-                                        <AvatarFallback className="bg-transparent text-current  font-black text-[10px] rounded-md">
-                                            {user?.username?.substring(0, 2).toUpperCase() || 'US'}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                </Button>
-                            </DropdownMenuTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">
-                            {user?.username || 'Usuario'}
-                        </TooltipContent>
-                    </Tooltip>
-                    <DropdownMenuContent className="w-56 border-sidebar-border shadow-overlay" align="end" sideOffset={12}>
-                        <DropdownMenuLabel className="font-normal">
-                            <div className="flex items-center gap-2 rounded-lg bg-muted p-1.5">
-                                <Avatar className="h-7 w-7 rounded-md">
-                                    <AvatarFallback className="rounded-md font-black text-[10px]">
-                                        {user?.username?.substring(0, 2).toUpperCase() || 'US'}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div className="flex flex-col">
-                                    <p className="text-xs font-bold text-foreground leading-tight">
-                                        {[user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.username || 'Usuario'}
-                                    </p>
-                                    <p className="text-[10px] uppercase text-muted-foreground leading-tight">{user?.groups?.[0] || 'Sin Rol'}</p>
-                                </div>
-                            </div>
-                        </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer">
-                            <User className="mr-3 h-4 w-4 text-primary" />
-                            <span className="text-xs">Perfil</span>
-                        </DropdownMenuItem>
-                        <PermissionGuard permission="core.change_companysettings">
-                            <DropdownMenuItem onClick={() => router.push("/settings")} className="cursor-pointer">
-                                <Settings className="mr-3 h-4 w-4 text-primary" />
-                                <span className="text-xs">Configuración</span>
-                            </DropdownMenuItem>
-                        </PermissionGuard>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer">
-                            <LogOut className="mr-3 h-4 w-4" />
-                            <span className="font-bold text-xs">Cerrar Sesión</span>
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
             </TooltipProvider>
 
             <CostCalculatorDrawer open={isCalculatorOpen} onOpenChange={setIsCalculatorOpen} />

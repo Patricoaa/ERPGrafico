@@ -6,6 +6,19 @@ import { SEG_TEXT, TAB_TOOLBAR_TRIGGER } from './search-styles'
 import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
+/**
+ * Positional CMYK accent cycle for navigation surfaces (TabBar underline +
+ * module rail). Each element gets its process ink by position: 1º Cyan, 2º
+ * Magenta, 3º Yellow, 4º Black (Key), cycling every 4. Authorized as a
+ * Layer-1 consumer by ADR-0076 — restricted to navigation decoration.
+ */
+export const CMYK_ACCENT = [
+    { text: "text-cyan", activeText: "data-[state=active]:text-cyan", openText: "data-[state=open]:text-cyan", hoverText: "hover:text-cyan", bar: "bg-cyan" },
+    { text: "text-magenta", activeText: "data-[state=active]:text-magenta", openText: "data-[state=open]:text-magenta", hoverText: "hover:text-magenta", bar: "bg-magenta" },
+    { text: "text-yellow", activeText: "data-[state=active]:text-yellow", openText: "data-[state=open]:text-yellow", hoverText: "hover:text-yellow", bar: "bg-yellow" },
+    { text: "text-black", activeText: "data-[state=active]:text-black", openText: "data-[state=open]:text-black", hoverText: "hover:text-black", bar: "bg-black" },
+] as const
+
 export interface TabItem {
     value: string
     label: string
@@ -57,20 +70,18 @@ export function TabBar({
     const triggerStyles = isToolbar
         ? cn(
             TAB_TOOLBAR_TRIGGER,
-            "data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm",
-            "data-[state=inactive]:text-muted-foreground hover:text-foreground hover:bg-accent/30",
-            "transition-all duration-150",
+            "group relative transition-all duration-200",
+            "data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-sm",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
             "disabled:opacity-40 disabled:pointer-events-none",
             "inline-flex items-center justify-center whitespace-nowrap"
         )
         : isUnderline
             ? cn(
-                "group relative w-auto transition-all duration-200 bg-transparent rounded-none tab-underline-cmyk",
+                "group relative w-auto transition-all duration-200 bg-transparent rounded-none",
                 dense ? "h-8" : "h-12",
-                "data-[state=active]:text-foreground data-[state=active]:font-bold data-[state=active]:bg-transparent data-[state=active]:shadow-none",
-                "data-[state=inactive]:text-foreground/60 data-[state=inactive]:font-bold hover:text-foreground",
-                "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-40 disabled:pointer-events-none px-1 flex items-center justify-center gap-2"
+                "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
+                "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-40 disabled:pointer-events-none flex items-center justify-center gap-2"
             )
             : cn(
                 "group relative w-auto h-auto transition-all duration-200",
@@ -96,9 +107,9 @@ export function TabBar({
                     isVertical
                         ? "h-auto w-auto flex-col items-start justify-start gap-3 col-start-1 overflow-visible max-h-full"
                         : isToolbar
-                            ? "h-7 p-0 gap-0 bg-transparent items-center"
+                            ? "h-auto p-0 gap-0 bg-transparent items-center"
                             : isUnderline
-                                ? "h-full w-auto flex-row items-end justify-start gap-2 px-1 pb-0"
+                                ? "h-full w-auto flex-row items-end justify-start gap-0 px-0 pb-0"
                                 : "h-auto w-auto flex-row items-end justify-center gap-1 px-1 pb-0",
                     listClassName
                 )}
@@ -108,14 +119,22 @@ export function TabBar({
                     marginLeft: "-2.64rem",
                 } : undefined}
             >
-                {visible.map((item) => {
+                {visible.map((item, index) => {
                     const Icon = item.icon
+                    const isActive = value === item.value
+                    const accent = (isUnderline || isToolbar) ? CMYK_ACCENT[index % CMYK_ACCENT.length] : null
                     return (
                         <TabsTrigger
                             key={item.value}
                             value={item.value}
                             disabled={item.disabled}
-                            className={triggerStyles}
+                            className={cn(
+                                triggerStyles,
+                                accent && cn(
+                                    isActive ? accent.activeText : cn(isUnderline ? "text-foreground/60" : "text-muted-foreground", accent.hoverText),
+                                    isUnderline && (isActive ? "font-bold" : "font-medium hover:font-bold")
+                                )
+                            )}
                         >
                             <span
                                 className={cn(
@@ -129,7 +148,6 @@ export function TabBar({
                                 <span
                                     className={cn(
                                         SEG_TEXT + " leading-tight",
-                                                                                "tracking-widest",
                                         "whitespace-nowrap text-center",
                                         isVertical && "group-data-[state=inactive]:hidden group-hover:!block"
                                     )}
@@ -138,11 +156,10 @@ export function TabBar({
                                 </span>
                                 {item.badge !== undefined && (
                                     <span className={cn(
-                                        "shrink-0 flex px-1 items-center justify-center rounded border border-border bg-muted/50 text-muted-foreground font-black leading-none",
-                                        dense ? "h-[14px] min-w-[14px] text-[9px]" : "h-4 min-w-[1rem] text-[9px]",
+                                        "shrink-0 flex px-1 items-center justify-center rounded border border-border bg-muted/50 text-muted-foreground font-bold tabular-nums leading-none h-4 min-w-[1rem] text-xs",
                                         isVertical && "rotate-90",
-                                        isToolbar && "border-transparent bg-accent/30",
                                         "group-data-[state=active]:bg-primary-foreground/20 group-data-[state=active]:text-primary-foreground group-data-[state=active]:border-primary-foreground/30",
+                                        isToolbar && "group-data-[state=active]:bg-muted/50 group-data-[state=active]:text-muted-foreground group-data-[state=active]:border-border",
                                         isVertical && "group-data-[state=inactive]:hidden group-hover:!flex"
                                     )}>
                                         {item.badge}
@@ -152,7 +169,7 @@ export function TabBar({
                                     <span
                                         aria-label="Errores en pestaña"
                                         className={cn(
-                                            "shrink-0 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black",
+                                            "shrink-0 flex h-4 w-4 items-center justify-center rounded-full text-4xs font-bold",
                                             isVertical && "rotate-90",
                                             "bg-destructive text-destructive-foreground shadow",
                                             "ring-2 ring-primary"
@@ -162,6 +179,15 @@ export function TabBar({
                                     </span>
                                 )}
                             </span>
+                            {(isUnderline || isToolbar) && accent && (
+                                <div className={cn(
+                                    isUnderline
+                                        ? "absolute bottom-[-1px] w-full h-[5px] rounded-t-sm transition-opacity duration-200"
+                                        : "absolute bottom-0 left-0 w-full h-[4px] rounded-t-sm transition-opacity duration-200",
+                                    accent.bar,
+                                    isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                                )} />
+                            )}
                         </TabsTrigger>
                     )
                 })}
@@ -173,7 +199,7 @@ export function TabBar({
         if (isToolbar) {
             return (
                 <div className={cn(
-                    "flex items-center justify-center shrink-0 bg-background rounded-sm px-1 h-9",
+                    "flex items-center justify-center shrink-0 bg-transparent p-0",
                     containerClassName
                 )}>
                     {list}
@@ -183,7 +209,8 @@ export function TabBar({
 
         if (isUnderline) {
             return (
-                <div className={cn("flex items-end justify-start w-full bg-transparent", dense ? "px-3 h-8" : "px-6 h-12", headerClassName)}>
+                <div className={cn("relative flex items-end justify-start w-full bg-transparent", dense ? "px-3 h-8" : "px-6 h-12", headerClassName)}>
+                    <div aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-border" />
                     <div className="w-fit">
                         {list}
                     </div>

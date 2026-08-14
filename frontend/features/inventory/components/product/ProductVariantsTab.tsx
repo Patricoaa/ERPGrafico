@@ -217,9 +217,9 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                             }
                         </h3>
                         {selectedVariantIds.length > 0 || activeEditVariant ? (
-                            <p className="text-[10px] text-muted-foreground font-bold italic">Modifique los campos y guarde los cambios.</p>
+                            <p className="text-3xs text-muted-foreground font-bold italic">Modifique los campos y guarde los cambios.</p>
                         ) : (
-                            <p className="text-[10px] text-muted-foreground font-bold italic">Seleccione los atributos para combinar.</p>
+                            <p className="text-3xs text-muted-foreground font-bold italic">Seleccione los atributos para combinar.</p>
                         )}
                     </div>
                 </div>
@@ -231,7 +231,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                className="h-9 px-4 text-[10px] font-black uppercase tracking-widest"
+                                className="h-9 px-4 text-3xs font-medium uppercase tracking-widest"
                                 onClick={() => setSelectedVariantIds([])}
                             >
                                 <X className="h-3.5 w-3.5 mr-2" />
@@ -241,7 +241,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                                 type="submit"
                                 form="bulk-edit-form"
                                 size="sm"
-                                className="h-9 px-5 text-[10px] font-black uppercase tracking-widest bg-primary text-primary-foreground hover:scale-[1.02]"
+                                className="h-9 px-5 text-3xs font-medium uppercase tracking-widest bg-primary text-primary-foreground hover:scale-[1.02]"
                             >
                                 Guardar Variantes
                             </Button>
@@ -252,7 +252,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                className="h-9 px-4 text-[10px] font-black uppercase tracking-widest"
+                                className="h-9 px-4 text-3xs font-medium uppercase tracking-widest"
                                 onClick={() => setSelectedVariantIds([])}
                             >
                                 <X className="h-3.5 w-3.5 mr-2" />
@@ -262,13 +262,13 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                                 type="submit"
                                 form="quick-edit-form"
                                 size="sm"
-                                className="h-9 px-5 text-[10px] font-black uppercase tracking-widest bg-primary text-primary-foreground hover:scale-[1.02]"
+                                className="h-9 px-5 text-3xs font-medium uppercase tracking-widest bg-primary text-primary-foreground hover:scale-[1.02]"
                             >
                                 Guardar Variante
                             </Button>
                         </>
                     ) : (
-                        <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                        <div className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">
                             {variants.length} variantes
                         </div>
                     )}
@@ -356,7 +356,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                                                     v.mfg_auto_finalize ? (
                                                         <Chip intent="destructive">SIN LDM</Chip>
                                                     ) : (
-                                                        <span className="text-[9px] text-muted-foreground/40 font-bold">-</span>
+                                                        <span className="text-4xs text-muted-foreground/40 font-bold">-</span>
                                                     )
                                                 )}
                                             </TableCell>
@@ -474,7 +474,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                             <div className="shrink-0 pt-4 mt-4">
                                 <Button
                                     type="button"
-                                    className="w-full rounded-md font-black uppercase tracking-widest text-[11px] shadow-elevated bg-primary hover:bg-primary/90 text-primary-foreground transition-all hover:scale-[1.01] active:scale-[0.98]"
+                                    className="w-full rounded-md font-medium uppercase tracking-widest text-2xs shadow-elevated bg-primary hover:bg-primary/90 text-primary-foreground transition-all hover:scale-[1.01] active:scale-[0.98]"
                                     onClick={handleGenerateVariants}
                                     disabled={isGenerating || availableAttributes.length === 0}
                                 >
@@ -484,7 +484,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
 
                                 {!initialData?.id && (
                                     <div className="mt-4 p-3 bg-warning/10 border border-warning/20 rounded-md">
-                                        <p className="text-[10px] text-warning text-center font-black uppercase tracking-tighter italic">
+                                        <p className="text-3xs text-warning text-center font-bold uppercase tracking-tighter italic">
                                             * Las variantes se crearán automáticamente al guardar la ficha principal del producto.
                                         </p>
                                     </div>
