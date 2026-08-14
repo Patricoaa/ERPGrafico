@@ -48,7 +48,7 @@ Fuente: `wc -l` + conteo de entry points (def/class) por archivo, `grep @action`
 
 ## §1. Metodología y glosario
 
-Convenciones arriba; el diseño de la auditoría se aprobó previamente y no se conserva en el repo (esta sección es la referencia durable). Trabajo resuelto: el aging de `contacts/selectors.py:146-205` es **Θ(C+O) round-trips / Θ(C+O+P) row-scan** (N+1 en dos niveles, **lineal en la suma**, no Θ(C×O×P)); `results[:limit]` es un slice posterior al trabajo (no límite duro). Para walks de árbol donde cada nodo consulta su subárbol: Σ(tamaños de subárbol) = O(n×depth), peor O(n²) en cadena (`finances`).
+Convenciones arriba; el diseño de la auditoría se aprobó previamente y no se conserva en el repo (esta sección es la referencia durable). Trabajo resuelto: el aging de `contacts/selectors.py:146-205` es **Θ(C+O) round-trips / Θ(C+O+P) row-scan** (N+1 en dos niveles, **lineal en la suma**, no Θ(C×O×P)); `results[:limit]` es un slice posterior al trabajo (no límite duro). Para walks de árbol donde cada nodo consulta su subárbol: Σ(tamaños de subárbol) = O(n×depth), peor O(n²) en cadena (`finances`) — resuelto en P1-6 con pase único en memoria (chart 1 query + balances preagregados + agregador memoizado).
 
 ## §2. Mapa por entry point
 
@@ -58,19 +58,19 @@ Formato de fila: `clave (archivo:línea) | n | bounded-ness | round-trips | row-
 
 | Entry point | n | bounded-ness | round-trips | row-scan | clase | remediación |
 |---|---|---|---|---|---|---|
-| `contacts/selectors.py:117` `customer_aging_report` | C+O+P (toda la cartera) | unbounded | Θ(C+O) | Θ(C+O+P) | Θ(n) | bucketizar saldo en SQL (Subquery Sum) y `LIMIT 20` en la query |
-| `contacts/selectors.py:208` `supplier_aging_report` | C+O+P | unbounded | Θ(C+O) | Θ(C+O+P) | Θ(n) | idem customer_aging |
-| `contacts/selectors.py:318` `get_credit_portfolio_data` | C+ΣO+ΣP | unbounded (cache 120s solo aplaza) | Θ(C+ΣO+ΣP) ×2-3 | Θ(C+O+P) | Θ(n) | annotations (Subquery Sum) + prefetch + devolver páginas |
+| `contacts/selectors.py:117` `customer_aging_report` | C+O+P (toda la cartera) | unbounded | Θ(C+O) | Θ(C+O+P) | Θ(n) | ✅ P1-5: prefetch de órdenes+items+payments + bucketización por bucket en Python; `LIMIT 20` tras bucketizar (SaleOrder.effective_total es property Python → slice posterior al trabajo, no límite duro) |
+| `contacts/selectors.py:208` `supplier_aging_report` | C+O+P | unbounded | Θ(C+O) | Θ(C+O+P) | Θ(n) | ✅ P1-5: idem customer_aging (prefetch + buckets compartidos) |
+| `contacts/selectors.py:318` `get_credit_portfolio_data` | C+ΣO+ΣP | unbounded (cache 120s solo aplaza) | Θ(C+ΣO+ΣP) ×2-3 | Θ(C+O+P) | Θ(n) | ✅ P1-5: annotations Subquery Sum + prefetch + paginación estándar; `credit_balance_used` cuantizado salvo blacklist (compat) |
 | `contacts/selectors.py:423` `get_credit_ledger` | O (órdenes del contacto, sin tope) | unbounded | Θ(O) | Θ(O+P) | Θ(n) | annotate paid/pending + Prefetch('payments') + paginar |
 | `contacts/selectors.py:512` `get_credit_history` | H×L×B | unbounded | Θ(H×k) | Θ(H×L×B) | Θ(n) | paginar + queryset base con prefetches + serializer ligero |
 | `contacts/selectors.py:573` `get_partner_statement` | T | unbounded | Θ(T×2)+~10 | Θ(T) | Θ(n) | select_related('journal_entry','created_by') + annotate summary |
 | `contacts/views.py:71,77,149,155,164` `customers/suppliers/partners/partner_statement/partners_summary` | C/S/P | unbounded | Θ(n × 2-20 aggregates) | Θ(n) | Θ(n) | paginar + serializers ligeros con annotations |
-| `finances/services.py:72` `_get_aggregated_balance` | nodos×depth | unbounded | Θ(nodos) | O(n×depth) peor O(n²) | Θ(n×depth) | CTE `WITH RECURSIVE` o pase único en memoria |
-| `finances/services.py:103` `build_account_tree` | nodos×depth, k roots | unbounded | Θ(n×depth) | O(n×depth) | Θ(n×depth) | 1 query de accounts con parent + memoizar balance por nodo + GROUP BY account_id |
-| `finances/services.py:211,299,415,675,791` `get_balance_sheet/income_statement/cash_flow/financial_analysis/trial_balance` | árbol×I+E/J | unbounded | 3-6×build_account_tree + Θ(A) | Θ(J) | Θ(n×depth) | precomputar balances por cuenta una vez; trial balance con 1 GROUP BY condicional |
+| `finances/services.py:72` `_get_aggregated_balance` | nodos×depth | unbounded | Θ(nodos) | O(n×depth) peor O(n²) | Θ(n×depth) | ✅ P1-6: pase único en memoria (`_leaf_balance_map` + `_make_aggregator` memoizado, 0 queries) |
+| `finances/services.py:103` `build_account_tree` | nodos×depth, k roots | unbounded | Θ(n×depth) | O(n×depth) | Θ(n×depth) | ✅ P1-6: chart en 1 query + balances preagregados + agregador memoizado; categorías resueltas en memoria (vivo con herencia, fiscal sin herencia) |
+| `finances/services.py:211,299,415,675,791` `get_balance_sheet/income_statement/cash_flow/financial_analysis/trial_balance` | árbol×I+E/J | unbounded | 3-6×build_account_tree + Θ(A) | Θ(J) | Θ(n×depth) | ✅ P1-6: reportes comparten chart/balances preagregados (7/9/20/3/18 queries vs 475/416/595/27/893); trial balance con 2 GROUP BY agrupados |
 | `finances/bi_analytics.py:13` `get_bi_analytics` | P productos | unbounded | Θ(P) | Θ(StockMove por producto) | Θ(P) | 1 GROUP BY product_id en StockMove |
 | `finances/tasks.py:24` `generate_report_task` | árbol/A/P | unbounded (sin cap, sin chunking) | Θ(n×depth) | Θ(J) | Θ(n×depth) | chunking por período o preagregación |
-| `tax/selectors.py:18` + `tax/views.py:142` `get_declaration_documents`/`documents` | I_month (4-8k invoices) | unbounded | 1 + Θ(I) (InvoiceSerializer con ~10 SMF con ORM) | Θ(I) + N+1 profundo | Θ(n) const. altísima | serializador ligero plano + prefetch completo, o export paginado — **peor entry point del repo** |
+| `tax/selectors.py:18` + `tax/views.py:142` `get_declaration_documents`/`documents` | I_month (4-8k invoices) | unbounded | 1 + Θ(I) (InvoiceSerializer con ~10 SMF con ORM) | Θ(I) + N+1 profundo | Θ(n) const. altísima | ✅ P1-4: paginación estándar + queryset con `select_related`/`prefetch` (fix `closed_by` pre-existente); el export de toda la serie queda paginado |
 | `tax/services.py:23` `calculate_f29_for_period` | I_month + J | unbounded | ~6-7 | Θ(I) + 2 scans full-history | Θ(n) | SQL aggregates (values().annotate) + 1 query carryforward SUM(CASE) |
 | `accounting/selectors.py:63` + `accounting/views.py:118` `get_account_ledger`/`ledger` | items del account | unbounded | 2+P (partner N+1) | Θ(histórico) | Θ(n) | paginar + select_related('partner') + saldo en window-function |
 | `accounting/services.py:1599` `get_variance_report` | J_año + A cuentas | unbounded | 6 + Θ(A) | Θ(J) + scans por cuenta | Θ(J+A) | accounts prefetch en memoria (0 queries por nodo) + mantener agregados SQL |
