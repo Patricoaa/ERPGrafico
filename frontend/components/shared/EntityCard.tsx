@@ -81,7 +81,7 @@ function EntityCardRoot({
                     }
                 }}
                 className={cn(
-                    "card-flat border-border/40 hover:border-border/60 group flex flex-col relative transition-all duration-300",
+                    "card-flat border-border group flex flex-col relative transition-all duration-300",
                     variant === "compact" ? "gap-1.5 p-3" : "gap-3 p-4",
                     isSelected && "accent-visible",
                     checked && "border-primary/40 bg-primary/5 shadow-sm",
@@ -567,15 +567,15 @@ const METRIC_VARIANT_CLASSES: Record<MetricVariant, string> = {
 
 function EntityCardMetrics({ metrics, defaultVariant = 'default', className }: EntityCardMetricsProps) {
     return (
-        <div className={cn("flex items-stretch gap-px border-t border-border mt-1", className)}>
+        <div className={cn("flex items-stretch justify-start gap-px border-t border-border mt-1", className)}>
             {metrics.map((item, idx) => {
                 const variant = item.variant ?? defaultVariant
                 return (
                     <div
                         key={idx}
                         className={cn(
-                            "flex-1 flex flex-col gap-0.5 px-4 py-2",
-                            "relative after:absolute after:inset-y-1 after:right-0 after:w-px after:bg-border/50 last:after:hidden"
+                            "shrink-0 flex flex-col gap-0.5 px-4 py-2",
+                            "relative after:absolute after:inset-y-1 after:right-0 after:w-px after:bg-border last:after:hidden"
                         )}
                     >
                         {item.icon && (

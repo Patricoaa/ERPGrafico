@@ -484,9 +484,13 @@
  * Apply via className="card-base".
  */
 @utility card-base {
-  @apply relative overflow-hidden rounded-md border border-border/15 bg-card outline-none transition-all;
-  @apply hover:border-border/30 hover:shadow-elevated;
+  @apply relative overflow-hidden rounded-md border border-border bg-card outline-none transition-all;
+  @apply hover:bg-muted/30 hover:shadow-elevated;
   @apply focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+
+  &:hover {
+    border-color: oklch(var(--border-raw) / 0.3);
+  }
 }
 
 /*
@@ -499,9 +503,13 @@
  * `border`/`shadow-none` to override deterministically.
  */
 @utility card-flat {
-  @apply relative overflow-hidden rounded-sm border border-border/40 bg-card text-foreground shadow-none outline-none transition-all;
-  @apply hover:border-border/60 hover:bg-muted/30;
+  @apply relative overflow-hidden rounded-sm border border-border bg-card text-foreground shadow-none outline-none transition-all;
+  @apply hover:bg-muted/30;
   @apply focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+
+  &:hover {
+    border-color: oklch(var(--border-raw) / 0.3);
+  }
 }
 
 /*
