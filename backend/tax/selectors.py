@@ -15,12 +15,23 @@ class TaxSelectorExt:
         }
 
     @staticmethod
-    def get_declaration_documents(declaration):
+    def get_declaration_documents_queryset(declaration):
         from datetime import date
-        from billing.serializers import InvoiceSerializer
         from billing.models import Invoice
         p = declaration.tax_period
         sd = date(p.year, p.month, 1)
         ed = date(p.year + 1, 1, 1) if p.month == 12 else date(p.year, p.month + 1, 1)
-        invoices = Invoice.objects.filter(date__gte=sd, date__lt=ed, status=Invoice.Status.POSTED).order_by('date', 'id')
-        return InvoiceSerializer(invoices, many=True).data
+        return (
+            Invoice.objects.filter(date__gte=sd, date__lt=ed, status=Invoice.Status.POSTED)
+            .select_related(
+                "contact",
+                "sale_order__customer",
+                "purchase_order__supplier",
+                "journal_entry",
+            )
+            .prefetch_related(
+                "payments",
+                "payment_allocations",
+            )
+            .order_by("date", "id")
+        )
