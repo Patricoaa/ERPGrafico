@@ -1,8 +1,10 @@
 from django.db.models import (
     BooleanField,
+    Case,
     Count,
     DecimalField,
     Exists,
+    F,
     IntegerField,
     OuterRef,
     Prefetch,
@@ -11,6 +13,7 @@ from django.db.models import (
     Subquery,
     Sum,
     Value,
+    When,
 )
 from django.db.models.functions import Coalesce
 
@@ -209,7 +212,7 @@ def get_stock_report_data(warehouse_id: int | None = None) -> list[dict]:
 
     from django.db.models import Q
 
-    from inventory.services import UoMService
+    from inventory.services import ProductService, UoMService
 
     products = Product.objects.filter(
         Q(product_type__in=[Product.Type.STORABLE, Product.Type.CONSUMABLE])
@@ -221,35 +224,86 @@ def get_stock_report_data(warehouse_id: int | None = None) -> list[dict]:
         )
     ).select_related("category", "uom")
 
+    ProductService.bulk_annotate_reserved_qty(products)
+
+    from .models import Stock, StockMove, UoM
+
+    product_ids = [p.id for p in products]
+
+    uom_cache: dict[tuple[int, Decimal], list[UoM]] = {}
+
+    def preloaded_smaller_uoms(uom: UoM) -> list[UoM]:
+        key = (uom.category_id, uom.ratio)
+        cached = uom_cache.get(key)
+        if cached is None:
+            cached = list(
+                UoM.objects.filter(
+                    category_id=uom.category_id, ratio__lt=uom.ratio, is_active=True
+                ).order_by("-ratio")
+            )
+            uom_cache[key] = cached
+        return cached
+
+    stock_qs = Stock.objects.filter(product_id__in=product_ids)
+    moves_qs = StockMove.objects.filter(product_id__in=product_ids)
+    if warehouse_id:
+        stock_qs = stock_qs.filter(warehouse_id=warehouse_id)
+        moves_qs = moves_qs.filter(
+            Q(source_location__warehouse_id=warehouse_id)
+            | Q(destination_location__warehouse_id=warehouse_id)
+        )
+
+    stock_map = {
+        row["product_id"]: row["total"]
+        for row in stock_qs.values("product_id").annotate(total=Sum("quantity"))
+    }
+    moves_map = {
+        row["product_id"]: row
+        for row in moves_qs.values("product_id").annotate(
+            moves_in=Sum(
+                Case(When(quantity__gt=0, then=F("quantity")), default=Value(0), output_field=DecimalField())
+            ),
+            moves_out=Sum(
+                Case(When(quantity__lt=0, then=F("quantity")), default=Value(0), output_field=DecimalField())
+            ),
+        )
+    }
+
     report = []
     for p in products:
-        if warehouse_id:
-            stocks_qs = p.stocks.filter(warehouse_id=warehouse_id)
-            moves_qs = p.stock_moves.filter(
-                Q(source_location__warehouse_id=warehouse_id) |
-                Q(destination_location__warehouse_id=warehouse_id)
-            )
-            moves_in_qs = moves_qs.filter(quantity__gt=0)
-            moves_out_qs = moves_qs.filter(quantity__lt=0)
-        else:
-            stocks_qs = p.stocks.all()
-            moves_qs = p.stock_moves.all()
-            moves_in_qs = p.stock_moves.filter(quantity__gt=0)
-            moves_out_qs = p.stock_moves.filter(quantity__lt=0)
+        stock_qty = stock_map.get(p.id, Decimal("0")) or Decimal("0")
+        moves_row = moves_map.get(p.id, {})
+        moves_in = moves_row.get("moves_in") or Decimal("0")
+        moves_out = abs(moves_row.get("moves_out") or Decimal("0"))
 
-        stock_qty = stocks_qs.aggregate(total=Sum("quantity"))["total"] or 0
-        moves_in = moves_in_qs.aggregate(total=Sum("quantity"))["total"] or 0
-        moves_out = abs(moves_out_qs.aggregate(total=Sum("quantity"))["total"] or 0)
-
-        qty_reserved = float(p.qty_reserved)
+        qty_reserved = float(p.annotated_qty_reserved or Decimal("0"))
         unit_cost = float(p.cost_price) if stock_qty > 0 else 0.0
         total_value = float(stock_qty * Decimal(str(unit_cost)))
         qty_available = float(stock_qty) - qty_reserved
 
         uom = p.uom
-        uom_display_stock = UoMService.format_quantity_display(Decimal(str(stock_qty)), uom) if uom else ""
-        uom_display_reserved = UoMService.format_quantity_display(Decimal(str(qty_reserved)), uom) if uom else ""
-        uom_display_available = UoMService.format_quantity_display(Decimal(str(qty_available)), uom) if uom else ""
+        preloaded_smaller = preloaded_smaller_uoms(uom) if uom else None
+        uom_display_stock = (
+            UoMService.format_quantity_display(
+                Decimal(str(stock_qty)), uom, preloaded_smaller=preloaded_smaller
+            )
+            if uom
+            else ""
+        )
+        uom_display_reserved = (
+            UoMService.format_quantity_display(
+                Decimal(str(qty_reserved)), uom, preloaded_smaller=preloaded_smaller
+            )
+            if uom
+            else ""
+        )
+        uom_display_available = (
+            UoMService.format_quantity_display(
+                Decimal(str(qty_available)), uom, preloaded_smaller=preloaded_smaller
+            )
+            if uom
+            else ""
+        )
 
         report.append(
             {

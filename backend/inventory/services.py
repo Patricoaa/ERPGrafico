@@ -971,7 +971,9 @@ class UoMService:
             )
 
     @staticmethod
-    def get_smart_display_uom(qty: Decimal, base_uom: UoM) -> Tuple[Decimal, UoM]:
+    def get_smart_display_uom(
+        qty: Decimal, base_uom: UoM, preloaded_smaller: list | None = None
+    ) -> Tuple[Decimal, UoM]:
         """
         Determina la mejor UoM para mostrar una cantidad.
 
@@ -983,6 +985,8 @@ class UoMService:
         Args:
             qty: Cantidad en unidad base
             base_uom: UoM base del producto
+            preloaded_smaller: Lista pre-cargada de UoMs más pequeñas (orden desc por ratio)
+                para evitar N+1 en reportes; si es None se consulta la BD.
 
         Returns:
             Tupla (cantidad_convertida, uom_display)
@@ -998,9 +1002,12 @@ class UoMService:
             return (qty, base_uom)
 
         # Buscar UoMs más pequeños de la misma categoría
-        smaller_uoms = UoM.objects.filter(
-            category=base_uom.category, ratio__lt=base_uom.ratio, is_active=True
-        ).order_by("-ratio")  # De mayor a menor (más cercano a base primero)
+        if preloaded_smaller is not None:
+            smaller_uoms = preloaded_smaller
+        else:
+            smaller_uoms = UoM.objects.filter(
+                category=base_uom.category, ratio__lt=base_uom.ratio, is_active=True
+            ).order_by("-ratio")  # De mayor a menor (más cercano a base primero)
 
         for smaller_uom in smaller_uoms:
             try:
@@ -1015,7 +1022,12 @@ class UoMService:
         return (qty, base_uom)
 
     @staticmethod
-    def format_quantity_display(qty: Decimal, base_uom: UoM, smart_convert: bool = True) -> str:
+    def format_quantity_display(
+        qty: Decimal,
+        base_uom: UoM,
+        smart_convert: bool = True,
+        preloaded_smaller: list | None = None,
+    ) -> str:
         """
         Formatea cantidad con unidad para display.
 
@@ -1026,6 +1038,7 @@ class UoMService:
             qty: Cantidad en unidad base
             base_uom: UoM base del producto
             smart_convert: Si True, convierte cantidades < 1 a unidad menor
+            preloaded_smaller: Lista pre-cargada de UoMs más pequeñas (evita N+1)
 
         Returns:
             String formateado con cantidad y unidad
@@ -1039,7 +1052,9 @@ class UoMService:
             '0.5 kg'
         """
         if smart_convert and qty < 1:
-            display_qty, display_uom = UoMService.get_smart_display_uom(qty, base_uom)
+            display_qty, display_uom = UoMService.get_smart_display_uom(
+                qty, base_uom, preloaded_smaller=preloaded_smaller
+            )
         else:
             display_qty, display_uom = qty, base_uom
 
@@ -1696,27 +1711,95 @@ class ProductService:
     @staticmethod
     def check_availability(lines: list) -> dict:
         from decimal import Decimal
-        from inventory.models import Product, UoM
+
+        from django.db.models import Prefetch, Sum
+
+        from inventory.models import Product, Stock, UoM
+
+        parsed = []
+        product_ids = []
+        uom_ids = []
+        for line in lines:
+            try:
+                product_id = int(line.get("product_id"))
+            except (TypeError, ValueError):
+                continue
+            uom_id = line.get("uom_id")
+            if uom_id is not None:
+                try:
+                    uom_id = int(uom_id)
+                except (TypeError, ValueError):
+                    uom_id = None
+            if uom_id:
+                uom_ids.append(uom_id)
+            product_ids.append(product_id)
+            parsed.append((product_id, Decimal(str(line.get("quantity", 0))), uom_id))
 
         details = []
         all_available = True
+        if not parsed:
+            return {"available": all_available, "details": details}
 
-        for line in lines:
-            product_id = line.get("product_id")
-            requested_qty = Decimal(str(line.get("quantity", 0)))
-            uom_id = line.get("uom_id")
+        from production.models import BillOfMaterials
 
-            try:
-                product = Product.objects.get(pk=product_id)
-            except Product.DoesNotExist:
+        products_qs = Product.objects.filter(id__in=product_ids).prefetch_related(
+            Prefetch(
+                "boms",
+                queryset=BillOfMaterials.objects.filter(active=True).prefetch_related(
+                    "lines__component", "lines__component__uom", "lines__uom"
+                ),
+            )
+        )
+        products_by_id = {p.id: p for p in products_qs}
+        uoms_by_id = {u.id: u for u in UoM.objects.filter(id__in=uom_ids)} if uom_ids else {}
+
+        components = []
+        seen_component_ids = set()
+        for product in products_by_id.values():
+            if not (product.strategy.can_have_bom and product.has_bom):
+                continue
+            active_bom = next((b for b in product.boms.all() if b.active), None)
+            if active_bom is None:
+                continue
+            for line_item in active_bom.lines.all():
+                comp_product = line_item.component
+                if comp_product is not None and comp_product.id not in seen_component_ids:
+                    components.append(comp_product)
+                    seen_component_ids.add(comp_product.id)
+
+        annotate_products = []
+        annotated_ids = set()
+        for product in products_by_id.values():
+            if product.strategy.tracks_inventory:
+                annotate_products.append(product)
+                annotated_ids.add(product.id)
+        for comp_product in components:
+            if comp_product.id not in annotated_ids:
+                annotate_products.append(comp_product)
+                annotated_ids.add(comp_product.id)
+
+        if annotate_products:
+            ProductService.bulk_annotate_reserved_qty(annotate_products)
+            stock_map = {
+                row["product_id"]: row["total"]
+                for row in Stock.objects.filter(product_id__in=annotated_ids)
+                .values("product_id")
+                .annotate(total=Sum("quantity"))
+            }
+            for annotate_product in annotate_products:
+                annotate_product.annotated_current_stock = stock_map.get(
+                    annotate_product.id, Decimal("0")
+                )
+
+        for product_id, requested_qty, uom_id in parsed:
+            product = products_by_id.get(product_id)
+            if product is None:
                 continue
 
             if uom_id and product.uom_id != uom_id:
-                try:
-                    uom = UoM.objects.get(pk=uom_id)
+                uom = uoms_by_id.get(uom_id)
+                if uom is not None:
                     requested_qty = requested_qty * uom.ratio
-                except UoM.DoesNotExist:
-                    pass
 
             line_detail = {
                 "product_id": product.id,
@@ -1728,20 +1811,23 @@ class ProductService:
 
             if product.strategy.can_have_bom:
                 if product.has_bom:
-                    manufacturable_qty = product.manufacturable_quantity or 0
+                    manufacturable_qty = product.get_manufacturable_quantity() or 0
                     line_detail["manufacturable_qty"] = float(manufacturable_qty)
                     line_detail["is_available"] = requested_qty <= manufacturable_qty
 
                     if not line_detail["is_available"]:
                         all_available = False
 
-                        from production.models import BillOfMaterials
-                        try:
-                            bom = BillOfMaterials.objects.get(product=product, active=True)
-                            for component in bom.components.all():
-                                comp_product = component.component
-                                required_qty = component.quantity * requested_qty
-                                available_qty = comp_product.qty_available
+                        active_bom = next((b for b in product.boms.all() if b.active), None)
+                        if active_bom is not None:
+                            for line_item in active_bom.lines.all():
+                                comp_product = line_item.component
+                                if comp_product is None:
+                                    continue
+                                required_qty = float(line_item.quantity) * float(requested_qty)
+                                available_qty = float(
+                                    comp_product.annotated_current_stock or 0
+                                ) - float(comp_product.annotated_qty_reserved or 0)
 
                                 if required_qty > available_qty:
                                     line_detail["missing_components"].append(
@@ -1753,11 +1839,11 @@ class ProductService:
                                             "missing_qty": float(required_qty - available_qty),
                                         }
                                     )
-                        except BillOfMaterials.DoesNotExist:
-                            pass
 
             elif product.strategy.tracks_inventory:
-                available_qty = product.qty_available
+                available_qty = float(
+                    getattr(product, "annotated_current_stock", None) or 0
+                ) - float(getattr(product, "annotated_qty_reserved", None) or 0)
                 line_detail["available_qty"] = float(available_qty)
                 line_detail["is_available"] = requested_qty <= available_qty
 
