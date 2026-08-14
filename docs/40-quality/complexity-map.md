@@ -8,7 +8,7 @@ last_review: 2026-08-13
 
 # Mapa de complejidad (Big O)
 
-Auditoría estática exhaustiva de complejidad asintótica por entry point. Generado según el diseño aprobado en `.opencode/plans/big-o-performance-audit-design-20260813.md` (branch `feat--big-o-complexity-audit`).
+Auditoría estática exhaustiva de complejidad asintótica por entry point, generada desde la rama `feat--big-o-complexity-audit`. Metodología y convenciones en §1.
 
 **Last verified commit**: `3fb69cfcc` (0.3.1)
 
@@ -48,7 +48,7 @@ Fuente: `wc -l` + conteo de entry points (def/class) por archivo, `grep @action`
 
 ## §1. Metodología y glosario
 
-Ver `.opencode/plans/big-o-performance-audit-design-20260813.md` §1; convenciones arriba. Trabajo resuelto: el aging de `contacts/selectors.py:146-205` es **Θ(C+O) round-trips / Θ(C+O+P) row-scan** (N+1 en dos niveles, **lineal en la suma**, no Θ(C×O×P)); `results[:limit]` es un slice posterior al trabajo (no límite duro). Para walks de árbol donde cada nodo consulta su subárbol: Σ(tamaños de subárbol) = O(n×depth), peor O(n²) en cadena (`finances`).
+Convenciones arriba; el diseño de la auditoría se aprobó previamente y no se conserva en el repo (esta sección es la referencia durable). Trabajo resuelto: el aging de `contacts/selectors.py:146-205` es **Θ(C+O) round-trips / Θ(C+O+P) row-scan** (N+1 en dos niveles, **lineal en la suma**, no Θ(C×O×P)); `results[:limit]` es un slice posterior al trabajo (no límite duro). Para walks de árbol donde cada nodo consulta su subárbol: Σ(tamaños de subárbol) = O(n×depth), peor O(n²) en cadena (`finances`).
 
 ## §2. Mapa por entry point
 
@@ -228,7 +228,7 @@ Prioridad = riesgo × radio de impacto (riesgo {bajo,medio,alto} = clase × boun
 14. page_size obsoletos (`inventoryApi.ts:130` 9999, `useProducts.ts:76` 500) — iteración vieja confirmada.
 15. Accounting list_accounts (materializar totales), audit log clamp.
 
-**Issues a abrir**: 1 por ítem P0-P1 (15 issues). El mapa en sí no cambia contratos; subir el cap 200 o paginar un @action requiere ADR (invariant 12).
+**Issues a abrir**: 1 por ítem (15 issues, P0-P3). El mapa en sí no cambia contratos; subir el cap 200 o paginar un @action requiere ADR (invariant 12).
 
 ## Nota de mantenimiento
 
