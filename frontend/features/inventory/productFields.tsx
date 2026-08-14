@@ -64,7 +64,7 @@ export const productFields = createEntityFields<Product>()({
     },
 }, {
     subtitle: {
-        excludeKeys: ['name', 'availability'],
+        excludeKeys: ['name', 'can_be_sold'],
         renderer: (p): SubtitleItem[] => {
             const items: SubtitleItem[] = []
             if (p.name) items.push({ kind: 'text', content: p.name })
