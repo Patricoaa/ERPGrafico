@@ -120,6 +120,14 @@ Before considering a task complete:
 
 Detail: [docs/00-context/stack-decisions.md](docs/00-context/stack-decisions.md).
 
+## Health Stack
+
+- typecheck: tsc --noEmit (frontend)
+- lint: eslint . (frontend) | ruff check backend (backend)
+- test: npm run test -- frontend (vitest) | pytest (backend)
+- deadcode: n/a
+- shell: n/a
+
 ## Common commands
 
 ### Dev setup — hybrid mode (recommended on Windows)
