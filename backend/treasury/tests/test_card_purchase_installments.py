@@ -55,6 +55,7 @@ def _make_env():
         name="Visa",
         account=card_acc,
         account_type=TreasuryAccount.Type.CREDIT_CARD,
+        card_number="4111111111111111",
     )
     from contacts.models import Contact
 

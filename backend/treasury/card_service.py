@@ -47,6 +47,7 @@ from .models import (
     TreasuryAccount,
     TreasuryMovement,
 )
+from accounting.glosa_builder import GlosaBuilder, Roles
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
@@ -502,6 +503,7 @@ class CardService:
                     JournalEntryService.reverse_entry(
                         old_movement.journal_entry,
                         description=(f"REVERSO cargos {statement.display_id} (reaplicación)"),
+                        allow_automatic=True,
                     )
                 except ValidationError:
                     # Si ya estaba revertido, no es error: limpiamos igual.
@@ -787,6 +789,7 @@ class CardService:
                         description=(
                             f"REVERSO cargos {statement.display_id} (anulación de statement)"
                         ),
+                        allow_automatic=True,
                     )
                     reversal_lines.append(f"Cargos {old_charges_mv.display_id} reversados")
                 except ValidationError:
@@ -820,6 +823,7 @@ class CardService:
                         description=(
                             f"REVERSO pago {statement.display_id} (anulación de statement)"
                         ),
+                        allow_automatic=True,
                     )
                     reversal_lines.append(f"Pago {old_payment_mv.display_id} reversado")
                 except ValidationError:
@@ -852,6 +856,7 @@ class CardService:
                     description=(
                         f"REVERSO facturación {statement.display_id} (anulación de statement)"
                     ),
+                    allow_automatic=True,
                 )
                 reversal_lines.append(f"Facturación {statement.display_id} reversada")
             except ValidationError:

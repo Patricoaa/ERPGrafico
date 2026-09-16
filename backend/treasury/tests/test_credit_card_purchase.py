@@ -51,6 +51,7 @@ def fixture(db):
         name="Visa Empresa",
         account=card_acc,
         account_type=TreasuryAccount.Type.CREDIT_CARD,
+        card_number="4111111111111111",
         bank=bank,
     )
 

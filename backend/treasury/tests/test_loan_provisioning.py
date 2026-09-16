@@ -117,6 +117,7 @@ def test_rejects_account_already_used_by_other_type(bank, liability):
         account=liability,
         bank=bank,
         account_type=TreasuryAccount.Type.CREDIT_CARD,
+        card_number="4111111111111111",
     )
     with pytest.raises(ValidationError):
         get_or_create_loan_treasury_account(

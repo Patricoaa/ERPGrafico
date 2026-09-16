@@ -542,6 +542,7 @@ def test_create_loan_rejects_liability_account_already_used_by_other_type(
         account=liability_accounting,
         bank=bank,
         account_type=TreasuryAccount.Type.CREDIT_CARD,
+        card_number="4111111111111111",
     )
     resp = auth_client.post(
         "/api/treasury/loans/",

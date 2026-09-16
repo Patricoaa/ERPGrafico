@@ -58,6 +58,7 @@ def env(db):
         name="Visa Val",
         account=card_acc,
         account_type=TreasuryAccount.Type.CREDIT_CARD,
+        card_number="4111111111111111",
         bank=bank,
     )
 
@@ -112,6 +113,7 @@ def test_pay_statement_rejects_credit_card_as_payment(env):
         name="Mastercard",
         account=other_card_acc,
         account_type=TreasuryAccount.Type.CREDIT_CARD,
+        card_number="4111111111111111",
         bank=env["bank"],
     )
     stmt = _open(env, billed=Decimal("100000"))

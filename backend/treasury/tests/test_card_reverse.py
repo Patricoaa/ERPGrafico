@@ -57,6 +57,7 @@ def _env_setup():
         name="Visa",
         account=card_acc,
         account_type=TreasuryAccount.Type.CREDIT_CARD,
+        card_number="4111111111111111",
     )
     card_ta_liability = card_ta.account  # pasivo asociado
 

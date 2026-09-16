@@ -54,6 +54,7 @@ def card_account(db, bank):
         account=liability,
         bank=bank,
         account_type=TreasuryAccount.Type.CREDIT_CARD,
+        card_number="4111111111111111",
     )
 
 

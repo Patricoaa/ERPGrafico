@@ -55,6 +55,7 @@ def env(db):
         name="Visa Empresa",
         account=card_acc,
         account_type=TreasuryAccount.Type.CREDIT_CARD,
+        card_number="4111111111111111",
         bank=bank,
     )
 
@@ -65,6 +66,22 @@ def env(db):
     fees_exp = Account.objects.create(
         name="Comisiones Tarjeta", code="5.2.01.002", account_type=AccountType.EXPENSE
     )
+
+    # Contrapartidas globales (refactor P1: se resuelven desde settings).
+    ar_acc = Account.objects.create(
+        name="Deudores Comerciales", code="1.1.02.010", account_type=AccountType.ASSET
+    )
+    payable_acc = Account.objects.create(
+        name="Proveedores", code="2.1.01.010", account_type=AccountType.LIABILITY
+    )
+    from accounting.models import AccountingSettings
+
+    settings_obj, _ = AccountingSettings.objects.get_or_create()
+    settings_obj.default_receivable_account = ar_acc
+    settings_obj.default_payable_account = payable_acc
+    settings_obj.interest_expense_account = interest_exp
+    settings_obj.bank_commission_account = fees_exp
+    settings_obj.save()
 
     return {
         "user": user,

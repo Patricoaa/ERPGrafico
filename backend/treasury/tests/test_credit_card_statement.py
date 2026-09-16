@@ -30,6 +30,7 @@ def card_setup(db):
         name="Visa Empresa",
         account=card_acc,
         account_type=TreasuryAccount.Type.CREDIT_CARD,
+        card_number="4111111111111111",
         bank=bank,
     )
     return {"bank": bank, "card_acc": card_acc, "card_ta": card_ta}
@@ -95,6 +96,7 @@ def test_same_period_different_card_ok(card_setup):
         name="Mastercard",
         account=other_acc,
         account_type=TreasuryAccount.Type.CREDIT_CARD,
+        card_number="4111111111111111",
         bank=card_setup["bank"],
     )
     CreditCardStatement.objects.create(

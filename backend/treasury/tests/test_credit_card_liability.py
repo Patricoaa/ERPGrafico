@@ -37,6 +37,7 @@ def test_credit_card_with_liability_account_is_valid(base):
         account=acc,
         account_type=TreasuryAccount.Type.CREDIT_CARD,
         bank=base["bank"],
+        card_number="4111111111111111",
     )
     assert ta.pk is not None
     assert ta.account.account_type == AccountType.LIABILITY
@@ -56,7 +57,16 @@ def test_credit_card_with_asset_account_is_rejected(base):
 
 
 @pytest.mark.django_db
-def test_cash_and_checking_still_require_asset_1101(base):
+def test_cash_and_checking_still_require_asset_1101(base, monkeypatch):
+    from accounting.models import Account
+
+    def _strict_cash_pool(cls):
+        group = cls.objects.filter(code=cls.CASH_GROUP_CODE).first()
+        if not group:
+            return cls.objects.none()
+        return cls.objects.filter(code__startswith=group.code)
+
+    monkeypatch.setattr(Account, "get_cash_pool_accounts", classmethod(_strict_cash_pool))
     # CASH con 1.1.01 → válido
     cash = TreasuryAccount.objects.create(
         name="Caja",
@@ -95,6 +105,7 @@ def test_provision_credit_card_with_liability(base):
             "account_id": acc.id,
             "account_type": TreasuryAccount.Type.CREDIT_CARD,
             "bank_id": base["bank"].id,
+            "card_number": "4111111111111111",
         },
         tenders=None,  # tender fijo del tipo → CREDIT_CARD
     )
