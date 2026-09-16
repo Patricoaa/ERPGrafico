@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from billing.test_note_manual import test_complete_workflow
+from billing.tests.test_note_manual import test_complete_workflow
 
 
 class Command(BaseCommand):

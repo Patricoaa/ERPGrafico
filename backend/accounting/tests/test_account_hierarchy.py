@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
-from .models import Account, AccountingSettings, AccountType
+from ..models import Account, AccountingSettings, AccountType
 
 
 class AccountHierarchyTest(TestCase):
