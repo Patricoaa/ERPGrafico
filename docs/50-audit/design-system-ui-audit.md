@@ -188,18 +188,22 @@ Ningún refactor de estas fases reduce la jerarquía actual. Toda fase converge 
 
 Cada oleada debe preservar el arco emocional actual de la persona; se mide en pasos/taps no regresivos, no en líneas de código:
 
-| Oleada | Journey (paso clave) | Persona | No-regresión |
-|---|---|---|---|
-| F1 (tokens) | Cart → cobro → cierre | Cajera POS | 0 cambios de flujo; solo apariencia |
-| F2 (NumpadModal/bridge) | Validar folio en documento | Usuario de documentos | 0 taps extra al validar |
-| F3.7 `TerminalDrawer` | Terminal → ticket | Cajera POS | mismo número de pasos; éxito → cierre inmediato |
-| F3.8 `VariantPriceFields` | Editar variante → heredar precio | Inventarista | 1 sola superficie, sin diálogo extra |
-| F3.9 `FundJustificationStep` | Abrir/cerrar sesión → justificar | Cajera / admin POS | misma secuencia; búsqueda sin fricción |
-| F3.10 `OrderDetailDrawer` | Lista → detalle → imprimir | Vendedor | detalle legible en ≤1 clic |
-| F3·11 receipts/hooks | Imprimir ticket / justificar caja → buscar | Cajera / admin POS | mismo número de pasos; 0 stale por colisión de cache-key |
-| F4 `DataTable` family | Buscar → filtrar → leer | Analista | densidad preservada; 0 re-renders percibidos |
+| Oleada | Journey (paso clave) | Persona | Baseline e2e (pasos / taps) | Fuente |
+|---|---|---|---|---|
+| F1 (tokens) | Cart → cobro → cierre | Cajera POS | 1 / 1 por ruta (smoke; sin flujo multi-paso) | `pos-flow.spec.ts` (3 tests) |
+| F2 (NumpadModal/bridge) | Validar folio en documento | Usuario de documentos | 2 / 2 (abrir lista + botón crear); validación de folio sin cobertura | `sales-flow.spec.ts`, `purchase-flow.spec.ts` |
+| F3.7 `TerminalDrawer` | Terminal → ticket | Cajera POS | sin cobertura directa | — |
+| F3.8 `VariantPriceFields` | Editar variante → heredar precio | Inventarista | sin cobertura directa | — |
+| F3.9 `FundJustificationStep` | Abrir/cerrar sesión → justificar | Cajera / admin POS | sin cobertura directa (smoke POS) | `pos-flow.spec.ts` |
+| F3.10 `OrderDetailDrawer` | Lista → detalle → imprimir | Vendedor | sin cobertura directa | — |
+| F3·11 receipts/hooks | Imprimir ticket / justificar caja → buscar | Cajera / admin POS | sin cobertura directa | — |
+| F4 `DataTable` family | Buscar → filtrar → leer | Analista | 5 / 4 (canónico; idéntico en 14 tests) | `universal-search.spec.ts` |
+
+**Método (T10):** 1 tap = un `click` / `fill` / `press` / `keyboard.type` / `goto`; las aserciones (`expect`) no cuentan; `keyboard.type(q)` = 1 tap aunque emita N pulsaciones; el `goto` inicial del journey cuenta; login/`storageState` en `beforeEach` no cuenta. La cifra es falsable: si un refactor baja o sube estos números, el e2e correspondiente cambia.
 
 **Baselines (H6, eng review 2026-09-16):** la columna "No-regresión" es cualitativa hasta que **T10 fija la cifra base de pasos/taps por journey** (medida en F1, antes de cualquier refactor). A partir de ahí cada oleada verifica contra ese número, no contra "misma secuencia".
+
+**Limitación (T10, 2026-09-17):** los 5 e2e son smoke de rutas, no flujos multi-paso: `pos-flow` (1 tap/test), `fiscal-closing-flow` (4 tests de carga), `purchase-flow`/`sales-flow` (lista + botón crear), y solo `universal-search` ejercita un journey real (5/4). Por eso **6 de los 8 journeys de §8.1 quedan "sin cobertura directa"**: sus verify de T6/T7/T9 son falsables solo contra el smoke (0 rutas nuevas rotas), no contra un conteo de pasos. Cerrar esa brecha (tests de flujo reales) queda fuera de F1. Los refactors de F1 (tokens/animación/dead-code) son neutrales en flujo, así que la cifra sigue siendo la base pre-refactor.
 
 **§8.2 — Decisión de sabor: `LedgerDrawer` (resuelto 2026-09-16).**
 
@@ -301,10 +305,11 @@ Se mantiene la metáfora CMYK (Cargos/Debe=Cyan, Abonos/Haber=Magenta, Saldo Fin
   - Surfaced by: §8 F3·11, §5 (colisión de cache-key), §4.5; oleada que estaba huérfana (sin T) hasta eng review
   - Files: `components/shared/PrintableReceipt.tsx` vs `features/_shared/transaction-drawer/PrintableLayout.tsx` (ganador = el de 38 consumidores); `usePrintableDrawer`/`usePrintTransaction`/4 `useReactToPrint` raw → hook único; los 3 `useTreasuryAccounts`; familia `use*Search` → `createSearchHook`
   - Verify: **ADR de cache-key aprobado ANTES del merge** (`treasury_accounts` vs `["treasuryAccounts"]`); journey §8.1 F3·11 sin regresión vs baseline (T10); contrato de estados §4.5; type-check + lint
-- [ ] **T10 (P1, human: ~1h / CC: ~10min)** — Instrumentar baselines numéricos de journey (§8.1) antes de cualquier refactor
+- [x] **T10 (P1, human: ~1h / CC: ~10min)** — Instrumentar baselines numéricos de journey (§8.1) antes de cualquier refactor
   - Surfaced by: eng review 2026-09-16 (H6: los verify de T6/T7 no eran falsables)
   - Files: `docs/50-audit/design-system-ui-audit.md` (§8.1, columna de cifras base) + captura de los flujos de §8.1
   - Verify: cada journey de §8.1 tiene pasos/taps base anotados; T6/T7/T9 verifican contra esa cifra
+  - **Done 2026-09-17 (branch `docs/f1-journey-baselines`)**: §8.1 ahora tiene columna "Baseline e2e (pasos / taps)" + método de conteo explícito. Medido: `universal-search` = **5 pasos / 4 taps** (canónico, idéntico en los 14 tests); `pos-flow` = 1/1 por ruta (smoke); `sales-flow`/`purchase-flow` = 2/2 (lista + botón crear). **Hallazgo:** los e2e son smoke de rutas, no flujos multi-paso → **6 de 8 journeys sin cobertura directa** (queda anotado; cerrar la brecha queda fuera de F1). F1 es neutral en flujo, así que la cifra vale como base pre-refactor.
 
 ## NOT in scope (eng review 2026-09-16)
 
