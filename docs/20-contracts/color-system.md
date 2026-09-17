@@ -258,6 +258,20 @@ Current domain mapping — `payment_method` (`frontend/lib/badge-resolvers.ts`):
 
 Rules: Layer 1 chip intents are **fixed** across light/dark (they carry no `.dark` override — the inks do not adapt) and are **restricted to categorical chips** — never for workflow state (`StatusBadge` / `STATUS_MAP` stays semantic).
 
+### 4.6 Ledger Ink Metaphor (Layer 1 — ADR-0071)
+
+The ledger summary (`features/accounting/components/LedgerSummaryPanel.tsx`) renders the account figures in the printing-ink vocabulary — **Cargos (Debe) = Process Cyan**, **Abonos (Haber) = Process Magenta**, **Saldo Final = Process Yellow** — as an on-brand metaphor for a graphic-industry ERP. `Saldo Inicial` is neutral (`foreground`), **not** Process Black.
+
+Unlike §4.5 chips (identity only), the ink here *does* encode meaning, so it is a bounded carve-out:
+
+- **Ink lives on non-text carriers** — border (`border-{ink}/30`), tinted background (`bg-{ink}/10`, `bg-{ink}/20`) and the cue icon (`text-{ink}`).
+- **Label text uses `text-foreground`** — the fixed inks fail WCAG SC 1.4.3 as small text on light surfaces (cyan `2.5:1`, yellow `1.2:1`, magenta `4.2:1`).
+- **Cue icons are mandatory** (`ArrowUpRight` / `ArrowDownRight` / `Scale` / `Calculator`) so the distinction survives without color.
+- **Fixed across themes** — no `.dark` override (§5.1).
+- Enforced by `frontend/lib/__tests__/semantic-ink.test.ts` (explicit file allowlist).
+
+Never extend this metaphor to another surface without a new ADR.
+
 ---
 
 ## 5. Dark Mode Strategy
@@ -374,6 +388,7 @@ The following are authorized to use process colors (Layer 1), the chart palette,
 | `ColorBar.tsx` | CMYK printing process control strip | `var(--color-cyan)`, `var(--color-magenta)`, etc. |
 | Charts (recharts) | Categorical data-viz series | `var(--chart-1…6)` (§4.4) |
 | Categorical chips (`Chip.Category`) | Category identity — fixed inks (ADR-0064) | Layer 1 `BadgeIntent` (`cyan` / `magenta` / `yellow` / `black`) via `bg-{ink}/10 text-{ink} border-{ink}/20` (§4.5) |
+| `LedgerSummaryPanel.tsx` | Ledger ink metaphor — Debe/Haber/Saldo identity (ADR-0071) | Layer 1 `cyan` / `magenta` / `yellow` on border/tint/icon **only**; label text `text-foreground` (§4.6) |
 | Company branding settings | User-configurable brand colors stored as **data** | `primary_color` / `secondary_color` hex defaults |
 | `components/ui/*` overlays | Shadcn base primitives (Dialog/Sheet/AlertDialog) | stock `bg-black/{N}` scrim — do not modify (rule 22) |
 
@@ -411,6 +426,7 @@ The 3-layer form system uses a fixed set of color tokens (defined in `component-
 | PR checklist | `90-governance/pr-review-checklist.md` |
 | Implementation source | `frontend/app/globals.css` — `@theme inline` |
 | Badge resolver (runtime mapping) | `frontend/lib/badge-resolvers.ts` |
+| Ledger ink metaphor carve-out | ADR-0071, §4.6 |
 
 ---
 
@@ -422,4 +438,5 @@ The 3-layer form system uses a fixed set of color tokens (defined in `component-
 - **Adding a new Layer 1 token requires an ADR.**
 - **Adding a new Layer 2 or Layer 3 token** must be documented in this file and approved by the frontend team lead.
 - **Adding a Layer 1 `BadgeIntent` for categorical chips** (cyan / magenta / yellow / black) requires an ADR (see ADR-0064); it must be listed in §4.5 and the `color-system.contract.test.ts` known-intent set.
+- **Extending a component-scoped Layer 1 carve-out** (e.g. the ledger ink metaphor, §4.6 / ADR-0071) to any other surface requires a new ADR.
 - **Violations** of the forbidden patterns (§8) block PR merge (Governance rule 12).

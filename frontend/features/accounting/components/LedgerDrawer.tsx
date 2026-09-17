@@ -3,9 +3,9 @@
 import React, {useState, useEffect, useMemo} from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
-import { Book, ArrowUpRight, ArrowDownRight, Scale, Calculator } from "lucide-react"
+import { Book } from "lucide-react"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout } from "@/features/_shared"
-import { DataTable, DateRangeFilter, Drawer, IconButton, MoneyDisplay, SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { DataTable, DateRangeFilter, Drawer, IconButton, SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { formDrawerWidth } from "@/lib/form-widths"
 import { formatCurrency } from "@/lib/money"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
@@ -14,12 +14,18 @@ import { JournalEntryDrawer } from "@/features/accounting/components/JournalEntr
 
 import { format } from "date-fns"
 import { useLedger } from "@/features/accounting/hooks/useLedger"
-import { es } from "date-fns/locale"
+import { LedgerSummaryPanel } from "@/features/accounting/components/LedgerSummaryPanel"
 
 import type { LedgerData, LedgerMovement } from "@/features/accounting/types"
 import { ledgerMovementActions, type LedgerMovementActionsCtx } from './ledgerMovementActions'
 import { ledgerMovementFields } from "@/features/accounting/ledgerMovementFields"
 
+/**
+ * Libro Mayor. The Debe/Haber/Saldo summary keeps the CMYK ink metaphor
+ * (cyan/magenta/yellow) as an explicit carve-out documented in ADR-0071 and
+ * `color-system.md` §4.6/§8: the ink lives on border/tint/icon, while label
+ * text uses `text-foreground` to meet WCAG contrast (see LedgerSummaryPanel).
+ */
 interface LedgerDrawerProps {
     accountId: number
     accountName: string
@@ -234,67 +240,14 @@ function LedgerContent({
 
     return (
         <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden gap-4 p-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0">
-                {/* Black/Base — Saldo Inicial */}
-                <div className="rounded-md border border-foreground/20 bg-foreground/5 px-3 py-2.5 flex items-start gap-2.5">
-                    <div className="rounded-sm bg-foreground/10 p-1.5 shrink-0">
-                        <Calculator className="h-3.5 w-3.5 text-foreground" />
-                    </div>
-                    <div className="min-w-0">
-                        <p className="text-3xs font-semibold uppercase tracking-widest text-foreground/80">Saldo Inicial</p>
-                        <p className="text-sm font-bold text-foreground font-mono truncate">
-                            <MoneyDisplay amount={data?.opening_balance} showColor={false} />
-                        </p>
-                        <p className="text-3xs text-muted-foreground mt-0.5">
-                            Al {dateRange?.from ? format(dateRange.from, 'dd/MM/yy', { locale: es }) : '-'}
-                        </p>
-                    </div>
-                </div>
-
-                {/* Cyan — Cargos (Debe) */}
-                <div className="rounded-md border border-cyan/30 bg-cyan/10 px-3 py-2.5 flex items-start gap-2.5">
-                    <div className="rounded-sm bg-cyan/20 p-1.5 shrink-0">
-                        <ArrowUpRight className="h-3.5 w-3.5 text-cyan" />
-                    </div>
-                    <div className="min-w-0">
-                        <p className="text-3xs font-semibold uppercase tracking-widest text-cyan">Cargos (Debe)</p>
-                        <p className="text-sm font-bold text-foreground font-mono truncate">
-                            <MoneyDisplay amount={data?.period_debit} showColor={false} />
-                        </p>
-                        <p className="text-3xs text-muted-foreground mt-0.5">Total del periodo</p>
-                    </div>
-                </div>
-
-                {/* Magenta — Abonos (Haber) */}
-                <div className="rounded-md border border-magenta/30 bg-magenta/10 px-3 py-2.5 flex items-start gap-2.5">
-                    <div className="rounded-sm bg-magenta/20 p-1.5 shrink-0">
-                        <ArrowDownRight className="h-3.5 w-3.5 text-magenta" />
-                    </div>
-                    <div className="min-w-0">
-                        <p className="text-3xs font-semibold uppercase tracking-widest text-magenta">Abonos (Haber)</p>
-                        <p className="text-sm font-bold text-foreground font-mono truncate">
-                            <MoneyDisplay amount={data?.period_credit} showColor={false} />
-                        </p>
-                        <p className="text-3xs text-muted-foreground mt-0.5">Total del periodo</p>
-                    </div>
-                </div>
-
-                {/* Yellow — Saldo Final */}
-                <div className="rounded-md border border-yellow/40 bg-yellow/10 px-3 py-2.5 flex items-start gap-2.5">
-                    <div className="rounded-sm bg-yellow/20 p-1.5 shrink-0">
-                        <Scale className="h-3.5 w-3.5 text-yellow" />
-                    </div>
-                    <div className="min-w-0">
-                        <p className="text-3xs font-semibold uppercase tracking-widest text-yellow">Saldo Final</p>
-                        <p className="text-sm font-bold text-foreground font-mono truncate">
-                            <MoneyDisplay amount={data?.closing_balance} showColor={false} />
-                        </p>
-                        <p className="text-3xs text-muted-foreground mt-0.5">
-                            Al {dateRange?.to ? format(dateRange.to, 'dd/MM/yy', { locale: es }) : '-'}
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <LedgerSummaryPanel
+                openingBalance={data?.opening_balance}
+                periodDebit={data?.period_debit}
+                periodCredit={data?.period_credit}
+                closingBalance={data?.closing_balance}
+                fromDate={dateRange?.from}
+                toDate={dateRange?.to}
+            />
 
             {/* Table — fills remaining height */}
             <div className="flex-1 min-h-0 overflow-hidden">
