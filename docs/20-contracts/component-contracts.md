@@ -309,7 +309,6 @@ Registry cerrado de acciones CRUD (`ROW_ACTIONS` en `@/lib/row-actions`) + rende
 | `createActionsColumn<T>` | Tabla | Columna estandarizada de acciones |
 | `DataCell.Action action="<key>"` | Tabla | Botón icono individual (forma preferida) |
 | `DataCell.ActionMenu items={[…]}` | Tabla | Kebab overflow para 4+ acciones |
-| `CardActions` + `CardActions.Item` / `CardActions.Menu` | Card / Kanban | Mismos primitivos para footers de tarjeta |
 | `useEntityRouteActions()` | Hook | Handlers `openSelected` / `openDetail` / `openHub` |
 
 Orden canónico (siempre): `view → detail → hub → edit → duplicate → pay → deliver → receive → download → print → share → archive → restore → lock/unlock → annul → delete`. `annul` y `delete` siempre al final, en ese orden, ambas detrás de `ActionConfirmModal` (`variant="destructive"`).

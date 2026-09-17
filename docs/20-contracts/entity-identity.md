@@ -24,7 +24,7 @@ Sistema centralizado de identidad de entidades ERP. Define el **único lugar** d
 3. [API de prefijos (frontend)](#3-api-de-prefijos-frontend)
 4. [DynamicIcon](#4-dynamicicon)
 5. [EntityBadge](#5-entitybadge)
-6. [EntityHeader](#6-entityheader)
+6. [EntityHeader — eliminado](#6-entityheader--eliminado-adr-0072)
 7. [DataCell.Entity](#7-datacellEntity)
 8. [PageHeader — integración con iconos](#8-pageheader--integración-con-iconos)
 9. [Tabla maestra de prefijos](#9-tabla-maestra-de-prefijos)
@@ -311,39 +311,11 @@ Componente premium para renderizar identificadores de entidades de forma consist
 
 ---
 
-## 6. EntityHeader
+## 6. EntityHeader — eliminado (ADR-0072)
 
-**Archivo**: `frontend/components/shared/EntityHeader.tsx`  
-**Import**: `import { EntityHeader } from '@/components/shared'`
+> ⚠️ **Componente eliminado en la limpieza de código muerto (ADR-0072).** `frontend/components/shared/EntityHeader.tsx` ya no existe ni se exporta desde `@/components/shared`.
 
-Header estandarizado para páginas de detalle `[id]/page.tsx`. Renderiza el ícono del registry + título de la entidad + displayId formateado + breadcrumb + slot de acciones.
-
-```tsx
-<EntityHeader
-  entityLabel="purchasing.purchaseorder"
-  data={{ id: 5, number: 7 }}
-  action="view"
-  breadcrumb={[
-    { label: 'Compras', href: '/purchasing' },
-    { label: 'Órdenes', href: '/purchasing/orders' },
-  ]}
->
-  <Button>Confirmar</Button>
-</EntityHeader>
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `entityLabel` | `string` | ✅ | — | Clave `ENTITY_REGISTRY`. Determina ícono y título. |
-| `data` | `any` | ❌ | — | Objeto para formatear `displayId` (e.g. `{ id, number }`) |
-| `action` | `'create' \| 'edit' \| 'view'` | ❌ | `'view'` | Prefija el título: `view` → título base, `create` → "Nuevo/a …", `edit` → "Editar …" |
-| `customTitle` | `string` | ❌ | — | Sobreescribe el título generado por `action` |
-| `breadcrumb` | `BreadcrumbItem[]` | ❌ | — | `[{ label, href }]`. El último item es la página actual. |
-| `readonly` | `boolean` | ❌ | `false` | Muestra badge "Solo lectura" |
-| `children` | `ReactNode` | ❌ | — | Botones de acción alineados a la derecha |
-| `className` | `string` | ❌ | — | Clases del contenedor raíz |
-
-**Lógica de resolución de ícono**: lee `ENTITY_REGISTRY[entityLabel].icon`. Fallback: `Package`.
+Era el header de las páginas de detalle `[id]/page.tsx`, rutas que ya no existen: [ADR-0020](../10-architecture/adr/0020-modal-on-list-edit-ux.md) las revirtió al patrón list-modal-edit. Hoy la identidad de entidad se renderiza con `EntityBadge` (§5) y `DataCell.Entity` (§8) dentro del drawer/modal de edición, y el título de la superficie lo aporta la propia surface (`Drawer`/`Modal`) o `PageHeader` (§9).
 
 ---
 
@@ -418,14 +390,9 @@ Los módulos de lista (no detalle) usan `PageHeader` con `iconName` que correspo
   description="Gestión de órdenes de compra"
 />
 
-// Vista de detalle — no existe EntityDetailPage (eliminado, ADR-0020).
-// La identidad de entidad en drawers/modales se renderiza con EntityHeader
-// (ícono + título del ENTITY_REGISTRY) sobre el patrón list-modal-edit.
-<EntityHeader
-  entityLabel="purchasing.purchaseorder"  // ← ícono viene del ENTITY_REGISTRY
-  data={{ id, number }}
-  action="view"
-/>
+// Vista de detalle — no existen EntityDetailPage ni EntityHeader (ADR-0020, ADR-0072).
+// La identidad de entidad en drawers/modales se renderiza con EntityBadge /
+// DataCell.Entity (ícono + displayId del ENTITY_REGISTRY) sobre el patrón list-modal-edit.
 ```
 
 | prop relevante | type | notes |
@@ -506,7 +473,6 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 
 - Leer metadata via `getEntityMetadata()`, `getEntityIcon()`, `formatEntityDisplay()`.
 - Renderizar identificadores via `EntityBadge` o `DataCell.Entity`.
-- Usar `EntityHeader` en todas las superficies que muestren la identidad de una entidad (modales, drawers, headers).
 - ~~Usar `EntityDetailPage` en rutas `[id]/page.tsx`~~ — **Decommissionado (T-95)**. Las rutas `[id]` redirigen server-side a `<list_url>?selected={id}` (ADR-0020).
 - Agregar entidades nuevas al registry con ADR previo si cambia la interfaz `EntityMetadata`.
 
@@ -520,12 +486,12 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 <DataCell.Entity type="PURCHASE_ORDER" ... />
 
 // ❌ Ícono de entidad ad-hoc fuera del registry
-<ShoppingCart className="h-5 w-5" />  // en un EntityHeader
-// → usar EntityHeader con entityLabel en su lugar
+<ShoppingCart className="h-5 w-5" />
+// → usar EntityBadge / DataCell.Entity con entityLabel en su lugar
 
 // ❌ Título de entidad hardcodeado
 <h1>Orden de Compra #{id}</h1>
-// → usar EntityHeader con entityLabel dentro del drawer/modal de edición
+// → usar EntityBadge / el header de la surface (Drawer/Modal/PageHeader)
 
 // ❌ Usar getDtePrefix sin importarlo desde @/lib/entity-registry (es re-exportado desde api/entity-prefixes)
 ```
@@ -541,6 +507,6 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 
 ---
 
-*Fuentes: `backend/core/prefix_registry.py` · `frontend/lib/entity-registry.ts` · `frontend/lib/api/entity-prefixes.ts` · `frontend/components/shared/EntityBadge.tsx` · `frontend/components/shared/EntityHeader.tsx` · `frontend/components/shared/DataTableCells.tsx` · `frontend/components/shared/DynamicIcon.tsx`*
+*Fuentes: `backend/core/prefix_registry.py` · `frontend/lib/entity-registry.ts` · `frontend/lib/api/entity-prefixes.ts` · `frontend/components/shared/EntityBadge.tsx` · `frontend/components/shared/DataTableCells.tsx` · `frontend/components/shared/DynamicIcon.tsx`*
 
 > **Nota histórica:** `EntityDetailPage.tsx` fue eliminado en T-95. Ver [list-modal-edit-pattern.md](./list-modal-edit-pattern.md) para el patrón canónico actual.

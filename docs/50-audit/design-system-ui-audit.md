@@ -136,7 +136,7 @@ Para cada par fusionado (`§4.3`) y cada refactor de shared (Fase 4), lo que el 
 
 ## 6. Simplificación: muertos y fusionables en shared
 
-**Código muerto verificado (0 consumidores fuera del barrel):**
+**Código muerto verificado (0 consumidores fuera del barrel)** — eliminado en T1 (ADR-0072):
 
 - `components/shared/EntityHeader.tsx` (153L)
 - `components/shared/CardActions.tsx` (73L)
@@ -160,7 +160,7 @@ Para cada par fusionado (`§4.3`) y cada refactor de shared (Fase 4), lo que el 
 
 | Cambio | ¿Requiere ADR? | Referencia |
 |---|---|---|
-| Borrar código muerto (EntityHeader, CardActions, EntityCard.Hero, props muertas) | No | deprecate-feature playbook |
+| Borrar código muerto (EntityHeader, CardActions, EntityCard.Hero, props muertas) | **Sí** — `EntityHeader`/`CardActions` están exportados por el barrel público y documentados en contratos Capa-20 (invariante 12); corregido el 2026-09-17 (la fila decía "No") | ADR-0072 + deprecate-feature playbook |
 | Promover `NumpadModal` / extraer bridge de `ReportTable` | No (cambios locales de archivo; sin nuevo API público) | add-shared-component playbook |
 | Desambiguar `ProductSelector` duplicado (rename grid + reubicar fuera de shared) | **No es un winner-ADR**: las superficies son incompatibles (grid controlada vs picker de valor único). ADR solo si el barrel shared pierde/renombra un export público (se decide en T5) | rename + reubicación |
 | Fusionar duplicados de features (TerminalDrawer, Variant forms, Session modals, Order drawers) | **No** — son internos de features; pero documentar en `component-decision-tree.md` si nace un componente compartido | add-shared-component |
@@ -262,10 +262,11 @@ Se mantiene la metáfora CMYK (Cargos/Debe=Cyan, Abonos/Haber=Magenta, Saldo Fin
 
 ## Implementation Tasks
 
-- [ ] **T1 (P1, human: ~1h / CC: ~10min)** — Borrar código muerto (`EntityHeader`, `CardActions`, `EntityCard.Hero`, props `textTransform`/`letterSpacing`)
+- [x] **T1 (P1, human: ~1h / CC: ~10min)** — Borrar código muerto (`EntityHeader`, `CardActions`, `EntityCard.Hero`, props `textTransform`/`letterSpacing`)
   - Surfaced by: §8 F1·1, §6
   - Files: `components/shared/{EntityHeader,CardActions,EntityCard,DataTableCells}.tsx` + barrel
   - Verify: `npm run type-check` + `npm run lint`; 0 usos fuera del barrel
+  - **Done 2026-09-17 (branch `refactor/f1-dead-code`)**: verificado por grep que los 4 artefactos tienen 0 consumidores fuera del barrel → borrados `EntityHeader.tsx` (153L) y `CardActions.tsx` (73L), `EntityCard.Hero` + `EntityCardHeroProps`, y las props `textTransform`/`letterSpacing` + `TEXT_TRANSFORM_MAP`/`LETTER_SPACING_MAP` de `DataTableCells.tsx`; exports quitados del barrel. Gobernanza corregida: al estar documentados en contratos Capa-20 y exportados públicamente, el borrado requiere ADR (invariante 12) → **ADR-0072** + fila §7 actualizada de "No" a "Sí". Contratos actualizados sin refs muertas: `entity-identity.md` §6 → puntero histórico "eliminado" (patrón §7/T-95), ejemplos y listas de §9/§11 y fuentes; `component-row-actions.md` §1/§3/§5.2 → `DataCell.ActionGroup`; `component-contracts.md` fila `CardActions` eliminada. `type-check` limpio; `lint` 0 errores (sin warnings nuevos).
 - [ ] **T2 (P1, human: ~1h / CC: ~15min)** — Reemplazar `animate-in` inline por `<FadeIn>` en los 5 top offenders
   - Surfaced by: §8 F1·2, §4.4
   - Files: `pos/SessionOpenModal.tsx`, `SessionCloseModal.tsx`, `pos/POSClientView.tsx`, `bank-reconciliation/StatementImportModal.tsx`, wizard de partners + Nuevo: `lib/__tests__/animate-in.contract.test.ts`

@@ -28,13 +28,13 @@ related_adrs:
 |---------|----------|-----------------|
 | Table row (DataTable) | `createActionsColumn<T>` + `DataCell.Action` / `DataCell.ActionMenu` | `ROW_ACTIONS` |
 | Card grid (EntityCard) | `actions` prop on `<EntityCard>` (top-right corner) | `ROW_ACTIONS` |
-| Kanban card | `CardActions` slot inside the card body | `ROW_ACTIONS` |
+| Kanban card | `DataCell.ActionGroup` + `DataCell.Action` inside the card body | `ROW_ACTIONS` |
 
 All three surfaces share the **same registry, the same icons, the same tooltips and the same
 canonical order.** The only difference is the *renderer wrapper* (column factory vs. card actions prop).
 
 > Never hand-roll an icon button for a CRUD action. If the action is in `ROW_ACTIONS`, use
-> `DataCell.Action action="<key>"` or `<CardActions.Item action="<key>">`. If the action is
+> `DataCell.Action action="<key>"` (or its `ActionGroup` container). If the action is
 > module-specific (e.g. "Recalcular Stock"), still use the same renderer with a custom `icon` +
 > `title`, so size/tooltip/variant remain identical.
 
@@ -126,7 +126,7 @@ the visual anchor — if present, it should be the first *write* action. Read ac
 
 All destructive — all MUST open `ActionConfirmModal` with `variant="destructive"`.
 
-The `<CardActions>` and `<DataCell.ActionGroup>` containers do not reorder children — the caller
+The `<DataCell.ActionGroup>` container does not reorder children — the caller
 is responsible for ordering. Lint rule (future ADR) will enforce ordering automatically.
 
 ---
@@ -251,9 +251,7 @@ The `render()` method works with both patterns:
 - **Structured data** (array of `StructuredAction`) → converts to `DataCell.Action` icons.
 - **JSX** (legacy ReactNode) → passes through unchanged.
 
-`CardActions` is a thin wrapper around `DataCell.ActionGroup` + `DataCell.Action` /
-`DataCell.ActionMenu` — same primitives, same a11y, same tooltips. The wrapper exists so a future
-visual change (e.g. enlarging icons on touch devices) can be applied to card surfaces only.
+> ⚠️ The former `CardActions` wrapper was removed with the dead-code cleanup ([ADR-0072](../10-architecture/adr/0072-dead-shared-exports-removal.md)): card/kanban surfaces use `DataCell.ActionGroup` + `DataCell.Action` / `DataCell.ActionMenu` directly.
 
 ### 5.3 Routing — `useEntityRouteActions`
 

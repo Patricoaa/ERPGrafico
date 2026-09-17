@@ -70,7 +70,6 @@ export * from './Badge';
 export * from './ModuleNavigationMenu';
 
 // Navigation & Layout
-export * from './EntityHeader';
 export * from './PageHeader';
 export * from './PageContainer';
 export * from './PageSectionHeader';
@@ -143,7 +142,6 @@ export * from './FormLineItemsTable';
 
 export * from './EntityCard'
 export * from './AutoEntityCard'
-export * from './CardActions'
 // ─── Migrated from components/ui — GOVERNANCE rule 21 compliance ─────────────
 // Table system
 export * from './emptyStateResolver';

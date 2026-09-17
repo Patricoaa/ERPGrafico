@@ -616,35 +616,6 @@ function EntityCardDashboard({ children, title, className }: EntityCardDashboard
     )
 }
 
-// ─── Hero ───────────────────────────────────────────────────────────────────
-
-interface EntityCardHeroProps extends Pick<EntityCardHeaderProps, 'title' | 'subtitle' | 'actions'> {
-    /** Primary image — renders in a larger 64×64 icon slot */
-    imageSrc?: string
-    /** Fallback icon when no image is present */
-    icon?: LucideIcon
-    /** Styling for the icon container */
-    iconClassName?: string
-    /** Prominent accent element rendered as the trailing slot (e.g. price, status) */
-    accent?: React.ReactNode
-    className?: string
-}
-
-function EntityCardHero({ imageSrc, icon, iconClassName, accent, title, subtitle, actions, className }: EntityCardHeroProps) {
-    return (
-        <EntityCardHeader
-            imageSrc={imageSrc}
-            icon={icon}
-            iconClassName={cn("h-16 w-16 rounded-lg", iconClassName ?? "bg-accent text-muted-foreground")}
-            title={title}
-            subtitle={subtitle}
-            trailing={accent}
-            actions={actions}
-            className={className}
-        />
-    )
-}
-
 // ─── Hub Trigger ──────────────────────────────────────────────────────────────
 
 interface EntityCardHubTriggerProps {
@@ -701,7 +672,6 @@ export const EntityCard = Object.assign(EntityCardRoot, {
     WorkflowBody: EntityCardWorkflowBody,
     Metrics: EntityCardMetrics,
     Dashboard: EntityCardDashboard,
-    Hero: EntityCardHero,
     HubTrigger: EntityCardHubTrigger,
 })
 
@@ -720,6 +690,5 @@ export type {
     EntityCardMetricsProps,
     EntityCardMetricItem,
     EntityCardDashboardProps,
-    EntityCardHeroProps,
     EntityCardHubTriggerProps,
 }
