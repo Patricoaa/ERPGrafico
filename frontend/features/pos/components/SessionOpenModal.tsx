@@ -13,7 +13,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { toast } from "sonner"
 import { posApi } from "../api/posApi"
-import { GenericWizard, Numpad, Chip, type WizardStep } from '@/components/shared'
+import { GenericWizard, Numpad, Chip, FadeIn, type WizardStep } from '@/components/shared'
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { useTouchMode } from "@/hooks/useTouchMode"
 
@@ -256,7 +256,7 @@ export function SessionOpenModal({
 
     // Step 1: Mode Selection
     const modeStepContent = (
-        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+        <FadeIn className="space-y-6">
             {dataLoading ? (
                 <>
                     <div className="text-center space-y-2 mb-6">
@@ -317,12 +317,12 @@ export function SessionOpenModal({
                     </div>
                 </>
             )}
-        </div>
+        </FadeIn>
     )
 
     // Step 2: Terminal Selection
     const terminalStepContent = freeTerminals.length === 0 ? (
-        <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+        <FadeIn className="space-y-4">
             <div className="text-center mb-4">
                 <h3 className="font-bold">Seleccione Punto de Venta</h3>
             </div>
@@ -336,9 +336,9 @@ export function SessionOpenModal({
                     Reintentar
                 </Button>
             </div>
-        </div>
+        </FadeIn>
     ) : (
-        <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+        <FadeIn className="space-y-4">
             <div className="text-center mb-4">
                 <h3 className="font-bold">Seleccione Punto de Venta</h3>
             </div>
@@ -368,12 +368,12 @@ export function SessionOpenModal({
                     </Button>
                 ))}
             </div>
-        </div>
+        </FadeIn>
     )
 
     // Step 3: Initial Fund (Numpad)
     const fundStepContent = (
-        <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+        <FadeIn className="space-y-4">
             <div className="text-center space-y-1">
                 <h3 className="font-bold text-lg">{selectedTerminal?.name}</h3>
                 <p className="text-sm text-muted-foreground">Ingrese el fondo inicial</p>
@@ -403,12 +403,12 @@ export function SessionOpenModal({
                     />
                 </div>
             </div>
-        </div>
+        </FadeIn>
     )
 
     // Step 4: Confirmation & Justification
     const confirmStepContent = (
-        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+        <FadeIn className="space-y-6">
             <div className="text-center">
                 <Unlock className="h-6 w-6 text-muted-foreground" />
                 <h3 className="font-bold text-xl">Confirmar Apertura</h3>
@@ -502,7 +502,7 @@ export function SessionOpenModal({
                         </div>
 
                         {openingJustifyReason === 'TRANSFER' && (
-                            <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                            <FadeIn className="space-y-2">
                                 <Label className="text-xs">
                                     {openingDiff < 0 ? 'Cuenta de Destino (¿A dónde se fue?)' : 'Cuenta de Origen (¿De dónde vino?)'}
                                 </Label>
@@ -528,17 +528,17 @@ export function SessionOpenModal({
                                         </div>
                                     </div>
                                 )}
-                            </div>
+                            </FadeIn>
                         )}
                     </div>
                 )
             })()}
-        </div>
+        </FadeIn>
     )
 
     // Join Session Flow
     const joinStepContent = (
-        <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+        <FadeIn className="space-y-4">
             <div className="text-center mb-4">
                 <h3 className="font-bold">Unirse a una sesión existente</h3>
                 <p className="text-sm text-muted-foreground">Seleccione una sesión activa para operar</p>
@@ -561,7 +561,7 @@ export function SessionOpenModal({
                     </Button>
                 ))}
             </div>
-        </div>
+        </FadeIn>
     )
 
     const steps: WizardStep[] = [

@@ -8,7 +8,7 @@ import { getErrorMessage } from "@/lib/errors"
 import type { ColumnDef } from "@tanstack/react-table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { DataCell, DataTable, LabeledSelect, GenericWizard, type WizardStep, FormSection, DocumentAttachmentDropzone, LabeledInput } from "@/components/shared"
+import { DataCell, DataTable, LabeledSelect, GenericWizard, FadeIn, type WizardStep, FormSection, DocumentAttachmentDropzone, LabeledInput } from "@/components/shared"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import {FileUp, Columns, Table as TableIcon, CheckCircle2, FileSearch, Landmark, SlidersHorizontal} from "lucide-react"
 import { financeApi } from "../../api/financeApi"
@@ -293,7 +293,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
             id: 'UPLOAD',
             title: 'Carga de Archivo',
             component: (
-                <div className="px-4 pb-4 pt-2 space-y-6 animate-in fade-in zoom-in-95 duration-500">
+                <FadeIn className="px-4 pb-4 pt-2 space-y-6">
                     <FormSection title="Cuenta de Destino" icon={Landmark} />
                     <div className="grid grid-cols-4 gap-4">
                         <div className="col-span-3">
@@ -328,16 +328,16 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                         />
 
                         {error && (
-                            <div className="animate-in fade-in slide-in-from-top-2">
+                            <FadeIn>
                                 <Alert variant="destructive" className="rounded-md">
                                     <AlertDescription className="text-xs font-bold uppercase leading-relaxed">
                                         {error}
                                     </AlertDescription>
                                 </Alert>
-                            </div>
+                            </FadeIn>
                         )}
                     </div>
-                </div>
+                </FadeIn>
             ),
             isValid: !!treasuryAccountId && !!bankFormat && !!file,
             onNext: async () => {
@@ -352,7 +352,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
             id: 'MAPPING',
             title: 'Mapeo de Columnas',
             component: (
-                <div className="px-4 pb-4 pt-2 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                <FadeIn className="px-4 pb-4 pt-2 space-y-6">
                     <FormSection title="Mapeo de Columnas" icon={Columns} />
 
                     {/* S3.7: Parse options */}
@@ -482,15 +482,15 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                     </div>
 
                     {error && (
-                        <div className="max-w-xl mx-auto animate-in fade-in slide-in-from-top-2">
+                        <FadeIn className="max-w-xl mx-auto">
                             <Alert variant="destructive" className="rounded-md">
                                 <AlertDescription className="text-xs font-bold uppercase leading-relaxed">
                                     {error}
                                 </AlertDescription>
                             </Alert>
-                        </div>
+                        </FadeIn>
                     )}
-                </div>
+                </FadeIn>
             ),
             isValid: validateMapping(),
             onNext: async () => {

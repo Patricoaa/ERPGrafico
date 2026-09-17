@@ -11,7 +11,7 @@ import {
     Banknote,
     AlertTriangle
 } from "lucide-react"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, DataCell, RadioCard, GenericWizard, type WizardStep } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, DataCell, RadioCard, GenericWizard, FadeIn, type WizardStep } from "@/components/shared"
 import { partnersApi } from "@/features/contacts"
 import { type Partner } from "@/features/contacts"
 import { type TreasuryAccount } from "@/features/treasury"
@@ -206,7 +206,7 @@ export function PartnerWithdrawalWizard({
                         }))}
                     />
                     {selectedPartner && (
-                        <div className="p-3 bg-destructive/5 border-2 border-dashed border-destructive/20 rounded-md space-y-2 animate-in fade-in zoom-in-95 duration-300">
+                        <FadeIn className="p-3 bg-destructive/5 border-2 border-dashed border-destructive/20 rounded-md space-y-2">
                             <div className="flex justify-between items-center text-3xs text-muted-foreground uppercase font-bold">
                                 <span>Pasivo con el Socio</span>
                                 <Chip size="xs" intent="destructive">Deuda del Socio</Chip>
@@ -221,7 +221,7 @@ export function PartnerWithdrawalWizard({
                                     <p className="text-sm font-black font-mono"><DataCell.CurrencyFlow value={selectedPartner.partner_earnings_balance} direction="inflow" showIcon={false} /></p>
                                 </div>
                             </div>
-                        </div>
+                        </FadeIn>
                     )}
                 </div>
             )
@@ -262,7 +262,7 @@ export function PartnerWithdrawalWizard({
                 ? (!!cashData.amount && !!cashData.treasuryAccountId)
                 : (!!assetData.productId && !!assetData.warehouseId && !!assetData.quantity),
             component: method === "CASH" ? (
-                <div className="space-y-4 py-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                <FadeIn className="space-y-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
                         <LabeledInput
                             label="Importe a Retirar"
@@ -301,9 +301,9 @@ export function PartnerWithdrawalWizard({
                             placeholder="Ej: Adelanto utilidades Octubre"
                         />
                     </div>
-                </div>
+                </FadeIn>
             ) : (
-                <div className="space-y-4 py-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                <FadeIn className="space-y-4 py-4">
                     <div className="grid grid-cols-[1.5fr_2fr] gap-4">
                         <LabeledSelect
                             label="Almacén de Salida"
@@ -354,7 +354,7 @@ export function PartnerWithdrawalWizard({
                             <span className="text-3xs font-bold uppercase tracking-widest">Atención: Esta operación disminuye el stock disponible.</span>
                         </div>
                     </Alert>
-                </div>
+                </FadeIn>
             )
         }
     ]

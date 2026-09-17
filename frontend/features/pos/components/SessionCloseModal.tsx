@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Loader2, AlertTriangle, Search, ChevronDown, Check } from "lucide-react"
 import { toast } from "sonner"
 import { posApi } from "../api/posApi"
-import { GenericWizard, Numpad, type WizardStep } from '@/components/shared'
+import { GenericWizard, Numpad, FadeIn, type WizardStep } from '@/components/shared'
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 
 import { LabeledContainer } from "@/components/shared"
@@ -224,7 +224,8 @@ export function SessionCloseModal({
         } as POSReportData
 
         return (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            <FadeIn>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Left Column: Report context */}
                 <POSReport
                     data={reportData}
@@ -259,12 +260,13 @@ export function SessionCloseModal({
                     </div>
                 </div>
             </div>
+            </FadeIn>
         )
     })()
 
     // Step 2: Review & Difference
     const reviewStepContent = (
-        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+        <FadeIn className="space-y-6">
             <div className="bg-card border rounded-md p-4 space-y-3 shadow-card">
                 <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Efectivo Esperado (Sistema):</span>
@@ -372,7 +374,7 @@ export function SessionCloseModal({
                         </div>
 
                         {justifyReason === 'TRANSFER' && (
-                            <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                            <FadeIn className="space-y-2">
                                 <Label className="text-xs">
                                     {diff < 0 ? 'Cuenta de Destino (¿A dónde se llevó el dinero?)' : 'Cuenta de Origen (¿De dónde vino el dinero?)'}
                                 </Label>
@@ -399,7 +401,7 @@ export function SessionCloseModal({
                                         </div>
                                     </div>
                                 )}
-                            </div>
+                            </FadeIn>
                         )}
                     </div>
                 ) : (
@@ -421,14 +423,14 @@ export function SessionCloseModal({
                     onChange={(e) => setCloseNotes(e.target.value)}
                 />
             </div>
-        </div>
+        </FadeIn>
     )
 
     const reviewIsValid = !(hasDiff && !justifyReason) && !(justifyReason === 'TRANSFER' && !justifyTargetId) && !insufficientFunds
 
     // Step 3: Decision
     const decisionStepContent = (
-        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+        <FadeIn className="space-y-6">
             <div className="grid grid-cols-1 gap-3">
                 <Button
                     variant="outline"
@@ -446,14 +448,14 @@ export function SessionCloseModal({
                 >
                     <span className="font-medium text-success">No, cerrar sin retirar</span>
                     <span className="text-xs text-muted-foreground">Finaliza la sesión ahora</span>
-                </Button>
-            </div>
-        </div>
+                    </Button>
+                </div>
+        </FadeIn>
     )
 
     // Step 4: Withdrawal (Optional Step)
     const withdrawStepContent = (
-        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+        <FadeIn className="space-y-6">
             <div className="p-4 bg-muted/20 rounded-md space-y-4">
                 <div className="space-y-4">
                     <Numpad
@@ -486,7 +488,7 @@ export function SessionCloseModal({
                     />
                 </LabeledContainer>
             </div>
-        </div>
+        </FadeIn>
     )
 
     const steps: WizardStep[] = [

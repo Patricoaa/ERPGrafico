@@ -11,7 +11,7 @@ import {
     Banknote,
     Lock
 } from "lucide-react"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, RadioCard, GenericWizard, type WizardStep } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, RadioCard, GenericWizard, FadeIn, type WizardStep } from "@/components/shared"
 import { partnersApi, netEquityPercentages } from "@/features/contacts"
 import { type Partner } from "@/features/contacts"
 import { type TreasuryAccount } from "@/features/treasury"
@@ -232,7 +232,7 @@ export function PartnerContributionWizard({
                         }))}
                     />
                     {selectedPartner && (
-                        <div className="p-3 bg-muted/30 border-2 border-dashed rounded-md space-y-2 animate-in fade-in zoom-in-95 duration-300">
+                        <FadeIn className="p-3 bg-muted/30 border-2 border-dashed rounded-md space-y-2">
                             <div className="flex justify-between items-center text-3xs text-muted-foreground uppercase font-bold">
                                 <span>Estado Societario</span>
                                 <Chip size="xs" intent="primary">Activo</Chip>
@@ -247,7 +247,7 @@ export function PartnerContributionWizard({
                                     <p className="text-sm font-black text-primary font-mono">{equityPctById[selectedPartner.id] ?? "0"}%</p>
                                 </div>
                             </div>
-                        </div>
+                        </FadeIn>
                     )}
                 </div>
             )
@@ -288,7 +288,7 @@ export function PartnerContributionWizard({
                 ? (!!cashData.amount && !!cashData.treasuryAccountId)
                 : (!!assetData.productId && !!assetData.warehouseId && !!assetData.quantity && Number(assetData.unitCost) > 0),
             component: method === "CASH" ? (
-                <div className="space-y-4 py-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                <FadeIn className="space-y-4 py-4">
                     {lockAmount && (
                         <Alert variant="info" className="py-2" icon={null}>
                             <div className="flex items-center justify-between w-full">
@@ -339,9 +339,9 @@ export function PartnerContributionWizard({
                             placeholder="Ej: Aporte inicial"
                         />
                     </div>
-                </div>
+                </FadeIn>
             ) : (
-                <div className="space-y-4 py-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                <FadeIn className="space-y-4 py-4">
                     <div className="grid grid-cols-[1.5fr_2fr] gap-4">
                         <LabeledSelect
                             label="Almacén de Entrada"
@@ -399,7 +399,7 @@ export function PartnerContributionWizard({
                             </div>
                         </Alert>
                     )}
-                </div>
+                </FadeIn>
             )
         }
     ]
