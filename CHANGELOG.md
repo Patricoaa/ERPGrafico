@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.5](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.4...v0.3.5) (2026-08-14)
+
+
+### ⚡ Performance
+
+* remediación Big O P2 — tasks batch, signals guard, N+1 (sales/purchasing/production) ([#174](https://github.com/Patricoaa/ERPGrafico/issues/174)) ([161b4c7](https://github.com/Patricoaa/ERPGrafico/commit/161b4c7dd9a7ba71e1b9a35c2be4cfe40f8cbc20))
+
 ### [0.3.4](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.3...v0.3.4) (2026-08-14)
 
 
