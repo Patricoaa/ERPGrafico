@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.7](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.6...v0.3.7) (2026-10-09)
+
+
+### 📚 Documentation
+
+* **dev-server:** document always-available remote dev server ([ab08f08](https://github.com/Patricoaa/ERPGrafico/commit/ab08f089ad74c5ae65fbf1f2d77524f529c1e706))
+
+
+### ⚙️ Refactors
+
+* **backend:** unambiguous import regrouping + ADR-0022 list-url source of truth (P1.4b) ([55b5ab1](https://github.com/Patricoaa/ERPGrafico/commit/55b5ab1149b17c078ab7ee12fb6d4317a499ad61))
+* **frontend:** no-unsafe-* ratchet to error + contract test (P1.6) ([a4a9bf2](https://github.com/Patricoaa/ERPGrafico/commit/a4a9bf2e23fb550fe6efd9436a0d4dd0c86cc893))
+
 ### [0.3.6](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.5...v0.3.6) (2026-10-09)
 
 
