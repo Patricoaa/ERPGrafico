@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.6](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.5...v0.3.6) (2026-10-09)
+
+
+### 🧪 Testing
+
+* reorganize backend tests into packages, keep debug scripts ([6c1530c](https://github.com/Patricoaa/ERPGrafico/commit/6c1530c4f63cd84ca25beaf1b7f41085471007b6))
+
+
+### 🐛 Bug Fixes
+
+* **treasury:** allow automatic reverses, provision card_number ([58f851c](https://github.com/Patricoaa/ERPGrafico/commit/58f851c56b1fdaffbdd9cb5483f21f3aac77bb73))
+
+
+### 📚 Documentation
+
+* add UI design system audit + health stack ([d8a30a7](https://github.com/Patricoaa/ERPGrafico/commit/d8a30a751d49afadafcc62937192eafddc37b7b2))
+* **audit:** eng review — resoluciones y veredicto (ENG CLEARED) ([90a4be4](https://github.com/Patricoaa/ERPGrafico/commit/90a4be442d1ed3b1faaaca67accb0c8b469e85be))
+* **audit:** journey step/tap baselines (T10) ([e76e9ee](https://github.com/Patricoaa/ERPGrafico/commit/e76e9ee87a5974b000e8ff4429237e632b7bf745))
+
+
+### ⚙️ Refactors
+
+* **accounting:** ledger ink carve-out (ADR-0071) + semantic-ink guard (T3) ([64e5a85](https://github.com/Patricoaa/ERPGrafico/commit/64e5a85105b7a2ffdb46ecdcd41f98e21757038b))
+* **motion:** migrate inline animate-in to FadeIn + animate-in guard (T2) ([135d22d](https://github.com/Patricoaa/ERPGrafico/commit/135d22dedca368c3d07950b654787f374e358066))
+* **pos:** impeccable 6-pass UI refinement — semantic action colors, a11y, typeset, clarify, scan feedback, inline errors ([878ecf1](https://github.com/Patricoaa/ERPGrafico/commit/878ecf1ae5b5093542f0f848b14851b34ab75abc))
+* **shared:** remove dead exports (ADR-0072) (T1) ([4d9bb99](https://github.com/Patricoaa/ERPGrafico/commit/4d9bb99cbd2d2b33817c806d1506b812850771c2))
+
 ### [0.3.5](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.4...v0.3.5) (2026-08-14)
 
 
