@@ -8,7 +8,13 @@ last_review: 2026-05-21
 
 # System Diagram
 
-> **Topology:** single-node on home-server (Proxmox + VM Ubuntu + Docker Compose). No load balancer, no DB replicas, no clusters. Scale vertically (more RAM/CPU/disk) before considering multi-node — see §"Deployment units".
+> **Topology (entorno de desarrollo):** single-node on the dev server (`pato@192.168.1.93`, Docker
+> Compose) — see [remote-dev-server.md](../30-playbooks/remote-dev-server.md). **No existe entorno de
+> producción todavía.** No hay load balancer, ni réplicas de DB, ni clusters. Escalar verticalmente
+> (más RAM/CPU/disco) antes de considerar multi-nodo — ver §"Deployment units".
+>
+> El diagrama siguiente describe la topología de ejecución del **entorno dev**; aplica igual a la
+> futura topología de producción, aún no desplegada.
 
 ## Runtime topology
 
@@ -77,6 +83,10 @@ DRF view enqueues: task.delay(args)
 ```
 
 ## Deployment units
+
+> **Estado:** planificado / entorno dev. Hoy todos los componentes corren como contenedores Docker en
+> un único host (el dev server). **No hay producción desplegada.** La tabla describe la estrategia
+> objetivo para cuando el proyecto pase a producción.
 
 All components run as Docker containers on a single host. The actual scaling strategy is **vertical** (increase host resources) or **move individual services to the cloud** (R2 already in use for media) before considering any multi-node topology.
 

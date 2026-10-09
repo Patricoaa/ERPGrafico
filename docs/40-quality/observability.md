@@ -8,7 +8,15 @@ last_review: 2026-05-21
 
 # Observability
 
-ERPGrafico opera como deployment single-node en home-server con presupuesto operativo ~$0. La stack de observability se apoya en **Sentry + logs estructurados + endpoint `/healthz` + uptime monitoring externo gratuito**. NO se opera Prometheus, Grafana, Jaeger/Tempo, OpenTelemetry ni PagerDuty.
+> **Estado:** el proyecto está en fase de desarrollo; **no existe entorno de producción**. Este doc
+> describe el **objetivo/plan** de observability para un deployment single-node de bajo costo. Hoy
+> corre un único entorno dev en `pato@192.168.1.93` (ver
+> [remote-dev-server.md](../30-playbooks/remote-dev-server.md)) y **no hay monitoreo externo ni SLOs
+> operativos activos**.
+
+El objetivo de operación es un deployment single-node con presupuesto ~$0. La stack de observability
+planificada se apoya en **Sentry + logs estructurados + endpoint `/healthz` + uptime monitoring
+externo gratuito**. NO se planea Prometheus, Grafana, Jaeger/Tempo, OpenTelemetry ni PagerDuty.
 
 Cuando el proyecto migre a multi-servicio o presupuesto SRE dedicado, esta doc debe revisarse — ver §“Roadmap” al final.
 
@@ -52,7 +60,7 @@ Never log: password, JWT, full email (mask), phone, card numbers. Redaction filt
 ### Stack PYME — sin Prometheus/Grafana
 
 - **Sentry Performance** (free tier — 10k transactions/mes) captura latencia HTTP y Celery automáticamente vía SDK. Sustituye Prometheus para el caso single-node.
-- **Endpoint `/api/healthz/`** (Django) devuelve `{"status":"ok"}` si DB + Redis + MinIO responden. Lo pingea Healthchecks.io/UptimeRobot cada N minutos desde fuera del home-server.
+- **Endpoint `/api/healthz/`** (Django) devuelve `{"status":"ok"}` si DB + Redis + MinIO responden. *(Planificado: pinguearlo con Healthchecks.io/UptimeRobot desde fuera del host cuando exista producción.)*
 - **Logs estructurados (sección anterior)** llevan el `event` field — sirven como métricas low-volume vía grep/Loki-self-hosted si en el futuro se necesita.
 
 **NO se instala** `django-prometheus`, `celery-prometheus-exporter`, exporters de cualquier tipo, ni se levanta Prometheus/Grafana. La complejidad operativa de ese stack es enemigo del presupuesto PYME.
@@ -106,6 +114,9 @@ No hay Grafana. Las vistas que funcionan como “dashboards” para el proyecto:
 
 ## Alerts
 
+> **Planificado.** No hay alertas activas: dependen de Sentry/UptimeRobot, aún sin configurar en
+> producción.
+
 Tier único — todo va a email y a un canal de Telegram opcional. Sin PagerDuty.
 
 | Origen | Trigger | Canal |
@@ -113,7 +124,7 @@ Tier único — todo va a email y a un canal de Telegram opcional. Sin PagerDuty
 | Sentry | Error nuevo (issue alert) o spike en issue existente | Email del owner + Telegram (vía Sentry webhook → bot) |
 | Healthchecks.io / UptimeRobot | `/api/healthz/` no responde 5 min | Email + Telegram |
 | Healthchecks.io | Cron Celery beat no pingea en su ventana esperada (backup nocturno, reconciliación, etc.) | Email |
-| Disco home-server | `df` cron → si >85%, escribe a log y mailx | Email manual |
+| Disco dev server | `df` cron → si >85%, escribe a log y mailx | Email manual |
 
 **No se exige runbook por alerta** en PYME, pero sí un acuerdo: cualquier alerta repetida 3 veces en una semana fuerza abrir incidente y documentar fix o silenciar formalmente.
 

@@ -44,7 +44,7 @@ last_review: 2026-06-19
 | “file upload”, “attachment”, “FileField”, “MinIO”, “document” | [add-file-upload.md](30-playbooks/add-file-upload.md) | 30 |
 | “permission”, “role”, “access control”, “RBAC”, “guard” | [add-role-permission.md](30-playbooks/add-role-permission.md) | 30 |
 | “selector”, “N+1”, “select_related”, “prefetch_related”, “slow query” | [add-selector.md](30-playbooks/add-selector.md) | 30 |
-| “home server”, “low resources”, “old pc”, “ssh development”, “remote setup” | [home-server-setup.md](30-playbooks/home-server-setup.md) | 30 |
+| “dev server”, “servidor de desarrollo/remoto”, “ssh development”, “mutagen”, “correr tests en el servidor”, “QA local”, “levantar entorno”, “logs del servidor” | [remote-dev-server.md](30-playbooks/remote-dev-server.md) | 30 |
 | “what is X”, “domain term”, “glossary” | [domain-glossary.md](00-context/domain-glossary.md) | 00 |
 | “architecture”, “folder structure”, “where does X go” | [frontend-fsd.md](10-architecture/frontend-fsd.md) / [backend-apps.md](10-architecture/backend-apps.md) | 10 |
 | “which component”, “component decision”, “what to use” | [component-decision-tree.md](20-contracts/component-decision-tree.md) | 20 |

@@ -15,6 +15,10 @@ last_review: 2026-05-21
 
 Qué hacer cuando "el ERP no anda". No es un manual exhaustivo: es la secuencia que cualquier persona con SSH y este doc puede ejecutar en <4 horas.
 
+> **Estado:** el proyecto está en fase de desarrollo (**no existe producción**). Hoy aplica al único
+> entorno, el dev server (`pato@192.168.1.93`, ver [remote-dev-server.md](remote-dev-server.md)).
+> Los RTO/RPO y pasos que asumen servicio productivo se activan cuando exista producción.
+
 **RTO objetivo (no SLA contractual):** restaurar servicio en <4h.
 **RPO objetivo:** perder ≤24h de transacciones (backup diario).
 
@@ -184,7 +188,7 @@ docker compose logs --tail=50 nginx
 | Recurso | Dónde está | Verificar trimestralmente |
 |---------|-----------|----------------------------|
 | Credenciales R2 backups | Bitwarden / Keepass | Que el token siga válido |
-| `.env.prod` de producción | Bitwarden / Keepass (cifrado) | Idem |
+| `.env.dev` del dev server | Bitwarden / Keepass (cifrado) | Idem *(añadir `.env.prod` cuando exista producción)* |
 | SSH key del host | Bitwarden + máquina secundaria | Que se puede entrar desde 2 máquinas distintas |
 | Acceso a Cloudflare DNS | Cuenta Cloudflare con MFA | Que el MFA funciona |
 | Último backup downloadeable de R2 | aws s3 ls — verificar TS reciente | Trimestral test de descarga |

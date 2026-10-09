@@ -36,7 +36,7 @@ Stack de desarrollo optimizado para máquinas con recursos limitados.
 | **Total Docker** | | | **~256 MB** |
 
 > [!TIP]
-> **¿Tienes una PC vieja disponible?** Si tienes hardware extra, el [Setup de Home Server](home-server-setup.md) es la opción recomendada. Es gratuita, 100% privada y ofrece el mejor rendimiento para tu laptop.
+> **¿Tienes hardware extra disponible?** El proyecto ya usa un [servidor de desarrollo remoto](remote-dev-server.md) (SSH + Mutagen), que es la opción recomendada: gratuita, 100% privada y descarga tu laptop. El setup híbrido de este doc es la alternativa si prefieres correr todo en tu máquina.
 
 ---
 

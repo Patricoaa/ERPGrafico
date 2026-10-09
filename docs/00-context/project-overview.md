@@ -63,10 +63,13 @@ User → Nginx :80 → Next.js :3000 (SSR/App Router)
 
 | Env | Host | Data |
 |-----|------|------|
-| Local | `localhost` (docker compose hybrid) | Sembrada vía `setup_demo_data` |
-| Prod | Home-server (Proxmox VM Ubuntu + docker compose) | Real, single-org |
+| Local (edición) | `localhost` (IDE + git) | No corre el stack |
+| Remote dev server | `pato@192.168.1.93` → `~/ERPGrafico` (docker compose) | Sembrada vía `setup_demo_data` |
 
-No dedicated staging environment: pre-production is validated via local feature branches + tests + smoke. When budget allows for a staging VM, this table should be updated.
+**No existe entorno de producción.** El proyecto está en fase de desarrollo y solo hay un entorno de
+desarrollo remoto, accesible por SSH y sincronizado con Mutagen. Ver
+[remote-dev-server.md](../30-playbooks/remote-dev-server.md) para el contrato de uso. Cuando el
+proyecto pase a producción, esta tabla y los docs de entorno deben actualizarse.
 
 ## Further reading
 

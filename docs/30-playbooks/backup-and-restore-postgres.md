@@ -15,6 +15,11 @@ last_review: 2026-05-21
 
 Estrategia mínima y barata para no perder los libros fiscales. Asume topología single-node ([system-diagram.md](../10-architecture/system-diagram.md)) y presupuesto ~$0. Cloudflare R2 ya está en uso para media — lo reusamos para backups.
 
+> **Estado:** el proyecto está en fase de desarrollo (**no existe producción**). Hoy solo hay que
+> proteger la base del **dev server** (`pato@192.168.1.93`, ver
+> [remote-dev-server.md](remote-dev-server.md)); los pasos marcados *“cuando exista producción”* se
+> activan entonces.
+
 ## La estrategia en una línea
 
 `pg_dump` diario via Celery beat → comprime → sube a R2 → retiene 30 días locales + 365 días en R2 → restore probado el primer lunes de cada mes.
@@ -26,9 +31,9 @@ Estrategia mínima y barata para no perder los libros fiscales. Asume topología
 | Stack | Postgres 16-alpine en docker compose (`db` service) |
 | Volumen | `postgres_data:/var/lib/postgresql/data` (named volume Docker) |
 | DB | `${POSTGRES_DB:-erpgrafico}` |
-| Credenciales | `.env.dev` (dev) / `.env.prod` (prod) → `POSTGRES_USER`, `POSTGRES_PASSWORD` |
+| Credenciales | `.env.dev` (único entorno actual; `.env.prod` se añadirá cuando exista producción) → `POSTGRES_USER`, `POSTGRES_PASSWORD` |
 | Storage de backup | Cloudflare R2 bucket dedicado (`erpgrafico-backups`) |
-| Local staging | `/mnt/data/backups/postgres/` en el host del home-server |
+| Local staging | `/mnt/data/backups/postgres/` en el host del dev server |
 
 ---
 
@@ -36,10 +41,10 @@ Estrategia mínima y barata para no perder los libros fiscales. Asume topología
 
 Una sola vez. Dashboard de Cloudflare → R2 → Create bucket → `erpgrafico-backups`.
 
-Crear API token con scope `Object Read & Write` solo para ese bucket. Guardar `ACCESS_KEY_ID` + `SECRET_ACCESS_KEY` + `ENDPOINT` en `.env.dev` (o `.env.prod` para producción):
+Crear API token con scope `Object Read & Write` solo para ese bucket. Guardar `ACCESS_KEY_ID` + `SECRET_ACCESS_KEY` + `ENDPOINT` en `.env.dev` (único entorno actual; se añadirá `.env.prod` cuando exista producción):
 
 ```bash
-# .env.dev / .env.prod
+# .env.dev
 R2_BACKUPS_BUCKET=erpgrafico-backups
 R2_BACKUPS_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
 R2_BACKUPS_ACCESS_KEY=...
@@ -104,7 +109,7 @@ Hacerlo ejecutable: `chmod +x scripts/backup_postgres.sh`.
 
 ## Step 3 — Cron diario
 
-En el host del home-server (no en el contenedor):
+En el host del dev server (no en el contenedor):
 
 ```cron
 # /etc/cron.d/erpgrafico-backup
@@ -155,7 +160,7 @@ Cron mensual (día 2 a las 04:00):
 
 ### A. Test mensual a base temporal
 
-Primer lunes de cada mes. Restaura el backup más reciente a una DB temporal (`erpgrafico_restore_test`), verifica row counts contra prod, dropea.
+Primer lunes de cada mes. Restaura el backup más reciente a una DB temporal (`erpgrafico_restore_test`), verifica row counts contra la base origen, dropea. *(Cuando exista producción, se compara contra esa base.)*
 
 ```bash
 #!/usr/bin/env bash
@@ -163,7 +168,7 @@ Primer lunes de cada mes. Restaura el backup más reciente a una DB temporal (`e
 set -euo pipefail
 
 PROJECT_ROOT="${PROJECT_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
-ENV_FILE="${ENV_FILE:-.env.dev}"  # Usar .env.prod para producción
+ENV_FILE="${ENV_FILE:-.env.dev}"  # único entorno actual; .env.prod cuando exista producción
 set -a; source "$PROJECT_ROOT/$ENV_FILE"; set +a
 
 TEST_DB="erpgrafico_restore_test"
@@ -236,7 +241,7 @@ Mensual (automático):
 - Si diff >100 filas en cualquier tabla crítica → email del log + investigar.
 
 Trimestral (manual):
-- Descargar **manualmente** un backup de R2 desde una máquina distinta al home-server.
+- Descargar **manualmente** un backup de R2 desde una máquina distinta al dev server.
 - Restaurar a una VM/contenedor descartable.
 - Confirmar que la app levanta y `smoke.sh` pasa.
 

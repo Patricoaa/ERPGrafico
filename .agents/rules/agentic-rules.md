@@ -42,6 +42,7 @@ Task routing — common intents:
 | TypeScript error / `any` escape hatch | [resolve-type-errors.md](docs/30-playbooks/resolve-type-errors.md) |
 | Loading state / skeleton / refetch CLS / loading.tsx | [component-skeleton.md](docs/20-contracts/component-skeleton.md) |
 | Naming a component / hook / file / type / sufijo incorrecto | [naming-conventions.md](docs/90-governance/naming-conventions.md) |
+| Dev server / remote tests / SSH / Mutagen | [remote-dev-server.md](docs/30-playbooks/remote-dev-server.md) |
 
 Full routing table in [docs/README.md](docs/README.md).
 
@@ -76,6 +77,18 @@ Before writing any code, verify:
 - **Tailwind v4**: NO `tailwind.config.ts`. Theme via `@theme` inline in [frontend/app/globals.css](frontend/app/globals.css).
 
 Detail: [docs/00-context/stack-decisions.md](docs/00-context/stack-decisions.md).
+
+## Dev server (always available)
+
+There is one shared **remote dev server**; **no production environment exists yet**. Agents may run
+commands there, but MUST first confirm the Mutagen sync is active.
+
+- Host: `ssh pato@192.168.1.93` → `cd ERPGrafico` (`/home/pato/ERPGrafico`; Mutagen mirror, **no git**).
+- App: `http://192.168.1.93` (nginx) / `http://192.168.1.93:3000` (frontend).
+- Before any server command, `mutagen sync list` must show `erpgrafico-sync … Connected: Yes`.
+- If down → `mutagen project start`; if it still cannot connect → **warn the user and stop**.
+- Run app commands via `docker compose exec` from `~/ERPGrafico`.
+- Full contract + troubleshooting: [remote-dev-server.md](docs/30-playbooks/remote-dev-server.md).
 
 ## Common commands
 

@@ -8,11 +8,17 @@ last_review: 2026-05-21
 
 # CI / CD
 
+> **Estado:** pipeline **objetivo/planificado**. Hoy **no existe entorno de producción ni staging**;
+> el único entorno es el dev server (`pato@192.168.1.93`). Las etapas de `deploy` y las tablas de
+> Entornos describen lo que se implementará cuando el proyecto pase a producción.
+
 ## Pipeline stages
 
 ```
 [push] → lint → type-check → test → build → security scan → deploy(staging) → smoke → [manual] deploy(prod)
 ```
+
+*(Las etapas de deploy son objetivo futuro; hoy el pipeline corre lint/type-check/test/build/scan.)*
 
 Every stage is a hard gate. No merge if any stage red.
 
@@ -55,11 +61,13 @@ Every stage is a hard gate. No merge if any stage red.
 
 ## Branch strategy
 
-- `master` — protected, deploy-to-staging on merge.
+- `master` — protected. *(Planificado: deploy-to-staging on merge, cuando exista staging.)*
 - Feature branches: `feat/…`, `fix/…`, `refactor/…`.
 - PR requires: green CI, 1 approval (2 if touches `20-contracts/`), no unresolved comments.
 
 ## Release flow
+
+*(Planificado — no hay releases a producción todavía.)*
 
 ```
 master merge → smoke tests (local + pre-deploy) → manual prod deploy → smoke tests (post-deploy)
@@ -143,11 +151,15 @@ step "smoke OK"
 
 ## Environments
 
-| Env | Branch | Auto-deploy | Data |
-|-----|--------|-------------|------|
-| preview | any PR | yes | synthetic |
-| staging | master | yes | anonymized prod snapshot |
-| prod | tag `v*` | manual gate | real |
+> **Hoy solo existe el dev server** (`pato@192.168.1.93`). Las filas `preview`/`staging`/`prod` son el
+> objetivo futuro, no entornos activos.
+
+| Env | Branch | Auto-deploy | Data | Estado |
+|-----|--------|-------------|------|--------|
+| dev server | n/a (Mutagen sync desde local) | n/a | synthetic (`setup_demo_data`) | **activo** |
+| preview | any PR | yes | synthetic | planificado |
+| staging | master | yes | anonymized prod snapshot | planificado |
+| prod | tag `v*` | manual gate | real | **no existe** |
 
 ## Definition of “green”
 
