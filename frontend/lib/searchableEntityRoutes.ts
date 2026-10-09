@@ -28,11 +28,12 @@
 export const searchableEntityRoutes: Record<string, string> = {
     // Sales
     'sales.saleorder':     '/sales/orders',
-    'sales.saledelivery':  '/sales/deliveries',
+    'sales.saledelivery':  '/sales/orders/deliveries',
     'sales.salereturn':    '/sales/returns',
 
     // Purchasing
     'purchasing.purchaseorder': '/purchasing/orders',
+    // purchased return/receipt: drawers desde /purchasing/orders (ADR-0022 DRAWER_ENTITIES)
 
     // Billing (split entries — each resolves to its own list)
     'billing.invoice_sales':     '/billing/sales',
@@ -40,6 +41,7 @@ export const searchableEntityRoutes: Record<string, string> = {
 
     // Contacts
     'contacts.contact': '/contacts',
+    // partnertransaction / profitdistributionresolution: tabs (ADR-0022 DRAWER_ENTITIES)
 
     // Accounting
     // account: vive en /accounting/ledger (AccountsClientView montada ahí) — T-99
@@ -55,27 +57,37 @@ export const searchableEntityRoutes: Record<string, string> = {
     // categories/warehouses/stock-moves viven en tabs dentro de otras páginas — T-99
     'inventory.product':             '/inventory/products',
     'inventory.productcategory':     '/inventory/products/categories',
-    'inventory.warehouse':           '/inventory/stock/warehouses',
-    'inventory.stockmove':           '/inventory/stock/movements',
+    'inventory.warehouse':           '/inventory/operations/warehouses',
+    'inventory.stockmove':           '/inventory/reports/movements',
     'inventory.inventorydocument':   '/inventory/operations/documents',
+    'inventory.subscription':        '/inventory/products/subscriptions',
 
     // Treasury
     'treasury.treasurymovement': '/treasury/operaciones/movements',
     'treasury.treasuryaccount':  '/treasury/operaciones/accounts',
+    'treasury.paymentmethod':     '/treasury/operaciones/methods',
+    'treasury.check':            '/treasury/operaciones/checks',
     // possession: vive en /sales/sessions (POSSessionsView) — T-99
     'treasury.possession':       '/sales/sessions',
-    // bankstatement: vive en /treasury/reconciliation tab=statements — T-99
-    'treasury.bankstatement':    '/treasury/reconciliation/statements',
+    // bankstatement: la lista vive en /treasury/reconciliation; el detalle
+    // re-navega al workbench — T-99
+    'treasury.bankstatement':    '/treasury/reconciliation',
+    // loans/cards/credit lines: tabs del hub /treasury/bank-center (ADR-0022 DRAWER_ENTITIES)
 
     // HR
-    'hr.employee': '/hr/employees',
+    'hr.employee':       '/hr/employees',
+    'hr.absence':        '/hr/absences',
+    'hr.salaryadvance':  '/hr/advances',
+    // payrollconcept: tab en /hr/settings/concepts (ADR-0022 DRAWER_ENTITIES)
 
     // Production
     'production.workorder': '/production/orders',
+    'production.bom':       '/production/boms',
 
     // Tax
     // f29declaration: vive en /accounting/tax (TaxDeclarationsView) — T-99
     'tax.f29declaration': '/accounting/tax',
+    'tax.taxperiod':      '/tax/periods',
 
     // Core
     'core.user': '/settings/users',

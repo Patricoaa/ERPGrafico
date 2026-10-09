@@ -66,6 +66,7 @@ export const STATUS_MAP: Record<string, StatusStyle> = {
     // ── Production ────────────────────────────────────────────────────────
     IN_PROGRESS:    { label: 'En Proceso',   intent: 'warning' },
     FINISHED:       { label: 'Finalizado',   intent: 'success' },
+    REJECTED:       { label: 'Rechazado',    intent: 'destructive' },
     MANUFACTURING:  { label: 'Fabricando',   intent: 'primary' },
     // WorkOrder stages
     MATERIAL_ASSIGNMENT:    { label: 'Asig. Materiales',   intent: 'info' },

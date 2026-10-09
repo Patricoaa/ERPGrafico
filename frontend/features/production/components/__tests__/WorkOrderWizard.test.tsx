@@ -54,6 +54,16 @@ vi.mock("@/components/providers/HubPanelProvider", () => ({
     })
 }))
 
+// Polyfills required by the Drawer / ProductSelector tree (jsdom lacks these).
+global.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+}
+window.HTMLElement.prototype.scrollIntoView = function () {}
+window.HTMLElement.prototype.hasPointerCapture = function () { return false }
+window.HTMLElement.prototype.releasePointerCapture = function () {}
+
 const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
 })
@@ -71,7 +81,7 @@ describe("WorkOrderWizard Tests", () => {
         vi.clearAllMocks()
     })
 
-    it("abre en step 0 (BASIC_INFO) en modo create", async () => {
+    it("abre en step 0 (ORIGIN_SELECTION) en modo create", async () => {
         renderWithProviders(
             <WorkOrderWizard
                 mode={{ kind: 'create' }}
@@ -79,19 +89,20 @@ describe("WorkOrderWizard Tests", () => {
                 onOpenChange={vi.fn()}
             />
         )
-        
+
         // Wait for Wizard header
         expect(await screen.findByText("Crear Orden de Trabajo")).toBeInTheDocument()
-        
+
         // Only one dialog should be open (no nested BaseModals)
         const dialogs = screen.getAllByRole("dialog")
         expect(dialogs).toHaveLength(1)
-        
-        // Configuración de Flujo should be visible in create mode Step 0
-        expect(screen.getByText(/Configuración de Flujo/i)).toBeInTheDocument()
+
+        // Step 0 create = OriginSelectionStep (type chooser).
+        expect(screen.getByText("Vincular a Venta")).toBeInTheDocument()
+        expect(screen.getByText("Producción para Stock")).toBeInTheDocument()
     })
 
-    it("permite seleccionar origen y avanza a Información Básica", async () => {
+    it("permite seleccionar origen y avanza a Selección de Producto", async () => {
         renderWithProviders(
             <WorkOrderWizard
                 mode={{ kind: 'create' }}
@@ -103,27 +114,17 @@ describe("WorkOrderWizard Tests", () => {
         // Wait for title
         expect(await screen.findByText("Crear Orden de Trabajo")).toBeInTheDocument()
 
-        // Initially we are at Step 0: Origen de Fabricación
-        expect(screen.getByRole("heading", { name: "Origen de Fabricación" })).toBeInTheDocument()
-
-        // Let's select "Producción para Stock"
+        // Step 0: Origen de Fabricación (type chooser).
         const buttonStock = screen.getByText("Producción para Stock")
         fireEvent.click(buttonStock)
 
-        // It should advance to Step 1: Información Básica
+        // Advances to step 1: PRODUCT_SELECTION — footer offers "Seleccionar Producto".
         await waitFor(() => {
-            expect(screen.getByRole("heading", { name: "Información Básica" })).toBeInTheDocument()
+            expect(screen.getByText("Seleccionar Producto")).toBeInTheDocument()
         })
 
-        // There should be an "Anterior" button in the footer
-        const buttonBack = screen.getByRole("button", { name: "Anterior" })
-        expect(buttonBack).toBeInTheDocument()
-
-        // Clicking "Anterior" should return us to Origen de Fabricación
-        fireEvent.click(buttonBack)
-        await waitFor(() => {
-            expect(screen.getByRole("heading", { name: "Origen de Fabricación" })).toBeInTheDocument()
-        })
+        // The origin chooser is no longer rendered.
+        expect(screen.queryByText("Vincular a Venta")).not.toBeInTheDocument()
     })
 
     it("modo manage en targetStage", async () => {
@@ -144,6 +145,6 @@ describe("WorkOrderWizard Tests", () => {
         const dialogs = screen.getAllByRole("dialog")
         expect(dialogs).toHaveLength(1)
         
-        expect(screen.getByText("Gestión de orden de trabajo")).toBeInTheDocument()
+        expect(screen.getByText("Gestión de Orden de Trabajo")).toBeInTheDocument()
     })
 })

@@ -16,6 +16,7 @@ import componentNamingSuffix from "./eslint-rules/component-naming-suffix.mjs";
 import statusMustUseStatusbadge from "./eslint-rules/status-must-use-statusbadge.mjs";
 import mutationMustMarkLocal from "./eslint-rules/mutation-must-mark-local.mjs";
 import drawerNoRounded from "./eslint-rules/drawer-no-rounded.mjs";
+import { NO_UNSAFE_ALLOWLIST_FILES } from "./eslint-rules/no-unsafe-allowlist.mjs";
 
 const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   ".next/**",
@@ -91,16 +92,30 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   },
   rules: {
     "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/no-unsafe-assignment": "warn",
-    "@typescript-eslint/no-unsafe-call": "warn",
-    "@typescript-eslint/no-unsafe-member-access": "warn",
-    "@typescript-eslint/no-unsafe-return": "warn",
+    "@typescript-eslint/no-unsafe-assignment": "error",
+    "@typescript-eslint/no-unsafe-call": "error",
+    "@typescript-eslint/no-unsafe-member-access": "error",
+    "@typescript-eslint/no-unsafe-return": "error",
     "@typescript-eslint/no-non-null-assertion": "warn",
     "@typescript-eslint/consistent-type-imports": ["warn", {
       "prefer": "type-imports",
       "fixStyle": "inline-type-imports",
       "disallowTypeAnnotations": true,
     }],
+  },
+}, // Ratchet P1.6 — the no-unsafe-* rules above run at `error` globally; the
+// 92 files below carry the legacy debt and are pinned back to `warn`. The
+// guard test (lib/__tests__/no-unsafe.contract.test.ts) enforces that no file
+// outside this list carries a violation and that counts never grow. Migrating
+// a file = fixing its warnings and removing its entry from
+// eslint-rules/no-unsafe-allowlist.mjs in the same change.
+{
+  files: NO_UNSAFE_ALLOWLIST_FILES,
+  rules: {
+    "@typescript-eslint/no-unsafe-assignment": "warn",
+    "@typescript-eslint/no-unsafe-call": "warn",
+    "@typescript-eslint/no-unsafe-member-access": "warn",
+    "@typescript-eslint/no-unsafe-return": "warn",
   },
 }, // Feature zero-any enforcement (error for clean features, warn for pending migration)
 {

@@ -6,5 +6,5 @@ import { searchableEntityRoutes } from '@/lib/searchableEntityRoutes'
 export default async function DetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
     const listUrl = searchableEntityRoutes['inventory.stockmove']
-    redirect(`${listUrl}&selected=${id}`)
+    redirect(`${listUrl}?selected=${id}`)
 }

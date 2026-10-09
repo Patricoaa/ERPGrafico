@@ -51,7 +51,7 @@ describe('useAutoSaveForm', () => {
     })
 
     it('debounces the save and fires once after the delay', async () => {
-        const { result, onSave } = setupHook({ debounceMs: 50 })
+        const { result, onSave } = setupHook({ debounceMs: 300 })
 
         act(() => {
             result.current.form.setValue('name', 'changed', { shouldDirty: true })

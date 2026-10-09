@@ -54,7 +54,9 @@ describe("WorkOrderBasicStep Unit and Rendering Tests", () => {
     
     it("renders the type chooser in create mode when defaultOtType is not provided", () => {
         renderWithProviders(<WorkOrderBasicStep mode="create" formId="test-form" />)
-        expect(screen.getByText(/Configuración de Flujo/i)).toBeInTheDocument()
+        // Step 0 create renders OriginSelectionStep (the type chooser).
+        expect(screen.getByText("Producción para Stock")).toBeInTheDocument()
+        expect(screen.getByText("Vincular a Venta")).toBeInTheDocument()
     })
 
     it("renders the LINKED view when initialData has a sale_order", async () => {

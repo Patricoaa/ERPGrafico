@@ -466,7 +466,8 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
 
     // ── Users ─────────────────────────────────────────────────────────────────
     // * requires full group data — EntityBadge always provides it
-    "users.group": ({ open, onOpenChange, data, onSuccess }) => (
+    // Key must match ENTITY_REGISTRY / backend label (`settings.group`).
+    "settings.group": ({ open, onOpenChange, data, onSuccess }) => (
         <GroupDrawer
             mode={data ? 'view' : 'create'}
             open={open}
