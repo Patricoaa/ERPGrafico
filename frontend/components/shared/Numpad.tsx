@@ -82,6 +82,12 @@ export function Numpad({
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            // Ignore keystrokes aimed at form fields/contenteditable so typing elsewhere
+            // does not leak digits or clear the Numpad's amount.
+            const target = e.target as HTMLElement | null
+            if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable)) {
+                return
+            }
             // Numbers 0-9
             if (/^[0-9]$/.test(e.key)) {
                 handleNumber(e.key)

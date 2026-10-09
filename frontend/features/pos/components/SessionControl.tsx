@@ -244,7 +244,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                             "gap-1 px-3 py-1.5 flex items-center text-3xs font-bold uppercase rounded-full border",
                             isSharedSession ? 'bg-primary/10 text-primary border-primary/20' : 'border-success/30 text-success bg-success/5'
                         )}>
-                            <div className={cn("h-2 w-2 rounded-full animate-pulse", isSharedSession ? 'bg-primary' : 'bg-success')} />
+                            <div className={cn("h-2 w-2 rounded-full animate-pulse motion-reduce:animate-none", isSharedSession ? 'bg-primary' : 'bg-success')} />
                             {isSharedSession ? "Sesión Compartida" : "Sesión Abierta"}
                         </span>
 
@@ -263,8 +263,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             </div>
 
             {reportDialogOpen && (
-                <div className="fixed inset-0 z-[100] bg-overlay/50 flex items-center justify-center p-4 animate-in fade-in duration-200 print:hidden text-foreground">
-                    <div className="w-full max-w-sm animate-in zoom-in-95 duration-200 space-y-3">
+                <div className="fixed inset-0 z-[100] bg-overlay/50 flex items-center justify-center p-4 animate-in fade-in duration-200 print:hidden text-foreground motion-reduce:animate-none">
+                    <div className="w-full max-w-sm animate-in zoom-in-95 duration-200 space-y-3 motion-reduce:animate-none">
                         {reportData && (
                             <POSReport
                                 data={reportData}

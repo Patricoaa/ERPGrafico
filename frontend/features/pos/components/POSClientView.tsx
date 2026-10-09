@@ -277,8 +277,8 @@ export function POSClientView() {
         const term = searchTerm.toLowerCase().trim()
         if (!term) return
         const exact = filteredProducts.find(p => p.code.toLowerCase() === term || p.internal_code?.toLowerCase() === term)
-        if (exact) { handleProductClick(exact); setSearchTerm(""); return }
-        if (filteredProducts.length === 1) { handleProductClick(filteredProducts[0]); setSearchTerm(""); return }
+        if (exact) { handleProductClick(exact); setSearchTerm(""); scannerFeedbackRef.current?.triggerSuccess(); return }
+        if (filteredProducts.length === 1) { handleProductClick(filteredProducts[0]); setSearchTerm(""); scannerFeedbackRef.current?.triggerSuccess(); return }
         scannerFeedbackRef.current?.triggerError()
     }
 
@@ -423,7 +423,7 @@ export function POSClientView() {
     if (loading) return <POSLayoutSkeleton />
 
     return (
-        <div className="flex-1 p-3 pt-1.5 flex flex-col gap-1.5 overflow-hidden animate-in fade-in duration-500">
+        <div className="flex-1 p-3 pt-1.5 flex flex-col gap-1.5 overflow-hidden animate-in fade-in duration-500 motion-reduce:animate-none">
             <div className="flex items-center justify-between py-0.5 px-1 mb-1 relative min-h-[44px]">
                 {/* Left: Terminal & Session Info */}
                 <div className="flex items-center gap-3 flex-1">
@@ -454,37 +454,38 @@ export function POSClientView() {
                         }
 
                         return syncDrafts.length > 0 && (
-                            <div className="hidden lg:flex items-center gap-1 mr-2 animate-in fade-in zoom-in duration-300">
+                            <div className="hidden lg:flex items-center gap-1 mr-2 animate-in fade-in zoom-in duration-300 motion-reduce:animate-none">
                                 {quickDrafts.map(d => {
                                     const lockInfo = getLockInfo(d.id)
                                     const lockedByOther = lockInfo.isLocked && !lockInfo.isOwnLock
                                     const isWaitingPayment = !!d.wizard_state?.isWaitingPayment;
+                                    const draftLabel = d.name || `#${d.id}`
                                     return (
                                         <Button
                                             key={d.id}
                                             variant="outline"
                                             size="sm"
                                             className={cn(
-                                                "h-10 min-w-[40px] px-2 text-3xs font-mono font-medium transition-all duration-300 gap-1.5 relative rounded-sm",
+                                                "h-10 min-w-[40px] px-2 text-2xs font-medium transition-all duration-300 gap-1.5 relative rounded-sm",
                                                 currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-card border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
-                                                isSaving && currentDraftId === d.id && "animate-pulse opacity-70",
+                                                isSaving && currentDraftId === d.id && "animate-pulse opacity-70 motion-reduce:animate-none",
                                                 lockedByOther && "border-destructive/40 opacity-60",
-                                                isWaitingPayment && currentDraftId !== d.id && "border-warning text-warning bg-warning/10 shadow-card border-solid ring-1 ring-warning/30 animate-in zoom-in-95 duration-500"
+                                                isWaitingPayment && currentDraftId !== d.id && "border-warning text-warning bg-warning/10 shadow-card border-solid ring-1 ring-warning/30 animate-in zoom-in-95 duration-500 motion-reduce:animate-none"
                                             )}
                                             onClick={() => handleLoadDraft(d)}
-                                            title={lockedByOther ? `En uso por ${lockInfo.lockedByName}` : isWaitingPayment ? "Registrar Pago (Pendiente)" : undefined}
+                                            title={lockedByOther ? `En uso por ${lockInfo.lockedByName}` : isWaitingPayment ? "Registrar Pago (Pendiente)" : d.name ? `Borrador: ${d.name}` : `Borrador #${d.id}`}
                                         >
                                             {lockedByOther && <Lock className="mr-0.5 h-2.5 w-2.5 text-destructive" />}
                                             {isWaitingPayment && currentDraftId !== d.id && !lockedByOther ? (
                                                 <div className="flex items-center gap-1">
-                                                    {d.id}
-                                                    <Wallet className="h-3.5 w-3.5 text-warning animate-pulse" />
+                                                    <span className="max-w-[72px] truncate">{draftLabel}</span>
+                                                    <Wallet className="h-3.5 w-3.5 text-warning animate-pulse motion-reduce:animate-none" />
                                                 </div>
                                             ) : (
-                                                (!isWaitingPayment || currentDraftId === d.id) && d.id
+                                                <span className="max-w-[72px] truncate">{(isWaitingPayment && currentDraftId === d.id) || !isWaitingPayment ? draftLabel : ''}</span>
                                             )}
                                             {/* eslint-disable-next-line no-restricted-syntax -- inline spinner in draft tab selector, not a submit/action button */}
-                                            {isSaving && currentDraftId === d.id && <Loader2 className="ml-1 h-2 w-2 animate-spin" />}
+                                            {isSaving && currentDraftId === d.id && <Loader2 className="ml-1 h-2 w-2 animate-spin motion-reduce:animate-none" />}
                                         </Button>
                                     )
                                 })}
@@ -505,6 +506,7 @@ export function POSClientView() {
                                         size="icon"
                                         variant="outline"
                                         className="relative rounded-md hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-border/60"
+                                        aria-label="Abrir menú de usuario"
                                     >
                                         <Avatar className="h-full w-full rounded-md bg-transparent">
                                             <AvatarFallback className="bg-transparent text-current font-medium text-3xs rounded-md">
@@ -572,7 +574,7 @@ export function POSClientView() {
 
                 <div className="md:col-span-12 lg:col-span-7 flex flex-col min-h-0">
                     {posMode === 'SHOPPING' ? (
-                        <div key="shop" className="flex-1 flex flex-col min-h-0 animate-in fade-in slide-in-from-left-2 ease-premium duration-300 fill-mode-both">
+                        <div key="shop" className="flex-1 flex flex-col min-h-0 animate-in fade-in slide-in-from-left-2 ease-premium duration-300 fill-mode-both motion-reduce:animate-none">
                             <Card className="flex-1 flex flex-col overflow-hidden bg-card border border-border/60 shadow-lg shadow-black/10 rounded-lg p-2">
                                 <div className={cn("px-2 border-b border-border/40 space-y-2", isTouchMode ? "pb-2 mb-2" : "pb-1.5 mb-1.5")}>
                                     <SearchBar
@@ -600,7 +602,7 @@ export function POSClientView() {
                             </Card>
                         </div>
                     ) : (
-                        <div key={currentDraftId || 'checkout-new'} className="flex-1 flex flex-col min-h-0 bg-card border border-border/50 rounded-md shadow-card shadow-black/5 overflow-hidden relative animate-in fade-in slide-in-from-right-2 ease-premium duration-300 fill-mode-both">
+                        <div key={currentDraftId || 'checkout-new'} className="flex-1 flex flex-col min-h-0 bg-card border border-border/50 rounded-md shadow-card shadow-black/5 overflow-hidden relative animate-in fade-in slide-in-from-right-2 ease-premium duration-300 fill-mode-both motion-reduce:animate-none">
                             <SalesCheckoutWizardView
                                 ref={checkoutWizardRef}
                                 key={currentDraftId || 'checkout-new'}

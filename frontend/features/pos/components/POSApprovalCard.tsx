@@ -57,7 +57,7 @@ export function POSApprovalCard({
             <div className="flex items-start gap-3">
                 <div className="p-2.5 rounded-sm bg-warning/10 shrink-0">
                     {isWaiting ? (
-                        <Loader2 className="h-5 w-5 text-warning animate-spin" />
+                        <Loader2 className="h-5 w-5 text-warning animate-spin motion-reduce:animate-none" />
                     ) : (
                         <AlertCircle className="h-5 w-5 text-warning" />
                     )}
@@ -84,7 +84,7 @@ export function POSApprovalCard({
                                 variant="outline"
                                 onClick={onCancel}
                                     className={cn(
-                                        "rounded-sm font-medium uppercase tracking-tight border-magenta/30 text-magenta hover:bg-magenta/10",
+                                        "rounded-sm font-medium uppercase tracking-tight",
                                     isTouchMode ? "h-11 text-sm" : "h-11 text-sm"
                                 )}
                             >
@@ -92,9 +92,10 @@ export function POSApprovalCard({
                             </Button>
                             {approvalTaskId && (
                                 <Button
+                                    variant="outline"
                                     onClick={() => onVerify(approvalTaskId)}
                                     className={cn(
-                                        "rounded-sm font-medium uppercase tracking-tight shadow-card border-none bg-magenta hover:bg-magenta/90 text-white",
+                                        "rounded-sm font-medium uppercase tracking-tight shadow-card border-border/60",
                                         isTouchMode ? "h-11 text-sm" : "h-11 text-sm"
                                     )}
                                 >
@@ -105,9 +106,10 @@ export function POSApprovalCard({
                     ) : (
                         <>
                             <Button
+                                variant="outline"
                                 onClick={onAdjust}
                                 className={cn(
-                                    "rounded-sm font-medium uppercase tracking-tight shadow-card border-2 border-magenta bg-magenta hover:bg-magenta/90 text-white",
+                                    "rounded-sm font-medium uppercase tracking-tight shadow-card border-border/60",
                                     isTouchMode ? "h-11 text-sm" : "h-11 text-sm"
                                 )}
                             >
@@ -117,7 +119,7 @@ export function POSApprovalCard({
                                 <Button
                                     onClick={onDirectApprove}
                                     className={cn(
-                                        "rounded-sm font-medium uppercase tracking-tight shadow-card border-none bg-yellow hover:bg-yellow/90 text-black",
+                                        "rounded-sm font-medium uppercase tracking-tight shadow-card border-none bg-primary hover:bg-primary/90 text-primary-foreground",
                                         isTouchMode ? "h-11 text-sm" : "h-11 text-sm"
                                     )}
                                 >
@@ -125,9 +127,10 @@ export function POSApprovalCard({
                                 </Button>
                             )}
                             <Button
+                                variant="outline"
                                 onClick={onRequest}
                                 className={cn(
-                                    "rounded-sm font-medium uppercase tracking-tight shadow-card border-none bg-cyan hover:bg-cyan/90 text-white",
+                                    "rounded-sm font-medium uppercase tracking-tight shadow-card border-border/60",
                                     isTouchMode ? "h-11 text-sm" : "h-11 text-sm"
                                 )}
                             >

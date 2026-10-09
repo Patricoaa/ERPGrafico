@@ -54,7 +54,7 @@ export const ScannerFeedback = forwardRef<ScannerFeedbackHandle>((_, ref) => {
             className={cn(
                 "fixed inset-0 z-[100] pointer-events-none transition-opacity duration-300",
                 flash === "success" ? "bg-success/10 border-[10px] border-success/30" : "bg-destructive/10 border-[10px] border-destructive/30",
-                "animate-in fade-in out-fade-out"
+                "animate-in fade-in out-fade-out motion-reduce:animate-none"
             )}
         />
     )

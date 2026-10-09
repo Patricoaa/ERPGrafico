@@ -23,6 +23,7 @@ function getDeliveryLabel(type: string): string {
     switch (type) {
         case 'IMMEDIATE': return 'Inmediata'
         case 'PARTIAL': return 'Parcial'
+        case 'SCHEDULED': return 'Programada'
         case 'LATER': return 'Programada'
         default: return type
     }
@@ -43,7 +44,7 @@ function getStepMetadata(stepLabel: string, wizardState: WizardState | null, ite
             return date ? `${date} (${label})` : label
         }
         case 'Carrito':
-            return `${itemsCount} items`
+            return `${itemsCount} ${itemsCount === 1 ? 'artículo' : 'artículos'}`
         case 'Pago':
             return wizardState.paymentData?.method ? methodLabels[wizardState.paymentData.method] || wizardState.paymentData.method : null
         default:
@@ -71,7 +72,7 @@ export function POSCheckoutHeader() {
     steps.push({ id: nextStepId++, label: 'Pago', icon: WalletIcon })
 
     return (
-        <div className="flex items-center justify-center gap-[clamp(0.25rem,1.5vw,1rem)] overflow-x-auto no-scrollbar py-1 animate-in fade-in duration-700">
+        <div className="flex items-center justify-center gap-[clamp(0.25rem,1.5vw,1rem)] overflow-x-auto no-scrollbar py-1 animate-in fade-in duration-700 motion-reduce:animate-none">
             {steps.map((step, index) => {
                 const Icon = step.icon
                 const isCompleted = currentStep > step.id
@@ -86,7 +87,7 @@ export function POSCheckoutHeader() {
                             )}
                         >
                             {stepMeta && (
-                                <span className="text-[clamp(0.3rem,0.65vw,0.5rem)] text-muted-foreground truncate max-w-[clamp(40px,10vw,80px)] leading-tight">
+                                <span className="text-[clamp(0.6rem,0.65vw,0.75rem)] text-muted-foreground truncate max-w-[clamp(40px,10vw,80px)] leading-tight">
                                     {stepMeta}
                                 </span>
                             )}
@@ -100,11 +101,11 @@ export function POSCheckoutHeader() {
 
                                 {/* Indicator Pulse for Active */}
                                 {isActive && (
-                                    <span className="absolute -top-0.5 -right-0.5 h-[clamp(0.5rem,1vw,0.75rem)] w-[clamp(0.5rem,1vw,0.75rem)] bg-primary rounded-full border-2 border-background animate-pulse" />
+                                    <span className="absolute -top-0.5 -right-0.5 h-[clamp(0.5rem,1vw,0.75rem)] w-[clamp(0.5rem,1vw,0.75rem)] bg-primary rounded-full border-2 border-background animate-pulse motion-reduce:animate-none" />
                                 )}
                             </div>
                             <span className={cn(
-                                "text-[clamp(0.4rem,1vw,0.65rem)] font-bold uppercase tracking-tight truncate max-w-[clamp(40px,10vw,80px)] transition-colors leading-tight",
+                                "text-[clamp(0.7rem,1vw,0.8rem)] font-bold uppercase tracking-tight truncate max-w-[clamp(40px,10vw,80px)] transition-colors leading-tight",
                                 isActive ? "text-primary" : isCompleted ? "text-success" : "text-muted-foreground"
                             )}>
                                 {step.label}

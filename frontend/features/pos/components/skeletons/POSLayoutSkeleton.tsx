@@ -52,7 +52,7 @@ export function POSCartItemsSkeleton({ count = 4 }: { count?: number }) {
 
 export function POSLayoutSkeleton() {
     return (
-        <div role="status" aria-label="Cargando punto de venta" className="flex-1 p-3 pt-1.5 flex flex-col gap-1.5 overflow-hidden animate-in fade-in duration-500">
+        <div role="status" aria-label="Cargando punto de venta" className="flex-1 p-3 pt-1.5 flex flex-col gap-1.5 overflow-hidden animate-in fade-in duration-500 motion-reduce:animate-none">
             <div className="flex items-center justify-between py-0.5 px-1 mb-1 relative min-h-[44px]">
                 <div className="flex items-center gap-4 flex-1">
                     <Skeleton className="h-6 w-48" />

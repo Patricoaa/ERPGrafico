@@ -188,6 +188,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
     const [pinModalOpen, setPinModalOpen] = useState(false)
 
     const [isPeriodValid, setIsPeriodValid] = useState(true)
+    const [stepError, setStepError] = useState<string | null>(null)
 
     const canDirectApprove = hasPermission('sales.approve_credit')
     const didHydrateRef = useRef(false)
@@ -355,17 +356,18 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
     const validateCurrentStep = async (): Promise<{ isValid: boolean, requireApproval?: boolean }> => {
         try {
             setCreditApprovalRequired(false)
+            setStepError(null)
             const currentStepDef = steps[step - 1];
             if (!currentStepDef) return { isValid: false };
 
             switch (currentStepDef.id) {
                 case 'customer':
                     if (!selectedCustomerId) {
-                        toast.error("Debe seleccionar un cliente para continuar.")
+                        setStepError("Debe seleccionar un cliente para continuar.")
                         return { isValid: false }
                     }
                     if (hasManufacturing && selectedCustomer?.is_default_customer) {
-                        toast.error("No se puede utilizar el cliente por defecto para productos con fabricación avanzada.")
+                        setStepError("No se puede utilizar el cliente por defecto para productos con fabricación avanzada.")
                         return { isValid: false }
                     }
                     return { isValid: true }
@@ -373,7 +375,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                 case 'dte':
                     if (dteData.type !== 'BOLETA' && !dteData.isPending) {
                         if (!dteData.number || !dteData.date || !dteData.attachment) {
-                            toast.error("Faltan datos obligatorios del documento DTE.")
+                            setStepError("Faltan datos obligatorios del documento DTE.")
                             return { isValid: false }
                         }
                     }
@@ -381,7 +383,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                     // Tax Period Validation (Handled visually in live, but enforced here)
                     if (!dteData.isPending && dteData.date) {
                         if (!isPeriodValid) {
-                            toast.error(`No se puede continuar. El periodo ya se encuentra cerrado.`)
+                            setStepError("No se puede continuar. El periodo ya se encuentra cerrado.")
                             return { isValid: false }
                         }
                     }
@@ -392,7 +394,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                         line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing && !line.manufacturing_data
                     )
                     if (pendingItems.length > 0) {
-                        toast.error(`Tiene ${pendingItems.length} productos sin configurar detalles de fabricación.`)
+                        setStepError(`Tiene ${pendingItems.length} productos sin configurar detalles de fabricación.`)
                         return { isValid: false }
                     }
                     return { isValid: true }
@@ -400,17 +402,17 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                 case 'delivery': {
                     const isOnlyService = currentOrderLines.every(line => line.product_type === 'SERVICE')
                     if (isOnlyService && !deliveryData.date) {
-                        toast.error("Debe seleccionar una fecha de cumplimiento para continuar.")
+                        setStepError("Debe seleccionar una fecha de cumplimiento para continuar.")
                         return { isValid: false }
                     }
                     if ((deliveryData.type === 'SCHEDULED' || deliveryData.type === 'PARTIAL') && !deliveryData.date) {
-                        toast.error("Debe seleccionar una fecha de entrega para continuar.")
+                        setStepError("Debe seleccionar una fecha de entrega para continuar.")
                         return { isValid: false }
                     }
                     if (deliveryData.type === 'PARTIAL') {
                         const hasPartialQty = (deliveryData.partialQuantities || []).some(pq => pq.dispatchedQty > 0)
                         if (!hasPartialQty) {
-                            toast.error("Debe especificar al menos una cantidad a despachar inmediatamente.")
+                            setStepError("Debe especificar al menos una cantidad a despachar inmediatamente.")
                             return { isValid: false }
                         }
                     }
@@ -423,28 +425,28 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
 
                     if (hasMultiPayment) {
                         if (multiPayments.length < 2) {
-                            toast.error("Seleccione al menos 2 formas de pago o use un único método.")
+                            setStepError("Seleccione al menos 2 formas de pago o use un único método.")
                             return { isValid: false }
                         }
                         const totalPaid = multiPayments.reduce((s: number, p: { amount: number }) => s + (p.amount || 0), 0)
 
                         for (const [i, p] of multiPayments.entries()) {
                             if (!p.method) {
-                                toast.error(`Pago #${i + 1}: método no especificado.`)
+                                setStepError(`Pago #${i + 1}: método no especificado.`)
                                 return { isValid: false }
                             }
                             if (p.method !== 'CREDIT' && p.method !== 'CREDIT_BALANCE') {
                                 if (!p.treasuryAccountId && !p.checkNumber) {
-                                    toast.error(`Pago #${i + 1}: debe seleccionar una cuenta de destino.`)
+                                    setStepError(`Pago #${i + 1}: debe seleccionar una cuenta de destino.`)
                                     return { isValid: false }
                                 }
                             }
                             if (p.method === 'CHECK' && p.amount > 0 && !p.checkNumber) {
-                                toast.error(`Pago #${i + 1}: debe ingresar el N° de Cheque.`)
+                                setStepError(`Pago #${i + 1}: debe ingresar el N° de Cheque.`)
                                 return { isValid: false }
                             }
                             if (p.method === 'CHECK' && p.amount > 0 && !p.checkBankId) {
-                                toast.error(`Pago #${i + 1}: debe seleccionar el banco emisor.`)
+                                setStepError(`Pago #${i + 1}: debe seleccionar el banco emisor.`)
                                 return { isValid: false }
                             }
                         }
@@ -462,21 +464,21 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                         }
                     } else {
                         if (!paymentData.method) {
-                            toast.error("Debe seleccionar un método de pago.")
+                            setStepError("Debe seleccionar un método de pago.")
                             return { isValid: false }
                         }
                         if (paymentData.method !== 'CREDIT' && paymentData.method !== 'CREDIT_BALANCE' && paymentData.amount > 0) {
                             if (!paymentData.treasuryAccountId) {
-                                toast.error("Debe seleccionar una cuenta de destino.")
+                                setStepError("Debe seleccionar una cuenta de destino.")
                                 return { isValid: false }
                             }
                         }
                         if (paymentData.method === 'CHECK' && paymentData.amount > 0 && !paymentData.checkNumber) {
-                            toast.error("Debe ingresar el N° de Cheque para registrar el pago.")
+                            setStepError("Debe ingresar el N° de Cheque para registrar el pago.")
                             return { isValid: false }
                         }
                         if (paymentData.method === 'CHECK' && paymentData.amount > 0 && !paymentData.checkBankId) {
-                            toast.error("Debe seleccionar el banco emisor del cheque.")
+                            setStepError("Debe seleccionar el banco emisor del cheque.")
                             return { isValid: false }
                         }
                         if (!approvalTaskId && !isApproved) {
@@ -510,10 +512,11 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
 
         const currentStepDef = steps[step - 1];
         if (currentStepDef.id === 'dte' && !isFolioValid && !dteData.isPending) {
-            toast.error("El número de folio ya ha sido utilizado. Ingrese uno válido para continuar.")
+            setStepError("El número de folio ya ha sido utilizado. Ingrese uno válido para continuar.")
             return
         }
 
+        setStepError(null)
         setStep(prev => prev + 1)
     }
 
@@ -522,6 +525,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
         setIsWaitingApproval(false)
         setApprovalTaskId(null)
         setCreditApprovalRequired(false)
+        setStepError(null)
         if ((step === 1 || quickSale) && onCancel) {
             onCancel()
         } else {
@@ -924,6 +928,29 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                                             </Button>
                                         </AlertDescription>
                                     </div>
+                                </div>
+                            </Alert>
+                        )}
+
+                        {stepError && (
+                            <Alert variant="destructive" className="mb-4 border-l-[3px] shadow-card" icon={null}>
+                                <div className="flex items-start gap-4">
+                                    <div className="p-2 rounded-sm bg-destructive/10">
+                                        <FileWarning className="h-4 w-4 text-destructive" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <AlertTitle className="font-black uppercase tracking-tight text-xs mb-1 text-destructive">Verificación requerida</AlertTitle>
+                                        <AlertDescription className="text-sm text-destructive/80 leading-relaxed">{stepError}</AlertDescription>
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => setStepError(null)}
+                                        className="h-8 shrink-0 uppercase font-medium text-3xs text-destructive hover:bg-destructive/10"
+                                        aria-label="Descartar aviso"
+                                    >
+                                        X
+                                    </Button>
                                 </div>
                             </Alert>
                         )}

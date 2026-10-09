@@ -317,7 +317,7 @@ export function SessionCloseModal({
                                     >
                                         {settingsLoading ? (
                                             /* eslint-disable-next-line no-restricted-syntax -- inline spinner in combobox trigger, not a submit/action button */
-                                            <><Loader2 className="h-4 w-4 animate-spin mr-2" />Cargando...</>
+                                            <><Loader2 className="h-4 w-4 animate-spin mr-2 motion-reduce:animate-none" />Cargando...</>
                                         ) : (
                                             <>{selectedLabel || "Seleccione motivo..."}</>
                                         )}
@@ -328,7 +328,7 @@ export function SessionCloseModal({
                                     <div className="p-2">
                                         {settingsLoading ? (
                                             <div className="flex items-center justify-center py-6">
-                                                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                                                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground motion-reduce:animate-none" />
                                                 <span className="ml-2 text-sm text-muted-foreground">Cargando opciones...</span>
                                             </div>
                                         ) : (

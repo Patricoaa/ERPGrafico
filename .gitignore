@@ -41,6 +41,7 @@ Thumbs.db
 .claude/*
 .agents/*
 memory/*
+graphify-out/
 
 # Scratch
 scratch.tsx

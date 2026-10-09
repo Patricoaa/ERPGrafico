@@ -263,7 +263,7 @@ export function SessionOpenModal({
                         <h3 className="text-lg font-bold">Bienvenido al Punto de Venta</h3>
                     </div>
                     <div className="flex items-center justify-center py-12">
-                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground motion-reduce:animate-none" />
                         <span className="ml-3 text-sm text-muted-foreground">Cargando puntos de venta...</span>
                     </div>
                 </>

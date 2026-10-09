@@ -38,7 +38,7 @@ export function DetailPanel({ type, id, onClose }: DetailPanelProps) {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col h-full animate-pulse">
+            <div className="flex flex-col h-full animate-pulse motion-reduce:animate-none">
                 <Header onClose={onClose} />
                 <div className="flex-1 p-4 space-y-3">
                     <div className="h-4 w-3/4 bg-muted rounded" />
@@ -85,7 +85,7 @@ function Header({ onClose, label }: { onClose: () => void; label?: string }) {
             <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70">
                 {label || 'Detalle'}
             </span>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose} aria-label="Cerrar detalle">
                 <X className="h-3.5 w-3.5" />
             </Button>
         </div>

@@ -139,7 +139,7 @@ export function Cart({
                     {/* Items List */}
                     <div className="flex-1 overflow-auto bg-transparent rounded-b-md relative scrollbar-thin">
                         {items.length === 0 ? (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-muted-foreground/60 gap-4 animate-in fade-in zoom-in duration-500">
+                            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-muted-foreground/60 gap-4 animate-in fade-in zoom-in duration-500 motion-reduce:animate-none">
                                 <ShoppingCart className="h-12 w-12 text-muted-foreground/20" />
                                 <div className="space-y-1.5">
                                     <p className="font-bold text-lg text-muted-foreground/80 tracking-tight">El carrito está vacío</p>
@@ -216,8 +216,9 @@ export function Cart({
                     <>
                         <div className="flex gap-2">
                             <Button
+                                variant="secondary"
                                 className={cn(
-                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-cyan hover:bg-cyan/90 text-white",
+                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card",
                                     isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                 )}
                                 size="lg"
@@ -230,8 +231,9 @@ export function Cart({
                             </Button>
                             {onWithdrawClick && items.length > 0 && items.every(i => i.track_inventory) && (
                                 <Button
+                                    variant="outline"
                                     className={cn(
-                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-magenta hover:bg-magenta/90 text-white",
+                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-border/60",
                                         isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                     )}
                                     size="lg"
@@ -246,7 +248,7 @@ export function Cart({
                         <Button
                             id="confirm-sale-btn"
                             className={cn(
-                                "w-full rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-yellow hover:bg-yellow/90 text-black",
+                                "w-full rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-primary hover:bg-primary/90 text-primary-foreground",
                                 isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                             )}
                             size="lg"
@@ -266,8 +268,9 @@ export function Cart({
                     <>
                         <div className="flex gap-2">
                             <Button
+                                variant="outline"
                                 className={cn(
-                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-cyan hover:bg-cyan/90 text-white",
+                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-border/60",
                                     isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                 )}
                                 size="lg"
@@ -279,8 +282,9 @@ export function Cart({
                             </Button>
                             {isLastStep && (
                                 <Button
+                                    variant="outline"
                                     className={cn(
-                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-magenta hover:bg-magenta/90 text-white",
+                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-border/60",
                                         isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                     )}
                                     size="lg"
@@ -295,10 +299,11 @@ export function Cart({
 
                         <div className="flex gap-2">
                             <Button
+                                variant="outline"
                                 onClick={onCheckoutBack}
                                 disabled={checkoutLoading}
                                 className={cn(
-                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-yellow hover:bg-yellow/90 text-black",
+                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-border/60",
                                     isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                 )}
                                 size="lg"

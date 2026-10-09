@@ -165,7 +165,7 @@ function CartItemComponent({
                                         variant="ghost"
                                         className={cn(
                                             "font-medium transition-colors rounded-md shrink-0 border-none shadow-none cursor-pointer text-destructive bg-destructive/10 hover:bg-destructive/20",
-                                            isTouchMode ? "h-10 px-2 text-sm" : "h-7 px-2 text-xs opacity-0 group-hover:opacity-100"
+                                            isTouchMode ? "h-10 px-2 text-sm" : "h-7 px-2 text-xs"
                                         )}
                                         onClick={() => onOpenNumpad(item.cartItemId, 'discount', item.discount_amount || 0)}
                                         type="button"
@@ -178,7 +178,7 @@ function CartItemComponent({
                                         variant="ghost"
                                         className={cn(
                                             "flex items-center justify-center transition-colors rounded-md shrink-0 border-none shadow-none cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted",
-                                            isTouchMode ? "h-10 w-10" : "h-7 w-7 opacity-0 group-hover:opacity-100"
+                                            isTouchMode ? "h-10 w-10" : "h-7 w-7"
                                         )}
                                         onClick={() => onOpenNumpad(item.cartItemId, 'discount', 0)}
                                         type="button"
@@ -219,7 +219,7 @@ function CartItemComponent({
                             variant="ghost"
                             className={cn(
                                 "flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors rounded-md shrink-0 ml-1 border-none shadow-none",
-                                isTouchMode ? "h-10 w-10" : "h-7 w-7 opacity-0 group-hover:opacity-100"
+                                isTouchMode ? "h-10 w-10" : "h-7 w-7"
                             )}
                             onClick={() => onRemove(item.cartItemId)}
                             type="button"
@@ -375,8 +375,14 @@ function CartItemComponent({
 export const CartItem = memo(CartItemComponent, (prevProps, nextProps) => {
     return (
         prevProps.item === nextProps.item &&
+        prevProps.originalProduct === nextProps.originalProduct &&
+        prevProps.uoms === nextProps.uoms &&
         prevProps.maxQty === nextProps.maxQty &&
         prevProps.onQuantityChange === nextProps.onQuantityChange &&
+        prevProps.onUomChange === nextProps.onUomChange &&
+        prevProps.onPriceChange === nextProps.onPriceChange &&
+        prevProps.onRemove === nextProps.onRemove &&
+        prevProps.onOpenNumpad === nextProps.onOpenNumpad &&
         prevProps.showLineDiscount === nextProps.showLineDiscount &&
         prevProps.posMode === nextProps.posMode
     )

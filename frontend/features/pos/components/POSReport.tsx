@@ -94,15 +94,15 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
 
     return (
         <div ref={reportRef} className={cn(
-            "w-full max-w-[380px] mx-auto bg-card p-6 shadow-overlay border border-border/50 text-card-foreground font-sans relative rounded-md animate-in zoom-in-95 duration-200",
+            "w-full max-w-[380px] mx-auto bg-card p-6 shadow-overlay border border-border/50 text-card-foreground font-sans relative rounded-md animate-in zoom-in-95 duration-200 motion-reduce:animate-none",
             "print:shadow-none print:border-none print:p-0 print:w-[80mm]"
         )}>
             {loading && (
-                <div className="absolute inset-0 z-20 flex items-center justify-center bg-card/60 rounded-md animate-pulse print:hidden">
+                <div className="absolute inset-0 z-20 flex items-center justify-center bg-card/60 rounded-md animate-pulse motion-reduce:animate-none print:hidden">
                     <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground/60">
-                        <div className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "0ms" }} />
-                        <div className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "150ms" }} />
-                        <div className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+                        <div className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce motion-reduce:animate-none" style={{ animationDelay: "0ms" }} />
+                        <div className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce motion-reduce:animate-none" style={{ animationDelay: "150ms" }} />
+                        <div className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce motion-reduce:animate-none" style={{ animationDelay: "300ms" }} />
                     </div>
                 </div>
             )}
