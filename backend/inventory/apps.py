@@ -27,7 +27,13 @@ class InventoryConfig(AppConfig):
         try:
             from core.prefix_registry import EntityPrefix
             from core.registry import SearchableEntity, UniversalRegistry
-            from inventory.models import Product, StockMove, Subscription, Warehouse, InventoryDocument
+            from inventory.models import (
+                InventoryDocument,
+                Product,
+                StockMove,
+                Subscription,
+                Warehouse,
+            )
 
             UniversalRegistry.register(
                 SearchableEntity(
@@ -56,7 +62,7 @@ class InventoryConfig(AppConfig):
                     search_fields=("id", "description", "adjustment_reason"),
                     short_display_template=f"{EntityPrefix.STOCK_MOVE}-{{id}}",
                     display_template=f"{EntityPrefix.STOCK_MOVE}-{{id}}",
-                    list_url="/inventory/stock?tab=movements",
+                    list_url="/inventory/reports/movements",
                     detail_url_pattern="/inventory/stock-moves/{id}",
                     permission="inventory.view_stockmove",
                 )
@@ -90,7 +96,7 @@ class InventoryConfig(AppConfig):
                     display_template="{name}",
                     subtitle_template="Código: {code}",
                     extra_info_template="",
-                    list_url="/inventory/stock/warehouses",
+                    list_url="/inventory/operations/warehouses",
                     detail_url_pattern="/inventory/warehouses/{id}",
                     permission="inventory.view_warehouse",
                 )

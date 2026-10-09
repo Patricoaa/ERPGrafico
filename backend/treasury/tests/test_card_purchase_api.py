@@ -71,6 +71,35 @@ def supplier(db):
     )
 
 
+@pytest.fixture
+def payable_account(db):
+    return Account.objects.create(
+        name="Prov Cuotas API",
+        code="2.1.01.051",
+        account_type=AccountType.LIABILITY,
+    )
+
+
+@pytest.fixture
+def receivable_account(db):
+    return Account.objects.create(
+        name="Deudores API",
+        code="1.1.02.051",
+        account_type=AccountType.ASSET,
+    )
+
+
+@pytest.fixture(autouse=True)
+def accounting_settings(db, payable_account, receivable_account):
+    from accounting.models import AccountingSettings
+
+    obj, _ = AccountingSettings.objects.get_or_create()
+    obj.default_receivable_account = receivable_account
+    obj.default_payable_account = payable_account
+    obj.save()
+    return obj
+
+
 def _url():
     return "/api/treasury/movements/card-purchase/"
 
@@ -91,6 +120,7 @@ def test_card_purchase_action_creates_group(auth_client, card_account, supplier)
             "client_reference": "API-CP-001",
         },
         format="json",
+        HTTP_IDEMPOTENCY_KEY="cp-api-create-001",
     )
     assert resp.status_code == 201, resp.json()
     data = resp.json()
@@ -125,6 +155,7 @@ def test_card_purchase_action_rejects_interest(auth_client, card_account, suppli
             "partner": supplier.id,
         },
         format="json",
+        HTTP_IDEMPOTENCY_KEY="cp-api-interest-001",
     )
     assert resp.status_code == 400
     assert "soportad" in resp.json()["error"]
@@ -157,6 +188,7 @@ def test_card_purchase_action_rejects_non_card_account(
             "installments": 1,
         },
         format="json",
+        HTTP_IDEMPOTENCY_KEY="cp-api-noncard-001",
     )
     assert resp.status_code == 400
     assert "CREDIT_CARD" in resp.json()["error"]
@@ -176,6 +208,7 @@ def test_card_purchase_action_validates_amount(
             "installments": 1,
         },
         format="json",
+        HTTP_IDEMPOTENCY_KEY="cp-api-amount-001",
     )
     assert resp.status_code == 400
     assert "monto" in resp.json()["error"]
@@ -195,8 +228,12 @@ def test_card_purchase_action_idempotent(
         "client_reference": "API-IDEM-001",
         "partner": supplier.id,
     }
-    r1 = auth_client.post(_url(), payload, format="json")
-    r2 = auth_client.post(_url(), payload, format="json")
+    r1 = auth_client.post(
+        _url(), payload, format="json", HTTP_IDEMPOTENCY_KEY="cp-api-idem-001"
+    )
+    r2 = auth_client.post(
+        _url(), payload, format="json", HTTP_IDEMPOTENCY_KEY="cp-api-idem-002"
+    )
     assert r1.status_code == 201
     assert r2.status_code == 201
     assert r1.json()["group"]["uuid"] == r2.json()["group"]["uuid"]

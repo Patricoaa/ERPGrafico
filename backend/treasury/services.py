@@ -10,10 +10,10 @@ from django.db.models.deletion import ProtectedError
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
-from core.prefix_registry import EntityPrefix
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, JournalEntry, JournalItem
 from accounting.services import JournalEntryService
+from core.prefix_registry import EntityPrefix
 
 from .check_service import CheckService
 from .models import CreditLine, PaymentMethod, TerminalBatch, TreasuryAccount, TreasuryMovement
@@ -39,6 +39,7 @@ class TreasuryService:
     def register_internal_transfer_from_request(cls, request):
         from datetime import datetime
         from decimal import Decimal
+
         from .models import TreasuryAccount
         fa = TreasuryAccount.objects.get(pk=request.data['from_account_id'])
         ta = TreasuryAccount.objects.get(pk=request.data['to_account_id'])
@@ -607,7 +608,7 @@ class TreasuryService:
                 "total_interest": str(group.total_interest),
                 "total_payable": str(group.total_payable),
             },
-            "schedule": schedule_data,
+            "installments": schedule_data,
             "movement": TreasuryMovementSerializer(use_movement).data if use_movement else None,
         }
 
@@ -618,13 +619,13 @@ class TreasuryService:
         from_account_id = data.get("from_account")
         if not from_account_id:
             raise ValidationError("from_account es requerido.")
-            
+
         try:
             from .models import TreasuryAccount
             from_account = TreasuryAccount.objects.get(pk=from_account_id)
         except TreasuryAccount.DoesNotExist:
             raise ValidationError("from_account no existe.")
-            
+
         if from_account.account_type != TreasuryAccount.Type.CREDIT_CARD:
             raise ValidationError("card-purchase requiere from_account de tipo CREDIT_CARD.")
 
@@ -640,7 +641,7 @@ class TreasuryService:
         installments = int(data.get("installments", 1))
         monthly_rate = data.get("monthly_rate", "0") or "0"
         amount = data.get("amount", "0")
-        
+
         date_value = data.get("date")
         if date_value and isinstance(date_value, str):
             from datetime import date as _date
@@ -678,7 +679,7 @@ class TreasuryService:
             notes=data.get("notes", "") or "",
             created_by=user,
         )
-        
+
         return group, from_account
 
     @staticmethod
@@ -970,6 +971,7 @@ class TreasuryService:
             JournalEntryService.reverse_entry(
                 movement.journal_entry,
                 description=f"Anulación Movimiento {movement.id}",
+                allow_automatic=True,
             )
         elif movement.journal_entry:
             je = movement.journal_entry
@@ -1236,7 +1238,7 @@ class TerminalBatchService:
     @staticmethod
     def create_batch_from_request(request) -> "TerminalBatch":
         data = request.data
-        from .models import PaymentTerminalProvider, PaymentMethod
+        from .models import PaymentMethod, PaymentTerminalProvider
 
         provider_id = data.get("provider")
         payment_method_id = data.get("payment_method")
@@ -1501,9 +1503,9 @@ class TerminalBatchService:
             )
 
         # 2. Create Purchase Order
+        from billing.services import BillingService
         from purchasing.models import PurchaseLine, PurchaseOrder
         from purchasing.services import PurchaseOrderService
-        from billing.services import BillingService
 
         po = PurchaseOrder.objects.create(
             supplier=supplier,
@@ -1536,8 +1538,8 @@ class TerminalBatchService:
 
         # 4. Generate Invoice
         BillingService.create_purchase_bill(
-            po, 
-            supplier_invoice_number=number or f"COM-{po.number}", 
+            po,
+            supplier_invoice_number=number or f"COM-{po.number}",
             date=date or timezone.now().date()
         )
 
@@ -1664,7 +1666,6 @@ class BankStatementService:
         Returns:
             La misma instancia con ``status = "CONFIRMED"``.
         """
-        from .models import BankStatement
 
         if statement.status == "CONFIRMED":
             raise ValueError("Cartola ya confirmada.")

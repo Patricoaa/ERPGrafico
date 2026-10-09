@@ -3381,7 +3381,7 @@ class CreditCardStatement(models.Model):
         from core.utils import get_current_date
 
         return (
-            self.status in (self.Status.ACTIVE, self.Status.DELIVERED)
+            self.status in (self.Status.OPEN, self.Status.PARTIALLY_PAID, self.Status.OVERDUE)
             and self.due_date
             and self.due_date < get_current_date()
         )

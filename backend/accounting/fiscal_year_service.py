@@ -345,7 +345,7 @@ class FiscalYearClosingService:
         if fiscal_year.closing_entry:
             if fiscal_year.closing_entry.status == JournalEntry.Status.POSTED:
                 JournalEntryService.reverse_entry(
-                    fiscal_year.closing_entry, 
+                    fiscal_year.closing_entry,
                     description=f"Reverso Cierre Ejercicio {year}",
                     allow_automatic=True
                 )
@@ -454,7 +454,7 @@ class FiscalYearClosingService:
                 continue
 
             target_account = retained_earnings_acc if account == current_earnings_acc and retained_earnings_acc else account
-            
+
             label = f"Apertura {target_account.code} {target_account.name}"
             if account == current_earnings_acc and retained_earnings_acc:
                 label = f"Traslado de Utilidad Ej. {year}"

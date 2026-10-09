@@ -5,7 +5,6 @@ from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.utils import timezone
 
-from core.prefix_registry import EntityPrefix
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, AccountType, JournalEntry, JournalItem
 from accounting.services import AccountingMapper, JournalEntryService
@@ -452,9 +451,9 @@ class PurchasingService:
             source_object_id=receipt.id,
         )
 
-        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
+        from inventory.models import InventoryDocument, InventoryDocumentDetail
         from inventory.services import InventoryService
-        
+
         doc = InventoryDocument.objects.create(
             document_type=InventoryDocument.Type.RECEIPT,
             status=InventoryDocument.Status.DRAFT,
@@ -462,11 +461,11 @@ class PurchasingService:
             reference=f"Recepción {receipt.purchase_order.display_id}",
             partner=receipt.purchase_order.supplier
         )
-        
+
         details_to_create = []
 
         for line in receipt.lines.all():
-            # 1. Prepare Inventory Document Detail - quantity is already negative in receipt line for returns, wait: confirm_receipt is for receipts not returns? 
+            # 1. Prepare Inventory Document Detail - quantity is already negative in receipt line for returns, wait: confirm_receipt is for receipts not returns?
             # Oh wait, the loop says "quantity is already negative in receipt line for returns". So confirm_receipt handles both.
             # But wait, InventoryDocument handles IN/OUT based on type. For receipt returns, it might need to be DELIVERY or we keep using RECEIPT with negative quantity and StockMove handles it.
             # Let's keep it simple: create details.
@@ -485,7 +484,7 @@ class PurchasingService:
                     f"Disponible: {line.product.qty_on_hand} {line.product.uom.name}, "
                     f"Requerido: {abs(base_qty)} {line.product.uom.name}"
                 )
-                
+
             details_to_create.append(
                 InventoryDocumentDetail(
                     document=doc,
@@ -501,10 +500,10 @@ class PurchasingService:
             line.purchase_line.save()
 
         InventoryDocumentDetail.objects.bulk_create(details_to_create)
-        
+
         # Confirm document
         doc, generated_moves = InventoryService.confirmar_documento(doc, journal_entry=entry)
-        
+
         # Assign generated moves to lines (matching by product)
         # Note: This is an approximation. If there are duplicate products in the receipt, it might assign the same move or arbitrary ones.
         for line, move in zip(receipt.lines.all(), generated_moves):
@@ -586,7 +585,6 @@ class PurchasingService:
         from datetime import datetime
 
         from accounting.services import JournalEntryService
-        from inventory.models import StockMove
 
         settings = AccountingSettings.get_solo()
         if not settings:
@@ -604,9 +602,9 @@ class PurchasingService:
             f"DEBUG: has_boleta={has_boleta}, StockMove fields={[f.name for f in StockMove._meta.get_fields()]}"
         )
 
-        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
+        from inventory.models import InventoryDocument, InventoryDocumentDetail
         from inventory.services import InventoryService
-        
+
         doc = InventoryDocument.objects.create(
             document_type=InventoryDocument.Type.RECEIPT,
             status=InventoryDocument.Status.DRAFT,
@@ -616,7 +614,7 @@ class PurchasingService:
             source_document_type="purchasing.purchasereceipt",
             source_document_id=receipt.id,
         )
-        
+
         details_to_create = []
 
         for line in receipt.lines.all():
@@ -716,7 +714,7 @@ class PurchasingService:
         if details_to_create:
             InventoryDocumentDetail.objects.bulk_create(details_to_create)
             doc, generated_moves = InventoryService.confirmar_documento(doc)
-            
+
             # Map lines that are not services to generated moves
             inventory_lines = [line for line in receipt.lines.all() if line.product.product_type not in ["SERVICE", "SUBSCRIPTION"]]
             for line, move in zip(inventory_lines, generated_moves):
@@ -807,6 +805,7 @@ class PurchasingService:
     @staticmethod
     def register_note_from_request(request, order: PurchaseOrder):
         import json
+
         from .serializers import NoteCreationSerializer
 
         data = request.data.dict() if hasattr(request.data, "dict") else request.data.copy()
@@ -855,7 +854,6 @@ class PurchasingService:
         """
         from accounting.models import JournalItem
         from billing.models import Invoice
-        from inventory.models import StockMove
 
         settings = AccountingSettings.get_solo()
         if not settings:
@@ -1025,7 +1023,7 @@ class PurchasingService:
 
         # 6. Process Inventory Movements (for both NC and ND if return_items specified)
         if return_items:
-            from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
+            from inventory.models import InventoryDocument, InventoryDocumentDetail
             from inventory.services import InventoryService
 
             doc = InventoryDocument.objects.create(
@@ -1168,7 +1166,8 @@ class PurchasingService:
         WorkflowService.sync_hub_tasks(result["order"])
         from billing.serializers import InvoiceSerializer
         from treasury.serializers import TreasuryMovementSerializer
-        from .serializers import PurchaseReceiptSerializer, PurchaseOrderSerializer
+
+        from .serializers import PurchaseOrderSerializer, PurchaseReceiptSerializer
 
         return {
             "order": PurchaseOrderSerializer(result["order"]).data,
@@ -1271,9 +1270,9 @@ class PurchasingService:
             )
 
         # 2. Reverse Stock Moves & Update Purchase Lines
-        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
+        from inventory.models import InventoryDocument, InventoryDocumentDetail
         from inventory.services import InventoryService
-        
+
         doc_inv = InventoryDocument.objects.create(
             document_type=InventoryDocument.Type.RECEIPT,
             status=InventoryDocument.Status.DRAFT,
@@ -1325,7 +1324,7 @@ class PurchasingService:
     @staticmethod
     def purchase_checkout_from_request(request) -> dict:
         import json
-        
+
         data = request.data
         order_data = data.get("order_data")
         if isinstance(order_data, str):

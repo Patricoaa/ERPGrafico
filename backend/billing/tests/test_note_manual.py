@@ -4,8 +4,8 @@ Run with: python backend/manage.py shell < backend/billing/test_note_manual.py
 """
 
 from decimal import Decimal
-import pytest
 
+import pytest
 from django.db import transaction
 from django.utils import timezone
 

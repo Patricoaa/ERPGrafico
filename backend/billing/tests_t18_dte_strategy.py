@@ -385,7 +385,6 @@ class TestBoletaMakeJournalEntry:
         )
         settings = make_settings()
 
-        from accounting.glosa_builder import Roles
 
         _, _, items = self.strategy.make_journal_entry(invoice, settings)
         rev_items = [i for i in items if "Ingreso" in i.get("label", "")]

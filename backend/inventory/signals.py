@@ -48,8 +48,9 @@ def product_post_save(sender, instance, created, **kwargs):
 
     if cost_changed or sale_changed:
         try:
-            from .tasks import check_product_margin_task
             from django.db import transaction
+
+            from .tasks import check_product_margin_task
 
             # Delay the task to run asynchronously after commit
             transaction.on_commit(lambda: check_product_margin_task.delay(instance.id))
@@ -65,20 +66,21 @@ def handle_stock_move_updates(sender, instance, created, **kwargs):
     2. Invalidates report cache (T-24).
     3. Actualiza el stock en la nueva tabla Stock usando las ubicaciones.
     """
+
     from core.cache import invalidate_report_cache
+
     from .services import InventoryService
-    from decimal import Decimal
 
     invalidate_report_cache("inventory")
 
     product = instance.product
-    
+
     if created:
         # Phase 3: Update based on Location
         # Add to destination if internal
         if instance.destination_location and instance.destination_location.location_type == "INTERNAL":
             InventoryService.actualizar_stock(product.id, instance.destination_location.warehouse_id, instance.quantity)
-            
+
         # Subtract from source if internal
         if instance.source_location and instance.source_location.location_type == "INTERNAL":
             InventoryService.actualizar_stock(product.id, instance.source_location.warehouse_id, -instance.quantity)
@@ -99,6 +101,7 @@ from django.db.models.signals import post_delete
 @receiver(post_delete, sender=StockMove)
 def handle_stock_move_delete(sender, instance, **kwargs):
     from core.cache import invalidate_report_cache
+
     from .services import InventoryService
 
     invalidate_report_cache("inventory")
@@ -106,7 +109,7 @@ def handle_stock_move_delete(sender, instance, **kwargs):
     # Reverse the quantity changes
     if instance.destination_location and instance.destination_location.location_type == "INTERNAL":
         InventoryService.actualizar_stock(instance.product.id, instance.destination_location.warehouse_id, -instance.quantity)
-        
+
     if instance.source_location and instance.source_location.location_type == "INTERNAL":
         InventoryService.actualizar_stock(instance.product.id, instance.source_location.warehouse_id, instance.quantity)
 

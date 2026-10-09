@@ -958,7 +958,7 @@ class WorkOrderService:
                 total_material_cost += mat.quantity_planned * service_cost
                 continue
 
-        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
+        from inventory.models import InventoryDocument, InventoryDocumentDetail
         from inventory.services import InventoryService
 
         doc_inv = InventoryDocument.objects.create(
@@ -1072,7 +1072,7 @@ class WorkOrderService:
         if details_to_create:
             InventoryDocumentDetail.objects.bulk_create(details_to_create)
             doc_inv, generated_moves = InventoryService.confirmar_documento(doc_inv)
-            
+
             # Create traceability records for materials
             for (mat, base_comp_qty), move in zip(mat_consumptions_data, generated_moves[:len(mat_consumptions_data)]):
                 ProductionConsumption.objects.create(
@@ -1868,6 +1868,7 @@ class WorkOrderService:
         annotated component stock so get_manufacturable_quantity() runs in-memory.
         """
         from django.db.models import Prefetch, Sum
+
         from inventory.models import Product, Stock
         from production.models import BillOfMaterials
 
@@ -1943,6 +1944,7 @@ class WorkOrderService:
             )
 
         from django.contrib.contenttypes.models import ContentType
+
         from workflow.models import Notification, Task
 
         content_type = ContentType.objects.get_for_model(work_order)
@@ -2039,6 +2041,7 @@ class WorkOrderService:
 
         # Cleanup generic relations (same as destroy)
         from django.contrib.contenttypes.models import ContentType
+
         from workflow.models import Notification, Task
 
         ct = ContentType.objects.get_for_model(work_order)
@@ -2100,6 +2103,7 @@ class WorkOrderService:
     @staticmethod
     def get_comments_queryset(work_order):
         from django.contrib.contenttypes.models import ContentType
+
         from workflow.models import Comment
 
         wo_ct = ContentType.objects.get_for_model(WorkOrder)
@@ -2187,6 +2191,7 @@ class WorkOrderPdfService:
 
         import base64
         from io import BytesIO
+
         import qrcode
 
         base_url = (

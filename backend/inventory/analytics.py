@@ -18,9 +18,22 @@ from datetime import timedelta
 from decimal import Decimal
 from typing import Any
 
-from django.db.models import Case, CharField, Count, DecimalField, ExpressionWrapper, F, Q, Sum, Value, When
+from django.db.models import (
+    Case,
+    CharField,
+    Count,
+    DecimalField,
+    ExpressionWrapper,
+    F,
+    Q,
+    Sum,
+    Value,
+    When,
+)
 from django.db.models.functions import TruncDay, TruncMonth, TruncYear
 from django.utils.timezone import now
+
+from core.utils import decimal_str
 
 from .models import ADJUSTMENT_VIRTUAL_NAMES, StockMove
 
@@ -207,10 +220,10 @@ class StockMoveAnalyticsService:
             {
                 "period": v["period"],
                 "count": v["count"],
-                "entradas": str(v["entradas"]),
-                "salidas": str(v["salidas"]),
-                "ajustes": str(v["ajustes"]),
-                "transferencias": str(v["transferencias"]),
+                "entradas": decimal_str(v["entradas"]),
+                "salidas": decimal_str(v["salidas"]),
+                "ajustes": decimal_str(v["ajustes"]),
+                "transferencias": decimal_str(v["transferencias"]),
             }
             for v in buckets.values()
         ]
@@ -289,11 +302,11 @@ class StockMoveAnalyticsService:
         return [
             {
                 "period": v["period"],
-                "entrada": str(v["entrada"]),
-                "salida": str(v["salida"]),
-                "ajuste": str(v["ajuste"]),
-                "transferencia": str(v["transferencia"]),
-                "total": str(v["total"]),
+                "entrada": decimal_str(v["entrada"]),
+                "salida": decimal_str(v["salida"]),
+                "ajuste": decimal_str(v["ajuste"]),
+                "transferencia": decimal_str(v["transferencia"]),
+                "total": decimal_str(v["total"]),
             }
             for v in buckets.values()
         ]
@@ -351,8 +364,8 @@ class StockMoveAnalyticsService:
                     "id": key,
                     "label": labels[key],
                     "count": row["count"] if row else 0,
-                    "quantity": str(row["quantity"] or Decimal("0")) if row else "0",
-                    "amount": str(row["amount"] or Decimal("0")) if row else "0",
+                    "quantity": decimal_str(row["quantity"] or Decimal("0")) if row else "0",
+                    "amount": decimal_str(row["amount"] or Decimal("0")) if row else "0",
                 }
             )
         return result
@@ -403,8 +416,8 @@ class StockMoveAnalyticsService:
             {
                 "product_id": row["product_id"],
                 "product_name": row["product__name"],
-                "quantity": str(row["quantity"] or Decimal("0")),
-                "amount": str(row["amount"] or Decimal("0")),
+                "quantity": decimal_str(row["quantity"] or Decimal("0")),
+                "amount": decimal_str(row["amount"] or Decimal("0")),
             }
             for row in rows
         ]
@@ -618,6 +631,6 @@ class StockMoveAnalyticsService:
                 "total_in_qty": by_key["IN"]["quantity"],
                 "total_out_qty": by_key["OUT"]["quantity"],
                 "total_adjustment_qty": by_key["ADJUSTMENT"]["quantity"],
-                "total_value": str(total_value),
+                "total_value": decimal_str(total_value),
             },
         }

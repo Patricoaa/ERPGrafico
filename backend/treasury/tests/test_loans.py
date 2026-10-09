@@ -12,10 +12,11 @@ Cubre:
 """
 
 from datetime import date, timedelta
-from decimal import Decimal
+from decimal import ROUND_HALF_EVEN, Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db.models import Sum
 
 from accounting.models import Account, AccountType, JournalItem
@@ -334,7 +335,8 @@ def test_pay_overdue_installment_charges_penalty(base):
     penalty_debit = JournalItem.objects.filter(account=penalty_acc, debit__gt=0).aggregate(
         s=Sum("debit")
     )["s"]
-    assert penalty_debit == expected_penalty
+    # El libro mayor registra en pesos enteros (JournalItem decimal_places=0, HALF_EVEN).
+    assert penalty_debit == expected_penalty.quantize(Decimal("1"), rounding=ROUND_HALF_EVEN)
     # El OUTBOUND total incluye la mora.
     assert paid.payment_movement.amount == (inst.total_amount + expected_penalty)
 
@@ -386,7 +388,7 @@ def test_pay_installment_reduces_liability(base):
         account=base["liab_ta"].account,
         debit__gt=0,
     ).aggregate(total=__import__("django").db.models.Sum("debit"))["total"]
-    expected_debit = inst.principal_amount
+    expected_debit = inst.principal_amount.quantize(Decimal("1"), rounding=ROUND_HALF_EVEN)
     assert debit_to_pasivo == expected_debit
 
 

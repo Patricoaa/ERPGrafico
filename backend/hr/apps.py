@@ -90,7 +90,7 @@ class HrConfig(AppConfig):
                     display_template="{name}",
                     subtitle_template="{category}",
                     extra_info_template="",
-                    list_url="/hr/payrolls",
+                    list_url="/hr/settings/concepts",
                     detail_url_pattern="/hr/settings/concepts",
                     permission="hr.view_payrollconcept",
                 )

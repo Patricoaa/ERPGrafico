@@ -2,6 +2,7 @@ class ProductionSelectorExt:
     @staticmethod
     def get_bom_queryset(request):
         from django.db.models import Q
+
         from .models import BillOfMaterials
 
         qs = BillOfMaterials.objects.all()
@@ -19,6 +20,7 @@ class ProductionSelectorExt:
     @staticmethod
     def get_stock_available(obj, context):
         from django.db.models import Sum
+
         from inventory.services import UoMService
         c = obj.component
         if c.product_type == 'SERVICE': return 999999
@@ -30,10 +32,10 @@ class ProductionSelectorExt:
             return c.get_manufacturable_quantity() or 0.0
         w = obj.work_order.warehouse
         if not w: return 0.0
-        
+
         sbp = context.get('stocks_by_product')
         req = context.get('request')
-        
+
         if sbp is not None: stock = sbp.get(c.id, 0.0)
         else:
             if req:
@@ -53,6 +55,7 @@ class ProductionSelectorExt:
     @staticmethod
     def get_total_cost(obj):
         from decimal import Decimal
+
         from inventory.services import UoMService
         total = Decimal('0.00')
         for line in obj.lines.all():

@@ -1,5 +1,3 @@
-from core.api.pagination import StandardResultsSetPagination
-from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
@@ -7,7 +5,9 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Notification, NotificationRule, Task, TaskAssignmentRule, WorkflowSettings
+from core.api.pagination import StandardResultsSetPagination
+
+from .models import NotificationRule, TaskAssignmentRule, WorkflowSettings
 from .selectors import NotificationSelector
 from .serializers import (
     NotificationRuleSerializer,

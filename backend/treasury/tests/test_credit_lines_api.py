@@ -29,10 +29,9 @@ def bank(db):
 
 @pytest.fixture
 def checking_account(db, bank):
-    Account.objects.create(
-        name="Efectivo y Equivalentes",
-        code="1.1.01",
-        account_type=AccountType.ASSET,
+    Account.objects.get_or_create(
+        code=Account.CASH_GROUP_CODE,
+        defaults={"name": "Efectivo y Equivalentes", "account_type": AccountType.ASSET},
     )
     bank_acc = Account.objects.create(
         name="Cta API Líneas",
@@ -66,20 +65,20 @@ class TestCreditLineAPI:
     def test_list_credit_lines(self, api_client, credit_line):
         resp = api_client.get("/api/treasury/credit-lines/")
         assert resp.status_code == status.HTTP_200_OK
-        assert len(resp.data) >= 1
-        assert resp.data[0]["code"] == "API-LINEA"
+        assert len(resp.data["results"]) >= 1
+        assert resp.data["results"][0]["code"] == "API-LINEA"
 
     def test_list_filter_by_treasury_account(self, api_client, checking_account, credit_line):
         resp = api_client.get(
             f"/api/treasury/credit-lines/?treasury_account_id={checking_account.id}"
         )
         assert resp.status_code == status.HTTP_200_OK
-        assert len(resp.data) == 1
+        assert len(resp.data["results"]) == 1
 
     def test_list_filter_by_bank(self, api_client, bank, credit_line):
         resp = api_client.get(f"/api/treasury/credit-lines/?bank_id={bank.id}")
         assert resp.status_code == status.HTTP_200_OK
-        assert len(resp.data) == 1
+        assert len(resp.data["results"]) == 1
 
     def test_create_credit_line(self, api_client, checking_account):
         payload = {

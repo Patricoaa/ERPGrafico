@@ -1,9 +1,12 @@
 import importlib
 import inspect
+
+import pytest
 from django.apps import apps
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
+
 from core.api.pagination import StandardResultsSetPagination
-import pytest
+
 
 @pytest.mark.django_db
 def test_all_list_viewsets_have_pagination():
@@ -11,7 +14,7 @@ def test_all_list_viewsets_have_pagination():
     Ningún ModelViewSet o ReadOnlyModelViewSet puede carecer de pagination_class,
     a menos que esté explícitamente exento (whitelist).
     """
-    
+
     WHITELIST = [
         # Settings / system viewsets (singletons or admin-only, no pagination)
         "AccountingSettingsViewSet",
@@ -48,29 +51,29 @@ def test_all_list_viewsets_have_pagination():
         "UoMViewSet",
         "WarehouseViewSet",
     ]
-    
+
     violating_viewsets = []
-    
+
     for app_config in apps.get_app_configs():
         # Only inspect local apps
         if app_config.name.startswith('django') or app_config.name.startswith('rest_framework'):
             continue
-            
+
         try:
             views_module = importlib.import_module(f"{app_config.name}.views")
         except ImportError:
             continue
-            
+
         for name, obj in inspect.getmembers(views_module):
             if inspect.isclass(obj):
                 # Ensure it's defined in the module itself, not imported
                 if obj.__module__ != f"{app_config.name}.views":
                     continue
-                
+
                 if issubclass(obj, (ModelViewSet, ReadOnlyModelViewSet)):
                     if name in WHITELIST:
                         continue
-                    
+
                     # Check if pagination_class is set to StandardResultsSetPagination
                     if not hasattr(obj, 'pagination_class') or obj.pagination_class is None:
                         violating_viewsets.append(f"{name} (Sin paginación)")

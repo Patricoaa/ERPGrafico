@@ -1,13 +1,14 @@
-import os
 import ast
+import os
+
 
 def analyze_gap_a(base_dir, output_file):
     apps = [d for d in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, d)) and not d.startswith('.') and d not in ['venv', 'tmp', 'scratch', 'scripts', 'media', 'config']]
-    
+
     with open(output_file, 'w') as out:
         out.write("# GAP A Violations Sweep\n\n")
         out.write("## 1. Vistas con más de 20 líneas\n\n")
-        
+
         total_long = 0
         for app in apps:
             path = os.path.join(base_dir, app, 'views.py')
@@ -27,12 +28,12 @@ def analyze_gap_a(base_dir, output_file):
                         out.write(f"### {app}\n")
                         for name, lines in app_violations:
                             out.write(f"- `{name}`: {lines} líneas\n")
-                except Exception as e:
+                except Exception:
                     pass
 
         out.write(f"\n*Total de vistas largas: {total_long}*\n")
         out.write("\n## 2. Lógica de negocio directa en vistas (`.save()`, `objects.create()`)\n\n")
-        
+
         total_logic = 0
         for app in apps:
             path = os.path.join(base_dir, app, 'views.py')

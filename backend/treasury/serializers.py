@@ -298,7 +298,7 @@ class TreasuryMovementListSerializer(serializers.ModelSerializer):
     class Meta:
         model = TreasuryMovement
         fields = [
-            "id", "display_id", "account", "account_name", "amount", "date", 
+            "id", "display_id", "account", "account_name", "amount", "date",
             "movement_type", "movement_type_display", "payment_method", "payment_method_display",
             "status", "is_reconciled", "is_pending_registration", "created_at"
         ]
@@ -966,8 +966,15 @@ class BankLoanSerializer(serializers.ModelSerializer):
         source="disbursement_account.name",
         read_only=True,
     )
+    # La FK del modelo apunta a la TreasuryAccount wrapper (tipo LOAN), pero el
+    # contrato de API expone la **cuenta contable** (Account) — consistente con
+    # el write serializer, que recibe el ID de la cuenta contable de pasivo.
+    liability_account = serializers.PrimaryKeyRelatedField(
+        source="liability_account.account",
+        read_only=True,
+    )
     liability_account_name = serializers.CharField(
-        source="liability_account.name",
+        source="liability_account.account.name",
         read_only=True,
     )
     created_by_name = serializers.CharField(
@@ -988,6 +995,7 @@ class BankLoanSerializer(serializers.ModelSerializer):
     def _get_aggregates(self, obj):
         if not hasattr(obj, "_loan_aggregates_cache"):
             from decimal import Decimal
+
             from .models import LoanInstallment
 
             installments = list(obj.installments.all())
@@ -1032,6 +1040,7 @@ class BankLoanSerializer(serializers.ModelSerializer):
 
     def get_total_disbursed(self, obj):
         from decimal import Decimal
+
         from .models import LoanInstallment
 
         result = sum(

@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from accounting.models import Account, AccountingSettings
 from billing.models import Invoice
 from contacts.models import Contact
-from inventory.models import Product, UoM, Warehouse
+from inventory.models import Product, ProductCategory, UoM, UoMCategory, Warehouse
 from sales.models import SaleLine, SaleOrder
 from sales.services import SalesService
 
@@ -25,7 +25,11 @@ def basic_setup(db):
     )
 
     # Setup UoM
-    uom = UoM.objects.create(name="Unit")
+    uom_cat, _ = UoMCategory.objects.get_or_create(name="Unidades")
+    uom = UoM.objects.create(name="Unit", category=uom_cat)
+
+    # Setup Product Category
+    category = ProductCategory.objects.create(name="General")
 
     # Setup Customer
     customer = Contact.objects.create(name="Test Customer", tax_id="1-9")
@@ -33,7 +37,13 @@ def basic_setup(db):
     # Setup Warehouse
     warehouse = Warehouse.objects.create(name="Main Warehouse")
 
-    return {"settings": settings, "uom": uom, "customer": customer, "warehouse": warehouse}
+    return {
+        "settings": settings,
+        "uom": uom,
+        "category": category,
+        "customer": customer,
+        "warehouse": warehouse,
+    }
 
 
 @pytest.mark.django_db
@@ -45,6 +55,7 @@ def test_create_note_validate_quantity_delivered(basic_setup):
         internal_code="ST01",
         product_type=Product.Type.STORABLE,
         uom=uom,
+        category=basic_setup["category"],
         track_inventory=True,
     )
 
@@ -80,6 +91,7 @@ def test_create_note_block_service_return(basic_setup):
         internal_code="SV01",
         product_type=Product.Type.SERVICE,
         uom=uom,
+        category=basic_setup["category"],
         track_inventory=False,
     )
 
@@ -108,7 +120,8 @@ def test_block_debit_note_for_non_storable_manufacturable(basic_setup):
         internal_code="MFG01",
         product_type=Product.Type.MANUFACTURABLE,
         uom=uom,
-        track_inventory=False,  # Non storable
+        category=basic_setup["category"],
+        mfg_auto_finalize=True,  # Express: no rastrea inventario (no-storable)
     )
 
     order = SaleOrder.objects.create(customer=basic_setup["customer"])

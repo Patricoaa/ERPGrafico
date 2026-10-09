@@ -2,6 +2,7 @@ class FinanceServiceExt:
     @staticmethod
     def handle_report_request(request, report_type, generator_func, default_start=None, default_end=None):
         from core.cache import cache_report
+
         from .views import _to_date
         end = request.query_params.get('end_date') or request.query_params.get('date') or default_end
         start = request.query_params.get('start_date', default_start)
@@ -12,6 +13,7 @@ class FinanceServiceExt:
         if request.query_params.get('is_async', 'false').lower() == 'true':
             from celery import uuid
             from django.db import transaction
+
             from .tasks import generate_report_task
             tid = uuid()
             transaction.on_commit(lambda: generate_report_task.apply_async(kwargs={'report_type': report_type, 'end_date': str(end) if end else None, 'start_date': str(start) if start else None, 'comp_end_date': str(cend) if cend else None, 'comp_start_date': str(cstart) if cstart else None, 'fiscal_year_id': fy_id}, task_id=tid))

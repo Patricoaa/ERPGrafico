@@ -22,7 +22,6 @@ All methods are read-only; no transactions or mutations.
 
 from __future__ import annotations
 
-from decimal import Decimal
 from typing import Any
 
 from django.db.models import (
@@ -38,6 +37,8 @@ from django.db.models import (
     When,
 )
 from django.db.models.functions import Coalesce
+
+from core.utils import decimal_str
 
 from .models import Product
 
@@ -308,8 +309,8 @@ class ProductAnalyticsService:
         )
         return {
             "total_products": total_products,
-            "total_units": str(agg["total_units"]),
-            "total_value": str(agg["total_value"]),
+            "total_units": decimal_str(agg["total_units"]),
+            "total_value": decimal_str(agg["total_value"]),
             "with_stock": agg["with_stock"],
             "out_of_stock": agg["out_of_stock"],
         }

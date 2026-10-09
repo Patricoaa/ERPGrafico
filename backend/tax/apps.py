@@ -49,7 +49,7 @@ class TaxConfig(AppConfig):
                     display_template="{month}/{year}",
                     subtitle_template="{status}",
                     extra_info_template="",
-                    list_url="/tax/declarations",
+                    list_url="/tax/periods",
                     detail_url_pattern="/tax/periods/{id}",
                     permission="tax.view_taxperiod",
                 )

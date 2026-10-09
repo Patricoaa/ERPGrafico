@@ -5,9 +5,8 @@ from django.utils import timezone
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .services import FinanceService
 from .bi_analytics import BIAnalyticsService
-from .tasks import generate_report_task
+from .services import FinanceService
 
 # --- API Views (JSON) ---
 

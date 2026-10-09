@@ -2,6 +2,7 @@ class TaxServiceExt:
     @staticmethod
     def create_declaration_from_request(request):
         from django.utils import timezone
+
         from .services import F29CalculationService
         y, m = request.data.get('tax_period_year'), request.data.get('tax_period_month')
         if not y or not m:

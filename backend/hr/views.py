@@ -1,16 +1,14 @@
-from core.api.pagination import StandardResultsSetPagination
-from core.idempotency import idempotent_endpoint
-from decimal import Decimal
 
 import django_filters
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from core.api.pagination import StandardResultsSetPagination
+from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin as AuditHistory
 
 from . import services
@@ -31,7 +29,6 @@ from .serializers import (
     AbsenceSerializer,
     AFPSerializer,
     EmployeeConceptAmountSerializer,
-    EmployeePayrollPreviewSerializer,
     EmployeeSerializer,
     EmployeeWriteSerializer,
     GlobalHRSettingsSerializer,
@@ -39,8 +36,8 @@ from .serializers import (
     PayrollDetailSerializer,
     PayrollItemSerializer,
     PayrollListSerializer,
-    PayrollWriteSerializer,
     PayrollPaymentSerializer,
+    PayrollWriteSerializer,
     SalaryAdvanceSerializer,
 )
 from .services import PayrollPaymentService
@@ -128,7 +125,7 @@ class EmployeeViewSet(AuditHistory, viewsets.ModelViewSet):
     serializer_class = EmployeeSerializer
     pagination_class = None  # Master data
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    
+
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
             return EmployeeWriteSerializer
@@ -221,9 +218,9 @@ class PayrollViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["post"])
     def create_draft_payrolls(self, request):
         """Dispara manualmente la creación de liquidaciones borrador para el mes actual."""
-        from .tasks import create_monthly_draft_payrolls
         from celery import uuid
-        from django.db import transaction
+
+        from .tasks import create_monthly_draft_payrolls
 
         task_id = uuid()
         transaction.on_commit(lambda: create_monthly_draft_payrolls.apply_async(task_id=task_id))

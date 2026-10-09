@@ -150,7 +150,7 @@ class ActionLoggingService:
 
     @staticmethod
     def log_failed_login(username, request):
-        from core.models import User, ActionLog
+        from core.models import ActionLog, User
 
         u = User.objects.filter(username=username).first()
         ActionLoggingService.log_action(
@@ -162,7 +162,7 @@ class ActionLoggingService:
 
     @staticmethod
     def log_successful_login(username, request):
-        from core.models import User, ActionLog
+        from core.models import ActionLog, User
 
         u = User.objects.filter(username=username).first()
         if u:

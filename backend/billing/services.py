@@ -175,7 +175,7 @@ class BillingService:
                 order = PurchaseOrder.objects.get(id=order_id)
             except PurchaseOrder.DoesNotExist:
                 raise ValidationError("Order not found")
-            
+
             supplier_invoice_number = validated_data.get("supplier_invoice_number", "")
             document_attachment = validated_data.get("document_attachment")
             issue_date = validated_data.get("issue_date")

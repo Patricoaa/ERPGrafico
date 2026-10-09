@@ -53,6 +53,28 @@ El backend `UniversalRegistry.list_url` DEBE coincidir siempre con el valor en `
 | `hr.payroll` | Vista standalone `/hr/payrolls/[id]` — mismo caso que Budget. |
 | `billing.invoice` | Split client-side (`is_sale_document`) — no aplica el patrón standard. |
 
+### Excepciones T-108 — entidades drawer/tab-only (oct 2026)
+
+El invariante T-103/T-79 asumía que TODA entidad searchable tiene lista y detalle
+en rutas propias. La auditoría de T-108 reveló dos categorías que no:
+
+**`DRAWER_ENTITIES`** — entidades SIN página de lista propia. Viven como drawer
+(launch desde otra lista) o como tab/sección dentro de una página padre. Se omiten
+de ambos invariantes (`test_list_url_matches_frontend_routes` y
+`test_search_routes_match_app_router`). Sus `list_url`:
+`/purchasing/orders` (returns/receipts), `/contacts` (partnertransaction),
+`/finances/partners/distributions` (profitdistributionresolution),
+`/treasury/bank-center` (bankloan, creditcardstatement, cardpurchasegroup,
+cardpurchaseinstallment, loaninstallment, creditline), `/hr/settings/concepts`
+(payrollconcept).
+
+**`DRAWER_DETAIL_ENTITIES`** — entidades CON lista propia (su `list_url` se valida
+contra `searchableEntityRoutes`), pero su detalle es un drawer: no existe
+`[id]/page.tsx`. Se omiten solo del invariante de detalle (T-79). Actuales:
+`production.bom`, `treasury.check`, `treasury.paymentmethod`,
+`treasury.treasurymovement`, `treasury.treasuryaccount`, `hr.absence`,
+`hr.salaryadvance`, `sales.saledelivery`, `inventory.inventorydocument`.
+
 ---
 
 ## 3. Implementación
@@ -84,6 +106,40 @@ El test:
 3. Falla con mensaje explicativo si hay divergencia.
 4. Ignora explícitamente las excepciones documentadas (Budget, Payroll, Invoice).
 
+### 3.3 Reconciliación T-108 (2026-10-09)
+
+La auditoría T-108 constató que el mapa frontend contenía rutas que ya no existían
+en el App Router (el propio `searchableEntityRoutes` se había quedado obsoleto) y
+que varias entidades del `UniversalRegistry` eran drawer/tab-only sin ruta posible.
+
+Correcciones de `list_url` (backend + frontend alineados contra páginas reales):
+
+| Entidad | `list_url` corregido | Página real |
+|---------|---------------------|-------------|
+| `accounting.budget` | `/finances/budgets` (era `/finance/budgets`) | `/finances/budgets` |
+| `sales.saledelivery` | `/sales/orders/deliveries` (era `/sales/deliveries`) | `/sales/orders/deliveries` |
+| `inventory.stockmove` | `/inventory/reports/movements` (era `/inventory/stock/movements`) | `MovementClientView` en `/inventory/reports/movements` |
+| `inventory.warehouse` | `/inventory/operations/warehouses` (era `/inventory/stock/warehouses`) | `WarehouseClientView` en `/inventory/operations/warehouses` |
+| `treasury.bankstatement` | `/treasury/reconciliation` (era `/treasury/reconciliation/statements`) | `StatementsClientView` en `/treasury/reconciliation` |
+| `treasury.check` | `/treasury/operaciones/checks` (era `/treasury/operaciones/movements`) | `/treasury/operaciones/checks` |
+| `tax.taxperiod` | `/tax/periods` (era `/tax/declarations`) | `/tax/periods` |
+
+Detalles corregidos:
+
+| Entidad | `detail_url_pattern` corregido |
+|---------|-------------------------------|
+| `accounting.budget` | `/finances/budgets/{id}` (typo `/finance/...`) |
+| `contacts.partnertransaction` | `/contacts` (parent, DRAWER_ENTITIES) |
+| `contacts.profitdistributionresolution` | `/finances/partners/distributions` (parent, DRAWER_ENTITIES) |
+| `purchasing.purchasereturn` / `purchasereceipt` | `/purchasing/orders` (parent, DRAWER_ENTITIES) |
+| `treasury.bankloan` / `loaninstallment` | `/treasury/bank-center` (hub, DRAWER_ENTITIES) |
+| `treasury.creditcardstatement` | `/treasury/bank-center` (se dropea `?statement=`) |
+| `hr.payrollconcept` | `/hr/settings/concepts` |
+
+Los redirects `[id]/page.tsx` que usaban `&selected=` sobre `list_url` sin query
+(`inventory/warehouses`, `inventory/stock-moves`, `inventory/categories`,
+`treasury/statements`) se corrigen a `?selected=` para no producir URLs rotas.
+
 ---
 
 ## 4. Trade-offs
@@ -98,3 +154,4 @@ El test:
 ## Changelog
 
 - **2026-05-09**: ADR creado (F9, T-103). 5 divergencias corregidas en backend. Test arquitectónico agregado.
+- **2026-10-09**: Reconciliación T-108. Mapa frontend estaba obsoleto (rutas inexistentes). Categorías `DRAWER_ENTITIES` (sin lista propia) y `DRAWER_DETAIL_ENTITIES` (detalle en drawer) documentadas y reflejadas en los invariantes. Corregidos list_url/detail de budget, saledelivery, stockmove, warehouse, bankstatement, check, taxperiod y redirects `&selected=` rotos.

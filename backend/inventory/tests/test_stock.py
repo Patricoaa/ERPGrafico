@@ -1,7 +1,10 @@
-import pytest
 from decimal import Decimal
-from inventory.models import Stock, StockMove, Product, ProductCategory, Warehouse, Location
+
+import pytest
+
+from inventory.models import Location, Product, ProductCategory, Stock, StockMove, Warehouse
 from inventory.services import InventoryService
+
 
 @pytest.mark.django_db
 def test_stock_recalculation_and_update():
@@ -28,11 +31,11 @@ def test_stock_recalculation_and_update():
         quantity=Decimal('10.5'),
         description='Test move IN'
     )
-    
+
     # Check if stock was updated via signal
     stock = Stock.objects.get(product=product, warehouse=warehouse)
     assert stock.quantity == Decimal('10.5')
-    
+
     # Create an OUT move
     StockMove.objects.create(
         product=product,
@@ -41,15 +44,15 @@ def test_stock_recalculation_and_update():
         quantity=Decimal('3.0'),
         description='Test move OUT'
     )
-    
+
     stock.refresh_from_db()
     assert stock.quantity == Decimal('7.5')
-    
+
     # Test recalcular_stock directly
     InventoryService.recalcular_stock(product.id, warehouse.id)
     stock.refresh_from_db()
     assert stock.quantity == Decimal('7.5')
-    
+
     # Test delete
     from django.core.exceptions import ValidationError
     with pytest.raises(ValidationError):

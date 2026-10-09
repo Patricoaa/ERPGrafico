@@ -1,7 +1,9 @@
-from django.db import models
-from django.db.models import Exists, OuterRef, Prefetch, QuerySet, Subquery, Sum, DecimalField as Df, Value
-from django.db.models.functions import Coalesce, Replace
 from decimal import Decimal
+
+from django.db import models
+from django.db.models import DecimalField as Df
+from django.db.models import Exists, OuterRef, Prefetch, QuerySet, Subquery, Sum, Value
+from django.db.models.functions import Coalesce, Replace
 
 from .models import Contact
 
@@ -68,11 +70,11 @@ def list_contacts(*, params: dict) -> QuerySet:
         last_sale_date=models.Max("sale_orders__date"),
     )
 
-    from sales.models import SaleOrder
-    from purchasing.models import PurchaseOrder
-    from production.models import WorkOrder
-    from hr.models import Employee
     from core.models import User
+    from hr.models import Employee
+    from production.models import WorkOrder
+    from purchasing.models import PurchaseOrder
+    from sales.models import SaleOrder
     from treasury.models import TreasuryMovement as _TM
 
     credit_additions_sq = (
@@ -328,10 +330,11 @@ class ContactSelector:
     @staticmethod
     def get_credit_portfolio_data(is_blacklist: bool) -> dict:
         from decimal import Decimal
+
         from django.utils import timezone
 
-        from treasury.models import TreasuryMovement
         from sales.models import SaleOrder
+        from treasury.models import TreasuryMovement
 
         contacts = list_credit_portfolio(is_blacklist=is_blacklist)
 
@@ -479,6 +482,7 @@ class ContactSelector:
         """
         from datetime import timedelta
         from decimal import Decimal
+
         from django.utils import timezone
 
         today = timezone.now().date()
@@ -632,7 +636,6 @@ class ContactSelector:
     @staticmethod
     def list_partner_transactions(partner):
         from .partner_models import PartnerTransaction
-        from .serializers import PartnerTransactionSerializer
 
         return PartnerTransaction.objects.filter(partner=partner).order_by("-date", "-created_at")
 
@@ -894,6 +897,7 @@ class ContactSelectorExt:
         from production.serializers import WorkOrderSerializer
         from purchasing.serializers import PurchaseOrderSerializer
         from sales.serializers import SaleOrderSerializer
+
         from .serializers import ContactSerializer
         sos = contact.sale_orders.all().order_by('-date')
         pos = contact.purchase_orders.all().order_by('-date')
@@ -907,17 +911,18 @@ class ContactSelectorExt:
 
     @staticmethod
     def get_credit_portfolio_data_cached(request, view):
+        from rest_framework.exceptions import Throttled
+
         from core.api.throttles import HeavyReportThrottle
         from core.cache import cache_report
-        from rest_framework.exceptions import Throttled
         if not HeavyReportThrottle().allow_request(request, view):
             raise Throttled(detail='Demasiadas solicitudes al reporte de crédito. Intente en un momento.')
-        
+
         from .selectors import ContactSelector
         is_blacklist = request.query_params.get('blacklist', 'false') == 'true'
         return cache_report(
-            module='contacts', endpoint='credit_portfolio', 
-            params={'blacklist': str(is_blacklist)}, timeout=120, 
+            module='contacts', endpoint='credit_portfolio',
+            params={'blacklist': str(is_blacklist)}, timeout=120,
             generator=lambda: ContactSelector.get_credit_portfolio_data(is_blacklist)
         )
 
@@ -926,8 +931,8 @@ class ContactSelectorExt:
         from rest_framework.exceptions import ValidationError
         if not contact.is_partner: raise ValidationError('El contacto no está marcado como socio.')
         from .partner_models import PartnerTransaction
-        from .serializers import PartnerTransactionSerializer
         from .partner_service import PartnerService
+        from .serializers import PartnerTransactionSerializer
         transactions = (
             PartnerTransaction.objects.filter(partner=contact)
             .select_related("partner", "journal_entry", "created_by")

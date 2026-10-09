@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from django.db import models, transaction
 from django.utils import timezone
 
-from inventory.models import Product, StockMove
+from inventory.models import Product
 from inventory.services import StockService
 from treasury.models import POSSession
 
@@ -26,6 +26,64 @@ class DraftCartService:
     def validate_pos_session_id(pos_session_id):
         if not pos_session_id:
             raise ValueError("Se requiere una sesión POS activa (pos_session_id)")
+
+    @staticmethod
+    def save_draft_from_request(data: dict, user) -> DraftCart:
+        pos_session_id = data.get("pos_session_id")
+        items = data.get("items", [])
+        DraftCartService.validate_pos_session_id(pos_session_id)
+        if not items and not data.get("draft_id"):
+            raise ValueError("El carrito está vacío")
+        return DraftCartService.save_draft(
+            pos_session_id=int(pos_session_id),
+            user=user,
+            items=items,
+            customer_id=data.get("customer_id"),
+            name=data.get("name", ""),
+            notes=data.get("notes", ""),
+            wizard_state=data.get("wizard_state"),
+            session_key=data.get("session_key", ""),
+            draft_id=data.get("draft_id"),
+        )
+
+    @staticmethod
+    def acquire_lock_from_request(draft_id: int, data: dict, user) -> Dict[str, Any]:
+        pos_session_id = data.get("pos_session_id")
+        session_key = data.get("session_key", "")
+        DraftCartService.validate_pos_session_id(pos_session_id)
+        if not session_key:
+            raise ValueError("Se requiere session_key")
+        return DraftCartService.acquire_lock(
+            draft_id=draft_id,
+            pos_session_id=int(pos_session_id),
+            user=user,
+            session_key=session_key,
+        )
+
+    @staticmethod
+    def refresh_lock_from_request(draft_id: int, data: dict, user) -> bool:
+        pos_session_id = data.get("pos_session_id")
+        session_key = data.get("session_key", "")
+        DraftCartService.validate_pos_session_id(pos_session_id)
+        if not session_key:
+            raise ValueError("Se requiere session_key")
+        return DraftCartService.refresh_lock(
+            draft_id=draft_id,
+            pos_session_id=int(pos_session_id),
+            user=user,
+            session_key=session_key,
+        )
+
+    @staticmethod
+    def process_withdrawal_from_request(draft_id: int, data: dict, user) -> Dict[str, Any]:
+        pos_session_id = data.get("pos_session_id")
+        DraftCartService.validate_pos_session_id(pos_session_id)
+        return DraftCartService.process_withdrawal(
+            draft_id=draft_id,
+            pos_session_id=int(pos_session_id),
+            user=user,
+            partner_id=data.get("partner_id"),
+        )
 
     # ── Lock Management ──────────────────────────────────────────────
 

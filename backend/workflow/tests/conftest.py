@@ -1,7 +1,7 @@
 import pytest
 from django.contrib.auth import get_user_model
 
-from workflow.models import NotificationRule, TaskAssignmentRule, Task
+from workflow.models import Task, TaskAssignmentRule
 
 User = get_user_model()
 

@@ -1,6 +1,6 @@
-import pytest
-from datetime import date
 from decimal import Decimal
+
+import pytest
 from rest_framework.test import APIClient
 
 from core.models import User
@@ -164,8 +164,8 @@ def treasury_account(db, bank, account_asset):
 
 @pytest.fixture
 def cash_account(db):
-    from treasury.models import TreasuryAccount
     from accounting.models import Account, AccountType
+    from treasury.models import TreasuryAccount
     cash_acc = Account.objects.create(
         code="1.1.01.100", name="Caja Chica", account_type=AccountType.ASSET,
     )

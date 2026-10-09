@@ -92,7 +92,7 @@ def test_check_side_effects_manual_material(draft_order, component, uom):
 
 @pytest.mark.django_db
 def test_check_side_effects_stock_movement(draft_order):
-    from inventory.models import UoM, Warehouse
+    from inventory.models import Warehouse
     from production.models import ProductionConsumption
 
     warehouse, _ = Warehouse.objects.get_or_create(name="Bodega Test", defaults={"code": "WH-TST"})

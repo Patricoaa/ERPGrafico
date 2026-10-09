@@ -1,7 +1,8 @@
-from core.api.pagination import StandardResultsSetPagination
 import logging
 
 from rest_framework import filters, status, viewsets
+
+from core.api.pagination import StandardResultsSetPagination
 
 logger = logging.getLogger(__name__)
 import django_filters
@@ -33,6 +34,7 @@ class WorkOrderFilterSet(FilterSet):
         if not (value and self.request and self.request.user.is_authenticated): return queryset
         from django.contrib.contenttypes.models import ContentType
         from django.db.models import Q
+
         from workflow.models import Task
         u = self.request.user
         tasks = Task.objects.filter(content_type=ContentType.objects.get_for_model(queryset.model), status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS])
@@ -45,16 +47,17 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
-from core.mixins import AuditHistoryMixin
-from core.idempotency import idempotent_endpoint
 
+from core.idempotency import idempotent_endpoint
+from core.mixins import AuditHistoryMixin
+
+from .selectors import ProductionSelectorExt
 from .serializers import (
     BillOfMaterialsSerializer,
     WorkOrderListSerializer,
     WorkOrderSerializer,
     WorkOrderWriteSerializer,
 )
-from .selectors import ProductionSelectorExt
 from .services import WorkOrderMetricsService, WorkOrderPdfService, WorkOrderService
 
 

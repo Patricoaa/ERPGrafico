@@ -22,7 +22,7 @@ for app, models in MODELS_TO_UPDATE.items():
     if not os.path.exists(file_path):
         print(f"File not found: {file_path}")
         continue
-        
+
     with open(file_path, 'r') as f:
         content = f.read()
 
@@ -33,5 +33,5 @@ for app, models in MODELS_TO_UPDATE.items():
 
     with open(file_path, 'w') as f:
         f.write(content)
-        
+
     print(f"Updated {file_path}")

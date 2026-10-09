@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+
 class PayrollValidator:
     @staticmethod
     def validate_payroll(instance, data):

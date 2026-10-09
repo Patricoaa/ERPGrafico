@@ -1,7 +1,8 @@
-from core.api.pagination import StandardResultsSetPagination
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
+from core.api.pagination import StandardResultsSetPagination
 
 from .selectors import SubscriptionSelector
 from .subscription_serializers import SubscriptionSerializer
@@ -20,8 +21,9 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         Pause an active subscription.
         """
         subscription = self.get_object()
-        from .services import SubscriptionService
         from django.core.exceptions import ValidationError
+
+        from .services import SubscriptionService
 
         try:
             subscription = SubscriptionService.pause_subscription(subscription)
@@ -48,8 +50,9 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         Resume a paused subscription.
         """
         subscription = self.get_object()
-        from .services import SubscriptionService
         from django.core.exceptions import ValidationError
+
+        from .services import SubscriptionService
 
         try:
             subscription = SubscriptionService.resume_subscription(subscription)

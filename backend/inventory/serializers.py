@@ -7,10 +7,11 @@ logger = logging.getLogger(__name__)
 
 from core.serializers import AttachmentSerializer
 
-
 from .models import (
     InventoryCount,
     InventoryCountLine,
+    InventoryDocument,
+    InventoryDocumentDetail,
     PricingRule,
     Product,
     ProductAttribute,
@@ -22,8 +23,6 @@ from .models import (
     UoM,
     UoMCategory,
     Warehouse,
-    InventoryDocument,
-    InventoryDocumentDetail,
 )
 from .services import ProductService
 
@@ -415,7 +414,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source="category.name", read_only=True)
     uom_name = serializers.CharField(source="uom.name", read_only=True)
     sale_uom_name = serializers.CharField(source="sale_uom.name", read_only=True)
-    
+
     is_favorite = serializers.SerializerMethodField()
     def get_is_favorite(self, obj):
         return getattr(obj, "is_favorite", False)
@@ -439,7 +438,7 @@ class ProductListSerializer(serializers.ModelSerializer):
         if hasattr(obj, "annotated_qty_reserved") and hasattr(obj, "annotated_current_stock"):
             return float(obj.annotated_current_stock or 0.0) - float(obj.annotated_qty_reserved or 0.0)
         return 0.0
-        
+
     image_thumbnail = serializers.SerializerMethodField()
     def get_image_thumbnail(self, obj):
         if obj.image and hasattr(obj, "image_thumbnail"):
@@ -456,10 +455,10 @@ class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            "id", "internal_code", "code", "name", "category", "category_name", 
+            "id", "internal_code", "code", "name", "category", "category_name",
             "product_type", "image_thumbnail", "is_active", "is_favorite",
-            "uom", "uom_name", "sale_uom", "sale_uom_name", 
-            "sale_price", "cost_price", "effective_price", 
+            "uom", "uom_name", "sale_uom", "sale_uom_name",
+            "sale_price", "cost_price", "effective_price",
             "current_stock", "qty_reserved", "qty_available",
             "track_inventory", "can_be_sold", "can_be_purchased",
             "has_variants", "is_variable_amount", "is_dynamic_pricing"
@@ -469,7 +468,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
     """Optimized serializer for create and update views."""
     variant_generation_selection = serializers.JSONField(write_only=True, required=False)
     uom_prices = ProductUoMPriceSerializer(many=True, required=False)
-    
+
     class Meta:
         model = Product
         fields = [
@@ -488,7 +487,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             "contract_end_date", "payment_day_type", "payment_day", "payment_interval_days",
             "variant_generation_selection", "uom_prices", "parent_template"
         ]
-        
+
     def validate(self, data):
         from .validators import ProductValidator
         return ProductValidator.validate(data)
@@ -606,7 +605,7 @@ class InventoryDocumentDetailSerializer(serializers.ModelSerializer):
     uom_name = serializers.CharField(source="product.uom.name", read_only=True)
     source_location_name = serializers.CharField(source="source_location.name", read_only=True)
     destination_location_name = serializers.CharField(source="destination_location.name", read_only=True)
-    
+
     # Convenience write-only: pass warehouse_id; backend infers the INTERNAL Location
     warehouse_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
     source_warehouse_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
@@ -666,67 +665,11 @@ class InventoryDocumentSerializer(serializers.ModelSerializer):
             "updated_at",
             "details",
         ]
-        
+
     def create(self, validated_data):
-        from .models import Location, InventoryDocument as InvDoc
-        
-        details_data = validated_data.pop('details', [])
-        document = InventoryDocument.objects.create(**validated_data)
-        doc_type = document.document_type
-        
-        # Cache virtual locations
-        loc_vendor = Location.objects.filter(location_type="VENDOR").first()
-        loc_customer = Location.objects.filter(location_type="CUSTOMER").first()
-        loc_gain = Location.objects.filter(location_type="VIRTUAL", name="Ajuste por Sobrante/Ganancia").first()
-        loc_loss = Location.objects.filter(location_type="VIRTUAL", name="Ajuste por Merma/Pérdida").first()
-        loc_capital = Location.objects.filter(location_type="VIRTUAL", name="Capital de Socios").first()
-        
-        for detail_data in details_data:
-            # Resolve warehouse_id to INTERNAL Location if provided
-            warehouse_id = detail_data.pop('warehouse_id', None)
-            source_warehouse_id = detail_data.pop('source_warehouse_id', None)
-            
-            src = detail_data.get('source_location')
-            dst = detail_data.get('destination_location')
-            
-            if not src or not dst:
-                internal_loc = Location.objects.filter(
-                    location_type="INTERNAL", warehouse_id=warehouse_id
-                ).first() if warehouse_id else None
-                
-                src_internal = Location.objects.filter(
-                    location_type="INTERNAL", warehouse_id=source_warehouse_id
-                ).first() if source_warehouse_id else None
-                
-                if doc_type == InvDoc.Type.RECEIPT:
-                    src = loc_vendor
-                    dst = internal_loc
-                elif doc_type == InvDoc.Type.DELIVERY:
-                    src = internal_loc
-                    dst = loc_customer
-                elif doc_type == InvDoc.Type.TRANSFER:
-                    src = src_internal
-                    dst = internal_loc
-                elif doc_type == InvDoc.Type.PARTNER_CONTRIBUTION:
-                    src = loc_capital
-                    dst = internal_loc
-                elif doc_type == InvDoc.Type.PARTNER_WITHDRAWAL:
-                    src = internal_loc
-                    dst = loc_capital
-                else:  # ADJUSTMENT
-                    qty = detail_data.get('quantity', 0)
-                    if qty and float(str(qty)) > 0:
-                        src = loc_gain
-                        dst = internal_loc
-                    else:
-                        src = internal_loc
-                        dst = loc_loss
-                
-                detail_data['source_location'] = src
-                detail_data['destination_location'] = dst
-            
-            InventoryDocumentDetail.objects.create(document=document, **detail_data)
-        return document
+        from .services import InventoryService
+
+        return InventoryService.create_document(validated_data)
 
 
 class InventoryCountLineSerializer(serializers.ModelSerializer):

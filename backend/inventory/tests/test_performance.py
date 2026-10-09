@@ -10,6 +10,7 @@ def api_client():
 @pytest.fixture
 def product_setup(db):
     from django.contrib.auth import get_user_model
+
     from inventory.models import Product, ProductCategory, UoM, UoMCategory
 
     User = get_user_model()

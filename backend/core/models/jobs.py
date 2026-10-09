@@ -35,7 +35,7 @@ class BackgroundJob(TimeStampedModel):
 
     # URL to the generated file in S3/MinIO
     result_file_url = models.URLField(_("URL de Resultado"), blank=True, null=True, max_length=1024)
-    
+
     # Store stack trace or user friendly error
     error_message = models.TextField(_("Mensaje de Error"), blank=True)
 

@@ -1,6 +1,5 @@
 import django_filters
 from django.core.exceptions import ValidationError
-from django.db.models import Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters as drf_filters
 from rest_framework import status, viewsets
@@ -8,10 +7,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
-from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
 from core.idempotency import idempotent_endpoint
-from purchasing.models import PurchaseOrder
-from sales.models import SaleOrder
+from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
 
 from .models import Invoice
 from .serializers import (

@@ -12,8 +12,8 @@ import pytest
 
 from contacts.models import Contact
 from contacts.selectors import (
-    _credit_balance_used_from_orders,
     ContactSelector,
+    _credit_balance_used_from_orders,
     customer_aging_report,
     supplier_aging_report,
 )

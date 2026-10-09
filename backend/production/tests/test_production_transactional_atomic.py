@@ -7,7 +7,6 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 
 from core.models import Attachment
-from production.models import WorkOrder
 from production.services import WorkOrderService
 
 User = get_user_model()

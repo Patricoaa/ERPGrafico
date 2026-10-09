@@ -5,10 +5,11 @@ Extracted from POSSessionViewSet to keep views thin.
 
 from decimal import Decimal
 
-from core.prefix_registry import EntityPrefix
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
+
+from core.prefix_registry import EntityPrefix
 
 from .models import (
     POSSession,

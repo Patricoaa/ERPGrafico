@@ -82,6 +82,23 @@ def env(db):
     }
 
 
+@pytest.fixture(autouse=True)
+def accounting_settings(db):
+    from accounting.models import AccountingSettings
+
+    ar = Account.objects.create(
+        name="Deudores Val", code="1.1.02.099", account_type=AccountType.ASSET
+    )
+    ap = Account.objects.create(
+        name="Proveedores Val", code="2.1.01.099", account_type=AccountType.LIABILITY
+    )
+    obj, _ = AccountingSettings.objects.get_or_create()
+    obj.default_receivable_account = ar
+    obj.default_payable_account = ap
+    obj.save()
+    return obj
+
+
 def _open(env, billed=Decimal("0")):
     return CreditCardStatement.objects.create(
         card_account=env["card_ta"],

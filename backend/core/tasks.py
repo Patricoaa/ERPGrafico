@@ -87,7 +87,7 @@ def finish_job_success(job_id: int, file_url: str = None):
         title="Proceso Completado",
         message=f"El proceso '{job.title}' finalizó exitosamente.",
         type=Notification.Type.SUCCESS,
-        link=f"/settings/jobs",
+        link="/settings/jobs",
     )
 
 
@@ -110,5 +110,5 @@ def finish_job_error(job_id: int, error_message: str):
         title="Error en Proceso",
         message=f"El proceso '{job.title}' falló.",
         type=Notification.Type.ERROR,
-        link=f"/settings/jobs",
+        link="/settings/jobs",
     )

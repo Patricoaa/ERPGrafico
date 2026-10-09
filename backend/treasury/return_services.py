@@ -1,7 +1,6 @@
 from datetime import date
 from decimal import Decimal
 
-from core.prefix_registry import EntityPrefix
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -10,6 +9,7 @@ from django.utils import timezone
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, JournalEntry, JournalItem
 from accounting.services import JournalEntryService
+from core.prefix_registry import EntityPrefix
 from treasury.check_service import CheckService
 from treasury.models import TreasuryMovement
 

@@ -61,7 +61,7 @@ class PurchaseLineSerializer(serializers.ModelSerializer):
         product, uom = data.get('product'), data.get('uom')
         if product and uom:
             from inventory.services import UoMService
-            if not product.uom: raise serializers.ValidationError({'product': f"El producto '{product.name}' debe tener UoM base."}) 
+            if not product.uom: raise serializers.ValidationError({'product': f"El producto '{product.name}' debe tener UoM base."})
             if not UoMService.validate_uom_compatibility(product.uom, uom):
                 raise serializers.ValidationError({'uom': f"La unidad '{uom.name}' no es compatible con '{product.uom.category.name}'."})
         return data

@@ -24,10 +24,9 @@ class NoteWorkflowSelector:
 class InvoiceSelectorExt:
     @staticmethod
     def get_queryset_from_request(view, request):
+
+
         from .models import Invoice
-        from sales.models import SaleOrder
-        from purchasing.models import PurchaseOrder
-        from django.db.models import Prefetch
 
         is_list = view.action in ['list', 'debit_notes_list', 'credit_notes_list', 'unpaid_invoices', 'dashboard_stats']
 
@@ -115,8 +114,8 @@ class InvoiceSelectorExt:
 
     @staticmethod
     def get_related_returns(invoice):
-        from sales.models import SaleReturn
         from purchasing.models import PurchaseReturn
+        from sales.models import SaleReturn
         returns = []
         if invoice.purchase_order_id:
             for r in PurchaseReturn.objects.filter(credit_note=invoice):

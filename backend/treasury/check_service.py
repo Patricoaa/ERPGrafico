@@ -136,15 +136,21 @@ class CheckService:
     @transaction.atomic
     def deposit(
         check: Check,
-        deposit_account_id: int,
+        deposit_account,
         *,
         date=None,
         created_by: "AbstractUser | None" = None,
     ) -> Check:
-        """Transfiere el cheque de cartera al banco; pasa a DEPOSITED."""
+        """Transfiere el cheque de cartera al banco; pasa a DEPOSITED.
+
+        `deposit_account` acepta una instancia de `TreasuryAccount` o su PK.
+        """
         CheckService._assert_transition(check, Check.Status.DEPOSITED)
 
-        deposit_account = TreasuryAccount.objects.get(pk=deposit_account_id)
+        if isinstance(deposit_account, TreasuryAccount):
+            deposit_account_obj = deposit_account
+        else:
+            deposit_account_obj = TreasuryAccount.objects.get(pk=deposit_account)
         from .services import TreasuryService
 
         movement = TreasuryService.create_movement(
@@ -152,14 +158,14 @@ class CheckService:
             movement_type=TreasuryMovement.Type.TRANSFER,
             payment_method=TreasuryMovement.Method.OTHER,
             from_account=check.portfolio_account,
-            to_account=deposit_account,
+            to_account=deposit_account_obj,
             date=date or timezone.now().date(),
             created_by=created_by,
             notes=f"Depósito {check.display_id}",
         )
 
         check.status = Check.Status.DEPOSITED
-        check.deposit_account = deposit_account
+        check.deposit_account = deposit_account_obj
         check.settlement_movement = movement
         check.deposited_at = timezone.now()
         check.save()

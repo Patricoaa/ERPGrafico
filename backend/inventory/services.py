@@ -2,15 +2,13 @@ import itertools
 from decimal import Decimal
 from typing import Tuple
 
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import Q, QuerySet
 from django.utils import timezone
 
-from core.prefix_registry import EntityPrefix
-from accounting.glosa_builder import GlosaBuilder, Roles
-from accounting.models import Account, AccountType, JournalEntry, JournalItem
+from accounting.glosa_builder import GlosaBuilder
+from accounting.models import JournalEntry, JournalItem
 from accounting.services import JournalEntryService
 
 from .models import (
@@ -23,9 +21,9 @@ from .models import (
     ProductAttributeValue,
     ProductUoMPrice,
     StockMove,
+    Subscription,
     UoM,
     Warehouse,
-    Subscription,
 )
 
 
@@ -61,24 +59,25 @@ class InventoryService:
         Recalcula el stock total a partir del histórico de StockMove y actualiza la entidad Stock.
         """
         from django.db.models import Sum
-        from .models import Stock, StockMove
-        
+
+        from .models import Stock
+
         # Calculate in memory to avoid N+1 and complex DB locks
         # In the new Location model: Stock is sum of moves WHERE destination_location is an INTERNAL location of this warehouse
         # MINUS sum of moves WHERE source_location is an INTERNAL location of this warehouse
-        
+
         in_qty = StockMove.objects.filter(
-            product_id=product_id, 
+            product_id=product_id,
             destination_location__warehouse_id=warehouse_id,
             destination_location__location_type="INTERNAL"
         ).aggregate(total=Sum('quantity'))['total'] or Decimal('0')
-        
+
         out_qty = StockMove.objects.filter(
-            product_id=product_id, 
+            product_id=product_id,
             source_location__warehouse_id=warehouse_id,
             source_location__location_type="INTERNAL"
         ).aggregate(total=Sum('quantity'))['total'] or Decimal('0')
-        
+
         total_qty = in_qty - out_qty
 
         stock, _ = Stock.objects.get_or_create(
@@ -89,7 +88,7 @@ class InventoryService:
         if stock.quantity != total_qty:
             stock.quantity = total_qty
             stock.save(update_fields=['quantity', 'updated_at'])
-            
+
         return stock
 
     @staticmethod
@@ -98,8 +97,9 @@ class InventoryService:
         Actualiza el stock sumando (o restando) la cantidad indicada de manera atómica.
         """
         from django.db.models import F
+
         from .models import Stock
-        
+
         stock, created = Stock.objects.get_or_create(
             product_id=product_id,
             warehouse_id=warehouse_id,
@@ -109,27 +109,27 @@ class InventoryService:
             stock.quantity = F('quantity') + quantity_change
             stock.save(update_fields=['quantity', 'updated_at'])
             stock.refresh_from_db(fields=['quantity'])
-            
+
         return stock
 
     @staticmethod
     @transaction.atomic
     def confirmar_documento(document, user=None, journal_entry=None, generate_accounting=False):
-        from .models import InventoryDocument, StockMove, Location
-        from accounting.models import JournalEntry, JournalItem
-        from accounting.services import JournalEntryService
-        from accounting.glosa_builder import GlosaBuilder, Roles
-        
+        from accounting.glosa_builder import GlosaBuilder
+        from accounting.models import JournalEntry
+
+        from .models import InventoryDocument, Location
+
         if document.status not in [InventoryDocument.Status.DRAFT, InventoryDocument.Status.APPROVED]:
             raise ValidationError("Solo se pueden confirmar documentos en estado borrador o aprobado.")
-            
+
         generated_moves = []
         for detail in document.details.select_related('product', 'source_location', 'destination_location'):
-            
+
             # Infer Locations if they are missing (Dual-Write Support)
             src_loc = detail.source_location
             dst_loc = detail.destination_location
-            
+
             if not src_loc or not dst_loc:
                 internal_loc = Location.objects.filter(location_type="INTERNAL", warehouse=detail.warehouse).first()
                 if document.document_type == InventoryDocument.Type.TRANSFER:
@@ -180,7 +180,7 @@ class InventoryService:
                 journal_entry=journal_entry
             )
             generated_moves.append(move)
-            
+
         # Accounting Generation
         if generate_accounting and not journal_entry:
             from accounting.models import AccountingSettings
@@ -200,21 +200,21 @@ class InventoryService:
 
             items = []
             total_value = 0
-            
+
             for move in generated_moves:
                 src = move.source_location
                 dst = move.destination_location
-                
+
                 value = abs(move.quantity * (move.unit_cost or move.product.cost_price))
                 if value == 0:
                     continue
-                    
+
                 total_value += value
-                
+
                 # Determine Accounts
                 credit_account = move.product.get_asset_account if src.location_type == 'INTERNAL' else src.account
                 debit_account = move.product.get_asset_account if dst.location_type == 'INTERNAL' else dst.account
-                
+
                 if not credit_account or not debit_account:
                     missing = []
                     if not credit_account:
@@ -227,10 +227,10 @@ class InventoryService:
                             missing.append(f"cuenta de inventario para el producto '{move.product.name}'")
                         else:
                             missing.append(f"cuenta contable asociada a la ubicación destino '{dst.name}'")
-                            
+
                     error_msg = f"No se pudieron resolver las cuentas contables: Falta {', y '.join(missing)}."
                     raise ValidationError(error_msg)
-                    
+
                 if credit_account != debit_account:
                     items.append(JournalItem(
                         account=debit_account,
@@ -244,7 +244,7 @@ class InventoryService:
                         credit=value,
                         label=f"{document.get_document_type_display()} {move.product.name}"
                     ))
-            
+
             if items:
                 entry = JournalEntry.objects.create(
                     date=timezone.now().date(),
@@ -257,13 +257,13 @@ class InventoryService:
                 for item in items:
                     item.entry = entry
                 JournalItem.objects.bulk_create(items)
-                
+
                 # Update moves with the generated entry
                 for move in generated_moves:
                     move.journal_entry = entry
                     move._allow_update = True
                     move.save(update_fields=['journal_entry'])
-                
+
         document.status = InventoryDocument.Status.CONFIRMED
         if user:
             document.confirmed_by = user
@@ -273,11 +273,11 @@ class InventoryService:
     @staticmethod
     @transaction.atomic
     def anular_documento(document):
-        from .models import InventoryDocument, StockMove
-        
+        from .models import InventoryDocument
+
         if document.status != InventoryDocument.Status.CONFIRMED:
             raise ValidationError("Solo se pueden anular documentos confirmados.")
-            
+
         for detail in document.details.select_related('product', 'source_location', 'destination_location'):
             StockMove.objects.create(
                 product=detail.product,
@@ -287,7 +287,7 @@ class InventoryService:
                 unit_cost=detail.unit_cost,
                 description=f"Anulación {document.get_document_type_display()} Doc: {document.reference or document.id}"
             )
-                
+
         document.status = InventoryDocument.Status.CANCELLED
         document.save(update_fields=['status'])
         return document
@@ -314,7 +314,8 @@ class StockService:
             return None
 
         from accounting.models import AccountingSettings
-        from .models import StockMove, InventoryDocument, InventoryDocumentDetail
+
+        from .models import InventoryDocument, InventoryDocumentDetail
 
         settings = AccountingSettings.get_solo()
         if not settings:
@@ -409,18 +410,103 @@ class StockService:
             quantity=quantity,
             unit_cost=unit_cost
         )
-        
+
         # We confirm the document which creates the StockMove natively
         # and generates accounting automatically via the Universal Accounting Engine
         doc, generated_moves = InventoryService.confirmar_documento(doc, generate_accounting=True)
-        
+
         # Get the generated move for returning
         move = generated_moves[0] if generated_moves else None
-        
+
         if not move: # Fallback if move_type was something else
             move = StockMove.objects.filter(product=product, warehouse=warehouse).order_by('-id').first()
 
         return move
+
+    @staticmethod
+    @transaction.atomic
+    def create_document(validated_data):
+        """
+        Crea un InventoryDocument con sus detalles, resolviendo ubicaciones
+        internas y virtuales según el tipo de documento.
+
+        Delegado desde InventoryDocumentSerializer.create() para mantener la
+        lógica de escritura en la capa de servicio (ARCH-RULE-C).
+        """
+        from .models import InventoryDocument, InventoryDocumentDetail, Location
+
+        details_data = validated_data.pop("details", [])
+        document = InventoryDocument.objects.create(**validated_data)
+        doc_type = document.document_type
+
+        # Cache virtual locations
+        loc_vendor = Location.objects.filter(location_type="VENDOR").first()
+        loc_customer = Location.objects.filter(location_type="CUSTOMER").first()
+        loc_gain = Location.objects.filter(
+            location_type="VIRTUAL", name="Ajuste por Sobrante/Ganancia"
+        ).first()
+        loc_loss = Location.objects.filter(
+            location_type="VIRTUAL", name="Ajuste por Merma/Pérdida"
+        ).first()
+        loc_capital = Location.objects.filter(
+            location_type="VIRTUAL", name="Capital de Socios"
+        ).first()
+
+        for detail_data in details_data:
+            # Resolve warehouse_id to INTERNAL Location if provided
+            warehouse_id = detail_data.pop("warehouse_id", None)
+            source_warehouse_id = detail_data.pop("source_warehouse_id", None)
+
+            src = detail_data.get("source_location")
+            dst = detail_data.get("destination_location")
+
+            if not src or not dst:
+                internal_loc = (
+                    Location.objects.filter(
+                        location_type="INTERNAL", warehouse_id=warehouse_id
+                    ).first()
+                    if warehouse_id
+                    else None
+                )
+
+                src_internal = (
+                    Location.objects.filter(
+                        location_type="INTERNAL", warehouse_id=source_warehouse_id
+                    ).first()
+                    if source_warehouse_id
+                    else None
+                )
+
+                if doc_type == InventoryDocument.Type.RECEIPT:
+                    src = loc_vendor
+                    dst = internal_loc
+                elif doc_type == InventoryDocument.Type.DELIVERY:
+                    src = internal_loc
+                    dst = loc_customer
+                elif doc_type == InventoryDocument.Type.TRANSFER:
+                    src = src_internal
+                    dst = internal_loc
+                elif doc_type == InventoryDocument.Type.PARTNER_CONTRIBUTION:
+                    src = loc_capital
+                    dst = internal_loc
+                elif doc_type == InventoryDocument.Type.PARTNER_WITHDRAWAL:
+                    src = internal_loc
+                    dst = loc_capital
+                else:  # ADJUSTMENT
+                    qty = detail_data.get("quantity", 0)
+                    if qty and float(str(qty)) > 0:
+                        src = loc_gain
+                        dst = internal_loc
+                    else:
+                        src = internal_loc
+                        dst = loc_loss
+
+                detail_data["source_location"] = src
+                detail_data["destination_location"] = dst
+
+            InventoryDocumentDetail.objects.create(document=document, **detail_data)
+
+        return document
 
     @staticmethod
     @transaction.atomic
@@ -439,12 +525,13 @@ class StockService:
         Quantity should be positive. If it's a withdrawal, the doc generation subtracts.
         """
         from decimal import Decimal
+
         from django.core.exceptions import ValidationError
-        from accounting.models import AccountingSettings, JournalEntry, JournalItem, Account, AccountType
-        from accounting.glosa_builder import GlosaBuilder, Roles
-        from accounting.services import JournalEntryService
+
+        from accounting.models import AccountingSettings
         from contacts.partner_models import PartnerTransaction
-        from .models import InventoryDocument, InventoryDocumentDetail, StockMove
+
+        from .models import InventoryDocument, InventoryDocumentDetail
 
         if quantity <= 0:
             raise ValidationError("La cantidad debe ser mayor a 0.")
@@ -457,7 +544,7 @@ class StockService:
 
         # 1. Create Document
         doc_type = InventoryDocument.Type.PARTNER_CONTRIBUTION if is_contribution else InventoryDocument.Type.PARTNER_WITHDRAWAL
-        
+
         doc = InventoryDocument.objects.create(
             document_type=doc_type,
             status=InventoryDocument.Status.DRAFT,
@@ -492,7 +579,7 @@ class StockService:
                 target_tx_type = PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY
             else:
                 target_tx_type = PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY
-                
+
             debit_account = asset_account
             # The partner gives capital
             credit_account = settings.partner_capital_contribution_account
@@ -504,7 +591,7 @@ class StockService:
                 target_tx_type = PartnerTransaction.Type.DIVIDEND_PAYMENT
             else:
                 target_tx_type = PartnerTransaction.Type.PROVISIONAL_WITHDRAWAL
-                
+
             credit_account = asset_account
             # The partner withdraws capital
             if target_tx_type == PartnerTransaction.Type.DIVIDEND_PAYMENT:
@@ -788,8 +875,9 @@ class PricingService:
     @staticmethod
     def get_effective_sale_price(product_id, quantity, uom_id=None):
         from decimal import Decimal
-        from inventory.models import Product, UoM
+
         from accounting.utils import get_vat_multiplier
+        from inventory.models import Product, UoM
 
         try:
             product = Product.objects.get(pk=product_id)
@@ -836,6 +924,7 @@ class UoMService:
         para evitar N+1 (Mecánicamente extraído fuera de los serializadores).
         """
         from functools import lru_cache
+
         from inventory.models import UoM
 
         @lru_cache(maxsize=32)
@@ -844,7 +933,7 @@ class UoMService:
                 return UoM.objects.get(pk=int(uom_id)).name
             except (UoM.DoesNotExist, TypeError, ValueError):
                 return None
-                
+
         return _get_uom_name(uid)
 
     @staticmethod
@@ -854,6 +943,7 @@ class UoMService:
         Fallback a name si abbreviation está vacío.
         """
         from functools import lru_cache
+
         from inventory.models import UoM
 
         @lru_cache(maxsize=32)
@@ -1328,6 +1418,7 @@ class ProductService:
             return
 
         from decimal import Decimal
+
         from production.models import WorkOrder, WorkOrderMaterial
         from sales.models import DraftCart, SaleLine, SaleOrder
 
@@ -1338,7 +1429,7 @@ class ProductService:
         pending_sales = SaleLine.objects.filter(
             product_id__in=product_ids, order__status=SaleOrder.Status.CONFIRMED
         ).exclude(order__delivery_status=SaleOrder.DeliveryStatus.DELIVERED)
-        
+
         for line in pending_sales:
             # We calculate quantity_pending in Python, but only for lines matching the criteria
             reserved_map[line.product_id] += line.quantity_pending
@@ -1996,6 +2087,7 @@ class ProductService:
     @staticmethod
     def bulk_set_surcharge(template, variant_ids, surcharge):
         from decimal import Decimal
+
         from .models import Product
 
         variants_qs = template.variants.filter(is_active=True)
@@ -2126,3 +2218,24 @@ class InventoryCountService:
         count.save()
 
         return doc
+
+
+def build_stock_report(query_params):
+    from core.cache import cache_report
+
+    from .selectors import get_stock_report_data
+
+    warehouse_id = query_params.get("warehouse_id")
+    if warehouse_id is not None:
+        try:
+            warehouse_id = int(warehouse_id)
+        except (ValueError, TypeError):
+            warehouse_id = None
+
+    return cache_report(
+        module="inventory",
+        endpoint="stock_report",
+        params={"warehouse_id": warehouse_id} if warehouse_id else None,
+        timeout=60,
+        generator=lambda: get_stock_report_data(warehouse_id=warehouse_id),
+    )

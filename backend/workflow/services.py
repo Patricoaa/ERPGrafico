@@ -144,6 +144,7 @@ class WorkflowService:
 
         if files:
             from django.contrib.contenttypes.models import ContentType
+
             from core.models import Attachment
             task_ct = ContentType.objects.get_for_model(Task)
             for f in files:

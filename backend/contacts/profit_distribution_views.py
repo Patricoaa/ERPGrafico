@@ -1,7 +1,8 @@
-from core.api.pagination import StandardResultsSetPagination
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
+from core.api.pagination import StandardResultsSetPagination
 
 from .partner_models import ProfitDistributionResolution
 from .profit_distribution_service import ProfitDistributionService

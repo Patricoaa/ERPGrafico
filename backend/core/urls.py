@@ -5,6 +5,7 @@ from .api.document import document_action_view
 from .api.search import universal_search
 from .views import (
     ActionLogViewSet,
+    BackgroundJobViewSet,
     ChangePasswordView,
     ChangePinView,
     CompanySettingsViewSet,
@@ -19,7 +20,6 @@ from .views import (
     entity_prefixes,
     server_time,
     system_status,
-    BackgroundJobViewSet,
 )
 
 router = DefaultRouter()

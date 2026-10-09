@@ -3,8 +3,8 @@ from datetime import datetime
 
 from celery import shared_task
 
-from .services import FinanceService
 from .bi_analytics import BIAnalyticsService
+from .services import FinanceService
 
 logger = logging.getLogger(__name__)
 

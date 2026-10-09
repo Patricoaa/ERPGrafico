@@ -1,7 +1,7 @@
 import traceback
-from decimal import Decimal
-from sales.models import DraftCart
+
 from sales.draft_cart_service import DraftCartService
+from sales.models import DraftCart
 
 cart = DraftCart.objects.filter(customer__isnull=False).first()
 if cart:
@@ -9,7 +9,7 @@ if cart:
     try:
         res = DraftCartService.process_withdrawal(cart, None)
         print(res)
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
 else:
     print("No draft cart with customer found")

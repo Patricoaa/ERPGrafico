@@ -52,8 +52,8 @@ class PurchasingConfig(AppConfig):
                     display_template=f"{EntityPrefix.PURCHASE_RETURN}-{{number}} · {{purchase_order.number}}",
                     subtitle_template="{supplier_name}",
                     extra_info_template="{status}",
-                    list_url="/purchasing/returns",
-                    detail_url_pattern="/purchasing/returns/{id}",
+                    list_url="/purchasing/orders",
+                    detail_url_pattern="/purchasing/orders",
                     permission="purchasing.view_purchasereturn",
                 )
             )
@@ -73,8 +73,8 @@ class PurchasingConfig(AppConfig):
                     display_template=f"{EntityPrefix.PURCHASE_RECEIPT}-{{number}} · {{purchase_order.number}}",
                     subtitle_template="{supplier_name}",
                     extra_info_template="{status}",
-                    list_url="/purchasing/receipts",
-                    detail_url_pattern="/purchasing/receipts/{id}",
+                    list_url="/purchasing/orders",
+                    detail_url_pattern="/purchasing/orders",
                     permission="purchasing.view_purchasereceipt",
                 )
             )

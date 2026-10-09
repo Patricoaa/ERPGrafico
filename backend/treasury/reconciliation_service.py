@@ -620,9 +620,10 @@ class ReconciliationService:
 
     @staticmethod
     def kickoff_auto_match(statement_id: int, confidence_threshold: float = 90.0) -> str:
-        from .tasks import auto_match_statement_task
         from celery import uuid
         from django.db import transaction
+
+        from .tasks import auto_match_statement_task
 
         task_id = uuid()
         transaction.on_commit(

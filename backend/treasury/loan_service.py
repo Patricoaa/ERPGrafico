@@ -79,8 +79,28 @@ class LoanService:
     @classmethod
     def prepay_from_request(cls, request, loan, v):
         from decimal import Decimal
-        amt = Decimal(str(v['amount']))
-        return cls.prepay(loan, amount=amt, date=v.get('date'), penalty_fee=Decimal(str(v['penalty_fee'])) if v.get('penalty_fee') is not None else None, penalty_expense_account=v.get('penalty_expense_account'), created_by=request.user)
+
+        from accounting.models import Account
+
+        from .models import TreasuryAccount
+
+        def _account(pk):
+            return Account.objects.get(pk=pk) if pk else None
+
+        def _dec(value):
+            return Decimal(str(value)) if value is not None else None
+
+        return cls.prepay(
+            loan,
+            payment_account=TreasuryAccount.objects.get(pk=v["payment_account"]),
+            interest_expense_account=_account(v.get("interest_expense_account")),
+            insurance_expense_account=_account(v.get("insurance_expense_account")),
+            date=v.get("date"),
+            created_by=request.user,
+            insurance_amount=_dec(v.get("insurance_amount")),
+            tax_amount=_dec(v.get("tax_amount")),
+            penalty_amount=_dec(v.get("penalty_amount")),
+        )
 
     """Operaciones sobre créditos / préstamos bancarios."""
 
@@ -92,7 +112,9 @@ class LoanService:
         Devuelve el dict listo para Response.
         """
         from decimal import Decimal
+
         from django.core.exceptions import ValidationError
+
         from .loan_service import _add_months
 
         if loan.installments.exists():
@@ -109,13 +131,13 @@ class LoanService:
         n = loan.term_months
         P = loan.principal
         ins = loan.insurance_monthly or Decimal("0")
-        
+
         # Calcular cuota francesa fija
         if i == 0:
             C = P / Decimal(n)
         else:
             C = P * i / (Decimal(1) - (Decimal(1) + i) ** (-n))
-            
+
         rows = []
         balance = P
         for k in range(1, n + 1):
@@ -136,7 +158,7 @@ class LoanService:
                     "outstanding_balance": str(balance),
                 }
             )
-            
+
         return {
             "currency": loan.currency,
             "monthly_rate": str(i),
@@ -453,9 +475,10 @@ class LoanService:
 
     @staticmethod
     def pay_installment_from_request(request, installment: LoanInstallment) -> LoanInstallment:
-        from .serializers import PayInstallmentActionSerializer
-        from .models import TreasuryAccount
         from accounting.models import Account
+
+        from .models import TreasuryAccount
+        from .serializers import PayInstallmentActionSerializer
 
         payload = PayInstallmentActionSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -956,7 +979,6 @@ def _build_installment_entry(
 
     from accounting.models import JournalEntry, JournalItem
     from accounting.services import JournalEntryService
-
     from core.prefix_registry import EntityPrefix
 
     # Construir DRAFT con la descripción y el source (el movimiento).

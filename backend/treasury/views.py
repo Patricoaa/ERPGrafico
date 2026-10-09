@@ -1,13 +1,10 @@
 import logging
-
 from decimal import Decimal
 
 import django_filters
-from celery.result import AsyncResult
 from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.http import HttpResponse
-from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
@@ -18,16 +15,11 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from accounting.models import Account
-from contacts.models import Contact
 from core.api.pagination import StandardResultsSetPagination
-from core.mixins import AuditHistoryMixin
 from core.idempotency import idempotent_endpoint
+from core.mixins import AuditHistoryMixin
 
 from .deletion_service import BankDeletionService
-
-# from .rule_service import RuleService
-from .selectors import BankStatementSelector
 from .difference_service import DifferenceService
 from .matching_service import MatchingService
 from .models import (
@@ -44,10 +36,11 @@ from .models import (
     TreasuryAccount,
     TreasuryMovement,
 )
-from .pos_service import POSService
 from .reconciliation_service import ReconciliationService
+
+# from .rule_service import RuleService
+from .selectors import BankStatementSelector
 from .serializers import (
-    ApplyChargesActionSerializer,
     BankLoanSerializer,
     BankLoanWriteSerializer,
     BankSerializer,
@@ -60,11 +53,9 @@ from .serializers import (
     CreditLineWriteSerializer,
     DisburseLoanActionSerializer,
     LoanInstallmentSerializer,
-    PayInstallmentActionSerializer,
     PaymentMethodSerializer,
     PaymentTerminalDeviceSerializer,
     PaymentTerminalProviderSerializer,
-    PayStatementActionSerializer,
     POSSessionAuditSerializer,
     POSSessionSerializer,
     POSTerminalSerializer,
@@ -72,8 +63,8 @@ from .serializers import (
     ReconciliationSettingsSerializer,
     TerminalBatchSerializer,
     TreasuryAccountSerializer,
-    TreasuryMovementSerializer,
     TreasuryMovementListSerializer,
+    TreasuryMovementSerializer,
     TreasuryMovementWriteSerializer,
 )
 from .services import TerminalBatchService, TreasuryService
@@ -364,25 +355,7 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def analytics(self, request):
         from .analytics import TreasuryMovementAnalyticsService
 
-        params = request.query_params
-        granularity = params.get("granularity", "month")
-        months = int(params.get("months", "12"))
-        treasury_account = int(params["treasury_account"]) if params.get("treasury_account") else None
-        bank = int(params["bank"]) if params.get("bank") else None
-        return Response(
-            TreasuryMovementAnalyticsService.get_consolidated(
-                granularity=granularity,
-                months=months,
-                treasury_account=treasury_account,
-                bank=bank,
-                movement_type=params.get("movement_type"),
-                payment_method=params.get("payment_method"),
-                amount_min=params.get("amount_min"),
-                amount_max=params.get("amount_max"),
-                date_from=params.get("date_from"),
-                date_to=params.get("date_to"),
-            )
-        )
+        return Response(TreasuryMovementAnalyticsService.from_request_params(request.query_params))
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -1062,6 +1035,7 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
 
     def list(self, request):
         from datetime import date as _date
+
         from .selectors import TreasuryDashboardSelector
         from .serializers import CashFlowSerializer
         ft = request.query_params.get("flow_type", "all")
@@ -1189,6 +1163,7 @@ class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def perform_create(self, serializer):
         from django.core.exceptions import ValidationError as DjangoValidationError
         from rest_framework.exceptions import ValidationError
+
         from .loan_service import LoanService
         try:
             self._just_created = LoanService.create_loan_from_request(self.request.user, serializer.validated_data)
@@ -1219,6 +1194,7 @@ class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         payload.is_valid(raise_exception=True)
         try:
             loan = LoanService.disburse_from_request(request, self.get_object(), payload.validated_data)
+            loan = self.get_queryset().get(pk=loan.pk)
             return Response(self.get_serializer(loan).data)
         except ValidationError as e:
             return Response({'detail': str(e)}, status=400)
@@ -1230,6 +1206,7 @@ class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         payload.is_valid(raise_exception=True)
         try:
             loan = LoanService.prepay_from_request(request, self.get_object(), payload.validated_data)
+            loan = self.get_queryset().get(pk=loan.pk)
             return Response(self.get_serializer(loan).data)
         except ValidationError as e:
             return Response({'detail': str(e)}, status=400)
@@ -1417,7 +1394,7 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         stmt = self.get_object()
         notes = request.data.get("notes", "")
         try:
-            stmt = CardService.reverse_statement(stmt, notes=notes)
+            stmt = CardService.cancel_statement(stmt, notes=notes)
         except ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         stmt.refresh_from_db()
@@ -1448,6 +1425,7 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=False, methods=['get'], url_path='unbilled-charges')
     def unbilled_charges(self, request):
         from datetime import date as _date
+
         from .selectors import CardSelector
         acc_id = request.query_params.get('card_account')
         if not acc_id: return Response({'detail': 'card_account req.'}, status=400)

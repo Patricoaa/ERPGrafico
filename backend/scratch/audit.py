@@ -1,14 +1,15 @@
-import os
 import ast
+import os
+
 
 def analyze_backend(base_dir):
     apps = [d for d in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, d)) and not d.startswith('.') and d not in ['venv', 'tmp', 'scratch', 'scripts', 'media', 'config']]
-    
+
     print(f"Found apps: {apps}")
     print("="*50)
     print("CHECKING VIEWS (>20 lines rule)")
     print("="*50)
-    
+
     for app in apps:
         path = os.path.join(base_dir, app, 'views.py')
         if os.path.exists(path):
@@ -27,7 +28,7 @@ def analyze_backend(base_dir):
     print("\n" + "="*50)
     print("CHECKING CROSS-APP IMPORTS IN SERIALIZERS")
     print("="*50)
-    
+
     for app in apps:
         path = os.path.join(base_dir, app, 'serializers.py')
         if os.path.exists(path):

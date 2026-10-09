@@ -1,12 +1,31 @@
 import os
 import uuid
 from collections.abc import Iterable, Iterator
+from decimal import Decimal
 from io import BytesIO
 
 from django.core.files.base import ContentFile
 from django.utils import timezone
 from django.utils.deconstruct import deconstructible
 from PIL import Image
+
+
+def decimal_str(value) -> str:
+    """
+    Canonical decimal string for API payloads: no spurious trailing zeros.
+
+    DB aggregations (``Sum`` over ``DecimalField``) carry the column scale, so a
+    quantity of 15 comes back as ``15.0000`` and money as ``2000.00``. API
+    payloads should render integral values without decimals (``2000``) and keep
+    significant fractional digits (``10.5``). Mirrors the quantity convention in
+    ``inventory/services.py``.
+    """
+    if value is None:
+        return "0"
+    d = Decimal(str(value))
+    if d == d.to_integral_value():
+        return str(d.quantize(Decimal("1")))
+    return format(d.normalize(), "f")
 
 
 def get_current_date():

@@ -66,6 +66,16 @@ def fixture(db):
         tax_id="76.123.456-7",
     )
 
+    ar_acc = Account.objects.create(
+        name="Deudores CC", code="1.1.02.030", account_type=AccountType.ASSET
+    )
+    from accounting.models import AccountingSettings
+
+    settings_obj, _ = AccountingSettings.objects.get_or_create()
+    settings_obj.default_receivable_account = ar_acc
+    settings_obj.default_payable_account = payable_acc
+    settings_obj.save()
+
     return {
         "user": user,
         "bank": bank,

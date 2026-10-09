@@ -28,12 +28,11 @@ Ver: docs/50-audit/Arquitectura Django/30-patterns.md#p-02b--dtestrategy
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-
-from core.prefix_registry import EntityPrefix
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from accounting.glosa_builder import GlosaBuilder, Roles
+from core.prefix_registry import EntityPrefix
 
 if TYPE_CHECKING:
     # Solo para type checkers — evitar import circular en runtime.

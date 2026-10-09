@@ -26,6 +26,8 @@ from django.db.models import Case, CharField, Count, F, IntegerField, Q, Sum, Va
 from django.db.models.functions import Coalesce, TruncDay, TruncMonth, TruncYear
 from django.utils.timezone import now
 
+from core.utils import decimal_str
+
 from .models import TreasuryMovement
 
 
@@ -219,10 +221,10 @@ class TreasuryMovementAnalyticsService:
             {
                 "period": v["period"],
                 "count": v["count"],
-                "ingresos": str(v["ingresos"]),
-                "egresos": str(v["egresos"]),
-                "ajustes": str(v["ajustes"]),
-                "transferencias": str(v["transferencias"]),
+                "ingresos": decimal_str(v["ingresos"]),
+                "egresos": decimal_str(v["egresos"]),
+                "ajustes": decimal_str(v["ajustes"]),
+                "transferencias": decimal_str(v["transferencias"]),
             }
             for v in buckets.values()
         ]
@@ -278,7 +280,7 @@ class TreasuryMovementAnalyticsService:
                     "id": key,
                     "label": labels[key],
                     "count": row["count"] if row else 0,
-                    "amount": str(row["amount"] or Decimal("0")) if row else "0",
+                    "amount": decimal_str(row["amount"] or Decimal("0")) if row else "0",
                 }
             )
         return result
@@ -340,8 +342,8 @@ class TreasuryMovementAnalyticsService:
                 "id": row["treasury_account_id"],
                 "account_name": row["account_name"] or "Sin cuenta",
                 "count": row["count"],
-                "in": str(row["in_amount"] or Decimal("0")),
-                "out": str(row["out_amount"] or Decimal("0")),
+                "in": decimal_str(row["in_amount"] or Decimal("0")),
+                "out": decimal_str(row["out_amount"] or Decimal("0")),
             }
             for row in rows
         ]
@@ -396,7 +398,7 @@ class TreasuryMovementAnalyticsService:
                     "id": key,
                     "label": label,
                     "count": row["count"] if row else 0,
-                    "amount": str(row["amount"] or Decimal("0")) if row else "0",
+                    "amount": decimal_str(row["amount"] or Decimal("0")) if row else "0",
                 }
             )
         return result
@@ -451,7 +453,7 @@ class TreasuryMovementAnalyticsService:
                     "id": key,
                     "label": label,
                     "count": row["count"] if row else 0,
-                    "amount": str(row["amount"] or Decimal("0")) if row else "0",
+                    "amount": decimal_str(row["amount"] or Decimal("0")) if row else "0",
                 }
             )
         return result
@@ -560,10 +562,29 @@ class TreasuryMovementAnalyticsService:
                 "total_movements": sum(row["count"] for row in direction_distribution),
                 "ingresos_count": by_key["IN"]["count"],
                 "egresos_count": by_key["OUT"]["count"],
-                "ingresos_amount": str(ingresos),
-                "egresos_amount": str(egresos),
-                "ajustes_amount": str(ajustes),
-                "transfer_amount": str(Decimal(by_key["TRANSFER"]["amount"])),
-                "net_flow": str(ingresos + ajustes - egresos),
+                "ingresos_amount": decimal_str(ingresos),
+                "egresos_amount": decimal_str(egresos),
+                "ajustes_amount": decimal_str(ajustes),
+                "transfer_amount": decimal_str(Decimal(by_key["TRANSFER"]["amount"])),
+                "net_flow": decimal_str(ingresos + ajustes - egresos),
             },
         }
+
+    @staticmethod
+    def from_request_params(params):
+        granularity = params.get("granularity", "month")
+        months = int(params.get("months", "12"))
+        treasury_account = int(params["treasury_account"]) if params.get("treasury_account") else None
+        bank = int(params["bank"]) if params.get("bank") else None
+        return TreasuryMovementAnalyticsService.get_consolidated(
+            granularity=granularity,
+            months=months,
+            treasury_account=treasury_account,
+            bank=bank,
+            movement_type=params.get("movement_type"),
+            payment_method=params.get("payment_method"),
+            amount_min=params.get("amount_min"),
+            amount_max=params.get("amount_max"),
+            date_from=params.get("date_from"),
+            date_to=params.get("date_to"),
+        )

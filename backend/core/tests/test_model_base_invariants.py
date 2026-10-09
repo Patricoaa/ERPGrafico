@@ -3,8 +3,8 @@ Test de arquitectura: verifica que todo modelo de negocio hereda de TimeStampedM
 
 Actualizar EXEMPT_MODELS al agregar excepciones documentadas via ADR.
 """
-import pytest
 from django.apps import apps
+
 from core.models.abstracts import TimeStampedModel
 
 # Modelos explícitamente exentos con su justificación
@@ -53,7 +53,7 @@ def test_all_business_models_inherit_timestampedmodel():
     for model in apps.get_models():
         app_label = model._meta.app_label
         model_label = f"{app_label}.{model.__name__}"
-        
+
         if app_label not in PROJECT_APPS:
             continue
         if model_label in EXEMPT_MODELS:
@@ -61,12 +61,12 @@ def test_all_business_models_inherit_timestampedmodel():
         # Filtrar tablas históricas de simple_history
         if model.__name__.startswith("Historical"):
             continue
-        
+
         if not issubclass(model, TimeStampedModel):
             violations.append(model_label)
-    
+
     assert not violations, (
-        f"Los siguientes modelos no heredan de TimeStampedModel. "
-        f"Migrar o agregar a EXEMPT_MODELS con justificación ADR:\n"
+        "Los siguientes modelos no heredan de TimeStampedModel. "
+        "Migrar o agregar a EXEMPT_MODELS con justificación ADR:\n"
         + "\n".join(f"  - {v}" for v in sorted(violations))
     )

@@ -64,7 +64,7 @@ class PartnerAnalyticsService:
         """
         Returns monthly (or daily/yearly) snapshots of partner metrics.
         """
-        from django.db.models.functions import TruncMonth, TruncDay, TruncYear
+        from django.db.models.functions import TruncDay, TruncMonth, TruncYear
 
         trunc_map = {
             "month": TruncMonth,

@@ -3,7 +3,6 @@ Tests para SalesService.create_sale_order_from_pos.
 Verifica atomicidad transaccional y manejo de errores.
 """
 
-from decimal import Decimal
 from unittest.mock import patch
 
 import pytest

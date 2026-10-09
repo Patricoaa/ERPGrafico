@@ -92,7 +92,36 @@ def card_account(db, bank):
 
 
 @pytest.fixture
-def funded_checking(db, checking_account, user):
+def payable_account(db):
+    return Account.objects.create(
+        name="Prov Statements API",
+        code="2.1.01.061",
+        account_type=AccountType.LIABILITY,
+    )
+
+
+@pytest.fixture
+def receivable_account(db):
+    return Account.objects.create(
+        name="Deudores Statements API",
+        code="1.1.02.061",
+        account_type=AccountType.ASSET,
+    )
+
+
+@pytest.fixture
+def accounting_settings(db, payable_account, receivable_account):
+    from accounting.models import AccountingSettings
+
+    obj, _ = AccountingSettings.objects.get_or_create()
+    obj.default_payable_account = payable_account
+    obj.default_receivable_account = receivable_account
+    obj.save()
+    return obj
+
+
+@pytest.fixture
+def funded_checking(db, checking_account, user, accounting_settings):
     """
     Devuelve el checking_account cargado con $1.000.000 vía un INBOUND
     con factura para que el asiento contable quede válido.

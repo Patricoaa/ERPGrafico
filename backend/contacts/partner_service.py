@@ -29,7 +29,6 @@ from contacts.partner_models import (
 )
 
 
-
 class PartnerService:
     """
     Centralized service for managing partner/shareholder operations.
@@ -40,9 +39,11 @@ class PartnerService:
     @transaction.atomic
     def handle_equity_movement_from_payload(payload: dict, user) -> "PartnerTransaction":
         from decimal import Decimal
+
         from django.core.exceptions import ValidationError
-        from contacts.models import Contact
         from django.utils import timezone
+
+        from contacts.models import Contact
 
         contact_id = payload.get("contact_id")
         amount = Decimal(str(payload.get("amount", "0")))
@@ -84,7 +85,9 @@ class PartnerService:
     @transaction.atomic
     def mass_mobilize_retained_earnings_from_payload(payload: dict, user) -> int:
         from decimal import Decimal
+
         from django.core.exceptions import ValidationError
+
         from contacts.models import Contact
 
         data_date = payload.get("date")
@@ -703,6 +706,14 @@ class PartnerService:
                 f"Tipo de transacción '{transaction_type}' no soportado en este endpoint. "
                 "Use los endpoints específicos para suscripción, transferencia, etc."
             )
+
+    @staticmethod
+    def register_partner_transaction(request, contact: "Contact") -> dict:
+        ptx = PartnerService.partner_transactions_from_request(request, contact)
+        return {
+            "message": "Transacción registrada.",
+            "journal_entry": ptx.journal_entry.display_id if ptx.journal_entry else None,
+        }
 
     # ──────────────────────────────────────────────────────────────
     # EQUITY TRANSFER

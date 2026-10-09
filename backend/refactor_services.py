@@ -1,5 +1,4 @@
 import os
-import re
 
 FILES = [
     "production/services.py",
@@ -25,11 +24,11 @@ def process():
         # We will replace `warehouse=X,` with `source_location=src, destination_location=dst,`
         # But we need to know src and dst.
         # We can dynamically inject the get_or_create calls before the bulk_create.
-        
+
         # Actually, let's just write a regex that matches InventoryDocumentDetail( ... )
         # and replaces warehouse=X with source_location=..., destination_location=...
         # and injects the location fetchers at the top of the function.
-        
+
         pass
 
 process()

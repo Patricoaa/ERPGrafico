@@ -1227,8 +1227,8 @@ class Location(models.Model):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, null=True, blank=True, related_name="locations")
     partner = models.ForeignKey("contacts.Contact", on_delete=models.CASCADE, null=True, blank=True, related_name="locations")
     account = models.ForeignKey(
-        "accounting.Account", 
-        on_delete=models.RESTRICT, 
+        "accounting.Account",
+        on_delete=models.RESTRICT,
         null=True, blank=True,
         help_text="Cuenta contable de contrapartida para ubicaciones virtuales."
     )
@@ -1249,7 +1249,7 @@ class Stock(models.Model):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name="stocks")
     quantity = models.DecimalField(_("Existencia"), max_digits=12, decimal_places=4, default=0)
     reserved_quantity = models.DecimalField(_("Reservado"), max_digits=12, decimal_places=4, default=0)
-    
+
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -1292,7 +1292,7 @@ class StockMove(models.Model):
         UoM, on_delete=models.PROTECT, related_name="stock_moves_uom", null=True, blank=True
     )
     quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4)
-    
+
     source_location = models.ForeignKey(
         Location, on_delete=models.PROTECT, related_name="moves_out"
     )
@@ -1381,7 +1381,7 @@ class StockMove(models.Model):
             # Only allow update if it's internal system flag
             if not getattr(self, "_allow_update", False):
                 raise ValidationError("Los movimientos de inventario son inmutables y no pueden ser modificados.")
-                
+
         if is_new and not getattr(self, "_is_internal_creation", False):
             # Enforce that StockMove is created via InventoryService
             pass  # For now we won't raise to not break generic tests, but in strict mode we should.
@@ -1442,9 +1442,9 @@ class InventoryDocument(TimeStampedModel):
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
     date = models.DateField(_("Fecha"), default=get_current_date)
     partner = models.ForeignKey(
-        "contacts.Contact", 
-        on_delete=models.PROTECT, 
-        null=True, 
+        "contacts.Contact",
+        on_delete=models.PROTECT,
+        null=True,
         blank=True,
         related_name="inventory_documents"
     )
@@ -1452,11 +1452,11 @@ class InventoryDocument(TimeStampedModel):
     source_document_type = models.CharField(_("Tipo documento fuente"), max_length=50, blank=True, default="")
     source_document_id = models.PositiveIntegerField(_("ID documento fuente"), null=True, blank=True)
     notes = models.TextField(_("Notas"), blank=True)
-    
+
     # Audit fields
     created_by = models.ForeignKey("core.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="created_inventory_docs")
     confirmed_by = models.ForeignKey("core.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="confirmed_inventory_docs")
-    
+
     history = HistoricalRecords()
 
     class Meta:
@@ -1470,11 +1470,11 @@ class InventoryDocumentDetailManager(models.Manager):
     def bulk_create(self, objs, **kwargs):
         if not objs:
             return super().bulk_create(objs, **kwargs)
-            
+
         vendor_loc = None
         customer_loc = None
         internal_locs = {}
-        
+
         def get_internal(warehouse):
             if not warehouse: return None
             if warehouse.id not in internal_locs:
@@ -1482,14 +1482,14 @@ class InventoryDocumentDetailManager(models.Manager):
                 loc = Location.objects.filter(location_type="INTERNAL", warehouse_id=warehouse.id).first()
                 internal_locs[warehouse.id] = loc
             return internal_locs[warehouse.id]
-            
+
         def get_vendor():
             nonlocal vendor_loc
             if not vendor_loc:
                 from inventory.models import Location
                 vendor_loc, _ = Location.objects.get_or_create(location_type="VENDOR", defaults={"name": "Proveedor (Virtual)"})
             return vendor_loc
-            
+
         def get_customer():
             nonlocal customer_loc
             if not customer_loc:
@@ -1508,22 +1508,22 @@ class InventoryDocumentDetailManager(models.Manager):
         for obj in objs:
             if getattr(obj, "source_location_id", None) and getattr(obj, "destination_location_id", None):
                 continue
-                
+
             warehouse = getattr(obj, "_legacy_warehouse", None)
             if not warehouse:
                 continue
-                
+
             doc = getattr(obj, "document", None)
             doc_type = doc.document_type if doc else None
-            
+
             is_return_or_annul = False
             if doc and doc.reference:
                 ref = doc.reference.lower()
                 if "devoluci" in ref or "anulaci" in ref:
                     is_return_or_annul = True
-            
+
             from inventory.models import InventoryDocument
-            
+
             if doc_type == InventoryDocument.Type.RECEIPT:
                 obj.source_location = get_customer() if is_return_or_annul else get_vendor()
                 obj.destination_location = get_internal(warehouse)
@@ -1555,7 +1555,7 @@ class InventoryDocumentDetailManager(models.Manager):
                 else: # Loss
                     obj.source_location = get_internal(warehouse)
                     obj.destination_location = get_virtual("Ajuste por Merma/Pérdida")
-                
+
         return super().bulk_create(objs, **kwargs)
 
 
@@ -1565,7 +1565,7 @@ class InventoryDocumentDetail(models.Model):
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="document_details")
     quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4)
     unit_cost = models.DecimalField(_("Costo Unitario"), max_digits=12, decimal_places=2, default=0)
-    
+
     source_location = models.ForeignKey(
         Location, on_delete=models.PROTECT, related_name="doc_moves_out"
     )
@@ -1592,18 +1592,18 @@ class InventoryDocumentDetail(models.Model):
             if warehouse:
                 doc = getattr(self, "document", None)
                 doc_type = doc.document_type if doc else None
-                
+
                 is_return_or_annul = False
                 if doc and doc.reference:
                     ref = doc.reference.lower()
                     if "devoluci" in ref or "anulaci" in ref:
                         is_return_or_annul = True
-                
-                from inventory.models import Location, InventoryDocument
+
+                from inventory.models import InventoryDocument, Location
                 internal_loc = Location.objects.filter(location_type="INTERNAL", warehouse_id=warehouse.id).first()
                 vendor_loc, _ = Location.objects.get_or_create(location_type="VENDOR", defaults={"name": "Proveedor (Virtual)"})
                 customer_loc, _ = Location.objects.get_or_create(location_type="CUSTOMER", defaults={"name": "Cliente (Virtual)"})
-                
+
                 def get_virtual(name):
                     loc, _ = Location.objects.get_or_create(location_type="VIRTUAL", name=name)
                     return loc
@@ -1639,7 +1639,7 @@ class InventoryDocumentDetail(models.Model):
                     else:
                         self.source_location = internal_loc
                         self.destination_location = get_virtual("Ajuste por Merma/Pérdida")
-                    
+
         super().save(*args, **kwargs)
 
     def __str__(self):

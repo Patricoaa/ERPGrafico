@@ -64,10 +64,21 @@ def _make_env():
         name="Proveedor Cuotas",
         account_type=AccountType.LIABILITY,
     )
+    ar_acc = Account.objects.create(
+        code="1.1.02.020",
+        name="Deudores Cuotas",
+        account_type=AccountType.ASSET,
+    )
     supplier = Contact.objects.create(
         name="Proveedor Cuotas",
         tax_id="76.123.456-7",
     )
+    from accounting.models import AccountingSettings
+
+    settings_obj, _ = AccountingSettings.objects.get_or_create()
+    settings_obj.default_receivable_account = ar_acc
+    settings_obj.default_payable_account = payable_acc
+    settings_obj.save()
     return {
         "user": user,
         "bank": bank,
@@ -424,7 +435,14 @@ def test_card_purchase_aborts_when_use_unbookable(env):
     pagar y sin `default_payable_account`), create_card_purchase aborta con
     ValidationError y, por ser atómico, no persiste grupo/movimiento/cuotas
     (no quedan pasivos fantasma ni cuotas facturando deuda no registrada)."""
+    from accounting.models import AccountingSettings
     from contacts.models import Contact
+
+    # `_make_env` siembra un `default_payable_account`; para el escenario E4
+    # (uso no contabilizable) lo limpiamos explícitamente.
+    settings_obj = AccountingSettings.get_solo()
+    settings_obj.default_payable_account = None
+    settings_obj.save(update_fields=["default_payable_account"])
 
     supplier_no_acc = Contact.objects.create(
         name="Prov Sin Cuenta",

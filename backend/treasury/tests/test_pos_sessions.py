@@ -12,7 +12,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 
-from treasury.models import POSTerminal, POSSession, TreasuryAccount
+from treasury.models import POSSession, POSTerminal, TreasuryAccount
 from treasury.pos_service import POSService
 from treasury.serializers import POSSessionSerializer
 

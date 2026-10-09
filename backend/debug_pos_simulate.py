@@ -1,11 +1,10 @@
 import traceback
-from decimal import Decimal
-from sales.models import DraftCart
-from sales.draft_cart_service import DraftCartService
+
 from contacts.models import Contact
 from inventory.models import Product
+from sales.draft_cart_service import DraftCartService
+from sales.models import DraftCart
 from treasury.models import POSSession
-import json
 
 session = POSSession.objects.first()
 if not session:
@@ -24,7 +23,6 @@ cart = DraftCart.objects.create(name="Debug POS Cart", customer=customer, pos_se
 try:
     DraftCartService.process_withdrawal(cart, None)
     print("Success")
-except Exception as e:
-    import logging
+except Exception:
     print("Failed:")
     traceback.print_exc()

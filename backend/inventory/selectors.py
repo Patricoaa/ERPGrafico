@@ -210,8 +210,6 @@ def get_stock_report_data(warehouse_id: int | None = None) -> list[dict]:
     """
     from decimal import Decimal
 
-    from django.db.models import Q
-
     from inventory.services import ProductService, UoMService
 
     products = Product.objects.filter(
@@ -471,6 +469,7 @@ class ProductSelector:
 
         from django.db import models
         from django.db.models import Avg, F, Sum
+
         from sales.models import SaleDeliveryLine, SaleReturnLine
 
         delivery_stats = SaleDeliveryLine.objects.filter(
@@ -499,9 +498,9 @@ class ProductSelector:
 
         avg_price = float(delivery_stats["avg_price"] or 0)
         avg_cost = float(delivery_stats["avg_cost"] or 0)
-        
+
         from django.db.models.functions import TruncMonth
-        
+
         sales_history = list(SaleDeliveryLine.objects.filter(
             product_id__in=product_ids, delivery__status="CONFIRMED"
         ).annotate(
@@ -511,7 +510,7 @@ class ProductSelector:
             cost=Sum(F("quantity") * F("unit_cost")),
             qty=Sum("quantity")
         ).order_by("month"))
-        
+
         # Convert month to string and decimals to float
         sales_history_formatted = []
         for s in sales_history:
@@ -566,7 +565,7 @@ class ProductSelector:
                     "qty": float(p["qty"] or 0)
                 })
 
-        from purchasing.models import PurchaseReceiptLine, PurchaseReturnLine
+        from purchasing.models import PurchaseReceiptLine
 
         purchase_receipt_stats = PurchaseReceiptLine.objects.filter(
             product_id__in=product_ids, receipt__status="CONFIRMED"
@@ -594,7 +593,6 @@ class ProductSelector:
                 })
 
         # Top customers by revenue
-        from django.db.models import CharField
         top_customers_qs = list(SaleDeliveryLine.objects.filter(
             product_id__in=product_ids, delivery__status="CONFIRMED"
         ).values(
@@ -713,7 +711,7 @@ class SubscriptionSelector:
 
     @staticmethod
     def get_stats():
-        from django.db.models import Count, Sum, Q
+        from django.db.models import Count, Sum
 
         now = timezone.now()
         threshold_30 = now.date() + timezone.timedelta(days=30)
@@ -815,6 +813,7 @@ class StockMoveSelector:
     @staticmethod
     def stock_level(product_id: int, warehouse_id: int) -> str:
         from decimal import Decimal
+
         from .models import Stock
 
         stock = Stock.objects.filter(
@@ -834,6 +833,6 @@ class StockMoveSelector:
             so = obj.sale_delivery_line.delivery.sale_order
             docs.append({'type': 'sale_order', 'id': so.id, 'name': str(so), 'url': '/sales/orders'})
             docs.extend([{'type': 'invoice', 'id': i.id, 'name': str(i), 'url': '/billing/sales'} for i in so.invoices.all()])
-        
+
         seen = set()
         return [d for d in docs if not (d['type'] == 'inventory' or (d['type'], d['id']) in seen or seen.add((d['type'], d['id'])))]

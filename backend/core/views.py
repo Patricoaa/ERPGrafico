@@ -1,4 +1,3 @@
-from core.api.pagination import StandardResultsSetPagination
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.utils import timezone
@@ -9,25 +8,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from accounting.models import JournalEntry
-from billing.models import Invoice
-from contacts.models import Contact
+from core.api.pagination import StandardResultsSetPagination
 from core.mixins import AuditHistoryMixin
-from inventory.models import Product, StockMove
-from production.models import WorkOrder
-from purchasing.models import PurchaseOrder
-from sales.models import SaleOrder
-from treasury.models import TreasuryMovement
 
-from .models import ActionLog, CompanySettings, User, UserPreference, BackgroundJob
+from .models import ActionLog, BackgroundJob, CompanySettings, User
 from .serializers import (
     ActionLogSerializer,
+    BackgroundJobSerializer,
     CompanySettingsSerializer,
     CustomTokenRefreshSerializer,
     GroupSerializer,
-    HistoricalRecordSerializer,
     UserSerializer,
-    BackgroundJobSerializer,
 )
 from .services import ActionLoggingService, CoreSelector, CoreService, UserService
 
@@ -122,6 +113,7 @@ class MyProfilePayrollPreviewView(APIView):
 
     def get(self, request, payroll_id):
         from rest_framework.exceptions import NotFound, PermissionDenied
+
         from hr.models import Payroll
         from hr.serializers import EmployeePayrollPreviewSerializer
         if not request.user.contact_id: raise PermissionDenied('User is not linked to an employee contact')
@@ -136,8 +128,9 @@ class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        from .user_service import UserServiceExt
         from rest_framework.exceptions import ValidationError
+
+        from .user_service import UserServiceExt
         try: return Response(UserServiceExt.change_password_from_request(request))
         except ValidationError as e: return Response({'detail': str(e)}, status=400)
 
@@ -148,8 +141,9 @@ class ChangePinView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        from .user_service import UserServiceExt
         from rest_framework.exceptions import ValidationError
+
+        from .user_service import UserServiceExt
         try: return Response(UserServiceExt.change_pin_from_request(request))
         except ValidationError as e: return Response({'detail': str(e)}, status=400)
 

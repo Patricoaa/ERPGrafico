@@ -1,18 +1,23 @@
 import os
+
 import django
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 import config.settings
+
 config.settings.CACHES = {'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}}
 django.setup()
 
+import traceback
+
 from django.test import RequestFactory
+from django.utils import timezone
 from rest_framework.test import force_authenticate
-from treasury.views import POSSessionViewSet
-from treasury.models import POSSession, TreasuryMovement, TreasuryAccount, PaymentMethod
+
 from contacts.models import Contact
 from core.models import User
-from django.utils import timezone
-import traceback
+from treasury.models import PaymentMethod, POSSession, TreasuryAccount, TreasuryMovement
+from treasury.views import POSSessionViewSet
 
 factory = RequestFactory()
 request = factory.get('/api/treasury/pos-sessions/current/')
@@ -44,5 +49,5 @@ view = POSSessionViewSet.as_view({'get': 'current'})
 try:
     response = view(request)
     print("STATUS:", response.status_code)
-except Exception as e:
+except Exception:
     traceback.print_exc()

@@ -1,7 +1,9 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.utils import timezone
 
 from core.prefix_registry import EntityPrefix
+
 from .glosa_builder import GlosaBuilder, Roles
 from .models import (
     Account,
@@ -16,6 +18,18 @@ from .models import (
 
 def balance_affecting_statuses():
     return JournalEntry.balance_affecting_statuses()
+
+
+def toggle_completed_checklist_item(instance, data, user):
+    is_completed = data.get("is_completed")
+    if is_completed is None:
+        raise ValidationError("El campo 'is_completed' es requerido.")
+    instance.is_completed = bool(is_completed)
+    instance.completed_at = timezone.now() if instance.is_completed else None
+    instance.completed_by = user if instance.is_completed else None
+    instance.notes = data.get("notes", instance.notes)
+    instance.save()
+    return instance
 
 
 class JournalEntryService:
@@ -1137,7 +1151,7 @@ class AccountingMapper:
                         "account": acc,
                         "debit": Decimal("0.00"),
                         "credit": net_amount,
-                        "label": GlosaBuilder.item(Roles.INGRESO, f"Productos", doc_id),
+                        "label": GlosaBuilder.item(Roles.INGRESO, "Productos", doc_id),
                     }
                 )
                 total_net_remaining -= net_amount

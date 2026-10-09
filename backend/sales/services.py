@@ -5,12 +5,12 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
-from core.prefix_registry import EntityPrefix
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import JournalEntry, JournalItem
 from accounting.services import AccountingMapper, JournalEntryService
+from core.prefix_registry import EntityPrefix
 from core.services import BaseNoteService
-from inventory.models import StockMove, Warehouse
+from inventory.models import Warehouse
 
 from .models import SaleDelivery, SaleDeliveryLine, SaleOrder
 
@@ -60,8 +60,9 @@ class SalesService:
                 raise ValidationError("Debe tener una sesión de caja activa para crear ventas (o seleccionar una compartida).")
 
         pos_pin = data.get("pos_pin")
-        from core.services import PINService
         from rest_framework.exceptions import PermissionDenied
+
+        from core.services import PINService
 
         salesperson = user
 
@@ -533,7 +534,6 @@ class SalesService:
         if delivery.status != SaleDelivery.Status.DRAFT:
             return delivery
 
-        from inventory.models import Product
         from inventory.services import UoMService
         from production.models import BillOfMaterials
 
@@ -574,7 +574,7 @@ class SalesService:
                         print(f"DEBUG: No OT created for {product.internal_code} (not express)")
 
         # 2. Process lines for stock moves and quantity updates
-        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
+        from inventory.models import InventoryDocument, InventoryDocumentDetail
         from inventory.services import InventoryService
 
         doc_inv = InventoryDocument.objects.create(
@@ -681,7 +681,7 @@ class SalesService:
         if details_to_create:
             InventoryDocumentDetail.objects.bulk_create(details_to_create)
             doc_inv, generated_moves = InventoryService.confirmar_documento(doc_inv)
-            
+
             # Map lines to generated moves for PATH A
             tracked_lines = [l for l in delivery.lines.all() if l.product.track_inventory]
             moves_by_key = {}
@@ -701,7 +701,7 @@ class SalesService:
                 if move is not None:
                     l.stock_move = move
                     l.save()
-                        
+
             created_moves.extend(generated_moves)
         else:
             doc_inv.delete()
@@ -933,7 +933,7 @@ class SalesService:
             )
 
         # 2. Reverse Stock Moves & Update Sale Lines
-        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
+        from inventory.models import InventoryDocument, InventoryDocumentDetail
         from inventory.services import InventoryService
 
         doc_inv = InventoryDocument.objects.create(
@@ -988,8 +988,9 @@ class SalesService:
     @staticmethod
     def register_note_from_request(request, order: SaleOrder):
         import json
+
         from purchasing.serializers import NoteCreationSerializer
-        
+
         data = request.data.dict() if hasattr(request.data, "dict") else request.data.copy()
         if "return_items" in data and isinstance(data["return_items"], str):
             try:
@@ -1034,7 +1035,7 @@ class SalesService:
         """
         from accounting.models import AccountingSettings
         from billing.models import Invoice
-        from inventory.models import Product, StockMove, Warehouse
+        from inventory.models import Product, Warehouse
 
         # 0. Initial Validations
         settings = AccountingSettings.get_solo()
@@ -1208,7 +1209,7 @@ class SalesService:
             if not default_warehouse:
                 print("WARNING: No warehouse found for return moves")
 
-            from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
+            from inventory.models import InventoryDocument, InventoryDocumentDetail
             from inventory.services import InventoryService
             doc_inv = InventoryDocument.objects.create(
                 document_type=InventoryDocument.Type.RECEIPT,
@@ -1525,12 +1526,15 @@ class SaleOrderService(DocumentService):
             order.notes = (order.notes or "") + f"\nAnulado: {reason}"
         order.save()
 
+        from workflow.services import WorkflowService
+
         WorkflowService.log_transition(order, "annul", user=user, reason=reason)
         return order
 
     @staticmethod
     def get_comments_queryset(order):
         from django.contrib.contenttypes.models import ContentType
+
         from production.models import WorkOrder
         from workflow.models import Comment
 

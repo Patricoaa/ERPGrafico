@@ -2,25 +2,24 @@
 Tests for FiscalYearAccountMapping snapshot and historical report resolution.
 """
 
-from decimal import Decimal
 from datetime import date
+from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase, TransactionTestCase
+from django.test import TransactionTestCase
 
+from accounting.fiscal_year_service import FiscalYearClosingService
 from accounting.models import (
     Account,
-    AccountType,
     AccountingSettings,
+    AccountType,
     BSCategory,
     CFCategory,
-    FiscalYear,
     FiscalYearAccountMapping,
     ISCategory,
     JournalEntry,
     JournalItem,
 )
-from accounting.fiscal_year_service import FiscalYearClosingService
 from finances.services import FinanceService
 from tax.models import AccountingPeriod
 

@@ -5,6 +5,7 @@ from .subscription_views import SubscriptionViewSet
 from .views import (
     CategoryViewSet,
     InventoryCountViewSet,
+    InventoryDocumentViewSet,
     PricingRuleViewSet,
     ProductAttributeValueViewSet,
     ProductAttributeViewSet,
@@ -14,7 +15,6 @@ from .views import (
     UoMCategoryViewSet,
     UoMViewSet,
     WarehouseViewSet,
-    InventoryDocumentViewSet,
 )
 
 router = DefaultRouter()

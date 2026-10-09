@@ -53,8 +53,8 @@ class ContactsConfig(AppConfig):
                     display_template="{display_id} · {partner.name}",
                     subtitle_template="{get_transaction_type_display}",
                     extra_info_template="{amount}",
-                    list_url="/contacts/partners",
-                    detail_url_pattern="/contacts/partner-transactions/{id}",
+                    list_url="/contacts",
+                    detail_url_pattern="/contacts",
                     permission="contacts.view_partnertransaction",
                 )
             )
@@ -70,8 +70,8 @@ class ContactsConfig(AppConfig):
                     display_template="{display_id}",
                     subtitle_template="Año {fiscal_year}",
                     extra_info_template="{status}",
-                    list_url="/contacts/profit-distribution",
-                    detail_url_pattern="/contacts/profit-distribution/{id}",
+                    list_url="/finances/partners/distributions",
+                    detail_url_pattern="/finances/partners/distributions",
                     permission="contacts.view_profitdistributionresolution",
                 )
             )
@@ -79,4 +79,3 @@ class ContactsConfig(AppConfig):
             pass
 
         # Conectar los signals de contacts
-        import contacts.signals

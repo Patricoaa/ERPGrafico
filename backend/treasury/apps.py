@@ -49,7 +49,7 @@ class TreasuryConfig(AppConfig):
                     display_template=f"{EntityPrefix.TREASURY_MOVEMENT}-{{id}}",
                     subtitle_template="{contact.name} · {contact.tax_id}",
                     extra_info_template="{payment_method}",
-                    list_url="/treasury/movements",
+                    list_url="/treasury/operaciones/movements",
                     detail_url_pattern="/treasury/movements/{id}",
                     permission="treasury.view_treasurymovement",
                 )
@@ -66,7 +66,7 @@ class TreasuryConfig(AppConfig):
                     display_template="{name}",
                     subtitle_template="{account_number} · {bank}",
                     extra_info_template="{currency}",
-                    list_url="/treasury/accounts",
+                    list_url="/treasury/operaciones/accounts",
                     detail_url_pattern="/treasury/accounts/{id}",
                     permission="treasury.view_treasuryaccount",
                 )
@@ -83,7 +83,7 @@ class TreasuryConfig(AppConfig):
                     display_template=f"{EntityPrefix.BANK_STATEMENT}-{{id}}",
                     subtitle_template="{treasury_account.name}",
                     extra_info_template="{date}",
-                    list_url="/treasury/reconciliation?tab=statements",
+                    list_url="/treasury/reconciliation",
                     detail_url_pattern="/treasury/statements/{id}",
                     permission="treasury.view_bankstatement",
                 )
@@ -100,8 +100,8 @@ class TreasuryConfig(AppConfig):
                     display_template=f"{EntityPrefix.CHECK}-{{check_number}}",
                     subtitle_template="{bank.name} · {counterparty.name}",
                     extra_info_template="{amount}",
-                    list_url="/treasury/operaciones/movements",
-                    detail_url_pattern="/treasury/operaciones/movements?check={id}",
+                    list_url="/treasury/operaciones/checks",
+                    detail_url_pattern="/treasury/operaciones/checks",
                     permission="treasury.view_check",
                 )
             )
@@ -117,8 +117,8 @@ class TreasuryConfig(AppConfig):
                     display_template=f"{EntityPrefix.BANK_LOAN}-{{loan_number}}",
                     subtitle_template="{lender.name} · {status}",
                     extra_info_template="{principal}",
-                    list_url="/treasury/loans",
-                    detail_url_pattern="/treasury/loans/{id}",
+                    list_url="/treasury/bank-center",
+                    detail_url_pattern="/treasury/bank-center",
                     permission="treasury.view_bankloan",
                 )
             )
@@ -152,7 +152,7 @@ class TreasuryConfig(AppConfig):
                     subtitle_template="{card_account.name} · {period_month}/{period_year}",
                     extra_info_template="{status}",
                     list_url="/treasury/bank-center",
-                    detail_url_pattern="/treasury/bank-center?statement={id}",
+                    detail_url_pattern="/treasury/bank-center",
                     permission="treasury.view_creditcardstatement",
                 )
             )
@@ -202,8 +202,8 @@ class TreasuryConfig(AppConfig):
                     display_template=f"{EntityPrefix.LOAN_INSTALLMENT}-{{id}}",
                     subtitle_template="{loan.loan_number} · Cuota {number}",
                     extra_info_template="{total_amount} · {status}",
-                    list_url="/treasury/loans",
-                    detail_url_pattern="/treasury/loans?selected={loan}&installment={id}",
+                    list_url="/treasury/bank-center",
+                    detail_url_pattern="/treasury/bank-center",
                     permission="treasury.view_loaninstallment",
                 )
             )

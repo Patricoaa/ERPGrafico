@@ -1,15 +1,17 @@
 from rest_framework import serializers
 
+
 class ProductValidator:
     @staticmethod
     def parse_request_data(data):
         import json
+
         from django.http import QueryDict
         ret = data.dict() if isinstance(data, QueryDict) else (data.copy() if hasattr(data, 'copy') else data)
         if isinstance(data, QueryDict):
             for f in ['boms', 'allowed_sale_uoms', 'attribute_values', 'variant_updates', 'variant_generation_selection', 'uom_prices']:
                 if f in data: ret[f] = data.getlist(f)
-                
+
         for f in ['boms', 'allowed_sale_uoms', 'attribute_values', 'variant_updates', 'variant_generation_selection', 'uom_prices']:
             if f in ret:
                 rv = ret[f]

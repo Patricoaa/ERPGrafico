@@ -2,6 +2,7 @@ from decimal import Decimal
 
 import pytest
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 
 from accounting.models import Account, AccountingSettings, AccountType, JournalEntry
@@ -10,8 +11,7 @@ from billing.note_checkout_service import NoteCheckoutService
 from billing.note_workflow import NoteWorkflow
 from contacts.models import Contact
 from core.models import User
-from django.core.files.uploadedfile import SimpleUploadedFile
-from inventory.models import Product, StockMove, UoM, Warehouse, UoMCategory
+from inventory.models import Product, StockMove, UoM, UoMCategory, Warehouse
 from sales.models import SaleLine, SaleOrder
 
 
@@ -69,11 +69,11 @@ def comprehensive_setup(db):
     uom = UoM.objects.create(name="Unit", category=uom_cat)
 
     # Contacts
-    customer = Contact.objects.create(tax_id="1-9", 
+    customer = Contact.objects.create(tax_id="1-9",
         name="Test Customer",
-        
+
     )
-    supplier = Contact.objects.create(tax_id="2-7", 
+    supplier = Contact.objects.create(tax_id="2-7",
         name="Test Supplier"
     )
 

@@ -3,7 +3,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import InvalidToken
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 
-from core.models import ActionLog, Attachment, CompanySettings, User, UserPreference, BackgroundJob
+from core.models import ActionLog, Attachment, BackgroundJob, CompanySettings, User, UserPreference
 
 
 class CustomTokenRefreshSerializer(TokenRefreshSerializer):

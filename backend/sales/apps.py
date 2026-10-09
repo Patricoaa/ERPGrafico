@@ -56,8 +56,8 @@ class SalesConfig(AppConfig):
                     display_template=f"{EntityPrefix.SALE_DELIVERY}-{{number}}",
                     subtitle_template="{customer_name}",
                     extra_info_template="{status}",
-                    list_url="/sales/deliveries",
-                    detail_url_pattern="/sales/deliveries/{id}",
+                    list_url="/sales/orders/deliveries",
+                    detail_url_pattern="/sales/orders/deliveries/{id}",
                     permission="sales.view_saledelivery",
                 )
             )

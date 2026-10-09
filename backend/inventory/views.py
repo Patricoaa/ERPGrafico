@@ -8,11 +8,11 @@ from rest_framework.response import Response
 from core.api.pagination import StandardResultsSetPagination
 from core.mixins import AuditHistoryMixin as AuditHistory
 from core.mixins import BulkImportMixin, NoDestroyModelMixin
-from core.idempotency import idempotent_endpoint
 
 from .filters import ProductFilter, StockMoveFilter, UoMFilter
 from .models import (
     InventoryCount,
+    InventoryDocument,
     PricingRule,
     Product,
     ProductAttribute,
@@ -20,40 +20,41 @@ from .models import (
     ProductCategory,
     ProductUoMPrice,
     StockMove,
-    Subscription,
     UoM,
     UoMCategory,
     Warehouse,
-    InventoryDocument,
 )
 from .selectors import (
     ProductAttributeValueSelector,
     ProductSelector,
     StockMoveSelector,
     get_product_base_queryset,
-    get_stock_report_data,
     list_products,
 )
 from .serializers import (
     InventoryCountCreateSerializer,
     InventoryCountSerializer,
+    InventoryDocumentSerializer,
     PricingRuleSerializer,
     ProductAttributeSerializer,
     ProductAttributeValueSerializer,
     ProductCategorySerializer,
-    ProductSerializer,
     ProductListSerializer,
-    ProductWriteSerializer,
+    ProductSerializer,
     ProductSimpleSerializer,
     ProductUoMPriceSerializer,
+    ProductWriteSerializer,
     StockMoveSerializer,
-    SubscriptionSerializer,
     UoMCategorySerializer,
     UoMSerializer,
     WarehouseSerializer,
-    InventoryDocumentSerializer,
 )
-from .services import InventoryCountService, StockService, UoMService, ProductService, PricingService
+from .services import (
+    InventoryCountService,
+    PricingService,
+    ProductService,
+    UoMService,
+)
 
 
 class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
@@ -85,13 +86,13 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
-        
+
         objects = page if page is not None else queryset
-        
+
         from .services import ProductService
         ProductService.bulk_annotate_reserved_qty(objects)
         ProductService.bulk_annotate_pricing(objects)
-        
+
         serializer = self.get_serializer(objects, many=True)
         if page is not None:
             return self.get_paginated_response(serializer.data)
@@ -136,30 +137,18 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
 
     @action(detail=False, methods=["get"])
     def stock_report(self, request):
-        from core.api.throttles import HeavyReportThrottle
-        from core.cache import cache_report
         from rest_framework.exceptions import Throttled
+
+        from core.api.throttles import HeavyReportThrottle
 
         if not HeavyReportThrottle().allow_request(request, self):
             raise Throttled(
                 detail="Demasiadas solicitudes al reporte de stock. Intente en un momento."
             )
 
-        warehouse_id = request.query_params.get("warehouse_id")
-        if warehouse_id is not None:
-            try:
-                warehouse_id = int(warehouse_id)
-            except (ValueError, TypeError):
-                warehouse_id = None
+        from .services import build_stock_report
 
-        data = cache_report(
-            module="inventory",
-            endpoint="stock_report",
-            params={"warehouse_id": warehouse_id} if warehouse_id else None,
-            timeout=60,
-            generator=lambda: get_stock_report_data(warehouse_id=warehouse_id),
-        )
-        return Response(data)
+        return Response(build_stock_report(request.query_params))
 
     @action(detail=False, methods=["get"])
     def analytics(self, request):
@@ -447,6 +436,7 @@ class InventoryDocumentViewSet(viewsets.ModelViewSet, AuditHistory):
     @action(detail=True, methods=["post"])
     def confirm(self, request, pk=None):
         from django.core.exceptions import ValidationError
+
         from .services import InventoryService
 
         doc = self.get_object()
@@ -461,6 +451,7 @@ class InventoryDocumentViewSet(viewsets.ModelViewSet, AuditHistory):
     @action(detail=True, methods=["post"])
     def annul(self, request, pk=None):
         from django.core.exceptions import ValidationError
+
         from .services import InventoryService
 
         doc = self.get_object()

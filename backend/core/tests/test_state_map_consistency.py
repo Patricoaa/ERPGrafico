@@ -40,10 +40,49 @@ STATE_MAP_ENTITIES = {
 }
 
 
+def _extract_status_column(body: str) -> list[str]:
+    """
+    Return the first column of the *first* markdown table in ``body``.
+
+    Only the entity's top-level Status table is considered. Later tables in
+    the same section (e.g. SaleOrder's DeliveryStatus, WorkOrder's Stage
+    pipeline) and inline transition lists are intentionally ignored.
+    """
+    statuses: list[str] = []
+    in_table = False
+    past_separator = False
+    status_col = 0
+    for line in body.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("|"):
+            cells = [c.strip().strip("`").strip() for c in stripped.strip("|").split("|")]
+            if not in_table:
+                in_table = True  # header row — locate the Status column
+                lowered = [c.lower() for c in cells]
+                for key in ("status", "value", "stage"):
+                    if key in lowered:
+                        status_col = lowered.index(key)
+                        break
+                continue
+            if set(stripped) <= set("|-: "):
+                past_separator = True  # |---|---| separator — skip
+                continue
+            if past_separator and status_col < len(cells):
+                if re.fullmatch(r"[A-Z_]+", cells[status_col]):
+                    statuses.append(cells[status_col])
+        elif in_table:
+            break  # first table ended
+    return statuses
+
+
 def _parse_state_map_states() -> dict[str, list[str]]:
     """
     Parse state-map.md and extract the status values listed in each entity table.
     Returns { 'SaleOrder': ['DRAFT', 'CONFIRMED', ...], ... }
+
+    Section headers may carry a qualifier (``## Task (Workflow)``) or document
+    more than one entity (``## TaxPeriod / AccountingPeriod``); both forms are
+    normalised back to the keys in ``STATE_MAP_ENTITIES``.
     """
     state_map_path = Path(settings.BASE_DIR).parent / "docs" / "20-contracts" / "state-map.md"
     if not state_map_path.exists():
@@ -56,17 +95,18 @@ def _parse_state_map_states() -> dict[str, list[str]]:
     sections = re.split(r"^## (.+)$", content, flags=re.MULTILINE)
     # sections[0] is preamble, then alternating: header, body
     for i in range(1, len(sections), 2):
-        header = sections[i].strip()
+        raw_header = sections[i].strip()
         body = sections[i + 1] if i + 1 < len(sections) else ""
 
-        # Only process entities we care about
-        if header not in STATE_MAP_ENTITIES:
-            continue
+        base = raw_header.split("(")[0].strip()
+        entity_names = [name.strip() for name in base.split("/")]
 
-        # Extract status values from table rows: | `STATUS` | ...
-        statuses = re.findall(r"\| `([A-Z_]+)` \|", body)
-        if statuses:
-            result[header] = statuses
+        statuses = _extract_status_column(body)
+        if not statuses:
+            continue
+        for name in entity_names:
+            if name in STATE_MAP_ENTITIES:
+                result[name] = statuses
 
     return result
 

@@ -1,19 +1,16 @@
-from core.api.pagination import StandardResultsSetPagination
-from decimal import Decimal
 
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from core.api.pagination import StandardResultsSetPagination
 from core.mixins import AuditHistoryMixin
 
 from .models import Contact
-from .selectors import ContactSelector, list_contacts, list_credit_portfolio
+from .selectors import ContactSelector, list_contacts
 from .serializers import (
     ContactListSerializer,
     ContactSerializer,
@@ -40,6 +37,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def destroy(self, request, *args, **kwargs):
         from rest_framework import status
         from rest_framework.exceptions import ValidationError
+
         from .services import ContactService
 
         contact = self.get_object()
@@ -105,9 +103,10 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=['post'])
     def write_off_debt(self, request, pk=None):
-        from .services import ContactService
         from django.core.exceptions import ValidationError as DjangoValidationError
         from rest_framework.exceptions import ValidationError
+
+        from .services import ContactService
         try:
             return Response(ContactService.write_off_debt_from_request(request, self.get_object()))
         except (DjangoValidationError, ValidationError) as e:
@@ -131,9 +130,10 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=['post'])
     def recover_written_off_debt(self, request, pk=None):
-        from .services import ContactService
         from django.core.exceptions import ValidationError as DjangoValidationError
         from rest_framework.exceptions import ValidationError
+
+        from .services import ContactService
         try:
             return Response(ContactService.recover_written_off_debt_from_request(request, self.get_object()))
         except (DjangoValidationError, ValidationError) as e:
@@ -151,8 +151,9 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=['get'])
     def partner_statement(self, request, pk=None):
-        from .selectors import ContactSelectorExt
         from rest_framework.exceptions import ValidationError
+
+        from .selectors import ContactSelectorExt
         try:
             return Response(ContactSelectorExt.get_partner_statement(self.get_object(), self.get_serializer))
         except ValidationError as e:
@@ -216,8 +217,9 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=['post'])
     def individual_dividend_payment(self, request, pk=None):
-        from .services import ContactService
         from rest_framework.exceptions import ValidationError
+
+        from .services import ContactService
         try:
             return Response(ContactService.individual_dividend_payment_from_request(request, self.get_object()))
         except ValidationError as e:
@@ -226,16 +228,11 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=True, methods=['get', 'post'])
     def partner_transactions(self, request, pk=None):
         if request.method == 'POST':
-            from .partner_service import PartnerService
             from rest_framework.exceptions import ValidationError
+
+            from .partner_service import PartnerService
             try:
-                ptx = PartnerService.partner_transactions_from_request(request, self.get_object())
-                return Response(
-                    {
-                        "message": "Transacción registrada.",
-                        "journal_entry": ptx.journal_entry.display_id if ptx.journal_entry else None,
-                    }
-                )
+                return Response(PartnerService.register_partner_transaction(request, self.get_object()))
             except ValidationError as e:
                 return Response({"error": str(e.message if hasattr(e, 'message') else e)}, status=400)
             except Exception as e:
@@ -308,8 +305,9 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=False, methods=['post'])
     def initial_setup(self, request):
-        from .services import ContactService
         from rest_framework.exceptions import ValidationError
+
+        from .services import ContactService
         try:
             return Response(ContactService.initial_setup_from_request(request))
         except ValidationError as e:
@@ -317,8 +315,9 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=False, methods=['post'])
     def mass_mobilize_retained_earnings(self, request):
-        from .services import ContactService
         from rest_framework.exceptions import ValidationError
+
+        from .services import ContactService
         try:
             return Response(ContactService.mass_mobilize_retained_earnings_from_request(request))
         except ValidationError as e:

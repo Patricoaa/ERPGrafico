@@ -1,5 +1,5 @@
 from inventory.models import *
-from inventory.services import InventoryService
+
 p = Product.objects.filter(name__icontains="Tinta Offset Magenta").first()
 loc_cap = Location.objects.filter(name="Capital de Socios").first()
 w = Warehouse.objects.first()

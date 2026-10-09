@@ -1,21 +1,18 @@
-from core.api.pagination import StandardResultsSetPagination
-from decimal import Decimal
 
 import django_filters
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from core.api.pagination import StandardResultsSetPagination
 from core.api.search import DistinctSearchFilter
 from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
 
 from .filters import SaleDeliveryFilter
-from .models import SaleDelivery, SaleOrder, SaleReturn, SalesSettings
+from .models import SaleOrder, SaleReturn, SalesSettings
 from .selectors import SaleDeliverySelector, SaleOrderSelector
 from .serializers import (
     CreateSaleOrderSerializer,
@@ -49,6 +46,7 @@ class SalesSettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 from core.api.permissions import StandardizedModelPermissions
 from core.idempotency import idempotent_endpoint
+
 
 class SaleOrderFilterSet(django_filters.FilterSet):
     customer_name = django_filters.CharFilter(field_name="customer__name", lookup_expr="icontains")

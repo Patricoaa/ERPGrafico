@@ -10,10 +10,10 @@ To run:
     pytest core/tests/test_zero_n_plus_one.py -v
 """
 
-import pytest
 from datetime import date
 from decimal import Decimal
 
+import pytest
 
 N = 5
 
@@ -97,9 +97,9 @@ class TestInventoryNPlusOne:
 class TestSalesNPlusOne:
 
     def test_sale_order_list(self, api_client, sale_order_with_lines, django_assert_max_num_queries):
-        from sales.models import SaleOrder, SaleLine
-        from inventory.models import Product, UoM, UoMCategory, ProductCategory
         from contacts.models import Contact
+        from inventory.models import Product, ProductCategory, UoM, UoMCategory
+        from sales.models import SaleLine, SaleOrder
 
         uom_cat = UoMCategory.objects.create(name="U")
         uom = UoM.objects.create(name="Ud", category=uom_cat, ratio=Decimal("1"))
@@ -156,8 +156,8 @@ class TestBillingNPlusOne:
 
     def test_invoice_list(self, api_client, django_assert_max_num_queries):
         from billing.models import Invoice
-        from sales.models import SaleOrder
         from contacts.models import Contact
+        from sales.models import SaleOrder
 
         for i in range(N):
             c = Contact.objects.create(name=f"Contact {i}", tax_id=f"87.{i:06d}-K")
@@ -193,8 +193,8 @@ class TestTreasuryNPlusOne:
         assert resp.status_code == 200
 
     def test_bank_list(self, api_client, django_assert_max_num_queries):
-        from treasury.models import Bank
         from contacts.models import Contact
+        from treasury.models import Bank
 
         for i in range(N):
             b = Bank.objects.create(name=f"Banco {i}", code=f"B{i}")
@@ -208,8 +208,8 @@ class TestTreasuryNPlusOne:
         assert resp.status_code == 200
 
     def test_treasury_account_list(self, api_client, django_assert_max_num_queries):
-        from treasury.models import TreasuryAccount
         from accounting.models import Account, AccountType
+        from treasury.models import TreasuryAccount
 
         for i in range(N):
             acc = Account.objects.create(
@@ -223,12 +223,14 @@ class TestTreasuryNPlusOne:
         assert resp.status_code == 200
 
     def test_terminal_batch_list(self, api_client, treasury_account, django_assert_max_num_queries):
-        from treasury.models import (
-            TerminalBatch, PaymentMethod, PaymentTerminalDevice, PaymentTerminalProvider,
-        )
-        from contacts.models import Contact
         from accounting.models import Account, AccountType
-        from inventory.models import Product, ProductCategory, UoM, UoMCategory
+        from contacts.models import Contact
+        from treasury.models import (
+            PaymentMethod,
+            PaymentTerminalDevice,
+            PaymentTerminalProvider,
+            TerminalBatch,
+        )
 
         supplier = Contact.objects.create(name="Transbank", tax_id="76.000.000-0")
         recv_acc = Account.objects.create(code="1.1.02.001", name="Cobro Terminal", account_type=AccountType.ASSET)
@@ -260,8 +262,8 @@ class TestTreasuryNPlusOne:
         assert resp.status_code == 200
 
     def test_bank_loan_list(self, api_client, django_assert_max_num_queries):
-        from treasury.models import Bank, TreasuryAccount, BankLoan
         from accounting.models import Account, AccountType
+        from treasury.models import Bank, BankLoan, TreasuryAccount
 
         bank_obj = Bank.objects.create(name="Banco", code="B")
         cta = TreasuryAccount.objects.create(

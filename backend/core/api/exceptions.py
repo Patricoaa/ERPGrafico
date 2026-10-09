@@ -32,8 +32,16 @@ def erpgrafico_exception_handler(exc, context):
 
     if response is not None:
         # Standardize DRF built-in exceptions (like 401, 403, 404, 405)
-        # We wrap them in our standard structure
-        message = response.data.get("detail") or str(response.data)
+        # We wrap them in our standard structure. `response.data` may be a
+        # dict (serializer errors), a list of ErrorDetail (ValidationError
+        # raised with a plain string/list) or a bare ErrorDetail.
+        data = response.data
+        if isinstance(data, dict):
+            message = data.get("detail") or str(data)
+        elif isinstance(data, (list, tuple)):
+            message = "; ".join(str(item) for item in data) or str(data)
+        else:
+            message = str(data)
         code = "API_ERROR"
 
         if response.status_code == status.HTTP_401_UNAUTHORIZED:
@@ -47,7 +55,7 @@ def erpgrafico_exception_handler(exc, context):
             "error": {
                 "message": message,
                 "code": code,
-                "details": response.data,
+                "details": data,
                 "status_code": response.status_code,
             }
         }

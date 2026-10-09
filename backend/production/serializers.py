@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from core.serializers import AttachmentSerializer
-from inventory.models import Product, UoM
+from inventory.models import Product
 
 from .models import (
     BillOfMaterials,
@@ -135,7 +135,7 @@ class WorkOrderInitialMaterialSerializer(serializers.Serializer):
 class WorkOrderWriteSerializer(serializers.ModelSerializer):
     """Optimized serializer for create and update views.
     Omits heavy nested components and read-only history/consumptions."""
-    
+
     class Meta:
         model = WorkOrder
         fields = [
@@ -256,7 +256,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
             return obj.sale_line.uom.name
         if obj.stage_data and obj.stage_data.get("uom_name"):
             return obj.stage_data["uom_name"]
-        
+
         uom_id = obj.stage_data.get("uom_id") if obj.stage_data else None
         if uom_id:
             from inventory.services import UoMService

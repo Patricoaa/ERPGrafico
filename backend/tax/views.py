@@ -1,16 +1,14 @@
-from core.api.pagination import StandardResultsSetPagination
-from core.idempotency import idempotent_endpoint
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework import status, viewsets, exceptions
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework import exceptions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from billing.models import Invoice
+from core.api.pagination import StandardResultsSetPagination
+from core.idempotency import idempotent_endpoint
 
 from .models import AccountingPeriod, F29Declaration, F29Payment, TaxPeriod
 from .serializers import (
@@ -97,8 +95,9 @@ class F29DeclarationViewSet(viewsets.ModelViewSet):
         return F29DeclarationSerializer
 
     def create(self, request, *args, **kwargs):
-        from .services_ext import TaxServiceExt
         from django.core.exceptions import ValidationError as DjangoValidationError
+
+        from .services_ext import TaxServiceExt
         try:
             dec = TaxServiceExt.create_declaration_from_request(request)
             return Response(self.get_serializer(dec).data, status=201)
@@ -141,6 +140,7 @@ class F29DeclarationViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'])
     def documents(self, request, pk=None):
         from billing.serializers import InvoiceListSerializer
+
         from .selectors import TaxSelectorExt
         queryset = TaxSelectorExt.get_declaration_documents_queryset(self.get_object())
         page = self.paginate_queryset(queryset)

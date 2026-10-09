@@ -5,11 +5,10 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
-from core.prefix_registry import EntityPrefix
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import JournalEntry, JournalItem
 from accounting.services import JournalEntryService
-from inventory.models import StockMove, Warehouse
+from inventory.models import Warehouse
 from inventory.services import UoMService
 
 from .models import PurchaseOrder, PurchaseReturn, PurchaseReturnLine
@@ -33,7 +32,7 @@ class PurchaseReturnService:
             return doc
 
         # 1. Reverse Stock Moves
-        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
+        from inventory.models import InventoryDocument, InventoryDocumentDetail
         from inventory.services import InventoryService
 
         doc_inv = InventoryDocument.objects.create(
@@ -180,7 +179,7 @@ class PurchaseReturnService:
         total_inventory_reversal = Decimal("0")
 
         # 1. Stock Moves
-        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
+        from inventory.models import InventoryDocument, InventoryDocumentDetail
         from inventory.services import InventoryService
 
         doc_inv = InventoryDocument.objects.create(
@@ -219,7 +218,7 @@ class PurchaseReturnService:
         if details_to_create:
             InventoryDocumentDetail.objects.bulk_create(details_to_create)
             doc_inv, generated_moves = InventoryService.confirmar_documento(doc_inv)
-            
+
             # Map lines to generated moves
             inventory_lines = [l for l in return_doc.lines.all() if l.product.track_inventory]
             for line, move in zip(inventory_lines, generated_moves):

@@ -317,7 +317,7 @@ class Command(BaseCommand):
                 self.stdout.write(
                     f"  ✓ {n_po} OC, {n_so} OV, {n_ot} OT, {n_inv} facturas, {n_tm} movs. tesorería"
                 )
-                
+
                 section_start = time.time()
                 self.stdout.write(f"\n{'─' * 50}")
                 self.stdout.write("  Historical Purchases & POS Demo...")
@@ -2717,7 +2717,7 @@ class Command(BaseCommand):
                 f"  ✓ OCS-{po.number}: {supplier.name} → {qty}u {product.name} "
                 f"(${po.total:,.0f}) — {order_date.strftime('%b %Y')}"
             )
-        self.stdout.write(f"  ── +6 compras multi-mes (Ene-Jun 2026)")
+        self.stdout.write("  ── +6 compras multi-mes (Ene-Jun 2026)")
 
     def _create_sales_demo(self, accounts, partners, inventory, uoms):
         from billing.services import BillingService
@@ -2905,9 +2905,9 @@ class Command(BaseCommand):
         self.stdout.write("  ── 3 ventas, 2 OT, 3 deliveries, 3 facturas, 3 cobros")
 
         # ── Multi-month sales (Historical to Current Month) ─────────────
+        import calendar
         import random
         from datetime import date as _date
-        import calendar
 
         current_month = today.month
         current_year = today.year
@@ -2920,7 +2920,7 @@ class Command(BaseCommand):
             (Product.objects.get(name="Calendario de Escritorio"), uoms["un"]),
             (Product.objects.get(name="Afiche Publicitario (Couché 170g)"), uoms["un"]),
         ]
-        
+
         customers = [c1, c2, c_default]
         total_hist_sales = 0
 
@@ -2928,23 +2928,23 @@ class Command(BaseCommand):
             num_days = calendar.monthrange(current_year, month)[1]
             max_day = num_days if month != current_month else today.day
             if max_day < 1: max_day = 1
-            
+
             # Generate between 15 and 20 sales per month
             num_sales = random.randint(15, 20)
-            
+
             for sale_idx in range(num_sales):
                 order_date = _date(current_year, month, random.randint(1, max_day))
                 customer = random.choice(customers)
                 product, uom = random.choice(available_products)
-                
+
                 target_value = Decimal(random.randint(1000, 150000))
                 price = product.sale_price if product.sale_price > 0 else Decimal("1000")
                 qty = max(1, int(target_value / price))
-                
+
                 note_tag = f"Seed-HistSale-{month:02d}-{sale_idx:02d}"
                 if SaleOrder.objects.filter(notes=note_tag).exists():
                     continue
-                    
+
                 so = SaleOrder.objects.create(
                     customer=customer, date=order_date,
                     payment_method=SaleOrder.PaymentMethod.TRANSFER,
@@ -2957,7 +2957,7 @@ class Command(BaseCommand):
                 )
                 so.save()
                 SalesService.confirm_sale(so)
-                
+
                 # Dispatch if required (for services, this might return None or empty)
                 delivery = SalesService.dispatch_order(so, wh, delivery_date=order_date)
                 if delivery:
@@ -2967,7 +2967,7 @@ class Command(BaseCommand):
                     so, dte_type=Invoice.DTEType.FACTURA,
                     payment_method="TRANSFER", date=order_date,
                 )
-                
+
                 TreasuryService.create_movement(
                     amount=inv.total,
                     movement_type=TreasuryMovement.Type.INBOUND,
@@ -2985,12 +2985,18 @@ class Command(BaseCommand):
         import calendar
         import random
         from datetime import date as _date
+
         from billing.services import BillingService
-        from purchasing.models import PurchaseOrder, PurchaseLine
-        from purchasing.services import PurchaseOrderService, PurchasingService
-        from treasury.services import TreasuryService, TerminalBatchService
-        from treasury.models import PaymentTerminalProvider, PaymentMethod, TreasuryAccount, TreasuryMovement
         from inventory.models import Product
+        from purchasing.models import PurchaseLine, PurchaseOrder
+        from purchasing.services import PurchaseOrderService, PurchasingService
+        from treasury.models import (
+            PaymentMethod,
+            PaymentTerminalProvider,
+            TreasuryAccount,
+            TreasuryMovement,
+        )
+        from treasury.services import TerminalBatchService, TreasuryService
 
         admin = User.objects.filter(is_superuser=True).first()
         today = timezone.now().date()
@@ -3068,7 +3074,7 @@ class Command(BaseCommand):
                 base_comm = (gross * Decimal("0.02")).quantize(Decimal("1")) # 2%
                 iva_comm = (base_comm * Decimal("0.19")).quantize(Decimal("1"))
                 net = gross - base_comm - iva_comm
-                
+
                 TerminalBatchService.create_batch(
                     provider=tuu_prov, payment_method=pm_deposit,
                     sales_date=sales_date, gross_amount=gross,
@@ -3076,12 +3082,12 @@ class Command(BaseCommand):
                     net_amount=net, terminal_reference=f"SETTLE-{month:02d}",
                     user=admin
                 )
-                
+
                 TerminalBatchService.generate_monthly_invoice(
                     provider=tuu_prov, year=current_year, month=month,
                     user=admin, number=f"TUU-{month:02d}", date=sales_date
                 )
-                
+
         self.stdout.write(f"  ✓ Compras históricas (Suscripciones) y Liquidaciones TC generadas (Ene-{today.strftime('%b')} {current_year})")
 
     def _initialize_company_settings(self):
@@ -3728,16 +3734,16 @@ class Command(BaseCommand):
                             f"    ⚠ F29 pago falló: {str(e)[:80]}"
                         ))
                 else:
-                    self.stdout.write(f"    ✓ F29 ya pagado completamente")
+                    self.stdout.write("    ✓ F29 ya pagado completamente")
             else:
-                self.stdout.write(f"    ✓ F29 sin saldo a pagar")
+                self.stdout.write("    ✓ F29 sin saldo a pagar")
 
             # 4. Close TaxPeriod
             try:
                 TaxPeriodService.close_period(
                     year=current_year, month=month, user=admin,
                 )
-                self.stdout.write(f"    ✓ Período tributario cerrado")
+                self.stdout.write("    ✓ Período tributario cerrado")
             except Exception as e:
                 self.stdout.write(self.style.WARNING(
                     f"    ⚠ Cierre tributario falló: {str(e)[:80]}"
@@ -3749,7 +3755,7 @@ class Command(BaseCommand):
                 AccountingPeriodService.close_period(
                     year=current_year, month=month, user=admin,
                 )
-                self.stdout.write(f"    ✓ Período contable cerrado")
+                self.stdout.write("    ✓ Período contable cerrado")
             except Exception as e:
                 self.stdout.write(self.style.WARNING(
                     f"    ⚠ Cierre contable falló: {str(e)[:80]}"

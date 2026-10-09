@@ -17,10 +17,9 @@ from treasury.models import Bank, CreditLine, TreasuryAccount
 def base(db):
     bank = Bank.objects.create(name="Banco Líneas", code="BLN")
 
-    Account.objects.create(
-        name="Efectivo y Equivalentes",
-        code="1.1.01",
-        account_type=AccountType.ASSET,
+    Account.objects.get_or_create(
+        code=Account.CASH_GROUP_CODE,
+        defaults={"name": "Efectivo y Equivalentes", "account_type": AccountType.ASSET},
     )
     bank_acc = Account.objects.create(
         name="Cta Líneas",
@@ -40,7 +39,6 @@ def base(db):
 
 def _make_credit_line(**overrides):
     defaults = {
-        "treasury_account_id": 1,
         "code": "LINEA-001",
         "currency": "CLP",
         "credit_limit": Decimal("100000000"),

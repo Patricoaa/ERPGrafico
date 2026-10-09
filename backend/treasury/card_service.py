@@ -40,6 +40,9 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _t
 
+from accounting.glosa_builder import GlosaBuilder, Roles
+from core.prefix_registry import EntityPrefix
+
 from .models import (
     CardPendingCharge,
     CardPurchaseInstallment,
@@ -47,7 +50,6 @@ from .models import (
     TreasuryAccount,
     TreasuryMovement,
 )
-from accounting.glosa_builder import GlosaBuilder, Roles
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
@@ -58,8 +60,9 @@ if TYPE_CHECKING:
 class CardService:
     @classmethod
     def pay_statement_from_request(cls, request, stmt):
-        from .models import TreasuryAccount
         from rest_framework.exceptions import ValidationError
+
+        from .models import TreasuryAccount
         v = request.data
         try:
             pa = TreasuryAccount.objects.get(pk=v['payment_account'])
@@ -69,7 +72,8 @@ class CardService:
     @classmethod
     def apply_charges_from_request(cls, request, stmt):
         from rest_framework.exceptions import ValidationError
-        from core.models import Account
+
+        from accounting.models import Account
         v = request.data
         ie = None
         fe = None
@@ -84,7 +88,8 @@ class CardService:
     @classmethod
     def reapply_charges_from_request(cls, request, stmt):
         from rest_framework.exceptions import ValidationError
-        from core.models import Account
+
+        from accounting.models import Account
         v = request.data
         ie = None
         fe = None
@@ -99,6 +104,7 @@ class CardService:
     @classmethod
     def update_charge_from_request(cls, request):
         from rest_framework.exceptions import ValidationError
+
         from .models import CardPendingCharge
         from .serializers import CardPendingChargeSerializer
         cid = request.data.get('id')
@@ -113,6 +119,7 @@ class CardService:
     @classmethod
     def delete_charge_from_request(cls, request):
         from rest_framework.exceptions import ValidationError
+
         from .models import CardPendingCharge
         cid = request.data.get('id')
         if not cid: raise ValidationError('id del cargo requerido.')
@@ -126,7 +133,7 @@ class CardService:
     def add_unbilled_charge_from_payload(data: dict, user) -> dict:
         from .models import TreasuryAccount
         from .serializers import CardPendingChargeSerializer
-        
+
         card_account_id = data.get("card_account")
         amount = data.get("amount")
         charge_type = data.get("charge_type", "OTHER")
@@ -176,8 +183,9 @@ class CardService:
 
     @staticmethod
     def bill_charges_from_payload(data: dict, user) -> dict:
-        from .models import TreasuryAccount
         from datetime import date as _date_type
+
+        from .models import TreasuryAccount
 
         card_account_id = data.get("card_account")
         period_year = data.get("period_year")
@@ -397,7 +405,6 @@ class CardService:
 
         from accounting.models import JournalEntry, JournalItem
         from accounting.services import JournalEntryService
-
         from core.prefix_registry import EntityPrefix
         doc_ref = f"{EntityPrefix.CARD_PENDING_CHARGE}-{statement.display_id}"
         entry = JournalEntry.objects.create(
@@ -756,12 +763,6 @@ class CardService:
 
         if statement.status == CreditCardStatement.Status.CANCELED:
             return statement  # idempotente
-
-        if statement.status == CreditCardStatement.Status.PAID:
-            raise ValidationError(
-                "No se puede anular un estado de cuenta pagado. "
-                "Revierta el pago primero."
-            )
 
         timestamp = timezone.now().isoformat()
         reversal_lines: list[str] = []

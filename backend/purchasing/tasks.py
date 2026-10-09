@@ -4,8 +4,6 @@ from celery import shared_task
 from django.db import transaction
 from django.utils import timezone
 
-from core.models import User
-from core.prefix_registry import EntityPrefix
 from inventory.models import Subscription
 from purchasing.models import PurchaseOrder
 from purchasing.serializers import WritePurchaseOrderSerializer

@@ -5,8 +5,8 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
-from contacts.models import Contact
 from accounting.glosa_builder import GlosaBuilder, Roles
+from contacts.models import Contact
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +108,7 @@ class ContactService:
     @classmethod
     def recover_written_off_debt_from_request(cls, request, contact):
         from decimal import Decimal
+
         from rest_framework.exceptions import ValidationError
         amount_str = request.data.get('amount')
         if not amount_str: raise ValidationError('Debe especificar el monto recuperado.')
@@ -117,10 +118,12 @@ class ContactService:
 
     @classmethod
     def initial_setup_from_request(cls, request):
-        from .partner_models import RetainedEarnings
         from datetime import date
         from decimal import Decimal
+
         from rest_framework.exceptions import ValidationError
+
+        from .partner_models import RetainedEarnings
         amount_str = request.data.get('amount')
         date_str = request.data.get('date', date.today().isoformat())
         notes = request.data.get('notes', 'Saldo Inicial / Setup')
@@ -130,9 +133,11 @@ class ContactService:
 
     @classmethod
     def individual_dividend_payment_from_request(cls, request, contact):
-        from rest_framework.exceptions import ValidationError
-        from treasury.models import TreasuryAccount
         from decimal import Decimal
+
+        from rest_framework.exceptions import ValidationError
+
+        from treasury.models import TreasuryAccount
         v = request.data
         if 'amount' not in v or 'treasury_account_id' not in v: raise ValidationError('Monto y cuenta requeridos.')
         ta = TreasuryAccount.objects.get(pk=v['treasury_account_id'])
@@ -142,6 +147,7 @@ class ContactService:
     @classmethod
     def mass_mobilize_retained_earnings_from_request(cls, request):
         from decimal import Decimal
+
         from rest_framework.exceptions import ValidationError
         amount = request.data.get('amount')
         if not amount: raise ValidationError('Monto requerido.')
@@ -152,9 +158,11 @@ class ContactService:
     @transaction.atomic
     def write_off_debt(contact: Contact) -> tuple:
         from decimal import Decimal
+
+        from django.contrib.contenttypes.models import ContentType
+
         from accounting.models import AccountingSettings, JournalEntry, JournalItem
         from treasury.models import TreasuryMovement
-        from django.contrib.contenttypes.models import ContentType
 
         orders_with_balance = []
         total_balance = Decimal("0")
@@ -239,9 +247,10 @@ class ContactService:
     @staticmethod
     @transaction.atomic
     def recover_written_off_debt(contact: Contact, amount: Decimal) -> tuple:
+        from django.contrib.contenttypes.models import ContentType
+
         from accounting.models import AccountingSettings, JournalEntry, JournalItem
         from treasury.models import TreasuryMovement
-        from django.contrib.contenttypes.models import ContentType
 
         settings = AccountingSettings.get_solo()
 

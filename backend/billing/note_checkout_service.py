@@ -6,11 +6,11 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
-from core.prefix_registry import EntityPrefix
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, JournalEntry, JournalItem
 from billing.models import Invoice
 from billing.note_workflow import NoteWorkflow
+from core.prefix_registry import EntityPrefix
 from inventory.models import Product, Warehouse
 from purchasing.return_services import PurchaseReturnService
 from purchasing.services import PurchasingService
@@ -1019,6 +1019,20 @@ class NoteCheckoutService:
 
         with acquire_locks(lock_resources, timeout=15):
             return NoteCheckoutService._process_full_checkout_internal(*args, **kwargs)
+
+    @staticmethod
+    def process_full_checkout_from_serializer(validated_data: Dict, request):
+        return NoteCheckoutService.process_full_checkout(
+            original_invoice_id=validated_data["original_invoice_id"],
+            note_type=validated_data["note_type"],
+            selected_items=validated_data["selected_items"],
+            registration_data=validated_data["registration_data"],
+            logistics_data=validated_data.get("logistics_data"),
+            payment_data=validated_data.get("payment_data"),
+            reason=validated_data.get("reason", ""),
+            document_attachment=request.FILES.get("document_attachment"),
+            created_by=request.user,
+        )
 
     @staticmethod
     @transaction.atomic

@@ -5,11 +5,11 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
-from core.prefix_registry import EntityPrefix
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import JournalEntry, JournalItem
 from accounting.services import JournalEntryService
-from inventory.models import StockMove, Warehouse
+from core.prefix_registry import EntityPrefix
+from inventory.models import Warehouse
 from inventory.services import UoMService
 
 from .models import SaleOrder, SaleReturn, SaleReturnLine
@@ -40,7 +40,7 @@ class ReturnService:
             )
 
         # 2. Reverse Stock Moves (Create opposite moves)
-        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
+        from inventory.models import InventoryDocument, InventoryDocumentDetail
         from inventory.services import InventoryService
 
         doc_inv = InventoryDocument.objects.create(
@@ -272,7 +272,7 @@ class ReturnService:
         if details_to_create:
             InventoryDocumentDetail.objects.bulk_create(details_to_create)
             doc_inv, generated_moves = InventoryService.confirmar_documento(doc_inv)
-            
+
             # Map lines to generated moves
             inventory_lines = [l for l in return_doc.lines.all() if l.product.track_inventory and not l.product.requires_advanced_manufacturing]
             for line, move in zip(inventory_lines, generated_moves):

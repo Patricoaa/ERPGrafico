@@ -1,13 +1,12 @@
-import traceback
-from decimal import Decimal
-from sales.models import DraftCart
-from sales.draft_cart_service import DraftCartService
-from contacts.models import Contact
-from inventory.models import Product, Warehouse, Location
-from treasury.models import POSSession
-from core.models import User
-import json
 import logging
+import traceback
+
+from contacts.models import Contact
+from core.models import User
+from inventory.models import Location, Product, Warehouse
+from sales.draft_cart_service import DraftCartService
+from sales.models import DraftCart
+from treasury.models import POSSession
 
 logging.basicConfig(level=logging.ERROR)
 
@@ -27,6 +26,6 @@ cart = DraftCart.objects.create(name="Debug POS Cart 2", customer=customer, pos_
 try:
     DraftCartService.process_withdrawal(draft_id=cart.id, pos_session_id=session.id, user=user)
     print("Success")
-except Exception as e:
+except Exception:
     print("Failed with Exception:")
     traceback.print_exc()

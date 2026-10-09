@@ -1,10 +1,11 @@
-from core.api.pagination import StandardResultsSetPagination
 import django_filters
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
+from core.api.pagination import StandardResultsSetPagination
 
 from .models import (
     Account,
@@ -29,8 +30,8 @@ class JournalEntryFilterSet(FilterSet):
 from django.core.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 
-from core.mixins import AuditHistoryMixin as AuditHistory
 from core.idempotency import idempotent_endpoint
+from core.mixins import AuditHistoryMixin as AuditHistory
 from core.mixins import BulkImportMixin
 
 from .fiscal_year_service import FiscalYearClosingService
@@ -391,33 +392,14 @@ class FiscalYearViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["patch"], url_path="(?P<year>[0-9]{4})/checklist/(?P<item_pk>[0-9]+)")
     def complete_checklist_item(self, request, year=None, item_pk=None):
-        """Mark a checklist item as completed or incomplete."""
         try:
             fy = FiscalYear.objects.get(year=year)
         except FiscalYear.DoesNotExist:
-            return Response(
-                {"error": f"No existe el ejercicio fiscal {year}."}, status=404
-            )
+            return Response({"error": f"No existe el ejercicio fiscal {year}."}, status=404)
         try:
             instance = fy.checklist_instances.get(pk=item_pk)
         except ClosingChecklistInstance.DoesNotExist:
-            return Response(
-                {"error": "Item de checklist no encontrado."}, status=404
-            )
-
-        is_completed = request.data.get("is_completed")
-        if is_completed is None:
-            return Response(
-                {"error": "El campo 'is_completed' es requerido."}, status=400
-            )
-
-        import django.utils.timezone as timezone
-
-        instance.is_completed = bool(is_completed)
-        instance.completed_at = timezone.now() if instance.is_completed else None
-        instance.completed_by = request.user if instance.is_completed else None
-        instance.notes = request.data.get("notes", instance.notes)
-        instance.save()
-
-        serializer = ClosingChecklistInstanceSerializer(instance)
-        return Response(serializer.data)
+            return Response({"error": "Item de checklist no encontrado."}, status=404)
+        from .services import toggle_completed_checklist_item
+        instance = toggle_completed_checklist_item(instance, request.data, request.user)
+        return Response(ClosingChecklistInstanceSerializer(instance).data)

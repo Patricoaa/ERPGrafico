@@ -7,6 +7,49 @@ import pytest
 from django.conf import settings
 
 
+# ---------------------------------------------------------------------------
+# T-108 / ADR-0022 — Excepciones de entidades searchables NO modal-on-list.
+#
+# `DRAWER_ENTITIES`: entidades que NO tienen una página de lista propia.
+#   Viven como drawer (componente de detalle abierto desde otra lista) o como
+#   tab/sección dentro de una página padre. No existe ruta standalone, así que
+#   no pueden mapearse ni tener `detail_url_pattern` real. Se omiten de ambos
+#   invariantes (T-79 y T-103).
+#
+# `DRAWER_DETAIL_ENTITIES`: entidades que SÍ tienen página de lista propia
+#   (su `list_url` se valida contra `searchableEntityRoutes.ts`), pero cuyo
+#   detalle es un drawer — no existe `[id]/page.tsx`. Se omiten solo del
+#   invariante de rutas de detalle (T-79).
+#
+# Cualquier alta/baja aquí DEBE reflejarse en docs/10-architecture/adr/0022.
+# ---------------------------------------------------------------------------
+DRAWER_ENTITIES: set[str] = {
+    "contacts.partnertransaction",  # tab en el perfil de socio
+    "contacts.profitdistributionresolution",  # tab en /finances/partners/distributions
+    "purchasing.purchasereturn",  # drawer lanzado desde /purchasing/orders
+    "purchasing.purchasereceipt",  # drawer lanzado desde /purchasing/orders
+    "treasury.bankloan",  # tab dentro del hub /treasury/bank-center/[bankId]
+    "treasury.creditcardstatement",  # tab del hub /treasury/bank-center/[bankId]
+    "treasury.cardpurchasegroup",  # tab del hub /treasury/bank-center/[bankId]
+    "treasury.cardpurchaseinstallment",  # tab del hub /treasury/bank-center/[bankId]
+    "treasury.loaninstallment",  # tab del hub /treasury/bank-center/[bankId]
+    "treasury.creditline",  # tab del hub /treasury/bank-center/[bankId]
+    "hr.payrollconcept",  # tab en /hr/settings/concepts
+}
+
+DRAWER_DETAIL_ENTITIES: set[str] = {
+    "production.bom",  # lista /production/boms; detalle en drawer
+    "treasury.check",  # lista /treasury/operaciones/checks; detalle en drawer
+    "treasury.paymentmethod",  # lista /treasury/operaciones/methods; detalle en drawer
+    "treasury.treasurymovement",  # lista /treasury/operaciones/movements; detalle en drawer
+    "treasury.treasuryaccount",  # lista /treasury/operaciones/accounts; detalle en drawer
+    "hr.absence",  # lista /hr/absences; detalle en drawer
+    "hr.salaryadvance",  # lista /hr/advances; detalle en drawer
+    "sales.saledelivery",  # lista /sales/orders/deliveries; detalle en drawer
+    "inventory.inventorydocument",  # lista /inventory/operations/documents; detalle en drawer
+}
+
+
 @pytest.mark.django_db
 class TestArchitecturalInvariants:
     def get_backend_python_files(self):
@@ -24,17 +67,26 @@ class TestArchitecturalInvariants:
 
     def test_no_class_name_discrimination(self):
         """
-        __class__.__name__ in/== retorna 0 en backend (excluye migrations/, tests/).
+        __class__.__name__ en comparaciones retorna 0 en backend (excluye migrations/, tests/).
+
+        Analiza solo código ejecutable vía AST (nodos `ast.Compare`) para no
+        confundir docstrings/string literals que documentan el antipatrón.
         """
         py_files = self.get_backend_python_files()
-        pattern = re.compile(r"__class__\.__name__\s*(?:in|==)")
+        forbidden = re.compile(r"__class__\.__name__\s*(?:in|==)")
 
         violations = []
         for filepath in py_files:
             with open(filepath, "r", encoding="utf-8") as f:
-                content = f.read()
-                if pattern.search(content):
-                    violations.append(filepath)
+                try:
+                    tree = ast.parse(f.read(), filename=filepath)
+                except SyntaxError:
+                    continue
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Compare):
+                    src_segment = ast.unparse(node)
+                    if forbidden.search(src_segment):
+                        violations.append(f"{filepath}:{node.lineno} -> {src_segment}")
 
         assert not violations, (
             f"Se encontraron discriminaciones por __class__.__name__ en: {violations}"
@@ -95,7 +147,11 @@ class TestArchitecturalInvariants:
 
     def test_all_apps_register_at_least_one_entity(self):
         """
-        las 12 apps están en UniversalRegistry.
+        Las apps de dominio están en UniversalRegistry.
+
+        `workflow` se excluye por diseño (T-102, Camino B): workflow.Task no
+        tiene página de ruta propia — vive en el TaskInbox del DashboardShell,
+        por lo que no se registra como SearchableEntity (ver workflow/apps.py).
         """
         from core.registry import UniversalRegistry
 
@@ -111,7 +167,6 @@ class TestArchitecturalInvariants:
             "contacts",
             "billing",
             "production",
-            "workflow",
         }
 
         registered_labels = UniversalRegistry.all_labels()
@@ -170,6 +225,8 @@ class TestArchitecturalInvariants:
         2. Convertir la ruta de filesystem a patrón de URL canónico:
            - segmentos [xxx] se normalizan a {id}.
         3. Para cada entidad, verificar que su detail_url_pattern coincide.
+        Entidades drawer/tab-only (DRAWER_ENTITIES / DRAWER_DETAIL_ENTITIES,
+        ver ADR-0022) se omiten: su detalle vive en un drawer, no en una página.
         """
         from core.registry import UniversalRegistry
 
@@ -197,6 +254,9 @@ class TestArchitecturalInvariants:
         # Validar cada entidad registrada
         violations: list[str] = []
         for label, entity in UniversalRegistry._entities.items():
+            # Drawer/tab-only: sin [id]/page.tsx real (ver ADR-0022).
+            if label in DRAWER_ENTITIES or label in DRAWER_DETAIL_ENTITIES:
+                continue
             pattern = entity.detail_url_pattern
             if not pattern:
                 violations.append(f"  {label}: detail_url_pattern vacío")
@@ -222,6 +282,8 @@ class TestArchitecturalInvariants:
           - accounting.budget  → /finances/budgets  (BudgetEditor standalone)
           - hr.payroll         → /hr/payrolls        (PayrollDetailContent standalone)
           - billing.invoice*   → split client-side por is_sale_document
+        Excepciones en DRAWER_ENTITIES — entidades drawer/tab-only sin list page propia
+        (ver ADR-0022). Se omiten de la comparación.
 
         Para añadir una excepción: documentarla en ADR-0022 y añadir al set.
         """
@@ -259,6 +321,10 @@ class TestArchitecturalInvariants:
         violations: list[str] = []
         for label, entity in UniversalRegistry._entities.items():
             if any(label.startswith(exc) for exc in STANDALONE_EXCEPTIONS):
+                continue
+
+            # Drawer/tab-only: sin list page propia (ver DRAWER_ENTITIES / ADR-0022).
+            if label in DRAWER_ENTITIES:
                 continue
 
             backend_url = entity.list_url

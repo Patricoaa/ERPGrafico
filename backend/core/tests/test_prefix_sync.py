@@ -4,6 +4,7 @@ and frontend ENTITY_REGISTRY.
 """
 
 import pytest
+
 from core.prefix_registry import EntityPrefix
 from core.registry import UniversalRegistry
 

@@ -211,6 +211,7 @@ class BIAnalyticsService:
         # ── 7. Payroll / Labour Cost ──
         try:
             from django.db.models import Q as Q2
+
             from hr.models import Payroll
 
             payroll_qs = Payroll.objects.filter(

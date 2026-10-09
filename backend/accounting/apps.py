@@ -86,8 +86,8 @@ class AccountingConfig(AppConfig):
                     display_template="{name}",
                     subtitle_template="{start_date} / {end_date}",
                     extra_info_template="{description}",
-                    list_url="/finance/budgets",
-                    detail_url_pattern="/finance/budgets/{id}",
+                    list_url="/finances/budgets",
+                    detail_url_pattern="/finances/budgets/{id}",
                     permission="accounting.view_budget",
                 )
             )

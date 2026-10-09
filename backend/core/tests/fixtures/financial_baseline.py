@@ -38,6 +38,8 @@ from typing import Any
 
 from django.db import transaction
 
+from accounting.utils import get_default_vat_rate
+
 YEAR = 2026
 START_DATE = date(YEAR, 1, 1)
 END_DATE = date(YEAR, 12, 31)
@@ -67,9 +69,7 @@ def _create_chart_of_accounts() -> dict[str, Any]:
     Returns a dict mapping logical names (e.g. 'cash') to Account instances
     for convenient use in journal entry generation.
     """
-    import pytest
-    from accounting.utils import get_default_vat_rate
-    from accounting.models import Account, AccountType
+    from accounting.models import Account
     from accounting.services import AccountingService
 
     AccountingService.populate_ifrs_coa()

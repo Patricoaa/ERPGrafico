@@ -5,7 +5,10 @@ import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
-from treasury.models import BankStatement, BankStatementLine, TreasuryAccount
+from django.contrib.auth import get_user_model
+
+from accounting.models import Account, AccountType
+from treasury.models import Bank, BankStatement, BankStatementLine, TreasuryAccount
 
 
 @pytest.fixture
@@ -14,9 +17,23 @@ def client():
 
 
 @pytest.fixture
+def user(db):
+    return get_user_model().objects.create_superuser(username="dryrunner", password="x")
+
+
+@pytest.fixture
 def treasury_account(db):
+    bank = Bank.objects.create(name="Banco Dry Run", code="BDR")
+    account = Account.objects.create(
+        name="Cta Dry Run", code="1.1.01.950", account_type=AccountType.ASSET
+    )
     return TreasuryAccount.objects.create(
-        name="Test Account", currency="CLP", account_type="CHECKING"
+        name="Test Account",
+        currency="CLP",
+        account_type="CHECKING",
+        account=account,
+        bank=bank,
+        account_number="950",
     )
 
 
@@ -94,6 +111,7 @@ def test_dry_run_detects_duplicate(client, user, treasury_account, test_csv_file
         closing_balance=95000,
         file_hash=file_hash,
         status="CONFIRMED",
+        imported_by=user,
     )
 
     response = client.post(

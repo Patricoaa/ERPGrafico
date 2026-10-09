@@ -1,9 +1,16 @@
 class UserServiceExt:
     @staticmethod
     def get_my_profile_data(user):
+        from hr.models import Employee, Payroll, PayrollPayment, SalaryAdvance
+        from hr.serializers import (
+            ContactMiniSerializer,
+            EmployeeSerializer,
+            PayrollListSerializer,
+            PayrollPaymentSerializer,
+            SalaryAdvanceSerializer,
+        )
+
         from .serializers import UserSerializer
-        from hr.serializers import ContactMiniSerializer, EmployeeSerializer, PayrollListSerializer, PayrollPaymentSerializer, SalaryAdvanceSerializer
-        from hr.models import Employee, Payroll, SalaryAdvance, PayrollPayment
         res = {'user': UserSerializer(user).data, 'contact_detail': None, 'employee': None, 'payrolls': [], 'advances': [], 'payments': []}
         if user.contact:
             res['contact_detail'] = ContactMiniSerializer(user.contact).data
@@ -20,8 +27,9 @@ class UserServiceExt:
 
     @staticmethod
     def change_password_from_request(request):
-        from .user_services import UserService
         from rest_framework.exceptions import ValidationError
+
+        from .user_services import UserService
         cur = request.data.get('current_password', '')
         new = request.data.get('new_password', '')
         if not cur or not new: raise ValidationError('Debe proporcionar la contraseña actual y la nueva contraseña.')
@@ -32,8 +40,9 @@ class UserServiceExt:
 
     @staticmethod
     def change_pin_from_request(request):
-        from .user_services import UserService
         from rest_framework.exceptions import ValidationError
+
+        from .user_services import UserService
         cur = request.data.get('current_password', '')
         pin = request.data.get('new_pin', '')
         if not cur or not pin: raise ValidationError('Debe proporcionar la contraseña actual y el nuevo PIN.')

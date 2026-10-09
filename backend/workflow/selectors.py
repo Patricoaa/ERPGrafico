@@ -13,8 +13,9 @@ class NotificationSelector:
 class TaskSelectorExt:
     @staticmethod
     def get_queryset_for_user(user):
-        from .models import Task
         from django.db.models import Q
+
+        from .models import Task
         qs = Task.objects.all()
         if user.is_superuser: return qs
         ug = list(user.groups.values_list('name', flat=True))

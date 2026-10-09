@@ -17,6 +17,7 @@ class TaxSelectorExt:
     @staticmethod
     def get_declaration_documents_queryset(declaration):
         from datetime import date
+
         from billing.models import Invoice
         p = declaration.tax_period
         sd = date(p.year, p.month, 1)

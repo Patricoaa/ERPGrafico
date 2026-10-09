@@ -87,7 +87,7 @@ class InvoiceListSerializer(serializers.ModelSerializer):
 class InvoiceWriteSerializer(serializers.ModelSerializer):
     """Optimized serializer for create and update views.
     Omits all computed and related read-only fields."""
-    
+
     class Meta:
         model = Invoice
         fields = [
