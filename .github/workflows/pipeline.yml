@@ -103,8 +103,16 @@ jobs:
       - name: Rust unit tests
         run: cd rust_ext && cargo test
 
-      - name: Ruff Check
-        run: ruff check . || echo "Ruff found issues (non-blocking for now)"
+      - name: Ruff Check (ratchet)
+        run: |
+          out=$(ruff check . 2>&1 || true)
+          count=$(echo "$out" | grep -oE 'Found [0-9]+ error' | grep -oE '[0-9]+' || echo 0)
+          echo "Ruff findings: ${count} (baseline 284)"
+          echo "$out" | grep -vE 'Found [0-9]+ error' | tail -40 || true
+          if [ "${count:-0}" -gt 284 ]; then
+            echo "::error::New Ruff findings introduced. Run 'cd backend && ruff check . --fix' locally."
+            exit 1
+          fi
       
       - name: Django Check
         run: python manage.py check
@@ -114,9 +122,9 @@ jobs:
       
       - name: Run Tests
         run: |
-          # Ensure we have a test settings file or use env vars
-          # Pytest will use pytest.ini if it exists
-          pytest --cov=. --cov-report=xml || echo "Tests failed or no tests found (non-blocking for now)"
+          # NOTE: backend suite is currently red (124 not passing). Non-blocking
+          # until the test-isolation work lands; do not add new failures.
+          pytest --cov=. --cov-report=xml || echo "Backend tests failing (non-blocking — tracked debt)"
 
   security:
     name: Security Scan
