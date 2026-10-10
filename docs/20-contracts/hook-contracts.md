@@ -268,6 +268,22 @@ Snapshot 2026-05-23. Se actualiza al cerrar cada migración de feature: si añad
 | `settings` (cross-domain) | ❌ N/A | — | Muta entidades de otros dominios; usa los `KEYS` de cada uno |
 | Resto (finance, pos, hr, tax, users, workflow, auth, …) | ⏳ Pendiente | — | Migrar siguiendo el [feature compliance checklist](#feature-compliance-checklist) |
 
+### Single cache-key namespace (ADR-0077)
+
+Cada entidad tiene **exactamente un namespace de cache** en todo el árbol. Para `treasury-accounts` el namespace canónico es `['treasury-accounts']` (owner: `features/treasury/hooks/queryKeys.ts` → `TREASURY_ACCOUNTS_KEYS`). Cualquier lector de cuentas de tesorería — hoy el hook raíz `frontend/hooks/useTreasuryAccounts.ts` (selector POS/terminal) y el hook de feature `features/treasury/hooks/useTreasuryAccounts.ts` (CRUD) — DEBE generar sus `queryKey` a partir de `TREASURY_ACCOUNTS_KEYS.*` (`lists()`/`details()`/`detail(id)`). Está prohibido declarar namespaces alternativos (`'treasury_accounts'`, `'treasuryAccounts'`) u otro factory que los genere.
+
+```ts
+// ✅ queryKey derivado del namespace canónico (cubre lista + detalle)
+queryClient.invalidateQueries({ queryKey: TREASURY_ACCOUNTS_KEYS.lists() })
+queryClient.invalidateQueries({ queryKey: TREASURY_ACCOUNTS_KEYS.details() })
+useQuery({ queryKey: [...TREASURY_ACCOUNTS_KEYS.lists(), filters], ... })
+
+// ❌ Nunca — namespace paralelo: no invalida la cache canónica y produce staleness invisible a tsc
+export const TREASURY_ACCOUNT_KEYS = { all: ['treasury_accounts'] as const, ... }
+```
+
+La regla de invalidación es la de siempre: mutar cuentas de tesorería invalida `lists()` y `details()` (ver [Mutation Contract Rule 2](#mutation-contract-usemutation)). Añadir un nuevo reader de cuentas cuenta como cambio de contrato y requiere revisión de ADR (ver [ADR-0077](../10-architecture/adr/0077-treasury-accounts-cache-key-unification.md)).
+
 ---
 
 ## Global hooks (promoted)

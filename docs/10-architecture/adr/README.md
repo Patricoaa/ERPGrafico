@@ -116,6 +116,7 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0050](0050-credit-line-overdraft-treasury-account.md) | Refactor CreditLine — sobregiro como overdraft de TreasuryAccount | Accepted |
 | [0051](0051-adjust-state-during-render.md) | Adjust State During Render — canonical pattern for state synchronization | Accepted |
 | [0052](0052-purchase-checkout-idempotency.md) | Purchase checkout endpoint in idempotency closed list | Accepted |
+| [0053](0053-timestampedmodel-mandatory-base.md) | TimeStampedModel como base obligatoria y resolución de auditoría | Accepted |
 | [0054](0054-entity-fields-schema.md) | Entity Fields Schema — declarative field mapping for DataTable / EntityCard / Kanban | Superseded by 0066 |
 | [0055](0055-entity-fields-computed-and-icon.md) | Entity Fields — computed type, icon prefix, chipIcon, null-safe status | Superseded by 0066 |
 | [0056](0056-card-variant-single-source.md) | Card Variant — Entity Registry as Single Source of Truth | Accepted |
@@ -133,5 +134,13 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0068](0068-badge-currencyflow-default.md) | Badge default adopts the CurrencyFlow aesthetic (font-sans text-xs font-medium, borderless rounded-sm); supersedes ghost-pill table cells | Proposed |
 | [0069](0069-badge-consumer-migration-and-exceptions.md) | Badge consumer migration (zero direct ui/badge imports) + audited justified visual exceptions (bubbles, tag pills, mono codes, callouts, POS density) | Proposed |
 | [0070](0070-primary-process-black.md) | Primary = Process Black K100 (placa Key) — ratificación de la decisión de julio | Accepted |
+| [0071](0071-ledger-ink-metaphor-carveout.md) | Ledger ink metaphor carve-out (Cyan/Magenta/Yellow in the ledger summary) | Accepted |
+| [0072](0072-dead-shared-exports-removal.md) | Removal of dead shared exports (EntityHeader, CardActions, EntityCard.Hero, dead DataCell props) | Accepted |
+| [0073](0073-heading-hierarchy-app-shell.md) | Heading hierarchy for app-shell pages (one H1 per module root) | Accepted |
+| [0074](0074-module-grid-shared-truthful-status.md) | Shared ModuleGrid component with truthful runtime status | Accepted |
+| [0075](0075-motion-compliance-fadein-only.md) | Motion compliance — single shell transition, FadeIn-only entry, global reduced-motion floor | Accepted |
+| [0076](0076-productselector-grid-picker-relocation.md) | Product grid family relocated out of the shared barrel and renamed ProductGridPicker | Accepted |
+| [0077](0077-treasury-accounts-cache-key-unification.md) | Unify treasury-account data surface and single cache-key namespace | Accepted |
+| [0078](0078-datatable-family-facade-split.md) | DataTable family façade-first split (56-prop surface distilled behind a stable API) | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

@@ -31,6 +31,31 @@ graph TD
 2. **Cero duplicación de animación en páginas simples**: Las páginas que solo cambian de contenido mediante una ruta única no deben envolverse en ningún componente de animación local. La transición la realiza el [DashboardShell](../../frontend/components/layout/DashboardShell.tsx).
 3. **Respeto Absoluto a Accesibilidad (Reduced Motion)**: Toda micro-animación local o global debe integrarse con las configuraciones de accesibilidad del sistema operativo para usuarios con sensibilidad al movimiento vestibular.
 
+### §1.1 Lista de Prohibiciones (ADR-0075)
+
+Se prohíbe, como PR Reject, en componentes de página/módulo:
+
+- `animate-in` / `animate-*` (utilidades Tailwind de entrada) en grids, tarjetas o contenido de página.
+- `animationDelay` / `animationFillMode` inline y `@keyframes` propios en contenido de página.
+- Imports directos de `framer-motion` (regla 1, reafirmada).
+
+La entrada de contenido se entrega solo vía: (a) transición global del `DashboardShell` al cambiar pathname, o (b) `<FadeIn>` para sub-vistas del mismo pathname (delay vía prop `delay`, GPU-only y reduced-motion aware).
+
+### §1.2 Module Grids (ADR-0074 + ADR-0075)
+
+Los grids de módulos (Dashboard y Settings) renderizan **tarjetas estáticas sin animación local** — el shell ya anima la vista completa. Cualquier entrada escalonada que se desee se aplica con un **único `<FadeIn>` del consumidor** que envuelve todo el grid, nunca per-card con `animationDelay` inline.
+
+### §1.3 Micro-feedback (ADR-0075 §4)
+
+Las pulsaciones/rebotes de atención (iconos de éxito/éxito-alerta, `animate-bounce`, `scale` de confirmación) están permitidas como **cue breve SOLO si**:
+
+- se acompañan de `motion-reduce:animate-none`, o
+- quedan cubiertas por el floor global de SC 2.3.3 (ver §1.4).
+
+### §1.4 Floor Global Reduced Motion (WCAG 2.1 SC 2.3.3)
+
+`frontend/app/globals.css` define el floor global (ADR-0075): bajo `prefers-reduced-motion: reduce`, cualquier elemento que aplique utilidades de entrada (`.animate-in`/`.animate-out`) o `animation-delay` inline colapsa a un único frame (`0.01ms`, sin delay, sin iteraciones extra, `transform: none`). Se mantienen además las reglas específicas de skeleton y sheets (100ms) y los pares `motion-reduce:` más fuertes donde existan (`DashboardShell`).
+
 ---
 
 ## 2. El Componente Compartido: `<FadeIn>`
@@ -73,26 +98,18 @@ function SalesTabView({ activeTab }: { activeTab: string }) {
 }
 ```
 
-### Ejemplo de Uso Avanzado (Cascada de Tarjetas / Staggered)
+### Ejemplo de Uso Avanzado (Grid estático — un solo FadeIn)
+
+Per §1.2, un grid estático NO anima cada tarjeta: un único `<FadeIn>` del consumidor envuelve todo el grid.
 
 ```tsx
 import { FadeIn } from "@/components/shared"
 
 function DashboardWidgets() {
     return (
-        <div className="grid grid-cols-3 gap-4">
-            <FadeIn delay={0.0}>
-                <KPIWidget title="Ventas Totales" />
-            </FadeIn>
-            
-            <FadeIn delay={0.1}>
-                <KPIWidget title="Órdenes Activas" />
-            </FadeIn>
-            
-            <FadeIn delay={0.2}>
-                <KPIWidget title="Caja Chica" />
-            </FadeIn>
-        </div>
+        <FadeIn>
+            <ModuleGrid items={modules} />
+        </FadeIn>
     )
 }
 ```

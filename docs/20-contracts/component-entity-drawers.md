@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-entity-drawers
 status: active
 owner: frontend-team
-last_review: 2026-05-28
+last_review: 2026-10-09
 stability: contract-changes-require-ADR
 preconditions:
   - component-drawer.md
@@ -207,6 +207,44 @@ Todos los drawers deben adherirse a esta estructura unificada:
 > [ADR-0027](../10-architecture/adr/0027-basedrawer-crud-forms.md). `openEntity` siempre monta el
 > drawer registrado en `ENTITY_DRAWERS`.
 
+### 5.1 Detalle de entidad = overlay siempre-recargable (reglas de foco y URL)
+
+El detalle de una entidad **no** es una página canónica: es la **lista + overlay** apuntado por
+`?selected={id}` ([ADR-0020](../10-architecture/adr/0020-modal-on-list-edit-ux.md)). Estas reglas
+son las que lo hacen operar como un detalle real (DET-02):
+
+**URL / deep-link**
+
+- La URL canónica de un detalle es SIEMPRE la lista con `?selected={id}`. No hay ruta de detalle
+  que renderice contenido: `/contacts/1` es un `redirect()` server-side a `/contacts?selected=1`.
+- Al incorporar una entidad con detalle: un server component en `app/(dashboard)/<módulo>/[id]/page.tsx`
+  que hace `redirect(`${listUrl}?selected=${id}`)` (ver `contacts/[id]/page.tsx`).
+- `clearSelection` (cierre) usa `router.replace` — sin entrada de historial falsa. Cambiar de
+  `?selected=a` a `?selected=b` convive con la historia de la lista (back/forward de la lista, no
+  del overlay).
+
+**Recarga / "siempre-recargable"**
+
+- `?selected=` es state-en-URL: un F5/reload vuelve a montar el overlay con la entidad seleccionada.
+  El hook canónico `useSelectedEntity` re-fetchea `${endpoint}/${id}/` y reutiliza la cache de
+  TanStack Query si la lista ya cargó el mismo id (contrato `list-modal-edit-pattern.md` §2.3).
+- Al cambiar `?selected=` de un id a otro, la lista NO se re-monta; solo se actualiza el overlay.
+
+**Foco**
+
+- Abrir el overlay (clic de fila o deep-link): el foco entra en el drawer (primer campo /
+  encabezado). La primitiva `Sheet` (Radix Dialog) aplica `aria-modal` y body-scroll-lock.
+- Cerrar (Escape / X / click-outside): el foco vuelve al trigger de la lista que lo abrió. Si el
+  overlay se abrió por deep-link (sin trigger), el foco vuelve al primer foco útil de la lista.
+- Navegar entre ids mantiene el foco dentro del drawer.
+
+**Título / bookmarks**
+
+- `document.title` de la lista debe reflejar la entidad seleccionada (p.ej. "Cliente #123 —
+  Contactos") para que bookmarks y links compartidos sean legibles al reabrir.
+
+> Estas reglas son surface-agnostic (modal centrado vs drawer embebido) — [ADR-0027](../10-architecture/adr/0027-basedrawer-crud-forms.md).
+
 ---
 
 ## 6. Anti-patrones
@@ -216,6 +254,8 @@ Todos los drawers deben adherirse a esta estructura unificada:
 | Reimplementar un modal/drawer local para ver un documento origen | `SourceDocumentLink` o `openEntity(label, id)` |
 | `<TransactionViewModal>` (eliminado) | drawer de entidad en modo `view` vía `openEntity` |
 | Importar un `*Drawer` y montarlo a mano para drill-down genérico | registrar en `ENTITY_DRAWERS` + `openEntity` |
+| Página de detalle propia que renderiza contenido (`[id]/page.tsx` con UI) | server `redirect('${listUrl}?selected=${id}')` (ADR-0020, §5.1) |
+| Cerrar el overlay con `router.push` (deja historial falso) | `clearSelection` (`router.replace`) del hook `useSelectedEntity` |
 | `label` distinto entre `ENTITY_DRAWERS` y `ENTITY_REGISTRY` | misma clave `app.model` en ambos |
 | Drawer de entidad sin `mode` (dos componentes view/edit separados) | un drawer con `mode?: DrawerMode` |
 | Calcular modo manualmente: `mode ?? (initialData ? "view" : "create")` | Usar `useDrawerMode({ mode, initialData })` |
