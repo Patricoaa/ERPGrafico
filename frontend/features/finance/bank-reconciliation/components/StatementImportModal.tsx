@@ -522,7 +522,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
             isCompleting={loading}
             successContent={
                 <div className="flex flex-col items-center justify-center py-10 space-y-4">
-                    <CheckCircle2 className="h-16 w-16 text-success animate-bounce" />
+                    <CheckCircle2 className="h-16 w-16 text-success animate-bounce motion-reduce:animate-none" />
                     <h3 className="text-xl font-black uppercase tracking-widest text-foreground">Importación Exitosa</h3>
                     <p className="text-muted-foreground text-sm font-medium">La cartola ha sido procesada correctamente.</p>
                 </div>

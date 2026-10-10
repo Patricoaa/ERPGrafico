@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function InventoryCountsPage() {
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <PageSectionHeader
+            <PageSectionHeader as="h1"
                 title="Conteo de Inventario"
                 description="Compara el stock teórico con el stock real por almacén."
             />

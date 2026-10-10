@@ -4,7 +4,7 @@ import { CompanySettingsView } from "@/features/settings"
 export default async function CompanySettingsBrandingPage() {
     return (
         <>
-            <PageSectionHeader title="Branding" description="Personalización de imagen corporativa y marca" />
+            <PageSectionHeader as="h1" title="Branding" description="Personalización de imagen corporativa y marca" />
             <CompanySettingsView activeTab="branding" />
         </>)
 }

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function SettingsPage() {
     return (
         <>
-            <PageSectionHeader title="Configuración" description="Administración general del sistema" />
+            <PageSectionHeader as="h1" title="Configuración" description="Administración general del sistema" />
             <SettingsPageClient />
         </>)
 }

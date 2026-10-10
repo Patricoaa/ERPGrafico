@@ -9,7 +9,7 @@ export { COMPANY_SETTINGS_QUERY_KEY, useCompanySettings } from './hooks/useCompa
 export { usePartnerSettings } from './hooks/usePartnerSettings'
 export { useSystemStatus } from './hooks/useSystemStatus'
 export { GROUPS_QUERY_KEY, useGroups } from './hooks/useGroups'
-export { TREASURY_ACCOUNTS_QUERY_KEY, useTreasuryAccounts } from './hooks/useTreasuryAccounts'
+export { useTreasuryAccounts } from './hooks/useTreasuryAccounts'
 export { useTreasurySettings } from './hooks/useTreasurySettings'
 export type { GlobalAuditLog } from './hooks/useAuditLogs'
 export { useAuditLogs } from './hooks/useAuditLogs'

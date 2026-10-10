@@ -14,7 +14,7 @@ export default function PayrollDetailPage({ params }: Props) {
 
     return (
         <div className="flex-1 space-y-6">
-            <PageSectionHeader title="Detalle de Remuneración" description="Visualización completa de la liquidación" />
+            <PageSectionHeader as="h1" title="Detalle de Remuneración" description="Visualización completa de la liquidación" />
             <PayrollDetailView payrollId={payrollId} />
         </div>
     )

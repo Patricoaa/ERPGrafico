@@ -38,14 +38,17 @@ export interface LineChartProps {
     pointSize?: number
     margin?: { top: number; right: number; bottom: number; left: number }
     legends?: unknown[]
+    /** Accessible name for screen readers. Falls back to an auto-generated summary. */
+    ariaLabel?: string
     [key: string]: unknown
 }
 
-export function LineChart({ data, renderTooltip, tooltipFormat, colors, ...rest }: LineChartProps) {
+export function LineChart({ data, renderTooltip, tooltipFormat, colors, ariaLabel, ...rest }: LineChartProps) {
     const chartColors = useMemo(() => getCssChartColors(), [])
 
     return (
-        <LazyLine
+        <div role="img" aria-label={ariaLabel ?? `Gráfico de líneas, ${data.length} series`} className="h-full w-full">
+            <LazyLine
             {...lineDefaults}
             data={data}
             colors={(colors ?? chartColors) as string | string[]}
@@ -68,5 +71,6 @@ export function LineChart({ data, renderTooltip, tooltipFormat, colors, ...rest 
             )}
             {...rest as Record<string, unknown>}
         />
+        </div>
     )
 }

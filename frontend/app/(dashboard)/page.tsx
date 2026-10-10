@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function DashboardPage() {
     return (
         <>
-            <PageSectionHeader title="Dashboard" description="Panel de indicadores y resumen general" />
+            <PageSectionHeader as="h1" title="Dashboard" />
             <DashboardPageClient />
         </>)
 }

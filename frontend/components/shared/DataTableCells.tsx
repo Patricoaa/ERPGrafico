@@ -196,10 +196,10 @@ export const DataCell = {
 
     /** Right-aligned number */
     Number: ({ value, suffix, prefix, className, decimals = 0, suffixGap = true, size, intent, weight, color, ...props }: ValueCellProps<number | string> & { suffix?: string, prefix?: string, decimals?: number, suffixGap?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string }) => {
-        if (value === null || value === undefined) return <div className={cn("text-xs font-sans font-medium text-muted-foreground flex justify-end items-center text-right", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, className)} {...props}>-</div>
+        if (value === null || value === undefined) return <div className={cn("text-xs font-sans font-medium text-muted-foreground flex justify-end items-center text-right tabular-nums", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, className)} {...props}>-</div>
         const num = typeof value === 'string' ? parseFloat(value) : value
         return (
-            <div className={cn("text-xs font-sans font-medium text-foreground flex justify-end items-center text-right", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, className)} {...props}>
+            <div className={cn("text-xs font-sans font-medium text-foreground flex justify-end items-center text-right tabular-nums", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, className)} {...props}>
                 {/* eslint-disable-next-line no-restricted-syntax -- numeric quantity format, not currency; MoneyDisplay not applicable */}
                 {prefix}{num.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}{suffix && <span className={cn("text-foreground flex justify-end items-center text-right", suffixGap && "ml-1")}>{suffix}</span>}
             </div>
@@ -209,7 +209,7 @@ export const DataCell = {
     /** Currency formatted cell. Pass `showColor` to color red/green based on sign (variance use case). */
     Currency: ({ value, currency = "CLP", className, digits = 0, showColor = false, showZeroAsDash = false, size, intent, weight, interactive, color, tooltip: tooltipContent, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number, showColor?: boolean, showZeroAsDash?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, interactive?: boolean, color?: string, tooltip?: ReactNode }) => {
         const cell = (
-            <div className={cn("text-xs font-sans font-medium text-foreground flex justify-end items-center text-right w-full", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], interactive && "cursor-pointer hover:underline", color, className)} {...props}>
+            <div className={cn("text-xs font-sans font-medium text-foreground flex justify-end items-center text-right tabular-nums w-full", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], interactive && "cursor-pointer hover:underline", color, className)} {...props}>
                 <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={showColor} showZeroAsDash={showZeroAsDash} weight={weight} />
             </div>
         )
@@ -259,7 +259,7 @@ export const DataCell = {
 
     Variance: ({ value, currency = "CLP", className, digits = 0, size, intent, weight, color, ...props }: ValueCellProps<number> & { currency?: string, digits?: number, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string }) => {
         return (
-            <div className={cn("text-xs font-sans font-medium text-foreground flex justify-end items-center text-right", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, className)} {...props}>
+            <div className={cn("text-xs font-sans font-medium text-foreground flex justify-end items-center text-right tabular-nums", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, className)} {...props}>
                 <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={true} weight={weight} />
             </div>
         )

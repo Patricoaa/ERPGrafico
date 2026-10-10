@@ -10,7 +10,7 @@ import { useDeviceContext } from '@/hooks/useDeviceContext'
 import type { BaseProduct, ProductCategory } from '@/features/inventory'
 import type { SharedStockLimits } from './ProductGrid'
 
-export interface ProductSelectorProps {
+export interface ProductGridPickerProps {
     products: BaseProduct[]
     categories: ProductCategory[]
 
@@ -33,7 +33,7 @@ export interface ProductSelectorProps {
     selectedProductIds?: Set<number>
 }
 
-export function ProductSelector({
+export function ProductGridPicker({
     products,
     categories,
     searchTerm,
@@ -47,7 +47,7 @@ export function ProductSelector({
     limits,
     priceRenderer,
     selectedProductIds
-}: ProductSelectorProps) {
+}: ProductGridPickerProps) {
     const { isDesktop } = useDeviceContext()
 
     return (

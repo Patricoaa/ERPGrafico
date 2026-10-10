@@ -20,7 +20,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { NumpadModal } from "@/features/pos"
+import { NumpadModal } from "@/components/shared"
 import { useTouchMode } from "@/hooks/useTouchMode"
 
 import { type CheckoutDeliveryData, type SaleOrderLine } from "../../types"

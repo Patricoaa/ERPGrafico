@@ -12,7 +12,7 @@ export default async function ProductsSubscriptionsPage({ searchParams }: PagePr
 
     return (
         <>
-            <PageSectionHeader title="Suscripciones" description="Gestión de productos con suscripción recurrente" />
+            <PageSectionHeader as="h1" title="Suscripciones" description="Gestión de productos con suscripción recurrente" />
             <SubscriptionsClientView
                 hideHeader
                 externalOpen={modal === 'new'}

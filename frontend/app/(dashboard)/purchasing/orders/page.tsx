@@ -48,7 +48,7 @@ export default async function PurchaseOrdersPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader title="Órdenes de Compra" description="Gestión de solicitudes y órdenes de compra a proveedores" />
+            <PageSectionHeader as="h1" title="Órdenes de Compra" description="Gestión de solicitudes y órdenes de compra a proveedores" />
             <PurchasingPageClient initialOrders={initialOrders} initialNotes={initialNotes} />
         </>)
 }

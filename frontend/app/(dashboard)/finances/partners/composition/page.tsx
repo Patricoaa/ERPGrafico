@@ -40,7 +40,7 @@ export default async function PartnersCompositionPage({ searchParams }: PageProp
                 navigation={navigation}
             />
 
-            <PageSectionHeader title="Composición Societaria" description="Gestión de capital suscrito y pagado por los socios" />
+            <PageSectionHeader as="h1" title="Composición Societaria" description="Gestión de capital suscrito y pagado por los socios" />
 
             <PartnersSettingsView
                 activeTab="composition"

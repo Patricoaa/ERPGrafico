@@ -26,6 +26,8 @@ export interface FunnelChartProps {
     shapeBlending?: number
     enableLabel?: boolean
     motionConfig?: string
+    /** Accessible name for screen readers. Falls back to an auto-generated summary. */
+    ariaLabel?: string
 }
 
 function formatTooltipValue(value: number, format?: "currency" | "number" | ((value: number) => string)): string {
@@ -44,6 +46,7 @@ export function FunnelChart({
     shapeBlending = 0.66,
     enableLabel = true,
     motionConfig = "gentle",
+    ariaLabel,
 }: FunnelChartProps) {
     // Map each datum id → resolved color (hex), so nivo can use a function scale
     const colorById = useMemo(() => {
@@ -56,7 +59,7 @@ export function FunnelChart({
     }, [data])
 
     return (
-        <div className="h-full w-full relative">
+        <div role="img" aria-label={ariaLabel ?? `Embudo de conversión, ${data.length} etapas`} className="h-full w-full relative">
             <LazyFunnel
                 data={data as unknown as FunnelDatum[]}
                 margin={margin}

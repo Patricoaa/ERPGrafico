@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { TREASURY_ACCOUNTS_KEYS } from '@/features/treasury'
 
 export interface TreasuryAccount {
     id: number
@@ -24,18 +25,13 @@ export interface UseTreasuryAccountsOptions {
     excludeId?: number
 }
 
-export const TREASURY_ACCOUNT_KEYS = {
-    all: ['treasury_accounts'] as const,
-    list: (opts: UseTreasuryAccountsOptions) => [...TREASURY_ACCOUNT_KEYS.all, 'list', opts] as const,
-}
-
 export function useTreasuryAccounts(options: UseTreasuryAccountsOptions) {
     const { context, terminalId, paymentMethod, enabled = true, excludeId } = options
 
     const isValid = context === 'GENERAL' || (context === 'POS' && !!terminalId)
 
     const query = useQuery({
-        queryKey: TREASURY_ACCOUNT_KEYS.list({ context, terminalId, paymentMethod, excludeId }),
+        queryKey: [...TREASURY_ACCOUNTS_KEYS.lists(), { context, terminalId, paymentMethod, excludeId }],
         queryFn: async ({ signal }) => {
             let fetchedAccounts: TreasuryAccount[]
 

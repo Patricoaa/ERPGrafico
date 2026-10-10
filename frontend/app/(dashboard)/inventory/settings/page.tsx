@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function InventorySettingsPage() {
     return (
         <>
-            <PageSectionHeader title="Configuración de Inventario" description="Parámetros generales del módulo de inventario" />
+            <PageSectionHeader as="h1" title="Configuración de Inventario" description="Parámetros generales del módulo de inventario" />
             <InventorySettingsPageClient />
         </>)
 }

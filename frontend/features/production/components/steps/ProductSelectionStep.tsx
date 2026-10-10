@@ -6,7 +6,8 @@ import {FileText, X} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BaseProduct } from "@/features/inventory";
 import { resolveMediaUrl } from '@/lib/media-url';
-import { ProductSelector, StaleDataBanner } from '@/components/shared';
+import { StaleDataBanner } from '@/components/shared';
+import { ProductGridPicker } from '@/components/selectors';
 import { useWorkOrderProducts } from "../../hooks/useWorkOrderProducts";
 
 interface ProductSelectionStepProps {
@@ -84,7 +85,7 @@ export function ProductSelectionStep({
                 <p className="text-muted-foreground">Cargando productos...</p>
               </div>
             ) : (
-              <ProductSelector
+              <ProductGridPicker
                 products={products}
                 categories={[]}
                 searchTerm={searchTerm}

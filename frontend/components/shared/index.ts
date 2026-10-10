@@ -46,6 +46,7 @@ export * from './CardSkeleton';
 export * from './SkeletonShell';
 export * from './LayoutSkeletons';
 export { Skeleton } from '@/components/ui/skeleton';
+export * from './ModuleGrid';
 
 // Data Display
 export * from './ColorBar';
@@ -161,11 +162,11 @@ export * from './ErrorBoundary'
 export * from './CmykRing'
 export * from './PrepressPanel'
 export * from './Numpad'
+export * from './NumpadModal'
 
 export * from './PrintableReceipt'
 
 export * from './ContactSelector'
-// Product Selector family (PR-1, PR-2, PR-3)
-export { SearchBar, CategoryFilter, ProductGrid, VariantSelectorModal, ProductSelector, CategoryDropdown } from './ProductSelector'
-export type { SearchBarProps, CategoryFilterProps, ProductGridProps, SharedStockLimits, VariantSelectorModalProps, ProductSelectorProps } from './ProductSelector'
+// Product grid family relocated to `components/selectors/ProductGridPicker`
+// (audit T5) — no longer published from the shared barrel.
 export * from './manufacturing'

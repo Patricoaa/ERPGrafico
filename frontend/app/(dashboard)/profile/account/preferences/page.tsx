@@ -8,7 +8,7 @@ export default function AccountPreferencesPage() {
     const { profile } = useMyProfile()
     return (
         <>
-            <PageSectionHeader title="Preferencias" description="Configuración de preferencias de usuario" />
+            <PageSectionHeader as="h1" title="Preferencias" description="Configuración de preferencias de usuario" />
             <ProfileView activeTab="account" activeSubTab="preferences" initialProfile={profile} />
         </>)
 }

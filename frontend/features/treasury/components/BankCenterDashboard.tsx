@@ -50,6 +50,7 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
     return (
         <div className="flex-1 min-h-0 flex flex-col overflow-y-auto custom-scrollbar">
             <PageSectionHeader
+                as="h1"
                 title={SUB_VIEW_LABELS[activeTab] || "Resumen"}
                 description={bankName}
                 subTabs={subViewTabs}

@@ -23,7 +23,7 @@ export default async function OperacionesPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader title="Operaciones de Tesorería" description="Movimientos, cheques y cuentas de tesorería" />
+            <PageSectionHeader as="h1" title="Operaciones de Tesorería" description="Movimientos, cheques y cuentas de tesorería" />
             <TreasuryMovementsClientView externalOpen={modalOpen} createAction={createAction} />
         </>)
 }

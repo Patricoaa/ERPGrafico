@@ -8,7 +8,7 @@ export default function UoMUnitsPage() {
 
     return (
         <div className="flex-1 overflow-hidden flex flex-col">
-            <PageSectionHeader
+            <PageSectionHeader as="h1"
                 title="Unidades de Medida"
                 description="Configuración de métricas y factores de conversión estándar."
                 subTabs={[

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default async function OperacionesChecksPage() {
     return (
         <>
-            <PageSectionHeader title="Cheques Recibidos" description="Gestión de cheques de clientes y terceros" />
+            <PageSectionHeader as="h1" title="Cheques Recibidos" description="Gestión de cheques de clientes y terceros" />
             <ChecksClientView direction="RECEIVED" />
         </>)
 }

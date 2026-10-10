@@ -40,7 +40,7 @@ export default async function PartnersDistributionsPage({ searchParams }: PagePr
                 navigation={navigation}
             />
 
-            <PageSectionHeader title="Distribución de Utilidades" description="Gestión de actas, resolución de dividendos y reinversiones" />
+            <PageSectionHeader as="h1" title="Distribución de Utilidades" description="Gestión de actas, resolución de dividendos y reinversiones" />
 
             <PartnersSettingsView
                 activeTab="distributions"

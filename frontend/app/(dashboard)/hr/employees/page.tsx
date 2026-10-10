@@ -27,7 +27,7 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader title="Empleados" description="Gestión de colaboradores y datos laborales" />
+            <PageSectionHeader as="h1" title="Empleados" description="Gestión de colaboradores y datos laborales" />
             <EmployeesPageClient initialEmployees={initialEmployees} />
         </>)
 }

@@ -25,7 +25,7 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader title="Conciliación Bancaria" description="Gestión de cartolas y cuadratura de movimientos" />
+            <PageSectionHeader as="h1" title="Conciliación Bancaria" description="Gestión de cartolas y cuadratura de movimientos" />
             <FadeIn>
                 <StatementsClientView externalOpen={modalOpen} createAction={createAction} />
             </FadeIn>

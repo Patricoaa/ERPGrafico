@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
 import { Trash2, Calculator, Info, Minus, Plus } from "lucide-react"
 import { Drawer } from '@/components/shared'
-import { ProductSelector } from "@/components/shared"
+import { ProductGridPicker } from "@/components/selectors"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
 
@@ -185,7 +185,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                             </div>
                         </Card>
                     ) : (
-                        <ProductSelector
+                        <ProductGridPicker
                             products={filteredProducts as unknown as BaseProduct[]}
                             categories={categories as unknown as ProductCategory[]}
                             searchTerm={searchTerm}

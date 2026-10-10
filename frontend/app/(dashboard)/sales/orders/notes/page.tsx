@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function SalesOrdersNotesPage() {
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <PageSectionHeader title="Ordenes de Venta" description="Notas de crédito y débito asociadas a ventas" />
+            <PageSectionHeader as="h1" title="Ordenes de Venta" description="Notas de crédito y débito asociadas a ventas" />
             <NotesPageClient />
         </div>)
 }

@@ -10,6 +10,6 @@ export { useSalesSettings } from "./useSalesSettings"
 export { useSystemStatus } from "./useSystemStatus"
 export { useTreasurySettings } from "./useTreasurySettings"
 export { useGroups } from "./useGroups"
-export { useTreasuryAccounts, TREASURY_ACCOUNTS_QUERY_KEY } from "./useTreasuryAccounts"
+export { useTreasuryAccounts } from "./useTreasuryAccounts"
 
 export { usePartnerAnalyticsData } from "./usePartnerAnalyticsData"

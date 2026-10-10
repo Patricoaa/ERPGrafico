@@ -18,7 +18,7 @@ export default async function BudgetsListPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader title="Presupuestos" description="Planificación y control presupuestario" />
+            <PageSectionHeader as="h1" title="Presupuestos" description="Planificación y control presupuestario" />
             <BudgetsClientView externalOpen={modal === 'new'} createAction={createAction} />
         </>)
 }

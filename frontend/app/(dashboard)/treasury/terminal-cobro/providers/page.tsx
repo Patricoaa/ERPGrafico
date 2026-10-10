@@ -18,7 +18,7 @@ export default async function TerminalCobroProvidersPage({ searchParams }: PageP
 
     return (
         <>
-            <PageSectionHeader title="Proveedores" description="Administración de proveedores de servicios de pago" />
+            <PageSectionHeader as="h1" title="Proveedores" description="Administración de proveedores de servicios de pago" />
             <PaymentHardwareClientView
                 activeTab="providers"
                 externalProviderOpen={modal === 'provider'}

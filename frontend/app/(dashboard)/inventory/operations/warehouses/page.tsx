@@ -16,7 +16,7 @@ export default async function StockWarehousesPage({ searchParams }: PageProps) {
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <PageSectionHeader title="Almacenes y Ubicaciones" description="Estructura física y lógica para el almacenamiento de mercadería." />
+            <PageSectionHeader as="h1" title="Almacenes y Ubicaciones" description="Estructura física y lógica para el almacenamiento de mercadería." />
             <WarehouseClientView
                 externalOpen={modal === 'new'}
                 createAction={createAction}

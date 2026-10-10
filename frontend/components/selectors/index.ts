@@ -4,6 +4,7 @@ export * from './AdvancedSaleOrderSelector';
 export * from './AdvancedWorkOrderSelector';
 export * from './GroupSelector';
 export * from './ProductSelector';
+export * from './ProductGridPicker';
 export * from './TreasuryAccountSelector';
 export * from './UoMSelector';
 export * from './UserSelector';

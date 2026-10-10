@@ -17,7 +17,7 @@ export default async function LedgerPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader title="Plan de Cuentas" description="Catálogo de cuentas contables" />
+            <PageSectionHeader as="h1" title="Plan de Cuentas" description="Catálogo de cuentas contables" />
             <AccountsClientView externalOpen={modal === 'new'} createAction={createAction} />
         </>)
 }

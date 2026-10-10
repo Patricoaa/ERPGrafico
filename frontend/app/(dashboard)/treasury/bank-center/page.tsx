@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function BankCenterPage() {
     return (
         <>
-            <PageSectionHeader title="Centro de Bancos" description="Vista consolidada de bancos y productos financieros" />
+            <PageSectionHeader as="h1" title="Centro de Bancos" description="Vista consolidada de bancos y productos financieros" />
             <BankCenterPageClient />
         </>)
 }

@@ -8,7 +8,7 @@ export default function UoMCategoriesPage() {
 
     return (
         <div className="flex-1 overflow-hidden flex flex-col">
-            <PageSectionHeader
+            <PageSectionHeader as="h1"
                 title="Categorías de Medida"
                 description="Clasificación de magnitudes compatibles (peso, volumen, longitud)."
                 subTabs={[

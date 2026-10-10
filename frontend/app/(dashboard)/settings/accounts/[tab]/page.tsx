@@ -15,7 +15,7 @@ export default async function SettingsAccountsTabPage({
 
     return (
         <>
-            <PageSectionHeader
+            <PageSectionHeader as="h1"
                 title="Cuentas Contables"
                 description="Cuentas contables por defecto de cada módulo del sistema"
                 subTabs={ACCOUNT_TABS.map(t => ({ value: t.value, label: t.label, href: `/settings/accounts/${t.value}` }))}

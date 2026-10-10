@@ -8,7 +8,7 @@ export default function PersonalPayrollsPage() {
     const { profile } = useMyProfile()
     return (
         <>
-            <PageSectionHeader title="Mis Remuneraciones" description="Historial de liquidaciones de sueldo" />
+            <PageSectionHeader as="h1" title="Mis Remuneraciones" description="Historial de liquidaciones de sueldo" />
             <ProfileView activeTab="personal" activeSubTab="payrolls" initialProfile={profile} />
         </>)
 }

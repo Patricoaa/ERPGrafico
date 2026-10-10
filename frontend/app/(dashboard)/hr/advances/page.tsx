@@ -28,7 +28,7 @@ export default async function AdvancesPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader title="Anticipos" description="Gestión de adelantos de remuneraciones" />
+            <PageSectionHeader as="h1" title="Anticipos" description="Gestión de adelantos de remuneraciones" />
             <AdvancesPageClient initialAdvances={initialAdvances} />
         </>)
 }

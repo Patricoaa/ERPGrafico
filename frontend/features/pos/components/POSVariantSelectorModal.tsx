@@ -1,12 +1,12 @@
 "use client"
 
 /**
- * @deprecated Use `VariantSelectorModal` from `@/components/shared` instead.
+ * @deprecated Use `VariantSelectorModal` from `@/components/selectors/ProductGridPicker` instead.
  * This component is maintained as a backward compatibility shim for POSClientView.
  * TODO(sprint-planning): Refactor POSClientView to use the shared VariantSelectorModal directly.
  */
 import React, { useCallback, useMemo } from 'react'
-import { VariantSelectorModal } from '@/components/shared'
+import { VariantSelectorModal } from '@/components/selectors/ProductGridPicker'
 import { isPOSProductDisabled } from '@/features/pos/utils/product-availability'
 import type { Product, Variant, CartItem } from '../types'
 import type { BaseProduct } from '@/features/inventory'

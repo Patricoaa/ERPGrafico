@@ -38,6 +38,8 @@ export interface BarChartProps {
     valueFormat?: string
     legends?: unknown[]
     margin?: { top: number; right: number; bottom: number; left: number }
+    /** Accessible name for screen readers. Falls back to an auto-generated summary. */
+    ariaLabel?: string
     [key: string]: unknown
 }
 
@@ -63,12 +65,14 @@ export function BarChart({
     layout,
     legends,
     margin,
+    ariaLabel,
     ...rest
 }: BarChartProps) {
     const chartColors = useMemo(() => getCssChartColors(), [])
 
     return (
-        <LazyBar
+        <div role="img" aria-label={ariaLabel ?? `Gráfico de barras, ${keys.length} series`} className="h-full w-full">
+            <LazyBar
             {...barDefaults}
             data={data as unknown as readonly BarDatum[]}
             keys={keys}
@@ -97,5 +101,6 @@ export function BarChart({
             )}
             {...rest as Record<string, unknown>}
         />
+        </div>
     )
 }

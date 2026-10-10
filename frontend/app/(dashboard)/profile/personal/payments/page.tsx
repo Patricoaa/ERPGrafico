@@ -8,7 +8,7 @@ export default function PersonalPaymentsPage() {
     const { profile } = useMyProfile()
     return (
         <>
-            <PageSectionHeader title="Mis Pagos" description="Historial de pagos y beneficios recibidos" />
+            <PageSectionHeader as="h1" title="Mis Pagos" description="Historial de pagos y beneficios recibidos" />
             <ProfileView activeTab="personal" activeSubTab="payments" initialProfile={profile} />
         </>)
 }

@@ -101,13 +101,25 @@ function ProductGridComponent({
 
                 return (
                     <Card
+                        role="button"
+                        tabIndex={isDisabled ? -1 : 0}
+                        aria-disabled={isDisabled || undefined}
+                        aria-label={product.name}
                         className={cn(
                             "group cursor-pointer hover:shadow-elevated transition-all border border-border/50 overflow-hidden flex flex-col h-full rounded-md p-2 bg-card shadow-card shadow-black/5",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                             selectedProductIds?.has(product.id) && "ribbon-cmyk",
                             isTouchPOS && "active:scale-95",
                             isDisabled && "opacity-50 grayscale cursor-not-allowed"
                         )}
                         onClick={() => !isDisabled && onProductClick(product)}
+                        onKeyDown={(e) => {
+                            if (isDisabled) return
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                onProductClick(product)
+                            }
+                        }}
                     >
                         <div className={cn(
                             "aspect-square bg-muted/20 rounded-sm flex items-center justify-center relative overflow-hidden border shadow-card",
@@ -233,12 +245,12 @@ function ProductGridComponent({
                             "pt-3 pb-1 px-1 flex items-start justify-between gap-3",
                             isTouchPOS && "pt-4"
                         )}>
-                            <div className={cn(
+                            <h3 className={cn(
                                 "font-bold line-clamp-2 text-left flex-1 leading-tight",
                                 isTouchPOS ? "text-base" : "text-sm"
                             )}>
                                 {product.name}
-                            </div>
+                            </h3>
                             <div className={cn(
                                 "text-primary font-black text-right shrink-0",
                                 isTouchPOS ? "text-lg" : "text-base"

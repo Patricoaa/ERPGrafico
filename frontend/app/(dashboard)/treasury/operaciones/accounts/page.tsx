@@ -17,7 +17,7 @@ export default async function OperacionesAccountsPage({ searchParams }: PageProp
 
     return (
         <>
-            <PageSectionHeader title="Cuentas de Tesorería" description="Administración de cuentas bancarias y de efectivo" />
+            <PageSectionHeader as="h1" title="Cuentas de Tesorería" description="Administración de cuentas bancarias y de efectivo" />
             <TreasuryAccountsClientView activeTab="accounts" externalOpen={modalOpen} createAction={action} />
         </>)
 }

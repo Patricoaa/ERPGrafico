@@ -22,12 +22,15 @@ import { resolveStatus } from '@/lib/badge-resolvers'
 import { Badge } from '@/components/shared'
 import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
+import type { BadgeIntent } from '@/lib/badge-resolvers'
 
 export interface StatusBadgeProps {
     /** Business status string. Case-insensitive. Resolved via STATUS_MAP. */
     status: string
     /** Override the resolved label */
     label?: string
+    /** Explicit severity intent — overrides STATUS_MAP resolution when the status string maps to neutral */
+    intent?: BadgeIntent
     /** Visual variant. 'dot'=compact, 'badge'=pill+dot, 'hub'=circular icon. */
     variant?: 'default' | 'dot' | 'badge' | 'hub'
     /** Icon — required for variant="hub", optional for default */
@@ -79,9 +82,11 @@ export function StatusBadge({
     progress,
     className,
     appearance,
+    intent: intentOverride,
 }: StatusBadgeProps) {
-    const { intent, label: resolvedLabel } = resolveStatus(status)
+    const { intent: resolvedIntent, label: resolvedLabel } = resolveStatus(status)
     const displayLabel = label ?? resolvedLabel
+    const intent = intentOverride ?? resolvedIntent
 
     if (variant === 'hub' && Icon) {
         return (

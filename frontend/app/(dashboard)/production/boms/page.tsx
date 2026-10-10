@@ -29,7 +29,7 @@ export default async function BOMsPage({ searchParams }: PageProps) {
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <PageSectionHeader title="Listas de Materiales" description="Estructuras de productos y recetas de fabricación" />
+            <PageSectionHeader as="h1" title="Listas de Materiales" description="Estructuras de productos y recetas de fabricación" />
             <BOMsPageClient initialBoms={initialBoms} />
         </div>)
 }

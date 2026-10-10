@@ -482,6 +482,7 @@
 /*
  * CARD BASE — Standard interactive card pattern
  * Apply via className="card-base".
+ * Sanctioned surface for: KPI cards, dashboard panels, ModuleGrid items, floating modals.
  */
 @utility card-base {
   @apply relative overflow-hidden rounded-md border border-border bg-card outline-none transition-all;
@@ -1333,4 +1334,22 @@ table [data-notched-field] {
 }
 @utility flush-panel {
   @apply bg-card border-border/100! rounded-none! shadow-none!;
+}
+
+/*
+ * MOTION COMPLIANCE — ADR-0075: global reduced-motion floor for entry/attention animation.
+ * Collapses any element applying entry utilities (.animate-in/.animate-out) or inline
+ * animation-delay to a single frame when the user requests reduced motion.
+ * WCAG 2.1 SC 2.3.3 (animation from interactions). Backstop: authors still pair with
+ * motion-reduce:animate-none where a transition family is used (see DashboardShell).
+ */
+@media (prefers-reduced-motion: reduce) {
+  [style*="animation-delay"],
+  .animate-in,
+  .animate-out {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transform: none !important;
+  }
 }

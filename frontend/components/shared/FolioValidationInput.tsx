@@ -6,7 +6,7 @@ import { LabeledInput } from "./LabeledInput"
 import { useFolioValidation, type FolioValidationResult } from "@/hooks/useFolioValidation"
 import { cn } from "@/lib/utils"
 import { useTouchMode } from "@/hooks/useTouchMode"
-import { NumpadModal } from "@/features/pos/components/NumpadModal"
+import { NumpadModal } from "./NumpadModal"
 
 interface FolioValidationInputProps {
     value: string

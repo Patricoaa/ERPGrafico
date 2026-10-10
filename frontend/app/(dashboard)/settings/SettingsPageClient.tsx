@@ -1,67 +1,55 @@
 "use client"
 
-import Link from "next/link"
 import { Building2, ShieldCheck, History, GitBranch, Terminal, Info, BookOpen, ServerCog } from "lucide-react"
+import { ModuleGrid, type ModuleGridItem } from "@/components/shared"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { getFrontendVersion, getGitHash, getBuildDate } from "@/lib/version"
 import { useSystemStatus } from "@/features/settings"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
-const settingsModules = [
+const settingsModules: ModuleGridItem[] = [
     { 
         id: "company", 
         icon: Building2, 
         label: "Empresa", 
         description: "Datos fiscales y logotipos",
-        url: "/settings/company", 
-        status: "Configurado", 
-        statusColor: "text-success bg-success/10" 
+        url: "/settings/company"
     },
     { 
         id: "users", 
         icon: ShieldCheck, 
         label: "Usuarios y Permisos", 
         description: "Gestión de accesos y roles",
-        url: "/settings/users", 
-        status: "Seguro", 
-        statusColor: "text-success bg-success/10" 
+        url: "/settings/users"
     },
     { 
         id: "audit", 
         icon: History, 
         label: "Auditoría", 
         description: "Logs y actividad del sistema",
-        url: "/settings/audit", 
-        status: "Activo", 
-        statusColor: "text-info bg-info/10" 
+        url: "/settings/audit"
     },
     { 
         id: "workflow", 
         icon: GitBranch, 
         label: "Workflow", 
         description: "Tareas y automatizaciones",
-        url: "/settings/workflow", 
-        status: "Ejecutando", 
-        statusColor: "text-success bg-success/10" 
+        url: "/settings/workflow"
     },
     {
         id: "accounts",
         icon: BookOpen,
         label: "Cuentas Contables",
         description: "Cuentas por defecto de cada módulo",
-        url: "/settings/accounts",
-        status: "Configurado",
-        statusColor: "text-success bg-success/10"
+        url: "/settings/accounts"
     },
     {
         id: "jobs",
         icon: ServerCog,
         label: "Procesos",
         description: "Importaciones y reportes",
-        url: "/settings/jobs",
-        status: "Activo",
-        statusColor: "text-info bg-info/10"
+        url: "/settings/jobs"
     },
 ]
 
@@ -74,39 +62,7 @@ export default function SettingsPageClient() {
 
     return (
         <div className="flex flex-col space-y-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {settingsModules.map((mod, index) => {
-                    const Icon = mod.icon
-                    return (
-                        <Link 
-                            key={mod.id} 
-                            href={mod.url}
-                            className="card-base group relative flex flex-col justify-between p-5 h-32 bg-background"
-                            style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
-                        >
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-md bg-muted/50 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
-                                        <Icon className="w-4 h-4" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="font-bold tracking-tight text-sm text-foreground">{mod.label}</span>
-                                        <span className="text-2xs text-muted-foreground line-clamp-1">{mod.description}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-2 mt-auto">
-                                <div className={`px-2 py-0.5 rounded-full text-3xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${mod.statusColor}`}>
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
-                                    {/* eslint-disable-next-line status/must-use-statusbadge -- module config label, not entity status */}
-                                    {mod.status}
-                                </div>
-                            </div>
-                        </Link>
-                    )
-                })}
-            </div>
+            <ModuleGrid items={settingsModules} />
 
             <Card className="rounded-md border-border/10 bg-muted/30 shadow-none overflow-hidden border-dashed">
                 <CardHeader className="pb-2">
@@ -137,7 +93,7 @@ export default function SettingsPageClient() {
                     {/* Backend Status */}
                     <div className="space-y-3">
                         <div className="flex items-center gap-2">
-                            <Building2 className="w-3.5 h-3.5 text-info" />
+                            <Building2 className="w-3.5 h-3.5 text-success" />
                             <span className="text-2xs font-bold uppercase tracking-wider text-muted-foreground">Backend / API</span>
                         </div>
                         <div className="space-y-2">
@@ -162,7 +118,7 @@ export default function SettingsPageClient() {
                     {/* Environment Info */}
                     <div className="space-y-3">
                         <div className="flex items-center gap-2">
-                            <GitBranch className="w-3.5 h-3.5 text-warning" />
+                            <GitBranch className="w-3.5 h-3.5 text-muted-foreground" />
                             <span className="text-2xs font-bold uppercase tracking-wider text-muted-foreground">Despliegue</span>
                         </div>
                         <div className="space-y-2">

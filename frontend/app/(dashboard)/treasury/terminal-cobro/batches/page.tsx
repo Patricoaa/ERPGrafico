@@ -13,7 +13,7 @@ export default async function TerminalCobroBatchesPage() {
 
     return (
         <>
-            <PageSectionHeader title="Liquidaciones" description="Gestión de liquidaciones y cierres de lote" />
+            <PageSectionHeader as="h1" title="Liquidaciones" description="Gestión de liquidaciones y cierres de lote" />
             <TerminalBatchesClientView
 
                 createAction={createAction}

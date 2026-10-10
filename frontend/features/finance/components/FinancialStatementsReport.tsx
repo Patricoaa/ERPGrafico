@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react"
 
-import { FadeIn, ReportTable, SkeletonShell, ReportToolbar, StaleDataBanner } from '@/components/shared'
+import { FadeIn, ReportTable, SkeletonShell, ReportToolbar, StaleDataBanner, type DrillDownTarget } from '@/components/shared'
 import { PageContainer } from "@/components/shared"
+import { LedgerDrawer } from "@/features/accounting"
 import { CashFlowTable, type CashFlowData } from "@/features/finance/components/CashFlowTable"
 import { MappingConfigDrawer } from "@/features/finance/components/MappingConfigDrawer"
 import { useMappingDrawer } from "@/features/finance/hooks/useMappingDrawer"
@@ -49,6 +50,7 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hide
     )
     type HeaderFormat = 'year' | 'month-year' | 'day-month-year'
     const [headerFormat, setHeaderFormat] = useState<HeaderFormat>('year')
+    const [drillDown, setDrillDown] = useState<DrillDownTarget | null>(null)
 
     // Date State
     const { serverDate } = useServerDate()
@@ -219,6 +221,7 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hide
                                                     compPeriodLabel={compPeriodLabel}
                                                     periodLabel={periodLabel}
                                                     showComparison={showComparison}
+                                                    onDrillDown={setDrillDown}
                                                 />
                                             );
                                         })()}
@@ -255,12 +258,13 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hide
                                                         isTotalRow: sec.is_total,
                                                         varianceDirection: sec.name.toLowerCase().includes('ingreso') ? 'higher-is-better' : 'lower-is-better'
                                                     }))}
-                                                    compPeriodLabel={compPeriodLabel}
+compPeriodLabel={compPeriodLabel}
                                                     periodLabel={periodLabel}
                                                     showComparison={showComparison}
+                                                    onDrillDown={setDrillDown}
                                                 />
-                                    );
-                                })()}
+                                            );
+                                        })()}
                                     </div>
                                 ) : (
                                     <SkeletonShell isLoading ariaLabel="Cargando estado de resultados">
@@ -310,6 +314,17 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hide
                     refetch()
                 }}
             />
+
+            {drillDown && (
+                <LedgerDrawer
+                    accountId={drillDown.accountId}
+                    accountName={drillDown.accountName}
+                    accountCode={drillDown.accountCode}
+                    noTrigger
+                    open
+                    onOpenChange={(open) => { if (!open) setDrillDown(null) }}
+                />
+            )}
         </PageContainer>
     )
 }

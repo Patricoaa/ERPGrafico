@@ -25,7 +25,7 @@ export default async function AuditHubPage() {
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <PageSectionHeader title="Auditoría" description="Registro de actividades y cambios en el sistema" />
+            <PageSectionHeader as="h1" title="Auditoría" description="Registro de actividades y cambios en el sistema" />
             <AuditPageClient initialLogs={initialLogs} />
         </div>)
 }

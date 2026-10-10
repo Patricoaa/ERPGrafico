@@ -20,7 +20,7 @@ export default async function CreditsPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader title="Créditos" description="Gestión de cartera crediticia y clasificación de deuda" />
+            <PageSectionHeader as="h1" title="Créditos" description="Gestión de cartera crediticia y clasificación de deuda" />
             <CreditPortfolioClientView
                 activeTab="portfolio"
                 externalOpen={modal === 'new'}

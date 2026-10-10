@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function JobsPage() {
     return (
         <div className="flex-1 min-h-0 flex flex-col space-y-6">
-            <PageSectionHeader 
+            <PageSectionHeader as="h1" 
                 title="Procesos en Segundo Plano" 
                 description="Visualice el progreso y descargue resultados de importaciones, exportaciones y reportes masivos." 
             />

@@ -25,6 +25,8 @@ export interface RadarChartProps {
     margin?: { top: number; right: number; bottom: number; left: number }
     legends?: unknown[]
     maxValue?: number | "auto"
+    /** Accessible name for screen readers. Falls back to an auto-generated summary. */
+    ariaLabel?: string
     [key: string]: unknown
 }
 
@@ -36,12 +38,14 @@ export function RadarChart({
     margin,
     legends,
     maxValue,
+    ariaLabel,
     ...rest
 }: RadarChartProps) {
     const chartColors = useMemo(() => getCssChartColors(), [])
 
     return (
-        <LazyRadar
+        <div role="img" aria-label={ariaLabel ?? `Gráfico radar, ${keys.length} series`} className="h-full w-full">
+            <LazyRadar
             data={data}
             keys={keys}
             indexBy={indexBy}
@@ -71,5 +75,6 @@ export function RadarChart({
             )}
             {...(rest as Record<string, unknown>)}
         />
+        </div>
     )
 }

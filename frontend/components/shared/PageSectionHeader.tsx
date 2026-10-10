@@ -16,9 +16,11 @@ interface PageSectionHeaderProps {
     subTabs?: PageSectionTab[]
     /** Render subTabs as a full-width underline row directly below the title/description block */
     subTabsBelow?: boolean
+    /** Heading level for the page title. Module-root pages pass "h1" (one H1 per route, ADR-0073); defaults to "h2". */
+    as?: "h1" | "h2"
 }
 
-export function PageSectionHeader({ title, description, tabs, subTabs, subTabsBelow = false }: PageSectionHeaderProps) {
+export function PageSectionHeader({ title, description, tabs, subTabs, subTabsBelow = false, as = "h2" }: PageSectionHeaderProps) {
     const pathname = usePathname()
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -38,7 +40,10 @@ export function PageSectionHeader({ title, description, tabs, subTabs, subTabsBe
             <div className="flex items-center justify-between gap-4">
                 {(displayTitle || description) && (
                     <div className="flex flex-col min-w-0">
-                        {displayTitle && (
+                        {displayTitle && as === "h1" && (
+                            <h1 className="text-lg font-semibold tracking-tight text-foreground">{displayTitle}</h1>
+                        )}
+                        {displayTitle && as !== "h1" && (
                             <h2 className="text-lg font-semibold tracking-tight text-foreground">{displayTitle}</h2>
                         )}
                         {description && (

@@ -2,7 +2,6 @@ export { POSApprovalCard } from './POSApprovalCard'
 export { Cart } from './Cart'
 export { CartItem } from './CartItem'
 export { DraftCartsClientView } from './DraftCartsClientView'
-export { NumpadModal } from './NumpadModal'
 export { PINPadModal } from './PINPadModal'
 export { POSCheckoutHeader } from './POSCheckoutHeader'
 export { POSClientView } from './POSClientView'
@@ -15,17 +14,17 @@ export { SessionCloseModal } from './SessionCloseModal'
 export { SessionControl } from './SessionControl'
 export { POSCartItemsSkeleton, POSGridSkeleton, POSLayoutSkeleton, POSSearchSkeleton } from './skeletons/POSLayoutSkeleton'
 
-// Deprecated shims — re-export from shared for backwards compat
-export { CategoryFilter } from '@/components/shared'
-export { ProductGrid } from '@/components/shared'
-export { SearchBar } from '@/components/shared'
+// Deprecated shims — re-export from selectors for backwards compat
+export { CategoryFilter } from '@/components/selectors/ProductGridPicker'
+export { ProductGrid } from '@/components/selectors/ProductGridPicker'
+export { SearchBar } from '@/components/selectors/ProductGridPicker'
 
 export type { POSVariantSelectorModalProps } from './POSVariantSelectorModal'
 export type { POSReportData } from './POSReport'
 export type { ScannerFeedbackHandle } from './ScannerFeedback'
 export type { SessionControlHandle } from './SessionControl'
 
-// Deprecated shim types — re-export from shared
-export type { CategoryFilterProps } from '@/components/shared'
-export type { ProductGridProps } from '@/components/shared'
-export type { SearchBarProps } from '@/components/shared'
+// Deprecated shim types — re-export from selectors
+export type { CategoryFilterProps } from '@/components/selectors/ProductGridPicker'
+export type { ProductGridProps } from '@/components/selectors/ProductGridPicker'
+export type { SearchBarProps } from '@/components/selectors/ProductGridPicker'

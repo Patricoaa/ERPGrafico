@@ -28,14 +28,6 @@ export const POS_KEYS = {
     list: () => [...POS_KEYS.terminals.all, 'list'] as const,
   },
 
-  // Treasury Accounts
-  treasuryAccounts: {
-    all: ['treasuryAccounts'] as const,
-    list: () => [...POS_KEYS.treasuryAccounts.all, 'list'] as const,
-    detail: () => [...POS_KEYS.treasuryAccounts.all, 'detail'] as const,
-    detailById: (id: number) => [...POS_KEYS.treasuryAccounts.detail(), id] as const,
-  },
-
   // Accounting Settings
   accountingSettings: {
     all: ['accountingSettings'] as const,

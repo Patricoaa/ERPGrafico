@@ -18,7 +18,7 @@ export default async function TerminalCobroDevicesPage({ searchParams }: PagePro
 
     return (
         <>
-            <PageSectionHeader title="Dispositivos" description="Administración de terminales de pago y hardware POS" />
+            <PageSectionHeader as="h1" title="Dispositivos" description="Administración de terminales de pago y hardware POS" />
             <PaymentHardwareClientView
                 activeTab="devices"
                 externalDeviceOpen={modal === 'device'}

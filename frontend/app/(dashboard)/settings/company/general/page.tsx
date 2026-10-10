@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default async function CompanySettingsGeneralPage() {
     return (
         <>
-            <PageSectionHeader title="Empresa" description="Identidad y parámetros globales de la organización" />
+            <PageSectionHeader as="h1" title="Empresa" description="Identidad y parámetros globales de la organización" />
             <CompanySettingsView activeTab="general" />
         </>)
 }

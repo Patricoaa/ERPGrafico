@@ -49,7 +49,9 @@ interface PageHeaderProps {
 }
 
 /**
- * Reusable Page Header component for consistent titles and descriptions.
+ * Reusable Page Header component for consistent shell chrome (title + breadcrumbs + global actions).
+ * Synchronizes header config into DashboardShell via HeaderProvider.
+ * Renders NO DOM heading — the in-content page title (H1) is owned by PageSectionHeader (ADR-0073).
  * Supports loading states, status indicators, and right-side actions.
  */
 import { useHeader } from "@/components/providers/HeaderProvider"

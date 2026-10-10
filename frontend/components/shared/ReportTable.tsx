@@ -14,7 +14,6 @@ import { ChevronRight, ChevronDown, TrendingUp, TrendingDown } from "lucide-reac
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { EmptyState, MoneyDisplay, SkeletonShell } from '@/components/shared';
-import { LedgerDrawer } from '@/features/accounting';
 
 export interface ReportNode {
     id: number | string;
@@ -36,9 +35,13 @@ interface ReportTableProps {
     compPeriodLabel?: string;
     varianceDirection?: 'higher-is-better' | 'lower-is-better';
     disableDrillDown?: boolean;
+    /** Feature-owned bridge: called when a drillable account row is clicked.
+     *  The caller renders its entity drawer (e.g. LedgerDrawer) from here, so
+     *  `components/shared` does not depend on `features/*`. */
+    onDrillDown?: (target: DrillDownTarget) => void;
 }
 
-interface DrillDownTarget {
+export interface DrillDownTarget {
     accountId: number;
     accountName: string;
     accountCode: string;
@@ -77,16 +80,16 @@ export const ReportTable: React.FC<ReportTableProps> = ({
     periodLabel,
     compPeriodLabel,
     varianceDirection = 'higher-is-better',
-    disableDrillDown = false
+    disableDrillDown = false,
+    onDrillDown
 }) => {
     const [expanded, setExpanded] = useState<ExpandedState>(true);
-    const [drillDown, setDrillDown] = useState<DrillDownTarget | null>(null);
 
     const displayData = isLoading ? SKELETON_DATA : data || [];
 
     const handleRowClick = (node: ReportNode) => {
         if (disableDrillDown || !isDrillable(node)) return;
-        setDrillDown({
+        onDrillDown?.({
             accountId: Number(node.id),
             accountName: node.name,
             accountCode: node.code ?? '',
@@ -264,72 +267,59 @@ export const ReportTable: React.FC<ReportTableProps> = ({
     }
 
     return (
-        <>
-            <SkeletonShell isLoading={!!isLoading} ariaLabel="Cargando reporte contable">
-                <div className="mb-8 rounded-t-sm overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full caption-bottom text-sm border-collapse">
-                            <thead className="bg-background">
-                                {table.getHeaderGroups().map(headerGroup => (
-                                    <tr key={headerGroup.id}>
-                                        {headerGroup.headers.map((header) => (
-                                            <th 
-                                                key={header.id} 
-                                                className="h-10 px-3 text-left align-middle font-semibold text-2xs uppercase tracking-widest text-muted-foreground/80 whitespace-nowrap"
-                                            >
-                                                {header.isPlaceholder
-                                                    ? null
-                                                    : flexRender(
-                                                        header.column.columnDef.header,
-                                                        header.getContext()
-                                                    )}
-                                            </th>
+        <SkeletonShell isLoading={!!isLoading} ariaLabel="Cargando reporte contable">
+            <div className="mb-8 rounded-t-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full caption-bottom text-sm border-collapse">
+                        <thead className="bg-background">
+                            {table.getHeaderGroups().map(headerGroup => (
+                                <tr key={headerGroup.id}>
+                                    {headerGroup.headers.map((header) => (
+                                        <th 
+                                            key={header.id} 
+                                            className="h-10 px-3 text-left align-middle font-semibold text-2xs uppercase tracking-widest text-muted-foreground/80 whitespace-nowrap"
+                                        >
+                                            {header.isPlaceholder
+                                                ? null
+                                                : flexRender(
+                                                    header.column.columnDef.header,
+                                                    header.getContext()
+                                                )}
+                                        </th>
+                                    ))}
+                                </tr>
+                            ))}
+                        </thead>
+                        <tbody className="divide-y divide-border/40">
+                            {table.getRowModel().rows.map(row => {
+                                const isRoot = row.depth === 0;
+                                const isTotal = row.original.isTotalRow;
+                                const drillable = isDrillable(row.original);
+                                
+                                return (
+                                    <tr 
+                                        key={row.id} 
+                                        onClick={() => handleRowClick(row.original)}
+                                        className={cn(
+                                            "transition-colors group/row",
+                                            drillable ? "cursor-pointer" : "cursor-default",
+                                            !isTotal && "hover:bg-muted/10",
+                                            isTotal ? "bg-primary/5 hover:bg-primary/10 shadow-[inset_0_1px_0_oklch(var(--foreground-raw)/0.12)]" : "",
+                                            isRoot && !isTotal ? "bg-muted/5" : ""
+                                        )}
+                                    >
+                                        {row.getVisibleCells().map(cell => (
+                                            <td key={cell.id} className="px-3 py-1.5 align-middle">
+                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                            </td>
                                         ))}
                                     </tr>
-                                ))}
-                            </thead>
-                            <tbody className="divide-y divide-border/40">
-                                {table.getRowModel().rows.map(row => {
-                                    const isRoot = row.depth === 0;
-                                    const isTotal = row.original.isTotalRow;
-                                    const drillable = isDrillable(row.original);
-                                    
-                                    return (
-                                        <tr 
-                                            key={row.id} 
-                                            onClick={() => handleRowClick(row.original)}
-                                            className={cn(
-                                                "transition-colors group/row",
-                                                drillable ? "cursor-pointer" : "cursor-default",
-                                                !isTotal && "hover:bg-muted/10",
-                                                isTotal ? "bg-primary/5 hover:bg-primary/10 shadow-[inset_0_1px_0_oklch(var(--foreground-raw)/0.12)]" : "",
-                                                isRoot && !isTotal ? "bg-muted/5" : ""
-                                            )}
-                                        >
-                                            {row.getVisibleCells().map(cell => (
-                                                <td key={cell.id} className="px-3 py-1.5 align-middle">
-                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                </td>
-                                            ))}
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+                                )
+                            })}
+                        </tbody>
+                    </table>
                 </div>
-            </SkeletonShell>
-
-            {drillDown && (
-                <LedgerDrawer
-                    accountId={drillDown.accountId}
-                    accountName={drillDown.accountName}
-                    accountCode={drillDown.accountCode}
-                    noTrigger
-                    open={true}
-                    onOpenChange={(open) => { if (!open) setDrillDown(null); }}
-                />
-            )}
-        </>
+            </div>
+        </SkeletonShell>
     );
 };

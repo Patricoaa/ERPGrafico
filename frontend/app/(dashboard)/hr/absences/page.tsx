@@ -28,7 +28,7 @@ export default async function AbsencesPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader title="Ausentismo" description="Control de ausencias, vacaciones y permisos" />
+            <PageSectionHeader as="h1" title="Ausentismo" description="Control de ausencias, vacaciones y permisos" />
             <AbsencesPageClient initialAbsences={initialAbsences} />
         </>)
 }

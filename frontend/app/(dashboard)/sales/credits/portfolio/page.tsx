@@ -14,7 +14,7 @@ export default async function CreditsPortfolioPage({ searchParams }: PageProps) 
 
     return (
         <>
-            <PageSectionHeader title="Cartera de Créditos" description="Clasificación de deuda por antigüedad y control de deudores" />
+            <PageSectionHeader as="h1" title="Cartera de Créditos" description="Clasificación de deuda por antigüedad y control de deudores" />
             <CreditPortfolioClientView
                 activeTab="portfolio"
                 externalOpen={modal === 'new'}

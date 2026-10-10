@@ -29,7 +29,7 @@ export default async function ContactsPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader title="Contactos" description="Gestión de clientes, proveedores y terceros" />
+            <PageSectionHeader as="h1" title="Contactos" description="Gestión de clientes, proveedores y terceros" />
             <ContactsPageClient initialContacts={initialContacts} />
         </>)
 }

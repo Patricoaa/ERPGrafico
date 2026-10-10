@@ -1,9 +1,9 @@
 // ─── Shared product selector foundation types ────────────────────────────────
-// These types are used by @/components/shared/ProductSelector and can be safely
-// imported by any feature without pulling in POS-specific context.
+// These types are used by @/components/selectors/ProductGridPicker and can be
+// safely imported by any feature without pulling in POS-specific context.
 
 /**
- * Minimal category shape used by ProductSelector.
+ * Minimal category shape used by ProductGridPicker.
  * Features that need richer category data should extend this.
  */
 export interface ProductCategory {

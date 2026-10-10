@@ -28,7 +28,7 @@ export default async function PayrollsPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader title="Remuneraciones" description="Gestión de liquidaciones de sueldo y remuneraciones" />
+            <PageSectionHeader as="h1" title="Remuneraciones" description="Gestión de liquidaciones de sueldo y remuneraciones" />
             <PayrollsPageClient initialPayrolls={initialPayrolls} />
         </>)
 }

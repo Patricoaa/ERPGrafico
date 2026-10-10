@@ -51,7 +51,7 @@ import type { Product, WizardState } from '../types'
 import type { TransactionData } from '@/types/transactions'
 import { type DraftCart } from './DraftCartsClientView'
 
-import { CategoryDropdown, CategoryFilter, ProductGrid, SearchBar } from '@/components/shared'
+import { CategoryDropdown, CategoryFilter, ProductGrid, SearchBar } from '@/components/selectors/ProductGridPicker'
 import { Cart } from './Cart'
 import { POSCheckoutHeader } from './POSCheckoutHeader'
 import { POSLayoutSkeleton } from './skeletons/POSLayoutSkeleton'
@@ -78,7 +78,7 @@ const DraftCartsClientView = dynamic(
 )
 
 const NumpadModal = dynamic(
-    () => import('@/features/pos/components/NumpadModal').then(mod => ({ default: mod.NumpadModal })),
+    () => import('@/components/shared').then(mod => ({ default: mod.NumpadModal })),
     { ssr: false }
 )
 

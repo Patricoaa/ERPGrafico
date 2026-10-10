@@ -12,7 +12,7 @@ export default async function ProductsPricingRulesPage({ searchParams }: PagePro
 
     return (
         <>
-            <PageSectionHeader title="Reglas de Precios" description="Configuración de márgenes y políticas de precios" />
+            <PageSectionHeader as="h1" title="Reglas de Precios" description="Configuración de márgenes y políticas de precios" />
             <PricingRuleClientView
                 externalOpen={modal === 'new'}
                 createAction={createAction}

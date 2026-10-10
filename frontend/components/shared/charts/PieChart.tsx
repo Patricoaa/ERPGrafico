@@ -52,6 +52,8 @@ export interface PieChartProps {
     legends?: unknown[]
     margin?: { top: number; right: number; bottom: number; left: number }
     activeId?: string | number
+    /** Accessible name for screen readers. Falls back to an auto-generated summary. */
+    ariaLabel?: string
 }
 
 function getArcTextColor(d: { color: string }): string {
@@ -85,6 +87,7 @@ export function PieChart({
     margin,
     arcLabelsTextColor: arcLabelsTextColorProp,
     activeId,
+    ariaLabel,
     ...rest
 }: PieChartProps) {
     const chartColors = useMemo(() => getCssChartColors("pie"), [])
@@ -113,7 +116,11 @@ export function PieChart({
     }
 
     return (
-        <div className="relative h-full w-full">
+        <div
+            role="img"
+            aria-label={ariaLabel ?? `Gráfico circular, ${chartData.length} categorías`}
+            className="relative h-full w-full"
+        >
             <LazyPie
                 {...pieDefaults}
                 data={chartData}

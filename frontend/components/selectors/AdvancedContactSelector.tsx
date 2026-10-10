@@ -16,7 +16,8 @@ import { useContactSearch, useSingleContact } from "@/features/contacts/hooks/us
 
 import { type Contact } from "@/types/entities"
 import { type Contact as ContactInitialData } from "@/features/contacts/types"
-import { CardSkeleton, EmptyState, LabeledContainer, SearchBar } from '@/components/shared'
+import { CardSkeleton, EmptyState, LabeledContainer } from '@/components/shared'
+import { SearchBar } from '@/components/selectors/ProductGridPicker'
 import React, { Suspense } from "react"
 
 const ContactDrawer = React.lazy(() => import("@/features/contacts/components/ContactDrawer"))

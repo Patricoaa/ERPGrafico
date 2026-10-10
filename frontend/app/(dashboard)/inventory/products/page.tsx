@@ -41,7 +41,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader title="Productos" description="Gestión de catálogo, categorías y reglas de precios" />
+            <PageSectionHeader as="h1" title="Productos" description="Gestión de catálogo, categorías y reglas de precios" />
             <ProductClientView
                 initialProducts={initialProducts}
                 externalOpen={modal === 'new'}
