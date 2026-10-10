@@ -144,7 +144,7 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
                 <div className="flex items-stretch gap-3 min-w-0">
                     {checkboxNode}
                     {imageSrc ? (
-                        <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md overflow-hidden", iconClassName ?? "bg-accent text-muted-foreground")}>
+                        <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md overflow-hidden", imageSrc.startsWith("data:") ? "bg-transparent" : (iconClassName ?? "bg-accent text-muted-foreground"))}>
                             <Image src={imageSrc} alt="" fill unoptimized={imageSrc.startsWith("data:")} className="object-cover" />
                         </div>
                     ) : Icon ? (

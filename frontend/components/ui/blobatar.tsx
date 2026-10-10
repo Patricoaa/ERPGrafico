@@ -37,6 +37,7 @@ import type * as React from "react";
  */
 import { Blobatar as Generated } from "@blobatar/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 /**
  * Distributive, and that is not pedantry. The generated blobatar's props are a
@@ -71,7 +72,10 @@ export type BlobatarProps = React.ComponentProps<typeof Avatar> & {
 
 export function Blobatar({ name, src, alt, blobatar, ...props }: BlobatarProps) {
   return (
-    <Avatar {...props}>
+    <Avatar
+      {...props}
+      className={cn(props.className, "overflow-visible bg-transparent")}
+    >
       {src ? <AvatarImage src={src} alt={alt ?? name} /> : null}
       {/* 
         `bg-transparent` overrides the fallback's `bg-muted`, and it is the one

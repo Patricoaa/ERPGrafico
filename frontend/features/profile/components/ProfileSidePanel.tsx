@@ -119,7 +119,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                 <div className="flex flex-col items-center justify-center py-10 px-6 gap-5 border-border/10 relative overflow-hidden">
                     <Blobatar
                         name={[firstName, lastName].filter(Boolean).join(" ") || user.username}
-                        className="h-24 w-24 border-2 border-primary/20 shadow-elevated ring-4 ring-background relative z-10"
+                        className="h-24 w-24 relative z-10"
                         blobatar={{ animate: "always" }}
                     />
 
