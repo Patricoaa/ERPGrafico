@@ -334,7 +334,7 @@ function EntityCardSkeleton({
 }: EntityCardSkeletonProps) {
     if (variant === "compact") {
         return (
-            <EntityCardRoot variant="compact" className={cn("animate-in fade-in duration-500", className)}>
+            <EntityCardRoot variant="compact" className={cn(className)}>
                 {showHeader && (
                     <div className="flex flex-col gap-2 p-1">
                         <div className="flex items-center gap-3">
@@ -351,7 +351,7 @@ function EntityCardSkeleton({
     }
 
     return (
-        <EntityCardRoot className={cn("animate-in fade-in duration-500", className)}>
+        <EntityCardRoot className={cn(className)}>
             {showHeader && (
                 <EntityCardHeader
                     title={
@@ -524,7 +524,7 @@ function EntityCardListItemSkeleton({ count = 3, className }: EntityCardListItem
     return (
         <div className={cn("divide-y divide-border/40", className)}>
             {Array.from({ length: count }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 py-2 px-1 animate-in fade-in duration-500">
+                <div key={i} className="flex items-center gap-3 py-2 px-1">
                     <Skeleton className="h-3.5 w-3.5 rounded-sm shrink-0" />
                     <div className="flex-1 min-w-0">
                         <Skeleton className="h-3 w-3/4" />

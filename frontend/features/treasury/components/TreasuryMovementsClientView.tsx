@@ -444,7 +444,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                                 key={m.id} 
                                 data={m}
                                 fields={movementFields}
-                                entityLabel="treasury.cashmovement"
+                                entityLabel="treasury.treasurymovement"
                                 onClick={() => handleViewDetails(m.id)}
                                 icon={Icon}
                                 iconClassName={iconStyle}

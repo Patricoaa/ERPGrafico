@@ -32,6 +32,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { BulkActionButtons, ActionDock, CmykRing, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, StatCard, type BulkAction, type AnalyticsPanelConfig, type ToolbarActionItem } from '@/components/shared'
 import { resolveEmptyState, type DataTableEmptyState } from './emptyStateResolver'
 
+const NON_MODAL_TABLE_MAX_HEIGHT = "max-h-[calc(100vh-260px)]"
+
 export interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
@@ -594,7 +596,12 @@ export function DataTable<TData, TValue>({
             <div ref={containerRef} className="relative">
                 {table.getRowModel().rows?.length ? (
                     <ScrollArea className={compactMaxHeight}>
-                        <div className={cn("grid", effectiveGridTemplate, gridGap)}>
+                        <div
+                            role="grid"
+                            aria-rowcount={table.getRowModel().rows.length + 1}
+                            aria-colcount={table.getHeaderGroups()[0]?.headers.length + (renderRowActions ? 1 : 0)}
+                            className={cn("grid", effectiveGridTemplate, gridGap)}
+                        >
                             {/* Header */}
                             <div className={cn("grid grid-cols-subgrid col-span-full px-3 py-1.5 text-3xs font-semibold uppercase tracking-wider text-muted-foreground border-b sticky top-0 bg-card z-10")} role="row">
                                 {table.getHeaderGroups()[0]?.headers.map((header) => (
@@ -611,7 +618,7 @@ export function DataTable<TData, TValue>({
                                     role="row"
                                     className={cn(
                                         "grid grid-cols-subgrid col-span-full",
-                                        "items-center px-3 py-2.5 hover:bg-muted/40 transition-all group animate-in fade-in duration-300 border-b border-border/60 last:border-b-0",
+                                        "items-center px-3 py-2.5 hover:bg-muted/40 group border-b border-border/60 last:border-b-0",
                                         hasRowAction && "cursor-pointer",
                                         getRowClassName?.(row)
                                     )}
@@ -695,7 +702,7 @@ export function DataTable<TData, TValue>({
                             </TableRow>
                         )}
                         {row.getIsExpanded() && renderSubComponent && (
-                            <tr key={`exp-${row.id}`} className="animate-in fade-in slide-in-from-top-2 duration-200 ease-in-out fill-mode-both">
+                            <tr key={`exp-${row.id}`}>
                                 <TableCell colSpan={row.getVisibleCells().length} className="p-0" style={{ backgroundColor: 'var(--table-expanded-bg)' }}>
                                     {renderSubComponent(row)}
                                 </TableCell>
@@ -761,7 +768,7 @@ export function DataTable<TData, TValue>({
                             {renderCustomView(table)}
                         </div>
                     ) : (
-                        <div className={cn("flex-1 flex flex-col min-h-0", !isInModal && "max-h-[calc(100vh-260px)]")}>
+                        <div className={cn("flex-1 flex flex-col min-h-0", !isInModal && NON_MODAL_TABLE_MAX_HEIGHT)}>
                             <div className="flex-shrink-0 bg-background rounded-t-sm overflow-hidden mb-1" style={{ scrollbarGutter: 'stable' }}>
                                 <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
                                     <colgroup>
@@ -859,7 +866,7 @@ export function DataTable<TData, TValue>({
                             )}
                         />
                     </div>
-                    <div className={cn("flex flex-col min-h-0", !isInModal && "max-h-[calc(100vh-260px)]", tableContainerClassName)}>
+                    <div className={cn("flex flex-col min-h-0", !isInModal && NON_MODAL_TABLE_MAX_HEIGHT, tableContainerClassName)}>
                         <div className="flex-shrink-0 bg-background rounded-t-sm overflow-hidden mb-1" style={{ scrollbarGutter: 'stable' }}>
                             <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
                                 <colgroup>
@@ -940,7 +947,7 @@ export function DataTable<TData, TValue>({
                                                     </TableRow>
                                                 )}
                                                 {row.getIsExpanded() && renderSubComponent && (
-                                                    <tr key={`exp-${row.id}`} className="animate-in fade-in slide-in-from-top-2 duration-200 ease-in-out fill-mode-both">
+                                                    <tr key={`exp-${row.id}`}>
                                                         <TableCell colSpan={row.getVisibleCells().length} className="p-0 border-b border-border/50">
                                                             {renderSubComponent(row)}
                                                         </TableCell>

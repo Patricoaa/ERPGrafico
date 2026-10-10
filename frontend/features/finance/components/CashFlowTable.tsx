@@ -10,12 +10,9 @@ import {
     TableRow
 } from "@/components/ui/table";
 import { cn, parseDateOnly } from "@/lib/utils";
-;
 import {AlertCircle, CheckCircle2, Info, Calendar} from "lucide-react";
-;
 import { BaseModal, Chip, DataCell, MoneyDisplay, type ReportNode, ReportTable } from '@/components/shared';
 import { Button } from "@/components/ui/button";
-;
 
 interface CulpritAccount {
     code: string;
