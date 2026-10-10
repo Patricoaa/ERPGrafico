@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.12](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.11...v0.3.12) (2026-10-10)
+
+
+### ⚙️ Refactors
+
+* **frontend:** datatable a11y + drop entrance animations (design review track A) ([8443e51](https://github.com/Patricoaa/ERPGrafico/commit/8443e5192767622ed660c1be8e328d3bd2929155))
+
+
+### 📚 Documentation
+
+* **frontend:** datatable/cards design review report ([6120cdc](https://github.com/Patricoaa/ERPGrafico/commit/6120cdcd66e7e7397656cfdba6e178197f5020f7))
+
 ### [0.3.11](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.10...v0.3.11) (2026-10-10)
 
 
