@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.11](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.10...v0.3.11) (2026-10-10)
+
+
+### ✨ Features
+
+* **frontend:** animate-always blobatars, chrome-free containers, username seed ([d335b12](https://github.com/Patricoaa/ERPGrafico/commit/d335b128042a51b21e57841884c3667c737558e6))
+
 ### [0.3.10](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.9...v0.3.10) (2026-10-10)
 
 
