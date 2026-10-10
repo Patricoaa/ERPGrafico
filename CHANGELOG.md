@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.9](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.8...v0.3.9) (2026-10-10)
+
+
+### ✨ Features
+
+* **frontend:** blobatar avatars for people and contact cards ([fc5fe10](https://github.com/Patricoaa/ERPGrafico/commit/fc5fe10bc3bddb3a521d406399865bb94172b00e))
+
 ### [0.3.8](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.7...v0.3.8) (2026-10-10)
 
 
