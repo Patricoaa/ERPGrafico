@@ -15,6 +15,7 @@ import { contactsUnifiedSearchDef } from "@/features/contacts/unifiedSearchDef"
 import type { ContactFilters } from "@/features/contacts/types"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { blobatarUri } from "blobatar/uri"
 
 // Lazy load heavy components
 const ContactDrawer = lazy(() => import("./ContactDrawer"))
@@ -127,6 +128,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                                 fields={contactFields}
                                 entityLabel="contacts.contact"
                                 icon={getEntityIcon('contacts.contact')}
+                                imageSrc={blobatarUri(contact.name)}
                                 iconClassName="text-primary bg-primary/10"
                                 actions={contactActions.render(contact, actionsCtx)}
                                 defaultAction={contactActions.defaultAction(actionsCtx)?.(contact) ?? (() => openSelected(contact.id))}

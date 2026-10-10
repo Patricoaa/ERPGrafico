@@ -18,7 +18,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Blobatar } from "@/components/ui/blobatar"
 import { Button } from "@/components/ui/button"
 
 export function UserSidebarMenu() {
@@ -40,11 +40,7 @@ export function UserSidebarMenu() {
                                 size="icon"
                                 className="relative h-8 w-8 rounded-full text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-border/60"
                             >
-                                <Avatar className="h-full w-full rounded-full bg-transparent">
-                                    <AvatarFallback className="bg-transparent text-current font-black text-xs rounded-full">
-                                        {user?.username?.substring(0, 2).toUpperCase() || 'US'}
-                                    </AvatarFallback>
-                                </Avatar>
+                                <Blobatar name={user?.username || "Usuario"} className="h-full w-full rounded-full bg-transparent" />
                             </Button>
                         </DropdownMenuTrigger>
                     </TooltipTrigger>
@@ -55,11 +51,7 @@ export function UserSidebarMenu() {
                 <DropdownMenuContent className="w-56 border-sidebar-border shadow-overlay" align="start" side="right" sideOffset={12}>
                     <DropdownMenuLabel className="font-normal">
                         <div className="flex items-center gap-2 rounded-lg bg-muted p-1.5">
-                            <Avatar className="h-7 w-7 rounded-md">
-                                <AvatarFallback className="rounded-md font-bold text-3xs">
-                                    {user?.username?.substring(0, 2).toUpperCase() || 'US'}
-                                </AvatarFallback>
-                            </Avatar>
+                            <Blobatar name={user?.username || "Usuario"} className="h-7 w-7 rounded-md" />
                             <div className="flex flex-col">
                                 <p className="text-xs font-bold text-foreground leading-tight">
                                     {[user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.username || 'Usuario'}

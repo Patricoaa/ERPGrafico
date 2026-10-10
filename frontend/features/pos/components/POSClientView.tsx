@@ -23,7 +23,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Switch } from '@/components/ui/switch'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Blobatar } from '@/components/ui/blobatar'
 import {
     Tooltip,
     TooltipContent,
@@ -508,11 +508,7 @@ export function POSClientView() {
                                         className="relative rounded-md hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-border/60"
                                         aria-label="Abrir menú de usuario"
                                     >
-                                        <Avatar className="h-full w-full rounded-md bg-transparent">
-                                            <AvatarFallback className="bg-transparent text-current font-medium text-3xs rounded-md">
-                                                {user?.username?.substring(0, 2).toUpperCase() || 'US'}
-                                            </AvatarFallback>
-                                        </Avatar>
+                                        <Blobatar name={user?.username || 'Usuario'} className="h-full w-full rounded-md bg-transparent" />
                                     </Button>
                                 </DropdownMenuTrigger>
                             </TooltipTrigger>

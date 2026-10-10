@@ -1,7 +1,8 @@
 "use client"
 
 import React from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Blobatar } from "@/components/ui/blobatar"
+import "blobatar/motion.css"
 import { CollapsibleSheet, Chip, SkeletonShell } from "@/components/shared"
 import type { MyProfile } from "@/types/profile"
 import { User } from "lucide-react"
@@ -94,7 +95,6 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
     // Get Initials
     const firstName = user.first_name || ""
     const lastName = user.last_name || ""
-    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || user.username.substring(0, 2).toUpperCase()
 
     // Contact info priority: contact_detail -> user
     const email = contact_detail?.email || user.email
@@ -117,12 +117,11 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
             <div className="flex-1 overflow-y-auto overflow-x-hidden text-foreground">
                 {/* Header / Avatar Area */}
                 <div className="flex flex-col items-center justify-center py-10 px-6 gap-5 border-border/10 relative overflow-hidden">
-                    <Avatar className="h-24 w-24 border-2 border-primary/20 shadow-elevated ring-4 ring-background relative z-10">
-                        <AvatarImage src="" alt={user.username} />
-                        <AvatarFallback className="text-2xl font-black text-foreground bg-muted">
-                            {initials}
-                        </AvatarFallback>
-                    </Avatar>
+                    <Blobatar
+                        name={[firstName, lastName].filter(Boolean).join(" ") || user.username}
+                        className="h-24 w-24 border-2 border-primary/20 shadow-elevated ring-4 ring-background relative z-10"
+                        blobatar={{ animate: "always" }}
+                    />
 
                     <div className="flex flex-col items-center gap-1 text-center relative z-10">
                         <h2 className="text-lg font-black tracking-tight leading-none text-foreground">

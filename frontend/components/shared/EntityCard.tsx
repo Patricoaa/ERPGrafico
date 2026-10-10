@@ -145,7 +145,7 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
                     {checkboxNode}
                     {imageSrc ? (
                         <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md overflow-hidden", iconClassName ?? "bg-accent text-muted-foreground")}>
-                            <Image src={imageSrc} alt="" fill className="object-cover" />
+                            <Image src={imageSrc} alt="" fill unoptimized={imageSrc.startsWith("data:")} className="object-cover" />
                         </div>
                     ) : Icon ? (
                         <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-accent text-muted-foreground")}>
@@ -180,7 +180,7 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
                 {checkboxNode}
                 {imageSrc ? (
                     <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md overflow-hidden", iconClassName ?? "bg-accent text-muted-foreground")}>
-                        <Image src={imageSrc} alt="" fill className="object-cover" />
+                        <Image src={imageSrc} alt="" fill unoptimized={imageSrc.startsWith("data:")} className="object-cover" />
                     </div>
                 ) : Icon ? (
                     <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-accent text-muted-foreground")}>
