@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.8](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.7...v0.3.8) (2026-10-10)
+
+
+### ⚙️ Refactors
+
+* **frontend:** F4 design-system audit consolidation (T1-T9) ([07ea3af](https://github.com/Patricoaa/ERPGrafico/commit/07ea3afa12d4e3acaaaee316bb3634461c548cb4))
+
+
+### 📚 Documentation
+
+* **architecture:** F4 audit findings T4-T9 + ADRs 0073-0078 ([9bea7c5](https://github.com/Patricoaa/ERPGrafico/commit/9bea7c5b57eb8bc213dfdd5dc0d25dab8aac27f2))
+
 ### [0.3.7](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.6...v0.3.7) (2026-10-09)
 
 
