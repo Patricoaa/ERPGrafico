@@ -38,7 +38,7 @@ export function UserSidebarMenu() {
                             <Button
                                 variant="outline"
                                 size="icon"
-                                className="relative h-8 w-8 rounded-full text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-border/60"
+                                className="relative h-8 w-8 rounded-full text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-0 bg-transparent shadow-none"
                             >
                                 <Blobatar name={user?.username || "Usuario"} className="h-full w-full rounded-full bg-transparent" />
                             </Button>

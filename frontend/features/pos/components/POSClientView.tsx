@@ -505,7 +505,7 @@ export function POSClientView() {
                                     <Button
                                         size="icon"
                                         variant="outline"
-                                        className="relative rounded-md hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-border/60"
+                                        className="relative rounded-md hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-0 bg-transparent shadow-none"
                                         aria-label="Abrir menú de usuario"
                                     >
                                         <Blobatar name={user?.username || 'Usuario'} className="h-full w-full rounded-md bg-transparent" />

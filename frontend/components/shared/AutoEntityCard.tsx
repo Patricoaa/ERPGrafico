@@ -43,6 +43,8 @@ export interface AutoEntityCardProps<TData> {
     className?: string
     /** Optional image URL to render in the header icon slot (takes precedence over icon) */
     imageSrc?: string
+    /** Optional React node rendered in the header icon slot (takes precedence over imageSrc and icon) */
+    avatar?: React.ReactNode
     /** Optional trailing slot to render in the header (e.g. badges, status) */
     trailing?: React.ReactNode
     /** Optional explicit title (overrides automatic selection from fields) */
@@ -276,6 +278,7 @@ export function AutoEntityCard<TData>({
     isSelected,
     className,
     imageSrc,
+    avatar,
     trailing,
     children,
     variant,
@@ -429,6 +432,7 @@ export function AutoEntityCard<TData>({
                 icon={resolvedIcon}
                 iconClassName={iconClassName}
                 imageSrc={imageSrc ?? undefined}
+                avatar={avatar}
                 title={displayTitle}
                 subtitle={subtitleNode}
                 center={centerContent}

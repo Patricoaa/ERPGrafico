@@ -36,6 +36,12 @@ import type * as React from "react";
  * project that imports both wants the aliasing to be deliberate.
  */
 import { Blobatar as Generated } from "@blobatar/react";
+/**
+ * Animated blobs need the motion keyframes (`.mo-always`, `.mo-hover`, the
+ * `--mo-*` custom props the inline SVG sets). Imported once here so every
+ * Blobatar in the app can animate regardless of who rendered it.
+ */
+import "blobatar/motion.css";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
@@ -66,11 +72,22 @@ export type BlobatarProps = React.ComponentProps<typeof Avatar> & {
    * decorative — `alt=""`, skipped by screen readers — which is the right
    * default when the name is already written next to the avatar, and the wrong
    * one when the avatar stands alone. Pass `{ title: name }` in that case.
+   *
+   * `animate` defaults to `"always"` here — the app's rule is that a blobatar
+   * is always moving — but an explicit value still wins.
    */
   blobatar?: GeneratedOptions;
 };
 
 export function Blobatar({ name, src, alt, blobatar, ...props }: BlobatarProps) {
+  /**
+   * `blobatar` is a union of the static and animated arms' options. Spreading
+   * `{ animate: "always", ...blobatar }` straight into the component makes TS
+   * match the static arm's img-typed props against the animated arm's SVG
+   * props and fail, so the merged object is cast back to the union once, here.
+   */
+  const options = { animate: "always", ...blobatar } as GeneratedOptions;
+
   return (
     <Avatar
       {...props}
@@ -89,7 +106,7 @@ export function Blobatar({ name, src, alt, blobatar, ...props }: BlobatarProps) 
         default, whatever you pass otherwise — rather than fighting it.
       */}
       <AvatarFallback className="bg-transparent">
-        <Generated {...blobatar} name={name} className="size-full" />
+        <Generated {...options} name={name} className="size-full" />
       </AvatarFallback>
     </Avatar>
   );

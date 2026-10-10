@@ -2,7 +2,6 @@
 
 import React from "react"
 import { Blobatar } from "@/components/ui/blobatar"
-import "blobatar/motion.css"
 import { CollapsibleSheet, Chip, SkeletonShell } from "@/components/shared"
 import type { MyProfile } from "@/types/profile"
 import { User } from "lucide-react"
@@ -118,9 +117,8 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                 {/* Header / Avatar Area */}
                 <div className="flex flex-col items-center justify-center py-10 px-6 gap-5 border-border/10 relative overflow-hidden">
                     <Blobatar
-                        name={[firstName, lastName].filter(Boolean).join(" ") || user.username}
+                        name={user.username || "Usuario"}
                         className="h-24 w-24 relative z-10"
-                        blobatar={{ animate: "always" }}
                     />
 
                     <div className="flex flex-col items-center gap-1 text-center relative z-10">

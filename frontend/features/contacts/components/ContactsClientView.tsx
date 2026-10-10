@@ -4,7 +4,6 @@ import { useRouter, useSearchParams } from "next/navigation"
 import React, {useState, lazy, Suspense} from "react"
 import { type ColumnDef } from "@tanstack/react-table"
 
-import { getEntityIcon } from "@/lib/entity-registry"
 import { DataTableView } from '@/components/shared'
 import { AutoEntityCard } from '@/components/shared'
 import { contactFields } from "@/features/contacts/contactFields"
@@ -15,7 +14,7 @@ import { contactsUnifiedSearchDef } from "@/features/contacts/unifiedSearchDef"
 import type { ContactFilters } from "@/features/contacts/types"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-import { blobatarUri } from "blobatar/uri"
+import { Blobatar } from "@/components/ui/blobatar"
 
 // Lazy load heavy components
 const ContactDrawer = lazy(() => import("./ContactDrawer"))
@@ -127,9 +126,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                                 data={contact}
                                 fields={contactFields}
                                 entityLabel="contacts.contact"
-                                icon={getEntityIcon('contacts.contact')}
-                                imageSrc={blobatarUri(contact.name)}
-                                iconClassName="text-primary bg-primary/10"
+                                avatar={<Blobatar name={contact.name} className="h-10 w-10 shrink-0 rounded-md" />}
                                 actions={contactActions.render(contact, actionsCtx)}
                                 defaultAction={contactActions.defaultAction(actionsCtx)?.(contact) ?? (() => openSelected(contact.id))}
                             />

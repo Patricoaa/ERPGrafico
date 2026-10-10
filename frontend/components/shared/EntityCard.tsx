@@ -112,12 +112,14 @@ interface EntityCardHeaderProps {
     icon?: LucideIcon
     /** Image URL — renders an <img> in the icon slot, taking precedence over `icon` */
     imageSrc?: string
+    /** Optional React node rendered in the icon slot — takes precedence over `imageSrc` and `icon` */
+    avatar?: React.ReactNode
     /** Styling for the icon container (e.g. "text-success bg-success/10") */
     iconClassName?: string
     className?: string
 }
 
-function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Icon, imageSrc, iconClassName, className }: EntityCardHeaderProps) {
+function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Icon, imageSrc, avatar, iconClassName, className }: EntityCardHeaderProps) {
     const { selectable, checked, onCheckedChange, isAnySelected } = React.useContext(EntityCardSelectionContext)
 
     const checkboxNode = selectable && (
@@ -143,7 +145,7 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
             <div className={cn("grid grid-cols-[1fr_minmax(auto,3fr)_auto] items-start gap-2", className)}>
                 <div className="flex items-stretch gap-3 min-w-0">
                     {checkboxNode}
-                    {imageSrc ? (
+                    {avatar ?? (imageSrc ? (
                         <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md overflow-hidden", imageSrc.startsWith("data:") ? "bg-transparent" : (iconClassName ?? "bg-accent text-muted-foreground"))}>
                             <Image src={imageSrc} alt="" fill unoptimized={imageSrc.startsWith("data:")} className="object-cover" />
                         </div>
@@ -151,7 +153,7 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
                         <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-accent text-muted-foreground")}>
                             <Icon className="h-5 w-5" />
                         </div>
-                    ) : null}
+                    ) : null)}
                     <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-medium leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
                             {title}
@@ -178,15 +180,15 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
         <div className={cn("flex items-start justify-between gap-2", className)}>
             <div className="flex items-stretch gap-3 min-w-0 flex-1">
                 {checkboxNode}
-                {imageSrc ? (
-                    <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md overflow-hidden", iconClassName ?? "bg-accent text-muted-foreground")}>
+                {avatar ?? (imageSrc ? (
+                    <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md overflow-hidden", imageSrc.startsWith("data:") ? "bg-transparent" : (iconClassName ?? "bg-accent text-muted-foreground"))}>
                         <Image src={imageSrc} alt="" fill unoptimized={imageSrc.startsWith("data:")} className="object-cover" />
                     </div>
                 ) : Icon ? (
                     <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-accent text-muted-foreground")}>
                         <Icon className="h-5 w-5" />
                     </div>
-                ) : null}
+                ) : null)}
                 <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
                         {title}
