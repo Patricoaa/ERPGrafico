@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.13](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.12...v0.3.13) (2026-10-12)
+
+
+### ⚙️ Refactors
+
+* **frontend:** unify table header/density/hover tokens (design review track B) ([41ffabf](https://github.com/Patricoaa/ERPGrafico/commit/41ffabf18bfaa666749ccd79483f7ab0ba58061d))
+
+
+### 📚 Documentation
+
+* **frontend:** design review track B — decisions applied ([6037092](https://github.com/Patricoaa/ERPGrafico/commit/6037092461a10e972d39d5d1dc3ba241d99e2e0a))
+
 ### [0.3.12](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.11...v0.3.12) (2026-10-10)
 
 
