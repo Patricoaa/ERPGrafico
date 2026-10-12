@@ -218,10 +218,10 @@ export function DataTableView<TData, TValue>({
 
       return (
         <React.Fragment>
-          <TableRow className="bg-muted/30 hover:bg-muted/40 border-b border-border/60">
+          <TableRow className="bg-muted/30 hover:bg-(--table-row-hover) border-b border-border/60">
             <TableCell
               colSpan={colCount}
-              className="py-1.5 px-3 text-xs font-semibold text-muted-foreground"
+              className="py-(--table-cell-py) px-(--table-cell-px) text-xs font-semibold text-muted-foreground"
             >
               <span>{headerLabel}</span>
             </TableCell>
@@ -252,6 +252,7 @@ export function DataTableView<TData, TValue>({
   return (
     <DataTable
       {...dataTableProps}
+      ariaLabel={entityLabel}
       createAction={currentView === "analytics" ? undefined : dataTableProps.createAction}
       toolbarActions={currentView === "analytics" ? undefined : dataTableProps.toolbarActions}
       emptyState={enrichedEmptyState}

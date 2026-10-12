@@ -228,10 +228,10 @@ export function Step2_Logistics({
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-muted/50">
-                                        <TableHead className="w-[45%] text-3xs font-bold uppercase tracking-wider">Producto</TableHead>
-                                        <TableHead className="w-[15%] text-right text-3xs font-bold uppercase tracking-wider">Total</TableHead>
-                                        <TableHead className="w-[20%] text-3xs font-bold uppercase tracking-wider">A Procesar</TableHead>
-                                        <TableHead className="w-[20%] text-3xs font-bold uppercase tracking-wider">Unidad</TableHead>
+                                        <TableHead className="w-[45%] text-3xs font-bold uppercase text-muted-foreground">Producto</TableHead>
+                                        <TableHead className="w-[15%] text-right text-3xs font-bold uppercase text-muted-foreground">Total</TableHead>
+                                        <TableHead className="w-[20%] text-3xs font-bold uppercase text-muted-foreground">A Procesar</TableHead>
+                                        <TableHead className="w-[20%] text-3xs font-bold uppercase text-muted-foreground">Unidad</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>

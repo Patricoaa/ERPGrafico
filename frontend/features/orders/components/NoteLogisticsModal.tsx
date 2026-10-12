@@ -174,11 +174,11 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Producto</TableHead>
-                                    <TableHead className="text-center">Cantidad Nota</TableHead>
-                                    <TableHead className="text-center">Procesado</TableHead>
-                                    <TableHead className="text-center">Pendiente</TableHead>
-                                    <TableHead className="text-center w-32">A Procesar</TableHead>
+                                    <TableHead className="text-muted-foreground">Producto</TableHead>
+                                    <TableHead className="text-center text-muted-foreground">Cantidad Nota</TableHead>
+                                    <TableHead className="text-center text-muted-foreground">Procesado</TableHead>
+                                    <TableHead className="text-center text-muted-foreground">Pendiente</TableHead>
+                                    <TableHead className="text-center text-muted-foreground w-32">A Procesar</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

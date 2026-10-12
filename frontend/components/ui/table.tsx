@@ -67,7 +67,7 @@ const TableRow = React.forwardRef<
     ref={ref}
     data-slot="table-row"
     className={cn(
-      "hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
+      "hover:bg-(--table-row-hover) data-[state=selected]:bg-muted border-b transition-colors",
       className
     )}
     {...props}
@@ -83,7 +83,7 @@ const TableHead = React.forwardRef<
     ref={ref}
     data-slot="table-head"
     className={cn(
-      "text-muted-foreground h-9 px-3 text-left align-middle font-medium text-xs whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      "h-(--table-header-h) px-(--table-header-px) py-(--table-header-py) text-left align-middle text-3xs font-bold uppercase tracking-widest whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
       className
     )}
     {...props}
@@ -99,7 +99,7 @@ const TableCell = React.forwardRef<
     ref={ref}
     data-slot="table-cell"
     className={cn(
-      "py-1.5 px-3 text-left align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      "py-(--table-cell-py) px-(--table-cell-px) text-left align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
       className
     )}
     {...props}

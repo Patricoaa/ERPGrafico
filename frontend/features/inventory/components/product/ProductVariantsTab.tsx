@@ -292,12 +292,12 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                                             variant="circle"
                                         />
                                     </TableHead>
-                                    <TableHead className="font-bold">ID</TableHead>
-                                    <TableHead className="font-bold">Atributos</TableHead>
-                                    <TableHead className="font-bold text-center">Modo de precio</TableHead>
-                                    <TableHead className="font-bold text-center">Precio</TableHead>
-                                    <TableHead className="font-bold text-center">LDM</TableHead>
-                                    <TableHead className="font-bold text-center">Disp.</TableHead>
+                                    <TableHead className="font-bold text-muted-foreground">ID</TableHead>
+                                    <TableHead className="font-bold text-muted-foreground">Atributos</TableHead>
+                                    <TableHead className="font-bold text-center text-muted-foreground">Modo de precio</TableHead>
+                                    <TableHead className="font-bold text-center text-muted-foreground">Precio</TableHead>
+                                    <TableHead className="font-bold text-center text-muted-foreground">LDM</TableHead>
+                                    <TableHead className="font-bold text-center text-muted-foreground">Disp.</TableHead>
                                     <TableHead className="w-[80px]"></TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -310,7 +310,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                                             key={v.id}
                                             className={cn(
                                                 "cursor-pointer group transition-colors",
-                                                "hover:bg-muted/50",
+                                                "hover:bg-(--table-row-hover)",
                                                 isSelected && "bg-primary/10/50 hover:bg-primary/10/80"
                                             )}
                                             onClick={() => toggleVariantSelect(v.id)}

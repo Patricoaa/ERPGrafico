@@ -37,6 +37,8 @@ const NON_MODAL_TABLE_MAX_HEIGHT = "max-h-[calc(100vh-260px)]"
 export interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
+    /** Nombre accesible de la tabla (role="grid" / <table>). Omitir solo si el contenedor ya aporta un nombre. */
+    ariaLabel?: string
     defaultPageSize?: number
     pageSizeOptions?: number[]
     hideToolbar?: boolean
@@ -171,6 +173,7 @@ function getSkeletonCellContent(columnIndex: number, totalColumns: number): { wi
 export function DataTable<TData, TValue>({
     columns,
     data,
+    ariaLabel,
     defaultPageSize = 20,
     pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
     hideToolbar = false,
@@ -444,7 +447,7 @@ export function DataTable<TData, TValue>({
                                     {table.getHeaderGroups().map(headerGroup => (
                                         <TableRow key={headerGroup.id}>
                                             {headerGroup.headers.map(header => (
-                                                <TableHead key={header.id} className="table-header">
+                                                <TableHead key={header.id}>
                                                     {header.isPlaceholder
                                                         ? null
                                                         : flexRender(
@@ -462,7 +465,7 @@ export function DataTable<TData, TValue>({
                                             {columns.map((_, j) => {
                                                 const cell = getSkeletonCellContent(j, columns.length)
                                                 return (
-                                                    <TableCell key={`skel-${i}-${j}`} className="table-cell">
+                                                    <TableCell key={`skel-${i}-${j}`}>
                                                         <Skeleton
                                                             className={cn(
                                                                 cell.height,
@@ -504,7 +507,7 @@ export function DataTable<TData, TValue>({
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id} className="border-none hover:bg-transparent">
                                 {headerGroup.headers.map((header) => (
-                                    <TableHead key={header.id} className="table-header">
+                                    <TableHead key={header.id} className="text-muted-foreground">
                                         {header.isPlaceholder
                                             ? null
                                             : flexRender(header.column.columnDef.header, header.getContext())}
@@ -526,7 +529,7 @@ export function DataTable<TData, TValue>({
                                     onClick={() => handleRowClick(row.original)}
                                 >
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id} className="table-cell">
+                                        <TableCell key={cell.id}>
                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                         </TableCell>
                                     ))}
@@ -569,7 +572,7 @@ export function DataTable<TData, TValue>({
             return (
                 <div ref={containerRef} className="relative">
                     <div className={cn("grid", effectiveGridTemplate, gridGap)}>
-                        <div className={cn("grid grid-cols-subgrid col-span-full px-3 py-1.5 text-3xs font-semibold uppercase tracking-wider text-muted-foreground border-b")}>
+                        <div className={cn("grid grid-cols-subgrid col-span-full px-(--table-header-px) py-(--table-header-py) text-3xs font-bold uppercase tracking-widest text-muted-foreground border-b")}>
                             {table.getHeaderGroups()[0]?.headers.map((header) => (
                                 <div key={header.id} className="text-center">
                                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
@@ -578,7 +581,7 @@ export function DataTable<TData, TValue>({
                             {renderRowActions && <div />}
                         </div>
                         {Array.from({ length: effectiveSkeletonRows }, (_, i) => (
-                            <div key={`skel-${i}`} className={cn("grid grid-cols-subgrid col-span-full items-center px-3 py-2.5 border-b border-border/60 last:border-b-0")}>
+                            <div key={`skel-${i}`} className={cn("grid grid-cols-subgrid col-span-full items-center px-(--table-cell-px) py-(--table-cell-py) border-b border-border/60 last:border-b-0")}>
                                 {columns.map((_, j) => (
                                     <div key={`skel-${i}-${j}`} className="flex justify-center">
                                         <Skeleton className="h-4 w-16" />
@@ -600,10 +603,11 @@ export function DataTable<TData, TValue>({
                             role="grid"
                             aria-rowcount={table.getRowModel().rows.length + 1}
                             aria-colcount={table.getHeaderGroups()[0]?.headers.length + (renderRowActions ? 1 : 0)}
+                            aria-label={ariaLabel}
                             className={cn("grid", effectiveGridTemplate, gridGap)}
                         >
                             {/* Header */}
-                            <div className={cn("grid grid-cols-subgrid col-span-full px-3 py-1.5 text-3xs font-semibold uppercase tracking-wider text-muted-foreground border-b sticky top-0 bg-card z-10")} role="row">
+                            <div className={cn("grid grid-cols-subgrid col-span-full px-(--table-header-px) py-(--table-header-py) text-3xs font-bold uppercase tracking-widest text-muted-foreground border-b sticky top-0 bg-card z-10")} role="row">
                                 {table.getHeaderGroups()[0]?.headers.map((header) => (
                                     <div key={header.id} role="columnheader">
                                         {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
@@ -618,7 +622,7 @@ export function DataTable<TData, TValue>({
                                     role="row"
                                     className={cn(
                                         "grid grid-cols-subgrid col-span-full",
-                                        "items-center px-3 py-2.5 hover:bg-muted/40 group border-b border-border/60 last:border-b-0",
+                                        "items-center px-(--table-cell-px) py-(--table-cell-py) hover:bg-(--table-row-hover) group border-b border-border/60 last:border-b-0",
                                         hasRowAction && "cursor-pointer",
                                         getRowClassName?.(row)
                                     )}
@@ -663,7 +667,7 @@ export function DataTable<TData, TValue>({
                                 <TableRow
                                     data-state={row.getIsSelected() && "selected"}
                                     className={cn(
-                                        "group border-b border-border/40 table-row-hover transition-all",
+                                        "group border-b border-border/40 table-row-hover transition-colors",
                                         hasRowAction && "cursor-pointer",
                                         row.getIsSelected() && "bg-primary/5",
                                         getRowClassName?.(row)
@@ -673,7 +677,6 @@ export function DataTable<TData, TValue>({
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell
                                             key={cell.id}
-                                            className="table-cell"
                                         >
                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                         </TableCell>
@@ -684,7 +687,7 @@ export function DataTable<TData, TValue>({
                             <TableRow
                                 data-state={row.getIsSelected() && "selected"}
                                 className={cn(
-                                    "group border-b border-border/40 table-row-hover transition-all",
+                                    "group border-b border-border/40 table-row-hover transition-colors",
                                     hasRowAction && "cursor-pointer",
                                     row.getIsSelected() && "bg-primary/5",
                                     getRowClassName?.(row)
@@ -694,7 +697,6 @@ export function DataTable<TData, TValue>({
                                 {row.getVisibleCells().map((cell) => (
                                     <TableCell
                                         key={cell.id}
-                                        className="table-cell"
                                     >
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                     </TableCell>
@@ -783,11 +785,7 @@ export function DataTable<TData, TValue>({
                                                 className="border-none hover:bg-transparent"
                                             >
                                                 {headerGroup.headers.map((header) => (
-                                                    <TableHead
-                                                        key={header.id}
-                                                        className="table-header"
-                                                        style={{ width: header.getSize() }}
-                                                    >
+                                                    <TableHead key={header.id} className="text-muted-foreground" style={{ width: header.getSize() }}>
                                                         {header.isPlaceholder
                                                             ? null
                                                             : flexRender(
@@ -802,7 +800,7 @@ export function DataTable<TData, TValue>({
                                 </table>
                             </div>
                             <div className={cn("flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-background", isTableEmpty && "flex flex-col")} style={{ scrollbarGutter: 'stable' }}>
-                                <table className={cn("w-full text-sm", isTableEmpty && "h-full")} style={{ tableLayout: 'fixed' }}>
+                                <table aria-label={ariaLabel} className={cn("w-full text-sm", isTableEmpty && "h-full")} style={{ tableLayout: 'fixed' }}>
                                     <colgroup>
                                         {embeddedHeaderGroups[0]?.headers.map(header => (
                                             <col key={header.id} style={{ width: header.getSize() }} />
@@ -879,7 +877,7 @@ export function DataTable<TData, TValue>({
                                         <TableRow key={headerGroup.id} className="border-none hover:bg-transparent">
                                             {headerGroup.headers.map((header) => {
                                                 return (
-                                                    <TableHead key={header.id} style={{ width: header.getSize() }}>
+                                                    <TableHead key={header.id} className="text-muted-foreground">
                                                         {header.isPlaceholder
                                                             ? null
                                                             : flexRender(
@@ -895,7 +893,7 @@ export function DataTable<TData, TValue>({
                             </table>
                         </div>
                         <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-background" style={{ scrollbarGutter: 'stable' }}>
-                            <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
+                            <table aria-label={ariaLabel} className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
                                 <colgroup>
                                     {classicHeaderGroups[0]?.headers.map(header => (
                                         <col key={header.id} style={{ width: header.getSize() }} />

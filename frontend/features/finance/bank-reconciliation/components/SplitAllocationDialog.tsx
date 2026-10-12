@@ -151,9 +151,9 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[30%]">Factura/Documento</TableHead>
-                                    <TableHead className="w-[40%]">Notas</TableHead>
-                                    <TableHead className="w-[20%] text-right">Monto</TableHead>
+                                    <TableHead className="w-[30%] text-muted-foreground">Factura/Documento</TableHead>
+                                    <TableHead className="w-[40%] text-muted-foreground">Notas</TableHead>
+                                    <TableHead className="w-[20%] text-right text-muted-foreground">Monto</TableHead>
                                     <TableHead className="w-[10%]"></TableHead>
                                 </TableRow>
                             </TableHeader>

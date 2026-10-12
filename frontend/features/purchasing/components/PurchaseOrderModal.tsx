@@ -256,11 +256,11 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
-                                                    <TableHead className="w-[35%]">Producto</TableHead>
-                                                    <TableHead className="w-[10%]">Cantidad</TableHead>
-                                                    <TableHead className="w-[20%]">Unidad</TableHead>
-                                                    <TableHead className="w-[15%]">costo Unit.</TableHead>
-                                                    <TableHead className="w-[10%]">Subtotal</TableHead>
+                                                    <TableHead className="w-[35%] text-muted-foreground">Producto</TableHead>
+                                                    <TableHead className="w-[10%] text-muted-foreground">Cantidad</TableHead>
+                                                    <TableHead className="w-[20%] text-muted-foreground">Unidad</TableHead>
+                                                    <TableHead className="w-[15%] text-muted-foreground">costo Unit.</TableHead>
+                                                    <TableHead className="w-[10%] text-muted-foreground">Subtotal</TableHead>
                                                     <TableHead className="w-[10%]"></TableHead>
                                                 </TableRow>
                                             </TableHeader>
@@ -413,11 +413,11 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead className="w-[35%]">Producto</TableHead>
-                                                <TableHead className="w-[10%]">Cantidad</TableHead>
-                                                <TableHead className="w-[20%]">Unidad</TableHead>
-                                                <TableHead className="w-[15%]">costo Unit.</TableHead>
-                                                <TableHead className="w-[10%]">Subtotal</TableHead>
+                                                <TableHead className="w-[35%] text-muted-foreground">Producto</TableHead>
+                                                <TableHead className="w-[10%] text-muted-foreground">Cantidad</TableHead>
+                                                <TableHead className="w-[20%] text-muted-foreground">Unidad</TableHead>
+                                                <TableHead className="w-[15%] text-muted-foreground">costo Unit.</TableHead>
+                                                <TableHead className="w-[10%] text-muted-foreground">Subtotal</TableHead>
                                                 <TableHead className="w-[10%]"></TableHead>
                                             </TableRow>
                                         </TableHeader>

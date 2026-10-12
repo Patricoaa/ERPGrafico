@@ -151,10 +151,10 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/30">
-                                    <TableHead className="text-3xs font-bold uppercase">Tipo</TableHead>
-                                    <TableHead className="text-3xs font-bold uppercase">Descripción</TableHead>
-                                    <TableHead className="text-3xs font-bold uppercase">Vencimiento</TableHead>
-                                    <TableHead className="text-right text-3xs font-bold uppercase">Monto</TableHead>
+                                    <TableHead className="text-3xs font-bold uppercase text-muted-foreground">Tipo</TableHead>
+                                    <TableHead className="text-3xs font-bold uppercase text-muted-foreground">Descripción</TableHead>
+                                    <TableHead className="text-3xs font-bold uppercase text-muted-foreground">Vencimiento</TableHead>
+                                    <TableHead className="text-right text-3xs font-bold uppercase text-muted-foreground">Monto</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -251,8 +251,8 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/30">
-                                    <TableHead className="text-3xs font-bold uppercase">Cuenta</TableHead>
-                                    <TableHead className="text-right text-3xs font-bold uppercase">Variación</TableHead>
+                                    <TableHead className="text-3xs font-bold uppercase text-muted-foreground">Cuenta</TableHead>
+                                    <TableHead className="text-right text-3xs font-bold uppercase text-muted-foreground">Variación</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

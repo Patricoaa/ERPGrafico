@@ -427,12 +427,12 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Producto</TableHead>
-                                <TableHead className="text-center">Unidad</TableHead>
-                                <TableHead className="text-center">Pendiente</TableHead>
-                                {!isServiceMode && <TableHead className="text-center">Stock</TableHead>}
-                                <TableHead className="text-center">{isServiceMode ? 'A Entregar' : 'A Despachar'}</TableHead>
-                                <TableHead>Estado</TableHead>
+                                <TableHead className="text-muted-foreground">Producto</TableHead>
+                                <TableHead className="text-center text-muted-foreground">Unidad</TableHead>
+                                <TableHead className="text-center text-muted-foreground">Pendiente</TableHead>
+                                {!isServiceMode && <TableHead className="text-center text-muted-foreground">Stock</TableHead>}
+                                <TableHead className="text-center text-muted-foreground">{isServiceMode ? 'A Entregar' : 'A Despachar'}</TableHead>
+                                <TableHead className="text-muted-foreground">Estado</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>

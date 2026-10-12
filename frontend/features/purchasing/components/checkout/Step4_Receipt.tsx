@@ -231,10 +231,10 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[40%]">Producto</TableHead>
-                                    <TableHead className="w-[20%] text-right">Ordenado</TableHead>
-                                    <TableHead className="w-[20%]">A Recibir</TableHead>
-                                    <TableHead className="w-[20%]">Unidad</TableHead>
+                                    <TableHead className="w-[40%] text-muted-foreground">Producto</TableHead>
+                                    <TableHead className="w-[20%] text-right text-muted-foreground">Ordenado</TableHead>
+                                    <TableHead className="w-[20%] text-muted-foreground">A Recibir</TableHead>
+                                    <TableHead className="w-[20%] text-muted-foreground">Unidad</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -284,8 +284,8 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[60%]">Suscripción</TableHead>
-                                    <TableHead className="w-[40%]">Fecha de Inicio</TableHead>
+                                    <TableHead className="w-[60%] text-muted-foreground">Suscripción</TableHead>
+                                    <TableHead className="w-[40%] text-muted-foreground">Fecha de Inicio</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

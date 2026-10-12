@@ -176,7 +176,7 @@ export function FormLineItemsTable({
                                     <TableHead
                                         key={i}
                                         className={cn(
-                                            "text-3xs font-bold uppercase tracking-widest text-muted-foreground table-cell",
+                                            "text-muted-foreground",
                                             col.width,
                                             /* default: center — override per column with align prop */
                                             col.align ? alignClass[col.align] : "text-center",

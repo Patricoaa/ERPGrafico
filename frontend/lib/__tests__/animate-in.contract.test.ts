@@ -22,7 +22,6 @@ const ANIMATE_UTILITY = /\banimate-(?:in|out)\b/
  * StatementImportModal, SessionOpenModal, SessionCloseModal.
  */
 const ANIMATE_ALLOWLIST = [
-    "app/(dashboard)/DashboardPageClient.tsx",
     "app/login/page.tsx",
     "app/not-found.tsx",
     "components/layout/DashboardShell.tsx",
@@ -31,7 +30,6 @@ const ANIMATE_ALLOWLIST = [
     "components/shared/CollapsibleSheet.tsx",
     "components/shared/CommentSystem.tsx",
     "components/shared/DataTableCells.tsx",
-    "components/shared/DataTable.tsx",
     "components/shared/DocumentAttachmentDropzone.tsx",
     "components/shared/EmptyState.tsx",
     "components/shared/EntityCard.tsx",
@@ -89,7 +87,6 @@ const ANIMATE_ALLOWLIST = [
     "features/production/components/forms/WorkOrderBasicStep/OtTypeChooser.tsx",
     "features/production/components/forms/WorkOrderBasicStep/WorkOrderBasicInfo.tsx",
     "features/production/components/MaterialAssignmentTabs.tsx",
-    "features/production/components/ProductionMetricsCard.tsx",
     "features/production/components/shared/OutsourcedServiceForm.tsx",
     "features/production/components/steps/FinishedStep.tsx",
     "features/production/components/steps/MaterialAssignmentStep.tsx",

@@ -277,7 +277,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                                     {headerGroup.headers.map((header) => (
                                         <th 
                                             key={header.id} 
-                                            className="h-10 px-3 text-left align-middle font-semibold text-2xs uppercase tracking-widest text-muted-foreground/80 whitespace-nowrap"
+                                            className="h-(--table-header-h) px-(--table-header-px) py-(--table-header-py) text-left align-middle font-bold text-3xs uppercase tracking-widest text-muted-foreground/80 whitespace-nowrap"
                                         >
                                             {header.isPlaceholder
                                                 ? null

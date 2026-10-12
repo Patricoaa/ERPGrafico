@@ -369,8 +369,8 @@
   /* px-3 */
   --table-header-py: 0.25rem;
   /* py-1 - Header vertical padding */
-  --table-header-px: 0.5rem;
-  /* px-2 - Header horizontal padding */
+  --table-header-px: 0.75rem;
+  /* px-3 - Aligned with cell padding (prevents header/cell misalignment) */
   --table-header-h: 2.25rem;
   /* ~h-9 - Compact header height */
   --table-row-hover: oklch(var(--muted-raw) / 0.5);

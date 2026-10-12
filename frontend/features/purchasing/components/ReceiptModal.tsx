@@ -286,12 +286,12 @@ export function ReceiptModal({
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Producto</TableHead>
-                                    <TableHead className="text-center">Unidad</TableHead>
-                                    <TableHead className="text-center">Pendiente</TableHead>
-                                    <TableHead className="text-center w-24">A {isRefund ? 'Devolver' : 'Recibir'}</TableHead>
-                                    <TableHead className="text-center w-32">Costo (Unit)</TableHead>
-                                    <TableHead>Estado</TableHead>
+                                    <TableHead className="text-muted-foreground">Producto</TableHead>
+                                    <TableHead className="text-center text-muted-foreground">Unidad</TableHead>
+                                    <TableHead className="text-center text-muted-foreground">Pendiente</TableHead>
+                                    <TableHead className="text-center text-muted-foreground w-24">A {isRefund ? 'Devolver' : 'Recibir'}</TableHead>
+                                    <TableHead className="text-center text-muted-foreground w-32">Costo (Unit)</TableHead>
+                                    <TableHead className="text-muted-foreground">Estado</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

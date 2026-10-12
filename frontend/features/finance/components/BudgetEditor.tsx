@@ -299,7 +299,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                 <div className="flex-1 overflow-hidden p-4">
                     <ScrollArea className="h-full border rounded-md overflow-hidden shadow-card">
                         <div className="min-w-[1200px]">
-                            <div className="flex bg-muted/50 border-b sticky top-0 z-10 font-bold text-2xs uppercase tracking-wider text-muted-foreground">
+                            <div className="flex bg-muted/50 border-b sticky top-0 z-10 font-bold text-3xs uppercase tracking-widest text-muted-foreground">
                                 <div className="w-[300px] p-3 border-r bg-muted/50">Cuenta Contable</div>
                                 {monthNames.map(m => (
                                     <div key={m} className="flex-1 p-3 text-center border-r bg-muted/50">{m}</div>

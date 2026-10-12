@@ -94,7 +94,7 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
     return (
         <>
             <TableRow className={cn(
-                "group hover:bg-muted/50 transition-colors",
+                "group hover:bg-(--table-row-hover) transition-colors",
                 level === 0 ? "bg-muted/20 font-bold" : "",
                 node.is_unbudgeted ? "bg-warning/5" : ""
             )}>
@@ -167,17 +167,17 @@ function BudgetVarianceTableBase({ data, loading }: BudgetVarianceTableProps) {
                 <Table>
                     <TableHeader className="bg-muted/50">
                         <TableRow className="hover:bg-transparent border-b-2">
-                            <TableHead className="w-[300px]  text-xs uppercase tracking-wider">Cuenta Contable</TableHead>
+                            <TableHead className="w-[300px] text-muted-foreground">Cuenta Contable</TableHead>
 
                             {/* Month Group */}
                             <TableHead className="text-right  text-3xs uppercase text-primary border-l">Real Mes</TableHead>
-                            <TableHead className="text-right  text-3xs uppercase border-r/50">Ppto Mes</TableHead>
-                            <TableHead className="text-right  text-3xs uppercase">Var Mes</TableHead>
+                            <TableHead className="text-right  text-3xs uppercase text-muted-foreground border-r/50">Ppto Mes</TableHead>
+                            <TableHead className="text-right  text-3xs uppercase text-muted-foreground">Var Mes</TableHead>
 
                             {/* YTD Group */}
                             <TableHead className="text-right  text-3xs uppercase text-primary border-l bg-muted/20">Real YTD</TableHead>
-                            <TableHead className="text-right  text-3xs uppercase border-r/50 bg-muted/20">Ppto YTD</TableHead>
-                            <TableHead className="text-right  text-3xs uppercase bg-muted/20">Var YTD</TableHead>
+                            <TableHead className="text-right  text-3xs uppercase text-muted-foreground border-r/50 bg-muted/20">Ppto YTD</TableHead>
+                            <TableHead className="text-right  text-3xs uppercase text-muted-foreground bg-muted/20">Var YTD</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>

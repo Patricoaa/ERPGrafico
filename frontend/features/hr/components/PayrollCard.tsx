@@ -40,7 +40,7 @@ function ItemRow({ item, type, isReadOnly, onEdit, onDeleteRequest }: {
     item: PayrollItem, type: 'HABER' | 'DESCUENTO', isReadOnly: boolean, onEdit?: (i: PayrollItem) => void, onDeleteRequest?: (i: PayrollItem) => void
 }) {
     return (
-        <TableRow className="group border-none hover:bg-muted/50 transition-colors">
+        <TableRow className="group border-none hover:bg-(--table-row-hover) transition-colors">
             <TableCell className="py-3 pl-8">
                 <div className="flex flex-col">
                     <DataCell.Text className="uppercase tracking-tight">

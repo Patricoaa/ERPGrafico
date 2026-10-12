@@ -173,10 +173,10 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[45%]">Producto</TableHead>
-                                    <TableHead className="w-[15%] text-right">Pendiente</TableHead>
-                                    <TableHead className="w-[20%]">A Despachar</TableHead>
-                                    <TableHead className="w-[20%]">Unidad</TableHead>
+                                    <TableHead className="w-[45%] text-muted-foreground">Producto</TableHead>
+                                    <TableHead className="w-[15%] text-right text-muted-foreground">Pendiente</TableHead>
+                                    <TableHead className="w-[20%] text-muted-foreground">A Despachar</TableHead>
+                                    <TableHead className="w-[20%] text-muted-foreground">Unidad</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

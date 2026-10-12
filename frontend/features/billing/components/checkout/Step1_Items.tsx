@@ -87,7 +87,7 @@ export function Step1_Items({
                 <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
-                            <TableHead className="w-14 text-center">
+                            <TableHead className="w-14 text-center text-muted-foreground">
                                 <Tag className="h-4 w-4 mx-auto text-muted-foreground" />
                             </TableHead>
                             <TableHead className="font-bold uppercase text-3xs tracking-widest text-muted-foreground/60">Producto/Servicio</TableHead>

@@ -373,8 +373,8 @@ export function ProductSelector({
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted hover:bg-muted">
-                                    <TableHead className="font-bold">Variante / Atributos</TableHead>
-                                    <TableHead className="text-right font-bold w-[120px]">Disponibilidad</TableHead>
+                                    <TableHead className="font-bold text-muted-foreground">Variante / Atributos</TableHead>
+                                    <TableHead className="text-right font-bold text-muted-foreground w-[120px]">Disponibilidad</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
