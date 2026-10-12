@@ -3,7 +3,7 @@
 - **Tipo de review:** Design System Compliance Audit + Accessibility Audit (estático, sin navegador)
 - **Alcance:** `components/shared/DataTable*`, `DataTableView`, `EntityCard`, `AutoEntityCard`, `entity-fields`, `entity-actions`, `view-helpers`, `search-styles`, `ui/table`, `ui/card` + consumidores muestra (ProductClientView, UsersSettings, WorkOrdersPage, TreasuryMovements, SalesOrdersView, BankMovements, PurchasingOrders, InventoryCount, ReconciliationPanel, CashFlowTable, BudgetEditor, AccountingEquationCard)
 - **Método:** lectura de código + conteos de evidencia (`grep`). Las afirmaciones de jerarquía/legibilidad se marcan como "a validar en render"; no hubo verificación visual.
-- **Fecha:** 2026-10-09 · Estado: **Needs Work** (Track A aplicado; Track B pendiente de decisión)
+- **Fecha:** 2026-10-09 · Estado: **Needs Work → Resuelto** (Track A aplicado 2026-10-09; Track B aplicado 2026-10-12 — ver §3.2)
 - **Punto de partida (importante):** los documentos de `docs/20-contracts/` **no se tratan como autoridad ni como spec**. Son *decisiones de diseño que también pueden estar mal diseñadas*; por eso este review los coloca en una sección propia de hipótesis a validar (§4) y juzga el código con criterios independientes: consistencia interna (con conteos), accesibilidad (WCAG/ARIA), ergonomía/performance y juicio de diseño propio.
 
 ---
@@ -106,6 +106,25 @@ Notas de la resolución:
 - D1 queda cubierto en estructura ARIA, pero **sin `aria-label`/caption**: el modo compact no tiene hoy una fuente de nombre accesible, y derivarlo requiere decidir de qué prop (parte de Track B).
 - El impacto de quitar el motion por fila (D5) **no se midió** en render: review estático. Verificar con profiling si se quiere cuantificar.
 
+### 3.2. Resolución — Track B (aplicada 2026-10-12)
+
+Decisiones de diseño adoptadas (actas en `track-b-resolution-decisions.md`) y su implementación. Verificado con `tsc --noEmit` limpio, `eslint` (0 errores) y `vitest` (174/174).
+
+| Decisión | Cambio | Archivo |
+|---|---|---|
+| **D2** — nivel canónico de cabecera `text-3xs font-bold uppercase tracking-widest` (10px) | `ui/table TableHead` + `DataTableColumnHeader` + compact skeleton/header + embedded/classic headers + `ReportTable` (`<th>` raw) migrados al nivel canónico | `ui/table.tsx`, `DataTableColumnHeader.tsx:15`, `DataTable.tsx`, `ReportTable.tsx:280`, `BudgetEditor.tsx:302` |
+| **D2+** — **el color no vive en la base** | `TableHead` base declara estructura/tipografía sin color; cada call-site declara su color explícito. Motivación medida en CSS compilado: `.text-expense` se emite *antes* de `.text-muted-foreground`, así que una base con muted volvería grises las cabeceras `text-expense` de `PayrollCard`. ~20 sitios con `TableHead` desnudo recibieron `text-muted-foreground` explícito. | `ui/table.tsx`, features (Step1_Items, Step2_Logistics, Step3_Delivery, Step4_Receipt, DeliveryDrawer, ReceiptModal, PurchaseOrderModal, NoteLogisticsModal, ProductVariantsTab, ProductSelector, CashFlowTable, SplitAllocationDialog, BudgetVarianceTable) |
+| **D3** — densidad vía tokens | `--table-header-px` bug → `0.75rem` (`globals.css:372`); primitivas y filas compact/minimal leen vars (`py-(--table-cell-py)`, `px-(--table-cell-px)`, `h-(--table-header-h)`, etc.); clases unlayered `.table-cell`/`.table-header` eliminadas de call-sites (la base ya las aporta) | `globals.css`, `ui/table.tsx`, `DataTable.tsx`, `DataTableView.tsx`, `FormLineItemsTable.tsx:179`, `ReportTable.tsx:280` |
+| **D4** — hover de fila único **0.5** vía `--table-row-hover` | Primitiva `ui/table` + compact + group header + PayrollCard + BudgetVarianceTable + ProductVariantsTab consumen `hover:bg-(--table-row-hover)` | `ui/table.tsx`, `DataTable.tsx`, `DataTableView.tsx`, `PayrollCard.tsx:43`, `BudgetVarianceTable.tsx:97`, `ProductVariantsTab.tsx:313` |
+| **D1 (resto)** — `ariaLabel?: string` | Prop opcional añadida; cableada en grid compact, tabla body embedded y classic; React omite el atributo si es `undefined`. `DataTableView` la pasa desde `entityLabel`. | `DataTable.tsx:41,176,605,802,895`, `DataTableView.tsx:253` |
+
+Notas de la resolución:
+- **Tracking residual:** `tracking-wider`/`text-xs`/`text-2xs` en cabeceras fueron sustituidos por el nivel canónico para evitar conflictos de cascada (misma propiedad, dos valores).
+- **Registro `.table-row-hover` clásico:** se mantiene intacto (5 usos) — convive con la base porque ambos resuelven a `var(--table-row-hover)`.
+- **Contrato de prueba (`animate-in` ratchet):** 3 entradas stale (DashboardPageClient, DataTable, ProductionMetricsCard) no animan inline ni en HEAD — fallo pre-existente; se quitaron del allowlist (cura documentada por el propio test: "migrating a file means deleting its entry here").
+- Las filas base crecen +2px por lado (token 8px vs `py-1.5` 6px); `table-comfortable` sigue como densidad alterna.
+- `<th>` raw de `ReportTable:280` migrado a tokens (`h-(--table-header-h) px-(--table-header-px) py-(--table-header-py)`, `font-bold text-3xs`), sin perder su color `text-muted-foreground/80`.
+
 ---
 
 ## 4. Hipótesis de contract-drift — los contratos como candidatos a estar mal diseñados
@@ -162,12 +181,12 @@ Criterios evaluados contra la evidencia de §§2-3 (consistencia verificable), n
 
 ## 6. Verdict
 
-**Needs Work**, por **defectos objetivos** que persisten independientemente de la validez de los contratos: cabeceras multi-estándar (D2) y densidad y hover con tres mecanismos (D3, D4). Track A (2026-10-09) ya resolvió los defectos *contract-independent*: ARIA del grid compact (D1), motion por fila (D5) y residuos (D6). Lo que queda (D2–D4) no es puramente técnico: exige decidir qué registro gana (token vs raw) y cómo se reescriben H1–H5. La superficie es funcionalmente rica y con una higiene de color/sombras notable (todo en tokens, cero literales); el problema no es "qué tan bien se sigue la spec" sino la **coexistencia de registros**: token-driven vs raw dentro del mismo componente.
+**Resuelto (2026-10-12).** El review original concluyó **Needs Work** por **defectos objetivos** independientes de la validez de los contratos: cabeceras multi-estándar (D2), densidad y hover con tres mecanismos (D3, D4). Track A (2026-10-09) resolvió los defectos *contract-independent*: ARIA del grid compact (D1), motion por fila (D5) y residuos (D6). Track B (2026-10-12) resolvió el resto con decisiones de diseño adoptadas (ver §3.2): nivel canónico de cabecera único (color por call-site, no en la base), densidad unificada en tokens (`--table-*` consumidos por toda la familia), hover de fila único 0.5 y nombre accesible (`ariaLabel`). La superficie queda con un único registro de estilo.
 
 ### Mantenibilidad
 - **Fuerzas:** infraestructura de tokens completa y consumida; factories de columnas (entity-fields, `DataCell`) y registry de acciones centralizan el 90% del render; deprecaciones se cumplen (0 `cardMode`); las pruebas de pesos de celda existen.
 - **Debilidades:** la familia se martilla en dos registros (token y raw) → un cambio de densidad/hover requiere tocar varios caminos; `SEG_*` es un tercer sistema; los tests no cubren las invariantes del surface (cabecera unívoca, ausencia de motion masivo, ARIA del grid compact).
-- **Acción recomendada — T8/ADR-0078 debe resolver las dos cosas a la vez:** (1) unificar cabecera en un único nivel de token (tamaño+peso+tracking) para clásico, compact, group y features; (2) hacer que compact y minimal consuman `.table-*` y que `ui/table` deje de hardcodear padding/hover; (3) ~~quitar `animate-in`/`transition-all` por fila~~ **hecho (Track A, D5)**; (4) ~~arreglar ARIA del grid (`role="grid"` + caption)~~ **parcialmente hecho (Track A, D1: falta `aria-label`/caption)**; (5) **antes de ejecutar**, validar H1–H5 en equipo: varios contratos hoy contradicen el producto (H2) o tienen adopción cero en su literal (H1), y ejecutar el refactor "hacia la spec" consolidaría decisiones potencialmente erróneas.
+- **Acción recomendada — T8/ADR-0078:** (1) ~~unificar cabecera en un único nivel de token (tamaño+peso+tracking)~~ **hecho (Track B, D2)**; (2) ~~hacer que compact y minimal consuman `.table-*` y que `ui/table` deje de hardcodear padding/hover~~ **hecho (Track B, D3–D4)**; (3) ~~quitar `animate-in`/`transition-all` por fila~~ **hecho (Track A, D5)**; (4) ~~arreglar ARIA del grid (`role="grid"` + caption)~~ **hecho (Track A, D1: estructura; Track B: `ariaLabel`)**; (5) **pendiente de validar en equipo** H1–H5 (contratos): redefinir N2 de `typography-scale` sobre tokens (H1), separar "entrada única" de "motion masivo" en `component-animation` (H2), documento de densidad contra render real (H3), centralizar hover en `--table-row-hover` en `color-system` (H4) y absorber/eliminar `SEG_*` (H5) — dos contratos ya entran en conflicto con lo implementado (la base ya no lleva color; `ANIMATE_ALLOWLIST` dejó de listar 3 archivos).
 
 ---
 
