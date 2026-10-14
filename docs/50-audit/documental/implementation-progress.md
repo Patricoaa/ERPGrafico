@@ -8,12 +8,39 @@
 | Fase | Estado |
 |---|---|
 | M0 Hotfix | **Hecha** (GAP-07, GAP-04a, GAP-05; GAP-06 adelantado) |
-| M1 Integridad | **Código hecho**; backfill de datos en dry-run, **pendiente de aprobación (D3)** |
+| M1 Integridad | **Hecha** (código + backfill aplicado en dev) · INT-15 corregido |
 | M2 Contratos | Pendiente |
 | M3 UI piloto | Pendiente (GAP-06 ya hecho) |
 | M4 Facturación y pagos | Pendiente |
 | M5 Extensión | Pendiente |
 | M6 Retiro | Pendiente |
+
+---
+
+## 2026-10-14 · INT-15 · Anulación de pago con devolución (corregido)
+
+**Diagnóstico (E, test ejecutado):** `TreasuryService.annul_movement` con `treasury_account_id` revertía el asiento del pago **y** registraba un movimiento de devolución con su propio asiento contra CxC/CxP. Resultado medido sobre los saldos contables:
+- Cobro de OV de 100, anulado con devolución a la misma caja → Caja −100 y CxC +100 respecto de antes del cobro (esperado 0 y 0).
+- Pago de OC de 100, anulado con reembolso a la misma caja → Caja +100 (esperado 0).
+- Devoluciones parciales aceptadas: se anulaba el pago completo pero solo se devolvía una parte; el resto desaparecía de la contabilidad.
+
+**Alcance:** no es solo la acción manual "Anular con devolución" del Hub. `cancel_sale_order`, `annul_invoice(force=True)` y la cancelación de OC anulan sus pagos contabilizados **con devolución a la misma cuenta**, así que toda cancelación de una orden con pagos descontaba la caja dos veces. En el dev server había 0 casos históricos (verificado con SELECT), por lo que no hubo datos que reparar.
+
+**Regla implementada** (`treasury/services.py` `annul_movement`):
+- La reversión del asiento del pago ya deshace el pago completo (restituye CxC/CxP y saca el dinero de la cuenta original). La devolución no genera otro asiento contra CxC/CxP.
+- Devolución desde la **misma cuenta** del pago: nada más que registrar.
+- Devolución desde **otra cuenta**: traspaso interno (`TRANSFER`) entre la cuenta elegida y la original, sin vínculo con la orden/factura (no altera el pagado).
+- Devolución **parcial** dentro de una anulación: se rechaza; para eso están "Registrar devolución" (`register_payment_return`, que mantiene el pago vigente) o una Nota de Crédito.
+- Cheques: se anula el cheque; su movimiento queda como registro sin asiento y sin vínculo documental.
+
+**Frontend:** el modal "Anular Pago" del Hub (`TreasuryPhase.tsx`) bloquea montos parciales y muestra el motivo.
+
+**Control permanente:** `audit_document_integrity` incluye el umbral "INT-15 devoluciones por anulación con asiento propio = 0" para detectar datos generados antes del arreglo (gate D5).
+
+**Tests:** `treasury/tests/test_annul_with_refund.py` (5): misma cuenta, otra cuenta, sin devolución, parcial rechazada, pago de OC. 4 fallaban con el código anterior. Suites `billing sales purchasing treasury core workflow inventory production`: 565 passed; los 25 fallos/errores son la línea base preexistente.
+
+**Hallazgo lateral (no corregido, fuera del alcance documental):**
+- **INT-16 · Traspasos internos rotos.** `TreasuryService.register_internal_transfer_from_request` (usado por `treasury/views.py:1054`) llama a `register_internal_transfer`, que no existe → `AttributeError` en cada traspaso desde ese endpoint. Evidencia C (grep: sin definición).
 
 ---
 
@@ -51,7 +78,7 @@
 | **OV que cambiarían de estado de entrega** | **0** | — |
 
 - Las 21 recepciones no son reparables: sus productos **no tienen ningún StockMove** (recepciones demo confirmadas sin pasar por el servicio). Quedan como datos demo inconsistentes; no se tocan.
-- **Pendiente:** aplicar con `--apply` en el dev server tras tu aprobación (D3).
+- **Aplicado el 2026-10-14** con `--apply` tras aprobación (D3). Resultado idéntico al dry-run; una segunda ejecución no encuentra nada más (idempotente). Auditoría posterior: GAP-01 0 · despachos sin move 0 · StockMove sin documento 0 % · recepciones sin move 21 (demo sin movimientos, no reparables).
 
 ### Verificación M1
 - Tests nuevos: `core/tests/test_document_link_commands.py` (3), `sales/tests/test_p24_confirm_delivery.py` (actualizado + 1 nuevo). Fallan con el código anterior.
@@ -88,8 +115,7 @@
 - El GFK sigue en el modelo; su retiro (migración) queda para M6.
 - Tests: `billing/tests/test_invoice_order_link.py` (4 tests; 3 fallan con el código anterior).
 
-### Hallazgo pendiente de decisión (no corregido)
-- **INT-15 · Anulación de pago con devolución invierte la caja dos veces.** `annul_movement` con `treasury_account_id`: revierte el asiento del pago (Dr CxC / Cr Caja) **y** crea un movimiento de devolución con su propio asiento (Dr CxC / Cr Caja). Un pago de 100 anulado con devolución total deja Caja en −100 y CxC en +100 respecto del estado previo al pago (debería quedar en 0 y 0). Evidencia: lectura de código (C), no ejecutado. El nuevo `PaymentSelector` es coherente con ese libro (la devolución resta), por lo que el saldo pendiente mostrado también refleja el doble efecto. Requiere decidir la semántica correcta (¿la anulación con devolución debe solo revertir, o solo registrar la devolución?) antes de corregir. Evidencia: `treasury/services.py` `annul_movement` (reverse_entry + asiento de devolución).
+### INT-15 · ver entrada "INT-15" más arriba (corregido después de M1)
 
 ### Verificación M0
 - Backend: suites `billing sales purchasing treasury core workflow` → 430 passed, 22 failed, 3 errors. Los 25 fallos/errores se reprodujeron **idénticos sin los cambios de M0** (preexistentes: baseline financiero, dedup de cartolas, tests que leen archivos de docs, rendimiento de búsqueda, invariantes de modelos). Los 9 tests nuevos pasan y fallan con el código anterior (salvo 1 de control).

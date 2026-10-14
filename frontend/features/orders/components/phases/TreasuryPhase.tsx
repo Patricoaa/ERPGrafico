@@ -81,6 +81,10 @@ export function TreasuryPhase({
         paymentMethodId: null,
     })
 
+    // INT-15: anular con devolución siempre devuelve el pago completo
+    const isPartialAnnulRefund =
+        annulPaymentData.amount > 0 && annulPaymentData.amount !== annulPaymentState.paymentAmount
+
     const [annulReason, setAnnulReason] = useState("")
     const [isAnnuling, setIsAnnuling] = useState(false)
 
@@ -256,7 +260,8 @@ export function TreasuryPhase({
                             disabled={
                                 isAnnuling ||
                                 !annulReason.trim() ||
-                                (annulPaymentData.amount > 0 && !annulPaymentData.treasuryAccountId)
+                                (annulPaymentData.amount > 0 && !annulPaymentData.treasuryAccountId) ||
+                                isPartialAnnulRefund
                             }
                         >
                             {isAnnuling ? 'Anulando...' : 'Anular con Devolución'}
@@ -283,6 +288,12 @@ export function TreasuryPhase({
                             </p>
                         }
                     />
+                    {isPartialAnnulRefund && (
+                        <p className="text-xs text-warning">
+                            La anulación devuelve el pago completo. Para una devolución parcial use
+                            &quot;Registrar devolución&quot; o una Nota de Crédito.
+                        </p>
+                    )}
                     <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-medium text-foreground">
                             Motivo de la anulación <span className="text-destructive">*</span>

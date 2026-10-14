@@ -36,6 +36,12 @@
 - Cálculos (C): `Invoice.total_paid` referencia `TreasuryMovement.Status` inexistente (`billing/models.py:181`) → `AttributeError` si se evalúa con pagos; `InvoiceSerializer.get_pending_amount` suma FK + allocations sin excluir anulados (`billing/serializers.py:82-85`, `:227-231`) → doble conteo si ambas vías apuntan a la misma factura (I; D 0 hoy); `SaleOrder.total_paid` no excluye anulados (`sales/models.py:249`, `sales/serializers.py:298`).
 - D: 127/248 movimientos con `invoice` **y** `sale_order` (anticipos reasignados, `billing/services.py:539`): un mismo pago aparece en ambos documentos — correcto como jerarquía, pero sin semántica explícita.
 
+### INT-15 · Anulación de pago con devolución afectaba la caja dos veces (corregido)
+- E: test `treasury/tests/test_annul_with_refund.py`; C: `treasury/services.py` `annul_movement`. Detectado durante M0, corregido tras M1. Detalle en [registro de avance](./implementation-progress.md).
+
+### INT-16 · Endpoint de traspasos internos llama a un método inexistente (pendiente)
+- C: `treasury/services.py:49` llama a `register_internal_transfer`, sin definición en el repositorio. Fuera del alcance documental.
+
 ## Severidad media
 
 | ID | Hallazgo | Evidencia |

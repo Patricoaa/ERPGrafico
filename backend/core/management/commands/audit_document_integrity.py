@@ -64,6 +64,13 @@ class Command(BaseCommand):
                 receipt_lines.filter(stock_move__isnull=True).count(), "= 0", None,
             ),
             ("GAP-03 % StockMove sin documento", round(orphan_pct, 1), "≤ 5", orphan_pct <= 5),
+            (
+                # Asiento de devolución duplicado por anulación anterior al fix INT-15
+                "INT-15 devoluciones por anulación con asiento propio",
+                TreasuryMovement.objects.filter(
+                    notes__startswith="Devolución por anulación:", journal_entry__isnull=False
+                ).count(), "= 0", None,
+            ),
         ]
         checks = [(n, v, t, (v == 0) if ok is None else ok) for n, v, t, ok in checks]
 
