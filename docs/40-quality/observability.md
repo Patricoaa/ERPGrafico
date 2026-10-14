@@ -30,7 +30,7 @@ Cuando el proyecto migre a multi-servicio o presupuesto SRE dedicado, esta doc d
 ```python
 logger.info(
     "sale_order.created",
-    extra={"sale_order_id": order.id, "customer_id": order.customer_id, "total_cents": order.total_cents},
+    extra={"sale_order_id": order.id, "customer_id": order.customer_id, "total": str(order.total)},
 )
 ```
 
@@ -97,7 +97,7 @@ Si un SLO se rompe persistentemente: abrir incidente, documentar en `99-walkthro
 
 ```ts
 // lib/analytics.ts
-trackEvent('sale_order.created', { customer_id, total_cents })
+trackEvent('sale_order.created', { customer_id, total })
 ```
 
 - Not PII. Product-analytics oriented.

@@ -3,168 +3,69 @@ layer: 40-quality
 doc: ci-cd
 status: active
 owner: platform-team
-last_review: 2026-05-21
+last_review: 2026-10-14
 ---
 
 # CI / CD
 
-> **Estado:** pipeline **objetivo/planificado**. Hoy **no existe entorno de producción ni staging**;
-> el único entorno es el dev server (`pato@192.168.1.93`). Las etapas de `deploy` y las tablas de
-> Entornos describen lo que se implementará cuando el proyecto pase a producción.
+> **Estado actual:** el pipeline corre lint / type-check / test / build / security scan en GitHub Actions.
+> **No existe entorno de producción ni staging.** El único entorno activo es el dev server (`pato@192.168.1.93`).
 
-## Pipeline stages
+## Pipeline actual (`.github/workflows/pipeline.yml`)
 
 ```
-[push] → lint → type-check → test → build → security scan → deploy(staging) → smoke → [manual] deploy(prod)
+[push/PR] → frontend job → backend job → security job
 ```
 
-*(Las etapas de deploy son objetivo futuro; hoy el pipeline corre lint/type-check/test/build/scan.)*
-
-Every stage is a hard gate. No merge if any stage red.
-
-## CI per PR
+Todos los jobs deben pasar para mergear. Los jobs de backend y lint son no-bloqueantes mientras se cierra la deuda técnica existente (ver notas en el YAML).
 
 ### Frontend job
 
 ```yaml
 - npm ci
-- npm run lint
-- npx tsc --noEmit
-- npm run test -- --coverage
-- npm run build
-- lighthouse-ci  # against built artifact
-- npm audit --audit-level=high
+- npm run lint          # non-blocking (FSD boundary errors en progreso)
+- npm run type-check    # hard gate
+- npm run test -- --run --coverage
+- npm run build         # hard gate
 ```
 
 ### Backend job
 
 ```yaml
 - pip install -r requirements.txt
-- python manage.py check --deploy
-- python manage.py makemigrations --dry-run --check
-- ruff check .
-- mypy apps
-- flake8-function-length  # enforces views ≤20 lines per action (GOVERNANCE.md #35)
-- pytest --cov=apps --cov-fail-under=80
-- pip-audit
+- python manage.py check
+- python manage.py makemigrations --check --dry-run
+- ruff check .          # ratchet: falla si introduce más de 284 errores existentes
+- pytest --cov=.        # non-blocking (124 tests fallando — deuda rastreada)
 ```
 
-### Contract sync job
-- Generate OpenAPI via `spectacular`.
-- Validate frontend Zod schemas parse example payloads.
-- Fails if drift detected.
-
 ### Security job
-- Secret scan (`gitleaks`).
-- SAST (`bandit` python, `semgrep`).
-- SBOM generation (`syft`).
+
+```yaml
+- bandit -r ./backend -ll
+- safety check
+```
 
 ## Branch strategy
 
-- `master` — protected. *(Planificado: deploy-to-staging on merge, cuando exista staging.)*
+- `master` — protected. CI verde requerido para mergear.
 - Feature branches: `feat/…`, `fix/…`, `refactor/…`.
-- PR requires: green CI, 1 approval (2 if touches `20-contracts/`), no unresolved comments.
+- PR requiere: CI verde, 1 approval (2 si toca `20-contracts/`), sin comentarios sin resolver.
 
 ## Release flow
 
-*(Planificado — no hay releases a producción todavía.)*
+El versionado es manual: `chore(release): X.Y.Z` con bump en `package.json` y tag git. Ver [versioning-policy.md](../90-governance/versioning-policy.md).
 
-```
-master merge → smoke tests (local + pre-deploy) → manual prod deploy → smoke tests (post-deploy)
-```
+## Secrets en CI
 
-- Tag `v[semver]` on prod release.
-- Changelog auto-generated from Conventional Commits (ver [versioning-policy.md](../90-governance/versioning-policy.md)).
-- Sentry release created + source maps uploaded (sustituye annotations de Grafana — no hay Grafana en stack PYME, ver [observability.md](observability.md)).
-
-## Smoke tests
-
-Bash mínimo que se corre **antes** de tagear y **después** de levantar contenedores en prod. Valida que los endpoints críticos respondan con auth real, no solo `/healthz`.
-
-Vive en `scripts/smoke.sh` (a crear) y se invoca:
-
-```bash
-SMOKE_USER=smoke SMOKE_PASS=xxx ./scripts/smoke.sh https://erp.tudominio.local
-```
-
-Esqueleto canónico:
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-BASE="${1:?usage: smoke.sh <base-url>}"
-USER="${SMOKE_USER:?env SMOKE_USER required}"
-PASS="${SMOKE_PASS:?env SMOKE_PASS required}"
-
-step() { printf '\n→ %s\n' "$*"; }
-
-step "healthz"
-curl -fsS "$BASE/api/healthz/" | grep -q '"status":"ok"'
-
-step "auth"
-TOKEN=$(curl -fsS -X POST "$BASE/api/token/" \
-  -H 'Content-Type: application/json' \
-  -d "{\"username\":\"$USER\",\"password\":\"$PASS\"}" | jq -r .access)
-[ "$TOKEN" != "null" ] && [ -n "$TOKEN" ]
-
-# Endpoints críticos: lectura barata, valida queryset + permisos.
-for path in \
-  "/api/sales/orders/?page_size=1" \
-  "/api/purchasing/orders/?page_size=1" \
-  "/api/billing/invoices/?page_size=1" \
-  "/api/treasury/movements/?page_size=1" \
-  "/api/accounting/entries/?page_size=1"; do
-  step "GET $path"
-  curl -fsS "$BASE$path" -H "Authorization: Bearer $TOKEN" \
-    | jq -e 'has("results") or has("count")' > /dev/null
-done
-
-step "smoke OK"
-```
-
-**Reglas:**
-- Cualquier endpoint cuyo fallo dejaría al usuario “sin trabajar” debe estar en `smoke.sh`. Agregar uno es 2 líneas.
-- El usuario `smoke` es un User real con rol `read-only`, sembrado por migración o `setup_demo_data`.
-- Si `smoke.sh` falla post-deploy: rollback inmediato (ver §Rollback). No debugging en caliente.
-
-## Rollback
-
-- Backend: `docker compose pull && docker compose up -d` with previous image tag.
-- Frontend: Vercel / Nginx swap to previous build.
-- DB: forward-only migrations preferred. Reverse migration only when data-safe; otherwise roll forward with fix.
-
-## Secrets in CI
-
-- GitHub Actions secrets for tokens.
-- Never echoed, never in logs (`::add-mask::` on generated).
-- Short-lived OIDC tokens preferred over long-lived API keys.
-
-## Artifacts retention
-
-| Artifact | Retention |
-|----------|-----------|
-| Build images | 90 days |
-| Test reports | 30 days |
-| Coverage reports | 30 days |
-| Sentry releases | Indefinite |
-| SBOM | Per-release, indefinite |
+- GitHub Actions secrets para tokens.
+- Nunca en logs (`::add-mask::` en generados).
+- Preferir OIDC de corta vida sobre API keys permanentes.
 
 ## Environments
-
-> **Hoy solo existe el dev server** (`pato@192.168.1.93`). Las filas `preview`/`staging`/`prod` son el
-> objetivo futuro, no entornos activos.
 
 | Env | Branch | Auto-deploy | Data | Estado |
 |-----|--------|-------------|------|--------|
 | dev server | n/a (Mutagen sync desde local) | n/a | synthetic (`setup_demo_data`) | **activo** |
-| preview | any PR | yes | synthetic | planificado |
-| staging | master | yes | anonymized prod snapshot | planificado |
-| prod | tag `v*` | manual gate | real | **no existe** |
-
-## Definition of “green”
-
-- All stages pass.
-- Coverage ≥ threshold per [testing.md](testing.md).
-- No new high/critical vulns.
-- No performance regression >10%.
-- Contract diff clean OR ADR linked.
+| staging | — | — | — | **no existe** |
+| prod | — | — | — | **no existe** |

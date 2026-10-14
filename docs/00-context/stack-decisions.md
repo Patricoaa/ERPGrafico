@@ -29,7 +29,7 @@ Why each core dependency exists. Changing any requires ADR.
 | Django 5 + DRF | Batteries-included, admin, ORM, mature ecosystem | [ADR-0008](../10-architecture/adr/0008-drf-viewsets-service-layer.md) |
 | Celery + Redis | Async tasks (invoice PDF, email, reports), scheduled jobs | [ADR-0009](../10-architecture/adr/0009-celery-for-async-side-effects.md) |
 | PostgreSQL | JSONB, transactions, row-level locking for reconciliation; FTS via tsvector + GIN | [ADR-0018](../10-architecture/adr/0018-postgresql-tsvector-migration.md) |
-| MinIO | S3-compatible, on-prem option, cheap | — |
+| Cloudflare R2 | S3-compatible, zero egress cost, CDN-native; MinIO used in local dev via docker-compose | — |
 | JWT auth (`/api/token/`) | Stateless, SPA-friendly | [ADR-0010](../10-architecture/adr/0010-jwt-auth-via-api-token.md) |
 
 ## Rejected / not used

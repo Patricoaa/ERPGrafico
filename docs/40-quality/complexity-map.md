@@ -8,6 +8,10 @@ last_review: 2026-08-14
 
 # Mapa de complejidad (Big O)
 
+> **Snapshot histórico** — verificado en commit `3fb69cfcc` (v0.3.1). El proyecto está en v0.3.16+.
+> Los ítems marcados como "pendiente" en este doc pueden ya estar resueltos. No usar como referencia
+> de arquitectura actual; consultar el código directamente.
+
 Auditoría estática exhaustiva de complejidad asintótica por entry point, generada desde la rama `feat--big-o-complexity-audit`. Metodología y convenciones en §1.
 
 **Last verified commit**: `3fb69cfcc` (0.3.1)

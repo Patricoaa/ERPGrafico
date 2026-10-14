@@ -249,7 +249,6 @@ Todas las violaciones documentadas previamente en esta sección han sido resuelt
 - Renombres `*FormModal`/`*Modal` → `*Drawer` (~16 archivos)
 - Migraciones `*View`/`*List` → `*ClientView` (`AbsenceManagementView` → `AbsenceClientView`, alias `*List` en inventory eliminados)
 
-Ver `docs/50-audit/architecture-compliance-audit-2026-06.md §4` para el detalle.
 
 ---
 

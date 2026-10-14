@@ -40,7 +40,7 @@ last_review: 2026-05-21
         ┌──────────┘   │   └─────────┐
         │              │             │
    ┌────▼────┐   ┌─────▼───┐   ┌─────▼─────┐
-   │Postgres │   │ Redis   │   │ MinIO     │
+   │Postgres │   │ Redis   │   │ R2/MinIO  │
    │(data)   │   │(cache + │   │(files,    │
    │         │   │ broker) │   │ PDFs)     │
    └─────────┘   └────┬────┘   └───────────┘
@@ -77,7 +77,7 @@ Browser
 DRF view enqueues: task.delay(args)
   → Redis (broker queue)
   → Celery worker picks up
-  → executes task (may hit Postgres, MinIO)
+  → executes task (may hit Postgres, R2/MinIO)
   → result → Redis (backend)
   → Flower displays status
 ```

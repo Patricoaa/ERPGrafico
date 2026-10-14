@@ -36,7 +36,7 @@ Task routing — common intents:
 | Bug / regression | [debug-workflow.md](docs/30-playbooks/debug-workflow.md) |
 | Refactor / rename | [refactor-workflow.md](docs/30-playbooks/refactor-workflow.md) |
 | Deprecate / remove | [deprecate-feature.md](docs/30-playbooks/deprecate-feature.md) |
-| File upload / attachment / MinIO | [add-file-upload.md](docs/30-playbooks/add-file-upload.md) |
+| File upload / attachment / R2 / storage | [add-file-upload.md](docs/30-playbooks/add-file-upload.md) |
 | Permission / role / RBAC / access guard | [add-role-permission.md](docs/30-playbooks/add-role-permission.md) |
 | N+1 query / selector / prefetch | [add-selector.md](docs/30-playbooks/add-selector.md) |
 | Settings panel / config section | [add-settings-panel.md](docs/30-playbooks/add-settings-panel.md) |
@@ -116,7 +116,7 @@ Before considering a task complete:
 
 - **Frontend**: Next.js 16 (App Router), TypeScript, Tailwind 4, Shadcn UI, TanStack Query, Zod, react-hook-form
 - **Backend**: Django 5 + DRF, Celery, Redis
-- **DB**: PostgreSQL — **Storage**: MinIO
+- **DB**: PostgreSQL — **Storage**: Cloudflare R2 (S3-compatible; MinIO in local dev)
 - **Tailwind v4**: NO `tailwind.config.ts`. Theme via `@theme` inline in [frontend/app/globals.css](frontend/app/globals.css).
 
 Detail: [docs/00-context/stack-decisions.md](docs/00-context/stack-decisions.md).

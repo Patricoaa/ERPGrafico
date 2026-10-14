@@ -29,7 +29,7 @@ Enforced via `next build` output + Lighthouse CI per PR.
 | Metric | Budget |
 |--------|--------|
 | p50 `/api/*` | <100ms |
-| p95 `/api/*` | <400ms |
+| p95 `/api/*` | <300ms |
 | p99 `/api/*` | <1s |
 | DB query per request | ≤10 |
 | Celery task p95 | task-specific, documented |

@@ -300,41 +300,6 @@ class DraftOnlyUpdateMixin:
         serializer.save()
 ```
 
-Additional mixins to add as patterns emerge:
-- `CompanyScopedMixin` — filters queryset by `request.user.company`
-- `PeriodScopedMixin` — filters by active fiscal period
-- `AuditLogMixin` — logs every state transition to `ActionLog`
-
-### Base ViewSets (`core/views.py`)
-
-Extract repeated ViewSet patterns into base classes:
-
-```python
-# backend/core/views.py
-class SingletonSettingsViewSet(viewsets.GenericViewSet):
-    """Base for settings panels (company-level singleton, no list/delete).
-    
-    Provides `current` action that returns the singleton or 404 on GET,
-    and `partial_update` on PATCH. Subclasses set `serializer_class` only.
-    """
-    lookup_field = None  # singleton — no pk in URL
-
-    def get_object(self):
-        obj, _ = self.queryset.model.objects.get_or_create(pk=1)
-        return obj
-
-    @action(detail=False, methods=['get', 'patch'])
-    def current(self, request):
-        if request.method == 'GET':
-            return Response(self.serializer_class(self.get_object()).data)
-        instance = self.get_object()
-        serializer = self.serializer_class(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
-```
-
-**Rule:** If the same ViewSet pattern appears in ≥3 apps, extract to `core/views.py`. Current candidates: `AccountingSettingsViewSet`, `SalesSettingsViewSet`, `HRSettingsViewSet`, `WorkflowSettingsViewSet`, `ProductionSettingsViewSet`, `ReconciliationSettingsViewSet`.
 
 ## Per-app quick reference
 

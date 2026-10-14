@@ -69,7 +69,7 @@ if (!items.length) return <EmptyState... />
 - Semantic colors only.
 - `h-10` minimum for interactive.
 - 8pt grid for spacing.
-- `font-heading` for titles; `font-sans` default.
+- `font-sans` (Onest) for all text. No `font-heading` token exists.
 
 ### 6. Write contract entry
 

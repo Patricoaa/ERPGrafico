@@ -53,57 +53,57 @@ Rules apply to every PR. Violations block merge unless an accepted ADR waives th
 
 ## 5. Hook rules
 
-24. Hook names: `use[Entity][Action]`. Return domain-named properties (`orders`, not `data`).
-25. Errors handled internally via `showApiError` toast; do not expose `error`.
-26. Loading flags: `isLoading` (initial), `isFetching` (refetch), `isCreating` / `isUpdating` / `isDeleting`.
-27. No `useQuery` / `useMutation` directly in components. Wrap in feature hook.
-28. `@/lib/api` importable only from `features/*/api/*`, `features/*/hooks/*`, and `/hooks/*`.
+27. Hook names: `use[Entity][Action]`. Return domain-named properties (`orders`, not `data`).
+28. Errors handled internally via `showApiError` toast; do not expose `error`.
+29. Loading flags: `isLoading` (initial), `isFetching` (refetch), `isCreating` / `isUpdating` / `isDeleting`.
+30. No `useQuery` / `useMutation` directly in components. Wrap in feature hook.
+31. `@/lib/api` importable only from `features/*/api/*`, `features/*/hooks/*`, and `/hooks/*`.
 
 ## 6. Forms
 
-29. All forms: `react-hook-form` + `zodResolver`.
-30. Zod schema in `components/forms/schema.ts`; TS type is `z.infer<typeof Schema>`.
-31. Backend serializer is authoritative; frontend Zod mirrors it.
+32. All forms: `react-hook-form` + `zodResolver`.
+33. Zod schema in `components/forms/schema.ts`; TS type is `z.infer<typeof Schema>`.
+34. Backend serializer is authoritative; frontend Zod mirrors it.
 
 ## 7. FSD boundaries
 
-32. A feature never imports internals from another feature. Use barrel `index.ts` or promote to `/shared`.
-33. `app/*` imports only feature barrels, not internals.
-34. Global hooks live in `/hooks/` only when consumed by ≥3 unrelated features.
+35. A feature never imports internals from another feature. Use barrel `index.ts` or promote to `/shared`.
+36. `app/*` imports only feature barrels, not internals.
+37. Global hooks live in `/hooks/` only when consumed by ≥3 unrelated features.
 
 ## 8. Backend layering
 
-35. Views ≤20 lines per action. Business logic in `services.py`.
-36. Complex reads in `services.py` or `ViewSet.get_queryset()`.
-37. Permission class declared on every viewset.
-38. Multi-table writes wrapped in `transaction.atomic()`.
-39. Async side effects via Celery — never synchronous in request path when >300ms.
-40. **Zero N+1** — No ORM queries (`.objects.filter/get/create`) inside any `Serializer` or `SerializerMethodField`. All related data MUST be preloaded via `select_related` / `prefetch_related` in the ViewSet. Creation of object graphs belongs in `services.py` with `@transaction.atomic`. Enforced by `assertNumQueries` tests on every list endpoint. See [zero-n-plus-one-policy.md](./zero-n-plus-one-policy.md).
+38. Views ≤20 lines per action. Business logic in `services.py`.
+39. Complex reads in `services.py` or `ViewSet.get_queryset()`.
+40. Permission class declared on every viewset.
+41. Multi-table writes wrapped in `transaction.atomic()`.
+42. Async side effects via Celery — never synchronous in request path when >300ms.
+43. **Zero N+1** — No ORM queries (`.objects.filter/get/create`) inside any `Serializer` or `SerializerMethodField`. All related data MUST be preloaded via `select_related` / `prefetch_related` in the ViewSet. Creation of object graphs belongs in `services.py` with `@transaction.atomic`. Enforced by `assertNumQueries` tests on every list endpoint. See [zero-n-plus-one-policy.md](./zero-n-plus-one-policy.md).
 
 ## 9. API contracts
 
-40. Every endpoint documented in `20-contracts/api-contracts.md`.
-41. Money fields: `DecimalField`. Transactional document totals use `decimal_places=0` (CLP has no minor unit — see ADR-0014). Canonical names: `total_net`, `total_tax`, `total`. Render only via `MoneyDisplay`. **No `_cents` integer convention.**
-42. IDs: integer auto-increment PK (no UUID — see ADR-0016 anti-goals). The business identifier is exposed as `number` / `display_id` and formatted via `ENTITY_REGISTRY` (`entity-identity.md`).
-43. Dates: ISO-8601 UTC (`Z` or `+00:00` — formato uniforme dentro de cada serializador) para datetimes; `YYYY-MM-DD` para date-only. Nunca datetimes naive (sin timezone). En frontend, prohibido usar `new Date("YYYY-MM-DD")` — parsear siempre con `new Date(y, m-1, d)` o `parseDateOnly`.
-44. Breaking API change: ADR + parallel period. Versioning is unified SemVer across FE+BE (ADR-0012) — there is no per-URL `/api/vN/` versioning.
+44. Every endpoint documented in `20-contracts/api-contracts.md`.
+45. Money fields: `DecimalField`. Transactional document totals use `decimal_places=0` (CLP has no minor unit — see ADR-0014). Canonical names: `total_net`, `total_tax`, `total`. Render only via `MoneyDisplay`. **No `_cents` integer convention.**
+46. IDs: integer auto-increment PK (no UUID — see ADR-0016 anti-goals). The business identifier is exposed as `number` / `display_id` and formatted via `ENTITY_REGISTRY` (`entity-identity.md`).
+47. Dates: ISO-8601 UTC (`Z` or `+00:00` — formato uniforme dentro de cada serializador) para datetimes; `YYYY-MM-DD` para date-only. Nunca datetimes naive (sin timezone). En frontend, prohibido usar `new Date("YYYY-MM-DD")` — parsear siempre con `new Date(y, m-1, d)` o `parseDateOnly`.
+48. Breaking API change: ADR + parallel period. Versioning is unified SemVer across FE+BE (ADR-0012) — there is no per-URL `/api/vN/` versioning.
 
 ## 10. State
 
-45. Entity states defined in `20-contracts/state-map.md`. Single source of truth.
-46. `BUSINESS_STATES.md` is deprecated. Do not reference.
-47. Invalid transitions return 409 Conflict.
+49. Entity states defined in `20-contracts/state-map.md`. Single source of truth.
+50. `BUSINESS_STATES.md` is deprecated. Do not reference.
+51. Invalid transitions return 409 Conflict.
 
 ## 11. Testing
 
-48. Coverage thresholds enforced (see `40-quality/testing.md`).
-49. Flaky test = bug. No permanent `@skip`.
-50. Tests co-located with source.
+52. Coverage thresholds enforced (see `40-quality/testing.md`).
+53. Flaky test = bug. No permanent `@skip`.
+54. Tests co-located with source.
 
 ## 12. Security
 
-51. Every PR touching auth / permissions / uploads reviewed by security team.
-52. Never log or transmit secrets / PII in plaintext (see `40-quality/security.md`).
+55. Every PR touching auth / permissions / uploads reviewed by security team.
+56. Never log or transmit secrets / PII in plaintext (see `40-quality/security.md`).
 
 ---
 last_review: 2026-06-25
