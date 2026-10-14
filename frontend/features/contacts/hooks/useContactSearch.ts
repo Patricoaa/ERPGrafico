@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { Contact } from '@/types/entities'
+import { staleTime } from '@/lib/query-config'
 
 export interface ContactSearchParams {
     search?: string
@@ -35,7 +36,7 @@ export function useContactSearch(params: ContactSearchParams = {}, enabled: bool
             return res.data.results
         },
         enabled,
-        staleTime: 5 * 60 * 1000, // 5 min
+        staleTime: staleTime.stable, // 5 min
     })
 
     return {
@@ -53,7 +54,7 @@ export function useSingleContact(id: string | number | null) {
             return res.data as Contact
         },
         enabled: !!id,
-        staleTime: 5 * 60 * 1000, // 5 min
+        staleTime: staleTime.stable, // 5 min
     })
 
     return {

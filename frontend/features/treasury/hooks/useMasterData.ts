@@ -8,6 +8,7 @@ import type { Bank, BankCreatePayload, BankUpdatePayload } from '../types'
 import type { PaymentMethod, PaymentMethodCreatePayload, PaymentMethodUpdatePayload } from '../types'
 import { getErrorMessage } from '@/lib/errors'
 import { ALLOWED_PAYMENT_METHODS_KEYS } from '@/hooks/useAllowedPaymentMethods'
+import { staleTime } from '@/lib/query-config'
 
 export type { Bank, PaymentMethod }
 export { BANKS_KEYS, PAYMENT_METHODS_KEYS }
@@ -19,7 +20,7 @@ export function useBanks() {
     const { data: banks, isLoading, refetch } = useQuery<Bank[]>({
         queryKey: BANKS_KEYS.list(),
         queryFn: treasuryApi.getBanks,
-        staleTime: 15 * 60 * 1000,
+        staleTime: staleTime.reference,
     })
 
     const invalidate = () => {
@@ -100,7 +101,7 @@ export function usePaymentMethods() {
     const { data: methods, isLoading, refetch } = useQuery<PaymentMethod[]>({
         queryKey: PAYMENT_METHODS_KEYS.list(),
         queryFn: treasuryApi.getPaymentMethods,
-        staleTime: 15 * 60 * 1000,
+        staleTime: staleTime.reference,
     })
 
     const invalidate = () => {

@@ -6,6 +6,7 @@ import { showApiError } from '@/lib/errors'
 import { treasuryApi } from '../api/treasuryApi'
 import { MOVEMENTS_KEYS } from './queryKeys'
 import type { MovementCreatePayload, TreasuryMovement, TreasuryMovementFilters } from '../types'
+import { staleTime } from '@/lib/query-config'
 
 // Re-export so existing consumers `import { TreasuryMovement } from '@/features/treasury/hooks/useTreasuryMovements'`
 // keep working without churn. Type itself now lives in `../types`.
@@ -36,7 +37,7 @@ export function useTreasuryMovements(filters: TreasuryMovementFilters = {}) {
     const { data: page_, isLoading, isFetching, refetch } = useQuery({
         queryKey: [...MOVEMENTS_KEYS.lists(), { page, page_size, ...rest }],
         queryFn: ({ signal }) => treasuryApi.getMovements(params, signal),
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
     })
 
     const createMovement = useMutation({

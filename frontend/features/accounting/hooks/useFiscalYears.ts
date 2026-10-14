@@ -7,6 +7,7 @@ import { useRealtime } from '@/features/realtime';
 import { invalidateCrossFeature } from '@/lib/invalidation';
 import { accountingApi } from '../api/accountingApi';
 import { ACCOUNTING_PERIODS_QUERY_KEY, FISCAL_YEARS_QUERY_KEY } from './queryKeys';
+import { staleTime } from '@/lib/query-config'
 
 export { FISCAL_YEARS_QUERY_KEY };
 
@@ -17,7 +18,7 @@ export function useFiscalYears() {
     const { data, isLoading, refetch } = useQuery({
         queryKey: FISCAL_YEARS_QUERY_KEY,
         queryFn: () => accountingApi.getFiscalYears({ ordering: '-year' }),
-        staleTime: 10 * 60 * 1000, // 10 min
+        staleTime: staleTime.slow, // 10 min
     });
 
     const closeMutation = useMutation({

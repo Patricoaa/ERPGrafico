@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { partnersApi } from '../api/partnersApi'
 import type { Partner } from '../types/partner'
+import { staleTime } from '@/lib/query-config'
 
 export const PARTNERS_KEYS = {
     all: ['partners'] as const,
@@ -17,7 +18,7 @@ export function usePartners() {
     const query = useQuery<Partner[]>({
         queryKey: PARTNERS_KEYS.list(),
         queryFn: () => partnersApi.getPartners(),
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
     })
     return {
         partners: query.data ?? [],

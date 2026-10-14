@@ -3,6 +3,7 @@ import { invalidateCrossFeature } from '@/lib/invalidation'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
+import { staleTime } from '@/lib/query-config'
 
 export interface Attribute {
     id: number
@@ -48,7 +49,7 @@ export function useAttributes({ filters }: { filters?: AttributeFilters } = {}) 
                 values: vals.filter((v: AttributeValue) => v.attribute === attr.id)
             }))
         },
-        staleTime: 15 * 60 * 1000, // 15 min — datos de configuración
+        staleTime: staleTime.reference, // 15 min — datos de configuración
     })
 
     const invalidate = () => invalidateCrossFeature(queryClient, [ATTRIBUTES_QUERY_KEY])

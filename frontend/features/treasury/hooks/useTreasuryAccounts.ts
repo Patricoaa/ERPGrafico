@@ -6,6 +6,7 @@ import { treasuryApi } from '../api/treasuryApi'
 import { TREASURY_ACCOUNTS_KEYS, PAYMENT_METHODS_KEYS } from './queryKeys'
 import { useRealtime } from '@/features/realtime'
 import type { TreasuryAccount, TreasuryAccountCreatePayload, TreasuryAccountUpdatePayload, TreasuryAccountProvisionPayload } from '../types'
+import { staleTime } from '@/lib/query-config'
 
 export { TREASURY_ACCOUNTS_KEYS }
 
@@ -56,7 +57,7 @@ export function useTreasuryAccounts({ filters }: { filters?: TreasuryAccountFilt
     const { data: accounts, isLoading, refetch } = useQuery({
         queryKey: [...TREASURY_ACCOUNTS_KEYS.lists(), filters],
         queryFn: () => treasuryApi.getAccounts(filters),
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
     })
 
     const invalidate = () => {

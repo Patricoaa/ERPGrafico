@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { financeApi } from '../api/financeApi'
 import { FINANCE_KEYS } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 export function useAnalysis(params?: Record<string, unknown>) {
     const enabled = params != null
@@ -8,7 +9,7 @@ export function useAnalysis(params?: Record<string, unknown>) {
         queryKey: [...FINANCE_KEYS.all, 'analysis', { params }] as const,
         queryFn: () => financeApi.getAnalysis(params),
         enabled,
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
         placeholderData: (prev) => prev,
     })
 }

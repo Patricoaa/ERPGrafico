@@ -10,6 +10,7 @@ import type {
 } from "../analyticsTypes"
 import { formatMonth } from "@/lib/analytics-helpers"
 import { assignChartColors } from "@/lib/chart-colors"
+import { staleTime } from '@/lib/query-config'
 
 export interface PieChartItem {
     id: string
@@ -61,7 +62,7 @@ export function useTreasuryMovementAnalytics(
             params.date_to ?? null,
         ],
         queryFn: () => treasuryApi.getMovementAnalytics(params),
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
     })
 
     return useMemo(() => {

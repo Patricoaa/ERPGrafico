@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { ordersApi } from '../api/ordersApi'
+import { staleTime } from '@/lib/query-config'
 
 const ORDERS_KEYS = {
     warehouses: () => ['orders', 'warehouses'] as const,
@@ -10,14 +11,14 @@ export function useNoteLogisticsData(invoiceId: number | null, enabled: boolean)
     const warehousesQuery = useQuery({
         queryKey: ORDERS_KEYS.warehouses(),
         queryFn: () => ordersApi.getWarehouses(),
-        staleTime: 10 * 60 * 1000,
+        staleTime: staleTime.slow,
         enabled,
     })
 
     const invoiceQuery = useQuery({
         queryKey: ORDERS_KEYS.invoice(invoiceId ?? 0),
         queryFn: () => ordersApi.getInvoice(invoiceId as number),
-        staleTime: 30_000,
+        staleTime: staleTime.volatile,
         enabled: enabled && !!invoiceId,
     })
 

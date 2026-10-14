@@ -10,6 +10,7 @@ import type {
 } from "../analyticsTypes"
 import { formatMonth } from "@/lib/analytics-helpers"
 import { assignChartColors } from "@/lib/chart-colors"
+import { staleTime } from '@/lib/query-config'
 
 export interface PieChartItem {
     id: string
@@ -57,7 +58,7 @@ export function useStockMoveAnalytics(params: StockMoveAnalyticsParams = {}): St
             params.date_to ?? null,
         ],
         queryFn: () => inventoryApi.getStockMoveAnalytics(params),
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
     })
 
     return useMemo(() => {

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { staleTime } from '@/lib/query-config'
 
 export function useStockReport(warehouseId?: string | null) {
     const params: Record<string, string> = {}
@@ -14,7 +15,7 @@ export function useStockReport(warehouseId?: string | null) {
             // eslint-disable-next-line pagination/no-raw-response-data -- custom @action, not paginated
             return response.data
         },
-        staleTime: 5 * 60 * 1000, // 5 min — reporte costoso
+        staleTime: staleTime.stable, // 5 min — reporte costoso
     })
 
     return {

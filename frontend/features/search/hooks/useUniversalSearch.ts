@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { searchApi, type SearchResult } from '../api/searchApi'
+import { staleTime } from '@/lib/query-config'
 
 const SEARCH_KEYS = {
     results: (q: string) => ['universal-search', q] as const,
@@ -15,7 +16,7 @@ export function useUniversalSearch(query: string): {
         queryKey: SEARCH_KEYS.results(query),
         queryFn: () => searchApi.search(query),
         enabled,
-        staleTime: 30_000,
+        staleTime: staleTime.volatile,
         placeholderData: (prev) => prev,
     })
 

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getAdvances } from '../api/hrApi'
 import type { SalaryAdvance } from '@/types/hr'
 import type { FilterState } from '@/components/shared'
+import { staleTime } from '@/lib/query-config'
 
 export const SALARY_ADVANCES_QUERY_KEY = ['hr', 'advances'] as const
 
@@ -15,7 +16,7 @@ export function useSalaryAdvances(filters?: FilterState, initialData?: SalaryAdv
             if (filters?.date_to) params.date_to = filters.date_to
             return getAdvances(Object.keys(params).length ? params : undefined)
         },
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
         initialData,
         placeholderData: (prev) => prev,
     })

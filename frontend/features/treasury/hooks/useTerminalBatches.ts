@@ -7,6 +7,7 @@ import { treasuryApi } from '../api/treasuryApi'
 import { BATCHES_KEYS } from './queryKeys'
 import type { FilterState } from '@/components/shared'
 import type { TerminalBatchCreatePayload } from '../types'
+import { staleTime } from '@/lib/query-config'
 
 export { BATCHES_KEYS }
 
@@ -22,7 +23,7 @@ export function useTerminalBatches(filters?: FilterState) {
     const { data: batches, isLoading, refetch } = useQuery({
         queryKey: [...BATCHES_KEYS.list(), filters],
         queryFn: () => treasuryApi.getTerminalBatches(Object.keys(params).length > 0 ? params : undefined),
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
     })
 
     const createBatch = useMutation({

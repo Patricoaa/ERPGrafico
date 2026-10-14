@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { type HistoricalRecord } from '@/types/audit'
+import { staleTime } from '@/lib/query-config'
 
 const ENDPOINT_MAP: Record<string, string> = {
     product: '/inventory/products',
@@ -49,7 +50,7 @@ export function useEntityHistory(entityType: string, entityId: number | string) 
             return res.data as HistoricalRecord[]
         },
         enabled: !!entityId && !!endpoint,
-        staleTime: 60 * 1000, // 1 min (history can update often)
+        staleTime: staleTime.volatile, // 1 min (history can update often)
     })
 
     return {

@@ -4,12 +4,13 @@ import { invalidateCrossFeature } from '@/lib/invalidation'
 import { creditLinesApi } from '../credit-lines/api'
 import { CREDIT_LINES_KEYS } from './queryKeys'
 import type { CreditLineCreatePayload } from '../credit-lines/types'
+import { staleTime } from '@/lib/query-config'
 
 export function useCreditLines(params?: { treasury_account_id?: number; bank_id?: number; status?: string }) {
     return useQuery({
         queryKey: [...CREDIT_LINES_KEYS.lists(), params],
         queryFn: () => creditLinesApi.list(params),
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
         placeholderData: (prev) => prev,
     })
 }
@@ -18,7 +19,7 @@ export function useCreditLine(id: number | null) {
     return useQuery({
         queryKey: CREDIT_LINES_KEYS.detail(id as number),
         queryFn: () => creditLinesApi.get(id as number),
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
         enabled: !!id,
     })
 }
@@ -27,7 +28,7 @@ export function useCreditLineOverview(id: number | null) {
     return useQuery({
         queryKey: [...CREDIT_LINES_KEYS.detail(id as number), 'overview'],
         queryFn: () => creditLinesApi.overview(id as number),
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
         enabled: !!id,
     })
 }

@@ -5,6 +5,7 @@ import { treasuryApi } from '../api/treasuryApi'
 import { MOVEMENTS_KEYS } from './queryKeys'
 import type { DateRange } from 'react-day-picker'
 import { format } from 'date-fns'
+import { staleTime } from '@/lib/query-config'
 
 export function useTerminalMovements(providerId: string, dateRange: DateRange | undefined, open: boolean) {
     return useQuery({
@@ -30,6 +31,6 @@ export function useTerminalMovements(providerId: string, dateRange: DateRange | 
             return treasuryApi.getMovements(params)
         },
         enabled: open && !!providerId && !!dateRange?.from,
-        staleTime: 30 * 1000,
+        staleTime: staleTime.volatile,
     })
 }

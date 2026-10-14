@@ -8,6 +8,7 @@ import { invalidateCrossFeature } from '@/lib/invalidation';
 import { accountingApi } from '../api/accountingApi';
 
 import { ACCOUNTING_PERIODS_QUERY_KEY } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 export { ACCOUNTING_PERIODS_QUERY_KEY }
 
@@ -18,7 +19,7 @@ export function useAccountingPeriods() {
     const { data, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTING_PERIODS_QUERY_KEY,
         queryFn: () => accountingApi.getAccountingPeriods({ ordering: '-year,-month' }),
-        staleTime: 10 * 60 * 1000, // 10 min
+        staleTime: staleTime.slow, // 10 min
     });
 
     const closeMutation = useMutation({

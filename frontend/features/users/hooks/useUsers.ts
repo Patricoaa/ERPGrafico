@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { usersApi } from "../api/usersApi"
 import { USER_KEYS } from './queryKeys'
 import type { FilterState } from '@/components/shared'
+import { staleTime } from '@/lib/query-config'
 
 export function useUsers(filters?: FilterState & { page?: number; page_size?: number }) {
     const { page = 1, page_size = 50, ...restFilters } = filters || {}
@@ -12,7 +13,7 @@ export function useUsers(filters?: FilterState & { page?: number; page_size?: nu
         queryFn: async () => {
             return await usersApi.getUsers(activeFilters)
         },
-        staleTime: 10 * 60 * 1000,
+        staleTime: staleTime.slow,
     })
 
     return {

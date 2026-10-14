@@ -4,6 +4,7 @@ import api from '@/lib/api'
 import { toPage, type Page } from '@/lib/pagination'
 import { useRealtime } from '@/features/realtime'
 import { PRODUCTS_KEYS } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 export interface StockMove {
     id: number
@@ -68,7 +69,7 @@ export function useStockMoves(filters: StockMoveFilters = {}) {
             const response = await api.get('/inventory/moves/', { params, signal })
             return toPage<StockMove>(response.data, page, page_size)
         },
-        staleTime: 2 * 60 * 1000, // 2 min — tier "Transactional"
+        staleTime: staleTime.standard, // 2 min — tier "Transactional"
     })
 
     return {

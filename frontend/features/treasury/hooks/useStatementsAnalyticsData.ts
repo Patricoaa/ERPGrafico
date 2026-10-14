@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { treasuryApi } from "../api/treasuryApi"
 import { parseDateOnly } from "@/lib/utils"
 import { assignChartColors } from "@/lib/chart-colors"
+import { staleTime } from '@/lib/query-config'
 import type {
     TcHubAnalyticsResponse,
     PaymentPerformanceRow,
@@ -47,7 +48,7 @@ export function useStatementsAnalyticsData(
             months,
             granularity,
         }),
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
         enabled: cardAccountId != null,
     })
 

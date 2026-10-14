@@ -8,6 +8,7 @@ import { useRealtime } from '@/features/realtime'
 import { useAuth } from '@/contexts/AuthContext'
 
 import { PURCHASE_INVOICES_KEYS, PURCHASE_INVOICES_QUERY_KEY } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 export { PURCHASE_INVOICES_KEYS, PURCHASE_INVOICES_QUERY_KEY }
 
@@ -23,7 +24,7 @@ export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) 
     const query = useQuery({
         queryKey: PURCHASE_INVOICES_KEYS.list(filters),
         queryFn: () => billingApi.getInvoices({ ...filters, mode: 'purchase' }),
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
         enabled: isAuthenticated,
         placeholderData: (prev) => prev,
     })

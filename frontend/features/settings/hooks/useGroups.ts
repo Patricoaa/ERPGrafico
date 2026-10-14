@@ -5,6 +5,7 @@ import { invalidateCrossFeature } from '@/lib/invalidation'
 import { settingsApi } from "../api/settingsApi"
 import { toast } from "sonner"
 import { useRealtime } from '@/features/realtime'
+import { staleTime } from '@/lib/query-config'
 export const GROUPS_QUERY_KEY = ['groups']
 
 export function useGroups() {
@@ -14,7 +15,7 @@ export function useGroups() {
     const { data: groups = [], isLoading } = useQuery({
         queryKey: GROUPS_QUERY_KEY,
         queryFn: settingsApi.getGroups,
-        staleTime: 10 * 60 * 1000,
+        staleTime: staleTime.slow,
     })
 
     const deleteMutation = useMutation({

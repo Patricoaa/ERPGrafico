@@ -5,6 +5,7 @@ import { settingsApi } from '../api/settingsApi'
 import { ACCOUNTING_SETTINGS_QUERY_KEY } from './useAccountingSettings'
 import { treasurySchema, type TreasuryFormValues } from "@/features/settings/schemas/treasury"
 import { useRealtime } from '@/features/realtime'
+import { staleTime } from '@/lib/query-config'
 
 export function useTreasurySettings() {
     const queryClient = useQueryClient()
@@ -25,7 +26,7 @@ export function useTreasurySettings() {
 
             return formattedSettings as TreasuryFormValues
         },
-        staleTime: 10 * 60 * 1000,
+        staleTime: staleTime.slow,
     })
 
     const updateMutation = useMutation({

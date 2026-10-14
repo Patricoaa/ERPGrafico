@@ -1,6 +1,7 @@
 import {useQuery} from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { Product, ProductType } from '@/types/entities'
+import { staleTime } from '@/lib/query-config'
 
 export interface ProductSearchParams {
     search?: string
@@ -63,7 +64,7 @@ export function useProductSearch(params: ProductSearchParams = {}, enabled: bool
             return await resolveVariants(results, limit)
         },
         enabled,
-        staleTime: 5 * 60 * 1000, // 5 min
+        staleTime: staleTime.stable, // 5 min
     })
 
     return {
@@ -81,7 +82,7 @@ export function useSingleProduct(id: string | number | null) {
             return res.data as Product
         },
         enabled: !!id,
-        staleTime: 5 * 60 * 1000, // 5 min
+        staleTime: staleTime.stable, // 5 min
     })
 
     return {

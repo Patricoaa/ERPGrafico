@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getAbsences } from '../api/hrApi'
 import type { Absence } from '@/types/hr'
 import type { FilterState } from '@/components/shared'
+import { staleTime } from '@/lib/query-config'
 
 export const ABSENCES_QUERY_KEY = ['hr', 'absences'] as const
 
@@ -15,7 +16,7 @@ export function useAbsences(filters?: FilterState, initialData?: Absence[]) {
             if (filters?.start_date_before) params.start_date_before = filters.start_date_before
             return getAbsences(Object.keys(params).length ? params : undefined)
         },
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
         initialData,
         placeholderData: (prev) => prev,
     })

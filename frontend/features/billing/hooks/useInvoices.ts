@@ -7,6 +7,7 @@ import type {InvoiceFilters} from '../types'
 import { SALES_KEYS } from '@/features/sales'
 
 import { INVOICES_KEYS, INVOICES_QUERY_KEY } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 export { INVOICES_KEYS, INVOICES_QUERY_KEY }
 
@@ -21,7 +22,7 @@ export function useInvoices({ filters }: UseInvoicesProps = {}) {
     const query = useQuery({
         queryKey: INVOICES_KEYS.list(filters),
         queryFn: () => billingApi.getInvoices(filters),
-        staleTime: 2 * 60 * 1000, // 2 min — TODO Fase 2: eliminar client-side filter
+        staleTime: staleTime.standard, // 2 min — TODO Fase 2: eliminar client-side filter
         placeholderData: (prev) => prev,
     })
 
@@ -109,7 +110,7 @@ export function useInvoice(id: number | null | undefined) {
     return useQuery({
         queryKey: id ? INVOICES_KEYS.detail(id) : INVOICES_KEYS.detail('noop'),
         queryFn: () => billingApi.getInvoice(id as number),
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
         enabled: !!id,
     })
 }

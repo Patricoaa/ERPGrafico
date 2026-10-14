@@ -5,6 +5,7 @@ import { settingsApi } from '../api/settingsApi'
 import { ACCOUNTING_SETTINGS_QUERY_KEY } from './useAccountingSettings'
 import type { BillingSettings, BillingSettingsUpdatePayload, AccountingSettings } from '../types'
 import { useRealtime } from '@/features/realtime'
+import { staleTime } from '@/lib/query-config'
 
 interface UseBillingSettingsReturn {
     settings: BillingSettings
@@ -18,7 +19,7 @@ export function useBillingSettingsQuery() {
     const { data: settings, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getBillingSettings,
-        staleTime: 1000 * 60 * 5,
+        staleTime: staleTime.stable,
     })
 
     return { settings, isLoading, refetch }
@@ -34,7 +35,7 @@ export function useBillingSettings(): UseBillingSettingsReturn {
     const { data: settings, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getBillingSettings,
-        staleTime: 10 * 60 * 1000,
+        staleTime: staleTime.slow,
     })
 
     const updateMutation = useMutation({

@@ -3,6 +3,7 @@ import api from '@/lib/api'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
 import { invalidateCrossFeature } from '@/lib/invalidation'
+import { staleTime } from '@/lib/query-config'
 
 export interface Category {
     id: number
@@ -43,7 +44,7 @@ export function useCategories(initialData?: Category[]) {
             // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
             return response.data
         },
-        staleTime: 15 * 60 * 1000, // 15 min — datos quasi-estáticos
+        staleTime: staleTime.reference, // 15 min — datos quasi-estáticos
         initialData,
         placeholderData: (prev) => prev,
     })
@@ -108,7 +109,7 @@ export function useCategory(id: number | null | undefined) {
             const res = await api.get<Category>(`/inventory/categories/${id as number}/`)
             return res.data
         },
-        staleTime: 15 * 60 * 1000,
+        staleTime: staleTime.reference,
         enabled: !!id,
     })
     return { category: category ?? null, isLoading, isError }

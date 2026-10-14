@@ -7,6 +7,7 @@ import { useRealtime } from '@/features/realtime'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 
 import { ACCOUNTS_QUERY_KEY, ACCOUNTS_MAPPINGS_QUERY_KEY } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 export { ACCOUNTS_QUERY_KEY, ACCOUNTS_MAPPINGS_QUERY_KEY }
 
@@ -24,7 +25,7 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
     const { data: accounts, isLoading, refetch } = useQuery({
         queryKey: [...ACCOUNTS_QUERY_KEY, filters],
         queryFn: () => accountingApi.getAccounts(filters),
-        staleTime: 15 * 60 * 1000, // 15 min — datos quasi-estáticos
+        staleTime: staleTime.reference, // 15 min — datos quasi-estáticos
     })
 
     const createMutation = useMutation({

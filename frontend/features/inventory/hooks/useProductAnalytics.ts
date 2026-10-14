@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { inventoryApi } from "../api/inventoryApi"
 import type { ProductAnalyticsParams } from "../analyticsTypes"
 import { assignChartColors } from "@/lib/chart-colors"
+import { staleTime } from '@/lib/query-config'
 
 export interface ProductAnalyticsData {
     analyticsLoading: boolean
@@ -39,7 +40,7 @@ export function useProductAnalytics(params: ProductAnalyticsParams = {}): Produc
     } = useQuery({
         queryKey: queryKey,
         queryFn: () => inventoryApi.getProductAnalytics(params),
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
     })
 
     return useMemo(() => {

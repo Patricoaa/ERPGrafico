@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { usersApi } from "../api/usersApi"
 import type { AppGroup } from '@/types/entities'
 import { GROUP_KEYS } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 export function useGroupSearch(search: string = "", enabled: boolean = true) {
     const query = useQuery({
@@ -15,7 +16,7 @@ export function useGroupSearch(search: string = "", enabled: boolean = true) {
             return data as AppGroup[]
         },
         enabled,
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
     })
 
     return {
@@ -33,7 +34,7 @@ export function useSingleGroup(id: string | number | null) {
             return data as AppGroup
         },
         enabled: !!id,
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
     })
 
     return {

@@ -3,6 +3,7 @@ import api from '@/lib/api'
 import type { Account } from '@/types/entities'
 
 import { ACCOUNT_KEYS } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 export { ACCOUNT_KEYS }
 
@@ -19,7 +20,7 @@ export function useAccountSearch(search: string = "", isLeaf: boolean = false, e
             return Array.isArray(res.data) ? res.data : res.data.results
         },
         enabled,
-        staleTime: 5 * 60 * 1000, // 5 min
+        staleTime: staleTime.stable, // 5 min
     })
 
     return {
@@ -37,7 +38,7 @@ export function useSingleAccount(id: string | number | null) {
             return res.data as Account
         },
         enabled: !!id,
-        staleTime: 5 * 60 * 1000, // 5 min
+        staleTime: staleTime.stable, // 5 min
     })
 
     return {

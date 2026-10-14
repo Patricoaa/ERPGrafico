@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { showApiError } from '@/lib/errors'
 import { useRealtime } from '@/features/realtime'
+import { staleTime } from '@/lib/query-config'
 
 export interface SaleOrderComment {
     id: number
@@ -26,7 +27,7 @@ export function useSaleOrderComments(orderId: number | string) {
             const res = await api.get(`/sales/orders/${orderId}/comments/`)
             return res.data
         },
-        staleTime: 30 * 1000,
+        staleTime: staleTime.volatile,
         enabled: !!orderId,
     })
 

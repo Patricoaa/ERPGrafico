@@ -3,6 +3,7 @@ import { inventoryApi } from '../api/inventoryApi'
 import type { InventoryDocumentFilters, InventoryDocument } from '../types'
 import { useRealtime } from '@/features/realtime'
 import { invalidateCrossFeature } from '@/lib/invalidation'
+import { staleTime } from '@/lib/query-config'
 
 export const INVENTORY_DOCUMENTS_QUERY_KEY = ['inventory', 'documents'] as const
 
@@ -12,7 +13,7 @@ export function useInventoryDocuments(filters: InventoryDocumentFilters = {}) {
     const { data: page_, isLoading, isFetching, refetch } = useQuery({
         queryKey: [...INVENTORY_DOCUMENTS_QUERY_KEY, { page, page_size, ...rest }],
         queryFn: () => inventoryApi.getInventoryDocuments({ page, page_size, ...rest }),
-        staleTime: 2 * 60 * 1000, // 2 minutes (Transactional)
+        staleTime: staleTime.standard, // 2 minutes (Transactional)
     })
 
     return {
@@ -116,7 +117,7 @@ export function usePickingTypes() {
     return useQuery({
         queryKey: ['inventory', 'pickingTypes'],
         queryFn: () => inventoryApi.getPickingTypes(),
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
     })
 }
 

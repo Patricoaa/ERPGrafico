@@ -5,6 +5,7 @@ import { settingsApi } from '../api/settingsApi'
 import { ACCOUNTING_SETTINGS_QUERY_KEY } from './useAccountingSettings'
 import type { InventorySettings, InventorySettingsUpdatePayload, AccountingSettings } from '../types'
 import { useRealtime } from '@/features/realtime'
+import { staleTime } from '@/lib/query-config'
 
 interface UseInventorySettingsReturn {
     settings: InventorySettings
@@ -24,7 +25,7 @@ export function useInventorySettings(): UseInventorySettingsReturn {
     const { data: settings, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getInventorySettings,
-        staleTime: 10 * 60 * 1000, // 10 min
+        staleTime: staleTime.slow, // 10 min
     })
 
     const updateMutation = useMutation({

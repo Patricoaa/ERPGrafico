@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { usersApi } from "../api/usersApi"
 import type { AppUser } from '@/types/entities'
 import { USER_KEYS } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 export function useUserSearch(search: string = "", enabled: boolean = true) {
     const query = useQuery({
@@ -15,7 +16,7 @@ export function useUserSearch(search: string = "", enabled: boolean = true) {
             return (res.results as AppUser[]) ?? []
         },
         enabled,
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
     })
 
     return {
@@ -33,7 +34,7 @@ export function useSingleUser(id: string | number | null) {
             return data as AppUser
         },
         enabled: !!id,
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
     })
 
     return {

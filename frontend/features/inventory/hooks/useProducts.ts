@@ -6,6 +6,7 @@ import type { Product, ProductFilters, ProductUpdatePayload } from '../types'
 import type { Page } from '@/lib/pagination'
 import { BOMS_QUERY_KEY, PRODUCTS_KEYS, PRODUCTS_QUERY_KEY } from './queryKeys'
 import { invalidateCrossFeature } from '@/lib/invalidation'
+import { staleTime } from '@/lib/query-config'
 
 // Re-export for backward compatibility with external consumers that still
 // import the flat constant directly (production/useBOMs, usePricingRules).
@@ -27,7 +28,7 @@ export function useProducts({ filters, initialData, page = 1, page_size = 50 }: 
     const query = useQuery({
         queryKey: PRODUCTS_KEYS.list(activeFilters),
         queryFn: () => inventoryApi.getProducts(activeFilters),
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
         initialData,
         placeholderData: (prev) => prev,
     })
@@ -125,7 +126,7 @@ export function useProduct(id: number | null | undefined) {
     const { data: product, isLoading, isError } = useQuery({
         queryKey: id ? PRODUCTS_KEYS.detail(id) : ['products', 'detail', 'noop'],
         queryFn: () => inventoryApi.getProduct(id as number),
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
         enabled: !!id,
     })
     return { product: product ?? null, isLoading, isError }
@@ -147,7 +148,7 @@ export function useProductInsights<T = unknown>(id: number | null | undefined) {
             if (!id) return null
             return inventoryApi.getProductInsights<T>(id)
         },
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
         enabled: !!id,
     })
     return { insights: insights ?? null, isLoading, isError, refetch }

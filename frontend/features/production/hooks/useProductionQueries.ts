@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { productionApi } from '../api/productionApi'
 import { PRODUCTION_METRICS_KEY } from './queryKeys'
 import { ACCOUNTING_SETTINGS_KEY } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 export interface ProductionMetrics {
     avg_time_by_stage: Record<string, number>
@@ -16,7 +17,7 @@ export function useProductionMetrics() {
     return useQuery<ProductionMetrics>({
         queryKey: PRODUCTION_METRICS_KEY,
         queryFn: productionApi.getProductionMetrics,
-        staleTime: 60 * 1000,
+        staleTime: staleTime.volatile,
         refetchInterval: 60000,
     })
 }
@@ -28,7 +29,7 @@ export function useAllowedDteTypes() {
             const data = await productionApi.getAccountingSettings()
             return (data as { allowed_dte_types_receive?: string[] }).allowed_dte_types_receive || ["FACTURA", "BOLETA"]
         },
-        staleTime: 1000 * 60 * 60,
+        staleTime: staleTime.session,
     })
 }
 
@@ -39,6 +40,6 @@ export function useCoreAllowedDteTypes() {
             const data = await productionApi.getCoreSettings()
             return (data as { allowed_dte_types_receive?: string[] }).allowed_dte_types_receive || ["FACTURA", "BOLETA"]
         },
-        staleTime: 1000 * 60 * 60,
+        staleTime: staleTime.session,
     })
 }

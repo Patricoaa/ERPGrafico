@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { PURCHASING_KEYS } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 export function usePurchaseOrderDetail(id: number | null) {
   return useQuery({
@@ -9,7 +10,7 @@ export function usePurchaseOrderDetail(id: number | null) {
       const res = await api.get(`/purchasing/orders/${id}/`)
       return res.data as Record<string, unknown>
     },
-    staleTime: 2 * 60 * 1000,
+    staleTime: staleTime.standard,
     enabled: !!id,
   })
 }

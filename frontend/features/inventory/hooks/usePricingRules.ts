@@ -4,6 +4,7 @@ import type { FilterState } from '@/components/shared'
 import { useRealtime } from '@/features/realtime'
 import { PRODUCTS_QUERY_KEY } from './queryKeys'
 import { invalidateCrossFeature } from '@/lib/invalidation'
+import { staleTime } from '@/lib/query-config'
 
 export interface PricingRule {
     id: number
@@ -46,7 +47,7 @@ export function usePricingRules(filters?: FilterState) {
             // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
             return response.data
         },
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
     })
 
     const invalidate = () => {
@@ -105,7 +106,7 @@ export function useProductPricingRules(productId: number | null | undefined) {
             // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
             return response.data
         },
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
         enabled: !!productId,
     })
 

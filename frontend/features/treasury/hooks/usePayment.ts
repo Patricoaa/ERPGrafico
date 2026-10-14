@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { PAYMENTS_KEYS } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 export function usePayment(id: number | null) {
   return useQuery({
@@ -9,7 +10,7 @@ export function usePayment(id: number | null) {
       const res = await api.get(`/treasury/payments/${id}/`)
       return res.data
     },
-    staleTime: 2 * 60 * 1000,
+    staleTime: staleTime.standard,
     enabled: !!id,
   })
 }

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { BaseProduct } from '@/features/inventory/types'
+import { staleTime } from '@/lib/query-config'
 
 export interface UseVariantsOptions {
     productId?: number
@@ -51,7 +52,7 @@ export function useVariants({ productId, enabled = true, activeOnly = true, extr
             return []
         },
         enabled: enabled && !!productId,
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        staleTime: staleTime.stable, // 5 minutes
     })
     return { variants: variants ?? [], isLoading, isError, refetch }
 }

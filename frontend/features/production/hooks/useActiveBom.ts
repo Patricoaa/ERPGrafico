@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { staleTime } from '@/lib/query-config'
 
 export interface BomSuggestion {
   active: boolean
@@ -18,7 +19,7 @@ export function useActiveBom(
       const res = await api.get<{ results: BomSuggestion[] }>(`/production/boms/?product_id=${productId}`)
       return res.data.results.find((b) => b.active) ?? null
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: staleTime.stable,
     enabled: (options.enabled ?? true) && !!productId,
   })
 }

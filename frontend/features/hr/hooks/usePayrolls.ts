@@ -3,6 +3,7 @@ import { getPayrolls, getPayroll, getPayrollConcepts, getPayrollPayments } from 
 import { getEmployeePayrollPreview } from '@/features/profile'
 import type {Payroll, PayrollConcept, PayrollPayment} from '@/types/hr'
 import type { FilterState } from '@/components/shared'
+import { staleTime } from '@/lib/query-config'
 
 export const PAYROLLS_QUERY_KEY = ['hr', 'payrolls'] as const
 
@@ -18,7 +19,7 @@ export function usePayrolls(filters?: FilterState, initialData?: Payroll[]) {
             if (filters?.date_to) params.date_to = filters.date_to
             return getPayrolls(Object.keys(params).length ? params : undefined)
         },
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
         initialData,
         placeholderData: (prev) => prev,
     })
@@ -46,7 +47,7 @@ export type EmployeeBasic = {
 export function usePayrollDetail(payrollId: number, viewMode: 'admin' | 'employee' = 'admin', employee?: EmployeeBasic | null) {
     const { data: payrollDetail, isLoading, isError, refetch } = useQuery({
         queryKey: [...PAYROLLS_QUERY_KEY, 'detail', payrollId, viewMode],
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
         queryFn: async () => {
             if (viewMode === 'employee') {
                 const pData = await getEmployeePayrollPreview(payrollId) as Record<string, unknown>

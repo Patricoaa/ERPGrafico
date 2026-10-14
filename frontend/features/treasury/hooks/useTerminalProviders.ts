@@ -7,6 +7,7 @@ import { treasuryApi } from "../api/treasuryApi"
 import { TERMINAL_PROVIDERS_KEYS, TERMINAL_DEVICES_KEYS } from "./queryKeys"
 import type { PaymentTerminalProvider, PaymentTerminalProviderCreatePayload, PaymentTerminalProviderUpdatePayload } from "../types"
 import type { PaymentTerminalDevice, PaymentTerminalDeviceCreatePayload, PaymentTerminalDeviceUpdatePayload } from "../types"
+import { staleTime } from '@/lib/query-config'
 export type { PaymentTerminalProvider, PaymentTerminalDevice }
 
 export function useTerminalProviders() {
@@ -16,7 +17,7 @@ export function useTerminalProviders() {
     const { data: providers, isLoading, error, refetch } = useQuery<PaymentTerminalProvider[]>({
         queryKey: TERMINAL_PROVIDERS_KEYS.lists(),
         queryFn: treasuryApi.getTerminalProviders,
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
     })
 
     const invalidate = () => {
@@ -72,7 +73,7 @@ export function useTerminalDevices(filters?: Record<string, string>) {
     const { data: devices, isLoading, error, refetch } = useQuery<PaymentTerminalDevice[]>({
         queryKey: [...TERMINAL_DEVICES_KEYS.lists(), filters],
         queryFn: () => treasuryApi.getTerminalDevices(filters),
-        staleTime: 15 * 60 * 1000,
+        staleTime: staleTime.reference,
     })
 
     const invalidate = () => {

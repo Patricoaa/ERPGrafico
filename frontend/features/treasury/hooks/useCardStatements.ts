@@ -7,6 +7,7 @@ import type {
 } from '../card-statements/types'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useRealtime } from '@/features/realtime'
+import { staleTime } from '@/lib/query-config'
 
 const STMT_KEYS = {
     all: ['card-statements'] as const,
@@ -19,7 +20,7 @@ export function useCardStatements(params?: Record<string, string>) {
     return useQuery({
         queryKey: STMT_KEYS.list(params),
         queryFn: () => cardStatementsApi.list(params),
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
         placeholderData: (prev) => prev,
     })
 }
@@ -29,7 +30,7 @@ export function useCardStatement(id: number | null) {
         queryKey: STMT_KEYS.detail(id ?? 0),
         queryFn: () => cardStatementsApi.get(id as number),
         enabled: id != null,
-        staleTime: 60 * 1000,
+        staleTime: staleTime.volatile,
     })
 }
 
@@ -38,7 +39,7 @@ export function useStatementCharges(statementId: number | null) {
         queryKey: [...STMT_KEYS.detail(statementId ?? 0), 'charges'],
         queryFn: () => cardStatementsApi.getCharges(statementId as number),
         enabled: statementId != null,
-        staleTime: 60 * 1000,
+        staleTime: staleTime.volatile,
     })
 }
 

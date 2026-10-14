@@ -4,6 +4,7 @@ import api from '@/lib/api'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
 import type { FilterState } from '@/components/shared'
+import { staleTime } from '@/lib/query-config'
 
 export interface UoMCategory {
     id: number
@@ -63,7 +64,7 @@ export function useAllowedUoMs(productId: number | string | null | undefined, co
             return res.data
         },
         enabled: !!productId,
-        staleTime: 30 * 60 * 1000, // 30 min — datos quasi-estáticos por producto
+        staleTime: staleTime.extended, // 30 min — datos quasi-estáticos por producto
     })
 }
 
@@ -88,7 +89,7 @@ export function useUoMs(filters?: FilterState) {
             // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
             return response.data
         },
-        staleTime: 60 * 60 * 1000, // 1 hora — datos estáticos
+        staleTime: staleTime.session, // 1 hora — datos estáticos
     })
 
     const { data: categories, isLoading: isCategoriesLoading } = useQuery({
@@ -98,7 +99,7 @@ export function useUoMs(filters?: FilterState) {
             // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
             return response.data
         },
-        staleTime: 60 * 60 * 1000, // 1 hora — datos estáticos
+        staleTime: staleTime.session, // 1 hora — datos estáticos
     })
 
     const deleteMutation = useMutation({

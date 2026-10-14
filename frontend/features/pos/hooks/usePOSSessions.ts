@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { posApi } from '../api/posApi'
 import type { FilterState } from '@/components/shared'
+import { staleTime } from '@/lib/query-config'
 
 export interface POSSession {
     id: number
@@ -39,7 +40,7 @@ export function usePOSSessions(filters?: FilterState) {
             const data = await posApi.getSessions(params) as unknown as POSSession[]
             return data
         },
-        staleTime: 60 * 1000, // 1 min — datos operativos activos
+        staleTime: staleTime.volatile, // 1 min — datos operativos activos
     })
 
     return {

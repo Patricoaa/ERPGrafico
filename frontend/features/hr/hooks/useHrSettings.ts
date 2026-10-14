@@ -13,6 +13,7 @@ import {
 } from '../api/hrApi'
 import type { AFP, PayrollConcept } from '@/types/hr'
 import { useRealtime } from '@/features/realtime'
+import { staleTime } from '@/lib/query-config'
 
 export const HR_SETTINGS_KEYS = {
     all: ['hr'] as const,
@@ -34,19 +35,19 @@ export function useHrSettings() {
     const settingsQuery = useQuery<GlobalHRSettings>({
         queryKey: HR_SETTINGS_KEYS.settings(),
         queryFn: () => getGlobalHRSettings(),
-        staleTime: 10 * 60 * 1000,
+        staleTime: staleTime.slow,
     })
 
     const conceptsQuery = useQuery<PayrollConcept[]>({
         queryKey: HR_SETTINGS_KEYS.concepts(),
         queryFn: () => getPayrollConcepts(),
-        staleTime: 10 * 60 * 1000,
+        staleTime: staleTime.slow,
     })
 
     const afpsQuery = useQuery<AFP[]>({
         queryKey: HR_SETTINGS_KEYS.afps(),
         queryFn: () => getAFPs(),
-        staleTime: 15 * 60 * 1000,
+        staleTime: staleTime.reference,
     })
 
     const updateSettingsMutation = useMutation({

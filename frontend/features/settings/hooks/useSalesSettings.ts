@@ -5,6 +5,7 @@ import { settingsApi } from '../api/settingsApi'
 import type { SalesSettings, SalesSettingsUpdatePayload } from '../types'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRealtime } from '@/features/realtime'
+import { staleTime } from '@/lib/query-config'
 
 
 export const SALES_SETTINGS_QUERY_KEY = ['settings-sales']
@@ -29,7 +30,7 @@ export function useSalesSettings(): UseSalesSettingsReturn {
     const { data: settings, isLoading, refetch } = useQuery({
         queryKey: SALES_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getSalesSettings,
-        staleTime: 10 * 60 * 1000, // 10 min
+        staleTime: staleTime.slow, // 10 min
     })
 
     const updateMutation = useMutation({

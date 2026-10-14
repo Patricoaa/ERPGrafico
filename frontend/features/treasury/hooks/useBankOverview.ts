@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { treasuryApi } from '../api/treasuryApi'
 import { BANKS_KEYS } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 export interface BankOverviewMaturityItem {
     type: string
@@ -90,7 +91,7 @@ export function useBankOverview(bankId: number | null) {
         queryKey: [...BANKS_KEYS.all, 'overview', bankId],
         queryFn: () => treasuryApi.getBankOverview(bankId as number),
         enabled: bankId != null,
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
         placeholderData: (prev) => prev,
     })
 }

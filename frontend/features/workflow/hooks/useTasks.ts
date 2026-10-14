@@ -3,6 +3,7 @@ import { useRef, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { getTasks, type Task } from '../api/workflowApi'
 import { WORKFLOW_KEYS } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 interface TaskListResponse {
     results: Task[]
@@ -20,14 +21,14 @@ export function useTasks() {
         queryKey: [...WORKFLOW_KEYS.tasks(), 'approvals'],
         queryFn: () => getTasks({ category: 'APPROVAL' }),
         refetchInterval: 30_000,
-        staleTime: 15_000,
+        staleTime: staleTime.volatile,
     })
 
     const operationalQuery = useQuery({
         queryKey: [...WORKFLOW_KEYS.tasks(), 'operational'],
         queryFn: () => getTasks({ category: 'TASK', status: 'PENDING' }),
         refetchInterval: 30_000,
-        staleTime: 15_000,
+        staleTime: staleTime.volatile,
     })
 
     const approvalTasks = normalizeTasks(approvalsQuery.data)

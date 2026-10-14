@@ -3,6 +3,7 @@ import api from "@/lib/api"
 import type { WorkflowRule, NotificationRule } from "@/types/entities"
 import * as workflowApi from '../api/workflowApi'
 import { WORKFLOW_KEYS } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 export interface WorkflowRecurrentSettings {
     f29_creation_day?: number
@@ -25,7 +26,7 @@ export function useWorkflowRulesQuery() {
             const res = await api.get<{ results: WorkflowRule[] }>("/workflow/assignment-rules/")
             return res.data.results
         },
-        staleTime: 10 * 60 * 1000,
+        staleTime: staleTime.slow,
     })
     return { rules: rules ?? [], isLoading, isError }
 }
@@ -37,7 +38,7 @@ export function useNotificationRulesQuery() {
             const res = await api.get<{ results: NotificationRule[] }>("/workflow/notification-rules/")
             return res.data.results
         },
-        staleTime: 10 * 60 * 1000,
+        staleTime: staleTime.slow,
     })
     return { notificationRules: notificationRules ?? [], isLoading, isError }
 }
@@ -49,7 +50,7 @@ export function useWorkflowRecurrentSettingsQuery() {
             const res = await api.get("/workflow/settings/current/")
             return res.data as WorkflowRecurrentSettings
         },
-        staleTime: 10 * 60 * 1000,
+        staleTime: staleTime.slow,
     })
     return { recurrentSettings: recurrentSettings ?? undefined, isLoading, isError }
 }
@@ -58,7 +59,7 @@ export function useTask(taskId: number | string) {
     const { data: task, isLoading, isError } = useQuery({
         queryKey: WORKFLOW_KEYS.taskDetail(taskId),
         queryFn: () => workflowApi.getTask(taskId),
-        staleTime: 30 * 1000,
+        staleTime: staleTime.volatile,
         enabled: !!taskId,
     })
     return { task: task ?? null, isLoading, isError }

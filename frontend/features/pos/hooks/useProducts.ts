@@ -13,6 +13,7 @@ import { invalidateCrossFeature } from '@/lib/invalidation'
 import { inventoryApi } from '@/features/inventory'
 import { useDebounce } from '@/hooks/useDebounce'
 import { POS_KEYS } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 const EMPTY_ARRAY: Product[] = []
 
@@ -56,7 +57,7 @@ export function useProducts() {
             })
             return (page.results ?? []) as unknown as Product[]
         },
-        staleTime: 1000 * 60 * 5,
+        staleTime: staleTime.stable,
     })
 
     // Sync global state if needed (though we should ideally use React Query data directly)
@@ -71,7 +72,7 @@ export function useProducts() {
             const data = await inventoryApi.getCategories()
             return (Array.isArray(data) ? data : ((data as Record<string, unknown>).results ?? [])) as unknown as Category[]
         },
-        staleTime: 1000 * 60 * 60,
+        staleTime: staleTime.session,
     })
 
     // 3. Fetch UoMs
@@ -81,7 +82,7 @@ export function useProducts() {
             const data = await posApi.getUoms({ is_active: true, page_size: 500 })
             return Array.isArray(data) ? data : ((data as { results?: unknown[] })?.results ?? [])
         },
-        staleTime: 1000 * 60 * 60,
+        staleTime: staleTime.session,
     })
 
     // Coordinate global loading state

@@ -3,6 +3,7 @@ import { inventoryApi } from '../api/inventoryApi'
 import type { InventoryCountFilters } from '../types'
 import { useRealtime } from '@/features/realtime'
 import { invalidateCrossFeature } from '@/lib/invalidation'
+import { staleTime } from '@/lib/query-config'
 
 export const INVENTORY_COUNTS_QUERY_KEY = ['inventory', 'counts'] as const
 
@@ -11,7 +12,7 @@ export function useInventoryCounts(filters: InventoryCountFilters = {}) {
     const { data: page_, isLoading, isFetching, refetch } = useQuery({
         queryKey: [...INVENTORY_COUNTS_QUERY_KEY, { page, page_size, ...rest }],
         queryFn: () => inventoryApi.getInventoryCounts({ page, page_size, ...rest }),
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
     })
     return {
         page: page_,

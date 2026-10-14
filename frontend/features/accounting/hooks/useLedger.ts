@@ -3,6 +3,7 @@ import { accountingApi } from '../api/accountingApi'
 import type { LedgerData } from '../types'
 
 import { LEDGER_QUERY_KEY } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 export { LEDGER_QUERY_KEY }
 
@@ -16,6 +17,6 @@ export function useLedger(
     return useQuery<LedgerData>({
         queryKey: [LEDGER_QUERY_KEY, accountId, sd, ed],
         queryFn: () => accountingApi.getLedger(accountId, sd, ed),
-        staleTime: 2 * 60 * 1000, // 2 min
+        staleTime: staleTime.standard, // 2 min
     })
 }

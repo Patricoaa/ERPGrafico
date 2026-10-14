@@ -4,6 +4,7 @@ import { accountingApi } from '@/features/accounting'
 import { type Account } from '@/features/accounting'
 import { useRealtime } from '@/features/realtime'
 import { invalidateCrossFeature } from '@/lib/invalidation'
+import { staleTime } from '@/lib/query-config'
 
 export type MappingType = 'is' | 'cf' | 'bs'
 
@@ -16,7 +17,7 @@ export function useAccountMappings(mappingType: MappingType) {
         queryKey: ['accounts', 'mappings'], 
         queryFn: () => accountingApi.getAccounts(),
         refetchOnWindowFocus: false,
-        staleTime: 15 * 60 * 1000, // 15 min — cuentas son quasi-estáticas
+        staleTime: staleTime.reference, // 15 min — cuentas son quasi-estáticas
     })
 
     // Filter relevant accounts based on mapping type

@@ -9,6 +9,7 @@ import { defaultsSchema, type DefaultsFormValues } from "@/features/settings/sch
 import { taxSchema, type TaxFormValues } from "@/features/settings/schemas/tax"
 import { hrSchema, type HRSettingsFormValues } from "@/features/settings/schemas/hr"
 import { purchasingSchema, type PurchasingFormValues } from "@/features/settings/schemas/purchasing"
+import { staleTime } from '@/lib/query-config'
 
 export const ACCOUNTING_SETTINGS_QUERY_KEY = ['accounting-settings']
 
@@ -19,7 +20,7 @@ export function useAccountingSettings() {
     const { data: rawUntyped, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
         queryFn: () => settingsApi.getCurrentSettings().then(d => d as unknown as Record<string, unknown>),
-        staleTime: 10 * 60 * 1000,
+        staleTime: staleTime.slow,
     })
 
     const rawSettings = rawUntyped ?? ({} as Record<string, unknown>)

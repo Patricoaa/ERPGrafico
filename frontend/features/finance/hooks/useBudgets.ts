@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { FINANCE_KEYS } from './queryKeys'
 import { useRealtime } from '@/features/realtime'
 import { invalidateCrossFeature } from '@/lib/invalidation'
+import { staleTime } from '@/lib/query-config'
 
 export type { Budget }
 
@@ -18,7 +19,7 @@ export function useBudgetDetailData(id: number | null) {
             return { budget, execution }
         },
         enabled: id != null,
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
         placeholderData: (prev) => prev,
     })
 }
@@ -28,7 +29,7 @@ export function useBudgetVariance(id: number | null, params?: Record<string, unk
         queryKey: FINANCE_KEYS.budgets.variance(id ?? 0),
         queryFn: () => financeApi.getBudgetVariance(id as number, params),
         enabled: id != null,
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
     })
 }
 
@@ -39,7 +40,7 @@ export function useBudgets() {
     const { data, isLoading, refetch } = useQuery({
         queryKey: FINANCE_KEYS.budgets.lists(),
         queryFn: financeApi.getBudgets,
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
     })
 
     const createMutation = useMutation({

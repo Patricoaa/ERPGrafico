@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getCreditPortfolio, getBlacklistedPortfolio, getGlobalCreditHistory } from '../api/creditsApi'
 import { invalidateCrossFeature } from '@/lib/invalidation'
+import { staleTime } from '@/lib/query-config'
 
 const CREDITS_KEY = ['credits'] as const
 
@@ -10,7 +11,7 @@ export function useCreditPortfolio() {
     const query = useQuery({
         queryKey: [...CREDITS_KEY, 'portfolio'],
         queryFn: getCreditPortfolio,
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
     })
 
     const refetch = () => invalidateCrossFeature(queryClient, [[...CREDITS_KEY, 'portfolio']])
@@ -29,7 +30,7 @@ export function useBlacklistedPortfolio() {
     const query = useQuery({
         queryKey: [...CREDITS_KEY, 'blacklist'],
         queryFn: getBlacklistedPortfolio,
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
     })
 
     const refetch = () => invalidateCrossFeature(queryClient, [[...CREDITS_KEY, 'blacklist']])
@@ -45,6 +46,6 @@ export function useCreditHistory() {
     return useQuery({
         queryKey: [...CREDITS_KEY, 'history'],
         queryFn: getGlobalCreditHistory,
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
     })
 }

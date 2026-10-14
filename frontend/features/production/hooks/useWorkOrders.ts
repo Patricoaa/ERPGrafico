@@ -4,6 +4,7 @@ import { invalidateCrossFeature } from '@/lib/invalidation'
 import type { WorkOrder } from '@/features/production/types'
 import { toPage, type Page } from '@/lib/pagination'
 import { WORK_ORDERS_LIST_KEY } from './useWorkOrderMutations'
+import { staleTime } from '@/lib/query-config'
 
 export { WORK_ORDERS_LIST_KEY }
 
@@ -42,7 +43,7 @@ export function useWorkOrders(filters?: WorkOrderFilters, initialData?: Page<Wor
             const res = await api.get('/production/orders/', { params })
             return toPage<WorkOrder>(res.data, page, page_size)
         },
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
         initialData,
         placeholderData: (prev) => prev,
     })
@@ -65,7 +66,7 @@ export function useWorkOrder(id: string | number) {
             const res = await api.get(`/production/orders/${id}/`)
             return res.data
         },
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
         enabled: !!id,
     })
     return { order: data, isLoading, isError, refetch }

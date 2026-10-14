@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getEmployees, getEmployee, getAFPs, getPayrollConcepts } from '../api/hrApi'
 import type {Employee, PayrollConcept} from '@/types/hr'
 import type { FilterState } from '@/components/shared'
+import { staleTime } from '@/lib/query-config'
 
 export const EMPLOYEES_QUERY_KEY = ['hr', 'employees'] as const
 
@@ -14,7 +15,7 @@ export function useEmployees(filters?: FilterState, initialData?: Employee[]) {
             if (filters?.status) params.status = filters.status
             return getEmployees(Object.keys(params).length ? params : undefined)
         },
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
         initialData,
         placeholderData: (prev) => prev,
     })
@@ -37,7 +38,7 @@ export function useEmployee(id: number | string | undefined) {
     const { data: employee, isLoading, isError } = useQuery({
         queryKey: [...EMPLOYEES_QUERY_KEY, 'detail', id],
         queryFn: () => getEmployee(Number(id)),
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
         enabled: !!id,
     })
     return { employee: employee ?? null, isLoading, isError }
@@ -56,7 +57,7 @@ export function useEmployeeFormDeps(enabled: boolean) {
                 concepts: conceptsData.filter((c: PayrollConcept) => c.formula_type === 'EMPLOYEE_SPECIFIC')
             }
         },
-        staleTime: 10 * 60 * 1000,
+        staleTime: staleTime.slow,
         enabled
     })
     return { employeeFormDeps: employeeFormDeps ?? null, isLoading, isError }

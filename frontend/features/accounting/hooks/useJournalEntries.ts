@@ -9,6 +9,7 @@ import { invalidateCrossFeature } from '@/lib/invalidation'
 import type { FilterState } from '@/components/shared'
 
 import { JOURNAL_ENTRIES_QUERY_KEY } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 export { JOURNAL_ENTRIES_QUERY_KEY }
 
@@ -52,7 +53,7 @@ export function useJournalEntry(id: string | number | undefined) {
             const data = await accountingApi.getEntry(id as string | number)
             return data as JournalEntry
         },
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
         enabled: !!id,
     })
 }
@@ -71,7 +72,7 @@ export function useJournalEntries(filters?: FilterState & { page?: number; page_
             if (restFilters?.date_before) params['date_before'] = restFilters.date_before
             return await accountingApi.getEntries(params)
         },
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
     })
 
     return {

@@ -9,6 +9,7 @@ import { useRealtime } from '@/features/realtime'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 
 import { CONTACTS_KEYS } from './queryKeys'
+import { staleTime } from '@/lib/query-config'
 
 export { CONTACTS_KEYS }
 
@@ -16,7 +17,7 @@ export function useContacts({ filters, initialData }: { filters?: ContactFilters
     const query = useQuery({
         queryKey: CONTACTS_KEYS.list(filters || {}),
         queryFn: () => contactsApi.getContacts(filters),
-        staleTime: 5 * 60 * 1000, // 5 min
+        staleTime: staleTime.stable, // 5 min
         initialData,
         placeholderData: (prev) => prev,
     })
@@ -94,7 +95,7 @@ export function useContactInsights(id: number | undefined) {
         queryKey: id ? CONTACTS_KEYS.insights(id) : ['contacts', 'insights', 'noop'],
         queryFn: () => contactsApi.getInsights(id as number),
         enabled: !!id,
-        staleTime: 5 * 60 * 1000, // 5 min
+        staleTime: staleTime.stable, // 5 min
     })
 }
 
@@ -103,7 +104,7 @@ export function useContact(id: number | null | undefined) {
     return useQuery({
         queryKey: id ? CONTACTS_KEYS.detail(id) : ['contacts', 'detail', 'noop'],
         queryFn: () => contactsApi.getContact(id as number),
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
         enabled: !!id,
     })
 }
@@ -126,7 +127,7 @@ export function useContactCreditLedger(contactId: number | null | undefined) {
             const data = await contactsApi.getCreditLedger(contactId as number)
             return data.filter(d => Number(d.balance) > 0)
         },
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
         enabled: !!contactId,
     })
 }

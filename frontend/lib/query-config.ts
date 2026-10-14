@@ -21,6 +21,12 @@ export const staleTime = {
     /** Reference data that almost never changes: VAT rates, payment methods */
     reference: 15 * 60 * 1000, // 15 minutes
 
+    /** Slow-changing reference data: account charts, exchange rate history */
+    extended: 30 * 60 * 1000, // 30 minutes
+
+    /** Effectively session-stable: company config, fiscal year list */
+    session: 60 * 60 * 1000, // 1 hour
+
     /** Effectively static — only refreshes on explicit invalidation */
     static: Infinity,
 } as const

@@ -5,6 +5,7 @@ import { checksApi } from '../checks/api'
 import type { CheckCreatePayload, CheckDepositPayload } from '../checks/types'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useRealtime } from '@/features/realtime'
+import { staleTime } from '@/lib/query-config'
 
 const CHECKS_KEYS = {
     all: ['checks'] as const,
@@ -19,7 +20,7 @@ export function useChecks(params?: Record<string, string>) {
     const { data: checks, isLoading, isError } = useQuery({
         queryKey: CHECKS_KEYS.list(params),
         queryFn: () => checksApi.list(params),
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
     })
     return { checks: checks ?? [], isLoading, isError }
 }
@@ -29,7 +30,7 @@ export function useCheck(id: number | null, enabled = true) {
         queryKey: CHECKS_KEYS.detail(id ?? 0),
         queryFn: () => checksApi.get(id as number),
         enabled: id != null && enabled,
-        staleTime: 60 * 1000,
+        staleTime: staleTime.volatile,
         placeholderData: (prev) => prev,
     })
     return { check: check ?? null, isLoading, isError }
@@ -39,7 +40,7 @@ export function useCheckPortfolio(params?: Record<string, string>, enabled = tru
     const { data: checkPortfolio, isLoading, isError } = useQuery({
         queryKey: CHECKS_KEYS.portfolio(),
         queryFn: () => checksApi.portfolio(params),
-        staleTime: 60 * 1000,
+        staleTime: staleTime.volatile,
         enabled,
     })
     return { checkPortfolio: checkPortfolio ?? null, isLoading, isError }
@@ -49,7 +50,7 @@ export function useCheckInTransit(params?: Record<string, string>, enabled = tru
     const { data: checkInTransit, isLoading, isError } = useQuery({
         queryKey: CHECKS_KEYS.inTransit(),
         queryFn: () => checksApi.inTransit(params),
-        staleTime: 60 * 1000,
+        staleTime: staleTime.volatile,
         enabled,
     })
     return { checkInTransit: checkInTransit ?? null, isLoading, isError }

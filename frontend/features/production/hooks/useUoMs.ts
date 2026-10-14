@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { UoM } from '../types'
+import { staleTime } from '@/lib/query-config'
 
 export const UOMS_QUERY_KEY = ['uoms'] as const
 
@@ -13,6 +14,6 @@ export function useUoMs(options: { enabled?: boolean } = {}) {
       return res.data
     },
     enabled: options.enabled ?? true,
-    staleTime: 60 * 60 * 1000,
+    staleTime: staleTime.session,
   })
 }

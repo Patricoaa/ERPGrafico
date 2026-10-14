@@ -7,6 +7,7 @@ import { productionApi } from '../api/productionApi'
 import { BOMS_QUERY_KEY, PRODUCTS_QUERY_KEY } from '@/features/inventory'
 import { useRealtime } from '@/features/realtime'
 import type { FilterState } from '@/components/shared'
+import { staleTime } from '@/lib/query-config'
 
 export const ALL_BOMS_QUERY_KEY = ['all-boms']
 
@@ -19,7 +20,7 @@ export function useBOM(id: number | undefined) {
         queryKey: [...ALL_BOMS_QUERY_KEY, 'detail', id],
         queryFn: () => productionApi.getBOM(id as number),
         enabled: !!id,
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
     })
 }
 
@@ -48,7 +49,7 @@ export function useBOMs(params: { product_id?: string | number, parent_id?: stri
             const res = await api.get('/production/boms/', { params })
             return res.data.results
         },
-        staleTime: 5 * 60 * 1000, // 5 min
+        staleTime: staleTime.stable, // 5 min
     })
 
     const deleteMutation = useMutation({
@@ -90,7 +91,7 @@ export function useAllBOMs(filters?: FilterState, initialData?: BOM[]) {
             const res = await api.get<{ results: BOM[] }>('/production/boms/', { params })
             return res.data.results
         },
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
         initialData,
         placeholderData: (prev) => prev,
     })
@@ -111,7 +112,7 @@ export function useProductionVariants(parentId: number | string | undefined) {
             const res = await api.get<{ results: ProductMinimal[] }>(`/inventory/products/?parent_template=${parentId}&show_technical_variants=true`)
             return res.data.results
         },
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
     })
 
     return { variants: variants ?? [], isVariantsLoading }

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { ordersApi } from '../api/ordersApi'
 import type { UserPermissions } from '@/types/actions'
+import { staleTime } from '@/lib/query-config'
 
 const ORDERS_KEYS = {
     order: (id: string | number, type: string) => ['orders', type, id] as const,
@@ -15,7 +16,7 @@ export function useOrderDetail(orderId: string | number | null, orderType: 'purc
                 ? ordersApi.getPurchaseOrder(orderId as string | number)
                 : ordersApi.getSaleOrder(orderId as string | number)
         },
-        staleTime: 30_000,
+        staleTime: staleTime.volatile,
         enabled: enabled && !!orderId,
     })
 
@@ -28,7 +29,7 @@ export function useOrderDetail(orderId: string | number | null, orderType: 'purc
                 isSuperuser: (data as Record<string, unknown>).is_superuser || false,
             } as UserPermissions
         },
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
         enabled,
     })
 

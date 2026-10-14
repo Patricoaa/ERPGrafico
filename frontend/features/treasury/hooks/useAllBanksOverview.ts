@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { treasuryApi } from '../api/treasuryApi'
 import { BANKS_KEYS } from './queryKeys'
 import { useBanks } from './useMasterData'
+import { staleTime } from '@/lib/query-config'
 
 interface BankSummary {
     bank: { id: number; name: string; code: string | null }
@@ -35,7 +36,7 @@ export function useAllBanksOverview() {
             return results.filter((r): r is BankSummary => r !== null)
         },
         enabled: banks.length > 0,
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
     })
 
     return { overviews: overviews ?? [], isLoading }

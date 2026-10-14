@@ -5,6 +5,7 @@ import api from '@/lib/api'
 import { showApiError } from '@/lib/errors'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useRealtime } from '@/features/realtime'
+import { staleTime } from '@/lib/query-config'
 
 export interface WorkOrderComment {
     id: number
@@ -27,7 +28,7 @@ export function useWorkOrderComments(orderId: number) {
             const res = await api.get(`/production/orders/${orderId}/comments/`)
             return res.data
         },
-        staleTime: 30 * 1000,
+        staleTime: staleTime.volatile,
         enabled: !!orderId,
     })
 

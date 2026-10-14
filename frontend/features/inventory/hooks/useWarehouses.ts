@@ -3,6 +3,7 @@ import api from '@/lib/api'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
 import { invalidateCrossFeature } from '@/lib/invalidation'
+import { staleTime } from '@/lib/query-config'
 
 export interface Warehouse {
     id: number
@@ -45,7 +46,7 @@ export function useWarehouses() {
             // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
             return response.data
         },
-        staleTime: 15 * 60 * 1000, // 15 min — datos de configuración
+        staleTime: staleTime.reference, // 15 min — datos de configuración
     })
 
     const invalidate = () => {
@@ -99,7 +100,7 @@ export function useWarehouse(id: number | null | undefined) {
             const res = await api.get<Warehouse>(`/inventory/warehouses/${id as number}/`)
             return res.data
         },
-        staleTime: 15 * 60 * 1000,
+        staleTime: staleTime.reference,
         enabled: !!id,
     })
     return { warehouse: warehouse ?? null, isLoading, isError }

@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import type { CompanySettings, CompanySettingsUpdatePayload } from '../types'
 import { useRealtime } from '@/features/realtime'
+import { staleTime } from '@/lib/query-config'
 
 export const COMPANY_SETTINGS_QUERY_KEY = ['settings-company']
 
@@ -25,7 +26,7 @@ export function useCompanySettings(): UseCompanySettingsReturn {
     const { data: settings, refetch, isLoading } = useQuery({
         queryKey: COMPANY_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getCompanySettings,
-        staleTime: 10 * 60 * 1000, // 10 min
+        staleTime: staleTime.slow, // 10 min
     })
 
     const updateMutation = useMutation({

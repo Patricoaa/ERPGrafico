@@ -17,6 +17,7 @@ import { getErrorMessage } from '@/lib/errors'
 import { formatEntityDisplay } from '@/lib/entity-registry'
 import { ordersApi } from '../api/ordersApi'
 import { useCancelOrder } from './useOrdersMutations'
+import { staleTime } from '@/lib/query-config'
 
 export interface CancelImpact {
     order_status: string
@@ -97,7 +98,7 @@ export function useCancelOrderFlow(
                 : ordersApi.getCancelPurchaseImpact(orderId)
         },
         enabled: !!options?.orderId,
-        staleTime: 30_000,
+        staleTime: staleTime.volatile,
     })
 
     const isAnnulBlocked = impact?.has_folio_invoices === true

@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { treasuryApi, TERMINALS_KEYS } from '@/features/treasury'
 import { useRealtime } from '@/features/realtime'
 import type { Terminal, TerminalUpdatePayload } from '@/features/treasury'
+import { staleTime } from '@/lib/query-config'
 
 export { TERMINALS_KEYS }
 
@@ -22,7 +23,7 @@ export function usePosTerminals(): UsePosTerminalsReturn {
     const { data: terminals, isLoading, refetch } = useQuery({
         queryKey: TERMINALS_KEYS.lists(),
         queryFn: treasuryApi.getTerminals,
-        staleTime: 5 * 60 * 1000,
+        staleTime: staleTime.stable,
     })
 
     const invalidate = () => invalidateCrossFeature(queryClient, [TERMINALS_KEYS.lists(), TERMINALS_KEYS.details()])

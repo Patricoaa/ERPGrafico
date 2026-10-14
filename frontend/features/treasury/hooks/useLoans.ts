@@ -8,6 +8,7 @@ import type {
 } from '../loans/types'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useRealtime } from '@/features/realtime'
+import { staleTime } from '@/lib/query-config'
 
 const LOANS_KEYS = {
     all: ['loans'] as const,
@@ -23,7 +24,7 @@ export function useLoans(params?: Record<string, string>) {
     return useQuery({
         queryKey: LOANS_KEYS.list(params),
         queryFn: () => loansApi.list(params),
-        staleTime: 2 * 60 * 1000,
+        staleTime: staleTime.standard,
         placeholderData: (prev) => prev,
     })
 }
@@ -33,7 +34,7 @@ export function useLoan(id: number | null) {
         queryKey: LOANS_KEYS.detail(id ?? 0),
         queryFn: () => loansApi.get(id as number),
         enabled: id != null,
-        staleTime: 60 * 1000,
+        staleTime: staleTime.volatile,
         placeholderData: (prev) => prev,
     })
 }
@@ -43,7 +44,7 @@ export function useLoanSchedule(id: number | null) {
         queryKey: LOANS_KEYS.schedule(id ?? 0),
         queryFn: () => loansApi.schedule(id as number),
         enabled: id != null,
-        staleTime: 60 * 1000,
+        staleTime: staleTime.volatile,
     })
 }
 
@@ -51,7 +52,7 @@ export function useLoanInstallments(params?: Record<string, string>) {
     return useQuery({
         queryKey: LOANS_KEYS.installmentsList(params),
         queryFn: () => loansApi.listInstallments(params),
-        staleTime: 60 * 1000,
+        staleTime: staleTime.volatile,
     })
 }
 
