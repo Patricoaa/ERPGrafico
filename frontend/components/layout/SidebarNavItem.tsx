@@ -5,7 +5,6 @@ import Link from "next/link"
 import { ChevronDown, ChevronRight, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DynamicIcon } from "@/components/shared"
-import { Button } from "@/components/ui/button"
 
 /**
  * Fila base del panel de módulo (patrón ERPNext v16, ADR-0079).
@@ -35,10 +34,10 @@ export const SidebarNavItem = React.forwardRef<HTMLElement, SidebarNavItemProps>
     const showIcon = depth === 0 && (Icon || iconName)
 
     const classes = cn(
-        "group/navitem flex w-full items-center gap-2 h-8 rounded-md px-2 text-sm text-left outline-none transition-colors",
+        "group/navitem flex w-full items-center gap-2 h-8 rounded-sm px-2 text-sm text-left outline-none transition-colors",
         "focus-visible:ring-2 focus-visible:ring-ring/30",
         depth > 0 && "pl-8 text-foreground/75",
-        depth > 1 && "pl-11",
+        depth > 1 && "pl-11 text-[13px] text-foreground/65",
         isActive
             ? "bg-card text-foreground font-medium shadow-card"
             : "text-foreground/80 hover:bg-foreground/5 hover:text-foreground",
@@ -78,16 +77,15 @@ export const SidebarNavItem = React.forwardRef<HTMLElement, SidebarNavItemProps>
     }
 
     return (
-        <Button
+        <button
             ref={ref as React.Ref<HTMLButtonElement>}
             type="button"
-            variant="ghost"
             onClick={onClick}
-            className={cn(classes, "justify-start font-normal has-[>svg]:px-2", isActive && "font-medium")}
+            className={cn(classes, "justify-start font-normal", isActive && "font-medium")}
             aria-expanded={isGroup ? expanded : undefined}
-            {...rest}
+            {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}
         >
             {content}
-        </Button>
+        </button>
     )
 })

@@ -6,6 +6,7 @@ import { MODULE_ORDER, getModuleConfig, getModuleIcon } from "@/lib/module-regis
 import { ModuleNavTree } from "./ModuleNavTree"
 import { SidebarNavItem } from "./SidebarNavItem"
 import { SidebarUtilityNav } from "./SidebarUtilityNav"
+import { SidebarQuickActions } from "./SidebarQuickActions"
 import { cn } from "@/lib/utils"
 
 interface ModuleSidebarPanelProps {
@@ -33,10 +34,7 @@ export function ModuleSidebarPanel({ currentModuleId, navigation, isHeaderReady,
     return (
         <div className="w-56 shrink-0 h-full flex flex-col border-r border-border/40 bg-muted/30">
             {/* Cabecera del panel: nombre del módulo activo */}
-            <div className={cn(
-                "shrink-0 h-12 flex items-center px-4 border-b border-border/40",
-                moduleLabel ? "justify-start" : "justify-center"
-            )}>
+            <div className="shrink-0 h-12 flex items-center justify-center px-4 border-b border-border/40">
                 {moduleLabel ? (
                     <span className="text-sm font-bold tracking-tight text-foreground">
                         {moduleLabel}
@@ -81,6 +79,8 @@ export function ModuleSidebarPanel({ currentModuleId, navigation, isHeaderReady,
                     </div>
                 )}
             </div>
+
+            <SidebarQuickActions />
         </div>
     )
 }

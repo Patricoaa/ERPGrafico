@@ -187,7 +187,7 @@ export function UnifiedSearchBar({
           side="bottom"
           sideOffset={4}
           style={{ width: triggerWidth > 0 ? triggerWidth : undefined }}
-          className="p-0 border-border/80 shadow-floating"
+          className="p-0 border-border/80 shadow-floating rounded-sm"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           {hasSearchText && !forceFilters ? (

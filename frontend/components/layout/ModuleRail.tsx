@@ -27,11 +27,11 @@ export function ModuleRail({ currentModuleId, onNavigate }: ModuleRailProps) {
             {/* Logo — alineado con la cabecera del panel y la topbar */}
             <Link href="/accounting/ledger?view=list" onClick={onNavigate} aria-label="Inicio" className="h-12 w-full shrink-0 flex items-center justify-center">
                 {logo ? (
-                    <div className="relative h-8 w-8">
+                    <div className="relative h-8 w-8 rounded-sm overflow-hidden">
                         <Image src={logo} alt={companyName || "Logo"} fill className="object-contain" />
                     </div>
                 ) : (
-                    <div className="w-8 h-8 rounded-md flex items-center justify-center bg-primary text-primary-foreground font-bold text-3xs">
+                    <div className="w-8 h-8 rounded-sm flex items-center justify-center bg-primary text-primary-foreground font-bold text-3xs">
                         {initials}
                     </div>
                 )}
@@ -54,7 +54,7 @@ export function ModuleRail({ currentModuleId, onNavigate }: ModuleRailProps) {
                                         aria-label={mod.label}
                                         aria-current={isActive ? "page" : undefined}
                                         className={cn(
-                                            "w-10 h-10 shrink-0 rounded-lg flex items-center justify-center transition-colors duration-200",
+                                            "w-10 h-10 shrink-0 rounded-sm flex items-center justify-center transition-colors duration-200",
                                             isActive
                                                 ? cn("bg-card shadow-card", accent.text)
                                                 : cn("text-muted-foreground hover:bg-foreground/5", accent.hoverText)
