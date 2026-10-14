@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.19](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.18...v0.3.19) (2026-10-14)
+
+
+### 📚 Documentation
+
+* second-round audit — archive, consolidate, and clarify doc set ([58d1bb3](https://github.com/Patricoaa/ERPGrafico/commit/58d1bb32e0b569b7d0342da6da1b913a74e65db2))
+
 ### [0.3.18](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.17...v0.3.18) (2026-10-14)
 
 
