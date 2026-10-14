@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.23](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.22...v0.3.23) (2026-10-14)
+
+
+### 🐛 Bug Fixes
+
+* **sidebar:** radius audit, center module label, move POS/Calc to sidebar footer ([a412326](https://github.com/Patricoaa/ERPGrafico/commit/a4123262c16259d947a1904c162e13b64a1ec30b))
+
 ### [0.3.22](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.21...v0.3.22) (2026-10-14)
 
 
