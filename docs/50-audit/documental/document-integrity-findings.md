@@ -39,8 +39,8 @@
 ### INT-15 · Anulación de pago con devolución afectaba la caja dos veces (corregido)
 - E: test `treasury/tests/test_annul_with_refund.py`; C: `treasury/services.py` `annul_movement`. Detectado durante M0, corregido tras M1. Detalle en [registro de avance](./implementation-progress.md).
 
-### INT-16 · Endpoint de traspasos internos llama a un método inexistente (pendiente)
-- C: `treasury/services.py:49` llama a `register_internal_transfer`, sin definición en el repositorio. Fuera del alcance documental.
+### INT-16 · Endpoint de traspasos internos roto (corregido)
+- E: el frontend no enviaba `Idempotency-Key` y el servicio llamaba a `register_internal_transfer`, eliminado en `1b13c2f16`. Test `treasury/tests/test_register_transfer.py`. Detalle en [registro de avance](./implementation-progress.md).
 
 ## Severidad media
 

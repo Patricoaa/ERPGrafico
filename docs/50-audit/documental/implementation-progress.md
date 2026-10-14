@@ -17,6 +17,20 @@
 
 ---
 
+## 2026-10-14 · INT-16 · Traspasos internos (corregido)
+
+**Diagnóstico (E):** el endpoint `POST /api/treasury/dashboard/register_transfer/` fallaba por dos causas encadenadas:
+1. El frontend (`TransferDrawer` → `useTransfer` → `treasuryApi.registerTransfer`) no enviaba `Idempotency-Key`, que el endpoint exige (`@idempotent_endpoint`) → 400 antes de llegar al servicio.
+2. `register_internal_transfer_from_request` llamaba a `TreasuryService.register_internal_transfer`, eliminado en el refactor `1b13c2f16` → `AttributeError`. La llamada además pasaba `notes`/`date` en el orden contrario a la firma antigua.
+
+**Corrección:**
+- `TreasuryService.register_internal_transfer(from, to, amount, created_by, notes, date)` reimplementado sobre `create_movement(TRANSFER)`, que genera el asiento (Cr origen / Dr destino). Rechaza origen = destino. La fecha ISO se convierte a `date`.
+- Frontend: `Idempotency-Key` generado una vez por intención en `TransferDrawer` (estado con inicialización perezosa; se renueva tras completar), pasado en las variables de la mutación según [idempotency.md](../../20-contracts/idempotency.md).
+
+**Tests:** `treasury/tests/test_register_transfer.py` (2, por el endpoint real con cabecera): saldos de ambas cuentas, tipo, fecha y notas; rechazo de misma cuenta. Fallan con el código anterior. Suite `treasury`: 274 passed; los 11 fallos son de la línea base preexistente. Frontend: type-check y lint sin errores nuevos.
+
+---
+
 ## 2026-10-14 · INT-15 · Anulación de pago con devolución (corregido)
 
 **Diagnóstico (E, test ejecutado):** `TreasuryService.annul_movement` con `treasury_account_id` revertía el asiento del pago **y** registraba un movimiento de devolución con su propio asiento contra CxC/CxP. Resultado medido sobre los saldos contables:
@@ -39,7 +53,7 @@
 
 **Tests:** `treasury/tests/test_annul_with_refund.py` (5): misma cuenta, otra cuenta, sin devolución, parcial rechazada, pago de OC. 4 fallaban con el código anterior. Suites `billing sales purchasing treasury core workflow inventory production`: 565 passed; los 25 fallos/errores son la línea base preexistente.
 
-**Hallazgo lateral (no corregido, fuera del alcance documental):**
+**Hallazgo lateral (corregido después, ver INT-16):**
 - **INT-16 · Traspasos internos rotos.** `TreasuryService.register_internal_transfer_from_request` (usado por `treasury/views.py:1054`) llama a `register_internal_transfer`, que no existe → `AttributeError` en cada traspaso desde ese endpoint. Evidencia C (grep: sin definición).
 
 ---

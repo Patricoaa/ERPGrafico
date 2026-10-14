@@ -46,7 +46,30 @@ class TreasuryService:
         am = Decimal(str(request.data.get('amount', 0)))
         if am <= 0: raise ValueError('Invalid amount')
         ds = request.data.get('date')
-        return cls.register_internal_transfer(fa, ta, am, request.user, request.data.get('notes', ''), datetime.fromisoformat(ds) if ds else None)
+        return cls.register_internal_transfer(
+            fa, ta, am, request.user, notes=request.data.get('notes', ''),
+            date=datetime.fromisoformat(ds).date() if ds else None,
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def register_internal_transfer(from_account, to_account, amount, created_by, notes='', date=None):
+        """
+        Traspaso entre dos cuentas de tesorería (INT-16: el método se había eliminado
+        en un refactor y el endpoint `register_transfer` fallaba con AttributeError).
+        Genera un TreasuryMovement TRANSFER con su asiento (Cr origen / Dr destino).
+        """
+        if from_account.pk == to_account.pk:
+            raise ValidationError("La cuenta de origen y destino no pueden ser la misma.")
+        return TreasuryService.create_movement(
+            amount=amount,
+            movement_type=TreasuryMovement.Type.TRANSFER,
+            from_account=from_account,
+            to_account=to_account,
+            created_by=created_by,
+            notes=notes,
+            date=date,
+        )
 
     @staticmethod
     def get_or_create_reconciliation_settings():
