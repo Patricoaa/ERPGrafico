@@ -13,6 +13,7 @@ import { PrintableLayout } from "@/features/_shared"
 import { useInventoryDocument, useInventoryDocumentMutations } from "../hooks/useInventoryDocuments"
 import type { InventoryDocumentDetail } from "../types"
 import { formDrawerWidth } from "@/lib/form-widths"
+import { DocumentRelationsSection } from "@/features/documents"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 
@@ -227,6 +228,10 @@ export function InventoryDocumentDrawer({ documentId, id, open, onOpenChange, on
                                     </div>
                                 </div>
                             )}
+                            <section className="space-y-2">
+                                <h4 className="text-sm font-medium">Documentos relacionados</h4>
+                                <DocumentRelationsSection label="inventory.inventorydocument" id={document.id} />
+                            </section>
                         </div>
 
                         {/* Footer actions for confirming/annulling documents */}

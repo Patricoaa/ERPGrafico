@@ -11,6 +11,8 @@ vi.mock("@/lib/api", () => ({
     default: { get: getMock },
 }))
 
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }))
+
 vi.mock("@/components/providers/GlobalModalProvider", async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
     useGlobalModals: () => ({ openEntity: vi.fn() }),

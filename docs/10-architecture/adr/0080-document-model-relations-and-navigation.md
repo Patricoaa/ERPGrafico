@@ -1,7 +1,7 @@
 ---
 id: 0080
 title: Unified document model — DocumentRef, relation service and canonical document navigation
-status: Proposed
+status: Accepted
 date: 2026-10-14
 author: backend-team
 ---
@@ -10,7 +10,7 @@ author: backend-team
 
 **Related:** documentary audit `docs/50-audit/documental/` (target architecture, migration roadmap, decisions D1–D6), `docs/20-contracts/document-relations.md` (new), `docs/20-contracts/component-entity-drawers.md`, `docs/20-contracts/entity-identity.md`, ADR-0016 (source-document GFK), ADR-0020 (`?selected` deep links), ADR-0028 (entity drawer registry).
 
-**Status note:** Phase M2 (additive backend + resolver route) is implemented under this ADR. The parts that *change* existing contracts — common document drawer, `openEntity` stack, Order Hub consuming relations, retirement of `DRAWER_MAP` — belong to phase M3 and must not start until this ADR is **Accepted**.
+**Status note:** Accepted 2026-10-14 by the project owner. M2 (additive) and M3 (common document sheet, `openEntity` stack, Order Hub as OV/OC sheet) are implemented under this ADR.
 
 ---
 

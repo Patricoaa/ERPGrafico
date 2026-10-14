@@ -95,6 +95,11 @@ export function HubPanelProvider({
     )
 }
 
+/** Igual que useHubPanel pero sin lanzar si no hay provider (p. ej. GlobalModalProvider en tests). */
+export function useOptionalHubPanel(): HubPanelContextType | undefined {
+    return useContext(HubPanelContext)
+}
+
 export function useHubPanel() {
     const context = useContext(HubPanelContext)
     if (context === undefined) {

@@ -29,6 +29,7 @@ import { Chip, Drawer, LabeledInput, CancelButton, IconButton, PeriodValidationD
 import { SourceDocumentSelector, type SourceDocument } from "@/components/selectors/SourceDocumentSelector";
 import { formDrawerWidth } from "@/lib/form-widths";
 import { ActivitySidebar } from "@/features/audit";
+import { DocumentRelationsSection } from "@/features/documents"
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({
@@ -415,6 +416,13 @@ export function JournalEntryDrawer({
                                 <ExternalLink className="h-3 w-3" />
                             </Link>
                         </div>
+                    )}
+
+                    {isViewMode && entityId && (
+                        <>
+                            <FormSection title="Documentos relacionados" className="space-y-2 pt-4" />
+                            <DocumentRelationsSection label="accounting.journalentry" id={Number(entityId)} />
+                        </>
                     )}
 
                     <FormMessage className="text-right" />

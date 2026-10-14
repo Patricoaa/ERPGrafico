@@ -10,6 +10,7 @@ import { useInvoice } from '@/features/billing/hooks/useInvoices'
 import { ActivitySidebar } from '@/features/audit'
 import type { TransactionDrawerProps } from '@/features/_shared'
 import { formDrawerWidth } from '@/lib/form-widths'
+import { DocumentRelationsSection } from '@/features/documents'
 
 interface InvoiceDrawerProps extends TransactionDrawerProps {
     invoiceId?: number
@@ -115,6 +116,10 @@ export function InvoiceDrawer({ id, open, onOpenChange, invoiceId }: InvoiceDraw
                                     </div>
                                 </div>
                             )}
+                            <section className="space-y-2">
+                                <h4 className="text-sm font-medium">Documentos relacionados</h4>
+                                <DocumentRelationsSection label="billing.invoice" id={invoice.id} />
+                            </section>
                         </div>
                     )}
                 </SkeletonShell>

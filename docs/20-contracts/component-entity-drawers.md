@@ -111,15 +111,24 @@ export const ENTITY_DRAWERS = {
 ```ts
 const { openEntity, closeEntity, hasEntityDrawer } = useGlobalModals()
 
-openEntity('sales.saleorder', 123)            // abre el drawer registrado (modo derivado)
-openEntity('contacts.contact', 7, contactObj) // con datos pre-fetcheados
-closeEntity()
+openEntity('sales.saledelivery', 123)                    // abre el drawer registrado (modo derivado)
+openEntity('contacts.contact', 7, contactObj)            // con datos pre-fetcheados
+openEntity('inventory.stockmove', 9, undefined, undefined, { display: 'MOV-9' })
+closeEntity()   // cierra toda la pila
+goBackEntity()  // vuelve al documento anterior
 ```
 
 | API | Tipo | Notas |
 |-----|------|-------|
-| `openEntity` | `(label: string, id: number, data?: unknown, segmenter?: React.ReactNode) => void` | Advierte en consola (no rompe) si no hay drawer registrado para el label |
-| `closeEntity` | `() => void` | |
+| `openEntity` | `(label, id, data?, segmenter?, options?: { display?: string }) => void` | Advierte en consola (no rompe) si no hay drawer registrado. `options.display` es el texto que verá el "Volver a …" del documento que se abra encima |
+| `closeEntity` | `() => void` | Cierra **todos** los documentos de la pila |
+| `goBackEntity` | `() => void` | Desapila el documento superior |
+
+**Pila y "volver" (ADR-0080, GAP-11).** `openEntity` con un documento ya abierto lo **apila** (máx. 5; reabrir el superior es no-op). Solo se renderiza el superior; el provider envuelve su drawer en `EntityNavigationContext` y el `Drawer` compartido muestra "← Volver a {display}" automáticamente — los drawers no necesitan cambios. Cerrar (X / Escape / `onSuccess`) vacía la pila. El contexto se resetea para los hijos de cada `Drawer`, así un drawer anidado no muestra el enlace.
+
+**OV/OC → Order Hub (decisión D4).** `openEntity('sales.saleorder' | 'purchasing.purchaseorder', id)` **no** abre `SaleOrderDrawer`/`PurchaseOrderDrawer`: vacía la pila y llama `openHub({ orderId: id, type })`. La ficha de OV/OC es el Hub desde cualquier punto de entrada. Los drawers delgados quedan solo para uso interno del Hub y se retiran en M6.
+
+**Asientos por id.** `openEntity('accounting.journalentry', id)` sin `data` abre el asiento en **modo vista** cargado por id (antes abría el formulario de creación). Sin `data` ni `id` → creación.
 | `useGlobalModals()` | hook | Acciones + estado de stacking de sheets (offsets de `CollapsibleSheet`) |
 | `useGlobalModalActions()` | hook | Solo acciones (sin re-render por estado de sheets) |
 
@@ -268,7 +277,8 @@ son las que lo hacen operar como un detalle real (DET-02):
 
 ## 7. Cross-references
 
-- ADR de la decisión: [ADR-0028](../10-architecture/adr/0028-entity-drawer-registry.md)
+- ADR de la decisión: [ADR-0028](../10-architecture/adr/0028-entity-drawer-registry.md); pila, "volver" y OV/OC → Hub: [ADR-0080](../10-architecture/adr/0080-document-model-relations-and-navigation.md)
+- Documentos relacionados y URL canónica: [document-relations.md](./document-relations.md)
 - Primitiva `Drawer` (API, tamaños): [component-drawer.md](./component-drawer.md)
 - Identidad de entidad / labels: [entity-identity.md](./entity-identity.md)
 - Edición deep-linkeable desde lista: [list-modal-edit-pattern.md](./list-modal-edit-pattern.md)

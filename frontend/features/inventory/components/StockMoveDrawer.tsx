@@ -8,6 +8,7 @@ import { useStockMove } from '@/features/inventory/hooks/useStockMoves'
 import { ActivitySidebar } from '@/features/audit'
 import type { TransactionDrawerProps } from '@/features/_shared'
 import { formDrawerWidth } from '@/lib/form-widths'
+import { DocumentRelationsSection } from '@/features/documents'
 
 interface StockMoveDrawerProps extends TransactionDrawerProps {
     stockMoveId?: number
@@ -89,19 +90,11 @@ export function StockMoveDrawer({ id, open, onOpenChange, stockMoveId }: StockMo
                                     <span className="text-xs text-muted-foreground">Descripción</span>
                                     <p className="text-sm">{move.description || '-'}</p>
                                 </div>
-                                {move.related_documents && move.related_documents.length > 0 && (
-                                    <div className="col-span-2">
-                                        <span className="text-xs text-muted-foreground">Documentos Relacionados</span>
-                                        <div className="space-y-1 mt-1">
-                                            {move.related_documents.map((doc, idx) => (
-                                                <p key={idx} className="text-sm">
-                                                    {doc.type}: {doc.name ?? `#${doc.id}`}
-                                                </p>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
                             </div>
+                            <section className="space-y-2">
+                                <h4 className="text-sm font-medium">Documentos relacionados</h4>
+                                <DocumentRelationsSection label="inventory.stockmove" id={move.id} />
+                            </section>
                         </div>
                     )}
                 </SkeletonShell>

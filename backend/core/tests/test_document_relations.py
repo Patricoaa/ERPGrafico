@@ -166,3 +166,37 @@ def test_permissions(pilot):
     assert client.get(f"/api/core/documents/billing.invoice/{pilot['invoice'].id}/relations/").status_code == 403
     assert client.get("/api/core/documents/nope.model/1/").status_code == 404
     assert client.get("/api/core/documents/sales.saleorder/999999/").status_code == 404
+
+
+@pytest.mark.django_db
+def test_purchase_receipt_relations(pilot):
+    from purchasing.models import PurchaseLine, PurchaseOrder, PurchaseReceipt, PurchaseReceiptLine
+    from purchasing.services import PurchasingService
+
+    product = SaleLine.objects.first().product
+    warehouse = Warehouse.objects.get(code="WH-M2")
+    Location.objects.get_or_create(location_type="VENDOR", defaults={"name": "Proveedor"})
+    supplier = Contact.objects.create(name="Papelera Sur", tax_id="22222222-2")
+    po = PurchaseOrder.objects.create(number="PO-M2", supplier=supplier, warehouse=warehouse,
+                                      total=0, total_net=0, total_tax=0)
+    po_line = PurchaseLine.objects.create(order=po, product=product, quantity=Decimal("5"),
+                                          unit_cost=Decimal("100"), uom=product.uom)
+    receipt = PurchaseReceipt.objects.create(purchase_order=po, warehouse=warehouse, receipt_date=date(2026, 10, 4),
+                                             total=0, total_net=0, total_tax=0)
+    PurchaseReceiptLine.objects.create(receipt=receipt, purchase_line=po_line, product=product, uom=product.uom,
+                                       quantity_received=Decimal("5"), unit_cost=Decimal("100"))
+    settings = AccountingSettings.get_solo()
+    settings.stock_input_account = Account.objects.create(
+        name="Mercadería por recibir", code="2.1.09.080", account_type=AccountType.LIABILITY)
+    settings.storable_inventory_account = Account.objects.create(
+        name="Inventario", code="1.1.05.080", account_type=AccountType.ASSET)
+    settings.save()
+    PurchasingService.confirm_receipt(receipt)
+
+    data = _relations(pilot["client"], "purchasing.purchasereceipt", receipt.id)
+    assert ("purchase_order", "purchasing.purchaseorder", po.id) in _targets(data)
+    assert _targets(data, "stock_move") and _targets(data, "inventory_document")
+    assert data["document"]["url"] == f"/d/purchasing.purchasereceipt/{receipt.id}"
+
+    po_data = _relations(pilot["client"], "purchasing.purchaseorder", po.id)
+    assert ("receipt", "purchasing.purchasereceipt", receipt.id) in _targets(po_data)

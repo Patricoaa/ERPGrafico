@@ -9,11 +9,44 @@
 |---|---|
 | M0 Hotfix | **Hecha** (GAP-07, GAP-04a, GAP-05; GAP-06 adelantado) |
 | M1 Integridad | **Hecha** (código + backfill aplicado en dev) · INT-15 corregido |
-| M2 Contratos | **Hecha** (parte aditiva) · ADR-0080 **Propuesto**: aceptar antes de M3 |
-| M3 UI piloto | Pendiente (GAP-06 ya hecho) |
+| M2 Contratos | **Hecha** · ADR-0080 **Aceptado** (2026-10-14) |
+| M3 UI piloto | **Hecha** (GAP-06, GAP-10, GAP-11, D4); verificación visual en navegador pendiente |
 | M4 Facturación y pagos | Pendiente |
 | M5 Extensión | Pendiente |
 | M6 Retiro | Pendiente |
+
+---
+
+## 2026-10-14 · M3 UI del piloto
+
+ADR-0080 pasa a **Accepted** por decisión del responsable del proyecto.
+
+**Navegación con pila y "volver" (GAP-11)** — `components/providers/GlobalModalProvider.tsx`:
+- `openEntity` apila (máx. 5) cuando ya hay un documento abierto; reabrir el superior es no-op; `closeEntity` vacía la pila; nuevo `goBackEntity`; `openEntity(..., { display })` para el texto del "volver".
+- El drawer superior se envuelve en `EntityNavigationContext` (nuevo, `components/shared`); el `Drawer` compartido muestra "← Volver a …" sin tocar cada drawer, y resetea el contexto para drawers anidados.
+
+**OV/OC → Order Hub (D4):** `openEntity('sales.saleorder' | 'purchasing.purchaseorder')` abre el Hub (`openHub`) en lugar de los drawers delgados (nuevo `useOptionalHubPanel`).
+
+**Ficha común y relacionados (GAP-10):**
+- `RelatedDocumentsTable` y `DocumentDrawerShell` en `components/shared` (solo presentación; loading/empty/error).
+- `DocumentRelationsSection` en `features/documents` (datos con `useDocumentRelations`, apertura con `openEntity`).
+- `SaleDeliveryDrawer` y `PurchaseReceiptDrawer` migrados a `DocumentDrawerShell`.
+- Sección de relacionados añadida a `InvoiceDrawer`, `CashMovementDrawer` (movimiento de tesorería), `JournalEntryDrawer` (vista), `StockMoveDrawer` (reemplaza la lista en texto plano no navegable) e `InventoryDocumentDrawer`.
+- Order Hub: sección "Documentos relacionados" de la OV/OC (o de la factura en modo nota). Sus documentos se abren con `openEntity` (pila y fichas nuevas); los pagos se abren como `treasury.treasurymovement` por id. La OV/OC propia sigue en su drawer local.
+
+**Corrección encontrada:** `openEntity('accounting.journalentry', id)` sin datos abría el formulario de **creación**; ahora abre el asiento en modo vista cargado por id (`lib/entity-drawers.tsx`).
+
+**Adelantado de M5:** proveedores de relaciones de compras (`purchasing.purchaseorder`, `purchasing.purchasereceipt`) para que la ficha de recepción y el Hub de compras no queden sin relacionados; la recepción usa el resolvedor `/d/`.
+
+**Contratos actualizados:** `component-entity-drawers.md` (pila, `goBackEntity`, D4, asiento por id) y `document-relations.md` (§5 componentes de UI).
+
+**Verificación:**
+- Frontend (dev server): `GlobalModalProvider.test.tsx` (pila, volver, cierre, D4 → Hub), `RelatedDocumentsTable.test.tsx` (agrupación, sin acceso, estados, "volver" del Drawer), tests de despacho/recepción y resolvedor → 15 en verde. Suite completa de vitest: solo falla `semantic-ink.test.ts` (preexistente, ambiental).
+- Backend: `core/tests/test_document_relations.py` 7/7 (incluye recepción de compra con `confirm_receipt` real) y sincronía de rutas.
+- `npm run type-check` y `eslint` sin errores.
+- **No verificado en navegador** (la app requiere sesión): recorrido OV → Hub → despacho → movimiento de stock → "volver".
+
+**Pendiente (M4–M6):** facturación con líneas propias y pagos (M4); extensión a producción/tesorería restante y retiro de `DRAWER_MAP`/`LazyDrawer` (GAP-12, M5); retiro de formatos legacy y drawers delgados de OV/OC (M6).
 
 ---
 

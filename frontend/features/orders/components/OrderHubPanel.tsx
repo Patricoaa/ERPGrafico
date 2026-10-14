@@ -14,7 +14,9 @@ import {
     FileText,
     Receipt
 } from "lucide-react"
-import { LazyDrawer } from "@/features/_shared"
+import { LazyDrawer, TYPE_TO_REGISTRY } from "@/features/_shared"
+import { DocumentRelationsSection } from "@/features/documents"
+import { hasEntityDrawer } from "@/lib/entity-drawers"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { OrderHubView, type OrderHubData } from "./OrderHubView"
 import type { Order, Payment } from "../types"
@@ -23,6 +25,16 @@ import {
     PanelHeader,
     SkeletonShell,
 } from "@/components/shared"
+
+/** Pagos = TreasuryMovement: se abren por id en su ficha (el adaptador finance.payment exige datos completos). */
+const HUB_DOC_LABELS: Record<string, string> = { payment: 'treasury.treasurymovement' }
+const HUB_SELF_TYPES = new Set(['sale_order', 'purchase_order', 'service_obligation'])
+
+function relationsTarget(activeDoc: Order | null | undefined, type: OrderHubPanelProps['type']): { label: string, id: number } | null {
+    if (!activeDoc?.id) return null
+    if (activeDoc.dte_type) return { label: 'billing.invoice', id: Number(activeDoc.id) }
+    return { label: type === 'sale' ? 'sales.saleorder' : 'purchasing.purchaseorder', id: Number(activeDoc.id) }
+}
 
 export interface OrderHubPanelProps {
     orderId?: number | null
@@ -56,8 +68,11 @@ export function OrderHubPanel({
     const [detailsModal, setDetailsModal] = useState<{ open: boolean, type: string, id: number | string }>({ open: false, type: 'sale_order', id: 0 })
 
     const openDetails = (docType: string, docId: number | string) => {
-        if (docType === 'work_order') {
-            openEntity('production.workorder', Number(docId))
+        // ADR-0080: los documentos se abren con openEntity (pila con "volver" y fichas comunes).
+        // La OV/OC propia del Hub sigue en su drawer local (openEntity la redirigiría al Hub, D4).
+        const label = HUB_DOC_LABELS[docType] ?? TYPE_TO_REGISTRY[docType]
+        if (label && !HUB_SELF_TYPES.has(docType) && hasEntityDrawer(label)) {
+            openEntity(label, Number(docId))
             return
         }
         if (onOpenDetail) {
@@ -66,6 +81,8 @@ export function OrderHubPanel({
         }
         setDetailsModal({ open: true, type: docType, id: docId })
     }
+
+    const relationsDoc = relationsTarget(activeDoc, type)
 
     const closeDetails = () => {
         setDetailsModal(prev => ({ ...prev, open: false }))
@@ -147,6 +164,12 @@ export function OrderHubPanel({
                             posSessionId={posSessionId}
                             compact={true}
                         />
+                        {relationsDoc && (
+                            <section className="mt-6 space-y-2">
+                                <h4 className="text-sm font-medium">Documentos relacionados</h4>
+                                <DocumentRelationsSection label={relationsDoc.label} id={relationsDoc.id} />
+                            </section>
+                        )}
                     </div>
                 </ScrollArea>
 

@@ -9,7 +9,7 @@ stability: contract-changes-require-ADR
 
 # Document relations — DocumentRef, relation providers and canonical document URLs
 
-Decision: [ADR-0080](../10-architecture/adr/0080-document-model-relations-and-navigation.md) (status **Proposed**: this contract covers the additive M2 part; M3 UI changes need the ADR accepted).
+Decision: [ADR-0080](../10-architecture/adr/0080-document-model-relations-and-navigation.md) (Accepted 2026-10-14).
 Origin: documentary audit [`docs/50-audit/documental/`](../50-audit/documental/document-system-assessment.md).
 
 ## 1. `DocumentRef`
@@ -94,11 +94,21 @@ Generated only by `DocumentTypeRegistry.canonical_url(label, obj)`:
 | `inventory.stockmove` | `/inventory/reports/movements?selected={id}` |
 | everything else (e.g. `sales.saledelivery`) | `/d/{label}/{id}` |
 
-## 5. Legacy formats (deprecated, removal in M6)
+## 5. UI components
+
+| Component | Where | Use |
+|---|---|---|
+| `RelatedDocumentsTable` | `@/components/shared` | Presentation only: relations grouped by semantic (origin/generated, logistics, payments, notes/returns/reversals, accounting, other). Rows show role, `display_id`, status, date, partner, amount/quantity; inaccessible targets show "sin acceso" without link; `loading`/`empty`/`error` + unresolved count |
+| `DocumentRelationsSection` | `@/features/documents` | Fetches with `useDocumentRelations` and opens each target with `openEntity` (stack + back; OV/OC → Hub per D4); types without drawer navigate to `DocumentRef.url` |
+| `DocumentDrawerShell` | `@/components/shared` | Common document sheet: header (caller's `useDrawerIdentity`), `summary`, type-specific `children`, `related` slot, loading/error. Used by `SaleDeliveryDrawer`, `PurchaseReceiptDrawer` |
+
+Sheets with the relations section (M3): delivery, receipt, invoice, treasury movement, journal entry (view), stock move, inventory document, and the Order Hub (OV/OC/invoice in note mode). Existing drawers keep their layout and add the section; full migration to `DocumentDrawerShell` happens when each drawer is touched (M5).
+
+## 6. Legacy formats (deprecated, removal in M6)
 
 `SaleOrderSelector/PurchaseOrderSelector.get_related_documents` (`related_documents` buckets), `Invoice.related_documents`, `JournalEntry.source_documents`/`source_info`. Do not add new consumers; use the relations endpoint.
 
-## 6. Anti-patterns
+## 7. Anti-patterns
 
 | Anti-pattern | Correct |
 |---|---|
@@ -106,3 +116,5 @@ Generated only by `DocumentTypeRegistry.canonical_url(label, obj)`:
 | Linking documents through text (`description`, `reference`) | Typed FK, then a provider |
 | Building document URLs in components (`/sales/orders/${id}`) | `DocumentRef.url` |
 | A generic "relations" table | Typed FKs (ADR-0080 §Alternatives) |
+| Ad-hoc "related documents" list inside a drawer | `DocumentRelationsSection` |
+| Opening a related document with `router.push` when it has a drawer | `openEntity` (keeps the stack and "volver") |

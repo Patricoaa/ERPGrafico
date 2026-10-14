@@ -1,4 +1,4 @@
-export { DocumentResolverView } from './components'
+export { DocumentRelationsSection, DocumentResolverView } from './components'
 export { DOCUMENTS_KEYS } from './hooks/queryKeys'
 export { useDocumentRef } from './hooks/useDocumentRef'
 export { useDocumentRelations } from './hooks/useDocumentRelations'

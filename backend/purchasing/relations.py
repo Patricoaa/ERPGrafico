@@ -1,8 +1,50 @@
-"""Tipos documentales de compras (ADR-0080). Los proveedores de relaciones llegan en M5."""
+"""Proveedores de relaciones documentales de compras (ADR-0080, contrato document-relations.md)."""
 
-from core.documents import DocumentType, DocumentTypeRegistry
+from core.documents import DocumentType, DocumentTypeRegistry, Link, relation_provider
 
 # OC: `?selected` abre el Order Hub, que es su ficha (decisión D4).
 DocumentTypeRegistry.register(DocumentType(
     label="purchasing.purchaseorder", canonical_url="/purchasing/orders?selected={id}",
 ))
+# Recepción: sin lista con `?selected` propio → resolvedor /d/ (valor por defecto).
+DocumentTypeRegistry.register(DocumentType(label="purchasing.purchasereceipt"))
+
+NOTE_ROLES = {"NOTA_CREDITO": "credit_note", "NOTA_DEBITO": "debit_note"}
+
+
+@relation_provider("purchasing.purchaseorder")
+def purchase_order_relations(order):
+    for receipt in order.receipts.all():
+        yield Link("fulfillment", "outgoing", "receipt", receipt)
+    for invoice in order.invoices.all():
+        if invoice.dte_type in NOTE_ROLES:
+            yield Link("correction", "outgoing", NOTE_ROLES[invoice.dte_type], invoice)
+        else:
+            yield Link("derivation", "outgoing", "invoice", invoice)
+    for purchase_return in order.returns.all():
+        yield Link("correction", "outgoing", "return", purchase_return)
+    if order.work_order_id:
+        yield Link("reference", "incoming", "work_order", order.work_order, is_dependency=False)
+    for payment in order.payments.all():
+        yield Link("settlement", "incoming", "payment", payment, amount=payment.amount)
+    for allocation in order.payment_allocations.select_related("treasury_movement"):
+        yield Link("settlement", "incoming", "payment", allocation.treasury_movement, amount=allocation.amount)
+    if order.journal_entry_id:
+        yield Link("posting", "outgoing", "journal_entry", order.journal_entry)
+
+
+@relation_provider("purchasing.purchasereceipt")
+def purchase_receipt_relations(receipt):
+    from inventory.models import InventoryDocument
+
+    yield Link("fulfillment", "incoming", "purchase_order", receipt.purchase_order)
+    if receipt.related_note_id:
+        yield Link("reference", "incoming", NOTE_ROLES.get(receipt.related_note.dte_type, "note"),
+                   receipt.related_note, is_dependency=False)
+    for line in receipt.lines.select_related("stock_move"):
+        if line.stock_move_id:
+            yield Link("fulfillment", "outgoing", "stock_move", line.stock_move, quantity=line.quantity_received)
+    for doc in InventoryDocument.objects.filter(source_document_type="purchasing.purchasereceipt", source_document_id=receipt.id):
+        yield Link("derivation", "outgoing", "inventory_document", doc)
+    if receipt.journal_entry_id:
+        yield Link("posting", "outgoing", "journal_entry", receipt.journal_entry)

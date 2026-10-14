@@ -274,10 +274,12 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
 
     // ── Accounting ────────────────────────────────────────────────────────────
-    // * requires full entry data (lines, items) — EntityBadge always provides it
-    "accounting.journalentry": ({ open, onOpenChange, data, onSuccess }) => (
+    // Con data → vista con datos completos; solo con id (relaciones, /d/) → vista cargada por id.
+    // Sin data ni id → creación.
+    "accounting.journalentry": ({ id, open, onOpenChange, data, onSuccess }) => (
         <JournalEntryDrawer
-            mode={data ? 'view' : 'create'}
+            mode={data || id ? 'view' : 'create'}
+            journalEntryId={data ? undefined : id || undefined}
             open={open}
             onOpenChange={onOpenChange}
             initialData={data as JournalEntryInitialData}

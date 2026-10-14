@@ -9,6 +9,7 @@ import { useTreasuryMovement } from '@/features/treasury/hooks/useTreasuryMoveme
 import { ActivitySidebar } from '@/features/audit'
 import type { TransactionDrawerProps } from '@/features/_shared'
 import { formDrawerWidth } from '@/lib/form-widths'
+import { DocumentRelationsSection } from '@/features/documents'
 
 interface CashMovementDrawerProps extends TransactionDrawerProps {
   movementId?: number
@@ -101,6 +102,10 @@ export function CashMovementDrawer({ id, open, onOpenChange, movementId }: CashM
                     <p className="text-sm">{movement.reference ?? '-'}</p>
                   </div>
                 </div>
+                <section className="space-y-2">
+                  <h4 className="text-sm font-medium">Documentos relacionados</h4>
+                  <DocumentRelationsSection label="treasury.treasurymovement" id={movement.id} />
+                </section>
               </div>
             </FormSplitLayout>
           )}
