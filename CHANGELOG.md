@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.16](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.15...v0.3.16) (2026-10-14)
+
+
+### ⚙️ Refactors
+
+* **frontend:** center rail icons vertically; dynamic root redirect ([40ea424](https://github.com/Patricoaa/ERPGrafico/commit/40ea424ba0806718e68b5a8e6904229489c2a72c))
+
 ### [0.3.15](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.14...v0.3.15) (2026-10-14)
 
 
