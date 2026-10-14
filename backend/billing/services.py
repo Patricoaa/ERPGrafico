@@ -1448,9 +1448,7 @@ class BillingService:
             )
 
         # Validate Uniqueness
-        supplier_id = (
-            invoice.source_order.get_invoice_supplier_id() if invoice.source_order else None
-        )
+        supplier_id = invoice.order.get_invoice_supplier_id() if invoice.order else None
         BillingService._validate_document_uniqueness(
             number, invoice.dte_type, supplier_id=supplier_id, exclude_id=invoice.id
         )
@@ -1474,8 +1472,8 @@ class BillingService:
             from accounting.services import JournalEntryService
 
             # 1. Update Description
-            if invoice.source_order:
-                entry.description = invoice.source_order.describe_for_invoice_journal(
+            if invoice.order:
+                entry.description = invoice.order.describe_for_invoice_journal(
                     number, invoice.get_dte_type_display()
                 )
 
@@ -1488,8 +1486,8 @@ class BillingService:
 
         from workflow.services import WorkflowService
 
-        if invoice.source_order:
-            WorkflowService.sync_hub_tasks(invoice.source_order)
+        if invoice.order:
+            WorkflowService.sync_hub_tasks(invoice.order)
 
         return invoice
 
@@ -1602,8 +1600,7 @@ class BillingService:
         # Solo aplica a documentos EMITIDOS (ventas): un folio propio informado al SII
         # es inmutable y se ajusta por Nota de Crédito. En compras el folio pertenece
         # al proveedor; la factura recibida se anula con asiento de reverso.
-        # (create_purchase_bill no setea source_order, por eso el FK explícito manda.)
-        is_purchase_doc = invoice.purchase_order_id is not None or not invoice.is_sale_document()
+        is_purchase_doc = not invoice.is_sale_document()
         if invoice.number and invoice.number != "Draft" and not is_purchase_doc:
             raise ValidationError(
                 "❌ No se puede anular una factura con folio asignado.\n"
@@ -1680,9 +1677,12 @@ class BillingService:
         invoice.status = Invoice.Status.CANCELLED
         invoice.save()
 
-        # 3. Update Order Status
-        if invoice.source_order:
-            invoice.source_order.revert_after_invoice_cancellation()
+        # 3. Update Order Status — solo si no le queda otra factura principal activa
+        order = invoice.order
+        if order and not order.invoices.exclude(pk=invoice.pk).exclude(
+            status=Invoice.Status.CANCELLED
+        ).exclude(dte_type__in=[Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]).exists():
+            order.revert_after_invoice_cancellation()
 
         from workflow.services import WorkflowService
 

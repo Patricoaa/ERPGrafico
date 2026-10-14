@@ -248,7 +248,9 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
     @property
     def total_paid(self):
         """Calculates the total amount paid for this order"""
-        return sum(p.amount for p in self.payments.all())
+        from treasury.selectors import PaymentSelector
+
+        return PaymentSelector.paid_amount(self.payments.all(), sale_side=True)
 
     @property
     def pending_amount(self):

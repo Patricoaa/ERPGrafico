@@ -80,9 +80,7 @@ class InvoiceListSerializer(serializers.ModelSerializer):
         return None
 
     def get_pending_amount(self, obj):
-        total_paid = sum(p.amount for p in obj.payments.all())
-        total_allocated = sum(a.amount for a in obj.payment_allocations.all())
-        return obj.total - (total_paid + total_allocated)
+        return obj.pending_amount
 
 class InvoiceWriteSerializer(serializers.ModelSerializer):
     """Optimized serializer for create and update views.
@@ -225,10 +223,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
         return InvoiceSelectorExt.get_serialized_payments(obj)
 
     def get_pending_amount(self, obj):
-        # Leer de RAM: payments y payment_allocations ya están prefetcheados
-        total_paid = sum(p.amount for p in obj.payments.all())
-        total_allocated = sum(a.amount for a in obj.payment_allocations.all())
-        return obj.total - (total_paid + total_allocated)
+        return obj.pending_amount
 
     def get_lines(self, obj):
         from .selectors import InvoiceSelectorExt

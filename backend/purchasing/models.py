@@ -157,13 +157,11 @@ class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
     def total_paid(self):
         """Calculates the total amount paid for this order (excluding Note-specific payments)"""
         # Exclude payments specific to Notes (NC/ND) to keep PO Hub status pure
-        payments = self.payments.all()
-        valid_payments = [
-            p
-            for p in payments
-            if not (p.invoice and p.invoice.dte_type in ["NOTA_CREDITO", "NOTA_DEBITO"])
-        ]
-        return sum(p.amount for p in valid_payments)
+        from treasury.selectors import PaymentSelector
+
+        return PaymentSelector.paid_amount(
+            self.payments.all(), sale_side=False, exclude_note_payments=True
+        )
 
     @property
     def pending_amount(self):

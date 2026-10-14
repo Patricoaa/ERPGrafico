@@ -175,10 +175,12 @@ class Invoice(TransactionalDocument):
     @property
     def total_paid(self):
         """Calculates the total amount paid for this invoice"""
-        from treasury.models import TreasuryMovement
+        from treasury.selectors import PaymentSelector
 
-        return sum(
-            p.amount for p in self.payments.all() if p.status != TreasuryMovement.Status.CANCELLED
+        return PaymentSelector.paid_amount(
+            self.payments.all(),
+            sale_side=not self.purchase_order_id,
+            allocations=self.payment_allocations.all(),
         )
 
     @property
@@ -188,24 +190,28 @@ class Invoice(TransactionalDocument):
 
     # --- T-57 ampliado: Polymorphic treasury hooks ---
 
+    @property
+    def order(self):
+        """
+        Orden origen de la factura vía FK tipadas (GAP-05, auditoría documental).
+        Reemplaza al GFK `source_order`, que ningún flujo escribe.
+        """
+        return self.sale_order or self.purchase_order
+
     def is_sale_document(self) -> bool:
         """
         Indica si la factura corresponde a una venta.
-        Verdadero si source_order es un SaleOrder (o si no hay source_order — facturas standalone son de venta).
+        Falso si está ligada a una OC o es factura de compra; las standalone son de venta.
         """
-        source = self.source_order
-        if source is None:
-            return True
-        return source._meta.model_name == "saleorder"
+        return self.purchase_order_id is None and self.dte_type != self.DTEType.PURCHASE_INV
 
     def get_customer_for_payment(self):
         """
         Retorna el contacto cliente para resolver la cuenta contable en el pago.
-        Prioriza el customer del documento origen sobre el contact de la factura.
+        Prioriza el customer de la OV origen sobre el contact de la factura.
         """
-        source = self.source_order
-        if source is not None:
-            return getattr(source, "customer", None)
+        if self.sale_order_id:
+            return self.sale_order.customer
         return self.contact
 
     class FormMeta:

@@ -201,6 +201,16 @@ const GroupDrawer = dynamic(
 // Obsolete drawers removed
 
 
+const PurchaseReceiptDrawer = dynamic(
+    () => import("@/features/purchasing/components/PurchaseReceiptDrawer").then((m) => m.PurchaseReceiptDrawer),
+    { ssr: false, loading: () => skeleton("recepción") }
+)
+
+const SaleDeliveryDrawer = dynamic(
+    () => import("@/features/sales/components/SaleDeliveryDrawer").then((m) => m.SaleDeliveryDrawer),
+    { ssr: false, loading: () => skeleton("despacho") }
+)
+
 const PurchaseReturnDrawer = dynamic(
     () => import("@/features/purchasing/components/PurchaseReturnDrawer").then((m) => m.PurchaseReturnDrawer),
     { ssr: false, loading: () => skeleton("devolución de compra") }
@@ -479,8 +489,8 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
 
     // ── Purchasing (read-only detail drawers) ────────────────────────────────
     "purchasing.purchasereceipt": ({ id, open, onOpenChange }) => (
-        <InventoryDocumentDrawer
-            documentId={id}
+        <PurchaseReceiptDrawer
+            id={id}
             open={open}
             onOpenChange={onOpenChange}
         />
@@ -548,8 +558,8 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
         />
     ),
     "sales.saledelivery": ({ id, open, onOpenChange }) => (
-        <InventoryDocumentDrawer
-            documentId={id}
+        <SaleDeliveryDrawer
+            id={id}
             open={open}
             onOpenChange={onOpenChange}
         />

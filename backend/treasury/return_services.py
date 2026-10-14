@@ -229,14 +229,7 @@ class TreasuryReturnService:
         return_movement.journal_entry = entry
         return_movement.save()
 
-        # 5. Update order pending amount
-        if payment.sale_order:
-            payment.sale_order.pending_amount = (payment.sale_order.pending_amount or 0) + amount
-            payment.sale_order.save()
-        elif payment.purchase_order:
-            payment.purchase_order.pending_amount = (
-                payment.purchase_order.pending_amount or 0
-            ) + amount
-            payment.purchase_order.save()
+        # 5. Order/invoice balances are derived (PaymentSelector): the return
+        # movement linked above already lowers the paid amount.
 
         return return_movement

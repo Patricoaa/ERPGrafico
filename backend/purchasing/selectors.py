@@ -96,40 +96,33 @@ class PurchaseOrderSelector:
             }
             docs["notes" if inv.dte_type in _NOTE_TYPES else "invoices"].append(doc_info)
 
+        # One entry per PurchaseReceipt (mirrors sales deliveries). `id` is always the
+        # receipt id: consumers use it to open and annul the receipt (GAP-07).
         receipts = [r for r in order.receipts.all() if getattr(r, "related_note_id", None) is None]
         for rec in receipts:
-            processed_moves: set = set()
             lines = list(rec.lines.all())
-            for line in lines:
-                if line.stock_move and line.stock_move_id not in processed_moves:
-                    move = line.stock_move
-                    processed_moves.add(move.id)
-                    docs["receipts"].append({
+            moves = {line.stock_move_id: line.stock_move for line in lines if line.stock_move}
+            docs["receipts"].append({
+                "id": rec.id,
+                "number": rec.number,
+                "display_id": rec.display_id,
+                "status": rec.status,
+                "date": rec.receipt_date,
+                "docType": "purchase_receipt",
+                "is_service": any(
+                    line.product and line.product.product_type in ["SERVICE", "SUBSCRIPTION"]
+                    for line in lines
+                ),
+                "stock_moves": [
+                    {
                         "id": move.id,
-                        "number": move.display_id,
-                        "display_id": move.display_id,
-                        "date": rec.receipt_date,
-                        "docType": "inventory",
-                        "stock_moves": [{
-                            "id": move.id,
-                            "product": move.product.name,
-                            "quantity": move.quantity,
-                            "is_return": move.quantity < 0,
-                        }],
-                    })
-            has_service = any(
-                line.product and line.product.product_type in ["SERVICE", "SUBSCRIPTION"]
-                for line in lines
-            )
-            if has_service:
-                docs["receipts"].append({
-                    "id": rec.id,
-                    "number": rec.display_id,
-                    "display_id": rec.display_id,
-                    "date": rec.receipt_date,
-                    "docType": "purchase_receipt",
-                    "is_service": True,
-                })
+                        "product": move.product.name,
+                        "quantity": move.quantity,
+                        "is_return": move.quantity < 0,
+                    }
+                    for move in moves.values()
+                ],
+            })
 
         for pay in order.payments.all():
             if pay.invoice and pay.invoice.dte_type in _NOTE_TYPES:

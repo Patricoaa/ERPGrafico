@@ -800,6 +800,46 @@ class CardSelector:
             "pending_charges": CardPendingChargeSerializer(pending, many=True).data,
         }
 
+class PaymentSelector:
+    """
+    Single source for "amount paid" of a commercial document (GAP-04a, document audit).
+
+    Works over already-loaded iterables (prefetched `payments` / `payment_allocations`)
+    so model properties and serializers share the rule without extra queries:
+
+    - CANCELLED movements are ignored.
+    - Direction is signed: for a sale document INBOUND adds and OUTBOUND (refund)
+      subtracts; for a purchase document the opposite.
+    - Optionally ignores movements whose invoice is a credit/debit note
+      (order hubs keep note payments out of the order balance).
+    - Allocations (`PaymentAllocation`) add their amount unless their movement is
+      CANCELLED.
+    """
+
+    NOTE_DTE_TYPES = ("NOTA_CREDITO", "NOTA_DEBITO")
+
+    @staticmethod
+    def paid_amount(movements, *, sale_side: bool, allocations=(), exclude_note_payments: bool = False):
+        from .models import TreasuryMovement
+
+        cancelled = TreasuryMovement.MovementStatus.CANCELLED
+        inbound, outbound = TreasuryMovement.Type.INBOUND, TreasuryMovement.Type.OUTBOUND
+        total = Decimal("0")
+        for m in movements:
+            if m.status == cancelled:
+                continue
+            if exclude_note_payments and m.invoice_id and m.invoice.dte_type in PaymentSelector.NOTE_DTE_TYPES:
+                continue
+            amount = Decimal(str(m.amount))
+            if m.movement_type in (inbound, outbound) and (m.movement_type == inbound) != sale_side:
+                amount = -amount
+            total += amount
+        for a in allocations:
+            if a.treasury_movement.status != cancelled:
+                total += Decimal(str(a.amount))
+        return total
+
+
 class TreasuryMovementSelector:
     @staticmethod
     def get_cancel_impact(movement) -> dict:

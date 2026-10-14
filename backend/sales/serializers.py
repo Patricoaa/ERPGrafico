@@ -296,7 +296,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         return len(ots) > 0
 
     def get_total_paid(self, obj):
-        return sum(p.amount for p in obj.payments.all())
+        return obj.total_paid
 
     def get_pending_amount(self, obj):
         return obj.effective_total - self.get_total_paid(obj)

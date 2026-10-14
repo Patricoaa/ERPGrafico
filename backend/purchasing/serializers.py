@@ -135,14 +135,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         ]
 
     def get_total_paid(self, obj):
-        # Exclude payments specific to Notes (NC/ND)
-        payments = obj.payments.all()
-        valid_payments = [
-            p
-            for p in payments
-            if not (p.invoice and p.invoice.dte_type in ["NOTA_CREDITO", "NOTA_DEBITO"])
-        ]
-        return sum(p.amount for p in valid_payments)
+        return obj.total_paid
 
     def get_pending_amount(self, obj):
         # Calculate base total from Primary Invoices (Factura/Boleta) OR PO Total

@@ -1113,17 +1113,8 @@ class TreasuryService:
                 return_movement.journal_entry = entry
                 return_movement.save()
 
-            # Update pending_amount
-            if movement.sale_order:
-                movement.sale_order.pending_amount = (
-                    movement.sale_order.pending_amount or 0
-                ) + refund_amount
-                movement.sale_order.save()
-            elif movement.purchase_order:
-                movement.purchase_order.pending_amount = (
-                    movement.purchase_order.pending_amount or 0
-                ) + refund_amount
-                movement.purchase_order.save()
+            # Order/invoice balances are derived (PaymentSelector): the return
+            # movement linked above already lowers the paid amount.
 
         movement.status = TreasuryMovement.MovementStatus.CANCELLED
         movement.save()
