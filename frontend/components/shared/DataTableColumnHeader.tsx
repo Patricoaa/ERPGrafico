@@ -30,7 +30,13 @@ export function DataTableColumnHeader<TData, TValue>({
                 size="sm"
                 style={{ height: "var(--table-header-btn-h, 1.75rem)" }}
                 className="-ml-2 data-[state=open]:bg-accent/50 hover:bg-primary/5 hover:text-primary transition-all rounded-sm"
-                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                onClick={() => {
+                    if (column.getIsSorted() === "desc") {
+                        column.clearSorting()
+                    } else {
+                        column.toggleSorting(column.getIsSorted() === "asc")
+                    }
+                }}
             >
                 <span className={headerTextClass}>{title}</span>
                 {column.getIsSorted() === "desc" ? (

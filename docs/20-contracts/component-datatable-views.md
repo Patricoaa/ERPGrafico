@@ -780,6 +780,112 @@ El `SmartSearchBar` acepta un slot `prefix?: ReactNode` renderizado antes del í
 
 ---
 
+## 17. Ordenamiento — Tri-estado obligatorio
+
+Cada columna ordenable debe pasar por un ciclo de **tres estados**, no dos:
+
+```
+Sin orden (original) → Ascendente → Descendente → Sin orden (original) → …
+```
+
+**Regla:** Nunca implementar un toggle binario (asc ↔ desc) sin retorno al estado original. El usuario debe poder restaurar el orden de inserción con un tercer clic.
+
+### Implementación correcta en `DataTableColumnHeader`
+
+```tsx
+// ✅ Correcto — tri-estado
+onClick={() => {
+    if (column.getIsSorted() === "desc") {
+        column.clearSorting()          // tercer clic → restaura orden original
+    } else {
+        column.toggleSorting(column.getIsSorted() === "asc")
+    }
+}}
+
+// ❌ Incorrecto — binario, pierde orden original
+onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+```
+
+`DataTableColumnHeader` ya implementa el tri-estado correcto. No volver al patrón binario.
+
+### Columnas numéricas — alineación y cifras tabulares
+
+Toda columna que muestre números debe:
+- **Alinear a la derecha** (`text-right`)
+- **Usar `tabular-nums`** para que los dígitos formen una cuadrícula vertical escaneable
+
+Las primitivas `DataCell.Currency`, `DataCell.Quantity` y `DataCell.Numeric` ya cumplen este invariante. No construir renders numéricos ad-hoc que omitan alguna de estas propiedades.
+
+```tsx
+// ✅ Ya correcto — tabular-nums + text-right incluidos en DataCell.Currency
+cell: ({ row }) => <DataCell.Currency value={row.original.total} />
+
+// ❌ Incorrecto — dígitos proporcionales, izquierda
+cell: ({ row }) => <span>{formatCurrency(row.original.total)}</span>
+```
+
+---
+
+## 18. Selección — Fila completa, barra lateral, estado indeterminado
+
+### 18.1 Área de hit: la fila entera
+
+El target de selección es **la fila completa**, no solo el checkbox. El `onClick` del `<TableRow>` ya maneja esto. No restringir el click de selección al checkbox únicamente.
+
+### 18.2 Estado visual de fila seleccionada
+
+Una fila seleccionada recibe tres señales visuales simultáneas:
+1. **Tinte de fondo** — `bg-primary/5` (no `bg-muted`)
+2. **Barra lateral izquierda** — `box-shadow: inset 2px 0 0 var(--color-primary)` (no añade layout)
+3. **Checkbox marcado** — estado `checked` en la columna de selección
+
+La utilidad `accent-visible` (definida en `globals.css`) aplica el tinte + la barra en un solo token. Usarla en lugar de clases individuales:
+
+```tsx
+// ✅ EntityCard seleccionada — accent-visible ya aplica tinte + barra
+<EntityCard isSelected={isSelected} ... />  // EntityCardRoot añade "accent-visible" cuando isSelected
+
+// ✅ TableRow seleccionada — data-state="selected" trigger en ui/table.tsx
+<TableRow data-state={row.getIsSelected() && "selected"} ... />
+```
+
+**No** combinar `accent-visible` con `bg-primary/5` o `shadow-*` por separado — la utilidad ya los incluye.
+
+### 18.3 Select-all — Estado indeterminado obligatorio
+
+El checkbox de "seleccionar todos" debe pasar **tres estados**:
+
+| Estado | `checked` | Cuándo |
+|--------|-----------|--------|
+| Vacío | `false` | Ninguna fila seleccionada |
+| Indeterminado (guión) | `"indeterminate"` | Al menos una, pero no todas |
+| Chequeado | `true` | Todas las filas de la página seleccionadas |
+
+```tsx
+// ✅ Correcto — tri-estado
+<Checkbox
+    checked={
+        table.getIsAllPageRowsSelected()
+            ? true
+            : table.getIsSomePageRowsSelected()
+            ? "indeterminate"
+            : false
+    }
+    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+    aria-label="Seleccionar todos"
+/>
+
+// ❌ Incorrecto — no comunica selección parcial
+<Checkbox
+    checked={table.getIsAllPageRowsSelected()}
+    ...
+/>
+```
+
+El componente `Checkbox` de Shadcn/UI soporta `checked: boolean | "indeterminate"` nativamente — no se necesita nada extra.
+
+---
+
 ## Checklist de PR
 
 Cada PR que toque `DataTable` o sus consumidores debe verificar:
@@ -807,6 +913,10 @@ Cada PR que toque `DataTable` o sus consumidores debe verificar:
 - [ ] La agrupación visual (`cardGroupBy`) es ortogonal al filtrado del toolbar (`SegmentationBar`) — uno filtra, el otro organiza
 - [ ] Usar `groupByDate` desde `@/lib/group-by-date` si se necesita agrupación fuera del factory
 - [ ] `analyticsPanel` usado solo si hay hook de datos dedicado (no construir inline en el componente)
+- [ ] Columnas ordenables usan `DataTableColumnHeader` — **no** toggle binario propio
+- [ ] Columnas numéricas usan `DataCell.Currency` / `DataCell.Quantity` / `DataCell.Numeric` — no `<span>` ad-hoc
+- [ ] Checkbox select-all usa tri-estado (`"indeterminate"` cuando `getIsSomePageRowsSelected()`) — no booleano puro
+- [ ] `EntityCard` con `isSelected` — no añadir `accent-visible` manualmente (EntityCardRoot lo aplica)
 - [ ] Hook de analytics usa helpers de `@/lib/analytics-helpers` (no duplicados)
 - [ ] Hook de analytics usa `assignChartColors` desde `@/lib/chart-colors` (no mapas hardcodeados)
 - [ ] `Granularity` es tipo compartido, no string literal inline
