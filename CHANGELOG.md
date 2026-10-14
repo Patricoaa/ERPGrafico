@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.21](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.20...v0.3.21) (2026-10-14)
+
+
+### ⚙️ Refactors
+
+* **hooks:** migrate 185 staleTime literals to staleTime.* constants ([edfb3f7](https://github.com/Patricoaa/ERPGrafico/commit/edfb3f734f524fbca4c445ddb0eb7a5382d67017))
+
 ### [0.3.20](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.19...v0.3.20) (2026-10-14)
 
 
