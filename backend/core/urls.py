@@ -2,6 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .api.document import document_action_view
+from .api.documents import document_ref, document_relations
 from .api.search import universal_search
 from .views import (
     ActionLogViewSet,
@@ -47,6 +48,9 @@ urlpatterns = [
     path("entity-config/", entity_config, name="entity-config"),
     path("preferences/", UserPreferenceView.as_view(), name="user-preferences"),
     path("search/", universal_search, name="universal-search"),
+    # ADR-0080: DocumentRef y relaciones (label = app.model)
+    path("documents/<str:label>/<int:pk>/", document_ref, name="document-ref"),
+    path("documents/<str:label>/<int:pk>/relations/", document_relations, name="document-relations"),
     path(
         "documents/<int:content_type_id>/<int:object_id>/<str:action>/",
         document_action_view,

@@ -1,0 +1,1 @@
+export { DocumentResolverView } from './DocumentResolverView'

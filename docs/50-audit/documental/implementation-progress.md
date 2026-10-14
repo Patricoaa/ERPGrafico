@@ -9,11 +9,39 @@
 |---|---|
 | M0 Hotfix | **Hecha** (GAP-07, GAP-04a, GAP-05; GAP-06 adelantado) |
 | M1 Integridad | **Hecha** (código + backfill aplicado en dev) · INT-15 corregido |
-| M2 Contratos | Pendiente |
+| M2 Contratos | **Hecha** (parte aditiva) · ADR-0080 **Propuesto**: aceptar antes de M3 |
 | M3 UI piloto | Pendiente (GAP-06 ya hecho) |
 | M4 Facturación y pagos | Pendiente |
 | M5 Extensión | Pendiente |
 | M6 Retiro | Pendiente |
+
+---
+
+## 2026-10-14 · M2 Contratos (aditivo)
+
+**ADR-0080** (`docs/10-architecture/adr/0080-document-model-relations-and-navigation.md`, estado **Proposed**): modelo documental común sin tabla `Document` ni tabla genérica de relaciones; `DocumentTypeRegistry` como extensión de `UniversalRegistry`; `DocumentRef`; servicio de relaciones con proveedores por app; URL canónica generada por el registro y resolvedor `/d/{label}/{id}`. La parte implementada en M2 es **aditiva** (no modifica contratos vigentes). M3 sí los modifica (drawers, `openEntity` con pila, Hub) y **requiere aceptar el ADR**.
+
+**Contrato nuevo:** `docs/20-contracts/document-relations.md` (enlazado desde `docs/README.md` y `CLAUDE.md`).
+
+**Backend (`core/documents/`):**
+- `types.py` — `DocumentType` / `DocumentTypeRegistry` (URL canónica, campos de estado/fecha/contraparte, permiso de lectura). `UniversalRegistry.get(label)` añadido.
+- `refs.py` — `build_ref` / `ref_for` / `missing_ref`: `exists=false` para referencias colgantes; sin permiso → `accessible=false` y sin contenido.
+- `relations.py` — `Link`, `DocumentRelationService`, `@relation_provider`; deduplica y separa `unresolved`.
+- Proveedores en `<app>/relations.py` (autodescubiertos en `CoreConfig.ready`): `sales` (OV, despacho), `billing` (factura; factura ↔ orden como lista, D1), `treasury` (movimiento + `PaymentAllocation`), `accounting` (asiento: origen GFK, reversiones, movimientos de stock), `inventory` (StockMove vía los vínculos tipados de M1, documento de inventario). `purchasing` solo declara la URL canónica de la OC (proveedores en M5).
+- Endpoints `GET /api/core/documents/{label}/{id}/` y `/relations/?semantic=&direction=` (404 tipo/documento desconocido, 403 sin permiso sobre el documento pedido).
+
+**URL canónica:** `?selected` solo donde la lista abre ese documento (OV/OC/factura de venta → Order Hub por D4; asiento; movimiento de tesorería; StockMove). Hallazgo: en `/sales/orders/deliveries`, `?selected` es id de **OV** (abre el formulario de despacho), así que el despacho y los demás tipos usan el resolvedor `/d/{label}/{id}`.
+
+**Frontend (`features/documents`, aditivo):** tipos Zod (`DocumentRef`, `DocumentLink`, `DocumentRelations`), `useDocumentRef`, `useDocumentRelations` (lo consumirá M3), `DocumentResolverView` y la página `app/(dashboard)/d/[label]/[id]`: redirige a la URL canónica o abre el drawer registrado con `openEntity`.
+
+**Verificación:**
+- `core/tests/test_document_relations.py` (6): flujo piloto OV → despacho → stock → documento de inventario → factura → pago → asiento, filtros, `unresolved` con origen borrado, permisos (403/404, `accessible=false`).
+- `core/tests/test_document_routes_sync.py`: toda URL canónica declarada y el resolvedor tienen ruta en `frontend/app` (falló antes de crear `/d/[label]/[id]`, pasa después).
+- `features/documents/components/__tests__/DocumentResolverView.test.tsx` (3, en el dev server).
+- **Datos demo del dev server** (servicio, solo lectura): 128 OV recorridas con sus 128 despachos, 128 facturas, 127 pagos, 83 StockMove y 338 asientos → **`unresolved` vacío en todo el piloto** (criterio de aceptación del plan). `GET /api/core/documents/sales.saledelivery/1/` → 200, `url=/d/sales.saledelivery/1`. La ruta `/d/...` responde 200 en el Next.js del dev server (no probada visualmente: requiere sesión).
+- Suites `billing sales purchasing treasury core workflow inventory production accounting`: sin fallos nuevos frente a la línea base (los de `accounting` se reprodujeron igual en un worktree del commit anterior). Type-check y lint del frontend sin errores.
+
+**Pendiente para M3 (requiere ADR-0080 aceptado):** `DocumentDrawerShell` + `RelatedDocumentsTable`, `openEntity` con pila y "volver", `openEntity` de OV/OC → Hub (D4), Hub consumiendo `relations`, retiro de `DRAWER_MAP`.
 
 ---
 

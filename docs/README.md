@@ -82,6 +82,7 @@ last_review: 2026-06-19
 | “realtime”, “WebSocket”, “SSE”, “EventSource”, “Django Channels”, “live update”, “push notification”, “useDraftSync”, “useNotifications” | [realtime-channels.md](20-contracts/realtime-channels.md) | 20 |
 | “entity drawer”, “openEntity”, “drawer registry”, “abrir documento origen”, “SourceDocumentLink”, “drill-down”, “drawer modes (view/edit/create)”, “TransactionViewModal” | [component-entity-drawers.md](20-contracts/component-entity-drawers.md) | 20 |
 | “idempotency”, “Idempotency-Key”, “double-click”, “duplicate request”, “retry safe” | [idempotency.md](20-contracts/idempotency.md) | 20 |
+| “document relations”, “related documents”, “DocumentRef”, “relation provider”, “canonical document URL”, “/d/{label}/{id}” | [document-relations.md](20-contracts/document-relations.md) | 20 |
 | “export PDF”, “export Excel”, “export CSV”, “WeasyPrint”, “openpyxl”, “generar reporte descargable”, “libro de ventas xlsx” | [export-formats.md](20-contracts/export-formats.md) | 20 |
 | “import CSV”, “import Excel”, “bulk upload”, “importar contactos/productos”, “column mapping”, “preview import”, “DataManagement” | [import-csv-xlsx.md](20-contracts/import-csv-xlsx.md) | 20 |
 | “agregar realtime”, “nuevo consumer WS”, “nuevo endpoint SSE”, “implementar notificación live” | [add-realtime-channel.md](30-playbooks/add-realtime-channel.md) | 30 |

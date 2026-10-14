@@ -57,6 +57,7 @@ Task routing — common intents:
 | Postgres backup / restore / disaster recovery | [backup-and-restore-postgres.md](docs/30-playbooks/backup-and-restore-postgres.md) + [disaster-recovery-pyme.md](docs/30-playbooks/disaster-recovery-pyme.md) |
 | Feature aggregator pattern (no root barrel, no own backend) | [frontend-fsd.md#aggregator-pattern](docs/10-architecture/frontend-fsd.md#aggregator-pattern-read-only-feature-without-root-barrel) |
 | Entity drawer / `openEntity` / source-document drill-down / drawer registry / drawer modes | [component-entity-drawers.md](docs/20-contracts/component-entity-drawers.md) |
+| Related documents / DocumentRef / relation provider / canonical document URL / `/d/{label}/{id}` | [document-relations.md](docs/20-contracts/document-relations.md) |
 | Dev server / remote tests / SSH / Mutagen | [remote-dev-server.md](docs/30-playbooks/remote-dev-server.md) |
 
 Full routing table in [docs/README.md](docs/README.md).

@@ -104,6 +104,10 @@ class UniversalRegistry:
         return list(cls._entities.keys())
 
     @classmethod
+    def get(cls, label: str) -> SearchableEntity | None:
+        return cls._entities.get(label)
+
+    @classmethod
     def all_entities_serializable(cls) -> list[dict[str, str]]:
         """Returns all registered entities as dicts for the /api/core/entity-config/ endpoint."""
         from core.prefix_registry import EntityPrefix
