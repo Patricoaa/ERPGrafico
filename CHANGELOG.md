@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.17](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.16...v0.3.17) (2026-10-14)
+
+
+### ⚙️ Refactors
+
+* **frontend:** move module label to panel header above utility nav ([8a07a2b](https://github.com/Patricoaa/ERPGrafico/commit/8a07a2b3244703ed6d9ef70b71f7a51b10a982f3))
+
 ### [0.3.16](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.15...v0.3.16) (2026-10-14)
 
 
