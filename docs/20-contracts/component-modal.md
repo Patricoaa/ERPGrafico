@@ -64,7 +64,7 @@ Primitiva base de todos los modales del proyecto. Wrappea `Dialog` de Shadcn con
 | `children` | `ReactNode` | ✅ | — | Cuerpo del modal |
 | `footer` | `ReactNode` | ❌ | — | Renderizado en `DialogFooter` con fondo transparente |
 | `headerActions` | `ReactNode` | ❌ | — | Slot derecho del header (ej. botones de acción extra) |
-| `size` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| '2xl' \| 'full' \| 'default'` | ❌ | `'default'` | Ver tabla de anchos abajo |
+| `size` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| '2xl' \| 'full'` | ❌ | `'md'` | Ver tabla de anchos abajo |
 | `variant` | `'default' \| 'transaction' \| 'wizard' \| 'form-tabs' \| 'raw'` | ❌ | `'default'` | Controla estilos de header/footer |
 | `showCloseButton` | `boolean` | ❌ | `true` | Botón X en esquina superior derecha |
 | `hideScrollArea` | `boolean` | ❌ | `false` | Desactiva `ScrollArea`; obligatorio cuando se usa `FormTabs` vertical |

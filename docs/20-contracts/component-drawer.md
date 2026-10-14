@@ -80,6 +80,8 @@ supersedes:
 
 Usar el helper `formDrawerWidth(complexity, hasSidebar)` de `@/lib/form-widths`. Nunca hardcodear porcentajes.
 
+**Excepción:** `defaultSize="100%"` está autorizado para wizards `side="bottom"` con `boundary="embedded"` que ocupan el viewport completo (ej: `WorkOrderWizard`, `UnifiedNoteWizard`, `PurchaseCheckoutWizard`).
+
 | `FormComplexity` | Campos | Creación | Edición (con sidebar) |
 |:----------------:|:------:|:--------:|:---------------------:|
 | `"micro"`   | 1 (ej: GroupForm, TransactionNumberForm) | `25%` | `40%` |

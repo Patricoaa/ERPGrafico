@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { useFiscalYears } from '@/features/accounting'
 
 export function useHistoricalToggle(selectedYear?: number) {
-    const { data: fiscalYears } = useFiscalYears()
+    const { fiscalYears } = useFiscalYears()
 
     const closedYear = useMemo(() => {
         if (!selectedYear || !fiscalYears?.length) return null

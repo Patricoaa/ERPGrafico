@@ -62,7 +62,7 @@ Rules apply to every PR. Violations block merge unless an accepted ADR waives th
 ## 6. Forms
 
 32. All forms: `react-hook-form` + `zodResolver`.
-33. Zod schema in `components/forms/schema.ts`; TS type is `z.infer<typeof Schema>`.
+33. Zod schema co-located alongside the form component in its own `schema.ts`; TS type is `z.infer<typeof Schema>`. No global `components/forms/schema.ts` path.
 34. Backend serializer is authoritative; frontend Zod mirrors it.
 
 ## 7. FSD boundaries

@@ -172,11 +172,11 @@ def write_csv(rows, fieldnames) -> bytes:
 
 ---
 
-## Storage async (MinIO via django-storages)
+## Storage async (R2/MinIO via django-storages)
 
 > **Configuración real (2026-08-04):** el storage NO es un cliente `boto3` raw en `core/storage.py` (ese módulo no existe). Se usa `django-storages[boto3]` con `S3Boto3Storage` ([settings.py:251-267](../../backend/config/settings.py#L251)): toggle `USE_S3`, endpoint `AWS_S3_ENDPOINT_URL` (default `http://minio:9000`, S3-compatible — también compatible con Cloudflare R2 cambiando el endpoint), firmas `s3v4`, `AWS_S3_FILE_OVERWRITE=False`. Los snippets de este doc usan `storage_client` como alias conceptual del backend de storage activo.
 
-Generados async se suben a MinIO y se sirven via signed URL:
+Generados async se suben a R2/MinIO y se sirven via signed URL:
 
 | Aspecto | Convención |
 |---------|------------|
@@ -261,7 +261,7 @@ export function useExportSalesBook() {
 | Service render xlsx | Carga con openpyxl, verifica headers, fila de totales con valor esperado |
 | View sync | 200, content-type correcto, content-disposition presente |
 | View async | 202 + job_id, job_id corresponde a `ExportJob` con `status=pending` |
-| Task | Sube a MinIO, marca `done`, signed URL responde 200 |
+| Task | Sube a R2/MinIO, marca `done`, signed URL responde 200 |
 | Cleanup cron | Objeto >7d se elimina; <7d sobrevive |
 
 ---
@@ -271,7 +271,7 @@ export function useExportSalesBook() {
 - [ ] Decidir formato(s) soportados. Ofrecer al menos uno; ofrecer múltiples solo si hay caso real.
 - [ ] Service en `backend/{app}/services/{entity}_export.py` que devuelve `ExportResult(mode, data | job_id)`.
 - [ ] Si sync: view devuelve binario con headers correctos.
-- [ ] Si async: view encola Celery, devuelve 202; task sube a MinIO + actualiza `ExportJob`.
+- [ ] Si async: view encola Celery, devuelve 202; task sube a R2/MinIO + actualiza `ExportJob`.
 - [ ] Frontend: hook + botón con feedback de loading + descarga al completar.
 - [ ] Tests de service + view + (si async) task.
 - [ ] Confirmar TTL de 7 días + signed URL 15 min.

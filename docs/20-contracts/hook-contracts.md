@@ -16,6 +16,7 @@ Public API of reusable hooks. Feature-local hooks live in `features/[x]/hooks/` 
 ## Conventions (apply to all)
 
 - Name: `use[Entity][Action]` — `useSaleOrders`, `useCreateInvoice`, `useStockValidation`.
+- Variant: módulos con muchos hooks agrupan queries en `use[Domain]Queries` (ej. `useWorkflowQueries`, `useProductionQueries`, `useTaxQueries`). Ambas convenciones son válidas; usar la que sea consistente con el módulo.
 - Return: **domain-named** properties. Never `data`, `mutate`, `error` raw.
 - Errors: handled internally via `showApiError` toast. The `error` object is never exposed in return shape.
 - `isError` (boolean) MAY be exposed when the component needs to branch UI on error state (e.g. render `EmptyState` instead of `Skeleton`). The raw `Error` object is never exposed.

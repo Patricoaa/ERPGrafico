@@ -11,3 +11,5 @@ export * from './UserSelector';
 export * from './CategorySelector';
 export * from './WarehouseSelector'
 export * from './ProductTypeSelector'
+
+export * from './SourceDocumentSelector';

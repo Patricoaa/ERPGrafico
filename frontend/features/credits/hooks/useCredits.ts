@@ -16,7 +16,6 @@ export function useCreditPortfolio() {
     const refetch = () => invalidateCrossFeature(queryClient, [[...CREDITS_KEY, 'portfolio']])
 
     return {
-        data: query.data ?? null,
         contacts: query.data?.contacts ?? [],
         summary: query.data?.summary ?? null,
         isLoading: query.isLoading,

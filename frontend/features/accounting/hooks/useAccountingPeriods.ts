@@ -64,7 +64,7 @@ export function useAccountingPeriods() {
     });
 
     return {
-        data: (data as AccountingPeriod[]) ?? [],
+        periods: (data as AccountingPeriod[]) ?? [],
         isLoading,
         refetch,
         isActionLoading: closeMutation.isPending || reopenMutation.isPending || createMutation.isPending,

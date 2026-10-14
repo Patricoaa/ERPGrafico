@@ -43,11 +43,13 @@ export interface DrawerBaseProps {
 }
 ```
 
-| Modo | Cuándo | Comportamiento |
-|------|--------|----------------|
-| `create` | sin `initialData`/`id` | formulario vacío, footer "Crear {Entidad}" |
-| `edit` | con `initialData`/`id` | pre-fill, dirty tracking, footer "Guardar Cambios" |
-| `view` | lectura | campos read-only, sin footer de edición; reemplaza el rol del difunto `TransactionViewModal` |
+| Modo | Cuándo | Comportamiento | Ruta de apertura |
+|------|--------|----------------|-----------------|
+| `create` | sin `initialData`/`id` | formulario vacío, footer "Crear {Entidad}" | `openEntity` o montaje directo |
+| `edit` | con `initialData`/`id` | pre-fill, dirty tracking, footer "Guardar Cambios" | **exclusivamente** vía `?selected={id}` (ADR-0020) |
+| `view` | lectura | campos read-only, sin footer de edición; reemplaza al difunto `TransactionViewModal` | `openEntity` (del registro) |
+
+> **Importante:** `ENTITY_DRAWERS` y `openEntity` solo abren drawers en modo `view` (o `create` si no hay `id`). El modo `edit` **jamás** se alcanza desde el registro — es exclusivo del patrón `?selected` que monta el drawer directamente con `initialData` de la lista. No pasar `mode="edit"` en adaptadores de `ENTITY_DRAWERS`.
 
 - Un drawer **deriva** el modo con el hook canónico: `const { mode, isView } = useDrawerMode({ mode: modeProp, initialData })`. **Jamás resolver el modo inline**.
 - Un drawer de entidad es un componente con sufijo `Drawer` (ver [naming-conventions.md](../90-governance/naming-conventions.md)) que monta su propia `<Drawer>` ([component-drawer.md](./component-drawer.md)).

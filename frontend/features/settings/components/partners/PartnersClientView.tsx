@@ -89,7 +89,7 @@ export function PartnersClientView({
     createAction
 }: PartnersClientViewProps) {
     const search = useUnifiedSearch(partnerUnifiedSearchDef)
-    const { data: partners = [], isLoading, isFetching, refetch, error } = usePartners()
+    const { partners = [], isLoading, isFetching, refetch, error } = usePartners()
     const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false)
     const [isTransferOpen, setIsTransferOpen] = useState(false)
     const [isInitialSetupOpen, setIsInitialSetupOpen] = useState(false)

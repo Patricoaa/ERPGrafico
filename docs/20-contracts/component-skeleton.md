@@ -20,7 +20,7 @@ Controla los **estados de carga** de la aplicación. Existen tres estrategias bi
 │
 ├─ Ruta nueva, sin datos previos (first load / Suspense boundary)
 │   └─ ¿Qué estructura se carga?
-│       ├─ Página completa (app/loading.tsx)         → AppShellSkeleton
+│       ├─ Página completa (route `loading.tsx`)       → PageLayoutSkeleton
 │       ├─ Página con tabs + toolbar + tabla          → PageLayoutSkeleton
 │       ├─ Página con formulario                      → PageLayoutSkeleton contentType="form"
 │       ├─ Tabla de datos                             → `DataTable isLoading={true}` (skeleton de filas integrado)
@@ -53,9 +53,9 @@ export default function Loading() {
 }
 ```
 
-### Regla de la ruta raíz
+### Regla para `loading.tsx` de ruta
 
-`app/loading.tsx` usa exclusivamente `AppShellSkeleton` (sidebar + topbar + contenido). No duplicar primitivos en ese archivo.
+Las rutas usan `PageLayoutSkeleton` en sus archivos `loading.tsx`. `AppShellSkeleton` (sidebar + topbar completo) está disponible como fallback de último recurso para un `loading.tsx` de raíz absoluta — actualmente no hay ninguno en uso.
 
 ---
 
@@ -289,7 +289,7 @@ Wrappers de alto nivel para rutas completas. Usar en `loading.tsx`.
 - `PageHeaderSkeleton` — barra superior con icono + título
 - `PageTabsSkeleton` — barra de pestañas
 - `ToolbarSkeleton` — barra de búsqueda + botones de acción
-- `AppShellSkeleton` — shell completo (sidebar + topbar + contenido); usar **solo** en `app/loading.tsx`
+- `AppShellSkeleton` — shell completo (sidebar + topbar + contenido); disponible como fallback de raíz, actualmente sin uso en `loading.tsx`
 
 ---
 

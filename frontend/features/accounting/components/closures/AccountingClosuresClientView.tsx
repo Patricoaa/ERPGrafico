@@ -33,7 +33,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     const pathname = usePathname();
 
     const {
-        data: fiscalYears,
+        fiscalYears,
         isLoading: isLoadingYr,
         isActionLoading: actionLoadingYr,
         refetch: fetchFiscalYears,
@@ -44,7 +44,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     const { entity: selectedFromUrl, clearSelection: clearUrlSelection } = useSelectedFiscalYearPreview();
 
     const {
-        data: periods,
+        periods,
         isLoading: isLoadingPeriods,
         isActionLoading: actionLoadingPeriod,
         refetch: fetchPeriods,

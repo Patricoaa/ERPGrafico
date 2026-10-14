@@ -432,7 +432,7 @@ export function InventoryCountClientView() {
                 onOpenChange={(open) => { if (!open) handleCloseDrawer() }}
                 side="bottom"
                 boundary="embedded"
-                defaultSize="80vh"
+                defaultSize="100%"
                 title={count ? `Conteo #${count.id}` : "Conteo"}
                 subtitle={drawerSubtitle}
                 icon="clipboard-check"

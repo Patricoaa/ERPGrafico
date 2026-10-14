@@ -20,7 +20,7 @@ export function usePartners() {
         staleTime: 5 * 60 * 1000,
     })
     return {
-        data: query.data ?? [],
+        partners: query.data ?? [],
         isLoading: query.isLoading,
         isFetching: query.isFetching,
         error: query.error,

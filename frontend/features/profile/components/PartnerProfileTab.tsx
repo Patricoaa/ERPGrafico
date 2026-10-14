@@ -37,7 +37,7 @@ export function PartnerProfileTab({ contactId }: Props) {
 
     const actionsCtx: PartnerTransactionActionsCtx = { onViewDocument: handleViewDocument }
 
-    const { data: partners } = usePartners()
+    const { partners } = usePartners()
 
     const txsWithBalance = useMemo(() => {
         if (!statement?.transactions) return []

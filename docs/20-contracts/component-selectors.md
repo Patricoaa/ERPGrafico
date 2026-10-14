@@ -368,6 +368,131 @@ Rich catalog selector with image grid, category filter, and search. Lives in `@/
 
 **⚠️ VirtuosoGrid constraint:** The parent container **must** have a defined height (`flex-1 min-h-0` or fixed px). A zero-height container renders nothing.
 
+## CategorySelector 🟢
+
+Combobox para categorías de producto. Usa `SearchablePopover` con soporte para crear categoría inline.
+
+```tsx
+<CategorySelector
+  value={categoryId}
+  onChange={setCategoryId}
+  label="Categoría"
+  showPlusButton={true}
+/>
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `value` | `string \| number \| null` | ❌ | — | Category `id` |
+| `onChange` | `(value: string \| null) => void` | ✅ | — | Returns `id.toString()` or `null` |
+| `placeholder` | `string` | ❌ | `''` | |
+| `disabled` | `boolean` | ❌ | — | |
+| `label` | `string` | ❌ | — | |
+| `error` | `string` | ❌ | — | |
+| `required` | `boolean` | ❌ | — | |
+| `className` | `string` | ❌ | — | |
+| `showPlusButton` | `boolean` | ❌ | `true` | Abre `CategoryDrawer` para crear inline |
+| `excludeId` | `number \| string` | ❌ | — | Excluir una categoría (ej. evitar self-parent) |
+| `allowNone` | `boolean` | ❌ | `false` | Agrega opción "Ninguno" |
+| `noneLabel` | `string` | ❌ | `'Ninguno'` | Texto de la opción vacía |
+| `icon` | `ReactNode` | ❌ | — | Ícono personalizado en el trigger |
+
+Feature hook: `useCategories` de `features/inventory`.
+
+---
+
+## WarehouseSelector 🟢
+
+Combobox para bodegas. Muestra nombre y código.
+
+```tsx
+<WarehouseSelector
+  value={warehouseId}
+  onChange={setWarehouseId}
+  label="Bodega"
+/>
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `value` | `string \| number \| null` | ❌ | — | Warehouse `id` |
+| `onChange` | `(value: string \| null) => void` | ✅ | — | |
+| `placeholder` | `string` | ❌ | `'Seleccionar bodega...'` | |
+| `disabled` | `boolean` | ❌ | — | |
+| `label` | `string` | ❌ | — | |
+| `error` | `string` | ❌ | — | |
+| `required` | `boolean` | ❌ | — | |
+| `className` | `string` | ❌ | — | |
+| `icon` | `ReactNode` | ❌ | — | Ícono personalizado en el trigger |
+
+Feature hook: `useWarehouses` de `features/inventory`.
+
+---
+
+## ProductTypeSelector 🟢
+
+Dropdown para tipo de producto (`STORABLE | CONSUMABLE | MANUFACTURABLE | SERVICE | SUBSCRIPTION`). Usa Shadcn `<Select>` (no popover) porque es un enum estático de 5 opciones.
+
+```tsx
+<ProductTypeSelector
+  value={productType}
+  onChange={setProductType}
+  label="Tipo de Producto"
+/>
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `value` | `string \| null` | ❌ | — | Uno de los 5 IDs del enum |
+| `onChange` | `(value: string) => void` | ✅ | — | |
+| `disabled` | `boolean` | ❌ | — | |
+| `label` | `string` | ❌ | `'Tipo de Producto'` | |
+| `required` | `boolean` | ❌ | — | |
+| `error` | `string` | ❌ | — | |
+| `lockedType` | `string` | ❌ | — | Fuerza un tipo y deshabilita el selector |
+
+Sin hook externo — opciones son estáticas en el componente.
+
+---
+
+## SourceDocumentSelector 🟢
+
+Selector de documento origen (GFK). Usa `useUniversalSearch` con debounce para buscar cualquier tipo de entidad.
+
+```tsx
+<SourceDocumentSelector
+  value={sourceDoc}
+  onChange={setSourceDoc}
+  label="Documento Origen"
+  allowedLabels={['sales.saleorder', 'purchases.purchaseorder']}
+/>
+```
+
+```ts
+// Tipo de valor
+interface SourceDocument {
+  content_type_id: number
+  object_id: number
+  display: string
+  label: string  // 'app.model'
+  icon: string
+}
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `value` | `SourceDocument \| null` | ❌ | — | Documento seleccionado |
+| `onChange` | `(value: SourceDocument \| null) => void` | ✅ | — | |
+| `disabled` | `boolean` | ❌ | `false` | |
+| `label` | `string` | ❌ | — | |
+| `error` | `string` | ❌ | — | |
+| `className` | `string` | ❌ | — | |
+| `allowedLabels` | `string[]` | ❌ | — | Filtrar por tipo de entidad (`'app.model'`) |
+
+Cuando el documento seleccionado tiene drawer registrado, el texto se convierte en link que abre el drawer con `openEntity`. Hook: `useUniversalSearch` de `features/search`.
+
+---
+
 ## Forbidden patterns
 
 - Do NOT use `<Select>` from shadcn for entity fields with >20 options or dynamic data.

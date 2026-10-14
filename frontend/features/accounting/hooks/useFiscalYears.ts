@@ -59,7 +59,7 @@ export function useFiscalYears() {
     });
 
     return {
-        data: (data as FiscalYear[]) ?? [],
+        fiscalYears: (data as FiscalYear[]) ?? [],
         isLoading,
         refetch,
         isActionLoading: closeMutation.isPending || reopenMutation.isPending || generateOpeningMutation.isPending || previewClosingMutation.isPending,

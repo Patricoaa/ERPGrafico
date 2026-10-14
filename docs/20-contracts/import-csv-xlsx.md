@@ -16,7 +16,7 @@ stability: beta
 >   - `POST /api/treasury/statements/import_statement/` — persiste y devuelve `201` (`ReconciliationService.import_statement_from_request`)
 >   - Todo en [treasury/views.py:556-618](../../backend/treasury/views.py#L556) + [reconciliation_service.py](../../backend/treasury/reconciliation_service.py). Parsers reales: `treasury/parsers/` (chile, santander, excel) con `pandas`.
 > - **Componente shared `DataManagement.tsx` EXISTE** en `frontend/components/shared/DataManagement.tsx` (aún sin consumidor de feature).
-> - **NO implementado:** el flujo genérico preview/commit con `ImportJob`, `GET /api/jobs/{id}/`, commit async con `Idempotency-Key`, subida a MinIO `imports-staging/` ni Celery. El import de tesorería es sync.
+> - **NO implementado:** el flujo genérico preview/commit con `ImportJob`, `GET /api/jobs/{id}/`, commit async con `Idempotency-Key`, subida a R2/MinIO `imports-staging/` ni Celery. El import de tesorería es sync.
 > - Este doc sigue siendo la convención canónica para imports futuros.
 
 ## Stack elegido
@@ -89,7 +89,7 @@ file=<binary>
 ```
 
 **Reglas preview:**
-- Archivo se persiste temporal en MinIO bucket `imports-staging/` con TTL 1 hora.
+- Archivo se persiste temporal en R2/MinIO bucket `imports-staging/` con TTL 1 hora.
 - `preview_token` referencia ese archivo; el commit reusa el token sin re-upload.
 - Sample = primeros 20 filas + 20 al azar para detectar problemas distribuidos.
 - `validation_errors_sample` = máx 100 errores, suficientes para que el usuario decida si vale corregir el archivo o el mapping.
@@ -164,7 +164,7 @@ GET /api/jobs/{job_id}/
   "updated": 20,
   "skipped": 47,
   "errors": 0,
-  "report_download_url": "<signed minio URL>",
+  "report_download_url": "<signed R2/MinIO URL>",
   "expires_at": "..."
 }
 ```
@@ -221,7 +221,7 @@ class ImportJob(models.Model):
     completed_at     = models.DateTimeField(null=True)
 ```
 
-`report_rows` puede crecer a miles de entries; mantenerlo en JSONB es OK para PYME (<10k filas típicas). Si supera 50k filas: persistir en archivo MinIO + leer on-demand.
+`report_rows` puede crecer a miles de entries; mantenerlo en JSONB es OK para PYME (<10k filas típicas). Si supera 50k filas: persistir en archivo R2/MinIO + leer on-demand.
 
 ---
 
