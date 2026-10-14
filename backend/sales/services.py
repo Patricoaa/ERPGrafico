@@ -12,7 +12,7 @@ from core.prefix_registry import EntityPrefix
 from core.services import BaseNoteService
 from inventory.models import Warehouse
 
-from .models import SaleDelivery, SaleDeliveryLine, SaleOrder
+from .models import SaleDelivery, SaleDeliveryLine, SaleLine, SaleOrder
 
 
 class SalesService:
@@ -270,9 +270,8 @@ class SalesService:
         # Confirm delivery (creates stock moves and COGS)
         SalesService.confirm_delivery(delivery)
 
-        # Update order delivery status
-        order.delivery_status = SaleOrder.DeliveryStatus.DELIVERED
-        order.save()
+        # Update order delivery status (GAP-01: derivado de cantidades, no forzado)
+        SalesService._update_order_delivery_status(order)
 
         # Auto-complete logistics HUB task
         # HUB Tasks Sync
@@ -583,10 +582,13 @@ class SalesService:
             date=delivery.delivery_date,
             reference=f"Despacho {EntityPrefix.SALE_ORDER}-{delivery.sale_order.number}",
             partner=delivery.sale_order.customer,
-            source_document_type="sales.saleorder",
-            source_document_id=delivery.sale_order.id,
+            # INT-04: el documento de inventario apunta al despacho, no a la OV
+            source_document_type="sales.saledelivery",
+            source_document_id=delivery.id,
         )
         details_to_create = []
+        # GAP-02: detalle de inventario de cada línea inventariable, para enlazar su StockMove 1:1
+        line_details = []
 
         for line in delivery.lines.all():
             product = line.product
@@ -598,15 +600,15 @@ class SalesService:
                     line.quantity, from_uom=line.uom or line.sale_line.uom, to_uom=line.product.uom
                 )
 
-                details_to_create.append(
-                    InventoryDocumentDetail(
-                        document=doc_inv,
-                        product=product,
-                        warehouse=delivery.warehouse,
-                        quantity=base_qty,
-                        unit_cost=product.cost_price
-                    )
+                detail = InventoryDocumentDetail(
+                    document=doc_inv,
+                    product=product,
+                    warehouse=delivery.warehouse,
+                    quantity=base_qty,
+                    unit_cost=product.cost_price
                 )
+                details_to_create.append(detail)
+                line_details.append((line, detail))
 
                 # Ensure unit_cost is the product's current cost
                 line.unit_cost = product.cost_price
@@ -682,33 +684,29 @@ class SalesService:
             InventoryDocumentDetail.objects.bulk_create(details_to_create)
             doc_inv, generated_moves = InventoryService.confirmar_documento(doc_inv)
 
-            # Map lines to generated moves for PATH A
-            tracked_lines = [l for l in delivery.lines.all() if l.product.track_inventory]
-            moves_by_key = {}
-            for move in generated_moves:
-                key = (move.product_id, move.quantity)
-                if key not in moves_by_key:
-                    moves_by_key[key] = move
-
-            for l in tracked_lines:
-                key = (
-                    l.product_id,
-                    -UoMService.convert_quantity(
-                        l.quantity, from_uom=l.uom or l.sale_line.uom, to_uom=l.product.uom
-                    ),
-                )
-                move = moves_by_key.get(key)
-                if move is not None:
-                    l.stock_move = move
-                    l.save()
+            # GAP-02: cada línea inventariable toma el StockMove de su propio detalle
+            move_by_detail = dict(
+                InventoryDocumentDetail.objects.filter(
+                    pk__in=[d.pk for _, d in line_details]
+                ).values_list("pk", "stock_move_id")
+            )
+            for dl, detail in line_details:
+                dl.stock_move_id = move_by_detail.get(detail.pk)
+                dl.save(update_fields=["stock_move"])
 
             created_moves.extend(generated_moves)
         else:
             doc_inv.delete()
 
-            # Update sale line delivered quantity
-            line.sale_line.quantity_delivered += line.quantity
-            line.sale_line.save()
+        # GAP-01: registrar el cumplimiento de TODAS las líneas del despacho
+        delivered_by_sale_line = {}
+        for line in delivery.lines.all():
+            delivered_by_sale_line[line.sale_line_id] = (
+                delivered_by_sale_line.get(line.sale_line_id, Decimal("0")) + line.quantity
+            )
+        for sale_line in SaleLine.objects.filter(pk__in=delivered_by_sale_line):
+            sale_line.quantity_delivered += delivered_by_sale_line[sale_line.pk]
+            sale_line.save()
 
         # 3. Accounting Entry via Mapper (using total_cost for COGS)
         # Recalculate totals after updating line costs

@@ -459,10 +459,13 @@ class PurchasingService:
             status=InventoryDocument.Status.DRAFT,
             date=receipt.receipt_date,
             reference=f"Recepción {receipt.purchase_order.display_id}",
-            partner=receipt.purchase_order.supplier
+            partner=receipt.purchase_order.supplier,
+            source_document_type="purchasing.purchasereceipt",
+            source_document_id=receipt.id,
         )
 
         details_to_create = []
+        line_details = []
 
         for line in receipt.lines.all():
             # 1. Prepare Inventory Document Detail - quantity is already negative in receipt line for returns, wait: confirm_receipt is for receipts not returns?
@@ -485,15 +488,15 @@ class PurchasingService:
                     f"Requerido: {abs(base_qty)} {line.product.uom.name}"
                 )
 
-            details_to_create.append(
-                InventoryDocumentDetail(
-                    document=doc,
-                    product=line.product,
-                    warehouse=receipt.warehouse,
-                    quantity=base_qty,
-                    unit_cost=line.unit_cost
-                )
+            detail = InventoryDocumentDetail(
+                document=doc,
+                product=line.product,
+                warehouse=receipt.warehouse,
+                quantity=base_qty,
+                unit_cost=line.unit_cost
             )
+            details_to_create.append(detail)
+            line_details.append((line, detail))
 
             # 2. Update Purchase Line
             line.purchase_line.quantity_received += line.quantity_received
@@ -504,11 +507,8 @@ class PurchasingService:
         # Confirm document
         doc, generated_moves = InventoryService.confirmar_documento(doc, journal_entry=entry)
 
-        # Assign generated moves to lines (matching by product)
-        # Note: This is an approximation. If there are duplicate products in the receipt, it might assign the same move or arbitrary ones.
-        for line, move in zip(receipt.lines.all(), generated_moves):
-            line.stock_move = move
-            line.save()
+        # GAP-02: cada línea toma el StockMove de su propio detalle
+        PurchasingService._link_lines_to_moves(line_details)
 
         for line in receipt.lines.all():
             # 3. Accounting
@@ -553,6 +553,20 @@ class PurchasingService:
         receipt.journal_entry = entry
         receipt.status = PurchaseReceipt.Status.CONFIRMED
         receipt.save()
+
+    @staticmethod
+    def _link_lines_to_moves(line_details):
+        """Enlaza cada línea de recepción con el StockMove generado por su detalle de inventario."""
+        from inventory.models import InventoryDocumentDetail
+
+        move_by_detail = dict(
+            InventoryDocumentDetail.objects.filter(
+                pk__in=[detail.pk for _, detail in line_details]
+            ).values_list("pk", "stock_move_id")
+        )
+        for line, detail in line_details:
+            line.stock_move_id = move_by_detail.get(detail.pk)
+            line.save(update_fields=["stock_move"])
 
     @staticmethod
     def _create_receipt_line(receipt, purchase_line, quantity, unit_cost, uom=None):
@@ -616,6 +630,7 @@ class PurchasingService:
         )
 
         details_to_create = []
+        line_details = []
 
         for line in receipt.lines.all():
             # Skip stock moves for SERVICE and SUBSCRIPTION type products
@@ -697,15 +712,15 @@ class PurchasingService:
             # Update Product Cost (Weighted Average)
             PurchasingService._update_product_cost(line.product, base_qty, cost_per_base_unit)
 
-            details_to_create.append(
-                InventoryDocumentDetail(
-                    document=doc,
-                    product=line.product,
-                    warehouse=receipt.warehouse,
-                    quantity=base_qty,
-                    unit_cost=cost_per_base_unit
-                )
+            detail = InventoryDocumentDetail(
+                document=doc,
+                product=line.product,
+                warehouse=receipt.warehouse,
+                quantity=base_qty,
+                unit_cost=cost_per_base_unit
             )
+            details_to_create.append(detail)
+            line_details.append((line, detail))
 
             # Update Purchase Line
             line.purchase_line.quantity_received += line.quantity_received
@@ -715,11 +730,8 @@ class PurchasingService:
             InventoryDocumentDetail.objects.bulk_create(details_to_create)
             doc, generated_moves = InventoryService.confirmar_documento(doc)
 
-            # Map lines that are not services to generated moves
-            inventory_lines = [line for line in receipt.lines.all() if line.product.product_type not in ["SERVICE", "SUBSCRIPTION"]]
-            for line, move in zip(inventory_lines, generated_moves):
-                line.stock_move = move
-                line.save()
+            # GAP-02: cada línea inventariable toma el StockMove de su propio detalle
+            PurchasingService._link_lines_to_moves(line_details)
         else:
             doc.delete()
 

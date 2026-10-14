@@ -118,7 +118,7 @@ class InventoryService:
         from accounting.glosa_builder import GlosaBuilder
         from accounting.models import JournalEntry
 
-        from .models import InventoryDocument, Location
+        from .models import InventoryDocument, InventoryDocumentDetail, Location
 
         if document.status not in [InventoryDocument.Status.DRAFT, InventoryDocument.Status.APPROVED]:
             raise ValidationError("Solo se pueden confirmar documentos en estado borrador o aprobado.")
@@ -179,6 +179,8 @@ class InventoryService:
                 description=f"{document.get_document_type_display()} Doc: {document.reference or document.id}",
                 journal_entry=journal_entry
             )
+            InventoryDocumentDetail.objects.filter(pk=detail.pk).update(stock_move=move)
+            detail.stock_move = move
             generated_moves.append(move)
 
         # Accounting Generation

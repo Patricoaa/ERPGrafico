@@ -1572,6 +1572,15 @@ class InventoryDocumentDetail(models.Model):
     destination_location = models.ForeignKey(
         Location, on_delete=models.PROTECT, related_name="doc_moves_in"
     )
+    # Movimiento generado al confirmar el documento (GAP-02/03, auditoría documental).
+    # Da a cada StockMove un vínculo tipado con su documento: move.inventory_document_detail.document
+    stock_move = models.OneToOneField(
+        StockMove,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="inventory_document_detail",
+    )
 
     class Meta:
         verbose_name = _("Detalle de Documento")
