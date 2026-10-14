@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { PageSectionHeader, ToolbarCreateButton } from "@/components/shared"
+import { ToolbarCreateButton } from "@/components/shared"
 import { WarehouseClientView } from "@/features/inventory"
 
 export const metadata: Metadata = {
@@ -16,7 +16,6 @@ export default async function StockWarehousesPage({ searchParams }: PageProps) {
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <PageSectionHeader as="h1" title="Almacenes y Ubicaciones" description="Estructura física y lógica para el almacenamiento de mercadería." />
             <WarehouseClientView
                 externalOpen={modal === 'new'}
                 createAction={createAction}

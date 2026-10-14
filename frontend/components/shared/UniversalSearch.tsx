@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { useEffect, useRef, useState, useMemo } from "react"
+import { useEffect, useRef, useState, useMemo, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import {
@@ -21,7 +21,12 @@ import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useBranding } from "@/contexts/BrandingProvider"
 
-export function UniversalSearch() {
+interface UniversalSearchProps {
+    /** Disparador personalizado (p. ej. ítem "Buscar" del sidebar). Por defecto: botón ícono. */
+    renderTrigger?: (open: () => void) => ReactNode
+}
+
+export function UniversalSearch({ renderTrigger }: UniversalSearchProps = {}) {
     const [open, setOpen] = useState(false)
     const [query, setQuery] = useState("")
     const [activeIndex, setActiveIndex] = useState(0)
@@ -116,17 +121,18 @@ export function UniversalSearch() {
 
     return (
         <>
-            {/* Wider Trigger Button */}
-            <Button
-                variant="ghost"
-                size="icon"
-                type="button"
-                onClick={() => setOpen(true)}
-                aria-label="Búsqueda universal (Ctrl+K)"
-                className="group h-8 w-8 rounded-md text-foreground/50 transition-all hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
-            >
-                <Search className="h-4 w-4 shrink-0 transition-colors group-hover:text-foreground" aria-hidden />
-            </Button>
+            {renderTrigger ? renderTrigger(() => setOpen(true)) : (
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    type="button"
+                    onClick={() => setOpen(true)}
+                    aria-label="Búsqueda universal (Ctrl+K)"
+                    className="group h-8 w-8 rounded-md text-foreground/50 transition-all hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                >
+                    <Search className="h-4 w-4 shrink-0 transition-colors group-hover:text-foreground" aria-hidden />
+                </Button>
+            )}
 
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogPortal>

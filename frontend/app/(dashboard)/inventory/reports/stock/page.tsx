@@ -1,5 +1,4 @@
 import { type Metadata } from "next"
-import { PageSectionHeader } from "@/components/shared"
 import { StockReport } from "@/features/inventory"
 
 export const metadata: Metadata = {
@@ -7,16 +6,7 @@ export const metadata: Metadata = {
     description: "Gestión de existencias, almacenes y reabastecimiento.",
 }
 
-export default async function StockReportPage(props: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
-    const searchParams = await props.searchParams
-    const productName = searchParams.product_name as string | undefined
-
-    return (
-        <>
-            <PageSectionHeader as="h1" 
-                title={productName ?? "Existencias"} 
-                description={productName ? "Insights y movimientos históricos del producto." : "Estado actual del inventario por almacén, valorizado en tiempo real."} 
-            />
-            <StockReport />
-        </>)
+// El título (incluido `product_name`) lo publica InventoryHeader en la topbar.
+export default function StockReportPage() {
+    return <StockReport />
 }

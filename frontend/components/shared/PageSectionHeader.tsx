@@ -1,6 +1,6 @@
 "use client"
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { TabBar } from "@/components/shared"
 
 interface PageSectionTab {
@@ -9,48 +9,31 @@ interface PageSectionTab {
     href: string
 }
 
+/**
+ * Pestañas internas de una vista (nivel por debajo del sidebar).
+ * El título y la descripción de la página los publica la topbar del shell (ADR-0079).
+ */
 interface PageSectionHeaderProps {
-    title?: string
-    description?: string
     tabs?: PageSectionTab[]
     subTabs?: PageSectionTab[]
-    /** Render subTabs as a full-width underline row directly below the title/description block */
+    /** Render subTabs as a full-width underline row */
     subTabsBelow?: boolean
-    /** Heading level for the page title. Module-root pages pass "h1" (one H1 per route, ADR-0073); defaults to "h2". */
-    as?: "h1" | "h2"
 }
 
-export function PageSectionHeader({ title, description, tabs, subTabs, subTabsBelow = false, as = "h2" }: PageSectionHeaderProps) {
+export function PageSectionHeader({ tabs, subTabs, subTabsBelow = false }: PageSectionHeaderProps) {
     const pathname = usePathname()
     const router = useRouter()
-    const searchParams = useSearchParams()
     const pathSegments = pathname.split('/').filter(Boolean)
     const hasTabs = tabs && tabs.length > 0
     const activeTab = hasTabs ? (tabs.find(t => pathSegments.includes(t.value))?.value || tabs[0]?.value) : undefined
     const hasSubTabs = subTabs && subTabs.length > 0
     const activeSubTab = hasSubTabs ? (subTabs.find(t => pathSegments.includes(t.value))?.value ?? subTabs[0]?.value ?? "") : ""
 
-    const currentView = searchParams.get('view')
-    const displayTitle = currentView === 'analytics' && title ? `Análisis de ${title}` : title
-
-    if (!title && !description && !hasTabs && !hasSubTabs) return null
+    if (!hasTabs && !hasSubTabs) return null
 
     return (
         <div>
-            <div className="flex items-center justify-between gap-4">
-                {(displayTitle || description) && (
-                    <div className="flex flex-col min-w-0">
-                        {displayTitle && as === "h1" && (
-                            <h1 className="text-lg font-semibold tracking-tight text-foreground">{displayTitle}</h1>
-                        )}
-                        {displayTitle && as !== "h1" && (
-                            <h2 className="text-lg font-semibold tracking-tight text-foreground">{displayTitle}</h2>
-                        )}
-                        {description && (
-                            <p className="text-xs text-muted-foreground">{description}</p>
-                        )}
-                    </div>
-                )}
+            <div className="flex items-center justify-end gap-4">
                 {hasTabs && (
                     <TabBar
                         items={tabs.map(t => ({ value: t.value, label: t.label }))}
@@ -60,8 +43,8 @@ export function PageSectionHeader({ title, description, tabs, subTabs, subTabsBe
                             if (tab) router.push(tab.href)
                         }}
                         variant="toolbar"
-                        className={title || description ? "w-auto flex-none shrink-0" : "w-full"}
-                        containerClassName={title || description ? "justify-end" : "justify-start"}
+                        className="w-full"
+                        containerClassName="justify-start"
                     >
                         <div className="hidden" />
                     </TabBar>

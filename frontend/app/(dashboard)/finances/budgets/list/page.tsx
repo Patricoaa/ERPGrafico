@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { BudgetsClientView } from "@/features/finance"
-import { PageSectionHeader, ToolbarCreateButton } from '@/components/shared'
+import { ToolbarCreateButton } from '@/components/shared'
 
 export const metadata: Metadata = {
     title: "Presupuestos | ERPGrafico",
@@ -18,7 +18,6 @@ export default async function BudgetsListPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader as="h1" title="Presupuestos" description="Planificación y control presupuestario" />
             <BudgetsClientView externalOpen={modal === 'new'} createAction={createAction} />
         </>)
 }

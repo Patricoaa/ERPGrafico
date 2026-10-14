@@ -1,5 +1,5 @@
 import { type Metadata } from "next"
-import { PageSectionHeader, ToolbarCreateButton, FadeIn } from "@/components/shared"
+import { ToolbarCreateButton, FadeIn } from "@/components/shared"
 import { StatementsClientView } from "@/features/finance"
 
 export const metadata: Metadata = {
@@ -25,7 +25,6 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader as="h1" title="Conciliación Bancaria" description="Gestión de cartolas y cuadratura de movimientos" />
             <FadeIn>
                 <StatementsClientView externalOpen={modalOpen} createAction={createAction} />
             </FadeIn>

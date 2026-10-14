@@ -68,7 +68,6 @@ export * from './AttachmentList';
 export * from './DocumentAttachmentDropzone';
 export * from './DocumentCompletionModal';
 export * from './Badge';
-export * from './ModuleNavigationMenu';
 
 // Navigation & Layout
 export * from './PageHeader';

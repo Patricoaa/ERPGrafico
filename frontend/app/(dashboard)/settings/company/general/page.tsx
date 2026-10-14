@@ -1,5 +1,4 @@
 import { type Metadata } from "next"
-import { PageSectionHeader } from "@/components/shared"
 import { CompanySettingsView } from "@/features/settings"
 
 export const metadata: Metadata = {
@@ -10,7 +9,6 @@ export const metadata: Metadata = {
 export default async function CompanySettingsGeneralPage() {
     return (
         <>
-            <PageSectionHeader as="h1" title="Empresa" description="Identidad y parámetros globales de la organización" />
             <CompanySettingsView activeTab="general" />
         </>)
 }

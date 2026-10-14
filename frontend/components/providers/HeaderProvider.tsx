@@ -51,8 +51,20 @@ export interface HeaderConfig {
     navigation?: NavigationConfig
 }
 
+/** Navegación del módulo + segmento raíz de la ruta donde se publicó. */
+export interface ModuleNavigation {
+    moduleId: string
+    navigation: NavigationConfig
+}
+
 interface HeaderContextType {
     config: HeaderConfig | null
+    /**
+     * Última navegación de módulo publicada. A diferencia de `config`, NO se limpia en
+     * `clearHeader`: una vista que monta su propio PageHeader sin `navigation`
+     * (p. ej. solo para titleActions) no vacía el sidebar (ADR-0079).
+     */
+    moduleNavigation: ModuleNavigation | null
     setHeader: (config: HeaderConfig | null) => void
     clearHeader: () => void
 }
@@ -61,9 +73,16 @@ const HeaderContext = createContext<HeaderContextType | undefined>(undefined)
 
 export function HeaderProvider({ children }: { children: React.ReactNode }) {
     const [config, setConfig] = useState<HeaderConfig | null>(null)
+    const [moduleNavigation, setModuleNavigation] = useState<ModuleNavigation | null>(null)
 
     const setHeader = useCallback((newConfig: HeaderConfig | null) => {
         setConfig(newConfig)
+        const navigation = newConfig?.navigation
+        if (navigation) {
+            // setHeader corre en efectos (cliente, tras el commit de la navegación)
+            const moduleId = window.location.pathname.split('/').filter(Boolean)[0] || 'dashboard'
+            setModuleNavigation({ moduleId, navigation })
+        }
     }, [])
 
     const clearHeader = useCallback(() => {
@@ -75,9 +94,10 @@ export function HeaderProvider({ children }: { children: React.ReactNode }) {
 
     const value = useMemo(() => ({
         config,
+        moduleNavigation,
         setHeader,
         clearHeader
-    }), [config, setHeader, clearHeader])
+    }), [config, moduleNavigation, setHeader, clearHeader])
 
     return (
         <HeaderContext.Provider value={value}>

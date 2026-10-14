@@ -1,4 +1,3 @@
-import { PageSectionHeader } from "@/components/shared"
 import { serverFetch } from "@/lib/server-fetch"
 import type { WorkOrder } from "@/features/production/types"
 import WorkOrdersPageClient from "./WorkOrdersPageClient"
@@ -29,7 +28,6 @@ export default async function WorkOrdersPage({ searchParams }: PageProps) {
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <PageSectionHeader as="h1" title="Órdenes de Producción" description="Planificación y seguimiento de órdenes de fabricación" />
             <WorkOrdersPageClient initialOrders={initialOrders} />
         </div>)
 }

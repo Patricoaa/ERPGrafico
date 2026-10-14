@@ -136,11 +136,12 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0070](0070-primary-process-black.md) | Primary = Process Black K100 (placa Key) — ratificación de la decisión de julio | Accepted |
 | [0071](0071-ledger-ink-metaphor-carveout.md) | Ledger ink metaphor carve-out (Cyan/Magenta/Yellow in the ledger summary) | Accepted |
 | [0072](0072-dead-shared-exports-removal.md) | Removal of dead shared exports (EntityHeader, CardActions, EntityCard.Hero, dead DataCell props) | Accepted |
-| [0073](0073-heading-hierarchy-app-shell.md) | Heading hierarchy for app-shell pages (one H1 per module root) | Accepted |
+| [0073](0073-heading-hierarchy-app-shell.md) | Heading hierarchy for app-shell pages (one H1 per module root) | Partially superseded (0079) |
 | [0074](0074-module-grid-shared-truthful-status.md) | Shared ModuleGrid component with truthful runtime status | Accepted |
 | [0075](0075-motion-compliance-fadein-only.md) | Motion compliance — single shell transition, FadeIn-only entry, global reduced-motion floor | Accepted |
 | [0076](0076-productselector-grid-picker-relocation.md) | Product grid family relocated out of the shared barrel and renamed ProductGridPicker | Accepted |
 | [0077](0077-treasury-accounts-cache-key-unification.md) | Unify treasury-account data surface and single cache-key namespace | Accepted |
 | [0078](0078-datatable-family-facade-split.md) | DataTable family façade-first split (56-prop surface distilled behind a stable API) | Proposed |
+| [0079](0079-module-navigation-sidebar-erpnext-v16.md) | Module navigation moves from top-bar tabs to a two-column sidebar (ERPNext v16 pattern) | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

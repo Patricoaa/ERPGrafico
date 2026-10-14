@@ -1,4 +1,3 @@
-import { PageSectionHeader } from "@/components/shared"
 import { BudgetDetailView } from "@/features/finance"
 
 interface PageProps {
@@ -9,7 +8,6 @@ export default async function BudgetDetailPage({ params }: PageProps) {
     const { id } = await params
     return (
         <div className="flex-1 space-y-4">
-            <PageSectionHeader as="h1" title="Detalle de Presupuesto" description="Visualización detallada del presupuesto" />
             <BudgetDetailView budgetId={id} />
         </div>
     )

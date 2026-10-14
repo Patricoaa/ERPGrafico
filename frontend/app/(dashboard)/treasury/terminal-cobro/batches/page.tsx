@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { PageSectionHeader, ToolbarCreateButton } from '@/components/shared'
+import { ToolbarCreateButton } from '@/components/shared'
 import { TerminalBatchesClientView } from "@/features/treasury"
 
 export const metadata: Metadata = {
@@ -13,7 +13,6 @@ export default async function TerminalCobroBatchesPage() {
 
     return (
         <>
-            <PageSectionHeader as="h1" title="Liquidaciones" description="Gestión de liquidaciones y cierres de lote" />
             <TerminalBatchesClientView
 
                 createAction={createAction}

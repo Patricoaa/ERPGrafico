@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { PageHeader, PageSectionHeader, ToolbarCreateButton } from '@/components/shared'
+import { PageHeader, ToolbarCreateButton } from '@/components/shared'
 import { PartnersSettingsView } from "@/features/settings"
 import { FINANCES_TABS } from "../../FinancesHeader"
 
@@ -40,7 +40,6 @@ export default async function PartnersDistributionsPage({ searchParams }: PagePr
                 navigation={navigation}
             />
 
-            <PageSectionHeader as="h1" title="Distribución de Utilidades" description="Gestión de actas, resolución de dividendos y reinversiones" />
 
             <PartnersSettingsView
                 activeTab="distributions"

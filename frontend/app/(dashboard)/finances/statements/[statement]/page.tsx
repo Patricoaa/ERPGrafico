@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation"
-import { PageSectionHeader } from "@/components/shared"
 import { FinancialStatementsReport } from "@/features/finance"
 
 const STATEMENTS = {
@@ -34,7 +33,6 @@ export default async function StatementPage({ params }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader as="h1" title={config.title} description={config.description} />
             <FinancialStatementsReport activeTab={statement} />
         </>
     )

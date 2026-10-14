@@ -4,7 +4,7 @@ doc: module-layout-navigation
 status: active
 owner: frontend-team
 stability: stable
-last_review: 2026-05-28
+last_review: 2026-10-13
 ---
 
 # Contrato: Layout y Navegación Dinámica por Módulo
@@ -26,24 +26,46 @@ Cada módulo en `app/(dashboard)/[module]/` DEBE seguir esta estructura:
 
 ## 2. El Componente Header (`[Module]Header.tsx`)
 
-Es el cerebro de la navegación del módulo. Debe ser un **Client Component** que consuma el estado de la URL.
+Es el cerebro de la navegación del módulo. Debe ser un **Client Component** que consuma el estado de la URL y **publique** la navegación vía `<PageHeader navigation={...} />` (→ `HeaderProvider`). No la renderiza: desde ADR-0079 la renderiza el sidebar del shell (§2.1).
 
 ### Responsabilidades:
 - **Detección de Segmentos**: Usar `usePathname()` para identificar en qué vista física se encuentra el usuario.
 - **Mapeo de Tabs**: Transformar el segmento de la URL (ej. `/sales/terminals`) en el valor activo del tab (ej. `pos`).
 - **Gestión de Breadcrumbs**: Configurar el objeto `navigation` para el `PageHeader` inyectando el `moduleName`.
-- **Sub-tabs**: Manejar sub-navegación mediante el parámetro `?tab=`.
+- **Sub-tabs**: Declarar `subTabs` (hasta 3 niveles: `tabs → subTabs → subTabs`).
 
 ### Ejemplo de Contrato de Navegación:
 ```tsx
 const navigation = {
-    moduleName: "Ventas",
+    moduleName: "Ventas",          // título del panel del sidebar
     moduleHref: "/sales",
-    tabs: [...],
-    activeValue: currentSegment,
-    subActiveValue: searchParams.get('tab')
+    tabs: [...],                   // ítems / grupos del panel
+    activeValue: currentSegment,   // nivel 1 activo
+    subActiveValue: searchParams.get('tab'), // nivel 2 activo
+    breadcrumbs: [...],            // opcional: se muestran en la topbar tras el título
 }
 ```
+
+### 2.1 Renderizado en el shell (ADR-0079, patrón ERPNext v16)
+
+`DashboardShell` = **riel de módulos** (`ModuleRail`, 56px) + **panel del módulo** (`ModuleSidebarPanel`, 224px, siempre visible ≥ md; drawer en móvil) + columna de contenido (topbar + página).
+
+| `navigation` | Panel |
+|---|---|
+| tab sin `subTabs` | ítem plano |
+| tab con `subTabs` | grupo colapsable (abierto si contiene la vista activa) |
+| `subTabs` de nivel 3 | ítems anidados; activo por `pathname` (sin query) |
+| grupo con un único hijo visible | se aplana: un ítem con label/ícono del padre |
+| `permission` sin acceso en un tab | se oculta el tab y se promueven sus hijos visibles |
+| `tabs: []` (dashboard) | lista de módulos |
+
+Reglas de activo: nivel 1 por `activeValue`, nivel 2 por `subActiveValue` (solo bajo el tab activo), nivel 3 por `pathname`.
+
+El tope del panel contiene **Buscar** (Ctrl+K) y **Bandeja de entrada** (`SidebarUtilityNav`); las **Notificaciones** están en el menú del avatar (pie del riel). No hay selector de módulo en el panel: el riel cumple esa función.
+
+La **topbar** (ancho completo, no se desplaza al abrir sheets) muestra el título de la vista como **único `<h1>`** de la página (la `description` es su tooltip), `breadcrumbs`, `status`, `titleActions`, `children` y los accesos POS / Calculadora a tamaño de riel. Las vistas **no** renderizan título ni descripción propios; `PageSectionHeader` solo dibuja pestañas internas.
+
+Una vista puede montar su propio `<PageHeader>` (p. ej. para `titleActions`) **sin** `navigation`: el sidebar conserva la navegación del módulo (`HeaderProvider.moduleNavigation`).
 
 ## 3. El Layout del Módulo (`layout.tsx`)
 
@@ -71,7 +93,7 @@ export default async function ModulePage({ searchParams }) {
 
 Las páginas dentro de los directorios de vista (sub-carpetas) tienen un contrato simplificado:
 
-1. **Sin Chrome Propio**: NO deben renderizar `PageHeader`, `Breadcrumbs` ni el wrapper de `LAYOUT_TOKENS.view` (ya provistos por el layout).
+1. **Sin Chrome Propio**: NO deben renderizar título/descripción (`PageSectionHeader` solo admite pestañas), `Breadcrumbs` ni el wrapper de `LAYOUT_TOKENS.view` (ya provistos por el layout). Un `PageHeader` anidado solo se justifica para publicar `titleActions` / un título dinámico.
 2. **Acciones de Toolbar**: Si la vista requiere un botón de creación (ej. "Nuevo Cliente"), debe renderizar el componente `<ToolbarCreateButton />` y, si es necesario, pasarlo como prop `createAction` al componente de feature.
 3. **Independencia**: La página es responsable de cargar sus propios datos (o usar Suspense) y manejar sus propios modales mediante `searchParams` (ej. `?modal=new`).
 

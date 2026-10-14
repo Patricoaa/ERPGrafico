@@ -1,5 +1,4 @@
 import { type Metadata } from "next"
-import { PageSectionHeader } from "@/components/shared"
 import { POSSessionsClientView } from "@/features/sales"
 
 export const metadata: Metadata = {
@@ -10,7 +9,6 @@ export const metadata: Metadata = {
 export default function POSSessionsPage() {
     return (
         <div className="h-full flex flex-col">
-            <PageSectionHeader as="h1" title="Sesiones POS" description="Registro de aperturas y cierres de sesión" />
             <POSSessionsClientView hideHeader />
         </div>
     )

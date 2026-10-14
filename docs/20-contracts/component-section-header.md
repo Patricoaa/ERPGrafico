@@ -13,8 +13,8 @@ stability: contract-changes-require-ADR
 
 | Component | Use case |
 |---|---|
-| **PageSectionHeader** | Page-level title (renders the single `<h1>` when `as="h1"` is passed on module-root routes; default `<h2>`) + optional tabs/sub-tabs. Owned by ADR-0073. |
-| **PageHeader** | Shell chrome only: title + breadcrumbs + global actions, rendered by `DashboardShell` via `HeaderProvider`. It renders **no DOM heading** — it is **not** the H1/H2 owner. |
+| **PageSectionHeader** | In-view tabs / sub-tabs only (level below the sidebar). No title, no description, no heading (ADR-0079). |
+| **PageHeader** | Publishes title, description (tooltip), status, actions and module `navigation` to `HeaderProvider`. `DashboardShell` renders the title as the page's single `<h1>` in the top bar (ADR-0079, supersedes ADR-0073 §1-2, §5). Renders nothing in place. |
 | **SectionHeader** | Individual section heading inside a card or list (always `<h2>` or lower) |
 
 ---

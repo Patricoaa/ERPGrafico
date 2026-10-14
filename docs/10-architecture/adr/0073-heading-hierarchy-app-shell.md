@@ -1,7 +1,8 @@
 ---
 id: 0073
 title: Heading hierarchy for app-shell pages (one H1 per module root)
-status: Accepted
+status: Partially superseded
+superseded_by: 0079 (H1 owner moves to the shell top bar; §3-4 still apply)
 date: 2026-10-09
 author: core-team
 ---

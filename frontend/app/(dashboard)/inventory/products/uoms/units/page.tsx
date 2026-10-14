@@ -8,9 +8,7 @@ export default function UoMUnitsPage() {
 
     return (
         <div className="flex-1 overflow-hidden flex flex-col">
-            <PageSectionHeader as="h1"
-                title="Unidades de Medida"
-                description="Configuración de métricas y factores de conversión estándar."
+            <PageSectionHeader
                 subTabs={[
                     { value: "units", label: "Unidades", href: "/inventory/products/uoms/units" },
                     { value: "uom-categories", label: "Categorías de Medida", href: "/inventory/products/uoms/categories" },

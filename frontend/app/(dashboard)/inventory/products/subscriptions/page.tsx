@@ -1,4 +1,3 @@
-import { PageSectionHeader } from "@/components/shared"
 import { SubscriptionsClientView } from "@/features/inventory"
 import { ToolbarCreateButton } from "@/components/shared"
 
@@ -12,7 +11,6 @@ export default async function ProductsSubscriptionsPage({ searchParams }: PagePr
 
     return (
         <>
-            <PageSectionHeader as="h1" title="Suscripciones" description="Gestión de productos con suscripción recurrente" />
             <SubscriptionsClientView
                 hideHeader
                 externalOpen={modal === 'new'}

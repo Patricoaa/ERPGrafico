@@ -43,6 +43,7 @@ Cada decisión de diseño se evalúa contra este criterio: ¿este píxel ayuda a
 | Espaciado y densidad (compact/comfortable) | [density-system.md](docs/20-contracts/density-system.md) |
 | Animación y transiciones | [component-animation.md](docs/20-contracts/component-animation.md) |
 | Componentes compartidos (qué usar en cada caso) | [component-decision-tree.md](docs/20-contracts/component-decision-tree.md) |
+| Shell, sidebar de módulos y navegación (patrón ERPNext v16) | [module-layout-navigation.md](docs/20-contracts/module-layout-navigation.md) · [ADR-0079](docs/10-architecture/adr/0079-module-navigation-sidebar-erpnext-v16.md) |
 | Arquitectura del design system, radios | [design-system.md](docs/10-architecture/design-system.md) |
 | Primary = K100 (ADR) | [ADR-0070](docs/10-architecture/adr/0070-primary-process-black.md) |
 | DataTable compact variant (ADR) | [ADR-0030](docs/10-architecture/adr/0030-datatable-compact-variant.md) |

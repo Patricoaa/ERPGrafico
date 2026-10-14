@@ -1,4 +1,3 @@
-import { PageSectionHeader } from "@/components/shared"
 import { serverFetch } from "@/lib/server-fetch"
 import type { PurchaseOrderAPI } from "@/features/purchasing"
 import type { Invoice } from "@/features/billing"
@@ -48,7 +47,6 @@ export default async function PurchaseOrdersPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader as="h1" title="Órdenes de Compra" description="Gestión de solicitudes y órdenes de compra a proveedores" />
             <PurchasingPageClient initialOrders={initialOrders} initialNotes={initialNotes} />
         </>)
 }

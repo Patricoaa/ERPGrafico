@@ -73,12 +73,10 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
     const fetchTaskCounts = async () => {
         try {
             // Fetch approval tasks (pending)
-            const approvalsRes = await getTasks({ category: 'APPROVAL', status: 'PENDING' })
-            const approvals = Array.isArray(approvalsRes) ? approvalsRes : (approvalsRes.results || [])
+            const approvals = await getTasks({ category: 'APPROVAL', status: 'PENDING' })
 
             // Fetch operational tasks (pending)
-            const tasksRes = await getTasks({ category: 'TASK', status: 'PENDING' })
-            const tasks = Array.isArray(tasksRes) ? tasksRes : (tasksRes.results || [])
+            const tasks = await getTasks({ category: 'TASK', status: 'PENDING' })
 
             setPendingCount(approvals.length + tasks.length)
         } catch (error) {

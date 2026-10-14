@@ -1,4 +1,3 @@
-import { PageSectionHeader } from "@/components/shared"
 import { serverFetch } from "@/lib/server-fetch"
 import type { BOM } from "@/features/production/types"
 import BOMsPageClient from "./BOMsPageClient"
@@ -29,7 +28,6 @@ export default async function BOMsPage({ searchParams }: PageProps) {
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <PageSectionHeader as="h1" title="Listas de Materiales" description="Estructuras de productos y recetas de fabricación" />
             <BOMsPageClient initialBoms={initialBoms} />
         </div>)
 }

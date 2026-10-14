@@ -143,8 +143,8 @@ export interface NotificationRulePayload {
 // ─── API Functions ────────────────────────────────────────
 
 // Tasks
-export const getTasks = async (params: TaskQueryParams = {}) => {
-    const response = await api.get('workflow/tasks/', { params })
+export const getTasks = async (params: TaskQueryParams = {}): Promise<Task[]> => {
+    const response = await api.get<{ results: Task[] }>('workflow/tasks/', { params })
     return response.data.results
 }
 
@@ -173,13 +173,13 @@ export const updateTask = async (id: number, payload: Record<string, unknown>) =
 }
 
 // Notifications
-export const getNotifications = async () => {
-    const response = await api.get('workflow/notifications/')
+export const getNotifications = async (): Promise<Notification[]> => {
+    const response = await api.get<{ results: Notification[] }>('workflow/notifications/')
     return response.data.results
 }
 
-export const getUnreadNotificationCount = async () => {
-    const response = await api.get('workflow/notifications/unread_count/')
+export const getUnreadNotificationCount = async (): Promise<number> => {
+    const response = await api.get<{ count: number }>('workflow/notifications/unread_count/')
     return response.data.count
 }
 

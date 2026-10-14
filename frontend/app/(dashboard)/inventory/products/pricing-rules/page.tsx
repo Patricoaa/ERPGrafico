@@ -1,4 +1,3 @@
-import { PageSectionHeader } from "@/components/shared"
 import { PricingRuleClientView } from "@/features/inventory"
 import { ToolbarCreateButton } from "@/components/shared"
 
@@ -12,7 +11,6 @@ export default async function ProductsPricingRulesPage({ searchParams }: PagePro
 
     return (
         <>
-            <PageSectionHeader as="h1" title="Reglas de Precios" description="Configuración de márgenes y políticas de precios" />
             <PricingRuleClientView
                 externalOpen={modal === 'new'}
                 createAction={createAction}

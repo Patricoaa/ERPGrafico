@@ -35,12 +35,7 @@ export function NotificationBell() {
     const fetchNotifications = async () => {
         setLoading(true)
         try {
-            const res = await getNotifications()
-            // Assume res is paginated (results) or list. 
-            // Standard django rest viewset usually returns { count, results } or list if disabled pagination.
-            // Let's safe check, assuming simple list or result. results is safer default for DRF.
-            const list = Array.isArray(res) ? res : (res.results || [])
-            setNotifications(list)
+            setNotifications(await getNotifications())
         } catch (e) {
             console.error(e)
         } finally {

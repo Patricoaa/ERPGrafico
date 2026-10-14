@@ -1,4 +1,3 @@
-import { PageSectionHeader } from "@/components/shared"
 import { serverFetch } from "@/lib/server-fetch"
 import type { Absence } from "@/types/hr"
 import AbsencesPageClient from "./AbsencesPageClient"
@@ -28,7 +27,6 @@ export default async function AbsencesPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader as="h1" title="Ausentismo" description="Control de ausencias, vacaciones y permisos" />
             <AbsencesPageClient initialAbsences={initialAbsences} />
         </>)
 }

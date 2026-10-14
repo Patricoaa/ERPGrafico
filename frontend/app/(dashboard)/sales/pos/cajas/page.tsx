@@ -1,4 +1,4 @@
-import { PageSectionHeader, ToolbarCreateButton } from '@/components/shared'
+import { ToolbarCreateButton } from '@/components/shared'
 import { SalesPosLayout } from "@/features/sales"
 
 interface PageProps {
@@ -11,7 +11,6 @@ export default async function PosCajasPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader as="h1" title="Puntos de Venta" description="Administre los puntos de venta y sus métodos de pago autorizados." />
             <SalesPosLayout
                 activeTab="cajas"
                 modal={modal}

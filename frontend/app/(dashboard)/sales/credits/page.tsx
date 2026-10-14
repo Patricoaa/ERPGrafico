@@ -1,5 +1,4 @@
 import { type Metadata } from "next"
-import { PageSectionHeader } from "@/components/shared"
 import { CreditPortfolioClientView } from "@/features/credits"
 import { ToolbarCreateButton } from '@/components/shared'
 
@@ -20,7 +19,6 @@ export default async function CreditsPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader as="h1" title="Créditos" description="Gestión de cartera crediticia y clasificación de deuda" />
             <CreditPortfolioClientView
                 activeTab="portfolio"
                 externalOpen={modal === 'new'}
