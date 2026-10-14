@@ -230,6 +230,18 @@ Los colores de tipo de producto en `ProductTypeSelector` son identificadores vis
 
 ---
 
+## Iconografía en componentes
+
+Para evitar fatiga visual, los iconos dentro de componentes (selectores, secciones, etc.) siguen estas reglas:
+
+| Tipo | Uso | Color |
+|------|-----|-------|
+| **Structural** | Secciones de form, search icons | `text-muted-foreground/50` |
+| **Semantic** | Warning, Info, errores | color funcional del intent (`destructive`, `warning`…) |
+| **Active** | Ítems seleccionados en dropdowns | `text-primary` o `text-foreground` |
+
+---
+
 ## Anti-patrones prohibidos
 
 ```tsx

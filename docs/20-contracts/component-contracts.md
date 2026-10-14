@@ -3,94 +3,35 @@ layer: 20-contracts
 doc: component-contracts
 status: active
 owner: frontend-team
-last_review: 2026-05-28
+last_review: 2026-10-14
 stability: contract-changes-require-ADR
 ---
 
 # Component Contracts
 
+Index of all shared components. Sections marked with 📄 have a dedicated contract file — go there for the full prop table, examples, and rules. Sections without a link contain the canonical contract here.
+
 ## Legend
 
 - 🟢 Stable — safe to use
 - 🟡 Beta — API may still change
-- 🔴 Pendiente de contrato — read source before use
-- Columns: `prop` | `type` | `required` | `default` | `notes`
+- 🔴 Deprecated / removed
 
-> 📄 **System-wide Contract**: For entity prefixes, icons, and labels, see **[entity-identity.md](./entity-identity.md)**.
-
----
-
-## Selector components
-
-> See **[component-selectors.md](./component-selectors.md)** for AccountSelector, ProductSelector, AdvancedWorkOrderSelector, and 7 more.
+> 📄 **Entity prefixes, icons, labels:** [entity-identity.md](./entity-identity.md)
 
 ---
 
-## Table Cell Input (excepción documentada)
+## Selectors 🟢
 
-> 📄 Documentación completa en **[component-table-cell-input.md](./component-table-cell-input.md)**.
-
-Patrón de `<Input>` de shadcn **sin notched** dentro de `<TableCell>`. Es la única excepción autorizada para no usar `LabeledInput` en un formulario con datos editables.
-Shell components: `FormLineItemsTable` · `AccountingLinesTable`.
+> 📄 [component-selectors.md](./component-selectors.md) — `AccountSelector`, `ProductSelector`, `AdvancedWorkOrderSelector`, and more.
 
 ---
 
-## BaseModal / ActionConfirmModal / GenericWizard
+## Chips & Status 🟢
 
-> 📄 Documentación completa en **[component-modal.md](./component-modal.md)**.
+> 📄 **Chip** (non-status informational labels) → [component-chip.md](./component-chip.md)
 
-Jerarquía: `BaseModal` (primitiva) → `ActionConfirmModal` | `GenericWizard` | `DocumentCompletionModal`.
-Nunca usar `Dialog` de shadcn directamente en features.
-
-
-
----
-
-## Dropdown & Popover Layout Invariants
-
-Global rules for positioning and width of floating UI elements to ensure consistency across the design system.
-
-### 1. Width Invariant (Match Trigger)
-Every dropdown or popover used within a form field (Select, Selector, Combobox) MUST match the width of its trigger by default.
-- **CSS Rule**: Use `w-[var(--radix-select-trigger-width)]` or `w-[var(--radix-popover-trigger-width)]`.
-- **Reasoning**: Maintains the "solid block" aesthetic of the form layout.
-- **Exception**: Filters in toolbars or specialized components like `DateRangeFilter` (see [component-datepicker.md](./component-datepicker.md)).
-
-### 2. Positioning vs. Notched Fields
-The positioning relative to a `notched-field` (fieldset + legend) depends on the component type:
-- **Covering (Default Selects)**: Standard `LabeledSelect` uses `item-aligned` positioning. The dropdown aligns with the top legend/border, covering the trigger.
-- **Floating (Entity Selectors)**: Feature-rich selectors (`AccountSelector`, `ProductSelector`) use `popper` positioning. The dropdown aligns with the bottom border of the fieldset to avoid obscuring search inputs or rich triggers.
-
----
-
-## Chip 🟢
-
-Single authorized component for **non-status, non-entity-ID** informational labels: type tags, category pills, count indicators, feature flags.
-
-> 📄 Contrato completo en **[component-chip.md](./component-chip.md)**.
-
-```tsx
-<Chip>Almacenable</Chip>
-<Chip size="xs" intent="warning">CREDITO</Chip>
-<Chip size="md" intent="success" icon={ShieldCheck}>BOM ACTIVA</Chip>
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `size` | `'xs' \| 'sm' \| 'md'` | ❌ | `'sm'` | xs=18px, sm=22px, md=26px |
-| `intent` | `'neutral' \| 'info' \| 'success' \| 'warning' \| 'destructive' \| 'primary'` | ❌ | `'neutral'` | |
-| `icon` | `LucideIcon` | ❌ | — | Same color as text |
-| `className` | `string` | ❌ | — | Layout/position only — never override typography |
-
-Typography invariant: `font-sans font-medium text-xs`, borderless, `rounded-sm` (CurrencyFlow aesthetic, ADR-0068). Decision boundary: workflows → `StatusBadge`; entity IDs → `EntityBadge`; everything else → `Chip`.
-
-> 🟡 **Justified exceptions** (burbujas de notificación, tag-input pills, mono para códigos/versiones/%, callouts, POS density) — ver **[component-chip.md §Documented exceptions](./component-chip.md#documented-exceptions-adr-0069)** y **[ADR-0069](../10-architecture/adr/0069-badge-consumer-migration-and-exceptions.md)**.
-
----
-
-## StatusBadge 🟢
-
-Workflow states and record status. Strictly mapped to `STATUS_MAP` in `lib/badge-resolvers.ts`. Only authorized status renderer (GOVERNANCE §18). **In DataTable cells render via `DataCell.Status` (tinted badge, ADR-0068).** Typography invariant: `font-sans font-medium text-xs`, borderless, `rounded-sm`.
+**StatusBadge** — workflow states and record status. Strictly mapped to `STATUS_MAP` in `lib/badge-resolvers.ts`. Only authorized status renderer (GOVERNANCE §19). In DataTable cells render via `DataCell.Status` (tinted badge, ADR-0068).
 
 ```tsx
 <StatusBadge status="IN_PROGRESS" />
@@ -101,1108 +42,402 @@ Workflow states and record status. Strictly mapped to `STATUS_MAP` in `lib/badge
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
 | `status` | `string` | ✅ | — | Business token, case-insensitive; resolved via `resolveStatus()` / `STATUS_MAP` |
-| `label` | `string` | ❌ | — | Overrides the resolved label |
-| `variant` | `'default' \| 'dot' \| 'badge' \| 'hub'` | ❌ | `'default'` | `default`/`dot` = compact dot+text (cards, kanban); `badge` = square tinted badge + dot (drawers, detail); `hub` = circular icon |
+| `label` | `string` | ❌ | — | Overrides resolved label |
+| `variant` | `'default' \| 'dot' \| 'badge' \| 'hub'` | ❌ | `'default'` | `default`/`dot` = compact (cards, kanban); `badge` = square tinted (drawers, detail); `hub` = circular icon |
 | `size` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | ❌ | `'md'` | sm=h-6/12px (tables), md=h-8/14px (modals), lg=h-10/base (detail) |
 | `className` | `string` | ❌ | — | Layout/position only — never typography or colors |
 
-States handled: — (pure presentational, no async).
-
 ---
 
-## Skeleton family
+## Modals & Sheets
 
-> 📄 Documentación completa en **[component-skeleton.md](./component-skeleton.md)**.
+> 📄 **BaseModal / ActionConfirmModal / GenericWizard** → [component-modal.md](./component-modal.md)
 
-Catálogo: `CardSkeleton` · `SkeletonShell` · `PageLayoutSkeleton` · `LoadingFallback`. El skeleton de tablas es integrado (`DataTable isLoading` + `skeletonRows`).
-Regla clave: usar wrappers estáticos para first-load, `SkeletonShell` para refetching.
-
----
-
-## EmptyState 🟢
+**CollapsibleSheet** 🟢 — Side panel with collapsible tab. Supports multi-sheet stacking via `GlobalModalProvider`.
 
 ```tsx
-<EmptyState
-  icon={<PackageIcon />}
-  title="Sin órdenes"
-  description="Crea la primera para empezar"
-  action={<Button>Crear</Button>}
-  variant="full"
-  context="inventory"
-/>
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `icon` | `ReactNode` | ❌ | — | Sobrescribe el icono del contexto |
-| `title` | `string` | ❌ | — | Título principal. Si se omite, se usa el por defecto del `context` |
-| `description` | `string` | ❌ | — | Descripción detallada debajo del título |
-| `context` | `EmptyStateContext` | ❌ | `'generic'` | Define icono y título por defecto. Valores: `'search' \| 'inventory' \| 'finance' \| 'users' \| 'generic' \| 'database' \| 'production' \| 'pos' \| 'bom' \| 'treasury' \| 'sale' \| 'purchase'` |
-| `variant` | `'full' \| 'compact' \| 'minimal'` | ❌ | `'full'` | `full`: icono grande con bordes. `compact`: padding reducido. `minimal`: inline flex. |
-| `entityName` | `string` | ❌ | — | Personaliza el título auto-generado (ej. "No hay órdenes para {entityName}") |
-| `action` | `ReactNode` | ❌ | — | Acción principal (derecha/abajo) |
-| `secondaryAction` | `ReactNode` | ❌ | — | Acción secundaria (izquierda/arriba) |
-| `className` | `string` | ❌ | — | Clases adicionales para el contenedor |
-
----
-
-## DataCell primitives 🟢
-
-> **File**: `frontend/components/shared/DataTableCells.tsx`  
-> **Import**: `import { DataCell, createActionsColumn } from '@/components/shared'`
-
-> ⚠️ **Para campos de entidad**, la asignación canónica es declarar `FieldDef.type` en `*Fields.ts`
-> vía `createEntityFields<T>()` — el motor resuelve el `DataCell` correcto. La **fuente de verdad**
-> de la asignación `type` → celda (los 15 FieldTypes, opciones, null policy y zonas) es
-> **[component-fields.md](./component-fields.md)**. Los primitivos de esta sección se usan
-> directamente solo en renderers `computed` y columnas de excepción.
-
-Namespace de celdas estandarizadas para `DataTable`. Centra contenido y aplica tipografía consistente.
-
-### Clasificación de Textos Estándar
-
-* **`DataCell.Text` (Texto Primario)**: Todo texto que no encaje en las definiciones restantes (identificadores, fechas, números, badges, etc.). Es el contenedor de texto principal por defecto (default `text-xs` + `font-medium`).
-* **`DataCell.Secondary` (Texto Secundario)**: Todo dato complementario que se muestre junto a o debajo de un texto primario, entidad, contacto, moneda, estado, metadato, etc., aportando contexto adicional (ej. categorías, notas, descripciones secundarias; default `text-xs` + `font-medium`, `text-muted-foreground`).
-
-> **Regla tipográfica por defecto (ADR-0061):** todos los DataCell de texto usan `text-xs` por default (`SIZE_MAP.md` sigue en `text-sm` como escalamiento explícito). Los consumidores pueden escalar con `size="md"`/`"lg"` o override via `className` (tailwind-merge last-wins).
-
-### DataCell.Date — fecha y fecha-hora (ADR-0062)
-
-| Prop | Tipo | Requerido | Default | Descripción |
-|---|---|---|---|---|
-| `value` | `string \| Date` | ✅ | — | Fecha a mostrar |
-| `showTime` | `boolean` | ❌ | `false` | Muestra hora/minutos (`es-CL`) como sufijo |
-| `weight` | `DataCellWeight` | ❌ | `medium` | Peso base de la celda (override del segmento fecha) |
-| `dateWeight` | `DataCellWeight` | ❌ | `'medium'` | Peso del segmento fecha (gana sobre `weight`) |
-| `timeWeight` | `DataCellWeight` | ❌ | `'normal'` | Peso del segmento hora (independiente de la fecha) |
-
-Pesos disponibles (`DataCellWeight`): `light` (300) · `normal` (400) · `medium` (500) · `semibold` (600) · `bold` (700). El token `light` se añadió en ADR-0062.
-
-**Peso por zona (ADR-0067):** el motor `entity-fields` aplica `weight: 'semibold'` automático a
-las celdas resueltas en zona `header` (lista y card) vía threading en `renderCell`. La zona
-`title` no recibe peso automático (queda en `font-medium`). Un `weight` explícito en el
-`FieldDef` gana sobre el automático. `Status` / `Chip` / `Category`
-conservan su tipografía de badge (no aceptan `weight`). Zonas de lista: `title → subtitle →
-detail → header` (header al final, antes de acciones).
-
-```tsx
-// Fecha con hora: fecha font-medium, hora font-normal (default)
-<DataCell.Date value={row.opened_at} showTime />
-
-// Fecha con hora y hora más ligera
-<DataCell.Date value={row.closed_at} showTime dateWeight="medium" timeWeight="light" />
-```
-
-**FieldType `dateTime` (entity-fields):** variante declarativa de fecha-hora. Renderiza `DataCell.Date` con `showTime` y admite `dateWeight`/`timeWeight` tipados en el `FieldDef`. El rol `datetime` lo enruta siempre a la zona **center header** del card (nunca a subtítulo); el `date` (rol `temporal`) sigue siendo candidato a subtítulo vía auto-compose.
-
-### Identidad y Enlaces: DataCell.Entity vs DataCell.Link vs DataCell.ContactLink
-
-| Primitivo | Destino / Propósito | Cuándo usar | Requiere |
-|---|---|---|---|
-| **`DataCell.Entity`** | Ficha de la entidad registrada en el ERP (con prefijo e ícono de la entidad). | **Siempre** que se represente un documento de negocio del ERP (OV, OT, OCS, Factura, Producto). | `entityLabel: string` y `data: any` |
-| **`DataCell.Link`** | URL interna/externa genérica (`href`) o callback (`onClick`). | **Solo para enlaces genéricos no registrales** (ej. descargar plantilla, enlace externo de tracking de courier). | `href` o `onClick` |
-| **`DataCell.ContactLink`** | Abre el `ContactDrawer` lateral a nivel global. | Nombre de persona o empresa (Clientes/Proveedores). | `contactId: number` |
-
-```tsx
-// ✅ CORRECTO: Los documentos del ERP se renderizan como Entidades (con su prefijo, ícono y enlace automático)
-<DataCell.Entity entityLabel="sales.saleorder" data={row.original} />
-
-// ✅ CORRECTO: Enlaces genéricos, externos o descargas
-<DataCell.Link href={`/downloads/template.csv`} external>Descargar Plantilla</DataCell.Link>
-
-// ✅ CORRECTO: Contactos (abre el drawer lateral en hover/click)
-<DataCell.ContactLink contactId={order.customer_id}>
-  {order.customer_name}
-</DataCell.ContactLink>
-
-// ❌ INCORRECTO: No usar Link genérico para documentos/entidades del ERP (rompe consistencia de íconos/prefijos)
-<DataCell.Link href={`/sales/orders/${id}`}>{order.code}</DataCell.Link>
-```
-
-### DataCell.NumericFlow
-
-Para cantidades con polaridad visual (+/−): movimientos de stock, horas de producción, variaciones de inventario. **No usar para monedas** — usar `DataCell.Currency showColor` que delega a `MoneyDisplay`.
-
-**FieldType `numericFlow` (entity-fields, ADR-0067):** variante declarativa reintroducida.
-Admite `direction?: FlowDirection | (e) => FlowDirection` (inferencia por signo si se omite),
-`unit?: string | (e) => string`, `showIcon?`, `showSign?`. Rol `flow` → zona header.
-`stockMoveFields.quantity` es la referencia de migración.
-
-Renderiza un **badge cuadrado (`rounded-sm`), sin borde, tintado del color del flujo** (fondo `/{10}` más tenue). Mismo lenguaje visual que `CurrencyFlow`. Defaults: `size sm` (`text-xs`) y `font-medium`.
-
-```tsx
-<DataCell.NumericFlow value={movement.qty} unit="un" />
-// → badge `bg-success/10 text-success` con "+10 un" | `bg-destructive/10 text-destructive` con "−5 un" | `bg-muted/60 text-muted-foreground` con "0 un"
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `value` | `number \| string \| null \| undefined` | ✅ | — | null / '' → dash |
-| `unit` | `string` | ❌ | — | Sufijo (e.g. `'un'`, `'kg'`) |
-| `showSign` | `boolean` | ❌ | `true` | Prefija `+` en positivos |
-| `className` | `string` | ❌ | — | |
-
-Usa `.toFixed(2)` y tokens `text-success` / `text-destructive` / `text-muted-foreground` de `globals.css` como tinta del badge.
-
-### DataCell.Progress
-
-Barra de progreso para métricas de completitud (% de entrega, avance de OT, stock vs. demanda).
-
-```tsx
-<DataCell.Progress value={order.qty_delivered} max={order.qty_ordered}
-  label="Entregado" subLabel="75%" />
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `value` | `number \| null \| undefined` | ✅ | — | Valor actual |
-| `max` | `number` | ❌ | `100` | Denominador |
-| `label` | `string` | ❌ | — | Texto izquierda sobre la barra |
-| `subLabel` | `string` | ❌ | — | Texto derecha sobre la barra |
-| `className` | `string` | ❌ | — | |
-
-`value >= max` → barra completa en `bg-success` con glow. `value < max` → `bg-primary`. Valor clamped a `[0, 100]%`.
-
-### DataCell.Category (ADR-0066 D-05)
-
-Uno o varios chips resueltos por dominio (wraps `Chip.Category` → `resolveCategory`). Contenedor `flex-wrap` centrado. Valores vacíos / sin dominio → guion de datos faltantes (política null unificada).
-
-```tsx
-<DataCell.Category value={roles} domain="contact_type" />
-// → chips "Cliente" / "Proveedor" según resolveCategory
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `value` | `string \| string[] \| null \| undefined` | ✅ | — | Uno o varios valores del dominio |
-| `domain` | `CategoryDomain` | ❌ | — | `product_type` · `tax_type` · `transaction_type` · `dte_type` · `contact_type` · `payment_method` |
-| `size` | `'xs' \| 'sm' \| 'md'` | ❌ | `'sm'` | |
-| `className` | `string` | ❌ | — | |
-
-**FieldType `chip-category` (entity-fields):** el motor delega a `DataCell.Category`; `domain` admite valor o `(entity) => CategoryDomain`.
-
----
-
-## DataTable & ExpandableTableRow 🟢
-
-> 📄 Documentación completa de arquitectura y vistas en **[component-datatable-views.md](./component-datatable-views.md)**.
-
-Sistema central de tablas de datos y sus primitivas de vista.
-
-| componente | uso principal | variant / prop clave |
-|---|---|---|
-| `DataTable` | Tabla principal CRUD con filtros/paginación/acciones | `variant="embedded" | "standalone"` |
-| `DataTable` (minimal) | Tabla display simple sin toolbar ni paginación | `variant="minimal"` |
-| `DataTable` (compact) | Tabla densa CSS Grid para modals/drawers | `variant="compact"` |
-| `EntityCard` | Shell estandarizado para vistas de tarjeta/grilla | `variant="default" | "compact"` |
-
----
-
-## Row & Card Actions 🟢
-
-> 📄 Contrato completo en **[component-row-actions.md](./component-row-actions.md)**.
-
-Registry cerrado de acciones CRUD (`ROW_ACTIONS` en `@/lib/row-actions`) + renderers unificados para filas y tarjetas. Icono, tooltip y color salen del registry — nunca hardcodear.
-
-| componente | superficie | uso |
-|---|---|---|
-| `createActionsColumn<T>` | Tabla | Columna estandarizada de acciones |
-| `DataCell.Action action="<key>"` | Tabla | Botón icono individual (forma preferida) |
-| `DataCell.ActionMenu items={[…]}` | Tabla | Kebab overflow para 4+ acciones |
-| `useEntityRouteActions()` | Hook | Handlers `openSelected` / `openDetail` / `openHub` |
-
-Orden canónico (siempre): `view → detail → hub → edit → duplicate → pay → deliver → receive → download → print → share → archive → restore → lock/unlock → annul → delete`. `annul` y `delete` siempre al final, en ese orden, ambas detrás de `ActionConfirmModal` (`variant="destructive"`).
-
----
-
-## ActionDock 🟡
-
-Floating taskbar for multi-selection actions and summary statistics. Automatically adjusts its horizontal position when Hub or Inbox panels are open.
-
-```tsx
-<ActionDock isVisible={selectedIds.length > 0}>
-  <ActionDock.Stats>
-    <ActionDock.Stat label="Seleccionados" value={selectedIds.length} />
-    <ActionDock.Stat label="Total" value={formatCurrency(total)} colorClass="text-primary" />
-  </ActionDock.Stats>
-  
-  <ActionDock.Actions>
-    <Button onClick={handleBatchAction}>Procesar</Button>
-  </ActionDock.Actions>
-</ActionDock>
-```
-
-### ActionDock Props
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `isVisible` | `boolean` | ✅ | — | Triggers entrance/exit animation |
-| `className` | `string` | ❌ | — | Merged into main container |
-
-### Sub-components
-- **`ActionDock.Section`**: Generic container for custom tools (e.g. suggestions).
-- **`ActionDock.Stats`**: Rounded container for numeric data.
-- **`ActionDock.Stat`**: Individual metric (`label` | `value` | `colorClass?`).
-- **`ActionDock.Actions`**: Button container with left border separator.
-
-States handled: entry/exit animations via `AnimatePresence`. Responsive centering via `MutationObserver` on `body`.
-
----
-
-## PageHeader 🟢
-
-> 📄 Para el uso de íconos centralizados (`iconName`), ver **[entity-identity.md §8](./entity-identity.md#8-pageheader--integración-con-iconos)**.
-
-| prop | type | required | notes |
-|------|------|----------|-------|
-| `title` | `string` | ✅ | uses `font-heading` |
-| `subtitle` | `string` | ❌ | |
-| `breadcrumbs` | `Array<{label; href?}>` | ❌ | |
-| `actions` | `ReactNode` | ❌ | Right-aligned |
-| `tabs` | `ReactNode` | ❌ | Below title |
-| `backHref` | `string` | ❌ | Renders chevron-left |
-
----
-
-## ActionConfirmModal
-
-> 📄 Ver **[component-modal.md](./component-modal.md)**.
-
----
-
-## DataManagement 🟢
-
-Toolbar group: export CSV, download template, import CSV.
-
-```tsx
-<DataManagement
-  onExport={handleExport}
-  onImport={handleImport}
-  templateData={[{ nombre: '', rut: '' }]}
-  onImportSuccess={refetch}
-  exportFilename="productos"
-/>
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `onExport` | `() => Promise<void>` | ✅ | — | Called on Export click |
-| `onImport` | `(formData: FormData) => Promise<void>` | ✅ | — | FormData key: `file` |
-| `templateData` | `Record<string, unknown>[]` | ✅ | — | First row keys = CSV headers |
-| `onImportSuccess` | `() => void` | ✅ | — | Called after successful import |
-| `exportFilename` | `string` | ❌ | `'export'` | Filename without extension |
-
-States handled: loading per button (export, import), error toast on failure.
-
----
-
-## DatePicker 🟢
-
-Single date selector. Spanish locale (es-CL).
-
-```tsx
-<DatePicker date={date} onDateChange={setDate} placeholder="Selecciona fecha" />
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `date` | `Date \| undefined` | ❌ | — | Controlled |
-| `onDateChange` | `(date?: Date) => void` | ✅ | — | Returns `undefined` on clear |
-| `placeholder` | `string` | ❌ | `'Seleccionar fecha'` | |
-| `className` | `string` | ❌ | — | |
-| `disabled` | `boolean` | ❌ | `false` | |
-
-States handled: — (pure controlled).
-
----
-
-## DateRangeFilter 🟢
-
-Two-month range picker for table filters.
-
-```tsx
-<DateRangeFilter onRangeChange={setRange} label="Período" />
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `onRangeChange` | `(range: DateRange \| undefined) => void` | ✅ | — | `DateRange` from `react-day-picker` |
-| `label` | `string` | ❌ | `'Filtrar por fecha'` | Shown when no range selected |
-| `defaultRange` | `DateRange` | ❌ | — | Initial range |
-| `className` | `string` | ❌ | — | |
-
-States handled: — (pure controlled, clear button built-in).
-
----
-
-## DocumentAttachmentDropzone 🟢
-
-Drag-and-drop file input with DTE-aware required logic.
-
-```tsx
-<DocumentAttachmentDropzone
-  file={file}
-  onFileChange={setFile}
-  dteType="FACTURA"
-  isPending={false}
-/>
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `file` | `File \| null` | ✅ | — | Controlled |
-| `onFileChange` | `(file: File \| null) => void` | ✅ | — | |
-| `dteType` | `string` | ❌ | — | Required for all except `BOLETA`/`NONE` when not `isPending` |
-| `isPending` | `boolean` | ❌ | `false` | Overrides required check |
-| `disabled` | `boolean` | ❌ | `false` | |
-| `label` | `string` | ❌ | `'Documento'` | |
-| `requiredOverride` | `boolean` | ❌ | — | Force required regardless of dteType |
-| `accept` | `string` | ❌ | `'.pdf,.xml,image/*'` | MIME/extension filter |
-
-States handled: file selected, drag-over highlight, remove.
-
----
-
-## DocumentCompletionModal 🟢
-
-Modal to complete an invoice with folio, date, and optional attachment. Validates tax and accounting periods before submit.
-
-```tsx
-<DocumentCompletionModal
-  open={open}
-  onOpenChange={setOpen}
-  invoiceId={42}
-  invoiceType="FACTURA"
-  onComplete={handleComplete}
-  onSuccess={refetch}
-/>
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `open` | `boolean` | ✅ | — | |
-| `onOpenChange` | `(open: boolean) => void` | ✅ | — | |
-| `invoiceId` | `number` | ✅ | — | |
-| `invoiceType` | `string` | ✅ | — | DTE type string (e.g. `'FACTURA'`) |
-| `onComplete` | `(invoiceId: number, formData: FormData) => Promise<void>` | ✅ | — | FormData keys: `number`, `date`, `document_attachment?` |
-| `onSuccess` | `() => void` | ❌ | — | Called after `onComplete` resolves |
-| `contactId` | `number` | ❌ | — | Passed to folio uniqueness check |
-| `isPurchase` | `boolean` | ❌ | `false` | Switches folio check to purchase scope |
-
-States handled: loading (submit), folio validation async, period validation async. Attachment required when `invoiceType === 'FACTURA'`.
-
----
-
-## FacetedFilter 🟢
-
-Multi-select popover for table column filtering.
-
-```tsx
-<FacetedFilter
-  title="Estado"
-  options={[{ label: 'Activo', value: 'active' }]}
-  selectedValues={selected}
-  onSelect={setSelected}
-/>
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `title` | `string` | ❌ | — | Popover trigger label |
-| `options` | `Array<{ label: string; value: string; icon?: ComponentType<{ className?: string }> }>` | ✅ | — | |
-| `selectedValues` | `string[]` | ✅ | — | Controlled |
-| `onSelect` | `(values: string[]) => void` | ✅ | — | Full updated array |
-
-States handled: — (pure controlled). Shows count badge when >2 selected; shows inline labels when ≤2.
-
----
-
-## LabeledInput 🟡
-
-> 📄 Documentación completa en **[component-input.md](./component-input.md)**.
-
-Primitivo único para el par label + campo de texto.
-
-```tsx
-<LabeledInput label="Nombre" required error={fieldState.error?.message} {...field} />
-<LabeledInput label="Observaciones" as="textarea" rows={4} {...field} />
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `label` | `string` | ✅ | — | Texto del legend (notched border) |
-| `as` | `'input' \| 'textarea'` | ❌ | `'input'` | |
-| `required` | `boolean` | ❌ | `false` | Muestra `*` automáticamente |
-| `error` | `string` | ❌ | — | Activa estado rojo + `role="alert"` |
-| `hint` | `string` | ❌ | — | Texto de ayuda (oculto si hay error) |
-| `disabled` | `boolean` | ❌ | `false` | |
-| `rows` | `number` | ❌ | `3` | Solo `as="textarea"` |
-| `containerClassName` | `string` | ❌ | — | Clases del wrapper `<div>` |
-
-`forwardRef`-compatible. Pasar `{...field}` de react-hook-form directamente. **No usar `<FormLabel>` ni `<FormMessage>`** junto a este componente.
-
----
-
-## MultiTagInput 🟡
-
-> 📄 Ver **[component-input.md](./component-input.md#multitaginput)**.
-
-Componente para entrada de múltiples etiquetas (tags) con procesamiento mediante la tecla `Enter`.
-
-```tsx
-<MultiTagInput label="Valores" values={tags} onAdd={add} onRemove={remove} />
-```
-
----
-
-## MultiSelectTagInput 🟡
-
-> 📄 Ver **[component-input.md](./component-input.md#multiselecttaginput)**.
-
-Selector múltiple con dropdown y etiquetas para opciones predefinidas.
-
-```tsx
-<MultiSelectTagInput label="Categorías" options={opts} value={val} onChange={set} />
-```
-
----
-
-## FolioValidationInput 🟢
-
-Text input with real-time DTE folio uniqueness validation.
-
-```tsx
-<FolioValidationInput
-  value={folio}
-  onChange={setFolio}
-  dteType="FACTURA"
-  contactId={contactId}
-  onValidityChange={(isValid) => setFolioValid(isValid)}
-/>
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `value` | `string` | ✅ | — | Controlled |
-| `onChange` | `(value: string) => void` | ✅ | — | |
-| `dteType` | `string` | ✅ | — | DTE type for uniqueness scope |
-| `contactId` | `number` | ❌ | — | Narrows uniqueness scope |
-| `isPurchase` | `boolean` | ❌ | `false` | Switches to purchase folio scope |
-| `excludeId` | `number` | ❌ | — | Exclude invoice id from check (edit mode) |
-| `onValidityChange` | `(isValid: boolean, result: FolioValidationResult \| null) => void` | ❌ | — | Fires after each validation |
-| `label` | `string` | ❌ | `'Folio'` | |
-| `placeholder` | `string` | ❌ | — | |
-| `className` | `string` | ❌ | — | |
-| `autoFocus` | `boolean` | ❌ | `false` | |
-| `disabled` | `boolean` | ❌ | `false` | |
-
-```typescript
-interface FolioValidationResult {
-  is_unique: boolean
-  message: string
-}
-```
-
-States handled: validating (spinner), valid (check icon), duplicate (warning icon + alert).
-
----
-
-## PeriodValidationDateInput 🟢
-
-DatePicker wrapper that validates tax/accounting period closure before accepting a date.
-
-```tsx
-<PeriodValidationDateInput
-  date={date}
-  onDateChange={setDate}
-  validationType="both"
-  onValidityChange={setDateValid}
-/>
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `date` | `Date \| undefined` | ✅ | — | Controlled |
-| `onDateChange` | `(date: Date \| undefined) => void` | ✅ | — | |
-| `onValidityChange` | `(isValid: boolean) => void` | ❌ | — | Fires after each validation |
-| `validationType` | `'tax' \| 'accounting' \| 'both'` | ❌ | `'tax'` | Which periods to check |
-| `label` | `string` | ❌ | `'Fecha Emisión'` | |
-| `placeholder` | `string` | ❌ | — | |
-| `className` | `string` | ❌ | — | |
-| `disabled` | `boolean` | ❌ | `false` | |
-| `required` | `boolean` | ❌ | `true` | |
-
-States handled: validating (spinner), period closed (warning alert, isValid=false).
-
----
-
-## MoneyDisplay 🟢
-
-Single source of truth for money rendering. Tabular, monospace, locale-aware.
-
-```tsx
-<MoneyDisplay amount={150000} />
-<MoneyDisplay amount={-50000} />
-<MoneyDisplay amount={null} showZeroAsDash />
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `amount` | `number \| string \| null \| undefined` | ✅ | — | null/undefined/NaN → dash |
-| `currency` | `string` | ❌ | `'CLP'` | ISO 4217 |
-| `showColor` | `boolean` | ❌ | `true` | Red < 0, green > 0 |
-| `showZeroAsDash` | `boolean` | ❌ | `false` | 0 renders as `—` |
-| `className` | `string` | ❌ | — | |
-| `digits` | `number` | ❌ | `0` | Decimal places override |
-| `inline` | `boolean` | ❌ | `false` | `display: inline` vs `inline-block` |
-| `weight` | `DataCellWeight` | ❌ | `'medium'` | Peso tipográfico (via `WEIGHT_MAP`) |
-
-Font: default `font-medium tabular-nums`. Override con `weight` (prop) o `className` (tailwind-merge last-wins). Do NOT render currency with raw JS `.toLocaleString()` outside this component.
-
----
-
-## QuantityDisplay 🟢
-
-Componente hermano de `MoneyDisplay` exclusivo para cantidades de producción, inventario y medidas físicas (kg, metros, unidades).
-
-```tsx
-<QuantityDisplay value={150.5} uom="kg"/>
-<QuantityDisplay value={diff} showSign />
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `value` | `number \| string \| null \| undefined` | ✅ | — | null/undefined/NaN → dash |
-| `uom` | `string` | ❌ | — | Suffix for Unit of Measure (e.g. 'kg') |
-| `decimals` | `number` | ❌ | `4` | Maximum fraction digits. Standardized to 4 for production precision. |
-| `showSign` | `boolean` | ❌ | `false` | Adds `+` prefix for positive values |
-| `className` | `string` | ❌ | — | Merged via `cn()` |
-
-Font: always `font-mono tabular-nums`. Do NOT render quantities with raw JS `.toLocaleString()` outside this component if they need to be aligned in tables or forms.
-
----
-
-## GenericWizard
-
-> 📄 Ver **[component-modal.md](./component-modal.md)**.
-
----
-
-## ReportTable 🟢
-
-Hierarchical accounting report table. Supports tree expand/collapse and comparison periods.
-
-```tsx
-<ReportTable
-  data={nodes}
-  title="Balance General"
-  totalLabel="Total Activos"
-  totalValue={5000000}
-  showComparison
-  varianceDirection="higher-is-better"
-  periodLabel="Abr 2026"
-  compPeriodLabel="Abr 2025"
-  accentColor="primary"
-/>
-```
-
-```typescript
-interface ReportNode {
-  id: number | string
-  code: string
-  name: string
-  balance: number
-  comp_balance?: number    // comparison period balance
-  variance?: number        // pre-computed variance (optional)
-  children?: ReportNode[]  // nested accounts
-}
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `data` | `ReportNode[] \| null` | ✅ | — | null triggers loading/empty state |
-| `title` | `string` | ❌ | — | Table caption |
-| `totalLabel` | `string` | ❌ | `'Total'` | Footer row label |
-| `totalValue` | `number` | ❌ | — | Footer row balance |
-| `totalValueComp` | `number` | ❌ | — | Footer comparison balance |
-| `showComparison` | `boolean` | ❌ | `false` | Adds comp column + variance |
-| `embedded` | `boolean` | ❌ | `false` | Removes card wrapper |
-| `isLoading` | `boolean` | ❌ | `false` | Shows skeleton loading state |
-| `periodLabel` | `string` | ❌ | — | Column header |
-| `compPeriodLabel` | `string` | ❌ | — | Comparison column header |
-| `mode` | `'tree' \| 'flat'` | ❌ | `'tree'` | Flat disables expand |
-| `accentColor` | `'primary' \| 'success' \| 'info' \| 'destructive' \| 'income' \| 'expense' \| 'asset' \| 'liability'` | ❌ | `'primary'` | Total row accent |
-| `varianceDirection` | `'higher-is-better' \| 'lower-is-better'` | ❌ | `'higher-is-better'` | Controls variance color polarity |
-
-States handled: loading (isLoading → skeleton), empty (EmptyState), populated.
-
----
-
-## BudgetVarianceTable 🟢 (feature-local)
-
-Budget variance report table with hierarchical account expansion. Located in `features/finance/components/`. Not exported from shared — internal to the finance feature.
-
-```tsx
-<BudgetVarianceTable data={varianceData} loading={isLoading} />
-```
-
-```typescript
-type BudgetVarianceAccountType = 'INCOME' | 'EXPENSE'
-
-interface BudgetVarianceNode {
-  id: number
-  code: string
-  name: string
-  type: BudgetVarianceAccountType
-  month_actual: number
-  month_budget: number
-  month_variance: number
-  month_percentage: number
-  ytd_actual: number
-  ytd_budget: number
-  ytd_variance: number
-  ytd_percentage: number
-  is_unbudgeted: boolean
-  children: BudgetVarianceNode[]
-}
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `data` | `BudgetVarianceNode[]` | ✅ | — | Tree data from `useBudgetVariance` |
-| `loading` | `boolean` | ❌ | `false` | Shows skeleton rows |
-
-States handled: loading (SkeletonShell), empty (handled by parent view), populated.
-
----
-
-## createExpanderColumn 🟢
-
-Factory function that creates an expander column for `DataTable` rows. Renders a chevron toggle button. Paired with `renderSubComponent` on DataTable for flat row expansion.
-
-```tsx
-import { createExpanderColumn } from '@/components/shared'
-
-const expanderCol = createExpanderColumn<CreditContact>({
-  canExpand: (row) => row.hasDetails,  // optional: hide button for non-expandable rows
-})
-
-<DataTable
-  columns={[expanderCol, ...otherColumns]}
-  data={data}
-  renderSubComponent={(row) => <DetailPanel data={row.original} />}
-/>
-```
-
-| param | type | required | notes |
-|-------|------|----------|-------|
-| `canExpand` | `(row: TData) => boolean` | ❌ | When returns false, cell renders null (hidden button) |
-
-Consumers: `ProfileView` (settlements), `PortfolioTable` (credits), `BlacklistClientView` (blacklist).
-
----
-
-## AccountingLinesTable 🟢
-
-Tabla estándar para ingreso de líneas de asiento doble (Debe/Haber). Contiene internamente la selección de cuenta contable, glosa, cálculos de balance e interfaz de inserción/borrado de filas. 
-Usa `useFieldArray` internamente conectándose a un react-hook-form superior.
-
-```tsx
-<AccountingLinesTable control={form.control} name="items" />
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `control` | `Control<any>` | ✅ | — | Form control de `react-hook-form` |
-| `name` | `string` | ✅ | — | Nombre del field array en el schema |
-
-La estructura esperada en el array de form values (zod schema) es un array de objetos con `account`, `label`, `debit`, y `credit`.
-
-States handled: Validaciones de input, cálculo en tiempo real de saldos totales.
-
-> Los inputs internos (`<Input>`) siguen el patrón **Table Cell Input** — ver [component-table-cell-input.md](./component-table-cell-input.md).
-
----
-
-## FormLineItemsTable 🟢
-
-Shell genérico para tablas de líneas editables (wizards de compra, wizards de producción, notas C/D, distribuciones de capital). Provee el **encabezado + footer con botón "Agregar Línea"** y delega el contenido de las celdas al caller vía `children`.
-
-```tsx
-<FormLineItemsTable
-  title="Líneas"
-  icon={PackageIcon}
-  onAdd={() => append({ ... })}
-  columns={[
-    { header: "Producto", width: "w-[300px]", align: "left" },
-    { header: "Cant.",    width: "w-[100px]", align: "center" },
-    { header: "P.Unit",  width: "w-[120px]", align: "right" },
-    { header: "",         width: "w-[48px]"  },
-  ]}
-  footer={<BalanceSummary />}
->
-  <TableBody>
-    {fields.map((field, i) => (
-      <TableRow key={field.id} className="hover:bg-primary/5 transition-colors">
-        <TableCell className="p-2"><ProductSelector ... /></TableCell>
-        <TableCell className="p-2"><Input type="number" className="h-8 text-xs font-mono text-right" ... /></TableCell>
-      </TableRow>
-    ))}
-  </TableBody>
-</FormLineItemsTable>
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `columns` | `FormLineItemColumn[]` | ✅ | — | `{ header, width?, align?, className? }` |
-| `children` | `ReactNode` | ✅ | — | Caller renderiza `<TableBody>` completo con sus celdas |
-| `onAdd` | `() => void` | ❌ | — | Callback del botón "Agregar Línea" |
-| `addButtonText` | `string` | ❌ | `'Agregar Línea'` | |
-| `hideAddButton` | `boolean` | ❌ | `false` | Oculta el botón (tablas de solo lectura o read-only wizard steps) |
-| `footer` | `ReactNode` | ❌ | — | Slot derecho del footer (balance, totales, etc.) |
-| `title` | `string` | ❌ | — | Label sobre la tabla |
-| `subtitle` | `string` | ❌ | — | Caption secundario junto al title |
-| `icon` | `ElementType` | ❌ | — | Ícono Lucide junto al title |
-| `className` | `string` | ❌ | — | |
-
-```typescript
-interface FormLineItemColumn {
-  header: ReactNode
-  width?: string     // e.g. "w-[150px]" o "w-[15%]"
-  align?: 'left' | 'center' | 'right'  // default: 'center'
-  className?: string
-}
-```
-
-Import: `import { FormLineItemsTable } from '@/components/shared'`
-
-> **Diferencia con `DataTable variant="minimal"`:** `FormLineItemsTable` es para **edición** (con inputs, `useFieldArray`, botón "Agregar Línea"). `variant="minimal"` es para **display** (solo lectura). Ambos usan los mismos tokens visuales definidos en `globals.css` (`--table-cell-py`, `--table-cell-px`, etc.).
-
-> Los inputs dentro de las celdas siguen el contrato **[Table Cell Input](./component-table-cell-input.md)**.
-
-## CollapsibleSheet 🟢
-
-Side panel with collapsible tab. Supports multi-sheet stacking via `GlobalModalProvider`.
-
-```tsx
-<CollapsibleSheet
-  sheetId="order-detail"
-  open={open}
-  onOpenChange={setOpen}
-  tabLabel="Detalle"
-  tabIcon={FileTextIcon}
-  size="lg"
->
+<CollapsibleSheet sheetId="order-detail" open={open} onOpenChange={setOpen}
+  tabLabel="Detalle" tabIcon={FileTextIcon} size="lg">
   <OrderDetail id={id} />
 </CollapsibleSheet>
 ```
 
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
-| `children` | `ReactNode` | ✅ | — | Sheet content |
+| `children` | `ReactNode` | ✅ | — | |
 | `sheetId` | `string` | ✅ | — | Unique ID for stacking z-index |
 | `open` | `boolean` | ✅ | — | |
 | `onOpenChange` | `(open: boolean) => void` | ✅ | — | |
 | `tabLabel` | `string` | ✅ | — | Vertical tab text when collapsed |
-| `tabIcon` | `LucideIcon` | ✅ | — | Tab icon |
+| `tabIcon` | `LucideIcon` | ✅ | — | |
 | `size` | `'sm' \| 'md' \| 'lg' \| 'xl' \| 'full'` | ❌ | `'md'` | sm=442px, md=682px, lg=882px, xl=1082px, full=100vw |
 | `side` | `'top' \| 'bottom' \| 'left' \| 'right'` | ❌ | `'right'` | |
-| `className` | `string` | ❌ | — | |
 | `forceCollapse` | `boolean` | ❌ | `false` | Keep tab visible even when open |
 | `fullWidth` | `number` | ❌ | — | Override size with px value |
-| `hideOverlay` | `boolean` | ❌ | `false` | No backdrop |
+| `hideOverlay` | `boolean` | ❌ | `false` | |
 | `pushOffset` | `number` | ❌ | — | Pixel offset for stacking |
 
-Requires `GlobalModalProvider` in layout for correct z-index stacking.
-DOM unmounts 500ms after close for exit animation.
+Requires `GlobalModalProvider` in layout. DOM unmounts 500ms after close for exit animation.
 
-### Surface treatment (parallel framing)
+### Surface textures
 
-The outer `SheetContent` uses the shared `@utility panel-surface` (defined in `app/globals.css`): `rounded-xl` + `border border-border/10` + `shadow-2xl` + `bg-card`. This is **the same** treatment applied to the main `<main>` shell in `DashboardShell` and to the embedded `Drawer` (see [component-drawer.md](./component-drawer.md)). All three surfaces read as parallel frames when they sit side-by-side.
+POS panels and industrial surfaces use background textures from `@utility` (defined in `app/globals.css`):
 
-> **Do not** override `border`, `shadow`, `rounded-*` or `bg-*` on `CollapsibleSheet` instances. If a variant is needed, add a new prop that composes with `panel-surface` instead of replacing it.
+| Utility | When to use |
+|---------|-------------|
+| `dot-grid-surface` | POS cart, product grid panels (24px grid) |
+| `dot-grid-surface-sm` | Compact panels (12px grid) |
+| `cross-grid-surface` | Technical/engineering surfaces |
+| `ribbon-cmyk` | CMY gradient top border on cards |
+| `card-focus-spin-cmyk` | CMY gradient border on hover/focus (included in `card-base`) |
 
-### Surface textures (industrial/prepress)
-
-POS panels, product grids, and other industrial-themed surfaces use background textures from the `@utility` surface family (defined in `app/globals.css`):
-
-| Utility | When to use | How to apply |
-|---------|-------------|-------------|
-| `dot-grid-surface` | POS cart, product grid panels, any `bg-card` surface needing a subtle dot texture (24px grid) | `className="bg-card dot-grid-surface"` |
-| `dot-grid-surface-sm` | Compact panels where 24px grid feels too sparse (12px grid) | `className="bg-card dot-grid-surface-sm"` |
-| `cross-grid-surface` | Technical/engineering surfaces (production grids, Gantt charts) | `className="bg-card cross-grid-surface"` |
-| `ribbon-cmyk` | CMY gradient top border on cards | `className="bg-card ribbon-cmyk"` |
-| `card-focus-spin-cmyk` | CMY gradient border on cards — rotating on hover, faster on focus/selected (`accent-visible`) | `className="card-focus-spin-cmyk"` (included in `card-base`) |
-
-**Rules:**
-- Apply only to surfaces with `bg-card` as base.
-- Do not combine two background textures on the same element.
-- Do not apply to overlays (modals, sheets) — those use `panel-surface`.
-- Full definitions and examples in `app/globals.css` and [`design-system.md`](../10-architecture/design-system.md).
+Apply only to `bg-card` surfaces. Do not combine two textures. Do not apply to overlays.
 
 ---
 
-## CommentSystem 🟢
+## Tables & Data Display
 
-Comment thread with scrollable feed and keyboard-submit input.
+> 📄 **DataTable & ExpandableTableRow** → [component-datatable-views.md](./component-datatable-views.md)
+> 📄 **Row & Card Actions** → [component-row-actions.md](./component-row-actions.md)
+> 📄 **Table Cell Input** (excepción de input dentro de `<TableCell>`) → [component-table-cell-input.md](./component-table-cell-input.md)
+
+### DataCell primitives 🟢
+
+> Import: `import { DataCell, createActionsColumn } from '@/components/shared'`
+> **Para campos de entidad**, declarar `FieldDef.type` en `*Fields.ts` — ver [component-fields.md](./component-fields.md).
+> Los primitivos aquí se usan directamente solo en renderers `computed` y columnas de excepción.
+
+**Clasificación de textos:**
+- `DataCell.Text` — texto primario por defecto (`text-xs font-medium`)
+- `DataCell.Secondary` — dato complementario (`text-xs font-medium text-muted-foreground`)
+
+**DataCell.Date** (ADR-0062):
+
+| prop | type | required | default |
+|------|------|----------|---------|
+| `value` | `string \| Date` | ✅ | — |
+| `showTime` | `boolean` | ❌ | `false` |
+| `dateWeight` | `DataCellWeight` | ❌ | `'medium'` |
+| `timeWeight` | `DataCellWeight` | ❌ | `'normal'` |
+
+Pesos (`DataCellWeight`): `light` · `normal` · `medium` · `semibold` · `bold`. Zona `header` aplica `semibold` automático vía entity-fields.
+
+**DataCell.Entity / DataCell.Link / DataCell.ContactLink:**
+
+| Primitivo | Cuándo usar |
+|---|---|
+| `DataCell.Entity` | Documento de negocio del ERP (OV, OT, Factura, Producto) |
+| `DataCell.Link` | URL genérica o callback (no registral) |
+| `DataCell.ContactLink` | Nombre de persona/empresa → abre `ContactDrawer` |
+
+**DataCell.NumericFlow** — cantidades con polaridad (+/−). Badge `rounded-sm` tintado. Props: `value`, `unit?`, `showSign?` (default `true`).
+
+**DataCell.Progress** — barra de completitud. Props: `value`, `max?` (default 100), `label?`, `subLabel?`.
+
+**DataCell.Category** (ADR-0066) — chips resueltos por dominio (`contact_type`, `product_type`, etc.). Props: `value`, `domain?`, `size?`.
+
+### createExpanderColumn 🟢
+
+Factory para columna de expansión en `DataTable`. `canExpand?: (row: TData) => boolean` oculta el botón en filas no-expandibles.
+
+### AccountingLinesTable 🟢
+
+Tabla de líneas de asiento doble (Debe/Haber) conectada a `react-hook-form`.
 
 ```tsx
-<CommentSystem
-  comments={comments}
-  onAddComment={handleAddComment}
-  placeholder="Escribe un comentario..."
-  maxHeight="300px"
-/>
+<AccountingLinesTable control={form.control} name="items" />
 ```
 
-```typescript
-interface Comment {
-  user: string       // displayed as 2-letter avatar initials
-  text: string
-  timestamp: string  // ISO string, formatted es-CL locale
-}
-```
+Props: `control` (✅), `name` (✅). Los inputs internos siguen el contrato [Table Cell Input](./component-table-cell-input.md).
 
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `comments` | `Comment[]` | ✅ | — | |
-| `onAddComment` | `(text: string) => void` | ✅ | — | Text already trimmed |
-| `placeholder` | `string` | ❌ | `'Escribe un comentario...'` | |
-| `emptyMessage` | `string` | ❌ | `'Sin comentarios'` | EmptyState title |
-| `className` | `string` | ❌ | — | |
-| `maxHeight` | `string` | ❌ | `'400px'` | Feed scroll container |
+### FormLineItemsTable 🟢
 
-Submit: `Enter` submits, `Shift+Enter` inserts newline.
-
-States handled: empty (EmptyState), populated.
-
----
-
-## AttachmentList 🟢
-
-File attachment grid with download link and optional delete.
+Shell genérico para tablas de líneas editables (wizards, notas C/D). Provee encabezado + footer "Agregar Línea", el caller renderiza el `<TableBody>`.
 
 ```tsx
-<AttachmentList
-  attachments={attachments}
-  onDelete={handleDelete}
-  isDeleting={deletingId}
-/>
+<FormLineItemsTable title="Líneas" icon={PackageIcon} onAdd={() => append({...})}
+  columns={[{ header: "Producto", width: "w-[300px]", align: "left" }, ...]}
+  footer={<BalanceSummary />}>
+  <TableBody>...</TableBody>
+</FormLineItemsTable>
 ```
 
-```typescript
-interface Attachment {
-  id: number
-  file: string                    // URL
-  original_filename: string
-  file_size_formatted: string     // pre-formatted by backend, e.g. "42 KB"
-  uploaded_at: string             // ISO string
-  user_name?: string
-  mime_type?: string
-}
-```
+| prop | type | required | default |
+|------|------|----------|---------|
+| `columns` | `FormLineItemColumn[]` | ✅ | — |
+| `children` | `ReactNode` | ✅ | — |
+| `onAdd` | `() => void` | ❌ | — |
+| `addButtonText` | `string` | ❌ | `'Agregar Línea'` |
+| `hideAddButton` | `boolean` | ❌ | `false` |
+| `footer` | `ReactNode` | ❌ | — |
+| `title` | `string` | ❌ | — |
+| `icon` | `ElementType` | ❌ | — |
 
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `attachments` | `Attachment[]` | ✅ | — | |
-| `onDelete` | `(id: number) => void` | ❌ | — | Omit to hide delete button |
-| `isDeleting` | `number \| null` | ❌ | `null` | ID of attachment being deleted |
-| `className` | `string` | ❌ | — | |
+> **vs `DataTable variant="minimal"`:** `FormLineItemsTable` es para edición; `minimal` es para display.
 
-Layout: 1 col mobile, 2 col `sm+`. Download opens new tab.
-States handled: empty (EmptyState), deleting per-item spinner.
+### ReportTable 🟢
+
+Tabla jerárquica de reportes contables con expand/collapse y períodos de comparación.
+
+| prop | type | required | default |
+|------|------|----------|---------|
+| `data` | `ReportNode[] \| null` | ✅ | — |
+| `showComparison` | `boolean` | ❌ | `false` |
+| `isLoading` | `boolean` | ❌ | `false` |
+| `accentColor` | `'primary' \| 'success' \| 'info' \| 'destructive' \| 'income' \| 'expense' \| 'asset' \| 'liability'` | ❌ | `'primary'` |
+| `varianceDirection` | `'higher-is-better' \| 'lower-is-better'` | ❌ | `'higher-is-better'` |
+
+`ReportNode`: `{ id, code, name, balance, comp_balance?, variance?, children? }`.
+
+### BudgetVarianceTable 🟢 (feature-local)
+
+Tabla de varianza presupuestaria. En `features/finance/components/` — no exportada desde shared.
+
+Props: `data: BudgetVarianceNode[]` (✅), `loading?: boolean`.
 
 ---
 
-## Button family (ToolbarCreateButton / ActionButtons)
+## Money & Quantities
 
-> 📄 Documentación completa en **[component-button.md](./component-button.md)**.
+### MoneyDisplay 🟢
 
-Catálogo: `SubmitButton` · `CancelButton` · `DangerButton` · `IconButton` · `ToolbarCreateButton`.
+Fuente única de verdad para renderizado de dinero. No usar `.toLocaleString()` para montos.
+
+```tsx
+<MoneyDisplay amount={150000} />
+<MoneyDisplay amount={null} showZeroAsDash />
+```
+
+| prop | type | required | default |
+|------|------|----------|---------|
+| `amount` | `number \| string \| null \| undefined` | ✅ | — |
+| `currency` | `string` | ❌ | `'CLP'` |
+| `showColor` | `boolean` | ❌ | `true` |
+| `showZeroAsDash` | `boolean` | ❌ | `false` |
+| `digits` | `number` | ❌ | `0` |
+| `weight` | `DataCellWeight` | ❌ | `'medium'` |
+
+### QuantityDisplay 🟢
+
+Para cantidades de producción/inventario (kg, metros, unidades). Font `font-mono tabular-nums`.
+
+Props: `value` (✅), `uom?`, `decimals?` (default 4), `showSign?`.
 
 ---
 
-## PageTabs 🟢
+## Inputs & Forms
 
-> 📄 Para el uso de `iconName`, ver **[entity-identity.md §3](./entity-identity.md#3-dynamicicon)**.
+> 📄 **LabeledInput / MultiTagInput / MultiSelectTagInput** → [component-input.md](./component-input.md)
+> 📄 **DatePicker / DateRangeFilter** → [component-datepicker.md](./component-datepicker.md)
+
+### Dropdown & Popover Layout Invariants
+
+Rules for positioning and width of floating UI elements.
+
+**Width invariant:** every dropdown within a form field (Select, Selector, Combobox) MUST match trigger width via `w-[var(--radix-select-trigger-width)]` or `w-[var(--radix-popover-trigger-width)]`. Exception: filters in toolbars and `DateRangeFilter`.
+
+**Positioning vs. notched fields:**
+- Standard `LabeledSelect` → `item-aligned` (covers trigger)
+- Feature-rich selectors (`AccountSelector`, `ProductSelector`) → `popper` (aligns to bottom border to avoid obscuring search input)
+
+### FolioValidationInput 🟢
+
+Text input with real-time DTE folio uniqueness validation.
+
+| prop | type | required | default |
+|------|------|----------|---------|
+| `value` | `string` | ✅ | — |
+| `onChange` | `(value: string) => void` | ✅ | — |
+| `dteType` | `string` | ✅ | — |
+| `contactId` | `number` | ❌ | — |
+| `isPurchase` | `boolean` | ❌ | `false` |
+| `excludeId` | `number` | ❌ | — |
+| `onValidityChange` | `(isValid: boolean, result: FolioValidationResult \| null) => void` | ❌ | — |
+
+States: validating (spinner), valid (check), duplicate (warning + alert).
+
+### PeriodValidationDateInput 🟢
+
+DatePicker que valida cierre de períodos fiscal/contable antes de aceptar una fecha.
+
+| prop | type | required | default |
+|------|------|----------|---------|
+| `date` | `Date \| undefined` | ✅ | — |
+| `onDateChange` | `(date: Date \| undefined) => void` | ✅ | — |
+| `validationType` | `'tax' \| 'accounting' \| 'both'` | ❌ | `'tax'` |
+| `onValidityChange` | `(isValid: boolean) => void` | ❌ | — |
+
+States: validating (spinner), period closed (warning alert, `isValid=false`).
+
+### DataManagement 🟢
+
+Toolbar group: export CSV, download template, import CSV.
+
+```tsx
+<DataManagement onExport={handleExport} onImport={handleImport}
+  templateData={[{ nombre: '', rut: '' }]} onImportSuccess={refetch}
+  exportFilename="productos" />
+```
+
+Props: `onExport` (✅), `onImport` (✅), `templateData` (✅), `onImportSuccess` (✅), `exportFilename?`.
+
+### DocumentAttachmentDropzone 🟢
+
+Drag-and-drop file input con lógica DTE-aware de campo requerido.
+
+| prop | type | required | default |
+|------|------|----------|---------|
+| `file` | `File \| null` | ✅ | — |
+| `onFileChange` | `(file: File \| null) => void` | ✅ | — |
+| `dteType` | `string` | ❌ | — |
+| `isPending` | `boolean` | ❌ | `false` |
+| `accept` | `string` | ❌ | `'.pdf,.xml,image/*'` |
+
+### DocumentCompletionModal 🟢
+
+Modal para completar una factura (folio, fecha, adjunto). Valida períodos antes de submit.
+
+Props: `open`, `onOpenChange`, `invoiceId`, `invoiceType`, `onComplete`, `onSuccess?`, `contactId?`, `isPurchase?`.
+
+### FacetedFilter 🟢
+
+Multi-select popover para filtros de columna en tablas.
+
+Props: `title?`, `options: Array<{label, value, icon?}>` (✅), `selectedValues: string[]` (✅), `onSelect` (✅).
+
+---
+
+## Navigation & Layout
+
+> 📄 **Section headers** → [component-section-header.md](./component-section-header.md)
+
+### PageHeader 🟢
+
+> 📄 Para `iconName` centralizado → [entity-identity.md §8](./entity-identity.md#8-pageheader--integración-con-iconos)
+
+| prop | type | required |
+|------|------|----------|
+| `title` | `string` | ✅ |
+| `subtitle` | `string` | ❌ |
+| `breadcrumbs` | `Array<{label; href?}>` | ❌ |
+| `actions` | `ReactNode` | ❌ |
+| `tabs` | `ReactNode` | ❌ |
+| `backHref` | `string` | ❌ |
+
+### PageTabs 🟢
 
 Industrial underline navigation tabs with optional subtab dropdowns.
 
 ```tsx
-<PageTabs
-  tabs={[
-    { value: 'orders', label: 'Órdenes', iconName: 'ClipboardList', href: '/sales' },
-    { value: 'sessions', label: 'Sesiones', iconName: 'Monitor', href: '/sales/sessions',
-      subTabs: [{ value: 'active', label: 'Activas', href: '/sales/sessions?status=active' }] },
-  ]}
-  activeValue="orders"
-/>
+<PageTabs tabs={[{ value: 'orders', label: 'Órdenes', iconName: 'ClipboardList', href: '/sales' }]}
+  activeValue="orders" />
 ```
 
-```typescript
-interface TabConfig {
-  value: string
-  label: string
-  iconName: string          // DynamicIcon name
-  href: string
-  subTabs?: SubTabConfig[]  // renders dropdown chevron
-}
+Tab config: `{ value, label, iconName, href, subTabs? }`. Props: `tabs` (✅), `activeValue` (✅), `subActiveValue?`, `variant?: 'default' | 'minimal'`, `configHref?`.
 
-interface SubTabConfig {
-  value: string
-  label: string
-  href: string
-  iconName?: string
-}
-```
+### FormTabs 🟢
 
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `tabs` | `TabConfig[]` | ✅ | — | |
-| `activeValue` | `string` | ✅ | — | Matches `TabConfig.value` |
-| `subActiveValue` | `string` | ❌ | — | Matches `SubTabConfig.value` |
-| `maxWidth` | `string` | ❌ | — | Container max-width |
-| `className` | `string` | ❌ | — | |
-| `variant` | `'default' \| 'minimal'` | ❌ | `'default'` | minimal reduces padding |
-| `configHref` | `string` | ❌ | — | Adds gear icon link at right |
-
-Tabs scroll horizontally on small screens (no scrollbar).
-
----
-
-## FormTabs 🟢
-
-Componente de pestañas estandarizado con estética "industrial gráfica" (carpetas troqueladas) para formularios complejos y modales con múltiples secciones. Reemplaza el uso directo de `Tabs` de shadcn/ui.
+Pestañas con estética "carpetas troqueladas" para formularios complejos.
 
 ```tsx
-<FormTabs
-  items={[
-    { value: 'general', label: 'General', icon: InfoIcon, hasErrors: !!errors.name },
-    { value: 'pricing', label: 'Precios', icon: DollarSignIcon, disabled: !productId },
-  ]}
-  value={activeTab}
-  onValueChange={setActiveTab}
-  orientation="vertical"
-  header={<headerSlot />}
->
+<FormTabs items={[{ value: 'general', label: 'General', icon: InfoIcon }]}
+  value={activeTab} onValueChange={setActiveTab} orientation="vertical">
   <FormTabsContent value="general">...</FormTabsContent>
 </FormTabs>
 ```
 
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `items` | `FormTabItem[]` | ✅ | — | `{ value, label, icon?, badge?, hasErrors?, hidden?, disabled? }` |
-| `value` | `string` | ✅ | — | Controlled state |
-| `onValueChange` | `(value: string) => void` | ✅ | — | |
-| `orientation` | `'vertical' \| 'horizontal'` | ❌ | `'vertical'` | |
-| `variant` | `'folder' \| 'underline'` | ❌ | `'folder'` | `folder`: corte industrial. `underline`: minimalista. |
-| `header` | `ReactNode` | ❌ | — | Renderiza sobre el contenido (obligatorio para sticky titles en modales verticales) |
-| `footer` | `ReactNode` | ❌ | — | Renderiza debajo del contenido |
-| `listClassName` | `string` | ❌ | — | Clases adicionales para el contenedor de pestañas |
+Props: `items: FormTabItem[]` (✅), `value` (✅), `onValueChange` (✅), `orientation?: 'vertical' | 'horizontal'`, `variant?: 'folder' | 'underline'`, `header?`, `footer?`.
 
-### Patrones de Uso
+**Vertical rail ("Sawtooth"):** fichas maestras (4+ tabs, modal `xl+`). El modal padre DEBE tener `allowOverflow={true}` y `hideScrollArea={true}`.
 
-#### 1. Vertical Rail ("Sawtooth")
-Estética de riel lateral con efecto de sierra que sobresale del contenedor.
-- **Cuándo usar:** Fichas maestras (Producto, Usuario, Contacto), alta densidad de datos (4+ pestañas), modales de gran tamaño (`xl` o superior).
-- **Requisito Técnico:** El modal padre DEBE tener `allowOverflow={true}` y `hideScrollArea={true}` para permitir que el riel sobresalga del marco.
-- **Navegación:** El título del modal debe moverse al `header` prop de `FormTabs` para alinear el riel con el contenido.
-
-#### 2. Horizontal Group ("Pills")
-Estética de mando unificado con doble redondeo superior y base recta.
-- **Cuándo usar:** Selectores de vista (Ventas vs Notas C/D), formularios simples o rápidos (2-3 pestañas), componentes inline.
-- **Comportamiento:** Se centran automáticamente en su contenedor y actúan como un grupo de botones ("button group") integrado.
+**Horizontal group ("Pills"):** selectores de vista (2-3 tabs, componentes inline).
 
 ---
 
----
+## Buttons
 
-## TransactionViewModal — eliminado (ADR-0028) 🔴
+> 📄 [component-button.md](./component-button.md) — `SubmitButton`, `CancelButton`, `DangerButton`, `IconButton`, `ToolbarCreateButton`, `ActionSlideButton`.
 
-> **Eliminado.** Reemplazado por el registro `ENTITY_DRAWERS` + el opener `openEntity` (drawer de
-> entidad en modo `view`). Ver [component-entity-drawers.md](./component-entity-drawers.md) y
-> [ADR-0028](../10-architecture/adr/0028-entity-drawer-registry.md).
->
-> - **Mostrar el detalle de un documento:** `openEntity('<app>.<model>', id)`.
-> - **Drill-down a un documento origen:** `SourceDocumentLink`.
-> - **Editor deep-linkeable desde lista:** `?selected={id}` ([list-modal-edit-pattern.md](./list-modal-edit-pattern.md)).
+**PageHeaderButton** 🟡 — botón estándar para `PageHeader.actions`.
 
-States handled: loading (dual spinner), error, populated.
+Props: `label` (✅), `icon?`, `onClick?`, `href?`, `disabled?`, `variant?: 'default' | 'outline' | 'secondary' | 'ghost'`.
 
----
+**ActionFoldButton** 🟡 — botón expansible para acciones secundarias.
 
-## PageHeaderButton 🟡
+Props: `label` (✅), `icon` (✅), `onClick` (✅), `variant?`.
 
-Botón estandarizado para usar dentro de las acciones de un `PageHeader`.
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `label` | `string` | ✅ | — | |
-| `icon` | `LucideIcon` | ❌ | — | |
-| `onClick` | `() => void` | ❌ | — | |
-| `href` | `string` | ❌ | — | Si se provee, renderiza como `<Link>` |
-| `disabled` | `boolean` | ❌ | `false` | |
-| `variant` | `'default' \| 'outline' \| 'secondary' \| 'ghost'` | ❌ | `'default'` | Variante de Shadcn Button |
-
----
-
-## ActionFoldButton 🟡
-
-Botón expansible para acciones secundarias.
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `label` | `string` | ✅ | — | |
-| `icon` | `LucideIcon` | ✅ | — | |
-| `onClick` | `() => void` | ✅ | — | |
-| `variant` | `'default' \| 'destructive' \| 'outline' \| 'secondary' \| 'ghost'` | ❌ | `'default'` | |
-
----
-
-## ActionSlideButton 🟢
-
-> 📄 Ver **[component-button.md](./component-button.md#actionslidebutton--premium-kinetic-button)**.
-
----
-
-## LoadingFallback
-
-> 📄 Ver **[component-skeleton.md](./component-skeleton.md)**.
-
----
-
-## SheetCloseButton 🟢
-
-Universal close primitive for Modals, Sheets, and Panels. Standardizes the 32px circular ghost button pattern.
+**ActionDock** 🟡 — floating taskbar for multi-selection actions.
 
 ```tsx
-<SheetCloseButton onClick={close} showTooltip tooltipText="Cerrar Panel" />
+<ActionDock isVisible={selectedIds.length > 0}>
+  <ActionDock.Stats>
+    <ActionDock.Stat label="Seleccionados" value={selectedIds.length} />
+  </ActionDock.Stats>
+  <ActionDock.Actions>
+    <Button onClick={handleBatch}>Procesar</Button>
+  </ActionDock.Actions>
+</ActionDock>
 ```
 
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `onClick` | `() => void` | ✅ | — | |
-| `className` | `string` | ❌ | — | Merged via `cn()` |
-| `label` | `string` | ❌ | `'Cerrar'` | Accessibility label |
-| `showTooltip` | `boolean` | ❌ | `false` | |
-| `tooltipText` | `string` | ❌ | — | Defaults to `label` |
-
+Props: `isVisible: boolean` (✅). Sub-components: `ActionDock.Stats`, `ActionDock.Stat` (`label`, `value`, `colorClass?`), `ActionDock.Actions`, `ActionDock.Section`.
 
 ---
 
-## Componentes Internos 🔴
+## Feedback & Utility
 
-Componentes de uso estrictamente interno, no consumir directamente en features:
+> 📄 **Skeleton family / LoadingFallback** → [component-skeleton.md](./component-skeleton.md)
 
-- `ColorBar`: Componente decorativo
+### EmptyState 🟢
+
+```tsx
+<EmptyState icon={<PackageIcon />} title="Sin órdenes" action={<Button>Crear</Button>}
+  variant="full" context="inventory" />
+```
+
+| prop | type | required | default |
+|------|------|----------|---------|
+| `context` | `'search' \| 'inventory' \| 'finance' \| 'users' \| 'generic' \| 'database' \| 'production' \| 'pos' \| 'bom' \| 'treasury' \| 'sale' \| 'purchase'` | ❌ | `'generic'` |
+| `variant` | `'full' \| 'compact' \| 'minimal'` | ❌ | `'full'` |
+| `title` / `description` / `icon` / `action` / `secondaryAction` | various | ❌ | — |
+
+### CommentSystem 🟢
+
+Thread de comentarios con feed scrollable. `Enter` = submit, `Shift+Enter` = newline.
+
+Props: `comments: Comment[]` (✅), `onAddComment` (✅), `placeholder?`, `maxHeight?` (default `'400px'`).
+
+`Comment`: `{ user: string, text: string, timestamp: string }`.
+
+### AttachmentList 🟢
+
+Grid de adjuntos con descarga y delete opcional.
+
+Props: `attachments: Attachment[]` (✅), `onDelete?: (id: number) => void`, `isDeleting?: number | null`.
+
+`Attachment`: `{ id, file, original_filename, file_size_formatted, uploaded_at, user_name?, mime_type? }`.
+
+### SheetCloseButton 🟢
+
+Botón de cierre universal (32px circular ghost) para Modals, Sheets y Panels.
+
+Props: `onClick` (✅), `label?` (default `'Cerrar'`), `showTooltip?`, `tooltipText?`.
+
+---
+
+## Deprecated 🔴
+
+**TransactionViewModal** — eliminado (ADR-0028). Reemplazado por `ENTITY_DRAWERS` + `openEntity`. Ver [component-entity-drawers.md](./component-entity-drawers.md).
+
+**Componentes internos** (no consumir en features): `ColorBar` (decorativo).
 
 ---
 
 ## Forbidden usage
 
-- Creating a new badge component instead of using `StatusBadge` (for states) or `Chip` (for labels/tags).
-- Inline `<Badge className="text-[8px] ...">` for informational tags — use `<Chip size="xs">`.
-- Importing `@/components/ui/badge` directly in features or shared components — use `Badge`/`Chip`/`StatusBadge` from `@/components/shared` (single source of visual truth, ADR-0068/0069).
-- Passing raw Tailwind color classes to any shared component.
-- Modifying `/components/ui/` (Shadcn base).
-- Calling `.toLocaleString()` for money formatting — use `MoneyDisplay`.
-- Rendering currency in tables without `MoneyDisplay` (breaks tabular alignment).
+- Nuevo badge component en lugar de `StatusBadge` (estados) o `Chip` (labels/tags).
+- `<Badge className="text-[8px] ...">` inline — usar `<Chip size="xs">`.
+- Import directo de `@/components/ui/badge` en features — usar `Badge`/`Chip`/`StatusBadge` desde `@/components/shared`.
+- Raw Tailwind color classes en cualquier shared component.
+- Modificar `/components/ui/` (Shadcn base).
+- `.toLocaleString()` para montos — usar `MoneyDisplay`.
+- Renderizar moneda en tablas sin `MoneyDisplay` (rompe alineación tabular).

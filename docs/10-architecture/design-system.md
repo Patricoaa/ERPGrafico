@@ -10,9 +10,6 @@ last_review: 2026-05-28
 
 > **Puerta de entrada:** para una vista consolidada (concepto, principios, mapas de referencia) consulta **[DESIGN.md](../../DESIGN.md)** en la raíz del repo. Este documento detalla la arquitectura del design system; los contratos normativos viven en `docs/20-contracts/`.
 
-## Overview
-ERPGrafico utilizes a unified design system. The goal is to provide a highly functional, data-dense interface suitable for an ERP, while maintaining a modern, polished, and distinctive aesthetic.
-
 ## Core Principles
 1.  **Data Density over Whitespace:** ERP users need to see information at a glance. Primary interactive elements default to `h-10` (40px). `h-8` and `h-9` are permitted only in compact contexts (toolbars, secondary tabs, icon buttons) — not as a general replacement for standard inputs.
 2.  **Radius Hierarchy (The Rule of Nested Corners):** Standardize on a base radius `R = 0.5rem` (8px). To ensure visual harmony in nested layouts, containers use a larger radius than their content:
@@ -33,28 +30,7 @@ ERPGrafico utilizes a unified design system. The goal is to provide a highly fun
 
 ## Color Palette
 
-The color system follows a **3-layer architecture** orchestrated in `globals.css`. Full contract: **[color-system.md](../20-contracts/color-system.md)**.
-
-### Layers
-
-| Layer | Purpose | Examples | Dark mode |
-|-------|---------|----------|-----------|
-| **Layer 1 — Process** | CMYK + Pantone identity (fixed inks) | `--cyan`, `--magenta`, `--yellow`, `--black` | Fixed (inks don't change) |
-| **Layer 2 — Semantic** | System intents aliased to Layer 1 | `--primary` → `--black` (K100), `--info` → `--blue` | Layer 2 carries the dark-mode adaptation |
-| **Layer 3 — Domain** | Business domain natures aliased to Layer 2 | `--income` → `--success`, `--asset` → `--info` | Inherits from Layer 2 |
-
-### Primary identity
-
-Primary = **Process Black K100 (placa Key)** (`oklch(0 0 0)` light / `oklch(0.99 0 0)` dark) via `text-primary` / `bg-primary`. Cyan is the **emphasis** accent (sidebar, ring, chart-1, chips). See [ADR-0070](adr/0070-primary-process-black.md).
-
-### Color Architecture
-Colors must be defined as raw OKLCH channels in `app/globals.css` to support Tailwind v4 opacity modifiers (e.g., `bg-primary/10`).
-
-### Prohibited Patterns
-- ❌ Hardcoded HEX/RGB values in components (e.g., `text-[#FF0000]`).
-- ❌ Non-semantic generic colors (plain red, plain blue). Always use the curated tokens defined in the theme.
-- ❌ Direct use of Layer 1 process tokens (`bg-cyan`, `text-magenta`) outside graphic industry components — exception: categorical chips (`Chip.Category` with Layer 1 `BadgeIntent`, ADR-0064, `color-system.md §4.5`).
-- ✅ Use Layer 2 semantic tokens (`bg-primary`, `text-info`, `border-warning`) for all application UI.
+El sistema de color sigue una arquitectura de 3 capas en `globals.css`. **Contrato completo y fuente autoritativa: [color-system.md](../20-contracts/color-system.md).**
 
 ## Typography
 - Use modern, clean typography suitable for data-heavy applications.
@@ -75,7 +51,5 @@ For legacy and modern pages, all data display should be routed through centraliz
 - **Inconsistent Separators:** Use `FadedSeparator` for headers/footers and `LabeledSeparator` for form sections.
 
 ## Enforcement
-The design system is enforced through:
-- **Tailwind v4 `@theme` inline:** Single source of truth in `globals.css`. Agentes de IA y desarrolladores **deben** leer el archivo `app/globals.css` para conocer los colores de tokens disponibles (`--color-*`). No inventar colores arbitrarios.
-- **Zero-Any / Component Contracts:** Strict TypeScript interfaces ensure components only accept allowed variants (e.g., `variant="default" | "destructive"`).
-- **ESLint:** Reglas que bloquean antipatrones como `.toLocaleString()` directamente en la UI.
+
+AI agents and developers **must** read `frontend/app/globals.css` to know the available semantic color tokens (`--color-*`). Do not invent arbitrary tokens. All other enforcement rules in [GOVERNANCE.md](../90-governance/GOVERNANCE.md).

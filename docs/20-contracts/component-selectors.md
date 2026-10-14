@@ -329,6 +329,45 @@ No feature hook — caller provides `uoms` list.
 
 ---
 
+---
+
+## ProductSelector 🟢
+
+Rich catalog selector with image grid, category filter, and search. Lives in `@/components/shared`. Use for full-catalog browsing; **not** for simple form fields or narrow popovers (requires ≥40vh height).
+
+```tsx
+<ProductSelector
+  products={products}
+  categories={categories}
+  searchTerm={search}
+  onSearchChange={setSearch}
+  selectedCategoryId={categoryId}
+  onSelectCategory={setCategoryId}
+  onProductClick={handleSelect}
+  isProductDisabled={isPOSProductDisabled}
+  priceRenderer={(p) => <MoneyDisplay value={p.cost_price} />}
+/>
+```
+
+| prop | type | required | notes |
+|------|------|----------|-------|
+| `products` | `BaseProduct[]` | ✅ | |
+| `categories` | `ProductCategory[]` | ✅ | |
+| `searchTerm` | `string` | ✅ | |
+| `onSearchChange` | `(value: string) => void` | ✅ | |
+| `onSearchEnter` | `() => void` | ❌ | |
+| `selectedCategoryId` | `number \| null` | ✅ | |
+| `onSelectCategory` | `(id: number \| null) => void` | ✅ | |
+| `onProductClick` | `(product: BaseProduct) => void` | ✅ | |
+| `onToggleFavorite` | `(productId: number) => void` | ❌ | |
+| `isProductDisabled` | `(product: BaseProduct) => boolean` | ❌ | inject business rules |
+| `limits` | `Record<number, number>` | ❌ | |
+| `priceRenderer` | `(product: BaseProduct) => ReactNode` | ❌ | override default price display |
+
+**Related subcomponents:** `VariantSelectorModal` (variant selection via `useVariants` hook), `ProductGrid` (pure virtualized grid — use standalone if you need a custom layout).
+
+**⚠️ VirtuosoGrid constraint:** The parent container **must** have a defined height (`flex-1 min-h-0` or fixed px). A zero-height container renders nothing.
+
 ## Forbidden patterns
 
 - Do NOT use `<Select>` from shadcn for entity fields with >20 options or dynamic data.

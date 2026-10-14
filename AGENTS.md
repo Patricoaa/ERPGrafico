@@ -25,7 +25,7 @@ Rules:
 
 ## gstack skills + graph
 
-The full skill-routing table lives in ~/.config/opencode/AGENTS.md (invoke skills by name via the `skill` tool). The playbook at docs/30-playbooks/graph-gstack-workflow.md documents how to combine the graph with those skills.
+The full skill-routing table lives in ~/.config/opencode/AGENTS.md (invoke skills by name via the `skill` tool). The playbook at docs/50-tooling/graph-gstack-workflow.md documents how to combine the graph with those skills.
 
 Rules:
 - For a codebase question, start with the graph (`graphify query/path/explain`) before grepping.

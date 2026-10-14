@@ -18,6 +18,10 @@ forbidden:
 
 # Bank Reconciliation — Roadmap LLM-Executable
 
+> **Nota:** Este documento es un backlog de producto específico de la feature de conciliación bancaria,
+> no un playbook reutilizable. Las tareas completadas aquí no se actualizan automáticamente — verificar
+> el estado real en git antes de asumir que algo está pendiente.
+
 **Audiencia:** agente LLM (Claude Code u otro) ejecutando tareas atómicas.
 **Origen:** análisis exhaustivo de gaps documentado en conversación de 2026-04-28.
 **Excluido:** B4 (parsers OFX/MT940/CAMT.053) y B5 (Open Banking Fintoc/Belvo) — no abordables ahora.
