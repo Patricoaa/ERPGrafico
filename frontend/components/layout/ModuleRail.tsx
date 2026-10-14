@@ -37,7 +37,7 @@ export function ModuleRail({ currentModuleId, onNavigate }: ModuleRailProps) {
                 )}
             </Link>
 
-            <nav aria-label="Módulos" className="flex-1 min-h-0 w-full overflow-y-auto custom-scrollbar flex flex-col items-center gap-1.5 py-2">
+            <nav aria-label="Módulos" className="flex-1 min-h-0 w-full overflow-y-auto custom-scrollbar flex flex-col items-center justify-center gap-1.5 py-2">
                 <TooltipProvider delayDuration={0}>
                     {MODULE_ORDER.map((modId, index) => {
                         const mod = getModuleConfig(modId)
