@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.18](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.17...v0.3.18) (2026-10-14)
+
+
+### 📚 Documentation
+
+* fix contradictions and remove aspirational content from agent docs ([7d65b81](https://github.com/Patricoaa/ERPGrafico/commit/7d65b81c4e1def5dbe5489b0afa1cbb4ee2ca021))
+
 ### [0.3.17](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.16...v0.3.17) (2026-10-14)
 
 
