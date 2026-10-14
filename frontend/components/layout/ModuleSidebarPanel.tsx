@@ -26,24 +26,35 @@ interface ModuleSidebarPanelProps {
 export function ModuleSidebarPanel({ currentModuleId, navigation, isHeaderReady, isInboxOpen, onInboxToggle, onNavigate }: ModuleSidebarPanelProps) {
     const hasModuleNav = !!navigation && navigation.tabs.length > 0
 
+    const moduleLabel = hasModuleNav
+        ? navigation.moduleName
+        : undefined
+
     return (
         <div className="w-56 shrink-0 h-full flex flex-col border-r border-border/40 bg-muted/30">
+            {/* Cabecera del panel: nombre del módulo activo */}
+            <div className={cn(
+                "shrink-0 h-12 flex items-center px-4 border-b border-border/40",
+                moduleLabel ? "justify-start" : "justify-center"
+            )}>
+                {moduleLabel ? (
+                    <span className="text-sm font-bold tracking-tight text-foreground">
+                        {moduleLabel}
+                    </span>
+                ) : (
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 select-none">
+                        Módulos
+                    </span>
+                )}
+            </div>
+
             <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-2 pt-2 pb-4 flex flex-col gap-3">
                 <SidebarUtilityNav isInboxOpen={isInboxOpen} onInboxToggle={onInboxToggle} />
 
                 <div className="h-px bg-border/60 mx-2" aria-hidden />
 
                 {hasModuleNav ? (
-                    <>
-                        {navigation.moduleName && (
-                            <p className={cn(
-                                "px-3 -mb-1 text-2xs font-semibold uppercase tracking-wider text-muted-foreground/70 select-none"
-                            )}>
-                                {navigation.moduleName}
-                            </p>
-                        )}
-                        <ModuleNavTree navigation={navigation} onNavigate={onNavigate} />
-                    </>
+                    <ModuleNavTree navigation={navigation} onNavigate={onNavigate} />
                 ) : isHeaderReady || navigation ? (
                     // Rutas sin navegación de módulo (dashboard): lista de módulos
                     <nav aria-label="Módulos" className="flex flex-col gap-px">
