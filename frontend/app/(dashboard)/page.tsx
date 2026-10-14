@@ -1,13 +1,5 @@
-import type { Metadata } from "next"
-import DashboardPageClient from "./DashboardPageClient"
-
-export const metadata: Metadata = {
-    title: "Dashboard | ERPGrafico",
-}
+import { redirect } from "next/navigation"
 
 export default function DashboardPage() {
-    return (
-        <>
-            <DashboardPageClient />
-        </>)
+    redirect("/accounting/ledger?view=list")
 }

@@ -12,7 +12,6 @@ export interface ModuleConfig {
 }
 
 export const MODULE_REGISTRY: Record<string, ModuleConfig> = {
-  dashboard:   { id: "dashboard",   label: "Inicio",        icon: Home,          iconName: "home",          primaryEntityLabel: null,                                    permission: null,                                         defaultUrl: "/" },
   accounting:  { id: "accounting",  label: "Contabilidad",  icon: Home,          iconName: "home",          primaryEntityLabel: 'accounting.account',                   permission: "accounting.view_dashboard_accounting",       defaultUrl: "/accounting/ledger?view=list" },
   billing:     { id: "billing",     label: "Facturación",   icon: Home,          iconName: "home",           primaryEntityLabel: 'billing.invoice',                      permission: "billing.view_dashboard_billing",             defaultUrl: "/billing/sales?view=card" },
   sales:       { id: "sales",       label: "Ventas",        icon: Home,          iconName: "home",           primaryEntityLabel: 'sales.saleorder',                      permission: "sales.view_dashboard_sales",                defaultUrl: "/sales/orders?view=card" },
@@ -25,7 +24,7 @@ export const MODULE_REGISTRY: Record<string, ModuleConfig> = {
   hr:          { id: "hr",          label: "RRHH",          icon: Home,          iconName: "home",           primaryEntityLabel: 'hr.employee',                          permission: "hr.view_dashboard_hr",                     defaultUrl: "/hr/employees?view=list" },
 } as const
 
-export const MODULE_ORDER = ["dashboard", "accounting", "billing", "sales", "contacts", "inventory", "production", "treasury", "purchasing", "finances", "hr"] as const
+export const MODULE_ORDER = ["accounting", "billing", "sales", "contacts", "inventory", "production", "treasury", "purchasing", "finances", "hr"] as const
 
 export function getModuleConfig(id: string): ModuleConfig | undefined {
   return MODULE_REGISTRY[id]

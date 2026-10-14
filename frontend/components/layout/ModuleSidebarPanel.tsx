@@ -6,6 +6,7 @@ import { MODULE_ORDER, getModuleConfig, getModuleIcon } from "@/lib/module-regis
 import { ModuleNavTree } from "./ModuleNavTree"
 import { SidebarNavItem } from "./SidebarNavItem"
 import { SidebarUtilityNav } from "./SidebarUtilityNav"
+import { cn } from "@/lib/utils"
 
 interface ModuleSidebarPanelProps {
     currentModuleId: string
@@ -33,7 +34,16 @@ export function ModuleSidebarPanel({ currentModuleId, navigation, isHeaderReady,
                 <div className="h-px bg-border/60 mx-2" aria-hidden />
 
                 {hasModuleNav ? (
-                    <ModuleNavTree navigation={navigation} onNavigate={onNavigate} />
+                    <>
+                        {navigation.moduleName && (
+                            <p className={cn(
+                                "px-3 -mb-1 text-2xs font-semibold uppercase tracking-wider text-muted-foreground/70 select-none"
+                            )}>
+                                {navigation.moduleName}
+                            </p>
+                        )}
+                        <ModuleNavTree navigation={navigation} onNavigate={onNavigate} />
+                    </>
                 ) : isHeaderReady || navigation ? (
                     // Rutas sin navegación de módulo (dashboard): lista de módulos
                     <nav aria-label="Módulos" className="flex flex-col gap-px">

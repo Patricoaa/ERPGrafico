@@ -25,7 +25,7 @@ export function ModuleRail({ currentModuleId, onNavigate }: ModuleRailProps) {
     return (
         <div className="w-14 shrink-0 h-full flex flex-col items-center border-r border-border/40 bg-muted/30">
             {/* Logo — alineado con la cabecera del panel y la topbar */}
-            <Link href="/" onClick={onNavigate} aria-label="Inicio" className="h-12 w-full shrink-0 flex items-center justify-center">
+            <Link href="/accounting/ledger?view=list" onClick={onNavigate} aria-label="Inicio" className="h-12 w-full shrink-0 flex items-center justify-center">
                 {logo ? (
                     <div className="relative h-8 w-8">
                         <Image src={logo} alt={companyName || "Logo"} fill className="object-contain" />
