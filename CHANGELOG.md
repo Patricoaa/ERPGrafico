@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.15](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.14...v0.3.15) (2026-10-14)
+
+
+### ⚙️ Refactors
+
+* **frontend:** remove Inicio module; add module name label to panel ([801a3ed](https://github.com/Patricoaa/ERPGrafico/commit/801a3edc9741a80ed82d75268f24faf89dda13b2))
+
 ### [0.3.14](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.13...v0.3.14) (2026-10-14)
 
 
