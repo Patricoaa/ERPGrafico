@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.14](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.13...v0.3.14) (2026-10-14)
+
+
+### ✨ Features
+
+* **frontend:** sidebar ERPNext v16 — two-column nav (ADR-0079) ([bfe18c1](https://github.com/Patricoaa/ERPGrafico/commit/bfe18c12297649a3b4e2e3e3a50380c54fc07078))
+
 ### [0.3.13](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.12...v0.3.13) (2026-10-12)
 
 
