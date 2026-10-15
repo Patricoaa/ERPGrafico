@@ -143,11 +143,11 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                                         </div>
 
                                         {/* Bloque de Información del Registro */}
-                                        <div className={cn("flex-1 min-w-0 flex flex-col", !isLast && "pb-8")}>
+                                         <div className={cn("flex-1 min-w-0 flex flex-col", !isLast && isExpanded && "pb-6")}>
                                             <div className="flex items-baseline justify-between gap-2">
-                                                <span className="min-w-0 truncate text-xs font-semibold leading-tight text-foreground">
-                                                    {username}
-                                                </span>
+                                                 <span className="min-w-0 truncate text-[11px] font-semibold leading-tight text-foreground">
+                                                     {username}
+                                                 </span>
                                                 <time
                                                     className="shrink-0 text-3xs font-medium text-muted-foreground/60"
                                                     title={format(date, "d MMM yyyy, HH:mm", { locale: es })}
@@ -171,10 +171,10 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                                                     disabled={loading}
                                                     aria-expanded={isExpanded}
                                                     aria-controls={changesId}
-                                                    className={cn(
-                                                        "-ml-1 h-auto w-fit gap-1 rounded-sm px-1 py-0.5 text-muted-foreground/70 hover:bg-transparent hover:text-foreground",
-                                                        isExpanded ? "mt-2" : "mt-1"
-                                                    )}
+                                                     className={cn(
+                                                         "-ml-1 h-auto w-fit gap-1 rounded-sm px-1 py-0.5 text-muted-foreground/70 hover:bg-transparent hover:text-foreground text-2xs",
+                                                         isExpanded ? "mt-2" : "mt-1"
+                                                     )}
                                                 >
                                                     {isExpanded ? 'Ocultar cambios' : 'Ver cambios'}
                                                     <ChevronDown
@@ -185,34 +185,32 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                                             )}
 
                                             {/* Detalles de Cambios */}
-                                            {canExpand && (
-                                                <div id={changesId} hidden={!isExpanded} className="mt-2">
-                                                    <ul className="space-y-1.5 rounded-sm border border-border/60 bg-muted/40 p-2">
-                                                        {changedFields.map(field => (
-                                                            <li key={field} className="grid grid-cols-[auto_1fr] items-baseline gap-x-2">
-                                                                <span className="text-3xs font-medium text-muted-foreground/70 lowercase">
-                                                                    {translateFieldName(field)}:
-                                                                </span>
-                                                                <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-                                                                    <span
-                                                                        className="truncate font-mono text-2xs text-muted-foreground/70 line-through"
-                                                                        title={formatHistoryValue(field, previous?.[field])}
-                                                                    >
-                                                                        {formatHistoryValue(field, previous?.[field])}
-                                                                    </span>
-                                                                    <ArrowRight aria-hidden="true" className="h-2.5 w-2.5 shrink-0 self-center text-muted-foreground/40" />
-                                                                    <span
-                                                                        className="min-w-0 break-words font-mono text-2xs font-medium text-foreground"
-                                                                        title={formatHistoryValue(field, record[field])}
-                                                                    >
-                                                                        {formatHistoryValue(field, record[field])}
-                                                                    </span>
-                                                                </div>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            )}
+                                             {canExpand && (
+                                                 <div id={changesId} hidden={!isExpanded} className="mt-2 border-l border-border/40 pl-2">
+                                                     <ul className="space-y-1">
+                                                         {changedFields.map(field => (
+                                                             <li key={field} className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-2xs">
+                                                                 <span className="text-muted-foreground/70 lowercase">
+                                                                     {translateFieldName(field)}:
+                                                                 </span>
+                                                                 <span
+                                                                     className="truncate text-muted-foreground/60 line-through"
+                                                                     title={formatHistoryValue(field, previous?.[field])}
+                                                                 >
+                                                                     {formatHistoryValue(field, previous?.[field])}
+                                                                 </span>
+                                                                 <ArrowRight aria-hidden="true" className="h-2.5 w-2.5 shrink-0 self-center text-muted-foreground/40" />
+                                                                 <span
+                                                                     className="min-w-0 break-words text-foreground"
+                                                                     title={formatHistoryValue(field, record[field])}
+                                                                 >
+                                                                     {formatHistoryValue(field, record[field])}
+                                                                 </span>
+                                                             </li>
+                                                         ))}
+                                                     </ul>
+                                                 </div>
+                                             )}
                                         </div>
                                     </li>
                                 )
