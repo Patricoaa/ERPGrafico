@@ -3,6 +3,7 @@
 import type { LucideIcon } from "lucide-react"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
+import { stageIntent } from "@/lib/workflow-status"
 import { StatusBadge } from "./StatusBadge"
 
 /**
@@ -57,6 +58,7 @@ export function DocumentLifecycle({ steps, onStepClick, activeStepId, className 
                                         size="md"
                                         icon={step.icon}
                                         status={step.status}
+                                        intent={stageIntent(step.status)}
                                         progress={step.progress}
                                         tooltip={`${step.label}: ${step.detail ?? STEP_LABEL[step.status]}`}
                                     />

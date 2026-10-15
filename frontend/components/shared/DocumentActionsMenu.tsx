@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils"
  * Menú único de acciones de la ficha documental (ADR-0083, component-document-sheet.md §4).
  * Botón de cabecera del Drawer con el mismo lenguaje que el de cierre (circular, ghost, tooltip)
  * y menú con el estilo de `DataCell.ActionMenu`. Orden: siguiente paso del ciclo, demás
- * acciones, imprimir y, separadas al final, las destructivas. Un punto cian indica que hay un
+ * acciones, imprimir y, separadas al final, las destructivas. Un punto indica que hay un
  * siguiente paso pendiente. Solo presentación: el consumidor resuelve disponibilidad y permisos.
  */
 export interface DocumentActionItem {
@@ -66,7 +66,7 @@ export function DocumentActionsMenu({ primary, actions = [], onPrint, label = "A
                             >
                                 <MoreVertical className="h-4 w-4" />
                                 {primary && (
-                                    <span aria-hidden className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-cyan" />
+                                    <span aria-hidden className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-primary" />
                                 )}
                             </Button>
                         </DropdownMenuTrigger>
@@ -97,7 +97,7 @@ function Item({ action, emphasis = false }: { action: DocumentActionItem; emphas
             variant={action.destructive ? "destructive" : "default"}
             className={cn(
                 "text-xs font-semibold uppercase tracking-widest rounded-sm cursor-pointer items-start",
-                emphasis && "text-cyan focus:text-cyan",
+                emphasis && "text-primary focus:text-primary",
             )}
         >
             {Icon && <Icon className="mt-0.5 h-3.5 w-3.5" />}

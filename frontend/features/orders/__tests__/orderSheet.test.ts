@@ -100,3 +100,38 @@ describe("orderLineFields", () => {
         expect(ids).toEqual(["product_name", "quantity", "unit_price", "quantity_delivered", "quantity_invoiced", "work_order_summary", "subtotal_net"])
     })
 })
+
+describe("ciclo: fuente única tarjeta/ficha", () => {
+    it("billing stays active while an invoice has no folio, even if fully invoiced", async () => {
+        const { billingStage, getHubStatuses } = await import("@/lib/workflow-status")
+        const order = {
+            status: "INVOICED", invoicing_status: "INVOICED", total: 50000, pending_amount: 0,
+            related_documents: { invoices: [{ status: "PAID", number: "" }] },
+            lines: [{ quantity: 10, quantity_delivered: 10, quantity_invoiced: 10 }],
+        }
+        expect(billingStage(order)).toEqual({ billingStatus: "active", billingFolioPending: true })
+        expect(getHubStatuses(order).billing).toBe("active")
+        const withFolio = { ...order, related_documents: { invoices: [{ status: "POSTED", number: "9101" }] } }
+        expect(billingStage(withFolio).billingStatus).toBe("success")
+        expect(billingStage({ ...withFolio, invoicing_status: "PARTIAL" }).billingStatus).toBe("active")
+        expect(billingStage({ status: "CONFIRMED", invoicing_status: "PENDING" }).billingStatus).toBe("neutral")
+    })
+
+    it("sheet lifecycle shows the same billing state with 'Folio pendiente'", () => {
+        const order = {
+            id: 4, number: "000004", status: "INVOICED", invoicing_status: "INVOICED", total: 50000, pending_amount: 0,
+            related_documents: { invoices: [{ id: 13, status: "PAID", number: "" }] },
+            lines: [{ id: 1, quantity: 10, quantity_delivered: 10, quantity_invoiced: 10, price_unit: 0, subtotal: 50000 }],
+        } as unknown as Order
+        const billing = getOrderLifecycle(order, "sale").find((s) => s.id === "billing")
+        expect(billing).toMatchObject({ status: "active", detail: "Folio pendiente" })
+    })
+
+    it("maps stage statuses to badge intents (in progress is not green)", async () => {
+        const { stageIntent } = await import("@/lib/workflow-status")
+        expect(stageIntent("active")).toBe("warning")
+        expect(stageIntent("success")).toBe("success")
+        expect(stageIntent("neutral")).toBe("neutral")
+        expect(stageIntent(undefined)).toBe("neutral")
+    })
+})

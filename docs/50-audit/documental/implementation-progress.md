@@ -21,6 +21,12 @@
 
 ---
 
+## 2026-10-15 · Ciclo: tarjeta y ficha desincronizadas · evaluación de la máquina de estados
+
+Caso reportado: OV-000004 se veía "Facturado" en la ficha sin folio registrado. Evaluación completa en [state-machine-evaluation.md](./state-machine-evaluation.md).
+- **Corregido (frontend):** el punto del botón de acciones usaba `bg-cyan` (CMYK reservado a navegación, ADR-0076; lo detectó `color-system.contract`) → `bg-primary`. Fuente única del ciclo en `lib/workflow-status` (`billingStage`: Facturación completa solo con todo facturado y foliado; "Folio pendiente" en la ficha); `features/orders/utils/status` reexporta (había dos copias). `stageIntent`: los estados de etapa ya no se resuelven como estados de negocio (`active` se pintaba verde "Activo" en tarjeta y ficha; ahora "en curso" = advertencia).
+- **Pendiente de decisión (backend):** `TreasuryService` escribe `status = PAID` en facturas/OV/OC al quedar pagadas → 180 facturas sin folio aparecen "Pagadas"; `Invoice.Status` y `SaleOrder/PurchaseOrder.Status` mezclan emisión, facturación y cobro. Propuesta de desacople (ADR-0084) en la evaluación.
+
 ## 2026-10-15 · Piloto U2 — columnas, netos y detalle de relaciones
 
 - **Orden de columnas no aplicado:** `toColumns()` ordena por zona semántica (los importes van a la zona "header"), no por orden de definición. Todos los campos de `orderLineFields` declaran `placement: 'detail'`; test que fija el orden (Producto, Cantidad, Precio unit., Entregado, Facturado, OT, Subtotal).
@@ -33,7 +39,7 @@
 
 - Contexto en **una fila** de 4 campos y sin separador (notas recortadas a 2 líneas).
 - Productos: **Subtotal como última columna**; precio unitario a la derecha de la cantidad.
-- Botón de acciones integrado al lenguaje del Drawer: botón circular ghost `⋮` como el de cierre, tooltip "Acciones · {siguiente paso}", punto cian si hay un siguiente paso, ítems con el estilo de `DataCell.ActionMenu`.
+- Botón de acciones integrado al lenguaje del Drawer: botón circular ghost `⋮` como el de cierre, tooltip "Acciones · {siguiente paso}", punto (`bg-primary`) si hay un siguiente paso, ítems con el estilo de `DataCell.ActionMenu`.
 - Relaciones: **cada fila es un único enlace** a la ficha de la entidad, en **una sola línea** con el icono de la entidad (`getEntityIcon`, registro central), código, tipo, detalle imprescindible truncado, importe y estado; la fecha y el texto completo quedan en el tooltip. Las acciones "⋯" fuera del enlace.
 - Verificación: `tsc` y ESLint sin errores; vitest 21/21 (documentos, órdenes, menú de acciones, tabla de relacionados).
 

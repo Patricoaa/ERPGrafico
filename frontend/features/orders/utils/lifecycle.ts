@@ -1,6 +1,6 @@
 import { Banknote, ClipboardList, FileText, Package, TrendingUp } from "lucide-react"
 import type { LifecycleStep, LifecycleStepStatus } from "@/components/shared"
-import { getHubStatuses } from "./status"
+import { getHubStatuses } from "@/lib/workflow-status"
 import type { Order, OrderLine } from "../types"
 
 const toNumber = (value: unknown) => {
@@ -13,7 +13,8 @@ const pct = (part: number, total: number) => (total > 0 ? Math.min(100, Math.rou
 /**
  * Ciclo de una OV/OC para la franja de la ficha (ADR-0083): Origen → Facturación →
  * Manufactura → Logística → Tesorería. Los ids coinciden con las áreas del tab Relaciones.
- * Facturación usa `invoicing_status` (ADR-0081) cuando existe; el resto, las reglas del Hub.
+ * Los estados salen de `getHubStatuses` (lib/workflow-status), la misma fuente que la tarjeta
+ * de la lista: tarjeta y ficha no pueden discrepar. Facturación exige facturado completo y folio.
  */
 export function getOrderLifecycle(order: Order, kind: "sale" | "purchase"): LifecycleStep[] {
     const hub = getHubStatuses(order as unknown as Parameters<typeof getHubStatuses>[0])
@@ -24,11 +25,10 @@ export function getOrderLifecycle(order: Order, kind: "sale" | "purchase"): Life
     const invoicedQty = lines.reduce((sum, l) => sum + toNumber(l.quantity_invoiced), 0)
     const logisticsPct = ordered > 0 ? pct(processed, ordered) : (lines.length > 0 ? 100 : 0)
 
-    const invoicingStatus = typeof order.invoicing_status === "string" ? order.invoicing_status : null
-    const billing: LifecycleStepStatus = invoicingStatus === "INVOICED" ? "success"
-        : invoicingStatus === "PARTIAL" ? "active"
-        : (hub.billing as LifecycleStepStatus)
-    const billingPct = invoicingStatus ? pct(invoicedQty, ordered) : (billing === "success" ? 100 : 0)
+    // Misma regla que la tarjeta de la lista (lib/workflow-status · billingStage)
+    const billing = hub.billing as LifecycleStepStatus
+    const billingPct = pct(invoicedQty, ordered)
+    const billingDetail = hub.billingFolioPending ? "Folio pendiente" : `${billingPct}% facturado`
 
     const workOrders = (order.work_orders ?? []).filter((ot) => ot.status !== "CANCELLED")
     const productionPct = workOrders.length > 0
@@ -44,7 +44,7 @@ export function getOrderLifecycle(order: Order, kind: "sale" | "purchase"): Life
         { id: "origin", label: "Origen", icon: TrendingUp, status: hub.origin as LifecycleStepStatus },
         {
             id: "billing", label: "Facturación", icon: FileText, status: isCancelled ? "not_applicable" : billing,
-            progress: billingPct, detail: `${billingPct}% facturado`,
+            progress: billingPct, detail: billingDetail,
         },
         {
             id: "production", label: "Manufactura", icon: ClipboardList,

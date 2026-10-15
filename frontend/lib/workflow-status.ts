@@ -1,3 +1,4 @@
+import type { BadgeIntent } from '@/lib/badge-resolvers'
 interface OrderLine {
     is_manufacturable?: boolean;
     product_type?: string;
@@ -22,7 +23,7 @@ interface OrderBase {
     lines?: Array<OrderLine>;
     items?: Array<OrderLine>;
     related_documents?: {
-        invoices?: Array<{ status: string; number: string }>;
+        invoices?: Array<{ status?: string; number?: string }>;
         payments?: Array<PaymentDetail>;
     };
     serialized_payments?: Array<PaymentDetail>;
@@ -67,6 +68,43 @@ interface InvoiceBase {
     [key: string]: unknown;
 }
 
+/**
+ * Intención visual de un paso del ciclo. Los estados de paso ('active', 'neutral'…) no son
+ * estados de negocio: pasados a StatusBadge sin intención, 'active' se resuelve como ACTIVE
+ * (verde, "Activo") y un paso en curso se veía igual que uno completado.
+ */
+export const STAGE_INTENT: Record<string, BadgeIntent> = {
+    success: 'success',
+    active: 'warning',
+    neutral: 'neutral',
+    destructive: 'destructive',
+    not_applicable: 'neutral',
+}
+
+export function stageIntent(stageStatus: string | null | undefined): BadgeIntent {
+    return STAGE_INTENT[stageStatus ?? ''] ?? 'neutral'
+}
+
+/**
+ * Paso "Facturación" del ciclo de OV/OC — fuente única para tarjeta (lista) y ficha (ADR-0083).
+ * - success: todo facturado (`invoicing_status` INVOICED, ADR-0081) y ninguna factura sin folio;
+ * - active: facturación parcial o facturas con folio pendiente;
+ * - neutral: sin facturas.
+ * Una factura sin folio cuenta para la cantidad facturada pero no completa el paso.
+ */
+export function billingStage(order: OrderBase): { billingStatus: string; billingFolioPending: boolean } {
+    const invoices = (order.related_documents?.invoices || []).filter((inv) => inv.status !== 'CANCELLED')
+    const billingFolioPending = invoices.some((inv) =>
+        inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number
+    )
+    const invoicingStatus = typeof order.invoicing_status === 'string' ? order.invoicing_status : null
+    const fullyInvoiced = invoicingStatus ? invoicingStatus === 'INVOICED' : invoices.length > 0
+    let billingStatus = 'neutral'
+    if (fullyInvoiced && invoices.length > 0 && !billingFolioPending) billingStatus = 'success'
+    else if (invoices.length > 0 || invoicingStatus === 'PARTIAL') billingStatus = 'active'
+    return { billingStatus, billingFolioPending }
+}
+
 export const getHubStatuses = (order: OrderBase) => {
     // 1. Production
     // Visible if order has manufacturable items or existing work orders
@@ -107,12 +145,8 @@ export const getHubStatuses = (order: OrderBase) => {
         else if (logisticsProgress > 0) logStatus = 'active'
     }
 
-    // 3. Billing
-    const invoices = order.related_documents?.invoices || []
-    const billingIsComplete = invoices.length > 0 && !invoices.some((inv) =>
-        inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number
-    )
-    const billingStatus = billingIsComplete ? 'success' : 'neutral'
+    // 3. Billing — completa solo con todo facturado (ADR-0081 `invoicing_status`) Y foliado.
+    const { billingStatus, billingFolioPending } = billingStage(order)
 
     // 4. Treasury
     const payments = order.serialized_payments || order.payments_detail || order.related_documents?.payments || []
@@ -140,6 +174,7 @@ export const getHubStatuses = (order: OrderBase) => {
         treasury: treasuryStatus,
         origin: originStatus,
         hasPendingTransactions: false,
+        billingFolioPending,
         productionProgress: Math.round(totalOTProgress),
         logisticsProgress,
         treasuryProgress,
@@ -276,12 +311,8 @@ export const getPurchaseHubStatuses = (order: OrderBase) => {
     if (order.status === 'CANCELLED') originStatus = 'destructive'
     else if (order.status !== 'DRAFT') originStatus = 'success'
 
-    // 2. Billing
-    const invoices = order.related_documents?.invoices || []
-    const billingIsComplete = invoices.length > 0 && !invoices.some((inv) =>
-        inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number
-    )
-    const billingStatus = billingIsComplete ? 'success' : 'neutral'
+    // 2. Billing — misma regla que la OV (facturado completo y foliado)
+    const { billingStatus, billingFolioPending } = billingStage(order)
 
     // 3. Treasury
     const payments = order.serialized_payments || order.payments_detail || order.related_documents?.payments || []
@@ -319,6 +350,7 @@ export const getPurchaseHubStatuses = (order: OrderBase) => {
         reception: logStatus,
         receptionProgress,
         treasuryProgress,
+        billingFolioPending,
         hasPendingTransactions: false
     }
 }

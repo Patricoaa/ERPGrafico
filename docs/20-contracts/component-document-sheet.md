@@ -40,7 +40,7 @@ Reference implementation (owner-approved pilot, 2026-10-15): `OrderSheet` (OV).
 
 ## 4. Actions — `DocumentActionsMenu` + registries
 
-One **actions button in the Drawer header, next to close** (`headerActions`), with the same language as the close button (circular ghost icon `⋮`, tooltip "Acciones · {next step}", cyan dot when a next step is pending) and the `DataCell.ActionMenu` item style. Menu order: "Siguiente paso" (primary), the other actions, **Imprimir**, then destructive ones separated. Disabled actions stay visible with their reason underneath.
+One **actions button in the Drawer header, next to close** (`headerActions`), with the same language as the close button (circular ghost icon `⋮`, tooltip "Acciones · {next step}", dot (`bg-primary`) when a next step is pending) and the `DataCell.ActionMenu` item style. Menu order: "Siguiente paso" (primary), the other actions, **Imprimir**, then destructive ones separated. Disabled actions stay visible with their reason underneath.
 
 - Source: the per-type action registry (`features/<app>/actions.tsx`, `ActionRegistry<T>`). Evaluate with `resolveRegistryActions(registry, doc, permissions, exclude)` — permission (any of `requiredPermissions`), `excludedStatus`/`requiredStatus`, `checkAvailability`, `isDisabled` + `disabledTooltip`.
 - **Primary** ("Siguiente paso") = first enabled action of the cycle priority (OV/OC: `complete-folio` → `create-work-order` → `register-delivery`/`register-reception` → `confirm-service-delivery` → `invoice-by-lines` → `register-payment`). No primary when the cycle is complete.

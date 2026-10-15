@@ -5,7 +5,7 @@ import { ClipboardList, Package, TrendingUp, Banknote, FileText } from "lucide-r
 import { StatusBadge } from "./StatusBadge"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { getEntityMetadata, getDtePrefix } from "@/lib/entity-registry"
-import { getHubStatuses, getInvoiceHubStatuses, getNoteHubStatuses } from "@/lib/workflow-status"
+import { getHubStatuses, getInvoiceHubStatuses, getNoteHubStatuses, stageIntent } from "@/lib/workflow-status"
 import { translateStatus } from "@/lib/utils"
 
 export interface HubStatusData {
@@ -53,6 +53,7 @@ export function HubStatus({ statuses, className }: HubStatusProps) {
                     size="lg"
                     icon={TrendingUp}
                     status={statuses.origin || 'info'}
+                    intent={stageIntent(statuses.origin)}
                     tooltip={tooltips.origin}
                     progress={progress.origin}
                 />
@@ -64,6 +65,7 @@ export function HubStatus({ statuses, className }: HubStatusProps) {
                         size="lg"
                         icon={ClipboardList}
                         status={statuses.production}
+                    intent={stageIntent(statuses.production)}
                         tooltip={tooltips.production}
                         progress={progress.production}
                     />
@@ -75,6 +77,7 @@ export function HubStatus({ statuses, className }: HubStatusProps) {
                     size="lg"
                     icon={FileText}
                     status={statuses.billing || 'info'}
+                    intent={stageIntent(statuses.billing)}
                     tooltip={tooltips.billing}
                     progress={progress.billing}
                 />
@@ -85,6 +88,7 @@ export function HubStatus({ statuses, className }: HubStatusProps) {
                     size="lg"
                     icon={Banknote}
                     status={statuses.treasury || 'info'}
+                    intent={stageIntent(statuses.treasury)}
                     tooltip={tooltips.treasury}
                     progress={progress.treasury}
                 />
@@ -96,6 +100,7 @@ export function HubStatus({ statuses, className }: HubStatusProps) {
                         size="lg"
                         icon={Package}
                         status={statuses.logistics || 'info'}
+                    intent={stageIntent(statuses.logistics)}
                         tooltip={tooltips.logistics}
                         progress={progress.logistics}
                     />
