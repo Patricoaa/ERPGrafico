@@ -186,7 +186,7 @@ class Command(BaseCommand):
         changed_lines = 0
         touched_orders = set()
         skipped_orders = set()
-        lines = SaleLine.objects.filter(order__status__in=["CONFIRMED", "INVOICED", "PAID"]).select_related("order")
+        lines = SaleLine.objects.filter(order__status="CONFIRMED").select_related("order")
         for line in lines.iterator():
             target = delivered.get(line.id, Decimal("0"))
             if line.quantity_delivered == target:

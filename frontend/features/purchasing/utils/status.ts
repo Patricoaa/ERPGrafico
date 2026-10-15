@@ -41,7 +41,7 @@ export const getPurchaseHubStatuses = (order: Record<string, unknown>) => {
         return (requiresTR && !Boolean(pay.transaction_number)) || Boolean(pay.is_pending_registration)
     })
 
-    const isPaid = (order.status === 'PAID' || order.payment_status === 'PAID' || (Number(order.pending_amount) <= 0)) && !hasPendingTransactions
+    const isPaid = (order.payment_status === 'PAID' || (Number(order.pending_amount) <= 0)) && !hasPendingTransactions
 
     let treasuryStatus = 'neutral'
     if (isPaid) treasuryStatus = 'success'

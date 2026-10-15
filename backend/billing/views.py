@@ -30,6 +30,15 @@ class InvoiceFilterSet(django_filters.FilterSet):
     total_max = django_filters.NumberFilter(field_name="total", lookup_expr="lte")
     number = django_filters.CharFilter(field_name="number", lookup_expr="icontains")
     partner_name = django_filters.CharFilter(field_name="contact__name", lookup_expr="icontains")
+    # ADR-0084: el pago es un eje derivado del saldo (UNPAID · PARTIAL · PAID), no un estado
+    payment_status = django_filters.CharFilter(method="filter_payment_status")
+
+    def filter_payment_status(self, queryset, name, value):
+        from core.payment_status import filter_by_payment_status
+
+        return filter_by_payment_status(
+            queryset, value, prefetch=("payments__allocations", "payment_allocations__treasury_movement")
+        )
 
     class Meta:
         model = Invoice

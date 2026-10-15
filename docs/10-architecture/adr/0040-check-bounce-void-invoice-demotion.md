@@ -9,6 +9,8 @@ related: 0035, 0039
 
 # 0040 — Demover factura/orden al protestar o anular un cheque
 
+> **Superseded in part by [ADR-0084](0084-document-status-decoupled-from-payment.md) (2026-10-15):** payment no longer writes the document status, so bounce/void no longer demote `Invoice.PAID → POSTED`; `payment_status` is derived from the balance. `_recompute_invoice_status()` is a no-op.
+
 ## Contexto
 
 ADR-0035 modeló el ciclo del cheque: al recibirlo se crea un `INBOUND` con

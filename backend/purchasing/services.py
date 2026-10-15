@@ -189,7 +189,6 @@ class PurchasingService:
 
         # Update Order Status
         order.receiving_status = PurchaseOrder.ReceivingStatus.RECEIVED
-        order.status = PurchaseOrder.Status.RECEIVED  # Compatible with old status
         order.save()
 
         return receipt
@@ -809,7 +808,6 @@ class PurchasingService:
             order.receiving_status = PurchaseOrder.ReceivingStatus.PENDING
         elif received_qty >= total_qty:
             order.receiving_status = PurchaseOrder.ReceivingStatus.RECEIVED
-            order.status = PurchaseOrder.Status.RECEIVED
         else:
             order.receiving_status = PurchaseOrder.ReceivingStatus.PARTIAL
         order.save()

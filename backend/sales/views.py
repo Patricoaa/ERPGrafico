@@ -94,7 +94,7 @@ class SaleOrderFilterSet(django_filters.FilterSet):
     def filter_billing_status(self, queryset, name, value):
         values = value.split(",") if value else []
         invoiced = queryset.filter(
-            invoices__status__in=["POSTED", "PAID"],
+            invoices__status="POSTED",
         ).exclude(invoices__number="").distinct()
         not_invoiced = queryset.exclude(
             id__in=invoiced.values("id")
@@ -107,15 +107,10 @@ class SaleOrderFilterSet(django_filters.FilterSet):
         return queryset
 
     def filter_payment_status(self, queryset, name, value):
-        if value == "success":
-            return queryset.filter(status="PAID")
-        elif value == "active":
-            return queryset.filter(payments__isnull=False).exclude(status="PAID").distinct()
-        elif value == "neutral":
-            return queryset.filter(
-                payments__isnull=True, status__in=["DRAFT", "CONFIRMED", "INVOICED"]
-            )
-        return queryset
+        # ADR-0084: el pago es un eje derivado del saldo, no un estado de la OV
+        from core.payment_status import filter_by_payment_status
+
+        return filter_by_payment_status(queryset.exclude(status="CANCELLED"), value)
 
     def filter_production_status(self, queryset, name, value):
         if value == "none":

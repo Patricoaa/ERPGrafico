@@ -171,10 +171,20 @@ export const salesNoteUnifiedSearchDef: UnifiedSearchConfig = {
       label: 'Estado',
       serverParam: 'status',
       options: [
-        { label: 'Borrador', value: 'DRAFT' },
-        { label: 'Publicado', value: 'POSTED' },
-        { label: 'Pagado', value: 'PAID' },
+        { label: 'Borrador (folio pendiente)', value: 'DRAFT' },
+        { label: 'Emitido', value: 'POSTED' },
         { label: 'Anulado', value: 'CANCELLED' },
+      ],
+    },
+    {
+      type: 'single',
+      key: 'payment_status',
+      label: 'Pago',
+      serverParam: 'payment_status',
+      options: [
+        { label: 'Pendiente', value: 'UNPAID' },
+        { label: 'Parcial', value: 'PARTIAL' },
+        { label: 'Pagado', value: 'PAID' },
       ],
     },
     {

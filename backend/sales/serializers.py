@@ -187,6 +187,8 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     customer_name = serializers.CharField(source="customer.name", read_only=True, allow_null=True)
     channel_display = serializers.CharField(source="get_channel_display", read_only=True)
     total_paid = serializers.SerializerMethodField()
+    # ADR-0084: eje de pago separado del estado del documento (UNPAID · PARTIAL · PAID)
+    payment_status = serializers.CharField(read_only=True)
     pending_amount = serializers.SerializerMethodField()
     serialized_payments = serializers.SerializerMethodField()
     # DEPRECATED (ADR-0080, 2026-10-15): formato legacy de relacionados. Usar
@@ -247,6 +249,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             "effective_total",
             "total_paid",
             "pending_amount",
+            "payment_status",
             "lines",
             "serialized_payments",
             "related_documents",

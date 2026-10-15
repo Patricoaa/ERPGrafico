@@ -145,7 +145,7 @@ def test_multi_order_invoice_same_customer(env):
     for order in (a, b):
         order.refresh_from_db()
         assert order.invoicing_status == SaleOrder.InvoicingStatus.INVOICED
-        assert order.status == SaleOrder.Status.INVOICED
+        assert order.status == SaleOrder.Status.CONFIRMED  # ADR-0084: facturar no cambia el estado
 
 
 @pytest.mark.django_db

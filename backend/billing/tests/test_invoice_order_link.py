@@ -76,30 +76,19 @@ def test_purchase_folio_is_unique_per_supplier(env):
 
 
 @pytest.mark.django_db
-def test_annul_invoice_reverts_order_status(env):
+@pytest.mark.parametrize("other_active_invoice", [False, True])
+def test_annul_invoice_never_changes_order_status(env, other_active_invoice):
+    """ADR-0084: facturar/anular no toca el estado de la OV (la facturación es invoicing_status)."""
     so = SaleOrder.objects.create(
-        customer=env["customer"], date=date(2026, 10, 1), status=SaleOrder.Status.INVOICED
+        customer=env["customer"], date=date(2026, 10, 1), status=SaleOrder.Status.CONFIRMED
     )
     inv = _invoice(dte_type=Invoice.DTEType.FACTURA, contact=env["customer"], sale_order=so,
                    status=Invoice.Status.POSTED)
+    if other_active_invoice:
+        _invoice(dte_type=Invoice.DTEType.FACTURA, contact=env["customer"], sale_order=so,
+                 status=Invoice.Status.POSTED)
 
     BillingService.annul_invoice(inv, reason="test")
 
     so.refresh_from_db()
     assert so.status == SaleOrder.Status.CONFIRMED
-
-
-@pytest.mark.django_db
-def test_annul_invoice_keeps_order_status_when_other_invoice_active(env):
-    so = SaleOrder.objects.create(
-        customer=env["customer"], date=date(2026, 10, 1), status=SaleOrder.Status.INVOICED
-    )
-    inv = _invoice(dte_type=Invoice.DTEType.FACTURA, contact=env["customer"], sale_order=so,
-                   status=Invoice.Status.POSTED)
-    _invoice(dte_type=Invoice.DTEType.FACTURA, contact=env["customer"], sale_order=so,
-             status=Invoice.Status.POSTED)
-
-    BillingService.annul_invoice(inv, reason="test")
-
-    so.refresh_from_db()
-    assert so.status == SaleOrder.Status.INVOICED

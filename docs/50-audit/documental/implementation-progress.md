@@ -17,9 +17,30 @@
 | U0 Contratos (etapa UI) | **Hecha** — ADR-0083 (Accepted), `component-document-sheet.md`, D7–D11 |
 | U1 Primitivas | **Hecha** — `domain` en `DocumentRef`, shell con tabs/ciclo/acciones/embedded, `DocumentRelationsTab`, motor de acciones extraído |
 | U2 Piloto OV | **Hecha** + refinamiento del responsable (2026-10-15): referencia para U3–U5; verificación en navegador pendiente |
+| ADR-0084 Estados desacoplados del pago | **Hecha** (2026-10-15) — migración aplicada en dev |
 | U3–U6 | Pendientes — [ui-document-sheet-plan.md](./ui-document-sheet-plan.md) |
 
 ---
+
+## 2026-10-15 · ADR-0084 — estado del documento desacoplado del pago
+
+Decisión del responsable: opción 1 (desacople completo antes de U3). Detalle en [state-machine-evaluation.md](./state-machine-evaluation.md) §5 y ADR-0084.
+
+**Backend**
+- Enums: `Invoice.Status` = DRAFT (folio pendiente) · POSTED (emitida) · CANCELLED; `SaleOrder.Status` = DRAFT · CONFIRMED · PAYMENT_PENDING · CANCELLED; `PurchaseOrder.Status` = DRAFT · CONFIRMED · CANCELLED.
+- `payment_status` derivado (`core/payment_status.py`, propiedad en factura/OV/OC, expuesto en serializers): UNPAID · PARTIAL · PAID.
+- Escritores eliminados: `TreasuryService` (ya no escribe `PAID`; dispara `on_fully_paid` solo al cruzar el umbral → avance de suscripción de la OC, antes atado a la transición a PAID), `BillingService` y `InvoiceFromLinesService` (ya no escriben INVOICED/PAID en la orden), recepción (ya no escribe RECEIVED), reversión al anular factura (no-op), democión por cheque protestado (no-op).
+- Lectores por eje: emitidas = POSTED (libro de ventas, origen de NC/ND, tarea de facturación, filtro de facturación); vigentes = DRAFT + POSTED (total efectivo, facturado BI); filtros de pago de listas OV/OC con `filter_by_payment_status`; nuevo filtro `payment_status` en facturas; `confirm_invoice` solo desde DRAFT; selectores/BI/tareas de crédito/backfill sin estados eliminados.
+- `PurchaseOrder.pending_amount` itera `invoices.all()` (prefetch; evitaba un N+1 nuevo en la lista).
+- Migraciones `billing/0020`, `sales/0019`, `purchasing/0014` (datos + choices).
+- Tests: suite completa = línea base exacta (24 fallos + 5 errores preexistentes, ninguno nuevo); 8 tests adaptados a la semántica nueva; 7 nuevos (`core/tests/test_payment_status_decoupling.py`: borrador pagado sigue DRAFT, OV CONFIRMED + PAID, filtros de lista y de facturas, avance de suscripción solo al cruzar el umbral).
+
+**Frontend**
+- Filtros de facturas/notas sin "Pagado" en Estado + filtro "Pago" aparte; tipos (`PaymentStatus`, `SaleOrderStatus`) al modelo nuevo; reglas de pagado del ciclo por `payment_status`; embudo de compras por ejes; tooltip de NC/ND corregido (decía "la orden debe estar pagada", condición que no existía).
+
+**Causa raíz adicional (encontrada al validar el seed):** `create_sale_invoice` creaba por defecto facturas **POSTED sin folio** (186 en un seed nuevo); antes el pago las pasaba a PAID y lo ocultaba. Ahora una factura POSTED exige folio: sin número nace en DRAFT (folio pendiente, asiento en borrador hasta `confirm_invoice`), como el checkout con registro pendiente. `audit_document_integrity` controla "emitidas sin folio = 0". Seed: el lote masivo emite con folio y deja 1 de cada 5 con folio pendiente → seed nuevo: 194 POSTED + 33 DRAFT, auditoría toda en OK.
+
+**Dev server:** respaldo `~/erpgrafico_pre_adr0084_20261015-2013.dump`; migraciones aplicadas: facturas 181 DRAFT + 58 POSTED (0 incoherencias de folio), OV 188 CONFIRMED, OC 50 CONFIRMED.
 
 ## 2026-10-15 · Ajustes: OT en productos y factura en borrador
 

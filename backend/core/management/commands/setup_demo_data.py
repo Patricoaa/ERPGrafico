@@ -2967,9 +2967,13 @@ class Command(BaseCommand):
                 if delivery:
                     SalesService.confirm_delivery(delivery)
 
+                # ADR-0084: emitida = con folio. Una de cada cinco queda con folio pendiente
+                # (borrador pagado), el resto se emite con folio.
+                folio_pending = sale_idx % 5 == 4
                 inv = BillingService.create_sale_invoice(
                     so, dte_type=Invoice.DTEType.FACTURA,
                     payment_method="TRANSFER", date=order_date,
+                    number=None if folio_pending else str(20000 + so.id),
                 )
 
                 TreasuryService.create_movement(

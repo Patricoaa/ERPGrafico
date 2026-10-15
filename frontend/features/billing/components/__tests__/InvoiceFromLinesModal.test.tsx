@@ -61,7 +61,7 @@ describe("InvoiceFromLinesModal", () => {
         })
         expect(config.headers["Idempotency-Key"]).toBeTruthy()
         await waitFor(() => expect(onSuccess).toHaveBeenCalled())
-    })
+    }, 20_000) // el primer render importa el modal completo; en frío supera los 10 s por defecto
 
     it("shows the empty state when nothing is pending", async () => {
         getMock.mockResolvedValue({ data: [] })

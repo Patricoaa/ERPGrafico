@@ -329,11 +329,8 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                     return !hasIssuedDTEWithFolio
                 },
 
-                disabledTooltip: (order) => {
-                    if (order.status !== 'PAID') return "La orden debe estar completamente pagada"
-                    if (order.delivery_status !== 'DELIVERED') return "La logística debe estar completamente finalizada"
-                    return "Debe existir una factura publicada con folio asignado"
-                }
+                // Única condición real (isDisabled): una factura emitida con folio
+                disabledTooltip: "Debe existir una factura emitida con folio asignado"
             },
             {
                 id: 'create-debit-note',
@@ -360,11 +357,8 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                     return !hasIssuedDTEWithFolio
                 },
 
-                disabledTooltip: (order) => {
-                    if (order.status !== 'PAID') return "La orden debe estar completamente pagada"
-                    if (order.delivery_status !== 'DELIVERED') return "La logística debe estar completamente finalizada"
-                    return "Debe existir una factura publicada con folio asignado"
-                }
+                // Única condición real (isDisabled): una factura emitida con folio
+                disabledTooltip: "Debe existir una factura emitida con folio asignado"
             }
         ]
     },

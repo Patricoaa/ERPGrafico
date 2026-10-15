@@ -123,11 +123,7 @@ def list_products(*, user, params: dict) -> QuerySet:
         sales_subquery = (
             SaleLine.objects.filter(
                 product=OuterRef("id"),
-                order__status__in=[
-                    SaleOrder.Status.CONFIRMED,
-                    SaleOrder.Status.INVOICED,
-                    SaleOrder.Status.PAID,
-                ],
+                order__status=SaleOrder.Status.CONFIRMED,
             )
             .values("product")
             .annotate(count=Count("id"))
@@ -768,7 +764,7 @@ class SubscriptionSelector:
         price_history_qs = PurchaseLine.objects.filter(
             product=product,
             order__supplier=supplier,
-            order__status__in=[PurchaseOrder.Status.CONFIRMED, PurchaseOrder.Status.RECEIVED],
+            order__status=PurchaseOrder.Status.CONFIRMED,
         ).order_by("-order__date")[:20]
 
         price_history = [

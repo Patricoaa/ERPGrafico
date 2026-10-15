@@ -10,6 +10,7 @@ cualquier carga de datos reales o puesta en marcha.
 """
 
 from django.core.management.base import BaseCommand, CommandError
+from django.db.models import Q
 
 from billing.models import Invoice
 from inventory.models import StockMove
@@ -68,6 +69,12 @@ class Command(BaseCommand):
                 receipt_lines.filter(stock_move__isnull=True).count(), "= 0", None,
             ),
             ("GAP-03 % StockMove sin documento", round(orphan_pct, 1), "≤ 5", orphan_pct <= 5),
+            (
+                # ADR-0084: emitida = con folio; sin folio debe estar en borrador
+                "ADR-0084 facturas emitidas (POSTED) sin folio",
+                Invoice.objects.filter(status=Invoice.Status.POSTED)
+                .filter(Q(number__isnull=True) | Q(number__in=["", "Draft"])).count(), "= 0", None,
+            ),
             (
                 # Asiento de devolución duplicado por anulación anterior al fix INT-15
                 "INT-15 devoluciones por anulación con asiento propio",

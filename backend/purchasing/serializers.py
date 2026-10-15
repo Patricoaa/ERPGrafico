@@ -73,6 +73,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     supplier_name = serializers.CharField(source="supplier.name", read_only=True)
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
     total_paid = serializers.SerializerMethodField()
+    # ADR-0084: eje de pago separado del estado del documento (UNPAID · PARTIAL · PAID)
+    payment_status = serializers.CharField(read_only=True)
     pending_amount = serializers.SerializerMethodField()
     is_invoiced = serializers.SerializerMethodField()
     invoice_details = serializers.SerializerMethodField()
@@ -114,6 +116,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             "total",
             "total_paid",
             "pending_amount",
+            "payment_status",
             "is_invoiced",
             "invoice_details",
             "serialized_payments",

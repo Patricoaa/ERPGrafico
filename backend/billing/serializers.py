@@ -25,6 +25,8 @@ class InvoiceListSerializer(serializers.ModelSerializer):
     )
     partner_name = serializers.SerializerMethodField()
     partner_id = serializers.SerializerMethodField()
+    # ADR-0084: eje de pago separado del estado del documento (UNPAID · PARTIAL · PAID)
+    payment_status = serializers.CharField(read_only=True)
     pending_amount = serializers.SerializerMethodField()
     is_tax_exempt = serializers.ReadOnlyField()
     is_sale_document = serializers.ReadOnlyField()
@@ -54,6 +56,7 @@ class InvoiceListSerializer(serializers.ModelSerializer):
             "partner_name",
             "partner_id",
             "pending_amount",
+            "payment_status",
             "is_tax_exempt",
             "is_sale_document",
             "created_at",
@@ -146,6 +149,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
     related_stock_moves = serializers.SerializerMethodField()
     related_returns = serializers.SerializerMethodField()
     lines = serializers.SerializerMethodField()
+    # ADR-0084: eje de pago separado del estado del documento (UNPAID · PARTIAL · PAID)
+    payment_status = serializers.CharField(read_only=True)
     pending_amount = serializers.SerializerMethodField()
     serialized_payments = serializers.SerializerMethodField()
     adjustments = serializers.SerializerMethodField()
@@ -196,6 +201,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "related_returns",
             "lines",
             "pending_amount",
+            "payment_status",
             "serialized_payments",
             "adjustments",
             "order_delivery_status",

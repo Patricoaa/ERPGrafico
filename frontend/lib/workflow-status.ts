@@ -153,7 +153,7 @@ export const getHubStatuses = (order: OrderBase) => {
 
     // Check if fully paid
     const pending = parseFloat(String(order.pending_amount || 0))
-    const isPaid = (order.status === 'PAID' || order.payment_status === 'PAID' || (pending <= 0))
+    const isPaid = (order.payment_status === 'PAID' || (pending <= 0))
 
     let treasuryStatus = 'neutral'
     if (isPaid) treasuryStatus = 'success'
@@ -222,7 +222,7 @@ export const getNoteHubStatuses = (note: NoteBase) => {
 
     const pendingAmount = parseFloat(String(note.pending_amount || 0))
     const totalAmount = parseFloat(String(note.total || 0))
-    const isPaid = (note.status === 'PAID' || (pendingAmount <= 0))
+    const isPaid = (note.payment_status === 'PAID' || (pendingAmount <= 0))
     let treasuryStatus = 'neutral'
     if (isPaid) treasuryStatus = 'success'
     else if (pendingAmount < totalAmount || payments.length > 0) treasuryStatus = 'active'
@@ -287,7 +287,7 @@ export const getInvoiceHubStatuses = (invoice: InvoiceBase) => {
 
     const pendingAmount = parseFloat(String(invoice.pending_amount || 0))
     const totalAmount = parseFloat(String(invoice.total || 0))
-    const isPaid = (invoice.status === 'PAID' || (pendingAmount <= 0))
+    const isPaid = (invoice.payment_status === 'PAID' || (pendingAmount <= 0))
     let treasuryStatus = 'neutral'
     if (isPaid) treasuryStatus = 'success'
     else if (pendingAmount < totalAmount || payments.length > 0) treasuryStatus = 'active'
@@ -317,7 +317,7 @@ export const getPurchaseHubStatuses = (order: OrderBase) => {
     // 3. Treasury
     const payments = order.serialized_payments || order.payments_detail || order.related_documents?.payments || []
     const pending = parseFloat(String(order.pending_amount || 0))
-    const isPaid = (order.status === 'PAID' || order.payment_status === 'PAID' || (pending <= 0))
+    const isPaid = (order.payment_status === 'PAID' || (pending <= 0))
     let treasuryStatus = 'neutral'
     if (isPaid) treasuryStatus = 'success'
     else if (pending < parseFloat(String(order.total || 0)) || payments.length > 0) treasuryStatus = 'active'

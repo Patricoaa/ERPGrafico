@@ -24,9 +24,10 @@ class Invoice(TransactionalDocument):
         COMPROBANTE_PAGO = "COMPROBANTE_PAGO", _("Comprobante de Pago Electrónico")
 
     class Status(models.TextChoices):
+        # Ciclo del documento (ADR-0084). Borrador = folio pendiente; el pago es otro eje
+        # (`payment_status`, derivado del saldo).
         DRAFT = "DRAFT", _("Borrador")
-        POSTED = "POSTED", _("Publicado")
-        PAID = "PAID", _("Pagado")
+        POSTED = "POSTED", _("Emitida")
         CANCELLED = "CANCELLED", _("Anulado")
 
     class PaymentMethod(models.TextChoices):
@@ -188,6 +189,13 @@ class Invoice(TransactionalDocument):
     def pending_amount(self):
         """Calculates the remaining amount to be paid for this invoice"""
         return self.total - self.total_paid
+
+    @property
+    def payment_status(self):
+        """Eje de pago (ADR-0084): UNPAID · PARTIAL · PAID, derivado del saldo."""
+        from core.payment_status import payment_status_for
+
+        return payment_status_for(self.total, self.total_paid)
 
     # --- T-57 ampliado: Polymorphic treasury hooks ---
 

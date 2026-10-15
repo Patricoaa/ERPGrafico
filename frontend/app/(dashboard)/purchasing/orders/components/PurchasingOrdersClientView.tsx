@@ -86,27 +86,19 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
 
     const analyticsData = usePurchasingAnalyticsData(orders as PurchaseOrderAPI[], null, granularity)
 
+    // Embudo por ejes (ADR-0084): el estado de la OC ya no es Recibida/Facturada/Pagada.
     const funnelData = useMemo(() => {
-        const desiredOrder = ["DRAFT", "CONFIRMED", "RECEIVED", "INVOICED", "PAID"]
-        const labelMap: Record<string, string> = {
-            DRAFT: "Borrador",
-            CONFIRMED: "Confirmada",
-            RECEIVED: "Recibida",
-            INVOICED: "Facturada",
-            PAID: "Pagada"
-        }
-        // Colors come from statusDistribution (assigned dynamically by assignChartColors)
-        return desiredOrder.map(status => {
-            const item = analyticsData.statusDistribution.find(d => d.id === status)
-            if (!item || item.value === 0) return null
-            return {
-                id: status,
-                label: labelMap[status],
-                value: item.value,
-                color: item.color,
-            }
-        }).filter((d): d is NonNullable<typeof d> => d !== null)
-    }, [analyticsData.statusDistribution])
+        const list = (orders as PurchaseOrderAPI[]).filter((o) => o.status !== "CANCELLED")
+        const field = (o: PurchaseOrderAPI, key: string) => (o as unknown as Record<string, unknown>)[key]
+        const stages = [
+            { id: "DRAFT", label: "Borrador", value: list.filter((o) => o.status === "DRAFT").length },
+            { id: "CONFIRMED", label: "Confirmada", value: list.filter((o) => o.status === "CONFIRMED").length },
+            { id: "RECEIVED", label: "Recibida", value: list.filter((o) => o.receiving_status === "RECEIVED").length },
+            { id: "INVOICED", label: "Facturada", value: list.filter((o) => field(o, "invoicing_status") === "INVOICED").length },
+            { id: "PAID", label: "Pagada", value: list.filter((o) => field(o, "payment_status") === "PAID").length },
+        ]
+        return assignChartColors(stages.filter((stage) => stage.value > 0))
+    }, [orders])
 
     const analyticsPanel: AnalyticsPanelConfig = useMemo(() => {
         if (viewMode !== "orders") return { screen: { entityName: "", tabs: [] } }

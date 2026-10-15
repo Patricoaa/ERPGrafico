@@ -45,6 +45,8 @@ interface OrderHistoryEntry {
     status: string
     total: number
     receiving_status: string
+    /** Eje de pago (ADR-0084). */
+    payment_status?: string
 }
 
 interface NoteHistoryEntry {
@@ -245,7 +247,7 @@ function OrderTable({ orders, onOpenHub }: { orders: OrderHistoryEntry[]; onOpen
             cell: ({ row }) => (
                 <div className="flex justify-center">
                     <StatusBadge
-                        status={row.original.status === 'PAID' || row.original.status === 'RECEIVED' ? 'SUCCESS' : 'NEUTRAL'}
+                        status={row.original.payment_status === 'PAID' || row.original.receiving_status === 'RECEIVED' ? 'SUCCESS' : 'NEUTRAL'}
                         label={translateStatus(row.original.status)}
                         variant="badge"
                     />
@@ -317,7 +319,7 @@ function NoteTable({ notes, onOpenHub }: { notes: NoteHistoryEntry[]; onOpenHub:
             cell: ({ row }) => (
                 <div className="flex justify-center">
                     <StatusBadge
-                        status={row.original.status === 'PAID' || row.original.status === 'POSTED' ? 'SUCCESS' : 'NEUTRAL'}
+                        status={row.original.status === 'POSTED' ? 'SUCCESS' : 'NEUTRAL'}
                         label={translateStatus(row.original.status)}
                         variant="badge"
                     />

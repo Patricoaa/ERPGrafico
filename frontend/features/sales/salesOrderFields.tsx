@@ -10,7 +10,8 @@ import type { SaleOrder } from "./types"
  */
 export function orderStageSummary(order: SaleOrder): { status: string; label: string; intent: BadgeIntent } {
     const s = getHubStatuses(order as unknown as Parameters<typeof getHubStatuses>[0])
-    const paid = order.status === 'PAID' || (Number(order.total) === 0 && Number(order.pending_amount) === 0)
+    // ADR-0084: el pago es su propio eje (payment_status), no un estado de la OV
+    const paid = order.payment_status === 'PAID' || (Number(order.total) === 0 && Number(order.pending_amount) === 0)
 
     if (order.status === 'CANCELLED' || s.origin === 'destructive') return { status: 'CANCELLED', label: 'Cancelada', intent: 'destructive' }
     if (paid || s.treasury === 'success') return { status: 'PAID', label: 'Cobrada', intent: 'success' }

@@ -432,6 +432,11 @@ class BillingService:
                 Invoice, filter_kwargs={"dte_type": Invoice.DTEType.BOLETA}
             )
 
+        # ADR-0084: emitida (POSTED) exige folio. Sin folio la factura nace en borrador
+        # (folio pendiente; su asiento queda en borrador hasta confirm_invoice).
+        if status == Invoice.Status.POSTED and not number:
+            status = Invoice.Status.DRAFT
+
         # Tax & Accounting Period Validation (Only for POSTED documents)
         if status != Invoice.Status.DRAFT:
             doc_date = date or timezone.now().date()
@@ -542,12 +547,7 @@ class BillingService:
                 payment.invoice = invoice
                 payment.save()
 
-        # Update Order Status
-        if total_advanced >= order.total:
-            order.status = SaleOrder.Status.PAID
-        else:
-            order.status = SaleOrder.Status.INVOICED
-        order.save()
+        # ADR-0084: facturar no cambia el estado de la OV (facturación = invoicing_status)
         InvoicingService.recompute_order(order)
 
         # Auto-complete billing HUB task ONLY if posted
@@ -714,12 +714,7 @@ class BillingService:
                 payment.invoice = invoice
                 payment.save()
 
-        # Update Order Status
-        if total_prepaid >= order.total:
-            order.status = PurchaseOrder.Status.PAID
-        else:
-            order.status = PurchaseOrder.Status.INVOICED
-        order.save()
+        # ADR-0084: facturar no cambia el estado de la OC (facturación = invoicing_status)
         InvoicingService.recompute_order(order)
 
         # Auto-complete billing HUB task ONLY if posted
@@ -1429,8 +1424,8 @@ class BillingService:
             raise ValidationError(
                 f"No se puede registrar este documento. El periodo de {target_date} está CONTABLE CERRADO."
             )
-        # Allow PAID status because a draft can be fully paid before folio is registered
-        if invoice.status not in [Invoice.Status.DRAFT, Invoice.Status.PAID]:
+        # Solo un borrador (folio pendiente) se confirma; el pago no cambia el estado (ADR-0084)
+        if invoice.status != Invoice.Status.DRAFT:
             raise ValidationError(
                 f"Solo se pueden confirmar facturas en estado Borrador (actual: {invoice.status})."
             )
@@ -1466,9 +1461,7 @@ class BillingService:
         if document_attachment:
             invoice.document_attachment = document_attachment
 
-        # Avoid downgrading status if it was already PAID
-        if invoice.status == Invoice.Status.DRAFT:
-            invoice.status = Invoice.Status.POSTED
+        invoice.status = Invoice.Status.POSTED
 
         invoice.save()
 
@@ -1606,7 +1599,7 @@ class BillingService:
         if not reason:
             raise ValidationError("Debe indicar el motivo de la anulación.")
 
-        if invoice.status not in [Invoice.Status.POSTED, Invoice.Status.PAID]:
+        if invoice.status != Invoice.Status.POSTED:
             raise ValidationError("Solo se pueden anular facturas publicadas o pagadas.")
 
         # VALIDATION 1: Folio registrado (fiscal requirement)

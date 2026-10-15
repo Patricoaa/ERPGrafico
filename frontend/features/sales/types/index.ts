@@ -1,7 +1,8 @@
 import { type Invoice } from "@/features/billing"
 import type { PageParams } from "@/lib/pagination"
 
-export type SaleOrderStatus = 'DRAFT' | 'OPEN' | 'CANCELLED' | 'COMPLETED' | 'PAID' | 'PARTIAL'
+/** Ciclo de la OV (ADR-0084); facturación, entrega y pago son ejes aparte. */
+export type SaleOrderStatus = 'DRAFT' | 'CONFIRMED' | 'PAYMENT_PENDING' | 'CANCELLED'
 export type DeliveryStatus = 'PENDING' | 'PARTIAL' | 'DELIVERED'
 
 export interface SaleOrderLine {
@@ -69,6 +70,9 @@ export interface SaleOrder {
     customer_name: string
     date: string
     status: SaleOrderStatus | string
+    /** Ejes independientes del estado (ADR-0081, ADR-0084). */
+    invoicing_status?: 'PENDING' | 'PARTIAL' | 'INVOICED'
+    payment_status?: 'UNPAID' | 'PARTIAL' | 'PAID'
     total: string | number
     total_net: string | number
     total_paid: number

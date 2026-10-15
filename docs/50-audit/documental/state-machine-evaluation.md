@@ -39,7 +39,7 @@ La factura nunca registró su folio, pero su estado es "Pagada": el estado del d
 - El folio pendiente no tiene estado propio y se modela distinto según el flujo: las facturas de OV quedan `POSTED` con `number` vacío; las notas (`note_checkout_service`) usan `DRAFT`.
 - `SaleOrder.Status` y `PurchaseOrder.Status` mezclan tres ejes en un campo: ciclo del documento (`DRAFT`, `CONFIRMED`, `CANCELLED`), facturación (`INVOICED`) y cobro (`PAID`), aunque **ya existen** `invoicing_status` (ADR-0081), `delivery_status`/`receiving_status` y el saldo (`pending_amount`). `BillingService` escribe `INVOICED`/`PAID` al facturar y `TreasuryService` escribe `PAID` al pagar → el `status` de la OV es redundante y a veces contradictorio (las OV quedan en `INVOICED` aunque estén pagadas; las OC llegan a `PAID`).
 
-## 4. Propuesta (requiere ADR-0084 y aprobación)
+## 4. Decisión (aprobada 2026-10-15, opción 1) — implementada en ADR-0084
 
 Un campo por eje; el estado del documento nunca lo escribe tesorería.
 
@@ -57,3 +57,7 @@ Pasos:
 5. Seed y tests de contrato de estados actualizados.
 
 Riesgo: medio-alto (toca facturación, tesorería, notas, cheques y reportes). Recomendación: hacerlo **antes de U3**, porque la ficha de facturas (U3) depende de que el estado de la factura sea fiable.
+
+## 5. Resultado (2026-10-15)
+
+Implementado según ADR-0084. En el dev server (respaldo `~/erpgrafico_pre_adr0084_20261015-2013.dump`): facturas 181 `DRAFT` (folio pendiente) + 58 `POSTED`, 0 incoherencias de folio; OV 188 `CONFIRMED`; OC 50 `CONFIRMED`. OV-000004: `CONFIRMED` · facturación `INVOICED` · pago `PAID`; su factura `DRAFT` · pago `PAID` (folio sigue pendiente).

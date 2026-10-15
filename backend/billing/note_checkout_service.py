@@ -181,7 +181,7 @@ class NoteCheckoutService:
             raise ValidationError(f"Factura con ID {corrected_invoice_id} no existe.")
 
         # CRITICAL VALIDATION: Only from POSTED or PAID invoices
-        if corrected_invoice.status not in [Invoice.Status.POSTED, Invoice.Status.PAID]:
+        if corrected_invoice.status != Invoice.Status.POSTED:
             raise ValidationError(
                 f"Solo se pueden crear NC/ND desde facturas publicadas o pagadas. "
                 f"Estado actual: {corrected_invoice.get_status_display()}"
@@ -1058,7 +1058,7 @@ class NoteCheckoutService:
         except Invoice.DoesNotExist:
             raise ValidationError(f"Factura con ID {original_invoice_id} no existe.")
 
-        if corrected_invoice.status not in [Invoice.Status.POSTED, Invoice.Status.PAID]:
+        if corrected_invoice.status != Invoice.Status.POSTED:
             raise ValidationError("Solo se pueden crear notas desde facturas Publicadas o Pagadas.")
 
         # 2. Initialize Invoice (Draft)

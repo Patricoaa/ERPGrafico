@@ -628,64 +628,13 @@ class CheckService:
     @staticmethod
     def _recompute_invoice_status(check: "Check") -> None:
         """
-        Recalcula el estado de pago de la factura/SO vinculada con matemática
-        firmada (INBOUND suma, OUTBOUND resta, TRANSFER es interno) y demueve
-        a estado no-pagado si el total neto cae por debajo del total facturado.
-
-        Idempotente. No-op si el cheque no tiene invoice_id ni sale_order_id.
-        Se invoca solo desde bounce() y void() (ADR-0040).
+        Antes demovía factura/OV de PAID a POSTED/CONFIRMED al protestar o anular un cheque
+        (ADR-0040). Desde ADR-0084 el pago no escribe el estado del documento: el eje de pago
+        (`payment_status`) se deriva del saldo y se corrige solo. Se conserva como no-op para
+        no tocar a los llamadores (bounce/void).
         """
-        invoice = _obj_or_none("billing.Invoice", check.invoice_id)
-        sale_order = _obj_or_none("sales.SaleOrder", check.sale_order_id)
+        return None
 
-        if invoice is not None:
-            CheckService._demote_invoice_to_posted(invoice)
-        if sale_order is not None:
-            CheckService._demote_sale_order_to_confirmed(sale_order)
-
-    @staticmethod
-    def _demote_invoice_to_posted(invoice) -> None:
-        """Demueve Invoice PAID → POSTED si el total firmado es < total facturado."""
-        if not hasattr(invoice, "Status") or not hasattr(invoice.Status, "PAID"):
-            return
-        if invoice.status != invoice.Status.PAID:
-            return
-
-        movements = invoice.payments.all()
-        net_paid = sum(
-            m.amount for m in movements if m.movement_type == TreasuryMovement.Type.INBOUND
-        ) - sum(m.amount for m in movements if m.movement_type == TreasuryMovement.Type.OUTBOUND)
-
-        target_total = getattr(invoice, "effective_total", None) or getattr(invoice, "total", 0)
-
-        if net_paid < target_total:
-            invoice.status = invoice.Status.POSTED
-            invoice.save(update_fields=["status"])
-
-    @staticmethod
-    def _demote_sale_order_to_confirmed(sale_order) -> None:
-        """
-        Demueve SaleOrder si expone Status.PAID; si no, no-op.
-        Hoy sales.SaleOrder solo define DRAFT/CONFIRMED/CANCELLED (cf.
-        sales/models.py:405-408), así que la rama es no-op por defecto.
-        """
-        if not hasattr(sale_order, "Status") or not hasattr(sale_order.Status, "PAID"):
-            return
-        if sale_order.status != sale_order.Status.PAID:
-            return
-
-        movements = sale_order.payments.all()
-        net_paid = sum(
-            m.amount for m in movements if m.movement_type == TreasuryMovement.Type.INBOUND
-        ) - sum(m.amount for m in movements if m.movement_type == TreasuryMovement.Type.OUTBOUND)
-
-        target_total = getattr(sale_order, "effective_total", None) or getattr(
-            sale_order, "total", 0
-        )
-
-        if net_paid < target_total and hasattr(sale_order.Status, "CONFIRMED"):
-            sale_order.status = sale_order.Status.CONFIRMED
-            sale_order.save(update_fields=["status"])
 
 
 def _obj_or_none(model_label: str, pk: int | None):

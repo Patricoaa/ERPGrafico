@@ -196,13 +196,13 @@ def _generate_sale_journal_entries(
         total = net + tax
 
         # Determine outcome
+        # ADR-0084: "pagada" ya no es un estado de la OV; se conserva el mismo sorteo
         outcome_roll = rng.random()
+        paid = outcome_roll >= 0.40
         if outcome_roll < 0.10:
             status = SaleOrder.Status.CANCELLED
-        elif outcome_roll < 0.40:
-            status = SaleOrder.Status.CONFIRMED  # credit pending
         else:
-            status = SaleOrder.Status.PAID
+            status = SaleOrder.Status.CONFIRMED  # credit pending o pagada (paid)
 
         customer = rng.choice(customers)
 
@@ -220,7 +220,7 @@ def _generate_sale_journal_entries(
             continue  # cancelled orders don't post
 
         debit_account = (
-            accounts["bank"] if status == SaleOrder.Status.PAID else accounts["receivable"]
+            accounts["bank"] if paid else accounts["receivable"]
         )
 
         je = _build_journal_entry(
@@ -273,7 +273,7 @@ def _generate_purchase_journal_entries(
         order = PurchaseOrder.objects.create(
             supplier=supplier,
             date=d,
-            status=PurchaseOrder.Status.RECEIVED,
+            status=PurchaseOrder.Status.CONFIRMED,
             total_net=net,
             total_tax=tax,
             total=total,

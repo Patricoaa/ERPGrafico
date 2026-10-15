@@ -297,7 +297,7 @@ class TreasuryService:
     def update_related_document_status(
         movement, invoice=None, sale_order=None, purchase_order=None, payroll=None
     ):
-        # Logic to update status to PAID
+        # Sincroniza tareas y efectos de "documento pagado" (ADR-0084: sin escribir estados)
         targets = []
         if invoice:
             targets.append(invoice)
@@ -333,12 +333,13 @@ class TreasuryService:
             if hasattr(target, "effective_total"):
                 target_total = target.effective_total
 
-            # Check if fully paid
+            # Check if fully paid. ADR-0084: el pago NO escribe el estado del documento
+            # (el eje de pago es `payment_status`, derivado del saldo).
             if total_paid >= target_total:
-                status_field = "status"
-                if hasattr(target, "Status") and hasattr(target.Status, "PAID"):
-                    setattr(target, status_field, target.Status.PAID)
-                    target.save()
+                # Efectos de "quedó pagado" solo al cruzar el umbral con este movimiento
+                crossed = total_paid - (movement.amount or 0) < target_total
+                if crossed and hasattr(target, "on_fully_paid"):
+                    target.on_fully_paid()
 
                 # Sync HUB Tasks
                 from workflow.services import WorkflowService

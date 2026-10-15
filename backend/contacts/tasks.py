@@ -36,7 +36,7 @@ def evaluate_credit_portfolio(self):
     # OR are currently auto-blocked (to allow unblocking if they paid).
     contacts = list(
         Contact.objects.filter(
-            models.Q(sale_orders__status__in=["CONFIRMED", "INVOICED", "PARTIAL"])
+            models.Q(sale_orders__status="CONFIRMED")
             | ~models.Q(credit_risk_level=RiskLevel.LOW)
             | models.Q(credit_auto_blocked=True)
         )
@@ -97,7 +97,8 @@ def evaluate_credit_portfolio(self):
             else:
                 aging["overdue_90plus"] += balance
 
-            if order.status not in ("DRAFT", "CANCELLED", "PAID") and days_overdue > max_overdue_days:
+            if (order.status not in ("DRAFT", "CANCELLED") and order.payment_status != "PAID"
+                    and days_overdue > max_overdue_days):
                 max_overdue_days = days_overdue
 
         # 1. Determine Risk Level

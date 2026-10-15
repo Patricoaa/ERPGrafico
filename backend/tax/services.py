@@ -41,7 +41,7 @@ class F29CalculationService:
         invoices = Invoice.objects.filter(
             date__gte=start_date,
             date__lt=end_date,
-            status__in=[Invoice.Status.POSTED, Invoice.Status.PAID],
+            status=Invoice.Status.POSTED,  # emitidas con folio (ADR-0084)
         )
 
         # Initialize accumulators

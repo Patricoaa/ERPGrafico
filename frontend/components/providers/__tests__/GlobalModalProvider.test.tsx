@@ -28,19 +28,22 @@ vi.mock("@/lib/entity-drawers", () => {
         "sales.saledelivery": render("sales.saledelivery"),
         "inventory.stockmove": render("inventory.stockmove"),
         "sales.saleorder": render("sales.saleorder"),
+        "purchasing.purchaseorder": render("purchasing.purchaseorder"),
     }
     return { ENTITY_DRAWERS: drawers, hasEntityDrawer: (label: string) => label in drawers }
 })
 
 /** Botones que disparan las acciones del provider y el estado del Hub como texto. */
 function Controls() {
-    const { openEntity, closeEntity } = useGlobalModals()
+    const { openEntity, closeEntity, setEntityDisplay } = useGlobalModals()
     const { hubConfig } = useHubPanel()
     return (
         <div>
             <Button onClick={() => openEntity("sales.saledelivery", 1, undefined, undefined, { display: "DES-1" })}>abrir-despacho</Button>
             <Button onClick={() => openEntity("inventory.stockmove", 7)}>abrir-move</Button>
             <Button onClick={() => openEntity("sales.saleorder", 42)}>abrir-ov</Button>
+            <Button onClick={() => openEntity("purchasing.purchaseorder", 9)}>abrir-oc</Button>
+            <Button onClick={() => setEntityDisplay("sales.saleorder", 42, "OV-000042")}>nombrar-ov</Button>
             <Button onClick={closeEntity}>cerrar</Button>
             <span>hub:{hubConfig ? `${hubConfig.type}:${hubConfig.orderId}` : "none"}</span>
         </div>
@@ -57,7 +60,7 @@ const setup = () => render(
 
 const click = (name: string) => act(() => screen.getByText(name).click())
 
-/** ADR-0080 (GAP-11, D4): pila de openEntity con "volver" y OV/OC → Order Hub. */
+/** ADR-0080 (GAP-11): pila de openEntity con "volver". ADR-0083: la OV abre su ficha; la OC, el Hub hasta U3. */
 describe("GlobalModalProvider entity stack", () => {
     it("stacks documents opened from another one and goes back", () => {
         setup()
@@ -82,11 +85,22 @@ describe("GlobalModalProvider entity stack", () => {
         expect(screen.queryByText(/open:/)).toBeNull()
     })
 
-    it("opens sale orders in the Order Hub (D4) instead of a drawer", () => {
+    it("opens sale orders in their document sheet, stacked with back (ADR-0083)", () => {
+        setup()
+        click("abrir-ov")
+        expect(screen.getByText("open:sales.saleorder:42")).toBeInTheDocument()
+        click("nombrar-ov")
+        click("abrir-despacho")
+        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
+        expect(screen.getByText("volver:OV-000042")).toBeInTheDocument()
+        expect(screen.getByText("hub:none")).toBeInTheDocument()
+    })
+
+    it("still opens purchase orders in the Order Hub until U3", () => {
         setup()
         click("abrir-despacho")
-        click("abrir-ov")
-        expect(screen.getByText("hub:sale:42")).toBeInTheDocument()
+        click("abrir-oc")
+        expect(screen.getByText("hub:purchase:9")).toBeInTheDocument()
         expect(screen.queryByText(/open:/)).toBeNull()
     })
 })

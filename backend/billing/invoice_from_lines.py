@@ -109,9 +109,8 @@ class InvoiceFromLinesService:
         InvoiceFromLinesService._journal_entry(s, invoice, status)
         InvoiceFromLinesService._allocate_advances(s, invoice, orders)
 
+        # ADR-0084: facturar no cambia el estado de la orden (facturación = invoicing_status)
         for order in orders:
-            if order.status == order.Status.CONFIRMED or str(order.status) == "RECEIVED":
-                type(order).objects.filter(pk=order.pk).update(status=order.Status.INVOICED)
             InvoicingService.recompute_order(order)
         if status == Invoice.Status.POSTED:
             from workflow.services import WorkflowService
