@@ -82,7 +82,8 @@ Generated only by `DocumentTypeRegistry.canonical_url(label, obj)`:
 1. A declared pattern / function — only when the list really opens **that** document with `?selected` (ADR-0020). OV/OC/sale invoices open the Order Hub (decision D4).
 2. Otherwise the resolver **`/d/{label}/{id}`** (`app/(dashboard)/d/[label]/[id]`): redirects to the canonical URL if there is one, or opens the drawer registered in `ENTITY_DRAWERS` via `openEntity`.
 
-`core/tests/test_document_routes_sync.py` fails if a declared canonical URL (or the resolver) has no frontend route.
+`core/tests/test_document_routes_sync.py` fails if a declared canonical URL (or the resolver) has no frontend route, or if a registered type has neither a declared canonical URL nor a drawer in `ENTITY_DRAWERS`.
+Universal search returns `detail_url = DocumentTypeRegistry.url_for(label, id)` (declared pattern, or the resolver when the URL depends on the instance).
 
 | label | canonical URL |
 |---|---|

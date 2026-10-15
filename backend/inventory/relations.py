@@ -39,3 +39,8 @@ def inventory_document_relations(doc):
     for detail in doc.details.select_related("stock_move"):
         if detail.stock_move_id:
             yield Link("derivation", "outgoing", "stock_move", detail.stock_move, quantity=detail.quantity)
+
+
+DocumentTypeRegistry.register(DocumentType(
+    label="inventory.subscription", canonical_url="/inventory/products/subscriptions?selected={id}",
+))

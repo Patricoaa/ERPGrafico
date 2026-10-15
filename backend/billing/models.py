@@ -319,3 +319,9 @@ class InvoiceLine(models.Model):
     @property
     def order_line(self):
         return self.sale_line or self.purchase_line
+
+
+# NoteWorkflow vive en su propio módulo; se importa aquí para que Django lo registre al
+# cargar la app (sin esto, con --nomigrations la tabla solo existía si otro módulo lo
+# importaba antes de crear la BD de test → "no such table" según el orden de los tests).
+from .note_workflow import NoteWorkflow  # noqa: E402, F401

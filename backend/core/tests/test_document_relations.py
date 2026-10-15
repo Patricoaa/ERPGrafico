@@ -200,3 +200,41 @@ def test_purchase_receipt_relations(pilot):
 
     po_data = _relations(pilot["client"], "purchasing.purchaseorder", po.id)
     assert ("receipt", "purchasing.purchasereceipt", receipt.id) in _targets(po_data)
+
+
+@pytest.mark.django_db
+def test_sale_return_relations_d6(pilot):
+    """M5 / D6: devolución de venta ligada a su OV, su NC y el movimiento de stock que repone."""
+    from sales.return_services import ReturnService as SalesReturnService
+
+    order = pilot["order"]
+    product = order.lines.first().product
+    credit_note = Invoice.objects.create(dte_type=Invoice.DTEType.NOTA_CREDITO, contact=order.customer,
+                                         sale_order=order, corrected_invoice=pilot["invoice"], total=Decimal("1190"))
+    sale_return = SalesReturnService.create_return_from_note_request(
+        order=order, items=[{"product_id": product.id, "quantity": 1, "uom_id": product.uom_id}],
+        warehouse_id=pilot["delivery"].warehouse_id, credit_note=credit_note,
+    )
+    SalesReturnService.confirm_return(sale_return)
+
+    data = _relations(pilot["client"], "sales.salereturn", sale_return.id)
+    assert ("sale_order", "sales.saleorder", order.id) in _targets(data)
+    assert ("credit_note", "billing.invoice", credit_note.id) in _targets(data)
+    assert _targets(data, "stock_move"), "la devolución enlaza el movimiento que repone stock"
+    assert ("return", "sales.salereturn", sale_return.id) in _targets(
+        _relations(pilot["client"], "sales.saleorder", order.id))
+    assert data["document"]["url"] == f"/sales/returns/{sale_return.id}"
+
+
+@pytest.mark.django_db
+def test_work_order_relations(pilot):
+    from production.models import WorkOrder
+
+    order = pilot["order"]
+    work_order = WorkOrder.objects.create(description="Impresión afiches", sale_order=order,
+                                          sale_line=order.lines.first())
+
+    data = _relations(pilot["client"], "production.workorder", work_order.id)
+    assert ("sale_order", "sales.saleorder", order.id) in _targets(data)
+    assert ("work_order", "production.workorder", work_order.id) in _targets(
+        _relations(pilot["client"], "sales.saleorder", order.id))

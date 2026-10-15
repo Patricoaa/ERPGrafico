@@ -466,9 +466,11 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
         />
     ),
     // * requires full payment data — EntityBadge always provides it
-    "finance.payment": ({ open, onOpenChange, data, onSuccess }) => (
+    // Con data o id → vista (el id sin data venía abriendo el formulario de creación)
+    "finance.payment": ({ id, open, onOpenChange, data, onSuccess }) => (
         <PaymentDrawer
-            mode={data ? 'view' : 'create'}
+            mode={data || id ? 'view' : 'create'}
+            id={data ? undefined : id || undefined}
             open={open}
             onOpenChange={onOpenChange}
             initialData={data as PaymentInitialData}

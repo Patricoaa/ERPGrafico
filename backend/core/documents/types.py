@@ -77,6 +77,14 @@ class DocumentTypeRegistry:
         return (url or RESOLVER_URL).format(label=label, id=obj.pk)
 
     @classmethod
+    def url_for(cls, label: str, pk) -> str:
+        """URL canónica sin cargar el objeto: patrón declarado o resolvedor (que redirige)."""
+        url = cls.get(label).canonical_url
+        if isinstance(url, str):
+            return url.format(label=label, id=pk)
+        return RESOLVER_URL.format(label=label, id=pk)
+
+    @classmethod
     def view_permission(cls, label: str) -> str:
         entity = UniversalRegistry.get(label)
         if entity and entity.permission:

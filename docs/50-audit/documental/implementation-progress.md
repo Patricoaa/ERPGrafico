@@ -12,8 +12,39 @@
 | M2 Contratos | **Hecha** · ADR-0080 **Aceptado** (2026-10-14) |
 | M3 UI piloto | **Hecha** (GAP-06, GAP-10, GAP-11, D4); verificación visual en navegador pendiente |
 | M4 Facturación y pagos | **Hecha** (M4a–M4d); backfill de líneas **aplicado** en dev (2026-10-15); pagos: se mantiene FK + imputaciones (decidido) |
-| M5 Extensión | Pendiente |
+| M5 Extensión | **Hecha** (relaciones en todos los módulos, GAP-08, GAP-12, escenarios D6 de devoluciones) |
 | M6 Retiro | Pendiente |
+
+---
+
+## 2026-10-15 · M5 · Extensión a todos los módulos, rutas canónicas (GAP-08) y un solo registro de fichas (GAP-12)
+
+**Backfill de líneas de factura aplicado** en el dev server (aprobado): 168 facturas / 173 líneas; idempotente; OV-000001 ya no aparece pendiente de facturar.
+
+**Relaciones en el resto de módulos** (`<app>/relations.py`):
+- Producción — OT: OV y nota de origen, despachos que la originaron, OC de servicios tercerizados, consumos de stock.
+- Ventas/compras — devoluciones: orden, NC asociada, movimientos de stock, asiento.
+- Tesorería — cheque (factura/OV que paga, movimientos de recepción y depósito), lote de terminal (pagos, liquidación, factura del proveedor, asiento); movimiento de tesorería suma cheque, lote y liquidación de sueldo.
+- RRHH — liquidación: pagos y asientos (sueldo y Previred).
+
+**GAP-08 — rutas canónicas sin rutas rotas:**
+- Todo tipo registrado en `UniversalRegistry` tiene URL canónica declarada (con ruta verificada) **o** ficha en `ENTITY_DRAWERS` para el resolvedor `/d/{label}/{id}`. Declarados para los 15 tipos sin ficha (presupuesto, ejercicio, conceptos de nómina, suscripción, BOM, devolución de venta, F29/periodo, centro bancario, medios de pago, transacciones de socios).
+- **Búsqueda global**: `detail_url` = URL canónica (`DocumentTypeRegistry.url_for`); antes usaba `detail_url_pattern`, con 29 patrones sin ruta (la búsqueda fallaba en 7 tipos).
+- Frontend: 23 `detailUrlPattern` de `ENTITY_REGISTRY` apuntaban a páginas inexistentes (p. ej. `/sales/deliveries/{id}`, `/purchasing/receipts/{id}`, `/tax/declarations/{id}`); corregidos a la ruta real o al resolvedor.
+- e2e `universal-search-routes.spec.ts`: el despacho simulaba `/sales/deliveries/800` (ruta inexistente que el backend nunca emitía); ahora espera `/d/sales.saledelivery/800`. **No ejecutado** (Playwright requiere navegador y sesión).
+- Tests de contrato: `core/tests/test_document_routes_sync.py` (URL canónica o ficha para todo tipo; búsqueda) y `frontend/lib/__tests__/entity-registry-routes.contract.test.ts` (todo `detailUrlPattern` tiene página).
+
+**GAP-12 — un solo registro de fichas:** `DRAWER_MAP` retirado; `LazyDrawer` (8 vistas) renderiza las fichas de `ENTITY_DRAWERS` a partir del `docType` legacy. Esto corrige de paso:
+- **Asiento** abierto desde esas vistas: se pasaba `id`, que `JournalEntryDrawer` ignora → abría el **formulario de creación**.
+- **Pago** (`finance.payment`) abierto por id desde `ENTITY_DRAWERS`: también abría creación; el adaptador ahora pasa `id` en modo vista.
+
+**Hallazgo y corrección de infraestructura de tests:** `NoteWorkflow` vive en `billing/note_workflow.py`, que `billing/models.py` no importaba; con `--nomigrations` su tabla solo se creaba si otro módulo lo importaba antes de crear la BD de test ("no such table" según el orden). Ahora se registra desde `billing/models.py` (sin cambios de migraciones).
+
+**D6 — devoluciones:** escenario con el flujo real (`ReturnService.create_return_from_note_request` + `confirm_return`): la devolución enlaza OV, NC y el movimiento que repone stock; la OV la lista como corrección. Escenario de OT ↔ OV.
+
+**Verificación:** backend `billing sales purchasing treasury core workflow inventory production accounting hr tax contacts`: 656 passed, sin fallos nuevos (el fallo de `contacts/test_p23_credit_portfolio_task` es preexistente: se reprodujo en un worktree del commit anterior). Frontend: suite completa en el dev server, solo falla `semantic-ink` (preexistente, ambiental); type-check y lint sin errores.
+
+**Pendiente (M6):** retirar formatos legacy (`related_documents`, `Invoice.related_documents`, `source_documents`), drawers delgados de OV/OC y columnas del GFK `allocated_to` (destructivo, con confirmación); derivar `ENTITY_REGISTRY` del endpoint `entity-config` (hoy se mantienen sincronizados por tests). P2 diferidos: GAP-15 (FK de línea en devoluciones), GAP-16…19.
 
 ---
 

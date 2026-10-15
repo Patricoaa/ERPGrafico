@@ -50,3 +50,18 @@ def sale_delivery_relations(delivery):
         yield Link("derivation", "outgoing", "inventory_document", doc)
     if delivery.journal_entry_id:
         yield Link("posting", "outgoing", "journal_entry", delivery.journal_entry)
+
+
+DocumentTypeRegistry.register(DocumentType(label="sales.salereturn", canonical_url="/sales/returns/{id}"))
+
+
+@relation_provider("sales.salereturn")
+def sale_return_relations(sale_return):
+    yield Link("correction", "incoming", "sale_order", sale_return.sale_order)
+    if sale_return.credit_note_id:
+        yield Link("reference", "incoming", "credit_note", sale_return.credit_note, is_dependency=False)
+    for line in sale_return.lines.select_related("stock_move"):
+        if line.stock_move_id:
+            yield Link("fulfillment", "outgoing", "stock_move", line.stock_move, quantity=line.quantity)
+    if sale_return.journal_entry_id:
+        yield Link("posting", "outgoing", "journal_entry", sale_return.journal_entry)

@@ -134,7 +134,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Registro de despacho de mercadería',
     shortTemplate: 'DES-{number}',
     listUrl: '/sales/deliveries',
-    detailUrlPattern: '/sales/deliveries/{id}',
+    detailUrlPattern: '/d/sales.saledelivery/{id}',
     partnerField: 'partner_name',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
@@ -233,7 +233,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Lista de materiales y componentes',
     shortTemplate: 'BOM-{id}',
     listUrl: '/production/boms',
-    detailUrlPattern: '/production/boms/{id}',
+    detailUrlPattern: '/production/boms',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', cardVariant: 'full' },
   },
   'inventory.stockmove': {
@@ -258,7 +258,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Recepción, entrega o transferencia de mercadería',
     shortTemplate: 'DOC-{id}',
     listUrl: '/inventory/operations/documents',
-    detailUrlPattern: '/inventory/operations/documents/{id}',
+    detailUrlPattern: '/d/inventory.inventorydocument/{id}',
     printable: true,
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', cardVariant: 'full' },
   },
@@ -311,7 +311,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Propiedad variable de un producto',
     shortTemplate: '{name}',
     listUrl: '/inventory/stock/products/attributes',
-    detailUrlPattern: '/inventory/stock/products/attributes',
+    detailUrlPattern: '/inventory/products/attributes',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
   'inventory.stockreport': {
@@ -323,7 +323,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Informe de existencias actuales',
     shortTemplate: '{name}',
     listUrl: '/inventory/stock/report',
-    detailUrlPattern: '/inventory/stock/report',
+    detailUrlPattern: '/inventory/reports/stock',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
   'treasury.loaninstallment': {
@@ -336,7 +336,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Pago periódico de un crédito',
     shortTemplate: 'CUO-{id}',
     listUrl: '/treasury/loans',
-    detailUrlPattern: '/treasury/loans?selected={loan}&installment={id}',
+    detailUrlPattern: '/treasury/bank-center',
     partnerField: (data) => String(data.loan_display_id ?? '---'),
     viewPolicy: { availableViews: ['list'], defaultView: 'list' },
   },
@@ -424,7 +424,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Proyección financiera',
     shortTemplate: 'BUD-{id}',
     listUrl: '/finance/budgets',
-    detailUrlPattern: '/finance/budgets/{id}',
+    detailUrlPattern: '/finances/budgets/{id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'highlights' },
   },
   'accounting.journalentry': {
@@ -485,7 +485,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Ausencia o permiso del empleado',
     shortTemplate: 'AUS-{id}',
     listUrl: '/hr/absences',
-    detailUrlPattern: '/hr/absences/{id}',
+    detailUrlPattern: '/d/hr.absence/{id}',
     partnerField: 'employee_name',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'highlights' },
   },
@@ -511,7 +511,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Adelanto de sueldo al empleado',
     shortTemplate: 'ANT-{id}',
     listUrl: '/hr/advances',
-    detailUrlPattern: '/hr/advances/{id}',
+    detailUrlPattern: '/d/hr.salaryadvance/{id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'highlights' },
   },
   'workflow.task': {
@@ -596,7 +596,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Socio colaborador con participación en resultados',
     shortTemplate: '{name}',
     listUrl: '/settings/partners',
-    detailUrlPattern: '/settings/partners?selected={id}',
+    detailUrlPattern: '/finances/partners',
     viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'highlights' },
   },
 
@@ -611,7 +611,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Ingreso de mercadería comprada',
     shortTemplate: 'REC-{number}',
     listUrl: '/purchasing/receipts',
-    detailUrlPattern: '/purchasing/receipts/{id}',
+    detailUrlPattern: '/d/purchasing.purchasereceipt/{id}',
     partnerField: 'supplier_name',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
@@ -625,7 +625,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Devolución de mercadería al proveedor',
     shortTemplate: 'DEV-{number}',
     listUrl: '/purchasing/orders',
-    detailUrlPattern: '/purchasing/returns/{id}',
+    detailUrlPattern: '/d/purchasing.purchasereturn/{id}',
     partnerField: 'supplier_name',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
@@ -653,7 +653,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Declaración mensual de IVA',
     shortTemplate: 'F29-{id}',
     listUrl: '/tax/declarations',
-    detailUrlPattern: '/tax/declarations/{id}',
+    detailUrlPattern: '/tax/f29/{id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
 
@@ -746,7 +746,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Préstamo otorgado por una entidad financiera',
     shortTemplate: 'CRE-{code}',
     listUrl: '/treasury/loans',
-    detailUrlPattern: '/treasury/loans?selected={id}',
+    detailUrlPattern: '/treasury/bank-center',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', cardVariant: 'summary' },
   },
   'treasury.creditline': {
@@ -771,7 +771,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Cargo pendiente de facturación en tarjeta',
     shortTemplate: 'CHG-{id}',
     listUrl: '/treasury/card-statements',
-    detailUrlPattern: '/treasury/card-statements',
+    detailUrlPattern: '/treasury/bank-center',
   },
   'treasury.terminal': {
     label: 'treasury.terminal',
@@ -830,7 +830,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Movimiento de fondos entre cuentas',
     shortTemplate: 'TRF-{id}',
     listUrl: '/treasury/transfers',
-    detailUrlPattern: '/treasury/transfers?selected={id}',
+    detailUrlPattern: '/treasury/bank-center',
     viewPolicy: { availableViews: ['list'], defaultView: 'list' },
   },
 
@@ -940,7 +940,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Jornada de caja registradora',
     shortTemplate: 'POS-{id}',
     listUrl: '/pos/sessions',
-    detailUrlPattern: '/pos/sessions?selected={id}',
+    detailUrlPattern: '/sales/sessions',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', cardVariant: 'full' },
   },
   'pos.terminal': {
@@ -953,7 +953,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Punto de venta configurable',
     shortTemplate: 'POS-{name}',
     listUrl: '/pos/sessions',
-    detailUrlPattern: '/pos/sessions',
+    detailUrlPattern: '/sales/pos/cajas',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
 
@@ -979,7 +979,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Factura emitida por un proveedor',
     shortTemplate: 'FC-{id}',
     listUrl: '/billing/purchase-invoices',
-    detailUrlPattern: '/billing/purchase-invoices/{id}',
+    detailUrlPattern: '/billing/purchases/{id}',
   },
   'treasury.cashmovement': {
     label: 'treasury.cashmovement',
@@ -1002,7 +1002,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Punto de venta configurable',
     shortTemplate: 'POS-{name}',
     listUrl: '/pos/sessions',
-    detailUrlPattern: '/pos/sessions',
+    detailUrlPattern: '/sales/pos/cajas',
   },
   'treasury.bankmovement': {
     label: 'treasury.bankmovement',
@@ -1024,7 +1024,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Conteo físico de existencias',
     shortTemplate: 'CI-{id}',
     listUrl: '/inventory/stock/count',
-    detailUrlPattern: '/inventory/stock/count/{id}',
+    detailUrlPattern: '/inventory/operations/counts',
   },
   'treasury.unbilledcharge': {
     label: 'treasury.unbilledcharge',
@@ -1035,7 +1035,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Cargo pendiente de facturación en tarjeta',
     shortTemplate: 'CHG-{id}',
     listUrl: '/treasury/card-statements',
-    detailUrlPattern: '/treasury/card-statements',
+    detailUrlPattern: '/treasury/bank-center',
   },
   'treasury.cardstatement': {
     label: 'treasury.cardstatement',
@@ -1047,7 +1047,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Resumen de movimientos de tarjeta',
     shortTemplate: 'ECT-{id}',
     listUrl: '/treasury/card-statements',
-    detailUrlPattern: '/treasury/card-statements/{id}',
+    detailUrlPattern: '/treasury/bank-center',
   },
 };
 

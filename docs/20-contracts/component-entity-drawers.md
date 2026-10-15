@@ -128,6 +128,8 @@ goBackEntity()  // vuelve al documento anterior
 
 **OV/OC → Order Hub (decisión D4).** `openEntity('sales.saleorder' | 'purchasing.purchaseorder', id)` **no** abre `SaleOrderDrawer`/`PurchaseOrderDrawer`: vacía la pila y llama `openHub({ orderId: id, type })`. La ficha de OV/OC es el Hub desde cualquier punto de entrada. Los drawers delgados quedan solo para uso interno del Hub y se retiran en M6.
 
+**`LazyDrawer` (legacy, GAP-12).** `DRAWER_MAP` se retiró: `LazyDrawer({ type, id, open, onOpenChange })` traduce el `docType` snake_case (`TYPE_TO_REGISTRY` + `service_obligation`, `inventory_document`) al label y renderiza el adaptador de `ENTITY_DRAWERS`. Hay un solo registro de fichas. Para código nuevo usar `openEntity`.
+
 **Asientos por id.** `openEntity('accounting.journalentry', id)` sin `data` abre el asiento en **modo vista** cargado por id (antes abría el formulario de creación). Sin `data` ni `id` → creación.
 | `useGlobalModals()` | hook | Acciones + estado de stacking de sheets (offsets de `CollapsibleSheet`) |
 | `useGlobalModalActions()` | hook | Solo acciones (sin re-render por estado de sheets) |

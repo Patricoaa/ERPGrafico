@@ -20,3 +20,8 @@ def journal_entry_relations(entry):
         yield Link("correction", "incoming", "reversal", reversal)
     for move in entry.stock_moves.all():
         yield Link("posting", "incoming", "stock_move", move)
+
+
+# Tipos sin ficha (drawer): ruta propia verificada por core/tests/test_document_routes_sync.py
+DocumentTypeRegistry.register(DocumentType(label="accounting.budget", canonical_url="/finances/budgets/{id}"))
+DocumentTypeRegistry.register(DocumentType(label="accounting.fiscalyear", canonical_url="/accounting/closures/{id}"))

@@ -41,3 +41,31 @@ def test_registered_canonical_urls_have_frontend_routes():
     })
     missing = {label: url for label, url in patterns.items() if not _has_route(url, routes)}
     assert not missing, f"URLs canónicas sin ruta en el frontend: {missing}"
+
+
+DRAWERS_FILE = APP_DIR.parent / "lib" / "entity-drawers.tsx"
+
+
+@pytest.mark.skipif(not DRAWERS_FILE.exists(), reason="frontend no disponible")
+def test_every_registered_type_has_canonical_url_or_drawer():
+    """GAP-08: sin URL declarada, /d/{label}/{id} abre la ficha registrada; si no hay ficha, falla."""
+    import re
+
+    from core.registry import UniversalRegistry
+
+    drawers = set(re.findall(r'^\s+"([a-z_]+\.[a-z_]+)":', DRAWERS_FILE.read_text(), re.MULTILINE))
+    missing = [
+        label for label in UniversalRegistry.all_labels()
+        if not isinstance(DocumentTypeRegistry.get(label).canonical_url, str)
+        and not callable(DocumentTypeRegistry.get(label).canonical_url)
+        and label not in drawers
+    ]
+    assert not missing, f"Tipos sin URL canónica ni ficha (el resolvedor no podría abrirlos): {missing}"
+
+
+def test_search_detail_url_uses_canonical_url():
+    from core.registry import UniversalRegistry
+
+    assert UniversalRegistry._canonical_url("sales.saledelivery", 800) == "/d/sales.saledelivery/800"
+    assert UniversalRegistry._canonical_url("sales.saleorder", 5) == "/sales/orders?selected=5"
+    assert UniversalRegistry._canonical_url("billing.invoice", 7) == "/d/billing.invoice/7"

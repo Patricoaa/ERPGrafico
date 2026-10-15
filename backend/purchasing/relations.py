@@ -50,3 +50,18 @@ def purchase_receipt_relations(receipt):
         yield Link("derivation", "outgoing", "inventory_document", doc)
     if receipt.journal_entry_id:
         yield Link("posting", "outgoing", "journal_entry", receipt.journal_entry)
+
+
+DocumentTypeRegistry.register(DocumentType(label="purchasing.purchasereturn"))
+
+
+@relation_provider("purchasing.purchasereturn")
+def purchase_return_relations(purchase_return):
+    yield Link("correction", "incoming", "purchase_order", purchase_return.purchase_order)
+    if purchase_return.credit_note_id:
+        yield Link("reference", "incoming", "credit_note", purchase_return.credit_note, is_dependency=False)
+    for line in purchase_return.lines.select_related("stock_move"):
+        if line.stock_move_id:
+            yield Link("fulfillment", "outgoing", "stock_move", line.stock_move, quantity=line.quantity)
+    if purchase_return.journal_entry_id:
+        yield Link("posting", "outgoing", "journal_entry", purchase_return.journal_entry)
