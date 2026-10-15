@@ -11,9 +11,34 @@
 | M1 Integridad | **Hecha** (código + backfill aplicado en dev) · INT-15 corregido |
 | M2 Contratos | **Hecha** · ADR-0080 **Aceptado** (2026-10-14) |
 | M3 UI piloto | **Hecha** (GAP-06, GAP-10, GAP-11, D4); verificación visual en navegador pendiente |
-| M4 Facturación y pagos | Pendiente |
+| M4 Facturación y pagos | **M4a hecha** (líneas propias, sin cambio de comportamiento); backfill en dry-run **pendiente de aprobación (D3)** · M4b–M4d pendientes |
 | M5 Extensión | Pendiente |
 | M6 Retiro | Pendiente |
+
+---
+
+## 2026-10-14 · M4a · Facturas con líneas propias (base)
+
+**ADR-0081** (`docs/10-architecture/adr/0081-invoice-lines-partial-and-multi-order-invoicing.md`, Accepted — formaliza D1.1–D1.4 y D2). Entrega por etapas: M4a base · M4b facturación parcial y multi-orden · M4c notas sobre líneas de factura + UI · M4d pagos.
+
+**Modelo** (migraciones `billing/0019_invoiceline`, `sales/0018_…`, `purchasing/0013_…`, aplicadas en el dev server; solo agregan tabla y columnas):
+- `billing.InvoiceLine` (`invoice.lines`): `sale_line`/`purchase_line`, `delivery_line`/`receipt_line`, `corrected_line` (para M4c), producto, cantidad, precios, impuesto, descuento, subtotal.
+- `SaleLine.quantity_invoiced`, `PurchaseLine.quantity_invoiced`; `SaleOrder.invoicing_status` y `PurchaseOrder.invoicing_status` (PENDING/PARTIAL/INVOICED, D1.4), expuestos de solo lectura en los serializers.
+
+**Servicio** `billing/invoicing.py` — `InvoicingService`: `mirror_order_lines` (factura = orden completa, como hasta ahora), `recompute_order` (contadores y estado, solo facturas principales no anuladas: FACTURA, exentas, BOLETA, COMPROBANTE_PAGO, PURCHASE_INV), `orders_of` / `invoices_of` (N:M desde las líneas + FK principal).
+- Enganchado en `create_sale_invoice`, `create_purchase_bill`, `cancel_invoice`, `annul_invoice`.
+
+**Lectura** (`InvoiceSelectorExt.get_lines`): desde `InvoiceLine`, con la **misma forma** que antes (cada ítem es la línea de OV/OC con `quantity`/`subtotal` de la factura e `invoice_line_id`), porque el flujo de notas usa ese `id` como línea de OV hasta GAP-14. Legacy (sin backfill): las **notas** devuelven sus propias líneas (antes, todas las de la orden: el modal logístico de la nota y su estado logístico mostraban líneas ajenas); las facturas, solo las líneas originales de la orden.
+
+**Relaciones:** factura ↔ orden en los proveedores de ventas, compras y facturación se deriva de las líneas (N:M).
+
+**Correcciones encontradas:**
+- `BillingService.cancel_invoice` borraba el asiento borrador mientras la factura lo referenciaba (FK PROTECT) → **cancelar una factura en borrador fallaba siempre**. Ahora desvincula y luego borra.
+- Fallos intermitentes "UNIQUE accounting_account.code" en la suite: la caché locmem (singleton `AccountingSettings`) sobrevivía entre tests mientras la BD se revertía; al guardarse, regeneraba códigos de cuentas raíz. Nuevo fixture autouse en `backend/conftest.py` que limpia la caché después de configurar el backend de test. Resultado: 4 tests de `accounting` de la línea base pasan.
+
+**Backfill** `python manage.py backfill_invoice_lines [--apply]` (dry-run por defecto, D3). **Dry-run en el dev server:** 168 facturas → 173 líneas espejo; OV: 128 `INVOICED`; OC: 40 `INVOICED`, 3 `PENDING`; ninguna orden facturada por sobre lo pedido. **Pendiente de aprobación.** Mientras no se aplique, las facturas antiguas se leen por el camino legacy.
+
+**Verificación:** `billing/tests/test_invoice_lines.py` (7: líneas propias y contadores, cancelación, PARCIAL, factura de compra, líneas de nota legacy, relaciones multi-orden, backfill dry-run/apply). Suites `billing sales purchasing treasury core workflow inventory production accounting`: 615 passed, sin fallos nuevos; 4 fallos de la línea base resueltos.
 
 ---
 

@@ -62,6 +62,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
             "discount_amount",
             "subtotal",
             "quantity_delivered",
+            "quantity_invoiced",
             "quantity_pending",
             "manufacturing_data",
             "requires_advanced_manufacturing",
@@ -74,6 +75,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
             "delivery_status",
             "delivery_date",
         ]
+        read_only_fields = ["quantity_invoiced"]
 
     def get_product_type(self, obj):
         return obj.product.product_type if obj.product else None
@@ -228,6 +230,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             "notes",
             "payment_method",
             "delivery_status",
+            "invoicing_status",
             "delivery_date",
             "salesperson",
             "total_net",
@@ -255,6 +258,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             "id",
             "number",
             "status",
+            "invoicing_status",
             "total_net",
             "total_tax",
             "total",

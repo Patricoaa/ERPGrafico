@@ -18,11 +18,12 @@ NOTE_ROLES = {"NOTA_CREDITO": "credit_note", "NOTA_DEBITO": "debit_note"}
 
 @relation_provider("billing.invoice")
 def invoice_relations(invoice):
-    # D1: factura ↔ orden es N:M; hoy se deriva de las FK tipadas (Invoice.order), mañana de las líneas.
-    if invoice.sale_order_id:
-        yield Link("derivation", "incoming", "sale_order", invoice.sale_order)
-    if invoice.purchase_order_id:
-        yield Link("derivation", "incoming", "purchase_order", invoice.purchase_order)
+    # D1 / ADR-0081: factura ↔ orden es N:M, derivada de las líneas (más la FK principal).
+    from .invoicing import InvoicingService
+
+    for order in InvoicingService.orders_of(invoice):
+        role = "sale_order" if order._meta.label_lower == "sales.saleorder" else "purchase_order"
+        yield Link("derivation", "incoming", role, order)
     if invoice.corrected_invoice_id:
         yield Link("correction", "outgoing", "corrected_invoice", invoice.corrected_invoice)
     for note in invoice.adjustments.all():

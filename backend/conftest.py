@@ -25,3 +25,17 @@ def _test_env(settings):
     }
     settings.CELERY_TASK_ALWAYS_EAGER = True
     settings.CELERY_TASK_EAGER_PROPAGATES = True
+
+
+@pytest.fixture(autouse=True)
+def _clear_cache_between_tests(_test_env):
+    """
+    La caché locmem sobrevive entre tests mientras la BD se revierte: singletons cacheados
+    (p. ej. AccountingSettings.get_solo) quedaban obsoletos y, al guardarse, regeneraban
+    códigos de cuentas raíz → UNIQUE accounting_account.code intermitente según el orden.
+    """
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()

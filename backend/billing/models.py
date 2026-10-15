@@ -268,3 +268,53 @@ class Invoice(TransactionalDocument):
                 "visible_if": {"field": "dte_type", "in": ["NOTA_CREDITO", "NOTA_DEBITO"]}
             },
         }
+
+
+class InvoiceLine(models.Model):
+    """
+    Línea propia de una factura (ADR-0081, GAP-13). Factura ↔ orden es N:M derivada de
+    estas líneas (`sale_line.order` / `purchase_line.order`); facturación parcial por
+    cantidad atada a la entrega (decisiones D1.1, D1.2).
+    """
+
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="lines")
+    sale_line = models.ForeignKey(
+        "sales.SaleLine", on_delete=models.PROTECT, null=True, blank=True, related_name="invoice_lines"
+    )
+    purchase_line = models.ForeignKey(
+        "purchasing.PurchaseLine", on_delete=models.PROTECT, null=True, blank=True, related_name="invoice_lines"
+    )
+    delivery_line = models.ForeignKey(
+        "sales.SaleDeliveryLine", on_delete=models.PROTECT, null=True, blank=True, related_name="invoice_lines"
+    )
+    receipt_line = models.ForeignKey(
+        "purchasing.PurchaseReceiptLine", on_delete=models.PROTECT, null=True, blank=True,
+        related_name="invoice_lines",
+    )
+    # NC/ND: línea de factura que corrige (D1.3, GAP-14 — etapa M4c)
+    corrected_line = models.ForeignKey(
+        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="note_lines"
+    )
+    product = models.ForeignKey(
+        "inventory.Product", on_delete=models.PROTECT, null=True, blank=True, related_name="invoice_lines"
+    )
+    description = models.CharField(_("Descripción"), max_length=255, blank=True)
+    quantity = models.DecimalField(_("Cantidad"), max_digits=10, decimal_places=2)
+    uom = models.ForeignKey("inventory.UoM", on_delete=models.PROTECT, null=True, blank=True)
+    unit_price = models.DecimalField(_("Precio Unitario Neto"), max_digits=12, decimal_places=2, default=0)
+    unit_price_gross = models.DecimalField(
+        _("Precio Unitario Bruto"), max_digits=12, decimal_places=2, null=True, blank=True
+    )
+    tax_rate = models.DecimalField(_("Tasa Impuesto"), max_digits=5, decimal_places=2, default=0)
+    discount_amount = models.DecimalField(_("Descuento"), max_digits=12, decimal_places=0, default=0)
+    # Misma semántica que la línea de orden que factura (bruto si hay precio bruto).
+    subtotal = models.DecimalField(_("Subtotal"), max_digits=12, decimal_places=0, default=0)
+
+    class Meta:
+        verbose_name = _("Línea de Factura")
+        verbose_name_plural = _("Líneas de Factura")
+        ordering = ["id"]
+
+    @property
+    def order_line(self):
+        return self.sale_line or self.purchase_line

@@ -27,6 +27,11 @@ class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
         PARTIAL = "PARTIAL", _("Parcial")
         RECEIVED = "RECEIVED", _("Recibido")
 
+    class InvoicingStatus(models.TextChoices):
+        PENDING = "PENDING", _("Pendiente")
+        PARTIAL = "PARTIAL", _("Parcial")
+        INVOICED = "INVOICED", _("Facturado")
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._initial_status = self.status
@@ -91,6 +96,13 @@ class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
         max_length=20,
         choices=ReceivingStatus.choices,
         default=ReceivingStatus.PENDING,
+    )
+    # ADR-0081 / D1.4: facturación por cantidad (Pendiente / Parcial / Facturado)
+    invoicing_status = models.CharField(
+        _("Estado de Facturación"),
+        max_length=20,
+        choices=InvoicingStatus.choices,
+        default=InvoicingStatus.PENDING,
     )
     receipt_date = models.DateField(_("Fecha de Recepción Planificada"), null=True, blank=True)
 
@@ -304,6 +316,10 @@ class PurchaseLine(models.Model):
         default=0,
         validators=[MinValueValidator(0)],
         help_text="Cantidad total recibida de esta línea",
+    )
+    # ADR-0081: Σ líneas de facturas principales no anuladas (InvoicingService)
+    quantity_invoiced = models.DecimalField(
+        _("Cantidad Facturada"), max_digits=10, decimal_places=2, default=0
     )
 
     related_note = models.ForeignKey(

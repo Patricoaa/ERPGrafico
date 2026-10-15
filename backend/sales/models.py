@@ -26,6 +26,11 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
         PARTIAL = "PARTIAL", _("Parcial")
         DELIVERED = "DELIVERED", _("Entregado")
 
+    class InvoicingStatus(models.TextChoices):
+        PENDING = "PENDING", _("Pendiente")
+        PARTIAL = "PARTIAL", _("Parcial")
+        INVOICED = "INVOICED", _("Facturado")
+
     class Channel(models.TextChoices):
         SYSTEM = "SYSTEM", _("Sistema")
         POS = "POS", _("Punto de Venta (POS)")
@@ -91,6 +96,13 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
         max_length=20,
         choices=DeliveryStatus.choices,
         default=DeliveryStatus.PENDING,
+    )
+    # ADR-0081 / D1.4: facturación por cantidad (Pendiente / Parcial / Facturado)
+    invoicing_status = models.CharField(
+        _("Estado de Facturación"),
+        max_length=20,
+        choices=InvoicingStatus.choices,
+        default=InvoicingStatus.PENDING,
     )
     delivery_date = models.DateField(_("Fecha de Entrega Planificada"), null=True, blank=True)
     immediate_dispatch = models.BooleanField(_("Despacho Inmediato"), default=False)
@@ -382,6 +394,10 @@ class SaleLine(models.Model):
         default=0,
         validators=[MinValueValidator(0)],
         help_text="Cantidad total despachada de esta línea",
+    )
+    # ADR-0081: Σ líneas de facturas principales no anuladas (InvoicingService)
+    quantity_invoiced = models.DecimalField(
+        _("Cantidad Facturada"), max_digits=10, decimal_places=2, default=0
     )
 
     manufacturing_data = models.JSONField(

@@ -41,12 +41,13 @@ class PurchaseLineSerializer(serializers.ModelSerializer):
             "tax_rate",
             "subtotal",
             "quantity_received",
+            "quantity_invoiced",
             "quantity_pending",
             "track_inventory",
             "has_bom",
             "requires_advanced_manufacturing",
         ]
-        read_only_fields = ["subtotal", "quantity_received", "quantity_pending"]
+        read_only_fields = ["subtotal", "quantity_received", "quantity_invoiced", "quantity_pending"]
 
     def get_track_inventory(self, obj):
         return obj.product.track_inventory if obj.product else False
@@ -103,6 +104,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             "date",
             "status",
             "receiving_status",
+            "invoicing_status",
             "receipt_date",
             "notes",
             "total_net",
@@ -129,6 +131,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             "number",
             "status",
             "receiving_status",
+            "invoicing_status",
             "total_net",
             "total_tax",
             "total",

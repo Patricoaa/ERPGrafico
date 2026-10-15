@@ -14,6 +14,7 @@ from sales.models import SaleOrder
 from tax.services import TaxPeriodService
 from treasury.models import TreasuryAccount, TreasuryMovement
 
+from .invoicing import InvoicingService
 from .models import Invoice
 
 
@@ -465,6 +466,8 @@ class BillingService:
             total=order.total,
             status=status,
         )
+        # ADR-0081: líneas propias (M4a: espejo de la orden completa)
+        InvoicingService.mirror_order_lines(invoice, order)
 
         # 2. Accounting Entry via Mapper
         settings = AccountingSettings.get_solo()
@@ -545,6 +548,7 @@ class BillingService:
         else:
             order.status = SaleOrder.Status.INVOICED
         order.save()
+        InvoicingService.recompute_order(order)
 
         # Auto-complete billing HUB task ONLY if posted
         if status == Invoice.Status.POSTED:
@@ -605,6 +609,8 @@ class BillingService:
             total=order.total,
             status=status,
         )
+        # ADR-0081: líneas propias (M4a: espejo de la orden completa)
+        InvoicingService.mirror_order_lines(invoice, order)
 
         # 2. Accounting Entry via Mapper (includes tax capitalization logic for Boletas)
         settings = AccountingSettings.get_solo()
@@ -714,6 +720,7 @@ class BillingService:
         else:
             order.status = PurchaseOrder.Status.INVOICED
         order.save()
+        InvoicingService.recompute_order(order)
 
         # Auto-complete billing HUB task ONLY if posted
         if status == Invoice.Status.POSTED:
@@ -1561,7 +1568,11 @@ class BillingService:
             from tax.services import validate_period_open
 
             validate_period_open(invoice.journal_entry.date, action="cancelar la factura")
-            invoice.journal_entry.delete()
+            # Desvincular antes de borrar: Invoice.journal_entry es PROTECT
+            draft_entry = invoice.journal_entry
+            invoice.journal_entry = None
+            invoice.save(update_fields=["journal_entry"])
+            draft_entry.delete()
 
         # 3. Delete reconciliation journal entries (RECO-...)
         JournalEntry.objects.filter(reference=f"RECO-{invoice.id}").delete()
@@ -1569,6 +1580,7 @@ class BillingService:
         # 4. Mark as CANCELLED
         invoice.status = Invoice.Status.CANCELLED
         invoice.save()
+        InvoicingService.recompute_invoice_orders(invoice)
 
         from workflow.services import WorkflowService
 
@@ -1676,6 +1688,7 @@ class BillingService:
         # 2. Update Status
         invoice.status = Invoice.Status.CANCELLED
         invoice.save()
+        InvoicingService.recompute_invoice_orders(invoice)
 
         # 3. Update Order Status — solo si no le queda otra factura principal activa
         order = invoice.order

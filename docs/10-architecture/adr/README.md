@@ -144,5 +144,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0078](0078-datatable-family-facade-split.md) | DataTable family façade-first split (56-prop surface distilled behind a stable API) | Proposed |
 | [0079](0079-module-navigation-sidebar-erpnext-v16.md) | Module navigation moves from top-bar tabs to a two-column sidebar (ERPNext v16 pattern) | Accepted |
 | [0080](0080-document-model-relations-and-navigation.md) | Unified document model — DocumentRef, relation service and canonical document navigation | Accepted |
+| [0081](0081-invoice-lines-partial-and-multi-order-invoicing.md) | Invoices own their lines — partial and multi-order invoicing by quantity | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

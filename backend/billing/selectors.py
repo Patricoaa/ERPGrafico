@@ -73,12 +73,45 @@ class InvoiceSelectorExt:
 
     @staticmethod
     def get_lines(invoice):
+        """
+        Líneas de la factura (ADR-0081). Forma compatible con el contrato previo: cada ítem
+        es la línea de orden que factura (`id` = id de la línea de OV/OC, lo usa el flujo de
+        notas hasta GAP-14) con `quantity`/`subtotal` de la factura y `invoice_line_id`.
+        """
+        from sales.serializers import SaleLineSerializer
+        from purchasing.serializers import PurchaseLineSerializer
+
+        invoice_lines = list(invoice.lines.select_related("sale_line", "purchase_line"))
+        if invoice_lines:
+            data = []
+            for il in invoice_lines:
+                if il.sale_line_id:
+                    item = dict(SaleLineSerializer(il.sale_line).data)
+                elif il.purchase_line_id:
+                    item = dict(PurchaseLineSerializer(il.purchase_line).data)
+                else:
+                    item = {"id": None, "product": il.product_id, "description": il.description,
+                            "unit_price": il.unit_price, "tax_rate": il.tax_rate}
+                item.update({
+                    "invoice_line_id": il.id,
+                    "quantity": il.quantity,
+                    "subtotal": il.subtotal,
+                    "delivery_line": il.delivery_line_id,
+                    "receipt_line": il.receipt_line_id,
+                })
+                data.append(item)
+            return data
+
+        # Legacy (facturas aún sin backfill): notas → sus propias líneas; resto → orden completa.
+        is_note = invoice.dte_type in (invoice.DTEType.NOTA_CREDITO, invoice.DTEType.NOTA_DEBITO)
         if invoice.sale_order_id:
-            from sales.serializers import SaleLineSerializer
-            return SaleLineSerializer(invoice.sale_order.lines.all(), many=True).data
+            lines = invoice.sale_order.lines.all()
+            lines = lines.filter(related_note=invoice) if is_note else lines.filter(related_note__isnull=True)
+            return SaleLineSerializer(lines, many=True).data
         if invoice.purchase_order_id:
-            from purchasing.serializers import PurchaseLineSerializer
-            return PurchaseLineSerializer(invoice.purchase_order.lines.all(), many=True).data
+            lines = invoice.purchase_order.lines.all()
+            lines = lines.filter(related_note=invoice) if is_note else lines.filter(related_note__isnull=True)
+            return PurchaseLineSerializer(lines, many=True).data
         return []
 
     @staticmethod

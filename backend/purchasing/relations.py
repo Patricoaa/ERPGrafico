@@ -16,7 +16,9 @@ NOTE_ROLES = {"NOTA_CREDITO": "credit_note", "NOTA_DEBITO": "debit_note"}
 def purchase_order_relations(order):
     for receipt in order.receipts.all():
         yield Link("fulfillment", "outgoing", "receipt", receipt)
-    for invoice in order.invoices.all():
+    from billing.invoicing import InvoicingService
+
+    for invoice in InvoicingService.invoices_of(order):
         if invoice.dte_type in NOTE_ROLES:
             yield Link("correction", "outgoing", NOTE_ROLES[invoice.dte_type], invoice)
         else:
