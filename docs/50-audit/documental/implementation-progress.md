@@ -28,6 +28,8 @@
 
 **Falso positivo corregido:** las "21 recepciones sin movimiento de stock" (30 en un seed nuevo) eran líneas de **suscripciones**, que por diseño no mueven stock; la métrica filtraba por `track_inventory`, que vale True por defecto incluso para servicios. `audit_document_integrity` y `backfill_document_links` excluyen ahora servicios y suscripciones. Con esto **todos los umbrales de integridad quedan en OK**.
 
+**Dev server re-sembrado (2026-10-15, autorizado):** respaldo previo `~/erpgrafico_pre_reseed_20261015-0459.dump` (pg_dump, en el servidor, fuera de la carpeta sincronizada); BD `erpgrafico` borrada y recreada, Redis vaciado, migraciones desde cero, `setup_demo_data` (415 s). Los 5 escenarios documentales creados; auditoría de integridad **todo OK**; el backfill de líneas no encuentra nada que corregir. Resultado: 238 facturas, 181 movimientos de stock, 2 imputaciones de anticipo; OV 186 facturadas + 1 parcial, OC 49 + 1 parcial.
+
 **Validación previa** en una BD PostgreSQL local desechable (migrate desde cero + seed): los 5 escenarios OK; auditoría todo OK; los comandos de backfill no encuentran nada que corregir (los servicios ya generan datos correctos).
 
 ## 2026-10-15 · M6 · Retiro y deprecación de lo legacy
