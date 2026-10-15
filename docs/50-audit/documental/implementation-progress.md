@@ -11,7 +11,7 @@
 | M1 Integridad | **Hecha** (código + backfill aplicado en dev) · INT-15 corregido |
 | M2 Contratos | **Hecha** · ADR-0080 **Aceptado** (2026-10-14) |
 | M3 UI piloto | **Hecha** (GAP-06, GAP-10, GAP-11, D4); verificación visual en navegador pendiente |
-| M4 Facturación y pagos | **Hecha** (M4a–M4d); backfill de líneas en dry-run **pendiente de aprobación (D3)** · decisión abierta sobre copiar las FK de pago a `PaymentAllocation` |
+| M4 Facturación y pagos | **Hecha** (M4a–M4d); backfill de líneas **aplicado** en dev (2026-10-15); pagos: se mantiene FK + imputaciones (decidido) |
 | M5 Extensión | Pendiente |
 | M6 Retiro | Pendiente |
 
@@ -32,7 +32,7 @@
 - GFK `allocated_to`: retiradas las 3 lecturas (fase 1). La eliminación de las columnas es destructiva → fase 2 en M6, con confirmación.
 - Prefetch `payments__allocations` / `payment_allocations__treasury_movement` en los querysets de facturas, OV y OC (sin N+1 nuevo).
 
-**Desviación respecto del plan (decisión abierta):** el plan proponía copiar cada FK de pago a una `PaymentAllocation` (backfill de ~248 movimientos) para que la tabla fuera la única representación física. Con la regla anterior la FK y la imputación conviven sin ambigüedad (la imputación manda; la FK recibe el resto), por lo que **no se copiaron datos**. La FK sigue siendo la forma simple de "un pago → un documento" y `PaymentAllocation` la de repartos (anticipos en facturas parciales, pagos a varias facturas). Si se prefiere la representación física única, el backfill sigue el patrón D3.
+**Desviación respecto del plan (aceptada por el responsable el 2026-10-15):** el plan proponía copiar cada FK de pago a una `PaymentAllocation` (backfill de ~248 movimientos) para que la tabla fuera la única representación física. Con la regla anterior la FK y la imputación conviven sin ambigüedad (la imputación manda; la FK recibe el resto), por lo que **no se copiaron datos**. La FK sigue siendo la forma simple de "un pago → un documento" y `PaymentAllocation` la de repartos (anticipos en facturas parciales, pagos a varias facturas). Si se prefiere la representación física única, el backfill sigue el patrón D3.
 
 **Verificación:** `treasury/tests/test_payment_selector.py` (+2: reparto sin doble conteo entre FK e imputaciones a A y B; pago anulado no marca PAGADA) — fallan con el código anterior. Suites backend: 628 passed, sin fallos nuevos. En el dev server hay 0 `PaymentAllocation`, por lo que los saldos mostrados no cambian.
 
@@ -101,7 +101,7 @@
 - `BillingService.cancel_invoice` borraba el asiento borrador mientras la factura lo referenciaba (FK PROTECT) → **cancelar una factura en borrador fallaba siempre**. Ahora desvincula y luego borra.
 - Fallos intermitentes "UNIQUE accounting_account.code" en la suite: la caché locmem (singleton `AccountingSettings`) sobrevivía entre tests mientras la BD se revertía; al guardarse, regeneraba códigos de cuentas raíz. Nuevo fixture autouse en `backend/conftest.py` que limpia la caché después de configurar el backend de test. Resultado: 4 tests de `accounting` de la línea base pasan.
 
-**Backfill** `python manage.py backfill_invoice_lines [--apply]` (dry-run por defecto, D3). **Dry-run en el dev server:** 168 facturas → 173 líneas espejo; OV: 128 `INVOICED`; OC: 40 `INVOICED`, 3 `PENDING`; ninguna orden facturada por sobre lo pedido. **Pendiente de aprobación.** Mientras no se aplique, las facturas antiguas se leen por el camino legacy.
+**Backfill** `python manage.py backfill_invoice_lines [--apply]` (dry-run por defecto, D3). **Aplicado en el dev server el 2026-10-15** (resultado idéntico al dry-run, segunda ejecución sin cambios; OV-000001 ya no aparece como pendiente de facturar). **Dry-run previo:** 168 facturas → 173 líneas espejo; OV: 128 `INVOICED`; OC: 40 `INVOICED`, 3 `PENDING`; ninguna orden facturada por sobre lo pedido. **Pendiente de aprobación.** Mientras no se aplique, las facturas antiguas se leen por el camino legacy.
 
 **Verificación:** `billing/tests/test_invoice_lines.py` (7: líneas propias y contadores, cancelación, PARCIAL, factura de compra, líneas de nota legacy, relaciones multi-orden, backfill dry-run/apply). Suites `billing sales purchasing treasury core workflow inventory production accounting`: 615 passed, sin fallos nuevos; 4 fallos de la línea base resueltos.
 

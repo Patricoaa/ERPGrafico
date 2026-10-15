@@ -38,7 +38,7 @@
 - Regla (decisión **D2**, [decisiones](./document-decisions.md)): imputación a la factura cuando existe; el anticipo no facturado sigue imputado a la orden; la orden se deriva vía factura. Backfill de los 127 casos con `invoice`+`sale_order`: 1 allocation a la factura, ninguna a la orden. Con D1 (facturas parciales y multi-orden) la allocation **con importe** es obligatoria → (b)(c) se ejecutan junto con GAP-13 en M4.
 - Aceptación: pendiente de OV/factura idéntico entre modelo, serializer y Hub en dataset de prueba con pagos anulados y parciales.
 - Reversión: (a) trivial; (b) allocations creadas por backfill marcadas (`notes='backfill-GAP04'`) y borrables.
-- **Estado (2026-10-15, M4d):** implementada la regla única de reparto (imputaciones + resto a la FK) y retiradas las lecturas del GFK; **no** se copiaron las FK a `PaymentAllocation` (ver [registro de avance](./implementation-progress.md), decisión abierta).
+- **Estado (2026-10-15, M4d):** implementada la regla única de reparto (imputaciones + resto a la FK) y retiradas las lecturas del GFK; **no** se copiaron las FK a `PaymentAllocation`; el responsable decidió mantenerlo así (2026-10-15).
 
 **GAP-05 · GFK `Invoice.source_order` muerto con lógica dependiente** — INT-05 · REG · S
 - Solución: reemplazar `invoice.source_order` por `invoice.sale_order or invoice.purchase_order` en `billing/services.py:1451,1477,1491` y `billing/models.py:196-209`; después retirar el GFK (migración que elimina columnas, sin datos útiles: D 168/168 NULL).
