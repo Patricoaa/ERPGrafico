@@ -1,13 +1,12 @@
 "use client"
 
 import React, { useEffect, useState, useMemo } from "react"
-import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { DataTableView, DataCell, DomainHubStatus, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch, DataTableColumnHeader, type AutoEntityCardProps } from '@/components/shared'
 import { salesOrderFields } from "@/features/sales/salesOrderFields"
 import { type ColumnDef } from "@tanstack/react-table"
 import { ENTITY_REGISTRY, getEntityIcon } from "@/lib/entity-registry"
 
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { useSalesOrders, useSalesNotes, useSalesAnalyticsData, type SaleOrder, type SaleNote } from "@/features/sales"
 import type { AnalyticsPanelConfig, Granularity } from '@/components/shared'
 import { assignChartColors } from '@/lib/chart-colors'
@@ -27,18 +26,11 @@ interface SalesOrdersViewProps {
 }
 
 export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selectedId }: SalesOrdersViewProps) {
-    const { hubConfig, isHubOpen } = useHubPanel()
-    const router = useRouter()
-    const searchParams = useSearchParams()
-    const pathname = usePathname()
-
-    // OV: `?selected` abre su ficha documental (ADR-0083). Notas: siguen en el Hub hasta U3.
-    const urlSelectedId = Number(searchParams.get('selected')) || null
-    const isPanelOpen = viewMode === "orders" ? !!urlSelectedId : isHubOpen
-    const isSelectedId = (id: number) => {
-        if (onSelectOrder) return selectedId === id
-        return viewMode === "orders" ? urlSelectedId === id : hubConfig?.invoiceId === id
-    }
+    // ?selected abre la ficha documental en la pila (ADR-0083): OV en "orders", factura/nota
+    // en "notes". Con onSelectOrder (POS) la lista solo selecciona; el panel lo pone el host.
+    const sheet = useDocumentSheetRoute(onSelectOrder ? null : (viewMode === "orders" ? "sales.saleorder" : "billing.invoice"))
+    const isPanelOpen = sheet.isOpen
+    const isSelectedId = (id: number) => (onSelectOrder ? selectedId === id : sheet.selectedId === id)
 
     const toggleSelection = (id: number) => {
         if (onSelectOrder) {
@@ -46,17 +38,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
             onSelectOrder(isSelected ? null : id)
             return
         }
-        const isSelected = isSelectedId(id)
-        const params = new URLSearchParams(searchParams.toString())
-
-        if (isSelected && isPanelOpen) {
-            params.delete('selected')
-        } else {
-            params.set('selected', String(id))
-        }
-
-        const query = params.toString()
-        router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
+        sheet.toggle(id)
     }
 
     const unifiedSearchDef = viewMode === 'orders' ? salesOrderUnifiedSearchDef : salesNoteUnifiedSearchDef

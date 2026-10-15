@@ -3,9 +3,8 @@
 import { useMemo } from "react"
 import { Package } from "lucide-react"
 import { DataCell, DataTable, DocumentFieldGrid, FormSection } from "@/components/shared"
-import { formatCurrency } from "@/lib/money"
-import { cn } from "@/lib/utils"
-import { orderLineFields } from "../../orderLineFields"
+import { orderLineFields, purchaseOrderLineFields } from "../../orderLineFields"
+import { DocumentTotalsBox } from "./DocumentTotalsBox"
 import type { Order, OrderLine } from "../../types"
 
 interface OrderSummaryTabProps {
@@ -48,7 +47,10 @@ export function OrderSummaryTab({ order, kind }: OrderSummaryTabProps) {
     const when = documentDateTime(order)
 
     const lines: OrderLine[] = order.lines ?? order.items ?? []
-    const columns = useMemo(() => orderLineFields.toColumns(), [])
+    const columns = useMemo(
+        () => (isSale ? orderLineFields.toColumns() : purchaseOrderLineFields.toColumns({ exclude: ["work_order_summary"] })),
+        [isSale],
+    )
     const subtotal = lines.reduce((sum, line) => sum + num(line.subtotal_net ?? line.subtotal), 0)
     const total = num(order.effective_total ?? order.total)
 
@@ -82,24 +84,14 @@ export function OrderSummaryTab({ order, kind }: OrderSummaryTabProps) {
             <section className="space-y-4">
                 <FormSection title="Productos" icon={Package} />
                 <DataTable columns={columns} data={lines} variant="minimal" />
-                <dl className="ml-auto w-full max-w-xs space-y-1.5 rounded-md border px-4 py-3 text-xs tabular-nums">
-                    <TotalRow label="Subtotal (neto)" value={subtotal} />
-                    <TotalRow label="IVA" value={num(order.total_tax)} />
-                    <TotalRow label="Total" value={total} strong />
-                    <div className="border-t pt-1.5" />
-                    <TotalRow label="Pagado" value={num(order.total_paid)} />
-                    <TotalRow label="Saldo pendiente" value={num(order.pending_amount)} strong={num(order.pending_amount) > 0} />
-                </dl>
+                <DocumentTotalsBox
+                    subtotal={subtotal}
+                    tax={num(order.total_tax)}
+                    total={total}
+                    paid={num(order.total_paid)}
+                    pending={num(order.pending_amount)}
+                />
             </section>
-        </div>
-    )
-}
-
-function TotalRow({ label, value, strong = false }: { label: string; value: number; strong?: boolean }) {
-    return (
-        <div className="flex items-baseline justify-between gap-4">
-            <dt className="text-muted-foreground">{label}</dt>
-            <dd className={cn("font-medium", strong && "font-bold text-foreground")}>{formatCurrency(value)}</dd>
         </div>
     )
 }

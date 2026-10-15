@@ -9,7 +9,7 @@ import type { OrderLine } from './types'
  * `placement: 'detail'` en todos: la tabla sigue el orden de definición (Subtotal al final).
  * Producto y OT abren su ficha apilada sobre la orden.
  */
-export const orderLineFields = createEntityFields<OrderLine>()({
+const buildOrderLineFields = (fulfilledLabel: string) => createEntityFields<OrderLine>()({
     product: {
         key: 'product_name',
         placement: 'detail',
@@ -32,14 +32,15 @@ export const orderLineFields = createEntityFields<OrderLine>()({
         placement: 'detail',
         type: 'currency',
         label: 'Precio unit. (neto)',
-        get: (l) => l.unit_price_net ?? l.unit_price ?? l.price_unit,
+        // OV: neto calculado (gross-first); OC: unit_cost ya es neto
+        get: (l) => l.unit_price_net ?? l.unit_cost ?? l.unit_price ?? l.price_unit,
         tableOptions: { align: 'right' },
     },
     delivered: {
         key: 'quantity_delivered',
         placement: 'detail',
         type: 'number',
-        label: 'Entregado',
+        label: fulfilledLabel,
         get: (l) => l.quantity_delivered ?? l.quantity_received ?? l.delivered_quantity ?? l.received_quantity ?? 0,
         tableOptions: { align: 'right' },
     },
@@ -70,3 +71,7 @@ export const orderLineFields = createEntityFields<OrderLine>()({
         tableOptions: { align: 'right' },
     },
 })
+
+export const orderLineFields = buildOrderLineFields('Entregado')
+/** OC: "Recibido"; sin columna OT (`toColumns({ exclude: ['work_order_summary'] })`). */
+export const purchaseOrderLineFields = buildOrderLineFields('Recibido')

@@ -1,6 +1,6 @@
 import { Banknote, ClipboardList, FileText, Package, TrendingUp } from "lucide-react"
 import type { LifecycleStep, LifecycleStepStatus } from "@/components/shared"
-import { getHubStatuses } from "@/lib/workflow-status"
+import { getHubStatuses, getInvoiceHubStatuses, getNoteHubStatuses } from "@/lib/workflow-status"
 import type { Order, OrderLine } from "../types"
 
 const toNumber = (value: unknown) => {
@@ -59,6 +59,46 @@ export function getOrderLifecycle(order: Order, kind: "sale" | "purchase"): Life
         {
             id: "treasury", label: "Tesorería", icon: Banknote, status: isCancelled ? "not_applicable" : (hub.treasury as LifecycleStepStatus),
             progress: pct(paid, total), detail: `${pct(paid, total)}% pagado`,
+        },
+    ]
+}
+
+const PAYMENT_STEP: Record<string, LifecycleStepStatus> = { PAID: "success", PARTIAL: "active", UNPAID: "neutral" }
+
+/**
+ * Ciclo de una factura o nota (ADR-0083/0084): Origen → Emisión → Logística → Tesorería.
+ * Emisión = folio (borrador = folio pendiente, vacío). Tesorería = `payment_status`, eje
+ * propio. Logística: reglas del Hub (entrega/recepción de la orden o de la nota).
+ */
+export function getInvoiceLifecycle(invoice: Order): LifecycleStep[] {
+    const isNote = invoice.dte_type === "NOTA_CREDITO" || invoice.dte_type === "NOTA_DEBITO"
+    const doc = invoice as unknown as Parameters<typeof getInvoiceHubStatuses>[0]
+    const hub = isNote ? getNoteHubStatuses(doc) : getInvoiceHubStatuses(doc)
+    const isCancelled = invoice.status === "CANCELLED"
+    const hasFolio = invoice.status === "POSTED" && !!invoice.number && invoice.number !== "Draft"
+    const total = toNumber(invoice.total)
+    const pending = toNumber(invoice.pending_amount)
+    const paidPct = pct(Math.max(0, total - pending), total)
+    const paymentStatus = typeof invoice.payment_status === "string" ? invoice.payment_status : (pending <= 0 ? "PAID" : "UNPAID")
+    const logisticsProgress = typeof hub.logisticsProgress === "number" ? hub.logisticsProgress : 0
+
+    return [
+        { id: "origin", label: "Origen", icon: TrendingUp, status: isCancelled ? "destructive" : "success" },
+        {
+            id: "billing", label: "Emisión", icon: FileText,
+            status: isCancelled ? "destructive" : hasFolio ? "success" : "neutral",
+            progress: hasFolio ? 100 : 0,
+            detail: isCancelled ? "Anulada" : hasFolio ? `Folio ${invoice.number}` : "Folio pendiente",
+        },
+        {
+            id: "logistics", label: "Logística", icon: Package,
+            status: isCancelled ? "not_applicable" : (hub.logistics as LifecycleStepStatus),
+            progress: logisticsProgress, detail: `${logisticsProgress}%`,
+        },
+        {
+            id: "treasury", label: "Tesorería", icon: Banknote,
+            status: isCancelled ? "not_applicable" : (PAYMENT_STEP[paymentStatus] ?? "neutral"),
+            progress: paidPct, detail: `${paidPct}% pagado`,
         },
     ]
 }

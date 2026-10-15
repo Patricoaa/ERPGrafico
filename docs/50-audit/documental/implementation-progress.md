@@ -18,9 +18,19 @@
 | U1 Primitivas | **Hecha** — `domain` en `DocumentRef`, shell con tabs/ciclo/acciones/embedded, `DocumentRelationsTab`, motor de acciones extraído |
 | U2 Piloto OV | **Hecha** + refinamiento del responsable (2026-10-15): referencia para U3–U5; verificación en navegador pendiente |
 | ADR-0084 Estados desacoplados del pago | **Hecha** (2026-10-15) — migración aplicada en dev |
-| U3–U6 | Pendientes — [ui-document-sheet-plan.md](./ui-document-sheet-plan.md) |
+| U3 OC + facturas/notas | **Hecha** (2026-10-15) — ver entrada |
+| U4–U6 | Pendientes — [ui-document-sheet-plan.md](./ui-document-sheet-plan.md) |
 
 ---
+
+## 2026-10-15 · U3 — ficha de OC y de factura/nota
+
+- **OC:** `openEntity('purchasing.purchaseorder')` abre `OrderSheet kind="purchase"` (columna "Recibido", sin OT; precio = `unit_cost`, neto). `PurchaseOrderDrawer` eliminado. `GlobalModalProvider` ya no redirige nada al Hub (`HUB_ENTITY_TYPES` retirado).
+- **Factura/nota:** nueva `InvoiceSheet` (reemplaza `InvoiceDrawer`, eliminado, y el "modo nota" del Hub): ciclo Origen → **Emisión** (folio; borrador = vacío "Folio pendiente") → Logística → Tesorería (`payment_status`); Resumen = Contexto (contraparte, fecha y hora, documento + folio, origen enlazado: OV/OC o documento corregido) + Productos (`invoiceLineFields`: producto, cantidad, precio neto, subtotal neto) + totales; Relaciones. Acciones del mismo registro y motor que el Hub, acotadas: factura → folio, pago, devolución de pago, NC, ND; nota → folio, pago/reembolso y logística de la nota. Borrador → "Cancelar borrador"; emitida → se corrige con NC/ND (ADR-0084).
+- **Netos en líneas de factura:** `InvoiceSelectorExt.get_lines` agrega `subtotal_net`/`unit_price_net` (venta gross-first con reparto exacto de `total_net`; compra ya neta).
+- **Listas → ficha:** nuevo `hooks/useDocumentSheetRoute(label)` (`?selected` ↔ pila de `openEntity`, limpia la URL al cerrar). Lo usan `SalesOrdersView` (OV, notas y devoluciones), `PurchasingOrdersClientView` (OC y notas de compra), `SalesInvoicesClientView` y `PurchaseInvoicesClientView`. Las páginas ya no abren el Hub (la de notas abría el Hub con el id de la nota como si fuera OV).
+- **POS:** el modo notas también usa la ficha incrustada (`InvoiceSheet embedded`); el POS ya no usa el Hub. `pos/DetailPanel` (consumidor de buckets legacy) eliminado.
+- Acciones sobre facturas relacionadas: borrador → cancelar; se quitó "anular documento" de facturas sin folio emitidas (estado imposible tras ADR-0084).
 
 ## 2026-10-15 · ADR-0084 — estado del documento desacoplado del pago
 

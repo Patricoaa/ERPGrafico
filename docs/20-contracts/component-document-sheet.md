@@ -21,7 +21,7 @@ Drawer (left, formDrawerWidth("master"))      — or embedded body (POS)
 └─ Sidebar      ActivitySidebar (FormSplitLayout), hidden when embedded
 ```
 
-Reference implementation (owner-approved pilot, 2026-10-15): `OrderSheet` (OV).
+Reference implementations: `OrderSheet` (OV/OC, owner-approved pilot 2026-10-15) and `InvoiceSheet` (invoices/notes, U3).
 
 | Rule | Detail |
 |---|---|
@@ -63,6 +63,10 @@ Props: `label`, `id`, `sectionActions?: Partial<Record<DocumentDomain, DocumentA
 ## 5b. Navigation
 
 The list `?selected={id}` opens the sheet **through the `openEntity` stack** (not a page-local drawer), so everything opened from it (product, OT, related documents) shows "Volver a {display}". Closing the stack clears `?selected`. Sheets call `setEntityDisplay(label, id, display_id)` once loaded so the back label shows the real number. Entity drawers that need full data (e.g. product) accept an `id`-only open via a loader (`ProductDrawerById`).
+
+### Lists
+
+Document lists open the sheet with `useDocumentSheetRoute(label)` (`@/hooks`): `?selected={id}` ↔ the `openEntity` stack; `toggle(id)` for row clicks, `selectedId` for row highlight. Lists embedded in a host with their own panel (POS) pass `null`.
 
 ## 6. Embedded mode
 

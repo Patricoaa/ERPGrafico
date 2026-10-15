@@ -158,13 +158,8 @@ const OrderSheet = dynamic(
     { ssr: false, loading: () => skeleton("orden de venta") }
 )
 
-const PurchaseOrderDrawer = dynamic(
-    () => import("@/features/purchasing/components/PurchaseOrderDrawer").then((m) => m.PurchaseOrderDrawer),
-    { ssr: false, loading: () => skeleton("orden de compra") }
-)
-
-const InvoiceDrawer = dynamic(
-    () => import("@/features/billing/components/InvoiceDrawer").then((m) => m.InvoiceDrawer),
+const InvoiceSheet = dynamic(
+    () => import("@/features/orders").then((m) => m.InvoiceSheet),
     { ssr: false, loading: () => skeleton("factura") }
 )
 
@@ -560,15 +555,17 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             onOpenChange={onOpenChange}
         />
     ),
+    // Fichas documentales (ADR-0083): sin onSuccess, las acciones no cierran la pila.
     "purchasing.purchaseorder": ({ id, open, onOpenChange }) => (
-        <PurchaseOrderDrawer
+        <OrderSheet
             id={id}
+            kind="purchase"
             open={open}
             onOpenChange={onOpenChange}
         />
     ),
     "billing.invoice": ({ id, open, onOpenChange }) => (
-        <InvoiceDrawer
+        <InvoiceSheet
             id={id}
             open={open}
             onOpenChange={onOpenChange}

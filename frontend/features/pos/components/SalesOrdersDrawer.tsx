@@ -7,9 +7,7 @@ import { TabBar } from "@/components/shared"
 import { useState, useEffect, Suspense, useCallback } from "react"
 import { Drawer, SkeletonShell } from "@/components/shared"
 import { cn } from "@/lib/utils"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { OrderHubPanel, OrderSheet } from "@/features/orders"
-import { DetailPanel } from "./DetailPanel"
+import { InvoiceSheet, OrderSheet } from "@/features/orders"
 
 interface SalesOrdersDrawerProps {
     open: boolean
@@ -17,16 +15,10 @@ interface SalesOrdersDrawerProps {
     posSessionId?: number | null
 }
 
-interface DetailContent {
-    type: string
-    id: number
-}
-
 export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrdersDrawerProps) {
     const [viewMode, setViewMode] = useState<'orders' | 'notes'>('orders')
     const [shouldRenderContent, setShouldRenderContent] = useState(open)
     const [selectedId, setSelectedId] = useState<number | null>(null)
-    const [detailContent, setDetailContent] = useState<DetailContent | null>(null)
 
     useEffect(() => {
         if (open) {
@@ -39,53 +31,24 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
         }
     }, [open])
 
-    const { isHubOpen, openHub, closeHub } = useHubPanel()
-
     const handleOpenChange = (newOpen: boolean) => {
-        if (!newOpen && isHubOpen) {
-            closeHub()
-        }
-        if (!newOpen) {
-            setSelectedId(null)
-            setDetailContent(null)
-        }
+        if (!newOpen) setSelectedId(null)
         onOpenChange(newOpen)
     }
 
     const handleViewModeChange = (v: string) => {
         setSelectedId(null)
-        setDetailContent(null)
         setViewMode(v as 'orders' | 'notes')
     }
 
     const handleActionSuccess = useCallback(() => {
-        setDetailContent(null)
         setSelectedId(null)
         onOpenChange(false)
     }, [onOpenChange])
 
-    const handleOrderSelect = useCallback((id: number | null) => {
-        setSelectedId(id)
-        setDetailContent(null)
-        // OV: ficha documental incrustada con su propio motor de acciones (ADR-0083).
-        // Notas C/D: siguen en el Hub hasta U3 (su motor de acciones es global).
-        if (id && viewMode === 'notes') {
-            openHub({
-                invoiceId: id,
-                type: 'sale',
-                posSessionId,
-                onActionSuccess: handleActionSuccess,
-            })
-        } else if (isHubOpen) {
-            closeHub()
-        }
-    }, [viewMode, posSessionId, isHubOpen, openHub, closeHub, handleActionSuccess])
-
-    const handleOpenDetail = useCallback((docType: string, docId: number | string) => {
-        setDetailContent({ type: docType, id: Number(docId) })
-    }, [])
-
-    const hasDetail = !!detailContent
+    // Ficha documental incrustada (ADR-0083, decisión D11): OV o nota con su propio motor de
+    // acciones; los relacionados se abren apilados con openEntity.
+    const handleOrderSelect = useCallback((id: number | null) => setSelectedId(id), [])
 
     return (
         <Drawer
@@ -120,7 +83,7 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
                         {/* List */}
                         <div className={cn(
                             "flex flex-col min-h-0 transition-all duration-300",
-                            selectedId && hasDetail ? "w-1/3" : selectedId ? "w-1/2" : "w-full"
+                            selectedId ? "w-1/2" : "w-full"
                         )}>
                             <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
                                 <SalesOrdersView
@@ -149,31 +112,17 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
                             </div>
                         )}
 
-                        {/* Notas C/D: Hub incrustado hasta U3 */}
+                        {/* Nota C/D: ficha documental incrustada (ADR-0083) */}
                         {selectedId && viewMode === 'notes' && (
-                            <div className={cn(
-                                "border-l border-border pl-4 flex flex-col min-h-0 overflow-hidden transition-all duration-300",
-                                hasDetail ? "w-1/3" : "w-1/2"
-                            )}>
-                                <OrderHubPanel
-                                    invoiceId={selectedId}
-                                    type="sale"
-                                    onClose={() => setSelectedId(null)}
-                                    onActionSuccess={handleActionSuccess}
-                                    onOpenDetail={handleOpenDetail}
+                            <div className="w-1/2 border-l border-border flex flex-col min-h-0 overflow-hidden transition-all duration-300">
+                                <InvoiceSheet
+                                    key={selectedId}
+                                    id={selectedId}
+                                    embedded
+                                    open
+                                    onOpenChange={(isOpen) => { if (!isOpen) setSelectedId(null) }}
                                     posSessionId={posSessionId}
-                                    showHeader={false}
-                                />
-                            </div>
-                        )}
-
-                        {/* Detail Panel (third column) */}
-                        {selectedId && hasDetail && (
-                            <div className="w-1/3 border-l border-border pl-4 flex flex-col min-h-0 overflow-hidden bg-muted/20 rounded-md">
-                                <DetailPanel
-                                    type={detailContent.type}
-                                    id={detailContent.id}
-                                    onClose={() => setDetailContent(null)}
+                                    onActionSuccess={handleActionSuccess}
                                 />
                             </div>
                         )}

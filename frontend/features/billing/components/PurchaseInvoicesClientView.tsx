@@ -14,7 +14,7 @@ import { LazyDrawer } from "@/features/_shared"
 import { DataTableView, AutoEntityCard } from '@/components/shared'
 import { purchaseInvoiceFields } from "@/features/billing/purchaseInvoiceFields"
 import { purchaseInvoiceActions, type PurchaseInvoiceActionsCtx } from "@/features/billing/purchaseInvoiceActions"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
@@ -34,7 +34,8 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
     const [completingDoc, setCompletingDoc] = useState<Invoice | null>(null)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: string; id: string } | null>(null)
 
-    const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
+    // ?selected abre la ficha documental de la factura de compra (ADR-0083)
+    const sheet = useDocumentSheetRoute("billing.invoice")
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -107,19 +108,7 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
         }
     }
 
-    const toggleHub = (doc: Invoice) => {
-        const isSelected = hubConfig?.invoiceId === doc.id
-        if (isSelected && isHubOpen) {
-            closeHub()
-        } else {
-            openHub({
-                orderId: doc.purchase_order || null,
-                invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type) ? doc.id : null,
-                type: 'purchase',
-                onActionSuccess: fetchDocuments,
-            })
-        }
-    }
+    const toggleHub = (doc: Invoice) => sheet.toggle(doc.id)
 
     const actionsCtx: PurchaseInvoiceActionsCtx = {
         onDetail: (doc) => setViewingTransaction({ type: 'invoice', id: String(doc.id) }),
@@ -184,7 +173,7 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
                             entityLabel="billing.invoice"
                             icon={getEntityIcon('billing.invoice')}
                             iconClassName="text-info bg-info/10"
-                            isSelected={hubConfig?.invoiceId === data.id}
+                            isSelected={sheet.selectedId === data.id}
                             onClick={() => toggleHub(data)}
                             actions={purchaseInvoiceActions.render(data, actionsCtx)}
                         />

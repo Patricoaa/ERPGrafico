@@ -154,3 +154,27 @@ def test_backfill_command_dry_run_and_apply(env):
     assert legacy.lines.count() == 2
     order.refresh_from_db()
     assert order.invoicing_status == SaleOrder.InvoicingStatus.INVOICED
+
+
+@pytest.mark.django_db
+def test_sale_invoice_lines_expose_net_amounts(env):
+    """ADR-0083/0084: la ficha muestra netos; venta gross-first → reparto exacto de total_net."""
+    order = _sale_order(env)
+    invoice = BillingService.create_sale_invoice(order, Invoice.DTEType.FACTURA, status=Invoice.Status.DRAFT)
+    invoice.refresh_from_db()
+
+    data = InvoiceSelectorExt.get_lines(invoice)
+    nets = [Decimal(item["subtotal_net"]) for item in data]
+    assert sum(nets) == invoice.total_net
+    assert all(Decimal(item["subtotal_net"]) <= Decimal(str(item["subtotal"])) for item in data)
+    for item in data:
+        assert Decimal(item["unit_price_net"]) == (Decimal(item["subtotal_net"]) / Decimal(str(item["quantity"]))).quantize(Decimal("0.01"))
+
+
+@pytest.mark.django_db
+def test_sale_invoice_without_folio_is_born_draft(env):
+    """ADR-0084: emitida exige folio; sin número la factura nace en borrador."""
+    order = _sale_order(env)
+    invoice = BillingService.create_sale_invoice(order, Invoice.DTEType.FACTURA)
+    assert invoice.status == Invoice.Status.DRAFT
+    assert invoice.journal_entry is None or invoice.journal_entry.status != "POSTED"

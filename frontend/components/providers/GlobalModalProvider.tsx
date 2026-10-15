@@ -4,7 +4,6 @@ import React, { createContext, useContext, useState, type ReactNode, useCallback
 import { ENTITY_DRAWERS, hasEntityDrawer } from "@/lib/entity-drawers"
 import { formatEntityDisplay, getEntityMetadata } from "@/lib/entity-registry"
 import { ErrorBoundary, EntityNavigationContext } from "@/components/shared"
-import { useOptionalHubPanel } from "./HubPanelProvider"
 
 interface OpenEntityState {
     label: string
@@ -22,13 +21,6 @@ export interface OpenEntityOptions {
 /** Máximo de documentos encadenados con "volver" (ADR-0080, GAP-11). */
 const MAX_ENTITY_STACK = 5
 
-/**
- * Labels que todavía abren el Order Hub (D4, revertida por ADR-0083). La OV ya abre su ficha
- * documental (piloto U2); la OC pasa en U3 y este mapa desaparece en U6.
- */
-const HUB_ENTITY_TYPES: Record<string, 'sale' | 'purchase'> = {
-    'purchasing.purchaseorder': 'purchase',
-}
 
 function entityBackLabel(entity: OpenEntityState): string {
     if (entity.display) return entity.display
@@ -75,7 +67,6 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     // ADR-0080 (GAP-11): pila de documentos; se muestra el superior y se puede volver.
     const [entityStack, setEntityStack] = useState<OpenEntityState[]>([])
     const openedEntity = entityStack.length > 0 ? entityStack[entityStack.length - 1] : null
-    const hubPanel = useOptionalHubPanel()
     const [sheetStack, setSheetStack] = useState<{id: string, width: number, priority: number, forced: boolean}[]>([])
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1600)
 
@@ -96,15 +87,8 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
             : prev)
     }, [])
 
-    const openHub = hubPanel?.openHub
 
     const openEntity = useCallback((label: string, id: number, data?: unknown, segmenter?: React.ReactNode, options?: OpenEntityOptions) => {
-        const hubType = HUB_ENTITY_TYPES[label]
-        if (hubType && openHub) {
-            setEntityStack([])
-            openHub({ orderId: id, invoiceId: null, type: hubType })
-            return
-        }
         if (!hasEntityDrawer(label)) {
             console.warn(`[GlobalModalProvider] No drawer registered for entity "${label}". Register it in lib/entity-drawers.tsx.`)
             return
@@ -116,7 +100,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
             // Abrir desde un documento ya abierto apila; si no hay ninguno, empieza la pila.
             return [...prev, entry].slice(-MAX_ENTITY_STACK)
         })
-    }, [openHub])
+    }, [])
 
     const registerSheet = useCallback((id: string, fullWidth: number, priority: number, forced: boolean = false) => {
         setSheetStack(prev => {

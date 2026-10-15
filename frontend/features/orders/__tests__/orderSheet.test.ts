@@ -3,7 +3,7 @@ import { Banknote } from "lucide-react"
 import { resolveRegistryActions } from "@/features/documents"
 import type { ActionRegistry } from "@/types/actions"
 import { planOrderSheetActions, SHEET_EXCLUDED_ACTIONS } from "../utils/orderSheetActions"
-import { getOrderLifecycle } from "../utils/lifecycle"
+import { getInvoiceLifecycle, getOrderLifecycle } from "../utils/lifecycle"
 import type { Order } from "../types"
 
 type Doc = { status: string; pending_amount?: number }
@@ -138,5 +138,40 @@ describe("ciclo: fuente única tarjeta/ficha", () => {
         expect(stageIntent("success")).toBe("success")
         expect(stageIntent("neutral")).toBe("neutral")
         expect(stageIntent(undefined)).toBe("neutral")
+    })
+})
+
+
+describe("getInvoiceLifecycle (U3)", () => {
+    const invoice = (overrides: Partial<Order>): Order => ({
+        id: 13, number: "", status: "DRAFT", dte_type: "FACTURA", total: 50000, pending_amount: 0,
+        payment_status: "PAID", order_delivery_status: "DELIVERED", lines: [], ...overrides,
+    } as unknown as Order)
+
+    it("draft (folio pending) leaves Emisión empty even when paid (ADR-0084)", () => {
+        const byId = Object.fromEntries(getInvoiceLifecycle(invoice({})).map((s) => [s.id, s]))
+        expect(byId.billing).toMatchObject({ label: "Emisión", status: "neutral", detail: "Folio pendiente" })
+        expect(byId.treasury).toMatchObject({ status: "success", detail: "100% pagado" })
+    })
+
+    it("issued invoice shows its folio; partial payment is in progress", () => {
+        const byId = Object.fromEntries(getInvoiceLifecycle(invoice({
+            status: "POSTED", number: "9101", pending_amount: 20000, payment_status: "PARTIAL",
+        })).map((s) => [s.id, s]))
+        expect(byId.billing).toMatchObject({ status: "success", detail: "Folio 9101" })
+        expect(byId.treasury).toMatchObject({ status: "active", detail: "60% pagado" })
+    })
+
+    it("cancelled invoice: emission destructive, rest not applicable", () => {
+        const steps = getInvoiceLifecycle(invoice({ status: "CANCELLED" }))
+        expect(steps.filter((s) => s.status !== "not_applicable").map((s) => s.id)).toEqual(["origin", "billing"])
+    })
+})
+
+describe("invoiceLineFields", () => {
+    it("product · quantity · unit price · subtotal last", async () => {
+        const { invoiceLineFields } = await import("../invoiceLineFields")
+        const ids = invoiceLineFields.toColumns().map((c) => c.id ?? (c as { accessorKey?: string }).accessorKey)
+        expect(ids).toEqual(["product_name", "quantity", "unit_price", "subtotal_net"])
     })
 })

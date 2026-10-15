@@ -72,6 +72,26 @@ class InvoiceSelectorExt:
         return TreasuryMovementSerializer(payments, many=True).data
 
     @staticmethod
+    def _add_net_amounts(invoice, invoice_lines, data):
+        """
+        Neto por línea para la ficha documental (ADR-0083/0084). Las facturas de venta son
+        gross-first (líneas brutas): se reparte `total_net` (suma exacta, allocate_line_nets).
+        Las de compra ya son netas.
+        """
+        from decimal import Decimal
+
+        from core.strategies.totals import allocate_line_nets
+
+        if invoice.is_sale_document():
+            nets = allocate_line_nets(invoice, invoice_lines)
+        else:
+            nets = {il.pk: Decimal(il.subtotal or 0) for il in invoice_lines}
+        for il, item in zip(invoice_lines, data):
+            net = nets.get(il.pk, Decimal("0"))
+            item["subtotal_net"] = str(net)
+            item["unit_price_net"] = str((net / il.quantity).quantize(Decimal("0.01"))) if il.quantity else "0"
+
+    @staticmethod
     def get_lines(invoice):
         """
         Líneas de la factura (ADR-0081). Forma compatible con el contrato previo: cada ítem
@@ -102,6 +122,7 @@ class InvoiceSelectorExt:
                     "receipt_line": il.receipt_line_id,
                 })
                 data.append(item)
+            InvoiceSelectorExt._add_net_amounts(invoice, invoice_lines, data)
             if invoice.dte_type == invoice.DTEType.NOTA_CREDITO:
                 InvoiceSelectorExt._apply_returned_quantities(invoice, data)
             return data

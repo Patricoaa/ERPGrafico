@@ -2,13 +2,11 @@
 
 import { useState, type ReactNode } from "react"
 import { Ban, Trash2 } from "lucide-react"
-import { toast } from "sonner"
-import { getErrorMessage, showApiError } from "@/lib/errors"
+import { showApiError } from "@/lib/errors"
 import { ActionConfirmModal, type DocumentActionItem } from "@/components/shared"
 import type { DocumentLink } from "@/features/documents"
 import { AnnulPaymentModal } from "../components/AnnulPaymentModal"
 import {
-    useAnnulInvoice,
     useAnnulLogistics,
     useAnnulWorkOrder,
     useCancelInvoice,
@@ -44,11 +42,10 @@ const LOGISTICS_DOC_TYPES: Record<string, { docType: string; label: string }> = 
 
 /**
  * Acciones sobre los documentos relacionados de una OV/OC en el tab Relaciones (ADR-0083):
- * cancelar/anular factura, pago, despacho/recepción, devolución y OT. Mismas reglas y
- * permisos que las fases del Order Hub, que este hook reemplaza.
+ * cancelar borrador de factura, cancelar/anular pago, anular despacho/recepción, devolución y
+ * OT. Mismas reglas y permisos que las fases del Order Hub, que este hook reemplaza.
  */
 export function useOrderRelatedActions({ order, isSale, permissions, onSuccess }: UseOrderRelatedActionsOptions) {
-    const { annulInvoice } = useAnnulInvoice()
     const { cancelInvoice } = useCancelInvoice()
     const { cancelPayment } = useCancelPayment()
     const { annulLogistics } = useAnnulLogistics()
@@ -78,38 +75,20 @@ export function useOrderRelatedActions({ order, isSale, permissions, onSuccess }
         })
     }
 
-    const annulInvoiceFlow = (id: number) => {
-        const execute = async (force: boolean, reason?: string): Promise<void> => {
-            try {
-                await annulInvoice({ id, force, reason })
-                close()
-                onSuccess?.()
-            } catch (error: unknown) {
-                const message = getErrorMessage(error) || "Error al anular documento"
-                if (message.includes("pagos") && !force) {
-                    // Pasa a la variante "anular con pagos"; el throw mantiene el modal abierto.
-                    setConfirm({
-                        title: "Anular Documento con Pagos",
-                        variant: "warning",
-                        confirmText: "Anular Todo",
-                        requireReason: true,
-                        onConfirm: (r?: string) => execute(true, r),
-                        description: "El documento tiene pagos asociados. ¿Deseas anular el documento y todos sus pagos vinculados? Esta acción es irreversible.",
-                    })
-                } else {
-                    toast.error(message)
-                }
-                throw error
-            }
-        }
-        setConfirm({
-            title: "Anular Documento",
-            variant: "warning",
-            confirmText: "Anular",
-            requireReason: true,
-            onConfirm: (reason?: string) => execute(false, reason),
-            description: "Se revertirá el asiento contable del documento. Esta acción es irreversible.",
-        })
+    /**
+     * Acciones de documento sobre una factura (ADR-0084): un borrador (folio pendiente) se
+     * cancela; una emitida no se anula, se corrige con NC/ND (acciones del registro).
+     */
+    const invoiceActions = (invoice: { id: number; status?: string }): DocumentActionItem[] => {
+        if (!can('billing.delete_invoice') || invoice.status !== 'DRAFT') return []
+        return [{
+            id: 'cancel-draft-invoice', label: 'Cancelar borrador', icon: Trash2, destructive: true,
+            onClick: () => confirmThen(
+                { title: "Cancelar Borrador", variant: "destructive", confirmText: "Cancelar Borrador", description: "¿Estás seguro de que deseas cancelar este borrador de factura?" },
+                (reason) => cancelInvoice({ id: invoice.id, reason }),
+                "No se pudo cancelar el borrador",
+            ),
+        }]
     }
 
     const rowActions = (link: DocumentLink): DocumentActionItem[] => {
@@ -118,21 +97,7 @@ export function useOrderRelatedActions({ order, isSale, permissions, onSuccess }
 
         if (label === 'billing.invoice') {
             const invoice = invoices.find((inv) => Number(inv.id) === id)
-            if (!invoice || !can('billing.delete_invoice')) return []
-            if (invoice.status === 'DRAFT') {
-                return [{
-                    id: 'cancel-draft-invoice', label: 'Cancelar borrador', icon: Trash2, destructive: true,
-                    onClick: () => confirmThen(
-                        { title: "Cancelar Borrador", variant: "destructive", confirmText: "Cancelar Borrador", description: "¿Estás seguro de que deseas cancelar este borrador de factura?" },
-                        (reason) => cancelInvoice({ id, reason }),
-                        "No se pudo cancelar el borrador",
-                    ),
-                }]
-            }
-            if (!invoice.number || invoice.number === 'Draft') {
-                return [{ id: 'annul-invoice', label: 'Anular documento', icon: Ban, destructive: true, onClick: () => annulInvoiceFlow(id) }]
-            }
-            return []
+            return invoice ? invoiceActions({ id, status: invoice.status }) : []
         }
 
         if (label === 'treasury.treasurymovement') {
@@ -220,5 +185,5 @@ export function useOrderRelatedActions({ order, isSale, permissions, onSuccess }
         </>
     )
 
-    return { rowActions, host }
+    return { rowActions, invoiceActions, host }
 }

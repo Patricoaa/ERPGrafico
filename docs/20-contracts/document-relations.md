@@ -82,7 +82,7 @@ Rules:
 
 Generated only by `DocumentTypeRegistry.canonical_url(label, obj)`:
 
-1. A declared pattern / function — only when the list really opens **that** document with `?selected` (ADR-0020). OV opens its document sheet (ADR-0083); OC/sale invoices still open the Order Hub until U3.
+1. A declared pattern / function — only when the list really opens **that** document with `?selected` (ADR-0020). OV, OC and invoices open their document sheet (ADR-0083).
 2. Otherwise the resolver **`/d/{label}/{id}`** (`app/(dashboard)/d/[label]/[id]`): redirects to the canonical URL if there is one, or opens the drawer registered in `ENTITY_DRAWERS` via `openEntity`.
 
 `core/tests/test_document_routes_sync.py` fails if a declared canonical URL (or the resolver) has no frontend route, or if a registered type has neither a declared canonical URL nor a drawer in `ENTITY_DRAWERS`.
@@ -91,8 +91,8 @@ Universal search returns `detail_url = DocumentTypeRegistry.url_for(label, id)` 
 | label | canonical URL |
 |---|---|
 | `sales.saleorder` | `/sales/orders?selected={id}` (document sheet, ADR-0083) |
-| `purchasing.purchaseorder` | `/purchasing/orders?selected={id}` (Order Hub) |
-| `billing.invoice` | sale: `/billing/sales?selected={id}` (Order Hub) · purchase: resolver |
+| `purchasing.purchaseorder` | `/purchasing/orders?selected={id}` (document sheet, ADR-0083) |
+| `billing.invoice` | sale: `/billing/sales?selected={id}` (document sheet) · purchase: resolver |
 | `treasury.treasurymovement` | `/treasury/operaciones/movements?selected={id}` |
 | `accounting.journalentry` | `/accounting/entries?selected={id}` |
 | `inventory.stockmove` | `/inventory/reports/movements?selected={id}` |
@@ -103,7 +103,7 @@ Universal search returns `detail_url = DocumentTypeRegistry.url_for(label, id)` 
 | Component | Where | Use |
 |---|---|---|
 | `RelatedDocumentsTable` | `@/components/shared` | Presentation only: relations grouped by semantic (origin/generated, logistics, payments, notes/returns/reversals, accounting, other). Rows show role, `display_id`, status, date, partner, amount/quantity; inaccessible targets show "sin acceso" without link; `loading`/`empty`/`error` + unresolved count |
-| `DocumentRelationsSection` | `@/features/documents` | Fetches with `useDocumentRelations` and opens each target with `openEntity` (stack + back; OV → document sheet, OC → Hub until U3); types without drawer navigate to `DocumentRef.url` |
+| `DocumentRelationsSection` | `@/features/documents` | Fetches with `useDocumentRelations` and opens each target with `openEntity` (stack + back; every document opens its sheet); types without drawer navigate to `DocumentRef.url` |
 | `DocumentDrawerShell` | `@/components/shared` | Common document sheet (ADR-0083): lifecycle, action bar, tabs, activity sidebar, `embedded`; legacy `summary`/`children`/`related` layout still used by `SaleDeliveryDrawer`, `PurchaseReceiptDrawer`. Contract: [component-document-sheet.md](./component-document-sheet.md) |
 | `DocumentRelationsTab` | `@/features/documents` | Relations tab of the document sheet: groups by `domain`, area and row actions, area filter (ADR-0083) |
 
@@ -125,10 +125,10 @@ Deprecated under ADR-0080 (phase "Deprecate" of [deprecate-feature.md](../30-pla
 
 | Legacy format | Producer | Remaining consumers (2026-10-15) |
 |---|---|---|
-| `related_documents` buckets of OV/OC | `SaleOrderSelector` / `PurchaseOrderSelector.get_related_documents` | Order Hub (phases, `useOrderHubData`, `HubStatus`, `ActionCategory`, action registries, status utils), POS `DetailPanel`, `ContactDrawer` (~23 files) |
+| `related_documents` buckets of OV/OC | `SaleOrderSelector` / `PurchaseOrderSelector.get_related_documents` | Order Hub (phases, `useOrderHubData`, `HubStatus`, `ActionCategory`, action registries, status utils), `ContactDrawer`, document sheets via `useOrderHubData` until U6 (POS `DetailPanel` removed in U3) |
 | `Invoice.related_documents`, `related_stock_moves`, `related_returns` | `InvoiceSelectorExt` | Order Hub in note mode, billing types/actions |
 | `JournalEntry.source_documents` | `JournalEntry.get_source_documents` | `JournalEntryDrawer` (origin field and edit prefill) |
-| `PurchaseOrderDrawer` (thin OC sheet) | — | Hub `OriginPhase` own detail; replaced by `OrderSheet` in U3. `SaleOrderDrawer` was removed (U2, 2026-10-15) |
+| ~~`SaleOrderDrawer` / `PurchaseOrderDrawer` / `InvoiceDrawer`~~ | — | **Removed** (U2–U3, 2026-10-15): replaced by `OrderSheet` / `InvoiceSheet` |
 
 **Removed in M6:** `StockMove.related_documents` (no readers since M3), GFK `TreasuryMovement.allocated_to` and its columns (no writers or readers; empty; migration `treasury/0094`), `DRAWER_MAP` (M5).
 

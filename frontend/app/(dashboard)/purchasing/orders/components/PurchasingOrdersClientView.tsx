@@ -18,7 +18,7 @@ import type { Page } from '@/lib/pagination'
 import type { PurchaseOrderInitialData } from "@/types/forms"
 import { toast } from "sonner"
 
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { getHubStatuses } from "@/lib/workflow-status"
 import { useVatRate } from '@/hooks/useVatRate'
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -79,7 +79,9 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const [folioModalOpen, setFolioModalOpen] = useState(false)
     const [selectedInvoice] = useState<{ id: number, type: string } | null>(null)
 
-    const { hubConfig, isHubOpen } = useHubPanel()
+    // ?selected abre la ficha documental (ADR-0083): OC en "orders", factura/nota en "notes"
+    const sheet = useDocumentSheetRoute(viewMode === "orders" ? "purchasing.purchaseorder" : "billing.invoice")
+    const isHubOpen = sheet.isOpen
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState("financiero")
     const [granularity, setGranularity] = useState<Granularity>("month")
@@ -716,19 +718,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         }
     }, [analyticsData, funnelData, viewMode, analyticsActiveTab])
 
-    const toggleSelection = (id: number) => {
-        const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
-        const params = new URLSearchParams(searchParams.toString())
-
-        if (isSelected && isHubOpen) {
-            params.delete('selected')
-        } else {
-            params.set('selected', String(id))
-        }
-
-        const query = params.toString()
-        router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
-    }
+    const toggleSelection = (id: number) => sheet.toggle(id)
 
     const filteredOrders = orders
     const filteredNotes = notes
@@ -899,12 +889,12 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                     fields={viewMode === 'orders' ? purchaseOrderFields as unknown as AutoEntityCardProps<PurchaseOrder>['fields'] : undefined as unknown as AutoEntityCardProps<PurchaseOrder>['fields']}
                                     entityLabel={label}
                                     onClick={() => toggleSelection(data.id as number)}
-                                    isSelected={viewMode === 'orders' ? hubConfig?.orderId === data.id : hubConfig?.invoiceId === data.id}
-                                    className={isHubOpen && (viewMode === 'orders' ? hubConfig?.orderId === data.id : hubConfig?.invoiceId === data.id) ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
+                                    isSelected={sheet.selectedId === data.id}
+                                    className={isHubOpen && (sheet.selectedId === data.id) ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
                                     icon={getEntityIcon(label)}
                                     iconClassName={iconClassName}
                                     hubTrigger={{
-                                        isSelected: viewMode === 'orders' ? hubConfig?.orderId === data.id : hubConfig?.invoiceId === data.id,
+                                        isSelected: sheet.selectedId === data.id,
                                         onToggle: () => toggleSelection(data.id as number),
                                     }}
                                 />
@@ -932,9 +922,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : viewMode === 'orders' ? pageState : undefined}
                         onPaginationChange={effectiveGrouping ? undefined : viewMode === 'orders' ? setPageState : undefined}
                         createAction={createAction}
-                        isSelected={(data: Record<string, unknown>) => viewMode === 'orders'
-                            ? hubConfig?.orderId === data.id
-                            : hubConfig?.invoiceId === data.id
+                        isSelected={(data: Record<string, unknown>) => sheet.selectedId === data.id
                         }
                         isHubOpen={isHubOpen}
                         isFiltered={search.isFiltered}
