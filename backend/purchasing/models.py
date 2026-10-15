@@ -172,7 +172,9 @@ class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
         from treasury.selectors import PaymentSelector
 
         return PaymentSelector.paid_amount(
-            self.payments.all(), sale_side=False, exclude_note_payments=True
+            self.payments.all(), sale_side=False, exclude_note_payments=True,
+            allocations=self.payment_allocations.all(),
+            fk_field="purchase_order", document=self,
         )
 
     @property

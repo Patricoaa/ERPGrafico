@@ -11,9 +11,30 @@
 | M1 Integridad | **Hecha** (código + backfill aplicado en dev) · INT-15 corregido |
 | M2 Contratos | **Hecha** · ADR-0080 **Aceptado** (2026-10-14) |
 | M3 UI piloto | **Hecha** (GAP-06, GAP-10, GAP-11, D4); verificación visual en navegador pendiente |
-| M4 Facturación y pagos | **M4a, M4b y M4c hechas**; backfill de líneas en dry-run **pendiente de aprobación (D3)** · M4d (pagos) pendiente |
+| M4 Facturación y pagos | **Hecha** (M4a–M4d); backfill de líneas en dry-run **pendiente de aprobación (D3)** · decisión abierta sobre copiar las FK de pago a `PaymentAllocation` |
 | M5 Extensión | Pendiente |
 | M6 Retiro | Pendiente |
+
+---
+
+## 2026-10-15 · M4d · Pagos: regla única de reparto (GAP-04 b/c)
+
+**Problemas encontrados (E, tests):**
+- **Doble conteo:** un pago con FK a una factura y además imputaciones (`PaymentAllocation`) a esa misma factura se contaba dos veces (FK completa + imputación).
+- **Otro cálculo divergente de "pagado":** `TreasuryService.update_related_document_status` marcaba la factura/orden como PAGADA con la suma bruta de los pagos por FK — **incluidos los anulados** y las devoluciones como positivas.
+- El GFK `allocated_to` (sin escritores) se seguía leyendo en 3 sitios.
+
+**Regla implementada** (`treasury/selectors.py` `PaymentSelector.paid_amount`): cada movimiento se reparte **una sola vez** — sus imputaciones explícitas y, para su documento de la FK, el resto.
+- Factura: pagos por FK aportan `importe − Σ sus imputaciones` + imputaciones a la factura (de cualquier pago).
+- Orden: pagos por FK aportan el importe completo (sus imputaciones a facturas de la misma orden siguen dentro de la orden: anticipos repartidos, D2) + imputaciones directas desde pagos **sin** esa FK.
+- Signo por dirección también para imputaciones; anulados excluidos.
+- `update_related_document_status` usa `total_paid` del documento (misma regla).
+- GFK `allocated_to`: retiradas las 3 lecturas (fase 1). La eliminación de las columnas es destructiva → fase 2 en M6, con confirmación.
+- Prefetch `payments__allocations` / `payment_allocations__treasury_movement` en los querysets de facturas, OV y OC (sin N+1 nuevo).
+
+**Desviación respecto del plan (decisión abierta):** el plan proponía copiar cada FK de pago a una `PaymentAllocation` (backfill de ~248 movimientos) para que la tabla fuera la única representación física. Con la regla anterior la FK y la imputación conviven sin ambigüedad (la imputación manda; la FK recibe el resto), por lo que **no se copiaron datos**. La FK sigue siendo la forma simple de "un pago → un documento" y `PaymentAllocation` la de repartos (anticipos en facturas parciales, pagos a varias facturas). Si se prefiere la representación física única, el backfill sigue el patrón D3.
+
+**Verificación:** `treasury/tests/test_payment_selector.py` (+2: reparto sin doble conteo entre FK e imputaciones a A y B; pago anulado no marca PAGADA) — fallan con el código anterior. Suites backend: 628 passed, sin fallos nuevos. En el dev server hay 0 `PaymentAllocation`, por lo que los saldos mostrados no cambian.
 
 ---
 

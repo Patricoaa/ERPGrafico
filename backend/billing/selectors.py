@@ -37,8 +37,8 @@ class InvoiceSelectorExt:
                 'purchase_order__supplier',
                 'journal_entry',
             ).prefetch_related(
-                'payments',
-                'payment_allocations',
+                'payments__allocations',
+                'payment_allocations__treasury_movement',
             )
         else:
             qs = Invoice.objects.select_related('contact', 'journal_entry')

@@ -12,6 +12,7 @@ class PurchaseOrderSelector:
             "supplier", "warehouse", "work_order", "payment_method_ref"
         ).prefetch_related(
             "payments__invoice",
+            "payment_allocations__treasury_movement",
             "invoices",
             "lines__product",
             "lines__uom",

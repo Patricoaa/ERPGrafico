@@ -179,8 +179,9 @@ class Invoice(TransactionalDocument):
 
         return PaymentSelector.paid_amount(
             self.payments.all(),
-            sale_side=not self.purchase_order_id,
+            sale_side=self.is_sale_document(),
             allocations=self.payment_allocations.all(),
+            fk_remainder=True,
         )
 
     @property

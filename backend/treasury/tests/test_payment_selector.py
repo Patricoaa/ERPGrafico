@@ -100,3 +100,39 @@ def test_payment_return_on_sale_order_lowers_paid_without_crashing(env):
 
     order.refresh_from_db()
     assert order.total_paid == Decimal("400")
+
+
+@pytest.mark.django_db
+def test_movement_is_distributed_once_between_fk_and_allocations(env):
+    """M4d: un pago con FK a la factura A e imputaciones no se cuenta dos veces."""
+    from treasury.models import PaymentAllocation
+
+    order = SaleOrder.objects.create(customer=env["contact"], date=date(2026, 10, 1))
+    inv_a = Invoice.objects.create(dte_type=Invoice.DTEType.FACTURA, contact=env["contact"], sale_order=order,
+                                   total=Decimal("1000"))
+    inv_b = Invoice.objects.create(dte_type=Invoice.DTEType.FACTURA, contact=env["contact"], sale_order=order,
+                                   total=Decimal("1000"))
+    payment = _mov(env, INBOUND, "1000", invoice=inv_a, sale_order=order)
+
+    PaymentAllocation.objects.create(treasury_movement=payment, invoice=inv_a, amount=Decimal("600"))
+    PaymentAllocation.objects.create(treasury_movement=payment, invoice=inv_b, amount=Decimal("400"))
+
+    assert inv_a.total_paid == Decimal("600")
+    assert inv_b.total_paid == Decimal("400")
+    assert order.total_paid == Decimal("1000"), "en la orden el pago cuenta una vez"
+
+
+@pytest.mark.django_db
+def test_status_update_ignores_cancelled_payments(env):
+    """M4d: update_related_document_status usaba la suma bruta (anulados incluidos) para marcar PAGADA."""
+    from treasury.services import TreasuryService
+
+    invoice = Invoice.objects.create(dte_type=Invoice.DTEType.FACTURA, contact=env["contact"],
+                                     total=Decimal("1000"), status=Invoice.Status.POSTED)
+    _mov(env, INBOUND, "1000", invoice=invoice, status=CANCELLED)
+    live = _mov(env, INBOUND, "500", invoice=invoice)
+
+    TreasuryService.update_related_document_status(live, invoice=invoice)
+
+    invoice.refresh_from_db()
+    assert invoice.status == Invoice.Status.POSTED

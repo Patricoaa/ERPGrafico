@@ -262,7 +262,11 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
         """Calculates the total amount paid for this order"""
         from treasury.selectors import PaymentSelector
 
-        return PaymentSelector.paid_amount(self.payments.all(), sale_side=True)
+        return PaymentSelector.paid_amount(
+            self.payments.all(), sale_side=True,
+            allocations=self.payment_allocations.all(),
+            fk_field="sale_order", document=self,
+        )
 
     @property
     def pending_amount(self):

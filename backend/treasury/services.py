@@ -308,20 +308,7 @@ class TreasuryService:
         if payroll:
             targets.append(payroll)
 
-        # If arguments are missing, try to resolve from movement's GFK allocated_to.
-        # Use _meta.model_name (stable string) instead of isinstance to avoid coupling.
-        allocated = getattr(movement, "allocated_to", None)
-        if allocated is not None:
-            model_name = allocated._meta.model_name
-            if not invoice and model_name == "invoice":
-                targets.append(allocated)
-            elif not sale_order and model_name == "saleorder":
-                targets.append(allocated)
-            elif not purchase_order and model_name == "purchaseorder":
-                targets.append(allocated)
-            elif not payroll and model_name == "payroll":
-                targets.append(allocated)
-
+        # (M4d) El GFK allocated_to no tiene escritores: se dejó de leer.
         targets = list(set(targets))  # unique
 
         for target in targets:
@@ -333,9 +320,14 @@ class TreasuryService:
             }
             field_name = model_to_field.get(target._meta.model_name, target._meta.model_name)
 
-            # Get all related payments
-            related_payments = TreasuryMovement.objects.filter(**{field_name: target})
-            total_paid = sum(m.amount for m in related_payments)
+            # M4d: regla única de pagado (excluye anulados, signo por dirección, imputaciones)
+            if hasattr(target, "total_paid"):
+                total_paid = target.total_paid
+            else:
+                related_payments = TreasuryMovement.objects.filter(**{field_name: target}).exclude(
+                    status=TreasuryMovement.MovementStatus.CANCELLED
+                )
+                total_paid = sum(m.amount for m in related_payments)
 
             target_total = getattr(target, "total", 0)
             if hasattr(target, "effective_total"):
@@ -366,9 +358,7 @@ class TreasuryService:
             return
 
         amount = movement.amount
-        allocated = getattr(movement, "allocated_to", None)
-        if allocated is None:
-            allocated = movement.purchase_order or movement.sale_order or movement.invoice
+        allocated = movement.purchase_order or movement.sale_order or movement.invoice
         is_sale = allocated is not None and allocated.is_sale_document()
 
         if movement.movement_type == TreasuryMovement.Type.INBOUND:
@@ -449,10 +439,8 @@ class TreasuryService:
                 elif mtype == TreasuryMovement.Type.OUTBOUND:
                     from_acc = pool_acc
 
-        # Resolve the related business document
-        allocated = getattr(movement, "allocated_to", None)
-        if allocated is None:
-            allocated = movement.purchase_order or movement.sale_order or movement.invoice
+        # Resolve the related business document (FK tipadas; GFK allocated_to retirado de lectura, M4d)
+        allocated = movement.purchase_order or movement.sale_order or movement.invoice
 
         # 1. TRANSFER (Internal)
         if mtype == TreasuryMovement.Type.TRANSFER:

@@ -20,6 +20,7 @@ class SaleOrderSelector:
             "invoices",
             "deliveries",
             "payments",
+            "payment_allocations__treasury_movement",
             "work_orders",
         ).order_by("-date", "-id")
 
