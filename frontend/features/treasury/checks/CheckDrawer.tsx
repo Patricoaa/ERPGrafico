@@ -1,9 +1,8 @@
 "use client"
 
-import { Drawer, MoneyDisplay, SkeletonShell, StatusBadge, StaleDataBanner } from "@/components/shared"
-import { useDrawerIdentity } from "@/features/_shared"
+import { DataCell, MoneyDisplay, StaleDataBanner } from "@/components/shared"
+import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents"
 import { useCheck } from '../hooks/useChecks'
-import { formDrawerWidth } from '@/lib/form-widths'
 
 interface CheckDrawerProps {
     id: number | null
@@ -11,73 +10,49 @@ interface CheckDrawerProps {
     onOpenChange: (open: boolean) => void
 }
 
+/**
+ * Ficha documental del cheque (ADR-0083): contexto (monto, banco y número, emisión y
+ * vencimiento, girador, OV asociada, notas) + relaciones (pago, depósito, protesto).
+ */
 export function CheckDrawer({ id, open, onOpenChange }: CheckDrawerProps) {
     const { check, isLoading, isError } = useCheck(id, open)
-    const identity = useDrawerIdentity('treasury.check', 'view', check, {
-        overrideTitle: check ? `${check.display_id}` : "Cheque",
-    })
 
     return (
-        <Drawer
-            mode="view"
-            open={open}
-            onOpenChange={onOpenChange}
-            side="left"
-            boundary="embedded"
-            defaultSize={formDrawerWidth("master", false)}
-            title={identity.title}
-            subtitle={identity.subtitle}
-            icon={identity.icon}
-        >
-            {isError && <StaleDataBanner className="mx-4 mt-2" />}
-            <SkeletonShell isLoading={isLoading} ariaLabel="Cargando cheque">
-                    {check ? (
-                        <div className="p-4 space-y-4">
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                    <span className="text-muted-foreground">N° Cheque</span>
-                                    <p className="font-medium">{check.check_number}</p>
-                                </div>
-                                <div>
-                                    <span className="text-muted-foreground">Estado</span>
-                                    <p><StatusBadge status={check.status} variant="badge" /></p>
-                                </div>
-                                <div>
-                                    <span className="text-muted-foreground">Banco</span>
-                                    <p className="font-medium">{check.bank_name}</p>
-                                </div>
-                                <div>
-                                    <span className="text-muted-foreground">Monto</span>
-                                    <p className="font-medium"><MoneyDisplay amount={parseFloat(check.amount)} inline weight="medium" /></p>
-                                </div>
-                                <div>
-                                    <span className="text-muted-foreground">Emisión</span>
-                                    <p>{check.issue_date}</p>
-                                </div>
-                                <div>
-                                    <span className="text-muted-foreground">Vencimiento</span>
-                                    <p>{check.due_date}</p>
-                                </div>
-                                <div>
-                                    <span className="text-muted-foreground">Girador</span>
-                                    <p className="font-medium">{check.counterparty_name ?? check.drawer_name ?? '—'}</p>
-                                </div>
-                                {check.sale_order_display && (
-                                    <div>
-                                        <span className="text-muted-foreground">OV Asociada</span>
-                                        <p className="font-medium">OV-{check.sale_order_display.number}</p>
-                                    </div>
-                                )}
-                            </div>
-                            {check.notes && (
-                                <div>
-                                    <span className="text-muted-foreground text-sm">Notas</span>
-                                    <p className="text-sm mt-1 whitespace-pre-wrap">{check.notes}</p>
-                                </div>
-                            )}
-                        </div>
-                    ) : null}
-                </SkeletonShell>
-        </Drawer>
+        <>
+            {isError && check && <StaleDataBanner className="mx-4 mt-2" />}
+            <DocumentSheet
+                label="treasury.check"
+                open={open}
+                onOpenChange={onOpenChange}
+                document={check ?? null}
+                isLoading={isLoading}
+                error={isError && !check ? new Error("No se pudo cargar el cheque.") : undefined}
+                loadingLabel="Cargando cheque"
+                status={check?.status ?? null}
+                context={check ? [
+                    { label: "Monto", value: <MoneyDisplay amount={parseFloat(check.amount)} inline weight="medium" /> },
+                    { label: "Banco · N°", value: `${check.bank_name ?? '—'} · ${check.check_number}` },
+                    {
+                        label: "Emisión → vencimiento",
+                        value: (
+                            <span className="inline-flex items-center gap-1">
+                                <DataCell.Date value={check.issue_date} size="xs" className={SHEET_LEFT} />
+                                <span aria-hidden>→</span>
+                                <DataCell.Date value={check.due_date} size="xs" className={SHEET_LEFT} />
+                            </span>
+                        ),
+                    },
+                    { label: "Girador", value: check.counterparty_name ?? check.drawer_name ?? null },
+                    {
+                        label: "OV asociada",
+                        hidden: !check.sale_order_display,
+                        value: check.sale_order_display ? (
+                            <DocumentRefLink label="sales.saleorder" id={Number(check.sale_order_display.id)} display={`OV-${check.sale_order_display.number}`} />
+                        ) : null,
+                    },
+                    { label: "Notas", value: check.notes || null, span: 3, hidden: !check.notes },
+                ] : []}
+            />
+        </>
     )
 }

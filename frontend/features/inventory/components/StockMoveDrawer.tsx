@@ -1,105 +1,59 @@
 'use client'
 
 import React from 'react'
-import {Drawer, SkeletonShell, FormSplitLayout} from '@/components/shared'
-import { useDrawerIdentity, usePrintableDrawer } from "@/features/_shared"
-import { PrintableLayout } from '@/features/_shared'
+import { DataCell } from '@/components/shared'
+import { PrintableLayout, usePrintableDrawer, type TransactionDrawerProps } from '@/features/_shared'
+import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from '@/features/documents'
 import { useStockMove } from '@/features/inventory/hooks/useStockMoves'
-import { ActivitySidebar } from '@/features/audit'
-import type { TransactionDrawerProps } from '@/features/_shared'
-import { formDrawerWidth } from '@/lib/form-widths'
-import { DocumentRelationsSection } from '@/features/documents'
 
 interface StockMoveDrawerProps extends TransactionDrawerProps {
     stockMoveId?: number
 }
 
+/**
+ * Ficha documental del movimiento de stock (ADR-0083): contexto (producto, cantidad,
+ * origen → destino, fecha, descripción) + relaciones (documento que lo originó, asiento).
+ */
 export function StockMoveDrawer({ id, open, onOpenChange, stockMoveId }: StockMoveDrawerProps) {
     const entityId = id ?? stockMoveId ?? null
-    const { data: move, isLoading } = useStockMove(entityId)
+    const { data: move, isLoading, isError } = useStockMove(entityId)
     const { printRef, handlePrint } = usePrintableDrawer()
-
-    const displayId = move?.display_id ?? `#${entityId}`
-    const identity = useDrawerIdentity('inventory.stockmove', 'view', move, {
-        onPrint: handlePrint,
-    })
+    const productId = Number((move as unknown as Record<string, unknown> | undefined)?.product) || null
 
     return (
         <>
-            <PrintableLayout
-                ref={printRef}
-                title="Movimiento de Stock"
-                displayId={displayId}
-            >
+            <PrintableLayout ref={printRef} title="Movimiento de Stock" displayId={move?.display_id ?? `#${entityId}`}>
                 <div className="text-4xs space-y-1 mb-2">
-                    <div className="flex justify-between">
-                        <span>Producto:</span>
-                        <span>{move?.product_name ?? '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span>Cantidad:</span>
-                        <span>{move?.quantity ?? '0'} {move?.uom_name ?? ''}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span>Origen:</span>
-                        <span>{move?.source_location_name ?? '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span>Destino:</span>
-                        <span>{move?.destination_location_name ?? '-'}</span>
-                    </div>
+                    <div className="flex justify-between"><span>Producto:</span><span>{move?.product_name ?? '-'}</span></div>
+                    <div className="flex justify-between"><span>Cantidad:</span><span>{move?.quantity ?? '0'} {move?.uom_name ?? ''}</span></div>
+                    <div className="flex justify-between"><span>Origen:</span><span>{move?.source_location_name ?? '-'}</span></div>
+                    <div className="flex justify-between"><span>Destino:</span><span>{move?.destination_location_name ?? '-'}</span></div>
                 </div>
             </PrintableLayout>
 
-            <Drawer
-                fillContent
+            <DocumentSheet
+                label="inventory.stockmove"
                 open={open}
                 onOpenChange={onOpenChange}
-                side="left"
-                defaultSize={formDrawerWidth("master", !!entityId)}
-                icon={identity.icon}
-                title={identity.title}
-                headerActions={identity.headerActions}
-                subtitle={identity.subtitle}
-            >
-                <FormSplitLayout sidebar={entityId ? <ActivitySidebar entityType="stock_move" entityId={entityId} /> : undefined} showSidebar={!!entityId}>
-                    <SkeletonShell isLoading={isLoading} ariaLabel="Cargando movimiento de stock">
-                    {move && (
-                        <div className="p-4 space-y-4">
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                    <span className="text-xs text-muted-foreground">Producto</span>
-                                    <p className="font-bold">{move.product_name}</p>
-                                    {move.product_code && (
-                                        <p className="text-xs text-muted-foreground font-mono">{move.product_code}</p>
-                                    )}
-                                </div>
-                                <div>
-                                    <span className="text-xs text-muted-foreground">Cantidad</span>
-                                    <p className="font-bold text-lg">{move.quantity} {move.uom_name ?? ''}</p>
-                                </div>
-                                <div>
-                                    <span className="text-xs text-muted-foreground">Origen</span>
-                                    <p className="font-medium">{move.source_location_name}</p>
-                                </div>
-                                <div>
-                                    <span className="text-xs text-muted-foreground">Destino</span>
-                                    <p className="font-medium">{move.destination_location_name}</p>
-                                </div>
-                                <div className="col-span-2">
-                                    <span className="text-xs text-muted-foreground">Descripción</span>
-                                    <p className="text-sm">{move.description || '-'}</p>
-                                </div>
-                            </div>
-                            <section className="space-y-2">
-                                <h4 className="text-sm font-medium">Documentos relacionados</h4>
-                                <DocumentRelationsSection label="inventory.stockmove" id={move.id} />
-                            </section>
-                        </div>
-                    )}
-                </SkeletonShell>
-                </FormSplitLayout>
-            </Drawer>
+                document={move ?? null}
+                isLoading={isLoading}
+                error={isError ? new Error("No se pudo cargar el movimiento.") : undefined}
+                loadingLabel="Cargando movimiento de stock"
+                onPrint={handlePrint}
+                auditType="stock_move"
+                context={move ? [
+                    {
+                        label: "Producto",
+                        value: productId
+                            ? <DocumentRefLink label="inventory.product" id={productId} display={move.product_name} mono={false} />
+                            : move.product_name,
+                    },
+                    { label: "Cantidad", value: <span className="tabular-nums">{move.quantity} {move.uom_name ?? ''}</span> },
+                    { label: "Origen → destino", value: `${move.source_location_name} → ${move.destination_location_name}` },
+                    { label: "Fecha", value: move.date ? <DataCell.Date value={move.date} size="xs" className={SHEET_LEFT} /> : null },
+                    { label: "Descripción", value: move.description || null, span: 4 },
+                ] : []}
+            />
         </>
     )
 }

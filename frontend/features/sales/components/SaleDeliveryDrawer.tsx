@@ -1,12 +1,12 @@
 "use client"
 
 import { useMemo } from "react"
-import type { ColumnDef } from "@tanstack/react-table"
-import { DocumentDrawerShell, StatusBadge, DataTable, DataCell, SourceDocumentLink } from "@/components/shared"
-import { DocumentRelationsSection } from "@/features/documents"
-import { useDrawerIdentity } from "@/features/_shared"
+import { Package } from "lucide-react"
+import { DataCell, DataTable } from "@/components/shared"
+import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { useSaleDelivery } from "../hooks/useSaleDeliveries"
+import { saleDeliveryLineFields } from "../saleDeliveryLineFields"
 
 interface SaleDeliveryDrawerProps {
     id?: number | null
@@ -17,94 +17,53 @@ interface SaleDeliveryDrawerProps {
 type Row = Record<string, unknown>
 
 /**
- * Read-only detail of a SaleDelivery (GAP-06, document audit).
- * Replaces the previous wiring that opened InventoryDocumentDrawer with a delivery id.
+ * Ficha documental del despacho (GAP-06, ADR-0083): contexto (cliente, fecha, bodega, OV)
+ * + productos con su movimiento de stock + relaciones.
  */
 export function SaleDeliveryDrawer({ id, open, onOpenChange }: SaleDeliveryDrawerProps) {
     const { data: delivery, isLoading, isError } = useSaleDelivery(open ? id ?? null : null)
-    const identity = useDrawerIdentity('sales.saledelivery', 'view', delivery)
-
-    const columns = useMemo<ColumnDef<Row>[]>(() => [
-        { id: "product", header: "Producto", cell: ({ row }) => String(row.original.product_name ?? '-') },
-        {
-            id: "quantity",
-            header: "Cantidad",
-            cell: ({ row }) => <DataCell.Number value={String(row.original.quantity)} decimals={2} suffix={String(row.original.uom_name ?? '')} />,
-            meta: { align: "right" },
-        },
-        {
-            id: "stock_move",
-            header: "Movimiento",
-            cell: ({ row }) => row.original.stock_move
-                ? <SourceDocumentLink doc={{
-                    type: 'inventory.stockmove',
-                    id: Number(row.original.stock_move),
-                    display: formatEntityDisplay('inventory.stockmove', { id: row.original.stock_move }),
-                }} />
-                : <span className="text-muted-foreground">—</span>,
-        },
-    ], [])
-
+    const columns = useMemo(() => saleDeliveryLineFields.toColumns(), [])
     const lines = (delivery?.lines as Row[] | undefined) ?? []
 
     return (
-        <DocumentDrawerShell
+        <DocumentSheet
+            label="sales.saledelivery"
             open={open}
             onOpenChange={onOpenChange}
-            title={identity.title}
-            subtitle={identity.subtitle}
-            icon={identity.icon}
-            headerActions={identity.headerActions}
+            document={delivery ? { id: Number(delivery.id), display_id: delivery.display_id as string | undefined } : null}
             isLoading={isLoading}
             error={isError ? new Error("No se pudo cargar el despacho.") : undefined}
             loadingLabel="Cargando despacho"
-            summary={delivery && (
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <span className="text-muted-foreground">Estado</span>
-                        <p><StatusBadge status={String(delivery.status)} variant="badge" /></p>
-                    </div>
-                    <div>
-                        <span className="text-muted-foreground">Fecha</span>
-                        <p className="font-medium"><DataCell.Date value={String(delivery.delivery_date ?? '')} /></p>
-                    </div>
-                    <div>
-                        <span className="text-muted-foreground">Cliente</span>
-                        <p className="font-medium">{String(delivery.customer_name ?? '-')}</p>
-                    </div>
-                    <div>
-                        <span className="text-muted-foreground">Bodega</span>
-                        <p className="font-medium">{String(delivery.warehouse_name ?? '-')}</p>
-                    </div>
-                    <div>
-                        <span className="text-muted-foreground">Orden de venta</span>
-                        <p className="font-medium">
-                            {delivery.sale_order ? (
-                                <SourceDocumentLink doc={{
-                                    type: 'sales.saleorder',
-                                    id: Number(delivery.sale_order),
-                                    display: formatEntityDisplay('sales.saleorder', { number: delivery.sale_order_number }),
-                                }} />
-                            ) : '-'}
-                        </p>
-                    </div>
-                </div>
-            )}
-            related={delivery ? <DocumentRelationsSection label="sales.saledelivery" id={Number(delivery.id)} /> : null}
-        >
-            <div>
-                <h4 className="text-sm font-medium mb-2">Líneas</h4>
-                <div className="border rounded-md overflow-hidden">
+            status={delivery ? String(delivery.status) : null}
+            auditType="sale_delivery"
+            context={delivery ? [
+                { label: "Cliente", value: String(delivery.customer_name ?? "") },
+                { label: "Fecha", value: delivery.delivery_date ? <DataCell.Date value={String(delivery.delivery_date)} size="xs" className={SHEET_LEFT} /> : null },
+                { label: "Bodega", value: String(delivery.warehouse_name ?? "") },
+                {
+                    label: "Orden de venta",
+                    value: delivery.sale_order ? (
+                        <DocumentRefLink
+                            label="sales.saleorder"
+                            id={Number(delivery.sale_order)}
+                            display={formatEntityDisplay("sales.saleorder", { number: delivery.sale_order_number })}
+                        />
+                    ) : null,
+                },
+            ] : []}
+            sections={[{
+                title: "Productos",
+                icon: Package,
+                content: (
                     <DataTable
                         columns={columns}
                         data={lines}
                         variant="minimal"
                         hidePagination
-                        noBorder
                         emptyState={{ title: "No hay líneas", description: "El despacho no tiene líneas." }}
                     />
-                </div>
-            </div>
-        </DocumentDrawerShell>
+                ),
+            }]}
+        />
     )
 }

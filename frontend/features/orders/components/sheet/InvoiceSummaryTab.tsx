@@ -2,30 +2,14 @@
 
 import { useMemo } from "react"
 import { Package } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { DataCell, DataTable, DocumentFieldGrid, FormSection } from "@/components/shared"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { DocumentRefLink } from "@/features/documents"
 import { invoiceLineFields } from "../../invoiceLineFields"
 import type { Order, OrderLine } from "../../types"
 import { DocumentTotalsBox, toNumber } from "./DocumentTotalsBox"
 
 /** Las celdas DataCell se centran por defecto; en la ficha van a la izquierda. */
 const LEFT = "w-auto justify-start text-left"
-
-/** Enlace a la ficha de otro documento, apilada con "volver" (ADR-0083). */
-function DocumentRefLink({ label, id, display }: { label: string; id: number; display: string }) {
-    const { openEntity } = useGlobalModals()
-    return (
-        <Button
-            variant="link"
-            size="sm"
-            className="h-auto p-0 font-mono text-xs font-medium"
-            onClick={() => openEntity(label, id, undefined, undefined, { display })}
-        >
-            {display}
-        </Button>
-    )
-}
 
 function originOf(invoice: Order): { label: string; id: number; display: string; title: string } | null {
     const corrected = invoice.corrected_invoice

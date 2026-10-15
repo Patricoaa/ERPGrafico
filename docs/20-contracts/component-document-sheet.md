@@ -21,7 +21,7 @@ Drawer (left, formDrawerWidth("master"))      — or embedded body (POS)
 └─ Sidebar      ActivitySidebar (FormSplitLayout), hidden when embedded
 ```
 
-Reference implementations: `OrderSheet` (OV/OC, owner-approved pilot 2026-10-15) and `InvoiceSheet` (invoices/notes, U3).
+Reference implementations: `OrderSheet` (OV/OC, owner-approved pilot 2026-10-15), `InvoiceSheet` (invoices/notes, U3) and the generic **`DocumentSheet`** (`@/features/documents`, U5) used by every other document: deliveries, receipts, purchase returns, inventory documents, stock moves, treasury movements, checks, terminal batches, profit distributions. New documents must use `DocumentSheet` (pass `context`, `sections`, `status`, actions) instead of composing the shell by hand. Documents whose UI is a workflow of its own (work order, payroll) keep it and expose relations with `DocumentRelationsButton`.
 
 | Rule | Detail |
 |---|---|

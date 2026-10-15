@@ -19,7 +19,7 @@ import { TabBar, TabBarContent } from "./TabBar"
  * (`DocumentLifecycle`), tabs (Resumen · Relaciones · propios) y sidebar de actividad.
  *
  * `embedded` renderiza solo el cuerpo, sin Drawer, para vistas incrustadas (POS).
- * Sin `tabs` mantiene el layout simple anterior (summary/children/related).
+ * Para fichas estándar usar `DocumentSheet` (@/features/documents), que compone este shell.
  */
 export interface DocumentSheetTab {
     value: string
@@ -43,7 +43,7 @@ export interface DocumentDrawerShellProps {
     loadingLabel?: string
     /** Franja de ciclo (`DocumentLifecycle`). */
     lifecycle?: ReactNode
-    tabs?: DocumentSheetTab[]
+    tabs: DocumentSheetTab[]
     /** Tab controlado (opcional). Sin él, la ficha gestiona su propio tab. */
     tab?: string
     onTabChange?: (tab: string) => void
@@ -53,11 +53,6 @@ export interface DocumentDrawerShellProps {
     /** Sin Drawer: solo el cuerpo (vista incrustada). */
     embedded?: boolean
     className?: string
-    /** Layout simple (sin tabs) — legado M3. */
-    summary?: ReactNode
-    children?: ReactNode
-    /** Normalmente <DocumentRelationsSection label id /> de @/features/documents. */
-    related?: ReactNode
 }
 
 export function DocumentDrawerShell(props: DocumentDrawerShellProps) {
@@ -91,8 +86,8 @@ export function DocumentDrawerShell(props: DocumentDrawerShellProps) {
             icon={icon}
             headerActions={headerActions}
             mode="view"
-            fillContent={!!tabs}
-            contentClassName={tabs ? "p-0" : undefined}
+            fillContent
+            contentClassName="p-0"
         >
             <DocumentSheetBody {...props} />
         </Drawer>
@@ -112,13 +107,12 @@ function EmbeddedIcon({ icon }: { icon: PanelBaseProps["icon"] }) {
 function DocumentSheetBody({
     isLoading, error, loadingLabel = "Cargando documento",
     lifecycle, tabs, tab, onTabChange, defaultTab, sidebar, className,
-    summary, children, related,
 }: DocumentDrawerShellProps) {
     if (isLoading) {
         // Skeleton con la forma de la ficha: ciclo, acciones, tabs y bloques de contenido.
         return (
             <SkeletonShell isLoading ariaLabel={loadingLabel} className="flex-1 space-y-4 p-6">
-                {tabs && <div className="h-12 rounded-md bg-muted" />}
+                <div className="h-12 rounded-md bg-muted" />
                 <div className="h-8 w-1/2 rounded-md bg-muted" />
                 <div className="h-40 rounded-md bg-muted" />
                 <div className="h-24 rounded-md bg-muted" />
@@ -132,21 +126,6 @@ function DocumentSheetBody({
             </p>
         )
     }
-    if (!tabs) {
-        return (
-            <div className={cn("p-4 space-y-6", className)}>
-                {summary}
-                {children}
-                {related && (
-                    <section className="space-y-2">
-                        <h4 className="text-sm font-medium">Documentos relacionados</h4>
-                        {related}
-                    </section>
-                )}
-            </div>
-        )
-    }
-
     return (
         <FormSplitLayout
             showSidebar={!!sidebar}

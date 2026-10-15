@@ -20,9 +20,19 @@
 | ADR-0084 Estados desacoplados del pago | **Hecha** (2026-10-15) — migración aplicada en dev |
 | U3 OC + facturas/notas | **Hecha** (2026-10-15) — ver entrada |
 | U4 Puntos de entrada | **Hecha** (2026-10-15) — ningún flujo abre el Hub |
-| U5–U6 | Pendientes — [ui-document-sheet-plan.md](./ui-document-sheet-plan.md) |
+| U5 Resto de fichas | **Hecha** (2026-10-15) |
+| U6 Retiro | Pendiente — [ui-document-sheet-plan.md](./ui-document-sheet-plan.md) |
 
 ---
+
+## 2026-10-15 · U5 — resto de fichas documentales
+
+- Nuevo **`DocumentSheet`** (`@/features/documents`): ficha estándar = cabecera (estado + menú de acciones con imprimir) · ciclo opcional · tabs Resumen (contexto en una fila + secciones del tipo) · [propios] · Relaciones · sidebar de actividad; fija el número en la pila ("Volver a …"). Componentes de apoyo: `DocumentRefLink` (enlace apilado, reemplaza el local de la ficha de factura) y `DocumentRelationsButton`.
+- Migradas a `DocumentSheet` (contexto + secciones con `*Fields.toColumns()`, invariante 13): despacho (`saleDeliveryLineFields`), recepción (`purchaseReceiptLineFields`), devolución de compra (`purchaseReturnLineFields`), documento de inventario (`inventoryDocumentDetailFields`; confirmar/anular en el menú), movimiento de stock, movimiento de tesorería, cheque, lote de terminal, distribución de resultados (`profitDistributionLineFields`). Productos, OV/OC y socios enlazados con "volver".
+- Flujos propios que conservan su UI y ganan acceso a Relaciones: **OT** (`WorkOrderWizard`, aplicación de producción a pantalla completa) y **liquidación de sueldo** (`PayrollDetailView`) → botón "Relaciones (n)" en la cabecera con el tab reutilizable en panel lateral. El **asiento** (formulario con modo vista) ya muestra sus relacionados.
+- `DocumentDrawerShell`: retirado el layout simple (`summary`/`children`/`related`, sin consumidores); una sola anatomía.
+- Fuera de U5 (registrados sin ficha documental): `sales.salereturn` (tiene página propia `/sales/returns/{id}`), `finance.payment` (formulario de pago).
+- **Aviso:** el commit del usuario 9d031204d dejó claves duplicadas en `lib/utils.ts` (12 errores TS1117 en `tsc`); no es parte de este trabajo y no se tocó.
 
 ## 2026-10-15 · U4 — puntos de entrada sin Hub
 

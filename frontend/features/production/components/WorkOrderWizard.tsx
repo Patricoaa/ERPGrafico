@@ -16,6 +16,7 @@ import { useVatRate } from '@/hooks/useVatRate'
 import { useAuth } from '@/contexts/AuthContext'
 import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
 import { useOnEntityStackClose } from '@/hooks/useOnEntityStackClose'
+import { DocumentRelationsButton } from '@/features/documents'
 import { useWorkOrderMutations, productionApi } from '../hooks'
 import { completeTask } from '@/features/workflow'
 
@@ -469,6 +470,8 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                   status={order.status}
                   variant="badge"
                 />
+                {/* ADR-0083 U5: relaciones de la OT (OV, despachos, consumos, compras de outsourcing) */}
+                <DocumentRelationsButton label="production.workorder" id={order.id} />
                 {order.status === 'IN_PROGRESS' && (
                   <Button
                     variant="outline"
