@@ -82,6 +82,10 @@ export interface WorkOrder {
     [key: string]: unknown
 }
 
+/**
+ * @deprecated ADR-0080 (2026-10-15): buckets legacy de relacionados. Usar `useDocumentRelations`
+ * de `@/features/documents`. Se retira cuando el Order Hub migre (document-relations.md §6).
+ */
 export interface RelatedDocuments {
     invoices?: InvoiceSummary[]
     payments?: Payment[]

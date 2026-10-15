@@ -86,6 +86,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     work_order_number = serializers.CharField(
         source="work_order.number", read_only=True, allow_null=True
     )
+    # DEPRECATED (ADR-0080, 2026-10-15): formato legacy de relacionados. Usar
+    # GET /api/core/documents/{label}/{id}/relations/. Se retira cuando el Order Hub migre (ver document-relations.md §6).
     related_documents = serializers.SerializerMethodField()
     actual_receipt_date = serializers.SerializerMethodField()
 

@@ -15,6 +15,10 @@ interface SaleOrderDrawerProps extends TransactionDrawerProps {
     segmenter?: React.ReactNode
 }
 
+/**
+ * @deprecated ADR-0080 / D4: la ficha de la OV es el Order Hub (`openEntity("sales.saleorder", id)`).
+ * Consumidores restantes: OriginPhase del Hub (detalle propio) y AdvancedSaleOrderSelector.
+ */
 export function SaleOrderDrawer({ id, open, onOpenChange, orderId, segmenter }: SaleOrderDrawerProps) {
     const entityId = id ?? orderId ?? null
     const { saleOrder: order, isLoading } = useSaleOrder(entityId)

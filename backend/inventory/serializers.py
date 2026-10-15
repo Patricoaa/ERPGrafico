@@ -530,7 +530,6 @@ class StockMoveSerializer(serializers.ModelSerializer):
         source="journal_entry.number", read_only=True, allow_null=True
     )
     reference_code = serializers.SerializerMethodField()
-    related_documents = serializers.SerializerMethodField()
     reference = serializers.SerializerMethodField()
     notes = serializers.SerializerMethodField()
     direction = serializers.CharField(read_only=True)
@@ -561,9 +560,6 @@ class StockMoveSerializer(serializers.ModelSerializer):
             )
         return data
 
-    def get_related_documents(self, obj):
-        from .selectors import StockMoveSelector
-        return StockMoveSelector.get_related_documents(obj)
 
     def get_reference_code(self, obj):
         from core.prefix_registry import EntityPrefix

@@ -10,7 +10,7 @@ author: backend-team
 
 **Related:** documentary audit `docs/50-audit/documental/` (target architecture, migration roadmap, decisions D1–D6), `docs/20-contracts/document-relations.md` (new), `docs/20-contracts/component-entity-drawers.md`, `docs/20-contracts/entity-identity.md`, ADR-0016 (source-document GFK), ADR-0020 (`?selected` deep links), ADR-0028 (entity drawer registry).
 
-**Status note:** Accepted 2026-10-14 by the project owner. M2 (additive) and M3 (common document sheet, `openEntity` stack, Order Hub as OV/OC sheet) are implemented under this ADR.
+**Status note:** Accepted 2026-10-14 by the project owner. M2–M6 implemented under this ADR. Decision 7 (legacy formats) is in its *Deprecate* phase: removal of the order `related_documents` buckets is blocked on migrating the Order Hub phases to the relations endpoint (see `document-relations.md` §6).
 
 ---
 

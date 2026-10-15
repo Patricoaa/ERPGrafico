@@ -105,9 +105,18 @@ Universal search returns `detail_url = DocumentTypeRegistry.url_for(label, id)` 
 
 Sheets with the relations section (M3): delivery, receipt, invoice, treasury movement, journal entry (view), stock move, inventory document, and the Order Hub (OV/OC/invoice in note mode). Existing drawers keep their layout and add the section; full migration to `DocumentDrawerShell` happens when each drawer is touched (M5).
 
-## 6. Legacy formats (deprecated, removal in M6)
+## 6. Deprecated (2026-10-15) — legacy relation formats
 
-`SaleOrderSelector/PurchaseOrderSelector.get_related_documents` (`related_documents` buckets), `Invoice.related_documents`, `JournalEntry.source_documents`/`source_info`. Do not add new consumers; use the relations endpoint.
+Deprecated under ADR-0080 (phase "Deprecate" of [deprecate-feature.md](../30-playbooks/deprecate-feature.md)); marked `DEPRECATED` in the serializers and `@deprecated` in the frontend types. **Do not add consumers.** Removal precondition: the Order Hub phases read `relations` instead of the buckets (separate project), then zero consumers + deprecation window.
+
+| Legacy format | Producer | Remaining consumers (2026-10-15) |
+|---|---|---|
+| `related_documents` buckets of OV/OC | `SaleOrderSelector` / `PurchaseOrderSelector.get_related_documents` | Order Hub (phases, `useOrderHubData`, `HubStatus`, `ActionCategory`, action registries, status utils), POS `DetailPanel`, `ContactDrawer` (~23 files) |
+| `Invoice.related_documents`, `related_stock_moves`, `related_returns` | `InvoiceSelectorExt` | Order Hub in note mode, billing types/actions |
+| `JournalEntry.source_documents` | `JournalEntry.get_source_documents` | `JournalEntryDrawer` (origin field and edit prefill) |
+| `SaleOrderDrawer` / `PurchaseOrderDrawer` (thin OV/OC sheets) | — | Hub `OriginPhase` own detail, `AdvancedSaleOrderSelector` |
+
+**Removed in M6:** `StockMove.related_documents` (no readers since M3), GFK `TreasuryMovement.allocated_to` and its columns (no writers or readers; empty; migration `treasury/0094`), `DRAWER_MAP` (M5).
 
 ## 7. Anti-patterns
 

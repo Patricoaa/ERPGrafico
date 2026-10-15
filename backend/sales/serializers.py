@@ -184,6 +184,8 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     total_paid = serializers.SerializerMethodField()
     pending_amount = serializers.SerializerMethodField()
     serialized_payments = serializers.SerializerMethodField()
+    # DEPRECATED (ADR-0080, 2026-10-15): formato legacy de relacionados. Usar
+    # GET /api/core/documents/{label}/{id}/relations/. Se retira cuando el Order Hub migre (ver document-relations.md §6).
     related_documents = serializers.SerializerMethodField()
     work_orders = serializers.SerializerMethodField()
     production_progress = serializers.SerializerMethodField()

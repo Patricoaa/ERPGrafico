@@ -140,6 +140,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
     )
     partner_name = serializers.SerializerMethodField()
     partner_id = serializers.SerializerMethodField()
+    # DEPRECATED (ADR-0080, 2026-10-15): formato legacy de relacionados. Usar
+    # GET /api/core/documents/{label}/{id}/relations/. Se retira cuando el Order Hub migre (ver document-relations.md §6).
     related_documents = serializers.SerializerMethodField()
     related_stock_moves = serializers.SerializerMethodField()
     related_returns = serializers.SerializerMethodField()

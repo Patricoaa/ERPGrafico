@@ -13,7 +13,30 @@
 | M3 UI piloto | **Hecha** (GAP-06, GAP-10, GAP-11, D4); verificación visual en navegador pendiente |
 | M4 Facturación y pagos | **Hecha** (M4a–M4d); backfill de líneas **aplicado** en dev (2026-10-15); pagos: se mantiene FK + imputaciones (decidido) |
 | M5 Extensión | **Hecha** (relaciones en todos los módulos, GAP-08, GAP-12, escenarios D6 de devoluciones) |
-| M6 Retiro | Pendiente |
+| M6 Retiro | **Hecha en lo retirable**; formatos legacy con consumidores en fase de deprecación (bloqueados por la migración del Order Hub) |
+
+---
+
+## 2026-10-15 · M6 · Retiro y deprecación de lo legacy
+
+Procedimiento: [deprecate-feature.md](../../30-playbooks/deprecate-feature.md) (retirar solo con 0 consumidores; el resto pasa a "Deprecate").
+
+**Retirado:**
+- **GFK `TreasuryMovement.allocated_to`** y sus columnas (`allocated_content_type`, `allocated_object_id`, también en el histórico): sin escritores desde siempre, sin lectores desde M4d, **vacías** en el dev server (0 de 248 movimientos, verificado con SELECT). Migración `treasury/0094_remove_treasurymovement_allocated_gfk`, aplicada en el dev server con la confirmación del responsable. Excepción al "periodo de deprecación" del playbook: no hay producción ni consumidores externos.
+- **`StockMove.related_documents`** (serializer, selector y tipos del frontend): su único lector era la lista en texto plano del `StockMoveDrawer`, reemplazada en M3 por la tabla de relacionados.
+- (`DRAWER_MAP`, en M5.)
+
+**Deprecado (sigue en uso; marcado `DEPRECATED` / `@deprecated`, inventario de consumidores en `document-relations.md` §6):**
+- `related_documents` de OV/OC (~23 archivos del frontend: todo el Order Hub, POS, contactos).
+- `Invoice.related_documents` / `related_stock_moves` / `related_returns` (Hub en modo nota).
+- `JournalEntry.source_documents` (campo de origen y precarga del `JournalEntryDrawer`).
+- `SaleOrderDrawer` / `PurchaseOrderDrawer` (detalle propio de `OriginPhase` y `AdvancedSaleOrderSelector`).
+
+**No hecho, con motivo:**
+- **Migrar el Order Hub al endpoint de relaciones** (condición para retirar los buckets): son ~3.600 líneas de UI de proceso con lógica de estado sobre los buckets; sin poder probar en navegador el riesgo de regresión es alto. Queda como proyecto propio; el Hub ya muestra la tabla común de relacionados (M3).
+- **Derivar `ENTITY_REGISTRY` del endpoint `entity-config`**: se mantiene la copia del frontend, ahora protegida por tests de contrato en ambos lados (rutas canónicas y `detailUrlPattern` con página).
+
+**Verificación:** `makemigrations --check` sin cambios; `treasury inventory billing` + relaciones: sin fallos nuevos frente a la línea base; type-check y lint del frontend sin errores.
 
 ---
 

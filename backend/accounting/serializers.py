@@ -107,6 +107,8 @@ class JournalItemSerializer(serializers.ModelSerializer):
 
 class JournalEntrySerializer(serializers.ModelSerializer):
     items = JournalItemSerializer(many=True, read_only=True)
+    # DEPRECATED (ADR-0080, 2026-10-15): formato legacy del documento origen. Usar
+    # GET /api/core/documents/{label}/{id}/relations/. Se retira cuando el Order Hub migre (ver document-relations.md §6).
     source_documents = serializers.ListField(source="get_source_documents", read_only=True)
     display_id = serializers.CharField(read_only=True)
     reversal_of = serializers.SerializerMethodField()

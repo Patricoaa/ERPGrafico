@@ -14,6 +14,10 @@ interface PurchaseOrderDrawerProps extends TransactionDrawerProps {
   purchaseOrderId?: number
 }
 
+/**
+ * @deprecated ADR-0080 / D4: la ficha de la OC es el Order Hub (`openEntity("purchasing.purchaseorder", id)`).
+ * Consumidor restante: OriginPhase del Hub (detalle propio).
+ */
 export function PurchaseOrderDrawer({ id, open, onOpenChange, purchaseOrderId }: PurchaseOrderDrawerProps) {
   const entityId = id ?? purchaseOrderId ?? null
   const { data: order, isLoading } = usePurchaseOrderDetail(entityId)
