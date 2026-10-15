@@ -25,6 +25,7 @@ const DocumentListModal = dynamic(() => import("./DocumentListModal").then(m => 
 import { LazyDrawer } from "@/features/_shared"
 const NoteLogisticsModal = dynamic(() => import("./NoteLogisticsModal").then(m => m.NoteLogisticsModal))
 const WorkOrderWizard = dynamic(() => import("@/features/production").then(m => m.WorkOrderWizard))
+const InvoiceFromLinesModal = dynamic(() => import("@/features/billing").then(m => m.InvoiceFromLinesModal))
 import {
     useCreateInvoiceFromOrder,
     useConfirmInvoice,
@@ -143,6 +144,7 @@ export const ActionCategory = forwardRef(({
             case 'view-work-orders':
             case 'register-merchandise-return':
             case 'register-payment-return':
+            case 'invoice-by-lines':
                 console.log(`[ActionEngine] Setting activeModal to: ${actionId}`);
                 setActiveModal(actionId)
                 break
@@ -368,6 +370,17 @@ export const ActionCategory = forwardRef(({
                          onSuccess={() => { closeModal(); onActionSuccess?.() }}
                      />
                  )}
+
+            {activeModal === 'invoice-by-lines' && order?.id && (
+                <InvoiceFromLinesModal
+                    open={true}
+                    onOpenChange={(open) => { if (!open) closeModal() }}
+                    side={isSale ? 'sale' : 'purchase'}
+                    orderId={Number(order.id)}
+                    partnerId={Number(((order?.customer || order?.supplier) as Record<string, unknown> | undefined)?.id ?? (isSale ? order.customer_id : order.supplier_id)) || null}
+                    onSuccess={() => { closeModal(); onActionSuccess?.() }}
+                />
+            )}
 
             {(activeModal === 'register-delivery' || activeModal === 'register-reception' || activeModal === 'confirm-service-delivery' || activeModal === 'register-merchandise-return') && (
                 order?.dte_type ? (

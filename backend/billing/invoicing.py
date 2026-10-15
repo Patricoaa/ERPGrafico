@@ -110,6 +110,71 @@ class InvoicingService:
         return Invoice.objects.filter(pk__in=set(order.invoices.values_list("pk", flat=True)) | set(via_lines)).order_by("id")
 
     @staticmethod
+    def build_note_lines(note: Invoice, items: list[dict]) -> list[InvoiceLine]:
+        """
+        Líneas propias de una NC/ND (D1.3, GAP-14). `items` son los ítems validados del flujo
+        de notas: `line_id` = línea de OV/OC (original en NC, línea adicional de la nota en ND),
+        `quantity`, `unit_price` (neto) y `tax_amount` (por unidad).
+        Cada línea apunta a la línea de la factura corregida que ajusta (`corrected_line`).
+        En una NC, lo acreditado por línea de factura no puede superar lo facturado.
+        """
+        is_sale = note.sale_order_id is not None
+        line_model = InvoicingService._order_line_model(is_sale)
+        line_field = "sale_line" if is_sale else "purchase_line"
+        is_credit = note.dte_type == Invoice.DTEType.NOTA_CREDITO
+        corrected = note.corrected_invoice
+        note.lines.all().delete()
+
+        rows = []
+        for item in items:
+            quantity = Decimal(str(item["quantity"]))
+            if quantity <= 0:
+                continue
+            order_line = line_model.objects.filter(pk=item.get("line_id")).first() if item.get("line_id") else None
+            corrected_line = None
+            if corrected is not None and order_line is not None:
+                target = order_line if order_line.related_note_id is None else None
+                if target is not None:
+                    corrected_line = corrected.lines.filter(**{line_field: target}).first()
+            if is_credit and corrected_line is not None:
+                credited = (
+                    InvoiceLine.objects.filter(corrected_line=corrected_line, invoice__dte_type=Invoice.DTEType.NOTA_CREDITO)
+                    .exclude(invoice=note).exclude(invoice__status=Invoice.Status.CANCELLED)
+                    .aggregate(t=Sum("quantity"))["t"] or Decimal("0")
+                )
+                if credited + quantity > corrected_line.quantity:
+                    from django.core.exceptions import ValidationError
+
+                    raise ValidationError(
+                        f"{corrected_line.description}: se intenta acreditar {quantity} y quedan "
+                        f"{corrected_line.quantity - credited} facturados sin acreditar."
+                    )
+            unit_price = Decimal(str(item.get("unit_price", 0)))
+            unit_tax = Decimal(str(item.get("tax_amount", 0)))
+            tax_rate = (unit_tax * 100 / unit_price).quantize(Decimal("0.01")) if unit_price else Decimal("0")
+            rows.append(InvoiceLine(
+                invoice=note,
+                **{line_field: order_line},
+                corrected_line=corrected_line,
+                product_id=item.get("product_id") or item.get("product"),
+                description=item.get("product_name", "") or (order_line.description if order_line and hasattr(order_line, "description") else ""),
+                quantity=quantity,
+                uom_id=order_line.uom_id if order_line else None,
+                unit_price=unit_price,
+                tax_rate=tax_rate,
+                subtotal=(quantity * unit_price).quantize(Decimal("1")),
+            ))
+        return InvoiceLine.objects.bulk_create(rows)
+
+    @staticmethod
+    def _order_line_model(is_sale: bool):
+        if is_sale:
+            from sales.models import SaleLine
+            return SaleLine
+        from purchasing.models import PurchaseLine
+        return PurchaseLine
+
+    @staticmethod
     def release_advances(invoice: Invoice, reverse_entry: bool) -> None:
         """
         Libera los anticipos imputados por importe a la factura (D2, M4b) para que vuelvan

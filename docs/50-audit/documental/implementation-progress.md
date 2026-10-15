@@ -11,9 +11,30 @@
 | M1 Integridad | **Hecha** (código + backfill aplicado en dev) · INT-15 corregido |
 | M2 Contratos | **Hecha** · ADR-0080 **Aceptado** (2026-10-14) |
 | M3 UI piloto | **Hecha** (GAP-06, GAP-10, GAP-11, D4); verificación visual en navegador pendiente |
-| M4 Facturación y pagos | **M4a y M4b hechas** (backend); backfill de líneas en dry-run **pendiente de aprobación (D3)** · M4c (notas + UI) y M4d (pagos) pendientes |
+| M4 Facturación y pagos | **M4a, M4b y M4c hechas**; backfill de líneas en dry-run **pendiente de aprobación (D3)** · M4d (pagos) pendiente |
 | M5 Extensión | Pendiente |
 | M6 Retiro | Pendiente |
+
+---
+
+## 2026-10-15 · M4c · Notas sobre líneas de factura (GAP-14) e interfaz de facturación por entregas
+
+**GAP-14 / D1.3 — notas con líneas propias:**
+- `InvoicingService.build_note_lines(note, items)`: al confirmar una NC/ND por el checkout de notas (`/billing/note-workflows/checkout/`, único flujo expuesto) se crean sus `InvoiceLine`. En NC, cada línea apunta a la línea de la factura corregida (`corrected_line`, deducida del `line_id` de OV que ya envía el frontend: sin cambio de contrato) y **no se puede acreditar más de lo facturado** por línea. En ND, la línea factura la línea adicional de la nota.
+- Lectura de líneas de una NC: lo "procesado" de cada línea es lo **devuelto para esa nota** (antes se usaba lo despachado de la OV, sin relación con la nota).
+- **Corrección:** el checkout exigía que lo acreditado no superara lo *despachado* incluso para **servicios**, que nunca se despachan → no se podía emitir una NC por un servicio facturado. Ahora la validación de despachado aplica solo a productos entregables; para servicios rige lo facturado (D1.3).
+- **Corrección:** `NoteCheckoutService.select_items` usaba `tax_rate` sin definir (NameError) cuando el IVA llegaba en 0. Flujo no expuesto por API, corregido igualmente.
+
+**Interfaz — "Facturar por entregas" (Hub, OV y OC):**
+- Acción `invoice-by-lines` en la categoría Documentos (`features/sales/actions.tsx`, `features/purchasing/actions.tsx`), visible si la orden no está completamente facturada; abre `InvoiceFromLinesModal` (`features/billing`).
+- El modal muestra lo pendiente por orden: productos entregables por despacho/recepción confirmados (entregado / por facturar), servicios por cantidad; botón "Facturar todo lo pendiente"; tipo de documento, fecha, folio y "Publicar al crear"; interruptor **"Incluir otras órdenes del cliente/proveedor"** para la factura multi-orden.
+- Datos con `useInvoiceableLines` / `useCreateInvoiceFromLines` (Zod; `Idempotency-Key` por intención); formulario con react-hook-form + `features/billing/schema.ts`. Invalida facturación, ventas, compras y documentos relacionados.
+
+**PDF / DTE:** no hay generación en el backend; la impresión (`PrintableLayout` del `InvoiceDrawer`) usa `invoice.lines`, que ya sale de las líneas propias.
+
+**Verificación:** `billing/tests/test_note_invoice_lines.py` (3: NC con `corrected_line` y procesado = devuelto, NC por sobre lo facturado rechazada, ND sobre su línea adicional); `features/billing/components/__tests__/InvoiceFromLinesModal.test.tsx` (2, dev server: carga, "facturar todo", envío con ítems e Idempotency-Key; estado vacío). Suites backend: 626 passed, sin fallos nuevos. Type-check y lint sin errores.
+
+**No verificado en navegador** (requiere sesión). Recordatorio: aplicar `backfill_invoice_lines --apply` antes de usar la nueva acción con órdenes ya facturadas.
 
 ---
 

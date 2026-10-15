@@ -80,3 +80,5 @@ export interface PaymentPayload {
     document_date?: string
     document_attachment?: File | null
 }
+
+export * from './invoiceFromLines'

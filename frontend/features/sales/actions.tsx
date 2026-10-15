@@ -61,6 +61,18 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                 excludedStatus: ['CANCELLED']
             },
             {
+                // ADR-0081: facturación parcial por entregas / multi-orden
+                id: 'invoice-by-lines',
+                label: 'Facturar por entregas',
+                icon: FileText,
+                requiredPermissions: ['billing.add_invoice'],
+                checkAvailability: (order) => {
+                    if (!order || order.dte_type) return false
+                    if (['DRAFT', 'CANCELLED'].includes(String(order.status))) return false
+                    return order.invoicing_status !== 'INVOICED'
+                }
+            },
+            {
                 id: 'view-documents',
                 label: 'Ver Documentos',
                 icon: Eye,

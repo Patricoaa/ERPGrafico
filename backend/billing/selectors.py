@@ -90,16 +90,20 @@ class InvoiceSelectorExt:
                 elif il.purchase_line_id:
                     item = dict(PurchaseLineSerializer(il.purchase_line).data)
                 else:
-                    item = {"id": None, "product": il.product_id, "description": il.description,
+                    item = {"id": None, "product": il.product_id, "product_id": il.product_id,
+                            "product_name": il.description, "description": il.description,
                             "unit_price": il.unit_price, "tax_rate": il.tax_rate}
                 item.update({
                     "invoice_line_id": il.id,
+                    "corrected_line": il.corrected_line_id,
                     "quantity": il.quantity,
                     "subtotal": il.subtotal,
                     "delivery_line": il.delivery_line_id,
                     "receipt_line": il.receipt_line_id,
                 })
                 data.append(item)
+            if invoice.dte_type == invoice.DTEType.NOTA_CREDITO:
+                InvoiceSelectorExt._apply_returned_quantities(invoice, data)
             return data
 
         # Legacy (facturas aún sin backfill): notas → sus propias líneas; resto → orden completa.
@@ -113,6 +117,25 @@ class InvoiceSelectorExt:
             lines = lines.filter(related_note=invoice) if is_note else lines.filter(related_note__isnull=True)
             return PurchaseLineSerializer(lines, many=True).data
         return []
+
+    @staticmethod
+    def _apply_returned_quantities(note, data):
+        """En una NC lo 'procesado' de cada línea es lo devuelto para esa nota (no lo despachado de la OV)."""
+        from django.db.models import Sum
+
+        if note.sale_order_id:
+            from sales.models import SaleReturnLine as ReturnLine
+            field, related = "quantity_delivered", "return_doc__credit_note"
+        else:
+            from purchasing.models import PurchaseReturnLine as ReturnLine
+            field, related = "quantity_received", "return_doc__credit_note"
+        returned = dict(
+            ReturnLine.objects.filter(**{related: note}).exclude(return_doc__status="CANCELLED")
+            .values_list("product_id").annotate(t=Sum("quantity"))
+        )
+        for item in data:
+            product_id = item.get("product_id") or item.get("product")
+            item[field] = returned.get(product_id, 0)
 
     @staticmethod
     def get_related_documents(invoice):
