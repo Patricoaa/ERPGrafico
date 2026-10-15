@@ -23,6 +23,16 @@ class SearchVectorField(models.Field):
         return "text"
 
 
+# Sin este lookup, `filter(search_vector=SearchQuery(...))` compila a `tsvector = tsquery`
+# (operador inexistente) y la búsqueda global falla en PostgreSQL. Con él compila a `@@`.
+try:
+    from django.contrib.postgres.search import SearchVectorExact
+
+    SearchVectorField.register_lookup(SearchVectorExact)
+except ImportError:  # sin psycopg (entornos sin PostgreSQL)
+    pass
+
+
 class GinIndex(models.Index):
     """Postgres GIN index — regular B-tree index on SQLite."""
 

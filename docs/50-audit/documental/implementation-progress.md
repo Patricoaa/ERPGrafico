@@ -40,6 +40,8 @@
 
 **Hallazgo y corrección de infraestructura de tests:** `NoteWorkflow` vive en `billing/note_workflow.py`, que `billing/models.py` no importaba; con `--nomigrations` su tabla solo se creaba si otro módulo lo importaba antes de crear la BD de test ("no such table" según el orden). Ahora se registra desde `billing/models.py` (sin cambios de migraciones).
 
+**Corrección encontrada al verificar en el dev server — búsqueda global rota en PostgreSQL:** `GlobalSearchIndex.search_vector` usa el campo propio `core/db_compat.SearchVectorField` (para poder testear en SQLite), que no registraba el lookup de búsqueda de texto de Django; `filter(search_vector=SearchQuery(...))` compilaba a `tsvector = tsquery` → `ProgrammingError` en **toda** búsqueda (preexistente). Se registra `SearchVectorExact` en el campo; verificado en el dev server (OV → `/sales/orders?selected=…`, despacho/OT → `/d/…`). Test `core/tests/test_search_postgres.py` (solo PostgreSQL; ejecutado contra PostgreSQL local: rojo sin el arreglo, verde con él).
+
 **D6 — devoluciones:** escenario con el flujo real (`ReturnService.create_return_from_note_request` + `confirm_return`): la devolución enlaza OV, NC y el movimiento que repone stock; la OV la lista como corrección. Escenario de OT ↔ OV.
 
 **Verificación:** backend `billing sales purchasing treasury core workflow inventory production accounting hr tax contacts`: 656 passed, sin fallos nuevos (el fallo de `contacts/test_p23_credit_portfolio_task` es preexistente: se reprodujo en un worktree del commit anterior). Frontend: suite completa en el dev server, solo falla `semantic-ink` (preexistente, ambiental); type-check y lint sin errores.
