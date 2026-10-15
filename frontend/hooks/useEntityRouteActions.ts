@@ -8,9 +8,9 @@
  *   ?selected={id}            → edit modal  (ADR-0020, list-modal-edit-pattern.md)
  *   ?selected={id}&action=view → view-only drawer (ADR-0028)
  *   ?selected={id}&action=X   → action-specific drawer (deposit, amortization, etc.)
- *   ?hub={id}                 → HUB sheet (CollapsibleSheet)
  *
- * `?selected` and `?hub` are mutually exclusive — opening one closes the other.
+ * `?hub` was removed with the Order Hub (ADR-0083): documents open their document sheet via
+ * `?selected` (`useDocumentSheetRoute`).
  * `?action` is only valid alongside `?selected`.
  * `?detail={id}` is DEPRECATED — use `openView(id)` instead.
  *
@@ -20,7 +20,7 @@
 import { useCallback, useMemo } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
-const ROUTE_ACTION_PARAMS = ['selected', 'hub'] as const
+const ROUTE_ACTION_PARAMS = ['selected'] as const
 const ACTION_PARAM = 'action' // ?action= is only valid alongside ?selected=
 
 export type EntityRouteActionParam = typeof ROUTE_ACTION_PARAMS[number]
@@ -30,8 +30,6 @@ export interface UseEntityRouteActionsResult {
     selectedId: string | null
     /** Currently active value for `?action` (e.g. 'view', 'deposit'), or null */
     viewAction: string | null
-    /** Currently active entity id for `?hub`, or null */
-    hubId: string | null
 
     /** Open the edit modal for `id` via `?selected={id}` (push). */
     openSelected: (id: number | string) => void
@@ -41,11 +39,9 @@ export interface UseEntityRouteActionsResult {
     openAction: (id: number | string, action: string) => void
     /** @deprecated Use `openView(id)` instead. */
     openDetail: (id: number | string) => void
-    /** Open the HUB sheet via `?hub={id}` (push). */
-    openHub: (id: number | string) => void
 
     /**
-     * Remove every entity-action param (selected/action/hub) while preserving
+     * Remove every entity-action param (selected/action) while preserving
      * any other param (filters, pagination, viewMode, etc).
      * Uses `router.replace` — no history entry.
      */
@@ -58,7 +54,6 @@ export function useEntityRouteActions(): UseEntityRouteActionsResult {
     const searchParams = useSearchParams()
 
     const selectedId = searchParams.get('selected')
-    const hubId = searchParams.get('hub')
     // ?action= is only meaningful when ?selected= is present
     const viewAction = selectedId ? searchParams.get(ACTION_PARAM) : null
 
@@ -104,11 +99,6 @@ export function useEntityRouteActions(): UseEntityRouteActionsResult {
         [router, buildUrl],
     )
 
-    const openHub = useCallback(
-        (id: number | string) => router.push(buildUrl('hub', id), { scroll: false }),
-        [router, buildUrl],
-    )
-
     const clearActions = useCallback(() => {
         const params = new URLSearchParams(searchParams.toString())
         let changed = false
@@ -131,14 +121,12 @@ export function useEntityRouteActions(): UseEntityRouteActionsResult {
         () => ({
             selectedId,
             viewAction,
-            hubId,
             openSelected,
             openView,
             openAction,
             openDetail,
-            openHub,
             clearActions,
         }),
-        [selectedId, viewAction, hubId, openSelected, openView, openAction, openDetail, openHub, clearActions],
+        [selectedId, viewAction, openSelected, openView, openAction, openDetail, clearActions],
     )
 }

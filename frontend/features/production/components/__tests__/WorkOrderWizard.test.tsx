@@ -46,13 +46,17 @@ vi.mock("@/contexts/AuthContext", () => ({
     })
 }))
 
-vi.mock("@/components/providers/HubPanelProvider", () => ({
-    useHubPanel: () => ({
-        isHubOpen: false,
-        openHubPanel: vi.fn(),
-        closeHubPanel: vi.fn()
-    })
-}))
+// ADR-0083: el asistente abre la ficha de la orden con openEntity (ya no el Order Hub)
+vi.mock("@/components/providers/GlobalModalProvider", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@/components/providers/GlobalModalProvider")>()
+    const modals = {
+        openEntity: vi.fn(), closeEntity: vi.fn(), goBackEntity: vi.fn(), setEntityDisplay: vi.fn(),
+        registerSheet: vi.fn(), unregisterSheet: vi.fn(), isSubModalActive: false,
+        getSheetOffset: () => 0, getSheetIndex: () => 0, isSheetCollapsed: () => false,
+        expandedSheetWidth: 0, totalSheetsWidth: 0,
+    }
+    return { ...actual, useGlobalModals: () => modals, useGlobalModalActions: () => modals }
+})
 
 // Polyfills required by the Drawer / ProductSelector tree (jsdom lacks these).
 global.ResizeObserver = class ResizeObserver {

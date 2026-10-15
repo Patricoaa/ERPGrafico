@@ -14,7 +14,8 @@ import { showApiError } from '@/lib/errors'
 import { useConfirmAction } from '@/hooks/useConfirmAction'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useAuth } from '@/contexts/AuthContext'
-import { useHubPanel } from '@/components/providers/HubPanelProvider'
+import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
+import { useOnEntityStackClose } from '@/hooks/useOnEntityStackClose'
 import { useWorkOrderMutations, productionApi } from '../hooks'
 import { completeTask } from '@/features/workflow'
 
@@ -150,7 +151,7 @@ interface WorkOrderWizardProps {
 export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrderWizardProps) {
   const router = useRouter()
   const { user } = useAuth()
-  const { openHub } = useHubPanel()
+  const { openEntity } = useGlobalModals()
   const { multiplier: vatMultiplier } = useVatRate()
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false)
   // localOrderId: null = create mode, number = manage mode
@@ -247,6 +248,8 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       setLoading(false)
     }
   }
+  // Al volver de la ficha de la orden (ADR-0083) se recarga la OT
+  useOnEntityStackClose(() => { void fetchOrder() })
 
   // Synchronize state with props during render to avoid useEffect setStates
   const [prevMode, setPrevMode] = useState(mode)
@@ -474,10 +477,11 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       const saleOrderId = typeof order.sale_order === 'object' ? order.sale_order?.id : order.sale_order
                       const id = saleOrderId ?? order.id
                       const type = saleOrderId ? 'sale' : 'purchase'
-                      openHub({ orderId: id, type: type as 'sale' | 'purchase', onActionSuccess: fetchOrder })
+                      // Ficha documental de la orden (ADR-0083); al volver se recarga la OT
+                      openEntity(type === 'sale' ? 'sales.saleorder' : 'purchasing.purchaseorder', id)
                     }}
                   >
-                    Centro de Comando
+                    Ver orden
                   </Button>
                 )}
                 <Button

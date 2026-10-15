@@ -19,9 +19,18 @@
 | U2 Piloto OV | **Hecha** + refinamiento del responsable (2026-10-15): referencia para U3–U5; verificación en navegador pendiente |
 | ADR-0084 Estados desacoplados del pago | **Hecha** (2026-10-15) — migración aplicada en dev |
 | U3 OC + facturas/notas | **Hecha** (2026-10-15) — ver entrada |
-| U4–U6 | Pendientes — [ui-document-sheet-plan.md](./ui-document-sheet-plan.md) |
+| U4 Puntos de entrada | **Hecha** (2026-10-15) — ningún flujo abre el Hub |
+| U5–U6 | Pendientes — [ui-document-sheet-plan.md](./ui-document-sheet-plan.md) |
 
 ---
+
+## 2026-10-15 · U4 — puntos de entrada sin Hub
+
+- Migrados a `openEntity` (ficha documental apilada): `ContactDrawer` (OV/OC de la ficha de contacto), `SubscriptionHistoryModal` (OC y notas), `OutsourcingVerificationStep` ("Ver OC"), `WorkOrderWizard` ("Ver orden"), `DeclarationWizard` ("Ver documento" en lugar de "Abrir Hub"), `UnbilledChargesClientView` (OC de cuotas), `TaskInbox` (mapeo puro `documentForTask`: tareas HUB_*, OV_, OC_, NC_/ND_, OT_ → su ficha; las NC_/ND_ abrían el Hub con el id de la nota como si fuera OV).
+- Los `onActionSuccess` que se pasaban al Hub (refrescar tareas, historial de suscripción, la OT del asistente, deudas del checkout) pasan a `hooks/useOnEntityStackClose`: se ejecutan al cerrar la pila de fichas.
+- `POSShell` ya no se desplaza por el Hub; `useEntityRouteActions` sin `?hub`/`openHub` (sin consumidores).
+- Único uso restante: `DashboardShell` lee el estado del Hub para el layout y `app/layout` monta `HubPanelProvider`/`GlobalHubPanel` → se retiran en U6 (inalcanzables: ningún flujo llama `openHub`).
+- Tests: `taskDocument.test.ts` (mapeo de tareas); mock del test de `WorkOrderWizard` actualizado. Tests de U3 corridos en el dev server: 7 archivos / 41 tests OK (antes hubo que instalar `@nivo/funnel`, ausente en el `node_modules` del contenedor tras el `npm ci`; instalado con `--no-save`, sin tocar el lockfile).
 
 ## 2026-10-15 · U3 — ficha de OC y de factura/nota
 

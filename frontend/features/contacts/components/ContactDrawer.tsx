@@ -15,7 +15,6 @@ import {
 import { RadioGroup } from "@/components/ui/radio-group"
 import { ActionSlideButton, CancelButton } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useContact, useContactCreditLedger } from "../hooks/useContacts"
 import { type Contact, type ContactPayload } from "../types"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
@@ -544,7 +543,6 @@ interface InsightsTableProps {
 
 function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
     const { openEntity } = useGlobalModals()
-    const { openHub } = useHubPanel()
     const [activeFilter, setActiveFilter] = useState<'all' | 'financial' | 'logistics' | 'billing' | 'pending'>('all')
 
     // Metrics Calculation
@@ -609,7 +607,8 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
             if (type === 'work_order') {
                 openEntity('production.workorder', item.id as number)
             } else {
-                openHub({ orderId: item.id as number, type: type === 'purchase' ? 'purchase' : 'sale' })
+                // Ficha documental de la orden (ADR-0083)
+                openEntity(type === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder', item.id as number)
             }
         },
     }
