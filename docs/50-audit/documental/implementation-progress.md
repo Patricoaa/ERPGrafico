@@ -21,6 +21,14 @@
 
 ---
 
+## 2026-10-15 · Piloto U2 — ajustes menores
+
+- Contexto en **una fila** de 4 campos y sin separador (notas recortadas a 2 líneas).
+- Productos: **Subtotal como última columna**; precio unitario a la derecha de la cantidad.
+- Botón de acciones integrado al lenguaje del Drawer: botón circular ghost `⋮` como el de cierre, tooltip "Acciones · {siguiente paso}", punto cian si hay un siguiente paso, ítems con el estilo de `DataCell.ActionMenu`.
+- Relaciones: **cada fila es un único enlace** a la ficha de la entidad, en **una sola línea** con el icono de la entidad (`getEntityIcon`, registro central), código, tipo, detalle imprescindible truncado, importe y estado; la fecha y el texto completo quedan en el tooltip. Las acciones "⋯" fuera del enlace.
+- Verificación: `tsc` y ESLint sin errores; vitest 21/21 (documentos, órdenes, menú de acciones, tabla de relacionados).
+
 ## 2026-10-15 · Piloto U2 refinado (referencia para las siguientes fichas)
 
 Pedido del responsable sobre la ficha de la OV:

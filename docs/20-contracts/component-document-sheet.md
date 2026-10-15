@@ -12,7 +12,7 @@ Every **document** (OV, OC, invoice/note, delivery, receipt, payment, stock move
 ```
 Drawer (left, formDrawerWidth("master"))      — or embedded body (POS)
 ├─ Header       identity (useDrawerIdentity) · "Volver a…" (openEntity stack)
-│               · [Acciones ▾] DocumentActionsMenu (next to close; includes Imprimir)
+│               · ⋮ DocumentActionsMenu (circular ghost button next to close; includes Imprimir)
 ├─ Lifecycle    DocumentLifecycle — steps only, no figures (OV/OC, invoices)
 ├─ TabBar       horizontal, variant "underline"
 │   ├─ Resumen     Contexto (DocumentFieldGrid) + Productos (table + totals box)
@@ -26,7 +26,7 @@ Reference implementation (owner-approved pilot, 2026-10-15): `OrderSheet` (OV).
 | Rule | Detail |
 |---|---|
 | Tabs | Horizontal `underline` (precedent: `ContactDrawer`). ≤5 visible; hide empty ones with `hidden`. |
-| Resumen | **Contexto**: partner (link to its sheet), date **with time**, the few fields that qualify the document (channel, warehouse, POS session) and **notes**. No document number (it is the title), no repeated statuses (the lifecycle shows them). All values **left-aligned** (`DataCell` cells center by default: pass `w-auto justify-start text-left`). **Productos** (documents with lines): table from `<Entity>LineFields.toColumns()` (invariant 13) — product and linked documents (OT…) open their sheet stacked on the document; prices/subtotals net; fulfilled/invoiced as plain quantities (no %). Under it, a right-aligned totals box: Subtotal (Σ line subtotals), IVA, Total, Pagado, Saldo pendiente. No separate "Líneas" tab. |
+| Resumen | **Contexto** (no section header, **one row** of up to 4 fields): partner (link to its sheet), date **with time**, the field that qualifies the document (channel or warehouse; POS session when present) and **notes** (clamped to 2 lines). No document number (it is the title), no repeated statuses (the lifecycle shows them). All values **left-aligned** (`DataCell` cells center by default: pass `w-auto justify-start text-left`). **Productos** (documents with lines): table from `<Entity>LineFields.toColumns()` (invariant 13) — product and linked documents (OT…) open their sheet stacked on the document; column order: product · quantity · unit price · fulfilled · invoiced · linked documents · **subtotal last**; prices/subtotals net; fulfilled/invoiced as plain quantities (no %). Under it, a right-aligned totals box: Subtotal (Σ line subtotals), IVA, Total, Pagado, Saldo pendiente. No separate "Líneas" tab. |
 | Status | Only `StatusBadge` (invariant 7) — including lifecycle steps (`variant="hub"`). |
 | Money/quantities | `formatCurrency`/`DataCell.Currency`/`QuantityDisplay`, `tabular-nums`. No `toLocaleString`. |
 | Cards | No cards inside the sheet; groups are `FormSection`/`SectionHeader` + borders. |
@@ -40,7 +40,7 @@ Reference implementation (owner-approved pilot, 2026-10-15): `OrderSheet` (OV).
 
 ## 4. Actions — `DocumentActionsMenu` + registries
 
-One **"Acciones" button in the Drawer header, next to close** (`headerActions`). Menu order: "Siguiente paso" (primary), the other actions, **Imprimir**, then destructive ones separated. Disabled actions stay visible with their reason underneath.
+One **actions button in the Drawer header, next to close** (`headerActions`), with the same language as the close button (circular ghost icon `⋮`, tooltip "Acciones · {next step}", cyan dot when a next step is pending) and the `DataCell.ActionMenu` item style. Menu order: "Siguiente paso" (primary), the other actions, **Imprimir**, then destructive ones separated. Disabled actions stay visible with their reason underneath.
 
 - Source: the per-type action registry (`features/<app>/actions.tsx`, `ActionRegistry<T>`). Evaluate with `resolveRegistryActions(registry, doc, permissions, exclude)` — permission (any of `requiredPermissions`), `excludedStatus`/`requiredStatus`, `checkAvailability`, `isDisabled` + `disabledTooltip`.
 - **Primary** ("Siguiente paso") = first enabled action of the cycle priority (OV/OC: `complete-folio` → `create-work-order` → `register-delivery`/`register-reception` → `confirm-service-delivery` → `invoice-by-lines` → `register-payment`). No primary when the cycle is complete.
@@ -56,7 +56,7 @@ Props: `label`, `id`, `sectionActions?: Partial<Record<DocumentDomain, DocumentA
 - Groups `GET /api/core/documents/{label}/{id}/relations/` by `target.domain` (backend-declared, `document-relations.md`) in cycle order; each group: `SectionHeader` (count + sum of non-cancelled `amount`) + its actions.
 - An area with actions is shown even when empty, with the action as empty state ("Sin documentos de tesorería · Registrar pago").
 - Areas: Origen, Facturación, Manufactura, Logística, Tesorería, Contabilidad, **Contactos**, Otros. The backend adds indirect links for the sheet: **journal entries of the related documents** (Contabilidad) and the **counterparties** (customer/supplier/contact) of the document and its related documents (Contactos, each once).
-- Rows: `RelatedDocumentRow` — line 1: `display_id` (opens with `openEntity`, stacked with "volver"; no sheet → canonical URL) + type/role; line 2: `DocumentRef.detail` (payment method + reference, DTE type, stage, line count…), date, and the partner **only when it differs from the sheet's own partner**. Right: amount (relation amount, e.g. allocated, else `DocumentRef.amount`), `StatusBadge`, optional "⋯" row actions. `accessible=false` shows the relation without content.
+- Rows: `RelatedDocumentRow` — **one line, the whole row is the link** to the entity's sheet (`openEntity`, stacked with "volver"; no sheet → canonical URL): entity icon (`getEntityIcon`, `ENTITY_REGISTRY`) · `display_id` · type/role · `DocumentRef.detail` truncated (partner only when it differs from the sheet's own) · amount (relation amount, e.g. allocated, else `DocumentRef.amount`) · `StatusBadge`. Only what identifies the document; everything else is one click away in its sheet (full text in the row tooltip). Row actions "⋯" sit outside the link. `accessible=false` shows the row without link ("· sin acceso").
 - Group total = Σ non-cancelled amounts (not shown for Contactos).
 - States: shaped skeleton; inline error (does not break the sheet); global empty state; count of `unresolved` references.
 

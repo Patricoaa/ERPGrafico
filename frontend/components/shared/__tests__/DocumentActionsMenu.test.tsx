@@ -6,7 +6,7 @@ import { DocumentActionsMenu } from "../DocumentActionsMenu"
 
 /** ADR-0083: menú único de acciones en la cabecera de la ficha. */
 describe("DocumentActionsMenu", () => {
-    const open = () => fireEvent.pointerDown(screen.getByRole("button", { name: /acciones/i }), { button: 0, ctrlKey: false })
+    const open = () => fireEvent.pointerDown(screen.getByRole("button", { name: "Acciones" }), { button: 0, ctrlKey: false })
 
     it("lists next step first, then actions, print and destructive last", () => {
         const print = vi.fn()

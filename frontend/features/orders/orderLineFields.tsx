@@ -30,7 +30,6 @@ export const orderLineFields = createEntityFields<OrderLine>()({
         get: (l) => l.unit_price ?? l.price_unit,
         tableOptions: { align: 'right' },
     },
-    subtotal: { key: 'subtotal', type: 'currency', label: 'Subtotal (neto)', tableOptions: { align: 'right' } },
     delivered: {
         key: 'quantity_delivered',
         type: 'number',
@@ -53,4 +52,6 @@ export const orderLineFields = createEntityFields<OrderLine>()({
         tableOptions: { align: 'left' },
         render: (l) => <OrderLineWorkOrderLink line={l} />,
     },
+    // Subtotal al final: es el resultado de la fila
+    subtotal: { key: 'subtotal', type: 'currency', label: 'Subtotal (neto)', tableOptions: { align: 'right' } },
 })

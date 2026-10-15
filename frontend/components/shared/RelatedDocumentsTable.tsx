@@ -1,5 +1,6 @@
 "use client"
 
+import { createElement } from "react"
 import { Link2Off, MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -10,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import type { DocumentActionItem } from "./DocumentActionsMenu"
 import { cn } from "@/lib/utils"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { getErrorMessage } from "@/lib/errors"
 import { DataCell } from "./DataTableCells"
 import { EmptyState } from "./EmptyState"
@@ -152,83 +154,83 @@ export interface RelatedDocumentRowProps {
 }
 
 /**
- * Fila de un documento relacionado (ADR-0083). Línea 1: código (abre su ficha) y tipo.
- * Línea 2: detalle del documento, fecha y contraparte si difiere. Derecha: importe
- * (el de la relación —p. ej. lo imputado— o el del documento), estado y acciones.
+ * Fila de un documento relacionado (ADR-0083). Una sola línea y toda la fila es el enlace a la
+ * ficha: icono de la entidad (ENTITY_REGISTRY) · código · tipo · detalle imprescindible
+ * (truncado; el resto está en la ficha) · importe · estado. La contraparte solo aparece si
+ * difiere de la de la ficha. Las acciones "⋯" quedan fuera del enlace.
  */
 export function RelatedDocumentRow({ item, onOpen, actions, hidePartner }: RelatedDocumentRowProps) {
     const { target } = item
     const amount = item.amount ?? target.amount
     const partner = target.partner_name && target.partner_name !== hidePartner ? target.partner_name : null
     const meta = [target.detail, partner].filter(Boolean).join(" · ")
+    const typeLabel = RELATED_ROLE_LABELS[item.role] ?? target.title
 
-    return (
-        <li
-            className={cn(
-                "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-3 py-2",
-                target.status === "CANCELLED" && "opacity-60",
-            )}
-        >
-            <div className="min-w-0 space-y-0.5">
-                <div className="flex min-w-0 items-baseline gap-2">
-                    {target.accessible ? (
-                        <Button
-                            variant="link"
-                            size="sm"
-                            className="h-auto shrink-0 p-0 font-mono text-xs font-medium"
-                            onClick={() => onOpen(item)}
-                        >
-                            {target.display_id}
-                        </Button>
-                    ) : (
-                        <span className="shrink-0 font-mono text-xs font-medium text-muted-foreground" title="Sin permiso para ver este documento">
-                            {target.display_id} · sin acceso
-                        </span>
-                    )}
-                    <span className="truncate text-xs text-muted-foreground">
-                        {RELATED_ROLE_LABELS[item.role] ?? target.title}
-                    </span>
-                </div>
-                {(meta || target.date) && (
-                    <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-                        {target.date && <DataCell.Date value={target.date} size="xs" className="shrink-0 justify-start" />}
-                        {target.date && meta && <span aria-hidden>·</span>}
-                        {meta && <span className="truncate">{meta}</span>}
-                    </div>
-                )}
-            </div>
-            <div className="flex items-center gap-3 justify-self-end">
-                {amount != null && <DataCell.Currency value={amount} size="xs" className="tabular-nums" />}
+    const content = (
+        <>
+            {createElement(getEntityIcon(target.label), {
+                "aria-hidden": true,
+                className: "h-4 w-4 shrink-0 text-muted-foreground group-hover/row:text-foreground",
+            })}
+            <span className="flex min-w-0 items-baseline gap-2">
+                <span className="shrink-0 font-mono text-xs font-medium">
+                    {target.accessible ? target.display_id : `${target.display_id} · sin acceso`}
+                </span>
+                <span className="shrink-0 text-xs text-muted-foreground">{typeLabel}</span>
+                {meta && <span className="min-w-0 truncate text-xs text-muted-foreground">{meta}</span>}
+            </span>
+            <span className="flex shrink-0 items-center gap-3">
+                {amount != null && <DataCell.Currency value={amount} size="xs" className="w-auto tabular-nums" />}
                 {amount == null && item.quantity != null && (
-                    <DataCell.Number value={item.quantity} decimals={2} size="xs" />
+                    <DataCell.Number value={item.quantity} decimals={2} size="xs" className="w-auto" />
                 )}
                 {target.status && <StatusBadge status={target.status} variant="badge" />}
-                {actions && actions.length > 0 && (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon-sm" className="size-7" aria-label={`Acciones de ${target.display_id}`}>
-                                <MoreHorizontal />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            {actions.map((action) => {
-                                const Icon = action.icon
-                                return (
-                                    <DropdownMenuItem
-                                        key={action.id}
-                                        onClick={action.onClick}
-                                        disabled={action.disabled}
-                                        variant={action.destructive ? "destructive" : "default"}
-                                    >
-                                        {Icon && <Icon />}
-                                        {action.label}
-                                    </DropdownMenuItem>
-                                )
-                            })}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                )}
-            </div>
+            </span>
+        </>
+    )
+    const rowClass = "group/row grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 text-left"
+    const title = [target.display_id, typeLabel, meta, target.date].filter(Boolean).join(" · ")
+
+    return (
+        <li className={cn("flex items-center", target.status === "CANCELLED" && "opacity-60")}>
+            {target.accessible ? (
+                <button
+                    type="button"
+                    onClick={() => onOpen(item)}
+                    title={title}
+                    className={cn(rowClass, "transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring")}
+                >
+                    {content}
+                </button>
+            ) : (
+                <div className={rowClass} title="Sin permiso para ver este documento">{content}</div>
+            )}
+            {actions && actions.length > 0 && (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon-sm" className="mr-1 size-7 shrink-0" aria-label={`Acciones de ${target.display_id}`}>
+                            <MoreHorizontal />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="rounded-lg border-sidebar-border">
+                        {actions.map((action) => {
+                            const ActionIcon = action.icon
+                            return (
+                                <DropdownMenuItem
+                                    key={action.id}
+                                    onClick={action.onClick}
+                                    disabled={action.disabled}
+                                    variant={action.destructive ? "destructive" : "default"}
+                                    className="text-xs font-semibold uppercase tracking-widest rounded-sm cursor-pointer"
+                                >
+                                    {ActionIcon && <ActionIcon className="h-3.5 w-3.5" />}
+                                    {action.label}
+                                </DropdownMenuItem>
+                            )
+                        })}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
         </li>
     )
 }

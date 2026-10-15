@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { ClipboardList, Package } from "lucide-react"
+import { Package } from "lucide-react"
 import { DataCell, DataTable, DocumentFieldGrid, FormSection } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
 import { cn } from "@/lib/utils"
@@ -35,7 +35,7 @@ function documentDateTime(order: Order): { value: string; showTime: boolean } | 
 
 /**
  * Tab Resumen de la ficha de OV/OC (ADR-0083, referencia para las demás fichas):
- * Contexto (contraparte, fecha y hora, canal, notas) y Productos (tabla + totales).
+ * Contexto en una fila (contraparte, fecha y hora, canal, notas) y Productos (tabla + totales).
  */
 export function OrderSummaryTab({ order, kind }: OrderSummaryTabProps) {
     const isSale = kind === "sale"
@@ -54,13 +54,12 @@ export function OrderSummaryTab({ order, kind }: OrderSummaryTabProps) {
 
     return (
         <div className="space-y-8">
-            <section className="space-y-4">
-                <FormSection title="Contexto" icon={ClipboardList} />
+            {/* Contexto: una sola fila, sin separador (lo encabeza el propio documento) */}
+            <section aria-label="Contexto">
                 <DocumentFieldGrid
                     fields={[
                         {
                             label: isSale ? "Cliente" : "Proveedor",
-                            span: 2,
                             value: partnerName
                                 ? <DataCell.ContactLink contactId={partnerId} className={LEFT}>{partnerName}</DataCell.ContactLink>
                                 : null,
@@ -72,7 +71,10 @@ export function OrderSummaryTab({ order, kind }: OrderSummaryTabProps) {
                         { label: "Canal", value: text(order.channel_display), hidden: !isSale },
                         { label: "Bodega", value: text(order.warehouse_name), hidden: isSale },
                         { label: "Sesión POS", value: text(order.pos_session_display), hidden: !isSale || !order.pos_session },
-                        { label: "Notas", value: text(order.notes), span: 4 },
+                        {
+                            label: "Notas",
+                            value: text(order.notes) && <span className="line-clamp-2" title={text(order.notes) ?? undefined}>{text(order.notes)}</span>,
+                        },
                     ]}
                 />
             </section>
