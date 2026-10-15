@@ -8,7 +8,13 @@ from django.db import models
 
 from core.registry import UniversalRegistry
 
-from .types import AUTO, DEFAULT_AMOUNT_FIELDS, DEFAULT_DATE_FIELDS, DEFAULT_PARTNER_PATHS, DocumentTypeRegistry
+from .types import (
+    AUTO,
+    DEFAULT_AMOUNT_FIELDS,
+    DEFAULT_DATE_FIELDS,
+    DEFAULT_PARTNER_PATHS,
+    DocumentTypeRegistry,
+)
 
 
 def _resolve_path(obj: Any, path: str) -> Any:

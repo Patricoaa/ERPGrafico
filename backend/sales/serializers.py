@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from rest_framework import serializers
 
 from sales.selectors import SaleOrderSelector
@@ -288,9 +290,19 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         return SaleOrderSelector.get_related_documents(obj)
 
     def get_lines(self, obj):
+        from core.strategies.totals import allocate_line_nets
+
+        all_lines = list(obj.lines.all())
+        # Neto por línea (las líneas de OV son brutas; ADR-0083): suma exacta = total_net
+        nets = allocate_line_nets(obj, all_lines)
         # Only include original lines (not those from notes)
-        lines = [line for line in obj.lines.all() if getattr(line, "related_note_id", None) is None]
-        return SaleLineSerializer(lines, many=True).data
+        lines = [line for line in all_lines if getattr(line, "related_note_id", None) is None]
+        data = SaleLineSerializer(lines, many=True).data
+        for line, row in zip(lines, data):
+            net = nets.get(line.pk, Decimal("0"))
+            row["subtotal_net"] = str(net)
+            row["unit_price_net"] = str((net / line.quantity).quantize(Decimal("0.01"))) if line.quantity else "0"
+        return data
 
     def get_work_orders(self, obj):
         from production.serializers import WorkOrderListSerializer

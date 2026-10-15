@@ -49,6 +49,9 @@ export interface OrderLine {
     delivered_quantity?: number | string
     price_unit: number | string
     subtotal: number | string
+    /** Neto por línea en documentos gross-first (OV): reparto exacto de total_net (ADR-0083). */
+    subtotal_net?: number | string
+    unit_price_net?: number | string
     is_manufacturable?: boolean
     requires_advanced_manufacturing?: boolean
     work_order_summary?: WorkOrderSummary

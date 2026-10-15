@@ -4,12 +4,15 @@ import type { OrderLine } from './types'
 
 /**
  * Productos de OV/OC en la ficha documental (ADR-0083, invariante 13). Precios y subtotales
- * netos (sin IVA); entregado/recibido y facturado (ADR-0081) como cantidades.
+ * netos (sin IVA): la OV guarda importes brutos y el backend entrega `unit_price_net` y
+ * `subtotal_net` (reparto exacto de `total_net`). Entregado/recibido y facturado como cantidades.
+ * `placement: 'detail'` en todos: la tabla sigue el orden de definición (Subtotal al final).
  * Producto y OT abren su ficha apilada sobre la orden.
  */
 export const orderLineFields = createEntityFields<OrderLine>()({
     product: {
         key: 'product_name',
+        placement: 'detail',
         type: 'computed',
         fieldRole: 'descriptive',
         label: 'Producto',
@@ -18,6 +21,7 @@ export const orderLineFields = createEntityFields<OrderLine>()({
     },
     quantity: {
         key: 'quantity',
+        placement: 'detail',
         type: 'number',
         label: 'Cantidad',
         suffix: (l) => String(l.uom_name ?? l.unit_name ?? ''),
@@ -25,13 +29,15 @@ export const orderLineFields = createEntityFields<OrderLine>()({
     },
     unit_price: {
         key: 'unit_price',
+        placement: 'detail',
         type: 'currency',
         label: 'Precio unit. (neto)',
-        get: (l) => l.unit_price ?? l.price_unit,
+        get: (l) => l.unit_price_net ?? l.unit_price ?? l.price_unit,
         tableOptions: { align: 'right' },
     },
     delivered: {
         key: 'quantity_delivered',
+        placement: 'detail',
         type: 'number',
         label: 'Entregado',
         get: (l) => l.quantity_delivered ?? l.quantity_received ?? l.delivered_quantity ?? l.received_quantity ?? 0,
@@ -39,6 +45,7 @@ export const orderLineFields = createEntityFields<OrderLine>()({
     },
     invoiced: {
         key: 'quantity_invoiced',
+        placement: 'detail',
         type: 'number',
         label: 'Facturado',
         get: (l) => l.quantity_invoiced ?? 0,
@@ -46,6 +53,7 @@ export const orderLineFields = createEntityFields<OrderLine>()({
     },
     work_order: {
         key: 'work_order_summary',
+        placement: 'detail',
         type: 'computed',
         fieldRole: 'descriptive',
         label: 'OT',
@@ -53,5 +61,12 @@ export const orderLineFields = createEntityFields<OrderLine>()({
         render: (l) => <OrderLineWorkOrderLink line={l} />,
     },
     // Subtotal al final: es el resultado de la fila
-    subtotal: { key: 'subtotal', type: 'currency', label: 'Subtotal (neto)', tableOptions: { align: 'right' } },
+    subtotal: {
+        key: 'subtotal_net',
+        placement: 'detail',
+        type: 'currency',
+        label: 'Subtotal (neto)',
+        get: (l) => l.subtotal_net ?? l.subtotal,
+        tableOptions: { align: 'right' },
+    },
 })

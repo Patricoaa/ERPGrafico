@@ -21,6 +21,14 @@
 
 ---
 
+## 2026-10-15 · Piloto U2 — columnas, netos y detalle de relaciones
+
+- **Orden de columnas no aplicado:** `toColumns()` ordena por zona semántica (los importes van a la zona "header"), no por orden de definición. Todos los campos de `orderLineFields` declaran `placement: 'detail'`; test que fija el orden (Producto, Cantidad, Precio unit., Entregado, Facturado, OT, Subtotal).
+- **Subtotales con IVA:** la OV es gross-first: `SaleLine.subtotal` y `unit_price` (sin precio bruto aparte) se guardan **con IVA** y el neto solo existe en el documento. Nuevo `allocate_line_nets` (`core/strategies/totals.py`): reparte `total_net` (ya con descuento global) en proporción al bruto con mayor resto → la suma de netos por línea es exactamente `total_net`. `SaleOrderSerializer` expone `subtotal_net` y `unit_price_net` por línea; la tabla y el recuadro de totales los usan. Dev (OV-000002): 500 × 150 bruto = 75.000 → precio neto 126,05 · subtotal neto 63.025 = `total_net`.
+- **Relaciones:** el detalle de la fila solo se muestra en Contactos y Tesorería.
+- Ruff: imports reordenados en los `relations.py` tocados antes.
+- Verificación: pytest relaciones + reparto 15/15; vitest 80/80 (órdenes, documentos, shared/__tests__); `tsc` y ESLint sin errores.
+
 ## 2026-10-15 · Piloto U2 — ajustes menores
 
 - Contexto en **una fila** de 4 campos y sin separador (notas recortadas a 2 líneas).

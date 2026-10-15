@@ -49,7 +49,7 @@ export function OrderSummaryTab({ order, kind }: OrderSummaryTabProps) {
 
     const lines: OrderLine[] = order.lines ?? order.items ?? []
     const columns = useMemo(() => orderLineFields.toColumns(), [])
-    const subtotal = lines.reduce((sum, line) => sum + num(line.subtotal), 0)
+    const subtotal = lines.reduce((sum, line) => sum + num(line.subtotal_net ?? line.subtotal), 0)
     const total = num(order.effective_total ?? order.total)
 
     return (

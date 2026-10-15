@@ -1,7 +1,7 @@
 """Proveedores de relaciones documentales de ventas (ADR-0080, contrato document-relations.md)."""
 
-from core.documents.details import display, join, lines_count
 from core.documents import DocumentType, DocumentTypeRegistry, Link, relation_provider
+from core.documents.details import display, join, lines_count
 
 # OV: `?selected` abre su ficha documental (ADR-0083). Área "origin": encabeza el ciclo.
 DocumentTypeRegistry.register(DocumentType(

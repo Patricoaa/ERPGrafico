@@ -1,6 +1,5 @@
 """Proveedores de relaciones documentales de inventario (ADR-0080, contrato document-relations.md)."""
 
-from core.documents.details import display, join, lines_count, quantity
 from core.documents import (
     DocumentType,
     DocumentTypeRegistry,
@@ -8,6 +7,7 @@ from core.documents import (
     related_or_none,
     relation_provider,
 )
+from core.documents.details import display, join, lines_count, quantity
 
 DocumentTypeRegistry.register(DocumentType(
     label="inventory.stockmove", canonical_url="/inventory/reports/movements?selected={id}", status_field=None,

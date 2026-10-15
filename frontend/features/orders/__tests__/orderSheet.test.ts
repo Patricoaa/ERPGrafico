@@ -92,3 +92,11 @@ describe("getOrderLifecycle", () => {
         expect(steps[0].status).toBe("destructive")
     })
 })
+
+describe("orderLineFields", () => {
+    it("keeps the owner-defined column order with Subtotal last", async () => {
+        const { orderLineFields } = await import("../orderLineFields")
+        const ids = orderLineFields.toColumns().map((c) => c.id ?? (c as { accessorKey?: string }).accessorKey)
+        expect(ids).toEqual(["product_name", "quantity", "unit_price", "quantity_delivered", "quantity_invoiced", "work_order_summary", "subtotal_net"])
+    })
+})

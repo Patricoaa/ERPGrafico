@@ -155,15 +155,18 @@ export interface RelatedDocumentRowProps {
 
 /**
  * Fila de un documento relacionado (ADR-0083). Una sola línea y toda la fila es el enlace a la
- * ficha: icono de la entidad (ENTITY_REGISTRY) · código · tipo · detalle imprescindible
- * (truncado; el resto está en la ficha) · importe · estado. La contraparte solo aparece si
- * difiere de la de la ficha. Las acciones "⋯" quedan fuera del enlace.
+ * ficha: icono de la entidad (ENTITY_REGISTRY) · código · tipo · importe · estado. Solo
+ * contactos y tesorería muestran además su detalle (truncado); el resto se ve en la ficha.
+ * Las acciones "⋯" quedan fuera del enlace.
  */
 export function RelatedDocumentRow({ item, onOpen, actions, hidePartner }: RelatedDocumentRowProps) {
     const { target } = item
     const amount = item.amount ?? target.amount
-    const partner = target.partner_name && target.partner_name !== hidePartner ? target.partner_name : null
-    const meta = [target.detail, partner].filter(Boolean).join(" · ")
+    // Detalle solo donde el código no basta para entenderlo: contactos (nombre, RUT) y
+    // tesorería (medio de pago, referencia). El resto se ve entrando a su ficha.
+    const showDetail = target.domain === "contacts" || target.domain === "treasury"
+    const partner = showDetail && target.partner_name && target.partner_name !== hidePartner ? target.partner_name : null
+    const meta = showDetail ? [target.detail, partner].filter(Boolean).join(" · ") : ""
     const typeLabel = RELATED_ROLE_LABELS[item.role] ?? target.title
 
     const content = (

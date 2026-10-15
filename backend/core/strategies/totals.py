@@ -122,6 +122,29 @@ class GrossFirstTotals(TotalsStrategy):
         }
 
 
+def allocate_line_nets(document, lines) -> dict:
+    """
+    Neto por línea de un documento gross-first (ADR-0083, ficha documental).
+
+    Las líneas guardan importes brutos (con IVA) y el neto solo existe a nivel documento
+    (`total_net`, ya con el descuento global). Se reparte `total_net` en proporción al bruto de
+    cada línea con redondeo de mayor resto: la suma de los netos por línea es exactamente
+    `total_net`. Devuelve {line.pk: Decimal entero}.
+    """
+    lines = list(lines)
+    gross = {line.pk: Decimal(getattr(line, "subtotal", 0) or 0) for line in lines}
+    total_gross = sum(gross.values())
+    total_net = Decimal(getattr(document, "total_net", 0) or 0)
+    if not lines or total_gross <= 0:
+        return {pk: Decimal("0") for pk in gross}
+    raw = {pk: total_net * g / total_gross for pk, g in gross.items()}
+    nets = {pk: value.to_integral_value(rounding="ROUND_FLOOR") for pk, value in raw.items()}
+    remainder = int(total_net - sum(nets.values()))
+    for pk in sorted(raw, key=lambda k: raw[k] - nets[k], reverse=True)[:max(remainder, 0)]:
+        nets[pk] += 1
+    return nets
+
+
 class NetFirstTotals(TotalsStrategy):
     """
     Lógica Net-first (compras / documentos de proveedor).

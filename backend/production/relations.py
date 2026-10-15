@@ -1,7 +1,7 @@
 """Proveedores de relaciones documentales de producción (ADR-0080, M5)."""
 
-from core.documents.details import display, join
 from core.documents import DocumentType, DocumentTypeRegistry, Link, relation_provider
+from core.documents.details import display, join
 
 DocumentTypeRegistry.register(DocumentType(
     label="production.workorder", amount_field=None,
