@@ -126,7 +126,7 @@ goBackEntity()  // vuelve al documento anterior
 
 **Pila y "volver" (ADR-0080, GAP-11).** `openEntity` con un documento ya abierto lo **apila** (máx. 5; reabrir el superior es no-op). Solo se renderiza el superior; el provider envuelve su drawer en `EntityNavigationContext` y el `Drawer` compartido muestra "← Volver a {display}" automáticamente — los drawers no necesitan cambios. Cerrar (X / Escape / `onSuccess`) vacía la pila. El contexto se resetea para los hijos de cada `Drawer`, así un drawer anidado no muestra el enlace.
 
-**OV/OC → Order Hub (decisión D4).** `openEntity('sales.saleorder' | 'purchasing.purchaseorder', id)` **no** abre `SaleOrderDrawer`/`PurchaseOrderDrawer`: vacía la pila y llama `openHub({ orderId: id, type })`. La ficha de OV/OC es el Hub desde cualquier punto de entrada. Los drawers delgados quedan solo para uso interno del Hub y se retiran en M6.
+**Ficha documental (ADR-0083, revierte D4).** Los documentos abren su ficha documental ([component-document-sheet.md](./component-document-sheet.md)). `openEntity('sales.saleorder', id)` abre `OrderSheet` (piloto U2; `SaleOrderDrawer` eliminado). Transitorio hasta U3: `purchasing.purchaseorder` aún vacía la pila y llama `openHub` (`HUB_ENTITY_TYPES` en `GlobalModalProvider`, se retira en U6). Las fichas documentales **no** reciben `onSuccess` en su adaptador: sus acciones no deben cerrar la pila.
 
 **`LazyDrawer` (legacy, GAP-12).** `DRAWER_MAP` se retiró: `LazyDrawer({ type, id, open, onOpenChange })` traduce el `docType` snake_case (`TYPE_TO_REGISTRY` + `service_obligation`, `inventory_document`) al label y renderiza el adaptador de `ENTITY_DRAWERS`. Hay un solo registro de fichas. Para código nuevo usar `openEntity`.
 

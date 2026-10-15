@@ -335,15 +335,15 @@ Industrial underline navigation tabs with optional subtab dropdowns.
 
 Tab config: `{ value, label, iconName, href, subTabs? }`. Props: `tabs` (✅), `activeValue` (✅), `subActiveValue?`, `variant?: 'default' | 'minimal'`, `configHref?`.
 
-### FormTabs 🟢
+### TabBar 🟢
 
 Pestañas con estética "carpetas troqueladas" para formularios complejos.
 
 ```tsx
-<FormTabs items={[{ value: 'general', label: 'General', icon: InfoIcon }]}
+<TabBar items={[{ value: 'general', label: 'General', icon: InfoIcon }]}
   value={activeTab} onValueChange={setActiveTab} orientation="vertical">
-  <FormTabsContent value="general">...</FormTabsContent>
-</FormTabs>
+  <TabBarContent value="general">...</TabBarContent>
+</TabBar>
 ```
 
 Props: `items: FormTabItem[]` (✅), `value` (✅), `onValueChange` (✅), `orientation?: 'vertical' | 'horizontal'`, `variant?: 'folder' | 'underline'`, `header?`, `footer?`.

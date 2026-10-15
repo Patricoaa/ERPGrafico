@@ -21,6 +21,21 @@ from core.registry import SearchableEntity, UniversalRegistry
 RESOLVER_URL = "/d/{label}/{id}"
 
 DEFAULT_DATE_FIELDS = ("date", "delivery_date", "receipt_date", "return_date", "created_at")
+# Área operativa (ADR-0083): agrupa los relacionados en la ficha documental en el mismo
+# orden que el ciclo Origen → Facturación → Producción → Logística → Tesorería → Contabilidad.
+DOCUMENT_DOMAINS = ("origin", "billing", "production", "logistics", "treasury", "accounting", "other")
+DEFAULT_DOMAIN_BY_APP = {
+    "billing": "billing",
+    "production": "production",
+    "sales": "logistics",
+    "purchasing": "logistics",
+    "inventory": "logistics",
+    "treasury": "treasury",
+    "finance": "treasury",
+    "accounting": "accounting",
+    "tax": "accounting",
+}
+
 DEFAULT_PARTNER_PATHS = (
     "customer", "supplier", "contact", "partner",
     "sale_order.customer", "purchase_order.supplier",
@@ -35,6 +50,8 @@ class DocumentType:
     status_field: str | None = "status"
     date_field: str | None = None
     partner_path: str | None = None
+    # None → por app (DEFAULT_DOMAIN_BY_APP) o "other".
+    domain: str | None = None
 
 
 class DocumentTypeRegistry:
@@ -42,9 +59,18 @@ class DocumentTypeRegistry:
 
     @classmethod
     def register(cls, doc_type: DocumentType) -> None:
+        if doc_type.domain and doc_type.domain not in DOCUMENT_DOMAINS:
+            raise ValueError(f"Unknown document domain '{doc_type.domain}' for '{doc_type.label}'.")
         if doc_type.label in cls._types:
             raise ValueError(f"Document type '{doc_type.label}' already registered.")
         cls._types[doc_type.label] = doc_type
+
+    @classmethod
+    def domain(cls, label: str) -> str:
+        declared = cls.get(label).domain
+        if declared:
+            return declared
+        return DEFAULT_DOMAIN_BY_APP.get(label.split(".", 1)[0], "other")
 
     @classmethod
     def get(cls, label: str) -> DocumentType:

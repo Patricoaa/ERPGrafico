@@ -14,7 +14,32 @@
 | M4 Facturación y pagos | **Hecha** (M4a–M4d); backfill de líneas **aplicado** en dev (2026-10-15); pagos: se mantiene FK + imputaciones (decidido) |
 | M5 Extensión | **Hecha** (relaciones en todos los módulos, GAP-08, GAP-12, escenarios D6 de devoluciones) |
 | M6 Retiro | **Hecha en lo retirable**; formatos legacy con consumidores en fase de deprecación (bloqueados por la migración del Order Hub) |
-| U0–U6 Etapa UI (ficha documental, retiro del Hub) | **Plan en revisión** — [ui-document-sheet-plan.md](./ui-document-sheet-plan.md) |
+| U0 Contratos (etapa UI) | **Hecha** — ADR-0083 (Accepted), `component-document-sheet.md`, D7–D11 |
+| U1 Primitivas | **Hecha** — `domain` en `DocumentRef`, shell con tabs/ciclo/acciones/embedded, `DocumentRelationsTab`, motor de acciones extraído |
+| U2 Piloto OV | **Hecha en código**; verificación en navegador pendiente (extensión de Chrome no conectada) |
+| U3–U6 | Pendientes — [ui-document-sheet-plan.md](./ui-document-sheet-plan.md) |
+
+---
+
+## 2026-10-15 · Etapa UI — U0, U1 y piloto U2 (ficha documental de la OV)
+
+**Decisiones** (D7–D11): piloto en OV, tabs horizontales, un único tab Relaciones agrupado por área, franja de ciclo, POS con vista incrustada. **ADR-0083** (revierte D4 de ADR-0080).
+
+**U0 · Contratos:** nuevo `component-document-sheet.md`; `component-entity-drawers.md` (OV ya no redirige al Hub), `document-relations.md` (campo `domain`, §6 ligado a U6), `component-form-patterns.md` y otros 5 contratos (`FormTabs` → `TabBar`, que es el componente real; regla de tabs horizontales en fichas en Drawer). Índices: ADR README, `docs/README.md`, `CLAUDE.md`.
+
+**U1 · Primitivas**
+- Backend: `DocumentType.domain` + `DocumentTypeRegistry.domain()` (default por app, OV/OC = `origin`), expuesto en `DocumentRef`. Test de contrato del orden de áreas.
+- Shared: `DocumentDrawerShell` (ciclo, barra de acciones, tabs `underline`, sidebar de actividad, `embedded`, skeleton con forma; layout anterior intacto para despacho/recepción), `DocumentLifecycle` (pasos con `StatusBadge variant="hub"`), `DocumentActionBar` (1 primaria · ≤3 secundarias · "Más", destructivas al final), `DocumentFieldGrid`, `RelatedDocumentRow` con acciones por fila.
+- `features/documents`: `DocumentRelationsTab` (agrupa por área en orden de ciclo, totales, acciones por área y estado vacío con acción, filtro por área, errores inline), `resolveRegistryActions` (mismas reglas que `PhaseCard`), `useOpenRelatedDocument`, `useInvalidateDocuments`.
+- `features/orders`: `useOrderActionEngine` (motor extraído de `ActionCategory`, sin motor global ni `ref`; `ActionCategory` del Hub delega en él), `useOrderRelatedActions` (anular/cancelar factura, pago, despacho/recepción, devolución y OT con las reglas de las fases), `AnnulPaymentModal` (extraído de `TreasuryPhase`, que lo reutiliza), `getOrderLifecycle` (facturación por `invoicing_status`), `planOrderSheetActions`, `orderLineFields`.
+
+**U2 · Piloto OV**
+- `OrderSheet` (tabs Resumen por capas · Líneas con avance de entrega y facturación · Relaciones) abre la OV desde: `openEntity('sales.saleorder')` (registro `ENTITY_DRAWERS`, sin `onSuccess` para no cerrar la pila), la lista `/sales/orders?selected=` (la selección de fila se rige por la URL), la vista previa de `AdvancedSaleOrderSelector` y el POS (incrustada, con `posSessionId`).
+- `SaleOrderDrawer` eliminado (0 consumidores).
+- **Paridad con el Hub** (16 acciones de la OV): las 13 de registro con modal o ejecución directa pasan por el mismo motor; `view-documents`, `view-deliveries`, `view-work-orders` y `payment-history` las reemplaza el tab Relaciones (cada documento abre su ficha); anular/cancelar la orden va en "Más" con el mismo flujo de impacto (`useCancelOrderFlow`), bloqueado con motivo cuando corresponde; las 7 acciones por documento relacionado de las fases están como acciones de fila.
+- OC, facturas y notas siguen en el Hub (U3).
+
+**Verificación:** `tsc --noEmit` y ESLint sin errores en lo tocado. Vitest (dev server): 8 archivos / 96 tests de documentos, órdenes y shared, más ventas/POS/proveedores/`lib`/`_shared`/producción en verde (`WorkOrderWizard` dio un timeout bajo carga y pasa aislado). Pytest `core/tests/test_document_relations.py` 10/10; el resto de `core/tests` falla solo en lo preexistente (baseline financiero, rendimiento, enlaces de docs antiguos). Prueba de humo HTTP: `/sales/orders` y `?selected=` compilan y responden 200. **Pendiente:** recorrido en navegador (la extensión de Chrome no estaba conectada).
 
 ---
 

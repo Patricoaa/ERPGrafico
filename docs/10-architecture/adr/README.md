@@ -146,5 +146,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0080](0080-document-model-relations-and-navigation.md) | Unified document model — DocumentRef, relation service and canonical document navigation | Accepted |
 | [0081](0081-invoice-lines-partial-and-multi-order-invoicing.md) | Invoices own their lines — partial and multi-order invoicing by quantity | Accepted |
 | [0082](0082-typography-scale-token-reconciliation.md) | Typography scale reconciliation — semantic tokens, truthful N-levels and shell chrome roles | Accepted |
+| [0083](0083-document-sheet-replaces-order-hub.md) | Document sheet replaces the Order Hub — relations tab, lifecycle and in-sheet actions | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

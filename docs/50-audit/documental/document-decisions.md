@@ -9,9 +9,14 @@
 | D1 | Relación factura ↔ orden | **Las tres modalidades coexisten**: 1 factura por orden, varias facturas por orden y 1 factura para varias órdenes. Facturación por cantidad, atada a la entrega, NC/ND sobre líneas de factura, estado "Parcial" (D1.1–D1.4) | Decidida |
 | D2 | Imputación de anticipos | **Pago → factura; la orden se deriva** a través de la factura | Decidida |
 | D3 | Backfill de `quantity_delivered` que reclasifica OV | **Informe previo (dry-run) + aprobación** antes de aplicar | Decidida |
-| D4 | Qué se abre al abrir una OV/OC | **El Order Hub es la ficha de OV/OC** | Decidida |
+| D4 | Qué se abre al abrir una OV/OC | **El Order Hub es la ficha de OV/OC** | **Revertida** por ADR-0083 (2026-10-15): ver D7 |
 | D5 | Validación con datos reales | **Sí, como gate**: auditoría de integridad antes de cualquier carga real | Propuesta por defecto |
 | D6 | Escenarios para notas/devoluciones/imputaciones | **Sí**: fixtures de prueba antes de M4/M5 | Propuesta por defecto |
+| D7 | Etapa UI: despliegue de la ficha documental | **Piloto en la OV** (U2), luego OC, facturas y resto | Decidida (2026-10-15) |
+| D8 | Orientación de los tabs de la ficha | **Horizontales** (`TabBar` `underline`) | Decidida |
+| D9 | Relaciones en la ficha | **Un único tab "Relaciones" agrupado por área**, con acciones por área | Decidida |
+| D10 | Franja de ciclo (Origen → … → Tesorería) en OV/OC/facturas | **Se conserva** en la cabecera de la ficha | Decidida |
+| D11 | POS | **Mantener vista incrustada** (ficha `embedded`) | Decidida |
 
 ---
 
@@ -91,6 +96,16 @@ Escenarios D6 añadidos por estas respuestas: factura parcial atada a una entreg
 - `DocumentDrawerShell` aplica al resto de documentos (despacho, factura, pago, stock, asiento…). OV/OC son la excepción documentada: su ficha es una vista de proceso.
 - La ruta canónica de OV/OC sigue siendo `lista?selected=id`, que ya abre el Hub. No hace falta cambiar rutas.
 - Se documenta en ADR-0080 como parte del contrato de fichas.
+
+## D7–D11 · Etapa UI: ficha documental (2026-10-15)
+
+Respuestas del responsable a las decisiones abiertas de [ui-document-sheet-plan.md](./ui-document-sheet-plan.md) §5. Formalizadas en ADR-0083, que **revierte D4**: el Order Hub deja de ser la ficha de OV/OC y se retira por completo (U6).
+
+- **D7 · Piloto en la OV.** La OV abre su ficha documental desde todos los puntos de entrada; OC y facturas siguen en el Hub hasta U3.
+- **D8 · Tabs horizontales** (`underline`, precedente `ContactDrawer`).
+- **D9 · Un solo tab Relaciones** agrupado por área (Origen, Facturación, Producción, Logística, Tesorería, Contabilidad, Otros). El área la declara el backend (`DocumentRef.domain`).
+- **D10 · Franja de ciclo** con pasos, avance y cifras clave; pulsar un paso filtra Relaciones.
+- **D11 · POS con vista incrustada**: `OrderSheet embedded` reemplaza al `OrderHubPanel` incrustado.
 
 ## D5 · Validación con datos reales (propuesta por defecto)
 

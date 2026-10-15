@@ -2,9 +2,9 @@
 
 from core.documents import DocumentType, DocumentTypeRegistry, Link, relation_provider
 
-# OC: `?selected` abre el Order Hub, que es su ficha (decisión D4).
+# OC: `?selected` abre su ficha documental (ADR-0083). Área "origin": encabeza el ciclo.
 DocumentTypeRegistry.register(DocumentType(
-    label="purchasing.purchaseorder", canonical_url="/purchasing/orders?selected={id}",
+    label="purchasing.purchaseorder", canonical_url="/purchasing/orders?selected={id}", domain="origin",
 ))
 # Recepción: sin lista con `?selected` propio → resolvedor /d/ (valor por defecto).
 DocumentTypeRegistry.register(DocumentType(label="purchasing.purchasereceipt"))

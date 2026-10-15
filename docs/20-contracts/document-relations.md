@@ -22,6 +22,7 @@ The only shape that represents "a document" between modules and towards the UI.
 | `id` | `number` | pk |
 | `display_id` | `string` | `obj.display_id`, else the registry short template |
 | `title` / `icon` | `string` / `string \| null` | from `SearchableEntity` |
+| `domain` | `string` | operational area (ADR-0083, see below); always present, also for dangling refs |
 | `status` / `status_display` | `string \| null` | `null` when the type has no status or the user has no access |
 | `date` | ISO `string \| null` | first of `date`, `delivery_date`, `receipt_date`, `return_date`, `created_at` (or declared field) |
 | `partner_name` | `string \| null` | customer / supplier / contact / partner (or declared path) |
@@ -79,7 +80,7 @@ Rules:
 
 Generated only by `DocumentTypeRegistry.canonical_url(label, obj)`:
 
-1. A declared pattern / function — only when the list really opens **that** document with `?selected` (ADR-0020). OV/OC/sale invoices open the Order Hub (decision D4).
+1. A declared pattern / function — only when the list really opens **that** document with `?selected` (ADR-0020). OV opens its document sheet (ADR-0083); OC/sale invoices still open the Order Hub until U3.
 2. Otherwise the resolver **`/d/{label}/{id}`** (`app/(dashboard)/d/[label]/[id]`): redirects to the canonical URL if there is one, or opens the drawer registered in `ENTITY_DRAWERS` via `openEntity`.
 
 `core/tests/test_document_routes_sync.py` fails if a declared canonical URL (or the resolver) has no frontend route, or if a registered type has neither a declared canonical URL nor a drawer in `ENTITY_DRAWERS`.
@@ -87,7 +88,7 @@ Universal search returns `detail_url = DocumentTypeRegistry.url_for(label, id)` 
 
 | label | canonical URL |
 |---|---|
-| `sales.saleorder` | `/sales/orders?selected={id}` (Order Hub) |
+| `sales.saleorder` | `/sales/orders?selected={id}` (document sheet, ADR-0083) |
 | `purchasing.purchaseorder` | `/purchasing/orders?selected={id}` (Order Hub) |
 | `billing.invoice` | sale: `/billing/sales?selected={id}` (Order Hub) · purchase: resolver |
 | `treasury.treasurymovement` | `/treasury/operaciones/movements?selected={id}` |
@@ -100,21 +101,26 @@ Universal search returns `detail_url = DocumentTypeRegistry.url_for(label, id)` 
 | Component | Where | Use |
 |---|---|---|
 | `RelatedDocumentsTable` | `@/components/shared` | Presentation only: relations grouped by semantic (origin/generated, logistics, payments, notes/returns/reversals, accounting, other). Rows show role, `display_id`, status, date, partner, amount/quantity; inaccessible targets show "sin acceso" without link; `loading`/`empty`/`error` + unresolved count |
-| `DocumentRelationsSection` | `@/features/documents` | Fetches with `useDocumentRelations` and opens each target with `openEntity` (stack + back; OV/OC → Hub per D4); types without drawer navigate to `DocumentRef.url` |
-| `DocumentDrawerShell` | `@/components/shared` | Common document sheet: header (caller's `useDrawerIdentity`), `summary`, type-specific `children`, `related` slot, loading/error. Used by `SaleDeliveryDrawer`, `PurchaseReceiptDrawer` |
+| `DocumentRelationsSection` | `@/features/documents` | Fetches with `useDocumentRelations` and opens each target with `openEntity` (stack + back; OV → document sheet, OC → Hub until U3); types without drawer navigate to `DocumentRef.url` |
+| `DocumentDrawerShell` | `@/components/shared` | Common document sheet (ADR-0083): lifecycle, action bar, tabs, activity sidebar, `embedded`; legacy `summary`/`children`/`related` layout still used by `SaleDeliveryDrawer`, `PurchaseReceiptDrawer`. Contract: [component-document-sheet.md](./component-document-sheet.md) |
+| `DocumentRelationsTab` | `@/features/documents` | Relations tab of the document sheet: groups by `domain`, area and row actions, area filter (ADR-0083) |
 
 Sheets with the relations section (M3): delivery, receipt, invoice, treasury movement, journal entry (view), stock move, inventory document, and the Order Hub (OV/OC/invoice in note mode). Existing drawers keep their layout and add the section; full migration to `DocumentDrawerShell` happens when each drawer is touched (M5).
 
+### `domain` (ADR-0083)
+
+Operational area of the document type: `origin | billing | production | logistics | treasury | accounting | other`, in lifecycle order. Declared by `DocumentTypeRegistry` — `DocumentType(domain=...)` overrides the app default (`DEFAULT_DOMAIN_BY_APP`; OV/OC declare `origin`). The document sheet's relations tab groups by it (`component-document-sheet.md` §5). Additive field; unknown values parse as `other` in the frontend.
+
 ## 6. Deprecated (2026-10-15) — legacy relation formats
 
-Deprecated under ADR-0080 (phase "Deprecate" of [deprecate-feature.md](../30-playbooks/deprecate-feature.md)); marked `DEPRECATED` in the serializers and `@deprecated` in the frontend types. **Do not add consumers.** Removal precondition: the Order Hub phases read `relations` instead of the buckets (separate project), then zero consumers + deprecation window.
+Deprecated under ADR-0080 (phase "Deprecate" of [deprecate-feature.md](../30-playbooks/deprecate-feature.md)); marked `DEPRECATED` in the serializers and `@deprecated` in the frontend types. **Do not add consumers.** Removal precondition: the Order Hub is retired (ADR-0083, phase U6), then zero consumers + deprecation window.
 
 | Legacy format | Producer | Remaining consumers (2026-10-15) |
 |---|---|---|
 | `related_documents` buckets of OV/OC | `SaleOrderSelector` / `PurchaseOrderSelector.get_related_documents` | Order Hub (phases, `useOrderHubData`, `HubStatus`, `ActionCategory`, action registries, status utils), POS `DetailPanel`, `ContactDrawer` (~23 files) |
 | `Invoice.related_documents`, `related_stock_moves`, `related_returns` | `InvoiceSelectorExt` | Order Hub in note mode, billing types/actions |
 | `JournalEntry.source_documents` | `JournalEntry.get_source_documents` | `JournalEntryDrawer` (origin field and edit prefill) |
-| `SaleOrderDrawer` / `PurchaseOrderDrawer` (thin OV/OC sheets) | — | Hub `OriginPhase` own detail, `AdvancedSaleOrderSelector` |
+| `PurchaseOrderDrawer` (thin OC sheet) | — | Hub `OriginPhase` own detail; replaced by `OrderSheet` in U3. `SaleOrderDrawer` was removed (U2, 2026-10-15) |
 
 **Removed in M6:** `StockMove.related_documents` (no readers since M3), GFK `TreasuryMovement.allocated_to` and its columns (no writers or readers; empty; migration `treasury/0094`), `DRAWER_MAP` (M5).
 

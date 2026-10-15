@@ -62,6 +62,7 @@ def build_ref(obj: models.Model, user, label: str | None = None) -> dict:
         "display_id": _display_id(label, obj),
         "title": entity.title_singular if entity else str(obj._meta.verbose_name),
         "icon": entity.icon if entity else None,
+        "domain": DocumentTypeRegistry.domain(label),
         # Sin permiso: se muestra que existe la relación, no su contenido.
         "status": status if accessible else None,
         "status_display": status_display if accessible else None,
@@ -79,6 +80,7 @@ def missing_ref(label: str, pk: Any) -> dict:
         "label": label, "id": pk, "display_id": f"#{pk}",
         "title": entity.title_singular if entity else label,
         "icon": entity.icon if entity else None,
+        "domain": DocumentTypeRegistry.domain(label),
         "status": None, "status_display": None, "date": None, "partner_name": None,
         "url": None, "accessible": False, "exists": False,
     }

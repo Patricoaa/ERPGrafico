@@ -91,6 +91,7 @@ def test_document_ref(pilot):
     assert res.data["url"] == f"/sales/orders?selected={order.id}"
     assert res.data["partner_name"] == "Imprenta Norte"
     assert res.data["accessible"] and res.data["exists"]
+    assert res.data["domain"] == "origin"
 
 
 @pytest.mark.django_db
@@ -238,3 +239,25 @@ def test_work_order_relations(pilot):
     assert ("sale_order", "sales.saleorder", order.id) in _targets(data)
     assert ("work_order", "production.workorder", work_order.id) in _targets(
         _relations(pilot["client"], "sales.saleorder", order.id))
+
+
+def test_document_domains_follow_cycle_order():
+    """ADR-0083: el área agrupa los relacionados de la ficha; OV/OC encabezan el ciclo."""
+    from core.documents import DocumentTypeRegistry
+    from core.documents.types import DOCUMENT_DOMAINS
+
+    expected = {
+        "sales.saleorder": "origin",
+        "purchasing.purchaseorder": "origin",
+        "billing.invoice": "billing",
+        "production.workorder": "production",
+        "sales.saledelivery": "logistics",
+        "purchasing.purchasereceipt": "logistics",
+        "inventory.stockmove": "logistics",
+        "treasury.treasurymovement": "treasury",
+        "accounting.journalentry": "accounting",
+        "hr.payroll": "other",
+    }
+    for label, domain in expected.items():
+        assert DocumentTypeRegistry.domain(label) == domain, label
+    assert all(DocumentTypeRegistry.domain(label) in DOCUMENT_DOMAINS for label in DocumentTypeRegistry._types)

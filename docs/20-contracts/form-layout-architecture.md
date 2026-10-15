@@ -222,8 +222,8 @@ El sidebar **siempre** ocupa el lado derecho del área del formulario. Lo posici
 
 ```
 Drawer (contentClassName="p-0") o BaseModal (hideScrollArea + contentClassName="p-0")
-  └─ FormTabs [opcional]
-       └─ FormTabsContent
+  └─ TabBar [opcional]
+       └─ TabBarContent
             └─ FormSplitLayout          ← gestiona la bipartición
                  ├─ form (izquierda, flex-1, scrollable)
                  └─ ActivitySidebar     ← SIEMPRE derecha, w-72, fijo
@@ -253,8 +253,8 @@ Drawer (contentClassName="p-0") o BaseModal (hideScrollArea + contentClassName="
     allowOverflow={true}
     footer={<FormFooter actions={<>...</>} />}
 >
-    <FormTabs orientation="vertical" ...>
-        <FormTabsContent value="general">
+    <TabBar orientation="vertical" ...>
+        <TabBarContent value="general">
             <FormSplitLayout
                 sidebar={<ActivitySidebar entityId={initialData.id} entityType="product" />}
                 showSidebar={!!initialData?.id}
@@ -263,11 +263,11 @@ Drawer (contentClassName="p-0") o BaseModal (hideScrollArea + contentClassName="
                     {/* campos */}
                 </form>
             </FormSplitLayout>
-        </FormTabsContent>
-        <FormTabsContent value="config">
+        </TabBarContent>
+        <TabBarContent value="config">
             {/* sin sidebar en tabs secundarios */}
-        </FormTabsContent>
-    </FormTabs>
+        </TabBarContent>
+    </TabBar>
 </BaseModal>
 ```
 

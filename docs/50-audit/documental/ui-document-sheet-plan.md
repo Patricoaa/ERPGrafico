@@ -1,6 +1,6 @@
 # Etapa UI — Ficha documental y retiro del Order Hub
 
-**Estado:** Plan para revisión (sin implementar) · 2026-10-15
+**Estado:** Aprobado (D7–D11, ADR-0083) · U0–U2 implementadas 2026-10-15 · ver [implementation-progress.md](./implementation-progress.md)
 **Rama:** `feat/document-system`
 **Prerrequisitos cumplidos:** M0–M6 (ADR-0080, ADR-0081), relaciones vía `GET /api/core/documents/{label}/{id}/relations/`.
 
@@ -220,13 +220,12 @@ Estimación: U0–U1 ≈ 1 bloque · U2 ≈ 1 · U3–U4 ≈ 1 · U5 ≈ 1–2 �
 | No hay pruebas en el navegador automatizadas | Prueba de humo manual o con Claude-in-Chrome en el dev server en cada fase (requiere credenciales). |
 | Que la pila de `openEntity` (máx. 5) se sature al navegar por relaciones | Ya existe un recorte FIFO; se muestra "Volver a…". |
 
-## 5. Decisiones abiertas
+## 5. Decisiones (resueltas 2026-10-15)
 
-Cada una tiene una recomendación por defecto.
+Registradas como D7–D11 en [document-decisions.md](./document-decisions.md): piloto en OV · tabs horizontales · un único tab Relaciones agrupado por área · franja de ciclo conservada · POS con vista incrustada.
 
-1. **Despliegue por piloto (recomendado: OV primero, U2) o todo de una vez.**
-2. **Tabs horizontales `underline` (recomendado, precedente `ContactDrawer`)** frente al riel vertical del contrato de formularios.
-3. **Un único tab Relaciones agrupado por dominio con acciones por sección (recomendado)** frente a tabs separados por dominio (Facturación, Logística, Tesorería…) además de Relaciones.
-4. **Conservar la franja de Ciclo** (Origen → … → Pago) en la cabecera de OV/OC/facturas (recomendado: sí).
-5. **POS:** abrir la ficha apilada (recomendado) o mantener una vista incrustada.
-6. **Credenciales del dev server** para la verificación en el navegador.
+## 6. Ajustes al implementar U1–U2
+
+- El motor de acciones de documentos comerciales (`useOrderActionEngine`), las acciones por documento relacionado (`useOrderRelatedActions`), el ciclo (`getOrderLifecycle`) y la ficha `OrderSheet` viven en `features/orders` (no en `features/documents`): dependen de ventas, compras, tesorería, notas y producción. Lo genérico (`DocumentRelationsTab`, `resolveRegistryActions`, áreas) sí está en `features/documents`. En U6 `features/orders` queda reducido a la ficha de órdenes y su motor.
+- `ActionCategory` del Hub delega en `useOrderActionEngine` y `TreasuryPhase` usa `AnnulPaymentModal`: durante la convivencia no hay lógica duplicada.
+- `SaleOrderDrawer` se eliminó (0 consumidores tras U2; la vista previa de `AdvancedSaleOrderSelector` abre la ficha con `openEntity`).

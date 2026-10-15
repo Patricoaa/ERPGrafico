@@ -2,8 +2,10 @@
 
 from core.documents import DocumentType, DocumentTypeRegistry, Link, relation_provider
 
-# OV: `?selected` abre el Order Hub, que es su ficha (decisión D4).
-DocumentTypeRegistry.register(DocumentType(label="sales.saleorder", canonical_url="/sales/orders?selected={id}"))
+# OV: `?selected` abre su ficha documental (ADR-0083). Área "origin": encabeza el ciclo.
+DocumentTypeRegistry.register(DocumentType(
+    label="sales.saleorder", canonical_url="/sales/orders?selected={id}", domain="origin",
+))
 # Despacho: su lista usa `?selected` con id de OV → resolvedor /d/ (valor por defecto).
 DocumentTypeRegistry.register(DocumentType(label="sales.saledelivery"))
 
