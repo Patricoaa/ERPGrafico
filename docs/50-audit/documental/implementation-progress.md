@@ -17,6 +17,19 @@
 
 ---
 
+## 2026-10-15 · Seed (`setup_demo_data`) revisado y dev server re-sembrado
+
+**Evaluación del seed:** casi todo se crea con los servicios, así que con un seed nuevo los datos nacen con los arreglos (líneas de factura, cumplimiento de despachos, enlaces stock↔documento, estado de facturación). Cambios necesarios:
+- `_create_sales_purchasing_demo` creaba la factura FACT-1001 con `Invoice.objects.create` (sin líneas propias, sin asiento, sin actualizar la OV) → ahora `BillingService.create_sale_invoice`.
+- Purga: `InvoiceLine` antes de las líneas de despacho/recepción (las protege con PROTECT).
+- Nueva sección `_create_document_flows_demo` (escenarios D6, solo servicios reales, idempotente y aislada): factura parcial por despacho (OV queda PARCIAL con un segundo despacho sin facturar), factura multi-orden, anticipo de 80.000 repartido 50.000 + 30.000 entre dos facturas, NC sobre línea de factura con devolución física, compra facturada contra una recepción parcial.
+
+**Fallo encontrado al probar el seed en PostgreSQL (los tests en SQLite no lo veían):** `InvoiceFromLinesService` bloqueaba con `select_for_update()` + `select_related("product")`; en ventas `product` es nullable (LEFT JOIN) y PostgreSQL rechaza el FOR UPDATE → **la facturación por entregas de ventas fallaba siempre en PostgreSQL**. Corregido con `select_for_update(of=("self",))`; los tests de M4b fallan 8/8 contra PostgreSQL sin el arreglo y pasan con él.
+
+**Falso positivo corregido:** las "21 recepciones sin movimiento de stock" (30 en un seed nuevo) eran líneas de **suscripciones**, que por diseño no mueven stock; la métrica filtraba por `track_inventory`, que vale True por defecto incluso para servicios. `audit_document_integrity` y `backfill_document_links` excluyen ahora servicios y suscripciones. Con esto **todos los umbrales de integridad quedan en OK**.
+
+**Validación previa** en una BD PostgreSQL local desechable (migrate desde cero + seed): los 5 escenarios OK; auditoría todo OK; los comandos de backfill no encuentran nada que corregir (los servicios ya generan datos correctos).
+
 ## 2026-10-15 · M6 · Retiro y deprecación de lo legacy
 
 Procedimiento: [deprecate-feature.md](../../30-playbooks/deprecate-feature.md) (retirar solo con 0 consumidores; el resto pasa a "Deprecate").

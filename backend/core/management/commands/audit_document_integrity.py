@@ -17,6 +17,8 @@ from purchasing.models import PurchaseReceiptLine
 from sales.models import SaleDeliveryLine, SaleLine
 from treasury.models import PaymentAllocation, TreasuryMovement
 
+NON_STOCK_TYPES = ("SERVICE", "SUBSCRIPTION")
+
 
 def _stock_moves_without_document():
     return StockMove.objects.filter(
@@ -36,12 +38,14 @@ class Command(BaseCommand):
         parser.add_argument("--strict", action="store_true", help="Termina con error si algún umbral falla.")
 
     def handle(self, *args, strict=False, **options):
+        # Servicios y suscripciones no mueven stock (track_inventory vale True por defecto
+        # incluso para ellos, por eso se filtra por tipo de producto).
         delivery_lines = SaleDeliveryLine.objects.filter(
             delivery__status="CONFIRMED", product__track_inventory=True
-        )
+        ).exclude(product__product_type__in=NON_STOCK_TYPES)
         receipt_lines = PurchaseReceiptLine.objects.filter(
             receipt__status="CONFIRMED", product__track_inventory=True
-        )
+        ).exclude(product__product_type__in=NON_STOCK_TYPES)
         delivered_lines = SaleLine.objects.filter(
             order__delivery_status="DELIVERED", related_note__isnull=True
         )

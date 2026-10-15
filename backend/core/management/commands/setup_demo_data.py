@@ -23,7 +23,7 @@ from accounting.models import (
 )
 from accounting.services import AccountingService
 from accounting.utils import get_default_vat_rate
-from billing.models import Invoice
+from billing.models import Invoice, InvoiceLine
 from billing.note_workflow import NoteWorkflow
 from contacts.models import Contact
 from contacts.partner_models import (
@@ -320,6 +320,11 @@ class Command(BaseCommand):
 
                 section_start = time.time()
                 self.stdout.write(f"\n{'─' * 50}")
+                self.stdout.write("  Document Flows Demo (ADR-0080/0081)...")
+                self._create_document_flows_demo(partners, inventory, uoms)
+
+                section_start = time.time()
+                self.stdout.write(f"\n{'─' * 50}")
                 self.stdout.write("  Historical Purchases & POS Demo...")
                 self._create_historical_purchases_and_pos(accounts, partners, inventory, uoms)
             section_start = time.time()
@@ -555,6 +560,7 @@ class Command(BaseCommand):
 
         # ── 4. Logistics Detail ──────────────────────────────
         _section_header("4. Logistics Detail")
+        _safe_delete(InvoiceLine, "InvoiceLine")  # protege líneas de OV/OC/despacho/recepción
         _safe_delete(SaleReturnLine, "SaleReturnLine")
         _safe_delete(SaleDeliveryLine, "SaleDeliveryLine")
         _safe_delete(PurchaseReturnLine, "PurchaseReturnLine")
@@ -2310,15 +2316,13 @@ class Command(BaseCommand):
             delivery = SalesService.dispatch_order(order, warehouse)
             SalesService.confirm_delivery(delivery)
 
-            # Bill
-            invoice = Invoice.objects.create(
+            # Bill (por el servicio: líneas propias, asiento y estado de la OV — ADR-0081)
+            from billing.services import BillingService
+
+            invoice = BillingService.create_sale_invoice(
+                order,
                 dte_type=Invoice.DTEType.FACTURA,
                 number="1001",
-                sale_order=order,
-                contact=customer,
-                total_net=order.total_net,
-                total_tax=order.total_tax,
-                total=order.total,
                 status=Invoice.Status.POSTED,
                 date=timezone.now().date(),
             )
@@ -2980,6 +2984,138 @@ class Command(BaseCommand):
                 total_hist_sales += 1
 
         self.stdout.write(f"  ✓ {total_hist_sales} ventas multi-mes generadas (Ene-{today.strftime('%b')} {current_year})")
+
+    def _create_document_flows_demo(self, partners, inventory, uoms):
+        """
+        Escenarios del modelo documental (ADR-0080/0081, decisiones D1–D2, D6) creados con los
+        servicios reales, para que el entorno demo tenga datos de los flujos nuevos:
+        facturación parcial por despacho, factura multi-orden, anticipo repartido entre facturas,
+        NC sobre línea de factura con devolución, y factura de compra parcial por recepción.
+        Cada escenario es idempotente (marca en `notes`) y se aísla: un fallo no detiene el seed.
+        """
+        from billing.invoice_from_lines import InvoiceFromLinesService
+        from billing.note_checkout_service import NoteCheckoutService
+        from billing.services import BillingService
+        from purchasing.services import PurchaseOrderService, PurchasingService
+        from sales.return_services import ReturnService
+        from sales.services import SalesService
+        from treasury.services import TreasuryService
+
+        admin = User.objects.filter(is_superuser=True).first()
+        wh = inventory["warehouse"]
+        today = timezone.now().date()
+        customer = partners["customers"][0]
+        supplier = partners["suppliers"][0]
+        papel = Product.objects.get(code="INS-0001")
+        diseno = Product.objects.get(code="SRV-DIS-GRA")
+        bco_estado = TreasuryAccount.objects.get(code="BCO-ESTADO")
+        vat = get_default_vat_rate()
+
+        def sale_order(marker, lines):
+            order = SaleOrder.objects.create(customer=customer, date=today, notes=marker,
+                                             payment_method=SaleOrder.PaymentMethod.CREDIT)
+            for product, qty, uom, price in lines:
+                SaleLine.objects.create(order=order, product=product, description=product.name, quantity=qty,
+                                        uom=uom, unit_price=Decimal(price), tax_rate=vat)
+            order.save()
+            SalesService.confirm_sale(order)
+            order.refresh_from_db()
+            return order
+
+        def invoice_from_lines(side, number, items):
+            return InvoiceFromLinesService.create(side=side, dte_type=Invoice.DTEType.FACTURA,
+                                                  status=Invoice.Status.POSTED, number=number, items=items)
+
+        def scenario(marker, label, build):
+            if SaleOrder.objects.filter(notes=marker).exists() or PurchaseOrder.objects.filter(notes=marker).exists():
+                self.stdout.write(f"    ├ {label}: ya existe")
+                return
+            try:
+                with transaction.atomic():
+                    detail = build(marker)
+                self.stdout.write(f"    ├ {label}: {detail}")
+            except Exception as e:  # un escenario demo no debe detener el seed
+                self.stdout.write(self.style.WARNING(f"    ├ {label}: omitido ({e})"))
+
+        # D1.2 — dos despachos parciales; se factura solo el primero (la OV queda PARCIAL)
+        def partial_by_delivery(marker):
+            order = sale_order(marker, [(papel, 10, papel.uom, "1500")])
+            line = order.lines.get()
+            first = SalesService.partial_dispatch(order, wh, [{"line_id": line.id, "quantity": 4}])
+            SalesService.partial_dispatch(order, wh, [{"line_id": line.id, "quantity": 3}])
+            inv = invoice_from_lines("sale", "9101", [
+                {"order_line_id": line.id, "quantity": 4, "fulfillment_line_id": first.lines.get().id},
+            ])
+            order.refresh_from_db()
+            return f"{order.display_id}: 4/10 facturado contra {first.display_id} ({inv.display_id}, {order.invoicing_status})"
+
+        # D1 — una factura para dos órdenes del mismo cliente
+        def multi_order(marker):
+            a = sale_order(marker, [(diseno, 1, uoms["un"], "80000")])
+            b = sale_order(marker + "-B", [(diseno, 2, uoms["un"], "60000")])
+            inv = invoice_from_lines("sale", "9102", [
+                {"order_line_id": a.lines.get().id, "quantity": 1},
+                {"order_line_id": b.lines.get().id, "quantity": 2},
+            ])
+            return f"{inv.display_id} factura {a.display_id} + {b.display_id}"
+
+        # D2 — anticipo repartido entre dos facturas parciales
+        def advance_split(marker):
+            order = sale_order(marker, [(diseno, 2, uoms["un"], "50000")])
+            line = order.lines.get()
+            TreasuryService.create_movement(
+                amount=Decimal("80000"), movement_type=TreasuryMovement.Type.INBOUND,
+                payment_method=TreasuryMovement.Method.TRANSFER, date=today, created_by=admin,
+                to_account=bco_estado, partner=customer, sale_order=order, reference="Anticipo demo D2",
+            )
+            first = invoice_from_lines("sale", "9103", [{"order_line_id": line.id, "quantity": 1}])
+            second = invoice_from_lines("sale", "9104", [{"order_line_id": line.id, "quantity": 1}])
+            return (f"anticipo 80.000 → {first.display_id} pagado {first.total_paid}, "
+                    f"{second.display_id} pagado {second.total_paid}")
+
+        # D1.3 / D6 — NC sobre línea de factura, con devolución física
+        def credit_note_with_return(marker):
+            order = sale_order(marker, [(papel, 5, papel.uom, "1500")])
+            SalesService.dispatch_order(order, wh)
+            invoice = BillingService.create_sale_invoice(order, dte_type=Invoice.DTEType.FACTURA, number="9105",
+                                                         status=Invoice.Status.POSTED, date=today)
+            workflow = NoteCheckoutService._process_full_checkout_internal(
+                original_invoice_id=invoice.id, note_type=Invoice.DTEType.NOTA_CREDITO,
+                selected_items=[{"product_id": papel.id, "quantity": 2, "unit_price": 1500,
+                                 "tax_amount": int(Decimal("1500") * vat / 100), "line_id": order.lines.get().id}],
+                registration_data={"document_number": "9501", "is_pending": False},
+                reason="Demo: devolución parcial", created_by=admin,
+            )
+            note = workflow.invoice
+            ret = ReturnService.create_return_from_note_request(
+                order=order, items=[{"product_id": papel.id, "quantity": 2, "uom_id": papel.uom_id}],
+                warehouse_id=wh.id, credit_note=note,
+            )
+            ReturnService.confirm_return(ret)
+            return f"{note.display_id} sobre {invoice.display_id} → devolución {ret.display_id}"
+
+        # D1.2 compras — factura parcial contra una recepción
+        def purchase_partial(marker):
+            po = PurchaseOrder.objects.create(supplier=supplier, warehouse=wh, date=today, notes=marker,
+                                              payment_method=PurchaseOrder.PaymentMethod.TRANSFER)
+            PurchaseLine.objects.create(order=po, product=papel, quantity=20, uom=papel.uom,
+                                        unit_cost=Decimal("900"), tax_rate=vat)
+            po.save()
+            PurchaseOrderService().confirm(po, user=admin)
+            line = po.lines.get()
+            receipt = PurchasingService.partial_receive(po, wh, [{"line_id": line.id, "quantity": 8, "unit_cost": 900}])
+            inv = invoice_from_lines("purchase", "77001", [
+                {"order_line_id": line.id, "quantity": 8, "fulfillment_line_id": receipt.lines.get().id},
+            ])
+            po.refresh_from_db()
+            return f"{po.display_id}: 8/20 facturado contra {receipt.display_id} ({inv.display_id}, {po.invoicing_status})"
+
+        self.stdout.write("  ─────────────────────────────────────────────")
+        scenario("Seed-Doc-Parcial-Despacho", "Factura parcial por despacho (D1.2)", partial_by_delivery)
+        scenario("Seed-Doc-MultiOrden", "Factura multi-orden (D1)", multi_order)
+        scenario("Seed-Doc-Anticipo", "Anticipo repartido (D2)", advance_split)
+        scenario("Seed-Doc-NC-Devolucion", "NC con devolución (D1.3)", credit_note_with_return)
+        scenario("Seed-Doc-Compra-Parcial", "Compra facturada por recepción (D1.2)", purchase_partial)
 
     def _create_historical_purchases_and_pos(self, accounts, partners, inventory, uoms):
         import calendar

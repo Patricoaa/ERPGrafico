@@ -124,7 +124,9 @@ class InvoiceFromLinesService:
     @staticmethod
     def _load(s: _Side, items):
         line_ids = [int(i["order_line_id"]) for i in items]
-        lines = s.line_model.objects.select_for_update().filter(pk__in=line_ids).select_related("order", "product")
+        # of=("self",): solo se bloquean las líneas; product es nullable (LEFT JOIN) y PostgreSQL
+        # no permite FOR UPDATE sobre el lado nullable de un outer join.
+        lines = s.line_model.objects.select_for_update(of=("self",)).filter(pk__in=line_ids).select_related("order", "product")
         lines_by_id = {line.pk: line for line in lines}
         missing = set(line_ids) - set(lines_by_id)
         if missing:

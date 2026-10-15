@@ -104,7 +104,7 @@ class Command(BaseCommand):
                 "despacho",
                 SaleDeliveryLine.objects.filter(
                     delivery__status="CONFIRMED", product__track_inventory=True, stock_move__isnull=True
-                ).select_related("delivery__sale_order", "product__uom", "uom", "sale_line__uom"),
+                ).exclude(product__product_type__in=("SERVICE", "SUBSCRIPTION")).select_related("delivery__sale_order", "product__uom", "uom", "sale_line__uom"),
                 lambda ln: UoMService.convert_quantity(ln.quantity, from_uom=ln.uom or ln.sale_line.uom, to_uom=ln.product.uom),
                 lambda ln: ln.delivery.journal_entry_id,
                 lambda ln: f"Despacho {EntityPrefix.SALE_ORDER}-{ln.delivery.sale_order.number}",
@@ -114,7 +114,7 @@ class Command(BaseCommand):
                 "recepción",
                 PurchaseReceiptLine.objects.filter(
                     receipt__status="CONFIRMED", product__track_inventory=True, stock_move__isnull=True
-                ).select_related("receipt__purchase_order", "product__uom", "uom", "purchase_line__uom"),
+                ).exclude(product__product_type__in=("SERVICE", "SUBSCRIPTION")).select_related("receipt__purchase_order", "product__uom", "uom", "purchase_line__uom"),
                 lambda ln: abs(UoMService.convert_quantity(
                     ln.quantity_received, from_uom=ln.uom or ln.purchase_line.uom, to_uom=ln.product.uom)),
                 lambda ln: ln.receipt.journal_entry_id,
