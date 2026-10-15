@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from rest_framework import serializers
 
 from core.serializers import AttachmentSerializer
@@ -314,3 +316,22 @@ class CreateInvoiceSerializer(serializers.Serializer):
     document_attachment = serializers.FileField(required=False, allow_null=True)
     issue_date = serializers.DateField(required=False, allow_null=True)
     status = serializers.ChoiceField(choices=Invoice.Status.choices, default=Invoice.Status.POSTED)
+
+
+class InvoiceFromLinesItemSerializer(serializers.Serializer):
+    order_line_id = serializers.IntegerField()
+    quantity = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal("0.01"))
+    # Línea de despacho (venta) o de recepción (compra) que se factura (D1.2)
+    fulfillment_line_id = serializers.IntegerField(required=False, allow_null=True)
+
+
+class InvoiceFromLinesSerializer(serializers.Serializer):
+    """Factura parcial / multi-orden por cantidad (ADR-0081)."""
+
+    side = serializers.ChoiceField(choices=["sale", "purchase"])
+    dte_type = serializers.ChoiceField(choices=Invoice.DTEType.choices)
+    items = InvoiceFromLinesItemSerializer(many=True, allow_empty=False)
+    status = serializers.ChoiceField(choices=[Invoice.Status.DRAFT, Invoice.Status.POSTED], default=Invoice.Status.DRAFT)
+    number = serializers.CharField(required=False, allow_blank=True, default="")
+    date = serializers.DateField(required=False, allow_null=True)
+    payment_method = serializers.ChoiceField(choices=Invoice.PaymentMethod.choices, default="CREDIT")

@@ -110,6 +110,24 @@ class InvoicingService:
         return Invoice.objects.filter(pk__in=set(order.invoices.values_list("pk", flat=True)) | set(via_lines)).order_by("id")
 
     @staticmethod
+    def release_advances(invoice: Invoice, reverse_entry: bool) -> None:
+        """
+        Libera los anticipos imputados por importe a la factura (D2, M4b) para que vuelvan
+        a estar disponibles en la orden. Al anular una factura publicada se revierte además
+        el asiento de conciliación RECO; las facturas legacy (anticipo por FK) no se tocan.
+        """
+        from accounting.models import JournalEntry
+        from accounting.services import JournalEntryService
+        from treasury.models import PaymentAllocation
+
+        released = PaymentAllocation.objects.filter(invoice=invoice).delete()[0]
+        if not (released and reverse_entry):
+            return
+        for entry in JournalEntry.objects.filter(reference=f"RECO-{invoice.id}", status=JournalEntry.State.POSTED):
+            JournalEntryService.reverse_entry(entry, description=f"Anulación conciliación {invoice.display_id}",
+                                              allow_automatic=True)
+
+    @staticmethod
     def recompute_invoice_orders(invoice: Invoice) -> None:
         for order in InvoicingService.orders_of(invoice):
             InvoicingService.recompute_order(order)

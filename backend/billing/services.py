@@ -1580,6 +1580,7 @@ class BillingService:
         # 4. Mark as CANCELLED
         invoice.status = Invoice.Status.CANCELLED
         invoice.save()
+        InvoicingService.release_advances(invoice, reverse_entry=False)
         InvoicingService.recompute_invoice_orders(invoice)
 
         from workflow.services import WorkflowService
@@ -1688,14 +1689,19 @@ class BillingService:
         # 2. Update Status
         invoice.status = Invoice.Status.CANCELLED
         invoice.save()
+        InvoicingService.release_advances(invoice, reverse_entry=True)
         InvoicingService.recompute_invoice_orders(invoice)
 
-        # 3. Update Order Status — solo si no le queda otra factura principal activa
-        order = invoice.order
-        if order and not order.invoices.exclude(pk=invoice.pk).exclude(
-            status=Invoice.Status.CANCELLED
-        ).exclude(dte_type__in=[Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]).exists():
-            order.revert_after_invoice_cancellation()
+        # 3. Update Order Status — cada orden de la factura (N:M, ADR-0081) que no
+        #    conserve otra factura principal activa vuelve a su estado previo
+        from .invoicing import PRIMARY_DTE_TYPES
+
+        for order in InvoicingService.orders_of(invoice):
+            others = InvoicingService.invoices_of(order).exclude(pk=invoice.pk).exclude(
+                status=Invoice.Status.CANCELLED
+            ).filter(dte_type__in=PRIMARY_DTE_TYPES)
+            if not others.exists():
+                order.revert_after_invoice_cancellation()
 
         from workflow.services import WorkflowService
 

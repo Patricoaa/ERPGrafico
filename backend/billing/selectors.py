@@ -78,8 +78,8 @@ class InvoiceSelectorExt:
         es la línea de orden que factura (`id` = id de la línea de OV/OC, lo usa el flujo de
         notas hasta GAP-14) con `quantity`/`subtotal` de la factura y `invoice_line_id`.
         """
-        from sales.serializers import SaleLineSerializer
         from purchasing.serializers import PurchaseLineSerializer
+        from sales.serializers import SaleLineSerializer
 
         invoice_lines = list(invoice.lines.select_related("sale_line", "purchase_line"))
         if invoice_lines:
@@ -224,3 +224,86 @@ class InvoiceSelectorExt:
             ],
             "action": "cancel" if invoice.status == Invoice.Status.DRAFT else "annul",
         }
+
+
+class InvoiceableLinesSelector:
+    """
+    Líneas pendientes de facturar (ADR-0081, M4b): por cliente/proveedor u órdenes, con las
+    entregas confirmadas de cada línea y lo ya facturado contra ellas (D1.1, D1.2).
+    """
+
+    @staticmethod
+    def list(side: str, partner_id=None, order_ids=None) -> list[dict]:
+        from django.db.models import Sum
+
+        from .invoicing import PRIMARY_DTE_TYPES
+        from .models import Invoice, InvoiceLine
+
+        is_sale = side == "sale"
+        if is_sale:
+            from sales.models import SaleDeliveryLine as FulfilLine
+            from sales.models import SaleOrder as Order
+            partner_field, line_field, fulfil_field, doc_field, qty_field = (
+                "customer", "sale_line", "delivery_line", "delivery", "quantity")
+        else:
+            from purchasing.models import PurchaseOrder as Order
+            from purchasing.models import PurchaseReceiptLine as FulfilLine
+            partner_field, line_field, fulfil_field, doc_field, qty_field = (
+                "supplier", "purchase_line", "receipt_line", "receipt", "quantity_received")
+
+        orders = Order.objects.exclude(status__in=["DRAFT", "CANCELLED"]).exclude(
+            invoicing_status=Order.InvoicingStatus.INVOICED
+        )
+        if partner_id:
+            orders = orders.filter(**{f"{partner_field}_id": partner_id})
+        if order_ids:
+            orders = orders.filter(pk__in=order_ids)
+        if not partner_id and not order_ids:
+            return []
+
+        active = InvoiceLine.objects.filter(invoice__dte_type__in=PRIMARY_DTE_TYPES).exclude(
+            invoice__status=Invoice.Status.CANCELLED
+        )
+        result = []
+        for order in orders.order_by("id"):
+            lines = []
+            for line in order.lines.filter(related_note__isnull=True).select_related("product"):
+                pending = line.quantity - line.quantity_invoiced
+                if pending <= 0:
+                    continue
+                invoiced_by_fulfil = dict(
+                    active.filter(**{f"{fulfil_field}__{line_field}": line})
+                    .values_list(fulfil_field).annotate(t=Sum("quantity"))
+                )
+                fulfillments = []
+                for fulfil in FulfilLine.objects.filter(**{line_field: line, f"{doc_field}__status": "CONFIRMED"}).select_related(doc_field):
+                    delivered = abs(getattr(fulfil, qty_field))
+                    invoiced = invoiced_by_fulfil.get(fulfil.pk, 0)
+                    fulfillments.append({
+                        "id": fulfil.pk,
+                        "document_id": getattr(fulfil, f"{doc_field}_id"),
+                        "document_display": getattr(fulfil, doc_field).display_id,
+                        "date": getattr(getattr(fulfil, doc_field), f"{doc_field}_date", None),
+                        "delivered": delivered,
+                        "invoiced": invoiced,
+                        "pending": delivered - invoiced,
+                    })
+                lines.append({
+                    "id": line.pk,
+                    "product_id": line.product_id,
+                    "description": getattr(line, "description", "") or (line.product.name if line.product else ""),
+                    "quantity": line.quantity,
+                    "quantity_invoiced": line.quantity_invoiced,
+                    "pending": pending,
+                    "deliverable": bool(line.product and line.product.product_type not in ("SERVICE", "SUBSCRIPTION")),
+                    "fulfillments": fulfillments,
+                })
+            if lines:
+                result.append({
+                    "order_id": order.pk,
+                    "display_id": order.display_id,
+                    "partner_id": getattr(order, f"{partner_field}_id"),
+                    "invoicing_status": order.invoicing_status,
+                    "lines": lines,
+                })
+        return result

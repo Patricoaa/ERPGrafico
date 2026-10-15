@@ -1378,11 +1378,16 @@ class AccountingMapper:
             raise ValidationError("Falta configuración de cuenta por cobrar.")
 
         revenue_gross_grouping = {}  # Account -> Gross Amount
-        for line in order.lines.all():
-            rev_acc = line.product.get_income_account or settings.default_revenue_account
+        # ADR-0081: la factura se contabiliza por sus propias líneas (legacy: líneas de la orden)
+        invoice_lines = list(invoice.lines.select_related("product"))
+        for line in invoice_lines or order.lines.all():
+            if line.product is None:
+                rev_acc = settings.default_revenue_account
+            else:
+                rev_acc = line.product.get_income_account or settings.default_revenue_account
             if not rev_acc:
                 raise ValidationError(
-                    f"Falta configurar cuenta de ingresos para el producto {line.product.code}."
+                    f"Falta configurar cuenta de ingresos para el producto {getattr(line.product, 'code', '')}."
                 )
             revenue_gross_grouping[rev_acc] = (
                 revenue_gross_grouping.get(rev_acc, Decimal("0.00")) + line.subtotal
@@ -1507,11 +1512,12 @@ class AccountingMapper:
                 if invoice.total_tax > 0:
                     tax_by_account: dict[int, dict] = {}
 
-                    for line in order.lines.all():
+                    # ADR-0081: líneas de la factura (legacy: líneas de la orden)
+                    for line in list(invoice.lines.select_related("product")) or order.lines.all():
                         line_tax = (line.subtotal * (line.tax_rate / Decimal("100.0"))).quantize(
                             Decimal("1"), rounding="ROUND_HALF_UP"
                         )
-                        if line_tax > 0 and hasattr(line, "product"):
+                        if line_tax > 0 and getattr(line, "product", None) is not None:
                             strategy = line.product.strategy
                             account = strategy.get_asset_account(line.product)
                             if account is not None:

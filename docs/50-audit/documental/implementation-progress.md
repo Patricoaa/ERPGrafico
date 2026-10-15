@@ -11,9 +11,32 @@
 | M1 Integridad | **Hecha** (código + backfill aplicado en dev) · INT-15 corregido |
 | M2 Contratos | **Hecha** · ADR-0080 **Aceptado** (2026-10-14) |
 | M3 UI piloto | **Hecha** (GAP-06, GAP-10, GAP-11, D4); verificación visual en navegador pendiente |
-| M4 Facturación y pagos | **M4a hecha** (líneas propias, sin cambio de comportamiento); backfill en dry-run **pendiente de aprobación (D3)** · M4b–M4d pendientes |
+| M4 Facturación y pagos | **M4a y M4b hechas** (backend); backfill de líneas en dry-run **pendiente de aprobación (D3)** · M4c (notas + UI) y M4d (pagos) pendientes |
 | M5 Extensión | Pendiente |
 | M6 Retiro | Pendiente |
+
+---
+
+## 2026-10-14 · M4b · Facturación parcial y multi-orden por cantidad (backend)
+
+**Servicio** `billing/invoice_from_lines.py` — `InvoiceFromLinesService.create(side, dte_type, items, status, number, date, payment_method)`; `items = [{order_line_id, quantity, fulfillment_line_id?}]` (`fulfillment_line_id` = línea de despacho en ventas / de recepción en compras). Reglas:
+- **D1.1** por cantidad; nunca más de lo pendiente de facturar por línea.
+- **D1.2** si la factura no completa todas las órdenes involucradas, cada línea de producto entregable (no servicio/suscripción) debe indicar su línea de despacho/recepción **confirmada**, y lo facturado contra ella no supera lo entregado.
+- **D1** varias órdenes en una factura solo si son del mismo cliente/proveedor; órdenes en borrador o anuladas no se facturan; líneas de notas no se facturan por esta vía.
+- Totales con las mismas estrategias de la orden (`GrossFirstTotals` venta / `NetFirstTotals` compra) sobre las líneas de la factura; el descuento global de la orden se prorratea por bruto facturado y la factura que completa la orden toma el resto (sin descuadre acumulado).
+- **Asiento desde las líneas propias**: `AccountingMapper.get_entries_for_sale_invoice`, `get_entries_for_purchase_bill` (IVA capitalizado de boletas) y `_build_revenue_grouping` (estrategias DTE) leen `invoice.lines` (legacy: líneas de la orden).
+- **D2 anticipos**: los pagos de las órdenes sin factura se imputan **por importe** con `PaymentAllocation` hasta el total de la factura (asiento de conciliación RECO por lo imputado); el saldo queda para la siguiente factura. Cancelar/anular libera las imputaciones (al anular, revierte el RECO). La orden cuenta el anticipo una sola vez (`PaymentSelector`).
+- Estado: la orden pasa a `INVOICED` (estado principal) y `invoicing_status` se recalcula; al anular, **cada** orden de la factura sin otra factura activa vuelve a su estado previo.
+
+**Endpoints:**
+- `POST /api/billing/invoices/from-lines/` (requiere `Idempotency-Key`, scope `billing.invoice.from_lines`) → 201 con la factura; 400 con el motivo de la regla incumplida.
+- `GET /api/billing/invoices/invoiceable-lines/?side=sale|purchase&partner=<id>|orders=<ids>` → órdenes con líneas pendientes, cada una con sus entregas confirmadas (entregado / facturado / pendiente).
+
+**Verificación:** `billing/tests/test_invoice_from_lines.py` — 8 escenarios D6: parciales atadas a despachos PENDING→PARTIAL→INVOICED con asiento cuadrado; más de lo entregado (rechazo); parcial sin despacho de entregable (rechazo) y de servicio (válida); multi-orden mismo cliente; clientes distintos (rechazo); más de lo pendiente (rechazo); anticipo de 2.000 repartido 1.190 + 810 y liberado al cancelar; endpoints con Idempotency-Key. Suites backend: 623 passed, sin fallos nuevos. Selector probado sobre datos del dev server (solo lectura).
+
+**Importante para el dev server:** hasta aplicar `backfill_invoice_lines --apply`, las órdenes ya facturadas aparecen con 0 facturado (p. ej. OV-000001 muestra 10 pendientes) y **podrían volver a facturarse** por la nueva vía. Aplicar el backfill antes de usarla.
+
+**Pendiente:** M4c — notas sobre líneas de factura (GAP-14) e interfaz de facturación parcial/multi-orden (Hub/facturación); DTE/PDF leyendo `invoice.lines`. M4d — pagos.
 
 ---
 

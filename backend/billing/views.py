@@ -10,9 +10,12 @@ from core.api.pagination import StandardResultsSetPagination
 from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
 
+from .invoice_from_lines import InvoiceFromLinesService
 from .models import Invoice
+from .selectors import InvoiceableLinesSelector
 from .serializers import (
     CreateInvoiceSerializer,
+    InvoiceFromLinesSerializer,
     InvoiceListSerializer,
     InvoiceSerializer,
     InvoiceWriteSerializer,
@@ -111,6 +114,28 @@ class InvoiceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMix
                 return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @idempotent_endpoint(scope="billing.invoice.from_lines")
+    @action(detail=False, methods=["post"], url_path="from-lines")
+    def from_lines(self, request):
+        """Factura parcial / multi-orden por cantidad (ADR-0081)."""
+        serializer = InvoiceFromLinesSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            invoice = InvoiceFromLinesService.create(**serializer.validated_data)
+        except ValidationError as e:
+            return Response({"error": " ".join(e.messages)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["get"], url_path="invoiceable-lines")
+    def invoiceable_lines(self, request):
+        """Líneas pendientes de facturar con sus entregas (ADR-0081)."""
+        params = request.query_params
+        order_ids = [int(x) for x in params.get("orders", "").split(",") if x.strip().isdigit()]
+        data = InvoiceableLinesSelector.list(
+            params.get("side", "sale"), partner_id=params.get("partner"), order_ids=order_ids or None
+        )
+        return Response(data)
 
     @action(detail=True, methods=["post"])
     def confirm(self, request, pk=None):
