@@ -14,6 +14,7 @@
 | M4 Facturación y pagos | **Hecha** (M4a–M4d); backfill de líneas **aplicado** en dev (2026-10-15); pagos: se mantiene FK + imputaciones (decidido) |
 | M5 Extensión | **Hecha** (relaciones en todos los módulos, GAP-08, GAP-12, escenarios D6 de devoluciones) |
 | M6 Retiro | **Hecha en lo retirable**; formatos legacy con consumidores en fase de deprecación (bloqueados por la migración del Order Hub) |
+| U0–U6 Etapa UI (ficha documental, retiro del Hub) | **Plan en revisión** — [ui-document-sheet-plan.md](./ui-document-sheet-plan.md) |
 
 ---
 
