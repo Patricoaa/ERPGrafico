@@ -1,5 +1,6 @@
 """Proveedores de relaciones documentales de inventario (ADR-0080, contrato document-relations.md)."""
 
+from core.documents.details import display, join, lines_count, quantity
 from core.documents import (
     DocumentType,
     DocumentTypeRegistry,
@@ -10,6 +11,8 @@ from core.documents import (
 
 DocumentTypeRegistry.register(DocumentType(
     label="inventory.stockmove", canonical_url="/inventory/reports/movements?selected={id}", status_field=None,
+    amount_field=None,
+    detail=lambda m: join(getattr(m.product, "name", None), f"{quantity(m.quantity)} {getattr(m.uom, 'name', '')}".strip()),
 ))
 
 
@@ -30,6 +33,12 @@ def stock_move_relations(move):
         yield Link("derivation", "incoming", "inventory_document", detail.document)
     if move.journal_entry_id:
         yield Link("posting", "outgoing", "journal_entry", move.journal_entry)
+
+
+DocumentTypeRegistry.register(DocumentType(
+    label="inventory.inventorydocument", amount_field=None,
+    detail=lambda d: join(display(d, "document_type"), lines_count(d, "details")),
+))
 
 
 @relation_provider("inventory.inventorydocument")

@@ -8,7 +8,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { DocumentActionItem } from "./DocumentActionBar"
+import type { DocumentActionItem } from "./DocumentActionsMenu"
 import { cn } from "@/lib/utils"
 import { getErrorMessage } from "@/lib/errors"
 import { DataCell } from "./DataTableCells"
@@ -24,6 +24,10 @@ export interface RelatedDocumentTarget {
     label: string
     /** Área operativa (ADR-0083). */
     domain?: string
+    /** Importe del documento (total, monto del pago…). */
+    amount?: string | number | null
+    /** Texto breve que distingue al documento ("Transferencia · ref. 123"). */
+    detail?: string | null
     id: number
     display_id: string
     title: string
@@ -80,6 +84,9 @@ export const RELATED_ROLE_LABELS: Record<string, string> = {
     return: "Devolución",
     reverses: "Revierte a",
     reversal: "Reversión",
+    customer: "Cliente",
+    supplier: "Proveedor",
+    contact: "Contacto",
 }
 
 export function RelatedDocumentsTable({
@@ -140,58 +147,66 @@ export interface RelatedDocumentRowProps {
     onOpen: (item: RelatedDocumentItem) => void
     /** Acciones sobre el documento relacionado (anular, cancelar…), en un menú "⋯". */
     actions?: DocumentActionItem[]
-    /** Muestra la relación (rol) como prefijo. Default true. */
-    showRole?: boolean
+    /** Contraparte del documento de la ficha: si coincide, no se repite en la fila. */
+    hidePartner?: string | null
 }
 
-/** Fila de un documento relacionado. La usan RelatedDocumentsTable y el tab Relaciones. */
-export function RelatedDocumentRow({ item, onOpen, actions, showRole = true }: RelatedDocumentRowProps) {
+/**
+ * Fila de un documento relacionado (ADR-0083). Línea 1: código (abre su ficha) y tipo.
+ * Línea 2: detalle del documento, fecha y contraparte si difiere. Derecha: importe
+ * (el de la relación —p. ej. lo imputado— o el del documento), estado y acciones.
+ */
+export function RelatedDocumentRow({ item, onOpen, actions, hidePartner }: RelatedDocumentRowProps) {
+    const { target } = item
+    const amount = item.amount ?? target.amount
+    const partner = target.partner_name && target.partner_name !== hidePartner ? target.partner_name : null
+    const meta = [target.detail, partner].filter(Boolean).join(" · ")
+
     return (
         <li
             className={cn(
-                "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-3 py-2 text-sm",
-                item.target.status === "CANCELLED" && "opacity-60",
+                "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-3 py-2",
+                target.status === "CANCELLED" && "opacity-60",
             )}
         >
-            <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                    {showRole && (
-                        <span className="text-xs text-muted-foreground">
-                            {RELATED_ROLE_LABELS[item.role] ?? item.target.title}
-                        </span>
-                    )}
-                    {item.target.accessible ? (
+            <div className="min-w-0 space-y-0.5">
+                <div className="flex min-w-0 items-baseline gap-2">
+                    {target.accessible ? (
                         <Button
                             variant="link"
                             size="sm"
-                            className="h-auto p-0 font-mono text-xs font-medium"
+                            className="h-auto shrink-0 p-0 font-mono text-xs font-medium"
                             onClick={() => onOpen(item)}
                         >
-                            {item.target.display_id}
+                            {target.display_id}
                         </Button>
                     ) : (
-                        <span className="font-mono text-xs font-medium text-muted-foreground" title="Sin permiso para ver este documento">
-                            {item.target.display_id} · sin acceso
+                        <span className="shrink-0 font-mono text-xs font-medium text-muted-foreground" title="Sin permiso para ver este documento">
+                            {target.display_id} · sin acceso
                         </span>
                     )}
+                    <span className="truncate text-xs text-muted-foreground">
+                        {RELATED_ROLE_LABELS[item.role] ?? target.title}
+                    </span>
                 </div>
-                {(item.target.partner_name || item.target.date) && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {item.target.date && <DataCell.Date value={item.target.date} size="xs" />}
-                        {item.target.partner_name && <span className="truncate">{item.target.partner_name}</span>}
+                {(meta || target.date) && (
+                    <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                        {target.date && <DataCell.Date value={target.date} size="xs" className="shrink-0 justify-start" />}
+                        {target.date && meta && <span aria-hidden>·</span>}
+                        {meta && <span className="truncate">{meta}</span>}
                     </div>
                 )}
             </div>
-            <div className="flex items-center gap-2 justify-self-end">
-                {item.amount != null && <DataCell.Currency value={item.amount} size="xs" />}
-                {item.amount == null && item.quantity != null && (
+            <div className="flex items-center gap-3 justify-self-end">
+                {amount != null && <DataCell.Currency value={amount} size="xs" className="tabular-nums" />}
+                {amount == null && item.quantity != null && (
                     <DataCell.Number value={item.quantity} decimals={2} size="xs" />
                 )}
-                {item.target.status && <StatusBadge status={item.target.status} variant="badge" />}
+                {target.status && <StatusBadge status={target.status} variant="badge" />}
                 {actions && actions.length > 0 && (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon-sm" className="size-7" aria-label={`Acciones de ${item.target.display_id}`}>
+                            <Button variant="ghost" size="icon-sm" className="size-7" aria-label={`Acciones de ${target.display_id}`}>
                                 <MoreHorizontal />
                             </Button>
                         </DropdownMenuTrigger>

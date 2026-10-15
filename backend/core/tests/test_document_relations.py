@@ -261,3 +261,38 @@ def test_document_domains_follow_cycle_order():
     for label, domain in expected.items():
         assert DocumentTypeRegistry.domain(label) == domain, label
     assert all(DocumentTypeRegistry.domain(label) in DOCUMENT_DOMAINS for label in DocumentTypeRegistry._types)
+
+
+@pytest.mark.django_db
+def test_sheet_relations_contacts_postings_and_detail(pilot):
+    """ADR-0083: la ficha ve la contraparte, los asientos de sus relacionados y datos útiles por fila."""
+    data = _relations(pilot["client"], "sales.saleorder", pilot["order"].id)
+    by_role = {}
+    for r in data["relations"]:
+        by_role.setdefault(r["role"], []).append(r)
+
+    customer = by_role["customer"]
+    assert len(customer) == 1, "la contraparte aparece una sola vez aunque se repita en los relacionados"
+    assert customer[0]["target"]["label"] == "contacts.contact"
+    assert customer[0]["target"]["domain"] == "contacts"
+    assert customer[0]["target"]["detail"].startswith("Imprenta Norte · 12345678-9")
+
+    # Asientos de despacho y pago: la OV no los referencia directamente
+    entries = {r["target"]["id"] for r in by_role["journal_entry"]}
+    assert pilot["payment"].journal_entry_id in entries
+    if pilot["delivery"].journal_entry_id:  # sin cuentas de inventario el despacho no contabiliza
+        assert pilot["delivery"].journal_entry_id in entries
+    assert all(r["target"]["domain"] == "accounting" for r in by_role["journal_entry"])
+
+    payment = next(r for r in by_role["payment"] if r["target"]["id"] == pilot["payment"].id)["target"]
+    assert Decimal(payment["amount"]) == Decimal("3570")
+    assert payment["detail"]
+
+    delivery = by_role["delivery"][0]["target"]
+    assert delivery["amount"] is None and delivery["detail"].startswith("1 línea")
+
+
+@pytest.mark.django_db
+def test_partner_and_indirect_links_respect_semantic_filter(pilot):
+    data = _relations(pilot["client"], "sales.saleorder", pilot["order"].id, semantic="fulfillment")
+    assert {r["semantic"] for r in data["relations"]} == {"fulfillment"}

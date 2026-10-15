@@ -58,6 +58,11 @@ const JournalEntryDrawer = dynamic(
     { ssr: false, loading: () => skeleton("asiento contable") }
 )
 
+const ProductDrawerById = dynamic(
+    () => import("@/features/inventory").then((m) => m.ProductDrawerById),
+    { ssr: false, loading: () => skeleton("producto") }
+)
+
 const ProductDrawer = dynamic(
     () => import("@/features/inventory").then((m) => m.ProductDrawer),
     { ssr: false, loading: () => skeleton("producto") }
@@ -288,15 +293,20 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
 
     // ── Inventory ─────────────────────────────────────────────────────────────
-    // * requires full product data — EntityBadge always provides it
-    "inventory.product": ({ open, onOpenChange, data, onSuccess }) => (
-        <ProductDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            initialData={data as ProductInitialData}
-            onSuccess={() => onSuccess?.()}
-        />
+    // Con datos completos (EntityBadge) abre directo; solo con id (enlaces desde documentos,
+    // ADR-0083) carga el producto primero. Sin ninguno → creación.
+    "inventory.product": ({ id, open, onOpenChange, data, onSuccess }) => (
+        !data && id ? (
+            <ProductDrawerById id={id} open={open} onOpenChange={onOpenChange} onSuccess={() => onSuccess?.()} />
+        ) : (
+            <ProductDrawer
+                mode={data ? 'view' : 'create'}
+                open={open}
+                onOpenChange={onOpenChange}
+                initialData={data as ProductInitialData}
+                onSuccess={() => onSuccess?.()}
+            />
+        )
     ),
     // * requires full category data — EntityBadge always provides it
     "inventory.category": ({ open, onOpenChange, data, onSuccess }) => (

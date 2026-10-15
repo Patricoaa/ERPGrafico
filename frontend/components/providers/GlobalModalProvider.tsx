@@ -48,6 +48,11 @@ interface GlobalModalActionsContextType {
     closeEntity: () => void
     /** Vuelve al documento anterior de la pila (no-op si no hay). */
     goBackEntity: () => void
+    /**
+     * Fija el texto con que se nombra un documento abierto en la pila ("Volver a OV-000183").
+     * Lo llama la ficha cuando carga su número (ADR-0083). No-op si no está en la pila.
+     */
+    setEntityDisplay: (label: string, id: number, display: string) => void
     registerSheet: (id: string, fullWidth: number, priority: number, forceCollapse?: boolean) => void
     unregisterSheet: (id: string) => void
 }
@@ -84,6 +89,12 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const closeEntity = useCallback(() => setEntityStack([]), [])
 
     const goBackEntity = useCallback(() => setEntityStack(prev => prev.slice(0, -1)), [])
+
+    const setEntityDisplay = useCallback((label: string, id: number, display: string) => {
+        setEntityStack(prev => prev.some(e => e.label === label && e.id === id && e.display !== display)
+            ? prev.map(e => (e.label === label && e.id === id ? { ...e, display } : e))
+            : prev)
+    }, [])
 
     const openHub = hubPanel?.openHub
 
@@ -184,9 +195,10 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         openEntity,
         closeEntity,
         goBackEntity,
+        setEntityDisplay,
         registerSheet,
         unregisterSheet,
-    }), [openEntity, closeEntity, goBackEntity, registerSheet, unregisterSheet])
+    }), [openEntity, closeEntity, goBackEntity, setEntityDisplay, registerSheet, unregisterSheet])
 
     const stateValue = useMemo(() => ({
         isSubModalActive: openedEntity !== null,

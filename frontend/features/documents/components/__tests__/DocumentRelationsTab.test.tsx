@@ -85,6 +85,23 @@ describe("DocumentRelationsTab", () => {
         expect(onDomainChange).toHaveBeenCalledWith(null)
     })
 
+    it("shows the document amount and detail, hiding the sheet's own partner", async () => {
+        const order = { ...link("sales.saleorder", 9, "origin").target, partner_name: "Imprenta Norte" }
+        const payment = link("treasury.treasurymovement", 7, "treasury", { role: "payment", semantic: "settlement" })
+        Object.assign(payment.target, { amount: "3570", detail: "Ingreso · Transferencia", partner_name: "Imprenta Norte" })
+        const contact = link("contacts.contact", 3, "contacts", { role: "customer", semantic: "association" })
+        Object.assign(contact.target, { detail: "Imprenta Norte · 12345678-9", status: null })
+        getMock.mockResolvedValue({ data: { document: order, relations: [payment, contact], unresolved: [] } })
+
+        wrap(<DocumentRelationsTab label="sales.saleorder" id={9} />)
+
+        await waitFor(() => expect(screen.getByText("Ingreso · Transferencia")).toBeInTheDocument())
+        expect(screen.getAllByText(/3\.570/).length).toBeGreaterThan(0)
+        expect(screen.getByText("Contactos")).toBeInTheDocument()
+        expect(screen.getByText("Cliente")).toBeInTheDocument()
+        expect(screen.queryByText("Ingreso · Transferencia · Imprenta Norte")).not.toBeInTheDocument()
+    })
+
     it("shows the empty state without relations or actions", async () => {
         getMock.mockResolvedValue({ data: { document: link("sales.saleorder", 9, "origin").target, relations: [], unresolved: [] } })
         wrap(<DocumentRelationsTab label="sales.saleorder" id={9} />)

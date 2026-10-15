@@ -1,12 +1,12 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Ban, Edit, FileText, Link2, ListOrdered, Trash2 } from "lucide-react"
+import { Ban, Edit, FileText, Link2, Trash2 } from "lucide-react"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import {
     ActionConfirmModal,
-    DataTable,
-    DocumentActionBar,
+    DocumentActionsMenu,
     DocumentDrawerShell,
     DocumentLifecycle,
     type DocumentActionItem,
@@ -31,7 +31,6 @@ import { useOrderActionEngine } from "../../hooks/useOrderActionEngine"
 import { useOrderRelatedActions } from "../../hooks/useOrderRelatedActions"
 import { getOrderLifecycle } from "../../utils/lifecycle"
 import { planOrderSheetActions, SHEET_EXCLUDED_ACTIONS } from "../../utils/orderSheetActions"
-import { orderLineFields } from "../../orderLineFields"
 import type { Order, OrderLine } from "../../types"
 import { OrderSummaryTab } from "./OrderSummaryTab"
 
@@ -53,7 +52,8 @@ const LIFECYCLE_DOMAINS = new Set<string>(["origin", "billing", "production", "l
 
 /**
  * Ficha documental de OV/OC (ADR-0083). Reemplaza el Order Hub: ciclo, acciones y relaciones
- * viven dentro de la ficha. Tabs: Resumen · Líneas · Relaciones.
+ * viven dentro de la ficha. Cabecera con menú único de acciones (incluye imprimir), franja de
+ * ciclo y tabs Resumen (contexto + productos) · Relaciones. Referencia para las demás fichas.
  */
 export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, posSessionId = null, onActionSuccess }: OrderSheetProps) {
     const router = useRouter()
@@ -84,10 +84,16 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
     )
 
     const { printRef, handlePrint } = usePrintableDrawer()
+    const displayId = order?.display_id ?? order?.number
     const identity = useDrawerIdentity(label, "view", order, {
-        overrideTitle: order?.display_id ?? order?.number ?? (isSale ? "Orden de Venta" : "Orden de Compra"),
-        onPrint: handlePrint,
+        overrideTitle: displayId ?? (isSale ? "Orden de Venta" : "Orden de Compra"),
     })
+
+    // "Volver a OV-000183" en los documentos que se abran encima (pila de openEntity)
+    const { setEntityDisplay } = useGlobalModals()
+    useEffect(() => {
+        if (order?.id && displayId) setEntityDisplay(label, order.id, String(displayId))
+    }, [label, order?.id, displayId, setEntityDisplay])
 
     const plan = useMemo(() => {
         const registry = isSale ? saleOrderActions : purchaseOrderActions
@@ -129,9 +135,8 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [plan])
 
-    const lifecycle = order ? getOrderLifecycle(order, kind) : null
+    const lifecycleSteps = order ? getOrderLifecycle(order, kind) : null
     const lines: OrderLine[] = order?.lines ?? order?.items ?? []
-    const columns = useMemo(() => orderLineFields.toColumns(), [])
 
     const openRelationsAt = (stepId: string) => {
         setDomain(LIFECYCLE_DOMAINS.has(stepId) ? (stepId as DocumentDomain) : null)
@@ -140,10 +145,6 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
 
     const tabs: DocumentSheetTab[] = order ? [
         { value: "summary", label: "Resumen", icon: FileText, content: <OrderSummaryTab order={order} kind={kind} /> },
-        {
-            value: "lines", label: "Líneas", icon: ListOrdered, badge: lines.length,
-            content: <DataTable columns={columns} data={lines} variant="minimal" />,
-        },
         {
             value: "relations", label: "Relaciones", icon: Link2, badge: relations?.relations.length,
             content: (
@@ -189,25 +190,23 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
                 title={identity.title}
                 subtitle={identity.subtitle}
                 icon={identity.icon}
-                headerActions={identity.headerActions}
+                headerActions={order && (
+                    <DocumentActionsMenu
+                        primary={plan.primary ? toItem(plan.primary) : null}
+                        actions={[...plan.secondary.map(toItem), ...plan.overflow.map(toItem), ...managementActions]}
+                        onPrint={handlePrint}
+                    />
+                )}
                 isLoading={loading || (!order && !isError)}
                 error={isError ? new Error("No se pudo cargar la orden") : undefined}
                 loadingLabel={isSale ? "Cargando orden de venta" : "Cargando orden de compra"}
-                lifecycle={lifecycle && (
+                lifecycle={lifecycleSteps && (
                     <DocumentLifecycle
-                        steps={lifecycle.steps}
-                        figures={lifecycle.figures}
+                        steps={lifecycleSteps}
                         onStepClick={openRelationsAt}
                         activeStepId={tab === "relations" ? domain : null}
                     />
                 )}
-                actionBar={
-                    <DocumentActionBar
-                        primary={plan.primary ? toItem(plan.primary) : null}
-                        secondary={plan.secondary.map(toItem)}
-                        overflow={[...plan.overflow.map(toItem), ...managementActions]}
-                    />
-                }
                 tabs={tabs}
                 tab={tab}
                 onTabChange={setTab}

@@ -61,7 +61,7 @@ export * from './EntityNavigationContext';
 export * from './RelatedDocumentsTable';
 export * from './DocumentDrawerShell';
 export * from './DocumentLifecycle';
-export * from './DocumentActionBar';
+export * from './DocumentActionsMenu';
 export * from './DocumentFieldGrid';
 export * from './ChartTooltip';
 export * from './AutoSaveStatusBadge';

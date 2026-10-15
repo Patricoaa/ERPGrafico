@@ -15,8 +15,8 @@ import { TabBar, TabBarContent } from "./TabBar"
  * Ficha documental común (ADR-0080 GAP-10, ADR-0083; contrato component-document-sheet.md).
  *
  * Zonas, de arriba abajo: encabezado (identidad del caller vía useDrawerIdentity, "Volver a…"
- * lo aporta `Drawer`), ciclo (`DocumentLifecycle`), barra de acciones (`DocumentActionBar`),
- * tabs (Resumen · Líneas · Relaciones · propios) y sidebar de actividad.
+ * lo aporta `Drawer`; las acciones van en `headerActions` con `DocumentActionsMenu`), ciclo
+ * (`DocumentLifecycle`), tabs (Resumen · Relaciones · propios) y sidebar de actividad.
  *
  * `embedded` renderiza solo el cuerpo, sin Drawer, para vistas incrustadas (POS).
  * Sin `tabs` mantiene el layout simple anterior (summary/children/related).
@@ -43,8 +43,6 @@ export interface DocumentDrawerShellProps {
     loadingLabel?: string
     /** Franja de ciclo (`DocumentLifecycle`). */
     lifecycle?: ReactNode
-    /** Barra de acciones (`DocumentActionBar`). */
-    actionBar?: ReactNode
     tabs?: DocumentSheetTab[]
     /** Tab controlado (opcional). Sin él, la ficha gestiona su propio tab. */
     tab?: string
@@ -113,7 +111,7 @@ function EmbeddedIcon({ icon }: { icon: PanelBaseProps["icon"] }) {
 
 function DocumentSheetBody({
     isLoading, error, loadingLabel = "Cargando documento",
-    lifecycle, actionBar, tabs, tab, onTabChange, defaultTab, sidebar, className,
+    lifecycle, tabs, tab, onTabChange, defaultTab, sidebar, className,
     summary, children, related,
 }: DocumentDrawerShellProps) {
     if (isLoading) {
@@ -121,7 +119,6 @@ function DocumentSheetBody({
         return (
             <SkeletonShell isLoading ariaLabel={loadingLabel} className="flex-1 space-y-4 p-6">
                 {tabs && <div className="h-12 rounded-md bg-muted" />}
-                {tabs && <div className="h-9 w-2/3 rounded-md bg-muted" />}
                 <div className="h-8 w-1/2 rounded-md bg-muted" />
                 <div className="h-40 rounded-md bg-muted" />
                 <div className="h-24 rounded-md bg-muted" />
@@ -156,12 +153,7 @@ function DocumentSheetBody({
             sidebar={sidebar}
             className={cn("min-w-0 h-full overflow-hidden p-0", className)}
         >
-            {(lifecycle || actionBar) && (
-                <div className="shrink-0 space-y-4 border-b px-6 py-4">
-                    {lifecycle}
-                    {actionBar}
-                </div>
-            )}
+            {lifecycle && <div className="shrink-0 border-b px-6 py-3">{lifecycle}</div>}
             <SheetTabs tabs={tabs} tab={tab} onTabChange={onTabChange} defaultTab={defaultTab} />
         </FormSplitLayout>
     )

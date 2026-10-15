@@ -1,9 +1,15 @@
 """Proveedores de relaciones documentales de tesorería (ADR-0080, contrato document-relations.md)."""
 
+from core.documents.details import display, join
 from core.documents import DocumentType, DocumentTypeRegistry, Link, relation_provider
 
 DocumentTypeRegistry.register(DocumentType(
     label="treasury.treasurymovement", canonical_url="/treasury/operaciones/movements?selected={id}",
+    amount_field="amount",
+    detail=lambda m: join(
+        display(m, "movement_type"), display(m, "payment_method"),
+        f"ref. {m.reference or m.transaction_number}" if (m.reference or m.transaction_number) else None,
+    ),
 ))
 
 

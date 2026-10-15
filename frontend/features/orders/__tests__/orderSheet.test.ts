@@ -77,17 +77,17 @@ describe("getOrderLifecycle", () => {
     })
 
     it("uses invoicing_status (ADR-0081) and quantity progress", () => {
-        const { steps, figures } = getOrderLifecycle(order({ invoicing_status: "PARTIAL" }), "sale")
+        const steps = getOrderLifecycle(order({ invoicing_status: "PARTIAL" }), "sale")
         const byId = Object.fromEntries(steps.map((s) => [s.id, s]))
         expect(byId.billing).toMatchObject({ status: "active", progress: 40 })
         expect(byId.logistics).toMatchObject({ status: "active", progress: 40 })
         expect(byId.treasury).toMatchObject({ status: "active", progress: 60 })
         expect(byId.production.status).toBe("not_applicable")
-        expect(figures.map((f) => f.label)).toEqual(["Total", "Pagado", "Saldo", "Entregado"])
+        expect(steps.map((s) => s.label)).toEqual(["Origen", "Facturación", "Manufactura", "Logística", "Tesorería"])
     })
 
     it("marks the cycle as not applicable for a cancelled order", () => {
-        const { steps } = getOrderLifecycle(order({ status: "CANCELLED" }), "purchase")
+        const steps = getOrderLifecycle(order({ status: "CANCELLED" }), "purchase")
         expect(steps.filter((s) => s.status !== "not_applicable").map((s) => s.id)).toEqual(["origin"])
         expect(steps[0].status).toBe("destructive")
     })

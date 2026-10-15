@@ -1,6 +1,5 @@
 "use client"
 
-import type { ReactNode } from "react"
 import type { LucideIcon } from "lucide-react"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
@@ -8,8 +7,8 @@ import { StatusBadge } from "./StatusBadge"
 
 /**
  * Franja de ciclo de la ficha documental (ADR-0083, contrato component-document-sheet.md §3).
- * Reemplaza HubStatus + OrderHeaderDashboard del Order Hub. Solo presentación: el consumidor
- * calcula los pasos (estado del propio documento) y las cifras.
+ * Reemplaza HubStatus del Order Hub. Solo pasos: los importes viven en el Resumen (no se
+ * repiten aquí). Solo presentación: el consumidor calcula los pasos con el estado del documento.
  */
 export type LifecycleStepStatus = "success" | "active" | "neutral" | "destructive" | "not_applicable"
 
@@ -24,14 +23,8 @@ export interface LifecycleStep {
     detail?: string
 }
 
-export interface LifecycleFigure {
-    label: string
-    value: ReactNode
-}
-
 export interface DocumentLifecycleProps {
     steps: LifecycleStep[]
-    figures?: LifecycleFigure[]
     /** Al pulsar un paso (p. ej. abrir Relaciones filtrado por esa área). */
     onStepClick?: (stepId: string) => void
     activeStepId?: string | null
@@ -46,13 +39,13 @@ const STEP_LABEL: Record<LifecycleStepStatus, string> = {
     not_applicable: "No aplica",
 }
 
-export function DocumentLifecycle({ steps, figures, onStepClick, activeStepId, className }: DocumentLifecycleProps) {
+export function DocumentLifecycle({ steps, onStepClick, activeStepId, className }: DocumentLifecycleProps) {
     const visible = steps.filter((step) => step.status !== "not_applicable")
-    if (visible.length === 0 && !figures?.length) return null
+    if (visible.length === 0) return null
 
     return (
         <TooltipProvider delayDuration={150}>
-            <div className={cn("space-y-3", className)}>
+            <div className={className}>
                 {visible.length > 0 && (
                     <ol className="flex items-start" aria-label="Ciclo del documento">
                         {visible.map((step, index) => {
@@ -105,16 +98,6 @@ export function DocumentLifecycle({ steps, figures, onStepClick, activeStepId, c
                             )
                         })}
                     </ol>
-                )}
-                {figures && figures.length > 0 && (
-                    <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
-                        {figures.map((figure) => (
-                            <div key={figure.label} className="min-w-0">
-                                <dt className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">{figure.label}</dt>
-                                <dd className="truncate text-sm font-medium tabular-nums">{figure.value}</dd>
-                            </div>
-                        ))}
-                    </dl>
                 )}
             </div>
         </TooltipProvider>

@@ -1,6 +1,7 @@
 """Proveedores de relaciones documentales de facturación (ADR-0080, contrato document-relations.md)."""
 
 from core.documents import DocumentType, DocumentTypeRegistry, Link, relation_provider
+from core.documents.details import display, join
 from core.documents.types import RESOLVER_URL
 
 
@@ -11,7 +12,10 @@ def _invoice_url(invoice):
     return RESOLVER_URL.format(label="billing.invoice", id=invoice.pk)
 
 
-DocumentTypeRegistry.register(DocumentType(label="billing.invoice", canonical_url=_invoice_url))
+DocumentTypeRegistry.register(DocumentType(
+    label="billing.invoice", canonical_url=_invoice_url,
+    detail=lambda inv: join(display(inv, "dte_type"), display(inv, "payment_method")),
+))
 
 NOTE_ROLES = {"NOTA_CREDITO": "credit_note", "NOTA_DEBITO": "debit_note"}
 

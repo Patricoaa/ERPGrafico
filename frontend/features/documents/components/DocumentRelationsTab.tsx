@@ -126,6 +126,7 @@ export function DocumentRelationsTab({
                                         item={link}
                                         onOpen={() => open(link.target)}
                                         actions={rowActions?.(link)}
+                                        hidePartner={data?.document.partner_name}
                                     />
                                 ))}
                             </ul>
@@ -175,10 +176,12 @@ export function groupByDomain(
         const domainLinks = links.filter((link) => link.target.domain === domain)
         const actions = sectionActions?.[domain] ?? []
         if (domainLinks.length === 0 && actions.length === 0) return []
+        // Importe de la relación (p. ej. lo imputado) o, si no hay, el del documento
         const amounts = domainLinks
-            .filter((link) => link.amount != null && link.target.status !== "CANCELLED")
-            .map((link) => Number(link.amount))
+            .map((link) => (link.target.status === "CANCELLED" ? null : (link.amount ?? link.target.amount)))
+            .filter((amount): amount is string | number => amount != null)
+            .map(Number)
         const total = amounts.length > 0 ? amounts.reduce((sum, n) => sum + (Number.isFinite(n) ? n : 0), 0) : null
-        return [{ domain, links: domainLinks, total, actions }]
+        return [{ domain, links: domainLinks, total: domain === "contacts" ? null : total, actions }]
     })
 }

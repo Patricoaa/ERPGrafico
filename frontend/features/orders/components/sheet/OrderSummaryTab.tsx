@@ -1,9 +1,12 @@
 "use client"
 
-import { Banknote, CalendarClock, ClipboardList, Scale } from "lucide-react"
-import { DataCell, DocumentFieldGrid, FormSection, StatusBadge } from "@/components/shared"
+import { useMemo } from "react"
+import { ClipboardList, Package } from "lucide-react"
+import { DataCell, DataTable, DocumentFieldGrid, FormSection } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
-import type { Order } from "../../types"
+import { cn } from "@/lib/utils"
+import { orderLineFields } from "../../orderLineFields"
+import type { Order, OrderLine } from "../../types"
 
 interface OrderSummaryTabProps {
     order: Order
@@ -11,13 +14,28 @@ interface OrderSummaryTabProps {
 }
 
 const text = (value: unknown) => (typeof value === "string" && value.trim() ? value : null)
-const money = (value: unknown) => (value === null || value === undefined || value === "" ? null : formatCurrency(Number(value)))
-const date = (value: unknown) => (typeof value === "string" && value ? <DataCell.Date value={value} size="xs" /> : null)
-const status = (value: unknown) => (typeof value === "string" && value ? <StatusBadge status={value} variant="badge" /> : null)
+const num = (value: unknown) => {
+    const n = parseFloat(String(value ?? 0))
+    return Number.isFinite(n) ? n : 0
+}
+
+/** Las celdas DataCell se centran por defecto; en la ficha van a la izquierda. */
+const LEFT = "w-auto justify-start text-left"
 
 /**
- * Tab Resumen de la ficha de OV/OC (ADR-0083): capas de form-layout-architecture §3 —
- * Contexto (qué) · Condiciones (cómo) · Totales (resultado) · Ciclo de vida (cuándo/estado).
+ * Fecha del documento con hora: `date` es solo fecha; la hora sale de `created_at`
+ * cuando ambos son el mismo día (orden creada en su fecha). Si no, solo la fecha.
+ */
+function documentDateTime(order: Order): { value: string; showTime: boolean } | null {
+    const created = typeof order.created_at === "string" ? order.created_at : null
+    if (!order.date) return created ? { value: created, showTime: true } : null
+    if (created && new Date(created).toLocaleDateString("sv-SE") === order.date) return { value: created, showTime: true }
+    return { value: order.date, showTime: false }
+}
+
+/**
+ * Tab Resumen de la ficha de OV/OC (ADR-0083, referencia para las demás fichas):
+ * Contexto (contraparte, fecha y hora, canal, notas) y Productos (tabla + totales).
  */
 export function OrderSummaryTab({ order, kind }: OrderSummaryTabProps) {
     const isSale = kind === "sale"
@@ -27,6 +45,12 @@ export function OrderSummaryTab({ order, kind }: OrderSummaryTabProps) {
     const partnerId = isSale
         ? (typeof order.customer === "number" ? order.customer : order.customer?.id)
         : (typeof order.supplier === "number" ? order.supplier : order.supplier?.id)
+    const when = documentDateTime(order)
+
+    const lines: OrderLine[] = order.lines ?? order.items ?? []
+    const columns = useMemo(() => orderLineFields.toColumns(), [])
+    const subtotal = lines.reduce((sum, line) => sum + num(line.subtotal), 0)
+    const total = num(order.effective_total ?? order.total)
 
     return (
         <div className="space-y-8">
@@ -38,58 +62,42 @@ export function OrderSummaryTab({ order, kind }: OrderSummaryTabProps) {
                             label: isSale ? "Cliente" : "Proveedor",
                             span: 2,
                             value: partnerName
-                                ? <DataCell.ContactLink contactId={partnerId} className="justify-start">{partnerName}</DataCell.ContactLink>
+                                ? <DataCell.ContactLink contactId={partnerId} className={LEFT}>{partnerName}</DataCell.ContactLink>
                                 : null,
                         },
-                        { label: "Fecha", value: date(order.date) },
-                        { label: "Número", value: <span className="font-mono">{order.display_id ?? order.number}</span> },
+                        {
+                            label: "Fecha",
+                            value: when ? <DataCell.Date value={when.value} showTime={when.showTime} size="xs" className={LEFT} /> : null,
+                        },
                         { label: "Canal", value: text(order.channel_display), hidden: !isSale },
-                        { label: "Sesión POS", value: text(order.pos_session_display), hidden: !isSale || !order.pos_session },
                         { label: "Bodega", value: text(order.warehouse_name), hidden: isSale },
-                        { label: "OT asociada", value: text(order.work_order_number), hidden: isSale || !order.work_order_number },
-                    ]}
-                />
-            </section>
-
-            <section className="space-y-4">
-                <FormSection title="Condiciones" icon={Scale} />
-                <DocumentFieldGrid
-                    fields={[
-                        { label: "Forma de pago", value: text(order.payment_method_ref_name) ?? text(order.payment_method) },
-                        { label: isSale ? "Fecha de entrega" : "Fecha de recepción", value: date(isSale ? order.delivery_date : order.receipt_date) },
-                        { label: isSale ? "Entrega" : "Recepción", value: status(isSale ? order.delivery_status : order.receiving_status) },
-                        { label: "Facturación", value: status(order.invoicing_status) },
-                        { label: "Origen del crédito", value: text(order.credit_assignment_origin_display), hidden: !isSale || !order.credit_assignment_origin },
-                    ]}
-                />
-            </section>
-
-            <section className="space-y-4">
-                <FormSection title="Totales" icon={Banknote} />
-                <DocumentFieldGrid
-                    className="tabular-nums"
-                    fields={[
-                        { label: "Neto", value: money(order.total_net) },
-                        { label: "Descuento", value: money(order.total_discount_amount), hidden: !Number(order.total_discount_amount) },
-                        { label: "Impuestos", value: money(order.total_tax) },
-                        { label: "Total", value: <span className="font-bold">{money(order.effective_total ?? order.total)}</span> },
-                        { label: "Pagado", value: money(order.total_paid) },
-                        { label: "Saldo", value: money(order.pending_amount) },
-                    ]}
-                />
-            </section>
-
-            <section className="space-y-4">
-                <FormSection title="Ciclo de vida" icon={CalendarClock} />
-                <DocumentFieldGrid
-                    fields={[
-                        { label: "Estado", value: status(order.status) },
-                        { label: "Creada", value: typeof order.created_at === "string" ? <DataCell.Date value={order.created_at} showTime size="xs" /> : null },
-                        { label: "Actualizada", value: typeof order.updated_at === "string" ? <DataCell.Date value={order.updated_at} showTime size="xs" /> : null },
+                        { label: "Sesión POS", value: text(order.pos_session_display), hidden: !isSale || !order.pos_session },
                         { label: "Notas", value: text(order.notes), span: 4 },
                     ]}
                 />
             </section>
+
+            <section className="space-y-4">
+                <FormSection title="Productos" icon={Package} />
+                <DataTable columns={columns} data={lines} variant="minimal" />
+                <dl className="ml-auto w-full max-w-xs space-y-1.5 rounded-md border px-4 py-3 text-xs tabular-nums">
+                    <TotalRow label="Subtotal (neto)" value={subtotal} />
+                    <TotalRow label="IVA" value={num(order.total_tax)} />
+                    <TotalRow label="Total" value={total} strong />
+                    <div className="border-t pt-1.5" />
+                    <TotalRow label="Pagado" value={num(order.total_paid)} />
+                    <TotalRow label="Saldo pendiente" value={num(order.pending_amount)} strong={num(order.pending_amount) > 0} />
+                </dl>
+            </section>
+        </div>
+    )
+}
+
+function TotalRow({ label, value, strong = false }: { label: string; value: number; strong?: boolean }) {
+    return (
+        <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-muted-foreground">{label}</dt>
+            <dd className={cn("font-medium", strong && "font-bold text-foreground")}>{formatCurrency(value)}</dd>
         </div>
     )
 }

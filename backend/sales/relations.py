@@ -1,13 +1,18 @@
 """Proveedores de relaciones documentales de ventas (ADR-0080, contrato document-relations.md)."""
 
+from core.documents.details import display, join, lines_count
 from core.documents import DocumentType, DocumentTypeRegistry, Link, relation_provider
 
 # OV: `?selected` abre su ficha documental (ADR-0083). Área "origin": encabeza el ciclo.
 DocumentTypeRegistry.register(DocumentType(
     label="sales.saleorder", canonical_url="/sales/orders?selected={id}", domain="origin",
+    detail=lambda o: join(display(o, "channel"), lines_count(o)),
 ))
 # Despacho: su lista usa `?selected` con id de OV → resolvedor /d/ (valor por defecto).
-DocumentTypeRegistry.register(DocumentType(label="sales.saledelivery"))
+DocumentTypeRegistry.register(DocumentType(
+    label="sales.saledelivery", amount_field=None,
+    detail=lambda d: join(lines_count(d), getattr(d.warehouse, "name", None)),
+))
 
 NOTE_ROLES = {"NOTA_CREDITO": "credit_note", "NOTA_DEBITO": "debit_note"}
 

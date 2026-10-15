@@ -23,6 +23,8 @@ The only shape that represents "a document" between modules and towards the UI.
 | `display_id` | `string` | `obj.display_id`, else the registry short template |
 | `title` / `icon` | `string` / `string \| null` | from `SearchableEntity` |
 | `domain` | `string` | operational area (ADR-0083, see below); always present, also for dangling refs |
+| `amount` | `string \| null` | document amount: `DocumentType.amount_field` or first of `effective_total`, `total`, `amount`; `null` when not meaningful (deliveries, entries, stock moves, contacts) or no access |
+| `detail` | `string \| null` | short type-specific text that identifies the document in a list (`DocumentType.detail(obj)`): payment = movement type · method · ref; invoice = DTE type · payment method; delivery = lines · warehouse; OT = stage · description; entry = description; contact = name · tax id · email |
 | `status` / `status_display` | `string \| null` | `null` when the type has no status or the user has no access |
 | `date` | ISO `string \| null` | first of `date`, `delivery_date`, `receipt_date`, `return_date`, `created_at` (or declared field) |
 | `partner_name` | `string \| null` | customer / supplier / contact / partner (or declared path) |
@@ -109,7 +111,13 @@ Sheets with the relations section (M3): delivery, receipt, invoice, treasury mov
 
 ### `domain` (ADR-0083)
 
-Operational area of the document type: `origin | billing | production | logistics | treasury | accounting | other`, in lifecycle order. Declared by `DocumentTypeRegistry` — `DocumentType(domain=...)` overrides the app default (`DEFAULT_DOMAIN_BY_APP`; OV/OC declare `origin`). The document sheet's relations tab groups by it (`component-document-sheet.md` §5). Additive field; unknown values parse as `other` in the frontend.
+Operational area of the document type: `origin | billing | production | logistics | treasury | accounting | contacts | other`, in lifecycle order. Declared by `DocumentTypeRegistry` — `DocumentType(domain=...)` overrides the app default (`DEFAULT_DOMAIN_BY_APP`; OV/OC declare `origin`). The document sheet's relations tab groups by it (`component-document-sheet.md` §5). Additive field; unknown values parse as `other` in the frontend.
+
+### Indirect links (ADR-0083)
+
+After the providers, the service appends for every document (respecting `semantic`/`direction` filters, deduplicated):
+- `posting` → the `journal_entry` of each related document that has one (the document itself does not reference them);
+- `association` → the counterparty of the document and of each related document (`partner_path` / default paths), role `customer` | `supplier` | `contact`, each contact once.
 
 ## 6. Deprecated (2026-10-15) — legacy relation formats
 

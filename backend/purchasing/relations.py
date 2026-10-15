@@ -1,13 +1,18 @@
 """Proveedores de relaciones documentales de compras (ADR-0080, contrato document-relations.md)."""
 
+from core.documents.details import join, lines_count
 from core.documents import DocumentType, DocumentTypeRegistry, Link, relation_provider
 
 # OC: `?selected` abre su ficha documental (ADR-0083). Área "origin": encabeza el ciclo.
 DocumentTypeRegistry.register(DocumentType(
     label="purchasing.purchaseorder", canonical_url="/purchasing/orders?selected={id}", domain="origin",
+    detail=lambda o: join(getattr(o.warehouse, "name", None), lines_count(o)),
 ))
 # Recepción: sin lista con `?selected` propio → resolvedor /d/ (valor por defecto).
-DocumentTypeRegistry.register(DocumentType(label="purchasing.purchasereceipt"))
+DocumentTypeRegistry.register(DocumentType(
+    label="purchasing.purchasereceipt", amount_field=None,
+    detail=lambda r: join(lines_count(r), getattr(getattr(r, "warehouse", None), "name", None)),
+))
 
 NOTE_ROLES = {"NOTA_CREDITO": "credit_note", "NOTA_DEBITO": "debit_note"}
 

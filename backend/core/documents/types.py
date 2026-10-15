@@ -23,7 +23,7 @@ RESOLVER_URL = "/d/{label}/{id}"
 DEFAULT_DATE_FIELDS = ("date", "delivery_date", "receipt_date", "return_date", "created_at")
 # Área operativa (ADR-0083): agrupa los relacionados en la ficha documental en el mismo
 # orden que el ciclo Origen → Facturación → Producción → Logística → Tesorería → Contabilidad.
-DOCUMENT_DOMAINS = ("origin", "billing", "production", "logistics", "treasury", "accounting", "other")
+DOCUMENT_DOMAINS = ("origin", "billing", "production", "logistics", "treasury", "accounting", "contacts", "other")
 DEFAULT_DOMAIN_BY_APP = {
     "billing": "billing",
     "production": "production",
@@ -34,7 +34,12 @@ DEFAULT_DOMAIN_BY_APP = {
     "finance": "treasury",
     "accounting": "accounting",
     "tax": "accounting",
+    "contacts": "contacts",
 }
+
+# Importe del documento: primer campo presente de esta lista (DocumentType.amount_field lo fija).
+DEFAULT_AMOUNT_FIELDS = ("effective_total", "total", "amount")
+AUTO = "auto"
 
 DEFAULT_PARTNER_PATHS = (
     "customer", "supplier", "contact", "partner",
@@ -52,6 +57,11 @@ class DocumentType:
     partner_path: str | None = None
     # None → por app (DEFAULT_DOMAIN_BY_APP) o "other".
     domain: str | None = None
+    # Campo con el importe del documento; AUTO → DEFAULT_AMOUNT_FIELDS; None → sin importe.
+    amount_field: str | None = AUTO
+    # (obj) -> texto breve que identifica el documento en una lista de relacionados
+    # ("Transferencia · ref. 123", "Factura electrónica"). ADR-0083.
+    detail: Callable[[models.Model], str | None] | None = None
 
 
 class DocumentTypeRegistry:

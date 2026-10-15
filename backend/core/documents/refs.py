@@ -8,7 +8,7 @@ from django.db import models
 
 from core.registry import UniversalRegistry
 
-from .types import DEFAULT_DATE_FIELDS, DEFAULT_PARTNER_PATHS, DocumentTypeRegistry
+from .types import AUTO, DEFAULT_AMOUNT_FIELDS, DEFAULT_DATE_FIELDS, DEFAULT_PARTNER_PATHS, DocumentTypeRegistry
 
 
 def _resolve_path(obj: Any, path: str) -> Any:
@@ -38,13 +38,42 @@ def _date(doc_type, obj) -> str | None:
     return None
 
 
-def _partner_name(doc_type, obj) -> str | None:
+def partner_of(doc_type, obj) -> tuple[str, models.Model] | None:
+    """(ruta, contraparte) del documento: cliente, proveedor o contacto."""
     paths = (doc_type.partner_path,) if doc_type.partner_path else DEFAULT_PARTNER_PATHS
     for path in paths:
         partner = _resolve_path(obj, path)
-        if partner is not None:
-            return getattr(partner, "name", None) or str(partner)
+        if isinstance(partner, models.Model):
+            return path, partner
     return None
+
+
+def _partner_name(doc_type, obj) -> str | None:
+    found = partner_of(doc_type, obj)
+    if found is None:
+        return None
+    partner = found[1]
+    return getattr(partner, "name", None) or str(partner)
+
+
+def _amount(doc_type, obj) -> str | None:
+    if doc_type.amount_field is None:
+        return None
+    fields = DEFAULT_AMOUNT_FIELDS if doc_type.amount_field == AUTO else (doc_type.amount_field,)
+    for name in fields:
+        value = getattr(obj, name, None)
+        if value is not None and not callable(value):
+            return str(value)
+    return None
+
+
+def _detail(doc_type, obj) -> str | None:
+    if doc_type.detail is None:
+        return None
+    try:
+        return doc_type.detail(obj) or None
+    except (AttributeError, TypeError, ValueError):
+        return None
 
 
 def build_ref(obj: models.Model, user, label: str | None = None) -> dict:
@@ -67,6 +96,8 @@ def build_ref(obj: models.Model, user, label: str | None = None) -> dict:
         "status": status if accessible else None,
         "status_display": status_display if accessible else None,
         "date": _date(doc_type, obj) if accessible else None,
+        "amount": _amount(doc_type, obj) if accessible else None,
+        "detail": _detail(doc_type, obj) if accessible else None,
         "partner_name": _partner_name(doc_type, obj) if accessible else None,
         "url": DocumentTypeRegistry.canonical_url(label, obj),
         "accessible": accessible,
@@ -81,7 +112,7 @@ def missing_ref(label: str, pk: Any) -> dict:
         "title": entity.title_singular if entity else label,
         "icon": entity.icon if entity else None,
         "domain": DocumentTypeRegistry.domain(label),
-        "status": None, "status_display": None, "date": None, "partner_name": None,
+        "status": None, "status_display": None, "date": None, "amount": None, "detail": None, "partner_name": None,
         "url": None, "accessible": False, "exists": False,
     }
 

@@ -33,7 +33,7 @@ interface ActionCategoryProps {
 /**
  * Botonera de una categoría de acciones del Order Hub. La ejecución (modales, pagos, notas…)
  * vive en `useOrderActionEngine` (ADR-0083), compartido con la ficha documental.
- * @deprecated ADR-0083: el Hub se retira (U6); la ficha usa DocumentActionBar + el motor.
+ * @deprecated ADR-0083: el Hub se retira (U6); la ficha usa DocumentActionsMenu + el motor.
  */
 export const ActionCategory = forwardRef(({
     category,

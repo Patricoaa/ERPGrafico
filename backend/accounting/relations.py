@@ -4,6 +4,7 @@ from core.documents import DocumentType, DocumentTypeRegistry, Link, relation_pr
 
 DocumentTypeRegistry.register(DocumentType(
     label="accounting.journalentry", canonical_url="/accounting/entries?selected={id}",
+    amount_field=None, detail=lambda je: je.description or None,
 ))
 
 

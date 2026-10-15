@@ -16,8 +16,24 @@
 | M6 Retiro | **Hecha en lo retirable**; formatos legacy con consumidores en fase de deprecación (bloqueados por la migración del Order Hub) |
 | U0 Contratos (etapa UI) | **Hecha** — ADR-0083 (Accepted), `component-document-sheet.md`, D7–D11 |
 | U1 Primitivas | **Hecha** — `domain` en `DocumentRef`, shell con tabs/ciclo/acciones/embedded, `DocumentRelationsTab`, motor de acciones extraído |
-| U2 Piloto OV | **Hecha en código**; verificación en navegador pendiente (extensión de Chrome no conectada) |
+| U2 Piloto OV | **Hecha** + refinamiento del responsable (2026-10-15): referencia para U3–U5; verificación en navegador pendiente |
 | U3–U6 | Pendientes — [ui-document-sheet-plan.md](./ui-document-sheet-plan.md) |
+
+---
+
+## 2026-10-15 · Piloto U2 refinado (referencia para las siguientes fichas)
+
+Pedido del responsable sobre la ficha de la OV:
+- **Franja de ciclo** sin Total/Pagado/Saldo/Entregado (redundantes) y "Producción" → **Manufactura**.
+- **Acciones**: la barra se reemplaza por un **menú único "Acciones" en la cabecera**, junto al botón de cierre, con **Imprimir** dentro (`DocumentActionsMenu`: siguiente paso · demás acciones · imprimir · destructivas). `DocumentActionBar` eliminado.
+- **Resumen**: fuera Condiciones, Ciclo de vida y Número; **Contexto** con fecha **y hora** (hora de `created_at` cuando coincide el día) y notas, todo alineado a la izquierda (causa: `DataCell.Date`/`ContactLink` se centran por defecto). Nueva sección **Productos** con la tabla (Producto, Cantidad, Precio unit. neto, Subtotal neto, Entregado, Facturado, OT) y recuadro de totales a la derecha (Subtotal = Σ subtotales, IVA, Total, Pagado, Saldo pendiente). Tab **Líneas** eliminado.
+- **Enlaces con retorno**: producto y OT abren su ficha apilada ("Volver a OV-…"). Para eso la lista abre la OV **a través de la pila de `openEntity`** (antes era un drawer local de la página, sin "volver"), la ficha fija su número en la pila (`setEntityDisplay`) y `inventory.product` acepta abrirse solo con id (`ProductDrawerById`).
+- **Relaciones**:
+  - Causa de "facturas y pagos en Otros": el backend del dev server (`daphne`, sin autorecarga) seguía con el código anterior a `domain` → el frontend caía al valor por defecto. Reiniciado.
+  - Nuevas áreas **Contactos** (cliente/proveedor/contacto del documento y de sus relacionados, una vez cada uno) y **Contabilidad** con los **asientos de los documentos relacionados** (la OV no los referencia directamente): relaciones indirectas del servicio.
+  - `DocumentRef` gana `amount` (importe del documento) y `detail` (texto que lo distingue: pago = tipo · medio · ref.; factura = tipo DTE · forma de pago; despacho = líneas · bodega; OT = etapa · descripción; asiento = glosa; contacto = nombre · RUT · email). La fila muestra código + tipo, detalle · fecha, contraparte solo si difiere de la de la ficha, importe y estado.
+
+**Verificación:** pytest `test_document_relations` + `test_document_routes_sync` 15/15 (2 tests nuevos: contactos, asientos indirectos, importe/detalle, filtro por semántica). `tsc` y ESLint sin errores. Vitest 21/21 en documentos, órdenes, menú de acciones y tabla de relacionados. En el dev server (OV-000002): despacho "1 línea · Bodega Taller Central", factura 75.000 "Factura Electrónica · Transferencia", OT "Asignación de Materiales · …", pago 75.000 "Entrante (Cobro/Venta) · Transferencia · ref. …", asientos de factura y pago, cliente con RUT y email.
 
 ---
 
