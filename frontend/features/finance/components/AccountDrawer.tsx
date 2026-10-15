@@ -29,6 +29,14 @@ const accountSchema = z.object({
 
 type AccountFormValues = z.infer<typeof accountSchema>
 
+function normalizeParent(parent: unknown): string {
+    if (parent === null || parent === undefined) return ""
+    if (typeof parent === "object") {
+        return String((parent as Record<string, unknown>).id ?? "")
+    }
+    return String(parent)
+}
+
 interface AccountDrawerProps {
     auditSidebar?: React.ReactNode
     onSuccess?: () => void
@@ -79,7 +87,7 @@ export function AccountDrawer({
             code: initialData?.code as string || "",
             name: initialData?.name as string || "",
             account_type: (initialData?.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE") || "ASSET",
-            parent: (typeof initialData?.parent === 'object' ? String((initialData.parent as Record<string, unknown>).id ?? '') : String(initialData?.parent ?? '')) || parentId || undefined,
+            parent: normalizeParent(initialData?.parent) || parentId || undefined,
         },
     })
 
@@ -99,7 +107,7 @@ export function AccountDrawer({
             code: data.code as string,
             name: data.name as string,
             account_type: data.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE",
-            parent: (typeof data.parent === 'object' ? String((data.parent as Record<string, unknown>).id ?? '') : String(data.parent ?? '')) || undefined,
+            parent: normalizeParent(data.parent) || undefined,
         }),
         defaultValues: () => ({
             code: "",
