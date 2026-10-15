@@ -1,5 +1,12 @@
 import * as z from "zod"
 
+/** Área operativa (ADR-0083): agrupa los relacionados en el orden del ciclo. */
+export const DOCUMENT_DOMAINS = [
+    "origin", "billing", "production", "logistics", "treasury", "accounting", "other",
+] as const
+export const documentDomainSchema = z.enum(DOCUMENT_DOMAINS)
+export type DocumentDomain = z.infer<typeof documentDomainSchema>
+
 /** DocumentRef — contrato document-relations.md (ADR-0080). */
 export const documentRefSchema = z.object({
     label: z.string(),
@@ -7,6 +14,7 @@ export const documentRefSchema = z.object({
     display_id: z.string(),
     title: z.string(),
     icon: z.string().nullable(),
+    domain: documentDomainSchema.catch("other"),
     status: z.string().nullable(),
     status_display: z.string().nullable(),
     date: z.string().nullable(),

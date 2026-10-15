@@ -32,16 +32,24 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
     const searchParams = useSearchParams()
     const pathname = usePathname()
 
+    // OV: `?selected` abre su ficha documental (ADR-0083). Notas: siguen en el Hub hasta U3.
+    const urlSelectedId = Number(searchParams.get('selected')) || null
+    const isPanelOpen = viewMode === "orders" ? !!urlSelectedId : isHubOpen
+    const isSelectedId = (id: number) => {
+        if (onSelectOrder) return selectedId === id
+        return viewMode === "orders" ? urlSelectedId === id : hubConfig?.invoiceId === id
+    }
+
     const toggleSelection = (id: number) => {
         if (onSelectOrder) {
             const isSelected = selectedId === id
             onSelectOrder(isSelected ? null : id)
             return
         }
-        const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
+        const isSelected = isSelectedId(id)
         const params = new URLSearchParams(searchParams.toString())
 
-        if (isSelected && isHubOpen) {
+        if (isSelected && isPanelOpen) {
             params.delete('selected')
         } else {
             params.set('selected', String(id))
@@ -363,11 +371,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
     // Determine entity label based on tab
     const entityLabel = viewMode === 'orders' ? 'sales.saleorder' : 'billing.invoice'
 
-    const getSelectionId = (item: SaleOrder | SaleNote) => {
-        const id = Number(item.id)
-        if (onSelectOrder) return selectedId === id
-        return viewMode === 'orders' ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
-    }
+    const getSelectionId = (item: SaleOrder | SaleNote) => isSelectedId(Number(item.id))
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -394,7 +398,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                                 entityLabel={label}
                                 onClick={() => toggleSelection(data.id)}
                                 isSelected={getSelectionId(data)}
-                                className={isHubOpen && getSelectionId(data) ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
+                                className={isPanelOpen && getSelectionId(data) ? "accent-visible" : isPanelOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
                                 icon={getEntityIcon(label)}
                                 iconClassName={iconClassName}
                                 hubTrigger={{
@@ -432,7 +436,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                     onReset={search.clearAll}
                     defaultPageSize={20}
                     isSelected={(data: SaleOrder | SaleNote) => !!getSelectionId(data)}
-                    isHubOpen={onSelectOrder ? !!selectedId : isHubOpen}
+                    isHubOpen={onSelectOrder ? !!selectedId : isPanelOpen}
                     isFiltered={isFiltered}
                     emptyState={{
                         context: viewMode === 'orders' ? "sale" : "finance",

@@ -1,7 +1,14 @@
 "use client"
 
-import { Link2Off } from "lucide-react"
+import { Link2Off, MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import type { DocumentActionItem } from "./DocumentActionBar"
 import { cn } from "@/lib/utils"
 import { getErrorMessage } from "@/lib/errors"
 import { DataCell } from "./DataTableCells"
@@ -15,6 +22,8 @@ import { StatusBadge } from "./StatusBadge"
  */
 export interface RelatedDocumentTarget {
     label: string
+    /** Área operativa (ADR-0083). */
+    domain?: string
     id: number
     display_id: string
     title: string
@@ -107,48 +116,11 @@ export function RelatedDocumentsTable({
                         <h5 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{group.title}</h5>
                         <ul className="divide-y divide-border rounded-md border">
                             {rows.map((item) => (
-                                <li
+                                <RelatedDocumentRow
                                     key={`${item.role}-${item.target.label}-${item.target.id}`}
-                                    className={cn(
-                                        "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-3 py-2 text-sm",
-                                        item.target.status === "CANCELLED" && "opacity-60",
-                                    )}
-                                >
-                                    <div className="min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs text-muted-foreground">
-                                                {RELATED_ROLE_LABELS[item.role] ?? item.target.title}
-                                            </span>
-                                            {item.target.accessible ? (
-                                                <Button
-                                                    variant="link"
-                                                    size="sm"
-                                                    className="h-auto p-0 font-medium"
-                                                    onClick={() => onOpen(item)}
-                                                >
-                                                    {item.target.display_id}
-                                                </Button>
-                                            ) : (
-                                                <span className="font-medium text-muted-foreground" title="Sin permiso para ver este documento">
-                                                    {item.target.display_id} · sin acceso
-                                                </span>
-                                            )}
-                                        </div>
-                                        {(item.target.partner_name || item.target.date) && (
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                {item.target.date && <DataCell.Date value={item.target.date} size="xs" />}
-                                                {item.target.partner_name && <span className="truncate">{item.target.partner_name}</span>}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-2 justify-self-end">
-                                        {item.amount != null && <DataCell.Currency value={item.amount} size="xs" />}
-                                        {item.amount == null && item.quantity != null && (
-                                            <DataCell.Number value={item.quantity} decimals={2} size="xs" />
-                                        )}
-                                        {item.target.status && <StatusBadge status={item.target.status} variant="badge" />}
-                                    </div>
-                                </li>
+                                    item={item}
+                                    onOpen={onOpen}
+                                />
                             ))}
                         </ul>
                     </section>
@@ -160,5 +132,88 @@ export function RelatedDocumentsTable({
                 </p>
             )}
         </div>
+    )
+}
+
+export interface RelatedDocumentRowProps {
+    item: RelatedDocumentItem
+    onOpen: (item: RelatedDocumentItem) => void
+    /** Acciones sobre el documento relacionado (anular, cancelar…), en un menú "⋯". */
+    actions?: DocumentActionItem[]
+    /** Muestra la relación (rol) como prefijo. Default true. */
+    showRole?: boolean
+}
+
+/** Fila de un documento relacionado. La usan RelatedDocumentsTable y el tab Relaciones. */
+export function RelatedDocumentRow({ item, onOpen, actions, showRole = true }: RelatedDocumentRowProps) {
+    return (
+        <li
+            className={cn(
+                "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-3 py-2 text-sm",
+                item.target.status === "CANCELLED" && "opacity-60",
+            )}
+        >
+            <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                    {showRole && (
+                        <span className="text-xs text-muted-foreground">
+                            {RELATED_ROLE_LABELS[item.role] ?? item.target.title}
+                        </span>
+                    )}
+                    {item.target.accessible ? (
+                        <Button
+                            variant="link"
+                            size="sm"
+                            className="h-auto p-0 font-mono text-xs font-medium"
+                            onClick={() => onOpen(item)}
+                        >
+                            {item.target.display_id}
+                        </Button>
+                    ) : (
+                        <span className="font-mono text-xs font-medium text-muted-foreground" title="Sin permiso para ver este documento">
+                            {item.target.display_id} · sin acceso
+                        </span>
+                    )}
+                </div>
+                {(item.target.partner_name || item.target.date) && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {item.target.date && <DataCell.Date value={item.target.date} size="xs" />}
+                        {item.target.partner_name && <span className="truncate">{item.target.partner_name}</span>}
+                    </div>
+                )}
+            </div>
+            <div className="flex items-center gap-2 justify-self-end">
+                {item.amount != null && <DataCell.Currency value={item.amount} size="xs" />}
+                {item.amount == null && item.quantity != null && (
+                    <DataCell.Number value={item.quantity} decimals={2} size="xs" />
+                )}
+                {item.target.status && <StatusBadge status={item.target.status} variant="badge" />}
+                {actions && actions.length > 0 && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon-sm" className="size-7" aria-label={`Acciones de ${item.target.display_id}`}>
+                                <MoreHorizontal />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {actions.map((action) => {
+                                const Icon = action.icon
+                                return (
+                                    <DropdownMenuItem
+                                        key={action.id}
+                                        onClick={action.onClick}
+                                        disabled={action.disabled}
+                                        variant={action.destructive ? "destructive" : "default"}
+                                    >
+                                        {Icon && <Icon />}
+                                        {action.label}
+                                    </DropdownMenuItem>
+                                )
+                            })}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
+            </div>
+        </li>
     )
 }

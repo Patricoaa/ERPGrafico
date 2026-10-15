@@ -8,7 +8,7 @@ import { useState, useEffect, Suspense, useCallback } from "react"
 import { Drawer, SkeletonShell } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { OrderHubPanel } from "@/features/orders"
+import { OrderHubPanel, OrderSheet } from "@/features/orders"
 import { DetailPanel } from "./DetailPanel"
 
 interface SalesOrdersDrawerProps {
@@ -67,15 +67,16 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
     const handleOrderSelect = useCallback((id: number | null) => {
         setSelectedId(id)
         setDetailContent(null)
-        if (id) {
+        // OV: ficha documental incrustada con su propio motor de acciones (ADR-0083).
+        // Notas C/D: siguen en el Hub hasta U3 (su motor de acciones es global).
+        if (id && viewMode === 'notes') {
             openHub({
-                orderId: viewMode === 'orders' ? id : undefined,
-                invoiceId: viewMode === 'notes' ? id : undefined,
+                invoiceId: id,
                 type: 'sale',
                 posSessionId,
                 onActionSuccess: handleActionSuccess,
             })
-        } else if (!id && isHubOpen) {
+        } else if (isHubOpen) {
             closeHub()
         }
     }, [viewMode, posSessionId, isHubOpen, openHub, closeHub, handleActionSuccess])
@@ -132,15 +133,30 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
                             </Suspense>
                         </div>
 
-                        {/* Embedded HUB Panel */}
-                        {selectedId && (
+                        {/* Ficha de la OV incrustada (ADR-0083) */}
+                        {selectedId && viewMode === 'orders' && (
+                            <div className="w-1/2 border-l border-border flex flex-col min-h-0 overflow-hidden transition-all duration-300">
+                                <OrderSheet
+                                    key={selectedId}
+                                    id={selectedId}
+                                    kind="sale"
+                                    embedded
+                                    open
+                                    onOpenChange={(isOpen) => { if (!isOpen) setSelectedId(null) }}
+                                    posSessionId={posSessionId}
+                                    onActionSuccess={handleActionSuccess}
+                                />
+                            </div>
+                        )}
+
+                        {/* Notas C/D: Hub incrustado hasta U3 */}
+                        {selectedId && viewMode === 'notes' && (
                             <div className={cn(
                                 "border-l border-border pl-4 flex flex-col min-h-0 overflow-hidden transition-all duration-300",
                                 hasDetail ? "w-1/3" : "w-1/2"
                             )}>
                                 <OrderHubPanel
-                                    orderId={viewMode === 'orders' ? selectedId : undefined}
-                                    invoiceId={viewMode === 'notes' ? selectedId : undefined}
+                                    invoiceId={selectedId}
                                     type="sale"
                                     onClose={() => setSelectedId(null)}
                                     onActionSuccess={handleActionSuccess}

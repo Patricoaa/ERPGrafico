@@ -22,9 +22,11 @@ export interface OpenEntityOptions {
 /** Máximo de documentos encadenados con "volver" (ADR-0080, GAP-11). */
 const MAX_ENTITY_STACK = 5
 
-/** D4: la ficha de OV/OC es el Order Hub; openEntity de estos labels abre el Hub. */
+/**
+ * Labels que todavía abren el Order Hub (D4, revertida por ADR-0083). La OV ya abre su ficha
+ * documental (piloto U2); la OC pasa en U3 y este mapa desaparece en U6.
+ */
 const HUB_ENTITY_TYPES: Record<string, 'sale' | 'purchase'> = {
-    'sales.saleorder': 'sale',
     'purchasing.purchaseorder': 'purchase',
 }
 

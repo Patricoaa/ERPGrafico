@@ -148,8 +148,8 @@ const PaymentDrawer = dynamic(
     { ssr: false, loading: () => skeleton("pago") }
 )
 
-const SaleOrderDrawer = dynamic(
-    () => import("@/features/sales/components/SaleOrderDrawer").then((m) => m.SaleOrderDrawer),
+const OrderSheet = dynamic(
+    () => import("@/features/orders").then((m) => m.OrderSheet),
     { ssr: false, loading: () => skeleton("orden de venta") }
 )
 
@@ -540,9 +540,12 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
 
     // ── Transaction Drawers (Phase 2 — dual-mode view/edit) ─────────────────
+    // Ficha documental (ADR-0083) — reemplaza el Order Hub como ficha de la OV.
+    // Las acciones no cierran la ficha: no se pasa onSuccess (cerraría la pila).
     "sales.saleorder": ({ id, open, onOpenChange }) => (
-        <SaleOrderDrawer
+        <OrderSheet
             id={id}
+            kind="sale"
             open={open}
             onOpenChange={onOpenChange}
         />
