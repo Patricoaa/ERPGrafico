@@ -29,7 +29,7 @@ La factura nunca registró su folio, pero su estado es "Pagada": el estado del d
 
 ### 3.1 Frontend (corregido el 2026-10-15)
 1. **Dos fuentes para el ciclo.** La tarjeta usaba `getHubStatuses` (exige folio) y la ficha usaba `invoicing_status` (cuenta facturas sin folio) → discrepaban. Había además dos copias de `getHubStatuses` (`lib/workflow-status` y `features/orders/utils/status`).
-   → Fuente única `lib/workflow-status` (`billingStage`): Facturación = completa solo con todo facturado **y** foliado; en curso con facturación parcial o folio pendiente ("Folio pendiente" en la ficha). La copia de `features/orders` reexporta.
+   → Fuente única `lib/workflow-status` (`billingStage`): solo cuentan las facturas emitidas (con folio). Sin emitidas el paso queda vacío aunque haya borradores ("Folio pendiente"); parcial o emitidas + borradores = en curso; todo facturado y foliado = completo. La copia de `features/orders` reexporta.
 2. **Colores de etapa.** Los estados de paso (`active`, `neutral`…) se pasaban a `StatusBadge` como estados de negocio: `active` se resolvía como `ACTIVE` (verde, "Activo") → una etapa en curso se veía igual que una completada, en la tarjeta y en la ficha.
    → `stageIntent` (`lib/workflow-status`): en curso = advertencia, completado = éxito, pendiente = neutro, anulado = destructivo. Lo usan `HubStatus` (tarjeta) y `DocumentLifecycle` (ficha).
 

@@ -87,21 +87,21 @@ export function stageIntent(stageStatus: string | null | undefined): BadgeIntent
 
 /**
  * Paso "Facturación" del ciclo de OV/OC — fuente única para tarjeta (lista) y ficha (ADR-0083).
- * - success: todo facturado (`invoicing_status` INVOICED, ADR-0081) y ninguna factura sin folio;
- * - active: facturación parcial o facturas con folio pendiente;
- * - neutral: sin facturas.
- * Una factura sin folio cuenta para la cantidad facturada pero no completa el paso.
+ * Solo cuentan las facturas emitidas (con folio): un borrador sin folio no es facturación.
+ * - neutral (vacío): sin facturas emitidas, aunque haya borradores ("Folio pendiente");
+ * - active: facturación parcial (`invoicing_status` PARTIAL, ADR-0081) o emitidas + borradores;
+ * - success: todo facturado y ninguna factura sin folio.
  */
 export function billingStage(order: OrderBase): { billingStatus: string; billingFolioPending: boolean } {
     const invoices = (order.related_documents?.invoices || []).filter((inv) => inv.status !== 'CANCELLED')
-    const billingFolioPending = invoices.some((inv) =>
+    const isDraft = (inv: { status?: string; number?: string }) =>
         inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number
-    )
+    const issued = invoices.filter((inv) => !isDraft(inv))
+    const billingFolioPending = invoices.some(isDraft)
     const invoicingStatus = typeof order.invoicing_status === 'string' ? order.invoicing_status : null
-    const fullyInvoiced = invoicingStatus ? invoicingStatus === 'INVOICED' : invoices.length > 0
+    const fullyInvoiced = invoicingStatus ? invoicingStatus === 'INVOICED' : issued.length > 0
     let billingStatus = 'neutral'
-    if (fullyInvoiced && invoices.length > 0 && !billingFolioPending) billingStatus = 'success'
-    else if (invoices.length > 0 || invoicingStatus === 'PARTIAL') billingStatus = 'active'
+    if (issued.length > 0) billingStatus = fullyInvoiced && !billingFolioPending ? 'success' : 'active'
     return { billingStatus, billingFolioPending }
 }
 

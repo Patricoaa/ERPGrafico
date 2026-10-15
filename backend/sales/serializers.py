@@ -139,6 +139,9 @@ class SaleLineSerializer(serializers.ModelSerializer):
         # Return summary of first active OT for simple UI display
         ot = ots[0]
         return {
+            # id y display_id: la ficha de la OV enlaza la OT desde la tabla de productos (ADR-0083)
+            "id": ot.id,
+            "display_id": ot.display_id,
             "number": ot.number,
             "status": ot.status,
             "status_display": ot.get_status_display(),

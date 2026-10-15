@@ -21,10 +21,16 @@
 
 ---
 
+## 2026-10-15 · Ajustes: OT en productos y factura en borrador
+
+- **OT con "—" en Productos** (OV-000002): `work_order_summary` de la línea no traía `id` ni `display_id`, así que el enlace no podía abrir la OT (en Relaciones sí aparecía, vía el proveedor). `SaleLineSerializer` los incluye.
+- **Factura en borrador** (sin folio): el paso Facturación queda **vacío** (neutral, anillo en 0, detalle "Folio pendiente"); solo las facturas emitidas mueven el paso. Facturación parcial o emitidas + borradores = en curso; todo facturado y foliado = completo. Misma regla en tarjeta y ficha (`billingStage`).
+- Verificación: vitest 87/87 (órdenes, contrato de color, shared); pytest ventas en verde.
+
 ## 2026-10-15 · Ciclo: tarjeta y ficha desincronizadas · evaluación de la máquina de estados
 
 Caso reportado: OV-000004 se veía "Facturado" en la ficha sin folio registrado. Evaluación completa en [state-machine-evaluation.md](./state-machine-evaluation.md).
-- **Corregido (frontend):** el punto del botón de acciones usaba `bg-cyan` (CMYK reservado a navegación, ADR-0076; lo detectó `color-system.contract`) → `bg-primary`. Fuente única del ciclo en `lib/workflow-status` (`billingStage`: Facturación completa solo con todo facturado y foliado; "Folio pendiente" en la ficha); `features/orders/utils/status` reexporta (había dos copias). `stageIntent`: los estados de etapa ya no se resuelven como estados de negocio (`active` se pintaba verde "Activo" en tarjeta y ficha; ahora "en curso" = advertencia).
+- **Corregido (frontend):** el punto del botón de acciones usaba `bg-cyan` (CMYK reservado a navegación, ADR-0076; lo detectó `color-system.contract`) → `bg-primary`. Fuente única del ciclo en `lib/workflow-status` (`billingStage`: Facturación completa solo con todo facturado y foliado; "Folio pendiente" en la ficha; ajustado después: un borrador deja el paso vacío); `features/orders/utils/status` reexporta (había dos copias). `stageIntent`: los estados de etapa ya no se resuelven como estados de negocio (`active` se pintaba verde "Activo" en tarjeta y ficha; ahora "en curso" = advertencia).
 - **Pendiente de decisión (backend):** `TreasuryService` escribe `status = PAID` en facturas/OV/OC al quedar pagadas → 180 facturas sin folio aparecen "Pagadas"; `Invoice.Status` y `SaleOrder/PurchaseOrder.Status` mezclan emisión, facturación y cobro. Propuesta de desacople (ADR-0084) en la evaluación.
 
 ## 2026-10-15 · Piloto U2 — columnas, netos y detalle de relaciones

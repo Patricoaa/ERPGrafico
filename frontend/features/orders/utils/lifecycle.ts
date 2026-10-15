@@ -27,7 +27,8 @@ export function getOrderLifecycle(order: Order, kind: "sale" | "purchase"): Life
 
     // Misma regla que la tarjeta de la lista (lib/workflow-status · billingStage)
     const billing = hub.billing as LifecycleStepStatus
-    const billingPct = pct(invoicedQty, ordered)
+    // Sin facturas emitidas el paso queda vacío (los borradores sin folio no cuentan)
+    const billingPct = billing === "neutral" ? 0 : pct(invoicedQty, ordered)
     const billingDetail = hub.billingFolioPending ? "Folio pendiente" : `${billingPct}% facturado`
 
     const workOrders = (order.work_orders ?? []).filter((ot) => ot.status !== "CANCELLED")
