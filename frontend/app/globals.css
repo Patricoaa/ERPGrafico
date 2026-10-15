@@ -528,11 +528,11 @@
  * KPI VALUES — Standardized large data typography
  */
 @utility kpi-value {
-  @apply text-3xl font-bold tracking-tight tabular-nums;
+  @apply text-3xl font-black tracking-tighter tabular-nums;
 }
 
 @utility kpi-value-compact {
-  @apply text-2xl font-bold tracking-tight tabular-nums;
+  @apply text-2xl font-black tracking-tighter tabular-nums;
 }
 
 /*

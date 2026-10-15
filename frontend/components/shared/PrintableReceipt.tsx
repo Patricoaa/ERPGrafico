@@ -85,6 +85,7 @@ export const PrintableReceipt = forwardRef<HTMLDivElement, PrintableReceiptProps
                             <div className="flex-1 min-w-0">
                                 <p className="truncate font-medium">{name || code || "—"}</p>
                                 {discount > 0 && (
+                                    // eslint-disable-next-line typography/token-first -- papel físico: escala sub-9px documentada (typography-scale.md)
                                     <p className="text-[8px] text-muted-foreground/80">Desc: {formatCurrency(discount)}</p>
                                 )}
                             </div>
@@ -126,6 +127,7 @@ export const PrintableReceipt = forwardRef<HTMLDivElement, PrintableReceiptProps
                 </div>
 
                 {/* Paper cut indicator */}
+                {/* eslint-disable-next-line typography/token-first -- papel físico: escala sub-9px documentada (typography-scale.md) */}
                 <div className="text-center text-[6px] text-muted-foreground/60 mt-2">
                     {"- ".repeat(16)}
                 </div>

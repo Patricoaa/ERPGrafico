@@ -90,7 +90,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 <span className="truncate">{config.title}</span>
             </h1>
             {nav?.breadcrumbs?.map((crumb, idx) => (
-                <span key={idx} className="flex items-center gap-1.5 shrink-0 text-sm font-semibold tracking-tight">
+                <span key={idx} className="flex items-center gap-1.5 shrink-0 text-xs font-medium tracking-normal">
                     <span className="text-border select-none" aria-hidden>/</span>
                     {crumb.href ? (
                         <Link href={crumb.href} className="text-muted-foreground hover:text-foreground transition-colors">
@@ -105,12 +105,12 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2 shrink-0">
                 {config.status && (
                     config.status.type === 'saving' ? (
-                        <Skeleton className="px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-tighter border shrink-0 bg-primary/20 text-primary border-primary/20 flex items-center justify-center">
+                        <Skeleton className="px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider border shrink-0 bg-primary/20 text-primary border-primary/20 flex items-center justify-center">
                             {config.status.label}
                         </Skeleton>
                     ) : (
                         <div className={cn(
-                            "px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-tighter border shrink-0",
+                            "px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider border shrink-0",
                             config.status.type === 'synced' && "bg-success/10 text-success border-success/20",
                             config.status.type === 'error' && "bg-destructive/10 text-destructive border-destructive/20",
                             !config.status.type && "bg-muted text-muted-foreground border-border"

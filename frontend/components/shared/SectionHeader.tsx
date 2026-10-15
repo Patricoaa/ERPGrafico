@@ -28,7 +28,7 @@ export function SectionHeader({
     const router = useRouter()
 
     const heading = (
-        <h2 className="text-3xs font-bold uppercase tracking-[0.25em] text-muted-foreground flex items-center gap-1.5">
+        <h2 className="text-2xs font-bold uppercase tracking-[0.25em] text-muted-foreground flex items-center gap-1.5">
             <Icon className="h-3 w-3" />
             {title}
             {count != null && (

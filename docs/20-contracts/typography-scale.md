@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: typography-scale
 status: active
 owner: frontend-team
-last_review: 2026-07-06
+last_review: 2026-10-14
 stability: contract-changes-require-ADR
 ---
 
@@ -18,7 +18,7 @@ stability: contract-changes-require-ADR
 | Token Tailwind | CSS Var | Fuente | Uso |
 |----------------|---------|--------|-----|
 | `font-sans` | `--font-sans` | Onest (variable 100–900) | **Única fuente del sistema** |
-| `font-mono` | `--font-mono` | System monospace stack | Datos tabulares, códigos, IDs |
+| `font-mono` | `--font-mono` | JetBrains Mono (bundleada vía `next/font`) | Datos tabulares, códigos, IDs |
 
 - Onest es la única fuente del sistema. No existe `font-heading`.
 - Toda la jerarquía tipográfica se construye con: weight, size, tracking y text-transform.
@@ -46,7 +46,17 @@ Definidos en `frontend/app/globals.css @layer base`. El estilo base es heredado 
 
 ## Sistema de jerarquía por contexto
 
-Esta escala es **hardcoded con valores `text-[Npx]`** deliberadamente — el diseño industrial denso requiere precisión sub-Tailwind. No reemplazar con clases semánticas (`text-xs`, `text-sm`).
+Esta escala usa **tokens semánticos** (`text-2xs`, `text-3xs`, `text-4xs`), **nunca px crudos**. Los valores `text-[Npx]` están prohibidos y los bloquea la regla ESLint `typography/token-first`.
+
+Equivalencias canónicas (el rango micro es **fijo**, no fluido, y exclusivo para chrome denso):
+
+| px (legacy) | Token | Valor |
+|-------------|-------|-------|
+| `text-[9px]` | `text-4xs` | 9px |
+| `text-[10px]` | `text-3xs` | 10px |
+| `text-[11px]` | `text-2xs` | 11px |
+| `text-[13px]` | `text-xs` | 12–14px (fluido) |
+| `text-[15px]` | `text-sm` | 14–16px (fluido) |
 
 | Contexto | Dónde | Tipografía | Tracking | Transform | Ejemplos |
 |----------|-------|------------|----------|-----------|----------|
@@ -54,16 +64,16 @@ Esta escala es **hardcoded con valores `text-[Npx]`** deliberadamente — el dis
 | **N0 — KPI/Metric** | StatCard value, PieChart center | `text-2xl/3xl font-black` | `tracking-tighter` | normal | "1.234" |
 | **N0 — Empty state** | EmptyState title | `text-lg font-black` | `tracking-tighter` | `uppercase` | "Sin resultados" |
 | **N0 — Error page** | ErrorBoundary, app/error | `text-2xl font-black` | `tracking-tighter` | `uppercase` | "Algo salió mal" |
-| **N1 — Sección** | FormSection, SectionHeader, sidebar título | `text-[11px] font-black` | `tracking-[0.25em]` | `uppercase` | "Roles", "Identidad del Contacto" |
-| **N2 — Etiqueta de campo** | LabeledInput legend | `text-[10px] font-black` | `tracking-widest` | `uppercase` | "Nombre / Razón Social" |
-| **N2 — Botón acción** | SubmitButton, CancelButton | `text-[10px] font-black h-9` | `tracking-widest` | `uppercase` | "Guardar", "Cancelar" |
-| **N2 — Header de tabla** | DataTableColumnHeader, `<th>` | `text-[10px] font-black` | `tracking-widest` | `uppercase` | "Fecha", "Total", "Estado" |
+| **N1 — Sección** | FormSection, SectionHeader, ActivitySidebar | `text-2xs font-bold` | `tracking-[0.25em]` | `uppercase` | "Roles", "Identidad del Contacto" |
+| **N2 — Etiqueta de campo** | LabeledInput legend | `text-2xs font-bold` | `tracking-widest` | `uppercase` | "Nombre / Razón Social" |
+| **N2 — Botón acción** | SubmitButton, CancelButton | `text-3xs font-black h-9` | `tracking-widest` | `uppercase` | "Guardar", "Cancelar" |
+| **N2 — Header de tabla** | DataTableColumnHeader, `<th>` | `text-3xs font-bold` | `tracking-widest` | `uppercase` | "Fecha", "Total", "Estado" |
 | **N2 — Badge/Chip** | Chip, EntityBadge | `text-xs font-medium font-sans` | `normal` | normal | "Pagado", "Pendiente" |
 | **N2 — StatusBadge** | StatusBadge (badge) | `text-xs font-medium font-sans` | `normal` | normal | "En Proceso", "Sin Conciliar" |
 | **N2 — Drawer/Modal title** | SheetTitle, DialogTitle | `text-xl font-black` | `tracking-tight` | normal | "Nuevo Contacto" |
 | **N2 — Drawer subtitle** | `subtitle` prop (PanelHeader, via `PanelBaseProps`) | `text-xs font-medium text-muted-foreground` | normal | normal | "Ficha Maestra • CRM" |
-| **N2 — Wizard step** | GenericWizard step indicator | `text-[10px] font-black` | `tracking-wider` | `uppercase` | "PASO 1 DE 3" |
-| **N2 — Paginación** | DataTablePagination | `text-[10px] font-black` | `tracking-widest` | `uppercase` | "Registros por página" |
+| **N2 — Wizard step** | GenericWizard step indicator | `text-3xs font-black` | `tracking-wider` | `uppercase` | "PASO 1 DE 3" |
+| **N2 — Paginación** | DataTablePagination | `text-xs font-medium` | normal | normal | "Registros por página" |
 | **N3 — Valor de input** | LabeledInput input | `text-sm` | normal | normal | "Juan Pérez" |
 | **N3 — Dato primario** | DataCell.Text, DataCell.Date | `text-xs font-medium` | normal | normal | "15/03/2026" |
 | **N3 — Dato secundario** | DataCell.Secondary, helper hints | `text-xs text-muted-foreground` | normal | normal | "3 documentos" |
@@ -72,10 +82,35 @@ Esta escala es **hardcoded con valores `text-[Npx]`** deliberadamente — el dis
 | **N3 — Fecha** | DataCell.Date | `text-xs font-medium` | normal | normal | "15/03/2026" |
 | **N3 — Fecha-hora** | DataCell.Date `showTime`, FieldType `dateTime` | fecha `text-xs font-medium` + hora `text-xs font-normal` (`light` opcional, ADR-0062) | normal | normal | "15/03/2026 · 14:30" |
 | **N3 — Descripción** | EmptyState description, notes | `text-sm text-muted-foreground` | normal | normal | "Defina la lista de materiales..." |
-| **N4 — Tab label** | PageTabs, TabBar trigger | `text-[10px] sm:text-[11px] font-black uppercase` | `tracking-wider` (PageTabs) / `tracking-widest` (TabBar) | `uppercase` | "Perfil", "Cliente" |
-| **N4 — Tooltip** | TooltipTrigger content | `text-[9px] font-black` | `tracking-widest` | `uppercase` | "Editar" |
-| **N4 — Timestamp** | ActivitySidebar time | `text-[9px] font-medium text-muted-foreground/60` | normal | normal | "hace 2 horas" |
-| **N4 — Badge count** | TabBar badge number | `text-[9px] font-black` | normal | normal | 3, 15 |
+| **N4 — Tab label** | PageTabs, TabBar trigger | `text-3xs sm:text-2xs font-bold` | `tracking-wider` (PageTabs) / `tracking-widest` (TabBar) | `uppercase` | "Perfil", "Cliente" |
+| **N4 — Tooltip** | TooltipContent (`ui/tooltip`) | `text-xs font-normal` | normal | normal | "Editar" |
+| **N4 — Timestamp** | ActivitySidebar time | `text-3xs font-medium text-muted-foreground/60` | normal | normal | "hace 2 horas" |
+| **N4 — Badge count** | TabBar badge number | `text-4xs font-bold` | normal | normal | 3, 15 |
+
+> **Peso de labels micro (N1/N2/N4): `font-bold`.** El sistema reserva `font-black` para valores de display (N0), botones de acción y el indicador de paso del wizard. La versión previa de este contrato declaraba `font-black` en todos los labels; el código enviado estandariza en `font-bold` (headers de tabla, títulos de sección, labels de campo, tabs). Ver [ADR-0082](../10-architecture/adr/0082-typography-scale-token-reconciliation.md).
+
+---
+
+## Escala del chrome del shell (ADR-0079)
+
+Roles tipográficos de los consumidores del shell (`DashboardShell`, `ModuleRail`, `ModuleSidebarPanel`, `SidebarNavItem`, `SidebarUtilityNav`, `PanelHeader`). Referencia de estructura: [module-layout-navigation.md §2.1](./module-layout-navigation.md).
+
+| Rol | Componente (archivo) | Tipografía | Tracking | Transform |
+|-----|----------------------|------------|----------|-----------|
+| Topbar — título de vista (`<h1>` único) | `DashboardShell.tsx` | `text-base font-semibold` | `tracking-tight` | normal |
+| Topbar — breadcrumb | `DashboardShell.tsx` | `text-xs font-medium text-muted-foreground` | normal | normal |
+| Topbar — status pill | `DashboardShell.tsx` | `text-2xs font-bold` | `tracking-wider` | `uppercase` |
+| Riel — logo/iniciales | `ModuleRail.tsx` | `text-3xs font-bold` | normal | `uppercase` |
+| Riel — tooltip de módulo | `ModuleRail.tsx` | `text-xs font-semibold` | normal | normal |
+| Panel — título de módulo | `ModuleSidebarPanel.tsx` | `text-sm font-semibold` | `tracking-tight` | normal |
+| Panel — fallback "Módulos" | `ModuleSidebarPanel.tsx` | `text-xs font-semibold` | `tracking-wider` | `uppercase` |
+| Panel — ítem de navegación (L0/L1/L2) | `SidebarNavItem.tsx` | `text-xs` | normal | normal |
+| Panel — atajo `kbd` (Ctrl K) | `SidebarUtilityNav.tsx` | `text-3xs` | normal | normal |
+| Panel — badge de conteo | `SidebarUtilityNav.tsx` | `text-4xs font-medium` | normal | normal |
+| Panel lateral — título | `PanelHeader.tsx` | `text-sm font-semibold` | `tracking-tight` | normal |
+| Panel lateral — subtítulo | `PanelHeader.tsx` | `text-xs font-medium text-muted-foreground` | normal | normal |
+
+> El tamaño micro mínimo del chrome es `text-4xs` (9px) y sólo se usa en glifos y contadores (iniciales del riel, badges de número), nunca en prosa.
 
 ---
 
@@ -84,16 +119,16 @@ Esta escala es **hardcoded con valores `text-[Npx]`** deliberadamente — el dis
 Todos los botones de acción del sistema usan un patrón unificado:
 
 ```
-h-9  text-[10px]  font-black  uppercase  tracking-widest
+h-9  text-3xs  font-black  uppercase  tracking-widest
 ```
 
 | Componente | Variante | Nota |
 |------------|----------|------|
-| `<SubmitButton>` | Primary (slide) |  |
-| `<CancelButton>` | Outline | `shadow-sm` |
+| `<SubmitButton>` | Primary (slide) | `px-4 h-9 text-3xs font-black` |
+| `<CancelButton>` | Outline | `px-5 h-9 text-3xs font-black shadow-card` |
 | `<DangerButton>` | Destructive | Extremo izquierdo del footer |
-| `<ToolbarCreateButton>` | Primary | `px-4 rounded-md shadow-sm` |
-| `<ActionSlideButton>` | Custom | Base de Submit y Cancel |
+| `<ActionSlideButton>` | Custom | Base de Submit y Cancel; variante `size="lg"` → `h-12 text-xs` |
+| `<ToolbarCreateButton>` | Primary (toolbar) | Excepción: `h-9 text-xs font-semibold tracking-widest` (superficie toolbar, no footer de formulario) |
 
 **Fuente del contrato:** [component-button.md](component-button.md) + [form-layout-architecture.md](form-layout-architecture.md)
 
@@ -106,10 +141,10 @@ h-9  text-[10px]  font-black  uppercase  tracking-widest
 | Tamaño | Clase | Cuándo usar | Componente |
 |--------|-------|-------------|------------|
 | **Estándar** | `text-xs font-medium font-sans` | Badge/chip genérico de UI chrome | `<Chip size="sm">` |
-| **Compacto** | `text-[9px] font-medium` | Tabla, inline, overlaid counters | `<Chip size="xs">` |
+| **Compacto** | `text-xs font-medium` | Tabla, inline, overlaid counters | `<Chip size="xs">` |
 | **Énfasis** | `text-xs font-medium` | Detail views, modal sections | `<Chip size="md">` |
-| **Header de tabla** | `text-[10px] font-black uppercase tracking-widest` | `<TableHead>` columnas | `data-table-column-header.tsx` |
-| **Fine print excepción** | `text-[9px] font-medium` | Timestamps, conteos mínimos sin pill | Inline `<span>` |
+| **Header de tabla** | `text-3xs font-bold uppercase tracking-widest` | `<TableHead>` columnas | `data-table-column-header.tsx` |
+| **Fine print excepción** | `text-4xs font-medium` | Timestamps, conteos mínimos sin pill | Inline `<span>` |
 
 Todos los badges son **borderless + `rounded-sm`** (CurrencyFlow aesthetic, ADR-0068).
 
@@ -117,21 +152,25 @@ Todos los badges son **borderless + `rounded-sm`** (CurrencyFlow aesthetic, ADR-
 
 ### Chip — matriz de tamaños
 
+`Chip` envuelve `Badge`; todos sus tamaños usan `text-xs font-medium` (el tamaño sólo cambia la caja, no la tipografía).
+
 | Prop `size` | Altura | Font | Uso |
 |-------------|--------|------|-----|
-| `xs` | `h-[18px]` | `text-[9px]` | Table cells, dense lists, overlaid counters |
-| `sm` (default) | `h-[22px]` | `text-[10px]` | General UI chrome, wizard steps |
-| `md` | auto | `text-xs` (`px-2 py-0.5`) | Detail panels, modal sub-headers |
+| `xs` | `h-[18px]` | `text-xs` | Table cells, dense lists, overlaid counters |
+| `sm` | `h-[22px]` | `text-xs` | General UI chrome, wizard steps |
+| `md` (default) | auto (`px-2 py-0.5`) | `text-xs` | Detail panels, modal sub-headers |
 
 ### StatusBadge — matriz de tamaños
 
-El componente `<StatusBadge>` tiene su propio sistema de tamaños intencional:
+`StatusBadge` delega el tamaño en `Badge`:
 
 | Prop `size` | Altura | Font | Uso |
 |-------------|--------|------|-----|
-| `xs` | `h-[18px]` | `text-[9px]` | Tablas, listas densas |
-| `sm` | `h-[22px]` | `text-[10px]` | Tablas, listas densas |
-| `md` (default) | auto | `text-xs` | Modales, panels de detalle |
+| `xs` | `h-[18px]` | `text-xs` | Tablas, listas densas |
+| `sm` | `h-[22px]` | `text-xs` | Tablas, listas densas |
+| `md` (default) | auto (`px-2 py-0.5`) | `text-xs` | Modales, panels de detalle |
+| `lg` | `h-8` | `text-sm` | Headers, énfasis |
+| `xl` | `h-10` | `text-base` | Hero, dashboards |
 
 ---
 
@@ -154,7 +193,7 @@ text-2xl  font-black  tracking-tighter
 **StatCard labels** — todas las variantes (`minimal`, `compact`, `chart`) usan `tracking-widest`:
 
 ```
-text-[10px] font-bold uppercase tracking-widest text-muted-foreground
+text-3xs font-bold uppercase tracking-widest text-muted-foreground
 ```
 
 ---
@@ -252,11 +291,15 @@ Para evitar fatiga visual, los iconos dentro de componentes (selectores, seccion
 <span className="text-blue-500">
 <span className="text-red-400">
 
-// ❌ Reemplazar sistema de capas con clases semánticas
-<legend className="text-xs">  // Usar text-[10px] para N2
+// ❌ Reemplazar el sistema de capas con px crudos o clases semánticas
+<legend className="text-[10px]">  // Usar text-3xs (N2)
+<legend className="text-xs">       // Usar text-3xs (N2)
 
-// ❌ font-bold en botones de acción
-<Button className="font-bold">  // Usar font-black
+// ❌ Tamaños px crudos en el chrome del shell
+<nav className="text-[13px]">  // Usar text-xs
+
+// ❌ font-bold en botones de acción del sistema
+<Button className="font-bold">  // Usar font-black (escala de acción) o font-medium (Button base)
 
 // ❌ Mezcla de pesos en el mismo patrón semántico
 // (Label+Value con semibold/bold/medium mezclados)
