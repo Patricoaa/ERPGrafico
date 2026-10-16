@@ -11,18 +11,17 @@ import { DocumentTotalsBox, toNumber } from "./DocumentTotalsBox"
 /** Las celdas DataCell se centran por defecto; en la ficha van a la izquierda. */
 const LEFT = "w-auto justify-start text-left"
 
-function originOf(invoice: Order): { label: string; id: number; display: string; title: string } | null {
-    const corrected = invoice.corrected_invoice
-    if (corrected?.id) {
-        return { label: "billing.invoice", id: Number(corrected.id), display: String(corrected.display_id ?? corrected.number ?? `#${corrected.id}`), title: "Documento corregido" }
-    }
-    if (typeof invoice.sale_order === "number") {
-        return { label: "sales.saleorder", id: invoice.sale_order, display: String(invoice.sale_order_number ?? `OV #${invoice.sale_order}`), title: "Orden de venta" }
-    }
-    if (typeof invoice.purchase_order === "number") {
-        return { label: "purchasing.purchaseorder", id: invoice.purchase_order, display: String(invoice.purchase_order_number ?? `OC #${invoice.purchase_order}`), title: "Orden de compra" }
-    }
-    return null
+/** Título de la fila de origen según el tipo del DocumentRef (`origin_document`, ADR-0086). */
+const ORIGIN_TITLE: Record<string, string> = {
+    "billing.invoice": "Documento corregido",
+    "sales.saleorder": "Orden de venta",
+    "purchasing.purchaseorder": "Orden de compra",
+}
+
+function originTitle(invoice: Order): string {
+    const ref = invoice.origin_document as { label?: unknown } | null | undefined
+    if (ref && typeof ref.label === "string") return ORIGIN_TITLE[ref.label] ?? "Origen"
+    return "Origen"
 }
 
 /** Fecha del documento con hora de creación cuando coinciden (mismo criterio que la OV). */
@@ -40,7 +39,6 @@ function dateTime(invoice: Order): { value: string; showTime: boolean } | null {
 export function InvoiceSummaryTab({ invoice }: { invoice: Order }) {
     const isSale = invoice.is_sale_document === true || !!invoice.sale_order
     const partnerId = typeof invoice.partner_id === "number" ? invoice.partner_id : undefined
-    const origin = originOf(invoice)
     const when = dateTime(invoice)
     const hasFolio = !!invoice.number && invoice.number !== "Draft"
 
@@ -78,8 +76,8 @@ export function InvoiceSummaryTab({ invoice }: { invoice: Order }) {
                             ),
                         },
                         {
-                            label: origin?.title ?? "Origen",
-                            value: origin ? <DocumentRefLink label={origin.label} id={origin.id} display={origin.display} /> : null,
+                            label: originTitle(invoice),
+                            value: invoice.origin_document ? <DocumentRefLink documentRef={invoice.origin_document} /> : null,
                         },
                     ]}
                 />

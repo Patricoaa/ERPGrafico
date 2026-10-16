@@ -41,7 +41,13 @@ class InvoiceSelectorExt:
                 'payment_allocations__treasury_movement',
             )
         else:
-            qs = Invoice.objects.select_related('contact', 'journal_entry')
+            qs = Invoice.objects.select_related(
+                'contact',
+                'journal_entry',
+                'sale_order__customer',
+                'purchase_order__supplier',
+                'corrected_invoice',
+            )
         if view.action in ['list', 'debit_notes_list', 'credit_notes_list', 'unpaid_invoices', 'dashboard_stats']:
             d_type = request.query_params.get('document_type')
             inv_type = request.query_params.get('invoice_type')

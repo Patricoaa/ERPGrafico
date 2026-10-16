@@ -152,6 +152,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
     corrected_invoice = serializers.SerializerMethodField()
     order_delivery_status = serializers.SerializerMethodField()
     work_orders = serializers.SerializerMethodField()
+    # Documento de origen como DocumentRef (ADR-0086): enlace navegable a su URL canónica.
+    origin_document = serializers.SerializerMethodField()
     is_tax_exempt = serializers.ReadOnlyField()
     pos_session = serializers.IntegerField(
         source="sale_order.pos_session", read_only=True, allow_null=True
@@ -202,6 +204,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "pos_session",
             "sale_order_detail",
             "is_sale_document",
+            "origin_document",
         ]
         read_only_fields = [
             "id",
@@ -275,6 +278,18 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "dte_type": obj.corrected_invoice.dte_type,
             "dte_type_display": obj.corrected_invoice.get_dte_type_display(),
         }
+
+    def get_origin_document(self, obj):
+        from core.documents import build_ref
+
+        user = getattr(self.context.get("request"), "user", None)
+        if obj.corrected_invoice_id:
+            return build_ref(obj.corrected_invoice, user, "billing.invoice")
+        if obj.sale_order_id:
+            return build_ref(obj.sale_order, user, "sales.saleorder")
+        if obj.purchase_order_id:
+            return build_ref(obj.purchase_order, user, "purchasing.purchaseorder")
+        return None
 
     def get_order_delivery_status(self, obj):
         if obj.sale_order:

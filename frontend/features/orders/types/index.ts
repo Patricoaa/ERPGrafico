@@ -116,6 +116,8 @@ export interface Order {
     work_orders?: WorkOrder[]
     serialized_payments?: Payment[]
     corrected_invoice?: Order
+    /** Documento de origen como DocumentRef (ADR-0086). */
+    origin_document?: unknown | null
     dte_type_display?: string
     partner_name?: string
     name?: string
