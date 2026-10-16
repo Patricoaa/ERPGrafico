@@ -48,6 +48,7 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
 
       <DocumentSheet
         label="contacts.profitdistributionresolution"
+        auditType="profit_distribution"
         open={open}
         onOpenChange={onOpenChange}
         document={distribution ? { id: Number(distribution.id), display_id: distribution.display_id } : null}

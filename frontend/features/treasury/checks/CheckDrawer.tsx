@@ -35,6 +35,7 @@ export function CheckDrawer({ id, open, onOpenChange }: CheckDrawerProps) {
             {isError && check && <StaleDataBanner className="mx-4 mt-2" />}
             <DocumentSheet
                 label="treasury.check"
+                auditType="check"
                 open={open}
                 onOpenChange={onOpenChange}
                 document={check ?? null}

@@ -34,6 +34,7 @@ export function TerminalBatchDrawer({ id, open, onOpenChange, batchId }: Termina
 
       <DocumentSheet
         label="treasury.terminalbatch"
+        auditType="terminal_batch"
         open={open}
         onOpenChange={onOpenChange}
         document={batch ?? null}
