@@ -59,8 +59,27 @@ The rule is enforced wherever a `DocumentRef` (with its `url`) reaches the surfa
 - `saleDeliveryLineFields` stock-move link — new backend `stock_move_document` (`build_ref(..., "inventory.stockmove")`).
 - `PurchaseReceiptDrawer` / `PurchaseReturnDrawer` order link — new backend `purchase_order_document` (`build_ref(..., "purchasing.purchaseorder")`).
 - `purchaseReceiptLineFields` / `purchaseReturnLineFields` stock-move link — new backend `stock_move_document` (`build_ref(..., "inventory.stockmove")`).
+- `WorkOrder` → OV run link — new backend `sale_order_document` (`production.serializers`).
+- `InventoryDocument` "documento origen" — new backend `source_document` (via `core.documents.ref_for`).
+- `CheckDrawer` OV link — new backend `sale_order_document` (`treasury`); `checkFields` uses it.
+- `InvoiceSummaryTab` origin — new backend `origin_document` (`billing.serializers.InvoiceSerializer`): precedence corrected invoice → OV → OC.
 
-The remaining surface that still holds only a raw id (no `url`) is **not** wired here and keeps the drawer until the backend exposes a `DocumentRef` (via `core.documents.ref_for`) for it: `InvoiceSummaryTab` origin. The frontend must not derive the route itself (rule 2).
+### Row-identity cells (`DataCell.Entity` → `DocumentRefLink`)
+
+A distinct case is a **table that lists documents of a given type** (a credit ledger, a credit
+history): the cell shows the row's *own* identity rather than a reference to a different
+document. These rows used `DataCell.Entity`, which — because a drawer exists for `sales.saleorder`
+(`ENTITY_DRAWERS`) — always opened the in-context drawer and never navigated, even though the
+label has a `?selected` canonical URL. The rule is the same: the backend emits the row's own
+`DocumentRef` and the cell uses `DocumentRefLink`, so the row navigates like any other document
+drilldown.
+
+- `CreditHistoryEntry` (`/sales/credit_history/`, `/contacts/{id}/credit_history/`) — `SaleOrderSerializer` exposes a self `document` (`build_ref(obj, ..., "sales.saleorder")`); `creditHistoryEntryFields` renders `DocumentRefLink`.
+- `CreditLedgerEntry` (`/contacts/{id}/credit_ledger/`) — `ContactSelector.get_credit_ledger` adds `document` per row; `creditLedgerEntryFields` and `ContactDrawer.CreditLedgerTable` render `DocumentRefLink`.
+
+The frontend must not derive the route itself (rule 2). Every surface that holds only a raw id
+keeps the drawer until the backend exposes a `DocumentRef` for it.
+
 
 ## Alternatives considered
 

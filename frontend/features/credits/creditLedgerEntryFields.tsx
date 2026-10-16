@@ -1,4 +1,5 @@
 import { createEntityFields, DataCell } from '@/components/shared'
+import { DocumentRefLink } from '@/features/documents'
 import type { CreditLedgerEntry } from './api/creditsApi'
 
 export const agingLabel: Record<string, string> = {
@@ -15,9 +16,7 @@ export const creditLedgerEntryFields = createEntityFields<CreditLedgerEntry>()({
         type: 'computed',
         label: 'N° Documento',
         placement: 'detail',
-        render: (h) => (
-            <DataCell.Entity entityLabel="sales.saleorder" data={h as unknown as Record<string, unknown>} />
-        ),
+        render: (h) => <DocumentRefLink documentRef={h.document} />,
     },
     date: {
         key: 'date',

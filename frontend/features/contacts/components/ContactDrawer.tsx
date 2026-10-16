@@ -38,6 +38,7 @@ import { type LucideIcon } from "lucide-react"
 import { contactCreditDocumentFields, type ContactCreditDocument } from '../contactCreditDocumentFields'
 
 import { getHubStatuses } from '@/features/orders'
+import { DocumentRefLink } from '@/features/documents'
 import { LabeledInput, LabeledContainer, RadioCard, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
 
@@ -728,7 +729,7 @@ function CreditLedgerTable({ data, loading }: { data: ContactCreditDocument[], l
             if (key === 'number') {
                 return {
                     ...col,
-                    cell: ({ row }: CellContext<ContactCreditDocument, unknown>) => <DataCell.Entity label="sales.saleorder" data={row.original as object} />,
+                    cell: ({ row }: CellContext<ContactCreditDocument, unknown>) => <DocumentRefLink documentRef={row.original.document} />,
                 }
             }
 

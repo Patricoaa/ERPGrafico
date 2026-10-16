@@ -93,7 +93,9 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
         from .selectors import ContactSelector
 
-        ledger_data = ContactSelector.get_credit_ledger(contact=contact, include_all=include_all)
+        ledger_data = ContactSelector.get_credit_ledger(
+            contact=contact, include_all=include_all, user=request.user
+        )
         return Response(ledger_data)
 
     @action(detail=False, methods=['get'])

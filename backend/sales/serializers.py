@@ -224,6 +224,14 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         return None
 
     display_id = serializers.CharField(read_only=True)
+    # DocumentRef de la propia OV (identidad de fila, ADR-0086): permite a las tablas
+    # que listan órdenes enlazar a su ruta canónica sin derivar la URL en el frontend.
+    document = serializers.SerializerMethodField()
+
+    def get_document(self, obj):
+        from core.documents import build_ref
+
+        return build_ref(obj, getattr(self.context.get("request"), "user", None), "sales.saleorder")
 
     class Meta:
         model = SaleOrder
@@ -264,6 +272,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             "credit_assignment_origin",
             "credit_assignment_origin_display",
             "credit_approval_task_details",
+            "document",
             "created_at",
             "updated_at",
         ]
