@@ -1465,7 +1465,14 @@ class InventoryDocument(TimeStampedModel):
         ordering = ["-id"]
 
     def __str__(self):
-        return f"{self.get_document_type_display()} {self.id}"
+        return self.display_id
+
+    @property
+    def display_id(self):
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.INVENTORY_DOCUMENT}-{self.id}"
+
+
 class InventoryDocumentDetailManager(models.Manager):
     def bulk_create(self, objs, **kwargs):
         if not objs:

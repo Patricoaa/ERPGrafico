@@ -63,6 +63,17 @@ def test_document_confirmation_and_cancellation(base_inventory_setup):
     assert StockMove.objects.filter(description__contains='REC-001').count() == 2
 
 @pytest.mark.django_db
+def test_document_display_id_uses_inv_prefix(base_inventory_setup):
+    doc = InventoryDocument.objects.create(
+        document_type=InventoryDocument.Type.RECEIPT,
+        status=InventoryDocument.Status.DRAFT,
+        reference='REC-002',
+    )
+
+    assert doc.display_id == f"INV-{doc.id}"
+    assert str(doc) == f"INV-{doc.id}"
+
+@pytest.mark.django_db
 def test_transfer_document(base_inventory_setup):
     product, warehouse_src = base_inventory_setup
     warehouse_dest = Warehouse.objects.create(name='Dest Warehouse', code='TW03')

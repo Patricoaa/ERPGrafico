@@ -176,7 +176,8 @@ class InventoryService:
                 source_location=src_loc,
                 destination_location=dst_loc,
                 unit_cost=detail.unit_cost,
-                description=f"{document.get_document_type_display()} Doc: {document.reference or document.id}",
+                description=f"{document.get_document_type_display()} {document.display_id}"
+                + (f" - {document.reference}" if document.reference else ""),
                 journal_entry=journal_entry
             )
             InventoryDocumentDetail.objects.filter(pk=detail.pk).update(stock_move=move)
@@ -287,7 +288,8 @@ class InventoryService:
                 source_location=detail.destination_location,
                 destination_location=detail.source_location,
                 unit_cost=detail.unit_cost,
-                description=f"Anulación {document.get_document_type_display()} Doc: {document.reference or document.id}"
+                description=f"Anulación {document.get_document_type_display()} {document.display_id}"
+                + (f" - {document.reference}" if document.reference else "")
             )
 
         document.status = InventoryDocument.Status.CANCELLED

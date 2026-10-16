@@ -7,7 +7,9 @@ const DOCUMENT_TYPE_MAP: Record<string, { intent: "success" | "warning" | "neutr
     'DELIVERY': { intent: 'primary', label: 'Entrega' },
     'TRANSFER': { intent: 'info', label: 'Transferencia' },
     'ADJUSTMENT': { intent: 'warning', label: 'Ajuste' },
-    'PRODUCTION': { intent: 'neutral', label: 'Producción' }
+    'PRODUCTION': { intent: 'neutral', label: 'Producción' },
+    'PARTNER_CONTRIBUTION': { intent: 'success', label: 'Aporte de socio' },
+    'PARTNER_WITHDRAWAL': { intent: 'warning', label: 'Retiro de socio' }
 }
 
 export const inventoryDocumentFields = createEntityFields<InventoryDocument>()({
@@ -15,7 +17,7 @@ export const inventoryDocumentFields = createEntityFields<InventoryDocument>()({
         key: "id",
         type: "code",
         label: "Folio",
-        get: (d) => `DOC-${d.id}`,
+        get: (d) => d.display_id,
     },
     date: {
         key: "date",

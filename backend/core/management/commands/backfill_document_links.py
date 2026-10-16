@@ -66,8 +66,13 @@ class Command(BaseCommand):
             status=InventoryDocument.Status.CONFIRMED, details__stock_move__isnull=True
         ).distinct()
         for doc in docs.iterator():
-            description = f"{doc.get_document_type_display()} Doc: {doc.reference or doc.id}"
-            moves = list(StockMove.objects.filter(description=description).exclude(id__in=taken))
+            type_label = doc.get_document_type_display()
+            # Movimientos históricos usan el formato antiguo; los nuevos usan el display_id.
+            old_description = f"{type_label} Doc: {doc.reference or doc.id}"
+            new_description = f"{type_label} {doc.display_id}" + (f" - {doc.reference}" if doc.reference else "")
+            moves = list(
+                StockMove.objects.filter(description__in=[old_description, new_description]).exclude(id__in=taken)
+            )
             for detail in doc.details.filter(stock_move__isnull=True):
                 candidates = [
                     m for m in moves

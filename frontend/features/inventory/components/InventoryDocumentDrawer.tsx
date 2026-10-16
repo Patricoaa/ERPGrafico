@@ -43,7 +43,7 @@ export function InventoryDocumentDrawer({ documentId, id, open, onOpenChange, on
         }
     }
 
-    const title = document ? `${document.document_type_display} #${document.id}` : "Documento de Inventario"
+    const title = document ? `${document.document_type_display} ${document.display_id}` : "Documento de Inventario"
     const primaryAction = document?.status === "DRAFT" && entityId ? {
         id: "confirm", label: "Confirmar documento", icon: Check, disabled: isConfirming,
         onClick: () => void run(() => confirmDocument(entityId), "Documento confirmado con éxito y stock actualizado.", "Error al confirmar documento"),
@@ -55,7 +55,7 @@ export function InventoryDocumentDrawer({ documentId, id, open, onOpenChange, on
 
     return (
         <>
-            <PrintableLayout ref={printRef} title="Documento de Inventario" displayId={String(document?.id ?? `#${entityId}`)} subtitle={document?.document_type_display ?? ''}>
+            <PrintableLayout ref={printRef} title="Documento de Inventario" displayId={document?.display_id ?? ''} subtitle={document?.document_type_display ?? ''}>
                 {document && (
                     <>
                         <div className="text-4xs space-y-1 mb-2">

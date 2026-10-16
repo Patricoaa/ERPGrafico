@@ -143,7 +143,7 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
                 />
             </div>
 
-            <PrintableLayout ref={printRef} title="Documento de Inventario" displayId={selectedDocumentId ? `DOC-${selectedDocumentId}` : ''}>
+            <PrintableLayout ref={printRef} title="Documento de Inventario" displayId={selectedFromUrl?.display_id ?? ''}>
                 <div className="text-4xs">Impresión de documento de inventario</div>
             </PrintableLayout>
 

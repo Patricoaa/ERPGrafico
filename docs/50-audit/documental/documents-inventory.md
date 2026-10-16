@@ -47,7 +47,7 @@ Además: `workflow.Transition` (`workflow/models.py:11`) — log append-only can
 
 | Técnico | Funcional | Identidad | Estados | Nota |
 |---|---|---|---|---|
-| `inventory.InventoryDocument` (`inventory/models.py:1425`) | Documento de Inventario `DOC-{id}` | sin número; `__str__` = tipo + id | DRAFT APPROVED CONFIRMED CANCELLED; tipos RECEIPT DELIVERY TRANSFER ADJUSTMENT PRODUCTION PARTNER_* | origen por **pseudo-GFK de texto** `source_document_type`/`source_document_id` (`:1452-1453`) |
+| `inventory.InventoryDocument` (`inventory/models.py:1425`) | Documento de Inventario `INV-{id}` | sin número; `display_id`/`__str__` = `INV-{id}` | DRAFT APPROVED CONFIRMED CANCELLED; tipos RECEIPT DELIVERY TRANSFER ADJUSTMENT PRODUCTION PARTNER_* | origen por **pseudo-GFK de texto** `source_document_type`/`source_document_id` (`:1452-1453`) |
 | `inventory.InventoryDocumentDetail` (`:1562`) | Línea | — | — | **sin FK al StockMove generado** |
 | `inventory.StockMove` (`:1276`) | Movimiento `MOV-{id}` | id | sin estado | **sin FK a documento**; vínculo a InventoryDocument solo en texto `description` (`inventory/services.py:179`) [C]; vínculo inverso 1:1 desde líneas de despacho/recepción/devolución/consumo |
 | `inventory.InventoryCount` (`:1883`) | Toma de inventario | id | DRAFT IN_PROGRESS APPLIED CANCELLED | FK `document` → InventoryDocument |

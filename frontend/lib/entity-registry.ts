@@ -256,7 +256,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'FileText',
     feminine: true,
     description: 'Recepción, entrega o transferencia de mercadería',
-    shortTemplate: 'DOC-{id}',
+    shortTemplate: 'INV-{id}',
     listUrl: '/inventory/operations/documents',
     detailUrlPattern: '/d/inventory.inventorydocument/{id}',
     printable: true,
@@ -1128,7 +1128,7 @@ export function formatEntityDisplay(label: string, data: Record<string, unknown>
   const cleanData = { ...data }
   if (label === 'billing.invoice' && dteType) {
     const rawNumber = String(data.number ?? '')
-    const knownPrefixes = ['FACV', 'FACC', 'FAC-EX', 'BOL', 'BE', 'NC', 'ND', 'GUI', 'CPE', 'FACT', 'DOC']
+    const knownPrefixes = ['FACV', 'FACC', 'FAC-EX', 'BOL', 'BE', 'NC', 'ND', 'GUI', 'CPE', 'FACT']
     const allVariants = knownPrefixes.flatMap(p => [p, p.replace(/-/g, '')])
 
     const matchedPrefix = allVariants.find(p =>

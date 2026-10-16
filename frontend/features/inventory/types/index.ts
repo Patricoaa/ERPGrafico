@@ -165,7 +165,8 @@ export interface InventoryDocumentDetail {
 
 export interface InventoryDocument {
     id: number
-    document_type: 'RECEIPT' | 'DELIVERY' | 'TRANSFER' | 'ADJUSTMENT' | 'PRODUCTION'
+    display_id: string
+    document_type: 'RECEIPT' | 'DELIVERY' | 'TRANSFER' | 'ADJUSTMENT' | 'PRODUCTION' | 'PARTNER_CONTRIBUTION' | 'PARTNER_WITHDRAWAL'
     document_type_display: string
     status: 'DRAFT' | 'APPROVED' | 'CONFIRMED' | 'CANCELLED'
     status_display: string

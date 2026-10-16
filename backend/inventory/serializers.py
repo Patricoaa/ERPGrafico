@@ -632,6 +632,7 @@ class InventoryDocumentDetailSerializer(serializers.ModelSerializer):
 
 class InventoryDocumentSerializer(serializers.ModelSerializer):
     details = InventoryDocumentDetailSerializer(many=True, required=False)
+    display_id = serializers.CharField(read_only=True)
     partner_name = serializers.CharField(source="partner.name", read_only=True)
     created_by_name = serializers.CharField(source="created_by.name", read_only=True)
     confirmed_by_name = serializers.CharField(source="confirmed_by.name", read_only=True)
@@ -642,6 +643,7 @@ class InventoryDocumentSerializer(serializers.ModelSerializer):
         model = InventoryDocument
         fields = [
             "id",
+            "display_id",
             "document_type",
             "document_type_display",
             "status",
