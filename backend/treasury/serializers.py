@@ -850,7 +850,7 @@ class CheckSerializer(serializers.ModelSerializer):
         from core.documents import build_ref
 
         user = getattr(self.context.get("request"), "user", None)
-        return build_ref(obj.sale_order, user, "sales.saleorder")
+        return build_ref(obj.sale_order, user, "sales.saleorder", navigational=True)
 
     class Meta:
         model = Check

@@ -673,7 +673,7 @@ class InventoryDocumentSerializer(serializers.ModelSerializer):
         from core.documents import ref_for
 
         user = getattr(self.context.get("request"), "user", None)
-        return ref_for(obj.source_document_type, obj.source_document_id, user)
+        return ref_for(obj.source_document_type, obj.source_document_id, user, navigational=True)
 
     def create(self, validated_data):
         from .services import InventoryService

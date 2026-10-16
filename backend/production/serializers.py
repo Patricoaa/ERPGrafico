@@ -20,7 +20,7 @@ def _build_sale_order_document(serializer, obj):
     from core.documents import build_ref
 
     user = getattr(serializer.context.get("request"), "user", None)
-    return build_ref(obj.sale_order, user, "sales.saleorder")
+    return build_ref(obj.sale_order, user, "sales.saleorder", navigational=True)
 
 
 class ProductionConsumptionSerializer(serializers.ModelSerializer):

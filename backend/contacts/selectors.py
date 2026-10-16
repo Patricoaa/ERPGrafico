@@ -550,7 +550,7 @@ class ContactSelector:
                             else None
                         ),
                         # DocumentRef de la OV (identidad de fila, ADR-0086).
-                        "document": build_ref(order, user, "sales.saleorder"),
+                        "document": build_ref(order, user, "sales.saleorder", navigational=True),
                     }
                 )
         return ledger_data

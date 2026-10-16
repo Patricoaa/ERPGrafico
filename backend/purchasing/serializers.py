@@ -253,7 +253,7 @@ class PurchaseReceiptLineSerializer(serializers.ModelSerializer):
         from core.documents import build_ref
 
         user = getattr(self.context.get("request"), "user", None)
-        return build_ref(obj.stock_move, user, "inventory.stockmove")
+        return build_ref(obj.stock_move, user, "inventory.stockmove", navigational=True)
 
 
 class PurchaseReceiptSerializer(serializers.ModelSerializer):
@@ -286,7 +286,7 @@ class PurchaseReceiptSerializer(serializers.ModelSerializer):
         from core.documents import build_ref
 
         user = getattr(self.context.get("request"), "user", None)
-        return build_ref(obj.purchase_order, user, "purchasing.purchaseorder")
+        return build_ref(obj.purchase_order, user, "purchasing.purchaseorder", navigational=True)
 
 
 class PurchaseReturnLineSerializer(serializers.ModelSerializer):
@@ -306,7 +306,7 @@ class PurchaseReturnLineSerializer(serializers.ModelSerializer):
         from core.documents import build_ref
 
         user = getattr(self.context.get("request"), "user", None)
-        return build_ref(obj.stock_move, user, "inventory.stockmove")
+        return build_ref(obj.stock_move, user, "inventory.stockmove", navigational=True)
 
 
 class PurchaseReturnSerializer(serializers.ModelSerializer):
@@ -330,7 +330,7 @@ class PurchaseReturnSerializer(serializers.ModelSerializer):
         from core.documents import build_ref
 
         user = getattr(self.context.get("request"), "user", None)
-        return build_ref(obj.purchase_order, user, "purchasing.purchaseorder")
+        return build_ref(obj.purchase_order, user, "purchasing.purchaseorder", navigational=True)
 
 
 class NoteCreationSerializer(serializers.Serializer):

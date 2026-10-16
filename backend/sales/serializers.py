@@ -231,7 +231,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     def get_document(self, obj):
         from core.documents import build_ref
 
-        return build_ref(obj, getattr(self.context.get("request"), "user", None), "sales.saleorder")
+        return build_ref(obj, getattr(self.context.get("request"), "user", None), "sales.saleorder", navigational=True)
 
     class Meta:
         model = SaleOrder
@@ -439,7 +439,7 @@ class SaleDeliveryLineSerializer(serializers.ModelSerializer):
         from core.documents import build_ref
 
         user = getattr(self.context.get("request"), "user", None)
-        return build_ref(obj.stock_move, user, "inventory.stockmove")
+        return build_ref(obj.stock_move, user, "inventory.stockmove", navigational=True)
 
 
 class SaleDeliverySerializer(serializers.ModelSerializer):
@@ -472,7 +472,7 @@ class SaleDeliverySerializer(serializers.ModelSerializer):
         from core.documents import build_ref
 
         user = getattr(self.context.get("request"), "user", None)
-        return build_ref(obj.sale_order, user, "sales.saleorder")
+        return build_ref(obj.sale_order, user, "sales.saleorder", navigational=True)
 
 
 class SaleReturnLineSerializer(serializers.ModelSerializer):
@@ -505,4 +505,4 @@ class SaleReturnSerializer(serializers.ModelSerializer):
         from core.documents import build_ref
 
         user = getattr(self.context.get("request"), "user", None)
-        return build_ref(obj.sale_order, user, "sales.saleorder")
+        return build_ref(obj.sale_order, user, "sales.saleorder", navigational=True)

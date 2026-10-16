@@ -82,7 +82,18 @@ def _detail(doc_type, obj) -> str | None:
         return None
 
 
-def build_ref(obj: models.Model, user, label: str | None = None) -> dict:
+def build_ref(
+    obj: models.Model, user, label: str | None = None, navigational: bool = False
+) -> dict:
+    """DocumentRef de `obj`.
+
+    `navigational=True` omite los campos *presentacionales* (`amount`, `detail`,
+    `partner_name`), que pueden costar una consulta por fila (p. ej. `effective_total`
+    recorre las facturas de la OV, `lines_count` cuenta las líneas). Los serializers que
+    emiten un ref para *navegación* en listas (consumido por `DocumentRefLink`, que solo
+    usa label/id/display/url, ADR-0086) lo usan para no introducir N+1; el endpoint de
+    relaciones y las fichas de detalle conservan el ref completo (valor por defecto).
+    """
     label = label or DocumentTypeRegistry.label_for(type(obj))
     doc_type = DocumentTypeRegistry.get(label)
     entity = UniversalRegistry.get(label)
@@ -91,6 +102,7 @@ def build_ref(obj: models.Model, user, label: str | None = None) -> dict:
     status_display = None
     if status is not None and hasattr(obj, f"get_{doc_type.status_field}_display"):
         status_display = getattr(obj, f"get_{doc_type.status_field}_display")()
+    presentational = accessible and not navigational
     return {
         "label": label,
         "id": obj.pk,
@@ -102,9 +114,9 @@ def build_ref(obj: models.Model, user, label: str | None = None) -> dict:
         "status": status if accessible else None,
         "status_display": status_display if accessible else None,
         "date": _date(doc_type, obj) if accessible else None,
-        "amount": _amount(doc_type, obj) if accessible else None,
-        "detail": _detail(doc_type, obj) if accessible else None,
-        "partner_name": _partner_name(doc_type, obj) if accessible else None,
+        "amount": _amount(doc_type, obj) if presentational else None,
+        "detail": _detail(doc_type, obj) if presentational else None,
+        "partner_name": _partner_name(doc_type, obj) if presentational else None,
         "url": DocumentTypeRegistry.canonical_url(label, obj),
         "accessible": accessible,
         "exists": True,
@@ -130,6 +142,8 @@ def get_document(label: str, pk: Any) -> models.Model | None:
     return model.objects.filter(pk=pk).first()
 
 
-def ref_for(label: str, pk: Any, user) -> dict:
+def ref_for(label: str, pk: Any, user, navigational: bool = False) -> dict:
     obj = get_document(label, pk)
-    return build_ref(obj, user, label) if obj is not None else missing_ref(label, pk)
+    if obj is None:
+        return missing_ref(label, pk)
+    return build_ref(obj, user, label, navigational=navigational)
