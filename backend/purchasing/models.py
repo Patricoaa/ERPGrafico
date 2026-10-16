@@ -124,8 +124,8 @@ class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
 
     @property
     def display_id(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{EntityPrefix.PURCHASE_ORDER}-{self.number}"
+        from core.prefix_registry import EntityPrefix, fmt_seq_num
+        return f"{EntityPrefix.PURCHASE_ORDER}-{fmt_seq_num(self.number)}"
 
     @property
     def effective_total(self):
@@ -416,13 +416,12 @@ class PurchaseReceipt(TransactionalDocument, TotalsCalculationMixin):
         ordering = ["-id"]
 
     def __str__(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{self.display_id} ({EntityPrefix.PURCHASE_ORDER}-{self.purchase_order.number})"
+        return f"{self.display_id} ({self.purchase_order.display_id})"
 
     @property
     def display_id(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{EntityPrefix.PURCHASE_RECEIPT}-{self.number}"
+        from core.prefix_registry import EntityPrefix, fmt_seq_num
+        return f"{EntityPrefix.PURCHASE_RECEIPT}-{fmt_seq_num(self.number)}"
 
     def save(self, *args, **kwargs):
         if not self.number:
@@ -551,13 +550,12 @@ class PurchaseReturn(TransactionalDocument, TotalsCalculationMixin):
         ordering = ["-id"]
 
     def __str__(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{self.display_id} ({EntityPrefix.PURCHASE_ORDER}-{self.purchase_order.number})"
+        return f"{self.display_id} ({self.purchase_order.display_id})"
 
     @property
     def display_id(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{EntityPrefix.PURCHASE_RETURN}-{self.number}"
+        from core.prefix_registry import EntityPrefix, fmt_seq_num
+        return f"{EntityPrefix.PURCHASE_RETURN}-{fmt_seq_num(self.number)}"
 
     def save(self, *args, **kwargs):
         if not self.number:

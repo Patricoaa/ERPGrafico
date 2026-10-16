@@ -109,3 +109,9 @@ class EntityPrefix(StrEnum):
     def as_dict(cls) -> dict[str, str]:
         """Returns {member_name: prefix_value} for API serialization."""
         return {member.name: member.value for member in cls}
+
+
+def fmt_seq_num(n) -> str:
+    """Strip leading zeros from a stored sequence number (e.g. '000042' → '42')."""
+    s = str(n)
+    return s.lstrip('0') or '0'

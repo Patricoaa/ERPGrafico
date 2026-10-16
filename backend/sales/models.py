@@ -283,8 +283,8 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
 
     @property
     def display_id(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{EntityPrefix.SALE_ORDER}-{self.number}"
+        from core.prefix_registry import EntityPrefix, fmt_seq_num
+        return f"{EntityPrefix.SALE_ORDER}-{fmt_seq_num(self.number)}"
 
     def save(self, *args, **kwargs):
         if not self.number:
@@ -606,13 +606,12 @@ class SaleDelivery(TransactionalDocument, TotalsCalculationMixin):
         verbose_name_plural = _("Despachos de Venta")
 
     def __str__(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{self.display_id} ({EntityPrefix.SALE_ORDER}-{self.sale_order.number})"
+        return f"{self.display_id} ({self.sale_order.display_id})"
 
     @property
     def display_id(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{EntityPrefix.SALE_DELIVERY}-{self.number}"
+        from core.prefix_registry import EntityPrefix, fmt_seq_num
+        return f"{EntityPrefix.SALE_DELIVERY}-{fmt_seq_num(self.number)}"
 
     def save(self, *args, **kwargs):
         if not self.number:
@@ -769,13 +768,12 @@ class SaleReturn(TransactionalDocument, TotalsCalculationMixin):
         verbose_name_plural = _("Devoluciones de Venta")
 
     def __str__(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{self.display_id} ({EntityPrefix.SALE_ORDER}-{self.sale_order.number})"
+        return f"{self.display_id} ({self.sale_order.display_id})"
 
     @property
     def display_id(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{EntityPrefix.SALE_RETURN}-{self.number}"
+        from core.prefix_registry import EntityPrefix, fmt_seq_num
+        return f"{EntityPrefix.SALE_RETURN}-{fmt_seq_num(self.number)}"
 
     def save(self, *args, **kwargs):
         if not self.number:

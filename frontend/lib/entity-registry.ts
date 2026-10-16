@@ -1104,6 +1104,9 @@ function templateFromData(template: string, data: Record<string, unknown>): stri
  *   3. data.id as last resort
  */
 export function formatEntityDisplay(label: string, data: Record<string, unknown>): string {
+  // 0. Use backend-supplied display_id directly when present (canonical, no zero-padding)
+  if (typeof data.display_id === 'string' && data.display_id) return data.display_id;
+
   // 1. Try API-served template first
   const config = getEntityConfig(label);
   let template = config?.shortTemplate;
