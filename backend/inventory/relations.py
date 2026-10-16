@@ -18,6 +18,7 @@ DocumentTypeRegistry.register(DocumentType(
 
 @relation_provider("inventory.stockmove")
 def stock_move_relations(move):
+    attributed = False
     for accessor, attr, role, semantic in (
         ("sale_delivery_line", "delivery", "delivery", "fulfillment"),
         ("purchase_receipt_line", "receipt", "receipt", "fulfillment"),
@@ -28,9 +29,17 @@ def stock_move_relations(move):
         line = related_or_none(move, accessor)
         if line is not None:
             yield Link(semantic, "incoming", role, getattr(line, attr))
+            attributed = True
     detail = related_or_none(move, "inventory_document_detail")
     if detail is not None:
         yield Link("derivation", "incoming", "inventory_document", detail.document)
+        attributed = True
+    if not attributed:
+        # ADR-0085: movimientos sin línea (p. ej. explosión BOM) se atribuyen por su
+        # documento comercial de origen vía el GFK `source_document`.
+        source = getattr(move, "source_document", None)
+        if source is not None:
+            yield Link("derivation", "incoming", "source_document", source)
     if move.journal_entry_id:
         yield Link("posting", "outgoing", "journal_entry", move.journal_entry)
 

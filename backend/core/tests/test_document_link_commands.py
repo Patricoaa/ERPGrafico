@@ -2,8 +2,10 @@
 M1 (auditoría documental): comandos `audit_document_integrity` (D5, solo lectura) y
 `backfill_document_links` (D3, dry-run por defecto).
 
-Se confirma un despacho con el servicio actual y luego se "rompen" sus vínculos para
-reproducir los datos históricos generados por el bug (GAP-01/02/03, INT-04).
+Se fabrica el estado histórico generado por el bug (GAP-01/02/03, INT-04): desde
+ADR-0085 el despacho ya no acuña un `InventoryDocument`, así que el fixture reproduce
+a mano el documento legado (con `source_document_type` apuntando a la OV) y deja sin
+enlazar el detalle y la línea, que es lo que estos comandos reparan.
 """
 
 from datetime import date
@@ -15,18 +17,19 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 
 from contacts.models import Contact
+from core.prefix_registry import EntityPrefix
 from inventory.models import (
     InventoryDocument,
     InventoryDocumentDetail,
     Location,
     Product,
     ProductCategory,
+    StockMove,
     UoM,
     UoMCategory,
     Warehouse,
 )
 from sales.models import SaleDelivery, SaleDeliveryLine, SaleLine, SaleOrder
-from sales.services import SalesService
 
 
 @pytest.fixture
@@ -39,30 +42,46 @@ def broken_delivery(db):
         uom=uom, category=cat, cost_price=Decimal("0"),
     )
     warehouse = Warehouse.objects.create(name="Bodega", code="WH-BF")
-    Location.objects.get_or_create(location_type="INTERNAL", warehouse=warehouse, defaults={"name": "Interno"})
-    Location.objects.get_or_create(location_type="CUSTOMER", defaults={"name": "Cliente"})
+    internal = Location.objects.create(location_type="INTERNAL", warehouse=warehouse, name="Interno")
+    customer_loc = Location.objects.create(location_type="CUSTOMER", name="Cliente")
     customer = Contact.objects.create(name="Cliente", tax_id="12345678-9")
     order = SaleOrder.objects.create(customer=customer, date=date(2026, 8, 1), status=SaleOrder.Status.CONFIRMED)
     sale_line = SaleLine.objects.create(
         order=order, product=product, quantity=Decimal("4"), unit_price=Decimal("1000"), uom=uom
     )
-    delivery = SaleDelivery.objects.create(sale_order=order, warehouse=warehouse, delivery_date=date(2026, 8, 14))
+    delivery = SaleDelivery.objects.create(
+        sale_order=order, warehouse=warehouse, delivery_date=date(2026, 8, 14),
+        status=SaleDelivery.Status.CONFIRMED,
+    )
     line = SaleDeliveryLine.objects.create(
         delivery=delivery, sale_line=sale_line, product=product, uom=uom,
         quantity=Decimal("4"), unit_price=Decimal("1000"),
     )
-    SalesService.confirm_delivery(delivery)
     SaleOrder.objects.filter(pk=order.pk).update(delivery_status=SaleOrder.DeliveryStatus.DELIVERED)
 
-    # Reproducir el estado histórico (bug)
-    doc = InventoryDocument.objects.get(source_document_type="sales.saledelivery", source_document_id=delivery.id)
-    InventoryDocument.objects.filter(pk=doc.pk).update(
-        source_document_type="sales.saleorder", source_document_id=order.id
+    # Estado legado creado por el confirm_delivery anterior a ADR-0085 (con el bug):
+    # el documento de inventario apuntaba a la OV, y ni detalle ni línea quedaron enlazados.
+    doc = InventoryDocument.objects.create(
+        document_type=InventoryDocument.Type.DELIVERY,
+        status=InventoryDocument.Status.CONFIRMED,
+        date=delivery.delivery_date,
+        reference=f"Despacho {EntityPrefix.SALE_ORDER}-{order.number}",
+        partner=customer,
+        source_document_type="sales.saleorder",
+        source_document_id=order.id,
     )
-    InventoryDocumentDetail.objects.filter(document=doc).update(stock_move=None)
-    SaleDeliveryLine.objects.filter(pk=line.pk).update(stock_move=None)
-    SaleLine.objects.filter(pk=sale_line.pk).update(quantity_delivered=0)
-    return {"doc": doc, "line": line, "sale_line": sale_line, "delivery": delivery}
+    type_label = doc.get_document_type_display()
+    move = StockMove.objects.create(
+        product=product, quantity=Decimal("4"),
+        source_location=internal, destination_location=customer_loc,
+        unit_cost=Decimal("0"),
+        description=f"{type_label} {doc.display_id}" + (f" - {doc.reference}" if doc.reference else ""),
+    )
+    InventoryDocumentDetail.objects.create(
+        document=doc, product=product, warehouse=warehouse,
+        quantity=Decimal("4"), unit_cost=Decimal("0"), stock_move=None,
+    )
+    return {"doc": doc, "line": line, "sale_line": sale_line, "delivery": delivery, "move": move}
 
 
 def _run(*args):
