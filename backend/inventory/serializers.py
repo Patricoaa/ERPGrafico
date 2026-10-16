@@ -638,6 +638,8 @@ class InventoryDocumentSerializer(serializers.ModelSerializer):
     confirmed_by_name = serializers.CharField(source="confirmed_by.name", read_only=True)
     document_type_display = serializers.CharField(source="get_document_type_display", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
+    # Documento fuente como DocumentRef (ADR-0086): el frontend navega a su URL canónica.
+    source_document = serializers.SerializerMethodField()
 
     class Meta:
         model = InventoryDocument
@@ -654,6 +656,7 @@ class InventoryDocumentSerializer(serializers.ModelSerializer):
             "reference",
             "source_document_type",
             "source_document_id",
+            "source_document",
             "notes",
             "created_by",
             "created_by_name",
@@ -663,6 +666,14 @@ class InventoryDocumentSerializer(serializers.ModelSerializer):
             "updated_at",
             "details",
         ]
+
+    def get_source_document(self, obj):
+        if not obj.source_document_type or not obj.source_document_id:
+            return None
+        from core.documents import ref_for
+
+        user = getattr(self.context.get("request"), "user", None)
+        return ref_for(obj.source_document_type, obj.source_document_id, user)
 
     def create(self, validated_data):
         from .services import InventoryService

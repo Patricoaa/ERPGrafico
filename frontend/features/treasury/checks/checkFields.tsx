@@ -1,6 +1,6 @@
 import { createEntityFields } from "@/components/shared"
 import type { Check } from "./types"
-import { DataCell } from "@/components/shared"
+import { DocumentRefLink } from "@/features/documents"
 
 export const checkFields = createEntityFields<Check>()({
     displayId: {
@@ -30,11 +30,10 @@ export const checkFields = createEntityFields<Check>()({
         type: "computed",
         label: "OV Asociada",
         render: (c) => {
-            const so = c.sale_order_display
-            if (!so) return null
+            if (!c.sale_order_document) return null
             return (
                 <div className="flex justify-center">
-                    <DataCell.Entity entityLabel="sales.saleorder" number={so.number} />
+                    <DocumentRefLink documentRef={c.sale_order_document} />
                 </div>
             )
         },

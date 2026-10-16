@@ -1,13 +1,17 @@
 import { createEntityFields } from '@/components/shared'
+import { DocumentRefLink } from '@/features/documents'
 import { translateProductionStage } from '@/lib/utils'
 import type { WorkOrder } from './types'
 
 export const workOrderFields = createEntityFields<WorkOrder>()({
     saleOrderNumber: {
         key: 'sale_order_number',
-        type: 'code',
+        type: 'computed',
+        fieldRole: 'identifier',
         label: 'OV Asociada',
-        get: (w) => w.sale_order_number ?? null,
+        render: (w) => w.sale_order_document
+            ? <DocumentRefLink documentRef={w.sale_order_document} />
+            : <span className="text-xs text-muted-foreground">—</span>,
     },
     startDate: {
         key: 'start_date',

@@ -176,6 +176,7 @@ export interface InventoryDocument {
     reference: string
     source_document_type?: string | null
     source_document_id?: number | null
+    source_document?: unknown | null
     notes: string
     created_by?: number | null
     created_by_name?: string | null

@@ -1,5 +1,6 @@
 import { createEntityFields } from "@/components/shared"
 import { DataCell } from "@/components/shared"
+import { DocumentRefLink } from "@/features/documents"
 import type { InventoryDocument } from "./types"
 
 const DOCUMENT_TYPE_MAP: Record<string, { intent: "success" | "warning" | "neutral" | "info" | "primary", label: string }> = {
@@ -37,6 +38,9 @@ export const inventoryDocumentFields = createEntityFields<InventoryDocument>()({
         type: "computed",
         label: "Referencia",
         render: (d) => {
+            if (d.source_document) {
+                return <DocumentRefLink documentRef={d.source_document} />
+            }
             if (d.source_document_type && d.source_document_id) {
                 return <DataCell.Entity entityLabel={d.source_document_type} number={d.source_document_id} />
             }
