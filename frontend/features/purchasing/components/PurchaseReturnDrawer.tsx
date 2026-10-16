@@ -5,7 +5,6 @@ import { Package } from "lucide-react"
 import { DataCell, DataTable } from "@/components/shared"
 import { PrintableLayout, usePrintableDrawer } from "@/features/_shared"
 import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents"
-import { formatEntityDisplay } from "@/lib/entity-registry"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { usePurchaseReturn } from "../hooks/usePurchasing"
 import { purchaseReturnLineFields } from "../purchaseReturnLineFields"
@@ -78,11 +77,7 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
                     {
                         label: "Orden de compra",
                         value: r.purchase_order ? (
-                            <DocumentRefLink
-                                label="purchasing.purchaseorder"
-                                id={Number(r.purchase_order)}
-                                display={String(r.purchase_order_number ?? formatEntityDisplay("purchasing.purchaseorder", { number: r.purchase_order_number }))}
-                            />
+                            <DocumentRefLink documentRef={r.purchase_order_document} />
                         ) : null,
                     },
                 ] : []}

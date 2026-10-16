@@ -149,5 +149,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0083](0083-document-sheet-replaces-order-hub.md) | Document sheet replaces the Order Hub — relations tab, lifecycle and in-sheet actions | Accepted |
 | [0084](0084-document-status-decoupled-from-payment.md) | Document status decoupled from payment — one field per axis (lifecycle, invoicing, fulfilment, payment) | Accepted |
 | [0085](0085-stock-moves-owned-by-business-document.md) | Stock moves owned by the business document — `StockMove.source_document` GFK, `InventoryDocument` reserved for standalone operations | Accepted |
+| [0086](0086-document-drilldown-canonical-navigation.md) | Document drilldown navigates to the target's canonical route — URL and module follow the relationship | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

@@ -274,7 +274,7 @@ class PurchaseReturnViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHis
         return PurchaseReturn.objects.select_related(
             "purchase_order__supplier", "warehouse"
         ).prefetch_related(
-            "lines__product", "lines__uom"
+            "lines__product", "lines__uom", "lines__stock_move"
         ).all()
     serializer_class = PurchaseReturnSerializer
     pagination_class = StandardResultsSetPagination

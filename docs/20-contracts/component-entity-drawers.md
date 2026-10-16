@@ -179,9 +179,10 @@ resolviendo en 3 niveles:
 
 | Prioridad | Condición | Acción |
 |-----------|-----------|--------|
-| 1 (preferida) | `hasEntityDrawer(doc.type)` | `openEntity(doc.type, doc.id, doc)` — drawer drill-down |
-| 2 | `doc.url` presente | `<Link href={doc.url}>` — navegación |
-| 3 | ninguna | texto plano, sin interacción |
+| 1 (preferida) | `doc.url` con `?selected=` (lista canónica) | navega a `doc.url` — la URL y el módulo/sección siguen a la relación ([ADR-0086](../10-architecture/adr/0086-document-drilldown-canonical-navigation.md)) |
+| 2 | `hasEntityDrawer(doc.type)` | `openEntity(doc.type, doc.id, doc)` — drawer drill-down (pila + "volver") |
+| 3 | `doc.url` presente | `<Link href={doc.url}>` — navegación |
+| 4 | ninguna | texto plano, sin interacción |
 
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
@@ -219,6 +220,21 @@ Todos los drawers deben adherirse a esta estructura unificada:
 > La superficie que monta `?selected` (modal centrado vs drawer embebido) es surface-agnostic — ver
 > [ADR-0027](../10-architecture/adr/0027-basedrawer-crud-forms.md). `openEntity` siempre monta el
 > drawer registrado en `ENTITY_DRAWERS`.
+
+### 5.2 Drilldown de documento: navegar vs apilar
+
+Las superficies de drilldown documental (`useOpenRelatedDocument` —filas del tab Relaciones—,
+`SourceDocumentLink`, `DocumentRefLink`) aplican **una sola** regla ([ADR-0086](../10-architecture/adr/0086-document-drilldown-canonical-navigation.md)):
+
+- **La URL canónica del destino abre una lista** (contiene `?selected=`, p. ej. una OV o una
+  factura): **navegar** con `router.push(url)`. Cambian la URL y el módulo/sección (el riel y
+  la barra lateral derivan de `usePathname()`), y la lista destino abre la ficha con `?selected`.
+- **No la abre** (resolvedor `/d/{label}/{id}`, o una lista sin `?selected`): **apilar** con
+  `openEntity` (pila + "volver", ADR-0028). Los maestros (contacto, producto, empleado…) caen aquí.
+
+La decisión sale siempre del `DocumentRef.url` que emite el backend (`DocumentTypeRegistry`,
+[ADR-0080](../10-architecture/adr/0080-document-model-relations-and-navigation.md) §6); el
+frontend no adivina rutas. Predicado: `isListSelectionUrl(url)` en `@/lib/documentNavigation`.
 
 ### 5.1 Detalle de entidad = overlay siempre-recargable (reglas de foco y URL)
 

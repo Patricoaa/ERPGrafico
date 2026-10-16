@@ -5,7 +5,6 @@ import { Package } from "lucide-react"
 import { DataCell, DataTable } from "@/components/shared"
 import { PrintableLayout, usePrintableDrawer } from "@/features/_shared"
 import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents"
-import { formatEntityDisplay } from "@/lib/entity-registry"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { usePurchaseReceipt } from "../hooks/usePurchasing"
 import { purchaseReceiptLineFields } from "../purchaseReceiptLineFields"
@@ -72,11 +71,7 @@ export function PurchaseReceiptDrawer({ id, open, onOpenChange }: PurchaseReceip
                 {
                     label: "Orden de compra",
                     value: receipt.purchase_order ? (
-                        <DocumentRefLink
-                            label="purchasing.purchaseorder"
-                            id={Number(receipt.purchase_order)}
-                            display={formatEntityDisplay("purchasing.purchaseorder", { number: receipt.purchase_order_number })}
-                        />
+                        <DocumentRefLink documentRef={receipt.purchase_order_document} />
                     ) : null,
                 },
             ] : []}

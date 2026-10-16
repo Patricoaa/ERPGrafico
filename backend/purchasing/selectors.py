@@ -116,5 +116,5 @@ class PurchaseReceiptSelector:
         return PurchaseReceipt.objects.select_related(
             "purchase_order__supplier", "warehouse", "related_note"
         ).prefetch_related(
-            "lines__product", "lines__uom"
+            "lines__product", "lines__uom", "lines__stock_move"
         ).all()

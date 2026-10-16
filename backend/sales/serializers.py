@@ -417,10 +417,20 @@ class SaleDeliveryLineSerializer(serializers.ModelSerializer):
     order_quantity = serializers.DecimalField(
         source="sale_line.quantity", max_digits=12, decimal_places=2, read_only=True
     )
+    # Movimiento de stock como DocumentRef (ADR-0086): permite al frontend navegar a su URL canónica.
+    stock_move_document = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleDeliveryLine
         fields = "__all__"
+
+    def get_stock_move_document(self, obj):
+        if not obj.stock_move_id:
+            return None
+        from core.documents import build_ref
+
+        user = getattr(self.context.get("request"), "user", None)
+        return build_ref(obj.stock_move, user, "inventory.stockmove")
 
 
 class SaleDeliverySerializer(serializers.ModelSerializer):
@@ -431,6 +441,8 @@ class SaleDeliverySerializer(serializers.ModelSerializer):
     customer_id = serializers.IntegerField(source="sale_order.customer_id", read_only=True)
     delivery_type = serializers.SerializerMethodField()
     related_note_display = serializers.SerializerMethodField()
+    # Orden de venta como DocumentRef (ADR-0086): el frontend navega a su URL canónica.
+    sale_order_document = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleDelivery
@@ -444,6 +456,14 @@ class SaleDeliverySerializer(serializers.ModelSerializer):
         if obj.related_note_id and obj.related_note:
             return obj.related_note.display_id
         return None
+
+    def get_sale_order_document(self, obj):
+        if not obj.sale_order_id:
+            return None
+        from core.documents import build_ref
+
+        user = getattr(self.context.get("request"), "user", None)
+        return build_ref(obj.sale_order, user, "sales.saleorder")
 
 
 class SaleReturnLineSerializer(serializers.ModelSerializer):
@@ -462,8 +482,18 @@ class SaleReturnSerializer(serializers.ModelSerializer):
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
     customer_name = serializers.CharField(source="sale_order.customer.name", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
+    # Orden de venta como DocumentRef (ADR-0086): el frontend navega a su URL canónica.
+    sale_order_document = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleReturn
         fields = "__all__"
         read_only_fields = ["id", "number", "status"]
+
+    def get_sale_order_document(self, obj):
+        if not obj.sale_order_id:
+            return None
+        from core.documents import build_ref
+
+        user = getattr(self.context.get("request"), "user", None)
+        return build_ref(obj.sale_order, user, "sales.saleorder")

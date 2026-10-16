@@ -88,6 +88,8 @@ Generated only by `DocumentTypeRegistry.canonical_url(label, obj)`:
 `core/tests/test_document_routes_sync.py` fails if a declared canonical URL (or the resolver) has no frontend route, or if a registered type has neither a declared canonical URL nor a drawer in `ENTITY_DRAWERS`.
 Universal search returns `detail_url = DocumentTypeRegistry.url_for(label, id)` (declared pattern, or the resolver when the URL depends on the instance).
 
+**Drilldown (ADR-0086).** When a consumer opens a related document, the canonical URL decides how: if it opens a real list (`?selected=`, not the `/d/` resolver) the frontend **navigates** to it — URL and module follow the relationship; otherwise it stacks the drawer with `openEntity`. Masters (contact, product…) use the resolver, so they keep the drawer. See `component-entity-drawers.md` §5.2.
+
 | label | canonical URL |
 |---|---|
 | `sales.saleorder` | `/sales/orders?selected={id}` (document sheet, ADR-0083) |
@@ -103,7 +105,7 @@ Universal search returns `detail_url = DocumentTypeRegistry.url_for(label, id)` 
 | Component | Where | Use |
 |---|---|---|
 | `RelatedDocumentsTable` | `@/components/shared` | Presentation only: relations grouped by semantic (origin/generated, logistics, payments, notes/returns/reversals, accounting, other). Rows show role, `display_id`, status, date, partner, amount/quantity; inaccessible targets show "sin acceso" without link; `loading`/`empty`/`error` + unresolved count |
-| `DocumentRelationsSection` | `@/features/documents` | Fetches with `useDocumentRelations` and opens each target with `openEntity` (stack + back; every document opens its sheet); types without drawer navigate to `DocumentRef.url` |
+| `DocumentRelationsSection` | `@/features/documents` | Fetches with `useDocumentRelations` and opens each target with the ADR-0086 rule: navigate to `DocumentRef.url` when it opens a list (`?selected=`), else `openEntity` (stack + back) |
 | `DocumentDrawerShell` | `@/components/shared` | Common document sheet (ADR-0083): lifecycle, action bar, tabs, activity sidebar, `embedded`; legacy `summary`/`children`/`related` layout still used by `SaleDeliveryDrawer`, `PurchaseReceiptDrawer`. Contract: [component-document-sheet.md](./component-document-sheet.md) |
 | `DocumentRelationsTab` | `@/features/documents` | Relations tab of the document sheet: groups by `domain`, area and row actions, area filter (ADR-0083) |
 
@@ -140,4 +142,4 @@ The three legacy formats were retired once the Order Hub was removed. Do not rei
 | Building document URLs in components (`/sales/orders/${id}`) | `DocumentRef.url` |
 | A generic "relations" table | Typed FKs (ADR-0080 §Alternatives) |
 | Ad-hoc "related documents" list inside a drawer | `DocumentRelationsSection` |
-| Opening a related document with `router.push` when it has a drawer | `openEntity` (keeps the stack and "volver") |
+| Stacking an in-memory drawer for a document whose canonical URL opens a list | Navigate to `DocumentRef.url` when it has `?selected=` (URL + module follow the relationship, ADR-0086); `openEntity` only for resolver/master targets |

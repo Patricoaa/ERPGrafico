@@ -376,7 +376,7 @@ export function JournalEntryDrawer({
                                     <legend>Documento Origen</legend>
                                     <div className="flex items-center gap-2">
                                         {viewEntry.source_document.accessible ? (
-                                            <DocumentRefLink label={viewEntry.source_document.label} id={viewEntry.source_document.id} display={viewEntry.source_document.display_id} />
+                                            <DocumentRefLink label={viewEntry.source_document.label} id={viewEntry.source_document.id} display={viewEntry.source_document.display_id} url={viewEntry.source_document.url} />
                                         ) : (
                                             <span className="text-xs text-muted-foreground">{viewEntry.source_document.display_id} · sin acceso</span>
                                         )}

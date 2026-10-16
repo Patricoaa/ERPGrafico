@@ -1,6 +1,5 @@
 import { createEntityFields } from '@/components/shared'
 import { DocumentRefLink } from '@/features/documents'
-import { formatEntityDisplay } from '@/lib/entity-registry'
 
 type ReceiptLine = Record<string, unknown>
 
@@ -36,7 +35,7 @@ export const purchaseReceiptLineFields = createEntityFields<ReceiptLine>()({
         label: 'Movimiento',
         tableOptions: { align: 'left' },
         render: (l) => l.stock_move
-            ? <DocumentRefLink label="inventory.stockmove" id={Number(l.stock_move)} display={formatEntityDisplay('inventory.stockmove', { id: l.stock_move })} />
+            ? <DocumentRefLink documentRef={l.stock_move_document} />
             : <span className="text-xs text-muted-foreground">—</span>,
     },
 })

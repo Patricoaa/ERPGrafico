@@ -137,7 +137,7 @@ class SaleDeliverySelector:
         return SaleDelivery.objects.select_related(
             "sale_order__customer", "warehouse", "related_note"
         ).prefetch_related(
-            "lines__product", "lines__uom", "lines__sale_line"
+            "lines__product", "lines__uom", "lines__sale_line", "lines__stock_move"
         ).all()
 
 

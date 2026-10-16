@@ -7,10 +7,10 @@ import { Banknote } from "lucide-react"
 import { DocumentRelationsTab, groupByDomain } from "../DocumentRelationsTab"
 import type { DocumentLink } from "../../types"
 
-const { getMock, openEntityMock } = vi.hoisted(() => ({ getMock: vi.fn(), openEntityMock: vi.fn() }))
+const { getMock, openEntityMock, pushMock } = vi.hoisted(() => ({ getMock: vi.fn(), openEntityMock: vi.fn(), pushMock: vi.fn() }))
 
 vi.mock("@/lib/api", () => ({ default: { get: getMock } }))
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }))
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: pushMock }) }))
 vi.mock("@/components/providers/GlobalModalProvider", () => ({
     useGlobalModals: () => ({ openEntity: openEntityMock }),
 }))
@@ -54,7 +54,7 @@ describe("groupByDomain", () => {
 })
 
 describe("DocumentRelationsTab", () => {
-    beforeEach(() => { getMock.mockReset(); openEntityMock.mockReset() })
+    beforeEach(() => { getMock.mockReset(); openEntityMock.mockReset(); pushMock.mockReset() })
 
     it("renders areas, opens a related document and runs the empty-area action", async () => {
         getMock.mockResolvedValue({ data: { document: link("sales.saleorder", 9, "origin").target, relations: [link("sales.saledelivery", 4, "logistics")], unresolved: [] } })
@@ -71,6 +71,20 @@ describe("DocumentRelationsTab", () => {
 
         fireEvent.click(screen.getByText("Registrar pago"))
         expect(pay).toHaveBeenCalled()
+    })
+
+    it("navigates to the canonical list URL when the target declares one (ADR-0086)", async () => {
+        const delivery = link("sales.saledelivery", 4, "logistics")
+        delivery.target.url = "/sales/orders/deliveries?selected=4"
+        getMock.mockResolvedValue({ data: { document: link("sales.saleorder", 9, "origin").target, relations: [delivery], unresolved: [] } })
+
+        wrap(<DocumentRelationsTab label="sales.saleorder" id={9} />)
+
+        await waitFor(() => expect(screen.getByText("sales.saledelivery-4")).toBeInTheDocument())
+        fireEvent.click(screen.getByText("sales.saledelivery-4"))
+
+        expect(pushMock).toHaveBeenCalledWith("/sales/orders/deliveries?selected=4", { scroll: false })
+        expect(openEntityMock).not.toHaveBeenCalled()
     })
 
     it("filters to one area and offers to show all", async () => {

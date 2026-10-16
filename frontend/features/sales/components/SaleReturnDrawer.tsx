@@ -5,7 +5,6 @@ import { Package } from "lucide-react"
 import { DataCell, DataTable } from "@/components/shared"
 import { PrintableLayout, usePrintableDrawer } from "@/features/_shared"
 import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents"
-import { formatEntityDisplay } from "@/lib/entity-registry"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useSaleReturn } from "../hooks/useSaleDeliveries"
 import { saleReturnLineFields } from "../saleReturnLineFields"
@@ -75,11 +74,7 @@ export function SaleReturnDrawer({ id, open, onOpenChange }: SaleReturnDrawerPro
                     {
                         label: "Orden de venta",
                         value: r.sale_order ? (
-                            <DocumentRefLink
-                                label="sales.saleorder"
-                                id={Number(r.sale_order)}
-                                display={formatEntityDisplay("sales.saleorder", { number: r.sale_order_number })}
-                            />
+                            <DocumentRefLink documentRef={r.sale_order_document} />
                         ) : null,
                     },
                 ] : []}

@@ -24,4 +24,15 @@ export const purchaseReturnLineFields = createEntityFields<ReturnLine>()({
         suffix: (l) => String(l.uom_name ?? ''),
         tableOptions: { align: 'right' },
     },
+    stock_move: {
+        key: 'stock_move',
+        placement: 'detail',
+        type: 'computed',
+        fieldRole: 'descriptive',
+        label: 'Movimiento',
+        tableOptions: { align: 'left' },
+        render: (l) => l.stock_move
+            ? <DocumentRefLink documentRef={l.stock_move_document} />
+            : <span className="text-xs text-muted-foreground">—</span>,
+    },
 })

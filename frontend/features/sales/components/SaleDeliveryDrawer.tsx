@@ -5,7 +5,6 @@ import { Package } from "lucide-react"
 import { DataCell, DataTable } from "@/components/shared"
 import { PrintableLayout, usePrintableDrawer } from "@/features/_shared"
 import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents"
-import { formatEntityDisplay } from "@/lib/entity-registry"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useSaleDelivery } from "../hooks/useSaleDeliveries"
 import { saleDeliveryLineFields } from "../saleDeliveryLineFields"
@@ -72,11 +71,7 @@ export function SaleDeliveryDrawer({ id, open, onOpenChange }: SaleDeliveryDrawe
                 {
                     label: "Orden de venta",
                     value: delivery.sale_order ? (
-                        <DocumentRefLink
-                            label="sales.saleorder"
-                            id={Number(delivery.sale_order)}
-                            display={formatEntityDisplay("sales.saleorder", { number: delivery.sale_order_number })}
-                        />
+                        <DocumentRefLink documentRef={delivery.sale_order_document} />
                     ) : null,
                 },
             ] : []}
