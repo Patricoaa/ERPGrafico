@@ -516,7 +516,16 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
     def get_document_info(self, obj):
         info = {"type": None, "id": None, "number": None, "label": None, "display_id": None}
         if obj.invoice:
-            info.update({"type": "invoice", "id": obj.invoice.id, "number": obj.invoice.number, "display_id": obj.invoice.display_id, "label": obj.invoice.display_id})
+            info.update({
+                "type": "invoice",
+                "id": obj.invoice.id,
+                "number": obj.invoice.number,
+                "display_id": obj.invoice.display_id,
+                "label": obj.invoice.display_id,
+                "status": obj.invoice.status,
+                "dte_type": obj.invoice.dte_type,
+                "folio": obj.invoice.number,
+            })
         elif obj.purchase_order:
             info.update({"type": "purchase_order", "id": obj.purchase_order.id, "number": obj.purchase_order.number, "display_id": obj.purchase_order.display_id, "label": obj.purchase_order.display_id})
         elif obj.sale_order:
