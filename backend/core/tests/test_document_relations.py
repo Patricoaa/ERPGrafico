@@ -196,7 +196,7 @@ def test_purchase_receipt_relations(pilot):
 
     data = _relations(pilot["client"], "purchasing.purchasereceipt", receipt.id)
     assert ("purchase_order", "purchasing.purchaseorder", po.id) in _targets(data)
-    assert _targets(data, "stock_move") and _targets(data, "inventory_document")
+    assert _targets(data, "stock_move") and not _targets(data, "inventory_document")
     assert data["document"]["url"] == f"/d/purchasing.purchasereceipt/{receipt.id}"
 
     po_data = _relations(pilot["client"], "purchasing.purchaseorder", po.id)

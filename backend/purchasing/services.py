@@ -450,29 +450,22 @@ class PurchasingService:
             source_object_id=receipt.id,
         )
 
-        from inventory.models import InventoryDocument, InventoryDocumentDetail
-        from inventory.services import InventoryService
+        # ADR-0085: la devolución es dueña de sus StockMove; ya no se acuña un InventoryDocument.
+        from inventory.models import Location
 
-        doc = InventoryDocument.objects.create(
-            document_type=InventoryDocument.Type.RECEIPT,
-            status=InventoryDocument.Status.DRAFT,
-            date=receipt.receipt_date,
-            reference=f"Recepción {receipt.purchase_order.display_id}",
-            partner=receipt.purchase_order.supplier,
-            source_document_type="purchasing.purchasereceipt",
-            source_document_id=receipt.id,
-        )
+        internal_loc = Location.objects.filter(
+            location_type="INTERNAL", warehouse=receipt.warehouse
+        ).first()
+        vendor_loc = Location.objects.filter(location_type="VENDOR").first()
+        if not internal_loc or not vendor_loc:
+            raise ValidationError(
+                "Faltan ubicaciones de inventario (INTERNO del almacén / PROVEEDOR) para confirmar la devolución."
+            )
 
-        details_to_create = []
-        line_details = []
+        move_description = f"Devolución {receipt.purchase_order.display_id}"
 
         for line in receipt.lines.all():
-            # 1. Prepare Inventory Document Detail - quantity is already negative in receipt line for returns, wait: confirm_receipt is for receipts not returns?
-            # Oh wait, the loop says "quantity is already negative in receipt line for returns". So confirm_receipt handles both.
-            # But wait, InventoryDocument handles IN/OUT based on type. For receipt returns, it might need to be DELIVERY or we keep using RECEIPT with negative quantity and StockMove handles it.
-            # Let's keep it simple: create details.
-
-            # Convert received quantity to base UoM for reversal/receipt
+            # Convert received quantity to base UoM for reversal (negative for returns)
             base_qty = StockService.convert_quantity(
                 line.quantity_received,
                 from_uom=line.uom or line.purchase_line.uom,
@@ -487,27 +480,24 @@ class PurchasingService:
                     f"Requerido: {abs(base_qty)} {line.product.uom.name}"
                 )
 
-            detail = InventoryDocumentDetail(
-                document=doc,
+            # ADR-0085: OUT (INTERNO → PROVEEDOR); la cantidad del movimiento es absoluta.
+            move = StockService.create_move(
                 product=line.product,
-                warehouse=receipt.warehouse,
-                quantity=base_qty,
-                unit_cost=line.unit_cost
+                quantity=abs(base_qty),
+                source_location=internal_loc,
+                destination_location=vendor_loc,
+                unit_cost=line.unit_cost,
+                description=move_description,
+                journal_entry=entry,
+                source_document=receipt,
+                date=receipt.receipt_date,
             )
-            details_to_create.append(detail)
-            line_details.append((line, detail))
+            line.stock_move = move
+            line.save(update_fields=["stock_move"])
 
-            # 2. Update Purchase Line
+            # Update Purchase Line
             line.purchase_line.quantity_received += line.quantity_received
             line.purchase_line.save()
-
-        InventoryDocumentDetail.objects.bulk_create(details_to_create)
-
-        # Confirm document
-        doc, generated_moves = InventoryService.confirmar_documento(doc, journal_entry=entry)
-
-        # GAP-02: cada línea toma el StockMove de su propio detalle
-        PurchasingService._link_lines_to_moves(line_details)
 
         for line in receipt.lines.all():
             # 3. Accounting
@@ -554,20 +544,6 @@ class PurchasingService:
         receipt.save()
 
     @staticmethod
-    def _link_lines_to_moves(line_details):
-        """Enlaza cada línea de recepción con el StockMove generado por su detalle de inventario."""
-        from inventory.models import InventoryDocumentDetail
-
-        move_by_detail = dict(
-            InventoryDocumentDetail.objects.filter(
-                pk__in=[detail.pk for _, detail in line_details]
-            ).values_list("pk", "stock_move_id")
-        )
-        for line, detail in line_details:
-            line.stock_move_id = move_by_detail.get(detail.pk)
-            line.save(update_fields=["stock_move"])
-
-    @staticmethod
     def _create_receipt_line(receipt, purchase_line, quantity, unit_cost, uom=None):
         PurchaseReceiptLine.objects.create(
             receipt=receipt,
@@ -611,25 +587,19 @@ class PurchasingService:
             inv.dte_type == Invoice.DTEType.BOLETA for inv in receipt.purchase_order.invoices.all()
         )
 
-        print(
-            f"DEBUG: has_boleta={has_boleta}, StockMove fields={[f.name for f in StockMove._meta.get_fields()]}"
-        )
+        # ADR-0085: la recepción es dueña de sus StockMove; ya no se acuña un InventoryDocument.
+        from inventory.models import Location
 
-        from inventory.models import InventoryDocument, InventoryDocumentDetail
-        from inventory.services import InventoryService
+        internal_loc = Location.objects.filter(
+            location_type="INTERNAL", warehouse=receipt.warehouse
+        ).first()
+        vendor_loc = Location.objects.filter(location_type="VENDOR").first()
+        if not internal_loc or not vendor_loc:
+            raise ValidationError(
+                "Faltan ubicaciones de inventario (INTERNO del almacén / PROVEEDOR) para confirmar la recepción."
+            )
 
-        doc = InventoryDocument.objects.create(
-            document_type=InventoryDocument.Type.RECEIPT,
-            status=InventoryDocument.Status.DRAFT,
-            date=receipt.receipt_date,
-            reference=f"Recepción {receipt.purchase_order.display_id}",
-            partner=receipt.purchase_order.supplier,
-            source_document_type="purchasing.purchasereceipt",
-            source_document_id=receipt.id,
-        )
-
-        details_to_create = []
-        line_details = []
+        move_description = f"Recepción {receipt.purchase_order.display_id}"
 
         for line in receipt.lines.all():
             # Skip stock moves for SERVICE and SUBSCRIPTION type products
@@ -711,28 +681,23 @@ class PurchasingService:
             # Update Product Cost (Weighted Average)
             PurchasingService._update_product_cost(line.product, base_qty, cost_per_base_unit)
 
-            detail = InventoryDocumentDetail(
-                document=doc,
+            # ADR-0085: el StockMove lo crea directamente la recepción (IN: PROVEEDOR → INTERNO).
+            move = StockService.create_move(
                 product=line.product,
-                warehouse=receipt.warehouse,
                 quantity=base_qty,
-                unit_cost=cost_per_base_unit
+                source_location=vendor_loc,
+                destination_location=internal_loc,
+                unit_cost=cost_per_base_unit,
+                description=move_description,
+                source_document=receipt,
+                date=receipt.receipt_date,
             )
-            details_to_create.append(detail)
-            line_details.append((line, detail))
+            line.stock_move = move
+            line.save(update_fields=["stock_move"])
 
             # Update Purchase Line
             line.purchase_line.quantity_received += line.quantity_received
             line.purchase_line.save()
-
-        if details_to_create:
-            InventoryDocumentDetail.objects.bulk_create(details_to_create)
-            doc, generated_moves = InventoryService.confirmar_documento(doc)
-
-            # GAP-02: cada línea inventariable toma el StockMove de su propio detalle
-            PurchasingService._link_lines_to_moves(line_details)
-        else:
-            doc.delete()
 
         # 3. Final Accounting Entry via Mapper (includes Consumable logic)
         description, reference, items = AccountingMapper.get_entries_for_receipt(receipt, settings)
@@ -1033,19 +998,8 @@ class PurchasingService:
 
         # 6. Process Inventory Movements (for both NC and ND if return_items specified)
         if return_items:
-            from inventory.models import InventoryDocument, InventoryDocumentDetail
-            from inventory.services import InventoryService
-
-            doc = InventoryDocument.objects.create(
-                document_type=InventoryDocument.Type.DELIVERY if note_type == Invoice.DTEType.NOTA_CREDITO else InventoryDocument.Type.RECEIPT,
-                status=InventoryDocument.Status.DRAFT,
-                date=timezone.now().date(),
-                reference=f"{invoice.get_dte_type_display()} {document_number} ({order.display_id})",
-                partner=order.supplier,
-                source_document_type="billing.invoice",
-                source_document_id=invoice.id,
-            )
-            details_to_create = []
+            # ADR-0085: la nota es dueña de sus StockMove; ya no se acuña un InventoryDocument.
+            from inventory.models import Location
 
             warehouse_by_purchase_line = {}
             confirmed_receipts = order.receipts.filter(
@@ -1095,62 +1049,32 @@ class PurchasingService:
                 if not warehouse:
                     warehouse = order.warehouse
 
-                details_to_create.append(
-                    InventoryDocumentDetail(
-                        document=doc,
-                        product=purchase_line.product,
-                        warehouse=warehouse,
-                        quantity=-quantity if note_type == Invoice.DTEType.NOTA_CREDITO else quantity,
-                        unit_cost=purchase_line.unit_cost
+                internal_loc = Location.objects.filter(
+                    location_type="INTERNAL", warehouse=warehouse
+                ).first()
+                vendor_loc = Location.objects.filter(location_type="VENDOR").first()
+                if not internal_loc or not vendor_loc:
+                    raise ValidationError(
+                        "Faltan ubicaciones de inventario (INTERNO del almacén / PROVEEDOR) para la nota."
                     )
+
+                # ADR-0085: NC = devolución de mercancía (OUT); ND = mercancía adicional (IN).
+                if note_type == Invoice.DTEType.NOTA_CREDITO:
+                    source_location, destination_location = internal_loc, vendor_loc
+                else:
+                    source_location, destination_location = vendor_loc, internal_loc
+
+                StockService.create_move(
+                    product=purchase_line.product,
+                    quantity=quantity,
+                    source_location=source_location,
+                    destination_location=destination_location,
+                    unit_cost=purchase_line.unit_cost,
+                    description=f"{invoice.get_dte_type_display()} {document_number} ({order.display_id})",
+                    journal_entry=entry,
+                    source_document=invoice,
+                    date=timezone.now().date(),
                 )
-
-            if details_to_create:
-                InventoryDocumentDetail.objects.bulk_create(details_to_create)
-                InventoryService.confirmar_documento(doc, journal_entry=entry)
-            else:
-                doc.delete()
-
-                # ACCOUNTING FOR INVENTORY RETURN
-                inventory_account = purchase_line.product.get_asset_account
-                line_cost = (quantity * purchase_line.unit_cost).quantize(
-                    Decimal("0.01"), rounding="ROUND_HALF_UP"
-                )
-
-                if line_cost > 0:
-                    product_code = purchase_line.product.code
-                    if note_type == Invoice.DTEType.NOTA_CREDITO:
-                        # Credit Note = Return Goods
-                        JournalItem.objects.create(
-                            entry=entry,
-                            account=stock_input_account,
-                            debit=line_cost,
-                            credit=0,
-                            label=GlosaBuilder.item(Roles.PUENTE_RECEPCION, product_code, doc_id),
-                        )
-                        JournalItem.objects.create(
-                            entry=entry,
-                            account=inventory_account,
-                            debit=0,
-                            credit=line_cost,
-                            label=GlosaBuilder.item(Roles.INVENTARIO, product_code, doc_id),
-                        )
-                    else:
-                        # Debit Note = Receive Goods (Rare)
-                        JournalItem.objects.create(
-                            entry=entry,
-                            account=stock_input_account,
-                            debit=0,
-                            credit=line_cost,
-                            label=GlosaBuilder.item(Roles.PUENTE_RECEPCION, product_code, doc_id),
-                        )
-                        JournalItem.objects.create(
-                            entry=entry,
-                            account=inventory_account,
-                            debit=line_cost,
-                            credit=0,
-                            label=GlosaBuilder.item(Roles.INVENTARIO, product_code, doc_id),
-                        )
 
         # 7. Post the entry
         JournalEntryService.post_entry(entry)
@@ -1279,45 +1203,35 @@ class PurchasingService:
                 receipt.journal_entry, description=f"Anulación Recepción {receipt.number}"
             )
 
-        # 2. Reverse Stock Moves & Update Purchase Lines
-        from inventory.models import InventoryDocument, InventoryDocumentDetail
-        from inventory.services import InventoryService
+        # 2. Reverse Stock Moves & Update Purchase Lines (ADR-0085)
+        from inventory.models import Location
 
-        doc_inv = InventoryDocument.objects.create(
-            document_type=InventoryDocument.Type.RECEIPT,
-            status=InventoryDocument.Status.DRAFT,
-            date=receipt.receipt_date,
-            reference=f"Recepción {receipt.purchase_order.display_id}",
-            partner=receipt.purchase_order.supplier,
-            source_document_type="purchasing.purchasereceipt",
-            source_document_id=receipt.id,
-        )
-        details_to_create = []
+        internal_loc = Location.objects.filter(
+            location_type="INTERNAL", warehouse=receipt.warehouse
+        ).first()
+        vendor_loc = Location.objects.filter(location_type="VENDOR").first()
+        if not internal_loc or not vendor_loc:
+            raise ValidationError(
+                "Faltan ubicaciones de inventario (INTERNO del almacén / PROVEEDOR) para anular la recepción."
+            )
+
+        # Reversa todos los StockMove originados por esta recepción (IN → OUT).
+        for move in list(StockMove.for_document(receipt)):
+            StockService.create_move(
+                product=move.product,
+                quantity=abs(move.quantity),
+                source_location=move.destination_location,
+                destination_location=move.source_location,
+                unit_cost=move.unit_cost,
+                description=f"Anulación Recepción {receipt.number}",
+                source_document=receipt,
+                date=timezone.now().date(),
+            )
 
         for line in receipt.lines.all():
-            # Create Reversal Move (OUT)
-            if line.stock_move:
-                details_to_create.append(
-                    InventoryDocumentDetail(
-                        document=doc_inv,
-                        product=line.product,
-                        warehouse=receipt.warehouse,
-                        quantity=abs(line.stock_move.quantity),  # Delivery expects positive
-                        unit_cost=line.stock_move.unit_cost
-                    )
-                )
-
             # Revert received quantity
             line.purchase_line.quantity_received -= line.quantity_received
             line.purchase_line.save()
-
-        if details_to_create:
-            InventoryDocumentDetail.objects.bulk_create(details_to_create)
-            InventoryService.confirmar_documento(doc_inv)
-        else:
-            doc_inv.delete()
-
-
 
         # 3. Update Receipt Status
         receipt.status = PurchaseReceipt.Status.CANCELLED
