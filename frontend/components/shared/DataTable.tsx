@@ -770,7 +770,7 @@ export function DataTable<TData, TValue>({
                             {renderCustomView(table)}
                         </div>
                     ) : (
-                        <div className={cn("flex-1 flex flex-col min-h-0", !isInModal && NON_MODAL_TABLE_MAX_HEIGHT)}>
+                        <div className="flex-1 flex flex-col min-h-0">
                             <div className="flex-shrink-0 bg-background rounded-t-sm overflow-hidden mb-1" style={{ scrollbarGutter: 'stable' }}>
                                 <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
                                     <colgroup>
