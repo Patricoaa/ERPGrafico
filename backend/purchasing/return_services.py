@@ -174,7 +174,7 @@ class PurchaseReturnService:
 
         for line in return_doc.lines.all():
             product = line.product
-            if product.track_inventory:
+            if product.track_inventory and product.strategy.allows_stock_moves:
                 # Convert to base UoM
                 qty_base = UoMService.convert_quantity(
                     line.quantity, from_uom=line.uom or product.uom, to_uom=product.uom
@@ -232,7 +232,7 @@ class PurchaseReturnService:
                 # Credit Inventory per line
                 for line in return_doc.lines.all():
                     product = line.product
-                    if product.track_inventory:
+                    if product.track_inventory and product.strategy.allows_stock_moves:
                         inv_account = product.get_asset_account
                         line_val = (
                             UoMService.convert_quantity(

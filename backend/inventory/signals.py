@@ -75,7 +75,7 @@ def handle_stock_move_updates(sender, instance, created, **kwargs):
 
     product = instance.product
 
-    if created:
+    if created and product.track_inventory and product.strategy.allows_stock_moves:
         # Phase 3: Update based on Location
         # Add to destination if internal
         if instance.destination_location and instance.destination_location.location_type == "INTERNAL":

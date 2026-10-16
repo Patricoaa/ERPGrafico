@@ -795,26 +795,30 @@ class Product(models.Model):
         if self.code == "" or (isinstance(self.code, str) and not self.code.strip()):
             self.code = None
 
-        # Logic for track_inventory is now handled by the frontend/API.
-        # We default to True for STORABLE if not specified, otherwise respect input.
-        if self.pk is None and self.track_inventory is None:
-            self.track_inventory = self.product_type == self.Type.STORABLE
-
-        # Express manufacturables (mfg_auto_finalize) do not track inventory
-        auto_finalize = (
-            self.mfg_profile.mfg_auto_finalize
-            if hasattr(self, "mfg_profile") and self.mfg_profile
-            else self.mfg_auto_finalize
-        )
-        advanced_mfg = (
-            self.mfg_profile.requires_advanced_manufacturing
-            if hasattr(self, "mfg_profile") and self.mfg_profile
-            else self.requires_advanced_manufacturing
-        )
-        if auto_finalize:
+        # SERVICE, SUBSCRIPTION and CONSUMABLE never track physical inventory —
+        # their strategy.allows_stock_moves is False and the field must match.
+        if self.product_type in (self.Type.SERVICE, self.Type.SUBSCRIPTION, self.Type.CONSUMABLE):
             self.track_inventory = False
-        elif self.product_type == self.Type.MANUFACTURABLE and not advanced_mfg:
-            self.track_inventory = True
+        else:
+            # For STORABLE: default True on creation if not explicitly set.
+            if self.pk is None and self.track_inventory is None:
+                self.track_inventory = self.product_type == self.Type.STORABLE
+
+            # Express manufacturables (mfg_auto_finalize) do not track inventory
+            auto_finalize = (
+                self.mfg_profile.mfg_auto_finalize
+                if hasattr(self, "mfg_profile") and self.mfg_profile
+                else self.mfg_auto_finalize
+            )
+            advanced_mfg = (
+                self.mfg_profile.requires_advanced_manufacturing
+                if hasattr(self, "mfg_profile") and self.mfg_profile
+                else self.requires_advanced_manufacturing
+            )
+            if auto_finalize:
+                self.track_inventory = False
+            elif self.product_type == self.Type.MANUFACTURABLE and not advanced_mfg:
+                self.track_inventory = True
         # Fallback for base UoM if missing but others are present
         if not self.uom:
             if self.sale_uom:

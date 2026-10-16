@@ -226,7 +226,7 @@ class ReturnService:
         created_moves = []
         for line in return_doc.lines.all():
             product = line.product
-            if product.track_inventory and not getattr(product, "requires_advanced_manufacturing", False):
+            if product.track_inventory and product.strategy.allows_stock_moves and not getattr(product, "requires_advanced_manufacturing", False):
                 qty_base = UoMService.convert_quantity(
                     line.quantity, from_uom=line.uom or product.uom, to_uom=product.uom
                 )

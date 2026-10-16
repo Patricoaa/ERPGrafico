@@ -602,8 +602,9 @@ class PurchasingService:
         move_description = f"Recepción {receipt.purchase_order.display_id}"
 
         for line in receipt.lines.all():
-            # Skip stock moves for SERVICE and SUBSCRIPTION type products
-            if line.product.product_type in ["SERVICE", "SUBSCRIPTION"]:
+            # Skip stock moves for products that don't allow inventory tracking.
+            # Uses both the strategy flag and the field to catch stale data.
+            if not line.product.strategy.allows_stock_moves or not line.product.track_inventory:
                 # Update Purchase Line (mark as received even though no physical stock)
                 line.purchase_line.quantity_received += line.quantity_received
                 line.purchase_line.save()

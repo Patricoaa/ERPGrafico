@@ -591,8 +591,9 @@ class SalesService:
         for line in delivery.lines.all():
             product = line.product
 
-            # PATH A: Product tracks inventory directly
-            if product.track_inventory:
+            # PATH A: Product tracks inventory directly.
+            # Guard against stale field values: also require the strategy to allow moves.
+            if product.track_inventory and product.strategy.allows_stock_moves:
                 # Base quantity conversion
                 base_qty = UoMService.convert_quantity(
                     line.quantity, from_uom=line.uom or line.sale_line.uom, to_uom=line.product.uom
