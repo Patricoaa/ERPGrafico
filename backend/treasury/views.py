@@ -913,7 +913,7 @@ class CheckViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         from .models import Check as CheckModel
 
         qs = CheckModel.objects.select_related(
-            "bank", "counterparty", "portfolio_account", "deposit_account"
+            "bank", "counterparty", "portfolio_account", "deposit_account", "sale_order"
         )
         return qs.order_by("due_date", "-id")
 

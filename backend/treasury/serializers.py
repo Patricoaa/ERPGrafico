@@ -516,16 +516,7 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
     def get_document_info(self, obj):
         info = {"type": None, "id": None, "number": None, "label": None, "display_id": None}
         if obj.invoice:
-            info.update({
-                "type": "invoice",
-                "id": obj.invoice.id,
-                "number": obj.invoice.number,
-                "display_id": obj.invoice.display_id,
-                "label": obj.invoice.display_id,
-                "status": obj.invoice.status,
-                "dte_type": obj.invoice.dte_type,
-                "folio": obj.invoice.number,
-            })
+            info.update({"type": "invoice", "id": obj.invoice.id, "number": obj.invoice.number, "display_id": obj.invoice.display_id, "label": obj.invoice.display_id})
         elif obj.purchase_order:
             info.update({"type": "purchase_order", "id": obj.purchase_order.id, "number": obj.purchase_order.number, "display_id": obj.purchase_order.display_id, "label": obj.purchase_order.display_id})
         elif obj.sale_order:
@@ -838,6 +829,7 @@ class CheckSerializer(serializers.ModelSerializer):
     bank_name = serializers.CharField(source="bank.name", read_only=True)
     counterparty_name = serializers.SerializerMethodField()
     sale_order_display = serializers.SerializerMethodField()
+    sale_order_document = serializers.SerializerMethodField()
 
     def get_counterparty_name(self, obj):
         if obj.counterparty:
@@ -851,6 +843,14 @@ class CheckSerializer(serializers.ModelSerializer):
                 "number": obj.sale_order.number,
             }
         return None
+
+    def get_sale_order_document(self, obj):
+        if not obj.sale_order_id:
+            return None
+        from core.documents import build_ref
+
+        user = getattr(self.context.get("request"), "user", None)
+        return build_ref(obj.sale_order, user, "sales.saleorder")
 
     class Meta:
         model = Check
@@ -878,6 +878,7 @@ class CheckSerializer(serializers.ModelSerializer):
             "invoice",
             "sale_order",
             "sale_order_display",
+            "sale_order_document",
             "notes",
             "deposited_at",
             "cleared_at",

@@ -70,9 +70,9 @@ export function CheckDrawer({ id, open, onOpenChange }: CheckDrawerProps) {
                     {
                         label: "OV asociada",
                         hidden: !check.sale_order_display,
-                        value: check.sale_order_display ? (
-                            <DocumentRefLink label="sales.saleorder" id={Number(check.sale_order_display.id)} display={`OV-${check.sale_order_display.number}`} />
-                        ) : null,
+                        value: check.sale_order ? (
+                        <DocumentRefLink documentRef={check.sale_order_document} />
+                    ) : null,
                     },
                     { label: "Notas", value: check.notes || null, span: 3, hidden: !check.notes },
                 ] : []}
