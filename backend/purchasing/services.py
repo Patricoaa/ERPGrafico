@@ -1205,17 +1205,8 @@ class PurchasingService:
             )
 
         # 2. Reverse Stock Moves & Update Purchase Lines (ADR-0085)
-        from inventory.models import Location
-
-        internal_loc = Location.objects.filter(
-            location_type="INTERNAL", warehouse=receipt.warehouse
-        ).first()
-        vendor_loc = Location.objects.filter(location_type="VENDOR").first()
-        if not internal_loc or not vendor_loc:
-            raise ValidationError(
-                "Faltan ubicaciones de inventario (INTERNO del almacén / PROVEEDOR) para anular la recepción."
-            )
-
+        # La reversión usa las ubicaciones de cada StockMove (no requiere
+        # ubicaciones sembradas del almacén ni del proveedor).
         # Reversa todos los StockMove originados por esta recepción (IN → OUT).
         for move in list(StockMove.for_document(receipt)):
             StockService.create_move(
