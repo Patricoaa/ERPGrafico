@@ -62,6 +62,7 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
                 loadingLabel="Cargando devolución"
                 status={r ? String(r.status) : null}
                 onPrint={handlePrint}
+                auditType="purchase_return"
                 context={r ? [
                     { label: "Proveedor", value: String(r.supplier_name ?? "") },
                     { label: "Fecha", value: r.return_date ? <DataCell.Date value={String(r.return_date)} size="xs" className={SHEET_LEFT} /> : null },

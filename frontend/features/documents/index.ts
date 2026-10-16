@@ -1,4 +1,4 @@
-export { DocumentRelationsSection, DocumentRelationsTab, DocumentRefLink, DocumentRelationsButton, DocumentResolverView, DocumentSheet, SHEET_LEFT, type DocumentRelationsTabProps, type DocumentSheetProps, type DocumentSheetSection } from './components'
+export { DocumentRelationsTab, DocumentRefLink, DocumentRelationsButton, DocumentResolverView, DocumentSheet, SHEET_LEFT, type DocumentRelationsTabProps, type DocumentSheetProps, type DocumentSheetSection } from './components'
 export { DOCUMENTS_KEYS } from './hooks/queryKeys'
 export { useDocumentRef } from './hooks/useDocumentRef'
 export { useDocumentRelations } from './hooks/useDocumentRelations'

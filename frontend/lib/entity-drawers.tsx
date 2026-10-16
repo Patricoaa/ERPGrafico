@@ -211,6 +211,11 @@ const SaleDeliveryDrawer = dynamic(
     { ssr: false, loading: () => skeleton("despacho") }
 )
 
+const SaleReturnDrawer = dynamic(
+    () => import("@/features/sales/components/SaleReturnDrawer").then((m) => m.SaleReturnDrawer),
+    { ssr: false, loading: () => skeleton("devolución de venta") }
+)
+
 const PurchaseReturnDrawer = dynamic(
     () => import("@/features/purchasing/components/PurchaseReturnDrawer").then((m) => m.PurchaseReturnDrawer),
     { ssr: false, loading: () => skeleton("devolución de compra") }
@@ -573,6 +578,13 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
     "sales.saledelivery": ({ id, open, onOpenChange }) => (
         <SaleDeliveryDrawer
+            id={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+    "sales.salereturn": ({ id, open, onOpenChange }) => (
+        <SaleReturnDrawer
             id={id}
             open={open}
             onOpenChange={onOpenChange}

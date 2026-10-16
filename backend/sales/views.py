@@ -395,7 +395,7 @@ class SaleDeliveryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 class SaleReturnViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     queryset = (
-        SaleReturn.objects.select_related("sale_order", "warehouse")
+        SaleReturn.objects.select_related("sale_order__customer", "warehouse")
         .prefetch_related("lines__product", "lines__uom")
         .all()
     )

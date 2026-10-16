@@ -3,6 +3,7 @@
 import { useMemo } from "react"
 import { Package } from "lucide-react"
 import { DataCell, DataTable } from "@/components/shared"
+import { PrintableLayout, usePrintableDrawer } from "@/features/_shared"
 import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { useSaleDelivery } from "../hooks/useSaleDeliveries"
@@ -22,11 +23,30 @@ type Row = Record<string, unknown>
  */
 export function SaleDeliveryDrawer({ id, open, onOpenChange }: SaleDeliveryDrawerProps) {
     const { data: delivery, isLoading, isError } = useSaleDelivery(open ? id ?? null : null)
+    const { printRef, handlePrint } = usePrintableDrawer()
     const columns = useMemo(() => saleDeliveryLineFields.toColumns(), [])
     const lines = (delivery?.lines as Row[] | undefined) ?? []
 
     return (
-        <DocumentSheet
+        <>
+            <PrintableLayout ref={printRef} title="Guía de Despacho" displayId={String(delivery?.display_id ?? `#${id}`)} subtitle={String(delivery?.customer_name ?? '')}>
+                {delivery && (
+                    <>
+                        <div className="text-4xs space-y-1 mb-2 border-b pb-2">
+                            <div className="flex justify-between"><span>Cliente:</span><span>{String(delivery.customer_name ?? '-')}</span></div>
+                            <div className="flex justify-between"><span>Bodega:</span><span>{String(delivery.warehouse_name ?? '-')}</span></div>
+                        </div>
+                        {lines.map((line, idx) => (
+                            <div key={idx} className="flex justify-between text-3xs">
+                                <span className="flex-1">{String(line.product_name ?? '-')}</span>
+                                <span className="w-12 text-right">{String(line.quantity ?? '-')}</span>
+                            </div>
+                        ))}
+                    </>
+                )}
+            </PrintableLayout>
+
+            <DocumentSheet
             label="sales.saledelivery"
             open={open}
             onOpenChange={onOpenChange}
@@ -36,6 +56,7 @@ export function SaleDeliveryDrawer({ id, open, onOpenChange }: SaleDeliveryDrawe
             loadingLabel="Cargando despacho"
             status={delivery ? String(delivery.status) : null}
             auditType="sale_delivery"
+            onPrint={handlePrint}
             context={delivery ? [
                 { label: "Cliente", value: String(delivery.customer_name ?? "") },
                 { label: "Fecha", value: delivery.delivery_date ? <DataCell.Date value={String(delivery.delivery_date)} size="xs" className={SHEET_LEFT} /> : null },
@@ -65,5 +86,6 @@ export function SaleDeliveryDrawer({ id, open, onOpenChange }: SaleDeliveryDrawe
                 ),
             }]}
         />
+        </>
     )
 }

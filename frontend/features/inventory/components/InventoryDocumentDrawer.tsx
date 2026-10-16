@@ -86,6 +86,7 @@ export function InventoryDocumentDrawer({ documentId, id, open, onOpenChange, on
                 error={isError ? new Error("No se pudo cargar el documento.") : undefined}
                 loadingLabel="Cargando documento"
                 status={document?.status ?? null}
+                auditType="inventory_document"
                 primaryAction={primaryAction}
                 actions={actions}
                 onPrint={() => handlePrint()}

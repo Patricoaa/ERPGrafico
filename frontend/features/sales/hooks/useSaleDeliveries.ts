@@ -30,3 +30,13 @@ export function useSaleDelivery(id: number | null) {
         staleTime: staleTime.standard,
     })
 }
+
+export function useSaleReturn(id: number | null, enabled = true) {
+    const { data, isLoading } = useQuery({
+        queryKey: SALES_KEYS.return(id ?? 0),
+        queryFn: () => salesApi.getReturn(id as number),
+        enabled: !!id && enabled,
+        staleTime: staleTime.standard,
+    })
+    return { data, isLoading }
+}

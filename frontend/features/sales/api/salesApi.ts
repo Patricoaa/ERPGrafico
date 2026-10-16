@@ -125,6 +125,14 @@ export const salesApi = {
     },
 
     /**
+     * Fetch a single sale return by id
+     */
+    getReturn: async (id: number): Promise<Record<string, unknown>> => {
+        const { data } = await api.get(`/sales/returns/${id}/`)
+        return data
+    },
+
+    /**
      * Fetch sales notes (credit/debit notes associated with orders)
      */
     getSalesNotes: async (filters?: SaleNoteFilters): Promise<Page<SaleNote>> => {

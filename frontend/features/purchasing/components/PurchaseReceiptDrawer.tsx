@@ -3,6 +3,7 @@
 import { useMemo } from "react"
 import { Package } from "lucide-react"
 import { DataCell, DataTable } from "@/components/shared"
+import { PrintableLayout, usePrintableDrawer } from "@/features/_shared"
 import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { usePurchaseReceipt } from "../hooks/usePurchasing"
@@ -22,11 +23,30 @@ type Row = Record<string, unknown>
  */
 export function PurchaseReceiptDrawer({ id, open, onOpenChange }: PurchaseReceiptDrawerProps) {
     const { receipt, isLoading } = usePurchaseReceipt(id ?? null, open)
+    const { printRef, handlePrint } = usePrintableDrawer()
     const columns = useMemo(() => purchaseReceiptLineFields.toColumns(), [])
     const lines = (receipt?.lines as Row[] | undefined) ?? []
 
     return (
-        <DocumentSheet
+        <>
+            <PrintableLayout ref={printRef} title="Recepción de Compra" displayId={String(receipt?.display_id ?? `#${id}`)} subtitle={String(receipt?.supplier_name ?? '')}>
+                {receipt && (
+                    <>
+                        <div className="text-4xs space-y-1 mb-2 border-b pb-2">
+                            <div className="flex justify-between"><span>Proveedor:</span><span>{String(receipt.supplier_name ?? '-')}</span></div>
+                            <div className="flex justify-between"><span>Bodega:</span><span>{String(receipt.warehouse_name ?? '-')}</span></div>
+                        </div>
+                        {lines.map((line, idx) => (
+                            <div key={idx} className="flex justify-between text-3xs">
+                                <span className="flex-1">{String(line.product_name ?? '-')}</span>
+                                <span className="w-12 text-right">{String(line.quantity_received ?? '-')}</span>
+                            </div>
+                        ))}
+                    </>
+                )}
+            </PrintableLayout>
+
+            <DocumentSheet
             label="purchasing.purchasereceipt"
             open={open}
             onOpenChange={onOpenChange}
@@ -36,6 +56,7 @@ export function PurchaseReceiptDrawer({ id, open, onOpenChange }: PurchaseReceip
             loadingLabel="Cargando recepción"
             status={receipt ? String(receipt.status) : null}
             auditType="purchase_receipt"
+            onPrint={handlePrint}
             context={receipt ? [
                 { label: "Proveedor", value: String(receipt.supplier_name ?? "") },
                 { label: "Fecha", value: receipt.receipt_date ? <DataCell.Date value={String(receipt.receipt_date)} size="xs" className={SHEET_LEFT} /> : null },
@@ -65,5 +86,6 @@ export function PurchaseReceiptDrawer({ id, open, onOpenChange }: PurchaseReceip
                 ),
             }]}
         />
+        </>
     )
 }
