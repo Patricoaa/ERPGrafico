@@ -83,23 +83,10 @@ export interface SaleOrder {
     payment_method?: string
     delivery_status: DeliveryStatus
     has_pending_work_orders?: boolean
-    related_documents?: {
-        invoices: Invoice[]
-        notes: SaleNote[]
-        payments: Array<{
-            id: number
-            amount: number
-            date: string
-            method: string
-            account_name: string
-        }>
-        deliveries: Array<{
-            id: number
-            number: string
-            date: string
-            status: string
-        }>
-    }
+    /** Resumen tipado de documentos (ADR-0083 U6; reemplaza `related_documents`). */
+    invoices?: Invoice[]
+    notes?: SaleNote[]
+    deliveries?: Array<{ id: number; display_id: string; status: string; date: string }>
     lines?: SaleOrderLine[]
     pos_session_display?: string
     pos_session?: number

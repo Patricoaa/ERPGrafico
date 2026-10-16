@@ -82,7 +82,7 @@ export function useOrderActionEngine({ order, posSessionId = null, onActionSucce
     // Tipo de documento: soporta OV/OC y notas (que referencian su orden)
     const isSale = !!order?.customer_name || !!order?.customer || !!order?.sale_order
     const isPurchase = !!order?.supplier_name || !!order?.supplier || !!order?.purchase_order
-    const resolvedInvoices = (order?.dte_type ? [order] : (order?.related_documents?.invoices || order?.invoices)) || []
+    const resolvedInvoices = (order?.dte_type ? [order] : (order?.invoices)) || []
     const partnerId = order
         ? (((order.customer || order.supplier) as { id?: number } | undefined)?.id ?? (isSale ? order.customer_id : order.supplier_id))
         : undefined
@@ -144,8 +144,8 @@ export function useOrderActionEngine({ order, posSessionId = null, onActionSucce
                     })
                 } else {
                     // Factura en borrador con pagos contabilizados: se devuelve el primero
-                    const payments = order.related_documents?.payments || []
-                    const firstPosted = payments.find((p) => (p.journal_entry as Record<string, unknown> | undefined)?.state === 'POSTED')
+                    const payments = order.serialized_payments || []
+                    const firstPosted = payments.find((p) => p.status === 'POSTED')
                     if (!firstPosted?.id) {
                         toast.error("No se encontró un pago contabilizado para devolver.")
                         return

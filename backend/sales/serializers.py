@@ -191,9 +191,10 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     payment_status = serializers.CharField(read_only=True)
     pending_amount = serializers.SerializerMethodField()
     serialized_payments = serializers.SerializerMethodField()
-    # DEPRECATED (ADR-0080, 2026-10-15): formato legacy de relacionados. Usar
-    # GET /api/core/documents/{label}/{id}/relations/. Se retira cuando el Order Hub migre (ver document-relations.md §6).
-    related_documents = serializers.SerializerMethodField()
+    # ADR-0083 U6: resumen tipado (reemplaza `related_documents`)
+    invoices = serializers.SerializerMethodField()
+    notes = serializers.SerializerMethodField()
+    deliveries = serializers.SerializerMethodField()
     work_orders = serializers.SerializerMethodField()
     production_progress = serializers.SerializerMethodField()
     has_pending_work_orders = serializers.SerializerMethodField()
@@ -252,7 +253,9 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             "payment_status",
             "lines",
             "serialized_payments",
-            "related_documents",
+            "invoices",
+            "notes",
+            "deliveries",
             "work_orders",
             "production_progress",
             "has_pending_work_orders",
@@ -288,12 +291,25 @@ class SaleOrderSerializer(serializers.ModelSerializer):
                 "reference": p.reference,
                 "is_pending_registration": p.is_pending_registration,
                 "invoice_id": p.invoice_id,
+                "status": p.status,
             }
             for p in obj.payments.all()
         ]
 
-    def get_related_documents(self, obj):
-        return SaleOrderSelector.get_related_documents(obj)
+    def _summary(self, obj) -> dict:
+        cache = self.context.setdefault("_document_summary", {})
+        if obj.pk not in cache:
+            cache[obj.pk] = SaleOrderSelector.get_document_summary(obj)
+        return cache[obj.pk]
+
+    def get_invoices(self, obj):
+        return self._summary(obj)["invoices"]
+
+    def get_notes(self, obj):
+        return self._summary(obj)["notes"]
+
+    def get_deliveries(self, obj):
+        return self._summary(obj)["deliveries"]
 
     def get_lines(self, obj):
         from core.strategies.totals import allocate_line_nets

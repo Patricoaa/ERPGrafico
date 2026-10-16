@@ -116,11 +116,11 @@ def test_delivery_stock_move_and_back(pilot):
     moves = [r for r in data["relations"] if r["role"] == "stock_move"]
     assert len(moves) == 1 and Decimal(str(moves[0]["quantity"])) == Decimal("3")
     assert ("sale_order", "sales.saleorder", pilot["order"].id) in _targets(data)
-    assert _targets(data, "inventory_document"), "el despacho enlaza su documento de inventario (INT-04)"
+    assert not _targets(data, "inventory_document"), "el despacho ya no acuña un documento de inventario (ADR-0085)"
 
     move_data = _relations(pilot["client"], "inventory.stockmove", moves[0]["target"]["id"])
     assert ("delivery", "sales.saledelivery", delivery.id) in _targets(move_data)
-    assert _targets(move_data, "inventory_document")
+    assert not _targets(move_data, "inventory_document")
 
 
 @pytest.mark.django_db
@@ -296,3 +296,24 @@ def test_sheet_relations_contacts_postings_and_detail(pilot):
 def test_partner_and_indirect_links_respect_semantic_filter(pilot):
     data = _relations(pilot["client"], "sales.saleorder", pilot["order"].id, semantic="fulfillment")
     assert {r["semantic"] for r in data["relations"]} == {"fulfillment"}
+
+
+@pytest.mark.django_db
+def test_u6_typed_summaries_replace_legacy_buckets(pilot):
+    """ADR-0083 U6: OV con resumen tipado; asiento con source_document (DocumentRef)."""
+    client = pilot["client"]
+    order = client.get(f"/api/sales/orders/{pilot['order'].id}/").data
+    assert "related_documents" not in order
+    assert [i["id"] for i in order["invoices"]] == [pilot["invoice"].id]
+    assert {"display_id", "number", "dte_type", "status", "total"} <= set(order["invoices"][0])
+    assert [d["id"] for d in order["deliveries"]] == [pilot["delivery"].id]
+    assert all("status" in p for p in order["serialized_payments"])
+
+    invoice = client.get(f"/api/billing/invoices/{pilot['invoice'].id}/").data
+    assert not {"related_documents", "related_stock_moves", "related_returns"} & set(invoice)
+
+    entry_id = pilot["payment"].journal_entry_id
+    entry = client.get(f"/api/accounting/entries/{entry_id}/").data
+    assert "source_documents" not in entry
+    assert entry["source_document"]["label"] == "treasury.treasurymovement"
+    assert entry["source_document"]["id"] == pilot["payment"].id

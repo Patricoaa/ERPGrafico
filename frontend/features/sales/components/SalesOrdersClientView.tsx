@@ -90,8 +90,8 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
                      <DocumentCompletionModal
                          open={!!completingFolio}
                          onOpenChange={(open: boolean) => !open && setCompletingFolio(null)}
-                         invoiceId={completingFolio.related_documents?.invoices?.find((inv: Invoice) => inv.number === 'Draft')?.id || completingFolio.related_documents?.invoices?.[0]?.id || 0}
-                            invoiceType={(completingFolio.related_documents?.invoices?.find((inv: Invoice) => inv.number === 'Draft') as unknown as Record<string, unknown>)?.type as string || "BOLETA"}
+                         invoiceId={completingFolio.invoices?.find((inv: Invoice) => inv.number === 'Draft')?.id || completingFolio.invoices?.[0]?.id || 0}
+                            invoiceType={(completingFolio.invoices?.find((inv: Invoice) => inv.number === 'Draft') as unknown as Record<string, unknown>)?.type as string || "BOLETA"}
                          contactId={completingFolio?.customer}
                          isPurchase={false}
                          onComplete={async (invoiceId, formData) => {
@@ -113,9 +113,9 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
                              mode="sales"
                              initialType="NOTA_CREDITO"
                              features={{ logistics: true, manufacturing: true }}
-                             referenceLabel={addingNote?.related_documents?.invoices?.[0]?.number as string | undefined}
+                             referenceLabel={addingNote?.invoices?.[0]?.number as string | undefined}
                              fetchSource={async () => {
-                                 const invoiceId = addingNote?.related_documents?.invoices?.[0]?.id ?? 0;
+                                 const invoiceId = addingNote?.invoices?.[0]?.id ?? 0;
                                  const { billingApi } = await import('@/features/billing/api/billingApi')
                                  const inv = (await billingApi.getInvoice(invoiceId) as unknown) as Record<string, unknown>
                                  const invLines = ((inv.lines as Record<string, unknown>[]) || []).map((l: Record<string, unknown>) => ({
@@ -144,7 +144,7 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
                                  }
                              }}
                              onSubmit={async (payload) => {
-                                 const invoiceId = addingNote?.related_documents?.invoices?.[0]?.id ?? 0;
+                                 const invoiceId = addingNote?.invoices?.[0]?.id ?? 0;
                                  const { billingApi } = await import('@/features/billing/api/billingApi')
                                  const formData = new FormData()
                                  formData.append('original_invoice_id', invoiceId.toString())

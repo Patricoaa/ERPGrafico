@@ -54,7 +54,7 @@ export function useOrderRelatedActions({ order, isSale, permissions, onSuccess }
     const [confirm, setConfirm] = useState<ConfirmState | null>(null)
     const [paymentToAnnul, setPaymentToAnnul] = useState<{ id: number; amount: number } | null>(null)
 
-    const invoices = order?.related_documents?.invoices ?? []
+    const invoices = order?.invoices ?? []
     const hasDraftInvoice = invoices.some((inv) => inv.status === 'DRAFT')
     const can = (perm: string) => permissions.includes(perm)
 

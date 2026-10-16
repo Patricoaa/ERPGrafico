@@ -107,7 +107,7 @@ Universal search returns `detail_url = DocumentTypeRegistry.url_for(label, id)` 
 | `DocumentDrawerShell` | `@/components/shared` | Common document sheet (ADR-0083): lifecycle, action bar, tabs, activity sidebar, `embedded`; legacy `summary`/`children`/`related` layout still used by `SaleDeliveryDrawer`, `PurchaseReceiptDrawer`. Contract: [component-document-sheet.md](./component-document-sheet.md) |
 | `DocumentRelationsTab` | `@/features/documents` | Relations tab of the document sheet: groups by `domain`, area and row actions, area filter (ADR-0083) |
 
-Sheets with the relations section (M3): delivery, receipt, invoice, treasury movement, journal entry (view), stock move, inventory document, and the Order Hub (OV/OC/invoice in note mode). Existing drawers keep their layout and add the section; full migration to `DocumentDrawerShell` happens when each drawer is touched (M5).
+Every document opens its document sheet with the relations tab (ADR-0083, U2–U5; see `component-document-sheet.md`). `DocumentRelationsSection` remains for forms with a view mode (journal entry).
 
 ### `domain` (ADR-0083)
 
@@ -119,16 +119,15 @@ After the providers, the service appends for every document (respecting `semanti
 - `posting` → the `journal_entry` of each related document that has one (the document itself does not reference them);
 - `association` → the counterparty of the document and of each related document (`partner_path` / default paths), role `customer` | `supplier` | `contact`, each contact once.
 
-## 6. Deprecated (2026-10-15) — legacy relation formats
+## 6. Legacy relation formats — removed (ADR-0083 U6, 2026-10-15)
 
-Deprecated under ADR-0080 (phase "Deprecate" of [deprecate-feature.md](../30-playbooks/deprecate-feature.md)); marked `DEPRECATED` in the serializers and `@deprecated` in the frontend types. **Do not add consumers.** Removal precondition: the Order Hub is retired (ADR-0083, phase U6), then zero consumers + deprecation window.
+The three legacy formats were retired once the Order Hub was removed. Do not reintroduce them.
 
-| Legacy format | Producer | Remaining consumers (2026-10-15) |
-|---|---|---|
-| `related_documents` buckets of OV/OC | `SaleOrderSelector` / `PurchaseOrderSelector.get_related_documents` | Order Hub (phases, `useOrderHubData`, `HubStatus`, `ActionCategory`, action registries, status utils), `ContactDrawer`, document sheets via `useOrderHubData` until U6 (POS `DetailPanel` removed in U3) |
-| `Invoice.related_documents`, `related_stock_moves`, `related_returns` | `InvoiceSelectorExt` | Order Hub in note mode, billing types/actions |
-| `JournalEntry.source_documents` | `JournalEntry.get_source_documents` | `JournalEntryDrawer` (origin field and edit prefill) |
-| ~~`SaleOrderDrawer` / `PurchaseOrderDrawer` / `InvoiceDrawer`~~ | — | **Removed** (U2–U3, 2026-10-15): replaced by `OrderSheet` / `InvoiceSheet` |
+| Removed | Replacement |
+|---|---|
+| `related_documents` buckets of OV/OC (`get_related_documents`) | Typed summary fields on the order serializers: `invoices`, `notes` (`{id, display_id, number, dte_type, dte_type_display, status, total}`), `deliveries` (OV) / `receipts` (OC) (`{id, display_id, status, date}`), plus `serialized_payments` (now with `status`). Built by `SaleOrderSelector` / `PurchaseOrderSelector.get_document_summary`. Full relations: the relations endpoint |
+| `Invoice.related_documents`, `related_stock_moves`, `related_returns` | Relations endpoint (no consumer read real data from them: the list had no payments and the moves had no state) |
+| `JournalEntry.source_documents` | `source_document`: a `DocumentRef` (+ `source_content_type_id` / `source_object_id` for the edit form) |
 
 **Removed in M6:** `StockMove.related_documents` (no readers since M3), GFK `TreasuryMovement.allocated_to` and its columns (no writers or readers; empty; migration `treasury/0094`), `DRAWER_MAP` (M5).
 

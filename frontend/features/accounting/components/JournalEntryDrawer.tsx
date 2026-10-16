@@ -25,11 +25,11 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { formatCurrency } from "@/lib/money"
 import { useJournalEntry } from "@/features/accounting/hooks/useJournalEntries"
-import { Chip, Drawer, LabeledInput, CancelButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell, StatusBadge, SourceDocumentLink } from "@/components/shared";
+import { Chip, Drawer, LabeledInput, CancelButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell, StatusBadge } from "@/components/shared";
 import { SourceDocumentSelector, type SourceDocument } from "@/components/selectors/SourceDocumentSelector";
 import { formDrawerWidth } from "@/lib/form-widths";
 import { ActivitySidebar } from "@/features/audit";
-import { DocumentRelationsSection } from "@/features/documents"
+import { DocumentRefLink, DocumentRelationsSection, type DocumentRef } from "@/features/documents"
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({
@@ -98,7 +98,7 @@ export function JournalEntryDrawer({
         description?: string;
         label?: string;
         items?: Array<Record<string, unknown>>;
-        source_documents?: Array<{ id: number; display_name?: string; type?: string; display?: string; name?: string; url?: string }>;
+        source_document?: DocumentRef | null;
         is_manual?: boolean;
         reversal_of?: { id?: number; display_id?: string } | null;
         status?: string;
@@ -198,14 +198,14 @@ export function JournalEntryDrawer({
             setSourceDocument(null)
             return
         }
-        const sourceDoc = (initialData as unknown as { source_documents?: Array<Record<string, unknown>> }).source_documents?.[0]
-        if (sourceDoc) {
-            const sDoc = sourceDoc
+        // ADR-0083 U6: origen como DocumentRef + ids del GFK para editar
+        const data = initialData as unknown as { source_document?: DocumentRef | null; source_content_type_id?: number | null; source_object_id?: number | null }
+        if (data.source_document && data.source_content_type_id && data.source_object_id) {
             setSourceDocument({
-                content_type_id: sDoc.content_type_id as number,
-                object_id: (sDoc.object_id ?? sDoc.id) as number,
-                display: (sDoc.display ?? sDoc.name ?? `Documento #${(sDoc.object_id ?? sDoc.id) as number}`) as string,
-                label: (sDoc.type as string) ?? '',
+                content_type_id: data.source_content_type_id,
+                object_id: data.source_object_id,
+                display: data.source_document.display_id,
+                label: data.source_document.title,
                 icon: '',
             })
         }
@@ -362,13 +362,15 @@ export function JournalEntryDrawer({
                             />
                         </div>
                         <div className="col-span-6">
-                            {isViewMode && viewEntry?.source_documents && viewEntry.source_documents.length > 0 ? (
+                            {isViewMode && viewEntry?.source_document ? (
                                 <fieldset className="notched-field h-full" aria-disabled="true">
                                     <legend>Documento Origen</legend>
                                     <div className="flex items-center gap-2">
-                                        {viewEntry.source_documents.map((doc) => (
-                                            <SourceDocumentLink key={doc.id} doc={doc as unknown as { type: string; id: number; display?: string; name?: string; url?: string }} />
-                                        ))}
+                                        {viewEntry.source_document.accessible ? (
+                                            <DocumentRefLink label={viewEntry.source_document.label} id={viewEntry.source_document.id} display={viewEntry.source_document.display_id} />
+                                        ) : (
+                                            <span className="text-xs text-muted-foreground">{viewEntry.source_document.display_id} · sin acceso</span>
+                                        )}
                                     </div>
                                 </fieldset>
                             ) : isViewMode ? (
@@ -483,10 +485,10 @@ export function JournalEntryDrawer({
                             <span>Descripción:</span>
                             <span>{formValues.description || '-'}</span>
                         </div>
-                        {isViewMode && viewEntry?.source_documents?.[0] && (
+                        {isViewMode && viewEntry?.source_document && (
                             <div className="flex justify-between">
                                 <span>Documento origen:</span>
-                                <span>{viewEntry.source_documents[0].display_name ?? `#${viewEntry.source_documents[0].id}`}</span>
+                                <span>{viewEntry.source_document.display_id}</span>
                             </div>
                         )}
                         <div className="flex justify-between">

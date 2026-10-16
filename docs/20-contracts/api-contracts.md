@@ -206,7 +206,7 @@ Response key fields:
     { "id": "number", "account": "number", "account_code": "string", "account_name": "string",
       "partner": "number | null", "label": "string", "debit": "decimal", "credit": "decimal" }
   ],
-  "source_documents": "array (computed links to originating docs)"
+  "source_document": "DocumentRef | null (ADR-0083 U6; document-relations.md)"
 }
 ```
 
@@ -491,7 +491,7 @@ Response key fields:
   "warehouse_name": "string",
   "move_type_display": "string",
   "date": "YYYY-MM-DD",
-  "related_documents": "array"
+  "payment_status": "UNPAID | PARTIAL | PAID (ADR-0084, derived)"
 }
 ```
 
@@ -593,7 +593,9 @@ Response key fields (`PurchaseOrderSerializer`):
   "pending_amount": "decimal (computed)",
   "is_invoiced": "boolean (computed)",
   "lines": "array (PurchaseLineSerializer)",
-  "related_documents": "object {invoices, notes, receipts, payments}"
+  "invoices": "array {id, display_id, number, dte_type, dte_type_display, status, total}",
+  "notes": "array (same shape as invoices)",
+  "receipts": "array {id, display_id, status, date, is_service}"
 }
 ```
 

@@ -261,7 +261,7 @@ The hook **`frontend/hooks/useEntityRouteActions.ts`** centralises the query-par
 |--------|--------|--------|
 | `?selected={id}` | `useSelectedEntity` (existing — ADR-0020) | `openSelected(id)` |
 | `?detail={id}` | **deprecado** (ADR-0028) — preferir `openEntity(label, id)` con `mode='view'` | `openDetail(id)` |
-| `?hub={id}` | callers wire to `CollapsibleSheet` | `openHub(id)` |
+| ~~`?hub={id}`~~ | retirado con el Order Hub (ADR-0083 U6); los documentos usan `?selected` + `useDocumentSheetRoute` | — |
 
 Mutually exclusive: opening any of the three closes the others. `clearActions()` removes all
 three while preserving every other param (filters, pagination, viewMode, etc).

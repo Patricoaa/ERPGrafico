@@ -170,7 +170,7 @@ class InventoryService:
             else:
                 qty = detail.quantity
 
-            move = StockMove.objects.create(
+            move = StockService.create_move(
                 product=detail.product,
                 quantity=abs(qty),
                 source_location=src_loc,
@@ -178,7 +178,7 @@ class InventoryService:
                 unit_cost=detail.unit_cost,
                 description=f"{document.get_document_type_display()} {document.display_id}"
                 + (f" - {document.reference}" if document.reference else ""),
-                journal_entry=journal_entry
+                journal_entry=journal_entry,
             )
             InventoryDocumentDetail.objects.filter(pk=detail.pk).update(stock_move=move)
             detail.stock_move = move
@@ -282,7 +282,7 @@ class InventoryService:
             raise ValidationError("Solo se pueden anular documentos confirmados.")
 
         for detail in document.details.select_related('product', 'source_location', 'destination_location'):
-            StockMove.objects.create(
+            StockService.create_move(
                 product=detail.product,
                 quantity=detail.quantity,
                 source_location=detail.destination_location,
@@ -298,6 +298,50 @@ class InventoryService:
 
 
 class StockService:
+    @staticmethod
+    def create_move(
+        *,
+        product,
+        quantity,
+        source_location,
+        destination_location,
+        unit_cost=None,
+        description="",
+        journal_entry=None,
+        source_uom=None,
+        source_quantity=None,
+        source_document=None,
+        date=None,
+    ):
+        """Create a `StockMove` — the single writer for the kardex (ADR-0085).
+
+        Every stock move, whether driven by a business document (delivery,
+        receipt, return, note, work order) or by a standalone `InventoryDocument`
+        (adjustment, transfer, partner capital), goes through here. Callers pass
+        the locations and the signed quantity resolved for their flow; this
+        primitive does not infer them. `source_document` is the owning business
+        document (a `GenericForeignKey`), used by the relation providers and the
+        kardex to attribute the move.
+        """
+        from .models import StockMove
+
+        kwargs = {
+            "product": product,
+            "quantity": quantity,
+            "source_location": source_location,
+            "destination_location": destination_location,
+            "unit_cost": unit_cost if unit_cost is not None else Decimal("0"),
+            "description": description,
+            "journal_entry": journal_entry,
+            "source_uom": source_uom,
+            "source_quantity": source_quantity,
+        }
+        if date is not None:
+            kwargs["date"] = date
+        if source_document is not None:
+            kwargs["source_document"] = source_document
+        return StockMove.objects.create(**kwargs)
+
     @staticmethod
     @transaction.atomic
     def adjust_stock(

@@ -36,7 +36,7 @@ Reference implementations: `OrderSheet` (OV/OC, owner-approved pilot 2026-10-15)
 `steps: { id, label, icon, status: success|active|neutral|destructive|not_applicable, progress?, detail? }[]`, `onStepClick?`, `activeStepId?`. No figures: amounts live in the Resumen totals box.
 
 - Step ids equal relation areas (`origin`, `billing`, `production`, `logistics`, `treasury`); clicking a step opens Relaciones filtered by that area.
-- Computed from the document's own normalized fields (`invoicing_status`, delivery/receipt status, `pending_amount`, OT progress) — never from the deprecated `related_documents` buckets. OV/OC: `getOrderLifecycle`.
+- Computed from the document's own normalized fields (`invoicing_status`, delivery/receipt status, `pending_amount`, OT progress) — never from relation buckets (retired in U6; orders expose typed `invoices`/`notes`/`deliveries`/`receipts`). OV/OC: `getOrderLifecycle`.
 
 ## 4. Actions — `DocumentActionsMenu` + registries
 
@@ -75,7 +75,7 @@ Document lists open the sheet with `useDocumentSheetRoute(label)` (`@/hooks`): `
 ## 7. Anti-patterns
 
 - Opening a document in a surface other than its sheet (Hub, ad-hoc modal).
-- Reading `related_documents` buckets for new UI.
+- Reintroducing relation buckets (`related_documents`-style dicts) instead of the relations endpoint or typed summary fields.
 - Global action engines / imperative refs to run document actions.
 - Hand-built label/value grids (`<span className="text-xs text-muted-foreground">` + `<p>`) instead of `DocumentFieldGrid`.
 - Inline table columns for lines instead of `*Fields.toColumns()`.

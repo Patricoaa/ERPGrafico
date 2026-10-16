@@ -22,10 +22,8 @@ interface OrderBase {
     work_orders?: Array<{ status: string; production_progress?: number }>;
     lines?: Array<OrderLine>;
     items?: Array<OrderLine>;
-    related_documents?: {
-        invoices?: Array<{ status?: string; number?: string }>;
-        payments?: Array<PaymentDetail>;
-    };
+    /** Resumen tipado de la orden (ADR-0083 U6). */
+    invoices?: Array<{ status?: string; number?: string }>;
     serialized_payments?: Array<PaymentDetail>;
     payments_detail?: Array<PaymentDetail>;
     status?: string;
@@ -40,12 +38,10 @@ interface NoteBase {
     status?: string;
     lines?: Array<OrderLine>;
     items?: Array<OrderLine>;
-    related_stock_moves?: Array<{ state: string }>;
     po_receiving_status?: string;
     number?: string;
     serialized_payments?: Array<PaymentDetail>;
     payments_detail?: Array<PaymentDetail>;
-    related_documents?: { payments?: Array<PaymentDetail> };
     pending_amount?: number | string;
     total?: number | string;
     [key: string]: unknown;
@@ -58,11 +54,9 @@ interface InvoiceBase {
     po_receiving_status?: string;
     lines?: Array<OrderLine>;
     items?: Array<OrderLine>;
-    related_stock_moves?: Array<{ state: string }>;
     number?: string;
     serialized_payments?: Array<PaymentDetail>;
     payments_detail?: Array<PaymentDetail>;
-    related_documents?: { payments?: Array<PaymentDetail> };
     pending_amount?: number | string;
     total?: number | string;
     [key: string]: unknown;
@@ -93,7 +87,7 @@ export function stageIntent(stageStatus: string | null | undefined): BadgeIntent
  * - success: todo facturado y ninguna factura sin folio.
  */
 export function billingStage(order: OrderBase): { billingStatus: string; billingFolioPending: boolean } {
-    const invoices = (order.related_documents?.invoices || []).filter((inv) => inv.status !== 'CANCELLED')
+    const invoices = (order.invoices || []).filter((inv) => inv.status !== 'CANCELLED')
     const isDraft = (inv: { status?: string; number?: string }) =>
         inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number
     const issued = invoices.filter((inv) => !isDraft(inv))
@@ -149,7 +143,7 @@ export const getHubStatuses = (order: OrderBase) => {
     const { billingStatus, billingFolioPending } = billingStage(order)
 
     // 4. Treasury
-    const payments = order.serialized_payments || order.payments_detail || order.related_documents?.payments || []
+    const payments = order.serialized_payments || order.payments_detail || []
 
     // Check if fully paid
     const pending = parseFloat(String(order.pending_amount || 0))
@@ -204,7 +198,7 @@ export const getNoteHubStatuses = (note: NoteBase) => {
             return acc + (parseFloat(String(processed)) || 0)
         }, 0)
         logisticsProgress = Math.min(100, Math.round((totalProcessed / totalOrdered) * 100))
-    } else if (lines.length > 0 || ((note.related_stock_moves?.length ?? 0) > 0)) {
+    } else if (lines.length > 0) {
         logisticsProgress = 100
     }
 
@@ -218,7 +212,7 @@ export const getNoteHubStatuses = (note: NoteBase) => {
     const billingStatus = hasFolio ? 'success' : 'neutral'
 
     // 4. Treasury
-    const payments = note.serialized_payments || note.payments_detail || note.related_documents?.payments || []
+    const payments = note.serialized_payments || note.payments_detail || []
 
     const pendingAmount = parseFloat(String(note.pending_amount || 0))
     const totalAmount = parseFloat(String(note.total || 0))
@@ -269,9 +263,6 @@ export const getInvoiceHubStatuses = (invoice: InvoiceBase) => {
                 return acc + (parseFloat(String(processed)) || 0)
             }, 0)
             logisticsProgress = Math.min(100, Math.round((totalProcessed / totalOrdered) * 100))
-        } else if ((invoice.related_stock_moves?.length ?? 0) > 0) {
-            const anyCompleted = invoice.related_stock_moves?.some((m) => m.state === 'done')
-            if (anyCompleted) logisticsProgress = 100
         }
 
         if (logisticsProgress === 100) logStatus = 'success'
@@ -283,7 +274,7 @@ export const getInvoiceHubStatuses = (invoice: InvoiceBase) => {
     const billingStatus = hasFolio ? 'success' : 'neutral'
 
     // 4. Treasury
-    const payments = invoice.serialized_payments || invoice.payments_detail || invoice.related_documents?.payments || []
+    const payments = invoice.serialized_payments || invoice.payments_detail || []
 
     const pendingAmount = parseFloat(String(invoice.pending_amount || 0))
     const totalAmount = parseFloat(String(invoice.total || 0))
@@ -315,7 +306,7 @@ export const getPurchaseHubStatuses = (order: OrderBase) => {
     const { billingStatus, billingFolioPending } = billingStage(order)
 
     // 3. Treasury
-    const payments = order.serialized_payments || order.payments_detail || order.related_documents?.payments || []
+    const payments = order.serialized_payments || order.payments_detail || []
     const pending = parseFloat(String(order.pending_amount || 0))
     const isPaid = (order.payment_status === 'PAID' || (pending <= 0))
     let treasuryStatus = 'neutral'

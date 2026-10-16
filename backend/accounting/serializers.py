@@ -107,9 +107,8 @@ class JournalItemSerializer(serializers.ModelSerializer):
 
 class JournalEntrySerializer(serializers.ModelSerializer):
     items = JournalItemSerializer(many=True, read_only=True)
-    # DEPRECATED (ADR-0080, 2026-10-15): formato legacy del documento origen. Usar
-    # GET /api/core/documents/{label}/{id}/relations/. Se retira cuando el Order Hub migre (ver document-relations.md §6).
-    source_documents = serializers.ListField(source="get_source_documents", read_only=True)
+    # Documento origen como DocumentRef (ADR-0080/0083 U6; reemplaza `source_documents`)
+    source_document = serializers.SerializerMethodField()
     display_id = serializers.CharField(read_only=True)
     reversal_of = serializers.SerializerMethodField()
 
@@ -124,13 +123,25 @@ class JournalEntrySerializer(serializers.ModelSerializer):
             "status",
             "is_manual",
             "items",
-            "source_documents",
+            "source_document",
             "reversal_of",
             "created_at",
             "source_content_type_id",
             "source_object_id",
         ]
         read_only_fields = ["id", "number", "status"]
+
+    def get_source_document(self, obj):
+        if not obj.source_content_type_id or not obj.source_object_id:
+            return None
+        from core.documents import ref_for
+        from core.documents.types import DocumentTypeRegistry
+
+        model = obj.source_content_type.model_class()
+        if model is None:
+            return None
+        request = self.context.get("request")
+        return ref_for(DocumentTypeRegistry.label_for(model), obj.source_object_id, getattr(request, "user", None))
 
     def get_reversal_of(self, obj):
         if obj.reversal_of_id:

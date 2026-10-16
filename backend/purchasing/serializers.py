@@ -88,9 +88,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     work_order_number = serializers.CharField(
         source="work_order.number", read_only=True, allow_null=True
     )
-    # DEPRECATED (ADR-0080, 2026-10-15): formato legacy de relacionados. Usar
-    # GET /api/core/documents/{label}/{id}/relations/. Se retira cuando el Order Hub migre (ver document-relations.md §6).
-    related_documents = serializers.SerializerMethodField()
+    # ADR-0083 U6: resumen tipado (reemplaza `related_documents`)
+    invoices = serializers.SerializerMethodField()
+    notes = serializers.SerializerMethodField()
+    receipts = serializers.SerializerMethodField()
     actual_receipt_date = serializers.SerializerMethodField()
 
     display_id = serializers.CharField(read_only=True)
@@ -125,7 +126,9 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             "payment_method_ref_method_type",
             "work_order",
             "work_order_number",
-            "related_documents",
+            "invoices",
+            "notes",
+            "receipts",
             "lines",
             "created_at",
             "updated_at",
@@ -180,8 +183,20 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     def get_invoice_details(self, obj):
         return PurchaseOrderSelector.get_invoice_details(obj)
 
-    def get_related_documents(self, obj):
-        return PurchaseOrderSelector.get_related_documents(obj)
+    def _summary(self, obj) -> dict:
+        cache = self.context.setdefault("_document_summary", {})
+        if obj.pk not in cache:
+            cache[obj.pk] = PurchaseOrderSelector.get_document_summary(obj)
+        return cache[obj.pk]
+
+    def get_invoices(self, obj):
+        return self._summary(obj)["invoices"]
+
+    def get_notes(self, obj):
+        return self._summary(obj)["notes"]
+
+    def get_receipts(self, obj):
+        return self._summary(obj)["receipts"]
 
     def get_actual_receipt_date(self, obj):
         confirmed_receipts = [r for r in obj.receipts.all() if r.status == PurchaseReceipt.Status.CONFIRMED]

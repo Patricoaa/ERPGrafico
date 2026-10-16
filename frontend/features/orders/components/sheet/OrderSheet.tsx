@@ -25,7 +25,7 @@ import {
 } from "@/features/documents"
 import { saleOrderActions } from "@/features/sales"
 import { purchaseOrderActions } from "@/features/purchasing"
-import { useOrderHubData } from "@/hooks/useOrderHubData"
+import { useOrderDocument } from "../../hooks/useCommercialDocument"
 import { useCancelOrderFlow } from "../../hooks/useCancelOrderFlow"
 import { useOrderActionEngine } from "../../hooks/useOrderActionEngine"
 import { useOrderRelatedActions } from "../../hooks/useOrderRelatedActions"
@@ -60,11 +60,7 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
     const label = LABEL[kind]
     const isSale = kind === "sale"
 
-    // TODO(U6): reemplazar por los hooks de detalle de cada feature al retirar el Hub.
-    const hub = useOrderHubData({ orderId: id, type: kind, enabled: open || embedded })
-    const { loading, isError, fetchOrderDetails } = hub
-    const order = (hub.activeDoc ?? null) as Order | null
-    const permissions = hub.userPermissions as string[]
+    const { order, permissions, isLoading: loading, isError, refetch: fetchOrderDetails } = useOrderDocument(id, kind, open || embedded)
     const { data: relations } = useDocumentRelations(label, order?.id ?? null)
     const invalidateDocuments = useInvalidateDocuments()
 

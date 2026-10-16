@@ -556,12 +556,6 @@ class JournalEntry(AuditedModel):
         super().delete(*args, **kwargs)
 
     @property
-    def get_source_documents(self):
-        # Mantenemos por retrocompatibilidad momentánea mientras migramos vistas.
-        # Retorna una lista con la nueva información de source.
-        info = self.source_info
-        return [info] if info else []
-
     @property
     def get_source_document(self):
         return self.source_document

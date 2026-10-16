@@ -1,6 +1,7 @@
 from decimal import Decimal
 
-from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -1310,6 +1311,25 @@ class StockMove(models.Model):
         verbose_name=_("Asiento Contable"),
     )
 
+    # Origin of the move (ADR-0085): the business document that owns it —
+    # sale delivery, purchase receipt, sale/purchase return, the notes that
+    # return goods or a work order. Generic FK because the originating-type set
+    # grows over time (ADR-0016 pattern), replacing the textual pseudo-GFK that
+    # lived on InventoryDocument. Standalone stock operations (adjustment,
+    # transfer, partner capital) live on InventoryDocument instead.
+    source_content_type = models.ForeignKey(
+        ContentType,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="stock_moves_from_documents",
+        verbose_name=_("Tipo de documento origen"),
+    )
+    source_object_id = models.PositiveIntegerField(
+        _("ID de documento origen"), null=True, blank=True
+    )
+    source_document = GenericForeignKey("source_content_type", "source_object_id")
+
     source_uom = models.ForeignKey(
         UoM,
         on_delete=models.SET_NULL,
@@ -1345,6 +1365,18 @@ class StockMove(models.Model):
 
     def __str__(self):
         return self.display_id
+
+    @classmethod
+    def for_document(cls, document):
+        """Movimientos atribuidos a un documento comercial vía `source_document` (ADR-0085).
+
+        Un `GenericForeignKey` no admite `filter(source_document=...)`, así que se
+        resuelve por su `ContentType` + id, como en el resto del código (ADR-0016).
+        """
+        return cls.objects.filter(
+            source_content_type=ContentType.objects.get_for_model(document),
+            source_object_id=document.pk,
+        )
 
     @property
     def display_id(self):

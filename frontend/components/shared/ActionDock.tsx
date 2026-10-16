@@ -18,22 +18,18 @@ interface ActionDockProps {
  * and contextual tools. Automatically adjusts its position when side panels are open.
  */
 export function ActionDock({ isVisible, children, className }: ActionDockProps) {
-    const [globalPanelStates, setGlobalPanelStates] = React.useState({ hub: false, inbox: false })
+    // Panel global que desplaza el dock: la bandeja (el Order Hub se retiró, ADR-0083)
+    const [isInboxOpen, setIsInboxOpen] = React.useState(false)
 
     // Track global panel states via body attributes (standard repo pattern)
     React.useEffect(() => {
-        const updateStates = () => {
-            setGlobalPanelStates({
-                hub: document.body.hasAttribute('data-hub-open'),
-                inbox: document.body.hasAttribute('data-inbox-open')
-            })
-        }
+        const updateStates = () => setIsInboxOpen(document.body.hasAttribute('data-inbox-open'))
         
         updateStates()
         const observer = new MutationObserver(updateStates)
         observer.observe(document.body, { 
             attributes: true, 
-            attributeFilter: ['data-hub-open', 'data-inbox-open'] 
+            attributeFilter: ['data-inbox-open'] 
         })
         
         return () => observer.disconnect()
@@ -42,9 +38,7 @@ export function ActionDock({ isVisible, children, className }: ActionDockProps) 
     // Calculate shifting based on open panels to maintain visual centering
     // Each panel is roughly 320-400px. We shift by half the active panels' total width.
     const getPositionClass = () => {
-        if (globalPanelStates.inbox && globalPanelStates.hub) return "left-[calc(50%-340px)] -translate-x-1/2"
-        if (globalPanelStates.hub) return "left-[calc(50%-180px)] -translate-x-1/2"
-        if (globalPanelStates.inbox) return "left-[calc(50%-160px)] -translate-x-1/2"
+        if (isInboxOpen) return "left-[calc(50%-160px)] -translate-x-1/2"
         return "left-1/2 -translate-x-1/2"
     }
 

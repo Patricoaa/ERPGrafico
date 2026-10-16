@@ -441,7 +441,7 @@ Promoted en `frontend/hooks/` y sin entrada extensa aquí. Detalle del shape de 
 | `useTreasuryAccounts(options)` | `() => { accounts, ... }` + `TREASURY_ACCOUNT_KEYS` | Cuentas de tesorería con query keys |
 | `useVatRate()` | `() => ...` + `VAT_RATE_QUERY_KEY` | Tasa IVA configurada |
 | `usePeriodValidation()` | `() => ...` | Valida período contable abierto/cerrado |
-| `useEntityRouteActions()` | `() => { openSelected, openDetail, openHub, clearActions }` | Convención de query params — ver [component-row-actions.md §5.3](./component-row-actions.md#53-routing--useentityrouteactions) |
+| `useEntityRouteActions()` | `() => { openSelected, openView, openAction, openDetail, clearActions }` (`?hub`/`openHub` retirados con el Order Hub, ADR-0083) | Convención de query params — ver [component-row-actions.md §5.3](./component-row-actions.md#53-routing--useentityrouteactions) |
 | `useCombinedAutoSaveStatus(statuses)` | `(statuses: AutoSaveStatus[]) => AutoSaveStatus` | Badge consolidado multi-form — ver [autosave-contract.md](./autosave-contract.md) |
 
 > **Promoción:** cualquier hook nuevo promovido a `/hooks/` debe añadir una entrada a esta tabla (misma regla que el §Global hooks).

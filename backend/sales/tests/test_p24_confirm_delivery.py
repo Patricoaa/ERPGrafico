@@ -114,8 +114,8 @@ def test_confirm_delivery_links_stock_moves_with_multiple_tracked_lines(delivery
     assert dl2.stock_move.product == p2
     assert dl1.stock_move.quantity == Decimal("2")
     assert dl2.stock_move.quantity == Decimal("3")
-    assert dl1.stock_move.inventory_document_detail.document.source_document_type == "sales.saledelivery"
-    assert dl1.stock_move.inventory_document_detail.document.source_document_id == delivery.id
+    assert dl1.stock_move.source_document == delivery
+    assert dl2.stock_move.source_document == delivery
 
     # GAP-01: el cumplimiento queda registrado en las líneas de la OV
     assert dl1.sale_line.quantity_delivered == Decimal("2")

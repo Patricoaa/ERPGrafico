@@ -1,6 +1,6 @@
 # Etapa UI — Ficha documental y retiro del Order Hub
 
-**Estado:** Aprobado (D7–D11, ADR-0083) · U0–U2 implementadas 2026-10-15 · ver [implementation-progress.md](./implementation-progress.md)
+**Estado:** Aprobado (D7–D11, ADR-0083) · **U0–U6 implementadas** 2026-10-15 · ver [implementation-progress.md](./implementation-progress.md)
 **Rama:** `feat/document-system`
 **Prerrequisitos cumplidos:** M0–M6 (ADR-0080, ADR-0081), relaciones vía `GET /api/core/documents/{label}/{id}/relations/`.
 

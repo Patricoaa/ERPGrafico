@@ -83,54 +83,29 @@ class SaleOrderSelector:
         return impact
 
     @staticmethod
-    def get_related_documents(order: SaleOrder) -> dict:
-        """Returns a summary of all documents related to this sale order for UI linking."""
+    def get_document_summary(order: SaleOrder) -> dict:
+        """
+        Resumen tipado de los documentos de la OV que necesitan la ficha y sus acciones
+        (ADR-0083 U6; reemplaza los buckets `related_documents`): facturas, notas y despachos.
+        Los pagos van en `serialized_payments`; las relaciones completas, en el endpoint de
+        relaciones (ADR-0080).
+        """
         from billing.models import Invoice
 
-        _NOTE_TYPES = [Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]
-        docs: dict = {"invoices": [], "notes": [], "payments": [], "deliveries": []}
-
+        note_types = (Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO)
+        summary: dict = {"invoices": [], "notes": [], "deliveries": []}
         for inv in order.invoices.all():
-            doc_info = {
-                "id": inv.id,
-                "number": inv.number or "Draft",
-                "display_id": inv.display_id,
-                "dte_type": inv.dte_type,
-                "type_display": inv.get_dte_type_display(),
-                "status": inv.status,
-                "total": inv.total,
-            }
-            docs["notes" if inv.dte_type in _NOTE_TYPES else "invoices"].append(doc_info)
-
+            summary["notes" if inv.dte_type in note_types else "invoices"].append(invoice_summary(inv))
         for deliv in order.deliveries.all():
             if getattr(deliv, "related_note_id", None) is not None:
                 continue
-            docs["deliveries"].append({
+            summary["deliveries"].append({
                 "id": deliv.id,
-                "number": deliv.number,
                 "display_id": deliv.display_id,
                 "status": deliv.status,
                 "date": deliv.delivery_date,
-                "docType": "sale_delivery",
             })
-
-        for pay in order.payments.all():
-            docs["payments"].append({
-                "id": pay.id,
-                "amount": pay.amount,
-                "date": pay.date,
-                "payment_method": pay.payment_method,
-                "payment_method_display": pay.get_payment_method_display(),
-                "method": pay.get_payment_method_display(),
-                "transaction_number": pay.transaction_number,
-                "is_pending_registration": pay.is_pending_registration,
-                "reference": pay.reference,
-                "invoice_id": pay.invoice_id,
-                "display_id": pay.display_id,
-                "code": pay.display_id,
-            })
-
-        return docs
+        return summary
 
 
 class DraftCartSelector:
@@ -164,3 +139,16 @@ class SaleDeliverySelector:
         ).prefetch_related(
             "lines__product", "lines__uom", "lines__sale_line"
         ).all()
+
+
+def invoice_summary(inv) -> dict:
+    """Forma única de una factura/nota dentro del resumen de una orden (ADR-0083 U6)."""
+    return {
+        "id": inv.id,
+        "display_id": inv.display_id,
+        "number": inv.number or "",
+        "dte_type": inv.dte_type,
+        "dte_type_display": inv.get_dte_type_display(),
+        "status": inv.status,
+        "total": inv.total,
+    }

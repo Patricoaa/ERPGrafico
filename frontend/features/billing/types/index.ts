@@ -19,9 +19,6 @@ export interface Invoice {
     payment_status?: PaymentStatus
     status_display: string
     pending_amount: number
-    related_documents?: {
-        payments?: Record<string, unknown>[]
-    }
     order_delivery_status?: string
     // Purchase related fields
     purchase_order?: number | null
@@ -29,7 +26,6 @@ export interface Invoice {
     service_obligation?: number | null
     po_receiving_status?: string | null
     serialized_payments?: Record<string, unknown>[]
-    related_stock_moves?: Record<string, unknown>[]
     // Helper property for filtering
     is_sale_document?: boolean
     customer_name?: string

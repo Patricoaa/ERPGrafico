@@ -159,50 +159,6 @@ class InvoiceSelectorExt:
             item[field] = returned.get(product_id, 0)
 
     @staticmethod
-    def get_related_documents(invoice):
-        docs = []
-        if invoice.purchase_order_id and hasattr(invoice, 'purchase_order') and invoice.purchase_order:
-            po = invoice.purchase_order
-            docs.append({'type': 'purchase_order', 'id': po.id, 'name': str(po), 'url': f'/purchasing/orders/{po.id}'})
-        if invoice.sale_order_id and hasattr(invoice, 'sale_order') and invoice.sale_order:
-            so = invoice.sale_order
-            docs.append({'type': 'sale_order', 'id': so.id, 'name': str(so), 'url': f'/sales/orders/{so.id}'})
-        for adj in invoice.adjustments.filter(dte_type__in=['NOTA_DEBITO', 'NOTA_CREDITO']):
-            doc_type = 'debit_note' if adj.dte_type == 'NOTA_DEBITO' else 'credit_note'
-            docs.append({'type': doc_type, 'id': adj.id, 'name': str(adj), 'url': f'/billing/{"purchases" if adj.purchase_order_id else "sales"}/{adj.id}'})
-        return docs
-
-    @staticmethod
-    def get_related_stock_moves(invoice):
-        moves = []
-        if invoice.sale_order_id:
-            for delivery in invoice.sale_order.deliveries.all():
-                for line in delivery.lines.select_related('stock_move'):
-                    if line.stock_move_id:
-                        m = line.stock_move
-                        moves.append({'id': m.id, 'reference': str(m), 'date': m.date, 'status': f"{getattr(m.source_location, 'name', '?')} → {getattr(m.destination_location, 'name', '?')}"})
-        if invoice.purchase_order_id:
-            for receipt in invoice.purchase_order.receipts.all():
-                for line in receipt.lines.select_related('stock_move'):
-                    if line.stock_move_id:
-                        m = line.stock_move
-                        moves.append({'id': m.id, 'reference': str(m), 'date': m.date, 'status': f"{getattr(m.source_location, 'name', '?')} → {getattr(m.destination_location, 'name', '?')}"})
-        return moves
-
-    @staticmethod
-    def get_related_returns(invoice):
-        from purchasing.models import PurchaseReturn
-        from sales.models import SaleReturn
-        returns = []
-        if invoice.purchase_order_id:
-            for r in PurchaseReturn.objects.filter(credit_note=invoice):
-                returns.append({'id': r.id, 'name': str(r), 'status': r.status})
-        else:
-            for r in SaleReturn.objects.filter(credit_note=invoice):
-                returns.append({'id': r.id, 'name': str(r), 'status': r.status})
-        return returns
-
-    @staticmethod
     def check_folio_uniqueness(
         *,
         number: str,

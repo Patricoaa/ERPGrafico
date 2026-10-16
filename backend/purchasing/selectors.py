@@ -77,72 +77,35 @@ class PurchaseOrderSelector:
         }
 
     @staticmethod
-    def get_related_documents(order) -> dict:
-        """Returns a summary of all documents related to this PO for UI linking."""
+    def get_document_summary(order) -> dict:
+        """
+        Resumen tipado de los documentos de la OC para la ficha y sus acciones (ADR-0083 U6;
+        reemplaza los buckets `related_documents`): facturas, notas y recepciones. Los pagos van
+        en `serialized_payments`; las relaciones completas, en el endpoint de relaciones.
+        """
         from billing.models import Invoice
+        from sales.selectors import invoice_summary
 
-        _NOTE_TYPES = [Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]
-
-        docs: dict = {"invoices": [], "notes": [], "receipts": [], "payments": []}
-
+        note_types = (Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO)
+        summary: dict = {"invoices": [], "notes": [], "receipts": []}
         for inv in order.invoices.all():
-            doc_info = {
-                "id": inv.id,
-                "number": inv.number or "Draft",
-                "display_id": inv.display_id,
-                "dte_type": inv.dte_type,
-                "type_display": inv.get_dte_type_display(),
-                "status": inv.status,
-                "total": inv.total,
-            }
-            docs["notes" if inv.dte_type in _NOTE_TYPES else "invoices"].append(doc_info)
-
-        # One entry per PurchaseReceipt (mirrors sales deliveries). `id` is always the
-        # receipt id: consumers use it to open and annul the receipt (GAP-07).
-        receipts = [r for r in order.receipts.all() if getattr(r, "related_note_id", None) is None]
-        for rec in receipts:
+            summary["notes" if inv.dte_type in note_types else "invoices"].append(invoice_summary(inv))
+        # Una entrada por recepción; `id` es siempre el de la recepción (GAP-07).
+        for rec in order.receipts.all():
+            if getattr(rec, "related_note_id", None) is not None:
+                continue
             lines = list(rec.lines.all())
-            moves = {line.stock_move_id: line.stock_move for line in lines if line.stock_move}
-            docs["receipts"].append({
+            summary["receipts"].append({
                 "id": rec.id,
-                "number": rec.number,
                 "display_id": rec.display_id,
                 "status": rec.status,
                 "date": rec.receipt_date,
-                "docType": "purchase_receipt",
                 "is_service": any(
                     line.product and line.product.product_type in ["SERVICE", "SUBSCRIPTION"]
                     for line in lines
                 ),
-                "stock_moves": [
-                    {
-                        "id": move.id,
-                        "product": move.product.name,
-                        "quantity": move.quantity,
-                        "is_return": move.quantity < 0,
-                    }
-                    for move in moves.values()
-                ],
             })
-
-        for pay in order.payments.all():
-            if pay.invoice and pay.invoice.dte_type in _NOTE_TYPES:
-                continue
-            docs["payments"].append({
-                "id": pay.id,
-                "amount": pay.amount,
-                "date": pay.date,
-                "method": pay.get_payment_method_display(),
-                "payment_method": pay.payment_method,
-                "transaction_number": pay.transaction_number,
-                "is_pending_registration": pay.is_pending_registration,
-                "invoice_id": pay.invoice_id,
-                "payment_type": pay.movement_type,
-                "display_id": pay.display_id,
-                "code": pay.display_id,
-            })
-
-        return docs
+        return summary
 
 
 class PurchaseReceiptSelector:

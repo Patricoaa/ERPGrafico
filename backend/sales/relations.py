@@ -42,19 +42,18 @@ def sale_order_relations(order):
 
 @relation_provider("sales.saledelivery")
 def sale_delivery_relations(delivery):
-    from inventory.models import InventoryDocument
+    from inventory.models import StockMove
 
     yield Link("fulfillment", "incoming", "sale_order", delivery.sale_order)
     if delivery.related_note_id:
         yield Link("reference", "incoming", NOTE_ROLES.get(delivery.related_note.dte_type, "note"),
                    delivery.related_note, is_dependency=False)
-    for line in delivery.lines.select_related("stock_move", "work_order"):
-        if line.stock_move_id:
-            yield Link("fulfillment", "outgoing", "stock_move", line.stock_move, quantity=line.quantity)
+    for line in delivery.lines.select_related("work_order"):
         if line.work_order_id:
             yield Link("derivation", "outgoing", "work_order", line.work_order)
-    for doc in InventoryDocument.objects.filter(source_document_type="sales.saledelivery", source_document_id=delivery.id):
-        yield Link("derivation", "outgoing", "inventory_document", doc)
+    # ADR-0085: el despacho es dueño de sus movimientos (incluye la explosión BOM).
+    for move in StockMove.for_document(delivery):
+        yield Link("fulfillment", "outgoing", "stock_move", move, quantity=move.quantity)
     if delivery.journal_entry_id:
         yield Link("posting", "outgoing", "journal_entry", delivery.journal_entry)
 

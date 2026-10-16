@@ -30,9 +30,9 @@ export default function ReturnsPageClient() {
                         mode="sales"
                         initialType="NOTA_CREDITO"
                         features={{ logistics: true, manufacturing: true }}
-                        referenceLabel={selectedOrder?.related_documents?.invoices?.[0]?.number as string | undefined}
+                        referenceLabel={selectedOrder?.invoices?.[0]?.number as string | undefined}
                         fetchSource={async () => {
-                            const invoiceId = selectedOrder?.related_documents?.invoices?.[0]?.id as number || 0;
+                            const invoiceId = selectedOrder?.invoices?.[0]?.id as number || 0;
                             const { billingApi } = await import('@/features/billing')
                             const inv = (await billingApi.getInvoice(invoiceId) as unknown) as Record<string, unknown>
                             const invLines = ((inv.lines as Record<string, unknown>[]) || []).map((l: Record<string, unknown>) => ({
@@ -61,7 +61,7 @@ export default function ReturnsPageClient() {
                             }
                         }}
                         onSubmit={async (payload) => {
-                            const invoiceId = selectedOrder?.related_documents?.invoices?.[0]?.id as number || 0;
+                            const invoiceId = selectedOrder?.invoices?.[0]?.id as number || 0;
                             const { billingApi } = await import('@/features/billing')
                             const formData = new FormData()
                             formData.append('original_invoice_id', invoiceId.toString())

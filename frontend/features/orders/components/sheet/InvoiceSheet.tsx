@@ -23,7 +23,7 @@ import {
 } from "@/features/documents"
 import { saleOrderActions } from "@/features/sales"
 import { purchaseOrderActions } from "@/features/purchasing"
-import { useOrderHubData } from "@/hooks/useOrderHubData"
+import { useInvoiceDocument } from "../../hooks/useCommercialDocument"
 import { useOrderActionEngine } from "../../hooks/useOrderActionEngine"
 import { useOrderRelatedActions } from "../../hooks/useOrderRelatedActions"
 import { getInvoiceLifecycle } from "../../utils/lifecycle"
@@ -60,11 +60,7 @@ const NOTE_ACTIONS = new Set([
  * y tabs Resumen · Relaciones.
  */
 export function InvoiceSheet({ id, open, onOpenChange, embedded = false, posSessionId = null, onActionSuccess }: InvoiceSheetProps) {
-    // TODO(U6): reemplazar por el hook de detalle de billing al retirar el Hub.
-    const hub = useOrderHubData({ invoiceId: id, enabled: open || embedded })
-    const { loading, isError, fetchOrderDetails } = hub
-    const invoice = (hub.activeInvoice ?? null) as Order | null
-    const permissions = hub.userPermissions as string[]
+    const { invoice, permissions, isLoading: loading, isError, refetch: fetchOrderDetails } = useInvoiceDocument(id, open || embedded)
     const isSale = invoice ? (invoice.is_sale_document === true || !!invoice.sale_order) : true
     const isNote = invoice?.dte_type === "NOTA_CREDITO" || invoice?.dte_type === "NOTA_DEBITO"
     const { data: relations } = useDocumentRelations(LABEL, invoice?.id ?? null)

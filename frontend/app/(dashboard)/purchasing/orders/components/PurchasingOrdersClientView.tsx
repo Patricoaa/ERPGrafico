@@ -959,7 +959,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         onOpenChange={(open) => !open && setCompletingInvoice(null)}
                         invoiceId={completingInvoice.id}
                         invoiceType={completingInvoice.type}
-                        contactId={invoicingOrder?.supplier_id || ((orders as unknown as PurchaseOrder[]).find((o) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === completingInvoice.id))?.supplier_id ?? undefined)}
+                        contactId={invoicingOrder?.supplier_id || ((orders as unknown as PurchaseOrder[]).find((o) => o.invoices?.some((i: Record<string, unknown>) => i.id === completingInvoice.id))?.supplier_id ?? undefined)}
                         isPurchase={true}
                         onComplete={async (invoiceId, formData) => {
                             await billingApi.confirmInvoice(invoiceId, formData)
@@ -1001,7 +1001,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         onOpenChange={setFolioModalOpen}
                         invoiceId={selectedInvoice.id}
                         invoiceType={selectedInvoice.type}
-                        contactId={invoicingOrder?.supplier_id || ((orders as unknown as PurchaseOrder[]).find((o) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === selectedInvoice.id))?.supplier_id ?? undefined)}
+                        contactId={invoicingOrder?.supplier_id || ((orders as unknown as PurchaseOrder[]).find((o) => o.invoices?.some((i: Record<string, unknown>) => i.id === selectedInvoice.id))?.supplier_id ?? undefined)}
                         isPurchase={true}
                         onComplete={async (invoiceId, formData) => {
                             await billingApi.confirmInvoice(invoiceId, formData)

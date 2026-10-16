@@ -85,41 +85,6 @@ export interface WorkOrder {
     [key: string]: unknown
 }
 
-/**
- * @deprecated ADR-0080 (2026-10-15): buckets legacy de relacionados. Usar `useDocumentRelations`
- * de `@/features/documents`. Se retira cuando el Order Hub migre (document-relations.md §6).
- */
-export interface RelatedDocuments {
-    invoices?: InvoiceSummary[]
-    payments?: Payment[]
-    deliveries?: DeliverySummary[]
-    receipts?: DeliverySummary[]
-    receptions?: DeliverySummary[]
-    work_orders?: WorkOrder[]
-    returns?: DeliverySummary[]
-    stock_moves?: StockMoveSummary[]
-    notes?: NoteSummary[]
-}
-
-export interface PhaseDocument {
-    id: number | string
-    number: string
-    type: string
-    docType: string
-    status?: string
-    isWarning?: boolean
-    disabled?: boolean
-    icon?: LucideIcon
-    dte_type?: string
-    actions?: {
-        icon: LucideIcon
-        title: string
-        color?: string
-        isPrimary?: boolean
-        onClick: () => void
-    }[]
-}
-
 export interface Order {
     id: number
     display_id?: string
@@ -138,16 +103,18 @@ export interface Order {
     purchase_order?: Partial<Order> | number | string
     lines?: OrderLine[]
     items?: OrderLine[] 
-    related_documents?: RelatedDocuments
-    invoices?: Order[]
+    /** Resumen tipado (ADR-0083 U6): facturas, notas, despachos (OV) o recepciones (OC). */
+    notes?: InvoiceSummary[]
+    deliveries?: DeliverySummary[]
+    receipts?: DeliverySummary[]
+    /** Resumen tipado de facturas (ADR-0083 U6). */
+    invoices?: InvoiceSummary[]
     delivery_status?: string
     receiving_status?: string
     dte_type?: string
     document_type?: string
     work_orders?: WorkOrder[]
     serialized_payments?: Payment[]
-    related_returns?: DeliverySummary[]
-    related_stock_moves?: StockMoveSummary[]
     corrected_invoice?: Order
     dte_type_display?: string
     partner_name?: string

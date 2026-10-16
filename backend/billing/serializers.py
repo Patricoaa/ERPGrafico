@@ -9,8 +9,8 @@ from .models import Invoice
 
 class InvoiceListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for Invoice list views.
-    Omits heavy nested serialization (sale_order_detail, related_stock_moves,
-    related_returns, lines, work_orders, adjustments) that trigger N+1 queries."""
+    Omits heavy nested serialization (sale_order_detail, lines, work_orders, adjustments)
+    that trigger N+1 queries."""
 
     dte_type_display = serializers.CharField(source="get_dte_type_display", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
@@ -143,11 +143,6 @@ class InvoiceSerializer(serializers.ModelSerializer):
     )
     partner_name = serializers.SerializerMethodField()
     partner_id = serializers.SerializerMethodField()
-    # DEPRECATED (ADR-0080, 2026-10-15): formato legacy de relacionados. Usar
-    # GET /api/core/documents/{label}/{id}/relations/. Se retira cuando el Order Hub migre (ver document-relations.md §6).
-    related_documents = serializers.SerializerMethodField()
-    related_stock_moves = serializers.SerializerMethodField()
-    related_returns = serializers.SerializerMethodField()
     lines = serializers.SerializerMethodField()
     # ADR-0084: eje de pago separado del estado del documento (UNPAID · PARTIAL · PAID)
     payment_status = serializers.CharField(read_only=True)
@@ -196,9 +191,6 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "po_receiving_status",
             "partner_name",
             "partner_id",
-            "related_documents",
-            "related_stock_moves",
-            "related_returns",
             "lines",
             "pending_amount",
             "payment_status",
@@ -239,10 +231,6 @@ class InvoiceSerializer(serializers.ModelSerializer):
         from .selectors import InvoiceSelectorExt
         return InvoiceSelectorExt.get_lines(obj)
 
-    def get_related_documents(self, obj):
-        from .selectors import InvoiceSelectorExt
-        return InvoiceSelectorExt.get_related_documents(obj)
-
     def get_partner_name(self, obj):
         if obj.sale_order and obj.sale_order.customer:
             return obj.sale_order.customer.name
@@ -260,14 +248,6 @@ class InvoiceSerializer(serializers.ModelSerializer):
         if obj.contact:
             return obj.contact.id
         return None
-
-    def get_related_stock_moves(self, obj):
-        from .selectors import InvoiceSelectorExt
-        return InvoiceSelectorExt.get_related_stock_moves(obj)
-
-    def get_related_returns(self, obj):
-        from .selectors import InvoiceSelectorExt
-        return InvoiceSelectorExt.get_related_returns(obj)
 
     def get_adjustments(self, obj):
         # Only Facturas/Boletas usually have adjustments (Notes correcting them)

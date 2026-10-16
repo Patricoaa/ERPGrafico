@@ -91,7 +91,7 @@ def _receipt(env, qty, with_move):
 
 def _receipts(env):
     order = PurchaseOrderSelector.get_base_queryset().get(pk=env["po"].pk)
-    return PurchaseOrderSelector.get_related_documents(order)["receipts"]
+    return PurchaseOrderSelector.get_document_summary(order)["receipts"]
 
 
 @pytest.mark.django_db
@@ -111,9 +111,9 @@ def test_receipts_use_receipt_id_not_stock_move_id(env):
     assert len(entries) == 1
     entry = entries[0]
     assert entry["id"] == receipt.id
-    assert entry["docType"] == "purchase_receipt"
     assert entry["status"] == receipt.status
-    assert [m["id"] for m in entry["stock_moves"]] == [move.id]
+    # ADR-0083 U6: los movimientos de stock de la recepción están en el endpoint de relaciones
+    assert "stock_moves" not in entry
 
 
 @pytest.mark.django_db

@@ -213,15 +213,8 @@ export function DomainHubStatus({ label, data, className }: DomainHubStatusProps
             })(),
             logistics: (() => {
                 if (isNote) {
-                    const raw = data as { related_documents?: { deliveries?: Array<unknown>; receipts?: Array<unknown> }; related_stock_moves?: Array<unknown> }
-                    const docs = raw.related_documents || {}
-                    const deliveries = docs.deliveries || []
-                    const receipts = docs.receipts || []
-                    const stockMoves = raw.related_stock_moves || []
-                    if (deliveries.length > 0) return `Logística (${deliveries.length} despachos)`
-                    if (receipts.length > 0) return `Logística (${receipts.length} recepciones)`
-                    if (stockMoves.length > 0) return `Logística (${stockMoves.length} movimientos)`
-                    return "Sin movimientos"
+                    // ADR-0083 U6: el detalle de despachos/movimientos está en la ficha (Relaciones)
+                    return s.logistics === 'success' ? "Logística: Completada" : s.logistics === 'active' ? "Logística: En curso" : "Sin movimientos"
                 }
                 return (s.logistics === 'success' ? "Logística: Completada" : s.logistics === 'active' ? `Logística: ${s.logisticsProgress}%` : "Logística: Pendiente")
             })(),

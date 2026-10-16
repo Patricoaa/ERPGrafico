@@ -10,7 +10,7 @@ author: frontend-team
 
 **Related:** ADR-0080 (document model, relations, navigation — decision D4 is reverted here), ADR-0081 (invoice lines), ADR-0028 (entity drawer registry), ADR-0076 (CMYK navigation accents), plan `docs/50-audit/documental/ui-document-sheet-plan.md`, contract `docs/20-contracts/component-document-sheet.md` (new).
 
-**Status note:** Accepted 2026-10-15 by the project owner, together with the five UI decisions recorded in `docs/50-audit/documental/document-decisions.md` (D7–D11).
+**Status note:** Accepted 2026-10-15 by the project owner, together with the five UI decisions recorded in `docs/50-audit/documental/document-decisions.md` (D7–D11). **Implemented U0–U6 (2026-10-15):** the Order Hub and the legacy relation formats are removed.
 
 ---
 

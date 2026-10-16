@@ -79,7 +79,7 @@ describe("getOrderLifecycle", () => {
     it("uses invoicing_status (ADR-0081) and quantity progress", () => {
         const steps = getOrderLifecycle(order({
             invoicing_status: "PARTIAL",
-            related_documents: { invoices: [{ id: 1, status: "POSTED", number: "9101" }] },
+            invoices: [{ id: 1, status: "POSTED", number: "9101" }],
         }), "sale")
         const byId = Object.fromEntries(steps.map((s) => [s.id, s]))
         expect(byId.billing).toMatchObject({ status: "active", progress: 40 })
@@ -109,15 +109,15 @@ describe("ciclo: fuente única tarjeta/ficha", () => {
         const { billingStage, getHubStatuses } = await import("@/lib/workflow-status")
         const order = {
             status: "INVOICED", invoicing_status: "INVOICED", total: 50000, pending_amount: 0,
-            related_documents: { invoices: [{ status: "PAID", number: "" }] },
+            invoices: [{ status: "PAID", number: "" }],
             lines: [{ quantity: 10, quantity_delivered: 10, quantity_invoiced: 10 }],
         }
         expect(billingStage(order)).toEqual({ billingStatus: "neutral", billingFolioPending: true })
         expect(getHubStatuses(order).billing).toBe("neutral")
-        const withFolio = { ...order, related_documents: { invoices: [{ status: "POSTED", number: "9101" }] } }
+        const withFolio = { ...order, invoices: [{ status: "POSTED", number: "9101" }] }
         expect(billingStage(withFolio).billingStatus).toBe("success")
         expect(billingStage({ ...withFolio, invoicing_status: "PARTIAL" }).billingStatus).toBe("active")
-        const mixed = { ...order, related_documents: { invoices: [{ status: "POSTED", number: "9101" }, { status: "POSTED", number: "" }] } }
+        const mixed = { ...order, invoices: [{ status: "POSTED", number: "9101" }, { status: "POSTED", number: "" }] }
         expect(billingStage(mixed)).toEqual({ billingStatus: "active", billingFolioPending: true })
         expect(billingStage({ status: "CONFIRMED", invoicing_status: "PENDING" }).billingStatus).toBe("neutral")
     })
@@ -125,7 +125,7 @@ describe("ciclo: fuente única tarjeta/ficha", () => {
     it("sheet lifecycle shows the same billing state with 'Folio pendiente'", () => {
         const order = {
             id: 4, number: "000004", status: "INVOICED", invoicing_status: "INVOICED", total: 50000, pending_amount: 0,
-            related_documents: { invoices: [{ id: 13, status: "PAID", number: "" }] },
+            invoices: [{ id: 13, status: "PAID", number: "" }],
             lines: [{ id: 1, quantity: 10, quantity_delivered: 10, quantity_invoiced: 10, price_unit: 0, subtotal: 50000 }],
         } as unknown as Order
         const billing = getOrderLifecycle(order, "sale").find((s) => s.id === "billing")

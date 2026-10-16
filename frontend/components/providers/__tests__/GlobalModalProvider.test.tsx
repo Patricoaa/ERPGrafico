@@ -3,7 +3,6 @@ import { vi, describe, it, expect } from "vitest"
 import React from "react"
 
 import { GlobalModalProvider, useGlobalModals } from "../GlobalModalProvider"
-import { HubPanelProvider, useHubPanel } from "../HubPanelProvider"
 import { useEntityNavigation } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 
@@ -33,10 +32,9 @@ vi.mock("@/lib/entity-drawers", () => {
     return { ENTITY_DRAWERS: drawers, hasEntityDrawer: (label: string) => label in drawers }
 })
 
-/** Botones que disparan las acciones del provider y el estado del Hub como texto. */
+/** Botones que disparan las acciones del provider. */
 function Controls() {
     const { openEntity, closeEntity, setEntityDisplay } = useGlobalModals()
-    const { hubConfig } = useHubPanel()
     return (
         <div>
             <Button onClick={() => openEntity("sales.saledelivery", 1, undefined, undefined, { display: "DES-1" })}>abrir-despacho</Button>
@@ -45,17 +43,14 @@ function Controls() {
             <Button onClick={() => openEntity("purchasing.purchaseorder", 9)}>abrir-oc</Button>
             <Button onClick={() => setEntityDisplay("sales.saleorder", 42, "OV-000042")}>nombrar-ov</Button>
             <Button onClick={closeEntity}>cerrar</Button>
-            <span>hub:{hubConfig ? `${hubConfig.type}:${hubConfig.orderId}` : "none"}</span>
         </div>
     )
 }
 
 const setup = () => render(
-    <HubPanelProvider>
-        <GlobalModalProvider>
-            <Controls />
-        </GlobalModalProvider>
-    </HubPanelProvider>
+    <GlobalModalProvider>
+        <Controls />
+    </GlobalModalProvider>
 )
 
 const click = (name: string) => act(() => screen.getByText(name).click())
@@ -93,15 +88,13 @@ describe("GlobalModalProvider entity stack", () => {
         click("abrir-despacho")
         expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
         expect(screen.getByText("volver:OV-000042")).toBeInTheDocument()
-        expect(screen.getByText("hub:none")).toBeInTheDocument()
     })
 
-    it("opens purchase orders in their document sheet too (U3); the Hub is never opened", () => {
+    it("opens purchase orders in their document sheet too (U3)", () => {
         setup()
         click("abrir-despacho")
         click("abrir-oc")
         expect(screen.getByText("open:purchasing.purchaseorder:9")).toBeInTheDocument()
         expect(screen.getByText("volver:DES-1")).toBeInTheDocument()
-        expect(screen.getByText("hub:none")).toBeInTheDocument()
     })
 })

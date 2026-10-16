@@ -717,16 +717,8 @@ function CreditLedgerTable({ data, loading }: { data: ContactCreditDocument[], l
         customer_id: 0,
         supplier_id: 0,
         lines: [] as unknown[],
-        related_documents: {
-            invoices: [],
-            payments: [],
-            deliveries: [],
-            receptions: [],
-            work_orders: [],
-            returns: [],
-            stock_moves: [],
-            notes: []
-        }
+        invoices: [],
+        serialized_payments: []
     }));
 
     const columns = useMemo<ColumnDef<ContactCreditDocument>[]>(() => [

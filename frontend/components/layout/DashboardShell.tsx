@@ -6,7 +6,6 @@ import dynamic from "next/dynamic"
 import { usePathname } from "next/navigation"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { UserActions } from "./UserActions"
 import { ModuleRail } from "./ModuleRail"
@@ -34,7 +33,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const currentModuleId = pathname.split('/').filter(Boolean)[0] || 'dashboard'
 
     const { config, moduleNavigation } = useHeader()
-    const { isHubEffectivelyOpen } = useHubPanel()
     const { totalSheetsWidth } = useGlobalModals()
     
     // La navegación del módulo sobrevive a PageHeaders anidados sin `navigation` (ADR-0079)
@@ -46,7 +44,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     // shift back in sync with the 200ms panel exit instead of snapping.
     useEffect(() => {
         let inboxTimeout: NodeJS.Timeout | undefined
-        let hubTimeout: NodeJS.Timeout | undefined
 
         if (isInboxOpen) {
             document.body.setAttribute('data-inbox-open', 'true')
@@ -54,17 +51,8 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             inboxTimeout = setTimeout(() => document.body.removeAttribute('data-inbox-open'), 220)
         }
 
-        if (isHubEffectivelyOpen) {
-            document.body.setAttribute('data-hub-open', 'true')
-        } else {
-            hubTimeout = setTimeout(() => document.body.removeAttribute('data-hub-open'), 220)
-        }
-
-        return () => {
-            clearTimeout(inboxTimeout)
-            clearTimeout(hubTimeout)
-        }
-    }, [isInboxOpen, isHubEffectivelyOpen])
+        return () => clearTimeout(inboxTimeout)
+    }, [isInboxOpen])
 
     const handleInboxToggle = () => {
         setIsInboxOpen(prev => !prev)

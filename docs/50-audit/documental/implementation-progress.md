@@ -21,9 +21,21 @@
 | U3 OC + facturas/notas | **Hecha** (2026-10-15) — ver entrada |
 | U4 Puntos de entrada | **Hecha** (2026-10-15) — ningún flujo abre el Hub |
 | U5 Resto de fichas | **Hecha** (2026-10-15) |
-| U6 Retiro | Pendiente — [ui-document-sheet-plan.md](./ui-document-sheet-plan.md) |
+| U6 Retiro | **Hecha** (2026-10-15) — Order Hub y formatos legacy de relaciones eliminados |
 
 ---
+
+## 2026-10-15 · U6 — retiro del Order Hub y de los formatos legacy de relaciones
+
+**Frontend (Hub):** eliminados `ActionButton`, `ActionCategory`, `DocumentListModal`, `GlobalHubPanel`, `OrderActionPanel`, `OrderHeaderDashboard`, `OrderHubView`, `OrderHubPanel`, las 5 fases + `PhaseCard`, `useOrderDetail`, `hooks/useOrderHubData` y `HubPanelProvider` (~3.000 líneas). `app/layout` ya no monta Hub; `DashboardShell`, `ActionDock` y `globals.css` sin `data-hub-open`/`--hub-width`. Las fichas cargan con `useOrderDocument`/`useInvoiceDocument` (claves bajo ventas/compras/facturas → se refrescan con las invalidaciones existentes; permisos desde `AuthContext`). Se conservan `NoteLogisticsModal`, `PaymentHistoryModal` y `AnnulPaymentModal` (los usa el motor de acciones).
+
+**Formatos legacy (backend + frontend):**
+- OV/OC: `related_documents` → campos tipados `invoices`, `notes`, `deliveries`/`receipts` (`get_document_summary`) y `serialized_payments` con `status`. Los registros de acciones, el ciclo, las acciones por fila, el checkout de notas y las vistas de compras/ventas leen los campos nuevos.
+- Factura: retirados `related_documents`, `related_stock_moves`, `related_returns` (ningún consumidor leía datos reales: la lista no tenía pagos y los movimientos no tenían estado).
+- Asiento: `source_documents` → `source_document` (`DocumentRef`); el visor lo enlaza con `DocumentRefLink` y la edición usa `source_content_type_id`/`source_object_id`.
+- **Bug corregido de paso:** "pago contabilizado" se buscaba en `journal_entry.state`, que el bucket nunca traía → la devolución de pago sobre factura en borrador no podía funcionar; ahora es `status === 'POSTED'`.
+
+**Docs:** `document-relations.md` §6 (formatos retirados y su reemplazo), `api-contracts.md`, `frontend-fsd.md`, `hook-contracts.md`, `component-row-actions.md`, `component-document-sheet.md`, ADR-0080 (decisión 7 completa) y ADR-0083 (U0–U6 implementado).
 
 ## 2026-10-15 · U5 — resto de fichas documentales
 
