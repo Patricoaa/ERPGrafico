@@ -8,7 +8,7 @@ import { BaseModal, CancelButton } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
-import { useAnnulPayment } from "../hooks/useOrdersMutations"
+import { useAnnulPayment, useRegisterPaymentReturn } from "../hooks/useOrdersMutations"
 
 interface AnnulPaymentModalProps {
     open: boolean
@@ -17,6 +17,8 @@ interface AnnulPaymentModalProps {
     paymentAmount: number
     isSale: boolean
     onSuccess?: () => void
+    /** 'annul' anula/revierte el pago; 'return' crea un pago devolución separado. Default: 'annul'. */
+    mode?: 'annul' | 'return'
 }
 
 const EMPTY_PAYMENT: PaymentData = { method: null, amount: 0, treasuryAccountId: null, paymentMethodId: null }
@@ -25,28 +27,39 @@ const EMPTY_PAYMENT: PaymentData = { method: null, amount: 0, treasuryAccountId:
  * Anular un pago contabilizado con devolución (INT-15: siempre por el monto completo).
  * Extraído de TreasuryPhase del Order Hub (ADR-0083); lo usan el Hub y la ficha documental.
  */
-export function AnnulPaymentModal({ open, onOpenChange, paymentId, paymentAmount, isSale, onSuccess }: AnnulPaymentModalProps) {
+export function AnnulPaymentModal({ open, onOpenChange, paymentId, paymentAmount, isSale, onSuccess, mode = 'annul' }: AnnulPaymentModalProps) {
     const { annulPayment } = useAnnulPayment()
+    const { registerPaymentReturn } = useRegisterPaymentReturn()
     // Montar con `key={paymentId}` para reiniciar el formulario al cambiar de pago.
     const [paymentData, setPaymentData] = useState<PaymentData>({ ...EMPTY_PAYMENT, amount: paymentAmount })
     const [reason, setReason] = useState("")
     const [isAnnuling, setIsAnnuling] = useState(false)
 
-    const isPartialRefund = paymentData.amount > 0 && paymentData.amount !== paymentAmount
+    const isReturn = mode === 'return'
+    const isPartialRefund = !isReturn && paymentData.amount > 0 && paymentData.amount !== paymentAmount
 
     const handleAnnul = async () => {
         setIsAnnuling(true)
         try {
-            await annulPayment({
-                id: paymentId,
-                reason,
-                treasuryAccountId: paymentData.treasuryAccountId ? Number(paymentData.treasuryAccountId) : undefined,
-                amount: paymentData.amount || undefined,
-            })
+            if (isReturn) {
+                await registerPaymentReturn({
+                    paymentId,
+                    amount: paymentData.amount,
+                    reason,
+                    treasuryAccountId: paymentData.treasuryAccountId ? Number(paymentData.treasuryAccountId) : null,
+                })
+            } else {
+                await annulPayment({
+                    id: paymentId,
+                    reason,
+                    treasuryAccountId: paymentData.treasuryAccountId ? Number(paymentData.treasuryAccountId) : undefined,
+                    amount: paymentData.amount || undefined,
+                })
+            }
             onOpenChange(false)
             onSuccess?.()
         } catch (error: unknown) {
-            toast.error(getErrorMessage(error) || "Error al anular el pago")
+            toast.error(getErrorMessage(error) || (isReturn ? "Error al registrar devolución" : "Error al anular el pago"))
         } finally {
             setIsAnnuling(false)
         }
@@ -59,7 +72,7 @@ export function AnnulPaymentModal({ open, onOpenChange, paymentId, paymentAmount
             title={
                 <span className="flex items-center gap-2">
                     <Ban className="h-5 w-5 text-warning" />
-                    Anular Pago
+                    {isReturn ? "Registrar Devolución de Pago" : "Anular Pago"}
                 </span>
             }
             size="lg"
@@ -76,7 +89,7 @@ export function AnnulPaymentModal({ open, onOpenChange, paymentId, paymentAmount
                             isPartialRefund
                         }
                     >
-                        {isAnnuling ? 'Anulando...' : 'Anular con Devolución'}
+                        {isAnnuling ? (isReturn ? 'Registrando...' : 'Anulando...') : (isReturn ? 'Registrar Devolución' : 'Anular con Devolución')}
                     </Button>
                 </div>
             }
@@ -113,7 +126,7 @@ export function AnnulPaymentModal({ open, onOpenChange, paymentId, paymentAmount
                     <Textarea
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
-                        placeholder="Indique el motivo de la anulación y devolución..."
+                        placeholder={isReturn ? "Indique el motivo de la devolución..." : "Indique el motivo de la anulación y devolución..."}
                         rows={3}
                         disabled={isAnnuling}
                     />

@@ -306,6 +306,10 @@ export interface TreasuryMovement {
     is_installment_interest?: boolean
     is_billed?: boolean
     billed_in_statement?: number | null
+    /** Computed by serializer: POSTED | PENDING | RECONCILED */
+    status?: string | null
+    from_container_name?: string | null
+    to_container_name?: string | null
 }
 
 export interface TreasuryMovementFilters {

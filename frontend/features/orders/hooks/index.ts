@@ -12,5 +12,8 @@ export {
     useRegisterPaymentMovement,
     useAnnulPayment,
     useAnnulWorkOrder,
+    useCancelInvoice,
+    useCancelPayment,
+    useRegisterPaymentReturn,
     ordersApi,
 } from './useOrdersMutations'

@@ -1,11 +1,13 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { DataCell } from '@/components/shared'
 import { formatCurrency } from '@/lib/money'
 import { PrintableLayout, usePrintableDrawer, type TransactionDrawerProps } from '@/features/_shared'
 import { DocumentSheet, SHEET_LEFT } from '@/features/documents'
+import { useGlobalModalActions } from '@/components/providers/GlobalModalProvider'
 import { useTreasuryMovement } from '@/features/treasury/hooks/useTreasuryMovement'
+import { useCashMovementActions } from '@/features/treasury/hooks/useCashMovementActions'
 
 interface CashMovementDrawerProps extends TransactionDrawerProps {
   movementId?: number
@@ -20,11 +22,20 @@ export function CashMovementDrawer({ id, open, onOpenChange, movementId }: CashM
   const entityId = id ?? movementId ?? null
   const { data: movement, isLoading, isError } = useTreasuryMovement(entityId)
   const { printRef, handlePrint } = usePrintableDrawer()
+  const { setEntityDisplay } = useGlobalModalActions()
   const displayId = movement?.display_id ?? `#${entityId}`
   const movementType = movement?.movement_type_display ?? movement?.movement_type ?? ''
   const from = movement?.from_container_name ?? movement?.from_account_name ?? null
   const to = movement?.to_container_name ?? movement?.to_account_name ?? null
   const isOutbound = movement?.movement_type === 'OUTBOUND'
+
+  useEffect(() => {
+    if (movement?.id && displayId) {
+      setEntityDisplay('treasury.treasurymovement', movement.id, String(displayId))
+    }
+  }, [movement?.id, displayId, setEntityDisplay])
+
+  const cashActions = useCashMovementActions({ movement })
 
   return (
     <>
@@ -48,6 +59,8 @@ export function CashMovementDrawer({ id, open, onOpenChange, movementId }: CashM
         loadingLabel="Cargando movimiento"
         status={movement?.status ?? null}
         onPrint={handlePrint}
+        actions={cashActions.actions}
+        rowActions={cashActions.rowActions}
         auditType="payment"
         context={movement ? [
           {
@@ -65,6 +78,8 @@ export function CashMovementDrawer({ id, open, onOpenChange, movementId }: CashM
           { label: "Notas", value: movement.notes || movement.justify_reason || null, span: 3 },
         ] : []}
       />
+
+      {cashActions.host}
     </>
   )
 }

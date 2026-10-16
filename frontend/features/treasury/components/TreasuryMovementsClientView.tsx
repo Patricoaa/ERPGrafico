@@ -77,10 +77,8 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
     }, [externalOpen])
 
     const handleViewDetails = React.useCallback((id: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [searchParams, pathname, router])
+        openEntity("treasury.treasurymovement", id)
+    }, [openEntity])
 
     const handleClearAccountFilter = React.useCallback(() => {
         const params = new URLSearchParams(searchParams.toString())
