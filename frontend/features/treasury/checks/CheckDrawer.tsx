@@ -1,9 +1,11 @@
 "use client"
 
+import { useEffect } from "react"
 import { DataCell, MoneyDisplay, StaleDataBanner } from "@/components/shared"
 import { PrintableLayout, usePrintableDrawer } from "@/features/_shared"
 import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents"
 import { formatCurrency } from "@/lib/money"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useCheck } from '../hooks/useChecks'
 
 interface CheckDrawerProps {
@@ -19,6 +21,13 @@ interface CheckDrawerProps {
 export function CheckDrawer({ id, open, onOpenChange }: CheckDrawerProps) {
     const { check, isLoading, isError } = useCheck(id, open)
     const { printRef, handlePrint } = usePrintableDrawer()
+    const { setEntityDisplay } = useGlobalModalActions()
+
+    useEffect(() => {
+        if (check?.id && check.display_id) {
+            setEntityDisplay('treasury.check', check.id, check.display_id)
+        }
+    }, [check?.id, check?.display_id, setEntityDisplay])
 
     return (
         <>

@@ -30,6 +30,7 @@ import { SourceDocumentSelector, type SourceDocument } from "@/components/select
 import { formDrawerWidth } from "@/lib/form-widths";
 import { ActivitySidebar } from "@/features/audit";
 import { DocumentRefLink, DocumentRelationsButton, type DocumentRef } from "@/features/documents"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({
@@ -97,6 +98,7 @@ export function JournalEntryDrawer({
         date?: string;
         description?: string;
         label?: string;
+        display_id?: string;
         items?: Array<Record<string, unknown>>;
         source_document?: DocumentRef | null;
         is_manual?: boolean;
@@ -104,6 +106,13 @@ export function JournalEntryDrawer({
         status?: string;
     } | undefined;
     const { printRef, handlePrint } = usePrintableDrawer()
+    const { setEntityDisplay } = useGlobalModalActions()
+
+    useEffect(() => {
+        if (entityId && viewEntry?.id) {
+            setEntityDisplay('accounting.journalentry', Number(entityId), viewEntry.display_id ?? `#${entityId}`)
+        }
+    }, [entityId, viewEntry?.id, viewEntry?.display_id, setEntityDisplay])
 
     const [loading, setLoading] = useState(false)
     const [isPeriodValid, setIsPeriodValid] = useState(true)

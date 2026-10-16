@@ -1,11 +1,12 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo } from "react"
 import { Package } from "lucide-react"
 import { DataCell, DataTable } from "@/components/shared"
 import { PrintableLayout, usePrintableDrawer } from "@/features/_shared"
 import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents"
 import { formatEntityDisplay } from "@/lib/entity-registry"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { usePurchaseReturn } from "../hooks/usePurchasing"
 import { purchaseReturnLineFields } from "../purchaseReturnLineFields"
 
@@ -27,9 +28,16 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
     const entityId = returnId ?? id ?? null
     const { returnData, isLoading } = usePurchaseReturn(entityId, open)
     const { printRef, handlePrint } = usePrintableDrawer()
+    const { setEntityDisplay } = useGlobalModalActions()
     const columns = useMemo(() => purchaseReturnLineFields.toColumns(), [])
     const r = returnData as Row | undefined
     const lines = (r?.lines as Row[] | undefined) ?? []
+
+    useEffect(() => {
+        if (r?.id && r.display_id) {
+            setEntityDisplay('purchasing.purchasereturn', Number(r.id), String(r.display_id))
+        }
+    }, [r?.id, r?.display_id, setEntityDisplay])
 
     return (
         <>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { Ban, Check, Package } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
 import { toast } from "sonner"
@@ -8,6 +8,7 @@ import { DataCell, DataTable } from "@/components/shared"
 import { PrintableLayout } from "@/features/_shared"
 import { DocumentSheet, SHEET_LEFT } from "@/features/documents"
 import { formatCurrency } from "@/lib/money"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { showApiError } from "@/lib/errors"
 import { useInventoryDocument, useInventoryDocumentMutations } from "../hooks/useInventoryDocuments"
 import { inventoryDocumentDetailFields } from "../inventoryDocumentDetailFields"
@@ -29,7 +30,14 @@ export function InventoryDocumentDrawer({ documentId, id, open, onOpenChange, on
     const entityId = documentId ?? id ?? null
     const { data: document, isLoading, isError } = useInventoryDocument(entityId)
     const { confirmDocument, isConfirming, annulDocument, isAnnulling } = useInventoryDocumentMutations(entityId ?? undefined)
+    const { setEntityDisplay } = useGlobalModalActions()
     const columns = useMemo(() => inventoryDocumentDetailFields.toColumns(), [])
+
+    useEffect(() => {
+        if (document?.id && document.display_id) {
+            setEntityDisplay('inventory.inventorydocument', document.id, document.display_id)
+        }
+    }, [document?.id, document?.display_id, setEntityDisplay])
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
 

@@ -1,9 +1,10 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { DataCell } from '@/components/shared'
 import { PrintableLayout, usePrintableDrawer, type TransactionDrawerProps } from '@/features/_shared'
 import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from '@/features/documents'
+import { useGlobalModalActions } from '@/components/providers/GlobalModalProvider'
 import { useStockMove } from '@/features/inventory/hooks/useStockMoves'
 
 interface StockMoveDrawerProps extends TransactionDrawerProps {
@@ -18,7 +19,14 @@ export function StockMoveDrawer({ id, open, onOpenChange, stockMoveId }: StockMo
     const entityId = id ?? stockMoveId ?? null
     const { data: move, isLoading, isError } = useStockMove(entityId)
     const { printRef, handlePrint } = usePrintableDrawer()
+    const { setEntityDisplay } = useGlobalModalActions()
     const productId = Number((move as unknown as Record<string, unknown> | undefined)?.product) || null
+
+    useEffect(() => {
+        if (move?.id && move.display_id) {
+            setEntityDisplay('inventory.stockmove', move.id, move.display_id)
+        }
+    }, [move?.id, move?.display_id, setEntityDisplay])
 
     return (
         <>

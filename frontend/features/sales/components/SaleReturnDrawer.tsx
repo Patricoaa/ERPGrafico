@@ -1,11 +1,12 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo } from "react"
 import { Package } from "lucide-react"
 import { DataCell, DataTable } from "@/components/shared"
 import { PrintableLayout, usePrintableDrawer } from "@/features/_shared"
 import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents"
 import { formatEntityDisplay } from "@/lib/entity-registry"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useSaleReturn } from "../hooks/useSaleDeliveries"
 import { saleReturnLineFields } from "../saleReturnLineFields"
 
@@ -24,8 +25,15 @@ type Row = Record<string, unknown>
 export function SaleReturnDrawer({ id, open, onOpenChange }: SaleReturnDrawerProps) {
     const { data: returnData, isLoading } = useSaleReturn(id ?? null, open)
     const { printRef, handlePrint } = usePrintableDrawer()
+    const { setEntityDisplay } = useGlobalModalActions()
     const columns = useMemo(() => saleReturnLineFields.toColumns(), [])
     const r = returnData as Row | undefined
+
+    useEffect(() => {
+        if (r?.id && r.display_id) {
+            setEntityDisplay('sales.salereturn', Number(r.id), String(r.display_id))
+        }
+    }, [r?.id, r?.display_id, setEntityDisplay])
     const lines = (r?.lines as Row[] | undefined) ?? []
 
     return (

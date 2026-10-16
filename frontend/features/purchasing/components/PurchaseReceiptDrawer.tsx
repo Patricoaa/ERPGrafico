@@ -1,11 +1,12 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo } from "react"
 import { Package } from "lucide-react"
 import { DataCell, DataTable } from "@/components/shared"
 import { PrintableLayout, usePrintableDrawer } from "@/features/_shared"
 import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents"
 import { formatEntityDisplay } from "@/lib/entity-registry"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { usePurchaseReceipt } from "../hooks/usePurchasing"
 import { purchaseReceiptLineFields } from "../purchaseReceiptLineFields"
 
@@ -24,8 +25,15 @@ type Row = Record<string, unknown>
 export function PurchaseReceiptDrawer({ id, open, onOpenChange }: PurchaseReceiptDrawerProps) {
     const { receipt, isLoading } = usePurchaseReceipt(id ?? null, open)
     const { printRef, handlePrint } = usePrintableDrawer()
+    const { setEntityDisplay } = useGlobalModalActions()
     const columns = useMemo(() => purchaseReceiptLineFields.toColumns(), [])
     const lines = (receipt?.lines as Row[] | undefined) ?? []
+
+    useEffect(() => {
+        if (receipt?.id && receipt.display_id) {
+            setEntityDisplay('purchasing.purchasereceipt', Number(receipt.id), String(receipt.display_id))
+        }
+    }, [receipt?.id, receipt?.display_id, setEntityDisplay])
 
     return (
         <>

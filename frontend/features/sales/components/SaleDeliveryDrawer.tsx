@@ -1,11 +1,12 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo } from "react"
 import { Package } from "lucide-react"
 import { DataCell, DataTable } from "@/components/shared"
 import { PrintableLayout, usePrintableDrawer } from "@/features/_shared"
 import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents"
 import { formatEntityDisplay } from "@/lib/entity-registry"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useSaleDelivery } from "../hooks/useSaleDeliveries"
 import { saleDeliveryLineFields } from "../saleDeliveryLineFields"
 
@@ -24,8 +25,15 @@ type Row = Record<string, unknown>
 export function SaleDeliveryDrawer({ id, open, onOpenChange }: SaleDeliveryDrawerProps) {
     const { data: delivery, isLoading, isError } = useSaleDelivery(open ? id ?? null : null)
     const { printRef, handlePrint } = usePrintableDrawer()
+    const { setEntityDisplay } = useGlobalModalActions()
     const columns = useMemo(() => saleDeliveryLineFields.toColumns(), [])
     const lines = (delivery?.lines as Row[] | undefined) ?? []
+
+    useEffect(() => {
+        if (delivery?.id && delivery.display_id) {
+            setEntityDisplay('sales.saledelivery', Number(delivery.id), String(delivery.display_id))
+        }
+    }, [delivery?.id, delivery?.display_id, setEntityDisplay])
 
     return (
         <>

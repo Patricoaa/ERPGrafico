@@ -1,12 +1,13 @@
 'use client'
 
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { Users } from 'lucide-react'
 import { DataTable } from '@/components/shared'
 import { formatCurrency } from '@/lib/money'
 import { PrintableLayout, usePrintableDrawer, type TransactionDrawerProps } from '@/features/_shared'
 import { useProfitDistribution } from '@/features/contacts'
 import { DocumentSheet } from '@/features/documents'
+import { useGlobalModalActions } from '@/components/providers/GlobalModalProvider'
 import { profitDistributionLineFields } from '../profitDistributionLineFields'
 
 interface ProfitDistributionDrawerProps extends TransactionDrawerProps {
@@ -23,8 +24,15 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
   const entityId = id ?? distributionId ?? null
   const { profitDistribution: distribution, isLoading } = useProfitDistribution(entityId)
   const { printRef, handlePrint } = usePrintableDrawer()
+  const { setEntityDisplay } = useGlobalModalActions()
   const columns = useMemo(() => profitDistributionLineFields.toColumns(), [])
   const displayId = distribution?.display_id ?? `#${entityId}`
+
+  useEffect(() => {
+    if (distribution?.id && distribution.display_id) {
+      setEntityDisplay('contacts.profitdistributionresolution', distribution.id, distribution.display_id)
+    }
+  }, [distribution?.id, distribution?.display_id, setEntityDisplay])
   const isProfit = distribution?.is_profit !== false
   const lines = (distribution?.lines as Row[] | undefined) ?? []
 

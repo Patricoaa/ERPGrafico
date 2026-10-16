@@ -1,10 +1,11 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { DataCell } from '@/components/shared'
 import { formatCurrency } from '@/lib/money'
 import { PrintableLayout, usePrintableDrawer, type TransactionDrawerProps } from '@/features/_shared'
 import { DocumentSheet, SHEET_LEFT } from '@/features/documents'
+import { useGlobalModalActions } from '@/components/providers/GlobalModalProvider'
 import { useTerminalBatch } from '@/features/treasury/hooks/useTerminalBatch'
 
 interface TerminalBatchDrawerProps extends TransactionDrawerProps {
@@ -20,7 +21,14 @@ export function TerminalBatchDrawer({ id, open, onOpenChange, batchId }: Termina
   const entityId = id ?? batchId ?? null
   const { data: batch, isLoading, isError } = useTerminalBatch(entityId)
   const { printRef, handlePrint } = usePrintableDrawer()
+  const { setEntityDisplay } = useGlobalModalActions()
   const displayId = batch?.display_id ?? `#${entityId}`
+
+  useEffect(() => {
+    if (batch?.id && batch.display_id) {
+      setEntityDisplay('treasury.terminalbatch', batch.id, batch.display_id)
+    }
+  }, [batch?.id, batch?.display_id, setEntityDisplay])
 
   return (
     <>
