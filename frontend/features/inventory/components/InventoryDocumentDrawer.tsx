@@ -68,7 +68,6 @@ export function InventoryDocumentDrawer({ documentId, id, open, onOpenChange, on
                     <>
                         <div className="text-4xs space-y-1 mb-2">
                             <div className="flex justify-between"><span>Tipo:</span><span>{document.document_type_display}</span></div>
-                            <div className="flex justify-between"><span>Estado:</span><span>{document.status_display}</span></div>
                             {document.partner_name && <div className="flex justify-between"><span>Contacto:</span><span>{document.partner_name}</span></div>}
                             {document.reference && <div className="flex justify-between"><span>Referencia:</span><span>{document.reference}</span></div>}
                         </div>
