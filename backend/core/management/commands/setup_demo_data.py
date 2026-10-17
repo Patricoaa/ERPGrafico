@@ -1313,6 +1313,7 @@ class Command(BaseCommand):
                 "product_type": Product.Type.SERVICE,
                 "uom": uoms["un"],
                 "sale_price": 25000,
+                "track_inventory": False,
             },
         )
         Product.objects.get_or_create(
@@ -1323,6 +1324,7 @@ class Command(BaseCommand):
                 "product_type": Product.Type.SERVICE,
                 "uom": uoms["un"],
                 "sale_price": 15000,
+                "track_inventory": False,
             },
         )
 
@@ -1355,6 +1357,7 @@ class Command(BaseCommand):
                 "renewal_notice_days": 7,
                 "can_be_sold": False,
                 "can_be_purchased": True,
+                "track_inventory": False,
             },
         )
 
@@ -1381,6 +1384,7 @@ class Command(BaseCommand):
                 "renewal_notice_days": 5,
                 "can_be_sold": False,
                 "can_be_purchased": True,
+                "track_inventory": False,
             },
         )
 
@@ -1681,11 +1685,11 @@ class Command(BaseCommand):
         entry.save()
 
         # Filter products that should receive initial stock
-        # Exclude: advanced manufacturing, services, subscriptions, and express manufacturing
+        # Exclude: advanced manufacturing, services, subscriptions, consumables, and express manufacturing
         products = (
             Product.objects.filter(track_inventory=True)
             .exclude(requires_advanced_manufacturing=True)
-            .exclude(product_type__in=[Product.Type.SERVICE, Product.Type.SUBSCRIPTION])
+            .exclude(product_type__in=[Product.Type.SERVICE, Product.Type.SUBSCRIPTION, Product.Type.CONSUMABLE])
             .exclude(
                 mfg_auto_finalize=True  # Exclude express manufacturing products
             )
@@ -2135,6 +2139,7 @@ class Command(BaseCommand):
                 "sale_price": 0,
                 "can_be_sold": False,
                 "can_be_purchased": True,
+                "track_inventory": False,
             },
         )
 
