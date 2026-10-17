@@ -1,4 +1,5 @@
 import type { WorkOrder } from '../types'
+import { getDomainConceptTitle, getDomainConceptCode } from '@/lib/entity-registry'
 
 export type MfgSection = 'identity' | 'volume' | 'prepress' | 'press' | 'postpress' | 'planning'
 
@@ -43,7 +44,7 @@ export function canEditMfgSection(section: MfgSection, order: WorkOrder): Sectio
             return { canEdit: false, reason: 'El volumen solo es modificable mientras la OT está en Borrador.' }
         }
         if (order.sale_order_number || order.sale_order) {
-            return { canEdit: false, reason: 'La cantidad se hereda de la Orden de Venta. Edite la línea en la OV o use "Crear OT corregida".' }
+            return { canEdit: false, reason: `La cantidad se hereda de la ${getDomainConceptTitle('ov')}. Edite la línea en la ${getDomainConceptCode('ov')} o use "Crear ${getDomainConceptCode('ot')} corregida".` }
         }
         const hasConfirmedPO = (order.materials ?? []).some(
             (m) => m.is_outsourced && m.purchase_order_number

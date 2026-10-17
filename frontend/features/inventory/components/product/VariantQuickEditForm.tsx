@@ -20,6 +20,7 @@ import { BarcodeModal } from "@/features/inventory/components/BarcodeModal"
 import { BOMDrawer } from "@/features/production"
 import type { BOM, ProductMinimal } from "@/features/production"
 import { useVatRate } from '@/hooks/useVatRate'
+import { getDomainConceptMessage } from "@/lib/entity-registry"
 import { useUoMs } from "../../hooks/useUoMs"
 import { useBOMs } from "@/features/production"
 import { useProductMutations } from "../../hooks/useProductMutations"
@@ -519,7 +520,7 @@ export function VariantQuickEditForm({
         open={pendingDeleteBomId !== null}
         onOpenChange={(open) => { if (!open) setPendingDeleteBomId(null) }}
         onConfirm={onConfirmDeleteBOM}
-        title="Eliminar Lista de Materiales"
+        title={getDomainConceptMessage('ldm', 'delete')}
         description="¿Eliminar esta lista de materiales? Esta acción no se puede deshacer."
         variant="destructive"
         confirmText="Eliminar"

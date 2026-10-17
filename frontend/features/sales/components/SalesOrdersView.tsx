@@ -15,6 +15,7 @@ import { BarChart3, Smartphone, Users, Package, Truck } from "lucide-react"
 import { salesOrderUnifiedSearchDef, salesNoteUnifiedSearchDef } from "@/features/sales/unifiedSearchDef"
 import type { SaleOrderFilters } from "@/features/sales/types"
 import { toast } from "sonner"
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 interface SalesOrdersViewProps {
     viewMode: 'orders' | 'notes'
@@ -98,7 +99,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
 
         return {
             screen: {
-                entityName: "Órdenes de Venta",
+                entityName: getDomainConceptTitle('ov', true),
                 activeTab: analyticsActiveTab,
                 onTabChange: setAnalyticsActiveTab,
                 granularity,

@@ -20,6 +20,7 @@ import { BOMDrawer } from "@/features/production"
 import { type BOM, type ProductMinimal } from "@/features/production"
 import { useState } from "react"
 import { Edit } from "lucide-react"
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 interface ProductManufacturingTabProps {
     form: UseFormReturn<ProductFormValues>
@@ -116,7 +117,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                             name="has_bom"
                             render={({ field }) => (
                                 <LabeledSwitch
-                                    label="Lista de Materiales"
+                                    label={getDomainConceptTitle('ldm')}
                                     description={isExpress && !hasVariants ? "Requerido para modo Express." : "Habilitar receta de fabricación."}
                                     checked={field.value}
                                     onCheckedChange={(val) => {
@@ -198,7 +199,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                                 setBomToEdit(undefined)
                                 setIsBomModalOpen(true)
                             }}
-                            addButtonText="Nueva Lista de Materiales"
+                            addButtonText={`Nueva ${getDomainConceptTitle('ldm')}`}
                             columns={[
                                 { header: "Nombre de la Receta", width: "w-1/2", align: "left" },
                                 { header: "Componentes", width: "w-1/4", align: "center" },
@@ -266,7 +267,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                                 {!isBOMsLoading && boms.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={4} className="text-center py-8 text-muted-foreground text-xs italic">
-                                            No hay recetas configuradas. Haga clic en &quot;Nueva Lista de Materiales&quot;.
+                                            No hay recetas configuradas. Haga clic en &quot;Nueva {getDomainConceptTitle('ldm')}&quot;.
                                         </TableCell>
                                     </TableRow>
                                 )}

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { ActionConfirmModal, FormFooter, SubmitButton, ActionSlideButton } from "@/components/shared"
 
 import type { WorkOrder, WorkOrderTask, WorkOrderStage, WizardStepMode } from "../types"
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 interface WizardFooterProps {
     isViewingCurrentStage: boolean
@@ -92,7 +93,7 @@ export function WizardStickyFooter({
             setShowAlert(true)
         } else {
             const warningMsg = !hasMaterials && currentStageId === 'MATERIAL_ASSIGNMENT'
-                ? "⚠️ No has asignado materiales a esta Orden de Trabajo.\n\n"
+                ? `⚠️ No has asignado materiales a esta ${getDomainConceptTitle('ot')}.\n\n`
                 : ""
 
             const isMaterialApprovalAdvance = currentStageId === 'MATERIAL_APPROVAL'

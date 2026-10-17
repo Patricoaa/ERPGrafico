@@ -8,6 +8,7 @@ import { type HistoricalRecord } from "@/types/audit"
 import { formatDistanceToNow, format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn, translateFieldName } from "@/lib/utils"
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 import { useEntityHistory } from "@/features/audit/hooks/useEntityHistory"
 import { EmptyState, SkeletonShell, StatusBadge } from "@/components/shared"
 import {
@@ -26,7 +27,7 @@ interface ActivitySidebarProps {
 const ENTITY_TYPE_LABELS: Record<string, string> = {
     product: 'el producto',
     contact: 'el contacto',
-    sale_order: 'la nota de venta',
+    sale_order: `la ${getDomainConceptTitle('ov').toLowerCase()}`,
     purchase_order: 'la orden de compra',
     invoice: 'la factura',
     payment: 'el pago',
@@ -40,7 +41,7 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
     profit_distribution: 'la distribución de resultados',
     user: 'el usuario',
     company_settings: 'la configuración',
-    work_order: 'la orden de trabajo',
+    work_order: `la ${getDomainConceptTitle('ot').toLowerCase()}`,
     journal_entry: 'el asiento contable',
     stock_move: 'el movimiento de stock',
     pricing_rule: 'la regla de precio',

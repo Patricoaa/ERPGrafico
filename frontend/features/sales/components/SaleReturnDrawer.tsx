@@ -8,6 +8,7 @@ import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useSaleReturn } from "../hooks/useSaleDeliveries"
 import { saleReturnLineFields } from "../saleReturnLineFields"
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 interface SaleReturnDrawerProps {
     id?: number | null
@@ -72,7 +73,7 @@ export function SaleReturnDrawer({ id, open, onOpenChange }: SaleReturnDrawerPro
                     { label: "Fecha", value: r.date ? <DataCell.Date value={String(r.date)} size="xs" className={SHEET_LEFT} /> : null },
                     { label: "Bodega", value: String(r.warehouse_name ?? "") },
                     {
-                        label: "Orden de venta",
+                        label: getDomainConceptTitle('ov'),
                         value: r.sale_order ? (
                             <DocumentRefLink documentRef={r.sale_order_document} />
                         ) : null,

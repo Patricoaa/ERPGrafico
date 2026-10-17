@@ -4,6 +4,7 @@ import { FileText, Plus, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { WorkOrderFormValues } from "@/types/forms";
+import { getDomainConceptTitle, getDomainConceptCode } from "@/lib/entity-registry";
 
 interface OriginSelectionStepProps {
   onChoose: (type: "LINKED" | "NONE", defaults: WorkOrderFormValues) => void;
@@ -20,7 +21,7 @@ export function OriginSelectionStep({ onChoose, selected = null }: OriginSelecti
         <p className="mt-2 text-muted-foreground max-w-md mx-auto">
           {selected
             ? "Origen ya definido para esta OT"
-            : "Seleccione cómo desea crear esta Orden de Trabajo"}
+            : `Seleccione cómo desea crear esta ${getDomainConceptTitle('ot')}`}
         </p>
       </div>
 
@@ -52,7 +53,7 @@ export function OriginSelectionStep({ onChoose, selected = null }: OriginSelecti
                 Vincular a Venta
               </h3>
               <p className="text-sm text-muted-foreground max-w-md">
-                Fabricación bajo demanda para una Orden de Venta (OV)
+                Fabricación bajo demanda para una {getDomainConceptTitle('ov')} ({getDomainConceptCode('ov')})
               </p>
             </div>
           </div>

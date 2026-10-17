@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import api from '@/lib/api'
 import { showApiError } from '@/lib/errors'
 import { invalidateCrossFeature } from '@/lib/invalidation'
+import { getDomainConceptTitle, getDomainConceptMessage } from '@/lib/entity-registry'
 import { useRealtime } from '@/features/realtime'
 import type { WorkOrderStageData } from '../schemas'
 
@@ -183,7 +184,7 @@ export function useWorkOrderMutations(
     },
     onSuccess: () => {
       markLocalMutation()
-      toast.success('Orden de Trabajo anulada exitosamente')
+      toast.success(`${getDomainConceptTitle('ot')} anulada exitosamente`)
       invalidate()
     },
     onError: (err) => showApiError(err, 'Error al anular la orden'),
@@ -196,7 +197,7 @@ export function useWorkOrderMutations(
     },
     onSuccess: () => {
       markLocalMutation()
-      toast.success('Orden de Trabajo eliminada')
+      toast.success(getDomainConceptMessage('ot', 'deleted'))
       invalidate()
     },
     onError: (err) => showApiError(err, 'Error al eliminar la orden'),
@@ -210,7 +211,7 @@ export function useWorkOrderMutations(
     },
     onSuccess: () => {
       markLocalMutation()
-      toast.success('Orden de Trabajo duplicada exitosamente')
+      toast.success(`${getDomainConceptTitle('ot')} duplicada exitosamente`)
       invalidate()
     },
     onError: (err) => showApiError(err, 'Error al duplicar la orden'),

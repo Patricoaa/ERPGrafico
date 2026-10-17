@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils'
 import { showApiError } from '@/lib/errors'
 import type { Product } from "@/types/entities"
 import type { WorkOrder, WorkOrderMaterial, ProductMinimal } from '../../types'
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 interface MaterialAssignmentStepProps {
   order: WorkOrder
@@ -344,7 +345,7 @@ export function MaterialAssignmentStep({
         title="Eliminar material"
         description={
           <>
-            ¿Eliminar <strong>{materialToDelete?.component_name}</strong> de la orden de trabajo?
+            ¿Eliminar <strong>{materialToDelete?.component_name}</strong> de la {getDomainConceptTitle('ot').toLowerCase()}?
             Esta acción no se puede deshacer.
           </>
         }

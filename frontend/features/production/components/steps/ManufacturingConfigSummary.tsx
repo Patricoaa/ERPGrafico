@@ -38,6 +38,7 @@ import { useWizardStore } from "../WorkOrderWizardStore"
 import { productionApi } from "../../api/productionApi"
 import { useUoMs, useWorkOrderIdentityActions } from "../../hooks"
 import { getErrorMessage } from "@/lib/errors"
+import { getDomainConceptTitle, getDomainConceptCode } from "@/lib/entity-registry"
 
 interface ManufacturingConfigSummaryProps {
     order: WorkOrder
@@ -303,8 +304,8 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
                     </div>
                     {isLinked && (
                         <div className="col-span-2">
-                            <p className="text-xs text-muted-foreground">Orden de Venta</p>
-                            <p className="font-medium">OV-{order.sale_order_number ?? order.sale_order?.number ?? '—'}</p>
+                            <p className="text-xs text-muted-foreground">{getDomainConceptTitle('ov')}</p>
+                            <p className="font-medium">{getDomainConceptCode('ov')}-{order.sale_order_number ?? order.sale_order?.number ?? '—'}</p>
                         </div>
                     )}
                 </div>

@@ -8,6 +8,7 @@ import { BOMS_QUERY_KEY, PRODUCTS_QUERY_KEY } from '@/features/inventory'
 import { useRealtime } from '@/features/realtime'
 import type { FilterState } from '@/components/shared'
 import { staleTime } from '@/lib/query-config'
+import { getDomainConcept, getDomainConceptMessage } from '@/lib/entity-registry'
 
 export const ALL_BOMS_QUERY_KEY = ['all-boms']
 
@@ -32,9 +33,9 @@ export function useDeleteBomMutation() {
         onSuccess: () => {
             markLocalMutation()
             invalidateCrossFeature(queryClient, [BOMS_QUERY_KEY, ALL_BOMS_QUERY_KEY, PRODUCTS_QUERY_KEY])
-            toast.success('Lista de Materiales eliminada')
+            toast.success(getDomainConceptMessage('ldm', 'deleted'))
         },
-        onError: () => toast.error('Error al eliminar Lista de Materiales'),
+        onError: () => toast.error(getDomainConceptMessage('ldm', 'deleteError')),
     })
     return { deleteBom: deleteBomMutation.mutateAsync, isDeletingBom: deleteBomMutation.isPending }
 }
@@ -57,9 +58,9 @@ export function useBOMs(params: { product_id?: string | number, parent_id?: stri
         onSuccess: () => {
             markLocalMutation()
             invalidateCrossFeature(queryClient, [BOMS_QUERY_KEY, PRODUCTS_QUERY_KEY])
-            toast.success('Lista de Materiales eliminada')
+            toast.success(getDomainConceptMessage('ldm', 'deleted'))
         },
-        onError: () => toast.error('Error al eliminar Lista de Materiales')
+        onError: () => toast.error(getDomainConceptMessage('ldm', 'deleteError'))
     })
 
     const toggleActiveMutation = useMutation({
@@ -67,7 +68,7 @@ export function useBOMs(params: { product_id?: string | number, parent_id?: stri
         onSuccess: () => {
             markLocalMutation()
             invalidateCrossFeature(queryClient, [BOMS_QUERY_KEY, PRODUCTS_QUERY_KEY])
-            toast.success('Lista de Materiales establecida como activa')
+            toast.success(`${getDomainConcept('ldm').title} establecida como activa`)
         },
         onError: () => toast.error('Error al actualizar estado')
     })

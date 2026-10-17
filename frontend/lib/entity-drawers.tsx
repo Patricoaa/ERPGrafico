@@ -17,6 +17,7 @@ import type {
     JournalEntryInitialData,
 } from "@/types/forms"
 import type { Employee, Absence, SalaryAdvance } from "@/types/hr"
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 /**
  * Standard props every entity drawer receives from the global opener.
@@ -50,7 +51,7 @@ const TreasuryAccountDrawer = dynamic(
 
 const WorkOrderWizard = dynamic(
     () => import("@/features/production").then((m) => m.WorkOrderWizard),
-    { ssr: false, loading: () => skeleton("orden de trabajo") }
+    { ssr: false, loading: () => skeleton(getDomainConceptTitle('ot').toLowerCase()) }
 )
 
 const JournalEntryDrawer = dynamic(
@@ -155,7 +156,7 @@ const PaymentDrawer = dynamic(
 
 const OrderSheet = dynamic(
     () => import("@/features/orders").then((m) => m.OrderSheet),
-    { ssr: false, loading: () => skeleton("orden de venta") }
+    { ssr: false, loading: () => skeleton(getDomainConceptTitle('ov').toLowerCase()) }
 )
 
 const InvoiceSheet = dynamic(

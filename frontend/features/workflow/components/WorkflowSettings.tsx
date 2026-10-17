@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { invalidateCrossFeature } from '@/lib/invalidation'
+import { getDomainConceptCode, getDomainConceptTitle } from '@/lib/entity-registry'
 import { CardSkeleton } from "@/components/shared"
 import type { WorkflowRule, NotificationRule } from "@/types/entities"
 import { useAutoSaveForm, type AutoSaveStatus } from "@/hooks/useAutoSaveForm"
@@ -51,11 +52,11 @@ const TASK_TYPES = [
 ]
 
 const HUB_TASK_TYPES = [
-    { id: "HUB_ORIGIN",   name: "Origen (Confirmación)", description: "Confirmar la orden de venta/compra." },
+    { id: "HUB_ORIGIN",   name: "Origen (Confirmación)", description: `Confirmar la ${getDomainConceptTitle('ov').toLowerCase()}/compra.` },
     { id: "HUB_LOGISTICS", name: "Logística",             description: "Despachar o recepcionar productos." },
     { id: "HUB_BILLING",  name: "Facturación",            description: "Emitir o registrar factura." },
     { id: "HUB_TREASURY", name: "Tesorería",              description: "Registrar pagos y conciliar." },
-    { id: "OT_CREATION",  name: "Creación de OT",         description: "Tarea para generar la Orden de Trabajo desde una Orden de Venta o manual." },
+    { id: "OT_CREATION",  name: `Creación de ${getDomainConceptCode('ot')}`,         description: `Tarea para generar la ${getDomainConceptTitle('ot')} desde una ${getDomainConceptTitle('ov')} o manual.` },
 ]
 
 const RECURRENT_TASK_TYPES = [

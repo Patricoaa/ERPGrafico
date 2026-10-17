@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/tooltip"
 import { getTasks } from '@/features/workflow'
 import { PermissionGuard } from "@/components/auth/PermissionGuard"
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 const actions = [
     {
@@ -45,7 +46,7 @@ const actions = [
         permission: "purchasing.view_dashboard_purchasing",
     },
     {
-        title: "Órdenes de Trabajo",
+        title: getDomainConceptTitle('ot', true),
         icon: Printer,
         url: "/production/orders",
         color: "text-primary",

@@ -8,6 +8,7 @@ import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useSaleDelivery } from "../hooks/useSaleDeliveries"
 import { saleDeliveryLineFields } from "../saleDeliveryLineFields"
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 interface SaleDeliveryDrawerProps {
     id?: number | null
@@ -69,7 +70,7 @@ export function SaleDeliveryDrawer({ id, open, onOpenChange }: SaleDeliveryDrawe
                 { label: "Fecha", value: delivery.delivery_date ? <DataCell.Date value={String(delivery.delivery_date)} size="xs" className={SHEET_LEFT} /> : null },
                 { label: "Bodega", value: String(delivery.warehouse_name ?? "") },
                 {
-                    label: "Orden de venta",
+                    label: getDomainConceptTitle('ov'),
                     value: delivery.sale_order ? (
                         <DocumentRefLink documentRef={delivery.sale_order_document} />
                     ) : null,

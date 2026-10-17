@@ -10,6 +10,7 @@ import { bomFields } from "@/features/production/bomFields"
 
 import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { getDomainConceptTitle, getDomainConceptCode, getDomainConceptMessage } from "@/lib/entity-registry"
 import { bomUnifiedSearchDef } from "@/features/production"
 
 import type { BOM, ProductMinimal } from "@/features/production/types"
@@ -110,8 +111,8 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
                     isFiltered={search.isFiltered}
                     emptyState={{
                         context: "bom",
-                        title: "Aún no hay listas de materiales",
-                        description: "Crea una lista de materiales (BOM) para definir cómo se fabrica un producto.",
+                        title: `Aún no hay ${getDomainConceptTitle('ldm', true).toLowerCase()}`,
+                        description: `Crea una ${getDomainConceptTitle('ldm').toLowerCase()} (${getDomainConceptCode('ldm')}) para definir cómo se fabrica un producto.`,
                     }}
                     renderCard={(bom: BOMListItem) => (
                         <AutoEntityCard
@@ -144,8 +145,8 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
                 open={deleteConfirm.isOpen}
                 onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
                 onConfirm={deleteConfirm.confirm}
-                title="Eliminar Lista de Materiales"
-                description="¿Está seguro de eliminar esta Lista de Materiales? Esta acción no se puede deshacer."
+                title={getDomainConceptMessage('ldm', 'delete')}
+                description={`¿Está seguro de eliminar esta ${getDomainConceptTitle('ldm')}? Esta acción no se puede deshacer.`}
                 variant="destructive"
             />
         </div>

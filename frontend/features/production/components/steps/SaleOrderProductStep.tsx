@@ -12,6 +12,7 @@ import { cn, parseDateOnly } from "@/lib/utils";
 import { formatCurrency } from "@/lib/money";
 import type { SaleOrderLine } from "@/features/sales";
 import { resolveMediaUrl } from "@/lib/media-url";
+import { getDomainConceptTitle } from "@/lib/entity-registry";
 
 type ExpandedProduct = { id: number; name: string; code: string; image_thumbnail?: string; requires_advanced_manufacturing?: boolean };
 
@@ -125,7 +126,7 @@ export function SaleOrderProductStep({
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-medium text-muted-foreground mb-1">
-            Buscar Orden de Venta
+            Buscar {getDomainConceptTitle('ov')}
           </label>
           <Input
             placeholder="Buscar por número, cliente o descripción..."
@@ -237,7 +238,7 @@ export function SaleOrderProductStep({
                 availableProducts.length === 0 ? (
                   <div className="text-center py-6">
                     <p className="text-muted-foreground">
-                      No hay productos fabricables avanzados pendientes en esta orden de venta.
+                      No hay productos fabricables avanzados pendientes en esta {getDomainConceptTitle('ov').toLowerCase()}.
                     </p>
                   </div>
                 ) : (

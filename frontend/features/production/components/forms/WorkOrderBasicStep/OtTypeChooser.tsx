@@ -2,6 +2,7 @@
 import { Plus, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { WorkOrderFormValues } from "@/types/forms"
+import { getDomainConceptTitle, getDomainConceptCode } from "@/lib/entity-registry"
 
 interface OtTypeChooserProps {
     onChoose: (type: 'LINKED' | 'NONE', defaults: WorkOrderFormValues) => void
@@ -32,7 +33,7 @@ export function OtTypeChooser({ onChoose }: OtTypeChooserProps) {
                     </div>
                     <div className="flex flex-col items-start">
                         <span className="font-black text-xs uppercase tracking-widest text-foreground/80">Vincular a Venta</span>
-                        <span className="text-3xs text-muted-foreground font-medium mt-0.5">Fabricación bajo demanda para una Orden de Venta (OV)</span>
+                        <span className="text-3xs text-muted-foreground font-medium mt-0.5">Fabricación bajo demanda para una {getDomainConceptTitle('ov')} ({getDomainConceptCode('ov')})</span>
                     </div>
                 </Button>
 

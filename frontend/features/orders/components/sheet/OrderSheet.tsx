@@ -13,6 +13,7 @@ import {
     type DocumentSheetTab,
 } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 import { ActivitySidebar } from "@/features/audit"
 import { PrintableLayout, useDrawerIdentity, usePrintableDrawer } from "@/features/_shared"
 import {
@@ -82,7 +83,7 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
     const { printRef, handlePrint } = usePrintableDrawer()
     const displayId = order?.display_id ?? order?.number
     const identity = useDrawerIdentity(label, "view", order, {
-        overrideTitle: displayId ?? (isSale ? "Orden de Venta" : "Orden de Compra"),
+        overrideTitle: displayId ?? (isSale ? getDomainConceptTitle('ov') : "Orden de Compra"),
     })
 
     // "Volver a OV-000183" en los documentos que se abran encima (pila de openEntity)
@@ -195,7 +196,7 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
                 )}
                 isLoading={loading || (!order && !isError)}
                 error={isError ? new Error("No se pudo cargar la orden") : undefined}
-                loadingLabel={isSale ? "Cargando orden de venta" : "Cargando orden de compra"}
+                loadingLabel={isSale ? `Cargando ${getDomainConceptTitle('ov').toLowerCase()}` : "Cargando orden de compra"}
                 lifecycle={lifecycleSteps && (
                     <DocumentLifecycle
                         steps={lifecycleSteps}

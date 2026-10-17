@@ -1,6 +1,7 @@
 "use client"
 import { formatPlainDate, toDate } from "@/lib/utils"
 import { getErrorMessage } from "@/lib/errors"
+import { getDomainConceptTitle, getDomainConceptMessage } from "@/lib/entity-registry"
 import { useState, useEffect, useRef } from "react"
 import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -248,7 +249,7 @@ export function WorkOrderBasicStep({
 
     async function onSubmit(data: WorkOrderFormValues) {
         if (data.otType === 'NONE' && selectedManualProduct?.requires_bom_validation) {
-            toast.error(`El producto "${selectedManualProduct.name}" requiere una Lista de Materiales asignada antes de fabricar.`)
+            toast.error(`El producto "${selectedManualProduct.name}" requiere una ${getDomainConceptTitle('ldm')} asignada antes de fabricar.`)
             return
         }
 
@@ -300,13 +301,13 @@ export function WorkOrderBasicStep({
             let workOrderId: number
             if (initialData?.id) {
                 await productionApi.updateWorkOrder(Number(initialData.id), formData)
-                toast.success("Orden de Trabajo actualizada correctamente")
+                toast.success(getDomainConceptMessage('ot', 'updated'))
                 workOrderId = Number(initialData.id)
             } else {
                 const data = await productionApi.createWorkOrder(formData, {
                     'Idempotency-Key': idempotencyKeyRef.current,
                 })
-                toast.success("Orden de Trabajo creada correctamente")
+                toast.success(getDomainConceptMessage('ot', 'created'))
                 workOrderId = (data as { id: number }).id
             }
             form.reset({} as WorkOrderFormValues)
@@ -314,7 +315,7 @@ export function WorkOrderBasicStep({
             onSuccess?.(workOrderId)
         } catch (error: unknown) {
             console.error("Error saving work order:", error)
-            toast.error(getErrorMessage(error) || "Error al guardar la Orden de Trabajo")
+            toast.error(getErrorMessage(error) || `Error al guardar la ${getDomainConceptTitle('ot')}`)
         } finally {
             handleLoadingChange(false)
         }
@@ -326,7 +327,7 @@ export function WorkOrderBasicStep({
     const isViewMode = mode === 'view'
 
     return (
-        <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de orden de trabajo">
+        <SkeletonShell isLoading={isFetchingInitialData} ariaLabel={`Cargando formulario de ${getDomainConceptTitle('ot').toLowerCase()}`}>
         <Form {...form}>
             <form id={formId} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
                 <fieldset disabled={isViewMode} className="block border-0 p-0 m-0 min-w-0">

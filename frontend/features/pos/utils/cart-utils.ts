@@ -3,6 +3,7 @@
 
 import type { CartItem, Product } from '../types'
 import { PricingUtils } from '@/lib/pricing-utils'
+import { getDomainConceptTitle } from '@/lib/entity-registry'
 
 /**
  * Generate unique cart item ID
@@ -115,7 +116,7 @@ export function canAddToCart(product: Product): { canAdd: boolean, reason?: stri
         if (isExpress) {
             // Express: must have BOM assigned
             if (!product.has_bom) {
-                return { canAdd: false, reason: 'Este producto requiere una Lista de Materiales asignada para poder venderse' }
+                return { canAdd: false, reason: `Este producto requiere una ${getDomainConceptTitle('ldm')} asignada para poder venderse` }
             }
             // With BOM: check if can manufacture
             if ((product.manufacturable_quantity || 0) <= 0) {

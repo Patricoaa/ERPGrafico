@@ -11,6 +11,7 @@ import { useState } from 'react'
 import { useVatRate } from '@/hooks/useVatRate'
 import { OutsourcedServiceForm, type OutsourcedServiceValues, emptyOutsourcedService } from '../shared/OutsourcedServiceForm'
 import type { WorkOrder, WorkOrderMaterial, UoM, ProductMinimal } from '../../types'
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 interface OutsourcingAssignmentStepProps {
   order: WorkOrder
@@ -193,7 +194,7 @@ export function OutsourcingAssignmentStep({
         title="Eliminar servicio tercerizado"
         description={
           <>
-            ¿Eliminar <strong>{serviceToDelete?.component_name}</strong> de la orden de trabajo?
+            ¿Eliminar <strong>{serviceToDelete?.component_name}</strong> de la {getDomainConceptTitle('ot').toLowerCase()}?
             Esta acción no se puede deshacer.
           </>
         }

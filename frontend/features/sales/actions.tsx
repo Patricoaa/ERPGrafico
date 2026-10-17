@@ -1,4 +1,5 @@
 import type { ActionRegistry } from '@/types/actions'
+import { getDomainConceptTitle, getDomainConceptMessage } from '@/lib/entity-registry'
 import {
     FileText,
     Truck,
@@ -103,7 +104,7 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
         actions: [
             {
                 id: 'create-work-order',
-                label: 'Crear Orden de Trabajo',
+                label: getDomainConceptMessage('ot', 'create'),
                 icon: FileEdit,
                 requiredPermissions: ['production.add_workorder'],
                 checkAvailability: (order) => {
@@ -418,7 +419,7 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
         actions: [
             {
                 id: 'view-work-orders',
-                label: 'Ver Órdenes de Trabajo',
+                label: `Ver ${getDomainConceptTitle('ot', true)}`,
                 icon: Eye,
                 requiredPermissions: ['production.view_workorder'],
                 checkAvailability: (order) => (order.work_orders?.length || 0) > 0

@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react"
 import { Ban, Trash2 } from "lucide-react"
 import { showApiError } from "@/lib/errors"
+import { getDomainConceptTitle, getDomainConceptCode } from "@/lib/entity-registry"
 import { ActionConfirmModal, type DocumentActionItem } from "@/components/shared"
 import type { DocumentLink } from "@/features/documents"
 import { AnnulPaymentModal } from "../components/AnnulPaymentModal"
@@ -146,7 +147,7 @@ export function useOrderRelatedActions({ order, isSale, permissions, onSuccess }
                 id: 'annul-work-order', label: 'Anular OT', icon: Ban, destructive: true,
                 onClick: () => confirmThen(
                     {
-                        title: "Anular Orden de Trabajo", variant: "destructive", confirmText: "Anular OT", requireReason: true,
+                        title: `Anular ${getDomainConceptTitle('ot')}`, variant: "destructive", confirmText: `Anular ${getDomainConceptCode('ot')}`, requireReason: true,
                         description: "Esta acción reverterá los consumos de materiales y liberará las reservas. ¿Está seguro?",
                     },
                     (reason) => annulWorkOrder({ id, reason }),

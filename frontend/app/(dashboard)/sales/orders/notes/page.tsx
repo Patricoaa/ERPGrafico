@@ -1,8 +1,9 @@
 import type { Metadata } from "next"
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 import NotesPageClient from "./NotesPageClient"
 
 export const metadata: Metadata = {
-    title: "Ordenes de Venta | ERPGrafico",
+    title: `${getDomainConceptTitle('ov', true)} | ERPGrafico`,
 }
 
 export default function SalesOrdersNotesPage() {

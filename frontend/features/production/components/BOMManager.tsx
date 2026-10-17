@@ -10,6 +10,7 @@ import { BOMDrawer } from "./BOMDrawer"
 
 import { ActionConfirmModal, Chip, LabeledSelect, StatusBadge } from '@/components/shared'
 import { cn } from "@/lib/utils"
+import { getDomainConceptTitle, getDomainConceptCode, getDomainConceptMessage } from "@/lib/entity-registry"
 import { DataTable } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from '@/components/shared'
@@ -112,7 +113,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
     const columns: ColumnDef<BOM>[] = [
         {
             accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Lista de Materiales (Receta)" className="justify-center" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title={`${getDomainConceptTitle('ldm')} (Receta)`} className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex flex-col items-center py-1 text-center w-full">
                     <DataCell.Text className="font-black text-xs tracking-tight uppercase leading-none">{row.original.name}</DataCell.Text>
@@ -204,7 +205,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                             <div className="flex-1">
                                 <h3 className="text-sm font-black uppercase text-primary tracking-widest flex items-center gap-2 leading-none">
                                     <Workflow className="h-4 w-4 text-primary opacity-50" />
-                                    Estructuras Técnicas (BOM)
+                                    Estructuras Técnicas ({getDomainConceptCode('ldm')})
                                 </h3>
                                 <p className="text-3xs font-bold uppercase text-muted-foreground mt-1.5 opacity-60">
                                     Gestión de fórmulas y procesos de fabricación
@@ -298,7 +299,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                             <div className="space-y-1.5 max-w-sm">
                                 <p className="text-base font-black uppercase tracking-widest text-primary">Sin recetas de producción</p>
                                 <p className="text-sm font-medium text-muted-foreground/80">
-                                    Defina la lista de materiales (BOM) y el ruteo de etapas para fabricar este producto.
+                                    Defina la {getDomainConceptTitle('ldm').toLowerCase()} ({getDomainConceptCode('ldm')}) y el ruteo de etapas para fabricar este producto.
                                 </p>
                             </div>
                             <div className="flex items-center gap-3 mt-2">
@@ -353,10 +354,10 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             <ActionConfirmModal
                 open={isDeleteModalOpen}
                 onOpenChange={setIsDeleteModalOpen}
-                title="Eliminar Lista de Materiales"
+                title={getDomainConceptMessage('ldm', 'delete')}
                 variant="destructive"
                 onConfirm={() => { if (bomToDelete) return handleDelete(bomToDelete, true) }}
-                confirmText="Eliminar Lista de Materiales"
+                confirmText={getDomainConceptMessage('ldm', 'delete')}
                 description={
                     <div className="space-y-3 pt-2">
                         <p className="text-sm font-bold uppercase tracking-tight">

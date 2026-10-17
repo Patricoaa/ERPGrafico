@@ -1,12 +1,11 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
-import { Ban, Trash2, RotateCcw, Hash, FileX, FilePlus } from "lucide-react"
+import { Ban, Trash2, RotateCcw } from "lucide-react"
 import { showApiError } from "@/lib/errors"
 import { ActionConfirmModal, type DocumentActionItem } from "@/components/shared"
 import type { DocumentLink } from "@/features/documents"
 import { AnnulPaymentModal, useCancelPayment, useCancelInvoice } from "@/features/orders"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useAuth } from "@/contexts/AuthContext"
 import type { TreasuryMovement } from "../types"
 
@@ -40,7 +39,6 @@ export function useCashMovementActions({ movement, onSuccess }: UseCashMovementA
     const permissions: string[] = user?.permissions ?? []
     const { cancelPayment } = useCancelPayment()
     const { cancelInvoice } = useCancelInvoice()
-    const { openEntity } = useGlobalModals()
 
     const [annulState, setAnnulState] = useState<AnnulState | null>(null)
     const [confirm, setConfirm] = useState<ConfirmState | null>(null)
@@ -117,18 +115,8 @@ export function useCashMovementActions({ movement, onSuccess }: UseCashMovementA
         const { label, id, status: linkStatus, accessible } = link.target
         if (!accessible || linkStatus === 'CANCELLED') return []
 
-        if (label !== 'billing.invoice') return []
-
-        const docInfo = movement?.document_info?.id === id ? movement.document_info : null
-        const dteType = docInfo?.dte_type ?? null
-        const folio = docInfo?.folio ?? null
-        const isNote = dteType === 'NOTA_CREDITO' || dteType === 'NOTA_DEBITO'
-        const isFactura = dteType === 'FACTURA' || dteType === 'FACTURA_EXENTA'
-
-        const result: DocumentActionItem[] = []
-
-        if (linkStatus === 'DRAFT' && can('billing.delete_invoice')) {
-            result.push({
+        if (label === 'billing.invoice' && linkStatus === 'DRAFT' && can('billing.delete_invoice')) {
+            return [{
                 id: 'cancel-draft-invoice',
                 label: 'Cancelar borrador',
                 icon: Trash2,
@@ -143,36 +131,10 @@ export function useCashMovementActions({ movement, onSuccess }: UseCashMovementA
                     (reason) => cancelInvoice({ id, reason }),
                     "No se pudo cancelar el borrador",
                 ),
-            })
+            }]
         }
 
-        if (linkStatus === 'POSTED' && !folio && !isNote) {
-            result.push({
-                id: 'complete-folio',
-                label: 'Registrar folio',
-                icon: Hash,
-                onClick: () => openEntity('billing.invoice', id),
-            })
-        }
-
-        if (linkStatus === 'POSTED' && folio && isFactura) {
-            result.push(
-                {
-                    id: 'create-credit-note',
-                    label: 'Crear NC',
-                    icon: FileX,
-                    onClick: () => openEntity('billing.invoice', id),
-                },
-                {
-                    id: 'create-debit-note',
-                    label: 'Crear ND',
-                    icon: FilePlus,
-                    onClick: () => openEntity('billing.invoice', id),
-                },
-            )
-        }
-
-        return result
+        return []
     }
 
     const host: ReactNode = (

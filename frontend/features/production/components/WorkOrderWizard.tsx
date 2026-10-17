@@ -7,9 +7,19 @@ import { toast } from 'sonner'
 import { AlertTriangle, Package, FileText, Plus, CheckCircle2, Keyboard, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-import { ActionConfirmModal, BaseModal, Drawer, CancelButton, FormFooter, LabeledSelect, StatusBadge } from '@/components/shared'
+import {
+  ActionConfirmModal,
+  BaseModal,
+  Drawer,
+  CancelButton,
+  FormFooter,
+  LabeledSelect,
+  StatusBadge,
+  DocumentActionsMenu,
+  type DocumentActionItem,
+} from '@/components/shared'
 import { cn, formatPlainDate } from '@/lib/utils'
-import { formatEntityDisplay } from '@/lib/entity-registry'
+import { formatEntityDisplay, getDomainConceptMessage, getDomainConceptTitle, getDomainConceptCode } from '@/lib/entity-registry'
 import { showApiError } from '@/lib/errors'
 import { useConfirmAction } from '@/hooks/useConfirmAction'
 import { useVatRate } from '@/hooks/useVatRate'
@@ -453,8 +463,8 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         icon={Package}
         title={
           order
-            ? `Gestión de Orden de Trabajo`
-            : 'Crear Orden de Trabajo'
+            ? getDomainConceptMessage('ot', 'manage')
+            : getDomainConceptMessage('ot', 'create')
         }
         subtitle={
           (order
@@ -463,66 +473,60 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
           + ` · ${STAGES[viewingStepIndex]?.label ?? ''}`
         }
         headerActions={
-          <div className="flex items-center gap-2">
-            {order && (
-              <>
-                <StatusBadge
-                  status={order.status}
-                  variant="badge"
-                />
-                {/* ADR-0083 U5: relaciones de la OT (OV, despachos, consumos, compras de outsourcing) */}
-                <DocumentRelationsButton label="production.workorder" id={order.id} />
-                {order.status === 'IN_PROGRESS' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const saleOrderId = typeof order.sale_order === 'object' ? order.sale_order?.id : order.sale_order
-                      const id = saleOrderId ?? order.id
-                      const type = saleOrderId ? 'sale' : 'purchase'
-                      // Ficha documental de la orden (ADR-0083); al volver se recarga la OT
+          order ? (
+            <div className="flex items-center gap-2">
+              <StatusBadge status={order.status} variant="badge" />
+              {/* ADR-0083 U5: relaciones de la OT (OV, despachos, consumos, compras de outsourcing) */}
+              <DocumentRelationsButton label="production.workorder" id={order.id} />
+              <DocumentActionsMenu
+                primary={(() => {
+                  if (order.status !== 'IN_PROGRESS') return null
+                  const saleOrderId = typeof order.sale_order === 'object' ? order.sale_order?.id : order.sale_order
+                  const id = saleOrderId ?? order.id
+                  const type = saleOrderId ? 'sale' : 'purchase'
+                  return {
+                    id: 'view-order',
+                    label: 'Ver orden',
+                    onClick: () => {
                       openEntity(type === 'sale' ? 'sales.saleorder' : 'purchasing.purchaseorder', id)
-                    }}
-                  >
-                    Ver orden
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsDuplicateModalOpen(true)}
-                  title="Duplicar"
-                  disabled={mutations.isDuplicating}
-                >
-                  Duplicar
-                </Button>
-                {order.status !== 'FINISHED' && order.status !== 'CANCELLED' && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsAnnulModalOpen(true)}
-                    title="Anular"
-                    disabled={mutations.isAnnuling}
-                    className="text-warning hover:text-warning"
-                  >
-                    Anular
-                  </Button>
-                )}
-                {order.status === 'DRAFT' && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsDeleteModalOpen(true)}
-                    title="Eliminar"
-                    disabled={mutations.isDeleting}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    Eliminar
-                  </Button>
-                )}
-              </>
-            )}
-          </div>
+                    },
+                  }
+                })()}
+                actions={(() => {
+                  const items: DocumentActionItem[] = []
+
+                  items.push({
+                    id: 'duplicate',
+                    label: 'Duplicar',
+                    onClick: () => setIsDuplicateModalOpen(true),
+                    disabled: mutations.isDuplicating,
+                  })
+
+                  if (order.status !== 'FINISHED' && order.status !== 'CANCELLED') {
+                    items.push({
+                      id: 'annul',
+                      label: 'Anular',
+                      onClick: () => setIsAnnulModalOpen(true),
+                      disabled: mutations.isAnnuling,
+                      destructive: true,
+                    })
+                  }
+
+                  if (order.status === 'DRAFT') {
+                    items.push({
+                      id: 'delete',
+                      label: 'Eliminar',
+                      onClick: () => setIsDeleteModalOpen(true),
+                      disabled: mutations.isDeleting,
+                      destructive: true,
+                    })
+                  }
+
+                  return items
+                })()}
+              />
+            </div>
+          ) : undefined
         }
         footer={
           <WizardStickyFooter
@@ -852,13 +856,13 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       <ActionConfirmModal
         open={isAnnulModalOpen}
         onOpenChange={setIsAnnulModalOpen}
-        title="Anular Orden de Trabajo"
+        title={`Anular ${getDomainConceptTitle('ot')}`}
         variant="warning"
         onConfirm={handleAnnul}
-        confirmText="Anular OT"
+        confirmText={`Anular ${getDomainConceptCode('ot')}`}
         description={
           <div className="space-y-3">
-            <p>¿Está seguro de que desea <strong>ANULAR</strong> esta Orden de Trabajo?</p>
+            <p>¿Está seguro de que desea <strong>ANULAR</strong> esta {getDomainConceptTitle('ot')}?</p>
             <div className="bg-warning/10 border border-warning/20 p-3 rounded-md text-warning text-xs flex gap-3 font-medium">
               <AlertTriangle className="h-5 w-5 shrink-0" />
               <ul className="list-disc pl-4 space-y-1">
@@ -874,13 +878,13 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       <ActionConfirmModal
         open={isDeleteModalOpen}
         onOpenChange={setIsDeleteModalOpen}
-        title="Borrar Orden de Trabajo"
+        title={`Borrar ${getDomainConceptTitle('ot')}`}
         variant="destructive"
         onConfirm={handleDelete}
         confirmText="Eliminar permanentemente"
         description={
           <div className="space-y-3">
-            <p>¿Está seguro de que desea <strong>ELIMINAR</strong> permanentemente esta Orden de Trabajo?</p>
+            <p>¿Está seguro de que desea <strong>ELIMINAR</strong> permanentemente esta {getDomainConceptTitle('ot')}?</p>
             <p className="text-destructive font-semibold bg-destructive/10 p-2 rounded text-xs">
               Esta acción es irreversible y borrará todos los registros históricos de esta orden.
             </p>
@@ -891,11 +895,11 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       <ActionConfirmModal
         open={isDuplicateModalOpen}
         onOpenChange={setIsDuplicateModalOpen}
-        title="Duplicar Orden de Trabajo"
+        title={`Duplicar ${getDomainConceptTitle('ot')}`}
         variant="default"
         onConfirm={handleDuplicate}
         confirmText="Duplicar"
-        description="Se creará una nueva OT en Borrador con los mismos materiales y configuración. No se vinculará a la Orden de Venta original."
+        description={`Se creará una nueva ${getDomainConceptCode('ot')} en Borrador con los mismos materiales y configuración. No se vinculará a la ${getDomainConceptTitle('ov')} original.`}
       />
 
       <ActionConfirmModal

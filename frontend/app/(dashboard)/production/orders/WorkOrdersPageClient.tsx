@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
 import { ActionConfirmModal, DataTableView } from '@/components/shared'
+import { getDomainConceptTitle, getDomainConceptCode } from '@/lib/entity-registry'
 import { DataTableColumnHeader, DataCell } from '@/components/shared'
 import { workOrderActions, type WorkOrderActionsCtx } from '@/features/production'
 import { type ColumnDef, type Row, type Table } from "@tanstack/react-table"
@@ -307,8 +308,8 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                 open={cancelConfirm.isOpen}
                 onOpenChange={(open) => { if (!open) cancelConfirm.cancel() }}
                 onConfirm={cancelConfirm.confirm}
-                title="Anular OT"
-                description="¿Está seguro de que desea ANULAR esta OT? Esto detendrá el proceso y liberará reservas."
+                title={`Anular ${getDomainConceptCode('ot')}`}
+                description={`¿Está seguro de que desea ANULAR esta ${getDomainConceptCode('ot')}? Esto detendrá el proceso y liberará reservas.`}
                 variant="destructive"
             />
 
@@ -316,8 +317,8 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                 open={duplicateConfirm.isOpen}
                 onOpenChange={(open) => { if (!open) duplicateConfirm.cancel() }}
                 onConfirm={duplicateConfirm.confirm}
-                title="Duplicar OT"
-                description="Se creará una nueva OT en Borrador con los mismos materiales y configuración. No se vinculará a la Orden de Venta original."
+                title={`Duplicar ${getDomainConceptCode('ot')}`}
+                description={`Se creará una nueva ${getDomainConceptCode('ot')} en Borrador con los mismos materiales y configuración. No se vinculará a la ${getDomainConceptTitle('ov')} original.`}
                 variant="default"
             />
         </div >

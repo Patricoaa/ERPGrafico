@@ -17,6 +17,7 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { cn } from "@/lib/utils"
+import { getDomainConceptTitle, getDomainConceptCode, getDomainConceptMessage } from "@/lib/entity-registry"
 import { toast } from "sonner"
 import { productionApi, useAllowedDteTypes } from "../hooks"
 import { useUoMs, useProductionVariants } from "../hooks"
@@ -186,7 +187,7 @@ export function BOMDrawer({
         open,
         initialData: bomToEdit,
         defaultValues: () => ({
-            name: "Nueva Lista de Materiales",
+            name: `Nueva ${getDomainConceptTitle('ldm')}`,
             active: true,
             yield_quantity: 1,
             yield_uom: "",
@@ -282,10 +283,10 @@ export function BOMDrawer({
 
             if (bomToEdit && bomToEdit.id) {
                 await productionApi.updateBom(bomToEdit.id, payload)
-                toast.success("Lista de Materiales actualizada correctamente")
+                toast.success(getDomainConceptMessage('ldm', 'updated'))
             } else {
                 await productionApi.createBom(payload)
-                toast.success("Lista de Materiales creada correctamente")
+                toast.success(getDomainConceptMessage('ldm', 'created'))
             }
             if (onSuccess) onSuccess()
 
@@ -294,7 +295,7 @@ export function BOMDrawer({
             }, 100)
         } catch (error: unknown) {
             console.error("Error saving BOM:", error)
-            showApiError(error, "Error al guardar Lista de Materiales: ")
+            showApiError(error, `Error al guardar ${getDomainConceptTitle('ldm')}: `)
         } finally {
             setLoading(false)
         }
@@ -302,12 +303,12 @@ export function BOMDrawer({
 
     const identity = useDrawerIdentity('production.bom', mode, bomToEdit, {
         overrideSubtitle: selectedVariant
-            ? `Lista de Materiales • Variante: ${selectedVariant.variant_display_name || selectedVariant.name}`
+            ? `${getDomainConceptTitle('ldm')} • Variante: ${selectedVariant.variant_display_name || selectedVariant.name}`
             : (selectedProduct && selectedProduct.has_variants)
-                ? `Lista de Materiales • Plantilla Base: ${selectedProduct.name}`
+                ? `${getDomainConceptTitle('ldm')} • Plantilla Base: ${selectedProduct.name}`
                 : selectedProduct
-                    ? `Lista de Materiales • P: ${selectedProduct.name}`
-                    : "Lista de Materiales • Receta de Fabricación",
+                    ? `${getDomainConceptTitle('ldm')} • P: ${selectedProduct.name}`
+                    : `${getDomainConceptTitle('ldm')} • Receta de Fabricación`,
         printable: (mode === 'view' || mode === 'edit') && !!bomToEdit?.id,
         onPrint: handlePrint,
     })
@@ -315,7 +316,7 @@ export function BOMDrawer({
     return (
         <>
             {isView && bomToEdit?.id && (
-                <PrintableLayout ref={printRef} title="BOM" displayId={`#${bomToEdit.id}`}>
+                <PrintableLayout ref={printRef} title={getDomainConceptCode('ldm')} displayId={`#${bomToEdit.id}`}>
                     <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
@@ -357,7 +358,7 @@ export function BOMDrawer({
                     />
                 )}
             >
-                <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de lista de materiales" className="flex-1 flex flex-col">
+                <SkeletonShell isLoading={isFetchingInitialData} ariaLabel={`Cargando formulario de ${getDomainConceptTitle('ldm').toLowerCase()}`} className="flex-1 flex flex-col">
                     <div className="px-1">
                         <Form {...form}>
                             <form id="bom-form"
@@ -769,7 +770,7 @@ export function BOMDrawer({
                                     <FormLineItemsTable
                                         icon={Truck}
                                         title="Servicios Tercerizados"
-                                        subtitle={`${serviceFields.length} servicio(s) · Se pre-llenan en la OT al fabricar`}
+                                        subtitle={`${serviceFields.length} servicio(s) · Se pre-llenan en la ${getDomainConceptCode('ot')} al fabricar`}
                                         columns={[
                                             { header: "Servicio", width: "w-[22%]" },
                                             { header: "Proveedor", width: "w-[22%]" },

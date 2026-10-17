@@ -1,5 +1,5 @@
 "use client"
-import { formatEntityDisplay, getEntityIcon } from "@/lib/entity-registry"
+import { formatEntityDisplay, getEntityIcon, getDomainConceptTitle } from "@/lib/entity-registry"
 
 import { useState, useEffect } from "react"
 import { Check, ChevronDown } from "lucide-react"
@@ -31,7 +31,7 @@ interface AdvancedSaleOrderSelectorProps {
 export function AdvancedSaleOrderSelector({
     value,
     onChange,
-    placeholder = "Seleccionar orden de venta...",
+    placeholder = `Seleccionar ${getDomainConceptTitle('ov').toLowerCase()}...`,
     disabled = false,
     customFilter,
     label,

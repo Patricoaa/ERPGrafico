@@ -1,10 +1,11 @@
 import { type Metadata } from "next"
 import { PageContainer } from "@/components/shared"
 import { ProductionHeader } from "./ProductionHeader"
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 export const metadata: Metadata = {
     title: "Módulo de Producción | ERPGrafico",
-    description: "Gestión centralizada de órdenes de trabajo, planificación y listas de materiales.",
+    description: `Gestión centralizada de ${getDomainConceptTitle('ot', true).toLowerCase()}, planificación y ${getDomainConceptTitle('ldm', true).toLowerCase()}.`,
 }
 
 export default function ProductionLayout({ children }: { children: React.ReactNode }) {

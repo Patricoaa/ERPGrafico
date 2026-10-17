@@ -299,10 +299,6 @@ export interface TreasuryMovement {
         id: number | null
         number: string | null
         label: string | null
-        display_id?: string | null
-        status?: string | null
-        dte_type?: string | null
-        folio?: string | null
     } | null
     card_purchase_group?: number | null
     card_purchase_group_detail?: CardPurchaseGroup | null
