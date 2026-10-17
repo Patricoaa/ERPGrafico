@@ -1,0 +1,17 @@
+# Progreso — Nuevo sistema de presentación
+- Fase actual: 4 completada · Puerta B aprobada · Siguiente: Fase 5 (spike)
+- Último completado: `04-architecture-options.md` (principios P1–P9; alternativas A/B/C con código TS para UoM, OV y Compras; matriz A 80 · B 71 · **C 91** · ADR-0078 46; plantillas de card; gobierno; exportación) + borrador `ADR-0087` (*Proposed*) + diagrama `diagrams/alt-c-hybrid.html`
+- Próximo paso exacto: tras la Puerta B → Fase 5 (spike en `components/entity-view/`, rama `spike/entity-view-system`): núcleo mínimo + UoM, OV y las dos más rígidas (Compras, Productos), con al menos una extensión por entidad (`docRef` en `features/documents`); stories en Storybook; métricas frente al sistema actual; prueba de alta de entidad con un subagente sin contexto.
+- Puertas: A ✅ (2026-10-17) · B ✅ (2026-10-17) · C ☐ · D (lotes) —
+- Preguntas abiertas para el usuario: —
+- Decisiones del usuario:
+  - 2026-10-17: las tablas de wizard/modal entran como caso de uso específico · `as any` de `AutoEntityCard.tsx:390` espera al rediseño · `journalEntryFields` lo determina la auditoría (→ TC-016) · TC-012 se corrige en la migración
+  - 2026-10-17 Puerta A: aprueba RC1–RC8 y la matriz C/F/E; pantallas de la Fase 4 = UoM, OV, Compras; aprueba `role="grid"` → `role="table"` en `compact`; **exportación = requisito** (aclarado)
+  - 2026-10-17 Puerta B: alternativa **C**; gobierno (≥3 entidades de ≥2 features para entrar al núcleo; ≤12 props por componente); objetivo **≥85 %** de colecciones sin código a medida; ADR-0078 → *Superseded* al aceptarse ADR-0087; identidad en `entity-registry`, presentación en la definición de entidad (la respuesta llegó numerada "4" dos veces; se interpreta la segunda como la pregunta 5)
+- Entorno: mutagen ✅ · tests remotos ✅ (vitest en contenedor, Node 20.20.2) · Node local v18.19.1
+- Bitácora:
+  - 2026-10-16 F0 iniciada y completada. Cambio relevante frente al §2: `renderCard` **no** es mayoritariamente manual (43/44 envuelven `AutoEntityCard`).
+  - 2026-10-17 F1 completada. Hallazgos clave: el 40 % de los `computed` son referencias a documentos; los 43 `placement: 'detail'` existen para deshacer el acoplamiento card↔tabla en líneas sin card; bug de `exclude` (TC-012); 7 copias del patrón "cantidad a procesar".
+  - 2026-10-17 F2 completada. 82 contextos; la franja "frecuente" (referencia, flujo, progreso, rango, saldo, pie de totales, modos, edición por lote) concentra la rigidez; CMYK descartado como dato; `BillChargesModal` reclasificado a P5.
+  - 2026-10-17 F3 completada. A11y: tabla partida en dos `<table>`, sin `aria-sort`, filas sin teclado. Volúmenes reales moderados (10³ documentos al año): paginación en servidor sí, virtualización solo opcional. Tipado: 0 tests de tipos. Puerta A presentada.
+  - 2026-10-17 F4 completada. Recomendación C (híbrido). Hallazgo: FSD obliga a registrar `docRef` como extensión de `features/documents`. Puerta B presentada.

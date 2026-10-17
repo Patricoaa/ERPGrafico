@@ -1,0 +1,255 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Alternativa C · Esquema semántico + composición",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "def",
+      "type": "frontend",
+      "label": "defineEntity<T>",
+      "sublabel": "campos semánticos",
+      "pos": [
+        40,
+        100
+      ],
+      "size": [
+        170,
+        64
+      ],
+      "tag": "features/<entidad>"
+    },
+    {
+      "id": "layout",
+      "type": "frontend",
+      "label": "Layouts",
+      "sublabel": "tabla · card · kanban",
+      "pos": [
+        40,
+        250
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "ext",
+      "type": "frontend",
+      "label": "Extensión",
+      "sublabel": "tipo o renderer propio",
+      "pos": [
+        40,
+        400
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "coll",
+      "type": "frontend",
+      "label": "useEntityCollection",
+      "sublabel": "TanStack + URL",
+      "pos": [
+        360,
+        100
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "surf",
+      "type": "frontend",
+      "label": "Collection.*",
+      "sublabel": "Table · Grid · Editable",
+      "pos": [
+        360,
+        250
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "reg",
+      "type": "frontend",
+      "label": "Registro de valores",
+      "sublabel": "abierto, tipado",
+      "pos": [
+        360,
+        400
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "fmt",
+      "type": "frontend",
+      "label": "Formatters puros",
+      "sublabel": "Intl es-CL",
+      "pos": [
+        660,
+        400
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "Hook de feature",
+      "sublabel": "TanStack Query → DRF",
+      "pos": [
+        980,
+        100
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "export",
+      "type": "backend",
+      "label": "Exportación",
+      "sublabel": "/export/?format=",
+      "pos": [
+        980,
+        250
+      ],
+      "size": [
+        180,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "features/<entidad>",
+      "wraps": [
+        "def",
+        "layout",
+        "ext"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "components/shared",
+      "wraps": [
+        "coll",
+        "surf",
+        "reg",
+        "fmt"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "def-layout",
+      "from": "def",
+      "to": "layout",
+      "label": "ids tipados",
+      "variant": "emphasis",
+      "labelAt": [
+        125,
+        207
+      ]
+    },
+    {
+      "id": "layout-surf",
+      "from": "layout",
+      "to": "surf",
+      "label": "compone",
+      "variant": "emphasis"
+    },
+    {
+      "id": "def-coll",
+      "from": "def",
+      "to": "coll",
+      "label": "orden y filtros"
+    },
+    {
+      "id": "api-coll",
+      "from": "api",
+      "to": "coll",
+      "label": "filas + rowCount"
+    },
+    {
+      "id": "coll-surf",
+      "from": "coll",
+      "to": "surf",
+      "label": "modelo",
+      "labelAt": [
+        455,
+        207
+      ]
+    },
+    {
+      "id": "ext-reg",
+      "from": "ext",
+      "to": "reg",
+      "label": "registra",
+      "variant": "dashed"
+    },
+    {
+      "id": "reg-surf",
+      "from": "reg",
+      "to": "surf",
+      "label": "renderers"
+    },
+    {
+      "id": "reg-fmt",
+      "from": "reg",
+      "to": "fmt",
+      "label": "formatea"
+    },
+    {
+      "id": "surf-export",
+      "from": "surf",
+      "to": "export",
+      "label": "mismos filtros",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "Por entidad (feature)",
+      "items": [
+        "Semántica de campos una vez",
+        "Layout declarado por superficie",
+        "Extensiones tipadas sin tocar shared"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Núcleo compartido",
+      "items": [
+        "Estado de colección headless",
+        "Compound components por superficie",
+        "Renderers y formatters únicos"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Garantías",
+      "items": [
+        "Claves e ids literales (TY-1, TY-3)",
+        "Una <table> semántica (AX-1)",
+        "Export por el contrato backend"
+      ]
+    }
+  ]
+}
