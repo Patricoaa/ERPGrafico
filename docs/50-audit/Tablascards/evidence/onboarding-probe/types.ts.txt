@@ -1,0 +1,18 @@
+export type PrintMachineKind = "OFFSET" | "DIGITAL" | "PLOTTER"
+export type PrintMachineStatus = "RUNNING" | "IDLE" | "MAINTENANCE"
+
+export interface PrintMachine {
+    id: number
+    code: string
+    name: string
+    kind: PrintMachineKind
+    status: PrintMachineStatus
+    max_sheet: string
+    speed_sheets_hour: number
+    hourly_cost: string
+    last_maintenance: string | null
+    utilization_done: number
+    utilization_capacity: number
+    operator: { id: number; name: string } | null
+    current_work_order: { id: number; display_id: string } | null
+}

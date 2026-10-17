@@ -1,0 +1,24 @@
+"use client"
+
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { registerDocumentValueKinds } from "@/features/documents/entity-view/docRef.kind"
+import { printMachineEntity, printMachineViews } from "./printMachine.entity"
+import type { PrintMachine } from "./types"
+
+// The app has no entity-view bootstrap yet (spike): register the docRef kind used by `workOrder`.
+// It is idempotent. Not exported by the features/documents barrel, so this is a deep import.
+registerDocumentValueKinds()
+
+interface PrintMachineCollectionProps {
+    rows: PrintMachine[]
+}
+
+export function PrintMachineCollection({ rows }: PrintMachineCollectionProps) {
+    const collection = useEntityCollection(printMachineEntity, { rows, isLoading: false, error: null })
+    return (
+        <Collection.Root collection={collection}>
+            <Collection.Toolbar />
+            <Collection.View table={printMachineViews.table} card={printMachineViews.card} />
+        </Collection.Root>
+    )
+}

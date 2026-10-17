@@ -1,17 +1,18 @@
 ---
 id: 0087
 title: Entity view system — semantic entity definitions + per-surface composition (replaces createEntityFields / AutoEntityCard / DataTable authoring)
-status: Proposed
+status: Accepted
 date: 2026-10-17
+accepted: 2026-10-17 (Gate C, spike validated — docs/50-audit/Tablascards/05-prototype-report.md)
 author: frontend-team
-supersedes: (on acceptance) 0078; partially 0054, 0055, 0056, 0057, 0059, 0066, 0067
+supersedes: 0078; partially 0054, 0055, 0056, 0057, 0059, 0066, 0067 (marked as each entity migrates, Phase 7)
 ---
 
 # 0087 — Entity view system
 
 **Related:** audit `docs/50-audit/Tablascards/` (00–04), ADR-0028 (drawer registry), ADR-0072 (dead export removal precedent), ADR-0078 (DataTable façade split, *Proposed*), ADR-0080/0086 (DocumentRef, canonical navigation), contracts `component-fields.md`, `component-card.md`, `component-datatable-views.md`, `component-contracts.md#datacell-primitives`, `export-formats.md`, invariants #6 and #13.
 
-> **Draft for Gate B.** The status moves to *Accepted* only after the spike passes Gate C.
+> **Accepted at Gate C (2026-10-17)** after the spike (`components/entity-view/`, branch `spike/entity-view-system`) rebuilt UoM, products, sale orders (with lines and the editable delivery surface) and purchasing (orders/notes modes) with zero `computed`/`renderCard`/inline columns.
 
 ## Context
 
@@ -66,6 +67,27 @@ Gate A (2026-10-17) approved these causes, the common/frequent/specific requirem
     - The legacy system is frozen (props-compat test) and coexists with the new one.
     - `fromLegacyFields()` adapts schemas that have no `computed`.
     - Migration runs in batches of ≤5 entities. The legacy system is removed when it has zero consumers (ADR-0072 precedent).
+
+### Adjustments from the spike (part of this decision)
+
+- **A1 · Self-registering extensions.** A feature extension exports a field builder (e.g. `docRef(f, accessor, opts)`) that registers its kind when used, so no runtime bootstrap is needed and cross-feature use goes through the owning feature's barrel. Found by the onboarding test.
+- **A2 · Typed entity label.** `label` becomes a union of `entity-registry` keys (today it is `string`, so an unregistered label compiles without icon, drawer or URL).
+- **A3 · Labelled hub.** `hubStatus` requires a readable `caption` (StatusBadge text) shown before the axis rings; table and card share one status vocabulary (Gate C).
+- **No native `min`/`max` on editable inputs.** HTML constraint validation blocks the react-hook-form submit; caps are shown as a hint and validated by the zod schema.
+- **Footer totals group by resolved options** (unit, currency); mixed units are never added.
+
+### Adoption prerequisites (first batch of Phase 7)
+
+| ID | Change | Where |
+|---|---|---|
+| R1 | `align` prop and inline (`span`) rendering in `DataCell` | `components/shared/DataTableCells.tsx` |
+| R2 | Single missing-value marker "—" (secondary tone) in `DataCell` | same |
+| R3 | Explicit dense-surface escape from the Fitts min-height rule | `app/globals.css:766-769`, `components/ui/button.tsx` |
+| R4 | `EntityCard`: accessible selection label + `EntityCard.Meta` slot | `components/shared/EntityCard.tsx` |
+| R5 | `getHubStatuses` typed against a minimal structural interface | `lib/workflow-status.ts` |
+| R6 | Contrast of warning/success intents (1.2:1 and 2.5:1 measured) — **separate color ADR** | color tokens |
+| R7 | Typed collection context and cast-free registry | `components/entity-view` |
+| R8 | Typed entity label (A2) | `lib/entity-registry.ts` |
 
 ## Consequences
 

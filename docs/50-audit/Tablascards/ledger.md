@@ -154,4 +154,28 @@
 - Evidencia: `04-architecture-options.md` §2 y §4 (matriz: A 80, B 71, C 91, ADR-0078 46)
 - Propuesta: alternativa C (esquema semántico + composición por superficie), ADR-0087 *Proposed*; ADR-0078 → *Superseded* al aceptarse
 - Restricciones nuevas: el tipo `docRef` debe registrarse en `features/documents` (FSD, invariante #3); la exportación sigue `export-formats.md` (hook por feature)
-- Estado: **aprobado en la Puerta B (2026-10-17)**: alternativa C, gobierno (≥3 entidades / ≥2 features; ≤12 props), objetivo ≥85 % sin código a medida, ADR-0078 → *Superseded* al aceptar ADR-0087, identidad en `entity-registry`
+- Estado: **aprobado en la Puerta B (2026-10-17)**; prototipo validado técnicamente en la Fase 5 (pendiente Puerta C): alternativa C, gobierno (≥3 entidades / ≥2 features; ≤12 props), objetivo ≥85 % sin código a medida, ADR-0078 → *Superseded* al aceptar ADR-0087, identidad en `entity-registry`
+
+### TC-029 · Prototipo · Verificado
+- Evidencia: `05-prototype-report.md` §3–§4; tsc 0 errores, lint limpio, 32 unitarios + 21 stories en verde, 16 configuraciones inválidas rechazadas en compilación, 0 `computed`/`renderCard` en 6 entidades
+- Estado: **aprobado en la Puerta C (2026-10-17)**; ADR-0087 Accepted, ADR-0078 Superseded
+
+### TC-030 · Arquitectura · Verificado (prueba de alta)
+- Evidencia: `evidence/onboarding-probe/`; el registro de extensiones solo existía en las stories y obligaba a un import profundo entre features
+- Decisión: A1, las extensiones exportan un constructor que registra su tipo al usarse; A2, `label` tipado (pendiente)
+- Estado: A1 implementado en el spike; A2 pendiente (Fase 6)
+
+### TC-031 · Rigidez heredada · Verificado
+- Evidencia: regla Fitts `frontend/app/globals.css:766-769` (40 px mínimo para `button`) que infla tablas densas; `DataCell` centra y pinta "-" en `null`; `EntityCard` sin etiqueta de selección ni slot de meta; contraste de `StatusBadge`/`Chip` warning 1,2:1 y success 2,5:1 (overlay `impeccable`)
+- Decisión vinculada: prerrequisitos R1–R8 (`05` §7)
+- Estado: aprobado (Puerta C): R1–R5 = lote 1 de la Fase 7; R6 = ADR de color aparte
+
+### TC-032 · Bug del sistema actual · Verificado
+- Evidencia: `evidence/legacy/compras--card.390.png` — en la card de OC a 390 px el título aparece como "-", las métricas se cortan y la paginación muestra "Página 1 de NaN"
+- Restricción raíz: RC4/RC6 (card por zonas fijas; paginación de la vista card sin total)
+- Estado: pendiente (se resuelve al migrar Compras; el prototipo no lo reproduce)
+
+### TC-033 · Decisión · Vocabulario de estado (Puerta C)
+- Decisión del usuario (2026-10-17): unificar el estado documental como **hub con etiqueta** en tabla y card
+- Implementación: `hubStatus` exige `caption: StatusValue` (StatusBadge con texto, antes de los anillos); orden y exportación usan ese texto; test de tipos que rechaza un hub sin etiqueta
+- Estado: implementado (spike)
