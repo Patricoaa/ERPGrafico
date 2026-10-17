@@ -1,7 +1,7 @@
 ---
 layer: 20-contracts
 doc: component-datatable-views
-status: active
+status: frozen
 owner: frontend-team
 created: 2026-05-12
 last_review: 2026-05-14
@@ -12,6 +12,8 @@ depends_on:
 ---
 
 # Contrato: DataTable — Sistema de Vistas e Interacciones
+
+> ⚠️ **API de autoría congelada (ADR-0087, 2026-10-17).** Las colecciones nuevas o migradas usan `Collection.*` de `@/components/entity-view`: ver **[component-entity-view.md](./component-entity-view.md)**. `DataTable`/`DataTableView`, `renderCard`/`renderCustomView` y las factories de card no admiten props ni consumidores nuevos (techos fijados por `frontend/lib/__tests__/entity-view.contract.test.ts`). **Se heredan sin cambios** en el sistema nuevo: §5 (`?view=` como clave de URL), §10 (bordes, sombras, radios), los tokens de densidad `--table-*` y las acciones de fila con `ROW_ACTIONS`.
 
 Este documento describe las reglas de arquitectura para el ecosistema `DataTable`, incluyendo variantes, vistas, persistencia y primitivas de card. Toda implementación nueva que toque `DataTable` o sus consumidores debe pasar el [checklist al final de este documento](#checklist-de-pr).
 

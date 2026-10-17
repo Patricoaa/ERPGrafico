@@ -43,13 +43,13 @@ Rules apply to every PR. Violations block merge unless an accepted ADR waives th
 20. All shared components handle `loading` (Skeleton), `empty` (EmptyState), `error` (toast).
 21. Shared components documented in `20-contracts/component-*.md` with full prop table.
 22. Do not modify `components/ui/` (Shadcn base). Extend in `components/shared/`.
-23. Promotion to `components/shared/` requires ≥3 consumers + contract entry.
+23. Promotion to `components/shared/` requires ≥3 consumers + contract entry. The same bar applies to the entity-view core: a value kind enters `components/entity-view/` only when ≥3 entities from ≥2 features use it; otherwise it stays a feature extension (ADR-0087).
 
-## 4.1 Field definitions
+## 4.1 Entity presentation (ADR-0087 — contract [component-entity-view.md](../20-contracts/component-entity-view.md))
 
-24. **`*Fields.ts` is the single source of truth** for entity list/card/kanban fields. Table columns must use `*Fields.toColumns()` as primary source.
-25. Use `computed` type only when standard types (`text`, `currency`, `status`, `chip`, etc.) cannot express the rendering. Prefer standard types.
-26. Fields files with JSX (using `computed`, `icon`, or `chipIcon` with JSX callbacks) must use `.tsx` extension.
+24. **An entity's collection presentation is declared once** with `defineEntity<T>()` in `features/<feature>/entity-view/<entity>.entity.ts` (`.tsx` only when it declares JSX). Every table, card grid, embedded list and wizard/modal batch-edit table renders it with `@/components/entity-view` (`Collection.*`, `EditableCollection`, `CollectionModes`). Layout is declared per surface (`views({ table, card })`); semantics are shared, layout is not.
+25. **No opaque escapes.** Specific needs are a feature value kind (module augmentation + self-registering builder, exported from the feature barrel) or a typed card section (`body: { kind: "custom" }`). Forbidden in entity-view code: `computed`, `renderCard`, inline JSX columns, `as any` / `as unknown as`, ad hoc `<table>`, and `Intl` / `toLocale*String` formatting outside the kind formatters. Core components keep ≤ 12 props. Enforced by `eslint-rules/entity-view-guards.mjs` and `lib/__tests__/entity-view.contract.test.ts`.
+26. **The legacy system is frozen** (`createEntityFields` / `*Fields.ts` / `toColumns()`, `AutoEntityCard`, `DataTable` / `DataTableView`, `renderCard` / `renderCustomView`): no new consumers, props or `FieldType`s. It keeps working for unmigrated screens ([component-fields.md](../20-contracts/component-fields.md), [component-datatable-views.md](../20-contracts/component-datatable-views.md)) and is removed when its last consumer migrates.
 
 ## 5. Hook rules
 

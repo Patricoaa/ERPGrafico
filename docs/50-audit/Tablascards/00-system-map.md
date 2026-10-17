@@ -84,7 +84,7 @@ Conclusión (V): el coste real de `renderCard` es **cableado repetido** (accione
 
 - **Híbridos `column()` + columnas inline** (el esquema no cubre toda la tabla): `WorkOrdersPageClient` (folio y estado inline, el resto con `workOrderFields.column()`), `UoMClientView`, `WarehouseClientView` y `UnbilledChargesClientView` (Fields para la card, ColumnDef inline para la tabla). V
 - **Pantallas de lista sin `*Fields` efectivo:** `settings/audit`, `settings/jobs`, `accounting/accounts/[id]/ledger` (aunque `ledgerMovementFields` existe), `treasury/reconciliation/*`, `BlacklistClientView` (tabla cruda, aunque `blacklistFields.ts` existe), `DraftCartsClientView`, `ProfitDistributionsTab`, `HRSettingsView`, `BudgetVarianceTable`, `CashFlowTable`, `ProfileView`. P (barrido heurístico)
-- **Tablas crudas (`<table>`/`<Table>`) en features:** 22 ubicaciones. Casi todas son **grillas de líneas editables** en wizards y modales (checkout, recepción, despacho, notas, OC, materiales de OT, distribuciones de socios), más 2 reportes (flujo de caja, varianza de presupuesto), 1 selector (`ProductSelector:373`) y 1 desglose en card (`PayrollCard:234`). V (ubicaciones) · P (propósito)
+- **Tablas crudas (`<table>`/`<Table>`) en features:** 22 ubicaciones (corregido en la Fase 1: **21 en 19 archivos**; `NoteStep_LineItems.tsx:64` no es tabla cruda). Casi todas son **grillas de líneas editables** en wizards y modales (checkout, recepción, despacho, notas, OC, materiales de OT, distribuciones de socios), más 2 reportes (flujo de caja, varianza de presupuesto), 1 selector (`ProductSelector:373`) y 1 desglose en card (`PayrollCard:234`). V (ubicaciones) · P (propósito)
 
 ### 3.3 Top de rigidez (renderCard + computed + columnas inline)
 
@@ -101,7 +101,7 @@ Conclusión (V): el coste real de `renderCard` es **cableado repetido** (accione
 | 9 | `TreasuryMovementsClientView` · `ReconciliationPanel` · `MovementClientView` | 10 | |
 | 10 | `features/inventory/components/InventoryCountClientView.tsx` | 10 | Card con líneas |
 
-El inventario completo por archivo (≈110 filas) está en `ledger.md` → TC-000 (enlace al barrido) y se regenera con los comandos del §1. **DP**: no versionar la tabla completa hasta la Fase 2, cuando se convierta en fichas por entidad.
+El inventario completo por archivo (≈110 filas) está en [`00-consumer-inventory.md`](00-consumer-inventory.md) y se regenera con los comandos que allí figuran.
 
 ### 3.4 `computed` por archivo `*Fields` (51 en total)
 

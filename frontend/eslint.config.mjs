@@ -16,6 +16,7 @@ import componentNamingSuffix from "./eslint-rules/component-naming-suffix.mjs";
 import statusMustUseStatusbadge from "./eslint-rules/status-must-use-statusbadge.mjs";
 import mutationMustMarkLocal from "./eslint-rules/mutation-must-mark-local.mjs";
 import drawerNoRounded from "./eslint-rules/drawer-no-rounded.mjs";
+import entityViewGuards from "./eslint-rules/entity-view-guards.mjs";
 import { NO_UNSAFE_ALLOWLIST_FILES } from "./eslint-rules/no-unsafe-allowlist.mjs";
 
 const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
@@ -199,6 +200,10 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
           message: "Cross-feature: import from barrel (features/[name]/index.ts), not utils/ subpath.",
         },
         {
+          group: ["@/features/*/entity-view/*", "@/features/*/entity-view/**"],
+          message: "Cross-feature: import entity-view extensions (e.g. docRef) from the owning feature barrel (ADR-0087 A1).",
+        },
+        {
           group: ["@/features/*/actions", "@/features/*/actions/*",
                    "@/features/*/contexts/*", "@/features/*/contexts/**"],
           message: "Cross-feature: import from barrel (features/[name]/index.ts), not internal file.",
@@ -238,6 +243,10 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
         {
           group: ["@/features/*/utils/*", "@/features/*/utils/**"],
           message: "Cross-feature: import from barrel (features/[name]/index.ts), not utils/ subpath.",
+        },
+        {
+          group: ["@/features/*/entity-view/*", "@/features/*/entity-view/**"],
+          message: "Cross-feature: import entity-view extensions (e.g. docRef) from the owning feature barrel (ADR-0087 A1).",
         },
         {
           group: ["@/features/*/actions", "@/features/*/actions/*",
@@ -406,6 +415,18 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   },
   rules: {
     "drawer/no-rounded": "error",
+  },
+}, // Entity view system guards — ADR-0087 §9, component-entity-view.md §9
+{
+  files: ["**/*.ts", "**/*.tsx"],
+  plugins: {
+    "entity-view": entityViewGuards,
+  },
+  rules: {
+    "entity-view/no-legacy-presentation": "error",
+    "entity-view/no-adhoc-format": "error",
+    "entity-view/no-adhoc-table": "error",
+    "entity-view/no-deep-import": "error",
   },
 }, ...storybook.configs["flat/recommended"]]);
 

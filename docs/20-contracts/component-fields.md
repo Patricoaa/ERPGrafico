@@ -1,13 +1,15 @@
 ---
 layer: 20-contracts
 doc: component-fields
-status: active
+status: frozen
 owner: frontend-team
 last_review: 2026-08-03
 stability: stable
 ---
 
 # Entity Fields — asignación de FieldType a DataCell
+
+> ⚠️ **Congelado (ADR-0087, 2026-10-17).** El código nuevo o migrado declara sus campos con `defineEntity<T>()` y los presenta con `@/components/entity-view`: ver **[component-entity-view.md](./component-entity-view.md)**. Este contrato sigue rigiendo a los `*Fields.ts` existentes hasta que migren (Fase 7). No admite `FieldType`, opciones ni consumidores nuevos; lo verifica `frontend/lib/__tests__/entity-view.contract.test.ts`.
 
 > **File**: `frontend/components/shared/entity-fields.tsx`
 > **Import**: `import { createEntityFields } from '@/components/shared'`

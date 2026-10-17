@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-decision-tree
 status: active
 owner: frontend-team
-last_review: 2026-05-28
+last_review: 2026-10-17
 stability: stable
 ---
 
@@ -71,19 +71,29 @@ graph TD
 
 ```mermaid
 graph TD
-    T[¿Qué tipo de tabla?]
-    T -->|CRUD con filtros/paginación/acciones| TA(DataTable variant="standalone" | "embedded")
-    T -->|Tabla display simple en tabs/detalle| TB(DataTable variant="minimal")
-    T -->|Lista compacta en modal/drawer| TC(DataTable variant="compact")
-    T -->|Líneas editables en formulario| TD(FormLineItemsTable / AccountingLinesTable)
+    T[¿Qué tipo de tabla o colección?]
+    T -->|Colección de una entidad: lista, cards, lista embebida en drawer/ficha| TA("defineEntity + Collection.Root/View (@/components/entity-view)")
+    T -->|Pantalla que cambia de entidad: órdenes ↔ notas| TM(CollectionModes)
+    T -->|Cantidad a procesar / reparto contra tope en wizard o modal| TB(defineEditable + EditableCollection)
+    T -->|Líneas editables de un formulario de documento| TD(FormLineItemsTable / AccountingLinesTable)
     T -->|Reporte jerárquico contable| TE(ReportTable)
+    T -->|Kanban, árbol, conciliación u otra vista de dominio| TF("Superficie de la feature sobre EntityCollection<T>")
 ```
 
-**¿Cómo renderizo un campo de una entidad (text vs secondary, código, fecha, moneda, chip…)?** →
-Declarar el `type` del campo en `*Fields.ts` con `createEntityFields<T>()`. El motor resuelve el
-`DataCell` correcto en las tres superficies. Ver **[component-fields.md](./component-fields.md)**
-(tabla de decisión de `type` y referencia FieldType → renderer). No se instancia `DataCell.*`
-inline en columnas regulares de entidad.
+**Colección de una entidad (ADR-0087).** Toda colección nueva o migrada se declara una vez con
+`defineEntity<T>()` en `features/<f>/entity-view/<entidad>.entity.ts` y se compone por superficie con
+`Collection.*`. Contrato: **[component-entity-view.md](./component-entity-view.md)**.
+`DataTable`/`DataTableView`/`AutoEntityCard`/`createEntityFields` están **congelados**: solo para las
+pantallas aún no migradas, sin props ni consumidores nuevos ([component-datatable-views.md](./component-datatable-views.md),
+[component-fields.md](./component-fields.md)). Las tablas `<table>` hechas a mano en features están prohibidas
+(ratchet en `lib/__tests__/entity-view.contract.test.ts`).
+
+**¿Cómo renderizo un campo de una entidad (texto, código, fecha, dinero, flujo, referencia…)?** →
+Elegir el **tipo de valor** (`f.text`, `f.code`, `f.date`, `f.money`, `f.flow`, `f.quantity`,
+`f.status`, `f.hubStatus`, `f.contact`, `f.tags`, `f.progress`…) en la definición de entidad. Una
+referencia a otro documento es `docRef(f, …)` de `@/features/documents`. Si ningún tipo encaja, la
+feature registra **su propio tipo** (component-entity-view.md §3); nunca JSX inline ni `DataCell.*`
+directamente.
 
 - **`StatusBadge`**: **Obligatorio** para el estado de las entidades (ej. `in_production`, `paid`). Lee `state-map.md`.
 - **`SectionHeader`**: **Obligatorio** para títulos de sección dentro de cards y listados. 2 variantes (`card` y `list`). [Ver contrato completo](./component-section-header.md).
@@ -121,7 +131,7 @@ graph TD
 - **`CollapsibleSheet`**: Cuando necesites un panel lateral con contenido secundario (ej. Ver el detalle de una orden al lado de un listado).
 - **`Drawer`**: Superficie modal que se despliega desde los bordes de la página. Compatible con **formularios CRUD** (create/edit) y subvistas de datos (tablas, históricos, libros mayores). Preserva el contexto visual de la página subyacente. Para formularios, usar `side="left"` y dimensionar según la tabla en [component-drawer.md](./component-drawer.md).
 - **`EntityDetailPage`**: ~~Shell de página completa para rutas `[id]`.~~ **Eliminado (T-95).** Las rutas `[id]` redirigen server-side a `<list_url>?selected={id}` per ADR-0020. Ver [list-modal-edit-pattern.md](./list-modal-edit-pattern.md).
-- **Skeletons (`SkeletonShell`, `CardSkeleton`, `PageLayoutSkeleton`)**: Úsalos durante el renderizado inicial y las transiciones asíncronas para evitar el salto de layout (CLS). El skeleton de tablas es integrado en `DataTable` (`isLoading` + `skeletonRows`).
+- **Skeletons (`SkeletonShell`, `CardSkeleton`, `PageLayoutSkeleton`)**: Úsalos durante el renderizado inicial y las transiciones asíncronas para evitar el salto de layout (CLS). El skeleton de tablas está integrado en `Collection.*` (`isLoading` de la fuente) y, en el sistema congelado, en `DataTable` (`isLoading` + `skeletonRows`).
 
 
 ## 5. Formularios y Surfaces

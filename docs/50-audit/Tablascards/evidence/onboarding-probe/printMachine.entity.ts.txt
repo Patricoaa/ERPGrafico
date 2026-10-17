@@ -1,0 +1,56 @@
+import { Printer } from "lucide-react"
+import { defineEntity, type CardTone, type StatusValue } from "@/components/entity-view"
+import type { PrintMachine, PrintMachineKind, PrintMachineStatus } from "./types"
+
+const STATUS_LABELS: Record<PrintMachineStatus, string> = {
+    RUNNING: "En marcha",
+    IDLE: "Detenida",
+    MAINTENANCE: "Mantención",
+}
+
+const STATUS_TONES: Record<PrintMachineStatus, CardTone> = {
+    RUNNING: "success",
+    IDLE: "muted",
+    MAINTENANCE: "warning",
+}
+
+const KIND_LABELS: Record<PrintMachineKind, string> = {
+    OFFSET: "Offset",
+    DIGITAL: "Digital",
+    PLOTTER: "Plotter",
+}
+
+export const printMachineEntity = defineEntity<PrintMachine>()((f) => ({
+    label: "production.printmachine",
+    fields: {
+        code: f.code("code", { label: "Código" }),
+        name: f.text("name", { label: "Nombre" }),
+        kind: f.text((m) => KIND_LABELS[m.kind], { label: "Tipo", tone: "secondary" }),
+        status: f.status((m): StatusValue => ({ status: m.status, label: STATUS_LABELS[m.status] }), { label: "Estado" }),
+        speed: f.quantity("speed_sheets_hour", { label: "Velocidad", uom: "pliegos/h", decimals: 0 }),
+        hourlyCost: f.money("hourly_cost", { label: "Costo hora" }),
+        utilization: f.progress((m) => ({ done: m.utilization_done, total: m.utilization_capacity }), { label: "Utilización", format: "percent" }),
+        operator: f.contact("operator", { label: "Operador" }),
+        workOrder: f.value(
+            "docRef",
+            (m) => (m.current_work_order ? { label: "production.workorder", id: m.current_work_order.id, display: m.current_work_order.display_id } : null),
+            { label: "OT actual", fallback: "—" },
+        ),
+        lastMaintenance: f.date("last_maintenance", { label: "Última mantención" }),
+    },
+}))
+
+export const printMachineViews = printMachineEntity.views({
+    table: {
+        columns: ["code", "name", "kind", "status", "speed", "hourlyCost", "utilization", "operator", "workOrder", "lastMaintenance"],
+        defaultSort: "name",
+    },
+    card: {
+        title: "name",
+        subtitle: ["code", "kind"],
+        trailing: ["status"],
+        meta: ["speed", "operator"],
+        body: { kind: "progress", field: "utilization" },
+        media: { icon: Printer, tone: (m: PrintMachine) => STATUS_TONES[m.status] },
+    },
+})

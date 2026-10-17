@@ -8,6 +8,7 @@ preconditions:
   - 20-contracts/hook-contracts.md
   - 20-contracts/api-contracts.md
   - 20-contracts/state-map.md
+  - 20-contracts/component-entity-view.md
 validation:
   - npx tsc --noEmit
   - npm run lint
@@ -19,7 +20,7 @@ forbidden:
   - cross-feature internal imports
 status: active
 owner: frontend-team
-last_review: 2026-04-23
+last_review: 2026-10-17
 ---
 
 # Playbook — Add frontend feature
@@ -43,8 +44,10 @@ A new business capability needs UI (list + detail + forms). Backend endpoint alr
 features/[name]/
   api/
     [name]Api.ts       # HTTP calls — thin axios wrappers
+  entity-view/
+    [name].entity.ts   # presentation: fields once + views per surface (ADR-0087)
   components/
-    [Name]List.tsx
+    [Name]Collection.tsx
     [Name]Detail.tsx
     forms/
       [Name]Form.tsx
@@ -101,7 +104,7 @@ Hooks import from `./api/[name]Api`, never from `@/lib/api` directly. See [front
 
 ### 4. Write components
 
-- **Field definitions first**: Create `features/[name]/[name]Fields.ts` (or `.tsx` if using `computed`) with `createEntityFields()`. This is the single source of truth for list/card views. Use `toColumns()` for DataTable columns and `toCardFields()` for cards.
+- **Entity presentation first** (invariant #13): declare the entity once in `features/[name]/entity-view/[name].entity.ts` with `defineEntity<T>()` and compose it with `Collection.*`. See **step 4c**. `createEntityFields` / `*Fields.ts` / `AutoEntityCard` / `DataTable` are frozen: do not use them in a new feature.
 - Three states mandatory: loading (Skeleton), empty (EmptyState), error (toast handled by hook).
 - Status: `StatusBadge` only.
 - Forms: `react-hook-form` + `zodResolver(schema)`. El patrón canónico de edición desde lista es `useSelectedEntity` + modal local. Ver [list-modal-edit-pattern.md](../20-contracts/list-modal-edit-pattern.md).
@@ -194,11 +197,44 @@ export function EntityDrawer({
 }
 ```
 
+### 4c. Dar de alta la presentación de una entidad (entity-view)
+
+Contrato: [component-entity-view.md](../20-contracts/component-entity-view.md). Guía corta con ejemplos: `frontend/components/entity-view/README.md`. Ejemplos completos: `docs/50-audit/Tablascards/06-spec.md` §14.
+
+1. **Etiqueta.** Confirma que la entidad está en `ENTITY_REGISTRY` (`lib/entity-registry.ts`): de ahí salen el nombre, el icono, la URL canónica y el drawer. Si no está → añádela primero ([entity-identity.md](../20-contracts/entity-identity.md)).
+2. **Definición** `features/[name]/entity-view/[name].entity.ts`:
+   ```ts
+   export const warehouseEntity = defineEntity<Warehouse>()((f) => ({
+       label: "inventory.warehouse",
+       fields: {
+           code: f.code("code", { label: "Código" }),
+           name: f.text("name", { label: "Nombre" }),
+           active: f.status((w): StatusValue => (w.is_active ? { status: "ACTIVE", label: "Activa" } : { status: "INACTIVE", label: "Inactiva" }), { label: "Estado" }),
+       },
+   }))
+   export const warehouseViews = warehouseEntity.views({
+       table: { columns: ["code", "name", "active"], defaultSort: "name" },
+       card: { title: "name", subtitle: ["code"], trailing: ["active"] },
+   })
+   ```
+   - Para cada dato, elige el **tipo de valor** (contrato §2). Si es una referencia a otro documento, usa `docRef(f, …)` de `@/features/documents`.
+   - Si ningún tipo encaja y lo usa una sola entidad o feature, crea una **extensión** en tu feature (contrato §3: aumentación + registro + constructor) y expórtala por tu barrel.
+   - Para un dato visual de dominio dentro de la card, usa `body: { kind: "custom", component }`.
+   - **Nunca** JSX inline, casts ni formateo manual: la regla ESLint y el test de contrato lo bloquean.
+3. **Vista** `features/[name]/components/[Name]Collection.tsx`: el hook de la feature (invariante #5) → `useEntityCollection(entity, { rows, isLoading, isRefetching, error, refetch, rowCount })` → `<Collection.Root>` + `<Collection.Toolbar>` (búsqueda y filtros como hijos) + `<Collection.View table card />`. Documentos y movimientos paginan **en servidor** (`pagination: { mode: "server", … }` + `rowCount`).
+4. **Casos especiales**:
+   - tabla editable de wizard o modal → `defineEditable` + `EditableCollection`, con `editableSchema` en `schema.ts` (invariante #9);
+   - pantalla con modos → `CollectionModes`;
+   - kanban, árbol u otra vista de dominio → una superficie de tu feature que recibe `EntityCollection<T>`.
+5. **Story** `features/[name]/entity-view/[Name].stories.tsx` con los estados loading/empty/error (decorador `withEntityView`).
+6. **Capacidad que aún falta** (estado en la URL, agrupación, expansión…: contrato §10.1): añádela a `@/components/entity-view` en un lote de la Fase 7 o deja la pantalla en el sistema congelado **sin ampliarlo**. No se agregan props a `DataTable`.
+7. **Verificación:** `npx tsc --noEmit`, `npm run lint` (incluye `entity-view/*`) y `npm run test -- lib/__tests__/entity-view.contract.test.ts`.
+
 ### 5. Write barrel
 
 ```ts
 // features/[name]/index.ts
-export { [Name]List, [Name]Detail, [Name]Form } from './components'
+export { [Name]Collection, [Name]Detail, [Name]Form } from './components'
 export { use[Name]s, useCreate[Name] } from './hooks'
 export type { [Name]Input } from './components/forms/schema'
 ```
@@ -253,6 +289,7 @@ npm run dev     # smoke test in browser
 - [ ] All three UI states handled.
 - [ ] Hook returns domain-named properties.
 - [ ] No cross-feature deep import.
+- [ ] Entity collections built with `@/components/entity-view` (no `createEntityFields` / `DataTable` / `AutoEntityCard`, no `<table>`); entity contract test green.
 - [ ] Tests pass, coverage ≥ module threshold.
 - [ ] Smoke test in browser: list → create → detail → edit → delete.
 - [ ] No new shared component created ad hoc (if needed → [add-shared-component.md](add-shared-component.md)).

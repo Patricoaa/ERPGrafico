@@ -1,13 +1,16 @@
 ---
 id: 0078
 title: DataTable family façade-first split (56-prop surface distilled behind a stable API)
-status: Proposed
+status: Superseded
+superseded_by: 0087 (2026-10-17)
 date: 2026-10-09
 author: frontend-team
 deferred: 2026-10-09 — product owner did not approve yet; implementation parked until vitest/CI (Node ≥20.12) can run the 56-prop compat test. Re-open by approving this ADR.
 ---
 
 # 0078 — DataTable family façade-first split
+
+> **Superseded by [ADR-0087](0087-entity-view-system.md) (2026-10-17).** Its props-compat test is reused to freeze the legacy `DataTable` API during coexistence; its blocking assumption (no vitest) no longer holds.
 
 **Related:** `docs/50-audit/design-system-ui-audit.md` (§8 family refactor, T8), ADR-0066/0067 (discriminated-union surface reduction precedent), ADR-0072 (dead shared exports removal), `docs/20-contracts/component-datatable-views.md`, `docs/50-audit/design-system-ui-audit.md` §4.5
 
