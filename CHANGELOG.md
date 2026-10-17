@@ -2,6 +2,88 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.24](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.23...v0.3.24) (2026-10-17)
+
+
+### 🚀 Maintenance
+
+* **documents:** M6 — retiro del GFK allocated_to y StockMove.related_documents; deprecación de formatos legacy ([34039ae](https://github.com/Patricoaa/ERPGrafico/commit/34039ae643a9050e3e8adf5d4ba8a7e8977f1011))
+
+
+### 📚 Documentation
+
+* **audit:** auditoría del sistema documental, decisiones D1–D6 ([de83349](https://github.com/Patricoaa/ERPGrafico/commit/de8334987f6abe978e55e4e033d59436f438c836))
+* **audit:** backfill de líneas aplicado; decisión de pagos ([8662220](https://github.com/Patricoaa/ERPGrafico/commit/86622200e58ad9dd0daeb2e855b18d417acad3ae))
+* **audit:** dev server re-sembrado con el seed actualizado ([b0f83b5](https://github.com/Patricoaa/ERPGrafico/commit/b0f83b58df8c7d3b5651b31bc921ccb60bd58d22))
+* **audit:** estado de GAP-04 tras M4d ([fa8d891](https://github.com/Patricoaa/ERPGrafico/commit/fa8d8911f8fd48f22120b920c9b3fdd77208e40f))
+* **audit:** plan de la etapa UI — ficha documental y retiro del Order Hub ([888cd3a](https://github.com/Patricoaa/ERPGrafico/commit/888cd3ab8da3191d94fc474d9d1a39274e31db4e))
+* **documents:** U0 — ADR-0083 ficha documental reemplaza el Order Hub; contrato component-document-sheet y área (domain) en DocumentRef ([f6efc20](https://github.com/Patricoaa/ERPGrafico/commit/f6efc20b1d04cc83923d1b00bfdf4ed20cdb9a59))
+
+
+### ⚙️ Refactors
+
+* **purchasing:** documentos de compra crean StockMove directo (ADR-0085 Fase 2.2) ([410f726](https://github.com/Patricoaa/ERPGrafico/commit/410f72640ae5f435ebab864f408bca0de2fbe8c0))
+* **sales:** devoluciones/NC crean StockMove directo (ADR-0085 Fase 2.3) ([5484f22](https://github.com/Patricoaa/ERPGrafico/commit/5484f22f603014b9c7d51ca2f95bb3ae028a90ad))
+* **sales:** el despacho es dueño de sus StockMove; anulación revierte todos los movimientos (ADR-0085) ([ca5cbfb](https://github.com/Patricoaa/ERPGrafico/commit/ca5cbfb8b63a4db4348b0dcc3213c2ff01d3789d))
+
+
+### 🐛 Bug Fixes
+
+* **accounting:** evitar crash al abrir cuentas raíz sin padre ([40d47ec](https://github.com/Patricoaa/ERPGrafico/commit/40d47ec591605a2f8667951aec0d80a26d0672eb))
+* **audit:** corrige espaciado colapsado y rediseña lista de cambios en ActivitySidebar ([76ae303](https://github.com/Patricoaa/ERPGrafico/commit/76ae303cc52d93813e32f264acbc4ad6bca0c327))
+* **demo:** track_inventory=False explícito en productos SERVICE/SUBSCRIPTION del seed ([07b6c9e](https://github.com/Patricoaa/ERPGrafico/commit/07b6c9edef5b5b70cc5dee493f2031bbea94d2d9))
+* **documents:** ciclo con fuente única para tarjeta y ficha (folio pendiente) e intención de etapa; evaluación de la máquina de estados ([79e16be](https://github.com/Patricoaa/ERPGrafico/commit/79e16be00afea359895160dee74689e3580b32f0))
+* **documents:** drillback en fichas documentales + IDs sin zero-padding + relaciones OV→InventoryDocument ([0c76bd7](https://github.com/Patricoaa/ERPGrafico/commit/0c76bd75fed16f4a4113a1a58279e4fd3c411a2e))
+* **documents:** elimina zero-padding de display_id en todos los modelos con SequenceService ([13253ea](https://github.com/Patricoaa/ERPGrafico/commit/13253ea51f1e23b43c74d768b505ea39ef2c5764))
+* **documents:** elimina zero-padding de JournalEntry.display_id + ignora .playwright-cli/ ([e986d6d](https://github.com/Patricoaa/ERPGrafico/commit/e986d6d8e291293852d92e32ec9038bb60d7df24))
+* **documents:** M0 hotfix — recepciones del Hub, drawers logísticos, pagado único, Invoice.order ([868c2ad](https://github.com/Patricoaa/ERPGrafico/commit/868c2adb3b1e6ff0fede143d61084326f03c3dd6))
+* **documents:** M1 integridad — StockMove↔documento, cumplimiento de despacho, comandos de auditoría y backfill ([1f814e9](https://github.com/Patricoaa/ERPGrafico/commit/1f814e95116975007d2cd59f1eb3c137cd41fb30))
+* **documents:** OT enlazable en la tabla de productos y factura en borrador deja vacío el paso de facturación ([933b3ce](https://github.com/Patricoaa/ERPGrafico/commit/933b3ce766240eaf29343457dd24d4174899233e))
+* **documents:** piloto U2 — orden de columnas de productos, subtotales y precios netos en la OV, detalle de relaciones solo en contactos y tesorería ([b03c40f](https://github.com/Patricoaa/ERPGrafico/commit/b03c40f1771dd9a01b5cd01cfe06517ba4b01fcf))
+* **documents:** ref de navegación omite campos presentacionales (evita N+1) (ADR-0086) ([14a54e9](https://github.com/Patricoaa/ERPGrafico/commit/14a54e9fc4f0c7390c8c95772e59f83afc81de31))
+* **drillback:** fichas documentales abren en pila de entidades desde todas las vistas ([aa78d77](https://github.com/Patricoaa/ERPGrafico/commit/aa78d778c9b143669753b67f2a8d4dfd03f2c5c2))
+* **frontend:** reconciliar escala tipográfica con el shell y añadir enforcement (ADR-0082) ([9d276f1](https://github.com/Patricoaa/ERPGrafico/commit/9d276f144b2bb39b93b6943d2709e6b971257d94))
+* **frontend:** redireccionamiento por permisos, capa de error y componentes UI ([0980fff](https://github.com/Patricoaa/ERPGrafico/commit/0980fff1e63c40935f1c9dde0bb252b42c21c761))
+* **inventory:** elimina status_display del print template de InventoryDocumentDrawer ([496e485](https://github.com/Patricoaa/ERPGrafico/commit/496e48521356cce100b1c9ab6732653705aeb006))
+* **inventory:** evitar StockMoves para productos sin control de stock ([4fbdbe0](https://github.com/Patricoaa/ERPGrafico/commit/4fbdbe00b72a7273366f38879558b646433e9c5d))
+* **purchasing:** elimina guard de ubicaciones sin uso al anular recepción (ADR-0085) ([29c8867](https://github.com/Patricoaa/ERPGrafico/commit/29c8867eab6280a3eed01a0a7e63d98c53a09225))
+* **sales:** confirm_delivery usa get_or_create para ubicaciones INTERNO/CLIENTE ([4a8ca1b](https://github.com/Patricoaa/ERPGrafico/commit/4a8ca1bcecf5a3ab8f1836cda56f0516139dbd5f))
+* **search:** búsqueda global fallaba en PostgreSQL (tsvector = tsquery) ([fa24ba0](https://github.com/Patricoaa/ERPGrafico/commit/fa24ba015d537d511c7804bff838e574237099f6))
+* **seed:** seed usa servicios para facturar y genera escenarios documentales; FOR UPDATE en PostgreSQL ([76e7556](https://github.com/Patricoaa/ERPGrafico/commit/76e75563102da2ed02eacaa09fde64ad9cfe207f))
+* **treasury:** INT-15 anular pago con devolución no duplica el efecto en caja ([5e16594](https://github.com/Patricoaa/ERPGrafico/commit/5e16594299a6c3988877167431d8981ff67d4544))
+* **treasury:** INT-16 traspasos internos — método eliminado e Idempotency-Key faltante ([ebebd25](https://github.com/Patricoaa/ERPGrafico/commit/ebebd25388e1b6bb2ad4a29acba8bc7480306bd1))
+* **treasury:** M4d — regla única de reparto de pagos, sin doble conteo (GAP-04 b/c) ([be3e6f7](https://github.com/Patricoaa/ERPGrafico/commit/be3e6f70c2ff1c43ec1449b0c31acdff942ab6c3))
+* **treasury:** movimiento de tesorería — acciones del kebab, rowActions y drillback ([7cb64e2](https://github.com/Patricoaa/ERPGrafico/commit/7cb64e2ee349b6133323a43d89e1a6353f77913b))
+
+
+### ✨ Features
+
+* **audit:** extrae history-display, compacta tipografía/espaciado en ActivitySidebar y amplía traducción de campos ([7c58581](https://github.com/Patricoaa/ERPGrafico/commit/7c585818b7675e9fb035500301798305782e1ca6))
+* **audit:** historial de actividad para cheque, lote terminal y distribución de resultados ([b6c32ac](https://github.com/Patricoaa/ERPGrafico/commit/b6c32ac4def719a10c5815597a7343855e667fb0))
+* **billing:** M4a — facturas con líneas propias, quantity_invoiced e invoicing_status (ADR-0081) ([16ff612](https://github.com/Patricoaa/ERPGrafico/commit/16ff6120c1c15174cc9f7d6e71f5bb2bf5cefe47))
+* **billing:** M4b — facturación parcial y multi-orden por cantidad (ADR-0081) ([5b233d8](https://github.com/Patricoaa/ERPGrafico/commit/5b233d8baacc289cf456051747a305eca51af823))
+* **billing:** M4c — notas sobre líneas de factura (GAP-14) y facturación por entregas en el Hub ([a09f3ac](https://github.com/Patricoaa/ERPGrafico/commit/a09f3acd3bd03c304f789b7a9862e4a277a2655b))
+* **documents:** CheckSerializer expone sale_order_document y frontend usa DocumentRef ([3e9c98f](https://github.com/Patricoaa/ERPGrafico/commit/3e9c98ff7745d31f0890ea4450669bb296f8c96f))
+* **documents:** drilldown documental navega a la ruta canónica del destino (ADR-0086) ([ff33c27](https://github.com/Patricoaa/ERPGrafico/commit/ff33c27c3c9f8bb49afb44feba2d0996983a8b52))
+* **documents:** fichas documentales — relaciones, acciones y kebab funcionales ([3f3a236](https://github.com/Patricoaa/ERPGrafico/commit/3f3a2360eebdfd0f43615a7e3fe6768cf7880a15))
+* **documents:** identidad de fila de OV en tablas de crédito (ADR-0086) ([e757521](https://github.com/Patricoaa/ERPGrafico/commit/e7575215ac1ede1edd4aec75a0112514db7f2f4d))
+* **documents:** InventoryDocument y WorkOrder exponen DocumentRef de su origen (ADR-0086) ([27d6c1a](https://github.com/Patricoaa/ERPGrafico/commit/27d6c1a68c69cdff2528adf8b56d7da0a18f13f0))
+* **documents:** InvoiceSerializer expone origin_document y la ficha navega al origen (ADR-0086) ([d724fba](https://github.com/Patricoaa/ERPGrafico/commit/d724fba0abe2f9eca05d1cad78f08a2c8482c8f3))
+* **documents:** M2 — ADR-0080, DocumentRef, servicio de relaciones y resolvedor /d/{label}/{id} ([6729d5c](https://github.com/Patricoaa/ERPGrafico/commit/6729d5cc23565efe32a2cb49beed8683b74cbdfb))
+* **documents:** M3 — ficha común, documentos relacionados, pila con volver y OV/OC al Hub ([8f12f59](https://github.com/Patricoaa/ERPGrafico/commit/8f12f5933ce5490b424ad4b0b114502b8061f7f2))
+* **documents:** M5 — relaciones en todos los módulos, rutas canónicas (GAP-08) y un solo registro de fichas (GAP-12) ([21d90db](https://github.com/Patricoaa/ERPGrafico/commit/21d90db88d575f6a5edd85d7e6793b7225e9a66c))
+* **documents:** piloto U2 — contexto en una fila, subtotal al final, botón de acciones integrado y filas de relaciones como enlace único con icono ([55ac822](https://github.com/Patricoaa/ERPGrafico/commit/55ac822d20d5c6f2fda6862d8f676b93c5dec65a))
+* **documents:** piloto U2 refinado — menú de acciones en cabecera, Resumen con productos y totales, relaciones con contactos, asientos e info por documento ([d03d0ae](https://github.com/Patricoaa/ERPGrafico/commit/d03d0ae08ca063556ef7b6ceb38372342a501111))
+* **documents:** U1–U2 — ficha documental (tabs, ciclo, acciones, relaciones) y piloto en la OV ([d0295c2](https://github.com/Patricoaa/ERPGrafico/commit/d0295c2d0d0c021d3ab2cc2c1c40896bd6e1e354))
+* **documents:** U3 — ficha documental de OC y de factura/nota; las listas abren fichas en lugar del Hub ([e16dac5](https://github.com/Patricoaa/ERPGrafico/commit/e16dac5a925a027453acbdedc3a6210b5e843222))
+* **documents:** U4 — todos los puntos de entrada abren fichas documentales; ningún flujo abre el Order Hub ([461a669](https://github.com/Patricoaa/ERPGrafico/commit/461a669f7191f46bc2bce9dfc5b2a5c668167497))
+* **documents:** U5 — DocumentSheet genérico y migración del resto de fichas documentales ([c65fe3a](https://github.com/Patricoaa/ERPGrafico/commit/c65fe3a5d4f11b0103ea45f08b13f8581c58566a))
+* **documents:** U6 — retiro del Order Hub y de los formatos legacy de relaciones ([b9821f0](https://github.com/Patricoaa/ERPGrafico/commit/b9821f0fecf9e6849d037fd49b0a279eb8174485))
+* **inventory:** canoniza el folio del documento de inventario como INV-{id} ([d771448](https://github.com/Patricoaa/ERPGrafico/commit/d771448b72eb78e173234849cacd32e3bef5cf7b))
+* **states:** ADR-0084 — estado del documento desacoplado del pago (un campo por eje) ([be715a3](https://github.com/Patricoaa/ERPGrafico/commit/be715a38cd066bcf5cc446141c73a8bb0d64fb4e))
+* **treasury:** acciones contextuales de factura en movimiento de tesorería ([f5a7d1b](https://github.com/Patricoaa/ERPGrafico/commit/f5a7d1b34cc66c1bb2eaea2fc59bad8b8b63c370))
+* **ux:** centraliza conceptos de dominio (LdM/OT/OV) y acciones de cabecera de ficha ([15aa6b8](https://github.com/Patricoaa/ERPGrafico/commit/15aa6b858ae614feb06ffe7b7386fd417340a9d5))
+
 ### [0.3.23](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.22...v0.3.23) (2026-10-14)
 
 
