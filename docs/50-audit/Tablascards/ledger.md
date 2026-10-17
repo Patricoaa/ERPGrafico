@@ -249,5 +249,5 @@
 
 ### TC-046 · Defecto latente del backend · Verificado
 - Evidencia: `ruff check backend/inventory/selectors.py` → 8 × F821. `timezone` y `Subscription` no están importados en `selectors.py:730-736`; ya estaba así en `HEAD`, antes del lote. Esa función lanza `NameError` si se ejecuta
-- Decisión: fuera del alcance de entity-view; se informa al usuario
-- Estado: pendiente
+- Decisión: fuera del alcance de entity-view; tarea aparte aprobada por el usuario. `get_stats()` lo llama `subscription_views.py:67`, así que ese endpoint probablemente responde 500
+- Estado: https://github.com/Patricoaa/ERPGrafico/issues/179

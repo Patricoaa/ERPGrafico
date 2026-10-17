@@ -223,7 +223,7 @@ function View<T, Id extends string>({ table, card, emptyTitle, emptyDescription,
     const surface = ctx.view === "card" && card ? <Grid layout={card} /> : table ? <TableSurface layout={table} /> : null
     if (!truncated) return surface
     return (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-1 flex-col gap-2 min-h-0">
             {/* Persistent notice, not an interruption: role="status" instead of the Alert default "alert". */}
             <Alert variant="warning" role="status">
                 <AlertDescription className="text-xs">
@@ -380,8 +380,9 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
     }
 
     return (
-        <div className="flex flex-col min-h-0 overflow-hidden rounded-md border">
-            <div className="relative overflow-auto max-h-[calc(100vh-260px)]">
+        // Fills the available height (Root is flex-1); rows scroll inside, header sticky, pagination fixed below.
+        <div className="flex flex-1 flex-col min-h-0 overflow-hidden rounded-md border">
+            <div className="relative flex-1 min-h-0 overflow-auto">
                 <table
                     className="w-full text-sm"
                     data-density="compact"
@@ -614,7 +615,7 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
 
     if (status === "loading") {
         return (
-            <ul className={GRID_CLASS} aria-busy>
+            <ul className={cn(GRID_CLASS, "flex-1 min-h-0 overflow-auto content-start")} aria-busy>
                 {Array.from({ length: 6 }, (_, i) => (
                     <li key={i}><EntityCard.Skeleton /></li>
                 ))}
@@ -623,19 +624,23 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
     }
 
     return (
-        <div className="flex flex-col gap-2">
-            {groups ? (
-                groups.map((group) => (
-                    <section key={group.key} aria-label={group.label} className="flex flex-col gap-2">
-                        <h3 className={cn("px-1", HEADER_TEXT)}>
-                            {group.label} <span className="font-normal tabular-nums">({group.rows.length})</span>
-                        </h3>
-                        <ul className={GRID_CLASS}>{group.rows.map(renderCard)}</ul>
-                    </section>
-                ))
-            ) : (
-                <ul className={GRID_CLASS} aria-label={ctx.label}>{table.getRowModel().rows.map(renderCard)}</ul>
-            )}
+        // Same frame as the table: the cards scroll inside the available height, pagination stays below.
+        <div className="flex flex-1 flex-col gap-2 min-h-0">
+            {/* p-0.5 keeps focus rings and the selected-card accent visible at the scroll edges. */}
+            <div className="flex flex-1 min-h-0 flex-col gap-4 overflow-auto p-0.5">
+                {groups ? (
+                    groups.map((group) => (
+                        <section key={group.key} aria-label={group.label} className="flex flex-col gap-2">
+                            <h3 className={cn("px-1", HEADER_TEXT)}>
+                                {group.label} <span className="font-normal tabular-nums">({group.rows.length})</span>
+                            </h3>
+                            <ul className={GRID_CLASS}>{group.rows.map(renderCard)}</ul>
+                        </section>
+                    ))
+                ) : (
+                    <ul className={GRID_CLASS} aria-label={ctx.label}>{table.getRowModel().rows.map(renderCard)}</ul>
+                )}
+            </div>
             {ctx.collection.paginated && <DataTablePagination table={table} />}
         </div>
     )
