@@ -10,7 +10,8 @@ const qty = (v: number | string | null | undefined): number => toNumber(v) ?? 0
  * References use the documents extension builder `docRef(f, …)`, which registers its kind.
  */
 export const orderLineEntity = defineEntity<OrderLine>()((f) => ({
-    label: "sales.saleline",
+    // Lines have no sheet of their own (not in ENTITY_REGISTRY): embedded collection, no default open.
+    title: "Líneas",
     fields: {
         product: docRef(f, (l) => (l.product ? { label: "inventory.product", id: l.product, display: l.product_name ?? `#${l.product}` } : null), { label: "Producto" }),
         description: f.text((l) => l.product_name ?? l.description ?? null, { label: "Descripción" }),

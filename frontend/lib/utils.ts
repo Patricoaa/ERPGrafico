@@ -5,6 +5,21 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/** Single missing-value marker for tables, cards and money (ADR-0087 R2): an em dash, shown in secondary tone. */
+export const EMPTY_VALUE = "—"
+
+/** Flex + text alignment classes for cell content (DataCell `align`, entity-view kinds). */
+export const FLEX_ALIGN_CLASS: Record<"start" | "center" | "end", string> = {
+  start: "justify-start text-left",
+  center: "justify-center text-center",
+  end: "justify-end text-right",
+}
+
+/** Missing value: `null`, `undefined`, `""` or an empty array. `0` and `false` are values. */
+export function isMissing(value: unknown): value is null | undefined | "" | readonly [] {
+  return value === null || value === undefined || value === "" || (Array.isArray(value) && value.length === 0)
+}
+
 import { STATUS_MAP } from './badge-resolvers'
 
 export function translateStatus(status: string | null | undefined): string {

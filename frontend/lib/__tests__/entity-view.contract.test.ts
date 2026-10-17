@@ -92,8 +92,8 @@ describe("entity-view core stays small", () => {
 const FEATURE_FILES = collect("features")
 const ENTITY_FILES = FEATURE_FILES.filter((rel) => /\/entity-view\/[^/]+\.entity\.tsx?$/.test(rel))
 
-/** Cast debt inside entity definitions. Removing an entry is the fix (R5: typed getHubStatuses). */
-const ENTITY_CAST_ALLOWLIST = ["features/purchasing/entity-view/purchaseOrder.entity.ts"]
+/** Cast debt inside entity definitions. Emptied by R5 (typed getHubStatuses); must stay empty. */
+const ENTITY_CAST_ALLOWLIST: string[] = []
 
 describe("entity definitions", () => {
     it("live in features/<feature>/entity-view/<entity>.entity.ts(x)", () => {

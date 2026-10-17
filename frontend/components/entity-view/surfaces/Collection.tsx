@@ -10,6 +10,7 @@ import { getEntityIcon } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
 import {
     alignOf,
+    entityName,
     fieldById,
     readValue,
     resolveField,
@@ -18,6 +19,8 @@ import {
     type CardSection,
     type CardTone,
     type Entity,
+    type EntityIdentity,
+    type EntitySpec,
     type FieldDef,
     type FieldMap,
     type TableLayout,
@@ -33,8 +36,11 @@ import { useEntityOpener } from "./EntityViewProvider"
 export type CollectionViewMode = "table" | "card"
 export type SelectionMode = "none" | "bulk" | "panel"
 
+/** What the surfaces read from the entity: label and fields (the literal field-id map `F` is erased). */
+type EntityRef<T> = EntityIdentity & Pick<EntitySpec<T, FieldMap<T>>, "fields" | "export">
+
 interface CollectionContextValue<T> {
-    collection: EntityCollection<T, FieldMap<T>>
+    collection: Omit<EntityCollection<T, FieldMap<T>>, "entity"> & { entity: EntityRef<T> }
     actions?: (row: T) => React.ReactNode
     open: (row: T) => void
     canOpen: boolean
@@ -45,11 +51,16 @@ interface CollectionContextValue<T> {
     label: string
 }
 
-const CollectionContext = React.createContext<CollectionContextValue<unknown> | null>(null)
+/**
+ * One context serves every row type, so it is stored as `unknown` (providing a typed value needs no
+ * cast). Reading it back as `T` is the single bridge (R7): `Collection.*` children only render inside
+ * the `Root` that provided that same `T`.
+ */
+const CollectionContext = React.createContext<unknown>(null)
 
 function useCollectionContext<T>(): CollectionContextValue<T> {
     const ctx = React.useContext(CollectionContext)
-    if (!ctx) throw new Error("entity-view: Collection.* debe usarse dentro de <Collection.Root>")
+    if (ctx === null) throw new Error("entity-view: Collection.* debe usarse dentro de <Collection.Root>")
     return ctx as CollectionContextValue<T>
 }
 
@@ -79,35 +90,47 @@ export interface CollectionRootProps<T, F extends FieldMap<T>> {
     /** Highlighted row in `panel` selection mode (document sheet open). */
     selectedId?: string | number | null
     defaultView?: CollectionViewMode
+    /** Controlled view, e.g. from `useCollectionViewMode` (`?view=` in the URL). Uncontrolled when omitted. */
+    view?: CollectionViewMode
+    onViewChange?: (view: CollectionViewMode) => void
     /** Accessible name. Defaults to the entity label resolved by the provider. */
     label?: string
 }
 
-function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen, selection = "none", selectedId, defaultView = "table", label }: CollectionRootProps<T, F>) {
+function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen, selection = "none", selectedId, defaultView = "table", view: controlledView, onViewChange, label }: CollectionRootProps<T, F>) {
     const opener = useEntityOpener()
-    const [view, setView] = React.useState<CollectionViewMode>(defaultView)
+    const [localView, setLocalView] = React.useState<CollectionViewMode>(defaultView)
+    const view = controlledView ?? localView
+    const setView = React.useCallback(
+        (next: CollectionViewMode) => {
+            if (controlledView === undefined) setLocalView(next)
+            onViewChange?.(next)
+        },
+        [controlledView, onViewChange],
+    )
     const entity = collection.entity
     const open = React.useCallback(
         (row: T) => {
             if (onOpen) return onOpen(row)
             const id = Number((row as { id?: unknown }).id)
-            if (opener && Number.isFinite(id)) opener.open(entity.label, id, row)
+            if (opener && entity.label && Number.isFinite(id)) opener.open(entity.label, id, row)
         },
         [onOpen, opener, entity.label],
     )
     const value: CollectionContextValue<T> = {
-        collection: collection as unknown as EntityCollection<T, FieldMap<T>>,
+        collection,
         actions,
         open,
-        canOpen: !!onOpen || !!opener,
+        // Embedded rows (no registry label) only open through an explicit `onOpen`.
+        canOpen: !!onOpen || (!!opener && !!entity.label),
         selection,
         selectedId: selectedId === undefined || selectedId === null ? null : String(selectedId),
         view,
         setView,
-        label: label ?? opener?.labelOf(entity.label) ?? entity.label,
+        label: label ?? (entity.label !== undefined ? opener?.labelOf(entity.label) : undefined) ?? entityName(entity),
     }
     return (
-        <CollectionContext.Provider value={value as CollectionContextValue<unknown>}>
+        <CollectionContext.Provider value={value}>
             <div className="flex flex-col gap-2 min-h-0">{children}</div>
         </CollectionContext.Provider>
     )
@@ -251,6 +274,7 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
             <div className="relative overflow-auto max-h-[calc(100vh-260px)]">
                 <table
                     className="w-full text-sm"
+                    data-density="compact"
                     aria-label={ctx.label}
                     aria-busy={status === "loading" || isRefetching}
                     aria-rowcount={total + 1}
@@ -277,7 +301,7 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
                                         className={cn("h-(--table-header-h) px-(--table-header-px) py-(--table-header-py) whitespace-nowrap", HEADER_TEXT, ALIGN_TEXT[align])}
                                     >
                                         {column?.getCanSort() ? (
-                                            // `h-7` opts out of the global Fitts guard (globals.css) that would inflate the header to 40px.
+                                            // Compact header height; the Fitts guard is lifted by `data-density="compact"` (R3).
                                             <Button variant="ghost" size="sm" className={cn("-mx-2 h-7 gap-1", align === "end" && "flex-row-reverse")} onClick={column.getToggleSortingHandler()}>
                                                 {/* Same header text treatment as DataTableColumnHeader (canonical header, track B). */}
                                                 <span className={HEADER_TEXT}>{def.header ?? def.label}</span>
@@ -327,7 +351,7 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
                                         {cols.map(({ id, def, align }) => (
                                             <td key={id} className={cn(CELL, "align-middle whitespace-nowrap", ALIGN_TEXT[align])}>
                                                 {id === primary && ctx.canOpen ? (
-                                                    <PrimaryCell def={def} row={row.original} onOpen={ctx.open} />
+                                                    <PrimaryCell def={def} row={row.original} onOpen={ctx.open} align={align} />
                                                 ) : (
                                                     <FieldValue def={def} row={row.original} surface="table" align={align} />
                                                 )}
@@ -370,20 +394,28 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
     )
 }
 
-function PrimaryCell<T>({ def, row, onOpen }: { def: FieldDef<T, ValueKind>; row: T; onOpen: (row: T) => void }) {
-    const { text } = resolveField(def, row)
+/**
+ * The row's default action (AX-3). Kinds with an inline renderer keep their own look inside the
+ * button (R1: DataCell renders a `span`); other kinds fall back to their formatted text.
+ */
+function PrimaryCell<T>({ def, row, onOpen, align }: { def: FieldDef<T, ValueKind>; row: T; onOpen: (row: T) => void; align: Align }) {
+    const { value, options, text } = resolveField(def, row)
+    const Inline = getValueKind(def.kind).inline
     return (
-        // `h-7` escapes the global Fitts min-height; `-my-1.5` cancels its extra height so the row keeps
-        // compact density (deeper fix: exclude link buttons from the guard in globals.css, ADR-0087 prerequisite).
+        // Natural height: the table's `data-density="compact"` lifts the Fitts guard on fine pointers (R3).
         <Button
             variant="link"
-            className="-my-1.5 h-7 p-0 text-xs font-medium text-foreground underline-offset-2 hover:underline focus-visible:underline"
+            className="h-auto p-0 text-xs font-medium text-foreground underline-offset-2 hover:underline focus-visible:underline"
             onClick={(e) => {
                 e.stopPropagation()
                 onOpen(row)
             }}
         >
-            {text}
+            {Inline ? (
+                <Inline value={value} options={options} surface="table" align={align} label={def.label} />
+            ) : (
+                text
+            )}
         </Button>
     )
 }
@@ -430,6 +462,8 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
     const { table, status } = ctx.collection
     const entity = ctx.collection.entity
     const isBulk = ctx.selection === "bulk"
+    // Meta field definitions are resolved once per layout, not per card.
+    const metaDefs = React.useMemo(() => (layout.meta ?? []).map((id) => ({ id, def: fieldById(entity, id) })), [layout.meta, entity])
 
     if (status === "loading") {
         return (
@@ -448,7 +482,7 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                     const data = row.original
                     const media = layout.media
                     const Avatar = media?.avatar
-                    const icon = media?.iconFor?.(data) ?? media?.icon ?? getEntityIcon(entity.label)
+                    const icon = media?.iconFor?.(data) ?? media?.icon ?? (entity.label !== undefined ? getEntityIcon(entity.label) : undefined)
                     const tone = pick(media?.tone, data) ?? "default"
                     const subtitle = (layout.subtitle ?? [])
                         .map((id) => resolveField(fieldById(entity, id), data).text)
@@ -463,6 +497,12 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                             <EntityCard
                                 variant="compact"
                                 isSelected={ctx.selectedId === row.id}
+                                selectable={isBulk}
+                                checked={row.getIsSelected()}
+                                onCheckedChange={(v) => row.toggleSelected(v)}
+                                // Always visible in bulk mode: EntityCard reveals it on hover otherwise, and touch has no hover.
+                                isAnySelected
+                                selectionLabel={`Seleccionar ${title}`}
                             >
                                 <EntityCard.Header
                                     icon={icon}
@@ -482,23 +522,13 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                                     // Wide trailing values (hub with label) only fit in the header on wide cards;
                                     // narrow cards (container < 28rem) show them below the title instead.
                                     trailing={trailing ? <div className="hidden @md:flex items-center gap-3">{trailing}</div> : undefined}
-                                    // Own labeled checkbox: EntityCard's built-in selection input has no accessible name.
-                                    actions={(isBulk || ctx.actions) ? (
-                                        <div className="flex items-center gap-1">
-                                            {ctx.actions?.(data)}
-                                            {isBulk && (
-                                                <Checkbox
-                                                    aria-label={`Seleccionar ${title}`}
-                                                    checked={row.getIsSelected()}
-                                                    onCheckedChange={(v) => row.toggleSelected(!!v)}
-                                                />
-                                            )}
-                                        </div>
-                                    ) : undefined}
+                                    actions={ctx.actions?.(data)}
                                 />
                                 {trailing && <div className="flex @md:hidden flex-wrap items-center gap-3 px-1">{trailing}</div>}
                                 {/* Meta lives below the header: in the header center it squeezed the title (EntityCard 1fr column). */}
-                                {layout.meta && layout.meta.length > 0 && <CardMeta ids={layout.meta} entity={entity} row={data} />}
+                                <EntityCard.Meta
+                                    items={metaDefs.map(({ id, def }) => ({ key: id, label: def.label, value: <FieldValue def={def} row={data} surface="card" align="start" /> }))}
+                                />
                                 {layout.body && <CardBody section={layout.body} entity={entity} row={data} />}
                             </EntityCard>
                         </li>
@@ -510,23 +540,7 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
     )
 }
 
-function CardMeta<T, Id extends string>({ ids, entity, row, className }: { ids: readonly Id[]; entity: Entity<T, FieldMap<T>>; row: T; className?: string }) {
-    return (
-        <dl className={cn("flex flex-wrap items-start gap-x-6 gap-y-1 min-w-0 px-1", className)}>
-            {ids.map((id) => {
-                const def = fieldById(entity, id)
-                return (
-                    <div key={id} className="flex flex-col items-start min-w-0">
-                        <dt className="text-4xs uppercase tracking-widest text-muted-foreground font-bold whitespace-nowrap">{def.label}</dt>
-                        <dd className="min-w-0"><FieldValue def={def} row={row} surface="card" align="start" /></dd>
-                    </div>
-                )
-            })}
-        </dl>
-    )
-}
-
-function CardBody<T, Id extends string>({ section, entity, row }: { section: CardSection<T, Id>; entity: Entity<T, FieldMap<T>>; row: T }) {
+function CardBody<T, Id extends string>({ section, entity, row }: { section: CardSection<T, Id>; entity: EntityRef<T>; row: T }) {
     const metric = (id: Id) => {
         const def = fieldById(entity, id)
         return { label: def.label, value: <FieldValue def={def} row={row} surface="card" align="start" /> }

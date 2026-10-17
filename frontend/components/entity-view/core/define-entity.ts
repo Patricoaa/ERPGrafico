@@ -1,5 +1,6 @@
 import type { ComponentType } from "react"
 import type { LucideIcon } from "lucide-react"
+import type { EntityLabel } from "@/lib/entity-registry"
 import { getValueKind, type Align, type KindOptions, type KindValue, type ValueKind } from "./value-kinds"
 
 // ─── Accessors & row-aware options ───────────────────────────────────────────
@@ -187,9 +188,22 @@ export interface ExportSpec<Filters> {
 }
 export type ExportFormat = "xlsx" | "csv" | "pdf"
 
-export interface EntitySpec<T, F extends FieldMap<T>> {
-    /** Registry label (identity stays in entity-registry: icon, URL, drawer). */
-    label: string
+/**
+ * Identity of an entity, one of two:
+ * - `label`: registry label (icon, URL, drawer stay in entity-registry). An unregistered label does not compile (R8).
+ * - `title`: embedded rows without a sheet of their own (document lines). No default open action and no
+ *   registry icon; the title is the collection's accessible name.
+ */
+export type EntityIdentity =
+    | { label: EntityLabel; title?: undefined }
+    | { title: string; label?: undefined }
+
+/** Display name of an entity: its registry label or its title. */
+export function entityName(identity: EntityIdentity): string {
+    return identity.label !== undefined ? identity.label : identity.title
+}
+
+export type EntitySpec<T, F extends FieldMap<T>> = EntityIdentity & {
     fields: F
     /** Facet dimensions for filters, independent from visible columns. */
     facets?: Record<string, (row: T) => string | null | undefined>
@@ -198,7 +212,7 @@ export interface EntitySpec<T, F extends FieldMap<T>> {
     rowId?: (row: T) => string | number
 }
 
-export interface Entity<T, F extends FieldMap<T>> extends EntitySpec<T, F> {
+export type Entity<T, F extends FieldMap<T>> = EntitySpec<T, F> & {
     readonly ids: readonly FieldId<F>[]
     field: <Id extends FieldId<F>>(id: Id) => F[Id]
     views: <V extends ViewsInput<T, FieldId<F>>>(views: V) => {
@@ -236,9 +250,9 @@ export function defineEntity<T>() {
 }
 
 /** Untyped-id lookup used by the surfaces (ids were already checked when the layout was declared). */
-export function fieldById<T>(entity: { label: string; fields: FieldMap<T> }, id: string): FieldDef<T, ValueKind> {
+export function fieldById<T>(entity: EntityIdentity & { fields: FieldMap<T> }, id: string): FieldDef<T, ValueKind> {
     const def = entity.fields[id]
-    if (!def) throw new Error(`entity-view: el campo "${id}" no existe en ${entity.label}`)
+    if (!def) throw new Error(`entity-view: el campo "${id}" no existe en ${entityName(entity)}`)
     return def
 }
 

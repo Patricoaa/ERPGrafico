@@ -1,12 +1,14 @@
 import { formatMoney, formatQuantity } from "@/lib/money"
-import { formatPlainDate, translateStatus } from "@/lib/utils"
+import { EMPTY_VALUE, formatPlainDate, isMissing, translateStatus } from "@/lib/utils"
+
+export { isMissing }
 import type { CurrencyCode, DecimalString, FlowDirection, ISODate, StatusValue } from "./value-kinds"
 
 /**
  * Pure formatters (ADR-0087 §2, P1). Single source for table, card, subtitle,
  * accessible text and export. Missing data renders as `EMPTY`.
  */
-export const EMPTY = "—"
+export const EMPTY = EMPTY_VALUE
 
 type Numeric = number | DecimalString | null | undefined
 
@@ -16,9 +18,6 @@ export function toNumber(value: Numeric): number | null {
     return Number.isFinite(n) ? n : null
 }
 
-export function isMissing(value: unknown): boolean {
-    return value === null || value === undefined || value === "" || (Array.isArray(value) && value.length === 0)
-}
 
 export function formatText(value: string | number | null | undefined, prefix = ""): string {
     return isMissing(value) ? EMPTY : `${prefix}${String(value)}`

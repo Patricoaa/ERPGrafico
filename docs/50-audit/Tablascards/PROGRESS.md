@@ -1,9 +1,9 @@
 # Progreso — Nuevo sistema de presentación
-- Fase actual: 6 completada y confirmada · Siguiente: Fase 7, lote 1 (pendiente la Puerta D)
-- Último completado: `06-spec.md` + contrato `docs/20-contracts/component-entity-view.md`; contratos antiguos congelados (`component-fields.md`, `component-datatable-views.md`, nota en `component-contracts.md#datacell-primitives`); árbol de decisión; `add-feature.md` §4c; invariantes #6/#13/#14 en CLAUDE.md, docs/README.md y GOVERNANCE.md; guardas `eslint-rules/entity-view-guards.mjs` (4 reglas) + `lib/__tests__/entity-view.contract.test.ts` (12 aserciones, verificadas por mutación); `docRef` por el barrel `@/features/documents`; ADR-0087 con el resultado de la Fase 6
-- Próximo paso exacto: presentar la Puerta D del lote 1 de la Fase 7 = R1–R5 + R7 + R8 + `EntityViewProvider` en el shell + `useCollectionUrlState` (`06` §5.3, §13.2), en una rama propia; crear `07-migration-matrix.md`; R6 como ADR de color aparte
-- Rama: `spike/entity-view-system` (commit `b8f1eec55`, desde `audit/tablascards`); el spike vive en `frontend/components/entity-view/` + `frontend/features/*/entity-view/`
-- Puertas: A ✅ (2026-10-17) · B ✅ (2026-10-17) · C ✅ (2026-10-17) · D (lotes) —
+- Fase actual: 7 · Lote 1 completado y commiteado · Siguiente: Puerta D del lote 2
+- Último completado: lote 1 (R1–R5, R7, R8, provider, paridad de URL) + `/simplify` + `/code-review` medium (8 hallazgos corregidos); tsc 0 errores; vitest 151/151; stories 21/21; 58 capturas sin desbordes; medición de R3 (fino 40 px / táctil 57 px). Detalle en `07` §2.2
+- Próximo paso exacto: presentar la Puerta D del lote 2 (Compras órdenes+notas, OV, UoM, Productos) en rama propia desde `refactor/entity-view-lote-1`; incluye TC-032 (card de Compras) y TC-041 (listUrl de UoM)
+- Rama: `refactor/entity-view-lote-1` (desde `master` 61c60515b); issues abiertas #176 (TC-034) y #177 (TC-039)
+- Puertas: A ✅ · B ✅ · C ✅ (2026-10-17) · D lote 1 ✅ (2026-10-17)
 - Preguntas abiertas para el usuario: —
 - Decisiones del usuario:
   - 2026-10-17: las tablas de wizard/modal entran como caso de uso específico · `as any` de `AutoEntityCard.tsx:390` espera al rediseño · `journalEntryFields` lo determina la auditoría (→ TC-016) · TC-012 se corrige en la migración
@@ -11,6 +11,7 @@
   - 2026-10-17 Puerta B: alternativa **C**; gobierno (≥3 entidades de ≥2 features para entrar al núcleo; ≤12 props por componente); objetivo **≥85 %** de colecciones sin código a medida; ADR-0078 → *Superseded* al aceptarse ADR-0087; identidad en `entity-registry`, presentación en la definición de entidad (la respuesta llegó numerada "4" dos veces; se interpreta la segunda como la pregunta 5)
   - 2026-10-17 Puerta C: ADR-0087 → Accepted (con A1–A3, R1–R8); ADR-0078 → Superseded; R1–R5 = primer lote de la Fase 7; R6 = ADR de color aparte; estado unificado como **hub con etiqueta** en tabla y card; comparación con la app real hecha (usuario de demo; credenciales no guardadas); commit del spike autorizado
   - 2026-10-17 Fase 6: aprueba las invariantes #6 y #13, y "Zero N+1" como #14; el lote 1 incluye R1–R5 + R7 + R8 + el provider en el shell + el estado en la URL; TC-034 va como tarea aparte → issue #176
+  - 2026-10-17 Puerta D lote 1: R2 global ("—"); R3 = exención `[data-density="compact"]` con `pointer: fine` + excepción en GOVERNANCE #17; URL solo paridad; lote aprobado
 - Entorno: mutagen ✅ · tests remotos ✅ (vitest en contenedor, Node 20.20.2; el contenedor no tiene Chromium de Playwright) · Node local v18.19.1 por defecto, **Node 24 disponible en nvm** (`/home/pato/.nvm/versions/node/v24.18.0/bin`): vitest, Storybook y playwright-cli corren en local con él
 - Bitácora:
   - 2026-10-16 F0 iniciada y completada. Cambio relevante frente al §2: `renderCard` **no** es mayoritariamente manual (43/44 envuelven `AutoEntityCard`).
@@ -22,3 +23,6 @@
   - 2026-10-17 F5 completada. Densidad recuperada (57→40 px) tras detectar la regla Fitts global; extensiones autoregistradas por constructor (A1, de la prueba de alta); contraste heredado de StatusBadge/Chip (warning 1,2:1) → prerrequisito R6. Spike sin commitear.
   - 2026-10-17 Puerta C aprobada. Hub con etiqueta implementado (`caption` obligatorio). Comparación con la app real: tabla partida, 0 `scope`/`aria-sort`, 52 botones sin nombre en Compras, card de Compras a 390 px sin título y "Página 1 de NaN" (TC-032).
   - 2026-10-17 F6 completada. Hallazgos: `component-card.md` es el Card de shadcn (TC-036); la invariante #13 estaba desincronizada entre CLAUDE.md y docs/README.md (TC-035); la guarda de imports entre features no se aplica en los `.tsx` de `features/` (TC-034). Línea base de `tsc`: 23,7 s.
+  - 2026-10-17 F7 iniciada: merge del spike en master; Puerta D del lote 1 presentada; TC-038 (corrección de ADR-0022).
+  - 2026-10-17 Lote 1 implementado. R8 destapó TC-040 (las líneas usaban una etiqueta inexistente). `/code-review` encontró que el provider no cubría los drawers; el contexto se movió a `components/providers` para evitar un ciclo de imports. TC-039: el ratchet `no-unsafe` ya fallaba en master.
+  - 2026-10-17 Lote 1 cerrado: pantallas reales comparadas (alturas sin cambios; R2 solo cambia el glifo); TC-041 (listUrl de UoM). Issue #177 (TC-039). Commit del lote 1.

@@ -63,7 +63,7 @@ Este contrato rige **todo código nuevo o migrado** que presenta una colección 
 Una extensión tiene tres partes y vive en `features/<dueña>/entity-view/<kind>.kind.tsx`:
 
 1. **Aumentación del módulo** `@/components/entity-view/core/value-kinds` con `interface ValueKinds { miKind: { value; options } }`. Es la única referencia permitida a una ruta interna del sistema, y no es un import.
-2. **Registro idempotente** con `registerValueKind("miKind", { format, sortValue?, align?, render })`.
+2. **Registro idempotente** con `registerValueKind("miKind", { format, sortValue?, align?, render, inline? })`. `inline` es un renderer que solo usa contenido de frase (`span`); se usa cuando el valor va dentro de un enlace o botón, como la celda principal. Sin él, ahí se muestra el texto formateado. En el núcleo lo tienen `text` y `code`.
 3. **Constructor de campo** `miKind<T>(f, accessor, input)` que llama al registro y devuelve `f.value("miKind", …)`. **Es la única forma pública de declarar el campo**: un campo no puede existir sin su kind registrado (A1).
 
 El constructor se exporta por el **barrel de la feature dueña** (`export { docRef } from './entity-view/docRef.kind'`). Otra feature lo importa de `@/features/<dueña>`, nunca de `@/features/<dueña>/entity-view/*` (invariante #3; lo bloquea ESLint).
@@ -92,7 +92,8 @@ Reglas:
 - **Estático a nivel de módulo** (PF-3): la entidad y sus `views` se crean una vez, nunca dentro de un componente.
 - **Accesor:** una clave de `T` cuyo tipo es compatible con el valor del kind, o una función `(row) => valor`. Una clave inexistente o de tipo incompatible no compila (TY-1/TY-2).
 - **Ids de campo:** unión literal inferida. `columns`, `primary`, `defaultSort`, `footer.sum`, `title`, `subtitle`, `meta`, `trailing`, las secciones del cuerpo, `.without()` y `context` de `defineEditable` solo aceptan esos ids (TY-3). TC-012 no puede repetirse.
-- **`label`:** etiqueta registrada en `ENTITY_REGISTRY`. La identidad (nombre, icono, URL canónica, drawer) se queda en el registro; la presentación (`viewPolicy`, `cardConfig`, `workflow`, `partnerField`) se muda a la definición conforme migra cada entidad. *Pendiente R8/A2:* hoy `label` es `string`; pasará a `EntityLabel` (unión de las claves del registro).
+- **`label`:** etiqueta del tipo `EntityLabel` (unión de las claves de `ENTITY_REGISTRY`, R8): una etiqueta no registrada no compila. La identidad (nombre, icono, URL canónica, drawer) se queda en el registro; la presentación (`viewPolicy`, `cardConfig`, `workflow`, `partnerField`) se muda a la definición conforme migra cada entidad.
+- **Colecciones embebidas sin ficha propia** (p. ej. líneas de documento, que no están en el registro): en lugar de `label` se declara `title` (la identidad es una unión discriminada `label` | `title`: una de las dos, nunca ambas) (nombre accesible, p. ej. "Líneas"). Sin `label` no hay acción por defecto (solo `onOpen` explícito) ni icono del registro.
 - **Sin escapes opacos:** no hay `computed`. Lo específico es un kind de la feature (§3) o una sección `custom` de card (§6.3). `as any`, `as unknown as` y `: any` están prohibidos en entidades (test de contrato, con una deuda permitida hasta R5).
 
 ## 5. Estado de colección — `useEntityCollection(entity, source, options?)`
@@ -121,7 +122,7 @@ Todo componente del núcleo tiene **≤ 12 props** (test de contrato). Lo que no
 
 | Componente | Props |
 |---|---|
-| `Collection.Root` | `collection`, `children`, `actions?: (row) => ReactNode`, `onOpen?: (row) => void`, `selection?: "none" \| "bulk" \| "panel"`, `selectedId?`, `defaultView?: "table" \| "card"`, `label?` |
+| `Collection.Root` | `collection`, `children`, `actions?: (row) => ReactNode`, `onOpen?: (row) => void`, `selection?: "none" \| "bulk" \| "panel"`, `selectedId?`, `defaultView?: "table" \| "card"`, `view?` + `onViewChange?` (vista controlada), `label?` |
 | `Collection.Toolbar` | `children?` (filtros, búsqueda, acciones), `views?`, `exportFilters?` |
 | `Collection.View` | `table?`, `card?`, `emptyTitle?`, `emptyDescription?`: elige la superficie activa |
 | `Collection.Table` / `Collection.Grid` | la superficie concreta, para pantallas con una sola vista |
@@ -156,7 +157,8 @@ Cubre los patrones P1 (cantidad a procesar por línea) y P2 (reparto contra un t
 ### 6.5 `CollectionModes` y `EntityViewProvider`
 
 - **`CollectionModes`** (`modes`, `value`, `onChange`, `label`): pantallas que cambian de entidad (órdenes ↔ notas). Cada modo monta su propio `Collection.Root` con su propia entidad: así no hace falta ningún cast (TY-5, TC-018).
-- **`EntityViewProvider`** (`opener: { open(label, id, row), labelOf(label) }`): se monta **una vez** en el shell de la app y conecta la acción por defecto con `openEntity` y el registro de drawers (ADR-0028/0086). Sin provider y sin `onOpen`, la celda principal no se muestra como enlace.
+- **`EntityViewProvider`** (`opener: { open(label, id, row), labelOf(label) }`): montado **una vez** por `GlobalModalProvider` (vía `components/providers/EntityViewBridge.tsx`) alrededor de la página **y** del host de drawers, de modo que las colecciones dentro de un drawer también abren sus filas. El contexto vive en `components/providers/EntityOpenerContext.tsx`, que solo depende de React; así se evita el ciclo con `@/components/shared` y el barrel no entra en el bundle raíz. `@/components/entity-view` lo reexporta. Conecta la acción por defecto con `openEntity` y el registro de drawers (ADR-0028/0086), y el nombre accesible con `titlePlural` del registro. Sin provider y sin `onOpen`, la celda principal no se muestra como enlace.
+- **`useCollectionViewMode(label, defaultView?)`** → `{ view, onViewChange }` para `Collection.Root`. Da paridad con el sistema actual: el mismo parámetro `?view=` (`list` ↔ `table`, `card` ↔ `card`) y la misma preferencia guardada que `useViewMode`. Los filtros siguen en `UnifiedSearchBar` (hijo de `Toolbar`) y la selección en `?selected=` vía `selectedId`.
 
 ## 7. Reglas de resolución (deterministas)
 
@@ -171,7 +173,7 @@ Para un campo `def`, una fila `row` y una superficie `s`:
 7. **Render** = `<spec.render value options surface={s} align label={def.label} />`. Un valor ausente se pinta como `EMPTY` ("—") en tono secundario, igual en todos los kinds.
 8. **Cabecera** = `def.header ?? def.label`. **Ordenable** = `def.sortable ?? true`.
 9. **Pie** (`footer.sum`): se suman los valores numéricos **agrupados por las opciones resueltas** (unidad, moneda). Nunca se suman unidades distintas ("600 Hoja · 5 Millar").
-10. **Celda principal** = `layout.primary ?? columns[0]`. Es un botón o enlace real que abre la fila (`onOpen` o, si no hay, `opener.open`).
+10. **Celda principal** = `layout.primary ?? columns[0]`. Es un botón o enlace real que abre la fila (`onOpen` o, si no hay, `opener.open` cuando la entidad tiene `label`). Dentro va `spec.inline` si el kind lo declara; si no, el texto formateado. Su altura es la natural: la tabla lleva `data-density="compact"`, que con puntero fino exime a sus botones de la regla Fitts. Con puntero táctil se mantienen los 40 px (GOVERNANCE #17).
 
 No existe inferencia por rol, por regex de nombre de clave ni por capacidad de zona: lo que no se declara no se muestra.
 
@@ -191,7 +193,7 @@ No existe inferencia por rol, por regex de nombre de clave ni por capacidad de z
 - **AX-1:** una única `<table>` con `<th scope="col">` y cabecera fija.
 - **AX-2:** `aria-sort` en la columna ordenada; iconos con `aria-hidden`.
 - **AX-3:** la acción por defecto es un botón o enlace real. El clic en la fila es un atajo, no la única vía.
-- **AX-4:** sin interactivos anidados en cards; el checkbox de selección lleva etiqueta.
+- **AX-4:** sin interactivos anidados en cards; el checkbox de selección es el de `EntityCard` con `selectionLabel` ("Seleccionar {título}").
 - **AX-5:** `aria-busy` durante la carga y el refetch.
 - **AX-6:** inputs editables con nombre derivado de la fila, `aria-invalid` y `aria-describedby` (error, pista o motivo).
 - **AX-7:** `progress` expone `role="progressbar"`, y el estado nunca se comunica solo por color.
@@ -227,7 +229,8 @@ Mientras falte una capacidad, la pantalla que la necesita **se queda en el siste
 
 | Capacidad | Estado | Lote |
 |---|---|---|
-| Estado en la URL (`?view=`, orden, página; ADR-0022) y `UnifiedSearchBar` | especificado (`06-spec.md` §5.3), sin implementar | Fase 7 |
+| Paridad de URL con el sistema actual: `?view=` (`useCollectionViewMode`), filtros de `UnifiedSearchBar` (nuqs) y `?selected=` (ADR-0020) | **hecho** | lote 1 |
+| Orden y página en la URL (hoy son estado local también en el sistema antiguo) | mejora opcional (`06-spec.md` §5.3) | — |
 | Agrupación, filas expandibles, panel de analítica, kanban/timeline | especificado como composición (`06-spec.md` §6.6) | Fase 7, por demanda |
 | Exportación real | el hook existe; falta el endpoint (Pd-backend) | — |
-| `label` tipado (R8), contexto sin casts (R7) | especificado | lote 1 |
+| `label` tipado (R8), contexto y registro con un único puente cada uno (R7), provider en el shell | **hecho** | lote 1 |

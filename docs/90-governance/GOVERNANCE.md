@@ -34,7 +34,7 @@ Rules apply to every PR. Violations block merge unless an accepted ADR waives th
 14. `font-sans` (Onest) for body — única fuente del sistema. No existe `font-heading`. `font-mono` = JetBrains Mono (bundleada vía `next/font`, `--font-jetbrains-mono`) para cifras, códigos y datos tabulares.
 15. Border radius default: `0.5rem`. No `rounded-xl` on form components without ADR. `rounded-full` limited to: `Badge.Hub` (status ring), avatar/entity icons, icon-only buttons, filter pills, skeleton circles, scrollbar thumbs, status dot indicators, notification bubbles (ADR-0069). Badges/chips use `rounded-sm` (ADR-0068); the only authorized badge relaxations are the audited exceptions in `component-chip.md` §Documented exceptions (ADR-0069). `rounded-none` only permitted in: nested analytics cards (within a Card container), segmented toolbar buttons, underline tabs, error boundary containers, specific skeleton presets.
 16. 8pt grid — padding/margin/gap multiples of 8px.
-17. Minimum interactive height: `h-10` (40px).
+17. Minimum interactive height: `h-10` (40px). Single exception (ADR-0087 R3): buttons inside a dense data surface marked `data-density="compact"` (entity-view tables) are exempt **only with a fine pointer**; with `pointer: coarse` the 40px target applies. Enforced in `app/globals.css` (Interaction Guards).
 18. Source of truth: `frontend/app/globals.css`. No theme changes elsewhere.
 
 ## 4. Component rules

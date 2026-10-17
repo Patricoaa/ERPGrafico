@@ -16,7 +16,7 @@ interface Row {
  */
 describe("entity-view · type guarantees", () => {
     const entity = defineEntity<Row>()((f) => ({
-        label: "test.row",
+        title: "Prueba",
         fields: {
             name: f.text("name", { label: "Nombre" }),
             amount: f.money("amount", { label: "Monto" }),
@@ -32,7 +32,7 @@ describe("entity-view · type guarantees", () => {
 
     it("rejects unknown keys and incompatible key types (TY-1, TY-2)", () => {
         defineEntity<Row>()((f) => ({
-            label: "test.row",
+            title: "Prueba",
             fields: {
                 // @ts-expect-error — "nmae" is not a key of Row
                 typo: f.text("nmae", { label: "x" }),
@@ -46,7 +46,7 @@ describe("entity-view · type guarantees", () => {
 
     it("rejects invalid or missing options", () => {
         defineEntity<Row>()((f) => ({
-            label: "test.row",
+            title: "Prueba",
             fields: {
                 // @ts-expect-error — flow requires `direction`
                 flowNoDirection: f.flow("amount", { label: "x" }),
@@ -87,7 +87,7 @@ describe("entity-view · type guarantees", () => {
 
     it("rejects unregistered kinds (TY-4)", () => {
         defineEntity<Row>()((f) => ({
-            label: "test.row",
+            title: "Prueba",
             fields: {
                 // @ts-expect-error — "barcode" is not a registered ValueKind
                 barcode: f.value("barcode", "name", { label: "x" }),
@@ -109,5 +109,13 @@ describe("entity-view · type guarantees", () => {
             // @ts-expect-error — footer sums only reference declared inputs
             footer: { sum: ["give"] },
         })
+    })
+
+    it("rejects an entity label that is not in ENTITY_REGISTRY (R8)", () => {
+        defineEntity<Row>()((f) => ({
+            // @ts-expect-error — "inventory.uomx" has no icon, drawer or URL in the registry
+            label: "inventory.uomx",
+            fields: { name: f.text("name", { label: "Nombre" }) },
+        }))
     })
 })

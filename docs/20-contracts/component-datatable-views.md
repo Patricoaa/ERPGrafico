@@ -270,6 +270,10 @@ import { EntityCard } from "@/components/shared/EntityCard"
 </EntityCard>
 ```
 
+Añadidos del ADR-0087 (R4, lote 1):
+- **`selectionLabel`** en el root: nombre accesible del checkbox de selección (`selectable`). Por defecto es "Seleccionar"; pasa siempre uno que identifique la fila ("Seleccionar OC-0201").
+- **`EntityCard.Meta`** (`items: { key, label, value }[]`): pares etiqueta/valor bajo el header. No van en `center` porque ahí aplastan el título.
+
 ### Tarjetas de documentos transaccionales (`cardVariant`)
 Para entidades con `viewPolicy.cardComponent: 'entity'` y `cardVariant` definido (`'workflow' | 'full'`), la tarjeta se compone sobre `EntityCard` con la variante correspondiente:
 - `cardVariant: 'workflow'` — tarjetas de órdenes/facturas con badges de estado de dominio (WorkflowStatus)

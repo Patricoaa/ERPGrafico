@@ -250,7 +250,15 @@ export interface EntityCollection<T, F> {
 
 ### 5.3 Estado en la URL y búsqueda (especificado; Fase 7, antes de migrar documentos)
 
-ADR-0022 exige que filtros, orden y página vivan en la URL. El spike usa estado local (`05` §8). Especificación:
+> **Corrección (2026-10-17, Puerta D del lote 1, TC-038).** ADR-0022 trata del `list_url` de las entidades buscables, no del estado de la lista. Esta sección decía que exigía filtros, orden y página en la URL, y eso es falso. Lo medido en el sistema actual es esto:
+> - la búsqueda y los filtros van en la URL vía `UnifiedSearchBar` (`useUnifiedSearch`, nuqs);
+> - la vista va en `?view=` (`hooks/useViewMode.ts`);
+> - la selección va en `?selected=` (ADR-0020);
+> - **el orden y la página son `useState` local** (p. ej. `WorkOrdersPageClient.tsx:44`, `EntriesClientView.tsx:31`).
+>
+> La paridad solo exige los tres primeros. Guardar el orden y la página en la URL sería una mejora, no paridad. La API de abajo se mantiene como opción futura.
+
+Especificación (opcional; no es necesaria para la paridad):
 
 ```ts
 // core/use-collection-url-state.ts (nuevo)
@@ -685,5 +693,5 @@ Cada `*Collection` sigue el patrón de §14.2. `purchaseInvoiceEntity` se export
 Preguntas:
 
 1. ¿Apruebas la nueva redacción de las invariantes **#6** y **#13**, y la sincronización de **"Zero N+1" como #14** en `CLAUDE.md`, `docs/README.md` y `GOVERNANCE.md`?
-2. ¿El **lote 1** de la Fase 7 incluye, además de R1–R5, **R7, R8, el `EntityViewProvider` en el shell y `useCollectionUrlState`**? Sin el estado en la URL no se puede migrar ninguna lista documental sin perder ADR-0022.
+2. ¿El **lote 1** de la Fase 7 incluye, además de R1–R5, **R7, R8, el `EntityViewProvider` en el shell y `useCollectionUrlState`**? *(Esta justificación era errónea: ver la corrección de §5.3.)*
 3. ¿Abro una tarea aparte para **TC-034** (guarda de imports entre features que no se aplica en los `.tsx` de `features/`)?

@@ -820,7 +820,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         // Hidden columns for filtering only - these provide data for faceted filters
         {
             id: "reception_status",
-            accessorFn: (row) => getHubStatuses(row as Record<string, unknown>).logistics,
+            accessorFn: (row) => getHubStatuses(row).logistics,
             header: () => null,
             cell: () => null,
             enableSorting: false,
@@ -831,7 +831,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         },
         {
             id: "billing_status",
-            accessorFn: (row) => getHubStatuses(row as Record<string, unknown>).billing,
+            accessorFn: (row) => getHubStatuses(row).billing,
             header: () => null,
             cell: () => null,
             enableSorting: false,
@@ -842,7 +842,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         },
         {
             id: "treasury_status",
-            accessorFn: (row) => getHubStatuses(row as Record<string, unknown>).treasury,
+            accessorFn: (row) => getHubStatuses(row).treasury,
             header: () => null,
             cell: () => null,
             enableSorting: false,

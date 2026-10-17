@@ -17,7 +17,7 @@ interface Sample {
 }
 
 const sampleEntity = defineEntity<Sample>()((f) => ({
-    label: "test.sample",
+    title: "Casos límite",
     fields: {
         label: f.text("label", { label: "Caso" }),
         money: f.money("amount", { label: "Dinero" }),

@@ -762,12 +762,23 @@ table [data-notched-field] {
   /* Interaction Guards (Ley de Fitts) 
      Target: 40px height for primary interactive elements.
      Excludes: small variants (h-9, h-8, h-7) to maintain density in toolbars/tabs.
+     Dense data surfaces (`[data-density="compact"]`, e.g. entity-view tables) lower the button target
+     with a fine pointer only; on touch the 40px target stays (GOVERNANCE #17, ADR-0087 R3).
   */
-  button:not(.size-icon):not(.variant-link):not(.h-9):not(.h-8):not(.h-7):not([role="switch"]):not([role="radio"]):not([role="checkbox"]):not([role="menuitem"]),
+  button:not(.size-icon):not(.variant-link):not(.h-9):not(.h-8):not(.h-7):not([role="switch"]):not([role="radio"]):not([role="checkbox"]):not([role="menuitem"]) {
+    min-height: var(--fitts-button-min, 2.5rem);
+  }
+
   input:not([type="checkbox"]):not([type="radio"]):not(.h-9):not(.h-8):not(.h-7),
   select:not(.h-9):not(.h-8):not(.h-7) {
     min-height: 2.5rem;
     /* 40px base target */
+  }
+
+  @media (pointer: fine) {
+    [data-density="compact"] {
+      --fitts-button-min: 0px;
+    }
   }
 
   /*

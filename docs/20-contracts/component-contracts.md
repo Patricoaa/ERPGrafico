@@ -103,7 +103,7 @@ Apply only to `bg-card` surfaces. Do not combine two textures. Do not apply to o
 
 ### DataCell primitives 🟢
 
-> **ADR-0087:** en el sistema nuevo, `DataCell.*` es la **primitiva de renderer** de los tipos de valor de `@/components/entity-view` (`kinds/core-kinds.tsx`); las entidades no la instancian directamente. Cambios pendientes del lote 1 de la Fase 7: R1 (prop `align` con un valor por defecto semántico y render en línea `span` para usarla dentro de un botón) y R2 (marcador único "—" para el dato ausente). Ver [component-entity-view.md](./component-entity-view.md).
+> **ADR-0087:** en el sistema nuevo, `DataCell.*` es la **primitiva de renderer** de los tipos de valor de `@/components/entity-view` (`kinds/core-kinds.tsx`); las entidades no la instancian directamente. Lote 1 de la Fase 7 (hecho): **R1**, prop `align?: "start" | "center" | "end"` en `Text`, `Secondary`, `Code`, `Number`, `Currency`, `CurrencyFlow`, `Date`, `ContactLink` y `Category` (sin `align` se conserva el valor por defecto histórico), e `inline` (`span`) en `Text`, `Secondary` y `Code` para usarlas dentro de un botón o enlace; **R2**, marcador único de dato ausente `EMPTY_VALUE` ("—", `@/lib/utils`, con `isMissing()`) en tono secundario, renderizado por `DataCell.Empty` (`align?`, `inline?`) y también en `MoneyDisplay`. `Code` ya no trata `0` como vacío. `FLEX_ALIGN_CLASS` (`@/lib/utils`) es la tabla de clases de alineación. Ver [component-entity-view.md](./component-entity-view.md).
 
 > Import: `import { DataCell, createActionsColumn } from '@/components/shared'`
 > **Para campos de entidad**, declarar `FieldDef.type` en `*Fields.ts` — ver [component-fields.md](./component-fields.md).

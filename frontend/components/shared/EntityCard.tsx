@@ -19,6 +19,7 @@ interface EntityCardSelectionContextValue {
     checked?: boolean
     onCheckedChange?: (checked: boolean) => void
     isAnySelected?: boolean
+    selectionLabel?: string
 }
 
 const EntityCardSelectionContext = React.createContext<EntityCardSelectionContextValue>({
@@ -44,6 +45,8 @@ interface EntityCardRootProps {
     checked?: boolean
     onCheckedChange?: (checked: boolean) => void
     isAnySelected?: boolean
+    /** Accessible name of the selection checkbox, e.g. "Seleccionar OV-0012" (ADR-0087 R4). */
+    selectionLabel?: string
 }
 
 function EntityCardRoot({
@@ -57,9 +60,10 @@ function EntityCardRoot({
     checked = false,
     onCheckedChange,
     isAnySelected = false,
+    selectionLabel,
 }: EntityCardRootProps) {
     return (
-        <EntityCardSelectionContext.Provider value={{ selectable, checked, onCheckedChange, isAnySelected }}>
+        <EntityCardSelectionContext.Provider value={{ selectable, checked, onCheckedChange, isAnySelected, selectionLabel }}>
             <div
                 role={onClick || defaultAction ? "button" : undefined}
                 tabIndex={onClick || defaultAction ? 0 : undefined}
@@ -120,7 +124,7 @@ interface EntityCardHeaderProps {
 }
 
 function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Icon, imageSrc, avatar, iconClassName, className }: EntityCardHeaderProps) {
-    const { selectable, checked, onCheckedChange, isAnySelected } = React.useContext(EntityCardSelectionContext)
+    const { selectable, checked, onCheckedChange, isAnySelected, selectionLabel } = React.useContext(EntityCardSelectionContext)
 
     const checkboxNode = selectable && (
         <div
@@ -134,6 +138,7 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
         >
             <Checkbox
                 variant="circle"
+                aria-label={selectionLabel ?? "Seleccionar"}
                 checked={checked}
                 onCheckedChange={onCheckedChange}
             />
@@ -660,10 +665,39 @@ function EntityCardHubTrigger({ isSelected, onToggle, className }: EntityCardHub
     )
 }
 
+// ─── Meta ─────────────────────────────────────────────────────────────────────
+
+interface EntityCardMetaItem {
+    key: string
+    label: React.ReactNode
+    value: React.ReactNode
+}
+
+interface EntityCardMetaProps {
+    items: readonly EntityCardMetaItem[]
+    className?: string
+}
+
+/** Label/value pairs below the header (ADR-0087 R4). In the header center they squeezed the title. */
+function EntityCardMeta({ items, className }: EntityCardMetaProps) {
+    if (items.length === 0) return null
+    return (
+        <dl className={cn("flex flex-wrap items-start gap-x-6 gap-y-1 min-w-0 px-1", className)}>
+            {items.map((item) => (
+                <div key={item.key} className="flex flex-col items-start min-w-0">
+                    <dt className="text-4xs uppercase tracking-widest text-muted-foreground font-bold whitespace-nowrap">{item.label}</dt>
+                    <dd className="min-w-0">{item.value}</dd>
+                </div>
+            ))}
+        </dl>
+    )
+}
+
 // ─── Composite export ─────────────────────────────────────────────────────────
 
 export const EntityCard = Object.assign(EntityCardRoot, {
     Header: EntityCardHeader,
+    Meta: EntityCardMeta,
     Body: EntityCardBody,
     Field: EntityCardField,
     Footer: EntityCardFooter,
@@ -680,6 +714,8 @@ export const EntityCard = Object.assign(EntityCardRoot, {
 export type {
     EntityCardRootProps,
     EntityCardHeaderProps,
+    EntityCardMetaProps,
+    EntityCardMetaItem,
     EntityCardSkeletonProps,
     EntityCardBodyProps,
     EntityCardFieldProps,

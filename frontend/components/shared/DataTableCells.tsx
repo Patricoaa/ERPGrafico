@@ -1,5 +1,5 @@
 
-import { cn, formatPlainDate, parseDateOnly } from "@/lib/utils"
+import { cn, EMPTY_VALUE, FLEX_ALIGN_CLASS, formatPlainDate, isMissing, parseDateOnly } from "@/lib/utils"
 import { ArrowRight, ArrowUpRight, ArrowDownLeft, History, ExternalLink, User, type LucideIcon, MoreVertical, ChevronDown, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { type ReactNode, type HTMLAttributes } from "react"
@@ -35,6 +35,14 @@ interface BaseCellProps extends HTMLAttributes<HTMLDivElement> {
     children?: ReactNode
 }
 
+/** Text cells that can also render inline (`span`), e.g. inside a link or button (ADR-0087 R1). */
+interface InlineCellProps extends HTMLAttributes<HTMLElement> {
+    children?: ReactNode
+    align?: DataCellAlign
+    /** Renders a `span` (inline-flex, intrinsic width) instead of a full-width `div`. */
+    inline?: boolean
+}
+
 interface ValueCellProps<T> extends BaseCellProps {
     value: T | null | undefined
 }
@@ -49,6 +57,33 @@ const SIZE_MAP: Record<DataCellSize, string> = {
     sm: 'text-xs',
     md: 'text-sm',
     lg: 'text-base',
+}
+
+/**
+ * Semantic alignment (ADR-0087 R1). Each cell keeps its historical default when `align` is
+ * omitted (text centered, numbers right-aligned); `align` overrides it via tailwind-merge.
+ */
+export type DataCellAlign = 'start' | 'center' | 'end'
+
+const alignClass = (align: DataCellAlign | undefined) => align && FLEX_ALIGN_CLASS[align]
+
+const INLINE_CLASS = 'inline-flex w-auto'
+
+type TextCellProps = InlineCellProps & { size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string }
+
+/** Shared body of Text / Secondary / Code: a full-width `div`, or a `span` when `inline` (R1). */
+function TextCell({ tone, children, className, size, intent, weight, color, align, inline, ...props }: TextCellProps & { tone: string }) {
+    const Tag = inline ? "span" : "div"
+    return (
+        <Tag className={cn("flex justify-center items-center text-center w-full text-xs font-sans font-medium", tone, alignClass(align), inline && INLINE_CLASS, size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, className)} {...props}>
+            {children}
+        </Tag>
+    )
+}
+
+/** Missing value: one marker ("—") and one tone for every cell (ADR-0087 R2). */
+function EmptyCell({ align, defaultAlign = "center", ...props }: Omit<InlineCellProps, "align" | "children"> & { align?: DataCellAlign, defaultAlign?: DataCellAlign }) {
+    return <TextCell tone="text-muted-foreground" align={align ?? defaultAlign} {...props}>{EMPTY_VALUE}</TextCell>
 }
 
 const INTENT_MAP: Record<DataCellIntent, string> = {
@@ -106,24 +141,25 @@ export const DataCell = {
      * Texto primario: Todo texto que no encaje en las definiciones restantes
      * (identificadores, fechas, números, badges, etc.). Es el contenedor de texto principal por defecto.
      */
-    Text: ({ children, className, size, intent, weight, uppercase, color, ...props }: BaseCellProps & { size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, uppercase?: boolean, color?: string }) => (
-        <div className={cn("flex justify-center items-center text-center w-full text-xs font-sans font-medium text-foreground", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], uppercase && "uppercase tracking-tight", color, className)} {...props}>{children}</div>
+    Text: ({ uppercase, className, ...props }: TextCellProps & { uppercase?: boolean }) => (
+        <TextCell tone="text-foreground" className={cn(uppercase && "uppercase tracking-tight", className)} {...props} />
     ),
 
     /**
      * Texto secundario: Todo dato complementario que se muestre junto a o debajo de un texto primario,
      * entidad, contacto, moneda, estado, metadato, etc., aportando contexto adicional (ej. categorías, notas, descripciones secundarias).
      */
-    Secondary: ({ children, className, size, intent, weight, color, ...props }: BaseCellProps & { size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string }) => (
-        <div className={cn("flex justify-center items-center text-center w-full text-xs font-sans font-medium text-muted-foreground", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, className)} {...props}>{children}</div>
-    ),
+    Secondary: (props: TextCellProps) => <TextCell tone="text-muted-foreground" {...props} />,
+
+    /** Missing value ("—", secondary tone): the single empty marker of every cell (ADR-0087 R2). */
+    Empty: EmptyCell,
 
     /** Standard text for identifiers (simple font as per request) */
-    Code: ({ children, className, size, intent, weight, color, ...props }: BaseCellProps & { size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string }) => (
-        <div className={cn("flex justify-center items-center text-center w-full text-xs font-sans font-medium text-foreground uppercase", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, className)} {...props}>
-            {children || "-"}
-        </div>
-    ),
+    // `false` also counts as empty (`{flag && code}`), as the former `children || "-"` did.
+    Code: ({ children, ...props }: TextCellProps) =>
+        isMissing(children) || children === false
+            ? <EmptyCell {...props} />
+            : <TextCell tone="text-foreground uppercase" {...props}>{children}</TextCell>,
 
     /** Standardized Entity ID with prefix and padding (Uses EntityBadge, matches Status badge typography/size) */
     Entity: ({ entityLabel, type, number, label, data, className, size = "sm", ...props }: { entityLabel?: string, type?: string, number?: string | number | null | undefined, label?: string, data?: object, className?: string, size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
@@ -140,10 +176,10 @@ export const DataCell = {
     },
 
     /** Clickable contact/human identifier */
-    ContactLink: ({ children, contactId, onClick, className, ...props }: HTMLAttributes<HTMLButtonElement> & { contactId?: number | string, onClick?: (e: React.MouseEvent) => void }) => {
+    ContactLink: ({ children, contactId, onClick, className, align, ...props }: HTMLAttributes<HTMLButtonElement> & { contactId?: number | string, onClick?: (e: React.MouseEvent) => void, align?: DataCellAlign }) => {
         const { openEntity } = useGlobalModals();
         return (
-            <div className={cn("flex justify-center items-center w-full group", className)}>
+            <div className={cn("flex justify-center items-center w-full group", alignClass(align), className)}>
                 <Button
                     variant="ghost"
                     onClick={(e) => {
@@ -195,11 +231,11 @@ export const DataCell = {
     // --- Numeric Cells ---
 
     /** Right-aligned number */
-    Number: ({ value, suffix, prefix, className, decimals = 0, suffixGap = true, size, intent, weight, color, ...props }: ValueCellProps<number | string> & { suffix?: string, prefix?: string, decimals?: number, suffixGap?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string }) => {
-        if (value === null || value === undefined) return <div className={cn("text-xs font-sans font-medium text-muted-foreground flex justify-end items-center text-right tabular-nums", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, className)} {...props}>-</div>
+    Number: ({ value, suffix, prefix, className, decimals = 0, suffixGap = true, size, intent, weight, color, align, ...props }: ValueCellProps<number | string> & { suffix?: string, prefix?: string, decimals?: number, suffixGap?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string, align?: DataCellAlign }) => {
+        if (isMissing(value)) return <EmptyCell align={align} defaultAlign="end" className={className} {...props} />
         const num = typeof value === 'string' ? parseFloat(value) : value
         return (
-            <div className={cn("text-xs font-sans font-medium text-foreground flex justify-end items-center text-right tabular-nums", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, className)} {...props}>
+            <div className={cn("text-xs font-sans font-medium text-foreground flex justify-end items-center text-right tabular-nums", alignClass(align), size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, className)} {...props}>
                 {/* eslint-disable-next-line no-restricted-syntax -- numeric quantity format, not currency; MoneyDisplay not applicable */}
                 {prefix}{num.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}{suffix && <span className={cn("text-foreground flex justify-end items-center text-right", suffixGap && "ml-1")}>{suffix}</span>}
             </div>
@@ -207,9 +243,9 @@ export const DataCell = {
     },
 
     /** Currency formatted cell. Pass `showColor` to color red/green based on sign (variance use case). */
-    Currency: ({ value, currency = "CLP", className, digits = 0, showColor = false, showZeroAsDash = false, size, intent, weight, interactive, color, tooltip: tooltipContent, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number, showColor?: boolean, showZeroAsDash?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, interactive?: boolean, color?: string, tooltip?: ReactNode }) => {
+    Currency: ({ value, currency = "CLP", className, digits = 0, showColor = false, showZeroAsDash = false, size, intent, weight, interactive, color, tooltip: tooltipContent, align, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number, showColor?: boolean, showZeroAsDash?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, interactive?: boolean, color?: string, tooltip?: ReactNode, align?: DataCellAlign }) => {
         const cell = (
-            <div className={cn("text-xs font-sans font-medium text-foreground flex justify-end items-center text-right tabular-nums w-full", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], interactive && "cursor-pointer hover:underline", color, className)} {...props}>
+            <div className={cn("text-xs font-sans font-medium text-foreground flex justify-end items-center text-right tabular-nums w-full", alignClass(align), size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], interactive && "cursor-pointer hover:underline", color, className)} {...props}>
                 <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={showColor} showZeroAsDash={showZeroAsDash} weight={weight} />
             </div>
         )
@@ -237,7 +273,7 @@ export const DataCell = {
      * Shows directional icon, sign prefix (+/-), and semantic color.
      * Use for ledgers, movement tables, and transaction histories.
      */
-    CurrencyFlow: ({ value, direction, currency = "CLP", digits = 0, showIcon = true, showSign = true, className, size, intent, weight, color, ...props }: ValueCellProps<number | string> & { direction: 'inflow' | 'outflow' | 'neutral', currency?: string, digits?: number, showIcon?: boolean, showSign?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string }) => {
+    CurrencyFlow: ({ value, direction, currency = "CLP", digits = 0, showIcon = true, showSign = true, className, size, intent, weight, color, align, ...props }: ValueCellProps<number | string> & { direction: 'inflow' | 'outflow' | 'neutral', currency?: string, digits?: number, showIcon?: boolean, showSign?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string, align?: DataCellAlign }) => {
         const Icon = direction === 'inflow' ? ArrowUpRight : direction === 'outflow' ? ArrowDownLeft : History
         const iconColor = direction === 'inflow' ? 'text-success' : direction === 'outflow' ? 'text-destructive' : 'text-muted-foreground'
         const badgeColor = direction === 'inflow'
@@ -248,7 +284,7 @@ export const DataCell = {
         const sign = showSign ? (direction === 'inflow' ? '+' : direction === 'outflow' ? '-' : '') : ''
 
         return (
-            <div className={cn("flex items-center justify-center gap-1 font-sans text-xs font-medium text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, className)} {...props}>
+            <div className={cn("flex items-center justify-center gap-1 font-sans text-xs font-medium text-center", alignClass(align), size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, className)} {...props}>
                 <span className={cn("inline-flex items-center gap-1 rounded-sm px-2 py-0.5 leading-none", badgeColor)}>
                     {showIcon && <Icon className={cn("h-3.5 w-3.5", iconColor)} />}
                     <span>{sign}{formatCurrency(value, currency, { maximumFractionDigits: digits })}</span>
@@ -271,10 +307,10 @@ export const DataCell = {
      * When `direction` is omitted, infers from sign (backward compatible).
      */
     NumericFlow: ({ value, unit, uom, direction: dirProp, showIcon = true, showSign = true, className, size, intent, weight, color, ...props }: HTMLAttributes<HTMLDivElement> & { value: number | string | null | undefined, unit?: string, uom?: string, direction?: 'inflow' | 'outflow' | 'neutral', showIcon?: boolean, showSign?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string }) => {
-        if (value === null || value === undefined || value === "") return <div className="flex justify-center items-center text-center font-medium text-muted-foreground text-xs">-</div>
+        if (isMissing(value)) return <EmptyCell />
 
         const numValue = Number(value)
-        if (isNaN(numValue)) return <div className="text-xs font-medium text-foreground flex justify-center items-center text-center">-</div>
+        if (isNaN(numValue)) return <EmptyCell />
 
         const direction = dirProp ?? (numValue > 0 ? 'inflow' : numValue < 0 ? 'outflow' : 'neutral')
 
@@ -326,10 +362,10 @@ export const DataCell = {
     // --- Date Cells ---
 
     /** Standard date format */
-    Date: ({ value, className, showTime = false, size, intent, weight, dateWeight, timeWeight, color, ...props }: ValueCellProps<string | Date> & { showTime?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, dateWeight?: DataCellWeight, timeWeight?: DataCellWeight, color?: string }) => {
-        if (!value) return <div className={cn("flex justify-center items-center w-full text-center text-xs font-medium text-muted-foreground/50", className)} {...props}>-</div>
+    Date: ({ value, className, showTime = false, size, intent, weight, dateWeight, timeWeight, color, align, ...props }: ValueCellProps<string | Date> & { showTime?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, dateWeight?: DataCellWeight, timeWeight?: DataCellWeight, color?: string, align?: DataCellAlign }) => {
+        if (!value) return <EmptyCell align={align} className={className} />
         return (
-            <div className={cn("flex justify-center items-center w-full text-center text-xs font-sans font-medium text-foreground whitespace-nowrap", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], dateWeight && WEIGHT_MAP[dateWeight], color, className)} {...props}>
+            <div className={cn("flex justify-center items-center w-full text-center text-xs font-sans font-medium text-foreground whitespace-nowrap", alignClass(align), size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], dateWeight && WEIGHT_MAP[dateWeight], color, className)} {...props}>
                 {formatPlainDate(value)}
                 {showTime && (() => {
                     const date = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
@@ -365,15 +401,15 @@ export const DataCell = {
     ),
 
     /** One or more domain-resolved category chips (wraps shared Chip.Category). Empty renders the unified null dash. */
-    Category: ({ value, domain, size = "md", className, ...props }: { value: string | string[] | null | undefined, domain?: CategoryDomain, size?: "xs" | "sm" | "md", className?: string } & HTMLAttributes<HTMLDivElement>) => {
+    Category: ({ value, domain, size = "md", className, align, ...props }: { value: string | string[] | null | undefined, domain?: CategoryDomain, size?: "xs" | "sm" | "md", className?: string, align?: DataCellAlign } & HTMLAttributes<HTMLDivElement>) => {
         const values = (Array.isArray(value) ? value : value ? [value] : []) as string[]
         if (values.length === 0 || !domain) {
             return (
-                <div className={cn("flex justify-center items-center w-full text-xs font-medium text-muted-foreground/50", className)} {...props}>-</div>
+                <EmptyCell align={align} className={className} />
             )
         }
         return (
-            <div className={cn("flex justify-center items-center flex-wrap gap-1 w-full", className)} {...props}>
+            <div className={cn("flex justify-center items-center flex-wrap gap-1 w-full", alignClass(align), className)} {...props}>
                 {values.map((v, i) => (
                     <ChipComponent.Category key={`${v}-${i}`} domain={domain} value={v} size={size} />
                 ))}
@@ -854,7 +890,7 @@ export function createCodeColumn<TData>(
         header: ({ column }) => <DataTableColumnHeader column={column} title={title} className={cn("justify-center", opts?.headerClassName)} />,
         cell: ({ row }) => (
             <DataCell.Code>
-                {opts?.render ? opts.render(row.original) : ((row.getValue(accessorKey) as string) ?? "-")}
+                {opts?.render ? opts.render(row.original) : (row.getValue(accessorKey) as string | null)}
             </DataCell.Code>
         ),
         enableSorting: opts?.enableSorting ?? true,
@@ -908,7 +944,7 @@ export function createSecondaryColumn<TData>(
     return {
         accessorKey,
         header: ({ column }) => <DataTableColumnHeader column={column} title={title} className={cn("justify-center", opts?.headerClassName)} />,
-        cell: ({ row }) => <DataCell.Secondary>{(row.getValue(accessorKey) as string) ?? "-"}</DataCell.Secondary>,
+        cell: ({ row }) => <DataCell.Secondary>{(row.getValue(accessorKey) as string) ?? EMPTY_VALUE}</DataCell.Secondary>,
         enableSorting: opts?.enableSorting ?? true,
     }
 }

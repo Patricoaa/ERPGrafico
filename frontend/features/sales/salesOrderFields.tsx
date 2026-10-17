@@ -9,7 +9,7 @@ import type { SaleOrder } from "./types"
  * transitions never depend on fabricated literals.
  */
 export function orderStageSummary(order: SaleOrder): { status: string; label: string; intent: BadgeIntent } {
-    const s = getHubStatuses(order as unknown as Parameters<typeof getHubStatuses>[0])
+    const s = getHubStatuses(order)
     // ADR-0084: el pago es su propio eje (payment_status), no un estado de la OV
     const paid = order.payment_status === 'PAID' || (Number(order.total) === 0 && Number(order.pending_amount) === 0)
 

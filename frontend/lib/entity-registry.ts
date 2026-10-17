@@ -219,7 +219,7 @@ export function getDomainConceptMessage(concept: DomainConceptKey, action: Domai
   return Object.entries(values).reduce((acc, [placeholder, value]) => acc.split(`{${placeholder}}`).join(String(value ?? '')), template);
 }
 
-export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
+const REGISTRY = {
   'sales.saleorder': {
     label: 'sales.saleorder',
     title: 'Orden de Venta',
@@ -1177,7 +1177,13 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/treasury/card-statements',
     detailUrlPattern: '/treasury/bank-center',
   },
-};
+} satisfies Record<string, EntityMetadata>
+
+/** Every registered entity label (ADR-0087 R8). `label` in entity-view definitions is this union. */
+export type EntityLabel = keyof typeof REGISTRY
+
+/** Indexed by any string for legacy callers; use `EntityLabel` where the label is known statically. */
+export const ENTITY_REGISTRY: Record<string, EntityMetadata> = REGISTRY
 
 import { getDtePrefix, getDteLabel, getEntityConfig } from './api/entity-prefixes';
 export { getDtePrefix, getDteLabel };

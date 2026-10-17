@@ -200,3 +200,26 @@
 - Evidencia: `06-spec.md`; contrato `docs/20-contracts/component-entity-view.md`; `frontend/eslint-rules/entity-view-guards.mjs` (4 reglas; una sonda las dispara todas); `frontend/lib/__tests__/entity-view.contract.test.ts` (12/12 en verde; la mutación hace fallar 6 aserciones); `docRef` exportado por `@/features/documents`; tsc 0 errores; vitest del sistema 44/44
 - Decisiones: D-1 (segundo barrel autorizado, invariante #6), D-2 (convención de archivo verificada por test), sin overrides por superficie (§7), lote 1 ampliado con R7, R8, el provider en el shell y el estado en la URL (propuesta)
 - Estado: aprobado (2026-10-17): lote 1 = R1–R5 + R7 + R8 + provider + estado en la URL
+
+### TC-038 · Corrección · Verificado
+- Evidencia: `docs/10-architecture/adr/0022-list-url-source-of-truth.md` trata del `list_url` de las entidades buscables. Hoy en la URL viven los filtros (`components/shared/UnifiedSearchBar/useUnifiedSearch.ts`, nuqs), la vista (`hooks/useViewMode.ts`, `?view=`) y la selección (`?selected=`, ADR-0020). El orden y la página son `useState` local (`app/(dashboard)/production/orders/WorkOrdersPageClient.tsx:44`, `app/(dashboard)/accounting/entries/EntriesClientView.tsx:31`)
+- Error corregido: el §2.2 del prompt y `06` §5.3 atribuían a ADR-0022 "filtros, orden y página en la URL". La pregunta 2 de `06` §15 se apoyaba en esa premisa falsa
+- Decisión: el lote 1 implementa **paridad** (vista controlada + `useViewMode`, filtros en `Toolbar children`, `selectedId`). El orden y la página en la URL pasan a mejora opcional (pendiente de decisión 3, Puerta D)
+- Estado: corregido en `06` §5.3 y en el contrato §10.1
+
+### TC-039 · Deuda del sistema actual · Verificado
+- Evidencia: `frontend/lib/__tests__/no-unsafe.contract.test.ts` falla en `master` sin los cambios del lote 1 (comprobado con `git stash -u`). Hay 4 archivos por encima de su línea base (`features/sales/api/salesApi.ts` 6>4, `ProfitDistributionDrawer.tsx` 26>22, `CashMovementDrawer.tsx` 33>26, `TerminalBatchDrawer.tsx` 30>20) y 8 entradas obsoletas (archivos sin advertencias, como `OrderHubPanel.tsx` y `useOrderHubData.ts`)
+- Decisión: fuera del alcance de entity-view; tarea aparte aprobada por el usuario (2026-10-17)
+- Estado: https://github.com/Patricoaa/ERPGrafico/issues/177
+
+### TC-040 · Defecto encontrado por R8 · Verificado
+- Evidencia: `features/orders/entity-view/orderLine.entity.ts` declaraba `label: "sales.saleline"`, que no existe en `ENTITY_REGISTRY`. Con `EntityLabel`, ya no compila
+- Necesidad: las líneas no tienen ficha propia. Con el provider montado, la celda principal habría llamado a `openEntity("sales.saleline", …)`
+- Decisión: la identidad pasa a ser una unión discriminada `label` (abrible, del registro) \| `title` (embebida, sin acción por defecto ni icono)
+- Estado: implementado (lote 1)
+
+### TC-041 · Defecto del registro · Verificado
+- Evidencia: `frontend/lib/entity-registry.ts`, en la entrada `inventory.uom`, tiene `listUrl: '/inventory/products/units'`. Esa ruta no existe: el navegador termina en `/inventory/products`. La pantalla real es `/inventory/products/uoms/units` (`app/(dashboard)/inventory/products/uoms/units/page.tsx`)
+- Efecto: los enlaces de lista a UoM que usan el registro (búsqueda, redirecciones `?selected=`) llevan a Productos
+- Decisión: se corrige al migrar UoM (lote 2); `entity-registry-routes.contract.test.ts` debería haberlo detectado (revisar su alcance)
+- Estado: pendiente

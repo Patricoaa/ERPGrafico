@@ -8,7 +8,7 @@ const RECEIVING = {
     RECEIVED: { status: "RECEIVED", label: "Recibida" },
 } as const
 
-const hubAxes = (o: PurchaseOrderAPI) => getHubStatuses(o as unknown as Parameters<typeof getHubStatuses>[0])
+const hubAxes = (o: PurchaseOrderAPI) => getHubStatuses(o)
 
 /** Purchase order — most rigid screen (2 computed, 3 hidden facet columns, notes mode, 881-line view). */
 export const purchaseOrderEntity = defineEntity<PurchaseOrderAPI>()((f) => ({

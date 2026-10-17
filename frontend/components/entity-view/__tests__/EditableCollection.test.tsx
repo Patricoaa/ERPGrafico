@@ -24,7 +24,7 @@ interface Line {
 }
 
 const entity = defineEntity<Line>()((f) => ({
-    label: "test.line",
+    title: "Prueba",
     fields: {
         name: f.text("name", { label: "Producto" }),
         quantity: f.quantity("quantity", { label: "Cantidad" }),

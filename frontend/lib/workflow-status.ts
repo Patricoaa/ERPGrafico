@@ -33,6 +33,33 @@ interface OrderBase {
     [key: string]: unknown;
 }
 
+/**
+ * Minimal structural input of `getHubStatuses` / `billingStage`: only the fields they read,
+ * all optional and nullable, without an index signature. Any order-like API type (sale order,
+ * purchase order, serializer variants) is assignable without a cast (ADR-0087 R5).
+ */
+export interface HubOrderSource {
+    readonly work_orders?: ReadonlyArray<{ readonly status: string; readonly production_progress?: number | null }> | null
+    readonly lines?: ReadonlyArray<HubOrderLine> | null
+    readonly items?: ReadonlyArray<HubOrderLine> | null
+    readonly invoices?: ReadonlyArray<{ readonly status?: string | null; readonly number?: string | null }> | null
+    readonly invoicing_status?: string | null
+    readonly serialized_payments?: ReadonlyArray<unknown> | null
+    readonly payments_detail?: ReadonlyArray<unknown> | null
+    readonly status?: string | null
+    readonly payment_status?: string | null
+    readonly pending_amount?: number | string | null
+    readonly total?: number | string | null
+}
+
+export interface HubOrderLine {
+    readonly is_manufacturable?: boolean | null
+    readonly product_type?: string | null
+    readonly quantity?: number | string | null
+    readonly quantity_delivered?: number | string | null
+    readonly quantity_received?: number | string | null
+}
+
 interface NoteBase {
     sale_order?: unknown;
     status?: string;
@@ -86,9 +113,9 @@ export function stageIntent(stageStatus: string | null | undefined): BadgeIntent
  * - active: facturación parcial (`invoicing_status` PARTIAL, ADR-0081) o emitidas + borradores;
  * - success: todo facturado y ninguna factura sin folio.
  */
-export function billingStage(order: OrderBase): { billingStatus: string; billingFolioPending: boolean } {
+export function billingStage(order: HubOrderSource): { billingStatus: string; billingFolioPending: boolean } {
     const invoices = (order.invoices || []).filter((inv) => inv.status !== 'CANCELLED')
-    const isDraft = (inv: { status?: string; number?: string }) =>
+    const isDraft = (inv: { readonly status?: string | null; readonly number?: string | null }) =>
         inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number
     const issued = invoices.filter((inv) => !isDraft(inv))
     const billingFolioPending = invoices.some(isDraft)
@@ -99,7 +126,7 @@ export function billingStage(order: OrderBase): { billingStatus: string; billing
     return { billingStatus, billingFolioPending }
 }
 
-export const getHubStatuses = (order: OrderBase) => {
+export const getHubStatuses = (order: HubOrderSource) => {
     // 1. Production
     // Visible if order has manufacturable items or existing work orders
     const showProduction = (order.work_orders?.length ?? 0) > 0 || (order.lines || order.items || []).some((l) => l.is_manufacturable)
