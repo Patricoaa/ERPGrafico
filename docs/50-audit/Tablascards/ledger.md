@@ -179,3 +179,24 @@
 - Decisión del usuario (2026-10-17): unificar el estado documental como **hub con etiqueta** en tabla y card
 - Implementación: `hubStatus` exige `caption: StatusValue` (StatusBadge con texto, antes de los anillos); orden y exportación usan ese texto; test de tipos que rechaza un hub sin etiqueta
 - Estado: implementado (spike)
+
+### TC-034 · Guarda rota del sistema actual · Verificado
+- Evidencia: en `frontend/eslint.config.mjs`, el bloque "UI component data fetching" (`files: ["components/**/*.tsx", "features/**/*.tsx"]`) redefine `no-restricted-imports` solo con TanStack. La configuración plana se queda con la última definición, así que la guarda de imports entre features **no se aplica en los `.tsx` de `features/`**. Sonda: `import { useUoMs } from "@/features/inventory/hooks/useUoMs"` da error en `features/sales/zzProbe.ts` y pasa en `zzProbe2.tsx` (2026-10-17)
+- Efecto visible: dos stories hacen imports profundos entre features sin aviso: `Purchasing.stories.tsx` → `@/features/billing/entity-view/purchaseInvoice.entity` y `SaleOrder.stories.tsx` → `@/features/orders/entity-view/orderLine.entity`. Se resuelven al exportar esas entidades por sus barrels en la migración
+- Propuesta: fusionar las restricciones en un único bloque `no-restricted-imports` y medir las violaciones destapadas antes de activarlo (tarea propia, fuera del alcance de la Fase 6)
+- Estado: tarea aparte, aprobada por el usuario (2026-10-17) → https://github.com/Patricoaa/ERPGrafico/issues/176 (alcance: 9 imports en 6 archivos)
+
+### TC-035 · Gobierno · Verificado
+- Evidencia: `docs/README.md:114` numeraba "Zero N+1" como invariante #13 y omitía la de `*Fields.ts`; `CLAUDE.md:91` tenía `*Fields.ts` como #13 y omitía N+1. Las dos decían "the same 13"
+- Decisión propuesta: #13 = nueva redacción de entity-view; "Zero N+1" = #14 en las tres listas (ya es GOVERNANCE #43)
+- Estado: aprobado por el usuario (2026-10-17)
+
+### TC-036 · Corrección de hipótesis · Verificado
+- Evidencia: `docs/20-contracts/component-card.md` documenta el `Card` de shadcn (contenedor genérico), no la card de entidad. La card de entidad estaba repartida entre `component-fields.md` §5 y `component-datatable-views.md` §6
+- Decisión: `component-card.md` no se modifica; la card de entidad pasa a `component-entity-view.md` §6.3
+- Estado: implementado
+
+### TC-037 · Fase 6 · Especificación y guardas · Verificado
+- Evidencia: `06-spec.md`; contrato `docs/20-contracts/component-entity-view.md`; `frontend/eslint-rules/entity-view-guards.mjs` (4 reglas; una sonda las dispara todas); `frontend/lib/__tests__/entity-view.contract.test.ts` (12/12 en verde; la mutación hace fallar 6 aserciones); `docRef` exportado por `@/features/documents`; tsc 0 errores; vitest del sistema 44/44
+- Decisiones: D-1 (segundo barrel autorizado, invariante #6), D-2 (convención de archivo verificada por test), sin overrides por superficie (§7), lote 1 ampliado con R7, R8, el provider en el shell y el estado en la URL (propuesta)
+- Estado: aprobado (2026-10-17): lote 1 = R1–R5 + R7 + R8 + provider + estado en la URL

@@ -89,6 +89,21 @@ Gate A (2026-10-17) approved these causes, the common/frequent/specific requirem
 | R7 | Typed collection context and cast-free registry | `components/entity-view` |
 | R8 | Typed entity label (A2) | `lib/entity-registry.ts` |
 
+### Phase 6 outcome (2026-10-17) — specification and contracts
+
+- **Contract:** [`component-entity-view.md`](../../20-contracts/component-entity-view.md) is the layer-20 contract for new and migrated code. `component-fields.md` and `component-datatable-views.md` are frozen (their visual tokens and the `?view=` URL key are inherited). `component-card.md` is unaffected: it documents the shadcn `Card`, not the entity card. Full specification: `docs/50-audit/Tablascards/06-spec.md`.
+- **Invariants:**
+  - #6 is widened to the `@/components/entity-view` barrel. Module augmentation of `core/value-kinds` is the only allowed internal path.
+  - #13 is rewritten as "entity collections declared once, composed per surface; legacy frozen".
+  - "Zero N+1" becomes #14 in all three headline lists. It was #13 in `docs/README.md` only (a pre-existing desync).
+  - GOVERNANCE §4.1 is rewritten (rules 24–26), and rule 23 now carries the value-kind governance bar.
+- **Guards:**
+  - `eslint-rules/entity-view-guards.mjs`: `no-legacy-presentation`, `no-adhoc-format`, `no-adhoc-table`, `no-deep-import`.
+  - The cross-feature pattern `@/features/*/entity-view/*`.
+  - `lib/__tests__/entity-view.contract.test.ts`: ≤12-prop ceiling, frozen core kind set, entity file location and no casts, legacy props-compat ceilings (`DataTableProps` 57, `DataTableViewProps` 12, `AutoEntityCardProps` 22, `FieldType` 15), and an ad hoc table ratchet (23 files).
+- **A1 applied:** `docRef` is exported from the `@/features/documents` barrel.
+- **Specified, not yet built (Phase 7 batch 1):** URL state (`useCollectionUrlState`), typed label (R8), cast-free context (R7), mounting `EntityViewProvider` in the app shell, and the `fromLegacyFields()` adapter.
+
 ## Consequences
 
 ### Positive

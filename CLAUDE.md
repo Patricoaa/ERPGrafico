@@ -41,7 +41,8 @@ Task routing — common intents:
 | N+1 query / selector / prefetch | [add-selector.md](docs/30-playbooks/add-selector.md) |
 | Settings panel / config section | [add-settings-panel.md](docs/30-playbooks/add-settings-panel.md) |
 | Which component to use / component decision | [component-decision-tree.md](docs/20-contracts/component-decision-tree.md) |
-| Field type / DataCell assignment / text vs secondary / createEntityFields / \*Fields.ts | [component-fields.md](docs/20-contracts/component-fields.md) |
+| Entity collection / table / card / list columns / value kind / `defineEntity` / entity-view | [component-entity-view.md](docs/20-contracts/component-entity-view.md) |
+| Legacy field type / DataCell assignment / createEntityFields / \*Fields.ts (frozen) | [component-fields.md](docs/20-contracts/component-fields.md) |
 | Badge / chip / pill for a label or tag | [component-chip.md](docs/20-contracts/component-chip.md) |
 | Module layout / navigation tabs / dynamic header | [module-layout-navigation.md](docs/20-contracts/module-layout-navigation.md) |
 | TypeScript error / `any` escape hatch | [resolve-type-errors.md](docs/30-playbooks/resolve-type-errors.md) |
@@ -74,21 +75,22 @@ Before writing any code, verify:
 
 ## Global invariants (violate = PR rejected)
 
-> Headline list. The **authoritative** rules live in [GOVERNANCE.md](docs/90-governance/GOVERNANCE.md); the same 13 appear in [docs/README.md](docs/README.md). Keep all three in sync.
+> Headline list. The **authoritative** rules live in [GOVERNANCE.md](docs/90-governance/GOVERNANCE.md); the same 14 appear in [docs/README.md](docs/README.md). Keep all three in sync.
 
 1. **Zero `any`** in TypeScript — use Zod-derived types or `unknown` + type guard. See [zero-any-policy.md](docs/90-governance/zero-any-policy.md).
 2. **No raw Tailwind colors** (`bg-red-500`, `text-blue-600`) — semantic tokens only (`bg-primary`, `text-muted-foreground`).
 3. **No cross-feature internal imports** — import from feature barrel `index.ts` only.
 4. **No direct `@/lib/api` in components or pages** — only importable from `features/*/api/`, `features/*/hooks/`, and `/hooks/`.
 5. **No `useQuery`/`useMutation` directly in components** — wrap in a feature hook under `features/*/hooks/`.
-6. **Shared components imported via barrel only** — `import { X } from '@/components/shared'`, never the file path directly.
+6. **Shared components imported via barrel only** — `import { X } from '@/components/shared'` or `'@/components/entity-view'`, never the file path directly. Only exception: module augmentation of `@/components/entity-view/core/value-kinds` by feature value kinds.
 7. **`StatusBadge` is the only authorized status renderer.**
 8. **All shared components handle `loading` / `empty` / `error`.**
 9. **All forms** use `react-hook-form` + `zodResolver` with schema in `schema.ts`.
 10. **Views ≤ 20 lines** per Django action — business logic goes in `services.py`.
 11. **Component suffix matches surface** — `Drawer`/`Modal`/`Sheet`/`Wizard`/`Form`…; `FormModal`/`FormDrawer` prohibited. See [naming-conventions.md](docs/90-governance/naming-conventions.md).
 12. **Changing a contract (layer 20), public API, or a global invariant requires an ADR.**
-13. **`*Fields.ts` is the single source of truth** for entity list/card/kanban fields. Table columns must use `*Fields.toColumns()`. Inline columns only via `computed` type.
+13. **Entity collections are declared once and composed per surface** — fields live in `defineEntity<T>()` (`features/*/entity-view/*.entity.ts`) and every table, card grid, embedded list and batch-edit table is rendered with `@/components/entity-view`. Specific needs are feature value kinds or typed card sections, never opaque escapes (`computed`, `renderCard`, inline JSX columns, `as unknown as`). The legacy system (`*Fields.ts`, `toColumns()`, `AutoEntityCard`, `DataTable`) is frozen until its last consumer migrates. See [component-entity-view.md](docs/20-contracts/component-entity-view.md) (ADR-0087).
+14. **Zero N+1** — no `Serializer` / `SerializerMethodField` runs ORM queries; relations are preloaded in the `ViewSet` (`select_related` / `prefetch_related`); object graphs are created in `services.py` under `@transaction.atomic`. See [zero-n-plus-one-policy.md](docs/90-governance/zero-n-plus-one-policy.md).
 
 ## Rule precedence
 

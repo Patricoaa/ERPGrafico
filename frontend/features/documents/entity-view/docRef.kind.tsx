@@ -31,7 +31,7 @@ function DocRefCell({ value, options }: ValueRenderProps<"docRef">) {
 
 let registered = false
 
-/** Called once from the app bootstrap (next to EntityViewProvider) and from stories. */
+/** Idempotent. The `docRef` builder calls it; stories may call it directly. */
 export function registerDocumentValueKinds(): void {
     if (registered) return
     registered = true
@@ -45,7 +45,7 @@ export function registerDocumentValueKinds(): void {
 /**
  * Field builder of the extension (adjustment from the onboarding test, 05 §6): using it registers
  * the kind, so an entity can never declare a `docRef` field that fails at runtime for lack of
- * a bootstrap call. To be exported from the `@/features/documents` barrel on adoption (invariant #3).
+ * a bootstrap call. Exported from the `@/features/documents` barrel (invariant #3).
  */
 export function docRef<T>(f: FieldBuilders<T>, accessor: Accessor<T, DocRefValue | null>, input: FieldMeta & { fallback?: string }): FieldDef<T, "docRef"> {
     registerDocumentValueKinds()

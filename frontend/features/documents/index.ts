@@ -8,3 +8,5 @@ export { DOCUMENT_DOMAIN_META } from './utils/domains'
 export { useOpenRelatedDocument } from './hooks/useOpenRelatedDocument'
 export { useInvalidateDocuments } from './hooks/useInvalidateDocuments'
 export { resolveRegistryActions, type ResolvedDocumentAction } from './utils/actions'
+// entity-view extension (ADR-0087 A1): field builder that self-registers the `docRef` kind.
+export { docRef, type DocRefValue } from './entity-view/docRef.kind'

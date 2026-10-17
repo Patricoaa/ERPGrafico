@@ -103,6 +103,8 @@ Apply only to `bg-card` surfaces. Do not combine two textures. Do not apply to o
 
 ### DataCell primitives 🟢
 
+> **ADR-0087:** en el sistema nuevo, `DataCell.*` es la **primitiva de renderer** de los tipos de valor de `@/components/entity-view` (`kinds/core-kinds.tsx`); las entidades no la instancian directamente. Cambios pendientes del lote 1 de la Fase 7: R1 (prop `align` con un valor por defecto semántico y render en línea `span` para usarla dentro de un botón) y R2 (marcador único "—" para el dato ausente). Ver [component-entity-view.md](./component-entity-view.md).
+
 > Import: `import { DataCell, createActionsColumn } from '@/components/shared'`
 > **Para campos de entidad**, declarar `FieldDef.type` en `*Fields.ts` — ver [component-fields.md](./component-fields.md).
 > Los primitivos aquí se usan directamente solo en renderers `computed` y columnas de excepción.

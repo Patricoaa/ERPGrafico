@@ -49,7 +49,8 @@ last_review: 2026-06-19
 | “architecture”, “folder structure”, “where does X go” | [frontend-fsd.md](10-architecture/frontend-fsd.md) / [backend-apps.md](10-architecture/backend-apps.md) | 10 |
 | “which component”, “component decision”, “what to use” | [component-decision-tree.md](20-contracts/component-decision-tree.md) | 20 |
 | “component API”, “prop signature”, “StatusBadge usage” | [component-contracts.md](20-contracts/component-contracts.md) | 20 |
-| “field type”, “DataCell assignment”, “text vs secondary”, “cómo asignar tipo de campo”, “createEntityFields”, “\*Fields.ts”, “FieldType” | [component-fields.md](20-contracts/component-fields.md) | 20 |
+| “tabla de entidad”, “card de entidad”, “columnas”, “lista embebida”, “tipo de valor”, “value kind”, “defineEntity”, “entity-view”, “Collection”, “EditableCollection”, “dar de alta la presentación de una entidad” | [component-entity-view.md](20-contracts/component-entity-view.md) | 20 |
+| “field type”, “DataCell assignment”, “text vs secondary”, “cómo asignar tipo de campo”, “createEntityFields”, “\*Fields.ts”, “FieldType” (sistema congelado) | [component-fields.md](20-contracts/component-fields.md) | 20 |
 | “Drawer API”, “drawer contract”, “BaseDrawer”, “cómo usar Drawer”, “tamaño de drawer”, “formDrawerWidth” | [component-drawer.md](20-contracts/component-drawer.md) | 20 |
 | “selector component”, “entity search”, “combobox”, “AccountSelector” | [component-selectors.md](20-contracts/component-selectors.md) | 20 |
 | “module layout”, “navigation pattern”, “dynamic header”, “module tabs” | [module-layout-navigation.md](20-contracts/module-layout-navigation.md) | 20 |
@@ -97,21 +98,22 @@ last_review: 2026-06-19
 
 ## Global invariants (violate = PR rejected)
 
-> Headline list. The **authoritative** rules live in [GOVERNANCE.md](90-governance/GOVERNANCE.md); the same 13 appear in the root [CLAUDE.md](../CLAUDE.md). Keep all three in sync.
+> Headline list. The **authoritative** rules live in [GOVERNANCE.md](90-governance/GOVERNANCE.md); the same 14 appear in the root [CLAUDE.md](../CLAUDE.md). Keep all three in sync.
 
 1. **Zero `any`** — Zod-derived types or `unknown` + type guard. See [zero-any-policy.md](90-governance/zero-any-policy.md).
 2. **No raw Tailwind colors** (`bg-red-500`) — semantic tokens only (`bg-primary`).
 3. **No cross-feature internal imports** — feature barrel `index.ts` only.
 4. **No direct `@/lib/api` in components or pages** — only `features/*/api/`, `features/*/hooks/`, `/hooks/`.
 5. **No `useQuery`/`useMutation` directly in components** — wrap in a feature hook.
-6. **Shared components imported via barrel only** — `@/components/shared`, never the file path.
+6. **Shared components imported via barrel only** — `@/components/shared` or `@/components/entity-view`, never the file path. Only exception: module augmentation of `@/components/entity-view/core/value-kinds` by feature value kinds.
 7. **`StatusBadge`** is the only authorized status renderer.
 8. **All shared components** handle `loading` / `empty` / `error` states.
 9. **All forms** use `react-hook-form` + `zodResolver` (schema in `schema.ts`).
 10. **Views ≤ 20 lines** per Django action — logic in `services.py`.
 11. **Component suffix must match surface** — `Drawer` = slide-over, `Modal` = dialog, `Sheet`/`Wizard`/`Form`…; `FormModal`/`FormDrawer` are prohibited. See [naming-conventions.md](90-governance/naming-conventions.md).
 12. **Changing a contract (layer 20), public API, or a global invariant requires an ADR.**
-13. **Zero N+1** — Ningún `Serializer` o `SerializerMethodField` ejecuta queries ORM. Toda relación se precarga en el `ViewSet` con `select_related`/`prefetch_related`. Creación de grafos en `services.py` con `@transaction.atomic`. Ver [zero-n-plus-one-policy.md](90-governance/zero-n-plus-one-policy.md).
+13. **Entity collections are declared once and composed per surface** — fields live in `defineEntity<T>()` (`features/*/entity-view/*.entity.ts`) and every table, card grid, embedded list and batch-edit table is rendered with `@/components/entity-view`. Specific needs are feature value kinds or typed card sections, never opaque escapes (`computed`, `renderCard`, inline JSX columns, `as unknown as`). The legacy system (`*Fields.ts`, `toColumns()`, `AutoEntityCard`, `DataTable`) is frozen until its last consumer migrates. See [component-entity-view.md](20-contracts/component-entity-view.md) (ADR-0087).
+14. **Zero N+1** — Ningún `Serializer` o `SerializerMethodField` ejecuta queries ORM. Toda relación se precarga en el `ViewSet` con `select_related`/`prefetch_related`. Creación de grafos en `services.py` con `@transaction.atomic`. Ver [zero-n-plus-one-policy.md](90-governance/zero-n-plus-one-policy.md).
 
 ## Agentic model instructions
 

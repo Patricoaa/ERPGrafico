@@ -1,6 +1,5 @@
 import { defineEditable, defineEntity, toNumber } from "@/components/entity-view"
-// On adoption this comes from the `@/features/documents` barrel (spike: the barrel is not touched).
-import { docRef } from "@/features/documents/entity-view/docRef.kind"
+import { docRef } from "@/features/documents"
 import type { OrderLine } from "../types"
 
 const qty = (v: number | string | null | undefined): number => toNumber(v) ?? 0

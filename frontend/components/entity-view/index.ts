@@ -1,6 +1,6 @@
 /**
- * Entity view system — spike (ADR-0087, Proposed). Isolated namespace with its own barrel;
- * not used by production pages until Gate C.
+ * Entity view system (ADR-0087, Accepted). Second authorized barrel (invariant #6);
+ * contract: docs/20-contracts/component-entity-view.md. Importing it registers the core kinds.
  */
 import { registerCoreValueKinds } from "./kinds/core-kinds"
 

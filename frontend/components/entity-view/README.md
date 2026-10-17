@@ -1,4 +1,6 @@
-# entity-view — guía rápida (prototipo, ADR-0087 *Proposed*)
+# entity-view — guía rápida (ADR-0087 *Accepted*)
+
+> Contrato normativo: [`docs/20-contracts/component-entity-view.md`](../../../docs/20-contracts/component-entity-view.md). Playbook: `docs/30-playbooks/add-feature.md` §4c.
 
 Sistema para presentar colecciones de una entidad (tabla, cards, listas embebidas, superficies editables) **declarando los campos una vez** y el layout **por superficie**. Barrel: `@/components/entity-view`.
 
@@ -72,7 +74,7 @@ Gratis, sin código: tabla semántica accesible, orden, paginación, card, vací
 | `tags` | `string[]` | `domain` (chips de categoría) |
 | `progress` | `{ done, total }` | `format: "percent"\|"ratio"` |
 
-Extensiones de features (se usan con su **constructor**, que además registra el tipo): `docRef(f, (row) => ({ label, id, display }) | null, { label, fallback? })` de `features/documents`, para enlazar a otro documento o entidad.
+Extensiones de features (se usan con su **constructor**, que además registra el tipo): `docRef(f, (row) => ({ label, id, display }) | null, { label, fallback? })`, importado de `@/features/documents`, para enlazar a otro documento o entidad.
 
 ## 3. Layout de la card
 
@@ -104,4 +106,4 @@ Regla de gobierno: un tipo entra al núcleo solo si lo usan ≥3 entidades de �
 
 ## 6. Prohibido
 
-`any`; `as unknown as` para mezclar entidades (usa `CollectionModes`); formatear dinero o fechas a mano (usa los tipos o los formatters exportados); `<table>` propias; importar `DataTable`, `createEntityFields` o `AutoEntityCard` desde código nuevo.
+`any`; `as unknown as` para mezclar entidades (usa `CollectionModes`); formatear dinero o fechas a mano (usa los tipos o los formatters exportados); `<table>` propias; importar `DataTable`, `createEntityFields` o `AutoEntityCard` desde código nuevo; importar rutas internas de `@/components/entity-view`. Lo bloquean las reglas `entity-view/*` de ESLint y `lib/__tests__/entity-view.contract.test.ts`.
