@@ -91,6 +91,134 @@ export interface EntityMetadata {
   subtitleSuffixTemplate?: string
 }
 
+// ── Domain concepts: LdM / OT / OV (canonical UX identity) ──────────────────
+
+export type DomainConceptKey = 'ldm' | 'ot' | 'ov';
+
+export interface DomainConcept {
+  key: DomainConceptKey;
+  /** Short code used in identifiers / display templates (e.g. "LDM-{id}"). */
+  code: string;
+  /** Human-readable label used in UX copy (e.g. "LdM", "Orden de Trabajo", "Orden de Venta"). */
+  label: string;
+  /** Backend registry key backing this domain concept. */
+  entityKey: string;
+  /** Display title of the backing entity. */
+  title: string;
+  /** Plural display title used in UX copy (e.g. "Órdenes de Trabajo"). */
+  pluralTitle: string;
+  /** Short template for display identifiers. */
+  shortTemplate: string;
+}
+
+export const DOMAIN_CONCEPTS: Record<DomainConceptKey, DomainConcept> = {
+  ldm: { key: 'ldm', code: 'LDM', label: 'LdM', entityKey: 'production.bom', title: 'Lista de Materiales', pluralTitle: 'Listas de Materiales', shortTemplate: 'LDM-{id}' },
+  ot: { key: 'ot', code: 'OT', label: 'Orden de Trabajo', entityKey: 'production.workorder', title: 'Orden de Trabajo', pluralTitle: 'Órdenes de Trabajo', shortTemplate: 'OT-{number}' },
+  ov: { key: 'ov', code: 'OV', label: 'Orden de Venta', entityKey: 'sales.saleorder', title: 'Orden de Venta', pluralTitle: 'Órdenes de Venta', shortTemplate: 'OV-{number}' },
+};
+
+export function getDomainConcept(key: DomainConceptKey): DomainConcept {
+  const concept = DOMAIN_CONCEPTS[key];
+  if (!concept) throw new Error(`Unknown domain concept: ${key}`);
+  return concept;
+}
+
+export function getDomainConceptLabel(key: DomainConceptKey, plural = false): string {
+  const concept = getDomainConcept(key);
+  if (!plural) return concept.label;
+  switch (key) {
+    case 'ldm': return 'Listas de Materiales';
+    case 'ot': return 'Ordenes de Trabajo';
+    case 'ov': return 'Ordenes de Venta';
+  }
+}
+
+export function getDomainConceptTitle(key: DomainConceptKey, plural = false): string {
+  const concept = getDomainConcept(key);
+  return plural ? concept.pluralTitle : concept.title;
+}
+
+export function getDomainConceptCode(key: DomainConceptKey): string {
+  return getDomainConcept(key).code;
+}
+
+export function getDomainConceptShortTemplate(key: DomainConceptKey): string {
+  const concept = getDomainConcept(key);
+  const entity = ENTITY_REGISTRY[concept.entityKey];
+  return entity?.shortTemplate ?? concept.shortTemplate;
+}
+
+export type DomainConceptAction = 'create' | 'created' | 'update' | 'updated' | 'delete' | 'deleted'
+  | 'duplicate' | 'duplicated' | 'annul' | 'annulled' | 'manage'
+  | 'createError' | 'updateError' | 'deleteError' | 'duplicateError' | 'annulError' | 'manageError';
+
+const DOMAIN_CONCEPT_MESSAGES: Record<DomainConceptKey, Partial<Record<DomainConceptAction, string>>> = {
+  ldm: {
+    create: 'Crear {subject}',
+    created: '{subject} creada correctamente',
+    update: 'Actualizar {subject}',
+    updated: '{subject} actualizada correctamente',
+    delete: 'Eliminar {subject}',
+    deleted: '{subject} eliminada',
+    duplicate: 'Duplicar {subject}',
+    duplicated: '{subject} duplicada',
+    annul: 'Anular {subject}',
+    annulled: '{subject} anulada',
+    manage: 'Gestión de {subject}',
+    createError: 'Error al crear {subject}',
+    updateError: 'Error al actualizar {subject}',
+    deleteError: 'Error al eliminar {subject}',
+    duplicateError: 'Error al duplicar {subject}',
+    annulError: 'Error al anular {subject}',
+    manageError: 'Error al gestionar {subject}',
+  },
+  ot: {
+    create: 'Crear {subject}',
+    created: '{subject} creada correctamente',
+    update: 'Actualizar {subject}',
+    updated: '{subject} actualizada correctamente',
+    delete: 'Eliminar {subject}',
+    deleted: '{subject} eliminada',
+    duplicate: 'Duplicar {subject}',
+    duplicated: '{subject} duplicada',
+    annul: 'Anular {subject}',
+    annulled: '{subject} anulada',
+    manage: 'Gestión de {subject}',
+    createError: 'Error al crear {subject}',
+    updateError: 'Error al actualizar {subject}',
+    deleteError: 'Error al eliminar {subject}',
+    duplicateError: 'Error al duplicar {subject}',
+    annulError: 'Error al anular {subject}',
+    manageError: 'Error al gestionar {subject}',
+  },
+  ov: {
+    create: 'Crear {subject}',
+    created: '{subject} creada correctamente',
+    update: 'Actualizar {subject}',
+    updated: '{subject} actualizada correctamente',
+    delete: 'Eliminar {subject}',
+    deleted: '{subject} eliminada',
+    duplicate: 'Duplicar {subject}',
+    duplicated: '{subject} duplicada',
+    annul: 'Anular {subject}',
+    annulled: '{subject} anulada',
+    manage: 'Gestión de {subject}',
+    createError: 'Error al crear {subject}',
+    updateError: 'Error al actualizar {subject}',
+    deleteError: 'Error al eliminar {subject}',
+    duplicateError: 'Error al duplicar {subject}',
+    annulError: 'Error al anular {subject}',
+    manageError: 'Error al gestionar {subject}',
+  },
+};
+
+export function getDomainConceptMessage(concept: DomainConceptKey, action: DomainConceptAction, context?: Record<string, unknown>): string {
+  const template = DOMAIN_CONCEPT_MESSAGES[concept]?.[action];
+  if (!template) return '';
+  const values: Record<string, unknown> = { subject: getDomainConcept(concept).title, ...context };
+  return Object.entries(values).reduce((acc, [placeholder, value]) => acc.split(`{${placeholder}}`).join(String(value ?? '')), template);
+}
+
 export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
   'sales.saleorder': {
     label: 'sales.saleorder',
@@ -134,7 +262,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Registro de despacho de mercadería',
     shortTemplate: 'DES-{number}',
     listUrl: '/sales/deliveries',
-    detailUrlPattern: '/sales/deliveries/{id}',
+    detailUrlPattern: '/d/sales.saledelivery/{id}',
     partnerField: 'partner_name',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
@@ -231,9 +359,9 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'ClipboardList',
     feminine: true,
     description: 'Lista de materiales y componentes',
-    shortTemplate: 'BOM-{id}',
+    shortTemplate: 'LDM-{id}',
     listUrl: '/production/boms',
-    detailUrlPattern: '/production/boms/{id}',
+    detailUrlPattern: '/production/boms',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', cardVariant: 'full' },
   },
   'inventory.stockmove': {
@@ -256,9 +384,9 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'FileText',
     feminine: true,
     description: 'Recepción, entrega o transferencia de mercadería',
-    shortTemplate: 'DOC-{id}',
+    shortTemplate: 'INV-{id}',
     listUrl: '/inventory/operations/documents',
-    detailUrlPattern: '/inventory/operations/documents/{id}',
+    detailUrlPattern: '/d/inventory.inventorydocument/{id}',
     printable: true,
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', cardVariant: 'full' },
   },
@@ -311,7 +439,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Propiedad variable de un producto',
     shortTemplate: '{name}',
     listUrl: '/inventory/stock/products/attributes',
-    detailUrlPattern: '/inventory/stock/products/attributes',
+    detailUrlPattern: '/inventory/products/attributes',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
   'inventory.stockreport': {
@@ -323,7 +451,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Informe de existencias actuales',
     shortTemplate: '{name}',
     listUrl: '/inventory/stock/report',
-    detailUrlPattern: '/inventory/stock/report',
+    detailUrlPattern: '/inventory/reports/stock',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
   'treasury.loaninstallment': {
@@ -336,7 +464,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Pago periódico de un crédito',
     shortTemplate: 'CUO-{id}',
     listUrl: '/treasury/loans',
-    detailUrlPattern: '/treasury/loans?selected={loan}&installment={id}',
+    detailUrlPattern: '/treasury/bank-center',
     partnerField: (data) => String(data.loan_display_id ?? '---'),
     viewPolicy: { availableViews: ['list'], defaultView: 'list' },
   },
@@ -424,7 +552,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Proyección financiera',
     shortTemplate: 'BUD-{id}',
     listUrl: '/finance/budgets',
-    detailUrlPattern: '/finance/budgets/{id}',
+    detailUrlPattern: '/finances/budgets/{id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'highlights' },
   },
   'accounting.journalentry': {
@@ -485,7 +613,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Ausencia o permiso del empleado',
     shortTemplate: 'AUS-{id}',
     listUrl: '/hr/absences',
-    detailUrlPattern: '/hr/absences/{id}',
+    detailUrlPattern: '/d/hr.absence/{id}',
     partnerField: 'employee_name',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'highlights' },
   },
@@ -511,7 +639,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Adelanto de sueldo al empleado',
     shortTemplate: 'ANT-{id}',
     listUrl: '/hr/advances',
-    detailUrlPattern: '/hr/advances/{id}',
+    detailUrlPattern: '/d/hr.salaryadvance/{id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'highlights' },
   },
   'workflow.task': {
@@ -596,7 +724,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Socio colaborador con participación en resultados',
     shortTemplate: '{name}',
     listUrl: '/settings/partners',
-    detailUrlPattern: '/settings/partners?selected={id}',
+    detailUrlPattern: '/finances/partners',
     viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'highlights' },
   },
 
@@ -611,7 +739,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Ingreso de mercadería comprada',
     shortTemplate: 'REC-{number}',
     listUrl: '/purchasing/receipts',
-    detailUrlPattern: '/purchasing/receipts/{id}',
+    detailUrlPattern: '/d/purchasing.purchasereceipt/{id}',
     partnerField: 'supplier_name',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
@@ -625,7 +753,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Devolución de mercadería al proveedor',
     shortTemplate: 'DEV-{number}',
     listUrl: '/purchasing/orders',
-    detailUrlPattern: '/purchasing/returns/{id}',
+    detailUrlPattern: '/d/purchasing.purchasereturn/{id}',
     partnerField: 'supplier_name',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
@@ -653,7 +781,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Declaración mensual de IVA',
     shortTemplate: 'F29-{id}',
     listUrl: '/tax/declarations',
-    detailUrlPattern: '/tax/declarations/{id}',
+    detailUrlPattern: '/tax/f29/{id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
 
@@ -746,7 +874,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Préstamo otorgado por una entidad financiera',
     shortTemplate: 'CRE-{code}',
     listUrl: '/treasury/loans',
-    detailUrlPattern: '/treasury/loans?selected={id}',
+    detailUrlPattern: '/treasury/bank-center',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', cardVariant: 'summary' },
   },
   'treasury.creditline': {
@@ -771,7 +899,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Cargo pendiente de facturación en tarjeta',
     shortTemplate: 'CHG-{id}',
     listUrl: '/treasury/card-statements',
-    detailUrlPattern: '/treasury/card-statements',
+    detailUrlPattern: '/treasury/bank-center',
   },
   'treasury.terminal': {
     label: 'treasury.terminal',
@@ -830,7 +958,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Movimiento de fondos entre cuentas',
     shortTemplate: 'TRF-{id}',
     listUrl: '/treasury/transfers',
-    detailUrlPattern: '/treasury/transfers?selected={id}',
+    detailUrlPattern: '/treasury/bank-center',
     viewPolicy: { availableViews: ['list'], defaultView: 'list' },
   },
 
@@ -940,7 +1068,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Jornada de caja registradora',
     shortTemplate: 'POS-{id}',
     listUrl: '/pos/sessions',
-    detailUrlPattern: '/pos/sessions?selected={id}',
+    detailUrlPattern: '/sales/sessions',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', cardVariant: 'full' },
   },
   'pos.terminal': {
@@ -953,7 +1081,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Punto de venta configurable',
     shortTemplate: 'POS-{name}',
     listUrl: '/pos/sessions',
-    detailUrlPattern: '/pos/sessions',
+    detailUrlPattern: '/sales/pos/cajas',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
 
@@ -979,7 +1107,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Factura emitida por un proveedor',
     shortTemplate: 'FC-{id}',
     listUrl: '/billing/purchase-invoices',
-    detailUrlPattern: '/billing/purchase-invoices/{id}',
+    detailUrlPattern: '/billing/purchases/{id}',
   },
   'treasury.cashmovement': {
     label: 'treasury.cashmovement',
@@ -1002,7 +1130,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Punto de venta configurable',
     shortTemplate: 'POS-{name}',
     listUrl: '/pos/sessions',
-    detailUrlPattern: '/pos/sessions',
+    detailUrlPattern: '/sales/pos/cajas',
   },
   'treasury.bankmovement': {
     label: 'treasury.bankmovement',
@@ -1024,7 +1152,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Conteo físico de existencias',
     shortTemplate: 'CI-{id}',
     listUrl: '/inventory/stock/count',
-    detailUrlPattern: '/inventory/stock/count/{id}',
+    detailUrlPattern: '/inventory/operations/counts',
   },
   'treasury.unbilledcharge': {
     label: 'treasury.unbilledcharge',
@@ -1035,7 +1163,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Cargo pendiente de facturación en tarjeta',
     shortTemplate: 'CHG-{id}',
     listUrl: '/treasury/card-statements',
-    detailUrlPattern: '/treasury/card-statements',
+    detailUrlPattern: '/treasury/bank-center',
   },
   'treasury.cardstatement': {
     label: 'treasury.cardstatement',
@@ -1047,7 +1175,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Resumen de movimientos de tarjeta',
     shortTemplate: 'ECT-{id}',
     listUrl: '/treasury/card-statements',
-    detailUrlPattern: '/treasury/card-statements/{id}',
+    detailUrlPattern: '/treasury/bank-center',
   },
 };
 
@@ -1104,6 +1232,9 @@ function templateFromData(template: string, data: Record<string, unknown>): stri
  *   3. data.id as last resort
  */
 export function formatEntityDisplay(label: string, data: Record<string, unknown>): string {
+  // 0. Use backend-supplied display_id directly when present (canonical, no zero-padding)
+  if (typeof data.display_id === 'string' && data.display_id) return data.display_id;
+
   // 1. Try API-served template first
   const config = getEntityConfig(label);
   let template = config?.shortTemplate;
@@ -1128,7 +1259,7 @@ export function formatEntityDisplay(label: string, data: Record<string, unknown>
   const cleanData = { ...data }
   if (label === 'billing.invoice' && dteType) {
     const rawNumber = String(data.number ?? '')
-    const knownPrefixes = ['FACV', 'FACC', 'FAC-EX', 'BOL', 'BE', 'NC', 'ND', 'GUI', 'CPE', 'FACT', 'DOC']
+    const knownPrefixes = ['FACV', 'FACC', 'FAC-EX', 'BOL', 'BE', 'NC', 'ND', 'GUI', 'CPE', 'FACT']
     const allVariants = knownPrefixes.flatMap(p => [p, p.replace(/-/g, '')])
 
     const matchedPrefix = allVariants.find(p =>

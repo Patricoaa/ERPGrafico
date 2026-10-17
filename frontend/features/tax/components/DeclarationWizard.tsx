@@ -21,7 +21,7 @@ import { useServerDate } from "@/hooks/useServerDate"
 
 import { type TaxPeriod, type TaxCalculationData } from "../types"
 import { taxApi } from "../api/taxApi"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface DeclarationWizardProps {
@@ -36,7 +36,7 @@ interface DeclarationWizardProps {
 
 export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYear, month: propMonth, onSuccess, existingPeriods: existingPeriodsProp }: DeclarationWizardProps) {
     const { year: currentYear, month: currentMonth, dateString, serverDate } = useServerDate()
-    const { openHub } = useHubPanel()
+    const { openEntity } = useGlobalModals()
     const { rate } = useVatRate()
     const [isLoading, setIsLoading] = useState(false)
     const [calcData, setCalcData] = useState<TaxCalculationData | null>(null)
@@ -287,7 +287,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                                     {calcData.drafts_summary.invoices.slice(0, 2).map(inv => (
                                         <div key={inv.id} className="flex items-center justify-between bg-muted/50 p-3 rounded-md border border-warning/10">
                                             <span className="text-2xs font-bold">{inv.display_id}</span>
-                                            <Button variant="ghost" size="sm" className="h-7 text-4xs font-medium" onClick={() => openHub({ type: inv.type, invoiceId: inv.id })}>Abrir Hub</Button>
+                                            <Button variant="ghost" size="sm" className="h-7 text-4xs font-medium" onClick={() => openEntity('billing.invoice', inv.id)}>Ver documento</Button>
                                         </div>
                                     ))}
                                 </div>

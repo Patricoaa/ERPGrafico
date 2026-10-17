@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-button
 status: active
 owner: frontend-team
-last_review: 2026-05-21
+last_review: 2026-10-14
 stability: contract-changes-require-ADR
 ---
 
@@ -58,7 +58,7 @@ Tamaños disponibles:
 
 **Importación única:** `import { SubmitButton, CancelButton, DangerButton, IconButton } from "@/components/shared"`
 
-Estos wrappers son la **forma correcta** de manejar acciones semánticas de ERP. Adoptan automáticamente: altura `h-9`, tipografía `text-[10px]`, peso `font-black`, `uppercase` y `tracking-widest`. Incluyen spinner automático, íconos de precisión y `type` correcto.
+Estos wrappers son la **forma correcta** de manejar acciones semánticas de ERP. Adoptan automáticamente: altura `h-9`, tipografía `text-3xs`, peso `font-black`, `uppercase` y `tracking-widest`. Incluyen spinner automático, íconos de precisión y `type` correcto.
 
 ### `SubmitButton` — Guardar / Procesar / Confirmar
 
@@ -156,7 +156,7 @@ Para el botón **"+ Nueva entidad"** en toolbars de listas.
 <ToolbarCreateButton label="Nuevo Producto" href="/inventory/products/new" />
 ```
 
-> Ya incluye estilos de `h-9`, `uppercase`, `tracking-widest`, `font-bold` y `shadow-card`. No pasar `className` para sobreescribir estos estilos salvo casos excepcionales.
+> Ya incluye estilos de `h-9`, `text-xs`, `font-semibold`, `tracking-widest` y `shadow-card`. Es una excepción de la superficie toolbar (no es un botón de footer de formulario). No pasar `className` para sobreescribir estos estilos salvo casos excepcionales.
 
 ---
 
@@ -234,7 +234,7 @@ Si un botón tiene un estilo recurrente que no existe en las 3 capas, proponer s
 
 ```tsx
 // MAL — rompe la consistencia; esta es la variante "ghost" disfrazada
-<Button variant="outline" className="h-9 px-4 text-[10px] font-black uppercase tracking-widest 
+<Button variant="outline" className="h-9 px-4 text-3xs font-black uppercase tracking-widest 
   bg-transparent border border-primary/30 text-primary hover:bg-primary/10 
   transition-all rounded-full shadow-none">
   Agregar

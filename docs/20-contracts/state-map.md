@@ -22,11 +22,19 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 | Status | DeliveryStatus | Intent | Transitions allowed to |
 |--------|---------------|--------|------------------------|
 | `DRAFT` | — | `info` | `CONFIRMED`, `CANCELLED` |
-| `CONFIRMED` | — | `warning` | `PAYMENT_PENDING`, `INVOICED`, `PAID`, `CANCELLED` |
-| `PAYMENT_PENDING` | — | `warning` | `INVOICED`, `PAID`, `CANCELLED` |
-| `INVOICED` | — | `info` | `PAID`, `CANCELLED` |
-| `PAID` | — | `success` | — |
+| `CONFIRMED` | — | `warning` | `PAYMENT_PENDING`, `CANCELLED` |
+| `PAYMENT_PENDING` | — | `warning` | `CONFIRMED`, `CANCELLED` |
 | `CANCELLED` | — | `destructive` | — |
+
+> **ADR-0084:** el `status` es solo el ciclo del documento. Facturación (`invoicing_status`, ADR-0081), entrega (`delivery_status`) y pago (`payment_status`) son ejes independientes; `INVOICED`/`PAID` dejaron de ser estados de la OV (migración `sales/0019`).
+
+**PaymentStatus** (derivado del saldo, ADR-0084 — nunca lo escribe tesorería en `status`):
+
+| Value | Intent | Meaning |
+|-------|--------|---------|
+| `UNPAID` | `neutral` | Sin pagos |
+| `PARTIAL` | `warning` | Pagos parciales |
+| `PAID` | `success` | Sin saldo pendiente |
 
 **DeliveryStatus** (independent tracking):
 
@@ -43,11 +51,10 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 | Status | ReceivingStatus | Intent | Transitions allowed to |
 |--------|----------------|--------|------------------------|
 | `DRAFT` | — | `info` | `CONFIRMED`, `CANCELLED` |
-| `CONFIRMED` | — | `warning` | `RECEIVED`, `INVOICED`, `PAID`, `CANCELLED` |
-| `RECEIVED` | — | `success` | `INVOICED`, `PAID`, `CANCELLED` |
-| `INVOICED` | — | `info` | `PAID`, `CANCELLED` |
-| `PAID` | — | `success` | — |
+| `CONFIRMED` | — | `warning` | `CANCELLED` |
 | `CANCELLED` | — | `destructive` | — |
+
+> **ADR-0084:** recepción (`receiving_status`), facturación (`invoicing_status`) y pago (`payment_status`, mismos valores que en OV) son ejes independientes; `RECEIVED`/`INVOICED`/`PAID` dejaron de ser estados de la OC (migración `purchasing/0014`). La OC que queda pagada avanza su suscripción (`on_fully_paid`).
 
 **ReceivingStatus** (independent tracking):
 
@@ -99,9 +106,10 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 | DTEType | Status | Intent | Transitions allowed to |
 |---------|--------|--------|------------------------|
 | Any | `DRAFT` | `info` | `POSTED`, `CANCELLED` |
-| Any | `POSTED` | `success` | `PAID`, `CANCELLED` |
-| Any | `PAID` | `success` | — |
+| Any | `POSTED` | `success` | `CANCELLED` |
 | Any | `CANCELLED` | `destructive` | — |
+
+> **ADR-0084:** `DRAFT` = folio pendiente (puede tener asiento y pagos); `POSTED` = emitida con folio. El pago es `payment_status` (`UNPAID` · `PARTIAL` · `PAID`, derivado del saldo) y **no** cambia el estado: una factura pagada sin folio sigue en `DRAFT`. `PAID` dejó de ser estado (migración `billing/0020`: con folio → `POSTED`, sin folio → `DRAFT`).
 
 **DTEType** (document type, not status):
 `FACTURA`, `FACTURA_EXENTA`, `BOLETA`, `BOLETA_EXENTA`, `PURCHASE_INV`, `NOTA_CREDITO`, `NOTA_DEBITO`, `COMPROBANTE_PAGO`
@@ -248,11 +256,10 @@ Backend: `treasury.Check`. Lifecycle gobernado por `treasury.check_service.Check
 > para el fundamento técnico. La parte de cheques girados de ADR-0035 sigue
 > vigente (cheques propios, F4.1).
 
-> **ADR-0040** define la democión de factura/orden al protestar o anular un
-> cheque: `bounce()` y `void()` invocan `_recompute_invoice_status()` para
-> recalcular el estado de pago del documento vinculado con matemática
-> firmada (INBOUND suma, OUTBOUND resta, TRANSFER interno) y demover
-> `Invoice.PAID → POSTED` si el total neto es menor al facturado. La
+> **ADR-0040** (superado en este punto por ADR-0084): protestar o anular un cheque ya no
+> "demueve" estados — el pago no escribe el estado del documento y `payment_status` se
+> recalcula solo desde el saldo (matemática firmada de `PaymentSelector`).
+> `_recompute_invoice_status()` queda como no-op. La
 > lógica vive en `CheckService` (no en `TreasuryService.update_related_document_status`)
 > para preservar el comportamiento de pagos no-cheque. Ver
 > `docs/10-architecture/adr/0040-check-bounce-void-invoice-demotion.md`.

@@ -258,10 +258,8 @@ class WorkflowService:
                     and not str(order_number).startswith("#")
                 )
 
-            # Check for any POSTED or PAID invoice with a number.
-            # PAID is the final state (after POSTED) so it must also be considered complete.
-            # Convention: POSTED = published/confirmed, PAID = settled. Both mean billing is done.
-            BILLED_STATUSES = ["POSTED", "PAID"]
+            # Factura emitida (POSTED) con folio. ADR-0084: el pago no cambia el estado.
+            BILLED_STATUSES = ["POSTED"]
             invoices = getattr(order, "invoices", None)
             if invoices is not None:
                 return invoices.filter(status__in=BILLED_STATUSES).exclude(number="").exists()
@@ -274,10 +272,7 @@ class WorkflowService:
 
         if stage_key == "treasury":
             # Check if PAID status and no pending registration for Card/Transfer
-            is_paid = (
-                getattr(order, "status", None) == "PAID"
-                or getattr(order, "payment_status", None) == "PAID"
-            )
+            is_paid = getattr(order, "payment_status", None) == "PAID"
 
             # Additional check: if zero pending amount
             if not is_paid and hasattr(order, "pending_amount"):

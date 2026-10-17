@@ -2,46 +2,46 @@
 
 import React from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Loader2, Plus, Edit, Trash2, User, Clock, ArrowRight, ChevronDown } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Clock, ArrowRight, ChevronDown } from "lucide-react"
 import { type HistoricalRecord } from "@/types/audit"
-import { formatDistanceToNow } from "date-fns"
+import { formatDistanceToNow, format } from "date-fns"
 import { es } from "date-fns/locale"
-import { cn } from "@/lib/utils"
-import {
-    translateFieldName,
-    translateStatus,
-    translateProductionStage,
-    translateSalesChannel,
-    translateReceivingStatus,
-    translateProductType,
-    translatePaymentMethod
-} from "@/lib/utils"
+import { cn, translateFieldName } from "@/lib/utils"
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 import { useEntityHistory } from "@/features/audit/hooks/useEntityHistory"
-import { FadeIn } from "@/components/shared"
-import { SkeletonShell } from "@/components/shared"
+import { EmptyState, SkeletonShell, StatusBadge } from "@/components/shared"
+import {
+    resolveHistoryOperation,
+    getChangedFields,
+    formatHistoryValue
+} from "@/features/audit/lib/history-display"
 
 interface ActivitySidebarProps {
     entityId: number | string
-    entityType: 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'sale_return' | 'purchase_receipt' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'pricing_rule' | 'reordering_rule' | 'treasuryaccount' | 'bank' | 'paymentmethod' | 'terminal' | 'category' | 'warehouse' | 'uom' | 'uom_category' | 'attribute' | 'account' | 'bank_journal' | 'employee' | 'salaryadvance' | 'absence' | 'fiscal_year' | 'tax_period' | 'f29_declaration' | 'task' | 'attachment' | 'group'
+    entityType: 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'sale_return' | 'purchase_receipt' | 'purchase_return' | 'inventory_document' | 'check' | 'terminal_batch' | 'profit_distribution' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'pricing_rule' | 'reordering_rule' | 'treasuryaccount' | 'bank' | 'paymentmethod' | 'terminal' | 'category' | 'warehouse' | 'uom' | 'uom_category' | 'attribute' | 'account' | 'bank_journal' | 'employee' | 'salaryadvance' | 'absence' | 'fiscal_year' | 'tax_period' | 'f29_declaration' | 'task' | 'attachment' | 'group'
     className?: string
     title?: string
 }
 
-const IGNORED_FIELDS = ['id', 'created_at', 'updated_at', 'history_id', 'history_date', 'history_type', 'history_user_id', 'history_user_username', 'history_change_reason']
-
 const ENTITY_TYPE_LABELS: Record<string, string> = {
     product: 'el producto',
     contact: 'el contacto',
-    sale_order: 'la nota de venta',
+    sale_order: `la ${getDomainConceptTitle('ov').toLowerCase()}`,
     purchase_order: 'la orden de compra',
     invoice: 'la factura',
     payment: 'el pago',
     sale_delivery: 'el despacho de venta',
     sale_return: 'la devolución de venta',
     purchase_receipt: 'la recepción de compra',
+    purchase_return: 'la devolución de compra',
+    inventory_document: 'el documento de inventario',
+    check: 'el cheque',
+    terminal_batch: 'el lote de terminal',
+    profit_distribution: 'la distribución de resultados',
     user: 'el usuario',
     company_settings: 'la configuración',
-    work_order: 'la orden de trabajo',
+    work_order: `la ${getDomainConceptTitle('ot').toLowerCase()}`,
     journal_entry: 'el asiento contable',
     stock_move: 'el movimiento de stock',
     pricing_rule: 'la regla de precio',
@@ -63,12 +63,22 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
     tax_period: 'el período de impuestos',
     f29_declaration: 'la declaración F29',
     task: 'la tarea',
-    attachment: 'el archivo adjunto'
+    attachment: 'el archivo adjunto',
+    group: 'el grupo'
 }
+
+const PLACEHOLDER_RECORDS: HistoricalRecord[] = [
+    { history_id: -1, history_date: '2024-01-01T12:00:00.000Z', history_change_reason: null, history_type: '+', history_user_id: null, history_user_username: 'Operador', name: 'A' },
+    { history_id: -2, history_date: '2024-01-01T13:00:00.000Z', history_change_reason: null, history_type: '~', history_user_id: null, history_user_username: 'Operador', name: 'B' },
+    { history_id: -3, history_date: '2024-01-01T14:00:00.000Z', history_change_reason: null, history_type: '~', history_user_id: null, history_user_username: 'Operador' },
+]
 
 export function ActivitySidebar({ entityId, entityType, className = "", title = "Actividad" }: ActivitySidebarProps) {
     const { history, loading, error } = useEntityHistory(entityType, entityId)
     const [expandedRecords, setExpandedRecords] = React.useState<Record<string | number, boolean>>({})
+
+    const records = loading ? PLACEHOLDER_RECORDS : history
+    const entityLabel = ENTITY_TYPE_LABELS[entityType] || 'el registro'
 
     const toggleRecord = (recordId: string | number) => {
         setExpandedRecords(prev => ({
@@ -77,209 +87,141 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
         }))
     }
 
-    const getChangeIcon = (type: string) => {
-        switch (type) {
-            case '+': return <Plus className="h-3 w-3" />
-            case '~': return <Edit className="h-3 w-3" />
-            case '-': return <Trash2 className="h-3 w-3" />
-            default: return <Edit className="h-3 w-3" />
-        }
-    }
-
-    const getIconColor = (type: string) => {
-        switch (type) {
-            case '+':
-                return 'bg-success text-success-foreground border-success'
-            case '~':
-                return 'bg-primary text-primary-foreground border-primary'
-            case '-':
-                return 'bg-destructive text-destructive-foreground border-destructive'
-            default:
-                return 'bg-muted text-muted-foreground border-border'
-        }
-    }
-
-    const getChangedFields = (current: HistoricalRecord, previous?: HistoricalRecord): string[] => {
-        if (!previous) return []
-
-        const changed: string[] = []
-        Object.keys(current).forEach(key => {
-            if (IGNORED_FIELDS.includes(key)) return
-            if (current[key] !== previous[key]) {
-                changed.push(key)
-            }
-        })
-        return changed
-    }
-
-    const formatFieldName = (field: string): string => {
-        return translateFieldName(field)
-    }
-
     return (
-        <SkeletonShell isLoading={loading} ariaLabel="Cargando actividad">
-            <div className={cn("flex flex-col h-full p-4 bg-background select-none", className)}>
+        <SkeletonShell isLoading={loading} ariaLabel="Cargando actividad" className="flex-1 min-h-0">
+            <div className={cn("flex flex-col h-full p-4", className)}>
                 {/* Encabezado del Módulo (Capa L1 - FormSection) */}
-                <div className="pb-3 mb-4 shrink-0 flex items-center justify-between border-b border-border/40">
-                    <h3 className="text-2xs font-bold uppercase tracking-[0.25em] text-muted-foreground/70 flex items-center gap-2">
-                        <Clock className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
+                <div className="pb-3 mb-4 shrink-0 flex items-center justify-between gap-2 border-b border-border/40 select-none">
+                    <h3 className="text-2xs font-bold uppercase tracking-[0.25em] text-muted-foreground/70 flex items-center gap-2.5">
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
                         {title}
                     </h3>
-                    {history.length > 0 && (
-                        <span className="text-3xs font-medium text-muted-foreground/50 lowercase tracking-normal">
-                            ({history.length} {history.length === 1 ? 'registro' : 'registros'})
+                    {records.length > 0 && (
+                        <span className="text-3xs font-medium text-muted-foreground/60 tabular-nums">
+                            ({records.length} {records.length === 1 ? 'registro' : 'registros'})
                         </span>
                     )}
                 </div>
 
                 {/* Scroll Container */}
                 <ScrollArea className="flex-1 min-h-0 pr-2">
-                    {loading ? (
-                        <div className="flex flex-col items-center justify-center h-48 gap-3">
-                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/55" />
-                            <span className="text-xs font-medium text-muted-foreground/60">Cargando Archivo...</span>
+                    {!loading && error ? (
+                        <div role="alert" className="rounded-md border border-dashed border-destructive/25 bg-destructive/5 px-3 py-8 text-center">
+                            <p className="text-xs font-medium text-destructive">No se pudo cargar la actividad</p>
+                            <p className="mt-1 text-3xs text-muted-foreground/70 break-words">{error}</p>
                         </div>
-                    ) : error ? (
-                        <div className="text-center py-12 border border-dashed border-destructive/25 rounded-md bg-destructive/5">
-                            <p className="text-xs font-medium text-destructive px-4">{error}</p>
-                        </div>
-                    ) : history.length === 0 ? (
-                        <div className="text-center py-16 border border-dashed border-border/60 rounded-md bg-muted/10">
-                            <User className="h-8 w-8 text-muted-foreground/20 mx-auto mb-3" />
-                            <p className="text-xs font-medium text-muted-foreground/60">
-                                Sin actividad registrada
-                            </p>
-                        </div>
+                    ) : !loading && records.length === 0 ? (
+                        <EmptyState
+                            variant="compact"
+                            context="generic"
+                            icon={Clock}
+                            title="Sin actividad registrada"
+                            description="Los cambios del registro aparecerán aquí."
+                        />
                     ) : (
-                        <div className="ml-1 mt-2 pb-4">
-                            {history.map((record, index) => {
-                                const changedFields = index < history.length - 1
-                                    ? getChangedFields(record, history[index + 1])
-                                    : []
-
-                                const username = record.history_user_username || 'Sistema';
-                                const isCreate = record.history_type === '+';
-                                const isDelete = record.history_type === '-';
-                                const recordDelay = Math.min(index * 0.05, 0.25);
+                        <ol reversed className="pb-2">
+                            {records.map((record, index) => {
+                                const operation = resolveHistoryOperation(record.history_type)
+                                const previous = records[index + 1]
+                                const changedFields = getChangedFields(record, previous)
+                                const canExpand = record.history_type === '~' && changedFields.length > 0
                                 const isExpanded = !!expandedRecords[record.history_id]
-                                const entityLabel = ENTITY_TYPE_LABELS[entityType] || 'el registro'
+                                const isLast = index === records.length - 1
+                                const changesId = `activity-changes-${record.history_id}`
+
+                                const username = record.history_user_username || 'Sistema'
+                                const date = new Date(record.history_date)
 
                                 return (
-                                    <FadeIn key={record.history_id} delay={recordDelay} yOffset={6}>
-                                        <div className="group relative flex gap-4 pb-8 last:pb-0">
-                                            {/* Línea de Troquelado / Perforación (Dashed Timeline Connector) */}
-                                            {index !== history.length - 1 && (
-                                                <div className="absolute left-[11px] top-6 -bottom-6 w-0 border-l border-dashed border-border/80 group-hover:border-primary/30 transition-colors duration-normal ease-premium z-0" />
+                                    <li key={record.history_id} className="flex gap-4">
+                                        {/* Columna del marcador: badge + perforación vertical */}
+                                        <div className="flex w-6 shrink-0 flex-col items-center">
+                                            <StatusBadge
+                                                variant="hub"
+                                                size="sm"
+                                                icon={operation.icon}
+                                                status={operation.status}
+                                                intent={operation.intent}
+                                            />
+                                            {!isLast && (
+                                                <span aria-hidden="true" className="w-0 flex-1 border-l border-dashed border-border/80" />
+                                            )}
+                                        </div>
+
+                                        {/* Bloque de Información del Registro */}
+                                         <div className={cn("flex-1 min-w-0 flex flex-col", !isLast && isExpanded && "pb-6")}>
+                                            <div className="flex items-baseline justify-between gap-2">
+                                                 <span className="min-w-0 truncate text-[11px] font-semibold leading-tight text-foreground">
+                                                     {username}
+                                                 </span>
+                                                <time
+                                                    className="shrink-0 text-3xs font-medium text-muted-foreground/60"
+                                                    title={format(date, "d MMM yyyy, HH:mm", { locale: es })}
+                                                >
+                                                    {formatDistanceToNow(date, { addSuffix: true, locale: es })}
+                                                </time>
+                                            </div>
+
+                                            <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground/80">
+                                                {operation.verb}{' '}
+                                                <span className="font-semibold text-foreground">{entityLabel}</span>
+                                            </p>
+
+                                            {/* Acordeón Toggle */}
+                                            {canExpand && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => toggleRecord(record.history_id)}
+                                                    disabled={loading}
+                                                    aria-expanded={isExpanded}
+                                                    aria-controls={changesId}
+                                                     className={cn(
+                                                         "-ml-1 h-auto w-fit gap-1 rounded-sm px-1 py-0.5 text-muted-foreground/70 hover:bg-transparent hover:text-foreground text-2xs",
+                                                         isExpanded ? "mt-2" : "mt-1"
+                                                     )}
+                                                >
+                                                    {isExpanded ? 'Ocultar cambios' : 'Ver cambios'}
+                                                    <ChevronDown
+                                                        aria-hidden="true"
+                                                        className={cn("size-3 transition-transform duration-200 ease-premium", isExpanded && "rotate-180")}
+                                                    />
+                                                </Button>
                                             )}
 
-                                            {/* Badge de Historial Tipo Swatch Angular */}
-                                            <div className={cn(
-                                                "relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border shadow-card transition-all duration-normal ease-premium group-hover:scale-105",
-                                                getIconColor(record.history_type)
-                                            )}>
-                                                {getChangeIcon(record.history_type)}
-                                            </div>
-
-                                            {/* Bloque de Información del Registro */}
-                                            <div className="flex-1 min-w-0 pt-0.5 flex flex-col">
-                                                {/* Cabecera del Item de Línea de Tiempo */}
-                                                <div className="flex items-center gap-1.5 text-sm text-muted-foreground flex-wrap">
-                                                    <span className="font-semibold text-foreground group-hover:text-primary transition-colors duration-normal">
-                                                        {username}
-                                                    </span>
-
-                                                    <span className="text-muted-foreground/80 font-medium">
-                                                        {isCreate ? 'creó' : isDelete ? 'eliminó' : 'editó'}
-                                                    </span>
-
-                                                    <span className="font-semibold text-foreground">
-                                                        {entityLabel}
-                                                    </span>
-
-                                                    {/* Timestamp */}
-                                                    <time
-                                                        className="whitespace-nowrap sm:ml-auto text-4xs font-medium tracking-normal text-muted-foreground/60 group-hover:text-muted-foreground transition-colors duration-normal"
-                                                        title={new Date(record.history_date).toISOString()}
-                                                    >
-                                                        {formatDistanceToNow(new Date(record.history_date), {
-                                                            addSuffix: true,
-                                                            locale: es
-                                                        })}
-                                                    </time>
-                                                </div>
-
-                                                {/* Acordeón Toggle */}
-                                                {changedFields.length > 0 && record.history_type === '~' && (
-                                                    <span
-                                                        role="button"
-                                                        tabIndex={0}
-                                                        onClick={() => toggleRecord(record.history_id)}
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === 'Enter' || e.key === ' ') {
-                                                                e.preventDefault();
-                                                                toggleRecord(record.history_id);
-                                                            }
-                                                        }}
-                                                        className="w-fit text-4xs font-bold text-muted-foreground/50 hover:text-primary flex items-center gap-1 cursor-pointer mt-1.5 uppercase tracking-wider transition-colors duration-normal select-none outline-none"
-                                                    >
-                                                        {isExpanded ? 'Ocultar cambios' : 'Ver cambios'}
-                                                        <ChevronDown className={cn("h-2.5 w-2.5 transition-transform duration-200", isExpanded && "rotate-180")} />
-                                                    </span>
-                                                )}
-
-                                                {/* Detalles de Cambios */}
-                                                {changedFields.length > 0 && record.history_type === '~' && isExpanded && (
-                                                    <div className="mt-2.5 pl-1 transition-all duration-normal ease-premium">
-                                                        <ul className="space-y-2">
-                                                            {changedFields.map(field => {
-                                                                const oldValue = history[index + 1][field];
-                                                                const newValue = record[field];
-
-                                                                const formatValue = (fieldName: string, val: unknown) => {
-                                                                    if (val === null || val === undefined || (typeof val === 'string' && val.trim() === ''))
-                                                                        return 'vacío';
-                                                                    if (typeof val === 'boolean') return val ? 'Sí' : 'No';
-
-                                                                    let displayVal = String(val);
-                                                                    if (typeof val === 'string') {
-                                                                        const f = fieldName.toLowerCase();
-                                                                        if (f.includes('status') || f.includes('state')) displayVal = translateStatus(val);
-                                                                        else if (f.includes('stage')) displayVal = translateProductionStage(val);
-                                                                        else if (f.includes('channel')) displayVal = translateSalesChannel(val);
-                                                                        else if (f.includes('method')) displayVal = translatePaymentMethod(val);
-                                                                        else if (f.includes('receiving')) displayVal = translateReceivingStatus(val);
-                                                                        else if (f.includes('type') && val.match(/^[A-Z_]+$/)) displayVal = translateProductType(val);
-
-                                                                        if (displayVal.length > 40) return displayVal.substring(0, 37) + '...';
-                                                                    }
-
-                                                                    return displayVal;
-                                                                };
-
-                                                                return (
-                                                                    <li key={field} className="text-xs flex items-baseline gap-2 py-0.5 text-muted-foreground/90 flex-wrap sm:flex-nowrap">
-                                                                        <span className="text-3xs font-medium tracking-normal text-muted-foreground/50 lowercase shrink-0">
-                                                                            {formatFieldName(field)}:
-                                                                        </span>
-                                                                        <span className="font-mono text-2xs text-muted-foreground/70 line-through truncate max-w-[120px] sm:max-w-none">
-                                                                            {formatValue(field, oldValue)}
-                                                                        </span>
-                                                                        <ArrowRight className="h-2.5 w-2.5 text-muted-foreground/30 shrink-0 self-center" />
-                                                                        <span className="font-mono text-2xs text-foreground font-medium truncate max-w-[120px] sm:max-w-none">
-                                                                            {formatValue(field, newValue)}
-                                                                        </span>
-                                                                    </li>
-                                                                );
-                                                            })}
-                                                        </ul>
-                                                    </div>
-                                                )}
-                                            </div>
+                                            {/* Detalles de Cambios */}
+                                             {canExpand && (
+                                                 <div id={changesId} hidden={!isExpanded} className="mt-2 border-l border-border/40 pl-2">
+                                                     <ul className="space-y-1">
+                                                         {changedFields.map(field => (
+                                                             <li key={field} className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-2xs">
+                                                                 <span className="text-muted-foreground/70 lowercase">
+                                                                     {translateFieldName(field)}:
+                                                                 </span>
+                                                                 <span
+                                                                     className="truncate text-muted-foreground/60 line-through"
+                                                                     title={formatHistoryValue(field, previous?.[field])}
+                                                                 >
+                                                                     {formatHistoryValue(field, previous?.[field])}
+                                                                 </span>
+                                                                 <ArrowRight aria-hidden="true" className="h-2.5 w-2.5 shrink-0 self-center text-muted-foreground/40" />
+                                                                 <span
+                                                                     className="min-w-0 break-words text-foreground"
+                                                                     title={formatHistoryValue(field, record[field])}
+                                                                 >
+                                                                     {formatHistoryValue(field, record[field])}
+                                                                 </span>
+                                                             </li>
+                                                         ))}
+                                                     </ul>
+                                                 </div>
+                                             )}
                                         </div>
-                                    </FadeIn>
-                                );
+                                    </li>
+                                )
                             })}
-                        </div>
+                        </ol>
                     )}
                 </ScrollArea>
             </div>

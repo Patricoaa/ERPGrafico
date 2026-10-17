@@ -21,7 +21,8 @@ import { DataCell } from '@/components/shared'
 import { TabBar, TabBarContent } from "@/components/shared"
 import type { ColumnDef } from "@tanstack/react-table"
 import { BarChart } from "@/components/shared"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useOnEntityStackClose } from "@/hooks/useOnEntityStackClose"
 
 import { translateStatus } from "@/lib/utils"
 
@@ -45,6 +46,8 @@ interface OrderHistoryEntry {
     status: string
     total: number
     receiving_status: string
+    /** Eje de pago (ADR-0084). */
+    payment_status?: string
 }
 
 interface NoteHistoryEntry {
@@ -73,7 +76,9 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
     // misma sub dentro del staleTime devuelve cache. refetch se usa como
     // callback de éxito desde acciones del Hub que mutan datos vinculados.
     const { data, isLoading: loading, refetch: refetchHistory } = useSubscriptionHistory<SubscriptionHistory>(open ? subscriptionId : null)
-    const { openHub } = useHubPanel()
+    // Fichas documentales (ADR-0083); al volver se refresca el historial
+    const { openEntity } = useGlobalModals()
+    useOnEntityStackClose(() => { void refetchHistory() })
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
     const [activeTab, setActiveTab] = useState("historial")
 
@@ -195,11 +200,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                             <div className="rounded-md border shadow-card overflow-hidden bg-card">
                                                 <OrderTable
                                                     orders={data.orders}
-                                                    onOpenHub={(orderId) => openHub({
-                                                        orderId,
-                                                        type: 'purchase' as const,
-                                                        onActionSuccess: () => refetchHistory()
-                                                    })}
+                                                    onOpenHub={(orderId) => openEntity('purchasing.purchaseorder', orderId)}
                                                 />
                                             </div>
                                         </TabBarContent>
@@ -209,11 +210,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                             <div className="rounded-md border shadow-card overflow-hidden bg-card">
                                                 <NoteTable
                                                     notes={data.notes}
-                                                    onOpenHub={(invoiceId) => openHub({
-                                                        invoiceId,
-                                                        type: 'purchase' as const,
-                                                        onActionSuccess: () => refetchHistory()
-                                                    })}
+                                                    onOpenHub={(invoiceId) => openEntity('billing.invoice', invoiceId)}
                                                 />
                                             </div>
                                         </TabBarContent>
@@ -245,7 +242,7 @@ function OrderTable({ orders, onOpenHub }: { orders: OrderHistoryEntry[]; onOpen
             cell: ({ row }) => (
                 <div className="flex justify-center">
                     <StatusBadge
-                        status={row.original.status === 'PAID' || row.original.status === 'RECEIVED' ? 'SUCCESS' : 'NEUTRAL'}
+                        status={row.original.payment_status === 'PAID' || row.original.receiving_status === 'RECEIVED' ? 'SUCCESS' : 'NEUTRAL'}
                         label={translateStatus(row.original.status)}
                         variant="badge"
                     />
@@ -317,7 +314,7 @@ function NoteTable({ notes, onOpenHub }: { notes: NoteHistoryEntry[]; onOpenHub:
             cell: ({ row }) => (
                 <div className="flex justify-center">
                     <StatusBadge
-                        status={row.original.status === 'PAID' || row.original.status === 'POSTED' ? 'SUCCESS' : 'NEUTRAL'}
+                        status={row.original.status === 'POSTED' ? 'SUCCESS' : 'NEUTRAL'}
                         label={translateStatus(row.original.status)}
                         variant="badge"
                     />

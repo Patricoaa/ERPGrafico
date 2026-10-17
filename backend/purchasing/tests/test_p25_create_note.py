@@ -14,10 +14,10 @@ from billing.models import Invoice
 from contacts.models import Contact
 from core.cache import CACHE_KEY_ACCOUNTING_SETTINGS, invalidate_singleton
 from inventory.models import (
-    InventoryDocumentDetail,
     Location,
     Product,
     ProductCategory,
+    StockMove,
     UoM,
     UoMCategory,
     Warehouse,
@@ -62,6 +62,7 @@ def note_setup(db):
         location_type="INTERNAL", warehouse=order_wh, defaults={"name": "Interno Orden"}
     )
     Location.objects.get_or_create(location_type="CUSTOMER", defaults={"name": "Cliente"})
+    Location.objects.get_or_create(location_type="VENDOR", defaults={"name": "Proveedor"})
 
     po = PurchaseOrder.objects.create(
         supplier=supplier,
@@ -122,13 +123,12 @@ def test_create_note_uses_receipt_warehouse_for_returns(note_setup):
         ],
     )
 
-    detail = InventoryDocumentDetail.objects.filter(
-        document__source_document_id=note.id
-    ).get(product=note_setup["product"])
+    move = StockMove.for_document(note).get(product=note_setup["product"])
 
-    assert detail.quantity == Decimal("-2")
-    assert detail.source_location.warehouse_id == note_setup["receipt_wh"].id
-    assert detail.destination_location.location_type == "CUSTOMER"
+    assert move.quantity == Decimal("2")
+    assert move.source_location.location_type == "INTERNAL"
+    assert move.source_location.warehouse_id == note_setup["receipt_wh"].id
+    assert move.destination_location.location_type == "VENDOR"
 
 
 def test_create_note_falls_back_to_order_warehouse_without_receipts(note_setup):
@@ -149,9 +149,9 @@ def test_create_note_falls_back_to_order_warehouse_without_receipts(note_setup):
         ],
     )
 
-    detail = InventoryDocumentDetail.objects.filter(
-        document__source_document_id=note.id
-    ).get(product=note_setup["product"])
+    move = StockMove.for_document(note).get(product=note_setup["product"])
 
-    assert detail.quantity == Decimal("-2")
-    assert detail.source_location.warehouse_id == note_setup["po"].warehouse_id
+    assert move.quantity == Decimal("2")
+    assert move.source_location.location_type == "INTERNAL"
+    assert move.source_location.warehouse_id == note_setup["po"].warehouse_id
+    assert move.destination_location.location_type == "VENDOR"

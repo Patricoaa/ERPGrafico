@@ -7,7 +7,8 @@ import { DataCell, TabBar, TabBarContent, type TabItem, SkeletonShell, EmptyStat
 import { CheckCircle2, ListTodo, ChevronDown, ChevronRight, Package, FileText, Wallet, TrendingUp, CreditCard, Wrench, ShoppingCart, Receipt, CalendarX2, ClipboardList } from "lucide-react"
 import { toast } from "sonner"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { useOnEntityStackClose } from "@/hooks/useOnEntityStackClose"
+import { documentForTask } from "../utils/taskDocument"
 import { cn } from "@/lib/utils"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
@@ -70,7 +71,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
     const [approvalsExpanded, setApprovalsExpanded] = useState(true)
     const [completedExpanded, setCompletedExpanded] = useState(false)
     const { openEntity } = useGlobalModalActions()
-    const { openHub } = useHubPanel()
+    useOnEntityStackClose(() => { void refetch() })
     const { user } = useAuth()
     const searchParams = useSearchParams()
     const router = useRouter()
@@ -93,28 +94,10 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
             return
         }
 
-        if (task.task_type === 'OT_CREATION') {
-            const saleOrderId = task.data?.sale_order_id || (task.data?.order_type === 'sale' ? task.object_id : null)
-            if (saleOrderId) {
-                openHub({ orderId: saleOrderId, type: 'sale', onActionSuccess: () => refetch() })
-            } else {
-                openEntity('production.workorder', task.object_id)
-            }
-        } else if (task.task_type?.includes('OT_')) {
-            openEntity('production.workorder', task.object_id)
-        } else if (task.task_type?.includes('OC_')) {
-            openHub({ orderId: task.object_id, type: 'purchase', onActionSuccess: () => refetch() })
-        } else if (task.task_type?.includes('OV_')) {
-            openHub({ orderId: task.object_id, type: 'sale', onActionSuccess: () => refetch() })
-        } else if (task.task_type?.includes('NC_') || task.task_type?.includes('ND_')) {
-            openHub({ orderId: task.object_id, type: 'sale', onActionSuccess: () => refetch() })
-        } else if (task.task_type?.startsWith('HUB_')) {
-            const orderType = (task.data?.order_type as 'purchase' | 'sale' | 'obligation') || 'sale'
-            if (task.data?.is_invoice || task.task_type?.includes('_NC_') || task.task_type?.includes('_ND_')) {
-                openHub({ orderId: null, invoiceId: task.object_id, type: orderType, onActionSuccess: () => refetch() })
-            } else {
-                openHub({ orderId: task.object_id, type: orderType, onActionSuccess: () => refetch() })
-            }
+        // Ficha documental de la tarea (ADR-0083); al cerrar la pila se refrescan las tareas
+        const target = documentForTask(task)
+        if (target) {
+            openEntity(target.label, target.id)
         } else if (task.task_type === 'CREDIT_POS_REQUEST') {
             toast.info("Usando vista rápida de aprobación (Click en el botón, no en la tarjeta)");
             return

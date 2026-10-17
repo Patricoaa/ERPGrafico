@@ -1,3 +1,4 @@
+import type { DocumentRef } from "@/features/documents"
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
@@ -35,15 +36,10 @@ export interface JournalEntry {
         debit: number
         credit: number
     }>
-    source_documents?: {
-        type: string
-        id: number
-        name: string
-        url?: string
-        content_type_id?: number
-        object_id?: number
-        display?: string
-    }[]
+    /** Documento origen como DocumentRef (ADR-0083 U6; reemplaza `source_documents`). */
+    source_document?: DocumentRef | null
+    source_content_type_id?: number | null
+    source_object_id?: number | null
 }
 
 export function useJournalEntry(id: string | number | undefined) {

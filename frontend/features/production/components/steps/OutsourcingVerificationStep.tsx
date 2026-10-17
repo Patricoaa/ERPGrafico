@@ -5,7 +5,7 @@ import { LayoutDashboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/shared'
 import { ApprovalTaskListPanel } from './ApprovalTaskListPanel'
-import { useHubPanel } from '@/components/providers/HubPanelProvider'
+import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
 import type { WorkOrder, WorkOrderMaterial, WorkOrderTask } from '../../types'
 
 interface OutsourcingVerificationStepProps {
@@ -20,7 +20,7 @@ interface OutsourcingVerificationStepProps {
 export function OutsourcingVerificationStep({
   order, canComplete, taskNotes, taskFiles, onNoteChange, onFileChange,
 }: OutsourcingVerificationStepProps) {
-  const { openHub } = useHubPanel()
+  const { openEntity } = useGlobalModals()
   const outsourced = order.materials?.filter((m: WorkOrderMaterial) => m.is_outsourced) ?? []
 
   return (
@@ -82,10 +82,10 @@ export function OutsourcingVerificationStep({
                     variant="outline"
                     size="sm"
                     className="gap-2 h-8"
-                    onClick={() => openHub({ orderId: m.purchase_order_id, type: 'purchase' })}
+                    onClick={() => m.purchase_order_id && openEntity('purchasing.purchaseorder', m.purchase_order_id)}
                   >
                     <LayoutDashboard className="h-4 w-4" />
-                    Abrir HUB de OC
+                    Ver OC
                   </Button>
                 )}
                 <StatusBadge status={isReceived ? 'RECEIVED' : 'PENDING'} size="sm" />

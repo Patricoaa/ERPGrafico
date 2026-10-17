@@ -95,6 +95,7 @@ export interface WorkOrder {
     sale_customer_rut?: string
     sale_order_date?: string
     sale_order_number?: string | null
+    sale_order_document?: unknown | null
     // Unified accessors from serializer (works for both LINKED and MANUAL).
     quantity?: number | null
     uom_id?: number | null

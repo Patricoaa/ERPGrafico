@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-chip
 status: active
 owner: frontend-team
-last_review: 2026-05-15
+last_review: 2026-10-14
 stability: contract-changes-require-ADR
 ---
 
@@ -59,11 +59,11 @@ import { Chip } from "@/components/shared"
 
 | `size` | Height | Padding | Font size | Gap | Typical use |
 |--------|--------|---------|-----------|-----|-------------|
-| `xs` | `h-[18px]` | `px-2` | `text-[9px]` | `gap-1` | Table cells, dense lists, inline annotations |
-| `sm` (default) | `h-[22px]` | `px-2.5` | `text-[10px]` | `gap-1` | General UI chrome, form labels, sidebar |
-| `md` | auto | `px-2 py-0.5` | `text-xs` | `gap-1` | Detail views, modal sections, emphasis |
+| `xs` | `h-[18px]` | `px-2` | `text-xs` | `gap-1` | Table cells, dense lists, inline annotations |
+| `sm` | `h-[22px]` | `px-2.5` | `text-xs` | `gap-1` | General UI chrome, form labels, sidebar |
+| `md` (default) | auto | `px-2 py-0.5` | `text-xs` | `gap-1` | Detail views, modal sections, emphasis |
 
-**Invariant typography** (never override): `font-sans font-medium text-xs`, borderless, `rounded-sm` (CurrencyFlow aesthetic, ADR-0068).
+**Invariant typography** (never override): `font-sans font-medium text-xs`, borderless, `rounded-sm` (CurrencyFlow aesthetic, ADR-0068). El tamaño sólo cambia la caja, nunca la tipografía.
 
 ---
 
@@ -105,9 +105,9 @@ Domain mapping: `payment_method` → CASH=`cyan`, CARD/CARD_TERMINAL/DEBIT_CARD/
 
 **`xs`** — Use inside table cells, next to product names in dropdowns, or as count badges overlaid on buttons. The 18px height fits within a standard `h-10` row without increasing row height.
 
-**`sm`** (default) — The general-purpose size. Use in form sections, wizard steps, card headers, and sidebar annotations.
+**`sm`** — The general-purpose size. Use in form sections, wizard steps, card headers, and sidebar annotations.
 
-**`md`** — Use in detail view panels, modal sub-headers, or when the chip needs to match the visual weight of a nearby heading.
+**`md`** (default) — Use in detail view panels, modal sub-headers, or when the chip needs to match the visual weight of a nearby heading.
 
 ---
 
@@ -116,7 +116,7 @@ Domain mapping: `payment_method` → CASH=`cyan`, CARD/CARD_TERMINAL/DEBIT_CARD/
 `className` is **layout-only**: `ml-1`, `animate-pulse`, `cursor-help`, `shrink-0`.
 
 Never use `className` to override:
-- Font size (`text-[10px]`, `text-sm`)
+- Font size (`text-2xs`, `text-sm`)
 - Font weight (`font-bold`, `font-semibold`)
 - Letter spacing (`tracking-wide`, `tracking-tight`)
 - Colors (`text-red-500`, `bg-blue-100`)
@@ -182,7 +182,7 @@ Do **not** use `Chip` for workflow states (order status, payment status, work or
 
 ```tsx
 // ❌ Ad-hoc badge for a type tag
-<Badge className="text-[9px] bg-warning/10 text-warning border-none font-black uppercase">
+<Badge className="text-2xs bg-warning/10 text-warning border-none font-black uppercase">
   CREDITO
 </Badge>
 

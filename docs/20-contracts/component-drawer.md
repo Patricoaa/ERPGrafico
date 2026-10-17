@@ -163,7 +163,7 @@ Cuando el formulario tiene modo edición, usar `FormSplitLayout` con `ActivitySi
 | Modo **creación** (sin ID) | ❌ Nunca |
 | Drawer de solo lectura (sin formulario) | ❌ No aplica |
 
-> El sidebar solo aparece en el primer tab (`FormTabsContent value="general"`). Los tabs secundarios no lo repiten.
+> El sidebar solo aparece en el primer tab (`TabBarContent value="general"`). Los tabs secundarios no lo repiten.
 
 ### Padding
 

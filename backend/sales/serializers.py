@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from rest_framework import serializers
 
 from sales.selectors import SaleOrderSelector
@@ -62,6 +64,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
             "discount_amount",
             "subtotal",
             "quantity_delivered",
+            "quantity_invoiced",
             "quantity_pending",
             "manufacturing_data",
             "requires_advanced_manufacturing",
@@ -74,6 +77,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
             "delivery_status",
             "delivery_date",
         ]
+        read_only_fields = ["quantity_invoiced"]
 
     def get_product_type(self, obj):
         return obj.product.product_type if obj.product else None
@@ -135,6 +139,9 @@ class SaleLineSerializer(serializers.ModelSerializer):
         # Return summary of first active OT for simple UI display
         ot = ots[0]
         return {
+            # id y display_id: la ficha de la OV enlaza la OT desde la tabla de productos (ADR-0083)
+            "id": ot.id,
+            "display_id": ot.display_id,
             "number": ot.number,
             "status": ot.status,
             "status_display": ot.get_status_display(),
@@ -180,9 +187,14 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     customer_name = serializers.CharField(source="customer.name", read_only=True, allow_null=True)
     channel_display = serializers.CharField(source="get_channel_display", read_only=True)
     total_paid = serializers.SerializerMethodField()
+    # ADR-0084: eje de pago separado del estado del documento (UNPAID · PARTIAL · PAID)
+    payment_status = serializers.CharField(read_only=True)
     pending_amount = serializers.SerializerMethodField()
     serialized_payments = serializers.SerializerMethodField()
-    related_documents = serializers.SerializerMethodField()
+    # ADR-0083 U6: resumen tipado (reemplaza `related_documents`)
+    invoices = serializers.SerializerMethodField()
+    notes = serializers.SerializerMethodField()
+    deliveries = serializers.SerializerMethodField()
     work_orders = serializers.SerializerMethodField()
     production_progress = serializers.SerializerMethodField()
     has_pending_work_orders = serializers.SerializerMethodField()
@@ -212,6 +224,14 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         return None
 
     display_id = serializers.CharField(read_only=True)
+    # DocumentRef de la propia OV (identidad de fila, ADR-0086): permite a las tablas
+    # que listan órdenes enlazar a su ruta canónica sin derivar la URL en el frontend.
+    document = serializers.SerializerMethodField()
+
+    def get_document(self, obj):
+        from core.documents import build_ref
+
+        return build_ref(obj, getattr(self.context.get("request"), "user", None), "sales.saleorder", navigational=True)
 
     class Meta:
         model = SaleOrder
@@ -228,6 +248,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             "notes",
             "payment_method",
             "delivery_status",
+            "invoicing_status",
             "delivery_date",
             "salesperson",
             "total_net",
@@ -237,9 +258,12 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             "effective_total",
             "total_paid",
             "pending_amount",
+            "payment_status",
             "lines",
             "serialized_payments",
-            "related_documents",
+            "invoices",
+            "notes",
+            "deliveries",
             "work_orders",
             "production_progress",
             "has_pending_work_orders",
@@ -248,6 +272,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             "credit_assignment_origin",
             "credit_assignment_origin_display",
             "credit_approval_task_details",
+            "document",
             "created_at",
             "updated_at",
         ]
@@ -255,6 +280,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             "id",
             "number",
             "status",
+            "invoicing_status",
             "total_net",
             "total_tax",
             "total",
@@ -274,17 +300,40 @@ class SaleOrderSerializer(serializers.ModelSerializer):
                 "reference": p.reference,
                 "is_pending_registration": p.is_pending_registration,
                 "invoice_id": p.invoice_id,
+                "status": p.status,
             }
             for p in obj.payments.all()
         ]
 
-    def get_related_documents(self, obj):
-        return SaleOrderSelector.get_related_documents(obj)
+    def _summary(self, obj) -> dict:
+        cache = self.context.setdefault("_document_summary", {})
+        if obj.pk not in cache:
+            cache[obj.pk] = SaleOrderSelector.get_document_summary(obj)
+        return cache[obj.pk]
+
+    def get_invoices(self, obj):
+        return self._summary(obj)["invoices"]
+
+    def get_notes(self, obj):
+        return self._summary(obj)["notes"]
+
+    def get_deliveries(self, obj):
+        return self._summary(obj)["deliveries"]
 
     def get_lines(self, obj):
+        from core.strategies.totals import allocate_line_nets
+
+        all_lines = list(obj.lines.all())
+        # Neto por línea (las líneas de OV son brutas; ADR-0083): suma exacta = total_net
+        nets = allocate_line_nets(obj, all_lines)
         # Only include original lines (not those from notes)
-        lines = [line for line in obj.lines.all() if getattr(line, "related_note_id", None) is None]
-        return SaleLineSerializer(lines, many=True).data
+        lines = [line for line in all_lines if getattr(line, "related_note_id", None) is None]
+        data = SaleLineSerializer(lines, many=True).data
+        for line, row in zip(lines, data):
+            net = nets.get(line.pk, Decimal("0"))
+            row["subtotal_net"] = str(net)
+            row["unit_price_net"] = str((net / line.quantity).quantize(Decimal("0.01"))) if line.quantity else "0"
+        return data
 
     def get_work_orders(self, obj):
         from production.serializers import WorkOrderListSerializer
@@ -296,7 +345,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         return len(ots) > 0
 
     def get_total_paid(self, obj):
-        return sum(p.amount for p in obj.payments.all())
+        return obj.total_paid
 
     def get_pending_amount(self, obj):
         return obj.effective_total - self.get_total_paid(obj)
@@ -377,10 +426,20 @@ class SaleDeliveryLineSerializer(serializers.ModelSerializer):
     order_quantity = serializers.DecimalField(
         source="sale_line.quantity", max_digits=12, decimal_places=2, read_only=True
     )
+    # Movimiento de stock como DocumentRef (ADR-0086): permite al frontend navegar a su URL canónica.
+    stock_move_document = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleDeliveryLine
         fields = "__all__"
+
+    def get_stock_move_document(self, obj):
+        if not obj.stock_move_id:
+            return None
+        from core.documents import build_ref
+
+        user = getattr(self.context.get("request"), "user", None)
+        return build_ref(obj.stock_move, user, "inventory.stockmove", navigational=True)
 
 
 class SaleDeliverySerializer(serializers.ModelSerializer):
@@ -391,6 +450,8 @@ class SaleDeliverySerializer(serializers.ModelSerializer):
     customer_id = serializers.IntegerField(source="sale_order.customer_id", read_only=True)
     delivery_type = serializers.SerializerMethodField()
     related_note_display = serializers.SerializerMethodField()
+    # Orden de venta como DocumentRef (ADR-0086): el frontend navega a su URL canónica.
+    sale_order_document = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleDelivery
@@ -404,6 +465,14 @@ class SaleDeliverySerializer(serializers.ModelSerializer):
         if obj.related_note_id and obj.related_note:
             return obj.related_note.display_id
         return None
+
+    def get_sale_order_document(self, obj):
+        if not obj.sale_order_id:
+            return None
+        from core.documents import build_ref
+
+        user = getattr(self.context.get("request"), "user", None)
+        return build_ref(obj.sale_order, user, "sales.saleorder", navigational=True)
 
 
 class SaleReturnLineSerializer(serializers.ModelSerializer):
@@ -420,9 +489,20 @@ class SaleReturnSerializer(serializers.ModelSerializer):
     lines = SaleReturnLineSerializer(many=True, read_only=True)
     sale_order_number = serializers.CharField(source="sale_order.number", read_only=True)
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
+    customer_name = serializers.CharField(source="sale_order.customer.name", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
+    # Orden de venta como DocumentRef (ADR-0086): el frontend navega a su URL canónica.
+    sale_order_document = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleReturn
         fields = "__all__"
         read_only_fields = ["id", "number", "status"]
+
+    def get_sale_order_document(self, obj):
+        if not obj.sale_order_id:
+            return None
+        from core.documents import build_ref
+
+        user = getattr(self.context.get("request"), "user", None)
+        return build_ref(obj.sale_order, user, "sales.saleorder", navigational=True)

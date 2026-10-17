@@ -20,7 +20,7 @@ export const purchaseInvoiceActions = createEntityActions<Invoice, PurchaseInvoi
     const canReceive = !!(doc.purchase_order || isNote) && doc.po_receiving_status !== 'RECEIVED'
     const canCompleteFolio = doc.status === 'DRAFT'
     const canCreateNote = !isNote && !!doc.number && doc.status !== 'DRAFT'
-    const hasPayments = (doc.related_documents?.payments?.length ?? 0) > 0 || (doc.serialized_payments?.length ?? 0) > 0
+    const hasPayments = (doc.serialized_payments?.length ?? 0) > 0 || (doc.serialized_payments?.length ?? 0) > 0
     const canDelete = doc.status === 'DRAFT'
     const canAnnul = doc.status !== 'DRAFT' && doc.status !== 'CANCELLED'
 

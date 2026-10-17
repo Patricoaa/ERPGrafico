@@ -1,5 +1,5 @@
 "use client"
-import { formatEntityDisplay, getEntityIcon } from "@/lib/entity-registry"
+import { formatEntityDisplay, getEntityIcon, getDomainConceptTitle } from "@/lib/entity-registry"
 
 import { useState, useEffect } from "react"
 import { Check, ChevronDown, X } from "lucide-react"
@@ -30,7 +30,7 @@ interface AdvancedWorkOrderSelectorProps {
 export function AdvancedWorkOrderSelector({
     value,
     onChange,
-    placeholder = "Vincular a Orden de Trabajo (Opcional)...",
+    placeholder = `Vincular a ${getDomainConceptTitle('ot')} (Opcional)...`,
     disabled = false,
     label,
     error,

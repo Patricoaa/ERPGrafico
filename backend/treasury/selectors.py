@@ -800,6 +800,65 @@ class CardSelector:
             "pending_charges": CardPendingChargeSerializer(pending, many=True).data,
         }
 
+class PaymentSelector:
+    """
+    Single source for "amount paid" of a commercial document (GAP-04, document audit).
+
+    Works over already-loaded iterables (prefetched `payments` / `payment_allocations`)
+    so model properties and serializers share the rule:
+
+    - CANCELLED movements are ignored.
+    - Direction is signed: for a sale document INBOUND adds and OUTBOUND (refund)
+      subtracts; for a purchase document the opposite (also for allocations).
+    - Optionally ignores movements whose invoice is a credit/debit note.
+    - Each movement is distributed once (M4d): its explicit allocations
+      (`PaymentAllocation`) and, for its FK document, the remainder.
+      * ``fk_remainder=True`` (invoices): an FK movement contributes
+        ``amount − Σ its allocations``; allocations to this document add on top.
+      * ``fk_remainder=False`` (orders): an FK movement contributes its full amount
+        (its allocations to the order's own invoices stay within the order, e.g.
+        advances split across partial invoices, D2); only allocations coming from
+        movements *without* this FK are added.
+    """
+
+    NOTE_DTE_TYPES = ("NOTA_CREDITO", "NOTA_DEBITO")
+
+    @staticmethod
+    def _signed(amount, movement, sale_side: bool) -> Decimal:
+        from .models import TreasuryMovement
+
+        value = Decimal(str(amount))
+        inbound, outbound = TreasuryMovement.Type.INBOUND, TreasuryMovement.Type.OUTBOUND
+        if movement.movement_type in (inbound, outbound) and (movement.movement_type == inbound) != sale_side:
+            value = -value
+        return value
+
+    @staticmethod
+    def paid_amount(movements, *, sale_side: bool, allocations=(), exclude_note_payments: bool = False,
+                    fk_field: str | None = None, document=None, fk_remainder: bool = False):
+        from .models import TreasuryMovement
+
+        cancelled = TreasuryMovement.MovementStatus.CANCELLED
+        total = Decimal("0")
+        for m in movements:
+            if m.status == cancelled:
+                continue
+            if exclude_note_payments and m.invoice_id and m.invoice.dte_type in PaymentSelector.NOTE_DTE_TYPES:
+                continue
+            amount = Decimal(str(m.amount))
+            if fk_remainder:
+                amount -= sum((Decimal(str(a.amount)) for a in m.allocations.all()), Decimal("0"))
+            total += PaymentSelector._signed(amount, m, sale_side)
+        for a in allocations:
+            movement = a.treasury_movement
+            if movement.status == cancelled:
+                continue
+            if not fk_remainder and fk_field and document is not None and getattr(movement, f"{fk_field}_id") == document.pk:
+                continue  # ya contado por la FK (importe completo)
+            total += PaymentSelector._signed(a.amount, movement, sale_side)
+        return total
+
+
 class TreasuryMovementSelector:
     @staticmethod
     def get_cancel_impact(movement) -> dict:

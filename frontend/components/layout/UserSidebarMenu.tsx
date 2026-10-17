@@ -176,7 +176,7 @@ export function UserSidebarMenu() {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:text-destructive cursor-pointer">
                             <LogOut className="mr-3 h-4 w-4" />
-                            <span className="font-bold text-xs">Cerrar Sesión</span>
+                            <span className="text-xs font-medium">Cerrar Sesión</span>
                         </DropdownMenuItem>
                     </div>
                 </DropdownMenuContent>

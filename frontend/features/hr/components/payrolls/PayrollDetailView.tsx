@@ -32,6 +32,7 @@ import { PayrollCard } from "@/features/hr/components/PayrollCard"
 import { cn } from "@/lib/utils"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { DocumentRelationsButton } from "@/features/documents"
     ;
 
 const itemSchema = z.object({
@@ -174,6 +175,8 @@ export function PayrollDetailView({
                 icon: FileText,
                 headerActions: (
                     <div className="flex items-center gap-2 sm:gap-3">
+                        {/* ADR-0083 U5: relaciones de la liquidación (pagos, asiento) */}
+                        {viewMode === 'admin' && <DocumentRelationsButton label="hr.payroll" id={payroll.id} />}
                         {viewMode === 'admin' && !isPosted && (
                             <>
                                 <ActionSlideButton

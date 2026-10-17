@@ -67,7 +67,7 @@ Primitiva base de todos los modales del proyecto. Wrappea `Dialog` de Shadcn con
 | `size` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| '2xl' \| 'full'` | ❌ | `'md'` | Ver tabla de anchos abajo |
 | `variant` | `'default' \| 'transaction' \| 'wizard' \| 'form-tabs' \| 'raw'` | ❌ | `'default'` | Controla estilos de header/footer |
 | `showCloseButton` | `boolean` | ❌ | `true` | Botón X en esquina superior derecha |
-| `hideScrollArea` | `boolean` | ❌ | `false` | Desactiva `ScrollArea`; obligatorio cuando se usa `FormTabs` vertical |
+| `hideScrollArea` | `boolean` | ❌ | `false` | Desactiva `ScrollArea`; obligatorio cuando se usa `TabBar` vertical |
 | `allowOverflow` | `boolean` | ❌ | `false` | Permite que el contenido sobresalga (ej. para rieles de pestañas negativos) |
 | `className` | `string` | ❌ | — | Clases para `DialogContent` |
 | `contentClassName` | `string` | ❌ | — | Clases para el área de contenido (scroll o div) |
@@ -80,7 +80,7 @@ Primitiva base de todos los modales del proyecto. Wrappea `Dialog` de Shadcn con
 *   **Comportamiento Dinámico (CRUD)**:
     *   **Creación**: El título del modal refleja la acción (ej: `[Icono] Crear Categoría`). La descripción puede omitirse.
     *   **Edición**: El título refleja la entidad y su estado (ej: `[Icono] Ficha de Categoría`). La descripción horizontal muestra dinámicamente detalles identificadores del registro activo (ej: siglas, folio, nombre de fantasía) para dar contexto instantáneo.
-*   **Pestañas Dinámicas (`form-tabs`)**: En el caso de formularios con pestañas (`FormTabs`), el título o la descripción de la cabecera del modal se actualiza para mostrar el camino de navegación activa (ej: `Editar Producto > Variantes`).
+*   **Pestañas Dinámicas (`form-tabs`)**: En el caso de formularios con pestañas (`TabBar`), el título o la descripción de la cabecera del modal se actualiza para mostrar el camino de navegación activa (ej: `Editar Producto > Variantes`).
 
 ### Invariante de Estados de Carga (Anti-Skeleton)
 

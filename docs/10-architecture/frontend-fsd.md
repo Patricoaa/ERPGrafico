@@ -126,7 +126,7 @@ A feature may aggregate other features for purely visual purposes. This is a leg
 
 ```ts
 // From a page or another feature:
-import { OrderHubPanel, OrderCard } from '@/features/orders/components'
+import { AnnulPaymentModal } from '@/features/orders/components'
 import { getHubStatuses } from '@/features/orders/utils/status'
 import type { Order } from '@/features/orders/types'
 ```
@@ -135,16 +135,15 @@ import type { Order } from '@/features/orders/types'
 
 ### Current canonical case: `features/orders`
 
-Visualization hub for SaleOrder + PurchaseOrder + WorkOrder.
+Commercial document sheets for SaleOrder, PurchaseOrder and Invoice/notes (ADR-0083). The Order Hub that used to live here was retired in U6 (2026-10-15).
 
-| Component | Purpose |
-|-----------|---------|
-| `OrderHubPanel` | Full side panel with tabs (used by sales, purchasing) |
-| `OrderHubIntegrated` | Internal hub with 5 phases (Origin → Production → Logistics → Billing → Treasury) |
-| `OrderCard` | Summary card for an order |
-| `OrderHeaderDashboard` | Header with status and totals |
-| `GlobalHubPanel` | App-level singleton (mounted in root layout) |
-| `OrderActionPanel` | Action panel for an order |
+| Piece | Purpose |
+|-------|---------|
+| `OrderSheet` / `InvoiceSheet` | Document sheets of OV/OC and invoices/notes (`components/sheet/`) |
+| `useOrderActionEngine` | Executes the sales/purchasing action registries (modals, payments, notes) inside the sheet |
+| `useOrderRelatedActions` | Annul/cancel actions on related documents (relations tab rows) |
+| `useOrderDocument` / `useInvoiceDocument` | Sheet data (query keys under sales/purchasing/invoices) |
+| `getOrderLifecycle` / `getInvoiceLifecycle` | Lifecycle strip steps |
 | `DocumentListModal` / `PaymentHistoryModal` | Related modals |
 | `phases/*` | `OriginPhase`, `ProductionPhase`, `LogisticsPhase`, `BillingPhase`, `TreasuryPhase` |
 

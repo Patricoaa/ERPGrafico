@@ -63,6 +63,8 @@ Reglas de activo: nivel 1 por `activeValue`, nivel 2 por `subActiveValue` (solo 
 
 El tope del panel contiene **Buscar** (Ctrl+K) y **Bandeja de entrada** (`SidebarUtilityNav`); las **Notificaciones** están en el menú del avatar (pie del riel). No hay selector de módulo en el panel: el riel cumple esa función.
 
+> Los roles tipográficos del chrome del shell (topbar, riel, panel de módulo, panel lateral) están normados en [typography-scale.md § Escala del chrome del shell](./typography-scale.md#escala-del-chrome-del-shell-adr-0079).
+
 La **topbar** (ancho completo, no se desplaza al abrir sheets) muestra el título de la vista como **único `<h1>`** de la página (la `description` es su tooltip), `breadcrumbs`, `status`, `titleActions`, `children` y los accesos POS / Calculadora a tamaño de riel. Las vistas **no** renderizan título ni descripción propios; `PageSectionHeader` solo dibuja pestañas internas.
 
 Una vista puede montar su propio `<PageHeader>` (p. ej. para `titleActions`) **sin** `navigation`: el sidebar conserva la navegación del módulo (`HeaderProvider.moduleNavigation`).

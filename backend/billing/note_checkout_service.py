@@ -181,7 +181,7 @@ class NoteCheckoutService:
             raise ValidationError(f"Factura con ID {corrected_invoice_id} no existe.")
 
         # CRITICAL VALIDATION: Only from POSTED or PAID invoices
-        if corrected_invoice.status not in [Invoice.Status.POSTED, Invoice.Status.PAID]:
+        if corrected_invoice.status != Invoice.Status.POSTED:
             raise ValidationError(
                 f"Solo se pueden crear NC/ND desde facturas publicadas o pagadas. "
                 f"Estado actual: {corrected_invoice.get_status_display()}"
@@ -305,7 +305,9 @@ class NoteCheckoutService:
             ]
 
             if tax_amount == 0 and not is_exempt:
-                # tax_rate remains Decimal('19.00') or found from orig_line
+                # Tasa de la línea original si existe; si no, IVA por defecto (antes: NameError)
+                orig_line = workflow.sale_order.lines.filter(product=product).first() if workflow.sale_order else None
+                tax_rate = getattr(orig_line, "tax_rate", None) or Decimal("19.00")
 
                 tax_amount = (unit_price * (tax_rate / 100)).quantize(
                     Decimal("1."), rounding="ROUND_HALF_UP"
@@ -1056,7 +1058,7 @@ class NoteCheckoutService:
         except Invoice.DoesNotExist:
             raise ValidationError(f"Factura con ID {original_invoice_id} no existe.")
 
-        if corrected_invoice.status not in [Invoice.Status.POSTED, Invoice.Status.PAID]:
+        if corrected_invoice.status != Invoice.Status.POSTED:
             raise ValidationError("Solo se pueden crear notas desde facturas Publicadas o Pagadas.")
 
         # 2. Initialize Invoice (Draft)
@@ -1103,14 +1105,16 @@ class NoteCheckoutService:
             if quantity <= 0:
                 continue
 
-            # Validation against delivered (for returns)
-            if workflow.is_credit_note and workflow.sale_order:
+            # Determine stockable / logistics-required
+            creates_stock_move = bool(product.track_inventory) or product.strategy.requires_manufacturing_profile
+
+            # Devolución física: no más de lo entregado. Servicios: el límite es lo facturado
+            # (D1.3, validado en InvoicingService.build_note_lines).
+            deliverable = product.product_type not in ("SERVICE", "SUBSCRIPTION")
+            if workflow.is_credit_note and workflow.sale_order and deliverable:
                 sale_line = workflow.sale_order.lines.filter(product=product).first()
                 if sale_line and quantity > sale_line.quantity_delivered:
                     raise ValidationError(f"Cantidad excede lo entregado para {product.name}")
-
-            # Determine stockable / logistics-required
-            creates_stock_move = bool(product.track_inventory) or product.strategy.requires_manufacturing_profile
 
             if creates_stock_move:
                 has_stockable = True
@@ -1169,6 +1173,11 @@ class NoteCheckoutService:
 
         workflow.selected_items = validated_items
         workflow.requires_logistics = has_stockable
+
+        # ADR-0081 / D1.3 (GAP-14): líneas propias de la nota sobre las líneas de la factura
+        from .invoicing import InvoicingService
+
+        InvoicingService.build_note_lines(invoice, validated_items)
 
         # Update Invoice Totals
         invoice.total_net = total_net

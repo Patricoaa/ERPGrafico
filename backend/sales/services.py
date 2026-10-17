@@ -12,7 +12,7 @@ from core.prefix_registry import EntityPrefix
 from core.services import BaseNoteService
 from inventory.models import Warehouse
 
-from .models import SaleDelivery, SaleDeliveryLine, SaleOrder
+from .models import SaleDelivery, SaleDeliveryLine, SaleLine, SaleOrder
 
 
 class SalesService:
@@ -270,9 +270,8 @@ class SalesService:
         # Confirm delivery (creates stock moves and COGS)
         SalesService.confirm_delivery(delivery)
 
-        # Update order delivery status
-        order.delivery_status = SaleOrder.DeliveryStatus.DELIVERED
-        order.save()
+        # Update order delivery status (GAP-01: derivado de cantidades, no forzado)
+        SalesService._update_order_delivery_status(order)
 
         # Auto-complete logistics HUB task
         # HUB Tasks Sync
@@ -574,43 +573,51 @@ class SalesService:
                         print(f"DEBUG: No OT created for {product.internal_code} (not express)")
 
         # 2. Process lines for stock moves and quantity updates
-        from inventory.models import InventoryDocument, InventoryDocumentDetail
-        from inventory.services import InventoryService
+        # ADR-0085: el despacho es dueño de sus StockMove; ya no se acuña un InventoryDocument.
+        from inventory.models import Location
+        from inventory.services import StockService
 
-        doc_inv = InventoryDocument.objects.create(
-            document_type=InventoryDocument.Type.DELIVERY,
-            status=InventoryDocument.Status.DRAFT,
-            date=delivery.delivery_date,
-            reference=f"Despacho {EntityPrefix.SALE_ORDER}-{delivery.sale_order.number}",
-            partner=delivery.sale_order.customer,
-            source_document_type="sales.saleorder",
-            source_document_id=delivery.sale_order.id,
+        internal_loc, _ = Location.objects.get_or_create(
+            location_type="INTERNAL",
+            warehouse=delivery.warehouse,
+            defaults={"name": delivery.warehouse.name if delivery.warehouse else "Interno"},
         )
-        details_to_create = []
+        customer_loc, _ = Location.objects.get_or_create(
+            location_type="CUSTOMER",
+            defaults={"name": "Clientes"},
+        )
+
+        move_description = f"Despacho {delivery.display_id}"
 
         for line in delivery.lines.all():
             product = line.product
 
-            # PATH A: Product tracks inventory directly
-            if product.track_inventory:
+            # PATH A: Product tracks inventory directly.
+            # Guard against stale field values: also require the strategy to allow moves.
+            if product.track_inventory and product.strategy.allows_stock_moves:
                 # Base quantity conversion
                 base_qty = UoMService.convert_quantity(
                     line.quantity, from_uom=line.uom or line.sale_line.uom, to_uom=line.product.uom
                 )
 
-                details_to_create.append(
-                    InventoryDocumentDetail(
-                        document=doc_inv,
-                        product=product,
-                        warehouse=delivery.warehouse,
-                        quantity=base_qty,
-                        unit_cost=product.cost_price
-                    )
-                )
-
                 # Ensure unit_cost is the product's current cost
                 line.unit_cost = product.cost_price
                 line.save()
+
+                move = StockService.create_move(
+                    product=product,
+                    quantity=base_qty,
+                    source_location=internal_loc,
+                    destination_location=customer_loc,
+                    unit_cost=product.cost_price,
+                    description=move_description,
+                    source_document=delivery,
+                    date=delivery.delivery_date,
+                )
+                created_moves.append(move)
+                # GAP-02: la línea de despacho queda ligada a su StockMove
+                line.stock_move = move
+                line.save(update_fields=["stock_move"])
 
             # PATH B: Product DOES NOT track inventory (Service or Non-tracked Manufactured)
             else:
@@ -648,15 +655,17 @@ class SalesService:
                                     to_uom=bom_line.component.uom,
                                 )
 
-                                details_to_create.append(
-                                    InventoryDocumentDetail(
-                                        document=doc_inv,
-                                        product=bom_line.component,
-                                        warehouse=delivery.warehouse,
-                                        quantity=base_comp_qty,
-                                        unit_cost=bom_line.component.cost_price
-                                    )
+                                move = StockService.create_move(
+                                    product=bom_line.component,
+                                    quantity=base_comp_qty,
+                                    source_location=internal_loc,
+                                    destination_location=customer_loc,
+                                    unit_cost=bom_line.component.cost_price,
+                                    description=move_description,
+                                    source_document=delivery,
+                                    date=delivery.delivery_date,
                                 )
+                                created_moves.append(move)
 
                                 # Calculate component cost contribution
                                 line_total_cost += base_comp_qty * bom_line.component.cost_price
@@ -678,37 +687,15 @@ class SalesService:
                     line.unit_cost = 0
                     line.save()
 
-        if details_to_create:
-            InventoryDocumentDetail.objects.bulk_create(details_to_create)
-            doc_inv, generated_moves = InventoryService.confirmar_documento(doc_inv)
-
-            # Map lines to generated moves for PATH A
-            tracked_lines = [l for l in delivery.lines.all() if l.product.track_inventory]
-            moves_by_key = {}
-            for move in generated_moves:
-                key = (move.product_id, move.quantity)
-                if key not in moves_by_key:
-                    moves_by_key[key] = move
-
-            for l in tracked_lines:
-                key = (
-                    l.product_id,
-                    -UoMService.convert_quantity(
-                        l.quantity, from_uom=l.uom or l.sale_line.uom, to_uom=l.product.uom
-                    ),
-                )
-                move = moves_by_key.get(key)
-                if move is not None:
-                    l.stock_move = move
-                    l.save()
-
-            created_moves.extend(generated_moves)
-        else:
-            doc_inv.delete()
-
-            # Update sale line delivered quantity
-            line.sale_line.quantity_delivered += line.quantity
-            line.sale_line.save()
+        # GAP-01: registrar el cumplimiento de TODAS las líneas del despacho
+        delivered_by_sale_line = {}
+        for line in delivery.lines.all():
+            delivered_by_sale_line[line.sale_line_id] = (
+                delivered_by_sale_line.get(line.sale_line_id, Decimal("0")) + line.quantity
+            )
+        for sale_line in SaleLine.objects.filter(pk__in=delivered_by_sale_line):
+            sale_line.quantity_delivered += delivered_by_sale_line[sale_line.pk]
+            sale_line.save()
 
         # 3. Accounting Entry via Mapper (using total_cost for COGS)
         # Recalculate totals after updating line costs
@@ -933,44 +920,29 @@ class SalesService:
             )
 
         # 2. Reverse Stock Moves & Update Sale Lines
-        from inventory.models import InventoryDocument, InventoryDocumentDetail
-        from inventory.services import InventoryService
+        # ADR-0085: se revierten TODOS los movimientos atribuidos al despacho vía
+        # `source_document` (incluye la explosión BOM), no solo los ligados a línea.
+        from inventory.models import StockMove
+        from inventory.services import StockService
 
-        doc_inv = InventoryDocument.objects.create(
-            document_type=InventoryDocument.Type.RECEIPT,
-            status=InventoryDocument.Status.DRAFT,
-            date=timezone.now().date(),
-            reference=f"Anulación Despacho {delivery.number}",
-            partner=delivery.sale_order.customer,
-            source_document_type="sales.saledelivery",
-            source_document_id=delivery.id,
-        )
-        details_to_create = []
+        reversal_description = f"Anulación Despacho {delivery.number}"
+        for move in list(StockMove.for_document(delivery)):
+            StockService.create_move(
+                product=move.product,
+                quantity=move.quantity,
+                source_location=move.destination_location,
+                destination_location=move.source_location,
+                unit_cost=move.unit_cost,
+                description=reversal_description,
+                journal_entry=rev_entry,
+                source_document=delivery,
+                date=timezone.now().date(),
+            )
 
         for line in delivery.lines.all():
-            # Create Reversal Move (IN)
-            if line.stock_move:
-                details_to_create.append(
-                    InventoryDocumentDetail(
-                        document=doc_inv,
-                        product=line.product,
-                        warehouse=delivery.warehouse,
-                        quantity=abs(line.stock_move.quantity),  # Positive IN
-                        unit_cost=line.stock_move.unit_cost
-                    )
-                )
-
             # Revert delivered quantity
             line.sale_line.quantity_delivered -= line.quantity
             line.sale_line.save()
-
-        if details_to_create:
-            InventoryDocumentDetail.objects.bulk_create(details_to_create)
-            InventoryService.confirmar_documento(doc_inv, journal_entry=rev_entry)
-        else:
-            doc_inv.delete()
-
-
 
         # 3. Update Delivery Status
         delivery.status = SaleDelivery.Status.CANCELLED

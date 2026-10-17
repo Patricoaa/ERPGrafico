@@ -5,6 +5,7 @@ import { useFormWithToast } from "@/hooks/useFormWithToast"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import * as z from "zod"
 import {ActionConfirmModal, DomainHubStatus, Drawer, StatCard} from '@/components/shared'
+import { DocumentActionsMenu } from '@/components/shared'
 import { formDrawerWidth } from "@/lib/form-widths"
 import {
     Form,
@@ -15,7 +16,6 @@ import {
 import { RadioGroup } from "@/components/ui/radio-group"
 import { ActionSlideButton, CancelButton } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useContact, useContactCreditLedger } from "../hooks/useContacts"
 import { type Contact, type ContactPayload } from "../types"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
@@ -39,8 +39,10 @@ import { type LucideIcon } from "lucide-react"
 import { contactCreditDocumentFields, type ContactCreditDocument } from '../contactCreditDocumentFields'
 
 import { getHubStatuses } from '@/features/orders'
+import { DocumentRefLink } from '@/features/documents'
 import { LabeledInput, LabeledContainer, RadioCard, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
+import { getDomainConceptTitle, getDomainConceptCode } from "@/lib/entity-registry"
 
 const contactSchema = z.object({
     name: z.string().min(2, "El nombre es requerido"),
@@ -210,9 +212,12 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
     ]
 
     const identity = useDrawerIdentity('contacts.contact', mode, contact, {
-        printable: !!contact?.id && (mode === 'view' || mode === 'edit'),
-        onPrint: handlePrint,
+        printable: false,
     })
+
+    const headerActions = c?.id && (mode === 'view' || mode === 'edit') ? (
+        <DocumentActionsMenu onPrint={handlePrint} />
+    ) : undefined
 
     return (
         <>
@@ -244,7 +249,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                 onOpenChange={onOpenChange}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={identity.headerActions}
+                headerActions={headerActions}
                 subtitle={identity.subtitle}
                 defaultSize={formDrawerWidth("master", !!c)}
                 className="h-[90vh]"
@@ -314,7 +319,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                                 description={
                                                                     defaultCustomer && defaultCustomer.id !== c?.id
                                                                         ? `Actual: ${defaultCustomer.name}`
-                                                                        : "Se selecciona automáticamente en nuevas OV"
+                                                                        : `Se selecciona automáticamente en nuevas ${getDomainConceptCode('ov')}`
                                                                 }
                                                                 icon={<ShoppingCart className="h-4 w-4" />}
                                                             />
@@ -474,7 +479,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                     <InsightsTable
                                         data={insightsData?.sales?.orders || []}
                                         type="sale"
-                                        title="Historial de Ventas (OV)"
+                                        title={`Historial de Ventas (${getDomainConceptCode('ov')})`}
                                         icon={ShoppingCart}
                                     />
                                 </TabBarContent>
@@ -492,7 +497,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                     <InsightsTable
                                         data={insightsData?.work_orders?.orders || []}
                                         type="work_order"
-                                        title="Historial de Órdenes de Trabajo"
+                                        title={`Historial de ${getDomainConceptTitle('ot', true)}`}
                                         icon={Wand2}
                                     />
                                 </TabBarContent>
@@ -544,7 +549,6 @@ interface InsightsTableProps {
 
 function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
     const { openEntity } = useGlobalModals()
-    const { openHub } = useHubPanel()
     const [activeFilter, setActiveFilter] = useState<'all' | 'financial' | 'logistics' | 'billing' | 'pending'>('all')
 
     // Metrics Calculation
@@ -609,7 +613,8 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
             if (type === 'work_order') {
                 openEntity('production.workorder', item.id as number)
             } else {
-                openHub({ orderId: item.id as number, type: type === 'purchase' ? 'purchase' : 'sale' })
+                // Ficha documental de la orden (ADR-0083)
+                openEntity(type === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder', item.id as number)
             }
         },
     }
@@ -718,16 +723,8 @@ function CreditLedgerTable({ data, loading }: { data: ContactCreditDocument[], l
         customer_id: 0,
         supplier_id: 0,
         lines: [] as unknown[],
-        related_documents: {
-            invoices: [],
-            payments: [],
-            deliveries: [],
-            receptions: [],
-            work_orders: [],
-            returns: [],
-            stock_moves: [],
-            notes: []
-        }
+        invoices: [],
+        serialized_payments: []
     }));
 
     const columns = useMemo<ColumnDef<ContactCreditDocument>[]>(() => [
@@ -737,7 +734,7 @@ function CreditLedgerTable({ data, loading }: { data: ContactCreditDocument[], l
             if (key === 'number') {
                 return {
                     ...col,
-                    cell: ({ row }: CellContext<ContactCreditDocument, unknown>) => <DataCell.Entity label="sales.saleorder" data={row.original as object} />,
+                    cell: ({ row }: CellContext<ContactCreditDocument, unknown>) => <DocumentRefLink documentRef={row.original.document} />,
                 }
             }
 

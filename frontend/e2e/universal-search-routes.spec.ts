@@ -31,6 +31,9 @@ async function openSearchAndType(page: Page, query: string) {
 test.describe('Universal Search — Entidades adicionales (T-79)', () => {
 
     test('Navega a detalle de Despacho de Venta', async ({ page }) => {
+        // ADR-0080 (GAP-08): el backend emite la URL canónica; el despacho no tiene lista
+        // con ?selected propio, así que es el resolvedor /d/{label}/{id} (antes se simulaba
+        // '/sales/deliveries/800', una ruta que el backend nunca emitía y no existe).
         await page.route('**/api/search/universal/?q=DES-800', async route => {
             await route.fulfill({
                 json: {
@@ -38,10 +41,19 @@ test.describe('Universal Search — Entidades adicionales (T-79)', () => {
                         id: 800,
                         type: 'sales.saledelivery',
                         display: 'DES-800',
-                        detail_url: '/sales/deliveries/800',
+                        detail_url: '/d/sales.saledelivery/800',
                         icon: 'truck',
                         label: 'sales.saledelivery',
                     }],
+                },
+            });
+        });
+        await page.route('**/api/core/documents/sales.saledelivery/800/', async route => {
+            await route.fulfill({
+                json: {
+                    label: 'sales.saledelivery', id: 800, display_id: 'DES-800', title: 'Despacho', icon: 'truck',
+                    status: 'CONFIRMED', status_display: 'Confirmado', date: '2026-10-02', partner_name: 'Cliente Test',
+                    url: '/d/sales.saledelivery/800', accessible: true, exists: true,
                 },
             });
         });
@@ -63,7 +75,7 @@ test.describe('Universal Search — Entidades adicionales (T-79)', () => {
         const result = page.locator('text=DES-800').first();
         await expect(result).toBeVisible();
         await result.click();
-        await expect(page).toHaveURL(/.*\/sales\/deliveries\/800/);
+        await expect(page).toHaveURL(/.*\/d\/sales\.saledelivery\/800/);
     });
 
     // ---------------------------------------------------------------------------

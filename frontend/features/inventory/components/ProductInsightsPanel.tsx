@@ -22,7 +22,7 @@ import { useProductInsights, useProduct } from "../hooks/useProducts"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from '@/components/shared'
-import { formatEntityDisplay } from "@/lib/entity-registry"
+import { formatEntityDisplay, getDomainConceptTitle } from "@/lib/entity-registry"
 import { parseDateOnly, cn } from "@/lib/utils"
 import { formatCurrency, formatQuantity } from "@/lib/money"
 import { ProductSelector } from "@/components/selectors"
@@ -629,7 +629,7 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                             <StatCard label="Total Consumido en OT" valueSize="xl"
                                                 value={`${formatQuantity(data.production_usage.reduce((a, u) => a + u.quantity, 0))} ${product.uom_name}`}
                                                 icon={Factory} accent="primary" />
-                                            <StatCard label="N° de Órdenes de Trabajo" valueSize="xl"
+                                            <StatCard label={`N° de ${getDomainConceptTitle('ot', true)}`} valueSize="xl"
                                                 value={String(new Set(data.production_usage.map(u => u.ot_id)).size)}
                                                 icon={BarChart3} accent="info" />
                                         </div>

@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from rest_framework import serializers
 
 from core.serializers import AttachmentSerializer
@@ -7,8 +9,8 @@ from .models import Invoice
 
 class InvoiceListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for Invoice list views.
-    Omits heavy nested serialization (sale_order_detail, related_stock_moves,
-    related_returns, lines, work_orders, adjustments) that trigger N+1 queries."""
+    Omits heavy nested serialization (sale_order_detail, lines, work_orders, adjustments)
+    that trigger N+1 queries."""
 
     dte_type_display = serializers.CharField(source="get_dte_type_display", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
@@ -23,6 +25,8 @@ class InvoiceListSerializer(serializers.ModelSerializer):
     )
     partner_name = serializers.SerializerMethodField()
     partner_id = serializers.SerializerMethodField()
+    # ADR-0084: eje de pago separado del estado del documento (UNPAID · PARTIAL · PAID)
+    payment_status = serializers.CharField(read_only=True)
     pending_amount = serializers.SerializerMethodField()
     is_tax_exempt = serializers.ReadOnlyField()
     is_sale_document = serializers.ReadOnlyField()
@@ -52,6 +56,7 @@ class InvoiceListSerializer(serializers.ModelSerializer):
             "partner_name",
             "partner_id",
             "pending_amount",
+            "payment_status",
             "is_tax_exempt",
             "is_sale_document",
             "created_at",
@@ -80,9 +85,7 @@ class InvoiceListSerializer(serializers.ModelSerializer):
         return None
 
     def get_pending_amount(self, obj):
-        total_paid = sum(p.amount for p in obj.payments.all())
-        total_allocated = sum(a.amount for a in obj.payment_allocations.all())
-        return obj.total - (total_paid + total_allocated)
+        return obj.pending_amount
 
 class InvoiceWriteSerializer(serializers.ModelSerializer):
     """Optimized serializer for create and update views.
@@ -140,16 +143,17 @@ class InvoiceSerializer(serializers.ModelSerializer):
     )
     partner_name = serializers.SerializerMethodField()
     partner_id = serializers.SerializerMethodField()
-    related_documents = serializers.SerializerMethodField()
-    related_stock_moves = serializers.SerializerMethodField()
-    related_returns = serializers.SerializerMethodField()
     lines = serializers.SerializerMethodField()
+    # ADR-0084: eje de pago separado del estado del documento (UNPAID · PARTIAL · PAID)
+    payment_status = serializers.CharField(read_only=True)
     pending_amount = serializers.SerializerMethodField()
     serialized_payments = serializers.SerializerMethodField()
     adjustments = serializers.SerializerMethodField()
     corrected_invoice = serializers.SerializerMethodField()
     order_delivery_status = serializers.SerializerMethodField()
     work_orders = serializers.SerializerMethodField()
+    # Documento de origen como DocumentRef (ADR-0086): enlace navegable a su URL canónica.
+    origin_document = serializers.SerializerMethodField()
     is_tax_exempt = serializers.ReadOnlyField()
     pos_session = serializers.IntegerField(
         source="sale_order.pos_session", read_only=True, allow_null=True
@@ -189,11 +193,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "po_receiving_status",
             "partner_name",
             "partner_id",
-            "related_documents",
-            "related_stock_moves",
-            "related_returns",
             "lines",
             "pending_amount",
+            "payment_status",
             "serialized_payments",
             "adjustments",
             "order_delivery_status",
@@ -202,6 +204,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "pos_session",
             "sale_order_detail",
             "is_sale_document",
+            "origin_document",
         ]
         read_only_fields = [
             "id",
@@ -225,18 +228,11 @@ class InvoiceSerializer(serializers.ModelSerializer):
         return InvoiceSelectorExt.get_serialized_payments(obj)
 
     def get_pending_amount(self, obj):
-        # Leer de RAM: payments y payment_allocations ya están prefetcheados
-        total_paid = sum(p.amount for p in obj.payments.all())
-        total_allocated = sum(a.amount for a in obj.payment_allocations.all())
-        return obj.total - (total_paid + total_allocated)
+        return obj.pending_amount
 
     def get_lines(self, obj):
         from .selectors import InvoiceSelectorExt
         return InvoiceSelectorExt.get_lines(obj)
-
-    def get_related_documents(self, obj):
-        from .selectors import InvoiceSelectorExt
-        return InvoiceSelectorExt.get_related_documents(obj)
 
     def get_partner_name(self, obj):
         if obj.sale_order and obj.sale_order.customer:
@@ -255,14 +251,6 @@ class InvoiceSerializer(serializers.ModelSerializer):
         if obj.contact:
             return obj.contact.id
         return None
-
-    def get_related_stock_moves(self, obj):
-        from .selectors import InvoiceSelectorExt
-        return InvoiceSelectorExt.get_related_stock_moves(obj)
-
-    def get_related_returns(self, obj):
-        from .selectors import InvoiceSelectorExt
-        return InvoiceSelectorExt.get_related_returns(obj)
 
     def get_adjustments(self, obj):
         # Only Facturas/Boletas usually have adjustments (Notes correcting them)
@@ -290,6 +278,18 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "dte_type": obj.corrected_invoice.dte_type,
             "dte_type_display": obj.corrected_invoice.get_dte_type_display(),
         }
+
+    def get_origin_document(self, obj):
+        from core.documents import build_ref
+
+        user = getattr(self.context.get("request"), "user", None)
+        if obj.corrected_invoice_id:
+            return build_ref(obj.corrected_invoice, user, "billing.invoice")
+        if obj.sale_order_id:
+            return build_ref(obj.sale_order, user, "sales.saleorder")
+        if obj.purchase_order_id:
+            return build_ref(obj.purchase_order, user, "purchasing.purchaseorder")
+        return None
 
     def get_order_delivery_status(self, obj):
         if obj.sale_order:
@@ -319,3 +319,22 @@ class CreateInvoiceSerializer(serializers.Serializer):
     document_attachment = serializers.FileField(required=False, allow_null=True)
     issue_date = serializers.DateField(required=False, allow_null=True)
     status = serializers.ChoiceField(choices=Invoice.Status.choices, default=Invoice.Status.POSTED)
+
+
+class InvoiceFromLinesItemSerializer(serializers.Serializer):
+    order_line_id = serializers.IntegerField()
+    quantity = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal("0.01"))
+    # Línea de despacho (venta) o de recepción (compra) que se factura (D1.2)
+    fulfillment_line_id = serializers.IntegerField(required=False, allow_null=True)
+
+
+class InvoiceFromLinesSerializer(serializers.Serializer):
+    """Factura parcial / multi-orden por cantidad (ADR-0081)."""
+
+    side = serializers.ChoiceField(choices=["sale", "purchase"])
+    dte_type = serializers.ChoiceField(choices=Invoice.DTEType.choices)
+    items = InvoiceFromLinesItemSerializer(many=True, allow_empty=False)
+    status = serializers.ChoiceField(choices=[Invoice.Status.DRAFT, Invoice.Status.POSTED], default=Invoice.Status.DRAFT)
+    number = serializers.CharField(required=False, allow_blank=True, default="")
+    date = serializers.DateField(required=False, allow_null=True)
+    payment_method = serializers.ChoiceField(choices=Invoice.PaymentMethod.choices, default="CREDIT")

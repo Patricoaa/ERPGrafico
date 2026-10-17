@@ -1,5 +1,5 @@
 "use client"
-import { formatEntityDisplay, getEntityIcon } from "@/lib/entity-registry"
+import { formatEntityDisplay, getEntityIcon, getDomainConceptTitle } from "@/lib/entity-registry"
 
 import { useState, useEffect } from "react"
 import { Check, ChevronDown } from "lucide-react"
@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button"
 import { DataCell } from "@/components/shared"
 import { useDebounce } from "@/hooks/useDebounce"
 import { format } from "date-fns"
-import { SaleOrderDrawer } from "@/features/sales/components/SaleOrderDrawer"
 
 import { useSaleOrderSearch } from "@/features/orders/hooks/useSaleOrderSearch"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { LabeledContainer, SearchablePopover } from '@/components/shared'
 import { type SaleOrder } from "@/types/entities"
 
@@ -31,7 +31,7 @@ interface AdvancedSaleOrderSelectorProps {
 export function AdvancedSaleOrderSelector({
     value,
     onChange,
-    placeholder = "Seleccionar orden de venta...",
+    placeholder = `Seleccionar ${getDomainConceptTitle('ov').toLowerCase()}...`,
     disabled = false,
     customFilter,
     label,
@@ -41,8 +41,7 @@ export function AdvancedSaleOrderSelector({
 }: AdvancedSaleOrderSelectorProps) {
     const { orders: rawOrders, singleOrder, loading: searchLoading, fetchOrders, fetchSingleOrder } = useSaleOrderSearch()
     const [open, setOpen] = useState(false)
-    const [previewOpen, setPreviewOpen] = useState(false)
-    const [previewId, setPreviewId] = useState<number | null>(null)
+    const { openEntity } = useGlobalModals()
 
     const [orders, setOrders] = useState<SaleOrder[]>([])
     const [searchTerm, setSearchTerm] = useState("")
@@ -91,8 +90,8 @@ export function AdvancedSaleOrderSelector({
 
     const openPreview = (e: React.MouseEvent, id: number) => {
         e.stopPropagation()
-        setPreviewId(id)
-        setPreviewOpen(true)
+        // Vista previa = ficha documental de la OV (ADR-0083), apilable con "volver".
+        openEntity('sales.saleorder', id)
     }
 
     return (
@@ -176,13 +175,6 @@ export function AdvancedSaleOrderSelector({
                 />
             </div>
 
-            {previewId && (
-                <SaleOrderDrawer
-                    id={previewId}
-                    open={previewOpen}
-                    onOpenChange={setPreviewOpen}
-                />
-            )}
         </LabeledContainer>
     )
 }

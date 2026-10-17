@@ -18,7 +18,7 @@ import type { Page } from '@/lib/pagination'
 import type { PurchaseOrderInitialData } from "@/types/forms"
 import { toast } from "sonner"
 
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { getHubStatuses } from "@/lib/workflow-status"
 import { useVatRate } from '@/hooks/useVatRate'
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -79,34 +79,28 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const [folioModalOpen, setFolioModalOpen] = useState(false)
     const [selectedInvoice] = useState<{ id: number, type: string } | null>(null)
 
-    const { hubConfig, isHubOpen } = useHubPanel()
+    // ?selected abre la ficha documental (ADR-0083): OC en "orders", factura/nota en "notes"
+    const sheet = useDocumentSheetRoute(viewMode === "orders" ? "purchasing.purchaseorder" : "billing.invoice")
+    const isHubOpen = sheet.isOpen
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState("financiero")
     const [granularity, setGranularity] = useState<Granularity>("month")
 
     const analyticsData = usePurchasingAnalyticsData(orders as PurchaseOrderAPI[], null, granularity)
 
+    // Embudo por ejes (ADR-0084): el estado de la OC ya no es Recibida/Facturada/Pagada.
     const funnelData = useMemo(() => {
-        const desiredOrder = ["DRAFT", "CONFIRMED", "RECEIVED", "INVOICED", "PAID"]
-        const labelMap: Record<string, string> = {
-            DRAFT: "Borrador",
-            CONFIRMED: "Confirmada",
-            RECEIVED: "Recibida",
-            INVOICED: "Facturada",
-            PAID: "Pagada"
-        }
-        // Colors come from statusDistribution (assigned dynamically by assignChartColors)
-        return desiredOrder.map(status => {
-            const item = analyticsData.statusDistribution.find(d => d.id === status)
-            if (!item || item.value === 0) return null
-            return {
-                id: status,
-                label: labelMap[status],
-                value: item.value,
-                color: item.color,
-            }
-        }).filter((d): d is NonNullable<typeof d> => d !== null)
-    }, [analyticsData.statusDistribution])
+        const list = (orders as PurchaseOrderAPI[]).filter((o) => o.status !== "CANCELLED")
+        const field = (o: PurchaseOrderAPI, key: string) => (o as unknown as Record<string, unknown>)[key]
+        const stages = [
+            { id: "DRAFT", label: "Borrador", value: list.filter((o) => o.status === "DRAFT").length },
+            { id: "CONFIRMED", label: "Confirmada", value: list.filter((o) => o.status === "CONFIRMED").length },
+            { id: "RECEIVED", label: "Recibida", value: list.filter((o) => o.receiving_status === "RECEIVED").length },
+            { id: "INVOICED", label: "Facturada", value: list.filter((o) => field(o, "invoicing_status") === "INVOICED").length },
+            { id: "PAID", label: "Pagada", value: list.filter((o) => field(o, "payment_status") === "PAID").length },
+        ]
+        return assignChartColors(stages.filter((stage) => stage.value > 0))
+    }, [orders])
 
     const analyticsPanel: AnalyticsPanelConfig = useMemo(() => {
         if (viewMode !== "orders") return { screen: { entityName: "", tabs: [] } }
@@ -724,19 +718,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         }
     }, [analyticsData, funnelData, viewMode, analyticsActiveTab])
 
-    const toggleSelection = (id: number) => {
-        const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
-        const params = new URLSearchParams(searchParams.toString())
-
-        if (isSelected && isHubOpen) {
-            params.delete('selected')
-        } else {
-            params.set('selected', String(id))
-        }
-
-        const query = params.toString()
-        router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
-    }
+    const toggleSelection = (id: number) => sheet.toggle(id)
 
     const filteredOrders = orders
     const filteredNotes = notes
@@ -907,12 +889,12 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                     fields={viewMode === 'orders' ? purchaseOrderFields as unknown as AutoEntityCardProps<PurchaseOrder>['fields'] : undefined as unknown as AutoEntityCardProps<PurchaseOrder>['fields']}
                                     entityLabel={label}
                                     onClick={() => toggleSelection(data.id as number)}
-                                    isSelected={viewMode === 'orders' ? hubConfig?.orderId === data.id : hubConfig?.invoiceId === data.id}
-                                    className={isHubOpen && (viewMode === 'orders' ? hubConfig?.orderId === data.id : hubConfig?.invoiceId === data.id) ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
+                                    isSelected={sheet.selectedId === data.id}
+                                    className={isHubOpen && (sheet.selectedId === data.id) ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
                                     icon={getEntityIcon(label)}
                                     iconClassName={iconClassName}
                                     hubTrigger={{
-                                        isSelected: viewMode === 'orders' ? hubConfig?.orderId === data.id : hubConfig?.invoiceId === data.id,
+                                        isSelected: sheet.selectedId === data.id,
                                         onToggle: () => toggleSelection(data.id as number),
                                     }}
                                 />
@@ -940,9 +922,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : viewMode === 'orders' ? pageState : undefined}
                         onPaginationChange={effectiveGrouping ? undefined : viewMode === 'orders' ? setPageState : undefined}
                         createAction={createAction}
-                        isSelected={(data: Record<string, unknown>) => viewMode === 'orders'
-                            ? hubConfig?.orderId === data.id
-                            : hubConfig?.invoiceId === data.id
+                        isSelected={(data: Record<string, unknown>) => sheet.selectedId === data.id
                         }
                         isHubOpen={isHubOpen}
                         isFiltered={search.isFiltered}
@@ -979,7 +959,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         onOpenChange={(open) => !open && setCompletingInvoice(null)}
                         invoiceId={completingInvoice.id}
                         invoiceType={completingInvoice.type}
-                        contactId={invoicingOrder?.supplier_id || ((orders as unknown as PurchaseOrder[]).find((o) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === completingInvoice.id))?.supplier_id ?? undefined)}
+                        contactId={invoicingOrder?.supplier_id || ((orders as unknown as PurchaseOrder[]).find((o) => o.invoices?.some((i: Record<string, unknown>) => i.id === completingInvoice.id))?.supplier_id ?? undefined)}
                         isPurchase={true}
                         onComplete={async (invoiceId, formData) => {
                             await billingApi.confirmInvoice(invoiceId, formData)
@@ -1021,7 +1001,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         onOpenChange={setFolioModalOpen}
                         invoiceId={selectedInvoice.id}
                         invoiceType={selectedInvoice.type}
-                        contactId={invoicingOrder?.supplier_id || ((orders as unknown as PurchaseOrder[]).find((o) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === selectedInvoice.id))?.supplier_id ?? undefined)}
+                        contactId={invoicingOrder?.supplier_id || ((orders as unknown as PurchaseOrder[]).find((o) => o.invoices?.some((i: Record<string, unknown>) => i.id === selectedInvoice.id))?.supplier_id ?? undefined)}
                         isPurchase={true}
                         onComplete={async (invoiceId, formData) => {
                             await billingApi.confirmInvoice(invoiceId, formData)

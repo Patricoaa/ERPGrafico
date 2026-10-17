@@ -37,11 +37,17 @@ class InvoiceSelectorExt:
                 'purchase_order__supplier',
                 'journal_entry',
             ).prefetch_related(
-                'payments',
-                'payment_allocations',
+                'payments__allocations',
+                'payment_allocations__treasury_movement',
             )
         else:
-            qs = Invoice.objects.select_related('contact', 'journal_entry')
+            qs = Invoice.objects.select_related(
+                'contact',
+                'journal_entry',
+                'sale_order__customer',
+                'purchase_order__supplier',
+                'corrected_invoice',
+            )
         if view.action in ['list', 'debit_notes_list', 'credit_notes_list', 'unpaid_invoices', 'dashboard_stats']:
             d_type = request.query_params.get('document_type')
             inv_type = request.query_params.get('invoice_type')
@@ -72,58 +78,91 @@ class InvoiceSelectorExt:
         return TreasuryMovementSerializer(payments, many=True).data
 
     @staticmethod
+    def _add_net_amounts(invoice, invoice_lines, data):
+        """
+        Neto por línea para la ficha documental (ADR-0083/0084). Las facturas de venta son
+        gross-first (líneas brutas): se reparte `total_net` (suma exacta, allocate_line_nets).
+        Las de compra ya son netas.
+        """
+        from decimal import Decimal
+
+        from core.strategies.totals import allocate_line_nets
+
+        if invoice.is_sale_document():
+            nets = allocate_line_nets(invoice, invoice_lines)
+        else:
+            nets = {il.pk: Decimal(il.subtotal or 0) for il in invoice_lines}
+        for il, item in zip(invoice_lines, data):
+            net = nets.get(il.pk, Decimal("0"))
+            item["subtotal_net"] = str(net)
+            item["unit_price_net"] = str((net / il.quantity).quantize(Decimal("0.01"))) if il.quantity else "0"
+
+    @staticmethod
     def get_lines(invoice):
+        """
+        Líneas de la factura (ADR-0081). Forma compatible con el contrato previo: cada ítem
+        es la línea de orden que factura (`id` = id de la línea de OV/OC, lo usa el flujo de
+        notas hasta GAP-14) con `quantity`/`subtotal` de la factura y `invoice_line_id`.
+        """
+        from purchasing.serializers import PurchaseLineSerializer
+        from sales.serializers import SaleLineSerializer
+
+        invoice_lines = list(invoice.lines.select_related("sale_line", "purchase_line"))
+        if invoice_lines:
+            data = []
+            for il in invoice_lines:
+                if il.sale_line_id:
+                    item = dict(SaleLineSerializer(il.sale_line).data)
+                elif il.purchase_line_id:
+                    item = dict(PurchaseLineSerializer(il.purchase_line).data)
+                else:
+                    item = {"id": None, "product": il.product_id, "product_id": il.product_id,
+                            "product_name": il.description, "description": il.description,
+                            "unit_price": il.unit_price, "tax_rate": il.tax_rate}
+                item.update({
+                    "invoice_line_id": il.id,
+                    "corrected_line": il.corrected_line_id,
+                    "quantity": il.quantity,
+                    "subtotal": il.subtotal,
+                    "delivery_line": il.delivery_line_id,
+                    "receipt_line": il.receipt_line_id,
+                })
+                data.append(item)
+            InvoiceSelectorExt._add_net_amounts(invoice, invoice_lines, data)
+            if invoice.dte_type == invoice.DTEType.NOTA_CREDITO:
+                InvoiceSelectorExt._apply_returned_quantities(invoice, data)
+            return data
+
+        # Legacy (facturas aún sin backfill): notas → sus propias líneas; resto → orden completa.
+        is_note = invoice.dte_type in (invoice.DTEType.NOTA_CREDITO, invoice.DTEType.NOTA_DEBITO)
         if invoice.sale_order_id:
-            from sales.serializers import SaleLineSerializer
-            return SaleLineSerializer(invoice.sale_order.lines.all(), many=True).data
+            lines = invoice.sale_order.lines.all()
+            lines = lines.filter(related_note=invoice) if is_note else lines.filter(related_note__isnull=True)
+            return SaleLineSerializer(lines, many=True).data
         if invoice.purchase_order_id:
-            from purchasing.serializers import PurchaseLineSerializer
-            return PurchaseLineSerializer(invoice.purchase_order.lines.all(), many=True).data
+            lines = invoice.purchase_order.lines.all()
+            lines = lines.filter(related_note=invoice) if is_note else lines.filter(related_note__isnull=True)
+            return PurchaseLineSerializer(lines, many=True).data
         return []
 
     @staticmethod
-    def get_related_documents(invoice):
-        docs = []
-        if invoice.purchase_order_id and hasattr(invoice, 'purchase_order') and invoice.purchase_order:
-            po = invoice.purchase_order
-            docs.append({'type': 'purchase_order', 'id': po.id, 'name': str(po), 'url': f'/purchasing/orders/{po.id}'})
-        if invoice.sale_order_id and hasattr(invoice, 'sale_order') and invoice.sale_order:
-            so = invoice.sale_order
-            docs.append({'type': 'sale_order', 'id': so.id, 'name': str(so), 'url': f'/sales/orders/{so.id}'})
-        for adj in invoice.adjustments.filter(dte_type__in=['NOTA_DEBITO', 'NOTA_CREDITO']):
-            doc_type = 'debit_note' if adj.dte_type == 'NOTA_DEBITO' else 'credit_note'
-            docs.append({'type': doc_type, 'id': adj.id, 'name': str(adj), 'url': f'/billing/{"purchases" if adj.purchase_order_id else "sales"}/{adj.id}'})
-        return docs
+    def _apply_returned_quantities(note, data):
+        """En una NC lo 'procesado' de cada línea es lo devuelto para esa nota (no lo despachado de la OV)."""
+        from django.db.models import Sum
 
-    @staticmethod
-    def get_related_stock_moves(invoice):
-        moves = []
-        if invoice.sale_order_id:
-            for delivery in invoice.sale_order.deliveries.all():
-                for line in delivery.lines.select_related('stock_move'):
-                    if line.stock_move_id:
-                        m = line.stock_move
-                        moves.append({'id': m.id, 'reference': str(m), 'date': m.date, 'status': f"{getattr(m.source_location, 'name', '?')} → {getattr(m.destination_location, 'name', '?')}"})
-        if invoice.purchase_order_id:
-            for receipt in invoice.purchase_order.receipts.all():
-                for line in receipt.lines.select_related('stock_move'):
-                    if line.stock_move_id:
-                        m = line.stock_move
-                        moves.append({'id': m.id, 'reference': str(m), 'date': m.date, 'status': f"{getattr(m.source_location, 'name', '?')} → {getattr(m.destination_location, 'name', '?')}"})
-        return moves
-
-    @staticmethod
-    def get_related_returns(invoice):
-        from purchasing.models import PurchaseReturn
-        from sales.models import SaleReturn
-        returns = []
-        if invoice.purchase_order_id:
-            for r in PurchaseReturn.objects.filter(credit_note=invoice):
-                returns.append({'id': r.id, 'name': str(r), 'status': r.status})
+        if note.sale_order_id:
+            from sales.models import SaleReturnLine as ReturnLine
+            field, related = "quantity_delivered", "return_doc__credit_note"
         else:
-            for r in SaleReturn.objects.filter(credit_note=invoice):
-                returns.append({'id': r.id, 'name': str(r), 'status': r.status})
-        return returns
+            from purchasing.models import PurchaseReturnLine as ReturnLine
+            field, related = "quantity_received", "return_doc__credit_note"
+        returned = dict(
+            ReturnLine.objects.filter(**{related: note}).exclude(return_doc__status="CANCELLED")
+            .values_list("product_id").annotate(t=Sum("quantity"))
+        )
+        for item in data:
+            product_id = item.get("product_id") or item.get("product")
+            item[field] = returned.get(product_id, 0)
 
     @staticmethod
     def check_folio_uniqueness(
@@ -191,3 +230,86 @@ class InvoiceSelectorExt:
             ],
             "action": "cancel" if invoice.status == Invoice.Status.DRAFT else "annul",
         }
+
+
+class InvoiceableLinesSelector:
+    """
+    Líneas pendientes de facturar (ADR-0081, M4b): por cliente/proveedor u órdenes, con las
+    entregas confirmadas de cada línea y lo ya facturado contra ellas (D1.1, D1.2).
+    """
+
+    @staticmethod
+    def list(side: str, partner_id=None, order_ids=None) -> list[dict]:
+        from django.db.models import Sum
+
+        from .invoicing import PRIMARY_DTE_TYPES
+        from .models import Invoice, InvoiceLine
+
+        is_sale = side == "sale"
+        if is_sale:
+            from sales.models import SaleDeliveryLine as FulfilLine
+            from sales.models import SaleOrder as Order
+            partner_field, line_field, fulfil_field, doc_field, qty_field = (
+                "customer", "sale_line", "delivery_line", "delivery", "quantity")
+        else:
+            from purchasing.models import PurchaseOrder as Order
+            from purchasing.models import PurchaseReceiptLine as FulfilLine
+            partner_field, line_field, fulfil_field, doc_field, qty_field = (
+                "supplier", "purchase_line", "receipt_line", "receipt", "quantity_received")
+
+        orders = Order.objects.exclude(status__in=["DRAFT", "CANCELLED"]).exclude(
+            invoicing_status=Order.InvoicingStatus.INVOICED
+        )
+        if partner_id:
+            orders = orders.filter(**{f"{partner_field}_id": partner_id})
+        if order_ids:
+            orders = orders.filter(pk__in=order_ids)
+        if not partner_id and not order_ids:
+            return []
+
+        active = InvoiceLine.objects.filter(invoice__dte_type__in=PRIMARY_DTE_TYPES).exclude(
+            invoice__status=Invoice.Status.CANCELLED
+        )
+        result = []
+        for order in orders.order_by("id"):
+            lines = []
+            for line in order.lines.filter(related_note__isnull=True).select_related("product"):
+                pending = line.quantity - line.quantity_invoiced
+                if pending <= 0:
+                    continue
+                invoiced_by_fulfil = dict(
+                    active.filter(**{f"{fulfil_field}__{line_field}": line})
+                    .values_list(fulfil_field).annotate(t=Sum("quantity"))
+                )
+                fulfillments = []
+                for fulfil in FulfilLine.objects.filter(**{line_field: line, f"{doc_field}__status": "CONFIRMED"}).select_related(doc_field):
+                    delivered = abs(getattr(fulfil, qty_field))
+                    invoiced = invoiced_by_fulfil.get(fulfil.pk, 0)
+                    fulfillments.append({
+                        "id": fulfil.pk,
+                        "document_id": getattr(fulfil, f"{doc_field}_id"),
+                        "document_display": getattr(fulfil, doc_field).display_id,
+                        "date": getattr(getattr(fulfil, doc_field), f"{doc_field}_date", None),
+                        "delivered": delivered,
+                        "invoiced": invoiced,
+                        "pending": delivered - invoiced,
+                    })
+                lines.append({
+                    "id": line.pk,
+                    "product_id": line.product_id,
+                    "description": getattr(line, "description", "") or (line.product.name if line.product else ""),
+                    "quantity": line.quantity,
+                    "quantity_invoiced": line.quantity_invoiced,
+                    "pending": pending,
+                    "deliverable": bool(line.product and line.product.product_type not in ("SERVICE", "SUBSCRIPTION")),
+                    "fulfillments": fulfillments,
+                })
+            if lines:
+                result.append({
+                    "order_id": order.pk,
+                    "display_id": order.display_id,
+                    "partner_id": getattr(order, f"{partner_field}_id"),
+                    "invoicing_status": order.invoicing_status,
+                    "lines": lines,
+                })
+        return result

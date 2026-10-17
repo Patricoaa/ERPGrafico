@@ -48,3 +48,5 @@ graphify-out/
 scratch.tsx
 scratch_rewrite.ts
 .gstack/
+# Playwright CLI output (may contain credentials)
+.playwright-cli/

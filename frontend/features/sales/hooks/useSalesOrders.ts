@@ -9,6 +9,7 @@ import type { Page } from '@/lib/pagination'
 
 import { SALES_KEYS } from './queryKeys'
 import { staleTime } from '@/lib/query-config'
+import { getDomainConceptTitle } from '@/lib/entity-registry'
 
 export { SALES_KEYS }
 
@@ -37,11 +38,11 @@ export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFi
         mutationFn: salesApi.createOrder,
         onSuccess: () => {
             markLocalMutation()
-            toast.success('Orden de venta creada')
+            toast.success(`${getDomainConceptTitle('ov')} creada`)
             invalidateSales()
         },
         onError: (error: Error) => {
-            showApiError(error, 'Error al crear la orden de venta')
+            showApiError(error, `Error al crear la ${getDomainConceptTitle('ov').toLowerCase()}`)
         }
     })
 
@@ -50,11 +51,11 @@ export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFi
             salesApi.updateOrder(id, payload),
         onSuccess: () => {
             markLocalMutation()
-            toast.success('Orden de venta actualizada')
+            toast.success(`${getDomainConceptTitle('ov')} actualizada`)
             invalidateSales()
         },
         onError: (error: Error) => {
-            showApiError(error, 'Error al actualizar la orden de venta')
+            showApiError(error, `Error al actualizar la ${getDomainConceptTitle('ov').toLowerCase()}`)
         }
     })
 
@@ -62,7 +63,7 @@ export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFi
         mutationFn: salesApi.deleteOrder,
         onSuccess: () => {
             markLocalMutation()
-            toast.success('Orden de venta eliminada')
+            toast.success(`${getDomainConceptTitle('ov')} eliminada`)
             invalidateSales()
         },
         onError: () => {

@@ -896,7 +896,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             return Response({'session': POSSessionSerializer(session).data, 'message': 'Movimiento registrado correctamente'})
         except Exception as e:
             return Response({'error': str(e)}, status=500)
-class CheckViewSet(viewsets.ModelViewSet):
+class CheckViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     """CRUD + transiciones de estado para cheques recibidos."""
 
@@ -913,7 +913,7 @@ class CheckViewSet(viewsets.ModelViewSet):
         from .models import Check as CheckModel
 
         qs = CheckModel.objects.select_related(
-            "bank", "counterparty", "portfolio_account", "deposit_account"
+            "bank", "counterparty", "portfolio_account", "deposit_account", "sale_order"
         )
         return qs.order_by("due_date", "-id")
 
@@ -1057,7 +1057,7 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
             return Response({'error': str(e)}, status=400)
 
 
-class TerminalBatchViewSet(viewsets.ModelViewSet):
+class TerminalBatchViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     """
     ViewSet for managing Terminal Batches (Settlements).

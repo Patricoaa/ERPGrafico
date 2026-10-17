@@ -14,6 +14,7 @@ from sales.models import SaleOrder
 from tax.services import TaxPeriodService
 from treasury.models import TreasuryAccount, TreasuryMovement
 
+from .invoicing import InvoicingService
 from .models import Invoice
 
 
@@ -431,6 +432,11 @@ class BillingService:
                 Invoice, filter_kwargs={"dte_type": Invoice.DTEType.BOLETA}
             )
 
+        # ADR-0084: emitida (POSTED) exige folio. Sin folio la factura nace en borrador
+        # (folio pendiente; su asiento queda en borrador hasta confirm_invoice).
+        if status == Invoice.Status.POSTED and not number:
+            status = Invoice.Status.DRAFT
+
         # Tax & Accounting Period Validation (Only for POSTED documents)
         if status != Invoice.Status.DRAFT:
             doc_date = date or timezone.now().date()
@@ -465,6 +471,8 @@ class BillingService:
             total=order.total,
             status=status,
         )
+        # ADR-0081: líneas propias (M4a: espejo de la orden completa)
+        InvoicingService.mirror_order_lines(invoice, order)
 
         # 2. Accounting Entry via Mapper
         settings = AccountingSettings.get_solo()
@@ -539,12 +547,8 @@ class BillingService:
                 payment.invoice = invoice
                 payment.save()
 
-        # Update Order Status
-        if total_advanced >= order.total:
-            order.status = SaleOrder.Status.PAID
-        else:
-            order.status = SaleOrder.Status.INVOICED
-        order.save()
+        # ADR-0084: facturar no cambia el estado de la OV (facturación = invoicing_status)
+        InvoicingService.recompute_order(order)
 
         # Auto-complete billing HUB task ONLY if posted
         if status == Invoice.Status.POSTED:
@@ -605,6 +609,8 @@ class BillingService:
             total=order.total,
             status=status,
         )
+        # ADR-0081: líneas propias (M4a: espejo de la orden completa)
+        InvoicingService.mirror_order_lines(invoice, order)
 
         # 2. Accounting Entry via Mapper (includes tax capitalization logic for Boletas)
         settings = AccountingSettings.get_solo()
@@ -708,12 +714,8 @@ class BillingService:
                 payment.invoice = invoice
                 payment.save()
 
-        # Update Order Status
-        if total_prepaid >= order.total:
-            order.status = PurchaseOrder.Status.PAID
-        else:
-            order.status = PurchaseOrder.Status.INVOICED
-        order.save()
+        # ADR-0084: facturar no cambia el estado de la OC (facturación = invoicing_status)
+        InvoicingService.recompute_order(order)
 
         # Auto-complete billing HUB task ONLY if posted
         if status == Invoice.Status.POSTED:
@@ -1422,8 +1424,8 @@ class BillingService:
             raise ValidationError(
                 f"No se puede registrar este documento. El periodo de {target_date} está CONTABLE CERRADO."
             )
-        # Allow PAID status because a draft can be fully paid before folio is registered
-        if invoice.status not in [Invoice.Status.DRAFT, Invoice.Status.PAID]:
+        # Solo un borrador (folio pendiente) se confirma; el pago no cambia el estado (ADR-0084)
+        if invoice.status != Invoice.Status.DRAFT:
             raise ValidationError(
                 f"Solo se pueden confirmar facturas en estado Borrador (actual: {invoice.status})."
             )
@@ -1448,9 +1450,7 @@ class BillingService:
             )
 
         # Validate Uniqueness
-        supplier_id = (
-            invoice.source_order.get_invoice_supplier_id() if invoice.source_order else None
-        )
+        supplier_id = invoice.order.get_invoice_supplier_id() if invoice.order else None
         BillingService._validate_document_uniqueness(
             number, invoice.dte_type, supplier_id=supplier_id, exclude_id=invoice.id
         )
@@ -1461,9 +1461,7 @@ class BillingService:
         if document_attachment:
             invoice.document_attachment = document_attachment
 
-        # Avoid downgrading status if it was already PAID
-        if invoice.status == Invoice.Status.DRAFT:
-            invoice.status = Invoice.Status.POSTED
+        invoice.status = Invoice.Status.POSTED
 
         invoice.save()
 
@@ -1474,8 +1472,8 @@ class BillingService:
             from accounting.services import JournalEntryService
 
             # 1. Update Description
-            if invoice.source_order:
-                entry.description = invoice.source_order.describe_for_invoice_journal(
+            if invoice.order:
+                entry.description = invoice.order.describe_for_invoice_journal(
                     number, invoice.get_dte_type_display()
                 )
 
@@ -1488,8 +1486,8 @@ class BillingService:
 
         from workflow.services import WorkflowService
 
-        if invoice.source_order:
-            WorkflowService.sync_hub_tasks(invoice.source_order)
+        if invoice.order:
+            WorkflowService.sync_hub_tasks(invoice.order)
 
         return invoice
 
@@ -1563,7 +1561,11 @@ class BillingService:
             from tax.services import validate_period_open
 
             validate_period_open(invoice.journal_entry.date, action="cancelar la factura")
-            invoice.journal_entry.delete()
+            # Desvincular antes de borrar: Invoice.journal_entry es PROTECT
+            draft_entry = invoice.journal_entry
+            invoice.journal_entry = None
+            invoice.save(update_fields=["journal_entry"])
+            draft_entry.delete()
 
         # 3. Delete reconciliation journal entries (RECO-...)
         JournalEntry.objects.filter(reference=f"RECO-{invoice.id}").delete()
@@ -1571,6 +1573,8 @@ class BillingService:
         # 4. Mark as CANCELLED
         invoice.status = Invoice.Status.CANCELLED
         invoice.save()
+        InvoicingService.release_advances(invoice, reverse_entry=False)
+        InvoicingService.recompute_invoice_orders(invoice)
 
         from workflow.services import WorkflowService
 
@@ -1595,15 +1599,14 @@ class BillingService:
         if not reason:
             raise ValidationError("Debe indicar el motivo de la anulación.")
 
-        if invoice.status not in [Invoice.Status.POSTED, Invoice.Status.PAID]:
+        if invoice.status != Invoice.Status.POSTED:
             raise ValidationError("Solo se pueden anular facturas publicadas o pagadas.")
 
         # VALIDATION 1: Folio registrado (fiscal requirement)
         # Solo aplica a documentos EMITIDOS (ventas): un folio propio informado al SII
         # es inmutable y se ajusta por Nota de Crédito. En compras el folio pertenece
         # al proveedor; la factura recibida se anula con asiento de reverso.
-        # (create_purchase_bill no setea source_order, por eso el FK explícito manda.)
-        is_purchase_doc = invoice.purchase_order_id is not None or not invoice.is_sale_document()
+        is_purchase_doc = not invoice.is_sale_document()
         if invoice.number and invoice.number != "Draft" and not is_purchase_doc:
             raise ValidationError(
                 "❌ No se puede anular una factura con folio asignado.\n"
@@ -1679,10 +1682,19 @@ class BillingService:
         # 2. Update Status
         invoice.status = Invoice.Status.CANCELLED
         invoice.save()
+        InvoicingService.release_advances(invoice, reverse_entry=True)
+        InvoicingService.recompute_invoice_orders(invoice)
 
-        # 3. Update Order Status
-        if invoice.source_order:
-            invoice.source_order.revert_after_invoice_cancellation()
+        # 3. Update Order Status — cada orden de la factura (N:M, ADR-0081) que no
+        #    conserve otra factura principal activa vuelve a su estado previo
+        from .invoicing import PRIMARY_DTE_TYPES
+
+        for order in InvoicingService.orders_of(invoice):
+            others = InvoicingService.invoices_of(order).exclude(pk=invoice.pk).exclude(
+                status=Invoice.Status.CANCELLED
+            ).filter(dte_type__in=PRIMARY_DTE_TYPES)
+            if not others.exists():
+                order.revert_after_invoice_cancellation()
 
         from workflow.services import WorkflowService
 

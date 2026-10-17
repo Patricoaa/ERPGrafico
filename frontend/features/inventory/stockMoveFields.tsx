@@ -17,11 +17,6 @@ export interface StockMove {
     uom_abbreviation?: string
     description: string
     direction?: 'IN' | 'OUT' | 'TRANSFER' | 'ADJUSTMENT' | 'OTHER'
-    related_documents: Array<{
-        type: string
-        id: number | string
-        name: string
-    }>
 }
 
 export const stockMoveFields = createEntityFields<StockMove>()({

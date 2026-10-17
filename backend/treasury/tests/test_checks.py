@@ -330,10 +330,11 @@ def posted_invoice(base):
 
 
 @pytest.mark.django_db
-def test_bounce_demotes_invoice_to_posted(base, posted_invoice):
+def test_bounce_reopens_invoice_payment(base, posted_invoice):
     """
-    bounce() sobre un cheque que pagó una factura debe demover la factura
-    a POSTED (matemática firmada: INBOUND 119k - OUTBOUND 119k = 0 < 119k).
+    bounce() sobre un cheque que pagó una factura deja la factura impaga (matemática firmada:
+    INBOUND 119k - OUTBOUND 119k = 0). ADR-0084: el estado del documento no cambia (POSTED);
+    el eje de pago se deriva del saldo.
     """
     check = _receive(
         base,
@@ -344,19 +345,21 @@ def test_bounce_demotes_invoice_to_posted(base, posted_invoice):
     )
     check = CheckService.deposit(check, base["bank_ta"], created_by=base["user"])
     posted_invoice.refresh_from_db()
-    assert posted_invoice.status == posted_invoice.Status.PAID
+    assert posted_invoice.status == posted_invoice.Status.POSTED
+    assert posted_invoice.payment_status == "PAID"
 
     CheckService.bounce(check, notes="Sin fondos", created_by=base["user"])
 
     posted_invoice.refresh_from_db()
     assert posted_invoice.status == posted_invoice.Status.POSTED
+    assert posted_invoice.payment_status != "PAID"
 
 
 @pytest.mark.django_db
-def test_void_demotes_invoice_to_posted(base, posted_invoice):
+def test_void_reopens_invoice_payment(base, posted_invoice):
     """
-    void() sobre un cheque en cartera que pagó una factura debe demover la
-    factura a POSTED.
+    void() sobre un cheque en cartera que pagó una factura la deja impaga. ADR-0084: el estado
+    del documento sigue POSTED; el eje de pago se deriva del saldo.
     """
     check = _receive(
         base,
@@ -366,12 +369,14 @@ def test_void_demotes_invoice_to_posted(base, posted_invoice):
         created_by=base["user"],
     )
     posted_invoice.refresh_from_db()
-    assert posted_invoice.status == posted_invoice.Status.PAID
+    assert posted_invoice.status == posted_invoice.Status.POSTED
+    assert posted_invoice.payment_status == "PAID"
 
     CheckService.void(check, notes="Anulado por operador")
 
     posted_invoice.refresh_from_db()
     assert posted_invoice.status == posted_invoice.Status.POSTED
+    assert posted_invoice.payment_status != "PAID"
 
 
 @pytest.mark.django_db

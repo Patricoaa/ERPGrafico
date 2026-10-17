@@ -4,17 +4,31 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
-import { AlertTriangle, Package, FileText, Plus, CheckCircle2, Keyboard, Printer } from 'lucide-react'
+import { AlertTriangle, Package, FileText, Plus, CheckCircle2, Keyboard, Printer, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-import { ActionConfirmModal, BaseModal, Drawer, CancelButton, FormFooter, LabeledSelect, StatusBadge } from '@/components/shared'
-import { cn, formatPlainDate } from '@/lib/utils'
-import { formatEntityDisplay } from '@/lib/entity-registry'
+import {
+  ActionConfirmModal,
+  BaseModal,
+  Drawer,
+  CancelButton,
+  FormFooter,
+  LabeledSelect,
+  StatusBadge,
+  DocumentActionsMenu,
+  TabBar,
+  TabBarContent,
+  type DocumentActionItem,
+} from '@/components/shared'
+import { cn } from '@/lib/utils'
+import { formatEntityDisplay, getDomainConceptTitle, getDomainConceptCode } from '@/lib/entity-registry'
 import { showApiError } from '@/lib/errors'
 import { useConfirmAction } from '@/hooks/useConfirmAction'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useAuth } from '@/contexts/AuthContext'
-import { useHubPanel } from '@/components/providers/HubPanelProvider'
+import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
+import { useOnEntityStackClose } from '@/hooks/useOnEntityStackClose'
+import { DocumentRelationsTab, useDocumentRelations } from '@/features/documents'
 import { useWorkOrderMutations, productionApi } from '../hooks'
 import { completeTask } from '@/features/workflow'
 
@@ -150,7 +164,7 @@ interface WorkOrderWizardProps {
 export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrderWizardProps) {
   const router = useRouter()
   const { user } = useAuth()
-  const { openHub } = useHubPanel()
+  const { openEntity } = useGlobalModals()
   const { multiplier: vatMultiplier } = useVatRate()
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false)
   // localOrderId: null = create mode, number = manage mode
@@ -184,6 +198,8 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   } = useWizardStore()
 
   const [showCheatsheet, setShowCheatsheet] = useState(false)
+  const [wizardTab, setWizardTab] = useState('stages')
+  const { data: relationsData } = useDocumentRelations('production.workorder', order?.id ?? null)
 
   // ── derived ────────────────────────────────────────────────────────────────
   const STAGES = useMemo(
@@ -247,6 +263,8 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       setLoading(false)
     }
   }
+  // Al volver de la ficha de la orden (ADR-0083) se recarga la OT
+  useOnEntityStackClose(() => { void fetchOrder() })
 
   // Synchronize state with props during render to avoid useEffect setStates
   const [prevMode, setPrevMode] = useState(mode)
@@ -445,77 +463,72 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         boundary="embedded"
         defaultSize="100%"
         resizable={false}
-        contentClassName="p-0 flex flex-col h-full overflow-hidden"
+        fillContent
+        contentClassName="p-0 flex flex-col overflow-hidden"
         icon={Package}
         title={
           order
-            ? `Gestión de Orden de Trabajo`
-            : 'Crear Orden de Trabajo'
+            ? formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)
+            : `Nueva ${getDomainConceptTitle('ot')}`
         }
         subtitle={
-          (order
-            ? `${formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)} · ${order.sale_customer_name || 'Manual'} · ${formatPlainDate(order.created_at)}`
-            : 'Planificación de Producción • Nueva OT')
-          + ` · ${STAGES[viewingStepIndex]?.label ?? ''}`
+          order
+            ? `${getDomainConceptTitle('ot')} · ${order.sale_customer_name || 'Manual'} · ${STAGES[viewingStepIndex]?.label ?? ''}`
+            : 'Planificación de Producción'
         }
         headerActions={
-          <div className="flex items-center gap-2">
-            {order && (
-              <>
-                <StatusBadge
-                  status={order.status}
-                  variant="badge"
-                />
-                {order.status === 'IN_PROGRESS' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const saleOrderId = typeof order.sale_order === 'object' ? order.sale_order?.id : order.sale_order
-                      const id = saleOrderId ?? order.id
-                      const type = saleOrderId ? 'sale' : 'purchase'
-                      openHub({ orderId: id, type: type as 'sale' | 'purchase', onActionSuccess: fetchOrder })
-                    }}
-                  >
-                    Centro de Comando
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsDuplicateModalOpen(true)}
-                  title="Duplicar"
-                  disabled={mutations.isDuplicating}
-                >
-                  Duplicar
-                </Button>
-                {order.status !== 'FINISHED' && order.status !== 'CANCELLED' && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsAnnulModalOpen(true)}
-                    title="Anular"
-                    disabled={mutations.isAnnuling}
-                    className="text-warning hover:text-warning"
-                  >
-                    Anular
-                  </Button>
-                )}
-                {order.status === 'DRAFT' && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsDeleteModalOpen(true)}
-                    title="Eliminar"
-                    disabled={mutations.isDeleting}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    Eliminar
-                  </Button>
-                )}
-              </>
-            )}
-          </div>
+          order ? (
+            <div className="flex items-center gap-2">
+              <StatusBadge status={order.status} variant="badge" />
+              <DocumentActionsMenu
+                primary={(() => {
+                  if (order.status !== 'IN_PROGRESS') return null
+                  const saleOrderId = typeof order.sale_order === 'object' ? order.sale_order?.id : order.sale_order
+                  const id = saleOrderId ?? order.id
+                  const type = saleOrderId ? 'sale' : 'purchase'
+                  return {
+                    id: 'view-order',
+                    label: 'Ver orden',
+                    onClick: () => {
+                      openEntity(type === 'sale' ? 'sales.saleorder' : 'purchasing.purchaseorder', id)
+                    },
+                  }
+                })()}
+                actions={(() => {
+                  const items: DocumentActionItem[] = []
+
+                  items.push({
+                    id: 'duplicate',
+                    label: 'Duplicar',
+                    onClick: () => setIsDuplicateModalOpen(true),
+                    disabled: mutations.isDuplicating,
+                  })
+
+                  if (order.status !== 'FINISHED' && order.status !== 'CANCELLED') {
+                    items.push({
+                      id: 'annul',
+                      label: 'Anular',
+                      onClick: () => setIsAnnulModalOpen(true),
+                      disabled: mutations.isAnnuling,
+                      destructive: true,
+                    })
+                  }
+
+                  if (order.status === 'DRAFT') {
+                    items.push({
+                      id: 'delete',
+                      label: 'Eliminar',
+                      onClick: () => setIsDeleteModalOpen(true),
+                      disabled: mutations.isDeleting,
+                      destructive: true,
+                    })
+                  }
+
+                  return items
+                })()}
+              />
+            </div>
+          ) : undefined
         }
         footer={
           <WizardStickyFooter
@@ -546,10 +559,28 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             isBasicInfoEditable={isBasicInfoEditable}
             chosenOtType={chosenOtType}
             onStepChange={setViewingStepIndex}
+            tabDisabled={wizardTab !== 'stages'}
           />
         }
       >
-        <div className="flex h-full min-h-0 overflow-hidden">
+        <div className="flex flex-1 min-h-0 overflow-hidden">
+        <TabBar
+          items={order ? [
+            { value: 'stages', label: 'Producción', icon: Package },
+            { value: 'relations', label: 'Relaciones', icon: Link2, badge: relationsData?.relations.length },
+          ] : [{ value: 'stages', label: 'Producción', icon: Package }]}
+          value={wizardTab}
+          onValueChange={setWizardTab}
+          orientation="horizontal"
+          variant="underline"
+          className="flex-1 min-h-0"
+          contentClassName="bg-transparent"
+        >
+          <TabBarContent
+            value="stages"
+            className="data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden"
+          >
+          <div className="flex flex-1 min-h-0 overflow-hidden">
           <WizardProcessSidebar
             stages={STAGES}
             viewingStepIndex={viewingStepIndex}
@@ -775,14 +806,26 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             </div>
           </div>
 
+          </div>
+          </TabBarContent>
+
           {order && (
-            <WizardRightSidebar
-              order={order}
-              viewingStepIndex={viewingStepIndex}
-              productName={productName}
-              stageData={stageData}
-            />
+            <TabBarContent
+              value="relations"
+              className="mt-0 px-6 pt-4 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin"
+            >
+              <DocumentRelationsTab label="production.workorder" id={order.id} />
+            </TabBarContent>
           )}
+        </TabBar>
+
+        {order && (
+          <WizardRightSidebar
+            order={order}
+            productName={productName}
+            stageData={stageData}
+          />
+        )}
         </div>
       </Drawer>
 
@@ -845,13 +888,13 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       <ActionConfirmModal
         open={isAnnulModalOpen}
         onOpenChange={setIsAnnulModalOpen}
-        title="Anular Orden de Trabajo"
+        title={`Anular ${getDomainConceptTitle('ot')}`}
         variant="warning"
         onConfirm={handleAnnul}
-        confirmText="Anular OT"
+        confirmText={`Anular ${getDomainConceptCode('ot')}`}
         description={
           <div className="space-y-3">
-            <p>¿Está seguro de que desea <strong>ANULAR</strong> esta Orden de Trabajo?</p>
+            <p>¿Está seguro de que desea <strong>ANULAR</strong> esta {getDomainConceptTitle('ot')}?</p>
             <div className="bg-warning/10 border border-warning/20 p-3 rounded-md text-warning text-xs flex gap-3 font-medium">
               <AlertTriangle className="h-5 w-5 shrink-0" />
               <ul className="list-disc pl-4 space-y-1">
@@ -867,13 +910,13 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       <ActionConfirmModal
         open={isDeleteModalOpen}
         onOpenChange={setIsDeleteModalOpen}
-        title="Borrar Orden de Trabajo"
+        title={`Borrar ${getDomainConceptTitle('ot')}`}
         variant="destructive"
         onConfirm={handleDelete}
         confirmText="Eliminar permanentemente"
         description={
           <div className="space-y-3">
-            <p>¿Está seguro de que desea <strong>ELIMINAR</strong> permanentemente esta Orden de Trabajo?</p>
+            <p>¿Está seguro de que desea <strong>ELIMINAR</strong> permanentemente esta {getDomainConceptTitle('ot')}?</p>
             <p className="text-destructive font-semibold bg-destructive/10 p-2 rounded text-xs">
               Esta acción es irreversible y borrará todos los registros históricos de esta orden.
             </p>
@@ -884,11 +927,11 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       <ActionConfirmModal
         open={isDuplicateModalOpen}
         onOpenChange={setIsDuplicateModalOpen}
-        title="Duplicar Orden de Trabajo"
+        title={`Duplicar ${getDomainConceptTitle('ot')}`}
         variant="default"
         onConfirm={handleDuplicate}
         confirmText="Duplicar"
-        description="Se creará una nueva OT en Borrador con los mismos materiales y configuración. No se vinculará a la Orden de Venta original."
+        description={`Se creará una nueva ${getDomainConceptCode('ot')} en Borrador con los mismos materiales y configuración. No se vinculará a la ${getDomainConceptTitle('ov')} original.`}
       />
 
       <ActionConfirmModal

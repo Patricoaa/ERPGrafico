@@ -12,7 +12,7 @@ import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactS
 import { LabeledInput, LabeledContainer, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
 
 import { cn, formatPlainDate } from "@/lib/utils"
-import { formatEntityDisplay } from "@/lib/entity-registry"
+import { formatEntityDisplay, getDomainConceptTitle } from "@/lib/entity-registry"
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms"
 import type { SaleOrder, SaleOrderLine } from "@/features/sales"
 import type { Contact } from "@/features/contacts"
@@ -81,7 +81,7 @@ export function WorkOrderBasicInfo({
                                     value={field.value}
                                     onChange={field.onChange}
                                     disabled={!!initialData}
-                                    label="Orden de Venta"
+                                    label={getDomainConceptTitle('ov')}
                                     error={fieldState.error?.message}
                                     icon={<FileText className="h-3.5 w-3.5 opacity-50" />}
                                     customFilter={(order: { lines?: Array<{ product_type?: string; requires_advanced_manufacturing?: boolean; work_order_summary?: unknown }> }) =>

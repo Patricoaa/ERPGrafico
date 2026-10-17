@@ -1,13 +1,12 @@
 "use client"
 
 import React, { useEffect, useState, useMemo } from "react"
-import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { DataTableView, DataCell, DomainHubStatus, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch, DataTableColumnHeader, type AutoEntityCardProps } from '@/components/shared'
 import { salesOrderFields } from "@/features/sales/salesOrderFields"
 import { type ColumnDef } from "@tanstack/react-table"
 import { ENTITY_REGISTRY, getEntityIcon } from "@/lib/entity-registry"
 
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { useSalesOrders, useSalesNotes, useSalesAnalyticsData, type SaleOrder, type SaleNote } from "@/features/sales"
 import type { AnalyticsPanelConfig, Granularity } from '@/components/shared'
 import { assignChartColors } from '@/lib/chart-colors'
@@ -16,6 +15,7 @@ import { BarChart3, Smartphone, Users, Package, Truck } from "lucide-react"
 import { salesOrderUnifiedSearchDef, salesNoteUnifiedSearchDef } from "@/features/sales/unifiedSearchDef"
 import type { SaleOrderFilters } from "@/features/sales/types"
 import { toast } from "sonner"
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 interface SalesOrdersViewProps {
     viewMode: 'orders' | 'notes'
@@ -27,10 +27,11 @@ interface SalesOrdersViewProps {
 }
 
 export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selectedId }: SalesOrdersViewProps) {
-    const { hubConfig, isHubOpen } = useHubPanel()
-    const router = useRouter()
-    const searchParams = useSearchParams()
-    const pathname = usePathname()
+    // ?selected abre la ficha documental en la pila (ADR-0083): OV en "orders", factura/nota
+    // en "notes". Con onSelectOrder (POS) la lista solo selecciona; el panel lo pone el host.
+    const sheet = useDocumentSheetRoute(onSelectOrder ? null : (viewMode === "orders" ? "sales.saleorder" : "billing.invoice"))
+    const isPanelOpen = sheet.isOpen
+    const isSelectedId = (id: number) => (onSelectOrder ? selectedId === id : sheet.selectedId === id)
 
     const toggleSelection = (id: number) => {
         if (onSelectOrder) {
@@ -38,17 +39,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
             onSelectOrder(isSelected ? null : id)
             return
         }
-        const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
-        const params = new URLSearchParams(searchParams.toString())
-
-        if (isSelected && isHubOpen) {
-            params.delete('selected')
-        } else {
-            params.set('selected', String(id))
-        }
-
-        const query = params.toString()
-        router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
+        sheet.toggle(id)
     }
 
     const unifiedSearchDef = viewMode === 'orders' ? salesOrderUnifiedSearchDef : salesNoteUnifiedSearchDef
@@ -108,7 +99,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
 
         return {
             screen: {
-                entityName: "Órdenes de Venta",
+                entityName: getDomainConceptTitle('ov', true),
                 activeTab: analyticsActiveTab,
                 onTabChange: setAnalyticsActiveTab,
                 granularity,
@@ -363,11 +354,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
     // Determine entity label based on tab
     const entityLabel = viewMode === 'orders' ? 'sales.saleorder' : 'billing.invoice'
 
-    const getSelectionId = (item: SaleOrder | SaleNote) => {
-        const id = Number(item.id)
-        if (onSelectOrder) return selectedId === id
-        return viewMode === 'orders' ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
-    }
+    const getSelectionId = (item: SaleOrder | SaleNote) => isSelectedId(Number(item.id))
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -394,7 +381,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                                 entityLabel={label}
                                 onClick={() => toggleSelection(data.id)}
                                 isSelected={getSelectionId(data)}
-                                className={isHubOpen && getSelectionId(data) ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
+                                className={isPanelOpen && getSelectionId(data) ? "accent-visible" : isPanelOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
                                 icon={getEntityIcon(label)}
                                 iconClassName={iconClassName}
                                 hubTrigger={{
@@ -432,7 +419,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                     onReset={search.clearAll}
                     defaultPageSize={20}
                     isSelected={(data: SaleOrder | SaleNote) => !!getSelectionId(data)}
-                    isHubOpen={onSelectOrder ? !!selectedId : isHubOpen}
+                    isHubOpen={onSelectOrder ? !!selectedId : isPanelOpen}
                     isFiltered={isFiltered}
                     emptyState={{
                         context: viewMode === 'orders' ? "sale" : "finance",

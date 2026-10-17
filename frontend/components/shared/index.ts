@@ -57,6 +57,12 @@ export * from './Chip';
 export * from './HubStatus';
 export * from './EntityBadge';
 export * from './SourceDocumentLink';
+export * from './EntityNavigationContext';
+export * from './RelatedDocumentsTable';
+export * from './DocumentDrawerShell';
+export * from './DocumentLifecycle';
+export * from './DocumentActionsMenu';
+export * from './DocumentFieldGrid';
 export * from './ChartTooltip';
 export * from './AutoSaveStatusBadge';
 

@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { Onest, JetBrains_Mono } from "next/font/google";
-import { GlobalHubPanel } from "@/features/orders";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext"
 import { GlobalModalProvider } from "@/components/providers/GlobalModalProvider"
-import { HubPanelProvider } from "@/components/providers/HubPanelProvider"
 import { HeaderProvider } from "@/components/providers/HeaderProvider"
 import { RealtimeProvider } from "@/features/realtime"
 import Providers from "./providers"
@@ -41,14 +39,11 @@ export default function RootLayout({
           <AuthProvider>
             <RealtimeProvider>
               <HeaderProvider>
-                <HubPanelProvider>
-                  <GlobalModalProvider>
+                <GlobalModalProvider>
                     {children}
-                    <GlobalHubPanel />
                     {/* Target portal container for module sheets to avoid containing blocks inside the transitioning container */}
                     <div id="module-sheets-portal-container" className="relative" />
                   </GlobalModalProvider>
-                </HubPanelProvider>
               </HeaderProvider>
             </RealtimeProvider>
           </AuthProvider>

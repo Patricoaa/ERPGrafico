@@ -1,6 +1,7 @@
 "use client"
 
 import React, { Component, type ErrorInfo, type ReactNode } from "react"
+import { unstable_rethrow } from "next/navigation"
 import { AlertTriangle, RefreshCw, AlertCircle, RefreshCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,10 +25,16 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     public static getDerivedStateFromError(error: Error): State {
+        // `redirect()` / `notFound()` throw control-flow errors meant for the
+        // router. Rethrow them instead of rendering the fallback, otherwise this
+        // boundary turns every server-side redirect (the app root and each module
+        // root) into a 200 "Error de Sistema" page.
+        unstable_rethrow(error)
         return { hasError: true, error }
     }
 
     public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+        unstable_rethrow(error)
         console.error("Uncaught industrial error:", error, errorInfo)
     }
 

@@ -2,8 +2,6 @@ import uuid as uuid_lib
 from decimal import Decimal
 
 from django.conf import settings
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -197,13 +195,6 @@ class TreasuryMovement(models.Model):
         blank=True,
         related_name="treasury_movements",
     )
-
-    # Allocation (GFK)
-    allocated_content_type = models.ForeignKey(
-        ContentType, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
-    )
-    allocated_object_id = models.PositiveIntegerField(null=True, blank=True)
-    allocated_to = GenericForeignKey("allocated_content_type", "allocated_object_id")
 
     # Legacy Allocation fields
     invoice = models.ForeignKey(

@@ -231,8 +231,10 @@ export const treasuryApi = {
 
     // ========== Transfers ==========
 
-    registerTransfer: async (payload: TransferPayload): Promise<TreasuryMovement> => {
-        const { data } = await api.post<TreasuryMovement>('/treasury/dashboard/register_transfer/', payload)
+    registerTransfer: async (payload: TransferPayload, idempotencyKey?: string): Promise<TreasuryMovement> => {
+        const { data } = await api.post<TreasuryMovement>('/treasury/dashboard/register_transfer/', payload, {
+            headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+        })
         return data
     },
 

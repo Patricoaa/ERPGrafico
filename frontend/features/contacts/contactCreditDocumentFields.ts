@@ -10,6 +10,8 @@ export interface ContactCreditDocument {
     number?: string
     display_id?: string
     balance: number | string
+    /** DocumentRef de la OV (identidad de fila, ADR-0086). */
+    document?: unknown | null
     [key: string]: unknown
 }
 

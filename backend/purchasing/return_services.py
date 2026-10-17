@@ -8,8 +8,8 @@ from django.utils import timezone
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import JournalEntry, JournalItem
 from accounting.services import JournalEntryService
-from inventory.models import Warehouse
-from inventory.services import UoMService
+from inventory.models import StockMove, Warehouse
+from inventory.services import StockService, UoMService
 
 from .models import PurchaseOrder, PurchaseReturn, PurchaseReturnLine
 
@@ -31,38 +31,18 @@ class PurchaseReturnService:
         if doc.status == PurchaseReturn.Status.CANCELLED:
             return doc
 
-        # 1. Reverse Stock Moves
-        from inventory.models import InventoryDocument, InventoryDocumentDetail
-        from inventory.services import InventoryService
-
-        doc_inv = InventoryDocument.objects.create(
-            document_type=InventoryDocument.Type.RECEIPT,
-            status=InventoryDocument.Status.DRAFT,
-            date=timezone.now().date(),
-            reference=f"Anulación {doc.display_id}",
-            partner=doc.purchase_order.supplier,
-            source_document_type="purchasing.purchasereturn",
-            source_document_id=doc.id,
-        )
-        details = []
-
-        for line in doc.lines.all():
-            if line.stock_move:
-                details.append(
-                    InventoryDocumentDetail(
-                        document=doc_inv,
-                        product=line.product,
-                        warehouse=doc.warehouse,
-                        quantity=abs(line.stock_move.quantity),  # Positive for IN
-                        unit_cost=line.stock_move.unit_cost
-                    )
-                )
-
-        if details:
-            InventoryDocumentDetail.objects.bulk_create(details)
-            InventoryService.confirmar_documento(doc_inv)
-        else:
-            doc_inv.delete()
+        # 1. Reverse Stock Moves (ADR-0085): reversa los StockMove originados por la devolución.
+        for move in list(StockMove.for_document(doc)):
+            StockService.create_move(
+                product=move.product,
+                quantity=abs(move.quantity),
+                source_location=move.destination_location,
+                destination_location=move.source_location,
+                unit_cost=move.unit_cost,
+                description=f"Anulación {doc.display_id}",
+                source_document=doc,
+                date=timezone.now().date(),
+            )
 
         doc.status = PurchaseReturn.Status.CANCELLED
         doc.save()
@@ -178,55 +158,45 @@ class PurchaseReturnService:
         created_moves = []
         total_inventory_reversal = Decimal("0")
 
-        # 1. Stock Moves
-        from inventory.models import InventoryDocument, InventoryDocumentDetail
-        from inventory.services import InventoryService
+        # 1. Stock Moves (ADR-0085: la devolución es dueña de sus StockMove; OUT INTERNO → PROVEEDOR)
+        from inventory.models import Location
 
-        doc_inv = InventoryDocument.objects.create(
-            document_type=InventoryDocument.Type.DELIVERY,
-            status=InventoryDocument.Status.DRAFT,
-            date=return_doc.date,
-            reference=f"Devolución {return_doc.purchase_order.display_id}",
-            partner=return_doc.purchase_order.supplier,
-            source_document_type="purchasing.purchasereturn",
-            source_document_id=return_doc.id,
-        )
-        details_to_create = []
+        internal_loc = Location.objects.filter(
+            location_type="INTERNAL", warehouse=return_doc.warehouse
+        ).first()
+        vendor_loc = Location.objects.filter(location_type="VENDOR").first()
+        if not internal_loc or not vendor_loc:
+            raise ValidationError(
+                "Faltan ubicaciones de inventario (INTERNO del almacén / PROVEEDOR) para confirmar la devolución."
+            )
+
+        move_description = f"Devolución {return_doc.purchase_order.display_id}"
 
         for line in return_doc.lines.all():
             product = line.product
-            if product.track_inventory:
+            if product.track_inventory and product.strategy.allows_stock_moves:
                 # Convert to base UoM
                 qty_base = UoMService.convert_quantity(
                     line.quantity, from_uom=line.uom or product.uom, to_uom=product.uom
                 )
 
-                details_to_create.append(
-                    InventoryDocumentDetail(
-                        document=doc_inv,
-                        product=product,
-                        warehouse=return_doc.warehouse,
-                        quantity=qty_base,
-                        unit_cost=line.unit_cost
-                    )
+                move = StockService.create_move(
+                    product=product,
+                    quantity=qty_base,
+                    source_location=internal_loc,
+                    destination_location=vendor_loc,
+                    unit_cost=line.unit_cost,
+                    description=move_description,
+                    source_document=return_doc,
+                    date=return_doc.date,
                 )
+                line.stock_move = move
+                line.save(update_fields=["stock_move"])
+                created_moves.append(move)
 
                 # Inventory Reversal amount for this line
                 line_val = qty_base * line.unit_cost
                 total_inventory_reversal += line_val
-
-        if details_to_create:
-            InventoryDocumentDetail.objects.bulk_create(details_to_create)
-            doc_inv, generated_moves = InventoryService.confirmar_documento(doc_inv)
-
-            # Map lines to generated moves
-            inventory_lines = [l for l in return_doc.lines.all() if l.product.track_inventory]
-            for line, move in zip(inventory_lines, generated_moves):
-                line.stock_move = move
-                line.save()
-                created_moves.append(move)
-        else:
-            doc_inv.delete()
 
         # 2. Accounting Entry (Bridge Reversal)
         if total_inventory_reversal > 0 and settings:
@@ -262,7 +232,7 @@ class PurchaseReturnService:
                 # Credit Inventory per line
                 for line in return_doc.lines.all():
                     product = line.product
-                    if product.track_inventory:
+                    if product.track_inventory and product.strategy.allows_stock_moves:
                         inv_account = product.get_asset_account
                         line_val = (
                             UoMService.convert_quantity(

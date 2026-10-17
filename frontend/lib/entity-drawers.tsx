@@ -17,6 +17,7 @@ import type {
     JournalEntryInitialData,
 } from "@/types/forms"
 import type { Employee, Absence, SalaryAdvance } from "@/types/hr"
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 /**
  * Standard props every entity drawer receives from the global opener.
@@ -50,12 +51,17 @@ const TreasuryAccountDrawer = dynamic(
 
 const WorkOrderWizard = dynamic(
     () => import("@/features/production").then((m) => m.WorkOrderWizard),
-    { ssr: false, loading: () => skeleton("orden de trabajo") }
+    { ssr: false, loading: () => skeleton(getDomainConceptTitle('ot').toLowerCase()) }
 )
 
 const JournalEntryDrawer = dynamic(
     () => import("@/features/accounting").then((m) => m.JournalEntryDrawer),
     { ssr: false, loading: () => skeleton("asiento contable") }
+)
+
+const ProductDrawerById = dynamic(
+    () => import("@/features/inventory").then((m) => m.ProductDrawerById),
+    { ssr: false, loading: () => skeleton("producto") }
 )
 
 const ProductDrawer = dynamic(
@@ -148,18 +154,13 @@ const PaymentDrawer = dynamic(
     { ssr: false, loading: () => skeleton("pago") }
 )
 
-const SaleOrderDrawer = dynamic(
-    () => import("@/features/sales/components/SaleOrderDrawer").then((m) => m.SaleOrderDrawer),
-    { ssr: false, loading: () => skeleton("orden de venta") }
+const OrderSheet = dynamic(
+    () => import("@/features/orders").then((m) => m.OrderSheet),
+    { ssr: false, loading: () => skeleton(getDomainConceptTitle('ov').toLowerCase()) }
 )
 
-const PurchaseOrderDrawer = dynamic(
-    () => import("@/features/purchasing/components/PurchaseOrderDrawer").then((m) => m.PurchaseOrderDrawer),
-    { ssr: false, loading: () => skeleton("orden de compra") }
-)
-
-const InvoiceDrawer = dynamic(
-    () => import("@/features/billing/components/InvoiceDrawer").then((m) => m.InvoiceDrawer),
+const InvoiceSheet = dynamic(
+    () => import("@/features/orders").then((m) => m.InvoiceSheet),
     { ssr: false, loading: () => skeleton("factura") }
 )
 
@@ -200,6 +201,21 @@ const GroupDrawer = dynamic(
 
 // Obsolete drawers removed
 
+
+const PurchaseReceiptDrawer = dynamic(
+    () => import("@/features/purchasing/components/PurchaseReceiptDrawer").then((m) => m.PurchaseReceiptDrawer),
+    { ssr: false, loading: () => skeleton("recepción") }
+)
+
+const SaleDeliveryDrawer = dynamic(
+    () => import("@/features/sales/components/SaleDeliveryDrawer").then((m) => m.SaleDeliveryDrawer),
+    { ssr: false, loading: () => skeleton("despacho") }
+)
+
+const SaleReturnDrawer = dynamic(
+    () => import("@/features/sales/components/SaleReturnDrawer").then((m) => m.SaleReturnDrawer),
+    { ssr: false, loading: () => skeleton("devolución de venta") }
+)
 
 const PurchaseReturnDrawer = dynamic(
     () => import("@/features/purchasing/components/PurchaseReturnDrawer").then((m) => m.PurchaseReturnDrawer),
@@ -264,10 +280,12 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
 
     // ── Accounting ────────────────────────────────────────────────────────────
-    // * requires full entry data (lines, items) — EntityBadge always provides it
-    "accounting.journalentry": ({ open, onOpenChange, data, onSuccess }) => (
+    // Con data → vista con datos completos; solo con id (relaciones, /d/) → vista cargada por id.
+    // Sin data ni id → creación.
+    "accounting.journalentry": ({ id, open, onOpenChange, data, onSuccess }) => (
         <JournalEntryDrawer
-            mode={data ? 'view' : 'create'}
+            mode={data || id ? 'view' : 'create'}
+            journalEntryId={data ? undefined : id || undefined}
             open={open}
             onOpenChange={onOpenChange}
             initialData={data as JournalEntryInitialData}
@@ -276,15 +294,20 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
 
     // ── Inventory ─────────────────────────────────────────────────────────────
-    // * requires full product data — EntityBadge always provides it
-    "inventory.product": ({ open, onOpenChange, data, onSuccess }) => (
-        <ProductDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            initialData={data as ProductInitialData}
-            onSuccess={() => onSuccess?.()}
-        />
+    // Con datos completos (EntityBadge) abre directo; solo con id (enlaces desde documentos,
+    // ADR-0083) carga el producto primero. Sin ninguno → creación.
+    "inventory.product": ({ id, open, onOpenChange, data, onSuccess }) => (
+        !data && id ? (
+            <ProductDrawerById id={id} open={open} onOpenChange={onOpenChange} onSuccess={() => onSuccess?.()} />
+        ) : (
+            <ProductDrawer
+                mode={data ? 'view' : 'create'}
+                open={open}
+                onOpenChange={onOpenChange}
+                initialData={data as ProductInitialData}
+                onSuccess={() => onSuccess?.()}
+            />
+        )
     ),
     // * requires full category data — EntityBadge always provides it
     "inventory.category": ({ open, onOpenChange, data, onSuccess }) => (
@@ -454,9 +477,11 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
         />
     ),
     // * requires full payment data — EntityBadge always provides it
-    "finance.payment": ({ open, onOpenChange, data, onSuccess }) => (
+    // Con data o id → vista (el id sin data venía abriendo el formulario de creación)
+    "finance.payment": ({ id, open, onOpenChange, data, onSuccess }) => (
         <PaymentDrawer
-            mode={data ? 'view' : 'create'}
+            mode={data || id ? 'view' : 'create'}
+            id={data ? undefined : id || undefined}
             open={open}
             onOpenChange={onOpenChange}
             initialData={data as PaymentInitialData}
@@ -479,8 +504,8 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
 
     // ── Purchasing (read-only detail drawers) ────────────────────────────────
     "purchasing.purchasereceipt": ({ id, open, onOpenChange }) => (
-        <InventoryDocumentDrawer
-            documentId={id}
+        <PurchaseReceiptDrawer
+            id={id}
             open={open}
             onOpenChange={onOpenChange}
         />
@@ -526,30 +551,42 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
 
     // ── Transaction Drawers (Phase 2 — dual-mode view/edit) ─────────────────
+    // Ficha documental (ADR-0083) — reemplaza el Order Hub como ficha de la OV.
+    // Las acciones no cierran la ficha: no se pasa onSuccess (cerraría la pila).
     "sales.saleorder": ({ id, open, onOpenChange }) => (
-        <SaleOrderDrawer
+        <OrderSheet
             id={id}
+            kind="sale"
             open={open}
             onOpenChange={onOpenChange}
         />
     ),
+    // Fichas documentales (ADR-0083): sin onSuccess, las acciones no cierran la pila.
     "purchasing.purchaseorder": ({ id, open, onOpenChange }) => (
-        <PurchaseOrderDrawer
+        <OrderSheet
             id={id}
+            kind="purchase"
             open={open}
             onOpenChange={onOpenChange}
         />
     ),
     "billing.invoice": ({ id, open, onOpenChange }) => (
-        <InvoiceDrawer
+        <InvoiceSheet
             id={id}
             open={open}
             onOpenChange={onOpenChange}
         />
     ),
     "sales.saledelivery": ({ id, open, onOpenChange }) => (
-        <InventoryDocumentDrawer
-            documentId={id}
+        <SaleDeliveryDrawer
+            id={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+    "sales.salereturn": ({ id, open, onOpenChange }) => (
+        <SaleReturnDrawer
+            id={id}
             open={open}
             onOpenChange={onOpenChange}
         />

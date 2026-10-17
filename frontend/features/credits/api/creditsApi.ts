@@ -68,6 +68,8 @@ export interface CreditLedgerEntry {
     status: string
     credit_assignment_origin?: string
     credit_assignment_origin_display?: string
+    /** DocumentRef de la OV (identidad de fila, ADR-0086). */
+    document?: unknown | null
     credit_approval_task_details?: {
         id: number
         status: string
@@ -89,6 +91,8 @@ export interface CreditHistoryEntry {
     effective_total: string
     credit_assignment_origin: string
     credit_assignment_origin_display: string
+    /** DocumentRef de la OV (identidad de fila, ADR-0086). */
+    document?: unknown | null
     credit_approval_task_details: {
         id: number
         status: string

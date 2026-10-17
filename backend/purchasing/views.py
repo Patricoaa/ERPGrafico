@@ -78,7 +78,7 @@ class PurchaseOrderFilterSet(FilterSet):
         if value == "success":
             return (
                 queryset.filter(
-                    invoices__status__in=["POSTED", "PAID"],
+                    invoices__status="POSTED",
                 )
                 .exclude(invoices__number="")
                 .distinct()
@@ -86,7 +86,7 @@ class PurchaseOrderFilterSet(FilterSet):
         elif value == "neutral":
             return queryset.exclude(
                 id__in=queryset.filter(
-                    invoices__status__in=["POSTED", "PAID"],
+                    invoices__status="POSTED",
                 )
                 .exclude(invoices__number="")
                 .values("id")
@@ -94,15 +94,10 @@ class PurchaseOrderFilterSet(FilterSet):
         return queryset
 
     def filter_treasury_status(self, queryset, name, value):
-        if value == "success":
-            return queryset.filter(status="PAID")
-        elif value == "active":
-            return queryset.filter(payments__isnull=False).exclude(status="PAID").distinct()
-        elif value == "neutral":
-            return queryset.filter(
-                payments__isnull=True, status__in=["DRAFT", "CONFIRMED", "RECEIVED", "INVOICED"]
-            )
-        return queryset
+        # ADR-0084: el pago es un eje derivado del saldo, no un estado de la OC
+        from core.payment_status import filter_by_payment_status
+
+        return filter_by_payment_status(queryset.exclude(status="CANCELLED"), value)
 
 
 class PurchaseOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
@@ -279,7 +274,7 @@ class PurchaseReturnViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHis
         return PurchaseReturn.objects.select_related(
             "purchase_order__supplier", "warehouse"
         ).prefetch_related(
-            "lines__product", "lines__uom"
+            "lines__product", "lines__uom", "lines__stock_move"
         ).all()
     serializer_class = PurchaseReturnSerializer
     pagination_class = StandardResultsSetPagination

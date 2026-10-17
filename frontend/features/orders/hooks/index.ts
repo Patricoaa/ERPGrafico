@@ -2,7 +2,6 @@ export { useSaleOrderSearch } from './useSaleOrderSearch'
 export { useCancelOrderFlow } from './useCancelOrderFlow'
 export type { CancelImpact, CancelFlowModalProps } from './useCancelOrderFlow'
 export { useNoteLogisticsData } from './useNoteLogisticsData'
-export { useOrderDetail } from './useOrderDetail'
 export {
     useAnnulInvoice,
     useConfirmInvoice,
@@ -13,5 +12,8 @@ export {
     useRegisterPaymentMovement,
     useAnnulPayment,
     useAnnulWorkOrder,
+    useCancelInvoice,
+    useCancelPayment,
+    useRegisterPaymentReturn,
     ordersApi,
 } from './useOrdersMutations'

@@ -6,8 +6,13 @@ class CoreConfig(AppConfig):
     name = "core"
 
     def ready(self):
+        from django.utils.module_loading import autodiscover_modules
+
         import core.signals  # noqa: F401
         from core.entity_bus import register_receivers
+
+        # ADR-0080: tipos documentales y proveedores de relaciones de cada app
+        autodiscover_modules("relations")
 
         register_receivers()
 

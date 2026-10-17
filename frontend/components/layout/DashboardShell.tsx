@@ -6,7 +6,6 @@ import dynamic from "next/dynamic"
 import { usePathname } from "next/navigation"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { UserActions } from "./UserActions"
 import { ModuleRail } from "./ModuleRail"
@@ -34,7 +33,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const currentModuleId = pathname.split('/').filter(Boolean)[0] || 'dashboard'
 
     const { config, moduleNavigation } = useHeader()
-    const { isHubEffectivelyOpen } = useHubPanel()
     const { totalSheetsWidth } = useGlobalModals()
     
     // La navegación del módulo sobrevive a PageHeaders anidados sin `navigation` (ADR-0079)
@@ -46,7 +44,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     // shift back in sync with the 200ms panel exit instead of snapping.
     useEffect(() => {
         let inboxTimeout: NodeJS.Timeout | undefined
-        let hubTimeout: NodeJS.Timeout | undefined
 
         if (isInboxOpen) {
             document.body.setAttribute('data-inbox-open', 'true')
@@ -54,17 +51,8 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             inboxTimeout = setTimeout(() => document.body.removeAttribute('data-inbox-open'), 220)
         }
 
-        if (isHubEffectivelyOpen) {
-            document.body.setAttribute('data-hub-open', 'true')
-        } else {
-            hubTimeout = setTimeout(() => document.body.removeAttribute('data-hub-open'), 220)
-        }
-
-        return () => {
-            clearTimeout(inboxTimeout)
-            clearTimeout(hubTimeout)
-        }
-    }, [isInboxOpen, isHubEffectivelyOpen])
+        return () => clearTimeout(inboxTimeout)
+    }, [isInboxOpen])
 
     const handleInboxToggle = () => {
         setIsInboxOpen(prev => !prev)
@@ -90,7 +78,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 <span className="truncate">{config.title}</span>
             </h1>
             {nav?.breadcrumbs?.map((crumb, idx) => (
-                <span key={idx} className="flex items-center gap-1.5 shrink-0 text-sm font-semibold tracking-tight">
+                <span key={idx} className="flex items-center gap-1.5 shrink-0 text-xs font-medium tracking-normal">
                     <span className="text-border select-none" aria-hidden>/</span>
                     {crumb.href ? (
                         <Link href={crumb.href} className="text-muted-foreground hover:text-foreground transition-colors">
@@ -105,12 +93,12 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2 shrink-0">
                 {config.status && (
                     config.status.type === 'saving' ? (
-                        <Skeleton className="px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-tighter border shrink-0 bg-primary/20 text-primary border-primary/20 flex items-center justify-center">
+                        <Skeleton className="px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider border shrink-0 bg-primary/20 text-primary border-primary/20 flex items-center justify-center">
                             {config.status.label}
                         </Skeleton>
                     ) : (
                         <div className={cn(
-                            "px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-tighter border shrink-0",
+                            "px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider border shrink-0",
                             config.status.type === 'synced' && "bg-success/10 text-success border-success/20",
                             config.status.type === 'error' && "bg-destructive/10 text-destructive border-destructive/20",
                             !config.status.type && "bg-muted text-muted-foreground border-border"

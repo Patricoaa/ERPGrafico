@@ -143,5 +143,12 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0077](0077-treasury-accounts-cache-key-unification.md) | Unify treasury-account data surface and single cache-key namespace | Accepted |
 | [0078](0078-datatable-family-facade-split.md) | DataTable family façade-first split (56-prop surface distilled behind a stable API) | Proposed |
 | [0079](0079-module-navigation-sidebar-erpnext-v16.md) | Module navigation moves from top-bar tabs to a two-column sidebar (ERPNext v16 pattern) | Accepted |
+| [0080](0080-document-model-relations-and-navigation.md) | Unified document model — DocumentRef, relation service and canonical document navigation | Accepted |
+| [0081](0081-invoice-lines-partial-and-multi-order-invoicing.md) | Invoices own their lines — partial and multi-order invoicing by quantity | Accepted |
+| [0082](0082-typography-scale-token-reconciliation.md) | Typography scale reconciliation — semantic tokens, truthful N-levels and shell chrome roles | Accepted |
+| [0083](0083-document-sheet-replaces-order-hub.md) | Document sheet replaces the Order Hub — relations tab, lifecycle and in-sheet actions | Accepted |
+| [0084](0084-document-status-decoupled-from-payment.md) | Document status decoupled from payment — one field per axis (lifecycle, invoicing, fulfilment, payment) | Accepted |
+| [0085](0085-stock-moves-owned-by-business-document.md) | Stock moves owned by the business document — `StockMove.source_document` GFK, `InventoryDocument` reserved for standalone operations | Accepted |
+| [0086](0086-document-drilldown-canonical-navigation.md) | Document drilldown navigates to the target's canonical route — URL and module follow the relationship | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

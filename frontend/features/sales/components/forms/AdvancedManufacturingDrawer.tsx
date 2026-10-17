@@ -9,6 +9,7 @@ import { toast } from "sonner"
 import { ManufacturingSpecsEditor, emptyManufacturingData, type ManufacturingData } from '@/components/shared'
 import { type Contact } from "@/types/entities"
 import { formDrawerWidth } from "@/lib/form-widths"
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 interface AdvancedManufacturingDrawerProps {
     open: boolean
@@ -98,7 +99,7 @@ export function AdvancedManufacturingDrawer({
 
     const handleConfirm = () => {
         if (showProductDescription && !data.product_description?.trim()) {
-            toast.error("La descripción del producto es obligatoria para productos sin lista de materiales.")
+            toast.error(`La descripción del producto es obligatoria para productos sin ${getDomainConceptTitle('ldm').toLowerCase()}.`)
             return
         }
         if (!anyPhaseEnabled) {

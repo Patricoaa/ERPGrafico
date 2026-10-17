@@ -2,13 +2,14 @@
  * typography/token-first
  *
  * Enforces the typography contract (docs/20-contracts/typography-scale.md):
- *   1. No raw arbitrary font sizes in the N5 micro range (text-[9px]..[15px]).
+ *   1. No raw arbitrary font sizes (text-[9px]..[15px] and any text-[Nrem]/[Nem]).
  *      Use the tokens: text-4xs (9px), text-3xs (10px), text-2xs (11px),
  *      text-xs (12px+), text-sm (14px+).
  *   2. No arbitrary letter-spacing except the sanctioned N1 value
  *      `tracking-[0.25em]`. Use tracking-widest / tracking-loose /
  *      tracking-looser for wider spacing.
- *   3. Action buttons must use `font-medium` (never `font-bold`) per the
+ *   3. Action buttons must not use `font-bold`: use the ERP action-button scale
+ *      (`font-black`) or the base Button weight (`font-medium`) — see the
  *      "Escala de botones de acción" section of typography-scale.md.
  */
 
@@ -21,6 +22,9 @@ const FORBIDDEN_SIZES = new Map([
   ['text-[14px]', 'text-sm'],
   ['text-[15px]', 'text-sm'],
 ]);
+
+// Any remaining arbitrary size (non-integer px, rem or em) not in the exact map.
+const ARBITRARY_SIZE = /^text-\[[0-9.]+(?:px|rem|em)\]$/;
 
 const ARBITRARY_TRACKING = /^tracking-\[(?!0\.25em\])/;
 
@@ -81,6 +85,14 @@ function checkTokenString(context, node, className, inButton) {
       });
       continue;
     }
+    if (ARBITRARY_SIZE.test(token)) {
+      context.report({
+        node,
+        messageId: 'rawSize',
+        data: { value: token, replacement: 'text-4xs/3xs/2xs o text-xs/sm según el rol' },
+      });
+      continue;
+    }
     if (ARBITRARY_TRACKING.test(token)) {
       context.report({
         node,
@@ -118,7 +130,7 @@ const rule = {
       arbitraryTracking:
         'Arbitrary letter-spacing "{{ value }}" detected. Use tracking-widest (0.1em), tracking-loose (0.15em), tracking-looser (0.2em) or the sanctioned tracking-[0.25em] (see typography-scale.md).',
       buttonWeight:
-        'Action buttons must use font-medium, not font-bold (see "Escala de botones de acción" in typography-scale.md).',
+        'Avoid font-bold on action buttons: use the ERP action-button scale (font-black) or the base Button weight (font-medium) — see "Escala de botones de acción" in typography-scale.md.',
     },
   },
   create(context) {

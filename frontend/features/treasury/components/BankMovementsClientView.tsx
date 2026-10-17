@@ -8,7 +8,6 @@ import { resolveTreasuryMovementIcon } from "@/lib/movement-icons"
 import { treasuryMovementActions, type TreasuryMovementActionsCtx } from './treasuryMovementActions'
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 
-import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
 import { treasuryMovementsUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -25,9 +24,6 @@ interface BankMovementsClientViewProps {
 export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps) {
     const { openEntity } = useGlobalModalActions()
     const search = useUnifiedSearch(treasuryMovementsUnifiedSearchDef)
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const pathname = usePathname()
 
     const allFilters = {
         ...search.filters,
@@ -58,21 +54,23 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
     const selectedMovementId = selectedFromUrl?.id ?? null
 
     const handleViewDetails = React.useCallback((id: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [searchParams, pathname, router])
+        openEntity("treasury.treasurymovement", id)
+    }, [openEntity])
 
+    const { clearAll } = search
     const handleReset = React.useCallback(() => {
-        search.clearAll()
-    }, [search.clearAll])
+        clearAll()
+    }, [clearAll])
 
-    const actionsCtx: TreasuryMovementActionsCtx = { onDetail: handleViewDetails }
+    const actionsCtx: TreasuryMovementActionsCtx = React.useMemo(
+        () => ({ onDetail: handleViewDetails }),
+        [handleViewDetails]
+    )
 
     const columns = React.useMemo<ColumnDef<TreasuryMovement>[]>(() => [
         ...movementFields.toColumns(),
         treasuryMovementActions.auto(actionsCtx)
-    ], [openEntity, handleViewDetails])
+    ], [actionsCtx])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">

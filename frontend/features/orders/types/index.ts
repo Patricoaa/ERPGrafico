@@ -49,6 +49,9 @@ export interface OrderLine {
     delivered_quantity?: number | string
     price_unit: number | string
     subtotal: number | string
+    /** Neto por línea en documentos gross-first (OV): reparto exacto de total_net (ADR-0083). */
+    subtotal_net?: number | string
+    unit_price_net?: number | string
     is_manufacturable?: boolean
     requires_advanced_manufacturing?: boolean
     work_order_summary?: WorkOrderSummary
@@ -82,37 +85,6 @@ export interface WorkOrder {
     [key: string]: unknown
 }
 
-export interface RelatedDocuments {
-    invoices?: InvoiceSummary[]
-    payments?: Payment[]
-    deliveries?: DeliverySummary[]
-    receipts?: DeliverySummary[]
-    receptions?: DeliverySummary[]
-    work_orders?: WorkOrder[]
-    returns?: DeliverySummary[]
-    stock_moves?: StockMoveSummary[]
-    notes?: NoteSummary[]
-}
-
-export interface PhaseDocument {
-    id: number | string
-    number: string
-    type: string
-    docType: string
-    status?: string
-    isWarning?: boolean
-    disabled?: boolean
-    icon?: LucideIcon
-    dte_type?: string
-    actions?: {
-        icon: LucideIcon
-        title: string
-        color?: string
-        isPrimary?: boolean
-        onClick: () => void
-    }[]
-}
-
 export interface Order {
     id: number
     display_id?: string
@@ -131,17 +103,21 @@ export interface Order {
     purchase_order?: Partial<Order> | number | string
     lines?: OrderLine[]
     items?: OrderLine[] 
-    related_documents?: RelatedDocuments
-    invoices?: Order[]
+    /** Resumen tipado (ADR-0083 U6): facturas, notas, despachos (OV) o recepciones (OC). */
+    notes?: InvoiceSummary[]
+    deliveries?: DeliverySummary[]
+    receipts?: DeliverySummary[]
+    /** Resumen tipado de facturas (ADR-0083 U6). */
+    invoices?: InvoiceSummary[]
     delivery_status?: string
     receiving_status?: string
     dte_type?: string
     document_type?: string
     work_orders?: WorkOrder[]
     serialized_payments?: Payment[]
-    related_returns?: DeliverySummary[]
-    related_stock_moves?: StockMoveSummary[]
     corrected_invoice?: Order
+    /** Documento de origen como DocumentRef (ADR-0086). */
+    origin_document?: unknown | null
     dte_type_display?: string
     partner_name?: string
     name?: string

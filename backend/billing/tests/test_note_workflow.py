@@ -226,7 +226,8 @@ def posted_sale_invoice(comprehensive_setup):
 
 @pytest.mark.django_db
 def test_init_workflow_valid_origin_statuses(comprehensive_setup):
-    """Test that workflow can be created from POSTED or PAID invoices, but not DRAFT"""
+    """NC/ND solo desde facturas emitidas (POSTED), pagadas o no; nunca desde borradores.
+    ADR-0084: "pagada" ya no es un estado de la factura."""
     setup = comprehensive_setup
 
     # 1. DRAFT invoice should fail
@@ -246,10 +247,10 @@ def test_init_workflow_valid_origin_statuses(comprehensive_setup):
             reason="Test",
         )
 
-    # 2. PAID invoice should succeed
+    # 2. Emitted invoice (POSTED, regardless of payment) should succeed
     paid_invoice = Invoice.objects.create(
         dte_type=Invoice.DTEType.FACTURA,
-        status=Invoice.Status.PAID,
+        status=Invoice.Status.POSTED,
         contact=setup["customer"],
         total=Decimal("1000"),
     )

@@ -31,7 +31,7 @@ export function ModuleRail({ currentModuleId, onNavigate }: ModuleRailProps) {
                         <Image src={logo} alt={companyName || "Logo"} fill className="object-contain" />
                     </div>
                 ) : (
-                    <div className="w-8 h-8 rounded-sm flex items-center justify-center bg-primary text-primary-foreground font-bold text-3xs">
+                    <div className="w-8 h-8 rounded-sm flex items-center justify-center bg-primary text-primary-foreground font-bold text-3xs uppercase">
                         {initials}
                     </div>
                 )}

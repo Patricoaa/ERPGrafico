@@ -1,6 +1,7 @@
 from decimal import Decimal
 
-from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -794,26 +795,30 @@ class Product(models.Model):
         if self.code == "" or (isinstance(self.code, str) and not self.code.strip()):
             self.code = None
 
-        # Logic for track_inventory is now handled by the frontend/API.
-        # We default to True for STORABLE if not specified, otherwise respect input.
-        if self.pk is None and self.track_inventory is None:
-            self.track_inventory = self.product_type == self.Type.STORABLE
-
-        # Express manufacturables (mfg_auto_finalize) do not track inventory
-        auto_finalize = (
-            self.mfg_profile.mfg_auto_finalize
-            if hasattr(self, "mfg_profile") and self.mfg_profile
-            else self.mfg_auto_finalize
-        )
-        advanced_mfg = (
-            self.mfg_profile.requires_advanced_manufacturing
-            if hasattr(self, "mfg_profile") and self.mfg_profile
-            else self.requires_advanced_manufacturing
-        )
-        if auto_finalize:
+        # SERVICE, SUBSCRIPTION and CONSUMABLE never track physical inventory —
+        # their strategy.allows_stock_moves is False and the field must match.
+        if self.product_type in (self.Type.SERVICE, self.Type.SUBSCRIPTION, self.Type.CONSUMABLE):
             self.track_inventory = False
-        elif self.product_type == self.Type.MANUFACTURABLE and not advanced_mfg:
-            self.track_inventory = True
+        else:
+            # For STORABLE: default True on creation if not explicitly set.
+            if self.pk is None and self.track_inventory is None:
+                self.track_inventory = self.product_type == self.Type.STORABLE
+
+            # Express manufacturables (mfg_auto_finalize) do not track inventory
+            auto_finalize = (
+                self.mfg_profile.mfg_auto_finalize
+                if hasattr(self, "mfg_profile") and self.mfg_profile
+                else self.mfg_auto_finalize
+            )
+            advanced_mfg = (
+                self.mfg_profile.requires_advanced_manufacturing
+                if hasattr(self, "mfg_profile") and self.mfg_profile
+                else self.requires_advanced_manufacturing
+            )
+            if auto_finalize:
+                self.track_inventory = False
+            elif self.product_type == self.Type.MANUFACTURABLE and not advanced_mfg:
+                self.track_inventory = True
         # Fallback for base UoM if missing but others are present
         if not self.uom:
             if self.sale_uom:
@@ -1310,6 +1315,25 @@ class StockMove(models.Model):
         verbose_name=_("Asiento Contable"),
     )
 
+    # Origin of the move (ADR-0085): the business document that owns it —
+    # sale delivery, purchase receipt, sale/purchase return, the notes that
+    # return goods or a work order. Generic FK because the originating-type set
+    # grows over time (ADR-0016 pattern), replacing the textual pseudo-GFK that
+    # lived on InventoryDocument. Standalone stock operations (adjustment,
+    # transfer, partner capital) live on InventoryDocument instead.
+    source_content_type = models.ForeignKey(
+        ContentType,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="stock_moves_from_documents",
+        verbose_name=_("Tipo de documento origen"),
+    )
+    source_object_id = models.PositiveIntegerField(
+        _("ID de documento origen"), null=True, blank=True
+    )
+    source_document = GenericForeignKey("source_content_type", "source_object_id")
+
     source_uom = models.ForeignKey(
         UoM,
         on_delete=models.SET_NULL,
@@ -1345,6 +1369,18 @@ class StockMove(models.Model):
 
     def __str__(self):
         return self.display_id
+
+    @classmethod
+    def for_document(cls, document):
+        """Movimientos atribuidos a un documento comercial vía `source_document` (ADR-0085).
+
+        Un `GenericForeignKey` no admite `filter(source_document=...)`, así que se
+        resuelve por su `ContentType` + id, como en el resto del código (ADR-0016).
+        """
+        return cls.objects.filter(
+            source_content_type=ContentType.objects.get_for_model(document),
+            source_object_id=document.pk,
+        )
 
     @property
     def display_id(self):
@@ -1465,7 +1501,14 @@ class InventoryDocument(TimeStampedModel):
         ordering = ["-id"]
 
     def __str__(self):
-        return f"{self.get_document_type_display()} {self.id}"
+        return self.display_id
+
+    @property
+    def display_id(self):
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.INVENTORY_DOCUMENT}-{self.id}"
+
+
 class InventoryDocumentDetailManager(models.Manager):
     def bulk_create(self, objs, **kwargs):
         if not objs:
@@ -1571,6 +1614,15 @@ class InventoryDocumentDetail(models.Model):
     )
     destination_location = models.ForeignKey(
         Location, on_delete=models.PROTECT, related_name="doc_moves_in"
+    )
+    # Movimiento generado al confirmar el documento (GAP-02/03, auditoría documental).
+    # Da a cada StockMove un vínculo tipado con su documento: move.inventory_document_detail.document
+    stock_move = models.OneToOneField(
+        StockMove,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="inventory_document_detail",
     )
 
     class Meta:

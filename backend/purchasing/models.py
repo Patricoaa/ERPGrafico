@@ -17,15 +17,19 @@ class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
     class Status(models.TextChoices):
         DRAFT = "DRAFT", _("Borrador")
         CONFIRMED = "CONFIRMED", _("Confirmado")
-        RECEIVED = "RECEIVED", _("Recibido")
-        INVOICED = "INVOICED", _("Facturado")
-        PAID = "PAID", _("Pagado")
         CANCELLED = "CANCELLED", _("Anulado")
+        # ADR-0084: recepción, facturación y pago son ejes propios (receiving_status,
+        # invoicing_status, payment_status); ya no son estados de la OC.
 
     class ReceivingStatus(models.TextChoices):
         PENDING = "PENDING", _("Pendiente")
         PARTIAL = "PARTIAL", _("Parcial")
         RECEIVED = "RECEIVED", _("Recibido")
+
+    class InvoicingStatus(models.TextChoices):
+        PENDING = "PENDING", _("Pendiente")
+        PARTIAL = "PARTIAL", _("Parcial")
+        INVOICED = "INVOICED", _("Facturado")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -92,6 +96,13 @@ class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
         choices=ReceivingStatus.choices,
         default=ReceivingStatus.PENDING,
     )
+    # ADR-0081 / D1.4: facturación por cantidad (Pendiente / Parcial / Facturado)
+    invoicing_status = models.CharField(
+        _("Estado de Facturación"),
+        max_length=20,
+        choices=InvoicingStatus.choices,
+        default=InvoicingStatus.PENDING,
+    )
     receipt_date = models.DateField(_("Fecha de Recepción Planificada"), null=True, blank=True)
 
     # Links
@@ -113,19 +124,19 @@ class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
 
     @property
     def display_id(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{EntityPrefix.PURCHASE_ORDER}-{self.number}"
+        from core.prefix_registry import EntityPrefix, fmt_seq_num
+        return f"{EntityPrefix.PURCHASE_ORDER}-{fmt_seq_num(self.number)}"
 
     @property
     def effective_total(self):
         """Returns the net value of the order considering all posted notes (ND increase, NC decrease).
 
-        Convention: both POSTED (published) and PAID (settled) invoices count as active documents.
-        DRAFT and CANCELLED invoices are excluded from this calculation.
+        Facturas vigentes: emitidas y borradores (folio pendiente); se excluyen las anuladas
+        (ADR-0081, ADR-0084).
         """
         from billing.models import Invoice
 
-        ACTIVE_STATUSES = [Invoice.Status.POSTED, Invoice.Status.PAID]
+        ACTIVE_STATUSES = [Invoice.Status.DRAFT, Invoice.Status.POSTED]
         invoices = self.invoices.filter(status__in=ACTIVE_STATUSES)
         if not invoices.exists():
             return self.total
@@ -157,22 +168,24 @@ class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
     def total_paid(self):
         """Calculates the total amount paid for this order (excluding Note-specific payments)"""
         # Exclude payments specific to Notes (NC/ND) to keep PO Hub status pure
-        payments = self.payments.all()
-        valid_payments = [
-            p
-            for p in payments
-            if not (p.invoice and p.invoice.dte_type in ["NOTA_CREDITO", "NOTA_DEBITO"])
-        ]
-        return sum(p.amount for p in valid_payments)
+        from treasury.selectors import PaymentSelector
+
+        return PaymentSelector.paid_amount(
+            self.payments.all(), sale_side=False, exclude_note_payments=True,
+            allocations=self.payment_allocations.all(),
+            fk_field="purchase_order", document=self,
+        )
 
     @property
     def pending_amount(self):
         """Calculates the remaining amount to be paid based on Primary Invoices or Total"""
-        primary_invoices = self.invoices.filter(
-            dte_type__in=["FACTURA", "BOLETA", "PURCHASE_INV"]
-        ).exclude(status="CANCELLED")
+        # Iteración en Python: respeta prefetch_related (listas sin N+1)
+        primary_invoices = [
+            inv for inv in self.invoices.all()
+            if inv.dte_type in ("FACTURA", "BOLETA", "PURCHASE_INV") and inv.status != "CANCELLED"
+        ]
 
-        if primary_invoices.exists():
+        if primary_invoices:
             base_total = sum(inv.total for inv in primary_invoices)
         else:
             base_total = self.total
@@ -184,18 +197,25 @@ class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
         if is_new:
             self.number = SequenceService.get_next_number(PurchaseOrder)
 
-        # Check for transition to PAID to advance subscriptions
-        # Transition happens if it was NOT paid and now IS paid, or if it's NEW and paid
-        is_paying = self.status == self.Status.PAID and (
-            is_new or self._initial_status != self.Status.PAID
-        )
-
         super().save(*args, **kwargs)
-
-        if is_paying:
-            self._handle_subscription_advancement()
-
         self._initial_status = self.status
+
+    @property
+    def payment_status(self):
+        """Eje de pago (ADR-0084): UNPAID · PARTIAL · PAID, derivado del saldo."""
+        from core.payment_status import PaymentStatus
+
+        pending = self.pending_amount
+        if pending <= 0:
+            return PaymentStatus.PAID
+        return PaymentStatus.PARTIAL if self.total_paid > 0 else PaymentStatus.UNPAID
+
+    def on_fully_paid(self) -> None:
+        """
+        La OC acaba de quedar pagada (TreasuryService, ADR-0084): avanza la suscripción
+        asociada. Antes lo disparaba la transición de estado a PAID en save().
+        """
+        self._handle_subscription_advancement()
 
     def _handle_subscription_advancement(self):
         """
@@ -236,12 +256,10 @@ class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
 
     def revert_after_invoice_cancellation(self) -> None:
         """
-        Revierte el estado de la orden al anular su factura asociada.
-        Para PurchaseOrder: vuelve a RECEIVED (mercadería recibida, sin factura activa).
-        Invocado por BillingService.annul_invoice().
+        Gancho al anular la última factura principal de la orden (BillingService.annul_invoice).
+        ADR-0084: facturar ya no cambia el estado de la OC; `invoicing_status` lo recalcula
+        InvoicingService.
         """
-        self.status = self.Status.RECEIVED
-        self.save()
 
     def describe_for_invoice_journal(self, number: str, dte_display: str) -> str:
         """
@@ -306,6 +324,10 @@ class PurchaseLine(models.Model):
         default=0,
         validators=[MinValueValidator(0)],
         help_text="Cantidad total recibida de esta línea",
+    )
+    # ADR-0081: Σ líneas de facturas principales no anuladas (InvoicingService)
+    quantity_invoiced = models.DecimalField(
+        _("Cantidad Facturada"), max_digits=10, decimal_places=2, default=0
     )
 
     related_note = models.ForeignKey(
@@ -394,13 +416,12 @@ class PurchaseReceipt(TransactionalDocument, TotalsCalculationMixin):
         ordering = ["-id"]
 
     def __str__(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{self.display_id} ({EntityPrefix.PURCHASE_ORDER}-{self.purchase_order.number})"
+        return f"{self.display_id} ({self.purchase_order.display_id})"
 
     @property
     def display_id(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{EntityPrefix.PURCHASE_RECEIPT}-{self.number}"
+        from core.prefix_registry import EntityPrefix, fmt_seq_num
+        return f"{EntityPrefix.PURCHASE_RECEIPT}-{fmt_seq_num(self.number)}"
 
     def save(self, *args, **kwargs):
         if not self.number:
@@ -529,13 +550,12 @@ class PurchaseReturn(TransactionalDocument, TotalsCalculationMixin):
         ordering = ["-id"]
 
     def __str__(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{self.display_id} ({EntityPrefix.PURCHASE_ORDER}-{self.purchase_order.number})"
+        return f"{self.display_id} ({self.purchase_order.display_id})"
 
     @property
     def display_id(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{EntityPrefix.PURCHASE_RETURN}-{self.number}"
+        from core.prefix_registry import EntityPrefix, fmt_seq_num
+        return f"{EntityPrefix.PURCHASE_RETURN}-{fmt_seq_num(self.number)}"
 
     def save(self, *args, **kwargs):
         if not self.number:

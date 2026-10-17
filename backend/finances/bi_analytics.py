@@ -27,7 +27,7 @@ class BIAnalyticsService:
         prev_start = prev_end - datetime.timedelta(days=period_length)
 
         # ── 1. Sales Analytics ──
-        ACTIVE_SALE_STATUSES = ["CONFIRMED", "INVOICED", "PAID"]
+        ACTIVE_SALE_STATUSES = ["CONFIRMED"]  # ADR-0084: facturación y pago son otros ejes
         sales_qs = SaleOrder.objects.filter(
             date__range=(start_date, end_date), status__in=ACTIVE_SALE_STATUSES
         )
@@ -76,7 +76,7 @@ class BIAnalyticsService:
         # ── 2. Purchase Analytics ──
         po_qs = PurchaseOrder.objects.filter(date__range=(start_date, end_date))
         purchase_total = (
-            po_qs.filter(status__in=["CONFIRMED", "RECEIVED", "INVOICED", "PAID"])
+            po_qs.filter(status="CONFIRMED")
             .aggregate(total=Sum("total"))["total"] or Decimal("0")
         )
         purchase_count = po_qs.exclude(status="CANCELLED").count()
@@ -93,7 +93,7 @@ class BIAnalyticsService:
         ]
 
         top_suppliers_qs = (
-            po_qs.filter(status__in=["CONFIRMED", "RECEIVED", "INVOICED", "PAID"])
+            po_qs.filter(status="CONFIRMED")
             .values("supplier__name")
             .annotate(total=Sum("total"))
             .order_by("-total")[:5]
@@ -164,7 +164,7 @@ class BIAnalyticsService:
         invoiced_period = (
             Invoice.objects.filter(
                 date__range=(start_date, end_date),
-                status__in=["POSTED", "PAID"],
+                status__in=["DRAFT", "POSTED"],  # vigentes (folio pendiente incluido), ADR-0084
                 dte_type__in=PRIMARY_DTE,
                 sale_order__isnull=False,
             ).aggregate(total=Sum("total"))["total"] or Decimal("0")

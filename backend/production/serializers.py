@@ -13,6 +13,16 @@ from .models import (
 )
 
 
+def _build_sale_order_document(serializer, obj):
+    """Orden de venta como DocumentRef (ADR-0086): el frontend navega a su URL canónica."""
+    if not obj.sale_order_id:
+        return None
+    from core.documents import build_ref
+
+    user = getattr(serializer.context.get("request"), "user", None)
+    return build_ref(obj.sale_order, user, "sales.saleorder", navigational=True)
+
+
 class ProductionConsumptionSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
@@ -174,6 +184,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     sale_order_delivery_date = serializers.DateField(
         source="sale_order.delivery_date", read_only=True, allow_null=True
     )
+    sale_order_document = serializers.SerializerMethodField()
     product_description = serializers.SerializerMethodField()
     sale_customer_name = serializers.SerializerMethodField()
     sale_customer_rut = serializers.SerializerMethodField()
@@ -215,6 +226,9 @@ class WorkOrderSerializer(serializers.ModelSerializer):
 
     def get_checkout_files(self, obj):
         return []
+
+    def get_sale_order_document(self, obj):
+        return _build_sale_order_document(self, obj)
 
     def get_display_id(self, obj):
         return obj.display_id
@@ -421,6 +435,7 @@ class WorkOrderListSerializer(serializers.ModelSerializer):
     sale_order_number = serializers.CharField(
         source="sale_order.number", read_only=True, allow_null=True
     )
+    sale_order_document = serializers.SerializerMethodField()
     product_name = serializers.SerializerMethodField()
     quantity = serializers.SerializerMethodField()
     uom_name = serializers.SerializerMethodField()
@@ -439,7 +454,8 @@ class WorkOrderListSerializer(serializers.ModelSerializer):
         model = WorkOrder
         fields = [
             "id", "number", "display_id", "description", "status", "current_stage",
-            "is_manual", "sale_order", "sale_order_number", "related_contact",
+            "is_manual", "sale_order", "sale_order_number", "sale_order_document",
+            "related_contact",
             "product", "product_name", "quantity", "uom_name", "main_product_id",
             "sale_customer_name", "due_date", "estimated_completion_date", "start_date",
             "production_progress", "outsourcing_status",
@@ -451,6 +467,9 @@ class WorkOrderListSerializer(serializers.ModelSerializer):
 
     def get_display_id(self, obj):
         return obj.display_id
+
+    def get_sale_order_document(self, obj):
+        return _build_sale_order_document(self, obj)
 
     def get_product_name(self, obj):
         if obj.sale_line and obj.sale_line.product:

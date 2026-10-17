@@ -6,6 +6,22 @@ const FRONTEND_ROOT = process.cwd()
 const SCAN_DIRS = ["app", "components", "features", "hooks", "lib"]
 const SKIP_DIRS = new Set(["node_modules", ".next", "__tests__", "e2e"])
 
+/**
+ * El contrato y su ADR viven en `docs/` de la raíz del repo, fuera del root del
+ * frontend. En CI/local `docs/` está en `../../..` desde este archivo; en el
+ * contenedor de dev se monta en `/repo-docs` (ver docker-compose.yml).
+ */
+const DOCS_DIR_CANDIDATES = [
+    process.env.REPO_DOCS_DIR,
+    join(__dirname, "..", "..", "..", "docs"),
+    join(FRONTEND_ROOT, "..", "docs"),
+    "/repo-docs",
+].filter((dir): dir is string => Boolean(dir))
+
+const REPO_DOCS_DIR = DOCS_DIR_CANDIDATES.find((dir) =>
+    existsSync(join(dir, "20-contracts", "color-system.md")),
+)
+
 const INK_UTILITY =
     /\b(?:bg|text|border|from|via|to|ring|fill|stroke|divide|outline|decoration|shadow|caret|accent)-(?:cyan|magenta|yellow)(?:\/\d+)?\b/
 
@@ -75,15 +91,20 @@ describe("Layer 1 ink usage (semantic surfaces)", () => {
     })
 
     it("carve-out is documented and gets an ADR", () => {
+        if (!REPO_DOCS_DIR) {
+            throw new Error(
+                `No se encontró la carpeta docs/ del repo. Rutas probadas: ${DOCS_DIR_CANDIDATES.join(", ")}`,
+            )
+        }
         const colorContract = readFileSync(
-            join(FRONTEND_ROOT, "..", "docs/20-contracts/color-system.md"),
+            join(REPO_DOCS_DIR, "20-contracts/color-system.md"),
             "utf8",
         )
         expect(colorContract).toContain("Ledger Ink Metaphor")
         expect(colorContract).toContain("ADR-0071")
         expect(
             existsSync(
-                join(FRONTEND_ROOT, "..", "docs/10-architecture/adr/0071-ledger-ink-metaphor-carveout.md"),
+                join(REPO_DOCS_DIR, "10-architecture/adr/0071-ledger-ink-metaphor-carveout.md"),
             ),
         ).toBe(true)
     })

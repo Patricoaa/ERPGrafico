@@ -1,5 +1,6 @@
 import { createEntityFields } from "@/components/shared"
 import { DataCell } from "@/components/shared"
+import { DocumentRefLink } from "@/features/documents"
 import type { InventoryDocument } from "./types"
 
 const DOCUMENT_TYPE_MAP: Record<string, { intent: "success" | "warning" | "neutral" | "info" | "primary", label: string }> = {
@@ -7,7 +8,9 @@ const DOCUMENT_TYPE_MAP: Record<string, { intent: "success" | "warning" | "neutr
     'DELIVERY': { intent: 'primary', label: 'Entrega' },
     'TRANSFER': { intent: 'info', label: 'Transferencia' },
     'ADJUSTMENT': { intent: 'warning', label: 'Ajuste' },
-    'PRODUCTION': { intent: 'neutral', label: 'Producción' }
+    'PRODUCTION': { intent: 'neutral', label: 'Producción' },
+    'PARTNER_CONTRIBUTION': { intent: 'success', label: 'Aporte de socio' },
+    'PARTNER_WITHDRAWAL': { intent: 'warning', label: 'Retiro de socio' }
 }
 
 export const inventoryDocumentFields = createEntityFields<InventoryDocument>()({
@@ -15,7 +18,7 @@ export const inventoryDocumentFields = createEntityFields<InventoryDocument>()({
         key: "id",
         type: "code",
         label: "Folio",
-        get: (d) => `DOC-${d.id}`,
+        get: (d) => d.display_id,
     },
     date: {
         key: "date",
@@ -35,6 +38,9 @@ export const inventoryDocumentFields = createEntityFields<InventoryDocument>()({
         type: "computed",
         label: "Referencia",
         render: (d) => {
+            if (d.source_document) {
+                return <DocumentRefLink documentRef={d.source_document} />
+            }
             if (d.source_document_type && d.source_document_id) {
                 return <DataCell.Entity entityLabel={d.source_document_type} number={d.source_document_id} />
             }

@@ -32,7 +32,7 @@ import type { PendingChargeRow, UpcomingInstallment, UnbilledItemRow } from '../
 import { mapToUnbilledItemRows } from './utils'
 import { CardPendingChargeDrawer } from './CardPendingChargeDrawer'
 import { BillChargesModal } from './BillChargesModal'
-import { useHubPanel } from '@/components/providers'
+import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
 import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
 import { useUnbilledCharges } from '../hooks/useUnbilledCharges'
@@ -61,7 +61,7 @@ export function UnbilledChargesClientView({
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState("cupo")
     const [granularity, setGranularity] = useState<Granularity>("month")
     const queryClient = useQueryClient()
-    const { openHub } = useHubPanel()
+    const { openEntity } = useGlobalModals()
     const searchParams = useSearchParams()
     const pathname = usePathname()
     const router = useRouter()
@@ -224,7 +224,7 @@ export function UnbilledChargesClientView({
                             onClick={(e) => {
                                 e.stopPropagation()
                                 if (inst.purchase_order_id) {
-                                    openHub({ orderId: inst.purchase_order_id, type: 'purchase' })
+                                    openEntity('purchasing.purchaseorder', inst.purchase_order_id)
                                 }
                             }}
                             className="inline-block outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-sm transition-shadow h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none"

@@ -6,18 +6,13 @@ import { type ColumnDef } from "@tanstack/react-table"
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { documentUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { useInventoryDocuments, useInventoryDocumentMutations } from "../hooks/useInventoryDocuments"
-import { InventoryDocumentDrawer } from "./InventoryDocumentDrawer"
 import { documentActions, type InventoryDocumentActionsCtx } from "../documentActions"
 import type { InventoryDocument } from "../types"
 import { inventoryDocumentFields } from "../inventoryDocumentFields"
 import { toast } from "sonner"
 import React from "react"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { showApiError } from "@/lib/errors"
-import { useRef } from "react"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
 
 interface DocumentsClientViewProps {
     documentTypeFilter?: 'RECEIPT' | 'DELIVERY' | 'TRANSFER' | 'ADJUSTMENT' | 'PRODUCTION'
@@ -48,17 +43,7 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
         }
     }, [isOverLimit, totalCount])
 
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<InventoryDocument>({
-        endpoint: '/inventory/documents'
-    })
-
-    const selectedDocumentId = selectedFromUrl?.id ?? null
-
-    const handleCloseDrawer = () => {
-        clearSelection()
-    }
-
-    const { openSelected } = useEntityRouteActions()
+    const sheet = useDocumentSheetRoute("inventory.inventorydocument")
 
     const { annulDocument } = useInventoryDocumentMutations()
 
@@ -72,14 +57,11 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
         }
     }, [annulDocument, refetch])
 
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
-
     const actionsCtx: InventoryDocumentActionsCtx = useMemo(() => ({
-        onViewDetail: openSelected,
-        onPrint: () => handlePrint(),
+        onViewDetail: sheet.toggle,
+        onPrint: (doc) => sheet.toggle(doc.id),
         onAnnul: handleAnnul,
-    }), [openSelected, handlePrint, handleAnnul])
+    }), [sheet, handleAnnul])
 
     const columns = useMemo<ColumnDef<InventoryDocument>[]>(() => {
         return [
@@ -137,24 +119,11 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
                                 entityLabel="inventory.inventorydocument"
 
                                 actions={documentActions.render(doc, actionsCtx)}
-                                defaultAction={() => openSelected(doc.id)}
+                                defaultAction={() => sheet.toggle(doc.id)}
                             />
                     )}
                 />
             </div>
-
-            <PrintableLayout ref={printRef} title="Documento de Inventario" displayId={selectedDocumentId ? `DOC-${selectedDocumentId}` : ''}>
-                <div className="text-4xs">Impresión de documento de inventario</div>
-            </PrintableLayout>
-
-            <InventoryDocumentDrawer
-                documentId={selectedDocumentId}
-                open={selectedDocumentId !== null}
-                onOpenChange={(open) => {
-                    if (!open) handleCloseDrawer()
-                }}
-                onSuccess={refetch}
-            />
         </div>
     )
 }

@@ -25,6 +25,7 @@ export interface Check {
     invoice: number | null
     sale_order: number | null
     sale_order_display: { id: number; number: number } | null
+    sale_order_document?: unknown | null
     notes: string
     deposited_at: string | null
     cleared_at: string | null

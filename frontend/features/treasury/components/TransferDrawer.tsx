@@ -1,6 +1,6 @@
 "use client"
 
-import React, {useState, useEffect} from "react"
+import React, { useState, useEffect } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -79,15 +79,22 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
         }
     }, [serverDate, form])
 
+    // Un Idempotency-Key por intención de traspaso: se reutiliza en reintentos y se renueva al completar
+    const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID())
+
     const onSubmit = async (values: TransferFormValues) => {
         try {
             await createTransfer({
-                from_account_id: values.from_account_id,
-                to_account_id: values.to_account_id,
-                amount: parseFloat(values.amount),
-                notes: values.notes,
-                date: values.date.toISOString().split('T')[0] + 'T' + new Date().toTimeString().split(' ')[0],
+                payload: {
+                    from_account_id: values.from_account_id,
+                    to_account_id: values.to_account_id,
+                    amount: parseFloat(values.amount),
+                    notes: values.notes,
+                    date: values.date.toISOString().split('T')[0] + 'T' + new Date().toTimeString().split(' ')[0],
+                },
+                idempotencyKey,
             })
+            setIdempotencyKey(crypto.randomUUID())
             onOpenChange(false)
             onSuccess?.()
             form.reset()

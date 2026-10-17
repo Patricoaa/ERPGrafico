@@ -24,9 +24,10 @@ class Invoice(TransactionalDocument):
         COMPROBANTE_PAGO = "COMPROBANTE_PAGO", _("Comprobante de Pago Electrónico")
 
     class Status(models.TextChoices):
+        # Ciclo del documento (ADR-0084). Borrador = folio pendiente; el pago es otro eje
+        # (`payment_status`, derivado del saldo).
         DRAFT = "DRAFT", _("Borrador")
-        POSTED = "POSTED", _("Publicado")
-        PAID = "PAID", _("Pagado")
+        POSTED = "POSTED", _("Emitida")
         CANCELLED = "CANCELLED", _("Anulado")
 
     class PaymentMethod(models.TextChoices):
@@ -175,10 +176,13 @@ class Invoice(TransactionalDocument):
     @property
     def total_paid(self):
         """Calculates the total amount paid for this invoice"""
-        from treasury.models import TreasuryMovement
+        from treasury.selectors import PaymentSelector
 
-        return sum(
-            p.amount for p in self.payments.all() if p.status != TreasuryMovement.Status.CANCELLED
+        return PaymentSelector.paid_amount(
+            self.payments.all(),
+            sale_side=self.is_sale_document(),
+            allocations=self.payment_allocations.all(),
+            fk_remainder=True,
         )
 
     @property
@@ -186,26 +190,37 @@ class Invoice(TransactionalDocument):
         """Calculates the remaining amount to be paid for this invoice"""
         return self.total - self.total_paid
 
+    @property
+    def payment_status(self):
+        """Eje de pago (ADR-0084): UNPAID · PARTIAL · PAID, derivado del saldo."""
+        from core.payment_status import payment_status_for
+
+        return payment_status_for(self.total, self.total_paid)
+
     # --- T-57 ampliado: Polymorphic treasury hooks ---
+
+    @property
+    def order(self):
+        """
+        Orden origen de la factura vía FK tipadas (GAP-05, auditoría documental).
+        Reemplaza al GFK `source_order`, que ningún flujo escribe.
+        """
+        return self.sale_order or self.purchase_order
 
     def is_sale_document(self) -> bool:
         """
         Indica si la factura corresponde a una venta.
-        Verdadero si source_order es un SaleOrder (o si no hay source_order — facturas standalone son de venta).
+        Falso si está ligada a una OC o es factura de compra; las standalone son de venta.
         """
-        source = self.source_order
-        if source is None:
-            return True
-        return source._meta.model_name == "saleorder"
+        return self.purchase_order_id is None and self.dte_type != self.DTEType.PURCHASE_INV
 
     def get_customer_for_payment(self):
         """
         Retorna el contacto cliente para resolver la cuenta contable en el pago.
-        Prioriza el customer del documento origen sobre el contact de la factura.
+        Prioriza el customer de la OV origen sobre el contact de la factura.
         """
-        source = self.source_order
-        if source is not None:
-            return getattr(source, "customer", None)
+        if self.sale_order_id:
+            return self.sale_order.customer
         return self.contact
 
     class FormMeta:
@@ -262,3 +277,59 @@ class Invoice(TransactionalDocument):
                 "visible_if": {"field": "dte_type", "in": ["NOTA_CREDITO", "NOTA_DEBITO"]}
             },
         }
+
+
+class InvoiceLine(models.Model):
+    """
+    Línea propia de una factura (ADR-0081, GAP-13). Factura ↔ orden es N:M derivada de
+    estas líneas (`sale_line.order` / `purchase_line.order`); facturación parcial por
+    cantidad atada a la entrega (decisiones D1.1, D1.2).
+    """
+
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="lines")
+    sale_line = models.ForeignKey(
+        "sales.SaleLine", on_delete=models.PROTECT, null=True, blank=True, related_name="invoice_lines"
+    )
+    purchase_line = models.ForeignKey(
+        "purchasing.PurchaseLine", on_delete=models.PROTECT, null=True, blank=True, related_name="invoice_lines"
+    )
+    delivery_line = models.ForeignKey(
+        "sales.SaleDeliveryLine", on_delete=models.PROTECT, null=True, blank=True, related_name="invoice_lines"
+    )
+    receipt_line = models.ForeignKey(
+        "purchasing.PurchaseReceiptLine", on_delete=models.PROTECT, null=True, blank=True,
+        related_name="invoice_lines",
+    )
+    # NC/ND: línea de factura que corrige (D1.3, GAP-14 — etapa M4c)
+    corrected_line = models.ForeignKey(
+        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="note_lines"
+    )
+    product = models.ForeignKey(
+        "inventory.Product", on_delete=models.PROTECT, null=True, blank=True, related_name="invoice_lines"
+    )
+    description = models.CharField(_("Descripción"), max_length=255, blank=True)
+    quantity = models.DecimalField(_("Cantidad"), max_digits=10, decimal_places=2)
+    uom = models.ForeignKey("inventory.UoM", on_delete=models.PROTECT, null=True, blank=True)
+    unit_price = models.DecimalField(_("Precio Unitario Neto"), max_digits=12, decimal_places=2, default=0)
+    unit_price_gross = models.DecimalField(
+        _("Precio Unitario Bruto"), max_digits=12, decimal_places=2, null=True, blank=True
+    )
+    tax_rate = models.DecimalField(_("Tasa Impuesto"), max_digits=5, decimal_places=2, default=0)
+    discount_amount = models.DecimalField(_("Descuento"), max_digits=12, decimal_places=0, default=0)
+    # Misma semántica que la línea de orden que factura (bruto si hay precio bruto).
+    subtotal = models.DecimalField(_("Subtotal"), max_digits=12, decimal_places=0, default=0)
+
+    class Meta:
+        verbose_name = _("Línea de Factura")
+        verbose_name_plural = _("Líneas de Factura")
+        ordering = ["id"]
+
+    @property
+    def order_line(self):
+        return self.sale_line or self.purchase_line
+
+
+# NoteWorkflow vive en su propio módulo; se importa aquí para que Django lo registre al
+# cargar la app (sin esto, con --nomigrations la tabla solo existía si otro módulo lo
+# importaba antes de crear la BD de test → "no such table" según el orden de los tests).
+from .note_workflow import NoteWorkflow  # noqa: E402, F401

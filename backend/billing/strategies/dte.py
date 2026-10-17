@@ -159,8 +159,9 @@ def _build_revenue_grouping(invoice: "Invoice") -> dict:
     from django.core.exceptions import ValidationError
 
     revenue_gross_grouping: dict = {}
-    for line in invoice.sale_order.lines.all():
-        rev_acc = line.product.get_income_account
+    # ADR-0081: líneas propias de la factura (legacy: líneas de la orden)
+    for line in list(invoice.lines.select_related("product")) or invoice.sale_order.lines.all():
+        rev_acc = line.product.get_income_account if line.product else None
         if not rev_acc:
             from accounting.models import AccountingSettings
 
@@ -168,7 +169,7 @@ def _build_revenue_grouping(invoice: "Invoice") -> dict:
             rev_acc = settings.default_revenue_account
         if not rev_acc:
             raise ValidationError(
-                f"Falta configurar cuenta de ingresos para el producto {line.product.code}."
+                f"Falta configurar cuenta de ingresos para el producto {getattr(line.product, 'code', '')}."
             )
         revenue_gross_grouping[rev_acc] = (
             revenue_gross_grouping.get(rev_acc, Decimal("0.00")) + line.subtotal

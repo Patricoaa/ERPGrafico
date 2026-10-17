@@ -1,4 +1,5 @@
 import type { ActionRegistry } from '@/types/actions'
+import { getDomainConceptTitle, getDomainConceptMessage } from '@/lib/entity-registry'
 import {
     FileText,
     Truck,
@@ -30,7 +31,8 @@ interface ActionDoc {
     lines?: Array<Record<string, unknown>>
     items?: Array<Record<string, unknown>>
     invoices?: Array<Record<string, unknown>>
-    related_documents?: { invoices?: Array<Record<string, unknown>>; deliveries?: Array<Record<string, unknown>>; payments?: Array<Record<string, unknown>> }
+    /** Resumen tipado de la orden (ADR-0083 U6). */
+    deliveries?: Array<Record<string, unknown>>
     work_orders?: Array<Record<string, unknown>>
     serialized_payments?: Array<Record<string, unknown>>
     product?: { track_inventory?: boolean }
@@ -54,18 +56,30 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                     if (isInvoiced) {
                         return activeDoc.status === 'DRAFT' || activeDoc.number === 'Draft' || !activeDoc.number
                     }
-                    const invoices = activeDoc.related_documents?.invoices || activeDoc.invoices || []
+                    const invoices = activeDoc.invoices || []
                     return invoices.some((inv) => inv.status === 'DRAFT' || inv.number === 'Draft')
                 },
                 badge: { type: 'warning', label: 'Pendiente' },
                 excludedStatus: ['CANCELLED']
             },
             {
+                // ADR-0081: facturación parcial por entregas / multi-orden
+                id: 'invoice-by-lines',
+                label: 'Facturar por entregas',
+                icon: FileText,
+                requiredPermissions: ['billing.add_invoice'],
+                checkAvailability: (order) => {
+                    if (!order || order.dte_type) return false
+                    if (['DRAFT', 'CANCELLED'].includes(String(order.status))) return false
+                    return order.invoicing_status !== 'INVOICED'
+                }
+            },
+            {
                 id: 'view-documents',
                 label: 'Ver Documentos',
                 icon: Eye,
                 requiredPermissions: ['billing.view_invoice'],
-                checkAvailability: (order) => (order.related_documents?.invoices?.length || 0) > 0
+                checkAvailability: (order) => (order.invoices?.length || 0) > 0
             },
             {
                 id: 'regenerate-document',
@@ -73,7 +87,7 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                 icon: FileEdit,
                 requiredPermissions: ['billing.add_invoice'],
                 checkAvailability: (order) => {
-                    const invoices = order.related_documents?.invoices || order.invoices || []
+                    const invoices = order.invoices || []
                     return invoices.length > 0 && invoices.every((inv: Record<string, unknown>) =>
                         inv.status === 'CANCELLED'
                     )
@@ -90,7 +104,7 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
         actions: [
             {
                 id: 'create-work-order',
-                label: 'Crear Orden de Trabajo',
+                label: getDomainConceptMessage('ot', 'create'),
                 icon: FileEdit,
                 requiredPermissions: ['production.add_workorder'],
                 checkAvailability: (order) => {
@@ -186,7 +200,7 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                     }
 
                     // Only if invoice is DRAFT
-                    const hasDraftInvoice = activeDoc.related_documents?.invoices?.some(
+                    const hasDraftInvoice = activeDoc.invoices?.some(
                         (inv: Record<string, unknown>) => inv.status === 'DRAFT'
                     ) ?? false
 
@@ -206,7 +220,7 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                 icon: Eye,
                 requiredPermissions: ['inventory.view_stockmove'],
                 checkAvailability: (order) => {
-                    return (order.related_documents?.deliveries?.length || 0) > 0
+                    return (order.deliveries?.length || 0) > 0
                 }
             }
         ]
@@ -259,14 +273,14 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                     }
 
                     // Only if invoice is DRAFT
-                    const hasDraftInvoice = activeDoc.related_documents?.invoices?.some(
+                    const hasDraftInvoice = activeDoc.invoices?.some(
                         (inv: Record<string, unknown>) => inv.status === 'DRAFT'
                     ) ?? false
 
                     // Only if has posted payments
-                    const payments = activeDoc.related_documents?.payments || []
+                    const payments = activeDoc.serialized_payments || []
                     const hasPostedPayments = payments.some(
-                        (pay: Record<string, unknown>) => (pay.journal_entry as Record<string, unknown> | undefined)?.state === 'POSTED'
+                        (pay: Record<string, unknown>) => pay.status === 'POSTED'
                     )
 
                     return hasDraftInvoice && hasPostedPayments
@@ -279,8 +293,7 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                 icon: History,
                 requiredPermissions: ['treasury.view_treasurymovement'],
                 checkAvailability: (order) => {
-                    const paymentsCount = order.related_documents?.payments?.length ||
-                        order.serialized_payments?.length || 0
+                    const paymentsCount = order.serialized_payments?.length || 0
                     return paymentsCount > 0
                 }
             }
@@ -301,12 +314,12 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                 checkAvailability: (order) => {
                     if (!order) return false
                     // Show if there is any DTE associated with the order
-                    const invoices = order.related_documents?.invoices || order.invoices || []
+                    const invoices = order.invoices || []
                     const validDTEs = ['FACTURA', 'FACTURA_EXENTA', 'BOLETA', 'BOLETA_EXENTA']
                     return invoices.some((inv: Record<string, unknown>) => validDTEs.includes(inv.dte_type as string))
                 },
                 isDisabled: (order) => {
-                    const invoices = order.related_documents?.invoices || order.invoices || []
+                    const invoices = order.invoices || []
 
                     const hasIssuedDTEWithFolio = invoices.some((inv: Record<string, unknown>) =>
                         inv.status !== 'DRAFT' &&
@@ -317,11 +330,8 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                     return !hasIssuedDTEWithFolio
                 },
 
-                disabledTooltip: (order) => {
-                    if (order.status !== 'PAID') return "La orden debe estar completamente pagada"
-                    if (order.delivery_status !== 'DELIVERED') return "La logística debe estar completamente finalizada"
-                    return "Debe existir una factura publicada con folio asignado"
-                }
+                // Única condición real (isDisabled): una factura emitida con folio
+                disabledTooltip: "Debe existir una factura emitida con folio asignado"
             },
             {
                 id: 'create-debit-note',
@@ -332,12 +342,12 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                 checkAvailability: (order) => {
                     if (!order) return false
                     // Show if there is any DTE associated with the order
-                    const invoices = order.related_documents?.invoices || order.invoices || []
+                    const invoices = order.invoices || []
                     const validDTEs = ['FACTURA', 'FACTURA_EXENTA', 'BOLETA', 'BOLETA_EXENTA']
                     return invoices.some((inv: Record<string, unknown>) => validDTEs.includes(inv.dte_type as string))
                 },
                 isDisabled: (order) => {
-                    const invoices = order.related_documents?.invoices || order.invoices || []
+                    const invoices = order.invoices || []
 
                     const hasIssuedDTEWithFolio = invoices.some((inv: Record<string, unknown>) =>
                         inv.status !== 'DRAFT' &&
@@ -348,11 +358,8 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                     return !hasIssuedDTEWithFolio
                 },
 
-                disabledTooltip: (order) => {
-                    if (order.status !== 'PAID') return "La orden debe estar completamente pagada"
-                    if (order.delivery_status !== 'DELIVERED') return "La logística debe estar completamente finalizada"
-                    return "Debe existir una factura publicada con folio asignado"
-                }
+                // Única condición real (isDisabled): una factura emitida con folio
+                disabledTooltip: "Debe existir una factura emitida con folio asignado"
             }
         ]
     },
@@ -369,7 +376,7 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                 requiredPermissions: ['inventory.add_stockmove'],
                 checkAvailability: (order) => {
                     // Only if invoice is DRAFT
-                    const hasDraftInvoice = order.related_documents?.invoices?.some(
+                    const hasDraftInvoice = order.invoices?.some(
                         (inv: Record<string, unknown>) => inv.status === 'DRAFT'
                     ) ?? false
 
@@ -389,13 +396,13 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                 requiredPermissions: ['treasury.add_treasurymovement'],
                  checkAvailability: (order) => {
                     // Only if invoice is DRAFT
-                    const hasDraftInvoice = order.related_documents?.invoices?.some(
+                    const hasDraftInvoice = order.invoices?.some(
                         (inv: Record<string, unknown>) => inv.status === 'DRAFT'
                     ) ?? false
 
                     // Only if has posted payments
-                    const hasPostedPayments = order.related_documents?.payments?.some(
-                        (pay: Record<string, unknown>) => (pay.journal_entry as Record<string, unknown> | undefined)?.state === 'POSTED'
+                    const hasPostedPayments = order.serialized_payments?.some(
+                        (pay: Record<string, unknown>) => pay.status === 'POSTED'
                     ) ?? false
 
                     return hasDraftInvoice && hasPostedPayments
@@ -412,7 +419,7 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
         actions: [
             {
                 id: 'view-work-orders',
-                label: 'Ver Órdenes de Trabajo',
+                label: `Ver ${getDomainConceptTitle('ot', true)}`,
                 icon: Eye,
                 requiredPermissions: ['production.view_workorder'],
                 checkAvailability: (order) => (order.work_orders?.length || 0) > 0

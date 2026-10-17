@@ -475,7 +475,7 @@ class ContactSelector:
         }
 
     @staticmethod
-    def get_credit_ledger(contact: Contact, include_all: bool = False) -> list:
+    def get_credit_ledger(contact: Contact, include_all: bool = False, user=None) -> list:
         """
         Retorna la lista de órdenes a crédito pendientes o castigadas para el contacto,
         enriquecida con fechas de vencimiento y clasificación de riesgo (aging buckets).
@@ -484,6 +484,8 @@ class ContactSelector:
         from decimal import Decimal
 
         from django.utils import timezone
+
+        from core.documents import build_ref
 
         today = timezone.now().date()
         payment_term = contact.credit_days or 30
@@ -547,6 +549,8 @@ class ContactSelector:
                             if order.credit_assignment_origin
                             else None
                         ),
+                        # DocumentRef de la OV (identidad de fila, ADR-0086).
+                        "document": build_ref(order, user, "sales.saleorder", navigational=True),
                     }
                 )
         return ledger_data

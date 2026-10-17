@@ -12,7 +12,9 @@ export function useTransfer() {
     const { markLocalMutation } = useRealtime()
 
     const createTransfer = useMutation({
-        mutationFn: (payload: TransferPayload) => treasuryApi.registerTransfer(payload),
+        // El endpoint exige Idempotency-Key (contrato idempotency.md); el key viaja en las variables
+        mutationFn: ({ payload, idempotencyKey }: { payload: TransferPayload; idempotencyKey: string }) =>
+            treasuryApi.registerTransfer(payload, idempotencyKey),
         onSuccess: () => {
             markLocalMutation()
             toast.success('Traspaso registrado correctamente.')

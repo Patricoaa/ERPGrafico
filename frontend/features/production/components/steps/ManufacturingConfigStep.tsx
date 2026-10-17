@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errors"
 import { toDate } from "@/lib/utils";
+import { getDomainConceptTitle, getDomainConceptMessage } from "@/lib/entity-registry";
 import { Form, FormField } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -338,20 +339,20 @@ export function ManufacturingConfigStep({
       let workOrderId: number;
       if (initialData?.id) {
         await productionApi.updateWorkOrder(Number(initialData.id), formData);
-        toast.success("Orden de Trabajo actualizada correctamente");
+        toast.success(getDomainConceptMessage('ot', 'updated'));
         workOrderId = Number(initialData.id);
       } else {
         const data = await productionApi.createWorkOrder(formData, {
           'Idempotency-Key': idempotencyKey
         });
-        toast.success("Orden de Trabajo creada correctamente");
+        toast.success(getDomainConceptMessage('ot', 'created'));
         workOrderId = (data as { id: number }).id;
       }
 
       onSuccess?.(workOrderId);
     } catch (error: unknown) {
       console.error("Error saving work order:", error);
-      toast.error(getErrorMessage(error) || "Error al guardar la Orden de Trabajo");
+      toast.error(getErrorMessage(error) || `Error al guardar la ${getDomainConceptTitle('ot')}`);
     } finally {
       setLoading(false);
     }
@@ -417,7 +418,7 @@ export function ManufacturingConfigStep({
               {otType === "LINKED" ? (
                 <div className="p-4 bg-muted/20 border rounded-md">
                   <Label className="text-3xs uppercase text-muted-foreground font-bold flex items-center gap-1">
-                    <FileText className="h-3.5 w-3.5" /> Producto de la Orden de Venta
+                    <FileText className="h-3.5 w-3.5" /> Producto de la {getDomainConceptTitle('ov')}
                   </Label>
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-4 text-sm">
@@ -556,7 +557,7 @@ export function ManufacturingConfigStep({
       <AlertDialog open={isCreateConfirmOpen} onOpenChange={setIsCreateConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Crear Orden de Trabajo</AlertDialogTitle>
+            <AlertDialogTitle>{getDomainConceptMessage('ot', 'create')}</AlertDialogTitle>
             <AlertDialogDescription>
               Una vez creada la OT no podrás modificar la configuración de fabricación
               ni volver a los pasos anteriores. ¿Deseas continuar?

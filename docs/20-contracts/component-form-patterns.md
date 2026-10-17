@@ -49,17 +49,17 @@ graph TD
     Q_CONTEXT2 -->|No| STANDARD["BaseModal (lg)<br/>+ FormSection"]
     Q5 -->|Sí| Q6{"¿Cuántos dominios?"}
     Q6 -->|"2–3"| TABS_H_Q{"¿Necesita preservar<br/>contexto de la lista?"}
-    TABS_H_Q -->|Sí| TABS_H_DRAWER["Drawer (left, 55%)<br/>+ FormTabs horizontal"]
-    TABS_H_Q -->|No| TABS_H["BaseModal (lg/xl)<br/>+ FormTabs horizontal"]
+    TABS_H_Q -->|Sí| TABS_H_DRAWER["Drawer (left, 55%)<br/>+ TabBar horizontal"]
+    TABS_H_Q -->|No| TABS_H["BaseModal (lg/xl)<br/>+ TabBar horizontal"]
     Q6 -->|"4+"| TABS_V_Q{"¿Necesita preservar<br/>contexto de la lista?"}
-    TABS_V_Q -->|Sí| TABS_V_DRAWER["Drawer (left, 65%)<br/>+ FormTabs vertical"]
-    TABS_V_Q -->|No| TABS_V["BaseModal (xl/2xl)<br/>+ FormTabs vertical"]
+    TABS_V_Q -->|Sí| TABS_V_DRAWER["Drawer (left, 65%)<br/>+ TabBar vertical"]
+    TABS_V_Q -->|No| TABS_V["BaseModal (xl/2xl)<br/>+ TabBar vertical"]
     Q4 -->|"16–30 campos"| Q_COMPLEX{"¿Necesita preservar<br/>contexto de la lista?"}
-    Q_COMPLEX -->|Sí| COMPLEX_DRAWER["Drawer (left, 65%)<br/>+ FormTabs vertical"]
-    Q_COMPLEX -->|No| COMPLEX["BaseModal (xl/2xl)<br/>+ FormTabs vertical"]
+    Q_COMPLEX -->|Sí| COMPLEX_DRAWER["Drawer (left, 65%)<br/>+ TabBar vertical"]
+    Q_COMPLEX -->|No| COMPLEX["BaseModal (xl/2xl)<br/>+ TabBar vertical"]
     Q4 -->|"30+ campos"| Q_MASTER{"¿Necesita preservar<br/>contexto de la lista?"}
-    Q_MASTER -->|Sí| MASTER_DRAWER["Drawer (left, 75%)<br/>+ FormTabs vertical<br/>+ FormSplitLayout"]
-    Q_MASTER -->|No| MASTER["BaseModal (full)<br/>+ FormTabs vertical<br/>+ FormSplitLayout"]
+    Q_MASTER -->|Sí| MASTER_DRAWER["Drawer (left, 75%)<br/>+ TabBar vertical<br/>+ FormSplitLayout"]
+    Q_MASTER -->|No| MASTER["BaseModal (full)<br/>+ TabBar vertical<br/>+ FormSplitLayout"]
 ```
 
 ### Regla de oro
@@ -103,7 +103,9 @@ Un formulario **puede crecer** de tamaño entre modo creación y edición:
 
 ---
 
-## 3. Cuándo Usar Tabs (FormTabs)
+## 3. Cuándo Usar Tabs (TabBar)
+
+> `TabBar`/`TabBarContent` (`@/components/shared`) reemplazó a `FormTabs` (mismo rol; `orientation` + `variant: toolbar | folder | underline`). Este contrato se actualizó por nombre en ADR-0083.
 
 ### Regla: ¿Necesito tabs?
 
@@ -111,12 +113,13 @@ Un formulario **puede crecer** de tamaño entre modo creación y edición:
 |:---|:---|
 | Sin dominios diferenciados (todo el contenido pertenece a 1 dominio) | **Nunca** — usar `FormSection` si hay ≥2 sub-grupos |
 | Formulario Micro o Simple (1–6 campos) | **Nunca** — independientemente de los dominios |
-| Formulario Estándar con 2–4 dominios lógicos | **Opcional** — `FormTabs` horizontal si la densidad lo justifica |
-| Formulario Estándar con ≥5 dominios lógicos | **Obligatorio** — `FormTabs` (horizontal) |
-| Formulario Complejo (16–30 campos) | **Obligatorio** — `FormTabs` vertical |
-| Ficha Maestra (30+ campos) | **Obligatorio** — `FormTabs` vertical |
-| Tabs con contenido denso (tablas, grids embebidos) | **Obligatorio** — `FormTabs` vertical |
-| Modal ≥ `xl` con sidebar (`FormSplitLayout`) | **Obligatorio** — `FormTabs` vertical |
+| Formulario Estándar con 2–4 dominios lógicos | **Opcional** — `TabBar` horizontal si la densidad lo justifica |
+| Formulario Estándar con ≥5 dominios lógicos | **Obligatorio** — `TabBar` (horizontal) |
+| Formulario Complejo (16–30 campos) | **Obligatorio** — `TabBar` vertical |
+| Ficha Maestra (30+ campos) | **Obligatorio** — `TabBar` vertical |
+| Tabs con contenido denso (tablas, grids embebidos) | **Obligatorio** — `TabBar` vertical |
+| Modal ≥ `xl` con sidebar (`FormSplitLayout`) | **Obligatorio** — `TabBar` vertical |
+| Ficha maestra o documental en **Drawer** (`ContactDrawer`, ficha documental) | `TabBar` **horizontal `underline`** (≤5 tabs visibles) — el riel vertical resta ancho a las tablas. Ver [component-document-sheet.md](./component-document-sheet.md) (ADR-0083) |
 
 ### ¿Qué es un "dominio lógico"?
 
@@ -148,12 +151,12 @@ Un dominio agrupa campos conceptualmente relacionados. Ejemplos:
     title="Ficha de Entidad"
     size="xl"
     variant="form-tabs"           // Estandarizado para pestañas dinámicas
-    hideScrollArea={true}         // FormTabs maneja su propio scroll
+    hideScrollArea={true}         // TabBar maneja su propio scroll
     allowOverflow={true}          // Permitir que el riel sobresalga
     contentClassName="p-0"
     footer={/* ... */}
 >
-    <FormTabs
+    <TabBar
         items={tabItems}
         value={activeTab}
         onValueChange={setActiveTab}
@@ -161,9 +164,9 @@ Un dominio agrupa campos conceptualmente relacionados. Ejemplos:
         header={headerSlot}       // Título movido aquí
         footer={footerSlot}       // Opcional: footer dentro de tabs
     >
-        <FormTabsContent value="general">...</FormTabsContent>
-        <FormTabsContent value="config">...</FormTabsContent>
-    </FormTabs>
+        <TabBarContent value="general">...</TabBarContent>
+        <TabBarContent value="config">...</TabBarContent>
+    </TabBar>
 </BaseModal>
 ```
 
@@ -177,15 +180,15 @@ Un dominio agrupa campos conceptualmente relacionados. Ejemplos:
     size="lg"
     footer={/* ... */}
 >
-    <FormTabs
+    <TabBar
         items={tabItems}
         value={activeTab}
         onValueChange={setActiveTab}
         orientation="horizontal"
     >
-        <FormTabsContent value="tab1">...</FormTabsContent>
-        <FormTabsContent value="tab2">...</FormTabsContent>
-    </FormTabs>
+        <TabBarContent value="tab1">...</TabBarContent>
+        <TabBarContent value="tab2">...</TabBarContent>
+    </TabBar>
 </BaseModal>
 ```
 
@@ -303,9 +306,9 @@ Jerarquía de componentes y cómo se ensamblan:
 
 ```
 Surface (BaseModal | Page)
-  └─ FormTabs (si ≥2 dominios)
+  └─ TabBar (si ≥2 dominios)
   │    ├─ header (título + badge de entidad)
-  │    ├─ FormTabsContent × N
+  │    ├─ TabBarContent × N
   │    │    └─ FormSplitLayout (si edit mode con audit)
   │    │         ├─ form (main area, scrollable)
   │    │         │    ├─ FormSection × N (separadores de dominio)
@@ -313,9 +316,9 @@ Surface (BaseModal | Page)
   │    │         │    │         └─ LabeledInput | LabeledContainer | Selector
   │    │         │    └─ FormSection ...
   │    │         └─ ActivitySidebar (w-72, border-l proveído por FormSplitLayout, solo edit mode)
-  │    └─ footer (FormFooter | FormTabs footer slot)
+  │    └─ footer (FormFooter | TabBar footer slot)
   │         └─ CancelButton + SubmitButton | ActionSlideButton
-  └─ (Sin FormTabs)
+  └─ (Sin TabBar)
        └─ FormSplitLayout (si edit mode)
             ├─ form
             │    └─ FormSection × N → grid → inputs
@@ -326,7 +329,7 @@ Surface (BaseModal | Page)
 
 | Componente | Propósito | Documentación |
 |:---|:---|:---|
-| `FormTabs` / `FormTabsContent` | Navegación por dominios lógicos | [component-contracts.md §FormTabs](./component-contracts.md) |
+| `TabBar` / `TabBarContent` | Navegación por dominios lógicos | [component-contracts.md §TabBar](./component-contracts.md) |
 | `FormSplitLayout` | Layout form + sidebar de auditoría | [form-layout-architecture.md §5](./form-layout-architecture.md) |
 | `SkeletonShell` | Overlay shimmer para formularios con dependencias asíncronas — wrapping completo del `<Form>` | [component-skeleton.md §Estrategia 4](./component-skeleton.md#estrategia-4-formmodal-first-load-layout-as-skeleton) |
 | `ActivitySidebar` | Historial de cambios — solo en edit mode, solo en sidebar de `FormSplitLayout` | [form-layout-architecture.md §5](./form-layout-architecture.md) |
@@ -348,7 +351,7 @@ Surface (BaseModal | Page)
 
 ## 7. Indicador de Errores en Tabs
 
-Cuando un formulario con tabs tiene errores de validación, `FormTabs` los muestra automáticamente a través de la prop `hasErrors`:
+Cuando un formulario con tabs tiene errores de validación, `TabBar` los muestra automáticamente a través de la prop `hasErrors`:
 
 ```tsx
 const tabItems: FormTabItem[] = [
@@ -458,7 +461,7 @@ graph TD
 
 ## Forbidden Patterns
 
-- ❌ **Tabs manuales** — Nunca implementar navegación por tabs de forma artesanal. Siempre usar `FormTabs`.
+- ❌ **Tabs manuales** — Nunca implementar navegación por tabs de forma artesanal. Siempre usar `TabBar`.
 - ❌ **`Dialog` directo** — Siempre envolver en `BaseModal`.
 - ❌ **Formulario sin Zod** — Todos los formularios usan `zodResolver` + `react-hook-form`.
 - ❌ **Footer sin `FormFooter`** — Todo formulario en `BaseModal` o `Drawer` **SIEMPRE** usa `FormFooter` en la prop `footer`. Nunca un `<div>` raw. Los overlays de solo lectura (sin form) pueden usar `<Button>Cerrar</Button>` directo.

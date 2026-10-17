@@ -2,7 +2,6 @@
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef } from "react"
-import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import {ActionConfirmModal, DataTableView, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch} from '@/components/shared'
 import { salesInvoiceFields } from "@/features/billing/salesInvoiceFields"
 import { salesInvoiceActions } from "@/features/billing/salesInvoiceActions"
@@ -13,7 +12,7 @@ import { type Invoice, type InvoiceFilters } from "@/features/billing/types"
 import { toast } from "sonner"
 import { UnifiedNoteWizard } from "@/features/notes"
 import { PaymentModal } from "@/features/treasury"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { getEntityIcon, getDtePrefix } from "@/lib/entity-registry"
@@ -21,24 +20,13 @@ import { getEntityIcon, getDtePrefix } from "@/lib/entity-registry"
 export function SalesInvoicesClientView() {
     const search = useUnifiedSearch(invoiceUnifiedSearchDef)
     const { invoices, isLoading, isRefetching, refetch, annulInvoice } = useInvoices({ filters: { ...search.filters, mode: 'sale' } as InvoiceFilters })
-    const { hubConfig, isHubOpen } = useHubPanel()
+    // ?selected abre la ficha documental de la factura (ADR-0083)
+    const sheet = useDocumentSheetRoute("billing.invoice")
+    const isHubOpen = sheet.isOpen
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
     const [payingInv, setPayingInv] = useState<Invoice | null>(null)
-    const router = useRouter()
-    const searchParams = useSearchParams()
-    const pathname = usePathname()
 
-    const toggleSelection = (inv: Invoice) => {
-        const isSelected = hubConfig?.invoiceId === inv.id
-        const params = new URLSearchParams(searchParams.toString())
-        if (isSelected && isHubOpen) {
-            params.delete('selected')
-        } else {
-            params.set('selected', String(inv.id))
-        }
-        const query = params.toString()
-        router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
-    }
+    const toggleSelection = (inv: Invoice) => sheet.toggle(inv.id)
 
     // El motivo se captura en el modal de anulación y se reutiliza en el force-retry
     const annulReasonRef = useRef('')
@@ -128,8 +116,8 @@ export function SalesInvoicesClientView() {
                                 fields={salesInvoiceFields}
                                 entityLabel={label}
                                 onClick={() => toggleSelection(data)}
-                                isSelected={hubConfig?.invoiceId === data.id}
-                                className={isHubOpen && hubConfig?.invoiceId === data.id ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
+                                isSelected={sheet.selectedId === data.id}
+                                className={isHubOpen && sheet.selectedId === data.id ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
                                 icon={getEntityIcon(label)}
                                 iconClassName={isNC ? "text-warning bg-warning/10" : undefined}
                                 actions={salesInvoiceActions.render(data, { onHub: (doc) => toggleSelection(doc) })}

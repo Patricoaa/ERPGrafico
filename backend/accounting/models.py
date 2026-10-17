@@ -460,8 +460,8 @@ class JournalEntry(AuditedModel):
 
     @property
     def display_id(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{EntityPrefix.JOURNAL_ENTRY}-{self.number}"
+        from core.prefix_registry import EntityPrefix, fmt_seq_num
+        return f"{EntityPrefix.JOURNAL_ENTRY}-{fmt_seq_num(self.number)}" if self.number else f"{EntityPrefix.JOURNAL_ENTRY}-?"
 
     def check_balance(self):
         from django.db.models import Sum
@@ -556,12 +556,6 @@ class JournalEntry(AuditedModel):
         super().delete(*args, **kwargs)
 
     @property
-    def get_source_documents(self):
-        # Mantenemos por retrocompatibilidad momentánea mientras migramos vistas.
-        # Retorna una lista con la nueva información de source.
-        info = self.source_info
-        return [info] if info else []
-
     @property
     def get_source_document(self):
         return self.source_document

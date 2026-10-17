@@ -1,3 +1,6 @@
+/** Eje de pago derivado del saldo (ADR-0084); no es un estado del documento. */
+export type PaymentStatus = 'UNPAID' | 'PARTIAL' | 'PAID'
+
 export interface Invoice {
     id: number
     display_id?: string
@@ -10,12 +13,12 @@ export interface Invoice {
     sale_order: number | null
     sale_order_number: string | null
     total: string
-    status: 'DRAFT' | 'POSTED' | 'PAID' | 'CANCELLED'
+    /** Ciclo del documento (ADR-0084): DRAFT = folio pendiente. */
+    status: 'DRAFT' | 'POSTED' | 'CANCELLED'
+    /** Eje de pago derivado del saldo (ADR-0084). */
+    payment_status?: PaymentStatus
     status_display: string
     pending_amount: number
-    related_documents?: {
-        payments?: Record<string, unknown>[]
-    }
     order_delivery_status?: string
     // Purchase related fields
     purchase_order?: number | null
@@ -23,7 +26,6 @@ export interface Invoice {
     service_obligation?: number | null
     po_receiving_status?: string | null
     serialized_payments?: Record<string, unknown>[]
-    related_stock_moves?: Record<string, unknown>[]
     // Helper property for filtering
     is_sale_document?: boolean
     customer_name?: string
@@ -80,3 +82,5 @@ export interface PaymentPayload {
     document_date?: string
     document_attachment?: File | null
 }
+
+export * from './invoiceFromLines'

@@ -32,10 +32,10 @@ export function WizardProcessSidebar({
 }: WizardProcessSidebarProps) {
     return (
         <TooltipProvider delayDuration={300}>
-            <div className="w-64 border-r h-full overflow-y-auto shrink-0 hidden md:flex md:flex-col">
-                <div className="p-4 space-y-2 flex-1">
-                <h3 className="text-xs font-bold uppercase text-muted-foreground mb-4 px-2">
-                    Etapas de Producción
+            <div className="w-52 border-r h-full overflow-y-auto shrink-0 hidden md:flex md:flex-col">
+                <div className="p-3 space-y-0.5 flex-1">
+                <h3 className="text-2xs font-bold uppercase tracking-[0.25em] text-muted-foreground/70 mb-3 px-2">
+                    Etapas
                 </h3>
 
                 {stages.map((stage, index) => {
@@ -64,7 +64,7 @@ export function WizardProcessSidebar({
                             onClick={isClickable ? () => onStepClick(index, 'view') : undefined}
                             aria-disabled={!isClickable}
                             className={cn(
-                                "group rounded-lg transition-all duration-200",
+                                "group rounded-sm transition-all duration-200",
                                 isClickable ? "cursor-pointer" : "cursor-not-allowed",
                                 isActive && isCreationStep && "bg-accent text-accent-foreground shadow-card",
                                 isActive && !isCreationStep && "bg-primary text-primary-foreground shadow-card",
@@ -76,8 +76,8 @@ export function WizardProcessSidebar({
                                 isFuture && !isCreationStep && "text-muted-foreground/60 opacity-60"
                             )}
                         >
-                            <div className="flex items-center space-x-3 p-3">
-                                <Icon className={cn("h-5 w-5 shrink-0",
+                            <div className="flex items-center gap-2 px-2.5 py-1.5">
+                                <Icon className={cn("h-3.5 w-3.5 shrink-0",
                                     isActive && isCreationStep ? "text-accent-foreground" :
                                     isActive && !isCreationStep ? "text-primary-foreground" :
                                     isPast ? "text-success" :
@@ -85,14 +85,14 @@ export function WizardProcessSidebar({
                                     "text-muted-foreground"
                                 )} />
 
-                                <span className="text-sm font-medium flex-1 truncate">{stage.label}</span>
+                                <span className="text-xs font-medium flex-1 truncate">{stage.label}</span>
 
                                 {/* ── Trailing indicators ── */}
                                 {isPast && capabilities && (
                                     <div className="flex items-center gap-0.5">
                                         {/* Default: checkmark — hidden on hover to show actions */}
                                         <CheckCircle2 className={cn(
-                                            "h-4 w-4 transition-opacity",
+                                            "h-3.5 w-3.5 transition-opacity",
                                             "group-hover:opacity-0 group-hover:w-0 group-hover:overflow-hidden",
                                             isActive ? "text-primary-foreground" : "text-success"
                                         )} />
@@ -173,7 +173,7 @@ export function WizardProcessSidebar({
 
                                 {/* Non-past trailing indicators */}
                                 {isPast && !capabilities && (
-                                    <CheckCircle2 className={cn("h-4 w-4",
+                                    <CheckCircle2 className={cn("h-3.5 w-3.5",
                                         isActive ? "text-primary-foreground" : "text-success"
                                     )} />
                                 )}

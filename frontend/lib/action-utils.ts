@@ -58,16 +58,16 @@ export function filterAvailableActions<T extends { status: string }>(
  */
 export function getActionBadgeCount(action: Action<unknown>, order: unknown): number | undefined {
     if (!order) return undefined
-    const o = order as { related_documents?: Record<string, { length?: number }>; serialized_payments?: { length?: number }; invoices?: { length?: number } }
+    const o = order as { serialized_payments?: { length?: number }; invoices?: { length?: number }; deliveries?: { length?: number }; receipts?: { length?: number } }
     switch (action.id) {
         case 'payment-history':
-            return o.related_documents?.payments?.length || o.serialized_payments?.length
+            return o.serialized_payments?.length
         case 'view-receptions':
-            return o.related_documents?.receipts?.length
+            return o.receipts?.length
         case 'view-deliveries':
-            return o.related_documents?.deliveries?.length
+            return o.deliveries?.length
         case 'view-documents':
-            return o.related_documents?.invoices?.length || o.invoices?.length
+            return o.invoices?.length
         default:
             return action.badge?.count
     }

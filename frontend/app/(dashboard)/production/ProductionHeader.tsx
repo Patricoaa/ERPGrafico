@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
-import { getEntityIconName } from "@/lib/entity-registry"
+import { getEntityIconName, getDomainConceptTitle, getDomainConceptCode } from "@/lib/entity-registry"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
 
 export function ProductionHeader() {
@@ -16,8 +16,8 @@ export function ProductionHeader() {
     const subActiveValue = undefined
 
     const tabs = [
-        { value: "orders", label: "Órdenes de Trabajo", iconName: getEntityIconName('production.workorder'), href: getViewModeUrl('production.workorder', "/production/orders") },
-        { value: "boms", label: "Lista de Materiales", iconName: getEntityIconName('production.bom'), href: getViewModeUrl('production.bom', "/production/boms") },
+        { value: "orders", label: getDomainConceptTitle('ot', true), iconName: getEntityIconName('production.workorder'), href: getViewModeUrl('production.workorder', "/production/orders") },
+        { value: "boms", label: getDomainConceptTitle('ldm'), iconName: getEntityIconName('production.bom'), href: getViewModeUrl('production.bom', "/production/boms") },
     ]
 
     const navigation = {
@@ -29,8 +29,8 @@ export function ProductionHeader() {
     }
 
     const getHeaderConfig = () => {
-        if (activeValue === 'boms') return { title: "Fichas Técnicas (BOM)", description: "Estructuras de productos, componentes y costos de fabricación.", iconName: "layers" as const }
-        return { title: "Centro de Producción", description: "Gestión de procesos fabriles, órdenes de trabajo y seguimiento.", iconName: getEntityIconName('production.workorder') ?? "printer" }
+        if (activeValue === 'boms') return { title: `Fichas Técnicas (${getDomainConceptCode('ldm')})`, description: "Estructuras de productos, componentes y costos de fabricación.", iconName: "layers" as const }
+        return { title: getDomainConceptTitle('ot', true), description: "Planificación y seguimiento de procesos fabriles.", iconName: getEntityIconName('production.workorder') ?? "printer" }
     }
 
     const config = getHeaderConfig()

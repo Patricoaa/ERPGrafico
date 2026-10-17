@@ -104,6 +104,10 @@ class UniversalRegistry:
         return list(cls._entities.keys())
 
     @classmethod
+    def get(cls, label: str) -> SearchableEntity | None:
+        return cls._entities.get(label)
+
+    @classmethod
     def all_entities_serializable(cls) -> list[dict[str, str]]:
         """Returns all registered entities as dicts for the /api/core/entity-config/ endpoint."""
         from core.prefix_registry import EntityPrefix
@@ -279,7 +283,8 @@ class UniversalRegistry:
                     "subtitle": idx.subtitle,
                     "extra_info": idx.extra_info,
                     "list_url": entity.list_url,
-                    "detail_url": entity.detail_url_pattern.replace("{id}", str(idx.object_id)),
+                    # ADR-0080 (GAP-08): URL canónica del registro documental, siempre con ruta
+                    "detail_url": cls._canonical_url(idx.entity_label, idx.object_id),
                 }
             )
 
@@ -311,15 +316,19 @@ class UniversalRegistry:
                             "subtitle": idx.subtitle,
                             "extra_info": idx.extra_info,
                             "list_url": entity.list_url,
-                            "detail_url": entity.detail_url_pattern.replace(
-                                "{id}", str(idx.object_id)
-                            ),
+                            "detail_url": cls._canonical_url(idx.entity_label, idx.object_id),
                         }
                     )
                     if len(final_results) >= limit:
                         break
 
         return final_results
+
+    @staticmethod
+    def _canonical_url(label: str, object_id) -> str:
+        from core.documents.types import DocumentTypeRegistry
+
+        return DocumentTypeRegistry.url_for(label, object_id)
 
     @classmethod
     def _build_fts_query(cls, entity: SearchableEntity, query: str) -> models.QuerySet[Any]:

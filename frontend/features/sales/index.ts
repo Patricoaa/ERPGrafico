@@ -21,6 +21,8 @@ export { AdvancedManufacturingDrawer } from './components/forms/AdvancedManufact
 export { PricingRuleDrawer } from './components/PricingRuleDrawer'
 export { saleOrderActions } from './actions'
 export { SALES_KEYS } from './hooks/queryKeys'
+export { useSaleDelivery, useSaleReturn } from './hooks/useSaleDeliveries'
+export { SaleReturnDrawer } from './components/SaleReturnDrawer'
 export { SalesCheckoutWizardView, type CheckoutWizardState } from './components/checkout/SalesCheckoutWizardView'
 export type { SalesCheckoutWizardViewHandle } from './components/checkout/SalesCheckoutWizardView'
 export { Step2_ManufacturingDetails } from './components/checkout/Step2_ManufacturingDetails'

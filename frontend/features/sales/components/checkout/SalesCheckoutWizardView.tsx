@@ -10,7 +10,7 @@ import { useVatRate } from '@/hooks/useVatRate'
 import { Step3_Delivery } from "./Step3_Delivery"
 import { Step2_ManufacturingDetails } from "./Step2_ManufacturingDetails"
 import { OrderSummaryCard } from "./OrderSummaryCard"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { ProcessSummarySidebar } from "./ProcessSummarySidebar"
 import { toast } from "sonner"
 import { useContact, useContactCreditLedger } from "@/features/contacts"
@@ -109,7 +109,8 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
     touchMode = false
 }: SalesCheckoutWizardViewProps, ref) {
     const { dateString } = useServerDate()
-    const { isHubOpen } = useHubPanel()
+    // Antes: "al cerrar el Hub". Ahora al cerrar la pila de fichas (pagos registrados en una OV)
+    const { isSubModalActive: isHubOpen } = useGlobalModals()
     const { hasPermission } = useAuth()
     const { rate } = useVatRate()
     const { posCheckout, requestCredit } = useInvoices()

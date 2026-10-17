@@ -46,7 +46,30 @@ class TreasuryService:
         am = Decimal(str(request.data.get('amount', 0)))
         if am <= 0: raise ValueError('Invalid amount')
         ds = request.data.get('date')
-        return cls.register_internal_transfer(fa, ta, am, request.user, request.data.get('notes', ''), datetime.fromisoformat(ds) if ds else None)
+        return cls.register_internal_transfer(
+            fa, ta, am, request.user, notes=request.data.get('notes', ''),
+            date=datetime.fromisoformat(ds).date() if ds else None,
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def register_internal_transfer(from_account, to_account, amount, created_by, notes='', date=None):
+        """
+        Traspaso entre dos cuentas de tesorería (INT-16: el método se había eliminado
+        en un refactor y el endpoint `register_transfer` fallaba con AttributeError).
+        Genera un TreasuryMovement TRANSFER con su asiento (Cr origen / Dr destino).
+        """
+        if from_account.pk == to_account.pk:
+            raise ValidationError("La cuenta de origen y destino no pueden ser la misma.")
+        return TreasuryService.create_movement(
+            amount=amount,
+            movement_type=TreasuryMovement.Type.TRANSFER,
+            from_account=from_account,
+            to_account=to_account,
+            created_by=created_by,
+            notes=notes,
+            date=date,
+        )
 
     @staticmethod
     def get_or_create_reconciliation_settings():
@@ -274,7 +297,7 @@ class TreasuryService:
     def update_related_document_status(
         movement, invoice=None, sale_order=None, purchase_order=None, payroll=None
     ):
-        # Logic to update status to PAID
+        # Sincroniza tareas y efectos de "documento pagado" (ADR-0084: sin escribir estados)
         targets = []
         if invoice:
             targets.append(invoice)
@@ -285,20 +308,7 @@ class TreasuryService:
         if payroll:
             targets.append(payroll)
 
-        # If arguments are missing, try to resolve from movement's GFK allocated_to.
-        # Use _meta.model_name (stable string) instead of isinstance to avoid coupling.
-        allocated = getattr(movement, "allocated_to", None)
-        if allocated is not None:
-            model_name = allocated._meta.model_name
-            if not invoice and model_name == "invoice":
-                targets.append(allocated)
-            elif not sale_order and model_name == "saleorder":
-                targets.append(allocated)
-            elif not purchase_order and model_name == "purchaseorder":
-                targets.append(allocated)
-            elif not payroll and model_name == "payroll":
-                targets.append(allocated)
-
+        # (M4d) El GFK allocated_to no tiene escritores: se dejó de leer.
         targets = list(set(targets))  # unique
 
         for target in targets:
@@ -310,20 +320,26 @@ class TreasuryService:
             }
             field_name = model_to_field.get(target._meta.model_name, target._meta.model_name)
 
-            # Get all related payments
-            related_payments = TreasuryMovement.objects.filter(**{field_name: target})
-            total_paid = sum(m.amount for m in related_payments)
+            # M4d: regla única de pagado (excluye anulados, signo por dirección, imputaciones)
+            if hasattr(target, "total_paid"):
+                total_paid = target.total_paid
+            else:
+                related_payments = TreasuryMovement.objects.filter(**{field_name: target}).exclude(
+                    status=TreasuryMovement.MovementStatus.CANCELLED
+                )
+                total_paid = sum(m.amount for m in related_payments)
 
             target_total = getattr(target, "total", 0)
             if hasattr(target, "effective_total"):
                 target_total = target.effective_total
 
-            # Check if fully paid
+            # Check if fully paid. ADR-0084: el pago NO escribe el estado del documento
+            # (el eje de pago es `payment_status`, derivado del saldo).
             if total_paid >= target_total:
-                status_field = "status"
-                if hasattr(target, "Status") and hasattr(target.Status, "PAID"):
-                    setattr(target, status_field, target.Status.PAID)
-                    target.save()
+                # Efectos de "quedó pagado" solo al cruzar el umbral con este movimiento
+                crossed = total_paid - (movement.amount or 0) < target_total
+                if crossed and hasattr(target, "on_fully_paid"):
+                    target.on_fully_paid()
 
                 # Sync HUB Tasks
                 from workflow.services import WorkflowService
@@ -343,9 +359,7 @@ class TreasuryService:
             return
 
         amount = movement.amount
-        allocated = getattr(movement, "allocated_to", None)
-        if allocated is None:
-            allocated = movement.purchase_order or movement.sale_order or movement.invoice
+        allocated = movement.purchase_order or movement.sale_order or movement.invoice
         is_sale = allocated is not None and allocated.is_sale_document()
 
         if movement.movement_type == TreasuryMovement.Type.INBOUND:
@@ -426,10 +440,8 @@ class TreasuryService:
                 elif mtype == TreasuryMovement.Type.OUTBOUND:
                     from_acc = pool_acc
 
-        # Resolve the related business document
-        allocated = getattr(movement, "allocated_to", None)
-        if allocated is None:
-            allocated = movement.purchase_order or movement.sale_order or movement.invoice
+        # Resolve the related business document (FK tipadas; GFK allocated_to retirado de lectura, M4d)
+        allocated = movement.purchase_order or movement.sale_order or movement.invoice
 
         # 1. TRANSFER (Internal)
         if mtype == TreasuryMovement.Type.TRANSFER:
@@ -982,14 +994,20 @@ class TreasuryService:
             except ProtectedError:
                 pass
 
-        # ── Return movement ──────────────────────────────────────────────
+        # ── Devolución del dinero (INT-15) ───────────────────────────────
+        # La reversión anterior ya deshace el pago completo en la contabilidad
+        # (CxC/CxP restituida y salida de la cuenta original). Por eso la devolución
+        # NO genera otro asiento contra CxC/CxP:
+        #   - misma cuenta que el pago → no hay nada más que registrar;
+        #   - otra cuenta → el dinero quedó en la original y sale de la elegida:
+        #     traspaso interno entre ambas (sin vínculo con la orden/factura).
+        # Una devolución parcial no es una anulación: usar register_payment_return.
         if treasury_account_id:
             refund_amount = amount or movement.amount
-            if refund_amount <= 0:
-                raise ValidationError("El monto a devolver debe ser mayor a cero.")
-            if refund_amount > movement.amount:
+            if refund_amount != movement.amount:
                 raise ValidationError(
-                    f"El monto a devolver ({refund_amount}) excede el monto del pago ({movement.amount})."
+                    "La anulación devuelve el pago completo. Para una devolución parcial "
+                    "use 'Registrar devolución' o una Nota de Crédito."
                 )
 
             try:
@@ -997,133 +1015,34 @@ class TreasuryService:
             except TreasuryAccount.DoesNotExist:
                 raise ValidationError("La cuenta de tesorería seleccionada no existe.")
 
-            # Check if original movement is a Check → route through CheckService
             check = getattr(movement, "check_receipt", None)
-
             if check:
-                return_movement = CheckService.void_and_return_movement(
-                    check,
-                    notes=reason,
+                # El cheque se anula; su movimiento queda como registro sin asiento y
+                # sin vínculo documental (el pago ya quedó revertido arriba).
+                void_movement = CheckService.void_and_return_movement(check, notes=reason)
+                TreasuryMovement.objects.filter(pk=void_movement.pk).update(
+                    invoice=None, sale_order=None, purchase_order=None
                 )
-                from_account = return_movement.from_account
-                to_account = return_movement.to_account
             else:
-                # Determine return direction (non-check)
-                if movement.sale_order:
-                    return_type = "OUTBOUND"
-                    from_account = treasury_acc
-                    to_account = None
-                elif movement.purchase_order:
-                    return_type = "INBOUND"
-                    from_account = None
-                    to_account = treasury_acc
-                else:
-                    # Fallback: invert original direction
-                    return_type = "OUTBOUND" if movement.movement_type == "INBOUND" else "INBOUND"
-                    from_account = treasury_acc if return_type == "OUTBOUND" else None
-                    to_account = treasury_acc if return_type == "INBOUND" else None
-
-                return_prefix = EntityPrefix.PURCHASE_RETURN if movement.purchase_order else EntityPrefix.SALE_RETURN
-                return_movement = TreasuryMovement.objects.create(
-                    movement_type=return_type,
-                    payment_method=movement.payment_method,
-                    amount=refund_amount,
-                    reference=f"{return_prefix}-{movement.id}",
-                    contact=movement.contact,
-                    invoice=movement.invoice,
-                    sale_order=movement.sale_order,
-                    purchase_order=movement.purchase_order,
-                    from_account=from_account,
-                    to_account=to_account,
-                    payment_method_new=movement.payment_method_new,
-                    date=timezone.now().date(),
-                    notes=f"Devolución por anulación: {reason}",
+                original_acc = (
+                    movement.to_account
+                    if movement.movement_type == TreasuryMovement.Type.INBOUND
+                    else movement.from_account
                 )
-
-            # ── Journal entry for the return movement ──────────────────
-            settings = AccountingSettings.get_solo()
-
-            if movement.sale_order:
-                partner_account = settings.default_receivable_account
-                treasury_acc_ref = from_account
-                refund_role = Roles.CXC
-            elif movement.purchase_order:
-                partner_account = settings.default_payable_account
-                treasury_acc_ref = to_account
-                refund_role = Roles.CXP
-
-            if movement.sale_order or movement.purchase_order:
-                return_prefix = EntityPrefix.PURCHASE_RETURN if movement.purchase_order else EntityPrefix.SALE_RETURN
-                partner_name = movement.contact.name if movement.contact else ""
-                doc_ref = f"{return_prefix}-{movement.id}"
-
-                entry = JournalEntry.objects.create(
-                    date=return_movement.date,
-                    description=GlosaBuilder.build(
-                        GlosaBuilder.DEVOLUCION_PAGO, doc_ref, partner_name, refund_amount,
-                    ),
-                    reference=f"{return_prefix}-JE-{movement.id}",
-                    status=JournalEntry.State.DRAFT,
-                    source_content_type=ContentType.objects.get_for_model(TreasuryMovement),
-                    source_object_id=return_movement.id,
-                )
-
-                if movement.sale_order:
-                    # Debit: Receivable, Credit: Treasury
-                    JournalItem.objects.create(
-                        entry=entry,
-                        account=partner_account,
-                        debit=refund_amount,
-                        credit=0,
+                if original_acc and original_acc.pk != treasury_acc.pk:
+                    inbound = movement.movement_type == TreasuryMovement.Type.INBOUND
+                    TreasuryService.create_movement(
+                        amount=refund_amount,
+                        movement_type=TreasuryMovement.Type.TRANSFER,
+                        # Cobro anulado: sale de la cuenta elegida hacia la original.
+                        # Pago anulado: el reembolso entra a la elegida desde la original.
+                        from_account=treasury_acc if inbound else original_acc,
+                        to_account=original_acc if inbound else treasury_acc,
                         partner=movement.contact,
-                        partner_name=partner_name,
-                        label=GlosaBuilder.item(refund_role, partner_name, doc_ref),
+                        created_by=user,
+                        reference=f"DEV-{movement.id}",
+                        notes=f"Devolución por anulación desde otra cuenta: {reason}",
                     )
-                    JournalItem.objects.create(
-                        entry=entry,
-                        account=treasury_acc_ref.account
-                        if hasattr(treasury_acc_ref, "account")
-                        else treasury_acc_ref,
-                        debit=0,
-                        credit=refund_amount,
-                        label=GlosaBuilder.item(Roles.EFECTIVO, "Devolución", doc_ref),
-                    )
-                else:
-                    # Debit: Treasury, Credit: Payable
-                    JournalItem.objects.create(
-                        entry=entry,
-                        account=treasury_acc_ref.account
-                        if hasattr(treasury_acc_ref, "account")
-                        else treasury_acc_ref,
-                        debit=refund_amount,
-                        credit=0,
-                        label=GlosaBuilder.item(Roles.EFECTIVO, "Devolución", doc_ref),
-                    )
-                    JournalItem.objects.create(
-                        entry=entry,
-                        account=partner_account,
-                        debit=0,
-                        credit=refund_amount,
-                        partner=movement.contact,
-                        partner_name=partner_name,
-                        label=GlosaBuilder.item(refund_role, partner_name, doc_ref),
-                    )
-
-                JournalEntryService.post_entry(entry)
-                return_movement.journal_entry = entry
-                return_movement.save()
-
-            # Update pending_amount
-            if movement.sale_order:
-                movement.sale_order.pending_amount = (
-                    movement.sale_order.pending_amount or 0
-                ) + refund_amount
-                movement.sale_order.save()
-            elif movement.purchase_order:
-                movement.purchase_order.pending_amount = (
-                    movement.purchase_order.pending_amount or 0
-                ) + refund_amount
-                movement.purchase_order.save()
 
         movement.status = TreasuryMovement.MovementStatus.CANCELLED
         movement.save()

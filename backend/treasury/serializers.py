@@ -829,6 +829,7 @@ class CheckSerializer(serializers.ModelSerializer):
     bank_name = serializers.CharField(source="bank.name", read_only=True)
     counterparty_name = serializers.SerializerMethodField()
     sale_order_display = serializers.SerializerMethodField()
+    sale_order_document = serializers.SerializerMethodField()
 
     def get_counterparty_name(self, obj):
         if obj.counterparty:
@@ -842,6 +843,14 @@ class CheckSerializer(serializers.ModelSerializer):
                 "number": obj.sale_order.number,
             }
         return None
+
+    def get_sale_order_document(self, obj):
+        if not obj.sale_order_id:
+            return None
+        from core.documents import build_ref
+
+        user = getattr(self.context.get("request"), "user", None)
+        return build_ref(obj.sale_order, user, "sales.saleorder", navigational=True)
 
     class Meta:
         model = Check
@@ -869,6 +878,7 @@ class CheckSerializer(serializers.ModelSerializer):
             "invoice",
             "sale_order",
             "sale_order_display",
+            "sale_order_document",
             "notes",
             "deposited_at",
             "cleared_at",

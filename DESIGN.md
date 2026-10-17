@@ -54,7 +54,7 @@ Cada decisión de diseño se evalúa contra este criterio: ¿este píxel ayuda a
 
 ## 4. Fuente de verdad técnica
 
-Los tokens viven en **`frontend/app/globals.css`** (bloque `@theme inline` + `:root`/`.dark`). El test de contrato **`frontend/lib/__tests__/color-system.contract.test.ts`** verifica invariantes (incluido que primary siga siendo K100). Si algo cambia en globals.css, el test y este documento deben quedar en sync.
+Los tokens viven en **`frontend/app/globals.css`** (bloque `@theme inline` + `:root`/`.dark`). Los tests de contrato **`frontend/lib/__tests__/color-system.contract.test.ts`** y **`frontend/lib/__tests__/typography.contract.test.ts`** verifican invariantes (color, y escala/tokens tipográficos + roles del chrome del shell). Si algo cambia en globals.css o en la escala tipográfica, el test y este documento deben quedar en sync.
 
 ---
 

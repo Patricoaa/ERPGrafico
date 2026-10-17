@@ -21,11 +21,6 @@ export interface StockMove {
     uom_name: string
     description: string
     direction?: 'IN' | 'OUT' | 'TRANSFER' | 'ADJUSTMENT' | 'OTHER'
-    related_documents: Array<{
-        type: string
-        id: number | string
-        name: string
-    }>
 }
 
 export interface StockMoveFilters {

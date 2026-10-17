@@ -1,41 +1,42 @@
-import React, { Suspense } from 'react'
-import { SkeletonShell, ErrorBoundary } from '@/components/shared'
+import React from 'react'
+import { ErrorBoundary } from '@/components/shared'
+import { ENTITY_DRAWERS } from '@/lib/entity-drawers'
+import { TYPE_TO_REGISTRY } from './types'
 
-type AnyDrawerComponent = React.ComponentType<Record<string, unknown>>
-
-export const DRAWER_MAP: Record<string, React.LazyExoticComponent<AnyDrawerComponent>> = {
-  sale_order: React.lazy(() => import('@/features/sales/components/SaleOrderDrawer').then(m => ({ default: m.SaleOrderDrawer as unknown as AnyDrawerComponent }))),
-  purchase_order: React.lazy(() => import('@/features/purchasing/components/PurchaseOrderDrawer').then(m => ({ default: m.PurchaseOrderDrawer as unknown as AnyDrawerComponent }))),
-  service_obligation: React.lazy(() => import('@/features/purchasing/components/PurchaseOrderDrawer').then(m => ({ default: m.PurchaseOrderDrawer as unknown as AnyDrawerComponent }))),
-  invoice: React.lazy(() => import('@/features/billing/components/InvoiceDrawer').then(m => ({ default: m.InvoiceDrawer as unknown as AnyDrawerComponent }))),
-  work_order: React.lazy(() => import('@/features/production/components/WorkOrderWizard').then(m => ({ default: m.WorkOrderWizard as unknown as AnyDrawerComponent }))),
-  sale_delivery: React.lazy(() => import('@/features/inventory/components/InventoryDocumentDrawer').then(m => ({ default: m.InventoryDocumentDrawer as unknown as AnyDrawerComponent }))),
-  purchase_receipt: React.lazy(() => import('@/features/inventory/components/InventoryDocumentDrawer').then(m => ({ default: m.InventoryDocumentDrawer as unknown as AnyDrawerComponent }))),
-  purchase_return: React.lazy(() => import('@/features/purchasing/components/PurchaseReturnDrawer').then(m => ({ default: m.PurchaseReturnDrawer as unknown as AnyDrawerComponent }))),
-  payment: React.lazy(() => import('@/features/treasury/components/PaymentDrawer').then(m => ({ default: m.PaymentDrawer as unknown as AnyDrawerComponent }))),
-  journal_entry: React.lazy(() => import('@/features/accounting/components/JournalEntryDrawer').then(m => ({ default: m.JournalEntryDrawer as unknown as AnyDrawerComponent }))),
-  cash_movement: React.lazy(() => import('@/features/treasury/components/CashMovementDrawer').then(m => ({ default: m.CashMovementDrawer as unknown as AnyDrawerComponent }))),
-  terminal_batch: React.lazy(() => import('@/features/treasury/components/TerminalBatchDrawer').then(m => ({ default: m.TerminalBatchDrawer as unknown as AnyDrawerComponent }))),
-  profit_distribution: React.lazy(() => import('@/features/settings/components/ProfitDistributionDrawer').then(m => ({ default: m.ProfitDistributionDrawer as unknown as AnyDrawerComponent }))),
-  stock_move: React.lazy(() => import('@/features/inventory/components/StockMoveDrawer').then(m => ({ default: m.StockMoveDrawer as unknown as AnyDrawerComponent }))),
-  inventory_document: React.lazy(() => import('@/features/inventory/components/InventoryDocumentDrawer').then(m => ({ default: m.InventoryDocumentDrawer as unknown as AnyDrawerComponent }))),
+/**
+ * `docType` legacy (snake_case) → label `app.model` de ENTITY_DRAWERS.
+ * ADR-0080 (GAP-12): un único registro de fichas; `DRAWER_MAP` (registro paralelo que
+ * abría despachos/recepciones como documentos de inventario y asientos/pagos en modo
+ * creación) se retiró.
+ */
+const DOC_TYPE_LABELS: Record<string, string> = {
+  ...TYPE_TO_REGISTRY,
+  service_obligation: 'purchasing.purchaseorder',
+  inventory_document: 'inventory.inventorydocument',
 }
 
+export function docTypeToLabel(type: string): string | undefined {
+  return DOC_TYPE_LABELS[type]
+}
 
-
-export function LazyDrawer({ type, open, onOpenChange, ...props }: {
+/**
+ * Renderiza la ficha registrada en ENTITY_DRAWERS para un `docType` legacy.
+ * Preferir `openEntity(label, id)` (pila con "volver"); este componente queda para las
+ * vistas que gestionan la apertura con estado local.
+ */
+export function LazyDrawer({ type, id, open, onOpenChange }: {
   type: string
+  id?: number | string | null
   open?: boolean
   onOpenChange?: (open: boolean) => void
   [key: string]: unknown
 }) {
-  const Drawer = DRAWER_MAP[type]
-  if (!Drawer) return null
+  const label = docTypeToLabel(type)
+  const render = label ? ENTITY_DRAWERS[label] : undefined
+  if (!render || id == null || id === '') return null
   return (
-    <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
-      <ErrorBoundary variant="inline">
-        <Drawer open={open} onOpenChange={onOpenChange} {...props} />
-      </ErrorBoundary>
-    </Suspense>
+    <ErrorBoundary variant="inline">
+      {render({ id: Number(id), open: !!open, onOpenChange: onOpenChange ?? (() => {}) })}
+    </ErrorBoundary>
   )
 }

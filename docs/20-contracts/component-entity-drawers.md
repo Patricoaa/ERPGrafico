@@ -111,15 +111,26 @@ export const ENTITY_DRAWERS = {
 ```ts
 const { openEntity, closeEntity, hasEntityDrawer } = useGlobalModals()
 
-openEntity('sales.saleorder', 123)            // abre el drawer registrado (modo derivado)
-openEntity('contacts.contact', 7, contactObj) // con datos pre-fetcheados
-closeEntity()
+openEntity('sales.saledelivery', 123)                    // abre el drawer registrado (modo derivado)
+openEntity('contacts.contact', 7, contactObj)            // con datos pre-fetcheados
+openEntity('inventory.stockmove', 9, undefined, undefined, { display: 'MOV-9' })
+closeEntity()   // cierra toda la pila
+goBackEntity()  // vuelve al documento anterior
 ```
 
 | API | Tipo | Notas |
 |-----|------|-------|
-| `openEntity` | `(label: string, id: number, data?: unknown, segmenter?: React.ReactNode) => void` | Advierte en consola (no rompe) si no hay drawer registrado para el label |
-| `closeEntity` | `() => void` | |
+| `openEntity` | `(label, id, data?, segmenter?, options?: { display?: string }) => void` | Advierte en consola (no rompe) si no hay drawer registrado. `options.display` es el texto que verá el "Volver a …" del documento que se abra encima |
+| `closeEntity` | `() => void` | Cierra **todos** los documentos de la pila |
+| `goBackEntity` | `() => void` | Desapila el documento superior |
+
+**Pila y "volver" (ADR-0080, GAP-11).** `openEntity` con un documento ya abierto lo **apila** (máx. 5; reabrir el superior es no-op). Solo se renderiza el superior; el provider envuelve su drawer en `EntityNavigationContext` y el `Drawer` compartido muestra "← Volver a {display}" automáticamente — los drawers no necesitan cambios. Cerrar (X / Escape / `onSuccess`) vacía la pila. El contexto se resetea para los hijos de cada `Drawer`, así un drawer anidado no muestra el enlace.
+
+**Ficha documental (ADR-0083, revierte D4).** Los documentos abren su ficha documental ([component-document-sheet.md](./component-document-sheet.md)): OV y OC → `OrderSheet`, factura/nota → `InvoiceSheet` (U2–U3; `SaleOrderDrawer`, `PurchaseOrderDrawer` e `InvoiceDrawer` eliminados). Ningún label redirige al Order Hub. Las fichas documentales **no** reciben `onSuccess` en su adaptador: sus acciones no deben cerrar la pila.
+
+**`LazyDrawer` (legacy, GAP-12).** `DRAWER_MAP` se retiró: `LazyDrawer({ type, id, open, onOpenChange })` traduce el `docType` snake_case (`TYPE_TO_REGISTRY` + `service_obligation`, `inventory_document`) al label y renderiza el adaptador de `ENTITY_DRAWERS`. Hay un solo registro de fichas. Para código nuevo usar `openEntity`.
+
+**Asientos por id.** `openEntity('accounting.journalentry', id)` sin `data` abre el asiento en **modo vista** cargado por id (antes abría el formulario de creación). Sin `data` ni `id` → creación.
 | `useGlobalModals()` | hook | Acciones + estado de stacking de sheets (offsets de `CollapsibleSheet`) |
 | `useGlobalModalActions()` | hook | Solo acciones (sin re-render por estado de sheets) |
 
@@ -168,9 +179,10 @@ resolviendo en 3 niveles:
 
 | Prioridad | Condición | Acción |
 |-----------|-----------|--------|
-| 1 (preferida) | `hasEntityDrawer(doc.type)` | `openEntity(doc.type, doc.id, doc)` — drawer drill-down |
-| 2 | `doc.url` presente | `<Link href={doc.url}>` — navegación |
-| 3 | ninguna | texto plano, sin interacción |
+| 1 (preferida) | `doc.url` con `?selected=` (lista canónica) | navega a `doc.url` — la URL y el módulo/sección siguen a la relación ([ADR-0086](../10-architecture/adr/0086-document-drilldown-canonical-navigation.md)) |
+| 2 | `hasEntityDrawer(doc.type)` | `openEntity(doc.type, doc.id, doc)` — drawer drill-down (pila + "volver") |
+| 3 | `doc.url` presente | `<Link href={doc.url}>` — navegación |
+| 4 | ninguna | texto plano, sin interacción |
 
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
@@ -208,6 +220,21 @@ Todos los drawers deben adherirse a esta estructura unificada:
 > La superficie que monta `?selected` (modal centrado vs drawer embebido) es surface-agnostic — ver
 > [ADR-0027](../10-architecture/adr/0027-basedrawer-crud-forms.md). `openEntity` siempre monta el
 > drawer registrado en `ENTITY_DRAWERS`.
+
+### 5.2 Drilldown de documento: navegar vs apilar
+
+Las superficies de drilldown documental (`useOpenRelatedDocument` —filas del tab Relaciones—,
+`SourceDocumentLink`, `DocumentRefLink`) aplican **una sola** regla ([ADR-0086](../10-architecture/adr/0086-document-drilldown-canonical-navigation.md)):
+
+- **La URL canónica del destino abre una lista** (contiene `?selected=`, p. ej. una OV o una
+  factura): **navegar** con `router.push(url)`. Cambian la URL y el módulo/sección (el riel y
+  la barra lateral derivan de `usePathname()`), y la lista destino abre la ficha con `?selected`.
+- **No la abre** (resolvedor `/d/{label}/{id}`, o una lista sin `?selected`): **apilar** con
+  `openEntity` (pila + "volver", ADR-0028). Los maestros (contacto, producto, empleado…) caen aquí.
+
+La decisión sale siempre del `DocumentRef.url` que emite el backend (`DocumentTypeRegistry`,
+[ADR-0080](../10-architecture/adr/0080-document-model-relations-and-navigation.md) §6); el
+frontend no adivina rutas. Predicado: `isListSelectionUrl(url)` en `@/lib/documentNavigation`.
 
 ### 5.1 Detalle de entidad = overlay siempre-recargable (reglas de foco y URL)
 
@@ -268,7 +295,8 @@ son las que lo hacen operar como un detalle real (DET-02):
 
 ## 7. Cross-references
 
-- ADR de la decisión: [ADR-0028](../10-architecture/adr/0028-entity-drawer-registry.md)
+- ADR de la decisión: [ADR-0028](../10-architecture/adr/0028-entity-drawer-registry.md); pila, "volver" y OV/OC → Hub: [ADR-0080](../10-architecture/adr/0080-document-model-relations-and-navigation.md)
+- Documentos relacionados y URL canónica: [document-relations.md](./document-relations.md)
 - Primitiva `Drawer` (API, tamaños): [component-drawer.md](./component-drawer.md)
 - Identidad de entidad / labels: [entity-identity.md](./entity-identity.md)
 - Edición deep-linkeable desde lista: [list-modal-edit-pattern.md](./list-modal-edit-pattern.md)

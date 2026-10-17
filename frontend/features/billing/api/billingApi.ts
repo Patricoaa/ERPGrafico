@@ -1,5 +1,6 @@
 import api from '@/lib/api'
-import type { Invoice, InvoiceFilters, AnnulInvoicePayload } from '../types'
+import type { Invoice, InvoiceFilters, AnnulInvoicePayload, InvoiceableLinesParams, InvoiceableOrder, InvoiceFromLinesPayload } from '../types'
+import { invoiceableOrderSchema } from '../types'
 
 /**
  * Centralized API service for billing operations
@@ -135,5 +136,25 @@ export const billingApi = {
         const res = await api.get(`/inventory/uoms/allowed/?product_id=${productId}&context=${context}`)
         // eslint-disable-next-line pagination/no-raw-response-data -- custom @action, not paginated
         return res.data
+    },
+
+    /** Líneas pendientes de facturar con sus entregas (ADR-0081). */
+    getInvoiceableLines: async (params: InvoiceableLinesParams): Promise<InvoiceableOrder[]> => {
+        const { data } = await api.get<unknown>('/billing/invoices/invoiceable-lines/', {
+            params: {
+                side: params.side,
+                ...(params.partner ? { partner: params.partner } : {}),
+                ...(params.orders?.length ? { orders: params.orders.join(',') } : {}),
+            },
+        })
+        return invoiceableOrderSchema.array().parse(data)
+    },
+
+    /** Factura parcial / multi-orden por cantidad (ADR-0081). Requiere Idempotency-Key. */
+    createInvoiceFromLines: async (payload: InvoiceFromLinesPayload, idempotencyKey: string): Promise<Invoice> => {
+        const { data } = await api.post<Invoice>('/billing/invoices/from-lines/', payload, {
+            headers: { 'Idempotency-Key': idempotencyKey },
+        })
+        return data
     },
 }

@@ -138,11 +138,11 @@ graph TD
     A -->|"Flujo paso a paso (≥3 pasos)"| C(GenericWizard)
     A -->|"CRUD simple (1–6 campos)"| D["BaseModal (sm/md)"]
     A -->|"CRUD estándar (7–15 campos)"| E["BaseModal (lg/xl)<br/>o Drawer (50–55%)"]
-    A -->|"Ficha maestra (16+ campos, ≥5 dominios)"| F["BaseModal (full)<br/>+ FormTabs vertical<br/>o Drawer (65–75%)"]
+    A -->|"Ficha maestra (16+ campos, ≥5 dominios)"| F["BaseModal (full)<br/>+ TabBar vertical<br/>o Drawer (65–75%)"]
     A -->|"Historial / subvista sin perder contexto de página"| H(Drawer)
 ```
 
-- **`FormTabs`**: Obligatorio en Complejo/Ficha Maestra, y en Estándar con ≥5 dominios. Horizontal para 2–4 tabs; Vertical (sawtooth) para ≥5 tabs o modal `xl`+. Ver [component-form-patterns.md §3](./component-form-patterns.md).
+- **`TabBar`**: Obligatorio en Complejo/Ficha Maestra, y en Estándar con ≥5 dominios. Horizontal para 2–4 tabs; Vertical (sawtooth) para ≥5 tabs o modal `xl`+. Ver [component-form-patterns.md §3](./component-form-patterns.md).
 - **`FormSplitLayout`**: Obligatorio en modo edición para integrar `ActivitySidebar`.
 - **`FormSection`**: Separador visual dentro de un tab o formulario sin tabs.
 - **`FormFooter`**: **Obligatorio** en todo formulario modal. Layout de botones: danger (izquierda) + cancel/submit (derecha). Nunca `<div>` raw.

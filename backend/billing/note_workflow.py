@@ -135,7 +135,7 @@ class NoteWorkflow(models.Model):
         """Validation rules"""
         # Validate corrected invoice is POSTED or PAID
         if self.corrected_invoice_id:
-            if self.corrected_invoice.status not in ["POSTED", "PAID"]:
+            if self.corrected_invoice.status != "POSTED":
                 raise ValidationError(
                     {
                         "corrected_invoice": _(

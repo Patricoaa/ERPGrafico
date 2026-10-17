@@ -1,6 +1,7 @@
 "use client"
 
 import { getErrorMessage } from "@/lib/errors"
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useReactToPrint } from 'react-to-print'
 import { useSearchParams } from 'next/navigation'
@@ -532,7 +533,7 @@ export function POSClientView() {
                                 <Switch checked={isTouchMode} onCheckedChange={toggleTouchMode} />
                             </div>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => setOrdersModalOpen(true)}><FileText className="mr-2 h-4 w-4" />Ordenes de Venta</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setOrdersModalOpen(true)}><FileText className="mr-2 h-4 w-4" />{getDomainConceptTitle('ov', true)}</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => sessionControlRef.current?.showMoveDialog()}><ArrowRightLeft className="mr-2 h-4 w-4" />Movimiento de Fondo</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => sessionControlRef.current?.showXReport()}><BarChart3 className="mr-2 h-4 w-4" />Reporte de la Sesión</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setDraftsListOpen(true)}><Save className="mr-2 h-4 w-4" />Ver Borradores</DropdownMenuItem>

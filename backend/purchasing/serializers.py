@@ -41,12 +41,13 @@ class PurchaseLineSerializer(serializers.ModelSerializer):
             "tax_rate",
             "subtotal",
             "quantity_received",
+            "quantity_invoiced",
             "quantity_pending",
             "track_inventory",
             "has_bom",
             "requires_advanced_manufacturing",
         ]
-        read_only_fields = ["subtotal", "quantity_received", "quantity_pending"]
+        read_only_fields = ["subtotal", "quantity_received", "quantity_invoiced", "quantity_pending"]
 
     def get_track_inventory(self, obj):
         return obj.product.track_inventory if obj.product else False
@@ -72,6 +73,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     supplier_name = serializers.CharField(source="supplier.name", read_only=True)
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
     total_paid = serializers.SerializerMethodField()
+    # ADR-0084: eje de pago separado del estado del documento (UNPAID · PARTIAL · PAID)
+    payment_status = serializers.CharField(read_only=True)
     pending_amount = serializers.SerializerMethodField()
     is_invoiced = serializers.SerializerMethodField()
     invoice_details = serializers.SerializerMethodField()
@@ -85,7 +88,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     work_order_number = serializers.CharField(
         source="work_order.number", read_only=True, allow_null=True
     )
-    related_documents = serializers.SerializerMethodField()
+    # ADR-0083 U6: resumen tipado (reemplaza `related_documents`)
+    invoices = serializers.SerializerMethodField()
+    notes = serializers.SerializerMethodField()
+    receipts = serializers.SerializerMethodField()
     actual_receipt_date = serializers.SerializerMethodField()
 
     display_id = serializers.CharField(read_only=True)
@@ -103,6 +109,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             "date",
             "status",
             "receiving_status",
+            "invoicing_status",
             "receipt_date",
             "notes",
             "total_net",
@@ -110,6 +117,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             "total",
             "total_paid",
             "pending_amount",
+            "payment_status",
             "is_invoiced",
             "invoice_details",
             "serialized_payments",
@@ -118,7 +126,9 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             "payment_method_ref_method_type",
             "work_order",
             "work_order_number",
-            "related_documents",
+            "invoices",
+            "notes",
+            "receipts",
             "lines",
             "created_at",
             "updated_at",
@@ -129,20 +139,14 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             "number",
             "status",
             "receiving_status",
+            "invoicing_status",
             "total_net",
             "total_tax",
             "total",
         ]
 
     def get_total_paid(self, obj):
-        # Exclude payments specific to Notes (NC/ND)
-        payments = obj.payments.all()
-        valid_payments = [
-            p
-            for p in payments
-            if not (p.invoice and p.invoice.dte_type in ["NOTA_CREDITO", "NOTA_DEBITO"])
-        ]
-        return sum(p.amount for p in valid_payments)
+        return obj.total_paid
 
     def get_pending_amount(self, obj):
         # Calculate base total from Primary Invoices (Factura/Boleta) OR PO Total
@@ -179,8 +183,20 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     def get_invoice_details(self, obj):
         return PurchaseOrderSelector.get_invoice_details(obj)
 
-    def get_related_documents(self, obj):
-        return PurchaseOrderSelector.get_related_documents(obj)
+    def _summary(self, obj) -> dict:
+        cache = self.context.setdefault("_document_summary", {})
+        if obj.pk not in cache:
+            cache[obj.pk] = PurchaseOrderSelector.get_document_summary(obj)
+        return cache[obj.pk]
+
+    def get_invoices(self, obj):
+        return self._summary(obj)["invoices"]
+
+    def get_notes(self, obj):
+        return self._summary(obj)["notes"]
+
+    def get_receipts(self, obj):
+        return self._summary(obj)["receipts"]
 
     def get_actual_receipt_date(self, obj):
         confirmed_receipts = [r for r in obj.receipts.all() if r.status == PurchaseReceipt.Status.CONFIRMED]
@@ -224,10 +240,20 @@ class WritePurchaseOrderSerializer(serializers.ModelSerializer):
 class PurchaseReceiptLineSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)
     product_code = serializers.CharField(source="product.code", read_only=True)
+    # Movimiento de stock como DocumentRef (ADR-0086): el frontend navega a su URL canónica.
+    stock_move_document = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseReceiptLine
         fields = "__all__"
+
+    def get_stock_move_document(self, obj):
+        if not obj.stock_move_id:
+            return None
+        from core.documents import build_ref
+
+        user = getattr(self.context.get("request"), "user", None)
+        return build_ref(obj.stock_move, user, "inventory.stockmove", navigational=True)
 
 
 class PurchaseReceiptSerializer(serializers.ModelSerializer):
@@ -238,6 +264,8 @@ class PurchaseReceiptSerializer(serializers.ModelSerializer):
     supplier_id = serializers.IntegerField(source="purchase_order.supplier_id", read_only=True)
     receipt_type = serializers.SerializerMethodField()
     related_note_display = serializers.SerializerMethodField()
+    # Orden de compra como DocumentRef (ADR-0086): el frontend navega a su URL canónica.
+    purchase_order_document = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseReceipt
@@ -252,15 +280,33 @@ class PurchaseReceiptSerializer(serializers.ModelSerializer):
             return obj.related_note.display_id
         return None
 
+    def get_purchase_order_document(self, obj):
+        if not obj.purchase_order_id:
+            return None
+        from core.documents import build_ref
+
+        user = getattr(self.context.get("request"), "user", None)
+        return build_ref(obj.purchase_order, user, "purchasing.purchaseorder", navigational=True)
+
 
 class PurchaseReturnLineSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)
     product_code = serializers.CharField(source="product.code", read_only=True)
     uom_name = serializers.CharField(source="uom.name", read_only=True)
+    # Movimiento de stock como DocumentRef (ADR-0086): el frontend navega a su URL canónica.
+    stock_move_document = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseReturnLine
         fields = "__all__"
+
+    def get_stock_move_document(self, obj):
+        if not obj.stock_move_id:
+            return None
+        from core.documents import build_ref
+
+        user = getattr(self.context.get("request"), "user", None)
+        return build_ref(obj.stock_move, user, "inventory.stockmove", navigational=True)
 
 
 class PurchaseReturnSerializer(serializers.ModelSerializer):
@@ -270,11 +316,21 @@ class PurchaseReturnSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     supplier_name = serializers.CharField(source="purchase_order.supplier.name", read_only=True)
     supplier_id = serializers.IntegerField(source="purchase_order.supplier_id", read_only=True)
+    # Orden de compra como DocumentRef (ADR-0086): el frontend navega a su URL canónica.
+    purchase_order_document = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseReturn
         fields = "__all__"
         read_only_fields = ["id", "number", "status"]
+
+    def get_purchase_order_document(self, obj):
+        if not obj.purchase_order_id:
+            return None
+        from core.documents import build_ref
+
+        user = getattr(self.context.get("request"), "user", None)
+        return build_ref(obj.purchase_order, user, "purchasing.purchaseorder", navigational=True)
 
 
 class NoteCreationSerializer(serializers.Serializer):

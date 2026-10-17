@@ -1,6 +1,7 @@
 "use client"
 
 import {type UoM, type Product} from "@/types/entities"
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 import { useState, useEffect, useMemo } from "react"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
@@ -405,7 +406,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
         subscription_supplier: "Proveedor de Suscripción",
         recurrence_period: "Período de Facturación",
         subscription_amount: "Monto de Suscripción",
-        boms: "Lista de Materiales",
+        boms: getDomainConceptTitle('ldm'),
         attribute_values: "Valores de Atributos"
     };
 

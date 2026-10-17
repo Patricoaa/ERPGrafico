@@ -17,14 +17,19 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
         DRAFT = "DRAFT", _("Borrador")
         CONFIRMED = "CONFIRMED", _("Confirmado")
         PAYMENT_PENDING = "PAYMENT_PENDING", _("Cobro en Terminal")
-        INVOICED = "INVOICED", _("Facturado")
-        PAID = "PAID", _("Pagado")
         CANCELLED = "CANCELLED", _("Anulado")
+        # ADR-0084: facturación, entrega y pago son ejes propios (invoicing_status,
+        # delivery_status, payment_status); ya no son estados de la OV.
 
     class DeliveryStatus(models.TextChoices):
         PENDING = "PENDING", _("Pendiente")
         PARTIAL = "PARTIAL", _("Parcial")
         DELIVERED = "DELIVERED", _("Entregado")
+
+    class InvoicingStatus(models.TextChoices):
+        PENDING = "PENDING", _("Pendiente")
+        PARTIAL = "PARTIAL", _("Parcial")
+        INVOICED = "INVOICED", _("Facturado")
 
     class Channel(models.TextChoices):
         SYSTEM = "SYSTEM", _("Sistema")
@@ -91,6 +96,13 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
         max_length=20,
         choices=DeliveryStatus.choices,
         default=DeliveryStatus.PENDING,
+    )
+    # ADR-0081 / D1.4: facturación por cantidad (Pendiente / Parcial / Facturado)
+    invoicing_status = models.CharField(
+        _("Estado de Facturación"),
+        max_length=20,
+        choices=InvoicingStatus.choices,
+        default=InvoicingStatus.PENDING,
     )
     delivery_date = models.DateField(_("Fecha de Entrega Planificada"), null=True, blank=True)
     immediate_dispatch = models.BooleanField(_("Despacho Inmediato"), default=False)
@@ -192,7 +204,7 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
         ]
         transitions = {
             "DRAFT": ["CONFIRMED", "CANCELLED"],
-            "CONFIRMED": ["INVOICED", "PAID", "CANCELLED"],
+            "CONFIRMED": ["CANCELLED"],
         }
 
     class Meta:
@@ -213,8 +225,9 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
         """
         from billing.models import Invoice
 
-        # Include both confirmed (POSTED) and settled (PAID) invoices — exclude drafts and cancelled
-        ACTIVE_STATUSES = [Invoice.Status.POSTED, Invoice.Status.PAID]
+        # Facturas vigentes: emitidas y borradores (folio pendiente); se excluyen las anuladas.
+        # Mismo criterio que InvoicingService para la cantidad facturada (ADR-0081, ADR-0084).
+        ACTIVE_STATUSES = [Invoice.Status.DRAFT, Invoice.Status.POSTED]
         # Use python-level filtering to respect prefetch_related and avoid N+1
         active_invoices = [inv for inv in self.invoices.all() if inv.status in ACTIVE_STATUSES]
         if not active_invoices:
@@ -248,7 +261,13 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
     @property
     def total_paid(self):
         """Calculates the total amount paid for this order"""
-        return sum(p.amount for p in self.payments.all())
+        from treasury.selectors import PaymentSelector
+
+        return PaymentSelector.paid_amount(
+            self.payments.all(), sale_side=True,
+            allocations=self.payment_allocations.all(),
+            fk_field="sale_order", document=self,
+        )
 
     @property
     def pending_amount(self):
@@ -256,9 +275,16 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
         return self.effective_total - self.total_paid
 
     @property
+    def payment_status(self):
+        """Eje de pago (ADR-0084): UNPAID · PARTIAL · PAID, derivado del saldo."""
+        from core.payment_status import payment_status_for
+
+        return payment_status_for(self.effective_total, self.total_paid)
+
+    @property
     def display_id(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{EntityPrefix.SALE_ORDER}-{self.number}"
+        from core.prefix_registry import EntityPrefix, fmt_seq_num
+        return f"{EntityPrefix.SALE_ORDER}-{fmt_seq_num(self.number)}"
 
     def save(self, *args, **kwargs):
         if not self.number:
@@ -273,12 +299,10 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
 
     def revert_after_invoice_cancellation(self) -> None:
         """
-        Revierte el estado de la orden al anular su factura asociada.
-        Para SaleOrder: vuelve a CONFIRMED (pedido confirmado, sin factura activa).
-        Invocado por BillingService.annul_invoice().
+        Gancho al anular la última factura principal de la orden (BillingService.annul_invoice).
+        ADR-0084: facturar ya no cambia el estado de la OV, así que no hay nada que revertir;
+        `invoicing_status` lo recalcula InvoicingService.
         """
-        self.status = self.Status.CONFIRMED
-        self.save()
 
     def describe_for_invoice_journal(self, number: str, dte_display: str) -> str:
         """
@@ -380,6 +404,10 @@ class SaleLine(models.Model):
         default=0,
         validators=[MinValueValidator(0)],
         help_text="Cantidad total despachada de esta línea",
+    )
+    # ADR-0081: Σ líneas de facturas principales no anuladas (InvoicingService)
+    quantity_invoiced = models.DecimalField(
+        _("Cantidad Facturada"), max_digits=10, decimal_places=2, default=0
     )
 
     manufacturing_data = models.JSONField(
@@ -578,13 +606,12 @@ class SaleDelivery(TransactionalDocument, TotalsCalculationMixin):
         verbose_name_plural = _("Despachos de Venta")
 
     def __str__(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{self.display_id} ({EntityPrefix.SALE_ORDER}-{self.sale_order.number})"
+        return f"{self.display_id} ({self.sale_order.display_id})"
 
     @property
     def display_id(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{EntityPrefix.SALE_DELIVERY}-{self.number}"
+        from core.prefix_registry import EntityPrefix, fmt_seq_num
+        return f"{EntityPrefix.SALE_DELIVERY}-{fmt_seq_num(self.number)}"
 
     def save(self, *args, **kwargs):
         if not self.number:
@@ -741,13 +768,12 @@ class SaleReturn(TransactionalDocument, TotalsCalculationMixin):
         verbose_name_plural = _("Devoluciones de Venta")
 
     def __str__(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{self.display_id} ({EntityPrefix.SALE_ORDER}-{self.sale_order.number})"
+        return f"{self.display_id} ({self.sale_order.display_id})"
 
     @property
     def display_id(self):
-        from core.prefix_registry import EntityPrefix
-        return f"{EntityPrefix.SALE_RETURN}-{self.number}"
+        from core.prefix_registry import EntityPrefix, fmt_seq_num
+        return f"{EntityPrefix.SALE_RETURN}-{fmt_seq_num(self.number)}"
 
     def save(self, *args, **kwargs):
         if not self.number:

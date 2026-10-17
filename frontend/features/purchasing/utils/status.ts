@@ -4,7 +4,6 @@ export const getPurchaseHubStatuses = (order: Record<string, unknown>) => {
     else if (order.status !== 'DRAFT') originStatus = 'success'
 
     const lines = (order.lines || order.items || []) as Array<Record<string, unknown>>
-    const relatedDocs = order.related_documents as Record<string, unknown> | undefined
 
 
     let receptionStatus = 'neutral'
@@ -26,13 +25,13 @@ export const getPurchaseHubStatuses = (order: Record<string, unknown>) => {
         else if (receptionProgress > 0) receptionStatus = 'active'
     }
 
-    const invoices = (relatedDocs?.invoices as Array<Record<string, unknown>> | undefined) || []
+    const invoices = (order.invoices as Array<Record<string, unknown>> | undefined) || []
     const billingIsComplete = invoices.length > 0 && !invoices.some((inv: Record<string, unknown>) =>
         inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number
     )
     const billingStatus = billingIsComplete ? 'success' : 'neutral'
 
-    const payments = (order.serialized_payments || order.payments_detail || relatedDocs?.payments || []) as Array<Record<string, unknown>>
+    const payments = (order.serialized_payments || order.payments_detail || []) as Array<Record<string, unknown>>
     const hasPendingTransactions = payments.some((pay: Record<string, unknown>) => {
         const requiresTR = (
             (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'TRANSFER' || pay.payment_method === 'CARD')) ||
@@ -41,7 +40,7 @@ export const getPurchaseHubStatuses = (order: Record<string, unknown>) => {
         return (requiresTR && !Boolean(pay.transaction_number)) || Boolean(pay.is_pending_registration)
     })
 
-    const isPaid = (order.status === 'PAID' || order.payment_status === 'PAID' || (Number(order.pending_amount) <= 0)) && !hasPendingTransactions
+    const isPaid = (order.payment_status === 'PAID' || (Number(order.pending_amount) <= 0)) && !hasPendingTransactions
 
     let treasuryStatus = 'neutral'
     if (isPaid) treasuryStatus = 'success'

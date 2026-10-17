@@ -16,6 +16,7 @@ export * from './UoMsView';
 export * from './UoMClientView';
 export * from './WarehouseClientView';
 export * from './ProductDrawer';
+export * from './ProductDrawerById';
 export * from './CategoryDrawer';
 export * from './UoMDrawer';
 export * from './UoMCategoryDrawer';

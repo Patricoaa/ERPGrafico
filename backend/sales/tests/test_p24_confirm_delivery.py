@@ -108,8 +108,18 @@ def test_confirm_delivery_links_stock_moves_with_multiple_tracked_lines(delivery
 
     dl1.refresh_from_db()
     dl2.refresh_from_db()
-    assert dl1.stock_move is None
-    assert dl2.stock_move is None
+    # GAP-02 (auditoría documental): antes quedaban en None por un emparejamiento
+    # heurístico (product_id, -qty) que nunca coincidía con moves de cantidad absoluta.
+    assert dl1.stock_move.product == p1
+    assert dl2.stock_move.product == p2
+    assert dl1.stock_move.quantity == Decimal("2")
+    assert dl2.stock_move.quantity == Decimal("3")
+    assert dl1.stock_move.source_document == delivery
+    assert dl2.stock_move.source_document == delivery
+
+    # GAP-01: el cumplimiento queda registrado en las líneas de la OV
+    assert dl1.sale_line.quantity_delivered == Decimal("2")
+    assert dl2.sale_line.quantity_delivered == Decimal("3")
 
 
 def test_confirm_delivery_rejects_non_draft(delivery_setup, db):
@@ -128,3 +138,43 @@ def test_confirm_delivery_rejects_non_draft(delivery_setup, db):
     again = SalesService.confirm_delivery(delivery)
 
     assert again.status == SaleDelivery.Status.CONFIRMED
+
+
+def test_confirm_delivery_partial_then_annul_restores_quantities(delivery_setup, db):
+    """GAP-01/02: despacho parcial → PARTIAL; anularlo repone stock y vuelve a PENDING."""
+    product = Product.objects.create(
+        name="P3",
+        internal_code="P3",
+        product_type=Product.Type.STORABLE,
+        uom=delivery_setup["uom"],
+        category=ProductCategory.objects.get_or_create(name="Test", defaults={"prefix": "TST"})[0],
+        cost_price=Decimal("0"),
+    )
+    sale_line = SaleLine.objects.create(
+        order=delivery_setup["order"], product=product, quantity=Decimal("5"),
+        unit_price=Decimal("1000"), uom=delivery_setup["uom"],
+    )
+    SaleDeliveryLine.objects.create(
+        delivery=delivery_setup["delivery"], sale_line=sale_line, product=product,
+        uom=delivery_setup["uom"], quantity=Decimal("2"), unit_price=Decimal("1000"),
+    )
+
+    delivery = SalesService.confirm_delivery(delivery_setup["delivery"])
+    SalesService._update_order_delivery_status(delivery.sale_order)
+
+    sale_line.refresh_from_db()
+    order = delivery.sale_order
+    order.refresh_from_db()
+    assert sale_line.quantity_delivered == Decimal("2")
+    assert order.delivery_status == SaleOrder.DeliveryStatus.PARTIAL
+
+    SalesService.annul_delivery(delivery, reason="test")
+
+    sale_line.refresh_from_db()
+    order.refresh_from_db()
+    assert sale_line.quantity_delivered == Decimal("0")
+    assert order.delivery_status == SaleOrder.DeliveryStatus.PENDING
+    returned = StockMove.objects.filter(
+        product=product, destination_location__location_type="INTERNAL"
+    )
+    assert returned.count() == 1, "anular el despacho debe reponer el stock"

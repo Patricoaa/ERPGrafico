@@ -1,4 +1,5 @@
 import { createEntityFields, DataCell } from '@/components/shared'
+import { DocumentRefLink } from '@/features/documents'
 import type { CreditHistoryEntry } from './api/creditsApi'
 
 export const creditHistoryEntryFields = createEntityFields<CreditHistoryEntry>()({
@@ -24,9 +25,7 @@ export const creditHistoryEntryFields = createEntityFields<CreditHistoryEntry>()
         type: 'computed',
         label: 'Nota Venta',
         tableOptions: { align: 'center' },
-        render: (h) => (
-            <DataCell.Entity entityLabel="sales.saleorder" data={h as unknown as Record<string, unknown>} size="sm" />
-        ),
+        render: (h) => <DocumentRefLink documentRef={h.document} />,
     },
     effectiveTotal: {
         key: 'effective_total',
