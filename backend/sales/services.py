@@ -577,14 +577,15 @@ class SalesService:
         from inventory.models import Location
         from inventory.services import StockService
 
-        internal_loc = Location.objects.filter(
-            location_type="INTERNAL", warehouse=delivery.warehouse
-        ).first()
-        customer_loc = Location.objects.filter(location_type="CUSTOMER").first()
-        if not internal_loc or not customer_loc:
-            raise ValidationError(
-                "Faltan ubicaciones de inventario (INTERNO del almacén / CLIENTE) para confirmar el despacho."
-            )
+        internal_loc, _ = Location.objects.get_or_create(
+            location_type="INTERNAL",
+            warehouse=delivery.warehouse,
+            defaults={"name": delivery.warehouse.name if delivery.warehouse else "Interno"},
+        )
+        customer_loc, _ = Location.objects.get_or_create(
+            location_type="CUSTOMER",
+            defaults={"name": "Clientes"},
+        )
 
         move_description = f"Despacho {delivery.display_id}"
 
