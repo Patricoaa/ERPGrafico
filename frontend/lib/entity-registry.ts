@@ -1011,8 +1011,8 @@ const REGISTRY = {
     feminine: true,
     description: 'Unidad de medida para productos',
     shortTemplate: '{name}',
-    listUrl: '/inventory/products/units',
-    detailUrlPattern: '/inventory/products/units?selected={id}',
+    listUrl: '/inventory/products/uoms/units',
+    detailUrlPattern: '/inventory/products/uoms/units?selected={id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'highlights' },
   },
   'inventory.uomcategory': {
@@ -1024,8 +1024,8 @@ const REGISTRY = {
     feminine: true,
     description: 'Agrupación de unidades de medida',
     shortTemplate: '{name}',
-    listUrl: '/inventory/products/units',
-    detailUrlPattern: '/inventory/products/units',
+    listUrl: '/inventory/products/uoms/categories',
+    detailUrlPattern: '/inventory/products/uoms/categories',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'highlights' },
   },
   'inventory.pricingrule': {

@@ -2,34 +2,26 @@
 
 import { showApiError } from "@/lib/errors"
 
-import React, { useEffect, useState, useMemo } from "react"
+import React, { useState, useMemo } from "react"
+import { hashKey } from "@tanstack/react-query"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { ActionConfirmModal, DataTableView } from '@/components/shared'
-
-import { type ColumnDef } from "@tanstack/react-table"
-
-import type { BulkAction } from "@/components/shared"
-import type { Page } from '@/lib/pagination'
+import { ActionConfirmModal, AnalyticsPanelContent, type AnalyticsPanelConfig, type BulkAction } from '@/components/shared'
+import { Collection, GROUP_ROW_LIMIT, orderingParam, useCollectionViewMode, useEntityCollection, type FieldId, type SortSpec } from "@/components/entity-view"
+import { toPage } from '@/lib/pagination'
 import { ProductDrawer } from "./ProductDrawer"
 import type { ProductInitialData } from "@/types/forms"
 import { Plus, AlertTriangle, BarChart3, Boxes, Package, Store, ShoppingCart, ShoppingBag, Warehouse } from "lucide-react"
-import type { LucideIcon } from "lucide-react"
-import * as LucideIcons from "lucide-react"
 import { toast } from "sonner"
-import { resolveMediaUrl } from "@/features/inventory/api/inventoryApi"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"
 import { StockReport } from "./StockReport"
 import { ProductInsightsPanel } from "./ProductInsightsPanel"
 import type { StockReportItem } from "@/features/inventory/stockReportFields"
 
-import { AutoEntityCard } from "@/components/shared"
-import { productFields } from "@/features/inventory/productFields"
-import { useProducts } from "@/features/inventory/hooks/useProducts"
+import { productEntity, productViews } from "../entity-view/product.entity"
+import { DEFAULT_PRODUCT_LIST_QUERY, useProducts } from "@/features/inventory/hooks/useProducts"
 import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { useProductAnalytics } from "@/features/inventory/hooks/useProductAnalytics"
-import type { AnalyticsPanelConfig } from "@/components/shared"
 import { formatQuantity } from "@/lib/money"
 import { type Product, type Restriction, type ProductFilters } from "@/features/inventory/types"
 import { productActions, type ProductActionsCtx } from "@/features/inventory/productActions"
@@ -43,16 +35,22 @@ interface ProductClientViewProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
     createAction?: React.ReactNode
-    initialProducts?: Product[]
+    /** Server-rendered first page of the default query (page 1, no filters, server order). */
+    initialPage?: InitialProductPage
 }
 
-export function ProductClientView({ externalOpen, onExternalOpenChange, createAction, initialProducts }: ProductClientViewProps) {
+/** DRF envelope of the server-rendered first page (pagination-contract §1.1). */
+export interface InitialProductPage {
+    results: Product[]
+    count: number
+    next: string | null
+    previous: string | null
+}
+
+const DEFAULT_PAGE: { pageIndex: number; pageSize: number } = { pageIndex: 0, pageSize: DEFAULT_PRODUCT_LIST_QUERY.page_size }
+
+export function ProductClientView({ externalOpen, onExternalOpenChange, createAction, initialPage }: ProductClientViewProps) {
     const { categories: categoryOptions } = useCategories()
-    const categoryIconMap = useMemo(() => {
-        const map = new Map<number, string | undefined>()
-        for (const cat of (categoryOptions ?? [])) map.set(cat.id, cat.icon)
-        return map
-    }, [categoryOptions])
     const config: UnifiedSearchConfig = useMemo(() => ({
         ...productUnifiedSearchDef,
         filters: [
@@ -93,10 +91,21 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         }
     }, [search.filters])
 
-    const isGrouping = search.groupBy !== null
-    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
+    // Search group keys → entity field ids (grouping uses the same formatted text as the cell).
+    const groupBy = search.groupBy === "product_type" ? "type" : search.groupBy === "category_name" ? "category" : null
+    const isGrouping = groupBy !== null
+    const [sort, setSort] = useState<SortSpec<FieldId<typeof productEntity.fields>> | null>(null)
+    // The page belongs to one query shape: a new filter, sort or grouping starts again at the first page
+    // (otherwise the user lands on an arbitrary slice, or on a page that no longer exists).
+    const queryShape = hashKey([filters, sort, groupBy])
+    const [paging, setPaging] = useState({ shape: queryShape, page: DEFAULT_PAGE })
+    const pageState = paging.shape === queryShape ? paging.page : DEFAULT_PAGE
+    const setPageState = (page: typeof DEFAULT_PAGE) => setPaging({ shape: queryShape, page })
+    // Server order by default (no sort): the header only claims an order the server applied.
+    const { view, onViewChange } = useCollectionViewMode("inventory.product")
     const viewParam = searchParams.get('view')
-    const initialAnalyticsTab = viewParam && ['resumen', 'ventas', 'compras', 'existencias'].includes(viewParam) ? viewParam : 'resumen'
+    const isTabParam = !!viewParam && ['resumen', 'ventas', 'compras', 'existencias'].includes(viewParam)
+    const initialAnalyticsTab = isTabParam && viewParam ? viewParam : 'resumen'
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState(initialAnalyticsTab)
     const [selectedStockProduct, setSelectedStockProduct] = useState<StockReportItem | null>(null)
 
@@ -112,22 +121,16 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     const ventasData = useProductAnalytics({ ...analyticsFilters, can_be_sold: true, price_field: "sale" })
     const comprasData = useProductAnalytics({ ...analyticsFilters, can_be_purchased: true, price_field: "cost" })
 
-    const { page, products, isLoading, refetch, updateProduct } = useProducts({
-        filters,
+    // Grouping loads one bounded page (GROUP_ROW_LIMIT); the collection warns when it is truncated.
+    const { page, products, isLoading, isRefetching, isError, refetch, updateProduct } = useProducts({
+        filters: { ...filters, ordering: orderingParam(productEntity, sort) },
         page: isGrouping ? 1 : pageState.pageIndex + 1,
-        page_size: isGrouping ? 200 : pageState.pageSize,
-        initialData: initialProducts ? { results: initialProducts, count: initialProducts.length } as Page<Product> : undefined,
+        page_size: isGrouping ? GROUP_ROW_LIMIT : pageState.pageSize,
+        // Only reused by the hook while the query is still the default one it was rendered for.
+        initial: initialPage
+            ? { page: toPage<Product>(initialPage, 1, DEFAULT_PRODUCT_LIST_QUERY.page_size), params: DEFAULT_PRODUCT_LIST_QUERY }
+            : undefined,
     })
-
-    const totalCount = page?.count ?? 0
-    const isOverLimit = isGrouping && totalCount > 200
-    const effectiveGrouping = isGrouping && !isOverLimit
-
-    useEffect(() => {
-        if (isOverLimit) {
-            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
-        }
-    }, [isOverLimit, totalCount])
 
 
     // Restrictions state
@@ -137,7 +140,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     const [isRetrying, setIsRetrying] = useState(false)
     const [currentArchivingProduct, setCurrentArchivingProduct] = useState<Product | null>(null)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
-    const displayProducts = React.useMemo(() => products, [products])
 
     const { entity: selectedFromUrl, clearSelection: clearUrlSelection } = useSelectedEntity<Product>({
         endpoint: '/inventory/products'
@@ -211,46 +213,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         onEdit: (id) => openSelected(id),
         onArchive: (product) => handleArchive(product),
     }
-
-    const columns = useMemo<ColumnDef<Product>[]>(() => [
-        {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={
-                        table.getIsAllPageRowsSelected()
-                            ? true
-                            : table.getIsSomePageRowsSelected()
-                            ? "indeterminate"
-                            : false
-                    }
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                    className="translate-y-[2px]"
-                    variant="circle"
-                />
-            ),
-            cell: ({ row }) => {
-                const isChild = row.original.is_child_variant;
-                if (isChild) return null;
-                return (
-                    <Checkbox
-                        checked={row.getIsSelected()}
-                        onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label="Select row"
-                        className="translate-y-[2px]"
-                        variant="circle"
-                    />
-                )
-            },
-            enableSorting: false,
-            enableHiding: false,
-            size: 40,
-            minSize: 40,
-        },
-        ...productFields.toColumns(),
-        productActions.auto(actionsCtx),
-    ], [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<Product>[]>(() => [
         {
@@ -573,84 +535,75 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         },
     }), [analyticsActiveTab, resumenData, ventasData, comprasData, filters, selectedStockProduct])
 
+    const collection = useEntityCollection(
+        productEntity,
+        { rows: products, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
+        {
+            pagination: isGrouping ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState },
+            sorting: { mode: "server", state: sort, onChange: setSort },
+            groupBy,
+        },
+    )
+
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    entityLabel="inventory.product"
-                    columns={columns}
-                    data={displayProducts}
-                    isLoading={isLoading}
-                    variant="embedded"
-                    manualPagination={!effectiveGrouping}
-                    pageCount={effectiveGrouping ? 1 : page ? Math.ceil(page.count / page.pageSize) : 0}
-                    rowCount={page?.count ?? 0}
-                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 200 } : pageState}
-                    onPaginationChange={effectiveGrouping ? undefined : setPageState}
-                    unifiedSearch={<UnifiedSearchBar
-                        config={config}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar producto..."
-                    />}
-                    unifiedSearchConfig={config}
-                    currentGroupBy={effectiveGrouping ? search.groupBy : null}
-                    showReset={search.isFiltered}
-                    isFiltered={search.isFiltered}
-                    onReset={search.clearAll}
-                    renderCard={(product: Product) => {
-                        const iconName = categoryIconMap.get(product.category_id)
-                        const fallbackIcon = iconName
-                            ? (LucideIcons as unknown as Record<string, LucideIcon | undefined>)[iconName]
-                            : undefined
-                        const imageUrl = (product.image ?? product.image_thumbnail) ? resolveMediaUrl(product.image ?? product.image_thumbnail) ?? undefined : undefined
-
-                        return (
-                            <AutoEntityCard 
-                                key={product.id}
-                                data={product}
-                                fields={productFields}
-                                entityLabel="inventory.product"
-                                imageSrc={imageUrl}
-                                icon={imageUrl ? undefined : (fallbackIcon ?? LucideIcons.Package)}
-                                iconClassName="bg-muted"
-                                actions={productActions.render(product, actionsCtx)}
-                                defaultAction={productActions.defaultAction(actionsCtx)?.(product) ?? null} 
-                                onClick={() => openSelected(product.id)}
-
-                            />
-                        )
-                    }}
-                    bulkActions={bulkActions}
-                    defaultPageSize={500}
-                    cardSkeleton={{ showBody: false, showFooter: false }}
-                    createAction={createAction}
-                    analyticsPanel={analyticsPanel}
-                    renderCustomView={selectedStockProduct ? () => (
-                        <div className="flex-1 flex flex-col min-h-0 h-full">
-                            <ProductInsightsPanel
-                                productId={selectedStockProduct.id as number}
-                                productName={selectedStockProduct.name ?? null}
-                                onBack={() => setSelectedStockProduct(null)}
-                                onProductChange={(id, name) => setSelectedStockProduct({ ...selectedStockProduct, id, name })}
+            <Collection.Root
+                collection={collection}
+                selection="bulk"
+                // ?view=resumen|ventas|… (analytics tab links) opens the analytics view on that tab.
+                view={isTabParam ? "analytics" : view}
+                onViewChange={onViewChange}
+                onOpen={(product) => openSelected(product.id)}
+                actions={productActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar>
+                    <div className="flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
+                            <UnifiedSearchBar
+                                config={config}
+                                chips={search.chips}
+                                isFiltered={search.isFiltered}
+                                inputValue={search.inputValue}
+                                onInputChange={search.setInputValue}
+                                onApply={search.applyFilter}
+                                onRemove={search.removeFilter}
+                                onClearAll={search.clearAll}
+                                groupBy={search.groupBy}
+                                onGroupBySelect={search.setGroupBy}
+                                paramValues={search.paramValues}
+                                placeholder="Buscar producto..."
                             />
                         </div>
-                    ) : undefined}
-                    emptyState={{
-                        context: "inventory",
-                        title: "Aún no hay productos",
-                        description: "Crea tu primer producto para empezar a construir el catálogo.",
-                    }}
+                        {createAction}
+                    </div>
+                </Collection.Toolbar>
+                <Collection.View
+                    table={productViews.table}
+                    card={productViews.card}
+                    emptyTitle="Aún no hay productos"
+                    emptyDescription="Crea tu primer producto para empezar a construir el catálogo."
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+                <Collection.Analytics>
+                    {selectedStockProduct ? (
+                        <ProductInsightsPanel
+                            productId={selectedStockProduct.id as number}
+                            productName={selectedStockProduct.name ?? null}
+                            onBack={() => setSelectedStockProduct(null)}
+                            onProductChange={(id, name) => setSelectedStockProduct({ ...selectedStockProduct, id, name })}
+                        />
+                    ) : analyticsPanel.screen ? (
+                        <AnalyticsPanelContent
+                            entityName={analyticsPanel.screen.entityName}
+                            tabs={analyticsPanel.screen.tabs}
+                            activeTab={analyticsPanel.screen.activeTab}
+                            onTabChange={analyticsPanel.screen.onTabChange}
+                        />
+                    ) : null}
+                </Collection.Analytics>
+                <Collection.BulkBar actions={bulkActions} />
+            </Collection.Root>
 
             <ProductDrawer
                 open={drawerOpen}

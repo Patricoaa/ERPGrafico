@@ -3,6 +3,7 @@
 import { Boxes, Package, Repeat, Wrench, type LucideIcon } from "lucide-react"
 import { Chip, DataCell } from "@/components/shared"
 import { defineEntity, registerValueKind, toNumber, formatMoneyValue, type ValueRenderProps } from "@/components/entity-view"
+import { resolveMediaUrl } from "../api/inventoryApi"
 import type { Product } from "../types"
 
 /**
@@ -57,14 +58,14 @@ registerInventoryValueKinds()
 export const productEntity = defineEntity<Product>()((f) => ({
     label: "inventory.product",
     fields: {
-        internalCode: f.code("internal_code", { label: "Código interno" }),
-        sku: f.text("code", { label: "SKU", tone: "secondary" }),
-        name: f.text("name", { label: "Nombre" }),
-        category: f.text("category_name", { label: "Categoría", tone: "secondary" }),
-        type: f.tags((p) => [p.product_type], { label: "Tipo", domain: "product_type" }),
+        internalCode: f.code("internal_code", { label: "Código interno", orderBy: "internal_code" }),
+        sku: f.text("code", { label: "SKU", tone: "secondary", orderBy: "code" }),
+        name: f.text("name", { label: "Nombre", orderBy: "name" }),
+        category: f.text("category_name", { label: "Categoría", tone: "secondary", orderBy: "category__name" }),
+        type: f.tags((p) => [p.product_type], { label: "Tipo", domain: "product_type", orderBy: "product_type" }),
         // Services carry no stock: "—" instead of "0 Unidad".
-        stock: f.quantity((p) => (p.product_type === "SERVICE" ? null : p.current_stock), { label: "Stock", uom: (p) => p.uom_name }),
-        price: f.value("productPrice", (p) => ({ gross: p.sale_price_gross || p.sale_price, dynamic: !!p.is_dynamic_pricing }), { label: "Total (c/IVA)" }),
+        stock: f.quantity((p) => (p.product_type === "SERVICE" ? null : p.current_stock), { label: "Stock", uom: (p) => p.uom_name, orderBy: "annotated_current_stock" }),
+        price: f.value("productPrice", (p) => ({ gross: p.sale_price_gross || p.sale_price, dynamic: !!p.is_dynamic_pricing }), { label: "Total (c/IVA)", sortable: false }), // shown gross or dynamic; the server can only sort by the net sale_price
         availability: f.tags(availability, { label: "Disponible para" }),
     },
 }))
@@ -76,6 +77,6 @@ export const productViews = productEntity.views({
         subtitle: ["internalCode", "category"],
         meta: ["stock", "availability"],
         trailing: ["price"],
-        media: { iconFor: (p) => TYPE_ICON[p.product_type] ?? Package, image: (p) => p.image_thumbnail ?? p.image ?? null },
+        media: { iconFor: (p) => TYPE_ICON[p.product_type] ?? Package, image: (p) => resolveMediaUrl(p.image_thumbnail ?? p.image ?? null) },
     },
 })

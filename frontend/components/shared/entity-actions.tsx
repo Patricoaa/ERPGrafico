@@ -132,6 +132,8 @@ export function toMenuItems(actions: StructuredAction[]): ActionMenuItem[] {
 export type EntityActionsReturn<T, Ctx> = {
     column: (ctx: Ctx, headerLabel?: string) => ColumnDef<T>
     auto: (ctx: Ctx, headerLabel?: string) => ColumnDef<T>
+    /** entity-view `Collection.Root actions`: table cell (`.cell`) or card actions (`.render`) per surface (ADR-0087). */
+    forCollection: (ctx: Ctx) => (item: T, surface: "table" | "card") => ReactNode
     render: (item: T, ctx: Ctx) => ReactNode
     single: (ctx: Ctx) => ColumnDef<T>
     defaultAction: (ctx: Ctx) => ((item: T) => ((e: React.MouseEvent) => void) | null)
@@ -143,6 +145,22 @@ export function createEntityActions<T, Ctx = object>(
     /** Detect if render returns structured data (array) or JSX (ReactNode). */
     const isStructured = (result: unknown): result is StructuredAction[] =>
         Array.isArray(result)
+
+    /**
+     * Table cell for one row. Counts visible actions at runtime:
+     * 0 → empty, 1 → ActionSingle (ArrowRight on hover), 2+ → ActionMenu (kebab).
+     * JSX from `render` (legacy) passes through.
+     */
+    const tableCell = (item: T, ctx: Ctx): ReactNode => {
+        const result = render(item, ctx)
+        if (!isStructured(result)) return result as ReactNode
+        const visible = result.filter((a) => !('visible' in a) || a.visible !== false)
+        if (visible.length === 0) return null
+        if (visible.length === 1 && 'action' in visible[0]) {
+            return <DataCell.ActionSingle onClick={visible[0].onClick} />
+        }
+        return <DataCell.ActionMenu items={toMenuItems(result)} />
+    }
 
     return {
         /**
@@ -167,28 +185,14 @@ export function createEntityActions<T, Ctx = object>(
         auto: (ctx: Ctx, headerLabel?: string): ColumnDef<T> =>
             createActionsColumn({
                 headerLabel,
-                renderActions: (item) => {
-                    const result = render(item, ctx)
-                    if (!isStructured(result)) return result as ReactNode
-
-                    const visible = result.filter(
-                        (a) => !('visible' in a) || a.visible !== false,
-                    )
-                    if (visible.length === 0) return null
-                    if (visible.length === 1 && 'action' in visible[0]) {
-                        return (
-                            <DataCell.ActionSingle
-                                onClick={visible[0].onClick}
-                            />
-                        )
-                    }
-                    return (
-                        <DataCell.ActionMenu
-                            items={toMenuItems(result)}
-                        />
-                    )
-                },
+                renderActions: (item) => tableCell(item, ctx),
             }),
+
+        forCollection: (ctx: Ctx) => (item: T, surface: "table" | "card") => {
+            if (surface === "table") return tableCell(item, ctx)
+            const result = render(item, ctx)
+            return isStructured(result) ? renderActions(result) : result
+        },
 
         /**
          * Render actions for EntityCard / Kanban.

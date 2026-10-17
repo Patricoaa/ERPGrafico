@@ -1,10 +1,10 @@
 # Progreso — Nuevo sistema de presentación
-- Fase actual: 7 · Lote 1 completado y commiteado · Siguiente: Puerta D del lote 2
-- Último completado: lote 1 (R1–R5, R7, R8, provider, paridad de URL) + `/simplify` + `/code-review` medium (8 hallazgos corregidos); tsc 0 errores; vitest 151/151; stories 21/21; 58 capturas sin desbordes; medición de R3 (fino 40 px / táctil 57 px). Detalle en `07` §2.2
-- Próximo paso exacto: presentar la Puerta D del lote 2 (Compras órdenes+notas, OV, UoM, Productos) en rama propia desde `refactor/entity-view-lote-1`; incluye TC-032 (card de Compras) y TC-041 (listUrl de UoM)
-- Rama: `refactor/entity-view-lote-1` (desde `master` 61c60515b); issues abiertas #176 (TC-034) y #177 (TC-039)
-- Puertas: A ✅ · B ✅ · C ✅ (2026-10-17) · D lote 1 ✅ (2026-10-17)
-- Preguntas abiertas para el usuario: —
+- Fase actual: 7 · Lote 2a completado (pendiente de commit) · Siguiente: Puerta D del 2b
+- Último completado: lote 2a — capacidades del núcleo (orden en servidor, agrupación, BulkBar, Analytics, estados vacíos) + UoM y Productos migrados + `OrderingFilter` de productos; `/simplify` + `/code-review` (9/10 corregidos); TC-041–TC-045; issues #178. Detalle en `07` §3.6
+- Próximo paso exacto: commit del lote 2a → Puerta D del 2b (OV + Compras: modos, foco del hub, ficha, modales, orden en servidor de OV/OC, TC-032, revisar `initialData` como TC-043)
+- Rama: `refactor/entity-view-lote-2` (desde el lote 1 `b3ae3fac3`); issues abiertas #176, #177
+- Puertas: A ✅ · B ✅ · C ✅ · D lote 1 ✅ · D lote 2a ✅ (2026-10-17)
+- Preguntas abiertas para el usuario: TC-046 (F821 en `inventory/selectors.py:730`)
 - Decisiones del usuario:
   - 2026-10-17: las tablas de wizard/modal entran como caso de uso específico · `as any` de `AutoEntityCard.tsx:390` espera al rediseño · `journalEntryFields` lo determina la auditoría (→ TC-016) · TC-012 se corrige en la migración
   - 2026-10-17 Puerta A: aprueba RC1–RC8 y la matriz C/F/E; pantallas de la Fase 4 = UoM, OV, Compras; aprueba `role="grid"` → `role="table"` en `compact`; **exportación = requisito** (aclarado)
@@ -12,6 +12,7 @@
   - 2026-10-17 Puerta C: ADR-0087 → Accepted (con A1–A3, R1–R8); ADR-0078 → Superseded; R1–R5 = primer lote de la Fase 7; R6 = ADR de color aparte; estado unificado como **hub con etiqueta** en tabla y card; comparación con la app real hecha (usuario de demo; credenciales no guardadas); commit del spike autorizado
   - 2026-10-17 Fase 6: aprueba las invariantes #6 y #13, y "Zero N+1" como #14; el lote 1 incluye R1–R5 + R7 + R8 + el provider en el shell + el estado en la URL; TC-034 va como tarea aparte → issue #176
   - 2026-10-17 Puerta D lote 1: R2 global ("—"); R3 = exención `[data-density="compact"]` con `pointer: fine` + excepción en GOVERNANCE #17; URL solo paridad; lote aprobado
+  - 2026-10-17 Puerta D lote 2: partición 2a/2b; agrupación con tope uniforme de 200; `Collection.Analytics` en el núcleo; **orden en servidor ahora** (OrderingFilter + ordering_fields)
 - Entorno: mutagen ✅ · tests remotos ✅ (vitest en contenedor, Node 20.20.2; el contenedor no tiene Chromium de Playwright) · Node local v18.19.1 por defecto, **Node 24 disponible en nvm** (`/home/pato/.nvm/versions/node/v24.18.0/bin`): vitest, Storybook y playwright-cli corren en local con él
 - Bitácora:
   - 2026-10-16 F0 iniciada y completada. Cambio relevante frente al §2: `renderCard` **no** es mayoritariamente manual (43/44 envuelven `AutoEntityCard`).
@@ -26,3 +27,4 @@
   - 2026-10-17 F7 iniciada: merge del spike en master; Puerta D del lote 1 presentada; TC-038 (corrección de ADR-0022).
   - 2026-10-17 Lote 1 implementado. R8 destapó TC-040 (las líneas usaban una etiqueta inexistente). `/code-review` encontró que el provider no cubría los drawers; el contexto se movió a `components/providers` para evitar un ciclo de imports. TC-039: el ratchet `no-unsafe` ya fallaba en master.
   - 2026-10-17 Lote 1 cerrado: pantallas reales comparadas (alturas sin cambios; R2 solo cambia el glifo); TC-041 (listUrl de UoM). Issue #177 (TC-039). Commit del lote 1.
+  - 2026-10-17 Lote 2a implementado y verificado en la app real. Defectos encontrados: TC-043 (initialData de TanStack), TC-044 (ciclo de imports), TC-045 (stock inflado por variantes), TC-046 (F821 latente).

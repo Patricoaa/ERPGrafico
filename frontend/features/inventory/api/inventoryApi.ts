@@ -50,6 +50,7 @@ export const inventoryApi = {
         if (filters?.track_inventory !== undefined) params.append('track_inventory', String(filters.track_inventory))
         if (filters?.page_size) params.append('page_size', String(filters.page_size))
         if (filters?.fields) params.append('fields', filters.fields)
+        if (filters?.ordering) params.append('ordering', filters.ordering)
 
         const { data } = await api.get<{ count: number; results: Product[] }>('inventory/products/', { params })
         return toPage<Product>(data, filters?.page ?? 1, filters?.page_size ?? 50)

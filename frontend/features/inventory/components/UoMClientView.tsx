@@ -4,30 +4,18 @@ import { showApiError } from "@/lib/errors"
 
 import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard } from '@/components/shared'
-import { type ColumnDef } from "@tanstack/react-table"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Trash2 } from "lucide-react"
-import { DataCell } from '@/components/shared'
-import { uomActions, type UoMActionsCtx } from "@/features/inventory/uomActions"
-import { uomFields } from "../uomFields"
-
-import type { BulkAction } from "@/components/shared"
-import { UoMDrawer } from "./UoMDrawer"
 import { toast } from "sonner"
+import { ActionConfirmModal, UnifiedSearchBar, useUnifiedSearch, type BulkAction } from "@/components/shared"
+import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { uomActions, type UoMActionsCtx } from "@/features/inventory/uomActions"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
-import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { uomUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
-
-const UOM_TYPE_CONFIG: Record<UoM['uom_type'], { status: string; label: string }> = {
-    REFERENCE: { status: 'INFO',    label: 'Referencia' },
-    BIGGER:    { status: 'SUCCESS', label: 'Mayor'      },
-    SMALLER:   { status: 'WARNING', label: 'Menor'      },
-}
+import { uomEntity, uomViews } from "../entity-view/uom.entity"
+import { UoMDrawer } from "./UoMDrawer"
 
 interface UoMClientViewProps {
     externalOpen?: boolean
@@ -37,12 +25,15 @@ interface UoMClientViewProps {
 
 export function UoMClientView({ externalOpen, onExternalOpenChange, createAction }: UoMClientViewProps) {
     const search = useUnifiedSearch(uomUnifiedSearchDef)
-    const { uoms, isLoading, refetch, deleteUoM } = useUoMs(search.filters)
+    const { uoms, isLoading, isError, refetch, deleteUoM } = useUoMs(search.filters)
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
     const { entity: selectedUoM, isLoading: isLoadingSelected, clearSelection } = useSelectedEntity<UoM>({ endpoint: '/inventory/uoms' })
     const { openSelected } = useEntityRouteActions()
+    const { view, onViewChange } = useCollectionViewMode("inventory.uom")
+    const collection = useEntityCollection(uomEntity, { rows: uoms, isLoading, error: isError, refetch, isFiltered: search.isFiltered }, { defaultSort: uomViews.table.defaultSort })
+
     const handleCloseModal = () => {
         clearSelection()
         onExternalOpenChange?.(false)
@@ -69,61 +60,10 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
             throw error
         }
     })
-    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
     const actionsCtx: UoMActionsCtx = {
         onEdit: (id) => openSelected(id),
-        onDelete: (id) => handleDelete(id),
+        onDelete: (id) => deleteConfirm.requestConfirm(id),
     }
-    const columns = useMemo<ColumnDef<UoM>[]>(() => {
-        return [
-            {
-                id: "select",
-                header: ({ table }) => (
-                    <Checkbox
-                        checked={
-                        table.getIsAllPageRowsSelected()
-                            ? true
-                            : table.getIsSomePageRowsSelected()
-                            ? "indeterminate"
-                            : false
-                    }
-                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                        aria-label="Select all"
-                        variant="circle"
-                    />
-                ),
-                cell: ({ row }) => (
-                    <Checkbox
-                        checked={row.getIsSelected()}
-                        onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label="Select row"
-                        variant="circle"
-                    />
-                ),
-                enableSorting: false,
-                enableHiding: false,
-                size: 40,
-            },
-            uomFields.column("id"),
-            uomFields.column("name"),
-            uomFields.column("category_name"),
-            {
-                accessorKey: "uom_type",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-                cell: ({ row }) => {
-                    const type = row.getValue("uom_type") as UoM['uom_type']
-                    return (
-                        <DataCell.Status
-                            status={UOM_TYPE_CONFIG[type]?.status || 'NEUTRAL'}
-                            label={UOM_TYPE_CONFIG[type]?.label || type}
-                        />
-                    )
-                },
-            },
-            uomFields.column("ratio"),
-            uomActions.auto(actionsCtx),
-        ]
-    }, [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<UoM>[]>(() => [
         {
@@ -137,52 +77,46 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    columns={columns}
-                    data={uoms}
-                    isLoading={isLoading}
-                    entityLabel="inventory.uom"
-                    variant="embedded"
-                    unifiedSearch={<UnifiedSearchBar
-                        config={uomUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar unidad..."
-                    />}
-                    unifiedSearchConfig={uomUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    bulkActions={bulkActions}
-                    createAction={createAction}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "inventory",
-                        title: "Aún no hay unidades de medida",
-                        description: "Define unidades para medir, comprar y vender tus productos.",
-                    }}
-                    renderCard={(uom: UoM) => (
-                        <AutoEntityCard
-                            key={uom.id}
-                            data={uom}
-                            fields={uomFields}
-                            entityLabel="inventory.uom"
-                            actions={uomActions.render(uom, actionsCtx)}
-                            defaultAction={uomActions.defaultAction(actionsCtx)?.(uom) ?? (() => openSelected(uom.id))}
-
-                        />
-                    )}
+            <Collection.Root
+                collection={collection}
+                selection="bulk"
+                view={view}
+                onViewChange={onViewChange}
+                // Edit through the UoM modal (?selected, ADR-0020), not the drawer registry.
+                onOpen={(uom) => openSelected(uom.id)}
+                actions={uomActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar>
+                    <div className="flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
+                            <UnifiedSearchBar
+                                config={uomUnifiedSearchDef}
+                                chips={search.chips}
+                                isFiltered={search.isFiltered}
+                                inputValue={search.inputValue}
+                                onInputChange={search.setInputValue}
+                                onApply={search.applyFilter}
+                                onRemove={search.removeFilter}
+                                onClearAll={search.clearAll}
+                                groupBy={search.groupBy}
+                                onGroupBySelect={search.setGroupBy}
+                                paramValues={search.paramValues}
+                                placeholder="Buscar unidad..."
+                            />
+                        </div>
+                        {createAction}
+                    </div>
+                </Collection.Toolbar>
+                <Collection.View
+                    table={uomViews.table}
+                    card={uomViews.card}
+                    emptyTitle="Aún no hay unidades de medida"
+                    emptyDescription="Define unidades para medir, comprar y vender tus productos."
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+                <Collection.BulkBar actions={bulkActions} />
+            </Collection.Root>
 
             {/* Unified Modal — UoMForm keeps rich FK + audit widgets for both create and edit.
                 Edit mode driven by ?selected={id} (ADR-0020); create mode driven by externalOpen. */}

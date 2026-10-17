@@ -391,7 +391,7 @@ Base: `/api/inventory/`
 ### products/
 
 ```
-GET    /api/inventory/products/          list, paginated (filtros: active, category, product, supplier, uom)
+GET    /api/inventory/products/          list, paginated (filtros: active, category, product, supplier, uom; ordering: id, name, internal_code, code, category__name, product_type, annotated_current_stock, sale_price — enviar con desempate `,id`, ADR-0087)
 POST   /api/inventory/products/          create (multipart/form-data for image)
 GET    /api/inventory/products/{id}/     detail
 PATCH  /api/inventory/products/{id}/     update

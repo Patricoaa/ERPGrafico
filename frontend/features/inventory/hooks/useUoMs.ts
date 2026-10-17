@@ -74,7 +74,7 @@ export function useUoMs(filters?: FilterState) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: uoms, isLoading: isUoMsLoading, refetch } = useQuery({
+    const { data: uoms, isLoading: isUoMsLoading, isError: isUoMsError, refetch } = useQuery({
         queryKey: [...UOMS_KEYS.all, filters],
         queryFn: async (): Promise<UoM[]> => {
             const params = new URLSearchParams()
@@ -156,6 +156,8 @@ export function useUoMs(filters?: FilterState) {
         categories: categories ?? [],
         isLoading: isUoMsLoading || isCategoriesLoading,
         isUoMsLoading,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError: isUoMsError,
         refetch,
         deleteUoM: deleteMutation.mutateAsync,
         saveUoM: saveMutation.mutateAsync,

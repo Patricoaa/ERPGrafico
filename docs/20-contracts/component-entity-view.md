@@ -103,16 +103,27 @@ Reglas:
 | `rows` | `readonly T[] \| undefined` | **obligatorio**; viene de un hook de feature (invariante #5) |
 | `isLoading` / `isRefetching` | `boolean` | carga inicial / refetch con datos visibles |
 | `error` | `unknown` | cualquier valor no nulo activa el estado de error |
-| `rowCount` | `number` | total del servidor; **obligatorio** con paginación en servidor |
+| `rowCount` | `number` | total del servidor; **obligatorio** con paginación en servidor, y también al agrupar una página acotada (activa el aviso de truncado) |
 | `refetch` | `() => void` | habilita "Reintentar" en el estado de error |
 | `isFiltered` | `boolean` | cambia el copy del vacío ("Ningún resultado para el filtro") |
 
 | `options` | Valores |
 |---|---|
 | `pagination` | `{ mode: "client", pageSize? }` (defecto, 20) · `{ mode: "server", state, onChange }` · `{ mode: "none" }` |
-| `defaultSort` | `"id"` o `"-id"` (ids tipados) |
+| `sorting` | `{ mode: "local" }` (defecto: ordena las filas cargadas con la clave semántica del kind) · `{ mode: "server", state: SortSpec \| null, onChange }` |
+| `defaultSort` | `"id"` o `"-id"` (ids tipados; solo en orden local) |
+| `groupBy` | id de campo o `null`: agrupa las filas cargadas por el texto formateado del campo |
 
 PF-1: documentos, movimientos, contabilidad y crédito paginan **en servidor**. La paginación en cliente se admite solo en maestros pequeños (< ~1 000 filas).
+
+**Orden en servidor** (Puerta D lote 2). Una lista paginada en servidor **también ordena en servidor**: si ordenara solo la página visible, mentiría.
+- El campo declara su clave del backend con `orderBy` (por ejemplo `f.quantity(…, { orderBy: "annotated_current_stock" })`). En modo servidor, solo los campos con `orderBy` se pueden ordenar.
+- La página guarda el `SortSpec` y lo traduce con `orderingParam(entity, spec)` (`"-stock"` → `"-annotated_current_stock,-id"`, con desempate estable por `id`) para el hook de la feature.
+- El viewset expone `filters.OrderingFilter` con `ordering_fields` como lista blanca, y documenta el parámetro en `api-contracts.md`.
+- Sin `ordering` se conserva el orden del servidor, y ninguna cabecera afirma un orden.
+- Si la página tiene datos renderizados en servidor (`initialData`), solo valen para la consulta por defecto: TanStack Query usaría `initialData` para cualquier clave nueva y nunca haría la petición.
+
+**Agrupación.** Usa `groupItems` (`lib/group-utils`), igual que las vistas agrupadas actuales: claves ordenadas y valores vacíos en un último grupo "Sin {campo}". Agrupar desactiva la paginación: la página carga una sola página acotada a `GROUP_ROW_LIMIT` (200) con `pagination: { mode: "none" }` y pasa `rowCount`. Si el total supera lo cargado, `Collection.View` muestra el aviso "Agrupando los primeros N de M resultados". La agrupación en servidor queda como Pd-backend (PF-5). Las claves de agrupación de `UnifiedSearchBar` se traducen a ids de campo en la página.
 
 ## 6. Superficies
 
@@ -122,10 +133,14 @@ Todo componente del núcleo tiene **≤ 12 props** (test de contrato). Lo que no
 
 | Componente | Props |
 |---|---|
-| `Collection.Root` | `collection`, `children`, `actions?: (row) => ReactNode`, `onOpen?: (row) => void`, `selection?: "none" \| "bulk" \| "panel"`, `selectedId?`, `defaultView?: "table" \| "card"`, `view?` + `onViewChange?` (vista controlada), `label?` |
-| `Collection.Toolbar` | `children?` (filtros, búsqueda, acciones), `views?`, `exportFilters?` |
-| `Collection.View` | `table?`, `card?`, `emptyTitle?`, `emptyDescription?`: elige la superficie activa |
-| `Collection.Table` / `Collection.Grid` | la superficie concreta, para pantallas con una sola vista |
+| `Collection.Root` | `collection`, `children`, `actions?: (row, surface: "table" \| "card") => ReactNode`, `onOpen?: (row) => void`, `selection?: "none" \| "bulk" \| "panel"`, `selectedId?`, `defaultView?`, `view?` + `onViewChange?` (vista controlada), `label?` |
+| `Collection.Toolbar` | `children?` (búsqueda `UnifiedSearchBar`, botón de crear), `views?`, `exportFilters?` |
+| `Collection.View` | `table?`, `card?`, `emptyTitle?`, `emptyDescription?`, `emptyAction?` (p. ej. crear), `onResetFilters?` ("Limpiar filtros" en el vacío filtrado): elige la superficie activa |
+| `Collection.Table` / `Collection.Grid` | la superficie concreta, para pantallas con una sola vista. Con `groupBy` pintan un `<tbody>` por grupo con su cabecera `th scope="rowgroup"` (tabla) o una sección con encabezado (cards) |
+| `Collection.BulkBar` | `actions: BulkAction<T>[]`: el mismo tipo y la misma barra (`SelectionDock`) que el sistema antiguo; aparece con la selección (`selection="bulk"`) |
+| `Collection.Analytics` | `children`: añade la vista "Analítica" al selector de la barra (modo `analytics`, `?view=analytics`). Mientras está activa, su contenido reemplaza la tabla o las cards. El contenido es de la feature (p. ej. `AnalyticsPanelContent`) |
+
+**Acciones de fila por superficie:** `actions={xActions.forCollection(ctx)}` (`createEntityActions`). En la tabla, si hay una sola acción visible se muestra `ActionSingle`; si hay varias, el menú kebab (lo mismo que `.auto()`). En la card se usa `.render`. La barra de `BulkBar` es el `SelectionDock` compartido (`components/shared/ActionDock.tsx`), el mismo que usa `DataTable`.
 
 ### 6.2 `TableLayout`
 
@@ -231,6 +246,7 @@ Mientras falte una capacidad, la pantalla que la necesita **se queda en el siste
 |---|---|---|
 | Paridad de URL con el sistema actual: `?view=` (`useCollectionViewMode`), filtros de `UnifiedSearchBar` (nuqs) y `?selected=` (ADR-0020) | **hecho** | lote 1 |
 | Orden y página en la URL (hoy son estado local también en el sistema antiguo) | mejora opcional (`06-spec.md` §5.3) | — |
-| Agrupación, filas expandibles, panel de analítica, kanban/timeline | especificado como composición (`06-spec.md` §6.6) | Fase 7, por demanda |
+| Agrupación, panel de analítica, acciones masivas, orden en servidor | **hecho** | lote 2a |
+| Filas expandibles, kanban/timeline, foco del hub (atenuar cards no seleccionadas) | especificado como composición (`06-spec.md` §6.6) | 2b / por demanda |
 | Exportación real | el hook existe; falta el endpoint (Pd-backend) | — |
 | `label` tipado (R8), contexto y registro con un único puente cada uno (R7), provider en el shell | **hecho** | lote 1 |

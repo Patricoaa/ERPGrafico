@@ -14,7 +14,8 @@
 | Lote | Contenido | Estado |
 |---|---|---|
 | 1 | Prerrequisitos R1–R5 + R7 + R8 + `EntityViewProvider` en el shell + paridad de URL | **completado (2026-10-17)** |
-| 2 | Compras (órdenes + notas), OV, UoM, Productos | — |
+| 2a | Capacidades + UoM + Productos (+ orden en servidor de productos, TC-041) | **Puerta D aprobada (2026-10-17)**, en curso |
+| 2b | OV + Compras (+ orden en servidor, TC-032) | — |
 | 3 | Líneas de documento + edición por lote P1 | — |
 | R6 | ADR de color (contraste warning/success) | aparte |
 
@@ -105,7 +106,140 @@ Conclusión: R1, R3 y R4 no cambian nada en las pantallas actuales, y R2 solo ca
 - `EntityCard.Meta` y `DocumentFieldGrid` son dos primitivas de etiqueta/valor.
 - `CollectionViewMode` (`table`) frente a `useViewMode` (`list`).
 
-## 3. Matriz por entidad
+## 3. Lote 2: plan (Puerta D, presentada el 2026-10-17)
+
+Rama: `refactor/entity-view-lote-2` (desde `refactor/entity-view-lote-1`, `b3ae3fac3`).
+
+### 3.1 Inventario de las pantallas actuales (Explore; V con `archivo:línea` en el informe del subagente)
+
+| Pantalla | Archivo (líneas) | Paginación | Búsqueda / agrupación | Selección y acciones | Apertura | Analítica | Particularidades |
+|---|---|---|---|---|---|---|---|
+| UoM | `features/inventory/components/UoMClientView.tsx` (215) | cliente | `UnifiedSearchBar` + `groupBy` | columna de checkbox a mano; masiva "Eliminar" con confirmación; `uomActions` | `?selected` → modal de edición | — | `renderCard` |
+| Productos | `features/inventory/components/ProductClientView.tsx` (705) | servidor (50); agrupar → página 1 de 200 sin paginar | búsqueda con filtros de categoría añadidos en ejecución y postproceso de disponibilidad | checkbox a mano; masivas; archivado con diálogos | `?selected` | **sí**, 4 pestañas y 3 hooks | `renderCustomView` (detalle de stock), imagen o icono por card, `defaultPageSize` 500 |
+| OV | `features/sales/components/SalesOrdersView.tsx` (435) | servidor (20); agrupar → 200 | por modo (órdenes/notas) | — | `toggleSelection` (ficha) o `onSelectOrder` del padre (POS) | **sí**, calculada sobre la página actual | modos con estado propio; cards atenuadas cuando la ficha está abierta (`isHubOpen`) + `hubTrigger` |
+| Compras | `app/(dashboard)/purchasing/orders/components/PurchasingOrdersClientView.tsx` (1042) | órdenes en servidor, notas en cliente; agrupar → 5000 | 3 columnas ocultas solo para filtrar | — | `useDocumentSheetRoute` | **sí**, embudo y 4 pestañas | 6 modales de workflow, datos iniciales del servidor (SSR) |
+
+Ninguna de las cuatro ordena en servidor: hoy el orden solo reordena la página visible.
+
+### 3.2 Capacidades que faltan en entity-view (todas por composición, sin props nuevas por encima del techo)
+
+| Capacidad | Diseño propuesto | Consumidores |
+|---|---|---|
+| Búsqueda unificada + reinicio | `UnifiedSearchBar` como hijo de `Collection.Toolbar`; `isFiltered` ya existe en la fuente; reinicio dentro del estado vacío filtrado | 4 |
+| Agrupación | opción `groupBy?: Id \| null` en `useEntityCollection` (estado, no prop); `Collection.Table`/`Grid` pintan encabezados de grupo. Paridad: el hook de la página desactiva la paginación en servidor al agrupar, con el tope de cada pantalla | 4 |
+| Acciones masivas | `Collection.BulkBar` (hijo nuevo, ≥3 consumidores en el repositorio) que recibe las filas seleccionadas y reutiliza el tipo `BulkAction` existente | UoM, Productos (+ otras pantallas ya inventariadas) |
+| Panel de analítica | `Collection.Analytics` (hijo nuevo: el botón de la barra lo muestra u oculta; el contenido es de la feature) | Productos, OV, Compras (3 entidades, 3 features: cumple la regla) |
+| Foco del hub | con `selection="panel"` y `selectedId`, las cards no seleccionadas se atenúan solas (sin prop nueva) | OV, Compras |
+| Estado vacío completo y botón de crear | el botón va como hijo de `Toolbar`; `emptyAction` en `View` (5 props, dentro del techo) | 4 |
+| Vista de detalle que sustituye la lista | composición en la página (condicional), sin cambios en el núcleo | Productos |
+
+### 3.3 Propuesta de partición
+
+- **Lote 2a:** las capacidades de §3.2 + **UoM** y **Productos**. Ejercitan búsqueda, agrupación, acciones masivas, analítica y vista sustituta. Incluye TC-041 (`listUrl` de UoM).
+- **Lote 2b:** **OV** y **Compras**, con modos, foco del hub, ficha y modales de workflow. Incluye TC-032.
+
+### 3.4 Decisiones de la Puerta D (2026-10-17)
+
+1. **Partición 2a + 2b.** 2a = capacidades + UoM + Productos (+ TC-041). 2b = OV + Compras (+ TC-032). Cada uno con su Puerta D.
+2. **Agrupación:** paridad con un **tope uniforme de 200** y un aviso cuando hay más resultados. Compras baja de 5000 a 200. La agrupación en servidor queda como Pd-backend (PF-5).
+3. **Analítica:** `Collection.Analytics` en el núcleo; el contenido sigue en cada feature.
+4. **Orden en servidor: se corrige ahora.** Backend: `filters.OrderingFilter` + lista blanca `ordering_fields` en cada viewset (precedente: `contacts/views.py:31-34`, `workflow/views.py:32-35`), con desempate estable por `id`. Frontend: orden controlado en `useEntityCollection` (modo servidor) y opción de campo `orderBy` (clave del servidor). Productos en 2a; OV y OC en 2b.
+
+### 3.5 Plan del lote 2a
+
+1. **Núcleo:**
+   - orden controlado/servidor + `orderBy`;
+   - `groupBy`;
+   - `Collection.BulkBar`;
+   - `Collection.Analytics`;
+   - `emptyAction`;
+
+   cada pieza con tests unitarios, stories y techo de props.
+2. **Backend:**
+   - `ProductViewSet`: `OrderingFilter` + `ordering_fields`;
+   - pytest del parámetro `ordering`;
+   - `api-contracts.md` actualizado.
+3. **UoM:**
+   - pantalla sobre entity-view (búsqueda, agrupación, acciones masivas y de fila, modal `?selected`);
+   - TC-041 (`listUrl`).
+4. **Productos:**
+   - paginación y orden en servidor, agrupación con tope, acciones masivas y archivado;
+   - analítica (4 pestañas) y vista sustituta del detalle de stock;
+   - imagen o icono por card.
+5. **Ciclo completo:**
+   - tsc, lint y tests (también pytest);
+   - capturas antes/después de las pantallas reales;
+   - `/simplify`, `/code-review` medium;
+   - commit;
+   - Puerta D del 2b.
+
+### 3.6 Resultado del lote 2a (2026-10-17)
+
+**Núcleo (entity-view):**
+- Orden en servidor: `sorting: { mode: "server" }`, campo `orderBy`, `orderingParam` con desempate por `id`.
+- `groupBy` con `groupItems` y `GROUP_ROW_LIMIT`, más el aviso `Alert` de truncado.
+- `Collection.BulkBar` sobre el `SelectionDock` compartido (también lo usa `DataTable`: quedan fuera dos copias de su marcado).
+- `Collection.Analytics` como modo de vista.
+- `emptyAction` y `onResetFilters`.
+- `actions(row, surface)` + `createEntityActions().forCollection(ctx)`.
+- `Root` ocupa la altura de su padre.
+
+**Backend:**
+- `ProductViewSet`: `OrderingFilter` + `ordering_fields` (id, name, internal_code, code, category__name, product_type, annotated_current_stock, sale_price).
+- pytest 4/4 (incluido el de número de queries); `api-contracts.md` actualizado.
+
+**Defectos encontrados y corregidos:**
+- **TC-043 · `initialData` de TanStack Query.** Productos pasaba los datos renderizados en servidor a `useQuery`, y TanStack los usa para *cualquier* clave nueva mientras la caché está vacía, además de darlos por frescos. Al ordenar, filtrar o paginar no se hacía la petición. Lo destapó el orden en servidor, y la vista antigua tenía el mismo problema. Arreglo: `useProducts({ initial: { page, params } })` solo los aplica si `hashKey` coincide. `page.tsx` pide ahora la misma consulta que el cliente (50 filas, sin variantes, total real; antes eran 200 filas con variantes y un `count` falso).
+- **TC-044 · Ciclo de imports.** `@/components/shared` → `GlobalModalProvider` → registro de drawers → vista de feature → barrel de entity-view. Al migrar Productos, todos los tests de entity-view fallaban con `registerValueKind is not a function`. Arreglo: el barrel evalúa primero el núcleo, que no tiene dependencias. Un test de contrato fija ese orden (verificado por mutación). La causa de fondo, que el registro de drawers cargue las vistas de forma ansiosa, queda como deuda.
+- **TC-041 + TC-042:** `listUrl` de UoM y de categorías de UoM corregidos; ratchet de 23 `listUrl` rotos (#178).
+- Defecto del total al agrupar (`rowCount` se ignoraba sin paginación en servidor), atrapado por el test nuevo.
+
+**Pantallas** (app real, servidor de desarrollo, usuario de demo; capturas en `evidence/lote2a/`):
+
+| Pantalla | Antes → después (líneas de vista + `*Fields`) | Verificado en la app |
+|---|---|---|
+| UoM | 215 + 52 (`uomFields.ts`, borrado) → 149 + 21 (`uom.entity.ts`) | tabla única con `data-density`; barra masiva; `?view=card`; el modal de edición abre con `?selected=` |
+| Productos | 705 + 76 (`productFields.tsx`, borrado) → 653 + 64 (`product.entity.tsx`) | orden en servidor (`ordering=name,id` / `-name,-id`, datos reordenados); agrupación por categoría (6 grupos); analítica (4 pestañas; detalle de stock dentro de la vista); cards a 390 px sin desborde; paginación "1 a 34 de 34" |
+
+Las vistas de Productos conservan casi todas sus líneas: la mayor parte es la configuración de la analítica (≈ 280 líneas) y el archivado con sus diálogos, que no son presentación.
+
+**Diferencias aceptadas:**
+- UoM ya no muestra la columna "Código interno" (`id`). Pasa a mostrar la abreviación (diseño del spike, Puerta C).
+- Las cards de Productos muestran el icono por tipo de producto, no el de la categoría (Puerta C).
+- Agrupar más de 200 productos agrupa los primeros 200 y muestra un aviso. Antes la lista quedaba sin agrupar y salía un toast.
+
+**Observación heredada (sin cambios):** en las `StatCard` con gráfico, en anchos estrechos los títulos se parten y la leyenda invade el encabezado. Pasa igual en la analítica de OV, que sigue en el sistema antiguo.
+
+**Deuda registrada:**
+- Traducir en cada vista las claves de agrupación de `UnifiedSearchBar` a ids de campo (Productos: `product_type` → `type`, `category_name` → `category`).
+- Ordenar por stock calcula la suma sobre todos los productos antes del `LIMIT`. Es barato con volúmenes de PYME; si crece, conviene desnormalizar e indexar el stock.
+- El registro de drawers carga las vistas de forma ansiosa (causa de fondo de TC-044).
+
+**Verificación:**
+- tsc 0 errores; lint de lo tocado sin errores ni advertencias.
+- vitest 220/222: las 2 fallas son del ratchet `no-unsafe`, ya presentes en master (#177), sin archivos nuevos.
+- Stories 21/21.
+- pytest 4/4.
+- `/simplify` aplicado: `SelectionDock`, `groupItems`, `Alert`, `forCollection`, la regla de `initialData` en el hook, memos de orden y selección, y la guarda del orden del barrel.
+- `/code-review` medium: 10 hallazgos, 9 corregidos.
+  1. La página vuelve a 0 al cambiar filtros, orden o agrupación. Se deriva por "forma" de consulta, sin efectos. Verificado por tipos y revisión, no en la app: con 34 productos solo hay una página.
+  2. `useProducts` y `useUoMs` exponen `isError`, y la colección muestra el error con "Reintentar" en vez de "vacío" (invariante #8).
+  3. `BulkBar` entrega las filas refrescadas tras un refetch (test de regresión, verificado por mutación).
+  4. Con paginación en servidor, la selección se limpia al llegar otras filas (test).
+  5. "Total (c/IVA)" no se puede ordenar: se muestra bruto o dinámico y el servidor solo ordena por el `sale_price` neto.
+  6. **TC-045:** el stock mostrado se multiplicaba por el número de variantes (defecto previo, ver el ledger). Corregido con una subconsulta; test de regresión.
+  7. Consulta por defecto única (`DEFAULT_PRODUCT_LIST_QUERY`) compartida por `page.tsx` y la vista; `group_by` evita la precarga inútil.
+  8. Fuera `createEntityActions().cell`, que no tenía uso.
+  9. JSDoc de `useCollectionViewMode` en su sitio.
+
+  No se corrige: el orden de imports del barrel. Lo protege un test de contrato, y la alternativa (imports profundos de `shared`) viola la invariante #6. Su causa de fondo es TC-044.
+- Verificación final:
+  - tsc 0 errores; lint de lo tocado sin errores (las advertencias de `inventoryApi.ts` son previas).
+  - vitest 222/224: las 2 fallas son de #177, ya presentes en master.
+  - Stories 21/21.
+  - pytest de inventario 72/72.
+
+## 4. Matriz por entidad
 
 | Entidad | Pantalla | Antes | Después | Extensiones | Diferencias | Tests | Resultado | Deuda |
 |---|---|---|---|---|---|---|---|---|

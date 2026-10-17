@@ -22,6 +22,11 @@ export interface FieldMeta {
     sortable?: boolean
     /** Overrides the kind's default table alignment. */
     align?: Align
+    /**
+     * Server ordering key (DRF `?ordering=`, must be in the viewset's `ordering_fields`). With server
+     * sorting only fields that declare it are sortable: the page alone is never reordered.
+     */
+    orderBy?: string
 }
 
 export type FieldDef<T, K extends ValueKind = ValueKind> = FieldMeta & {
@@ -33,9 +38,9 @@ export type FieldDef<T, K extends ValueKind = ValueKind> = FieldMeta & {
 type FieldInput<T, K extends ValueKind> = FieldMeta & RowAware<KindOptions<K>, T>
 
 function splitMeta<T, K extends ValueKind>(input: FieldInput<T, K>): { meta: FieldMeta; options: RowAware<KindOptions<K>, T> } {
-    const { label, header, sortable, align, ...options } = input
+    const { label, header, sortable, align, orderBy, ...options } = input
     // `options` is exactly the RowAware part of the input; TS cannot narrow a generic Omit back to it.
-    return { meta: { label, header, sortable, align }, options: options as unknown as RowAware<KindOptions<K>, T> }
+    return { meta: { label, header, sortable, align, orderBy }, options: options as unknown as RowAware<KindOptions<K>, T> }
 }
 
 /** Builders bound to the row type `T`. `value()` reaches any registered kind, including feature extensions. */
@@ -254,6 +259,20 @@ export function fieldById<T>(entity: EntityIdentity & { fields: FieldMap<T> }, i
     const def = entity.fields[id]
     if (!def) throw new Error(`entity-view: el campo "${id}" no existe en ${entityName(entity)}`)
     return def
+}
+
+/**
+ * DRF `ordering` param for a sort spec: `"-date"` → `"-date_field,-id"`. The `id` tie-break keeps
+ * pages stable. Returns `undefined` when the field has no server key (`orderBy`).
+ */
+export function orderingParam<T, F extends FieldMap<T>>(entity: Entity<T, F>, spec: SortSpec<FieldId<F>> | null | undefined): string | undefined {
+    if (!spec) return undefined
+    const desc = spec.startsWith("-")
+    const id: string = desc ? spec.slice(1) : spec
+    const key = fieldById(entity, id).orderBy
+    if (!key) return undefined
+    const sign = desc ? "-" : ""
+    return key === "id" ? `${sign}id` : `${sign}${key},${sign}id`
 }
 
 export function rowIdOf<T, F extends FieldMap<T>>(entity: Entity<T, F>, row: T): string {

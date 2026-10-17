@@ -8,11 +8,14 @@ import {
     useReactTable,
     type ColumnDef,
     type PaginationState,
+    type Row,
     type RowSelectionState,
     type SortingState,
     type Table,
 } from "@tanstack/react-table"
-import { rowIdOf, sortValueOf, type Entity, type FieldId, type FieldMap, type SortSpec } from "./define-entity"
+import { groupItems } from "@/lib/group-utils"
+import { EMPTY } from "./formatters"
+import { resolveField, rowIdOf, sortValueOf, type Entity, type FieldId, type FieldMap, type SortSpec } from "./define-entity"
 
 /** Data handed over by the feature hook (invariant #5: queries live in features/*\/hooks). */
 export interface CollectionSource<T> {
@@ -20,7 +23,7 @@ export interface CollectionSource<T> {
     isLoading?: boolean
     isRefetching?: boolean
     error?: unknown
-    /** Server total (required with server pagination, pagination-contract §3.2). */
+    /** Server total (required with server pagination, pagination-contract §3.2; also while grouping a bounded page). */
     rowCount?: number
     /** Retry action for the error state (e.g. TanStack Query `refetch`). */
     refetch?: () => void
@@ -33,9 +36,34 @@ export type CollectionPagination =
     | { mode: "server"; state: PaginationState; onChange: (next: PaginationState) => void }
     | { mode: "none" }
 
+/**
+ * Sorting. `local` (default) sorts the loaded rows by each kind's semantic key. `server` is
+ * controlled by the page (e.g. URL + `orderingParam`): rows arrive already sorted, and only fields
+ * with an `orderBy` key are sortable, so a paginated list is never reordered page by page.
+ */
+export type CollectionSorting<Id extends string> =
+    | { mode: "local" }
+    | { mode: "server"; state: SortSpec<Id> | null; onChange: (next: SortSpec<Id> | null) => void }
+
 export interface CollectionOptions<Id extends string> {
     pagination?: CollectionPagination
+    sorting?: CollectionSorting<Id>
     defaultSort?: SortSpec<Id>
+    /**
+     * Groups the loaded rows by a field's formatted text (same text as the cell). Grouping happens
+     * on the rows the page loaded: a server-paginated list should load one bounded page while grouping
+     * (Gate D lote 2: `GROUP_ROW_LIMIT`) and pass `rowCount` so the surfaces can warn when it is truncated.
+     */
+    groupBy?: Id | null
+}
+
+/** Uniform row cap while grouping (Gate D lote 2): beyond it the surfaces show a "refine the filter" notice. */
+export const GROUP_ROW_LIMIT = 200
+
+export interface CollectionGroup<T> {
+    key: string
+    label: string
+    rows: Row<T>[]
 }
 
 export type CollectionStatus = "loading" | "error" | "empty" | "ready"
@@ -50,9 +78,19 @@ export interface EntityCollection<T, F extends FieldMap<T>> {
     paginated: boolean
     refetch?: () => void
     isFiltered: boolean
+    /** Row groups when `groupBy` is set (in display order), otherwise `null`. */
+    groups: CollectionGroup<T>[] | null
+    /** True when grouping shows fewer rows than the server total (`rowCount`). */
+    truncated: boolean
 }
 
-function toSorting<Id extends string>(spec: SortSpec<Id> | undefined): SortingState {
+function toSpec<Id extends string>(state: SortingState): SortSpec<Id> | null {
+    const first = state[0]
+    if (!first) return null
+    return (first.desc ? `-${first.id}` : first.id) as SortSpec<Id>
+}
+
+function toSorting<Id extends string>(spec: SortSpec<Id> | null | undefined): SortingState {
     if (!spec) return []
     return spec.startsWith("-") ? [{ id: spec.slice(1), desc: true }] : [{ id: spec, desc: false }]
 }
@@ -70,6 +108,8 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
     options: CollectionOptions<FieldId<F>> = {},
 ): EntityCollection<T, F> {
     const pagination = options.pagination ?? { mode: "client" }
+    const sortingOption: CollectionSorting<FieldId<F>> = options.sorting ?? { mode: "local" }
+    const serverSorting = sortingOption.mode === "server"
     const rows = (source.rows ?? EMPTY_ROWS) as T[]
 
     const columns = React.useMemo<ColumnDef<T>[]>(
@@ -79,14 +119,18 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
                 return {
                     id,
                     accessorFn: (row: T) => sortValueOf(def, row),
-                    enableSorting: def.sortable ?? true,
+                    enableSorting: (def.sortable ?? true) && (!serverSorting || !!def.orderBy),
                     sortUndefined: "last",
                 }
             }),
-        [entity],
+        [entity, serverSorting],
     )
 
-    const [sorting, setSorting] = React.useState<SortingState>(() => toSorting(options.defaultSort))
+    const [localSorting, setLocalSorting] = React.useState<SortingState>(() => toSorting(options.defaultSort))
+    const serverSpec = sortingOption.mode === "server" ? sortingOption.state : null
+    // Stable identity per spec: a new array each render would invalidate TanStack's row models (and the groups).
+    const serverSortingState = React.useMemo(() => toSorting(serverSpec), [serverSpec])
+    const sorting = serverSorting ? serverSortingState : localSorting
     const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
     const [clientPagination, setClientPagination] = React.useState<PaginationState>({
         pageIndex: 0,
@@ -94,6 +138,12 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
     })
 
     const isServer = pagination.mode === "server"
+    // With server pagination every page/sort/filter brings new rows: a selection made on another
+    // page would no longer be visible, and the dock count and the bulk action targets would disagree.
+    React.useEffect(() => {
+        // Idempotent: a new empty `rows` array per render must not loop.
+        if (isServer) setRowSelection((current) => (Object.keys(current).length === 0 ? current : {}))
+    }, [isServer, rows])
     const table = useReactTable<T>({
         data: rows,
         columns,
@@ -104,7 +154,12 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
             ...(pagination.mode === "none" ? {} : { pagination: pagination.mode === "server" ? pagination.state : clientPagination }),
         },
         getRowId: (row) => rowIdOf(entity, row),
-        onSortingChange: setSorting,
+        onSortingChange: (updater) => {
+            const next = typeof updater === "function" ? updater(sorting) : updater
+            if (sortingOption.mode === "server") sortingOption.onChange(toSpec<FieldId<F>>(next))
+            else setLocalSorting(next)
+        },
+        manualSorting: serverSorting,
         onRowSelectionChange: setRowSelection,
         onPaginationChange: (updater) => {
             if (pagination.mode === "server") {
@@ -129,12 +184,29 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
                 ? "empty"
                 : "ready"
 
+    const groupBy = options.groupBy ?? null
+    const pageRows = table.getRowModel().rows
+    const groups = React.useMemo<CollectionGroup<T>[] | null>(() => {
+        if (!groupBy) return null
+        const def = entity.fields[groupBy]
+        // Same grouping helper as the legacy grouped views: sorted keys, missing values in a last "Sin …" group.
+        return groupItems(pageRows, groupBy, {
+            sort: "asc",
+            getValue: (row) => resolveField(def, row.original).text,
+            parseValue: (text) => (text === EMPTY ? null : String(text)),
+            defaultLabel: `Sin ${def.label.toLowerCase()}`,
+        }).map((group) => ({ key: group.key, label: group.label, rows: group.items }))
+    }, [groupBy, entity, pageRows])
+
     return {
         entity,
         table,
+        groups,
+        truncated: !!groupBy && source.rowCount !== undefined && source.rowCount > rows.length,
         status,
         isRefetching: !!source.isRefetching,
-        total: isServer ? source.rowCount ?? rows.length : rows.length,
+        // `rowCount` is the server total whenever the page passes it (server pages, or one bounded page while grouping).
+        total: source.rowCount ?? rows.length,
         paginated: pagination.mode !== "none",
         refetch: source.refetch,
         isFiltered: !!source.isFiltered,

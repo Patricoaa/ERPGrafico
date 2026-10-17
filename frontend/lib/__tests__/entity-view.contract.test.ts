@@ -87,6 +87,32 @@ describe("entity-view core stays small", () => {
     })
 })
 
+// ─── Barrel evaluation order (import cycle guard) ────────────────────────────
+
+/**
+ * `@/components/shared` → GlobalModalProvider → drawer registry → feature views → this barrel is a
+ * cycle at import time. Feature modules define entities and register kinds at module level, so the
+ * dependency-free core must be evaluated before anything that imports shared (lote 2a: an import
+ * re-sort here broke every entity-view test with "registerValueKind is not a function").
+ */
+describe("entity-view barrel evaluation order", () => {
+    const firstIndex = (lines: string[], re: RegExp) => lines.findIndex((l) => re.test(l))
+
+    it("index.ts exports the core before importing kinds or surfaces", () => {
+        const lines = read("components/entity-view/index.ts").split("\n")
+        const lastCore = Math.max(...lines.map((l, i) => (/from "\.\/core\//.test(l) ? i : -1)))
+        expect(lastCore).toBeGreaterThan(-1)
+        expect(firstIndex(lines, /from "\.\/kinds\//)).toBeGreaterThan(lastCore)
+        expect(firstIndex(lines, /from "\.\/surfaces\//)).toBeGreaterThan(lastCore)
+    })
+
+    it("core-kinds imports the core before @/components/shared", () => {
+        const lines = read("components/entity-view/kinds/core-kinds.tsx").split("\n")
+        const lastCore = Math.max(...lines.map((l, i) => (/from "\.\.\/core\//.test(l) ? i : -1)))
+        expect(firstIndex(lines, /from "@\/components\/shared"/)).toBeGreaterThan(lastCore)
+    })
+})
+
 // ─── Entity definitions: no opaque escapes ───────────────────────────────────
 
 const FEATURE_FILES = collect("features")

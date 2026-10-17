@@ -135,6 +135,8 @@ export interface ProductFilters {
     page_size?: number
     fields?: string
     track_inventory?: boolean
+    /** DRF ordering (`orderingParam` of the product entity, ADR-0087 lote 2). */
+    ordering?: string
 }
 
 export interface ProductUpdatePayload {

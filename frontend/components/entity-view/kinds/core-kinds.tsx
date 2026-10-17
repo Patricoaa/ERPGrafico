@@ -1,7 +1,5 @@
 "use client"
 
-import { DataCell, DomainHubStatus, StatusBadge } from "@/components/shared"
-import { cn } from "@/lib/utils"
 import {
     EMPTY,
     formatDate,
@@ -18,6 +16,9 @@ import {
 } from "../core/formatters"
 import { registerValueKind } from "../core/value-kinds"
 import { ALIGN_FLEX } from "../core/align"
+// After the core imports (see index.ts): the shared graph may re-enter this barrel.
+import { DataCell, DomainHubStatus, StatusBadge } from "@/components/shared"
+import { cn } from "@/lib/utils"
 
 /** Code content: `null` when missing so DataCell.Code renders its own empty marker. */
 const codeContent = (value: string | number | null | undefined, prefix?: string) => (isMissing(value) ? null : formatText(value, prefix))

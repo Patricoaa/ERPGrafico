@@ -1,8 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, LayoutGrid, Rows3 } from "lucide-react"
-import { DataTablePagination, EmptyState, EntityCard } from "@/components/shared"
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, LayoutGrid, Rows3 } from "lucide-react"
+import { BulkActionButtons, DataTablePagination, EmptyState, EntityCard, SelectionDock, type BulkAction } from "@/components/shared"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -28,12 +29,13 @@ import {
 import { toNumber } from "../core/formatters"
 import { getValueKind, type Align, type Surface, type ValueKind } from "../core/value-kinds"
 import type { EntityCollection } from "../core/use-entity-collection"
+import type { Row } from "@tanstack/react-table"
 import { ALIGN_FLEX, ALIGN_TEXT } from "../core/align"
 import { useEntityOpener } from "./EntityViewProvider"
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 
-export type CollectionViewMode = "table" | "card"
+export type CollectionViewMode = "table" | "card" | "analytics"
 export type SelectionMode = "none" | "bulk" | "panel"
 
 /** What the surfaces read from the entity: label and fields (the literal field-id map `F` is erased). */
@@ -41,7 +43,7 @@ type EntityRef<T> = EntityIdentity & Pick<EntitySpec<T, FieldMap<T>>, "fields" |
 
 interface CollectionContextValue<T> {
     collection: Omit<EntityCollection<T, FieldMap<T>>, "entity"> & { entity: EntityRef<T> }
-    actions?: (row: T) => React.ReactNode
+    actions?: (row: T, surface: "table" | "card") => React.ReactNode
     open: (row: T) => void
     canOpen: boolean
     selection: SelectionMode
@@ -49,6 +51,9 @@ interface CollectionContextValue<T> {
     view: CollectionViewMode
     setView: (view: CollectionViewMode) => void
     label: string
+    /** True while a `Collection.Analytics` is mounted: the toolbar then offers the analytics view. */
+    hasAnalytics: boolean
+    setHasAnalytics: (present: boolean) => void
 }
 
 /**
@@ -82,8 +87,8 @@ export const HEADER_TEXT = "text-3xs font-bold uppercase tracking-widest text-mu
 export interface CollectionRootProps<T, F extends FieldMap<T>> {
     collection: EntityCollection<T, F>
     children: React.ReactNode
-    /** Row actions (e.g. `uomActions.render(row, ctx)`); rendered outside the clickable area (AX-4). */
-    actions?: (row: T) => React.ReactNode
+    /** Row actions per surface, usually `xActions.forCollection(ctx)`. Rendered outside the clickable area (AX-4). */
+    actions?: (row: T, surface: "table" | "card") => React.ReactNode
     /** Overrides the default opener (EntityViewProvider → drawer registry by entity label). */
     onOpen?: (row: T) => void
     selection?: SelectionMode
@@ -100,6 +105,7 @@ export interface CollectionRootProps<T, F extends FieldMap<T>> {
 function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen, selection = "none", selectedId, defaultView = "table", view: controlledView, onViewChange, label }: CollectionRootProps<T, F>) {
     const opener = useEntityOpener()
     const [localView, setLocalView] = React.useState<CollectionViewMode>(defaultView)
+    const [hasAnalytics, setHasAnalytics] = React.useState(false)
     const view = controlledView ?? localView
     const setView = React.useCallback(
         (next: CollectionViewMode) => {
@@ -127,11 +133,13 @@ function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen,
         selectedId: selectedId === undefined || selectedId === null ? null : String(selectedId),
         view,
         setView,
+        hasAnalytics,
+        setHasAnalytics,
         label: label ?? (entity.label !== undefined ? opener?.labelOf(entity.label) : undefined) ?? entityName(entity),
     }
     return (
         <CollectionContext.Provider value={value}>
-            <div className="flex flex-col gap-2 min-h-0">{children}</div>
+            <div className="flex flex-1 flex-col gap-2 min-h-0">{children}</div>
         </CollectionContext.Provider>
     )
 }
@@ -149,22 +157,21 @@ export interface CollectionToolbarProps {
 const VIEW_BUTTONS = {
     table: { icon: Rows3, label: "Vista tabla" },
     card: { icon: LayoutGrid, label: "Vista tarjetas" },
+    analytics: { icon: BarChart3, label: "Analítica" },
 } as const
 
 function Toolbar({ children, views = ["table", "card"], exportFilters = {} }: CollectionToolbarProps) {
     const ctx = useCollectionContext<unknown>()
     const exportSpec = ctx.collection.entity.export
-    const selectedCount = ctx.collection.table.getSelectedRowModel().rows.length
+    // The analytics view is offered only while a `Collection.Analytics` is mounted.
+    const modes = ctx.hasAnalytics && !views.includes("analytics") ? [...views, "analytics" as const] : views
     return (
         <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
             <div className="flex-1 min-w-0">{children}</div>
-            {selectedCount > 0 && (
-                <span className="text-xs text-muted-foreground" aria-live="polite">{selectedCount} seleccionados</span>
-            )}
             {exportSpec && <ExportButtons spec={exportSpec} filters={exportFilters} />}
-            {views.length > 1 && (
+            {modes.length > 1 && (
                 <div className="flex items-center gap-1" role="group" aria-label="Vista">
-                    {views.map((mode) => {
+                    {modes.map((mode) => {
                         const { icon: Icon, label: viewLabel } = VIEW_BUTTONS[mode]
                         return (
                             <Button key={mode} variant={ctx.view === mode ? "secondary" : "ghost"} size="icon" aria-label={viewLabel} aria-pressed={ctx.view === mode} onClick={() => ctx.setView(mode)}>
@@ -199,24 +206,42 @@ export interface CollectionViewProps<T, Id extends string> {
     card?: CardLayout<T, Id>
     emptyTitle?: string
     emptyDescription?: string
+    /** Action of the truly-empty state (e.g. the create button). */
+    emptyAction?: React.ReactNode
+    /** Clears search and filters; offered by the filtered-empty state. */
+    onResetFilters?: () => void
 }
 
-function View<T, Id extends string>({ table, card, emptyTitle, emptyDescription }: CollectionViewProps<T, Id>) {
+function View<T, Id extends string>({ table, card, emptyTitle, emptyDescription, emptyAction, onResetFilters }: CollectionViewProps<T, Id>) {
     const ctx = useCollectionContext<T>()
-    const { status } = ctx.collection
+    const { status, truncated, total, table: model } = ctx.collection
+    // `Collection.Analytics` renders the analytics view itself.
+    if (ctx.view === "analytics") return null
     if (status === "error" || status === "empty") {
-        return <CollectionMessage status={status} emptyTitle={emptyTitle} emptyDescription={emptyDescription} />
+        return <CollectionMessage status={status} {...{ emptyTitle, emptyDescription, emptyAction, onResetFilters }} />
     }
-    if (ctx.view === "card" && card) return <Grid layout={card} />
-    if (table) return <TableSurface layout={table} />
-    return null
+    const surface = ctx.view === "card" && card ? <Grid layout={card} /> : table ? <TableSurface layout={table} /> : null
+    if (!truncated) return surface
+    return (
+        <div className="flex flex-col gap-2">
+            {/* Persistent notice, not an interruption: role="status" instead of the Alert default "alert". */}
+            <Alert variant="warning" role="status">
+                <AlertDescription className="text-xs">
+                    Agrupando los primeros {model.getCoreRowModel().rows.length} de {total} resultados. Refina la búsqueda para ver grupos completos.
+                </AlertDescription>
+            </Alert>
+            {surface}
+        </div>
+    )
 }
 
 /**
  * Error and empty states keep the collection frame (no layout jump) and offer a way out:
  * retry on error, operational copy instead of raw server messages, filtered vs truly empty.
  */
-function CollectionMessage({ status, emptyTitle, emptyDescription }: { status: "error" | "empty"; emptyTitle?: string; emptyDescription?: string }) {
+type CollectionMessageProps = Pick<CollectionViewProps<unknown, string>, "emptyTitle" | "emptyDescription" | "emptyAction" | "onResetFilters"> & { status: "error" | "empty" }
+
+function CollectionMessage({ status, emptyTitle, emptyDescription, emptyAction, onResetFilters }: CollectionMessageProps) {
     const ctx = useCollectionContext<unknown>()
     const { refetch, isFiltered, entity } = ctx.collection
     const noun = ctx.label.toLowerCase()
@@ -232,12 +257,62 @@ function CollectionMessage({ status, emptyTitle, emptyDescription }: { status: "
                     action={refetch ? <Button variant="outline" size="sm" onClick={refetch}>Reintentar</Button> : undefined}
                 />
             ) : isFiltered ? (
-                <EmptyState context="search" title="Ningún resultado para el filtro" description="Prueba con otros términos o limpia los filtros." variant="compact" />
+                <EmptyState
+                    context="search"
+                    title="Ningún resultado para el filtro"
+                    description="Prueba con otros términos o limpia los filtros."
+                    variant="compact"
+                    action={onResetFilters ? <Button variant="outline" size="sm" onClick={onResetFilters}>Limpiar filtros</Button> : undefined}
+                />
             ) : (
-                <EmptyState entityLabel={entity.label} title={emptyTitle} description={emptyDescription} variant="compact" />
+                <EmptyState entityLabel={entity.label} title={emptyTitle} description={emptyDescription} action={emptyAction} variant="compact" />
             )}
         </div>
     )
+}
+
+// ─── Bulk bar ────────────────────────────────────────────────────────────────
+
+export interface CollectionBulkBarProps<T> {
+    /** Same `BulkAction` type as the legacy bulk dock (ActionDock), so actions migrate unchanged. */
+    actions: BulkAction<T>[]
+}
+
+/** Floating dock with the selected rows' actions (`selection="bulk"`); hidden while nothing is selected. */
+function BulkBar<T>({ actions }: CollectionBulkBarProps<T>) {
+    const ctx = useCollectionContext<T>()
+    const { table } = ctx.collection
+    const rowSelection = table.getState().rowSelection
+    // `getCoreRowModel()` is memoized by TanStack and changes with the data: after a refetch the
+    // actions receive the fresh rows, not the objects that were selected.
+    const coreRows = table.getCoreRowModel()
+    const selected = React.useMemo(
+        () => (Object.keys(rowSelection).length === 0 ? [] : coreRows.rows.filter((row) => rowSelection[row.id]).map((row) => row.original)),
+        [coreRows, rowSelection],
+    )
+    return (
+        <SelectionDock count={selected.length} onClear={() => table.resetRowSelection()}>
+            <BulkActionButtons actions={actions} items={selected} />
+        </SelectionDock>
+    )
+}
+
+// ─── Analytics ───────────────────────────────────────────────────────────────
+
+/**
+ * Analytics view of the collection (Gate D lote 2). Mounting it adds an "Analítica" view to the
+ * toolbar's view switch; while that view is active its children replace the table/cards. The content
+ * (tabs, StatCards, feature hooks) belongs to the feature, e.g. `<AnalyticsPanelContent … />`.
+ */
+function Analytics({ children }: { children: React.ReactNode }) {
+    const ctx = useCollectionContext<unknown>()
+    const { setHasAnalytics } = ctx
+    React.useEffect(() => {
+        setHasAnalytics(true)
+        return () => setHasAnalytics(false)
+    }, [setHasAnalytics])
+    if (ctx.view !== "analytics") return null
+    return <div className="flex h-full min-h-0 flex-1 flex-col">{children}</div>
 }
 
 // ─── Table ───────────────────────────────────────────────────────────────────
@@ -252,7 +327,7 @@ const ARIA_SORT = { asc: "ascending", desc: "descending" } as const
 
 function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id> }) {
     const ctx = useCollectionContext<T>()
-    const { table, status, isRefetching, total } = ctx.collection
+    const { table, status, isRefetching, total, groups } = ctx.collection
     const entity = ctx.collection.entity
     const primary = layout.primary ?? layout.columns[0]
     const rows = table.getRowModel().rows
@@ -268,6 +343,41 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
         [layout.columns, entity],
     )
     const originals = rows.map((r) => r.original)
+    const colSpan = cols.length + (isBulk ? 1 : 0) + (hasActions ? 1 : 0)
+    const renderRow = (row: Row<T>, index: number) => {
+        const isSelected = ctx.selectedId === row.id || row.getIsSelected()
+        return (
+            <tr
+                key={row.id}
+                // Grouped rows are not a flat sequence: no row index (the group header carries the context).
+                aria-rowindex={groups ? undefined : table.getState().pagination.pageIndex * table.getState().pagination.pageSize + index + 2}
+                aria-selected={ctx.selection !== "none" ? isSelected : undefined}
+                className={cn("group border-b border-border/40 table-row-hover transition-colors", ctx.canOpen && "cursor-pointer", isSelected && "bg-primary/5")}
+                // Mouse enhancement only: the keyboard path is the primary cell button (AX-3).
+                onClick={() => ctx.canOpen && ctx.open(row.original)}
+            >
+                {isBulk && (
+                    <td className={CELL} onClick={(e) => e.stopPropagation()}>
+                        <Checkbox aria-label="Seleccionar fila" checked={row.getIsSelected()} onCheckedChange={(v) => row.toggleSelected(!!v)} />
+                    </td>
+                )}
+                {cols.map(({ id, def, align }) => (
+                    <td key={id} className={cn(CELL, "align-middle whitespace-nowrap", ALIGN_TEXT[align])}>
+                        {id === primary && ctx.canOpen ? (
+                            <PrimaryCell def={def} row={row.original} onOpen={ctx.open} align={align} />
+                        ) : (
+                            <FieldValue def={def} row={row.original} surface="table" align={align} />
+                        )}
+                    </td>
+                ))}
+                {hasActions && (
+                    <td className={cn(CELL, "text-right")} onClick={(e) => e.stopPropagation()}>
+                        {ctx.actions?.(row.original, "table")}
+                    </td>
+                )}
+            </tr>
+        )
+    }
 
     return (
         <div className="flex flex-col min-h-0 overflow-hidden rounded-md border">
@@ -332,40 +442,20 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
                                     {hasActions && <td />}
                                 </tr>
                             ))
-                            : rows.map((row, index) => {
-                                const isSelected = ctx.selectedId === row.id || row.getIsSelected()
-                                return (
-                                    <tr
-                                        key={row.id}
-                                        aria-rowindex={table.getState().pagination.pageIndex * table.getState().pagination.pageSize + index + 2}
-                                        aria-selected={ctx.selection !== "none" ? isSelected : undefined}
-                                        className={cn("group border-b border-border/40 table-row-hover transition-colors", ctx.canOpen && "cursor-pointer", isSelected && "bg-primary/5")}
-                                        // Mouse enhancement only: the keyboard path is the primary cell button (AX-3).
-                                        onClick={() => ctx.canOpen && ctx.open(row.original)}
-                                    >
-                                        {isBulk && (
-                                            <td className={CELL} onClick={(e) => e.stopPropagation()}>
-                                                <Checkbox aria-label="Seleccionar fila" checked={row.getIsSelected()} onCheckedChange={(v) => row.toggleSelected(!!v)} />
-                                            </td>
-                                        )}
-                                        {cols.map(({ id, def, align }) => (
-                                            <td key={id} className={cn(CELL, "align-middle whitespace-nowrap", ALIGN_TEXT[align])}>
-                                                {id === primary && ctx.canOpen ? (
-                                                    <PrimaryCell def={def} row={row.original} onOpen={ctx.open} align={align} />
-                                                ) : (
-                                                    <FieldValue def={def} row={row.original} surface="table" align={align} />
-                                                )}
-                                            </td>
-                                        ))}
-                                        {hasActions && (
-                                            <td className={cn(CELL, "text-right")} onClick={(e) => e.stopPropagation()}>
-                                                {ctx.actions?.(row.original)}
-                                            </td>
-                                        )}
-                                    </tr>
-                                )
-                            })}
+                            : groups
+                                ? null
+                                : rows.map(renderRow)}
                     </tbody>
+                    {status !== "loading" && groups?.map((group) => (
+                        <tbody key={group.key}>
+                            <tr className="border-b bg-muted/30">
+                                <th scope="rowgroup" colSpan={colSpan} className={cn("px-(--table-cell-px) py-1.5 text-left", HEADER_TEXT)}>
+                                    {group.label} <span className="font-normal tabular-nums">({group.rows.length})</span>
+                                </th>
+                            </tr>
+                            {group.rows.map(renderRow)}
+                        </tbody>
+                    ))}
                     {sums.length > 0 && status === "ready" && (
                         <tfoot className="border-t bg-muted/30">
                             <tr>
@@ -459,11 +549,68 @@ const GRID_CLASS = "grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-[repeat(2,
 
 function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
     const ctx = useCollectionContext<T>()
-    const { table, status } = ctx.collection
+    const { table, status, groups } = ctx.collection
     const entity = ctx.collection.entity
     const isBulk = ctx.selection === "bulk"
     // Meta field definitions are resolved once per layout, not per card.
     const metaDefs = React.useMemo(() => (layout.meta ?? []).map((id) => ({ id, def: fieldById(entity, id) })), [layout.meta, entity])
+
+    const renderCard = (row: Row<T>) => {
+        const data = row.original
+        const media = layout.media
+        const Avatar = media?.avatar
+        const icon = media?.iconFor?.(data) ?? media?.icon ?? (entity.label !== undefined ? getEntityIcon(entity.label) : undefined)
+        const tone = pick(media?.tone, data) ?? "default"
+        const subtitle = (layout.subtitle ?? [])
+            .map((id) => resolveField(fieldById(entity, id), data).text)
+            .filter((t) => t && t !== "—")
+            .join(" · ")
+        const title = resolveField(fieldById(entity, layout.title), data).text
+        const trailing = layout.trailing && layout.trailing.length > 0
+            ? layout.trailing.map((id) => <FieldValue key={id} def={fieldById(entity, id)} row={data} surface="card" align="start" />)
+            : null
+        return (
+            <li key={row.id} className="@container min-w-0">
+                <EntityCard
+                    variant="compact"
+                    isSelected={ctx.selectedId === row.id}
+                    selectable={isBulk}
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(v) => row.toggleSelected(v)}
+                    // Always visible in bulk mode: EntityCard reveals it on hover otherwise, and touch has no hover.
+                    isAnySelected
+                    selectionLabel={`Seleccionar ${title}`}
+                >
+                    <EntityCard.Header
+                        icon={icon}
+                        iconClassName={TONE_CLASS[tone]}
+                        imageSrc={media?.image?.(data) ?? undefined}
+                        avatar={Avatar ? <Avatar row={data} /> : undefined}
+                        title={
+                            ctx.canOpen ? (
+                                <Button variant="link" className="h-7 p-0 text-sm font-semibold text-foreground underline-offset-2 hover:underline focus-visible:underline" onClick={() => ctx.open(data)}>
+                                    {title}
+                                </Button>
+                            ) : (
+                                title
+                            )
+                        }
+                        subtitle={subtitle || undefined}
+                        // Wide trailing values (hub with label) only fit in the header on wide cards;
+                        // narrow cards (container < 28rem) show them below the title instead.
+                        trailing={trailing ? <div className="hidden @md:flex items-center gap-3">{trailing}</div> : undefined}
+                        actions={ctx.actions?.(data, "card")}
+                    />
+                    {trailing && <div className="flex @md:hidden flex-wrap items-center gap-3 px-1">{trailing}</div>}
+                    {/* Meta lives below the header: in the header center it squeezed the title (EntityCard 1fr column). */}
+                    <EntityCard.Meta
+                        items={metaDefs.map(({ id, def }) => ({ key: id, label: def.label, value: <FieldValue def={def} row={data} surface="card" align="start" /> }))}
+                    />
+                    {layout.body && <CardBody section={layout.body} entity={entity} row={data} />}
+                </EntityCard>
+            </li>
+        )
+    }
 
     if (status === "loading") {
         return (
@@ -477,64 +624,18 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
 
     return (
         <div className="flex flex-col gap-2">
-            <ul className={GRID_CLASS} aria-label={ctx.label}>
-                {table.getRowModel().rows.map((row) => {
-                    const data = row.original
-                    const media = layout.media
-                    const Avatar = media?.avatar
-                    const icon = media?.iconFor?.(data) ?? media?.icon ?? (entity.label !== undefined ? getEntityIcon(entity.label) : undefined)
-                    const tone = pick(media?.tone, data) ?? "default"
-                    const subtitle = (layout.subtitle ?? [])
-                        .map((id) => resolveField(fieldById(entity, id), data).text)
-                        .filter((t) => t && t !== "—")
-                        .join(" · ")
-                    const title = resolveField(fieldById(entity, layout.title), data).text
-                    const trailing = layout.trailing && layout.trailing.length > 0
-                        ? layout.trailing.map((id) => <FieldValue key={id} def={fieldById(entity, id)} row={data} surface="card" align="start" />)
-                        : null
-                    return (
-                        <li key={row.id} className="@container min-w-0">
-                            <EntityCard
-                                variant="compact"
-                                isSelected={ctx.selectedId === row.id}
-                                selectable={isBulk}
-                                checked={row.getIsSelected()}
-                                onCheckedChange={(v) => row.toggleSelected(v)}
-                                // Always visible in bulk mode: EntityCard reveals it on hover otherwise, and touch has no hover.
-                                isAnySelected
-                                selectionLabel={`Seleccionar ${title}`}
-                            >
-                                <EntityCard.Header
-                                    icon={icon}
-                                    iconClassName={TONE_CLASS[tone]}
-                                    imageSrc={media?.image?.(data) ?? undefined}
-                                    avatar={Avatar ? <Avatar row={data} /> : undefined}
-                                    title={
-                                        ctx.canOpen ? (
-                                            <Button variant="link" className="h-7 p-0 text-sm font-semibold text-foreground underline-offset-2 hover:underline focus-visible:underline" onClick={() => ctx.open(data)}>
-                                                {title}
-                                            </Button>
-                                        ) : (
-                                            title
-                                        )
-                                    }
-                                    subtitle={subtitle || undefined}
-                                    // Wide trailing values (hub with label) only fit in the header on wide cards;
-                                    // narrow cards (container < 28rem) show them below the title instead.
-                                    trailing={trailing ? <div className="hidden @md:flex items-center gap-3">{trailing}</div> : undefined}
-                                    actions={ctx.actions?.(data)}
-                                />
-                                {trailing && <div className="flex @md:hidden flex-wrap items-center gap-3 px-1">{trailing}</div>}
-                                {/* Meta lives below the header: in the header center it squeezed the title (EntityCard 1fr column). */}
-                                <EntityCard.Meta
-                                    items={metaDefs.map(({ id, def }) => ({ key: id, label: def.label, value: <FieldValue def={def} row={data} surface="card" align="start" /> }))}
-                                />
-                                {layout.body && <CardBody section={layout.body} entity={entity} row={data} />}
-                            </EntityCard>
-                        </li>
-                    )
-                })}
-            </ul>
+            {groups ? (
+                groups.map((group) => (
+                    <section key={group.key} aria-label={group.label} className="flex flex-col gap-2">
+                        <h3 className={cn("px-1", HEADER_TEXT)}>
+                            {group.label} <span className="font-normal tabular-nums">({group.rows.length})</span>
+                        </h3>
+                        <ul className={GRID_CLASS}>{group.rows.map(renderCard)}</ul>
+                    </section>
+                ))
+            ) : (
+                <ul className={GRID_CLASS} aria-label={ctx.label}>{table.getRowModel().rows.map(renderCard)}</ul>
+            )}
             {ctx.collection.paginated && <DataTablePagination table={table} />}
         </div>
     )
@@ -567,5 +668,5 @@ function CardBody<T, Id extends string>({ section, entity, row }: { section: Car
 
 // ─── Public compound ─────────────────────────────────────────────────────────
 
-export const Collection = Object.assign(Root, { Root, Toolbar, View, Table: TableSurface, Grid })
+export const Collection = Object.assign(Root, { Root, Toolbar, View, Table: TableSurface, Grid, BulkBar, Analytics })
 

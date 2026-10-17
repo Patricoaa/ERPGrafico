@@ -223,3 +223,31 @@
 - Efecto: los enlaces de lista a UoM que usan el registro (búsqueda, redirecciones `?selected=`) llevan a Productos
 - Decisión: se corrige al migrar UoM (lote 2); `entity-registry-routes.contract.test.ts` debería haberlo detectado (revisar su alcance)
 - Estado: pendiente
+
+### TC-042 · Defecto del registro · Verificado
+- Evidencia: el test de rutas solo comprobaba `detailUrlPattern` y aceptaba que un segmento literal coincidiera con `[param]`. Al extenderlo a `listUrl` (exigiendo una página estática) aparecen **23 entidades** cuyo `listUrl` no existe (p. ej. `sales.saledelivery → /sales/deliveries`, `pos.session → /pos/sessions`). No hay redirecciones en `next.config` ni rutas catch-all que las resuelvan
+- Decisión: corregidas `inventory.uom` e `inventory.uomcategory` (lote 2a); el resto queda como ratchet `KNOWN_BROKEN_LIST_URLS` en `lib/__tests__/entity-registry-routes.contract.test.ts` (verificado por mutación); tarea aparte aprobada por el usuario
+- Estado: https://github.com/Patricoaa/ERPGrafico/issues/178
+
+### TC-043 · Defecto del sistema actual · Verificado
+- Evidencia: `features/inventory/components/ProductClientView.tsx` pasaba `initialData` (datos renderizados en servidor) a `useProducts`, y TanStack Query lo usa para *cualquier* `queryKey` nueva mientras la caché esté vacía, además de tratarlo como fresco (`staleTime.stable`). En la app real, al ordenar no se hacía ninguna petición (captura de red de Playwright, 2026-10-17). `page.tsx` además pedía otra consulta (200 filas, con variantes) y fabricaba `count = results.length`
+- Decisión: `useProducts({ initial: { page, params } })` aplica los datos solo si `hashKey` coincide; `page.tsx` pide la consulta por defecto del cliente y pasa el sobre DRF completo
+- Pendiente: el mismo patrón puede existir en otros hooks con `initialData` (revisar al migrar OV y Compras en el 2b, que también reciben datos del servidor)
+- Estado: corregido en Productos (lote 2a)
+
+### TC-044 · Ciclo de imports · Verificado
+- Evidencia: `@/components/shared` (DataCell → GlobalModalProvider) → registro de drawers → vistas de features → `@/components/entity-view`. Con `ProductClientView` sobre entity-view, todos los tests de entity-view fallaban con `registerValueKind is not a function`
+- Decisión: el barrel evalúa primero `core/*`, que no tiene dependencias; guarda en `lib/__tests__/entity-view.contract.test.ts` (verificada por mutación)
+- Deuda: el registro de drawers importa las vistas de forma ansiosa (alternativa de fondo: `import()` diferido por entrada)
+- Estado: mitigado (lote 2a)
+
+### TC-045 · Defecto del sistema actual · Verificado
+- Evidencia: `backend/inventory/selectors.py:59-60` y `:171-172` anotaban `Sum("stocks__quantity")` junto a `Count("variants")` en el mismo `annotate`. Los dos JOIN multiplicaban el stock por el número de variantes y el conteo de variantes por el número de filas de stock. Test `inventory/tests/test_product_ordering.py::test_stock_and_variant_count_are_not_multiplied_by_the_joins`: stock real 15, se mostraba 30
+- Efecto: el stock que se ve en la lista de productos (y el orden por stock) salía inflado en plantillas con variantes
+- Decisión: subconsulta `_current_stock()` + `Count("variants", distinct=True)`
+- Estado: corregido (lote 2a, encontrado por `/code-review`)
+
+### TC-046 · Defecto latente del backend · Verificado
+- Evidencia: `ruff check backend/inventory/selectors.py` → 8 × F821. `timezone` y `Subscription` no están importados en `selectors.py:730-736`; ya estaba así en `HEAD`, antes del lote. Esa función lanza `NameError` si se ejecuta
+- Decisión: fuera del alcance de entity-view; se informa al usuario
+- Estado: pendiente

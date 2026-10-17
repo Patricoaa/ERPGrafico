@@ -67,10 +67,13 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
         if self.action in ["create", "update", "partial_update"]:
             return ProductWriteSerializer
         return ProductSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = ProductFilter
     pagination_class = StandardResultsSetPagination
     search_fields = ["name", "internal_code", "code"]
+    # Server ordering of the product list (ADR-0087 lote 2): the client sends `?ordering=<key>,id`.
+    # No default `ordering`: without the param the selector's order is kept.
+    ordering_fields = ["id", "name", "internal_code", "code", "category__name", "product_type", "annotated_current_stock", "sale_price"]
 
     def get_queryset(self):
         user = self.request.user

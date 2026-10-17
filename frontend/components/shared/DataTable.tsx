@@ -25,11 +25,10 @@ import { cn } from "@/lib/utils"
 
 
 import { Skeleton } from "@/components/ui/skeleton"
-import { Button } from "@/components/ui/button"
-import { X, type LucideIcon } from "lucide-react"
+import { type LucideIcon } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-import { BulkActionButtons, ActionDock, CmykRing, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, StatCard, type BulkAction, type AnalyticsPanelConfig, type ToolbarActionItem } from '@/components/shared'
+import { BulkActionButtons, SelectionDock, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, StatCard, type BulkAction, type AnalyticsPanelConfig, type ToolbarActionItem } from '@/components/shared'
 import { resolveEmptyState, type DataTableEmptyState } from './emptyStateResolver'
 
 const NON_MODAL_TABLE_MAX_HEIGHT = "max-h-[calc(100vh-260px)]"
@@ -355,52 +354,11 @@ export function DataTable<TData, TValue>({
 
     const hasRowAction = !!defaultAction || !!onRowClick
 
-    const dockNode = (() => {
-        if (selectedRows.length === 0) return null
-        if (bulkDock) return (
-            <ActionDock isVisible>
-                <div className="flex items-center gap-2">
-                    <CmykRing className="h-2.5 w-2.5 animate-pulse" />
-                    <span className="text-xs font-bold uppercase tracking-widest text-foreground whitespace-nowrap">
-                        {`${selectedRows.length} ${selectedRows.length === 1 ? "seleccionado" : "seleccionados"}`}
-                    </span>
-                </div>
-                {bulkDock(selectedItems, clearSelection)}
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearSelection}
-                    className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted"
-                >
-                    <X className="h-3 w-3 mr-1.5" />
-                    Limpiar
-                </Button>
-            </ActionDock>
-        )
-        if (bulkActions && bulkActions.length > 0) {
-            return (
-                <ActionDock isVisible>
-                    <div className="flex items-center gap-2">
-                        <CmykRing className="h-2.5 w-2.5 animate-pulse" />
-                        <span className="text-xs font-bold uppercase tracking-widest text-foreground whitespace-nowrap">
-                            {`${selectedRows.length} ${selectedRows.length === 1 ? "seleccionado" : "seleccionados"}`}
-                        </span>
-                    </div>
-                    <BulkActionButtons actions={bulkActions} items={selectedItems} />
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={clearSelection}
-                        className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted"
-                    >
-                        <X className="h-3 w-3 mr-1.5" />
-                        Limpiar
-                    </Button>
-                </ActionDock>
-            )
-        }
-        return null
-    })()
+    const dockNode = bulkDock
+        ? <SelectionDock count={selectedRows.length} onClear={clearSelection}>{bulkDock(selectedItems, clearSelection)}</SelectionDock>
+        : bulkActions && bulkActions.length > 0
+            ? <SelectionDock count={selectedRows.length} onClear={clearSelection}><BulkActionButtons actions={bulkActions} items={selectedItems} /></SelectionDock>
+            : null
 
     const kpiCardsNode = kpiCards && (
         <div className="grid gap-4 md:grid-cols-4">
