@@ -3,8 +3,7 @@
 import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, Check, ArrowRight, Eye, X } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { ActionConfirmModal, FormFooter, SubmitButton, ActionSlideButton } from "@/components/shared"
+import { ActionConfirmModal, ActionSlideButton, FormFooter, SubmitButton } from "@/components/shared"
 
 import type { WorkOrder, WorkOrderTask, WorkOrderStage, WizardStepMode } from "../types"
 import { getDomainConceptTitle } from "@/lib/entity-registry"
@@ -33,6 +32,7 @@ interface WizardFooterProps {
     isBasicInfoEditable?: boolean
     chosenOtType?: 'LINKED' | 'NONE' | null
     onStepChange?: (index: number) => void
+    tabDisabled?: boolean
 }
 
 export function WizardStickyFooter({
@@ -58,6 +58,7 @@ export function WizardStickyFooter({
     isBasicInfoEditable = false,
     chosenOtType = null,
     onStepChange,
+    tabDisabled = false,
 }: WizardFooterProps) {
     const currentStageId = stages[viewingStepIndex]?.id
     const isOriginSelectionStep = currentStageId === 'ORIGIN_SELECTION'
@@ -143,24 +144,20 @@ export function WizardStickyFooter({
             )
         }
 
-        return (
-            <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={onClose}>
-                    Cerrar
+        if (actualStepIndex > 0 && order?.status !== 'FINISHED' && onBack) {
+            return (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onBack}
+                    disabled={transitioning}
+                    className="text-muted-foreground hover:text-foreground"
+                >
+                    Anterior
                 </Button>
-                {actualStepIndex > 0 && order?.status !== 'FINISHED' && onBack && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onBack}
-                        disabled={transitioning}
-                        className="text-muted-foreground hover:text-foreground"
-                    >
-                        Anterior
-                    </Button>
-                )}
-            </div>
-        )
+            )
+        }
+        return null
     }, [stepMode, isViewingCurrentStage, onCancelEdit, onBackToCurrent, onClose, onBack, actualStepIndex, order?.status, transitioning])
 
     // ── Right actions: Siguiente / Rectificar / Guardar / Seleccionar ──
@@ -258,7 +255,6 @@ export function WizardStickyFooter({
                         }}
                         loading={transitioning}
                         variant="success"
-                        className="gap-2 bg-success hover:bg-success/90 text-success-foreground shadow-elevated shadow-success/20"
                         aria-label="Rectificar y Finalizar Producción"
                         icon={Check}
                     >
@@ -279,25 +275,13 @@ export function WizardStickyFooter({
                         disabled={isNextDisabled}
                         onClick={handleNextClick}
                         loading={transitioning}
-                        className={cn("gap-2", isImplicitlyApproving && "bg-primary hover:bg-primary")}
+                        variant="primary"
                         aria-label={viewingStepIndex === stages.length - 2 ? "Finalizar Producción" : "Siguiente Etapa"}
+                        icon={viewingStepIndex === stages.length - 2 ? Check : ArrowRight}
                     >
-                        {viewingStepIndex === stages.length - 2 ? (
-                            <>
-                                Finalizar Producción
-                                <Check className="ml-2 h-4 w-4" aria-hidden="true" />
-                            </>
-                        ) : isImplicitlyApproving ? (
-                            <>
-                                Aprobar y Siguiente
-                                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-                            </>
-                        ) : (
-                            <>
-                                Siguiente Etapa
-                                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-                            </>
-                        )}
+                        {viewingStepIndex === stages.length - 2 ? 'Finalizar Producción'
+                            : isImplicitlyApproving ? 'Aprobar y Siguiente'
+                            : 'Siguiente Etapa'}
                     </ActionSlideButton>
                 </div>
             )
@@ -314,10 +298,12 @@ export function WizardStickyFooter({
 
     return (
         <>
+            <div className={tabDisabled ? "opacity-40 pointer-events-none" : undefined}>
             <FormFooter
                 leftActions={leftActions}
                 actions={rightActions}
             />
+            </div>
             <ActionConfirmModal
                 open={showAlert}
                 onOpenChange={setShowAlert}

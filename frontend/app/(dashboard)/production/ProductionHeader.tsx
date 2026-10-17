@@ -30,7 +30,7 @@ export function ProductionHeader() {
 
     const getHeaderConfig = () => {
         if (activeValue === 'boms') return { title: `Fichas Técnicas (${getDomainConceptCode('ldm')})`, description: "Estructuras de productos, componentes y costos de fabricación.", iconName: "layers" as const }
-        return { title: "Centro de Producción", description: "Gestión de procesos fabriles, órdenes de trabajo y seguimiento.", iconName: getEntityIconName('production.workorder') ?? "printer" }
+        return { title: getDomainConceptTitle('ot', true), description: "Planificación y seguimiento de procesos fabriles.", iconName: getEntityIconName('production.workorder') ?? "printer" }
     }
 
     const config = getHeaderConfig()

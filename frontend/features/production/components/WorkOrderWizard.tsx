@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
-import { AlertTriangle, Package, FileText, Plus, CheckCircle2, Keyboard, Printer } from 'lucide-react'
+import { AlertTriangle, Package, FileText, Plus, CheckCircle2, Keyboard, Printer, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 import {
@@ -16,17 +16,19 @@ import {
   LabeledSelect,
   StatusBadge,
   DocumentActionsMenu,
+  TabBar,
+  TabBarContent,
   type DocumentActionItem,
 } from '@/components/shared'
-import { cn, formatPlainDate } from '@/lib/utils'
-import { formatEntityDisplay, getDomainConceptMessage, getDomainConceptTitle, getDomainConceptCode } from '@/lib/entity-registry'
+import { cn } from '@/lib/utils'
+import { formatEntityDisplay, getDomainConceptTitle, getDomainConceptCode } from '@/lib/entity-registry'
 import { showApiError } from '@/lib/errors'
 import { useConfirmAction } from '@/hooks/useConfirmAction'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useAuth } from '@/contexts/AuthContext'
 import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
 import { useOnEntityStackClose } from '@/hooks/useOnEntityStackClose'
-import { DocumentRelationsButton } from '@/features/documents'
+import { DocumentRelationsTab, useDocumentRelations } from '@/features/documents'
 import { useWorkOrderMutations, productionApi } from '../hooks'
 import { completeTask } from '@/features/workflow'
 
@@ -196,6 +198,8 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   } = useWizardStore()
 
   const [showCheatsheet, setShowCheatsheet] = useState(false)
+  const [wizardTab, setWizardTab] = useState('stages')
+  const { data: relationsData } = useDocumentRelations('production.workorder', order?.id ?? null)
 
   // ── derived ────────────────────────────────────────────────────────────────
   const STAGES = useMemo(
@@ -459,25 +463,23 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         boundary="embedded"
         defaultSize="100%"
         resizable={false}
-        contentClassName="p-0 flex flex-col h-full overflow-hidden"
+        fillContent
+        contentClassName="p-0 flex flex-col overflow-hidden"
         icon={Package}
         title={
           order
-            ? getDomainConceptMessage('ot', 'manage')
-            : getDomainConceptMessage('ot', 'create')
+            ? formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)
+            : `Nueva ${getDomainConceptTitle('ot')}`
         }
         subtitle={
-          (order
-            ? `${formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)} · ${order.sale_customer_name || 'Manual'} · ${formatPlainDate(order.created_at)}`
-            : 'Planificación de Producción • Nueva OT')
-          + ` · ${STAGES[viewingStepIndex]?.label ?? ''}`
+          order
+            ? `${getDomainConceptTitle('ot')} · ${order.sale_customer_name || 'Manual'} · ${STAGES[viewingStepIndex]?.label ?? ''}`
+            : 'Planificación de Producción'
         }
         headerActions={
           order ? (
             <div className="flex items-center gap-2">
               <StatusBadge status={order.status} variant="badge" />
-              {/* ADR-0083 U5: relaciones de la OT (OV, despachos, consumos, compras de outsourcing) */}
-              <DocumentRelationsButton label="production.workorder" id={order.id} />
               <DocumentActionsMenu
                 primary={(() => {
                   if (order.status !== 'IN_PROGRESS') return null
@@ -557,10 +559,28 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             isBasicInfoEditable={isBasicInfoEditable}
             chosenOtType={chosenOtType}
             onStepChange={setViewingStepIndex}
+            tabDisabled={wizardTab !== 'stages'}
           />
         }
       >
-        <div className="flex h-full min-h-0 overflow-hidden">
+        <div className="flex flex-1 min-h-0 overflow-hidden">
+        <TabBar
+          items={order ? [
+            { value: 'stages', label: 'Producción', icon: Package },
+            { value: 'relations', label: 'Relaciones', icon: Link2, badge: relationsData?.relations.length },
+          ] : [{ value: 'stages', label: 'Producción', icon: Package }]}
+          value={wizardTab}
+          onValueChange={setWizardTab}
+          orientation="horizontal"
+          variant="underline"
+          className="flex-1 min-h-0"
+          contentClassName="bg-transparent"
+        >
+          <TabBarContent
+            value="stages"
+            className="data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden"
+          >
+          <div className="flex flex-1 min-h-0 overflow-hidden">
           <WizardProcessSidebar
             stages={STAGES}
             viewingStepIndex={viewingStepIndex}
@@ -786,14 +806,26 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             </div>
           </div>
 
+          </div>
+          </TabBarContent>
+
           {order && (
-            <WizardRightSidebar
-              order={order}
-              viewingStepIndex={viewingStepIndex}
-              productName={productName}
-              stageData={stageData}
-            />
+            <TabBarContent
+              value="relations"
+              className="mt-0 px-6 pt-4 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin"
+            >
+              <DocumentRelationsTab label="production.workorder" id={order.id} />
+            </TabBarContent>
           )}
+        </TabBar>
+
+        {order && (
+          <WizardRightSidebar
+            order={order}
+            productName={productName}
+            stageData={stageData}
+          />
+        )}
         </div>
       </Drawer>
 

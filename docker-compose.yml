@@ -189,6 +189,8 @@ services:
       # .next/ en named volume → la caché de TurboPack/SWC persiste entre reinicios
       # Esto es lo que hace que el contenedor arranque en ~5s en lugar de ~60s
       - next_cache:/app/.next
+      # Docs del repo (los contract tests de frontend validan contratos/ADRs) — solo lectura
+      - ./docs:/repo-docs:ro
     ports:
       - "3000:3000"
     networks:

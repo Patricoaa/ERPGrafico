@@ -16,6 +16,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: 
 vi.mock("@/components/providers/GlobalModalProvider", async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
     useGlobalModals: () => ({ openEntity: vi.fn() }),
+    useGlobalModalActions: () => ({ setEntityDisplay: vi.fn() }),
 }))
 
 global.ResizeObserver = class ResizeObserver {
@@ -50,7 +51,7 @@ describe("logistics document drawers", () => {
 
         wrap(<PurchaseReceiptDrawer id={7} open onOpenChange={() => {}} />)
 
-        await waitFor(() => expect(screen.getByText("Papelera Sur")).toBeInTheDocument())
+        await waitFor(() => expect(screen.getAllByText("Papelera Sur").length).toBeGreaterThan(0))
         const urls = getMock.mock.calls.map((c) => String(c[0]))
         expect(urls).toContain("/purchasing/receipts/7/")
         expect(urls.some((u) => u.includes("/inventory/"))).toBe(false)

@@ -251,7 +251,7 @@ export function MaterialAssignmentStep({
                           <Input type="number" value={qty} onChange={(e) => setQty(e.target.value)} />
                         </div>
                         <div className="w-full md:w-40 space-y-2">
-                          <label className="text-xs font-bold uppercase">Unidad</label>
+                          <label className="text-xs font-bold uppercase">UoM</label>
                           <UoMSelector product={productObj as unknown as Parameters<typeof UoMSelector>[0]['product']} context="bom" value={uomId} onChange={setUomId} uoms={[]} />
                         </div>
                         <div className="flex gap-2">
