@@ -12,7 +12,6 @@ export * from './StockReport';
 export * from './SubscriptionHistoryModal';
 export * from './SubscriptionsClientView';
 export * from './UoMCategoryClientView';
-export * from './UoMsView';
 export * from './UoMClientView';
 export * from './WarehouseClientView';
 export * from './ProductDrawer';
