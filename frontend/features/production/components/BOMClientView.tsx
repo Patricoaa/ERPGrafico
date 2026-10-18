@@ -1,14 +1,14 @@
 "use client"
 
-import React, { useMemo } from "react"
+import React from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { type ColumnDef } from "@tanstack/react-table"
-import { ActionConfirmModal, DataTableView, AutoEntityCard } from '@/components/shared'
+import { ActionConfirmModal } from '@/components/shared'
+import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
 import { BOMDrawer, useAllBOMs, useBOM, useDeleteBomMutation } from "@/features/production"
 import { bomActions, type BOMActionsCtx } from "./bomActions"
-import { bomFields } from "@/features/production/bomFields"
+import { bomEntity, bomViews } from "../entity-view/bom.entity"
 
-import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { getDomainConceptTitle, getDomainConceptCode, getDomainConceptMessage } from "@/lib/entity-registry"
 import { bomUnifiedSearchDef } from "@/features/production"
@@ -22,6 +22,9 @@ export interface BOMListItem extends BOM {
     lines_count: number
     total_cost: number
 }
+
+/** Search group keys → entity field ids (grouping uses the formatted cell text). */
+const BOM_GROUPS: Record<string, FieldId<typeof bomEntity.fields>> = { active: "active" }
 
 interface BOMClientViewProps {
     initialBoms?: BOM[]
@@ -42,7 +45,15 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
 
     const search = useUnifiedSearch(bomUnifiedSearchDef)
     const allFilters = { ...search.filters }
-    const { boms, isLoading: loading, isRefetching, refetch: refetchBoms } = useAllBOMs(allFilters, initialBoms)
+    const { boms, isLoading: loading, isRefetching, isError, refetch: refetchBoms } = useAllBOMs(allFilters, initialBoms)
+    const groupBy = search.groupBy ? BOM_GROUPS[search.groupBy] ?? null : null
+    const { view, onViewChange } = useCollectionViewMode("production.bom")
+    const collection = useEntityCollection(
+        bomEntity,
+        { rows: boms, isLoading: loading, isRefetching, error: isError, refetch: refetchBoms, isFiltered: search.isFiltered },
+        // Groups span the whole list, not one page.
+        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
+    )
 
 
     const handleFormClose = (open: boolean) => {
@@ -72,62 +83,29 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
         onDelete: handleDelete,
     }
 
-    const columns: ColumnDef<BOMListItem>[] = useMemo(() => [
-        ...bomFields.toColumns(),
-        bomActions.auto(actionsCtx),
-    ], [])
+    const createAction = <ToolbarCreateButton label="Nueva Lista" href="/production/boms?modal=new" />
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    columns={columns}
-                    data={boms as unknown as BOMListItem[]}
-                    isLoading={loading}
-                    isRefetching={isRefetching}
-                    entityLabel="production.bom"
-                    variant="embedded"
-                    defaultPageSize={20}
-                    unifiedSearch={<UnifiedSearchBar
-                        config={bomUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar por producto..."
-                    />}
-                    unifiedSearchConfig={bomUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    createAction={<ToolbarCreateButton label="Nueva Lista" href="/production/boms?modal=new" />}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "bom",
-                        title: `Aún no hay ${getDomainConceptTitle('ldm', true).toLowerCase()}`,
-                        description: `Crea una ${getDomainConceptTitle('ldm').toLowerCase()} (${getDomainConceptCode('ldm')}) para definir cómo se fabrica un producto.`,
-                    }}
-                    renderCard={(bom: BOMListItem) => (
-                        <AutoEntityCard
-                            key={bom.id}
-                            data={bom}
-                            fields={bomFields}
-
-                            entityLabel="production.bom"
-
-                            actions={bomActions.render(bom, actionsCtx)}
-                            defaultAction={bomActions.defaultAction(actionsCtx)?.(bom) ?? (() => bom.id != null && handleEdit(bom.id))}
-                        />
-                    )}
+            <Collection.Root
+                collection={collection}
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(bom) => bom.id != null && handleEdit(bom.id)}
+                actions={bomActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar config={bomUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar por producto..." />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={bomViews.table}
+                    card={bomViews.card}
+                    emptyTitle={`Aún no hay ${getDomainConceptTitle('ldm', true).toLowerCase()}`}
+                    emptyDescription={`Crea una ${getDomainConceptTitle('ldm').toLowerCase()} (${getDomainConceptCode('ldm')}) para definir cómo se fabrica un producto.`}
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+            </Collection.Root>
 
             <BOMDrawer
                 open={isFormOpen}

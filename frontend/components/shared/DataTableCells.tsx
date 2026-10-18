@@ -540,6 +540,8 @@ export const DataCell = {
                                 onClick?.(e)
                             }}
                             type="button"
+                            // Icon-only button: the tooltip text is also its accessible name.
+                            aria-label={title}
                         >
                             <ArrowRight className="h-4 w-4" />
                         </Button>

@@ -13,11 +13,8 @@ import {
     SheetTitle,
     SheetDescription,
 } from '@/components/ui/sheet'
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
+import { LabeledInput, LabeledSelect, LabeledCheckbox, LabeledContainer } from '@/components/shared'
 import type { CreditLine, CreditLineCreatePayload } from './types'
 import type { TreasuryAccount } from '../types'
 import { treasuryApi } from '@/features/treasury'
@@ -141,6 +138,21 @@ export function CreditLineDrawer({ open, onOpenChange, creditLine, creditLineId,
         onOpenChange(false)
     }
 
+    const accountOptions = checkingAccounts.map((a: TreasuryAccount) => ({
+        value: String(a.id),
+        label: `${a.name} (${a.bank_name ?? 'Sin banco'})`,
+    }))
+
+    const currencyOptions = [
+        { value: 'CLP', label: 'CLP' },
+        { value: 'UF', label: 'UF' },
+    ] as const
+
+    const rateBasisOptions = [
+        { value: 'MONTHLY', label: 'Mensual' },
+        { value: 'ANNUAL', label: 'Anual' },
+    ] as const
+
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
@@ -151,174 +163,138 @@ export function CreditLineDrawer({ open, onOpenChange, creditLine, creditLineId,
                     </SheetDescription>
                 </SheetHeader>
 
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-6">
-                        <FormField control={form.control} name="treasury_account" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Cuenta Bancaria</FormLabel>
-                                {treasuryAccountId ? (
-                                    <FormControl>
-                                        <Input value={accountName || `Cuenta #${treasuryAccountId}`} disabled />
-                                    </FormControl>
-                                ) : (
-                                    <Select
-                                        value={String(field.value)}
-                                        onValueChange={(v) => {
-                                            field.onChange(Number(v))
-                                            const acc = checkingAccounts.find((a: TreasuryAccount) => a.id === Number(v))
-                                            setAccountName(acc?.name ?? '')
-                                        }}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Seleccionar cuenta" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {checkingAccounts.map((a: TreasuryAccount) => (
-                                                <SelectItem key={a.id} value={String(a.id)}>
-                                                    {a.name} ({a.bank_name ?? 'Sin banco'})
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                )}
-                                <FormMessage />
-                            </FormItem>
-                        )} />
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-6">
+                    {/* Cuenta Bancaria */}
+                    <FormField control={form.control} name="treasury_account" render={({ field }) => (
+                        treasuryAccountId ? (
+                            <LabeledInput
+                                {...field}
+                                value={accountName || `Cuenta #${treasuryAccountId}`}
+                                disabled
+                                label="Cuenta Bancaria"
+                            />
+                        ) : (
+                            <LabeledSelect
+                                {...field}
+                                value={field.value ? String(field.value) : ''}
+                                onValueChange={(v) => {
+                                    field.onChange(Number(v))
+                                    const acc = checkingAccounts.find((a: TreasuryAccount) => a.id === Number(v))
+                                    setAccountName(acc?.name ?? '')
+                                }}
+                                label="Cuenta Bancaria"
+                                options={accountOptions}
+                                placeholder="Seleccionar cuenta"
+                            />
+                        )
+                    )} />
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="code" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Código</FormLabel>
-                                    <FormControl><Input {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                            <FormField control={form.control} name="currency" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Moneda</FormLabel>
-                                    <Select value={field.value} onValueChange={field.onChange}>
-                                        <FormControl>
-                                            <SelectTrigger><SelectValue /></SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="CLP">CLP</SelectItem>
-                                            <SelectItem value="UF">UF</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                        </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        {/* Código */}
+                        <LabeledInput
+                            {...form.register('code')}
+                            label="Código"
+                            placeholder="Código opcional"
+                        />
 
-                        <FormField control={form.control} name="credit_limit" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Límite de Crédito</FormLabel>
-                                <FormControl><Input type="number" step="1" {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
+                        {/* Moneda */}
+                        <LabeledSelect
+                            {...form.register('currency')}
+                            label="Moneda"
+                            options={currencyOptions}
+                        />
+                    </div>
 
-                        <div className="grid grid-cols-3 gap-4">
-                            <FormField control={form.control} name="interest_rate" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Tasa %</FormLabel>
-                                    <FormControl><Input type="number" step="0.0001" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                            <FormField control={form.control} name="rate_basis" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Base</FormLabel>
-                                    <Select value={field.value} onValueChange={field.onChange}>
-                                        <FormControl>
-                                            <SelectTrigger><SelectValue /></SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="MONTHLY">Mensual</SelectItem>
-                                            <SelectItem value="ANNUAL">Anual</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                            <FormField control={form.control} name="spread" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Spread %</FormLabel>
-                                    <FormControl><Input type="number" step="0.0001" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                        </div>
+                    {/* Límite de Crédito */}
+                    <LabeledInput
+                        {...form.register('credit_limit')}
+                        label="Límite de Crédito"
+                        type="number"
+                        step="1"
+                        placeholder="Ej: 5000000"
+                    />
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="valid_from" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Vigencia Desde</FormLabel>
-                                    <FormControl><Input type="date" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                            <FormField control={form.control} name="valid_until" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Vigencia Hasta</FormLabel>
-                                    <FormControl>
-                                        <Input type="date" value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value || null)} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                        </div>
+                    <div className="grid grid-cols-3 gap-4">
+                        {/* Tasa % */}
+                        <LabeledInput
+                            {...form.register('interest_rate')}
+                            label="Tasa %"
+                            type="number"
+                            step="0.0001"
+                            placeholder="Ej: 1.5"
+                        />
 
-                        <FormField control={form.control} name="auto_renewal" render={({ field }) => (
-                            <FormItem className="flex items-center gap-2">
-                                <FormControl>
-                                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                                </FormControl>
-                                <FormLabel className="!mt-0">Renovación Automática</FormLabel>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
+                        {/* Base */}
+                        <LabeledSelect
+                            {...form.register('rate_basis')}
+                            label="Base"
+                            options={rateBasisOptions}
+                        />
 
-                        {form.watch('auto_renewal') && (
-                            <FormField control={form.control} name="renewal_term_months" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Plazo Renovación (meses)</FormLabel>
-                                    <FormControl>
-                                        <Input type="number" value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                        )}
+                        {/* Spread % */}
+                        <LabeledInput
+                            {...form.register('spread')}
+                            label="Spread %"
+                            type="number"
+                            step="0.0001"
+                            placeholder="0"
+                        />
+                    </div>
 
-                        <FormField control={form.control} name="collateral_notes" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Garantías</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
+                    <div className="grid grid-cols-2 gap-4">
+                        {/* Vigencia Desde */}
+                        <LabeledInput
+                            {...form.register('valid_from')}
+                            label="Vigencia Desde"
+                            type="date"
+                        />
 
-                        <FormField control={form.control} name="notes" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Notas</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
+                        {/* Vigencia Hasta */}
+                        <LabeledInput
+                            {...form.register('valid_until')}
+                            label="Vigencia Hasta"
+                            type="date"
+                        />
+                    </div>
 
-                        <div className="flex justify-end gap-3 pt-4">
-                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                                Cancelar
-                            </Button>
-                            <Button type="submit" disabled={create.isPending || update.isPending}>
-                                {isEditing ? 'Guardar' : 'Crear'}
-                            </Button>
-                        </div>
-                    </form>
-                </Form>
+                    {/* Renovación Automática */}
+                    <LabeledCheckbox
+                        {...form.register('auto_renewal')}
+                        label="Renovación Automática"
+                    />
+
+                    {form.watch('auto_renewal') && (
+                        <LabeledInput
+                            {...form.register('renewal_term_months')}
+                            label="Plazo Renovación (meses)"
+                            type="number"
+                            placeholder="Ej: 12"
+                        />
+                    )}
+
+                    {/* Garantías */}
+                    <LabeledInput
+                        {...form.register('collateral_notes')}
+                        label="Garantías"
+                        placeholder="Detalle de garantías..."
+                    />
+
+                    {/* Notas */}
+                    <LabeledInput
+                        {...form.register('notes')}
+                        label="Notas"
+                        placeholder="Notas adicionales..."
+                    />
+
+                    <div className="flex justify-end gap-3 pt-4">
+                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                            Cancelar
+                        </Button>
+                        <Button type="submit" disabled={create.isPending || update.isPending}>
+                            {isEditing ? 'Guardar' : 'Crear'}
+                        </Button>
+                    </div>
+                </form>
             </SheetContent>
         </Sheet>
     )

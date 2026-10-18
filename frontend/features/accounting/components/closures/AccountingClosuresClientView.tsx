@@ -3,7 +3,6 @@
 import React, {useState, useMemo, useCallback} from 'react';
 import { useFiscalYears } from '../../hooks/useFiscalYears';
 import { useAccountingPeriods } from '../../hooks/useAccountingPeriods';
-import { FiscalYearCard } from './FiscalYearCard';
 import { FiscalYearClosingWizard } from './FiscalYearClosingWizard';
 import { NewFiscalYearDrawer } from './NewFiscalYearDrawer';
 import { type AccountingPeriod, type TaxPeriod } from '../../types';
@@ -13,11 +12,12 @@ import { AccountingPeriodCloseChecklistModal } from './AccountingPeriodCloseChec
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useSelectedFiscalYearPreview } from '../../hooks/useSelectedFiscalYearPreview';
-import { DataTableView, EmptyState } from '@/components/shared';
-import { type ColumnDef } from '@tanstack/react-table';
-import { fiscalYearActions, type FiscalYearActionsCtx } from './fiscalYearActions';
-import { fiscalYearFields } from '../../fiscalYearFields';
-import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared';
+import { EmptyState, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared';
+import { Collection, useEntityCollection } from '@/components/entity-view';
+import { closureEntity, closureViews } from '../../entity-view/closure.entity';
+import { buildClosureTree } from '../../utils/closureTree';
+import { useReopenConfirm } from '../../hooks/useReopenConfirm';
+import { closureActions, type ClosureActionsCtx } from './closureActions';
 import { SkeletonShell } from '@/components/shared';
 import { fiscalYearUnifiedSearchDef } from '../../unifiedSearchDef';
 import { toast } from 'sonner';
@@ -298,6 +298,19 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         return search.filterFn(result.map(r => ({ ...r, status: r.fiscalYear?.status ?? 'OPEN' })))
     }, [groupedData, search.filters.status, search.filterFn, search])
 
+    // Fiscal year → its 12 months (tree, §6.19). Pages of 10 years, each with all its months.
+    const closureRows = useMemo(() => buildClosureTree(filteredGrouped), [filteredGrouped])
+    const collection = useEntityCollection(
+        closureEntity,
+        // A running action (close, reopen, declare…) marks the table busy, as the former view did.
+        { rows: closureRows, isRefetching: actionLoadingYr || actionLoadingPeriod || isLoadingTaxAction, isFiltered: search.isFiltered },
+        { pagination: { mode: 'client', pageSize: 10 } },
+    )
+
+    // Reopen confirmations (they lived in each month card): one per period type, for the whole tree.
+    const { confirmAndExecute: confirmReopenPeriod, dialog: reopenPeriodDialog } = useReopenConfirm(reopenPeriod, { periodType: 'contable' })
+    const { confirmAndExecute: confirmReopenTaxPeriod, dialog: reopenTaxPeriodDialog } = useReopenConfirm(handleReopenTaxPeriod, { periodType: 'tributario (F29)' })
+
     if (isLoading) {
         return <SkeletonShell isLoading ariaLabel="Cargando ejercicios..." />;
     }
@@ -322,78 +335,33 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         );
     }
 
-    const fiscalYearActionsCtx: FiscalYearActionsCtx = {
-        onExecuteClosing: (year) => handlePreviewClosing(year),
-        onReopen: (year) => reopenFiscalYear(year),
+    const actionsCtx: ClosureActionsCtx = {
+        onCloseYear: handlePreviewClosing,
+        // Errors are reported by the mutation; the promise must not go unhandled.
+        onReopenYear: (year) => { void Promise.resolve(reopenFiscalYear(year)).catch(() => undefined) },
+        onCreatePeriod: (year, month) => { void createPeriod({ year, month }) },
+        onClosePeriod: handleClosePeriodWithChecklist,
+        onReopenPeriod: confirmReopenPeriod,
+        onOpenDeclaration: handleOpenDeclaration,
+        onPayF29: handlePayF29,
+        onCloseTaxPeriod: (id) => { void handleCloseTaxPeriod(id) },
+        onReopenTaxPeriod: confirmReopenTaxPeriod,
+        isPeriodActionLoading: actionLoadingPeriod,
+        isTaxActionLoading: isLoadingTaxAction,
+        isFiscalYearLoading: actionLoadingYr,
     }
-
-    const columns: ColumnDef<typeof groupedData[0]>[] = [
-        ...(fiscalYearFields.toColumns() as ColumnDef<typeof groupedData[0]>[]),
-        fiscalYearActions.auto(fiscalYearActionsCtx) as ColumnDef<typeof groupedData[0]>
-    ];
+    const createAction = <ToolbarCreateButton href="/accounting/closures?modal=fy" label="Nuevo Ejercicio Fiscal" />
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    entityLabel="accounting.fiscalyear"
-                    columns={columns}
-                    data={filteredGrouped}
-                    isLoading={actionLoadingYr || actionLoadingPeriod || isLoadingTaxAction}
-                    variant="embedded"
-                    unifiedSearch={<UnifiedSearchBar
-                        config={fiscalYearUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar ejercicio..."
-                    />}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    defaultPageSize={10}
-                    createAction={
-                        <ToolbarCreateButton
-                            href="/accounting/closures?modal=fy"
-                            label="Nuevo Ejercicio Fiscal"
-                        />
-                    }
-                    renderCustomView={(table) => (
-                        <div className="space-y-6 pt-4">
-                            {table.getRowModel().rows.map(row => {
-                                const { year, periods: yearPeriods, taxPeriods: yearTaxPeriods, fiscalYear } = row.original;
-                                return (
-                                    <FiscalYearCard
-                                        key={`year-${year}`}
-                                        year={year}
-                                        fiscalYear={fiscalYear}
-                                        periods={yearPeriods}
-                                        taxPeriods={yearTaxPeriods}
-                                        onClosePeriod={handleClosePeriodWithChecklist}
-                                        onReopenPeriod={reopenPeriod}
-                                        onCreatePeriod={(year, month) => createPeriod({ year, month })}
-                                        isPeriodActionLoading={actionLoadingPeriod}
-                                        onCloseTaxPeriod={handleCloseTaxPeriod}
-                                        onReopenTaxPeriod={handleReopenTaxPeriod}
-                                        onOpenDeclaration={(params: { id?: number; year: number; month: number }) => handleOpenDeclaration(params)}
-                                        isTaxActionLoading={isLoadingTaxAction}
-                                        onPreviewClosing={handlePreviewClosing}
-                                        onReopenFiscalYear={reopenFiscalYear}
-                                        isFiscalYearLoading={actionLoadingYr}
-                                        onPayF29={handlePayF29}
-                                    />
-                                );
-                            })}
-                        </div>
-                    )}
-                />
-            </div>
+            <Collection.Root collection={collection} actions={closureActions.forCollection(actionsCtx)}>
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar config={fiscalYearUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar ejercicio..." />
+                </Collection.Toolbar>
+                <Collection.View table={closureViews.table} onResetFilters={search.clearAll} />
+            </Collection.Root>
+            {reopenPeriodDialog}
+            {reopenTaxPeriodDialog}
 
             <FiscalYearClosingWizard
                 isOpen={previewModalOpen}

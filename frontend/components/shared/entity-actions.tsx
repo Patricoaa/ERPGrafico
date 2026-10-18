@@ -2,7 +2,7 @@ import { type ReactNode } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import type { LucideIcon } from "lucide-react"
 import { createActionsColumn, DataCell, type ActionMenuItem } from "./DataTableCells"
-import type { RowActionKey } from "@/lib/row-actions"
+import { ROW_ACTIONS, type RowActionKey } from "@/lib/row-actions"
 
 // ─── Structured Action Types ────────────────────────────────────────────────
 
@@ -40,6 +40,16 @@ export type StructuredActions<T, Ctx> = (item: T, ctx: Ctx) => StructuredAction[
 // ─── renderActions utility ──────────────────────────────────────────────────
 
 /**
+ * The lone visible action, drawn as the hover arrow (`ActionSingle`), named by its label. A disabled one
+ * goes to the menu instead: `ActionSingle` has no disabled state, so it would stay clickable.
+ */
+function singleAction(visible: StructuredAction[]): { onClick: (e: React.MouseEvent) => void; title: string } | null {
+    const a = visible.length === 1 ? visible[0] : undefined
+    if (!a || !('action' in a) || a.disabled) return null
+    return { onClick: a.onClick, title: a.label ?? ROW_ACTIONS[a.action].label }
+}
+
+/**
  * Converts structured actions to JSX for card surfaces (EntityCard, Kanban).
  *
  * Uses the same components as DataTable for consistent behavior:
@@ -57,15 +67,8 @@ export function renderActions(
     )
     if (visible.length === 0) return null
 
-    if (visible.length === 1 && 'action' in visible[0]) {
-        const a = visible[0]
-        return (
-            <DataCell.ActionSingle
-                onClick={a.onClick}
-                title={'label' in a ? a.label : undefined}
-            />
-        )
-    }
+    const single = singleAction(visible)
+    if (single) return <DataCell.ActionSingle onClick={single.onClick} title={single.title} />
 
     return (
         <DataCell.ActionMenu
@@ -156,9 +159,8 @@ export function createEntityActions<T, Ctx = object>(
         if (!isStructured(result)) return result as ReactNode
         const visible = result.filter((a) => !('visible' in a) || a.visible !== false)
         if (visible.length === 0) return null
-        if (visible.length === 1 && 'action' in visible[0]) {
-            return <DataCell.ActionSingle onClick={visible[0].onClick} />
-        }
+        const single = singleAction(visible)
+        if (single) return <DataCell.ActionSingle onClick={single.onClick} title={single.title} />
         return <DataCell.ActionMenu items={toMenuItems(result)} />
     }
 

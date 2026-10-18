@@ -31,6 +31,8 @@ export function useContacts({ filters, initialData }: { filters?: ContactFilters
         contacts,
         isLoading: showSkeleton,
         isRefetching,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError: query.isError,
         refetch,
         ...useContactMutations()
     }

@@ -947,7 +947,7 @@ Tests nuevos: estado del control tras reabrir a mano, suma de raíces con ramas 
 
 **Cierres contables: propuesta de diseño pendiente** (ver §6.19). No se migran sin aprobación: pasar de cards a árbol es un rediseño del flujo de cierre, no paridad (M1).
 
-### 6.19 Propuesta: cierres contables como árbol (pendiente de aprobación)
+### 6.19 Cierres contables como árbol (aprobado por el usuario el 2026-10-18)
 
 Hoy: una card por ejercicio (estado, progreso "F29 n/12 · Contable n/12", botón "Cerrar Ejercicio") con una cuadrícula de 12 `CombinedPeriodCard` (cada mes: estado contable + estado F29 y hasta 7 acciones en iconos con tooltip).
 
@@ -966,3 +966,48 @@ Propuesta (árbol de una entidad con fila unión `ejercicio | mes`):
 - Acciones del mes en el menú de fila (`ROW_ACTIONS`): abrir periodo, cerrar/reabrir contable (con la confirmación actual de `useReopenConfirm`), declarar F29, pagar F29, cerrar/reabrir F29, ver comprobante. Las reglas de habilitación de `CombinedPeriodCard` se conservan tal cual (bloqueado por F29, contable cerrado, etc.).
 - Acciones del año: las de `fiscalYearActions` (ejecutar cierre / reabrir).
 - Se pierde la vista de cuadrícula de 12 meses de un vistazo; se gana orden, teclado, y el mismo patrón que el plan de cuentas y los futuros estados financieros.
+
+### 6.20 Resultado: cierres contables migrados a árbol (2026-10-18)
+
+- **Fila unión** `ClosureRow = ClosureYearRow | ClosureMonthRow` (`accounting/utils/closureTree.ts`): cada ejercicio con sus 12 meses, cada mes con su periodo contable y su periodo F29. `monthState` / `yearState` concentran las reglas que antes vivían en `CombinedPeriodCard` / `FiscalYearCard`.
+- **Entidad** `accounting/entity-view/closure.entity.ts` (identidad `title`, `rowId`, `tree`): Periodo · Contable (estado del ejercicio o del mes) · F29 · Cierres contables (n/total) · Cierres F29 (n/total) · Cierre del ejercicio (fecha y usuario).
+- **Acciones** `closures/closureActions.ts`: `closureActionList` (función pura, testeada) + `createEntityActions`. Mes: abrir periodo, cerrar/reabrir contable, declarar F29 (deshabilitado con el motivo en la etiqueta), pagar, cerrar/reabrir F29, ver comprobante. Ejercicio: cerrar (deshabilitado hasta que todo esté cerrado) / reabrir.
+- Las confirmaciones de reapertura (`useReopenConfirm`) pasan de una por card a una por tipo de periodo en la pantalla. El checklist de cierre contable, el asistente de cierre de ejercicio, el F29 y el pago no cambian.
+- **Diferencias:** se pierde la cuadrícula de 12 meses y el botón destacado "Cerrar Ejercicio" (ahora en el menú de la fila); los tooltips de motivo pasan a la etiqueta de la acción deshabilitada.
+- Borrados: `FiscalYearCard.tsx`, `CombinedPeriodCard.tsx`, `fiscalYearActions.tsx`, `fiscalYearFields.tsx`.
+- Tests: `accounting/utils/__tests__/closureTree.test.ts` (7): 12 meses por ejercicio; reglas de acciones por estado (sin periodo, F29 declarado impago/pagado, F29 cerrado congela el contable, reabrir F29, cierre del ejercicio).
+
+**`/code-review` medium de cierres (10 hallazgos)**
+
+Corregidos (8):
+1. **Acción única deshabilitada pero clicable** (compartido, `components/shared/entity-actions.tsx`): con una sola acción visible `createEntityActions` pintaba `DataCell.ActionSingle`, que no tiene estado deshabilitado. "Cerrar ejercicio" se podía pulsar sin estar listo. Ahora una acción única deshabilitada va al menú (que sí respeta `disabled`). Afecta a todas las pantallas; test de regresión verificado por mutación.
+2. y 3. La acción única se titulaba "Abrir" en la tabla (el `tableCell` no pasaba el título) y no tenía nombre accesible: ahora usa su etiqueta (o la de `ROW_ACTIONS`) y `ActionSingle` lleva `aria-label`.
+4. El motivo de bloqueo ("Bloqueado por cierre F29") había desaparecido: vuelve como acción deshabilitada.
+5. Sin indicio de trabajo en curso: la colección recibe `isRefetching` mientras corre una acción.
+6. Reabrir ejercicio dejaba una promesa sin manejar: capturada (el error lo informa la mutación).
+7. La columna "Contable" mostraba el estado del ejercicio en los años: se llama "Estado".
+8. "Declarar F29" usaba la clave `report` (lectura): ahora `post`.
+
+Sin cambio: el doble filtro de estado de `filteredGrouped` (heredado; sin efecto) y las claves de acción repetidas en un menú (las `key` del menú son por índice).
+
+**TC-068:** 3 tests de `WorkOrderWizard` fallan (no encuentran "Crear Orden de Trabajo" / "Gestión de Orden de Trabajo"). Verificado en un worktree en `b04d3927e` (inicio de la sesión): ya fallaban; ajeno a la migración.
+
+Verificación: `tsc` sin errores; vitest por partes de toda la suite: todo en verde salvo `no-unsafe` (TC-039/#177) y `WorkOrderWizard` (TC-068), ambos previos.
+
+### 6.21 Resultado del sub-lote A4 — contactos y listas de materiales (2026-10-18)
+
+2 pantallas, 2 entidades, 2 `*Fields` borrados. Cierra la oleada A.
+
+| Pantalla | Entidad | Extensiones | Diferencias intencionales frente a la versión anterior |
+|---|---|---|---|
+| `contacts/ContactsClientView` | `contacts/entity-view/contact.entity.tsx` | kind `contactName` (local): nombre + insignias de cliente/proveedor por defecto, con tooltip | RUT formateado en un campo de texto (antes `get` del `*Fields`); "Riesgo" como dimensión de agrupación (campo oculto `riskLevel`); **TC-069**: `credit_risk_level` no estaba en el tipo `Contact` aunque la API lo envía (mismo patrón que TC-061) |
+| `production/BOMClientView` | `production/entity-view/bom.entity.tsx` | kind `bomProduct` (local, mismo patrón que `pricingRuleTarget` de inventario) | agrupación por estado sobre la lista completa; `bomActions` pasa de tiparse sobre `BOMListItem` (un alias local) a `BOM`, que ya trae `lines_count`/`total_cost`/`product_code` de la API; **TC-070**: esos 3 campos no estaban en el tipo `BOM` |
+
+Hooks con `isError`/`isCategoriesError` añadidos: `useContacts`, `useAllBOMs` (vía `useBOMs.ts`).
+
+**Verificación**
+- `tsc` sin errores; `eslint` sin errores nuevos (2 avisos preexistentes en `useBOMs.ts`/`BOMClientView.tsx`, confirmados comparando con el stash previo a esta sesión).
+- vitest: `components/entity-view` + contrato 83/83; `features/{contacts,production,accounting}` en verde salvo `WorkOrderWizard` (TC-068, previo).
+- Avance (`scripts/entity-view-progress.sh`): 33 entidades · 62 pantallas · 36 `*Fields` · 38 `computed` · 33 `toColumns` · 20 `AutoEntityCard` · 98 consumidores.
+- `/code-review` en curso.
+

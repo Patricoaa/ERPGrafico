@@ -102,7 +102,7 @@ export function useAllBOMs(filters?: FilterState, initialData?: BOM[]) {
     const refetch = query.refetch
     const isRefetching = query.isFetching && !showSkeleton
 
-    return { boms, isLoading: showSkeleton, isRefetching, refetch }
+    return { boms, isLoading: showSkeleton, isRefetching, isError: query.isError, refetch }
 }
 
 export function useProductionVariants(parentId: number | string | undefined) {

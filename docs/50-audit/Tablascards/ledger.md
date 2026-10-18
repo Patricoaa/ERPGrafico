@@ -365,3 +365,18 @@
 - Decisión: Pd-backend: exponer `method_type` en el serializer del dispositivo
 - Estado: pendiente
 
+### TC-068 · Tests rotos previos · Verificado
+- Evidencia: `features/production/components/__tests__/WorkOrderWizard.test.tsx`: 3 tests no encuentran los títulos "Crear Orden de Trabajo" / "Gestión de Orden de Trabajo". Reproducido en un worktree en `b04d3927e` (antes de los cambios de esta sesión)
+- Probable: el commit `25e43a64f feat(navigation): centralizar títulos` cambió los títulos
+- Estado: pendiente (fuera de la migración)
+
+### TC-069 · Defecto del sistema actual · Verificado (código)
+- Evidencia: `features/contacts/types/index.ts` no declaraba `credit_risk_level`; `backend/contacts/serializers.py` lo envía (campo de `ContactSerializer`, `__all__`/explícito). `contactFields.tsx` lo ignoraba: la búsqueda ofrecía agrupar por "Riesgo" sin que ninguna columna lo mostrara
+- Decisión: añadido al tipo al migrar (A4), con los 4 valores de `RiskLevel`
+- Estado: corregido
+
+### TC-070 · Defecto del sistema actual · Verificado (código)
+- Evidencia: `BOMListItem` (alias local en `BOMClientView.tsx`) repetía `lines_count`, `total_cost` y `product_code`, que `BillOfMaterialsSerializer` ya envía; el tipo `BOM` no los tenía
+- Decisión: añadidos a `BOM` (A4); `bomActions` pasa a tiparse sobre `BOM`
+- Estado: corregido
+

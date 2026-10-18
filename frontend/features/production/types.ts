@@ -166,8 +166,12 @@ export interface BOM {
     product: number
     product_name?: string
     product_internal_code?: string
+    product_code?: string
     name: string
     active: boolean
+    /** List fields sent by `BillOfMaterialsSerializer`. */
+    lines_count?: number
+    total_cost?: number
     yield_quantity: number
     yield_uom?: number
     yield_uom_name?: string

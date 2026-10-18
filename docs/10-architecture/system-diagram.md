@@ -8,7 +8,7 @@ last_review: 2026-05-21
 
 # System Diagram
 
-> **Topology (entorno de desarrollo):** single-node on the dev server (`pato@192.168.1.93`, Docker
+> **Topology (entorno de desarrollo):** single-node on the dev server (`pato@192.168.1.86`, Docker
 > Compose) — see [remote-dev-server.md](../30-playbooks/remote-dev-server.md). **No existe entorno de
 > producción todavía.** No hay load balancer, ni réplicas de DB, ni clusters. Escalar verticalmente
 > (más RAM/CPU/disco) antes de considerar multi-nodo — ver §"Deployment units".

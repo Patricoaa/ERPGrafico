@@ -3,8 +3,8 @@
 import { useMemo, useState } from 'react'
 import { Plus, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import {ActionConfirmModal, Chip, DataCell, DataTable} from '@/components/shared'
+import {Input} from '@/components/ui/input'
+import {ActionConfirmModal, Chip, DataCell, DataTable, LabeledInput} from '@/components/shared'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -247,8 +247,13 @@ export function MaterialAssignmentStep({
                           )}
                         </div>
                         <div className="w-full md:w-32 space-y-2">
-                          <label className="text-xs font-bold uppercase">Cantidad</label>
-                          <Input type="number" value={qty} onChange={(e) => setQty(e.target.value)} />
+                          <LabeledInput
+                            label="Cantidad"
+                            type="number"
+                            value={qty}
+                            onChange={(e) => setQty(e.target.value)}
+                            className="h-8"
+                          />
                         </div>
                         <div className="w-full md:w-40 space-y-2">
                           <label className="text-xs font-bold uppercase">UoM</label>

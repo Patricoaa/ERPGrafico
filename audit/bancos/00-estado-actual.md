@@ -106,7 +106,7 @@ El sandbox SQLite no corre migraciones (Postgres-specific SQL en `treasury/0008`
 verificación canónica es contra **Postgres + Redis reales** en el dev box:
 
 ```bash
-ssh pato@192.168.1.93
+ssh pato@192.168.1.86
 # El checkout /home/pato/ERPGrafico se sincroniza desde el working tree local
 docker exec erpgrafico-backend-1 sh -c 'cd /app && python manage.py migrate'
 docker exec erpgrafico-backend-1 sh -c 'cd /app && python manage.py makemigrations --check'

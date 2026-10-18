@@ -2,7 +2,7 @@
 
 > Entregable 2a · 2026-10-14 · Complementa [documents-inventory.md](./documents-inventory.md).
 >
-> **Evidencia**: **C** = confirmado en código · **E** = confirmado por ejecución (test en BD efímera) · **D** = observado en datos del dev server (`192.168.1.93`, datos demo, consultas SELECT) · **I** = inferido · **NV** = no verificable.
+> **Evidencia**: **C** = confirmado en código · **E** = confirmado por ejecución (test en BD efímera) · **D** = observado en datos del dev server (`192.168.1.86`, datos demo, consultas SELECT) · **I** = inferido · **NV** = no verificable.
 > **Uso real (D)**: conteo en dev server; "0" puede significar flujo no ejercitado en los datos demo, no que no funcione.
 >
 > Semántica: **DER** derivación · **CUM** cumplimiento · **REF** referencia · **LIQ** liquidación · **CON** contabilización · **COR** corrección/reversión · **ASO** asociación.

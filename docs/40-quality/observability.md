@@ -10,7 +10,7 @@ last_review: 2026-05-21
 
 > **Estado:** el proyecto está en fase de desarrollo; **no existe entorno de producción**. Este doc
 > describe el **objetivo/plan** de observability para un deployment single-node de bajo costo. Hoy
-> corre un único entorno dev en `pato@192.168.1.93` (ver
+> corre un único entorno dev en `pato@192.168.1.86` (ver
 > [remote-dev-server.md](../30-playbooks/remote-dev-server.md)) y **no hay monitoreo externo ni SLOs
 > operativos activos**.
 

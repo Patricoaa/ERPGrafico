@@ -2,24 +2,23 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import React, {useState, lazy, Suspense} from "react"
-import { type ColumnDef } from "@tanstack/react-table"
-
-import { DataTableView } from '@/components/shared'
-import { AutoEntityCard } from '@/components/shared'
-import { contactFields } from "@/features/contacts/contactFields"
+import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
 import { contactActions, type ContactActionsCtx } from "@/features/contacts/contactActions"
 import { useContacts, type Contact } from "@/features/contacts"
-import { LoadingFallback, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { LoadingFallback, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { contactsUnifiedSearchDef } from "@/features/contacts/unifiedSearchDef"
 import type { ContactFilters } from "@/features/contacts/types"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-import { Blobatar } from "@/components/ui/blobatar"
+import { contactEntity, contactViews } from "../entity-view/contact.entity"
 
 // Lazy load heavy components
 const ContactDrawer = lazy(() => import("./ContactDrawer"))
 const ActionConfirmModal = lazy(() => import("@/components/shared/ActionConfirmModal").then(m => ({ default: m.ActionConfirmModal })))
 
+
+/** Search group keys → entity field ids (grouping uses the formatted cell text). */
+const CONTACT_GROUPS: Record<string, FieldId<typeof contactEntity.fields>> = { contact_type: "contactType", credit_risk_level: "riskLevel" }
 
 interface ContactsClientViewProps {
     isNewModalOpen?: boolean
@@ -29,7 +28,7 @@ interface ContactsClientViewProps {
 
 export function ContactsClientView({ isNewModalOpen = false, createAction, initialContacts }: ContactsClientViewProps) {
     const search = useUnifiedSearch(contactsUnifiedSearchDef)
-    const { contacts, isLoading, isRefetching, deleteContact } = useContacts({
+    const { contacts, isLoading, isRefetching, isError, refetch, deleteContact } = useContacts({
         filters: search.filters as ContactFilters,
         initialData: initialContacts,
     })
@@ -78,61 +77,36 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
         onDelete: (contact) => handleDelete(contact),
     }
 
-    const columns = React.useMemo<ColumnDef<Contact>[]>(() => [
-        ...contactFields.toColumns(),
-        contactActions.auto(actionsCtx),
-    ] as ColumnDef<Contact>[], [actionsCtx])
+    const groupBy = search.groupBy ? CONTACT_GROUPS[search.groupBy] ?? null : null
+    const { view, onViewChange } = useCollectionViewMode("contacts.contact")
+    const collection = useEntityCollection(
+        contactEntity,
+        { rows: contacts, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
+        // Groups span the whole list, not one page.
+        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy, defaultSort: contactViews.table.defaultSort },
+    )
 
     return (
-
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                    <DataTableView
-                        entityLabel="contacts.contact"
-                        columns={columns}
-                        data={contacts}
-                        isLoading={isLoading}
-                        isRefetching={isRefetching}
-                        variant="embedded"
-                        unifiedSearch={<UnifiedSearchBar
-                            config={contactsUnifiedSearchDef}
-                            chips={search.chips}
-                            isFiltered={search.isFiltered}
-                            inputValue={search.inputValue}
-                            onInputChange={search.setInputValue}
-                            onApply={search.applyFilter}
-                            onRemove={search.removeFilter}
-                            onClearAll={search.clearAll}
-                            groupBy={search.groupBy}
-                            onGroupBySelect={search.setGroupBy}
-                            paramValues={search.paramValues}
-                            placeholder="Buscar por nombre, RUT o email..."
-                        />}
-                        unifiedSearchConfig={contactsUnifiedSearchDef}
-                        currentGroupBy={search.groupBy}
-                        showReset={search.isFiltered}
-                        onReset={search.clearAll}
-                        defaultPageSize={20}
-                        createAction={createAction}
-                        isFiltered={search.isFiltered}
-                        emptyState={{
-                            context: "users",
-                            title: "Aún no hay contactos",
-                            description: "Crea tu primer cliente o proveedor para empezar a operar.",
-                        }}
-                        renderCard={(contact: Contact) => (
-                            <AutoEntityCard 
-                                key={contact.id}
-                                data={contact}
-                                fields={contactFields}
-                                entityLabel="contacts.contact"
-                                avatar={<Blobatar name={contact.name} className="h-10 w-10 shrink-0 rounded-md" />}
-                                actions={contactActions.render(contact, actionsCtx)}
-                                defaultAction={contactActions.defaultAction(actionsCtx)?.(contact) ?? (() => openSelected(contact.id))}
-                            />
-                        )}
-                    />
-            </div>
+            <Collection.Root
+                collection={collection}
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(contact) => openSelected(contact.id)}
+                actions={contactActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar config={contactsUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar por nombre, RUT o email..." />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={contactViews.table}
+                    card={contactViews.card}
+                    emptyTitle="Aún no hay contactos"
+                    emptyDescription="Crea tu primer cliente o proveedor para empezar a operar."
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
+                />
+            </Collection.Root>
 
             <Suspense fallback={<LoadingFallback />}>
                 <ContactDrawer

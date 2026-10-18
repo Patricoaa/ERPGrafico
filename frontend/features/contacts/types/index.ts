@@ -22,6 +22,8 @@ export interface Contact {
     credit_available?: number | null
     credit_blocked?: boolean
     credit_auto_blocked?: boolean
+    /** Credit risk band (`contacts.models.RiskLevel`); sent by the API, used to group the list. */
+    credit_risk_level?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
 }
 
 export interface ContactFilters {
