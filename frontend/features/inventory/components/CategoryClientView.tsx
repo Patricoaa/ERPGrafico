@@ -1,23 +1,18 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import {useState, useMemo, useCallback} from "react"
+import React, { useCallback, useMemo, useState } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { ActionConfirmModal, DataTableView, AutoEntityCard } from '@/components/shared'
-import { UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
-import { type ColumnDef } from "@tanstack/react-table"
-import { CategoryDrawer } from "./CategoryDrawer"
-import { categoryActions, type CategoryActionsCtx } from "@/features/inventory/categoryActions"
-import { categoryFields } from "../categoryFields"
-
 import { toast } from "sonner"
-
-import React from "react"
-
+import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { categoryActions, type CategoryActionsCtx } from "@/features/inventory/categoryActions"
 import { useCategories, type Category } from "@/features/inventory/hooks/useCategories"
 import { categoryUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { categoryEntity, categoryViews } from "../entity-view/category.entity"
+import { CategoryDrawer } from "./CategoryDrawer"
 
 interface CategoryClientViewProps {
     externalOpen?: boolean
@@ -26,8 +21,16 @@ interface CategoryClientViewProps {
 }
 
 export function CategoryClientView({ externalOpen, onExternalOpenChange, createAction }: CategoryClientViewProps) {
-    const { categories, isLoading, refetch, deleteCategory } = useCategories()
+    const { categories, isLoading, isRefetching, isError, refetch, deleteCategory } = useCategories()
     const search = useUnifiedSearch(categoryUnifiedSearchDef)
+    const { filterFn } = search
+    const { view, onViewChange } = useCollectionViewMode("inventory.category")
+    const rows = useMemo(() => filterFn(categories), [filterFn, categories])
+    const collection = useEntityCollection(
+        categoryEntity,
+        { rows, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
+        { defaultSort: categoryViews.table.defaultSort },
+    )
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null)
 
@@ -80,60 +83,31 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
         onDelete: (category) => handleDelete(category),
     }
 
-    const columns = useMemo<ColumnDef<Category>[]>(() => {
-        return [
-            ...categoryFields.toColumns(),
-            categoryActions.auto(actionsCtx),
-        ]
-    }, [actionsCtx])
-
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    columns={columns}
-                    data={search.filterFn(categories)}
-                    isLoading={isLoading}
-                    entityLabel="inventory.category"
-                    variant="embedded"
-                    unifiedSearch={<UnifiedSearchBar
+            <Collection.Root
+                collection={collection}
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(category) => openSelected(category.id)}
+                actions={categoryActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar
                         config={categoryUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
+                        {...bindUnifiedSearch(search)}
                         placeholder="Buscar categoría..."
-                    />}
-                    unifiedSearchConfig={categoryUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    createAction={createAction}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "inventory",
-                        title: "Aún no hay categorías",
-                        description: "Crea categorías para organizar y clasificar tu catálogo de productos.",
-                    }}
-                    renderCard={(category: Category) => (
-                        <AutoEntityCard
-                            key={category.id}
-                            data={category}
-                            fields={categoryFields}
-                            entityLabel="inventory.category"
-                            actions={categoryActions.render(category, actionsCtx)}
-                            defaultAction={categoryActions.defaultAction(actionsCtx)?.(category) ?? (() => openSelected(category.id))}
-
-                        />
-                    )}
+                    />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={categoryViews.table}
+                    card={categoryViews.card}
+                    emptyTitle="Aún no hay categorías"
+                    emptyDescription="Crea categorías para organizar y clasificar tu catálogo de productos."
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+            </Collection.Root>
 
             {/* Unified Modal — CategoryDrawer keeps rich selectors + audit for both create and edit */}
             <CategoryDrawer

@@ -279,7 +279,7 @@
 - Estado: corregido (lote 2c)
 
 ### TC-052 · Entorno · Verificado
-- Evidencia: tras reiniciar el backend, el frontend del servidor de desarrollo se reinició solo, quedó sin responder (curl sin respuesta en 300 s, 4,0 GB de 5 GB, CPU 0 %) y, tras `docker compose restart frontend`, el host 192.168.1.93 dejó de responder a ping/ssh ("No route to host"). Memoria del host: 6,9 GB en total, 1,5 GB disponibles antes de la caída
+- Evidencia: tras reiniciar el backend, el frontend del servidor de desarrollo se reinició solo, quedó sin responder (curl sin respuesta en 300 s, 4,0 GB de 5 GB, CPU 0 %) y, tras `docker compose restart frontend`, el host 192.168.1.86 dejó de responder a ping/ssh ("No route to host"). Memoria del host: 6,9 GB en total, 1,5 GB disponibles antes de la caída
 - Decisión: avisar al usuario; repetir la verificación del 2c cuando el host vuelva. El host volvió reiniciado (`up 0 min`) y la verificación se completó
 - Estado: resuelto (causa probable: memoria del host; el frontend `next dev --turbo` llega a 4 GB)
 
@@ -325,3 +325,19 @@
 - Decisión propuesta: congelar 3b/3c; oleadas 0 (habilitadores) y A–E por causa de rigidez; reglas M1–M8 con ratchet de consumidores antiguos (`07` §6)
 - Decisión del usuario (2026-10-18): aprobada la replanificación (oleadas, reglas M1–M8); TC-055 espera a la oleada E
 - Estado: aprobado
+
+### TC-061 · Defecto del sistema actual · Verificado (código)
+- Evidencia: `features/inventory/hooks/useCategories.ts` no declaraba `prefix`; `backend/inventory/serializers.py:58` lo envía. `categoryFields.tsx` lo leía con `key: "prefix"` (clave sin comprobar, RC8)
+- Decisión: añadido al tipo al migrar (A1)
+- Estado: corregido
+
+### TC-062 · Defecto del sistema actual · Verificado (código)
+- Evidencia: `UsersSettingsClientView` guardaba la página en `useState` (no se reiniciaba al filtrar → página inexistente posible) y casteaba `setPageState as unknown as …`
+- Decisión: `useServerPage` (A1)
+- Estado: corregido
+
+### TC-063 · Defecto del sistema actual · Verificado (código)
+- Evidencia: `UoMCategoryClientView.handleSave` llamaba a `refetch` de `useUoMs`, que refresca las UdM y no las categorías
+- Decisión: `refetchCategories` (A1)
+- Estado: corregido
+

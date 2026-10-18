@@ -201,3 +201,43 @@ describe("default sorting with server pagination (lote 2b)", () => {
         expect(screen.getAllByRole("columnheader").flatMap((h) => within(h).queryAllByRole("button"))).toHaveLength(0)
     })
 })
+
+describe("client pagination with rows filtered in render (code review, oleada A1)", () => {
+    const many: Item[] = Array.from({ length: 25 }, (_, i) => ({ id: i + 1, name: `Artículo ${String(i + 1).padStart(2, "0")}`, category: "Papeles", stock: i }))
+
+    function Filtered({ list }: { list: Item[] }) {
+        // A new array on every render of the component that owns the hook, like `search.filterFn(rows)` in the views.
+        const collection = useEntityCollection(entity, { rows: list.filter(() => true) }, { pagination: { mode: "client", pageSize: 20 } })
+        return (
+            <Collection.Root collection={collection}>
+                <Collection.View table={views.table} card={views.card} />
+            </Collection.Root>
+        )
+    }
+
+    it("moves to the next page without looping on the new rows array", async () => {
+        render(<Filtered list={many} />)
+        await userEvent.click(screen.getByRole("button", { name: "Ir a la página siguiente" }))
+        expect(screen.getByText("Artículo 21")).toBeInTheDocument()
+    })
+
+    it("clamps to the last existing page when a filter shrinks the list", async () => {
+        const { rerender } = render(<Filtered list={many} />)
+        await userEvent.click(screen.getByRole("button", { name: "Ir a la página siguiente" }))
+        rerender(<Filtered list={many.slice(0, 5)} />)
+        expect(screen.getByText("Artículo 01")).toBeInTheDocument()
+    })
+})
+
+describe("failed background refetch (code review, oleada A1)", () => {
+    it("keeps showing the cached rows instead of the error state", () => {
+        render(<Harness source={{ rows, error: true }} options={{ pagination: { mode: "none" } }} />)
+        expect(screen.getByText("Papel couché")).toBeInTheDocument()
+        expect(screen.queryByText(/No pudimos cargar/)).not.toBeInTheDocument()
+    })
+
+    it("shows the error state when there are no rows", () => {
+        render(<Harness source={{ rows: [], error: true }} options={{ pagination: { mode: "none" } }} />)
+        expect(screen.getByText(/No pudimos cargar/)).toBeInTheDocument()
+    })
+})

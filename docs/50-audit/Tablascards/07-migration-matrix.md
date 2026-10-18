@@ -787,3 +787,48 @@ Verificación:
 - `tsc` sin errores; `eslint` sin errores ni avisos en los archivos tocados.
 - vitest: contrato + entity-view 71, inventory 10, sales 7, purchasing 3.
 - **Sin verificar en la app real:** el servidor de desarrollo estaba fuera de la red (`ssh: No route to host`, ping 100 % perdido). Pendiente: comprobar con el panel cerrado que la lista de Productos no pide `/inventory/products/analytics/`, que su analítica (Resumen, Ventas, Compras, Existencias) se ve igual, y que la de OV también.
+
+### 6.15 Resultado del sub-lote A1 — inventario y configuración (2026-10-18)
+
+Migradas con la receta (§10.2 del contrato). 7 pantallas, 7 entidades, 7 `*Fields` borrados.
+
+| Pantalla | Entidad | Extensiones | Diferencias intencionales frente a la versión anterior |
+|---|---|---|---|
+| `inventory/UoMCategoryClientView` | `uomCategory.entity.ts` | — | título de la card = nombre (antes la heurística ponía el id); orden inicial por nombre |
+| `inventory/WarehouseClientView` | `warehouse.entity.ts` | — | orden inicial por nombre |
+| `inventory/CategoryClientView` | `category.entity.tsx` | kind `categoryIcon` (local) + avatar en la card | icono con `DynamicIcon` (antes importaba todo `lucide-react` y casteaba con `as unknown as`); orden por nombre |
+| `inventory/AttributesClientView` | `attribute.entity.tsx` | kind `attributeValues` (local, reutiliza `AttributeValuesSummary` con su provider) | orden por nombre |
+| `inventory/PricingRuleClientView` | `pricingRule.entity.tsx` | kind `pricingRuleTarget` (local) | 6 columnas en línea → campos; condición, valor y vigencia como texto (pierden negrita/mono); vigencia con fechas formateadas (antes ISO crudo) y "—" si no tiene límites (antes "... a ..."); se mantiene el orden del servidor (`-id`) |
+| `settings/GroupsClientView` | `group.entity.ts` (feature `settings`, carpeta nueva) | — | orden por nombre |
+| `settings/UsersSettingsClientView` | `user.entity.ts` | dominio `user_role` en `badge-resolvers` (datos, no kind) | rol con etiqueta legible (Admin, Gerente…; antes `ADMIN`); grupos funcionales como chips (2 + "+N"); "Contacto" = "—" sin contacto (antes repetía el nombre); etiqueta única `core.user` (antes `core.user` en la tabla y `settings.user` en la card) |
+
+**Defectos del sistema actual encontrados (corregidos al migrar)**
+- **TC-061:** `Category` no declaraba `prefix`, que la API sí envía (`ProductCategorySerializer`); el campo "Siglas" solo funcionaba porque el sistema antiguo aceptaba claves sin comprobar. Añadido al tipo.
+- **TC-062:** usuarios: la página no volvía a la primera al cambiar un filtro (`useState` en vez de `useServerPage`), y el cambio de página necesitaba `setPageState as unknown as …`. Corregido con `useServerPage`.
+- **TC-063:** categorías de UdM: tras guardar se refrescaba la lista de **UdM**, no la de categorías (`refetch` de `useUoMs` es el de las UdM). Ahora `refetchCategories`; los hooks ganan `isError` (UdM-categorías, almacenes, categorías, atributos, reglas, grupos, usuarios) para el estado de error con "Reintentar".
+
+**Deuda registrada (M1, sin cambio)**
+- Almacenes y categorías muestran dos toasts al borrar (el hook y la pantalla).
+
+**Verificación**
+- `tsc` sin errores; `eslint` sin errores en los archivos tocados.
+- vitest: `lib/__tests__` + `components/entity-view` 130/132; `features/inventory`, `features/settings`, `features/users` 10/10. Los 2 fallos son del ratchet `no-unsafe` (TC-039, issue #177) y están en archivos ajenos al A1 (`salesApi`, `ProfitDistributionDrawer`, `CashMovementDrawer`, `TerminalBatchDrawer`); además se quitan de su baseline `DeliveryDrawer` y `useDeliveryData`, que el 3a dejó sin avisos.
+- Avance (`scripts/entity-view-progress.sh`): 14 entidades · 80 pantallas · 52 `*Fields` · 42 `computed` · 48 `toColumns` · 36 `AutoEntityCard` · 132 consumidores.
+- **Sin verificar en la app real:** servidor de desarrollo fuera de la red. Pendiente: una captura por pantalla (1440, y 390 con card).
+
+**`/code-review` medium del A1 (8 hallazgos)**
+
+Corregidos (6):
+1. **Bucle de reinicio de página** (núcleo): `useEntityCollection` dejaba `autoResetPageIndex` de TanStack activo; con `rows: search.filterFn(...)` (un array nuevo por render) cambiar de página reiniciaba y volvía a renderizar sin fin. Ahora `autoResetPageIndex: false` + página acotada a la última existente (derivado, sin efecto). Test de regresión verificado por mutación.
+2. **Error con datos en caché** (núcleo): el estado miraba `error` antes que las filas, así que un refresco en segundo plano fallido tapaba la lista. Ahora las filas ganan. Cambio de contrato → enmienda de ADR-0087 y `component-entity-view.md` §8. Tests de regresión.
+3. Categorías de UdM esperaban también a la consulta de UdM (`isLoading` combinado): ahora `isCategoriesLoading`.
+4. "Añadir valor" de atributos abría el atributo dos veces (el clic burbujeaba a la fila): `stopPropagation`.
+5. Regla de descuento sin porcentaje mostraba "NaN%": ahora "—".
+6. Filtro en cliente recalculado en cada render: `useMemo` con `filterFn` (estable) en las 4 vistas.
+
+Sin cambio (registrados como diferencias intencionales):
+- "Contacto" sin contacto muestra "—" (antes repetía el nombre, ya visible en "Nombre").
+- Categorías de UdM pierden `pageSizeOptions={[10, 20]}`: entity-view no tiene esa opción y añadirla para una pantalla va contra M2.
+
+Verificación posterior: `tsc` y `eslint` limpios en los archivos tocados; vitest `components/entity-view` + contrato 75/75; `features/{inventory,settings,users,sales,purchasing,orders}` 38/38.
+

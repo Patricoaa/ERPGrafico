@@ -12,7 +12,7 @@ export function useGroups() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: groups = [], isLoading } = useQuery({
+    const { data: groups = [], isLoading, isError, refetch } = useQuery({
         queryKey: GROUPS_QUERY_KEY,
         queryFn: settingsApi.getGroups,
         staleTime: staleTime.slow,
@@ -33,6 +33,9 @@ export function useGroups() {
     return {
         groups,
         loading: isLoading,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError,
+        refetch,
         fetchGroups: () => invalidateCrossFeature(queryClient, [GROUPS_QUERY_KEY]),
         deleteGroup: deleteMutation.mutateAsync,
     }

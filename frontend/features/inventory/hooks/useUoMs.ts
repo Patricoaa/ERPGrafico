@@ -92,7 +92,7 @@ export function useUoMs(filters?: FilterState) {
         staleTime: staleTime.session, // 1 hora — datos estáticos
     })
 
-    const { data: categories, isLoading: isCategoriesLoading } = useQuery({
+    const { data: categories, isLoading: isCategoriesLoading, isError: isCategoriesError, refetch: refetchCategories } = useQuery({
         queryKey: UOM_CATEGORIES_KEYS.all,
         queryFn: async (): Promise<UoMCategory[]> => {
             const response = await api.get<UoMCategory[]>('/inventory/uom-categories/')
@@ -156,9 +156,13 @@ export function useUoMs(filters?: FilterState) {
         categories: categories ?? [],
         isLoading: isUoMsLoading || isCategoriesLoading,
         isUoMsLoading,
+        isCategoriesLoading,
         /** The list failed to load (the error itself is reported by the API layer). */
         isError: isUoMsError,
+        /** The category list failed to load. */
+        isCategoriesError,
         refetch,
+        refetchCategories,
         deleteUoM: deleteMutation.mutateAsync,
         saveUoM: saveMutation.mutateAsync,
         isSaving: saveMutation.isPending,

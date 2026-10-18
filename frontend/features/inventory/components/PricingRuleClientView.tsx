@@ -2,45 +2,19 @@
 
 import { showApiError } from "@/lib/errors"
 
-import React, { useMemo } from "react"
+import React from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard } from '@/components/shared'
-import { DataCell } from '@/components/shared'
-import { type ColumnDef } from "@tanstack/react-table"
-import { pricingRuleFields } from "@/features/inventory/pricingRuleFields"
-// useDeletePricingRule consumido vía usePricingRules.
+import { toast } from "sonner"
+import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { PricingRuleDrawer } from "@/features/sales"
 import { pricingRuleActions, type PricingRuleActionsCtx } from "@/features/inventory/pricingRuleActions"
-import { toast } from "sonner"
-
+import { usePricingRules, type PricingRule } from "@/features/inventory/hooks/usePricingRules"
+import { pricingRuleUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-
-interface PricingRule {
-    id: number
-    name: string
-    product?: number
-    product_name?: string
-    category?: number
-    category_name?: string
-    uom?: number
-    uom_name?: string
-    product_code?: string
-    product_internal_code?: string | null
-    operator: "BT" | "GT" | "LT" | "EQ" | "GE" | "LE"
-    operator_display: string
-    min_quantity: string
-    max_quantity?: string
-    rule_type: "FIXED" | "DISCOUNT_PERCENTAGE"
-    rule_type_display: string
-    fixed_price?: string
-    discount_percentage?: string
-    start_date?: string
-    end_date?: string
-    priority: number
-    active: boolean
-}
+import { pricingRuleEntity, pricingRuleViews } from "../entity-view/pricingRule.entity"
 
 interface PricingRuleClientViewProps {
     externalOpen?: boolean
@@ -48,13 +22,11 @@ interface PricingRuleClientViewProps {
     createAction?: React.ReactNode
 }
 
-import { usePricingRules } from "@/features/inventory/hooks/usePricingRules"
-import { Chip, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
-import { pricingRuleUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
-
 export function PricingRuleClientView({ externalOpen, onExternalOpenChange, createAction }: PricingRuleClientViewProps) {
     const search = useUnifiedSearch(pricingRuleUnifiedSearchDef)
-    const { rules, isLoading, refetch, deletePricingRule } = usePricingRules(search.filters)
+    const { rules, isLoading, isError, refetch, deletePricingRule } = usePricingRules(search.filters)
+    const { view, onViewChange } = useCollectionViewMode("inventory.pricingrule")
+    const collection = useEntityCollection(pricingRuleEntity, { rows: rules, isLoading, error: isError, refetch, isFiltered: search.isFiltered })
 
     const router = useRouter()
     const pathname = usePathname()
@@ -95,103 +67,6 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
         onDelete: (id) => handleDelete(id),
     }
 
-    const columns = useMemo<ColumnDef<PricingRule>[]>(() => [
-        ...(pricingRuleFields.toColumns() as ColumnDef<PricingRule>[]),
-        {
-            id: "applies_to",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Aplica a" className="justify-center" />,
-            cell: ({ row }) => {
-                const rule = row.original
-                return (
-                    <div className="flex flex-col items-center gap-1 py-1 w-full">
-                        {rule.product_name ? (
-                            <>
-                                <DataCell.Text>{rule.product_name}</DataCell.Text>
-                                <div className="flex flex-wrap justify-center gap-1">
-                                    {rule.product_internal_code && (
-                                        <DataCell.Code>
-                                            {rule.product_internal_code}
-                                        </DataCell.Code>
-                                    )}
-                                    {rule.product_code && rule.product_code !== rule.product_internal_code && (
-                                        <DataCell.Code>
-                                            {rule.product_code}
-                                        </DataCell.Code>
-                                    )}
-                                </div>
-                            </>
-                        ) : rule.category_name ? (
-                            <Chip size="xs" className="w-fit">Categoría: {rule.category_name}</Chip>
-                        ) : (
-                            <Chip size="xs" className="w-fit">Todos</Chip>
-                        )}
-                    </div>
-                )
-            },
-        },
-        {
-            id: "condition",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Condición (Cantidad)" className="justify-center" />,
-            cell: ({ row }) => {
-                const rule = row.original
-                return (
-                    <div className="text-center font-mono w-full">
-                        <span className="text-xs text-muted-foreground mr-1">{rule.operator_display}</span>
-                        <span className="font-bold">{Number(rule.min_quantity)}</span>
-                        {rule.operator === "BT" && rule.max_quantity && (
-                            <> y <span className="font-bold">{Number(rule.max_quantity)}</span></>
-                        )}
-                    </div>
-                )
-            },
-        },
-        {
-            id: "uom",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="UdM" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    {row.original.uom_name ? (
-                        <Chip size="xs">{row.original.uom_name}</Chip>
-                    ) : (
-                        <span className="text-xs text-muted-foreground italic">Base</span>
-                    )}
-                </div>
-            ),
-            meta: { title: "UdM" },
-        },
-        {
-            id: "value",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Valor" className="justify-center" />,
-            cell: ({ row }) => {
-                const rule = row.original
-                return (
-                    <div className="flex justify-center w-full">
-                        <span className="font-bold">
-                            {rule.rule_type === "FIXED"
-                                ? <DataCell.Currency value={Number(rule.fixed_price)} />
-                                : `${Number(rule.discount_percentage)}%`}
-                        </span>
-                    </div>
-                )
-            },
-        },
-        {
-            id: "validity",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Vigencia" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <span className="text-xs whitespace-nowrap">{row.original.start_date || '...'} a {row.original.end_date || '...'}</span>
-                </div>
-            ),
-        },
-        {
-            accessorKey: "priority",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Prioridad" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full text-center">{row.getValue("priority")}</div>,
-        },
-        pricingRuleActions.auto(actionsCtx),
-    ], [actionsCtx])
-
     return (
         <div className="flex-1 min-h-0 flex flex-col">
             <PricingRuleDrawer
@@ -203,52 +78,29 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                 }}
             />
 
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    columns={columns}
-                    data={rules}
-                    isLoading={isLoading}
-                    entityLabel="inventory.pricingrule"
-                    variant="embedded"
-                    unifiedSearch={<UnifiedSearchBar
+            <Collection.Root
+                collection={collection}
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(rule) => openSelected(rule.id)}
+                actions={pricingRuleActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar
                         config={pricingRuleUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
+                        {...bindUnifiedSearch(search)}
                         placeholder="Buscar reglas de precio..."
-                    />}
-                    unifiedSearchConfig={pricingRuleUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    createAction={createAction}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "inventory",
-                        title: "Aún no hay reglas de precio",
-                        description: "Crea reglas para automatizar descuentos y precios por producto o categoría.",
-                    }}
-                    renderCard={(rule: PricingRule) => (
-                        <AutoEntityCard
-                            key={rule.id}
-                            data={rule}
-                            fields={pricingRuleFields}
-                            entityLabel="inventory.pricingrule"
-
-                            actions={pricingRuleActions.render(rule, actionsCtx)}
-                            defaultAction={pricingRuleActions.defaultAction(actionsCtx)?.(rule) ?? (() => openSelected(rule.id))}
-
-                        />
-                    )}
+                    />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={pricingRuleViews.table}
+                    card={pricingRuleViews.card}
+                    emptyTitle="Aún no hay reglas de precio"
+                    emptyDescription="Crea reglas para automatizar descuentos y precios por producto o categoría."
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+            </Collection.Root>
 
             <ActionConfirmModal
                 open={deleteConfirm.isOpen}

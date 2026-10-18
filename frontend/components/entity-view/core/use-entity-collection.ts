@@ -144,6 +144,14 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
     })
 
     const isServer = pagination.mode === "server"
+    // Client pages are clamped, not auto-reset: TanStack's autoResetPageIndex resets on every new
+    // `rows` array, which loops with views that filter in render (`search.filterFn(rows)`). A filter
+    // that shrinks the list keeps the user on the last existing page instead.
+    const lastClientPage = Math.max(0, Math.ceil(rows.length / clientPagination.pageSize) - 1)
+    const clientPage = React.useMemo(
+        () => (clientPagination.pageIndex > lastClientPage ? { ...clientPagination, pageIndex: lastClientPage } : clientPagination),
+        [clientPagination, lastClientPage],
+    )
     // With server pagination every page/sort/filter brings new rows: a selection made on another
     // page would no longer be visible, and the dock count and the bulk action targets would disagree.
     React.useEffect(() => {
@@ -157,7 +165,7 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
             sorting,
             rowSelection,
             // Omitted (not `undefined`) without pagination, so TanStack keeps its default pagination state.
-            ...(pagination.mode === "none" ? {} : { pagination: pagination.mode === "server" ? pagination.state : clientPagination }),
+            ...(pagination.mode === "none" ? {} : { pagination: pagination.mode === "server" ? pagination.state : clientPage }),
         },
         getRowId: (row) => rowIdOf(entity, row),
         onSortingChange: (updater) => {
@@ -171,24 +179,26 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
             if (pagination.mode === "server") {
                 pagination.onChange(typeof updater === "function" ? updater(pagination.state) : updater)
             } else {
-                setClientPagination(updater)
+                setClientPagination(typeof updater === "function" ? updater(clientPage) : updater)
             }
         },
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         ...(pagination.mode === "client" ? { getPaginationRowModel: getPaginationRowModel() } : {}),
         manualPagination: isServer,
+        autoResetPageIndex: false,
         rowCount: isServer ? source.rowCount : undefined,
         enableRowSelection: true,
     })
 
+    // Rows win over a failed background refetch: cached data stays visible (legacy DataTableView parity).
     const status: CollectionStatus = source.isLoading
         ? "loading"
-        : source.error
-            ? "error"
-            : rows.length === 0
-                ? "empty"
-                : "ready"
+        : rows.length > 0
+            ? "ready"
+            : source.error
+                ? "error"
+                : "empty"
 
     const groupBy = options.groupBy ?? null
     const pageRows = table.getRowModel().rows

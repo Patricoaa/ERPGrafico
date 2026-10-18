@@ -1,17 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useGroups } from "../hooks"
-import { ActionConfirmModal, DataTableView, AutoEntityCard } from '@/components/shared'
-import { type ColumnDef } from "@tanstack/react-table"
-import { Users } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { GroupDrawer } from "@/features/users"
-import { groupActions, type GroupActionsCtx } from './groupActions'
-import { groupFields } from '../groupFields'
-import type { Group } from "../api/types"
-
-import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { groupUnifiedSearchDef } from "@/features/settings/unifiedSearchDef"
+import { useGroups } from "../hooks"
+import type { Group } from "../api/types"
+import { groupEntity, groupViews } from "../entity-view/group.entity"
+import { groupActions, type GroupActionsCtx } from "./groupActions"
 
 interface GroupsClientViewProps {
     externalOpen?: boolean
@@ -20,8 +17,16 @@ interface GroupsClientViewProps {
 }
 
 export function GroupsClientView({ externalOpen, onExternalOpenChange, createAction }: GroupsClientViewProps) {
-    const { groups, loading, fetchGroups, deleteGroup } = useGroups()
+    const { groups, loading, isError, refetch, fetchGroups, deleteGroup } = useGroups()
     const search = useUnifiedSearch(groupUnifiedSearchDef)
+    const { filterFn } = search
+    const { view, onViewChange } = useCollectionViewMode("settings.group")
+    const rows = useMemo(() => filterFn(groups), [filterFn, groups])
+    const collection = useEntityCollection(
+        groupEntity,
+        { rows, isLoading: loading, error: isError, refetch, isFiltered: search.isFiltered },
+        { defaultSort: groupViews.table.defaultSort },
+    )
     const [deleteId, setDeleteId] = useState<number | null>(null)
     const [showCreateModal, setShowCreateModal] = useState(false)
     const [editingGroup, setEditingGroup] = useState<Group | null>(null)
@@ -45,54 +50,30 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
         onDelete: (id) => setDeleteId(id),
     }
 
-    const columns: ColumnDef<Group>[] = [
-        ...groupFields.toColumns(),
-        groupActions.auto(groupActionsCtx)
-    ]
-
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    entityLabel="settings.group"
-                    columns={columns}
-                    data={search.filterFn(groups)}
-                    isLoading={loading}
-                    variant="embedded"
-                    unifiedSearch={<UnifiedSearchBar
+            <Collection.Root
+                collection={collection}
+                view={view}
+                onViewChange={onViewChange}
+                // Edit in the local drawer (no ?selected route for groups).
+                onOpen={(group) => groupActionsCtx.onEdit(group)}
+                actions={groupActions.forCollection(groupActionsCtx)}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar
                         config={groupUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
+                        {...bindUnifiedSearch(search)}
                         placeholder="Buscar grupo..."
-                    />}
-                    unifiedSearchConfig={groupUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    createAction={createAction}
-                    renderCard={(group: Group) => (
-                        <AutoEntityCard 
-                            key={group.id} 
-                            data={group}
-                            fields={groupFields}
-                            entityLabel="settings.group"
-                            onClick={() => groupActionsCtx.onEdit(group)}
-                            icon={Users}
-                            actions={groupActions.render(group, groupActionsCtx)}
-
-                        />
-                    )}
-                    cardSkeleton={{ showBody: false }}
+                    />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={groupViews.table}
+                    card={groupViews.card}
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+            </Collection.Root>
 
             <GroupDrawer
                 open={showCreateModal}

@@ -2,25 +2,20 @@
 
 import { showApiError } from "@/lib/errors"
 
-import React, { useMemo, useCallback } from "react"
-import { Trash2, Tag } from "lucide-react"
+import React, { useCallback, useMemo } from "react"
+import { Trash2 } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-
-import { DataTableView, AutoEntityCard } from '@/components/shared'
-import { attributeActions, type AttributeActionsCtx } from './attributeActions'
-import { type ColumnDef } from "@tanstack/react-table"
-import { Checkbox } from "@/components/ui/checkbox"
-import type { BulkAction } from "@/components/shared"
+import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
+import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared"
-import { attributeFields } from "../attributeFields"
-import { AttributeValuesProvider } from "./AttributeValuesSummary"
-import { useAttributes, type Attribute } from "@/features/inventory/hooks/useAttributes"
-import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
-import { attributeUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { useAttributes, type Attribute } from "@/features/inventory/hooks/useAttributes"
+import { attributeUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
+import { attributeEntity, attributeViews } from "../entity-view/attribute.entity"
+import { attributeActions, type AttributeActionsCtx } from "./attributeActions"
+import { AttributeValuesProvider } from "./AttributeValuesSummary"
 import { AttributeDrawer } from "./AttributeDrawer"
 
 interface AttributesClientViewProps {
@@ -34,10 +29,17 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
     const {
         attributes,
         isLoading,
+        isError,
         refetch,
         deleteAttribute,
         deleteAttributeValue,
     } = useAttributes({ filters: search.filters })
+    const { view, onViewChange } = useCollectionViewMode("inventory.attribute")
+    const collection = useEntityCollection(
+        attributeEntity,
+        { rows: attributes, isLoading, error: isError, refetch, isFiltered: search.isFiltered },
+        { defaultSort: attributeViews.table.defaultSort },
+    )
 
     const searchParams = useSearchParams()
     const router = useRouter()
@@ -101,39 +103,6 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
         }
     })
 
-    const columns = useMemo<ColumnDef<Attribute>[]>(() => [
-        {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={
-                        table.getIsAllPageRowsSelected()
-                            ? true
-                            : table.getIsSomePageRowsSelected()
-                            ? "indeterminate"
-                            : false
-                    }
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                    variant="circle"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                    variant="circle"
-                />
-            ),
-            enableSorting: false,
-            enableHiding: false,
-            size: 40,
-        },
-        ...attributeFields.toColumns(),
-        attributeActions.auto(attributeActionsCtx),
-    ], [attributeActionsCtx])
-
     const bulkActions = useMemo<BulkAction<Attribute>[]>(() => [
         {
             key: "delete",
@@ -146,58 +115,38 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <AttributeValuesProvider
-                    value={{
-                        onDeleteValue: (valueId) => handleDeleteValue(valueId),
-                        onAddValue: (attributeId) => openSelected(attributeId),
-                    }}
+            <AttributeValuesProvider
+                value={{
+                    onDeleteValue: (valueId) => handleDeleteValue(valueId),
+                    onAddValue: (attributeId) => openSelected(attributeId),
+                }}
+            >
+                <Collection.Root
+                    collection={collection}
+                    selection="bulk"
+                    view={view}
+                    onViewChange={onViewChange}
+                    onOpen={(attr) => openSelected(attr.id)}
+                    actions={attributeActions.forCollection(attributeActionsCtx)}
                 >
-                <DataTableView
-                    entityLabel="inventory.attribute"
-                    columns={columns}
-                    data={attributes}
-                    isLoading={isLoading}
-                    variant="embedded"
-                    bulkActions={bulkActions}
-                    createAction={createAction}
-                    unifiedSearch={<UnifiedSearchBar
-                        config={attributeUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar atributo..."
-                    />}
-                    unifiedSearchConfig={attributeUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "inventory",
-                        title: "Aún no hay atributos",
-                        description: "Crea atributos (color, talla…) para generar variantes de producto.",
-                    }}
-                    renderCard={(attr: Attribute) => (
-                        <AutoEntityCard
-                            key={attr.id}
-                            data={attr}
-                            fields={attributeFields}
-                            entityLabel="inventory.attribute"
-                            icon={Tag}
-                            actions={attributeActions.render(attr, attributeActionsCtx)}
+                    <Collection.Toolbar action={createAction}>
+                        <UnifiedSearchBar
+                            config={attributeUnifiedSearchDef}
+                            {...bindUnifiedSearch(search)}
+                            placeholder="Buscar atributo..."
                         />
-                    )}
-                />
-                </AttributeValuesProvider>
-            </div>
+                    </Collection.Toolbar>
+                    <Collection.View
+                        table={attributeViews.table}
+                        card={attributeViews.card}
+                        emptyTitle="Aún no hay atributos"
+                        emptyDescription="Crea atributos (color, talla…) para generar variantes de producto."
+                        emptyAction={createAction}
+                        onResetFilters={search.clearAll}
+                    />
+                    <Collection.BulkBar actions={bulkActions} />
+                </Collection.Root>
+            </AttributeValuesProvider>
 
             <AttributeDrawer
                 onSuccess={() => { void refetch() }}

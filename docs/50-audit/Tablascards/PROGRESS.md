@@ -1,11 +1,11 @@
 # Progreso — Nuevo sistema de presentación
-- **Avance (2026-10-18): 7 entidades `defineEntity` · 87 pantallas y 146 consumidores en el sistema antiguo** (`bash frontend/scripts/entity-view-progress.sh`)
-- Fase actual: 7 · oleada 0 completada (receta en el contrato §10.2; lo ya migrado alineado, `07` §6.14) · Puerta D del A1 aprobada
+- **Avance (2026-10-18): 14 entidades `defineEntity` · 80 pantallas y 132 consumidores en el sistema antiguo** (`bash frontend/scripts/entity-view-progress.sh`)
+- Fase actual: 7 · oleada A · A1 implementado + `/code-review` aplicado (`07` §6.15), sin commitear · esperando al usuario
 - Último completado: lote 3a. Líneas de la ficha (OV/OC/factura) sobre `orderLineEntity`; `DeliveryDrawer` y `ReceiptModal` con `EditableCollection` + RHF; núcleo con `processed`/`check`/`rowStatus` y `core/define-editable.ts`. TC-012 y TC-056 corregidos; TC-057 y TC-058 encontrados y corregidos; TC-059 para el usuario. Detalle en `07` §5.7
-- Próximo paso exacto: verificar en la app la alineación de §6.14 cuando vuelva el servidor de desarrollo → migrar A1 (UoMCategory, Warehouse, Category, Attributes, PricingRule, Groups, Users) con la receta
+- Próximo paso exacto: el usuario autoriza el commit del A1 → verificación en la app de §6.14 y §6.15 cuando vuelva el servidor → A2 (RR. HH. y POS)
 - Rama: `refactor/entity-view-lote-3` (3a commiteado en `7ef87d7a7`); issues abiertas #176, #177
 - Puertas: A ✅ · B ✅ · C ✅ · D lote 1 ✅ · D 2a ✅ · D 2b ✅ · D 2c ✅ (2026-10-17) · D lote 3 ✅ (2026-10-18) · replanificación ✅ (2026-10-18) · D A1 ✅ (2026-10-18)
-- Preguntas abiertas para el usuario: ninguna. Bloqueo: el servidor de desarrollo 192.168.1.93 no está en la red (2026-10-18)
+- Preguntas abiertas para el usuario: commit del A1. Bloqueo: servidor de desarrollo 192.168.1.86 fuera de la red (2026-10-18)
 - Decisiones del usuario:
   - 2026-10-17: las tablas de wizard/modal entran como caso de uso específico · `as any` de `AutoEntityCard.tsx:390` espera al rediseño · `journalEntryFields` lo determina la auditoría (→ TC-016) · TC-012 se corrige en la migración
   - 2026-10-17 Puerta A: aprueba RC1–RC8 y la matriz C/F/E; pantallas de la Fase 4 = UoM, OV, Compras; aprueba `role="grid"` → `role="table"` en `compact`; **exportación = requisito** (aclarado)
@@ -41,3 +41,5 @@
   - 2026-10-18 Lote 3a cerrado: commit `7ef87d7a7` autorizado por el usuario. TC-059 se corrige después.
   - 2026-10-18 Oleada 0: ratchet `LEGACY_CONSUMERS` (146, verificado por mutación), script de avance, 2 `*Fields` muertos borrados (TC-016). Al medir, `fromLegacyFields()` resulta de poco valor y rompe el tipado de ids (`07` §6.12).
   - 2026-10-18 Usuario: descarta `fromLegacyFields()` (receta en el contrato) y pide alinear lo ya migrado; aprueba el A1 y el commit de la oleada 0. Alineación: Productos pedía 3 analíticas en cada carga (corregido); builders de analítica fuera de las pantallas de Productos y OV. Servidor de desarrollo caído: verificación en la app pendiente.
+  - 2026-10-18 A1 implementado: 7 pantallas de inventario y configuración con la receta; TC-061 (prefix sin tipo), TC-062 (página de usuarios), TC-063 (refetch equivocado). Ratchet no-unsafe sigue rojo por archivos ajenos (#177).
+  - 2026-10-18 `/code-review` del A1: 6 corregidos (2 en el núcleo: bucle de reinicio de página y error que tapaba datos en caché → enmienda ADR-0087), 2 registrados como diferencias.

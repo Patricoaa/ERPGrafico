@@ -104,7 +104,7 @@ Reglas:
 |---|---|---|
 | `rows` | `readonly T[] \| undefined` | **obligatorio**; viene de un hook de feature (invariante #5) |
 | `isLoading` / `isRefetching` | `boolean` | carga inicial / refetch con datos visibles |
-| `error` | `unknown` | cualquier valor no nulo activa el estado de error |
+| `error` | `unknown` | cualquier valor no nulo activa el estado de error **si no hay filas** (con filas en caché se siguen mostrando) |
 | `rowCount` | `number` | total del servidor; **obligatorio** con paginación en servidor, y también al agrupar una página acotada (activa el aviso de truncado) |
 | `refetch` | `() => void` | habilita "Reintentar" en el estado de error |
 | `isFiltered` | `boolean` | cambia el copy del vacío ("Ningún resultado para el filtro") |
@@ -205,7 +205,9 @@ No existe inferencia por rol, por regex de nombre de clave ni por capacidad de z
 
 ## 8. Estados y accesibilidad
 
-**Precedencia de estados:** `loading` → `error` → `empty` → `ready`. `isRefetching` no cambia el estado: mantiene los datos visibles con `aria-busy`.
+**Precedencia de estados:** `loading` → `ready` (hay filas) → `error` → `empty`. Un refresco en segundo plano que falla con datos en caché **no** tapa la lista: el estado de error solo aparece sin filas (paridad con `DataTableView`; enmienda de ADR-0087, 2026-10-18). `isRefetching` no cambia el estado: mantiene los datos visibles con `aria-busy`.
+
+**Paginación en cliente:** la página no se reinicia sola cuando llega un array de filas nuevo (`autoResetPageIndex: false`, como el `DataTable` antiguo); si un filtro acorta la lista, se muestra la última página existente. Así una vista puede filtrar en el render sin entrar en bucle.
 
 | Estado | Comportamiento |
 |---|---|

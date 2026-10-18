@@ -216,7 +216,7 @@ export function resolveEntity(label: string, data: Record<string, unknown>): Res
 // CATEGORY & ENUM MAPPINGS (for Chip.Category)
 // ----------------------------------------------------------------------
 
-export type CategoryDomain = 'product_type' | 'tax_type' | 'transaction_type' | 'dte_type' | 'contact_type' | 'payment_method' | 'account_type' | 'channel' | 'absence_type'
+export type CategoryDomain = 'product_type' | 'tax_type' | 'transaction_type' | 'dte_type' | 'contact_type' | 'payment_method' | 'account_type' | 'channel' | 'absence_type' | 'user_role'
 
 interface CategoryEntry {
     intent: BadgeIntent
@@ -281,7 +281,14 @@ const CATEGORY_MAP: Record<CategoryDomain, Record<string, CategoryEntry>> = {
         'LICENCIA':         { intent: 'info',        label: 'Licencia' },
         'PERMISO_SIN_GOCE': { intent: 'warning',     label: 'Permiso s/Goce' },
         'AUSENCIA_HORAS':   { intent: 'neutral',     label: 'Horas' },
-    }
+    },
+    // System roles (Django groups seeded by core); functional groups are free tags.
+    user_role: {
+        'ADMIN':     { intent: 'primary', label: 'Admin' },
+        'MANAGER':   { intent: 'warning', label: 'Gerente' },
+        'OPERATOR':  { intent: 'info',    label: 'Operador' },
+        'READ_ONLY': { intent: 'neutral', label: 'Lectura' },
+    },
 }
 
 export function resolveCategory(domain: CategoryDomain, value: string): CategoryEntry {

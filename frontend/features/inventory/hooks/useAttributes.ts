@@ -33,7 +33,7 @@ export function useAttributes({ filters }: { filters?: AttributeFilters } = {}) 
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: attributes, isLoading, refetch } = useQuery({
+    const { data: attributes, isLoading, isError, refetch } = useQuery({
         queryKey: [...ATTRIBUTES_QUERY_KEY, filters],
         queryFn: async (): Promise<Attribute[]> => {
             const [attrRes, valRes] = await Promise.all([
@@ -100,6 +100,8 @@ export function useAttributes({ filters }: { filters?: AttributeFilters } = {}) 
     return {
         attributes: attributes ?? [],
         isLoading,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError,
         refetch,
         saveAttribute: saveAttributeMutation.mutateAsync,
         isSaving: saveAttributeMutation.isPending,

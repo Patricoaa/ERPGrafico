@@ -39,7 +39,7 @@ export function useWarehouses() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: warehouses, isLoading, refetch } = useQuery({
+    const { data: warehouses, isLoading, isError, refetch } = useQuery({
         queryKey: WAREHOUSES_KEYS.list(),
         queryFn: async (): Promise<Warehouse[]> => {
             const response = await api.get<Warehouse[]>('/inventory/warehouses/')
@@ -82,6 +82,8 @@ export function useWarehouses() {
     return {
         warehouses: warehouses ?? [],
         isLoading,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError,
         refetch,
         saveWarehouse: saveWarehouseMutation.mutateAsync,
         isSaving: saveWarehouseMutation.isPending,

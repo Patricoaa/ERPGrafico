@@ -4,25 +4,18 @@ import { showApiError } from "@/lib/errors"
 
 import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-// deleteUoMCategory consumido vía useUoMs.
-import { ActionConfirmModal, DataTableView, AutoEntityCard } from '@/components/shared'
-import { type ColumnDef } from "@tanstack/react-table"
-import { Checkbox } from "@/components/ui/checkbox"
-import { uomCategoryFields } from "@/features/inventory/uomCategoryFields"
 import { Trash2 } from "lucide-react"
-import type { BulkAction } from "@/components/shared"
-import { UoMCategoryDrawer } from "./UoMCategoryDrawer"
-import { uomCategoryActions, type UoMCategoryActionsCtx } from "@/features/inventory/uomCategoryActions"
 import { toast } from "sonner"
-
+import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
+import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { uomCategoryActions, type UoMCategoryActionsCtx } from "@/features/inventory/uomCategoryActions"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-
-interface UoMCategory {
-    id: number
-    name: string
-}
+import { useUoMs, type UoMCategory } from "@/features/inventory/hooks/useUoMs"
+import { uomCategoryUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
+import { uomCategoryEntity, uomCategoryViews } from "../entity-view/uomCategory.entity"
+import { UoMCategoryDrawer } from "./UoMCategoryDrawer"
 
 interface UoMCategoryClientViewProps {
     externalOpen?: boolean
@@ -30,13 +23,17 @@ interface UoMCategoryClientViewProps {
     createAction?: React.ReactNode
 }
 
-import { useUoMs } from "@/features/inventory/hooks/useUoMs"
-import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
-import { uomCategoryUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
-
 export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, createAction }: UoMCategoryClientViewProps) {
-    const { categories, isLoading, refetch, deleteUoMCategory } = useUoMs()
+    const { categories, isCategoriesLoading, isCategoriesError, refetchCategories, deleteUoMCategory } = useUoMs()
     const search = useUnifiedSearch(uomCategoryUnifiedSearchDef)
+    const { filterFn } = search
+    const { view, onViewChange } = useCollectionViewMode("inventory.uomcategory")
+    const rows = useMemo(() => filterFn(categories), [filterFn, categories])
+    const collection = useEntityCollection(
+        uomCategoryEntity,
+        { rows, isLoading: isCategoriesLoading, error: isCategoriesError, refetch: refetchCategories, isFiltered: search.isFiltered },
+        { defaultSort: uomCategoryViews.table.defaultSort },
+    )
 
     const router = useRouter()
     const pathname = usePathname()
@@ -61,7 +58,7 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
     const handleSave = async (category?: UoMCategory) => {
         if (category) {
             handleCloseModal()
-            refetch()
+            void refetchCategories()
         }
     }
 
@@ -87,43 +84,10 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
 
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
-    const actionsCtx: UoMCategoryActionsCtx = useMemo(() => ({
+    const actionsCtx: UoMCategoryActionsCtx = {
         onEdit: (item) => openSelected(item.id),
         onDelete: (id) => handleDelete(id),
-    }), [openSelected])
-
-    const columns = useMemo<ColumnDef<UoMCategory>[]>(() => [
-        {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={
-                        table.getIsAllPageRowsSelected()
-                            ? true
-                            : table.getIsSomePageRowsSelected()
-                            ? "indeterminate"
-                            : false
-                    }
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                    variant="circle"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                    variant="circle"
-                />
-            ),
-            enableSorting: false,
-            enableHiding: false,
-            size: 40,
-        },
-        ...uomCategoryFields.toColumns(),
-        uomCategoryActions.auto(actionsCtx),
-    ], [actionsCtx])
+    }
 
     const bulkActions = useMemo<BulkAction<UoMCategory>[]>(() => [
         {
@@ -137,53 +101,31 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    columns={columns}
-                    data={search.filterFn(categories)}
-                    isLoading={isLoading}
-                    entityLabel="inventory.uomcategory"
-                    variant="embedded"
-                    unifiedSearch={<UnifiedSearchBar
+            <Collection.Root
+                collection={collection}
+                selection="bulk"
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(cat) => openSelected(cat.id)}
+                actions={uomCategoryActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar
                         config={uomCategoryUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
+                        {...bindUnifiedSearch(search)}
                         placeholder="Buscar categoría..."
-                    />}
-                    unifiedSearchConfig={uomCategoryUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    pageSizeOptions={[10, 20]}
-                    bulkActions={bulkActions}
-                    createAction={createAction}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "inventory",
-                        title: "Aún no hay categorías de medida",
-                        description: "Agrupa unidades de medida relacionadas (peso, longitud, volumen…).",
-                    }}
-                    renderCard={(cat: UoMCategory) => (
-                        <AutoEntityCard
-                            key={cat.id}
-                            data={cat}
-                            fields={uomCategoryFields}
-                            entityLabel="inventory.uomcategory"
-                            actions={uomCategoryActions.render(cat, actionsCtx)}
-                            defaultAction={uomCategoryActions.defaultAction(actionsCtx)?.(cat) ?? (() => openSelected(cat.id))}
-
-                        />
-                    )}
+                    />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={uomCategoryViews.table}
+                    card={uomCategoryViews.card}
+                    emptyTitle="Aún no hay categorías de medida"
+                    emptyDescription="Agrupa unidades de medida relacionadas (peso, longitud, volumen…)."
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+                <Collection.BulkBar actions={bulkActions} />
+            </Collection.Root>
 
             <UoMCategoryDrawer
                 open={dialogOpen}

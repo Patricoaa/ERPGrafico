@@ -92,7 +92,7 @@ Cifras orientativas, a re-medir: 47 archivos con `AutoEntityCard`, 57 con `toCol
 
 1. Re-medir el §2 con comandos reproducibles: props de `DataTableProps`, miembros de `DataCell`, `FieldType`, consumidores de cada pieza, `renderCard`, columnas `computed`, tablas directas fuera de shared, `*Fields.ts` frente a entidades con vista de lista.
 2. Inventario de consumidores (subagente `Explore`): archivo · entidad · superficies · usa `toColumns` · usa `AutoEntityCard` · `renderCard` manual · nº de `computed` · tabla paralela.
-3. Entorno: Node local es **v18.19.1**, así que vitest no corre en local. Los tests se ejecutan en el servidor de desarrollo (`docs/30-playbooks/remote-dev-server.md`; antes comprobar `mutagen sync list` y, si no conecta, avisar y parar). La app está en `http://192.168.1.93:3000`.
+3. Entorno: Node local es **v18.19.1**, así que vitest no corre en local. Los tests se ejecutan en el servidor de desarrollo (`docs/30-playbooks/remote-dev-server.md`; antes comprobar `mutagen sync list` y, si no conecta, avisar y parar). La app está en `http://192.168.1.86:3000`.
 4. Seleccionar **8–10 pantallas representativas**, incluyendo obligatoriamente las de **mayor rigidez** (más `computed`/`renderCard`), una trivial (catálogo simple, p. ej. UoM), una documental (factura u OV con ficha) y una específica de imprenta (OT, BOM o producción).
 
 Entregable: `00-system-map.md` (+ `PROGRESS.md`, `ledger.md`).

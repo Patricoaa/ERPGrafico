@@ -68,6 +68,11 @@ Gate A (2026-10-17) approved these causes, the common/frequent/specific requirem
     - ~~`fromLegacyFields()` adapts schemas that have no `computed`.~~ **Amended 2026-10-18:** dropped. A runtime adapter turns typed field ids back into `string` (the TC-012 defect class) and saves little: the definition is ~10 % of a migration, the screen is the rest. Migration follows the recipe in `component-entity-view.md` §10.2.
     - Migration runs in waves (Phase 7 replan, `docs/50-audit/Tablascards/07-migration-matrix.md` §6); a ratchet test (`LEGACY_CONSUMERS`) lets the legacy consumer list only shrink. The legacy system is removed when it has zero consumers (ADR-0072 precedent).
 
+### Amendment 2026-10-18 · collection states and client paging (oleada A1 code review)
+
+- State precedence becomes `loading` → `ready` → `error` → `empty`: a failed background refetch with cached rows keeps the rows visible (legacy `DataTableView` parity). Before, every migrated list passing `error: isError` hid its data behind the error panel on a network blip.
+- Client pagination sets `autoResetPageIndex: false` (as the legacy `DataTable` did) and clamps the page to the last existing one. With TanStack's default, a view that filters in render (`search.filterFn(rows)`) reset the page on every render and looped.
+
 ### Adjustments from the spike (part of this decision)
 
 - **A1 · Self-registering extensions.** A feature extension exports a field builder (e.g. `docRef(f, accessor, opts)`) that registers its kind when used, so no runtime bootstrap is needed and cross-feature use goes through the owning feature's barrel. Found by the onboarding test.

@@ -8,6 +8,8 @@ import { staleTime } from '@/lib/query-config'
 export interface Category {
     id: number
     name: string
+    /** Product code prefix ("PROD" when empty, `inventory.models.Product`). */
+    prefix?: string | null
     parent: number | null
     parent_name: string | null
     asset_account: number | null
@@ -91,6 +93,8 @@ export function useCategories(initialData?: Category[]) {
         categories,
         isLoading: showSkeleton,
         isRefetching: query.isFetching && !showSkeleton,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError: query.isError,
         refetch,
         saveCategory: saveCategoryMutation.mutateAsync,
         isSaving: saveCategoryMutation.isPending,
