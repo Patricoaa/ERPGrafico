@@ -221,15 +221,16 @@ function ThemeSelectionCard() {
 
 function InfoField({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
     return (
-        <fieldset className="notched-field pointer-events-none" aria-disabled="true">
-            <legend className="px-1.5 text-3xs font-bold uppercase tracking-widest text-muted-foreground">
-                {label}
-            </legend>
-            <div className="flex items-center gap-2 h-5 px-2 text-sm font-medium text-foreground">
-                <span className="text-muted-foreground/60">{icon}</span>
-                {value}
-            </div>
-        </fieldset>
+        <LabeledInput
+            label={label}
+            value={value}
+            disabled
+            readOnly
+            icon={icon}
+            className="bg-background/50 text-foreground"
+            labelClassName="text-3xs text-muted-foreground"
+            containerClassName="pointer-events-none"
+        />
     )
 }
 

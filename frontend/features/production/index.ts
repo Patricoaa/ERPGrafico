@@ -4,7 +4,6 @@ export { WorkOrderTimeline } from './components/WorkOrderTimeline'
 export { ProductionMetricsCard } from './components/ProductionMetricsCard'
 export { BOMDrawer } from './components/BOMDrawer'
 export { BOMClientView } from './components/BOMClientView'
-export type { BOMListItem } from './components/BOMClientView'
 export {
   useWorkOrderProducts,
   useBOMs,

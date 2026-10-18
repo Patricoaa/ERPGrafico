@@ -15,14 +15,6 @@ import { bomUnifiedSearchDef } from "@/features/production"
 
 import type { BOM, ProductMinimal } from "@/features/production/types"
 
-export interface BOMListItem extends BOM {
-    product_name: string
-    product_code: string
-    product_internal_code?: string
-    lines_count: number
-    total_cost: number
-}
-
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
 const BOM_GROUPS: Record<string, FieldId<typeof bomEntity.fields>> = { active: "active" }
 
@@ -42,6 +34,8 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
 
     const { deleteBom } = useDeleteBomMutation()
     const { data: editingBomData } = useBOM(editingBomId ?? undefined)
+    // `getBOM` has no typed response: cast once here instead of a cast per field below.
+    const editingBom = editingBomData as BOM | undefined
 
     const search = useUnifiedSearch(bomUnifiedSearchDef)
     const allFilters = { ...search.filters }
@@ -111,11 +105,11 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
                 open={isFormOpen}
                 onOpenChange={handleFormClose}
                 onSuccess={refetchBoms}
-                bomToEdit={editingBomData as BOM | undefined}
-                product={editingBomData ? {
-                    id: (editingBomData as unknown as { product: number }).product,
-                    name: (editingBomData as unknown as BOMListItem).product_name,
-                    code: (editingBomData as unknown as BOMListItem).product_code
+                bomToEdit={editingBom}
+                product={editingBom ? {
+                    id: editingBom.product,
+                    name: editingBom.product_name,
+                    code: editingBom.product_code,
                 } as unknown as ProductMinimal : undefined}
             />
 
