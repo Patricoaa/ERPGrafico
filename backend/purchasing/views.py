@@ -109,8 +109,10 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHist
     filter_backends = [DjangoFilterBackend, DistinctSearchFilter, filters.OrderingFilter]
     filterset_class = PurchaseOrderFilterSet
     search_fields = ["supplier__name", "supplier__tax_id", "number", "lines__product__name"]
-    # Server ordering (ADR-0087 lote 2c): `?ordering=<key>,id`; without it the model order is kept.
+    # Server ordering (ADR-0087 lote 2c): `?ordering=<key>,id`; without it, newest first (the model
+    # has no Meta.ordering and an unordered queryset pages unstably).
     ordering_fields = ["id", "number", "date", "supplier__name", "receipt_date", "total"]
+    ordering = ["-date", "-id"]
 
     @action(detail=False, methods=["get"], url_path="analytics")
     def analytics(self, request):

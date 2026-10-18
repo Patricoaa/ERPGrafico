@@ -171,7 +171,7 @@ function Toolbar({ children, action, views = ["table", "card"], exportFilters = 
     return (
         <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                <div className="min-w-56 flex-1">{children}</div>
+                {children && <div className="min-w-56 flex-1">{children}</div>}
                 {action}
             </div>
             {exportSpec && <ExportButtons spec={exportSpec} filters={exportFilters} />}

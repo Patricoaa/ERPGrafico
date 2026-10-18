@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite"
 import { Collection, CollectionModes, useEntityCollection } from "@/components/entity-view"
 import { withEntityView } from "@/components/entity-view/stories/withEntityView"
 import { purchaseNoteEntity, purchaseNoteViews } from "./purchaseNote.entity"
-import type { Invoice } from "@/features/billing/types"
+import type { Invoice } from "@/features/billing"
 import type { PurchaseOrderAPI } from "../types"
 import { purchaseOrderEntity, purchaseOrderViews } from "./purchaseOrder.entity"
 

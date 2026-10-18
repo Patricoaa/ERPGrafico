@@ -6,7 +6,8 @@ import pytest
 from rest_framework.test import APIClient
 
 from contacts.models import Contact
-from purchasing.models import PurchaseOrder
+from inventory.models import Product, ProductCategory, UoM, UoMCategory
+from purchasing.models import PurchaseLine, PurchaseOrder
 
 TODAY = date.today()
 THIS_MONTH = date(TODAY.year, TODAY.month, 1)
@@ -19,9 +20,18 @@ def client_and_orders(db):
     user = get_user_model().objects.create_superuser(username="poanalytics", password="password")
     acme = Contact.objects.create(name="Papelera", tax_id="11111111-1")
     beta = Contact.objects.create(name="Tintas", tax_id="22222222-2")
-    # 25 orders: more than one page (20).
+    uom_cat, _ = UoMCategory.objects.get_or_create(name="Unidades")
+    uom, _ = UoM.objects.get_or_create(name="unidad", defaults={"ratio": 1, "category": uom_cat})
+    category, _ = ProductCategory.objects.get_or_create(name="Papeles", defaults={"prefix": "PAP"})
+    # Same name, different products: the analytics must not merge them.
+    papers = [
+        Product.objects.create(name="Papel Bond", internal_code=f"PB-{n}", product_type=Product.Type.STORABLE,
+                               uom=uom, category=category, cost_price=Decimal("0"))
+        for n in (1, 2)
+    ]
+    # 25 orders: more than one page (20), each with one line (exercises the line prefetches).
     for i in range(25):
-        PurchaseOrder.objects.create(
+        order = PurchaseOrder.objects.create(
             supplier=acme if i % 5 else beta,
             number=f"OC-{i:03d}",
             status="CONFIRMED",
@@ -30,6 +40,7 @@ def client_and_orders(db):
             receiving_status="PENDING",
             total=Decimal(200_000 if i < 20 else 2_000_000),
         )
+        PurchaseLine.objects.create(order=order, product=papers[i % 2], quantity=Decimal("1"), unit_cost=Decimal("1000"), uom=uom)
     client = APIClient()
     client.force_authenticate(user=user)
     return client
@@ -48,6 +59,9 @@ def test_analytics_covers_the_whole_filtered_list(client_and_orders):
     assert data["invoiced"]["pending_volume"] == totals["total_volume"]
     assert set(data["by_type"]) == {"storable", "service", "subscription"}
     assert {s["id"]: s["value"] for s in data["funnel"]}["CONFIRMED"] == 25
+    storable = data["by_type"]["storable"]
+    assert storable["order_count"] == 25 and storable["categories"] == [{"id": "Papeles", "value": storable["total_volume"]}]
+    assert [p["product"] for p in data["top_products"]] == ["Papel Bond", "Papel Bond"]
 
 
 @pytest.mark.django_db

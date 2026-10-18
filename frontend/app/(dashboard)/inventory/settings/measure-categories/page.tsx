@@ -1,5 +1,3 @@
-"use client"
-
 import { UoMCategoryClientView } from "@/features/inventory"
 import { ToolbarCreateButton } from "@/components/shared"
 import { getInventoryConfigSubTab } from "@/features/inventory/navigation"

@@ -3,7 +3,7 @@ Purchase order analytics over the full filtered list (ADR-0087 lote 2c).
 
 The frontend used to aggregate the orders of the visible page only. This service receives the
 same filtered queryset as the list endpoint and walks it once. Per-order amounts and states come
-from `PurchaseOrderSerializer`'s own methods (pending amount, actual receipt date) so
+from the model (`pending_amount`) and `PurchaseOrderSerializer` (actual receipt date) so
 the figures match the list and the document sheet. Sums are exact (Decimal) and converted at the
 end; period buckets are the first day of the period (ISO), labelled by the client. Only the
 figures the analytics panel shows are computed.
@@ -48,7 +48,8 @@ def _payment_key(order) -> str:
 
 
 def _top_products(products: dict) -> list[dict]:
-    return sorted(({"product": k, **v} for k, v in products.items()), key=lambda p: p["total"], reverse=True)[:TOP_PRODUCTS]
+    """By product id (two products may share a name), largest total first."""
+    return sorted(products.values(), key=lambda p: p["total"], reverse=True)[:TOP_PRODUCTS]
 
 
 class PurchaseOrderAnalyticsService:
@@ -69,15 +70,16 @@ class PurchaseOrderAnalyticsService:
         dte: Counter[str] = Counter()
         suppliers: dict[int | None, dict] = {}
         periods: dict[date, dict] = {}
-        products: dict[str, dict] = defaultdict(lambda: {"total": ZERO})
+        products: dict[int, dict] = {}
         product_types: defaultdict[str, Decimal] = defaultdict(Decimal)
         by_type = {
-            name: {"products": defaultdict(lambda: {"total": ZERO, "count": ZERO}), "periods": defaultdict(Decimal),
+            name: {"products": {}, "periods": defaultdict(Decimal),
                    "categories": defaultdict(Decimal), "total": ZERO, "orders": 0}
             for name in PRODUCT_GROUPS
         }
 
-        for order in queryset:
+        # Chunks keep the prefetches (Django ≥ 4.1) without loading the whole list and its relations at once.
+        for order in queryset.iterator(chunk_size=500):
             total = stats.num(order.total)
             money["volume"] += total
             counts["orders"] += 1
@@ -90,7 +92,7 @@ class PurchaseOrderAnalyticsService:
                     funnel["RECEIVED"] += 1
                 if order.invoicing_status == "INVOICED":
                     funnel["INVOICED"] += 1
-                if stats.num(serializer.get_pending_amount(order)) <= 0:
+                if stats.num(order.pending_amount) <= 0:
                     funnel["PAID"] += 1
 
             receipt = order.receipt_date
@@ -136,14 +138,14 @@ class PurchaseOrderAnalyticsService:
                 product_types[product.get_product_type_display() if product else "General"] += line_total
                 if not product:
                     continue
-                products[product.name]["total"] += line_total
+                products.setdefault(product.id, {"product": product.name, "total": ZERO})["total"] += line_total
                 for name, members in PRODUCT_GROUPS.items():
                     if product.product_type not in members:
                         continue
                     group = by_type[name]
                     types_in_order.add(name)
                     group["total"] += line_total
-                    item = group["products"][product.name]
+                    item = group["products"].setdefault(product.id, {"product": product.name, "total": ZERO, "count": ZERO})
                     item["total"] += line_total
                     item["count"] += stats.num(line.quantity)
                     if bucket:

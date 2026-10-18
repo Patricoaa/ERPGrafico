@@ -259,10 +259,35 @@
 
 ### TC-048 · Tipo erróneo · Verificado
 - Evidencia: `features/billing/types/index.ts` declaraba `partner?: number`, pero `billing/serializers.py` envía `partner_id` y `partner_name`. En la lista de notas de venta el enlace al cliente se construía sin id. `PurchaseInvoicesClientView.tsx:286` también lee `.partner`
-- Decisión: se añade `partner_id`; la entidad de notas lo usa. Quitar `partner` en el 2c (Compras)
-- Estado: parcial
+- Decisión: se añade `partner_id`; la entidad de notas lo usa. En el 2c, `PurchaseInvoicesClientView` usa `partner_id ?? supplier` y se quita `partner` del tipo
+- Estado: corregido (lotes 2b + 2c)
 
 ### TC-049 · Documentación del servidor de desarrollo · Verificado
 - Evidencia: `docs/30-playbooks/remote-dev-server.md:141` dice "Django auto-reload", pero el backend corre con `daphne -b 0.0.0.0 -p 8100 config.asgi:application`, sin autorrecarga. Una vista nueva devolvía 404 hasta `docker compose restart backend`
 - Decisión: registrar; corregir el playbook o el comando de arranque (tarea aparte)
 - Estado: pendiente
+
+### TC-050 · Defecto de la presentación nueva · Verificado
+- Evidencia: capturas a 390 px de `evidence/lote2c/compras--card.390.png` y `productos--card.390.png` (antes de la corrección). El botón "Nueva Orden" / "Nuevo Producto" tapaba la búsqueda. Las vistas metían búsqueda y botón en una sola celda `flex-1 min-w-0` de `Collection.Toolbar`, que no podía partirse
+- Decisión: ranura `action` en `Collection.Toolbar`. La búsqueda tiene un mínimo de `min-w-56` y la acción baja a la línea siguiente. Se usa en Compras, Productos y UoM (enmienda del contrato, ADR-0087 lote 2c)
+- Estado: corregido (lote 2c; regresión del lote 2a en Productos/UoM)
+
+### TC-051 · Defecto del sistema actual · Verificado
+- Evidencia: el modo "notas" de `PurchasingOrdersClientView` (ruta `/purchasing/notes`) llamaba a `purchasingApi.getNotes()` sin parámetros. Leía solo `response.results` (primera página del backend), ignoraba los filtros del buscador (usaba el de órdenes) y `page.tsx` precargaba las notas con el tipo `Invoice[]` en vez de la página DRF
+- Decisión: `usePurchasingNotes({ filters, page, page_size })` paginado en servidor con `purchaseInvoiceUnifiedSearchDef` (mismo endpoint `/billing/invoices/`). La Puerta D 2c había dado el modo por muerto; se corrige en §3.10
+- Estado: corregido (lote 2c)
+
+### TC-052 · Entorno · Verificado
+- Evidencia: tras reiniciar el backend, el frontend del servidor de desarrollo se reinició solo, quedó sin responder (curl sin respuesta en 300 s, 4,0 GB de 5 GB, CPU 0 %) y, tras `docker compose restart frontend`, el host 192.168.1.93 dejó de responder a ping/ssh ("No route to host"). Memoria del host: 6,9 GB en total, 1,5 GB disponibles antes de la caída
+- Decisión: avisar al usuario; repetir la verificación del 2c cuando el host vuelva. El host volvió reiniciado (`up 0 min`) y la verificación se completó
+- Estado: resuelto (causa probable: memoria del host; el frontend `next dev --turbo` llega a 4 GB)
+
+### TC-053 · Defecto ajeno al lote · Verificado
+- Evidencia: `app/(dashboard)/inventory/products/uoms/units/page.tsx` y `app/(dashboard)/inventory/settings/measure-categories/page.tsx` (commit `25e43a64f`, navegación) tienen `"use client"` y además `export const metadata = …`. Next.js no compila ninguna de las dos ("Ecmascript file had an error", línea 9)
+- Decisión: el usuario pide corregirlo (2026-10-18). Se quita `"use client"`: ninguna de las dos usa hooks, y quedan como Server Components igual que la página de productos
+- Estado: corregido
+
+### TC-054 · Proceso · Verificado
+- Evidencia: el commit `25e43a64f feat(navigation)` (2026-10-18 01:34) incluye todo el lote 2c sin commitear: backend, frontend, evidencias y documentos de contrato. También incluye `docker-compose.yml`. Los archivos nuevos del lote estaban marcados con `git add -N` (intent-to-add), lo que facilita que un `git add -A`/`commit -a` los arrastre
+- Decisión: no reescribir la historia. El usuario elige (2026-10-18) un commit de seguimiento en la rama con las correcciones del `/code-review`, los documentos y TC-053. En adelante, no usar `git add -N`
+- Estado: resuelto

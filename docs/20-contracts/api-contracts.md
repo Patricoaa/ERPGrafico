@@ -548,7 +548,8 @@ Base: `/api/purchasing/`
 ### orders/ (PurchaseOrder)
 
 ```
-GET    /api/purchasing/orders/                list, paginated (filtros vía PurchaseOrderFilterSet)
+GET    /api/purchasing/orders/                list, paginated (filtros vía PurchaseOrderFilterSet; `search` sin duplicados; `ordering`=number|date|supplier__name|receipt_date|total con desempate `,id`)
+GET    /api/purchasing/orders/analytics/      cifras del panel sobre TODA la lista filtrada (mismos filtros y búsqueda que la lista; `granularity`=day|month|year); formas de pago con etiqueta del modelo, buckets ISO del primer día del período (ADR-0087 lote 2c)
 POST   /api/purchasing/orders/                create
 GET    /api/purchasing/orders/{id}/           detail
 PATCH  /api/purchasing/orders/{id}/           update

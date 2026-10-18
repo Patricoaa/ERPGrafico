@@ -20,7 +20,6 @@
 /** @type {Record<string, number>} */
 export const NO_UNSAFE_BASELINE = {
     "app/(dashboard)/production/orders/WorkOrdersPageClient.tsx": 3,
-    "app/(dashboard)/purchasing/orders/components/PurchasingOrdersClientView.tsx": 9,
     "components/layout/QuickActionsMenu.tsx": 8,
     "components/shared/AutoEntityCard.tsx": 1,
     "components/shared/DataTableToolbar.tsx": 1,

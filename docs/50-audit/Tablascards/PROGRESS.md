@@ -1,7 +1,7 @@
 # Progreso — Nuevo sistema de presentación
-- Fase actual: 7 · Lote 2c (Compras) · Puerta D aprobada · en implementación
+- Fase actual: 7 · Lote 2c (Compras) · implementado, `/simplify` + `/code-review` aplicados, verificado en la app · esperando al usuario (TC-054: el lote ya quedó dentro del commit de navigación)
 - Último completado: lote 2a — capacidades del núcleo (orden en servidor, agrupación, BulkBar, Analytics, estados vacíos) + UoM y Productos migrados + `OrderingFilter` de productos; `/simplify` + `/code-review` (9/10 corregidos); TC-041–TC-045; issues #178. Detalle en `07` §3.6
-- Próximo paso exacto: 2c: backend (OrderingFilter + analítica de OC + test de duplicados en búsqueda) → hooks (initial por consulta, isError, ordering, facetas) → vista sin código muerto → PurchaseInvoicesClientView partner_id → ciclo completo
+- Próximo paso exacto: Puerta D del lote 3 (líneas de documento + edición por lote P1): inventario de pantallas con Explore, capacidades que faltan, partición y decisiones → presentar al usuario. Contexto: `07-migration-matrix.md` §1 y §4, `06-spec.md` (líneas y edición por lote), ledger TC-012/TC-040
 - Rama: `refactor/entity-view-lote-2` (desde el lote 1 `b3ae3fac3`); issues abiertas #176, #177
 - Puertas: A ✅ · B ✅ · C ✅ · D lote 1 ✅ · D 2a ✅ · D 2b ✅ · D 2c ✅ (2026-10-17)
 - Preguntas abiertas para el usuario: —
@@ -29,3 +29,6 @@
   - 2026-10-17 Lote 1 cerrado: pantallas reales comparadas (alturas sin cambios; R2 solo cambia el glifo); TC-041 (listUrl de UoM). Issue #177 (TC-039). Commit del lote 1.
   - 2026-10-17 Lote 2a implementado y verificado en la app real. Defectos encontrados: TC-043 (initialData de TanStack), TC-044 (ciclo de imports), TC-045 (stock inflado por variantes), TC-046 (F821 latente).
   - 2026-10-17 Lote 2b (OV) implementado: endpoint de analítica sobre la lista completa (TC-047), orden en servidor, foco del hub, notas con entidad propia; TC-048 (tipo Invoice), TC-049 (daphne).
+  - 2026-10-18 Lote 2c (Compras) implementado: endpoint de analítica de OC (solo las cifras que se muestran), orden en servidor, vista nueva (1042 → ~180 líneas), notas migradas (el modo sí estaba vivo, TC-051), `Collection.Toolbar action` (TC-050), helpers de analítica comunes en `core/analytics.py`. El servidor de desarrollo cayó durante la verificación posterior a `/simplify` (TC-052).
+  - 2026-10-18 `/code-review` del 2c: 7 corregidos (orden por defecto del ViewSet, iterator, productos por id, test con líneas, modelo en vez de serializer, Toolbar vacío, import de story); 3 sin cambio por paridad. Verificación final en la app hecha. TC-053 y TC-054 para el usuario.
+  - 2026-10-18 Usuario: commit de seguimiento del 2c (TC-054) y corrección de TC-053 (dos páginas con `"use client"` + `metadata`). Lote 2c cerrado.

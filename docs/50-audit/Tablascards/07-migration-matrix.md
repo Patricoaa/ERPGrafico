@@ -14,9 +14,9 @@
 | Lote | Contenido | Estado |
 |---|---|---|
 | 1 | Prerrequisitos R1–R5 + R7 + R8 + `EntityViewProvider` en el shell + paridad de URL | **completado (2026-10-17)** |
-| 2a | Capacidades + UoM + Productos (+ orden en servidor de productos, TC-041) | **Puerta D aprobada (2026-10-17)**, en curso |
-| 2b | OV (+ orden en servidor, foco del hub, endpoint de analítica de OV) | implementado y verificado (2026-10-17), §3.8 |
-| 2c | Compras (+ TC-043, TC-032) | **Puerta D aprobada (2026-10-17)**, en curso |
+| 2a | Capacidades + UoM + Productos (+ orden en servidor de productos, TC-041) | **completado (2026-10-17)**, §3.6 |
+| 2b | OV (+ orden en servidor, foco del hub, endpoint de analítica de OV) | **completado (2026-10-17)**, §3.8 |
+| 2c | Compras (+ TC-043, TC-032) | **completado (2026-10-18)**, §3.10 |
 | 3 | Líneas de documento + edición por lote P1 | — |
 | R6 | ADR de color (contraste warning/success) | aparte |
 
@@ -355,6 +355,69 @@ Inventario de `app/(dashboard)/purchasing/orders/components/PurchasingOrdersClie
 1. **Quitar el código muerto:** modales y acciones inalcanzables desde la lista y el modo "notas". Se conserva el asistente de alta (`?modal=new`).
 2. **Analítica de Compras sobre la lista filtrada completa** con endpoint propio, siguiendo el patrón de OV.
 3. **Facetas de recepción, facturación y tesorería al servidor** (`receiving_status`, `billing_status`, `treasury_status`). Fuera las columnas ocultas.
+
+### 3.10 Resultado del lote 2c — Compras (2026-10-18)
+
+**Backend**
+- `GET /api/purchasing/orders/analytics/` (`purchasing/analytics.py`). Reutiliza `filter_queryset`, así que aplica los mismos filtros y la misma búsqueda que la lista. Calcula **solo** las cifras que muestra el panel: volumen, embudo por ejes (ADR-0084), formas de pago, proveedores, periodos, almacenes, productos, tipos, DTE, facturación y desglose por tipo de producto. La versión del cliente calculaba además tendencias, rangos de monto y próximas recepciones, que ninguna pestaña mostraba.
+- Las etiquetas de forma de pago vienen de `TreasuryMovement.Method`; se quita el mapa duplicado del cliente, que difería de tesorería en "Terminal de cobro".
+- Helpers comunes con OV en `core/analytics.py` (`bucket`, `previous_bucket`, `num`, `to_json`, `ranked`).
+- `PurchaseOrderViewSet`: `OrderingFilter` (number, date, supplier__name, receipt_date, total; desempate `,id`) y `DistinctSearchFilter`.
+- Prefetch `payments__invoice`: `total_paid` lee el DTE de cada pago y, sin él, consultaba una vez por pago.
+- `purchasing/tests/test_order_analytics.py`: lista completa (25 > página), filtros, orden en servidor y consultas constantes.
+
+**Frontend**
+- `PurchasingOrdersClientView.tsx` (1042 líneas) se elimina.
+  - Lo reemplaza `features/purchasing/components/PurchaseOrdersView.tsx` (~180), que usa `Collection.*`: paginación y orden en servidor, `useServerPage`, agrupación con `GROUP_ROW_LIMIT`, foco del hub en cards y `Collection.Analytics` con estados de carga y error.
+  - La configuración del panel pasa a una función pura (`purchaseOrderAnalyticsScreen.ts`).
+- **Decisión 1 (código muerto) — corrección:** el modo "notas" **no** era inalcanzable. Lo usa `/purchasing/notes` (pestaña "Notas Crédito/Débito" de `PurchasingHeader`). Se migra como colección propia con `purchaseNoteEntity`, movida del spike de billing a purchasing, y con el `purchaseInvoiceUnifiedSearchDef` de billing (mismo endpoint). Antes la lista de notas ignoraba los filtros y la paginación (TC-051).
+- **Decisión 2:** `usePurchaseOrderAnalytics` (consulta habilitada solo en la vista de analítica) sustituye a `usePurchasingAnalyticsData`.
+- **Decisión 3:** las facetas viajan como parámetros del buscador (ya existían en `purchaseOrderUnifiedSearchDef`). La entidad pierde `facets` y las 3 columnas ocultas desaparecen.
+- **TC-043:** se quita la precarga SSR de 200 filas y de notas (`page.tsx` queda trivial, como OV). No hay `initialData` que contamine otras claves.
+- El asistente de alta (`?modal=new`) pasa a `PurchasingPageClient`. Al terminar invalida `PURCHASING_KEYS.orders()` (lista y analítica).
+- Se quitan `deleteOrder` y `annulOrder` de la API y sus mutaciones (sin consumidores; las acciones viven en la ficha).
+- **TC-048:** `PurchaseInvoicesClientView` usa `partner_id`, y se quita `partner` del tipo `Invoice`.
+- **`Collection.Toolbar action`** (enmienda del contrato, ADR-0087 lote 2c): a 390 px el botón de crear tapaba la búsqueda en Compras, Productos y UoM (TC-050).
+- `periodPresets(from, to)` en `lib/date-presets.ts` sustituye tres copias expandidas de los presets de fecha en `purchasing/unifiedSearchDef.ts`.
+
+**Verificación**
+- `tsc` sin errores.
+- `eslint` sin errores en los archivos del lote. Los 21 errores globales están en tesorería, contabilidad, dashboard y auditoría: son cambios del usuario sin commitear, fuera del lote.
+- vitest 51/51 (entity-view, purchasing, billing, inventory); stories de Compras 2/2.
+- pytest: purchasing + billing 68, y analítica de OV y Compras 28.
+- App real (antes de `/simplify`), en `evidence/lote2c/`:
+  - lista: 7 columnas, 20/51, sin scroll horizontal;
+  - orden: `ordering=-total,-id`;
+  - hub: `?selected=2`, 19 cards atenuadas;
+  - analítica sobre las 51 OC (volumen $7.333.850; embudo CONFIRMED 51 · RECEIVED 39 · INVOICED 49 · PAID 38);
+  - `?modal=new` abre el asistente;
+  - notas: estado vacío correcto, porque el servidor tiene 0 notas de compra;
+  - 390 px sin desborde.
+- **Tras `/simplify` y `/code-review`** (servidor reiniciado tras TC-052):
+  - formas de pago con etiqueta del modelo (Transferencia 37 · Crédito 13 · Tarjeta (Manual) 1);
+  - top de productos por id;
+  - la lista sin `ordering` usa el orden del servidor `-date,-id`;
+  - notas con el buscador de billing (`/billing/invoices/?page=1&page_size=20&…`, estado vacío);
+  - a 390 px, la acción baja bajo la búsqueda en Compras y Productos, sin desborde;
+  - UoM a 390 px sin desborde, pero la página no compila por TC-053 (ajeno al lote).
+
+**`/code-review` medium (10 hallazgos)**
+
+Corregidos (7):
+1. `PurchaseOrder` sin orden por defecto: paginación inestable. Ahora `ordering = ["-date", "-id"]` en el ViewSet.
+2. El test de consultas no ejercía los prefetches: ahora tiene líneas con productos.
+3. La analítica dependía del serializer: ahora usa `order.pending_amount` del modelo.
+4. Toda la lista cargaba en memoria de una vez: ahora `iterator(chunk_size=500)`.
+5. Los productos se agrupaban por nombre: ahora por id.
+6. `Toolbar` reservaba la celda de búsqueda aunque viniera vacía.
+7. Import interno de billing en la story.
+
+Sin cambio (paridad con la lista y con la versión del cliente; se registran):
+- las OC canceladas cuentan en el volumen;
+- una factura primaria anulada cuenta como "facturada", la misma regla que `get_is_invoiced` de la ficha;
+- "Pagada" = saldo ≤ 0, la misma regla que `payment_status` del modelo.
+
+Si se cambian, debe ser en el modelo y el serializer, no solo en la analítica.
 
 ## 4. Matriz por entidad
 
