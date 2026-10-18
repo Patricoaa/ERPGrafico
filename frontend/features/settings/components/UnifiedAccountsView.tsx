@@ -815,11 +815,11 @@ function EstructuraForm() {
                                         <legend className="px-1.5 text-3xs font-bold uppercase tracking-loose text-primary/80">
                                             Vista Previa del Formato
                                         </legend>
-                                        <div className="flex items-center justify-between w-full min-h-[2.5rem] py-1">
+                                        <div className="flex items-center justify-between w-full min-h-[2rem] py-0.5">
                                             <p className="text-3xs text-muted-foreground uppercase opacity-75 font-bold pl-2.5">
                                                 Ejemplo nivel {formValues.hierarchy_levels}
                                             </p>
-                                            <span className="text-lg font-mono font-bold tracking-tighter text-primary mr-1">
+                                            <span className="text-sm font-mono font-bold tracking-tighter text-primary mr-1">
                                                 {generatePreview(formValues)}
                                             </span>
                                         </div>
