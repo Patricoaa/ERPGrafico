@@ -107,6 +107,8 @@ export interface SaleOrderFilters extends PageParams {
     payment_status?: string
     production_status?: string
     pos_session?: number
+    /** DRF ordering (`orderingParam` of the sale order entity, ADR-0087 lote 2b). */
+    ordering?: string
 }
 
 export interface SaleOrderPayload {

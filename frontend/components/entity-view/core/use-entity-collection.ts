@@ -97,6 +97,8 @@ function toSorting<Id extends string>(spec: SortSpec<Id> | null | undefined): So
 
 const EMPTY_ROWS: never[] = []
 
+const NO_SERVER_SORT = { mode: "server" as const, state: null, onChange: () => undefined }
+
 /**
  * Headless collection state (ADR-0087 §4): TanStack model shared by every surface
  * (table, card grid, kanban). Columns are derived from the entity fields; each surface
@@ -108,8 +110,12 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
     options: CollectionOptions<FieldId<F>> = {},
 ): EntityCollection<T, F> {
     const pagination = options.pagination ?? { mode: "client" }
-    const sortingOption: CollectionSorting<FieldId<F>> = options.sorting ?? { mode: "local" }
+    // Default: local sorting, except with server pagination, where reordering one page would misrepresent
+    // the order. There it behaves as server sorting with no spec: only `orderBy` fields could sort, and
+    // without an `onChange` none does.
+    const sortingOption: CollectionSorting<FieldId<F>> = options.sorting ?? (pagination.mode === "server" ? NO_SERVER_SORT : { mode: "local" })
     const serverSorting = sortingOption.mode === "server"
+    const sortDisabled = sortingOption === NO_SERVER_SORT
     const rows = (source.rows ?? EMPTY_ROWS) as T[]
 
     const columns = React.useMemo<ColumnDef<T>[]>(
@@ -119,11 +125,11 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
                 return {
                     id,
                     accessorFn: (row: T) => sortValueOf(def, row),
-                    enableSorting: (def.sortable ?? true) && (!serverSorting || !!def.orderBy),
+                    enableSorting: (def.sortable ?? true) && (!serverSorting || (!!def.orderBy && !sortDisabled)),
                     sortUndefined: "last",
                 }
             }),
-        [entity, serverSorting],
+        [entity, serverSorting, sortDisabled],
     )
 
     const [localSorting, setLocalSorting] = React.useState<SortingState>(() => toSorting(options.defaultSort))

@@ -1,10 +1,10 @@
 # Progreso — Nuevo sistema de presentación
-- Fase actual: 7 · Lote 2a completado (pendiente de commit) · Siguiente: Puerta D del 2b
+- Fase actual: 7 · Lote 2b (OV) implementado y verificado (pendiente de commit) · Siguiente: Puerta D del 2c (Compras)
 - Último completado: lote 2a — capacidades del núcleo (orden en servidor, agrupación, BulkBar, Analytics, estados vacíos) + UoM y Productos migrados + `OrderingFilter` de productos; `/simplify` + `/code-review` (9/10 corregidos); TC-041–TC-045; issues #178. Detalle en `07` §3.6
-- Próximo paso exacto: commit del lote 2a → Puerta D del 2b (OV + Compras: modos, foco del hub, ficha, modales, orden en servidor de OV/OC, TC-032, revisar `initialData` como TC-043)
+- Próximo paso exacto: commit del 2b (cuando el usuario lo pida) → Puerta D del 2c (Compras: modos, 6 modales, TC-043 y TC-032 en Compras, quitar `partner` de Invoice, orden en servidor de OC)
 - Rama: `refactor/entity-view-lote-2` (desde el lote 1 `b3ae3fac3`); issues abiertas #176, #177
-- Puertas: A ✅ · B ✅ · C ✅ · D lote 1 ✅ · D lote 2a ✅ (2026-10-17)
-- Preguntas abiertas para el usuario: TC-046 (F821 en `inventory/selectors.py:730`)
+- Puertas: A ✅ · B ✅ · C ✅ · D lote 1 ✅ · D 2a ✅ · D 2b ✅ (2026-10-17)
+- Preguntas abiertas para el usuario: commit del 2b; cambio ajeno en `frontend/next.config.ts` (transpilePackages); desborde horizontal de la tabla de Productos; TC-049 (daphne sin autorrecarga)
 - Decisiones del usuario:
   - 2026-10-17: las tablas de wizard/modal entran como caso de uso específico · `as any` de `AutoEntityCard.tsx:390` espera al rediseño · `journalEntryFields` lo determina la auditoría (→ TC-016) · TC-012 se corrige en la migración
   - 2026-10-17 Puerta A: aprueba RC1–RC8 y la matriz C/F/E; pantallas de la Fase 4 = UoM, OV, Compras; aprueba `role="grid"` → `role="table"` en `compact`; **exportación = requisito** (aclarado)
@@ -28,3 +28,4 @@
   - 2026-10-17 Lote 1 implementado. R8 destapó TC-040 (las líneas usaban una etiqueta inexistente). `/code-review` encontró que el provider no cubría los drawers; el contexto se movió a `components/providers` para evitar un ciclo de imports. TC-039: el ratchet `no-unsafe` ya fallaba en master.
   - 2026-10-17 Lote 1 cerrado: pantallas reales comparadas (alturas sin cambios; R2 solo cambia el glifo); TC-041 (listUrl de UoM). Issue #177 (TC-039). Commit del lote 1.
   - 2026-10-17 Lote 2a implementado y verificado en la app real. Defectos encontrados: TC-043 (initialData de TanStack), TC-044 (ciclo de imports), TC-045 (stock inflado por variantes), TC-046 (F821 latente).
+  - 2026-10-17 Lote 2b (OV) implementado: endpoint de analítica sobre la lista completa (TC-047), orden en servidor, foco del hub, notas con entidad propia; TC-048 (tipo Invoice), TC-049 (daphne).

@@ -1,43 +1,32 @@
-import { defineEntity, type ExportFormat } from "@/components/entity-view"
-import { orderStageSummary } from "../salesOrderFields"
+import { defineEntity } from "@/components/entity-view"
+import { orderStageSummary } from "../utils/orderStage"
 import type { SaleOrder } from "../types"
 
 /**
- * Export hook (export-formats.md: one hook per export, in its feature).
- * Pd-backend: `/api/sales/orders/export/` does not exist yet; the spike records the request only.
+ * Sale order (ADR-0087 lote 2b). One status vocabulary for table and card: the readable stage
+ * plus the hub axes. `orderBy` marks the columns the server can sort as displayed.
  */
-function useExportSaleOrdersStub(): { run: (format: ExportFormat, filters: Record<string, unknown>) => void; isPending: boolean } {
-    return { run: () => undefined, isPending: false }
-}
-
-/** Sale order — documental entity (3 computed + notes mode today). */
 export const saleOrderEntity = defineEntity<SaleOrder>()((f) => ({
     label: "sales.saleorder",
     fields: {
-        folio: f.code((o) => o.display_id ?? o.number, { label: "Folio" }),
-        customer: f.contact((o) => ({ id: o.customer, name: o.customer_name }), { label: "Cliente" }),
-        date: f.date("date", { label: "Fecha" }),
-        // One status vocabulary for table and card: readable stage + hub axes (was two computed, F + G).
+        folio: f.code((o) => o.display_id ?? o.number, { label: "Folio", orderBy: "number" }),
+        customer: f.contact((o) => ({ id: o.customer, name: o.customer_name }), { label: "Cliente", orderBy: "customer__name" }),
+        date: f.date("date", { label: "Fecha", orderBy: "date" }),
         hub: f.hubStatus((o) => o, { label: "Estado", entity: "sales.saleorder", caption: orderStageSummary }),
         channel: f.tags((o) => (o.channel_display ? [o.channel_display] : []), { label: "Canal" }),
         lines: f.number((o) => o.lines?.length ?? 0, { label: "Líneas" }),
-        total: f.money("total", { label: "Total" }),
+        total: f.money("total", { label: "Total", orderBy: "total" }),
         pending: f.money("pending_amount", { label: "Pendiente" }),
     },
-    facets: {
-        payment: (o) => o.payment_status,
-        delivery: (o) => o.delivery_status,
-    },
-    export: { useExport: useExportSaleOrdersStub, formats: ["xlsx", "csv"] },
 }))
 
 export const saleOrderViews = saleOrderEntity.views({
-    table: { columns: ["folio", "customer", "date", "channel", "hub", "total", "pending"], defaultSort: "-date" },
+    table: { columns: ["folio", "customer", "date", "channel", "hub", "total", "pending"] },
     card: {
         title: "folio",
         subtitle: ["customer", "date"],
         trailing: ["hub"],
         media: { tone: (o) => (o.status === "CANCELLED" ? "muted" : "primary") },
-        body: { kind: "workflow", lines: "lines", total: "total", pending: "pending" },      // was computed (D)
+        body: { kind: "workflow", lines: "lines", total: "total", pending: "pending" },
     },
 })

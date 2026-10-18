@@ -80,7 +80,8 @@ GET    /api/auth/user/         (JWT)                          → CurrentUserSer
 ## Example — SaleOrder resource
 
 ```
-GET    /api/sales/orders/                list, paginated
+GET    /api/sales/orders/                list, paginated (ordering: id, number, date, customer__name, total — enviar con desempate `,id`, ADR-0087)
+GET    /api/sales/orders/analytics/      cifras sobre TODA la lista filtrada (mismos filtros y búsqueda que la lista; `granularity`=day|month|year); claves crudas + buckets de período (fecha ISO del primer día), etiquetas y colores en el cliente (ADR-0087 lote 2b)
 POST   /api/sales/orders/                create
 GET    /api/sales/orders/{id}/           detail
 PATCH  /api/sales/orders/{id}/           partial update

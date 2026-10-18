@@ -11,6 +11,7 @@ export * from "./core/value-kinds"
 export * from "./core/formatters"
 export * from "./core/define-entity"
 export * from "./core/use-entity-collection"
+export * from "./core/use-server-page"
 
 import { registerCoreValueKinds } from "./kinds/core-kinds"
 

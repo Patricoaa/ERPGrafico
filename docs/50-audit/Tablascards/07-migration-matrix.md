@@ -15,7 +15,8 @@
 |---|---|---|
 | 1 | Prerrequisitos R1–R5 + R7 + R8 + `EntityViewProvider` en el shell + paridad de URL | **completado (2026-10-17)** |
 | 2a | Capacidades + UoM + Productos (+ orden en servidor de productos, TC-041) | **Puerta D aprobada (2026-10-17)**, en curso |
-| 2b | OV + Compras (+ orden en servidor, TC-032) | — |
+| 2b | OV (+ orden en servidor, foco del hub, endpoint de analítica de OV) | implementado y verificado (2026-10-17), §3.8 |
+| 2c | Compras (+ TC-043, TC-032) | — |
 | 3 | Líneas de documento + edición por lote P1 | — |
 | R6 | ADR de color (contraste warning/success) | aparte |
 
@@ -238,6 +239,100 @@ Las vistas de Productos conservan casi todas sus líneas: la mayor parte es la c
   - vitest 222/224: las 2 fallas son de #177, ya presentes en master.
   - Stories 21/21.
   - pytest de inventario 72/72.
+
+### 3.7 Lote 2b: plan (Puerta D, presentada el 2026-10-17)
+
+Rama: `refactor/entity-view-lote-2` (sigue tras `ff25775da`).
+
+| Pantalla | Archivo (líneas) | Qué hay que conservar | Riesgo |
+|---|---|---|---|
+| OV | `features/sales/components/SalesOrdersView.tsx` (435) | modos órdenes/notas con hooks y paginación propios; ficha (`toggleSelection`, `useDocumentSheetRoute`) **y** selección controlada por el padre (POS: `onSelectOrder`/`selectedId`); filtro `posSessionId`; analítica (calculada sobre la página actual) | dos fuentes de selección; uso en POS |
+| Compras | `app/(dashboard)/purchasing/orders/components/PurchasingOrdersClientView.tsx` (1042) | modos (órdenes en servidor, notas en cliente); ficha; 6 modales de workflow (registro, completar, checkout, folio, borrar, anular, forzar anulación); analítica (embudo y 4 pestañas); facetas de recepción, facturación y tesorería | tamaño; **mismo defecto que TC-043** (`page.tsx` pide 200 filas; `usePurchasingOrders` aplica `initialData` a cualquier consulta); TC-032 |
+
+**Capacidades nuevas del núcleo:**
+- **Foco del hub.** Con `selection="panel"` y `selectedId`, las cards no seleccionadas se atenúan (paridad con `isHubOpen`). Va en el estado de Root, sin props nuevas.
+- **Modos con paginación propia.** Ya existe con `CollectionModes`: cada modo monta su colección.
+
+**Backend:** `OrderingFilter` + `ordering_fields` en `SaleOrderViewSet` y `PurchaseOrderViewSet`, solo para las columnas que el servidor puede ordenar tal como se muestran: folio (`number`), contacto (`customer__name` / `supplier__name`), `date`, `total`. Hub, canal y pendiente no se ordenan. Con pytest y `api-contracts.md`.
+
+**Correcciones incluidas:**
+- TC-043 en Compras (`initial` por consulta, con la misma constante para `page.tsx` y el cliente).
+- TC-032 (card de Compras sin título, métricas cortadas, "Página 1 de NaN"), que desaparece con la migración. Se verifica con capturas a 390 px.
+
+#### Decisiones de la Puerta D (2026-10-17)
+1. **Partición:** 2b = OV; 2c = Compras (con TC-043 y TC-032), con su propia Puerta D.
+2. **Foco del hub:** solo atenuar las cards no seleccionadas (sin blur).
+3. **Analítica de OV: se corrige ahora.** Endpoint de analítica de OV sobre el conjunto filtrado completo (hoy se calcula sobre las 20 órdenes de la página visible), siguiendo el precedente del endpoint de analítica de productos.
+
+### 3.8 Resultado del lote 2b — OV (2026-10-17)
+
+**Núcleo:**
+- Foco del hub: con `selection="panel"` y `selectedId`, las cards no seleccionadas se atenúan (opacidad, sin blur).
+- `useServerPage(shape, initial)`: la página vuelve al inicio al cambiar filtros, orden o agrupación. Ahora lo usan Productos y OV.
+- Orden por defecto derivado: con paginación en servidor y sin `sorting`, ninguna cabecera se puede ordenar, así que nunca se reordena una sola página.
+- `bindUnifiedSearch(search)` en `shared`: cablea la barra de búsqueda en las 4 colecciones migradas.
+
+**Backend:**
+- `SaleOrderViewSet`:
+  - `OrderingFilter` (id, number, date, customer__name, total);
+  - **`GET /sales/orders/analytics/`** sobre la lista filtrada completa (mismo `filter_queryset`), con `SaleOrderAnalyticsService` (`sales/analytics.py`).
+- Las cifras de pago usan las propiedades del modelo (`PaymentSelector`), para coincidir con la ficha. Las etiquetas salen de los `choices` del modelo.
+- Queryset propio con el prefetch justo.
+- pytest de `sales` 25/25 (5 nuevos: cubre toda la lista, filtros, granularidad, orden en servidor y número de queries constante).
+
+**Frontend:**
+- `SalesOrdersView`, de 435 a 421 líneas: el 55 % es la configuración de la analítica, que ahora es una función pura.
+- Dos colecciones, una por modo. Antes **se pedían órdenes y notas a la vez** aunque solo se viera una.
+- `useSaleOrderAnalytics` (de 273 a 114 líneas) solo consulta cuando la vista de analítica está abierta.
+- Entidades: `saleOrder.entity.ts` (27 líneas, sin el stub de exportación del spike) y `saleNote.entity.ts` (25 líneas, NC con signo).
+- `orderStageSummary` pasa a `features/sales/utils/orderStage.ts`.
+
+**Defectos encontrados y corregidos:**
+- **TC-047 · analítica de OV sobre la página visible.** Antes: 20 órdenes y $1.419.350. Ahora: las 178 órdenes filtradas y $12.522.850 (app real).
+- **TC-048 · el tipo `Invoice` declaraba `partner`, que la API nunca envía** (envía `partner_id`/`partner_name`). En notas, el enlace al cliente no tenía id. Se añade `partner_id`. `PurchaseInvoicesClientView.tsx:286` también lee `partner`: se revisa en el 2c.
+
+**Verificado en la app real** (capturas en `evidence/lote2b/`):
+- tabla de 7 columnas y "1 a 20 de 178";
+- `ordering=-total,-id`, que reordena los datos ($148.500 primero), sin hub ordenable;
+- al abrir una card, `?selected=179` y las otras 19 cards atenuadas;
+- analítica de 178 órdenes con el año completo en el gráfico;
+- notas: NC con signo y cliente enlazado, sin columnas ordenables.
+
+**Operación:** el backend del servidor de desarrollo corre con `daphne` sin autorrecarga, así que hubo que reiniciar el contenedor para cargar la vista nueva. `remote-dev-server.md` dice que Django recarga solo: discrepancia registrada (TC-049).
+
+**Deuda:**
+- analítica con agregados SQL en vez del recorrido en Python (lineal en el tamaño de la lista filtrada);
+- buckets diarios para no recalcular al cambiar de granularidad;
+- traducción de las claves de agrupación en cada pantalla;
+- orden en servidor para notas (endpoint de facturas);
+- quitar `partner` del tipo `Invoice` (2c).
+
+**Revisiones:**
+- `/simplify`:
+  - etiquetas desde los `choices` del modelo (fuera los mapas duplicados del cliente);
+  - queryset de analítica con el prefetch justo y sin ordenar;
+  - `paid_amount` una vez por orden;
+  - `bindUnifiedSearch`;
+  - orden por defecto derivado en el núcleo;
+  - fuera las props, parámetros y exports sin uso.
+- `/code-review` medium: 10 hallazgos, 7 corregidos.
+  1. Tendencias con `timezone.localdate()`.
+  2. Clientes agrupados por id.
+  3. Los 10 primeros clientes más "Otros".
+  4. Sumas en `Decimal`.
+  5. Analítica con carga (`SkeletonShell`) y error con "Reintentar", en vez de ceros.
+  6. Nombre del cliente sin id en notas (texto plano).
+  7. `Collection.Analytics` detectado como hijo directo, sin efectos; la vista `analytics` sin él cae a la tabla.
+
+  Además, el cambio del orden por defecto queda registrado en el contrato y en ADR-0087 ("Phase 7 amendments").
+  No corregidos: los agregados SQL (deuda ya registrada) y el cambio de `frontend/next.config.ts`, que **no es de este lote** (está sin commitear en la copia de trabajo, ajeno a esta tarea).
+
+**Verificación:**
+- tsc 0 errores; lint de lo tocado sin errores ni advertencias (`salesApi.ts` baja de 7 a 6).
+- vitest 147/147 (entity-view, shared, contrato, sales, inventory).
+- Stories 21/21.
+- pytest de `sales` 26/26.
+- App real tras reiniciar el backend: las mismas cifras sobre 178 órdenes.
 
 ## 4. Matriz por entidad
 

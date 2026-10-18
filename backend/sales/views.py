@@ -132,9 +132,21 @@ class SaleOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryM
     def get_queryset(self):
         return SaleOrderSelector.get_base_queryset()
     permission_classes = [StandardizedModelPermissions]
-    filter_backends = [DjangoFilterBackend, DistinctSearchFilter]
+    filter_backends = [DjangoFilterBackend, DistinctSearchFilter, filters.OrderingFilter]
     filterset_class = SaleOrderFilterSet
     search_fields = ["customer__name", "customer__tax_id", "number", "lines__product__name"]
+    # Server ordering of the list (ADR-0087 lote 2b): `?ordering=<key>,id`. Without it, the
+    # selector's "-date,-id" order is kept.
+    ordering_fields = ["id", "number", "date", "customer__name", "total"]
+
+    @action(detail=False, methods=["get"], url_path="analytics")
+    def analytics(self, request):
+        """Figures over the whole filtered list (same filters and search as the list endpoint)."""
+        from .analytics import SaleOrderAnalyticsService
+
+        queryset = self.filter_queryset(SaleOrderSelector.get_analytics_queryset()).order_by()
+        granularity = request.query_params.get("granularity", "month")
+        return Response(SaleOrderAnalyticsService.compute(queryset, granularity=granularity))
 
     def get_serializer_class(self):
         if self.action == "create":

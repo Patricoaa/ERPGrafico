@@ -1,5 +1,5 @@
 export { UnifiedSearchBar } from './UnifiedSearchBar'
-export { useUnifiedSearch } from './useUnifiedSearch'
+export { bindUnifiedSearch, useUnifiedSearch } from './useUnifiedSearch'
 export type {
   UnifiedSearchConfig,
   UnifiedChip,

@@ -5,6 +5,53 @@ import { type Invoice } from '@/features/billing'
 import { toPage } from '@/lib/pagination'
 import type {Page} from '@/lib/pagination'
 
+/** Filters shared by the order list and its analytics (same filtered set). */
+function orderListParams(filters?: SaleOrderFilters): URLSearchParams {
+    const params = new URLSearchParams()
+    if (filters?.customer_name) params.append('customer_name', filters.customer_name)
+    if (filters?.date_after) params.append('date_after', filters.date_after)
+    if (filters?.date_before) params.append('date_before', filters.date_before)
+    if (filters?.total_min) params.append('total_min', filters.total_min)
+    if (filters?.total_max) params.append('total_max', filters.total_max)
+    if (filters?.number) params.append('number', filters.number)
+    if (filters?.product_name) params.append('product_name', filters.product_name)
+    if (filters?.delivery_status) params.append('delivery_status', filters.delivery_status)
+    if (filters?.origin_status) params.append('origin_status', filters.origin_status)
+    if (filters?.billing_status) params.append('billing_status', filters.billing_status)
+    if (filters?.payment_status) params.append('payment_status', filters.payment_status)
+    if (filters?.production_status) params.append('production_status', filters.production_status)
+    if (filters?.pos_session) params.append('pos_session', String(filters.pos_session))
+    if (filters?.search) params.append('search', filters.search)
+    return params
+}
+
+/** Response of `GET /sales/orders/analytics/` (backend `sales/analytics.py`). */
+export interface SaleOrderAnalyticsResponse {
+    granularity: "day" | "month" | "year"
+    totals: {
+        total_volume: number
+        total_paid: number
+        total_pending: number
+        order_count: number
+        avg_order_value: number
+        customer_count: number
+        delivered_count: number
+        pending_delivery_count: number
+        pos_order_count: number
+        system_order_count: number
+    }
+    trend: Record<"current" | "previous", { volume: number; paid: number; count: number }>
+    channel: { id: string; value: number }[]
+    payment_method: { id: string; value: number }[]
+    delivery_status: { id: string; value: number }[]
+    customers: { customer: string; total: number; order_count: number }[]
+    products: { product: string; total: number; count: number }[]
+    product_types: { id: string; value: number }[]
+    /** Chronological; `bucket` is the first day of the period (ISO). */
+    periods: { bucket: string; total: number; count: number; net: number; system: number; pos: number; delivered: number }[]
+    price_ranges: { id: string; value: number }[]
+}
+
 /**
  * Centralized API service for sales operations
  */
@@ -13,26 +60,23 @@ export const salesApi = {
      * Fetch all sales orders
      */
     getOrders: async (filters?: SaleOrderFilters): Promise<Page<SaleOrder>> => {
-        const params = new URLSearchParams()
+        const params = orderListParams(filters)
         if (filters?.page) params.append('page', String(filters.page))
         if (filters?.page_size) params.append('page_size', String(filters.page_size))
-        if (filters?.customer_name) params.append('customer_name', filters.customer_name)
-        if (filters?.date_after) params.append('date_after', filters.date_after)
-        if (filters?.date_before) params.append('date_before', filters.date_before)
-        if (filters?.total_min) params.append('total_min', filters.total_min)
-        if (filters?.total_max) params.append('total_max', filters.total_max)
-        if (filters?.number) params.append('number', filters.number)
-        if (filters?.product_name) params.append('product_name', filters.product_name)
-        if (filters?.delivery_status) params.append('delivery_status', filters.delivery_status)
-        if (filters?.origin_status) params.append('origin_status', filters.origin_status)
-        if (filters?.billing_status) params.append('billing_status', filters.billing_status)
-        if (filters?.payment_status) params.append('payment_status', filters.payment_status)
-        if (filters?.production_status) params.append('production_status', filters.production_status)
-        if (filters?.pos_session) params.append('pos_session', String(filters.pos_session))
-        if (filters?.search) params.append('search', filters.search)
+        if (filters?.ordering) params.append('ordering', filters.ordering)
 
-        const { data } = await api.get('/sales/orders/', { params })
+        const { data } = await api.get<unknown>('/sales/orders/', { params })
         return toPage<SaleOrder>(data, filters?.page ?? 1, filters?.page_size ?? 50)
+    },
+
+    /**
+     * Analytics over the whole filtered order list (same filters as `getOrders`, no paging).
+     */
+    getOrderAnalytics: async (filters: SaleOrderFilters | undefined, granularity: string): Promise<SaleOrderAnalyticsResponse> => {
+        const params = orderListParams(filters)
+        params.append('granularity', granularity)
+        const { data } = await api.get<SaleOrderAnalyticsResponse>('/sales/orders/analytics/', { params })
+        return data
     },
 
     /**

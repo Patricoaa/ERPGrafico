@@ -251,3 +251,18 @@
 - Evidencia: `ruff check backend/inventory/selectors.py` → 8 × F821. `timezone` y `Subscription` no están importados en `selectors.py:730-736`; ya estaba así en `HEAD`, antes del lote. Esa función lanza `NameError` si se ejecuta
 - Decisión: fuera del alcance de entity-view; tarea aparte aprobada por el usuario. `get_stats()` lo llama `subscription_views.py:67`, así que ese endpoint probablemente responde 500
 - Estado: https://github.com/Patricoaa/ERPGrafico/issues/179
+
+### TC-047 · Defecto del sistema actual · Verificado
+- Evidencia: `features/sales/components/SalesOrdersView.tsx` (antes) calculaba la analítica con `useSalesAnalyticsData(orders, …)` sobre las órdenes de la **página visible** (20). Las cifras cambiaban al paginar (volumen $1.419.350 en la captura previa frente a $12.522.850 reales sobre 178 órdenes)
+- Decisión (Puerta D 2b): endpoint `GET /api/sales/orders/analytics/` sobre la lista filtrada completa, reutilizando `filter_queryset` (`sales/analytics.py`)
+- Estado: corregido (lote 2b)
+
+### TC-048 · Tipo erróneo · Verificado
+- Evidencia: `features/billing/types/index.ts` declaraba `partner?: number`, pero `billing/serializers.py` envía `partner_id` y `partner_name`. En la lista de notas de venta el enlace al cliente se construía sin id. `PurchaseInvoicesClientView.tsx:286` también lee `.partner`
+- Decisión: se añade `partner_id`; la entidad de notas lo usa. Quitar `partner` en el 2c (Compras)
+- Estado: parcial
+
+### TC-049 · Documentación del servidor de desarrollo · Verificado
+- Evidencia: `docs/30-playbooks/remote-dev-server.md:141` dice "Django auto-reload", pero el backend corre con `daphne -b 0.0.0.0 -p 8100 config.asgi:application`, sin autorrecarga. Una vista nueva devolvía 404 hasta `docker compose restart backend`
+- Decisión: registrar; corregir el playbook o el comando de arranque (tarea aparte)
+- Estado: pendiente

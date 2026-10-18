@@ -193,3 +193,11 @@ describe("selection with fresh data (code review, lote 2a)", () => {
         expect(screen.queryByText(/seleccionado/)).toBeNull()
     })
 })
+
+describe("default sorting with server pagination (lote 2b)", () => {
+    it("never reorders a single server page: without `sorting`, no header is sortable", () => {
+        const server = { mode: "server" as const, state: { pageIndex: 0, pageSize: 2 }, onChange: vi.fn() }
+        render(<Harness source={{ rows: rows.slice(0, 2), rowCount: 3 }} options={{ pagination: server }} />)
+        expect(screen.getAllByRole("columnheader").flatMap((h) => within(h).queryAllByRole("button"))).toHaveLength(0)
+    })
+})

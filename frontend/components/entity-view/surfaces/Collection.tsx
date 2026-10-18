@@ -51,9 +51,8 @@ interface CollectionContextValue<T> {
     view: CollectionViewMode
     setView: (view: CollectionViewMode) => void
     label: string
-    /** True while a `Collection.Analytics` is mounted: the toolbar then offers the analytics view. */
+    /** The Root has a `Collection.Analytics` child: the toolbar offers the analytics view. */
     hasAnalytics: boolean
-    setHasAnalytics: (present: boolean) => void
 }
 
 /**
@@ -105,8 +104,11 @@ export interface CollectionRootProps<T, F extends FieldMap<T>> {
 function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen, selection = "none", selectedId, defaultView = "table", view: controlledView, onViewChange, label }: CollectionRootProps<T, F>) {
     const opener = useEntityOpener()
     const [localView, setLocalView] = React.useState<CollectionViewMode>(defaultView)
-    const [hasAnalytics, setHasAnalytics] = React.useState(false)
-    const view = controlledView ?? localView
+    // Known at render time (no registration effect, no first-render flicker). Without an analytics
+    // child, a stored "analytics" view (e.g. ?view=analytics on a list that has none) falls back to the table.
+    const hasAnalytics = React.Children.toArray(children).some((child) => React.isValidElement(child) && child.type === Analytics)
+    const requestedView = controlledView ?? localView
+    const view = requestedView === "analytics" && !hasAnalytics ? "table" : requestedView
     const setView = React.useCallback(
         (next: CollectionViewMode) => {
             if (controlledView === undefined) setLocalView(next)
@@ -134,7 +136,6 @@ function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen,
         view,
         setView,
         hasAnalytics,
-        setHasAnalytics,
         label: label ?? (entity.label !== undefined ? opener?.labelOf(entity.label) : undefined) ?? entityName(entity),
     }
     return (
@@ -300,17 +301,12 @@ function BulkBar<T>({ actions }: CollectionBulkBarProps<T>) {
 // ─── Analytics ───────────────────────────────────────────────────────────────
 
 /**
- * Analytics view of the collection (Gate D lote 2). Mounting it adds an "Analítica" view to the
+ * Analytics view of the collection (Gate D lote 2). As a direct child of `Root` it adds an "Analítica" view to the
  * toolbar's view switch; while that view is active its children replace the table/cards. The content
  * (tabs, StatCards, feature hooks) belongs to the feature, e.g. `<AnalyticsPanelContent … />`.
  */
 function Analytics({ children }: { children: React.ReactNode }) {
     const ctx = useCollectionContext<unknown>()
-    const { setHasAnalytics } = ctx
-    React.useEffect(() => {
-        setHasAnalytics(true)
-        return () => setHasAnalytics(false)
-    }, [setHasAnalytics])
     if (ctx.view !== "analytics") return null
     return <div className="flex h-full min-h-0 flex-1 flex-col">{children}</div>
 }
@@ -575,6 +571,8 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                 <EntityCard
                     variant="compact"
                     isSelected={ctx.selectedId === row.id}
+                    // Hub focus (Gate D 2b): while a sheet is open, the other cards step back (dimmed, no blur).
+                    className={cn("transition-opacity", ctx.selection === "panel" && !!ctx.selectedId && ctx.selectedId !== row.id && "opacity-40")}
                     selectable={isBulk}
                     checked={row.getIsSelected()}
                     onCheckedChange={(v) => row.toggleSelected(v)}

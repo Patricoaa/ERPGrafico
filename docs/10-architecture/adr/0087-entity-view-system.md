@@ -104,6 +104,23 @@ Gate A (2026-10-17) approved these causes, the common/frequent/specific requirem
 - **A1 applied:** `docRef` is exported from the `@/features/documents` barrel.
 - **Specified, not yet built (Phase 7 batch 1):** URL state (`useCollectionUrlState`), typed label (R8), cast-free context (R7), mounting `EntityViewProvider` in the app shell, and the `fromLegacyFields()` adapter.
 
+### Phase 7 amendments to the contract (2026-10-17, batches 1–2b)
+
+All recorded in `component-entity-view.md`; each approved at its Gate D (`docs/50-audit/Tablascards/07-migration-matrix.md`):
+
+- **Batch 1:** typed `EntityLabel` and `label | title` identity; inline kind renderers; controlled view + `useCollectionViewMode`.
+- **Batch 2a:**
+  - server sorting (`orderBy`, `orderingParam`);
+  - `groupBy` + `GROUP_ROW_LIMIT`;
+  - `Collection.BulkBar` and `Collection.Analytics`;
+  - `emptyAction` / `onResetFilters`;
+  - `actions(row, surface)` + `createEntityActions().forCollection`.
+- **Batch 2b:**
+  - hub focus for cards in `panel` selection;
+  - `useServerPage`;
+  - **default sorting change:** with server pagination and no `sorting` option no header sorts (a single page is never reordered);
+  - `Collection.Analytics` detected as a direct child of `Root`, and an `analytics` view without it falls back to the table.
+
 ## Consequences
 
 ### Positive

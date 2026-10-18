@@ -45,7 +45,10 @@ export interface Invoice {
         description?: string
     }[]
     items?: Record<string, unknown>[]
+    /** Not sent by the invoice serializers (they send `partner_id` / `partner_name`). */
     partner?: number
+    /** Contact of the document: sale order customer, purchase order supplier or `contact` (billing/serializers.py). */
+    partner_id?: number | null
     supplier?: number
 }
 

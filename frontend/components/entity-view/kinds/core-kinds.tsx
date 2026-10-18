@@ -138,7 +138,8 @@ export function registerCoreValueKinds(): void {
         sortValue: (v) => v?.name ?? null,
         render: ({ value, align }) =>
             value ? (
-                <DataCell.ContactLink contactId={value.id} align={align}>{value.name}</DataCell.ContactLink>
+                // Without an id there is nothing to open: plain text, not a link that does nothing.
+                value.id ? <DataCell.ContactLink contactId={value.id} align={align}>{value.name}</DataCell.ContactLink> : <DataCell.Text align={align}>{value.name}</DataCell.Text>
             ) : (
                 <DataCell.Empty align={align} />
             ),

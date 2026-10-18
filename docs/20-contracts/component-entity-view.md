@@ -110,7 +110,7 @@ Reglas:
 | `options` | Valores |
 |---|---|
 | `pagination` | `{ mode: "client", pageSize? }` (defecto, 20) · `{ mode: "server", state, onChange }` · `{ mode: "none" }` |
-| `sorting` | `{ mode: "local" }` (defecto: ordena las filas cargadas con la clave semántica del kind) · `{ mode: "server", state: SortSpec \| null, onChange }` |
+| `sorting` | `{ mode: "local" }` (defecto con paginación cliente o sin paginar: ordena las filas cargadas con la clave semántica del kind) · `{ mode: "server", state: SortSpec \| null, onChange }`. Con paginación en servidor y sin `sorting`, **ninguna cabecera se puede ordenar** |
 | `defaultSort` | `"id"` o `"-id"` (ids tipados; solo en orden local) |
 | `groupBy` | id de campo o `null`: agrupa las filas cargadas por el texto formateado del campo |
 
@@ -122,6 +122,8 @@ PF-1: documentos, movimientos, contabilidad y crédito paginan **en servidor**. 
 - El viewset expone `filters.OrderingFilter` con `ordering_fields` como lista blanca, y documenta el parámetro en `api-contracts.md`.
 - Sin `ordering` se conserva el orden del servidor, y ninguna cabecera afirma un orden.
 - Si la página tiene datos renderizados en servidor (`initialData`), solo valen para la consulta por defecto: TanStack Query usaría `initialData` para cualquier clave nueva y nunca haría la petición.
+
+**Página por forma de consulta:** `useServerPage(shape, initial)` devuelve `[page, setPage]` y vuelve a `initial` cuando cambia la forma (filtros, orden, agrupación).
 
 **Agrupación.** Usa `groupItems` (`lib/group-utils`), igual que las vistas agrupadas actuales: claves ordenadas y valores vacíos en un último grupo "Sin {campo}". Agrupar desactiva la paginación: la página carga una sola página acotada a `GROUP_ROW_LIMIT` (200) con `pagination: { mode: "none" }` y pasa `rowCount`. Si el total supera lo cargado, `Collection.View` muestra el aviso "Agrupando los primeros N de M resultados". La agrupación en servidor queda como Pd-backend (PF-5). Las claves de agrupación de `UnifiedSearchBar` se traducen a ids de campo en la página.
 
@@ -247,6 +249,7 @@ Mientras falte una capacidad, la pantalla que la necesita **se queda en el siste
 | Paridad de URL con el sistema actual: `?view=` (`useCollectionViewMode`), filtros de `UnifiedSearchBar` (nuqs) y `?selected=` (ADR-0020) | **hecho** | lote 1 |
 | Orden y página en la URL (hoy son estado local también en el sistema antiguo) | mejora opcional (`06-spec.md` §5.3) | — |
 | Agrupación, panel de analítica, acciones masivas, orden en servidor | **hecho** | lote 2a |
-| Filas expandibles, kanban/timeline, foco del hub (atenuar cards no seleccionadas) | especificado como composición (`06-spec.md` §6.6) | 2b / por demanda |
+| Foco del hub: con `selection="panel"` y `selectedId`, las cards no seleccionadas se atenúan | **hecho** | lote 2b |
+| Filas expandibles, kanban/timeline | especificado como composición (`06-spec.md` §6.6) | por demanda |
 | Exportación real | el hook existe; falta el endpoint (Pd-backend) | — |
 | `label` tipado (R8), contexto y registro con un único puente cada uno (R7), provider en el shell | **hecho** | lote 1 |

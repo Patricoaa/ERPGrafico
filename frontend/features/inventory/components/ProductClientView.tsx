@@ -3,10 +3,9 @@
 import { showApiError } from "@/lib/errors"
 
 import React, { useState, useMemo } from "react"
-import { hashKey } from "@tanstack/react-query"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ActionConfirmModal, AnalyticsPanelContent, type AnalyticsPanelConfig, type BulkAction } from '@/components/shared'
-import { Collection, GROUP_ROW_LIMIT, orderingParam, useCollectionViewMode, useEntityCollection, type FieldId, type SortSpec } from "@/components/entity-view"
+import { Collection, GROUP_ROW_LIMIT, orderingParam, useCollectionViewMode, useEntityCollection, useServerPage, type FieldId, type SortSpec } from "@/components/entity-view"
 import { toPage } from '@/lib/pagination'
 import { ProductDrawer } from "./ProductDrawer"
 import type { ProductInitialData } from "@/types/forms"
@@ -27,7 +26,7 @@ import { type Product, type Restriction, type ProductFilters } from "@/features/
 import { productActions, type ProductActionsCtx } from "@/features/inventory/productActions"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { productUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 
@@ -95,12 +94,8 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     const groupBy = search.groupBy === "product_type" ? "type" : search.groupBy === "category_name" ? "category" : null
     const isGrouping = groupBy !== null
     const [sort, setSort] = useState<SortSpec<FieldId<typeof productEntity.fields>> | null>(null)
-    // The page belongs to one query shape: a new filter, sort or grouping starts again at the first page
-    // (otherwise the user lands on an arbitrary slice, or on a page that no longer exists).
-    const queryShape = hashKey([filters, sort, groupBy])
-    const [paging, setPaging] = useState({ shape: queryShape, page: DEFAULT_PAGE })
-    const pageState = paging.shape === queryShape ? paging.page : DEFAULT_PAGE
-    const setPageState = (page: typeof DEFAULT_PAGE) => setPaging({ shape: queryShape, page })
+    // A new filter, sort or grouping starts again at the first page.
+    const [pageState, setPageState] = useServerPage([filters, sort, groupBy], DEFAULT_PAGE)
     // Server order by default (no sort): the header only claims an order the server applied.
     const { view, onViewChange } = useCollectionViewMode("inventory.product")
     const viewParam = searchParams.get('view')
@@ -561,16 +556,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                         <div className="flex-1 min-w-0">
                             <UnifiedSearchBar
                                 config={config}
-                                chips={search.chips}
-                                isFiltered={search.isFiltered}
-                                inputValue={search.inputValue}
-                                onInputChange={search.setInputValue}
-                                onApply={search.applyFilter}
-                                onRemove={search.removeFilter}
-                                onClearAll={search.clearAll}
-                                groupBy={search.groupBy}
-                                onGroupBySelect={search.setGroupBy}
-                                paramValues={search.paramValues}
+                                {...bindUnifiedSearch(search)}
                                 placeholder="Buscar producto..."
                             />
                         </div>

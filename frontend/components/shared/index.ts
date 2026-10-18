@@ -110,7 +110,7 @@ export { SEG_TEXT, SEG_WRAPPER, SEG_TRIGGER, SEG_ACTIVE, SEG_INACTIVE, SEG_DROPD
 export { useSegmentationTable } from './SegmentationTableContext';
 
 // Unified Search (reemplaza SmartSearch + Segmentation + GroupBy)
-export { UnifiedSearchBar, useUnifiedSearch } from './UnifiedSearchBar';
+export { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from './UnifiedSearchBar';
 export type {
   UnifiedSearchConfig,
   UnifiedChip,

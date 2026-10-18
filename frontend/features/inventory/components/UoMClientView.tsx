@@ -6,7 +6,7 @@ import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Trash2 } from "lucide-react"
 import { toast } from "sonner"
-import { ActionConfirmModal, UnifiedSearchBar, useUnifiedSearch, type BulkAction } from "@/components/shared"
+import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { uomActions, type UoMActionsCtx } from "@/features/inventory/uomActions"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -91,16 +91,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                         <div className="flex-1 min-w-0">
                             <UnifiedSearchBar
                                 config={uomUnifiedSearchDef}
-                                chips={search.chips}
-                                isFiltered={search.isFiltered}
-                                inputValue={search.inputValue}
-                                onInputChange={search.setInputValue}
-                                onApply={search.applyFilter}
-                                onRemove={search.removeFilter}
-                                onClearAll={search.clearAll}
-                                groupBy={search.groupBy}
-                                onGroupBySelect={search.setGroupBy}
-                                paramValues={search.paramValues}
+                                {...bindUnifiedSearch(search)}
                                 placeholder="Buscar unidad..."
                             />
                         </div>
