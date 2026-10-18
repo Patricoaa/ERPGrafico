@@ -27,9 +27,10 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
     const { filterFn } = search
     const rows = useMemo(() => filterFn(advances), [filterFn, advances])
     const { view, onViewChange } = useCollectionViewMode("hr.salaryadvance")
+    // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
     const collection = useEntityCollection(
         salaryAdvanceEntity,
-        { rows, isLoading: loading, isRefetching, error: isError, refetch: refetchAdvances, isFiltered: search.isFiltered },
+        { rows, isLoading: loading, isRefetching, error: isError && advances.length === 0, refetch: refetchAdvances, isFiltered: search.isFiltered },
         { pagination: { mode: "client", pageSize: 20 }, defaultSort: salaryAdvanceViews.table.defaultSort },
     )
     const { employees } = useEmployees()

@@ -78,9 +78,10 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
     }
 
     const { view, onViewChange } = useCollectionViewMode("treasury.terminal")
+    // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
     const collection = useEntityCollection(
         posTerminalEntity,
-        { rows: filteredTerminals, isLoading, error: isError, refetch, isFiltered: search.isFiltered },
+        { rows: filteredTerminals, isLoading, error: isError && terminals.length === 0, refetch, isFiltered: search.isFiltered },
         { pagination: { mode: "client", pageSize: 20 } },
     )
     const toolbarAction = createAction || (

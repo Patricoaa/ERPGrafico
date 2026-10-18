@@ -1,11 +1,11 @@
 # Progreso — Nuevo sistema de presentación
-- **Avance (2026-10-18): 20 entidades `defineEntity` · 74 pantallas y 120 consumidores en el sistema antiguo** (`bash frontend/scripts/entity-view-progress.sh`)
-- Fase actual: 7 · oleada A · A2 implementado + `/code-review` aplicado (`07` §6.16), sin commitear · esperando al usuario
+- **Avance (2026-10-18): 29 entidades `defineEntity` · 69 pantallas y 106 consumidores en el sistema antiguo** (`bash frontend/scripts/entity-view-progress.sh`)
+- Fase actual: 7 · oleada A · A3 implementado + `/code-review` aplicado (`07` §6.17), sin commitear · esperando al usuario
 - Último completado: lote 3a. Líneas de la ficha (OV/OC/factura) sobre `orderLineEntity`; `DeliveryDrawer` y `ReceiptModal` con `EditableCollection` + RHF; núcleo con `processed`/`check`/`rowStatus` y `core/define-editable.ts`. TC-012 y TC-056 corregidos; TC-057 y TC-058 encontrados y corregidos; TC-059 para el usuario. Detalle en `07` §5.7
-- Próximo paso exacto: el usuario autoriza el commit del A2 → A3 (maestros de tesorería y contabilidad)
+- Próximo paso exacto: el usuario autoriza el commit del A3 y decide los casos específicos (plan de cuentas, cierres) → A4 (contactos y LdM)
 - Rama: `refactor/entity-view-lote-3` (3a commiteado en `7ef87d7a7`); issues abiertas #176, #177
 - Puertas: A ✅ · B ✅ · C ✅ · D lote 1 ✅ · D 2a ✅ · D 2b ✅ · D 2c ✅ (2026-10-17) · D lote 3 ✅ (2026-10-18) · replanificación ✅ (2026-10-18) · D A1 ✅ (2026-10-18)
-- Preguntas abiertas para el usuario: commit del A2; cómo reconectar mutagen a 192.168.1.86 sin resucitar borrados (TC-064)
+- Preguntas abiertas para el usuario: commit del A3; casos específicos plan de cuentas (árbol) y cierres (superficie propia); credenciales de demo para verificar en la app
 - Decisiones del usuario:
   - 2026-10-17: las tablas de wizard/modal entran como caso de uso específico · `as any` de `AutoEntityCard.tsx:390` espera al rediseño · `journalEntryFields` lo determina la auditoría (→ TC-016) · TC-012 se corrige en la migración
   - 2026-10-17 Puerta A: aprueba RC1–RC8 y la matriz C/F/E; pantallas de la Fase 4 = UoM, OV, Compras; aprueba `role="grid"` → `role="table"` en `compact`; **exportación = requisito** (aclarado)
@@ -16,7 +16,7 @@
   - 2026-10-18 Puerta D lote 3: 3a/3b/3c por separado; tipos de línea unificados en `OrderLine`; los asistentes pasan a RHF dentro del lote; `rowStatus` en la definición; E2/E3 entran al núcleo (excepción); `NumpadModal` se conserva; TC-056 se restaura
   - 2026-10-18 Replanificación (`07` §6.11): oleadas 0 → A → B → C → D → E; reglas M1–M8 (Puerta D por oleada, proceso ligero en A); 3b/3c congelados; TC-055 espera a la oleada E
   - 2026-10-17 Puerta D lote 2: partición 2a/2b; agrupación con tope uniforme de 200; `Collection.Analytics` en el núcleo; **orden en servidor ahora** (OrderingFilter + ordering_fields)
-- Entorno: mutagen ✅ · tests remotos ✅ (vitest en contenedor, Node 20.20.2; el contenedor no tiene Chromium de Playwright) · Node local v18.19.1 por defecto, **Node 24 disponible en nvm** (`/home/pato/.nvm/versions/node/v24.18.0/bin`): vitest, Storybook y playwright-cli corren en local con él
+- Entorno: servidor de desarrollo **192.168.1.86** (mutagen: una sola sesión `erpgrafico-sync`, conectada) · mutagen ✅ · tests remotos ✅ (vitest en contenedor, Node 20.20.2; el contenedor no tiene Chromium de Playwright) · Node local v18.19.1 por defecto, **Node 24 disponible en nvm** (`/home/pato/.nvm/versions/node/v24.18.0/bin`): vitest, Storybook y playwright-cli corren en local con él
 - Bitácora:
   - 2026-10-16 F0 iniciada y completada. Cambio relevante frente al §2: `renderCard` **no** es mayoritariamente manual (43/44 envuelven `AutoEntityCard`).
   - 2026-10-17 F1 completada. Hallazgos clave: el 40 % de los `computed` son referencias a documentos; los 43 `placement: 'detail'` existen para deshacer el acoplamiento card↔tabla en líneas sin card; bug de `exclude` (TC-012); 7 copias del patrón "cantidad a procesar".
@@ -45,3 +45,6 @@
   - 2026-10-18 `/code-review` del A1: 6 corregidos (2 en el núcleo: bucle de reinicio de página y error que tapaba datos en caché → enmienda ADR-0087), 2 registrados como diferencias.
   - 2026-10-18 A2 implementado (RR. HH., POS, suscripciones). TC-064: reaparecieron 9 `*Fields` borrados (sincronización); el ratchet lo detectó; borrados de nuevo.
   - 2026-10-18 `/code-review` del A2: 3 corregidos (TC-065 ventas POS concatenadas, grupos de inasistencias con código, moneda), 7 registrados (TC-066).
+  - 2026-10-18 A2 commiteado. Mutagen: sesión vieja (.93) terminada; local y .86 sin diferencias de contenido (TC-064 resuelto). Tras un reinicio de contenedores nginx daba 502 (upstream con la IP vieja del backend): `docker compose restart nginx`.
+  - 2026-10-18 A3 implementado (tesorería). Plan de cuentas y cierres contables salen como casos específicos.
+  - 2026-10-18 `/code-review` del A3: 7 corregidos (error con filtro en cliente en las 12 vistas que filtran → regla en la receta), 3 registrados (TC-067).

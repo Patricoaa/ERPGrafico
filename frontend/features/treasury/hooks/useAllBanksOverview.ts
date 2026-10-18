@@ -4,7 +4,7 @@ import { BANKS_KEYS } from './queryKeys'
 import { useBanks } from './useMasterData'
 import { staleTime } from '@/lib/query-config'
 
-interface BankSummary {
+export interface BankSummary {
     bank: { id: number; name: string; code: string | null }
     summary: {
         total_accounts: number
@@ -16,6 +16,9 @@ interface BankSummary {
         total_loan_debt: number
     }
 }
+
+/** Stable empty result: a fresh `[]` per render would invalidate every memo downstream. */
+const NO_OVERVIEWS: BankSummary[] = []
 
 export function useAllBanksOverview() {
     const { banks } = useBanks()
@@ -39,5 +42,5 @@ export function useAllBanksOverview() {
         staleTime: staleTime.stable,
     })
 
-    return { overviews: overviews ?? [], isLoading }
+    return { overviews: overviews ?? NO_OVERVIEWS, isLoading }
 }

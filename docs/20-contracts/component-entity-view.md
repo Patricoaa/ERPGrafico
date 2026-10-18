@@ -299,6 +299,7 @@ Se migra **con el comportamiento de hoy** (paridad). Las mejoras se registran y 
 Reglas de la pantalla:
 
 - **Selección:** la columna `select` a mano, `renderCard` y `AutoEntityCard` desaparecen; las da `selection`.
+- **Error con filtro en cliente:** si la vista filtra las filas antes de pasarlas (`filterFn`, filtros locales), pasa `error: isError && datos.length === 0` con los datos **sin filtrar**: con datos en caché, un refresco fallido más un filtro sin coincidencias debe leerse "sin resultados", no "error".
 - **Agrupación:** un mapa a nivel de módulo `const X_GROUPS: Record<string, FieldId<typeof xEntity.fields>>` traduce la clave de la búsqueda al campo.
 - **Analítica:**
   - el armado vive en `components/<entidad>AnalyticsScreen.ts`, sin JSX: `buildXAnalyticsScreen(data, ui): AnalyticsPanelContentProps`;

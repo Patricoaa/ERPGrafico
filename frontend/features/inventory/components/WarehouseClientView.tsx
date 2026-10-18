@@ -28,9 +28,10 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
     const { filterFn } = search
     const { view, onViewChange } = useCollectionViewMode("inventory.warehouse")
     const rows = useMemo(() => filterFn(warehouses), [filterFn, warehouses])
+    // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
     const collection = useEntityCollection(
         warehouseEntity,
-        { rows, isLoading, error: isError, refetch, isFiltered: search.isFiltered },
+        { rows, isLoading, error: isError && warehouses.length === 0, refetch, isFiltered: search.isFiltered },
         { defaultSort: warehouseViews.table.defaultSort },
     )
 

@@ -26,9 +26,10 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
     const { filterFn } = search
     const { view, onViewChange } = useCollectionViewMode("inventory.category")
     const rows = useMemo(() => filterFn(categories), [filterFn, categories])
+    // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
     const collection = useEntityCollection(
         categoryEntity,
-        { rows, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
+        { rows, isLoading, isRefetching, error: isError && categories.length === 0, refetch, isFiltered: search.isFiltered },
         { defaultSort: categoryViews.table.defaultSort },
     )
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)

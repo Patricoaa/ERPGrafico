@@ -22,9 +22,10 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
     const { filterFn } = search
     const { view, onViewChange } = useCollectionViewMode("settings.group")
     const rows = useMemo(() => filterFn(groups), [filterFn, groups])
+    // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
     const collection = useEntityCollection(
         groupEntity,
-        { rows, isLoading: loading, error: isError, refetch, isFiltered: search.isFiltered },
+        { rows, isLoading: loading, error: isError && groups.length === 0, refetch, isFiltered: search.isFiltered },
         { defaultSort: groupViews.table.defaultSort },
     )
     const [deleteId, setDeleteId] = useState<number | null>(null)

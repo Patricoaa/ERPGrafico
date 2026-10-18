@@ -873,3 +873,44 @@ Sin cambio (registrados):
 
 Verificación posterior: `tsc` y `eslint` limpios; vitest `components/entity-view` + contrato 75/75; `features/{hr,sales,pos,purchasing}` 22/22.
 
+
+### 6.17 Resultado del sub-lote A3 — maestros de tesorería (2026-10-18)
+
+8 archivos de pantalla, 9 entidades, 6 `*Fields` borrados. **Dos pantallas de contabilidad salen del A3 como casos específicos** (ver abajo).
+
+| Pantalla | Entidad | Diferencias intencionales frente a la versión anterior |
+|---|---|---|
+| `treasury/PaymentHardwareClientView` (proveedores y dispositivos) | `terminalProvider.entity.ts`, `terminalDevice.entity.ts` | etiquetas únicas `treasury.terminalprovider` / `treasury.terminaldevice` (antes `treasury.paymentterminal*` en la card, que no existían en el registro) |
+| `treasury/PaymentMethodClientView` | `paymentMethod.entity.ts` | icono y tono por tipo con `media.iconFor` / `media.tone`; el `computed` "cuenta + chips Ventas/Compras" pasa a dos campos (`treasuryAccount`, `usage` con chips neutros); ahora muestra el skeleton de carga (antes no pasaba `isLoading`) |
+| `treasury/BankCenterClientView` | `bank.entity.ts` | las métricas del resumen (cuentas, tarjetas, cheques, préstamos), que eran hijos opacos de la card, son campos tipados sobre una fila `BankRow` (banco + `summary`) que arma la pantalla; la tabla gana la columna de acciones |
+| `treasury/BankCheckingSection`, `BankCreditSection`, `BankLoanSection` | `bankCheckingAccount`, `bankCreditCard`, `bankLoanOverview` (identidad `title`) | colecciones solo de cards (`defaultView="card"`, sin barra) con sección `metrics`; las sumas usan `toNumber` (lección de TC-065); la tarjeta de crédito ya no muestra el nombre de la empresa como subtítulo (viene del contexto, no de la fila) |
+| `treasury/credit-lines/CreditLinesClientView` | `creditLine.entity.ts` + `creditLineActions.ts` (nuevo) | los botones "Editar"/"Archivar" en línea (tabla y card) pasan a `createEntityActions` (`ROW_ACTIONS`); el estado lleva su etiqueta (`status_display`); "Uso %" con formato local (`12,5 %`); el skeleton y el error los da la colección y `StaleDataBanner` queda solo con filas en caché |
+| `treasury/loans/LoansClientView` | `bankLoan.entity.ts` | igual criterio de carga/error; la fecha de vencimiento usa el formateador común; el saldo insoluto pierde el énfasis en negrita |
+
+**Casos específicos (fuera del A3, decisión del usuario)**
+- `accounting/AccountsClientView` (plan de cuentas): **árbol** con subfilas, expandir/plegar y autoexpansión (`getSubRows`, único consumidor). entity-view no tiene filas jerárquicas y la regla M2 impide añadirlas por una pantalla. Aplanarlo con sangría perdería el plegado.
+- `accounting/closures/AccountingClosuresClientView`: `DataTableView` solo aporta barra + paginación; cada ejercicio se dibuja con `FiscalYearCard`, un panel interactivo propio (`renderCustomView`). No es una colección de entidad: es una superficie de la feature.
+
+**Verificación**
+- `tsc` sin errores; `eslint` sin errores (avisos solo en dependencias de hooks preexistentes).
+- vitest: `components/entity-view` + contrato 75/75; `features/{treasury,accounting}` 4/4.
+- El ratchet volvió a detectar algo: tres comentarios nuevos mencionaban `createEntityFields` / `AutoEntityCard` (falso positivo); se reescribieron.
+- Avance: 29 entidades · 69 pantallas · 40 `*Fields` · 40 `computed` · 37 `toColumns` · 25 `AutoEntityCard` · 106 consumidores.
+
+**`/code-review` medium del A3 (10 hallazgos)**
+
+Corregidos (7 hallazgos en 6 cambios; los dos primeros eran el mismo defecto):
+1. **Error con filtro en cliente** (credit lines, préstamos, y el mismo patrón en las 12 vistas de A1–A3 que filtran en cliente): un refresco fallido + un filtro sin coincidencias mostraba "error" en vez de "sin resultados", porque el núcleo ve 0 filas con `error`. Ahora `error: isError && datos.length === 0` con los datos sin filtrar; regla añadida a la receta (`component-entity-view.md` §10.2). `StaleDataBanner` mira los datos sin filtrar.
+2. Tasa de préstamo vacía mostraba "—% anual": ahora "—".
+3. Métricas de banco sin resumen (bancos archivados, o mientras carga) mostraban 0 como dato real: ahora "—".
+4. "Cuotas Rest." mostraba pagadas/total (etiqueta heredada errónea): ahora "Cuotas pagadas".
+5. Centro de bancos: el resumen por banco se buscaba con `find` en cada render sobre un `[]` nuevo: `Map` + vacío estable en `useAllBanksOverview`.
+6. Archivar una línea de crédito no pedía confirmación (heredado) y ahora queda en el menú junto a "Editar": `useConfirmAction` + `ActionConfirmModal`, como el resto de maestros de tesorería.
+
+Sin cambio (registrados):
+- Subtítulo con el nombre de la empresa en las tarjetas de crédito: ya listado como diferencia (viene del contexto, no de la fila).
+- Chips "Ventas"/"Compras" sin color: no hay dominio; Productos usa el mismo par neutro. Se decide junto con el resto de chips de disponibilidad.
+- **TC-067:** los métodos soportados por un dispositivo se traducen con ids de base de datos fijos (1 → crédito, 2 → débito), heredado de `terminalDeviceFields`. Requiere que el serializer exponga `method_type` (Pd-backend).
+
+Verificación posterior: `tsc` y `eslint` sin errores; vitest `components/entity-view` + contrato y `features/{treasury,accounting,hr,inventory,sales,settings}` en verde.
+

@@ -29,9 +29,10 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
     const { filterFn } = search
     const { view, onViewChange } = useCollectionViewMode("inventory.uomcategory")
     const rows = useMemo(() => filterFn(categories), [filterFn, categories])
+    // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
     const collection = useEntityCollection(
         uomCategoryEntity,
-        { rows, isLoading: isCategoriesLoading, error: isCategoriesError, refetch: refetchCategories, isFiltered: search.isFiltered },
+        { rows, isLoading: isCategoriesLoading, error: isCategoriesError && categories.length === 0, refetch: refetchCategories, isFiltered: search.isFiltered },
         { defaultSort: uomCategoryViews.table.defaultSort },
     )
 

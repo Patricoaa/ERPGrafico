@@ -345,7 +345,9 @@
 - Evidencia: 9 archivos borrados en `7eb097068` y `beb445b00` reaparecen sin rastrear a las 18:59:50 del 2026-10-18, con permisos `-rw-------`, idénticos a `git show <commit>^:<ruta>`. `mutagen sync list`: la sesión sigue apuntando a 192.168.1.93 ("Connecting to beta") mientras `mutagen.yml` ya dice 192.168.1.86
 - Efecto: el ratchet `LEGACY_CONSUMERS` falla; sin él, los archivos se habrían colado en un commit
 - Decisión: borrados (recuperables desde git). Reconectar mutagen solo tras decidir cómo evitar que una sesión nueva sin ancestro común resucite borrados (two-way-resolved)
-- Estado: mitigado; pendiente del usuario
+- Causa (2026-10-18, verificada): había **dos** sesiones `erpgrafico-sync`: la vieja hacia .93 (desconectada) y una de proyecto hacia .86 creada al reconfigurar `mutagen.yml`. La nueva, sin ancestro común, unió los dos lados al arrancar y trajo los 9 archivos que el servidor aún tenía
+- Resolución: el usuario elige que la copia local mande. Un `rsync -anc` (simulación por checksum) mostró **0 diferencias de contenido** entre local y .86 (solo permisos y fechas) y 13 cartolas de prueba que existen solo en el servidor (`backend/media/bank_statements/`, ignoradas por git; mutagen no puede bajarlas porque `backend/media` local es de root). No hizo falta reemplazar nada; se terminó la sesión vieja (`sync_Lj184…`). Queda una sola, .86, "Watching for changes"
+- Estado: resuelto
 
 ### TC-065 · Defecto del sistema actual · Verificado (código)
 - Evidencia: `posSessionFields.ts` sumaba `total_cash_sales + total_card_sales`; el backend no define `COERCE_DECIMAL_TO_STRING`, así que DRF envía strings y la suma concatena (`"1000.00500.00"` → `parseFloat` = 1000,005: solo el efectivo)
@@ -355,5 +357,11 @@
 ### TC-066 · Defecto del sistema actual · Probable
 - Evidencia: `salaryAdvanceUnifiedSearchDef` declara `clientKey: ['display_id']` para "N° Anticipo", pero `SalaryAdvance` (`types/hr.ts`) no tiene `display_id`; `filterFn` en cliente no puede coincidir
 - Decisión: fuera de la migración (M1); revisar con el serializer de anticipos
+- Estado: pendiente
+
+### TC-067 · Defecto del sistema actual · Verificado (código)
+- Evidencia: `terminalDeviceFields.ts` (y ahora `terminalDevice.entity.ts`) traduce `supported_payment_methods` con `{1: CREDIT_CARD, 2: DEBIT_CARD}`: depende de las pk de `PaymentMethod`
+- Efecto: en otra base (reseed, tenant nuevo) los chips salen mal o no salen
+- Decisión: Pd-backend: exponer `method_type` en el serializer del dispositivo
 - Estado: pendiente
 

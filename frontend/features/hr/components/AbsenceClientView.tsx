@@ -30,9 +30,10 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
     const rows = useMemo(() => filterFn(absences), [filterFn, absences])
     const groupBy = search.groupBy ? ABSENCE_GROUPS[search.groupBy] ?? null : null
     const { view, onViewChange } = useCollectionViewMode("hr.absence")
+    // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
     const collection = useEntityCollection(
         absenceEntity,
-        { rows, isLoading: loading, isRefetching, error: isError, refetch: fetchAbsences, isFiltered: search.isFiltered },
+        { rows, isLoading: loading, isRefetching, error: isError && absences.length === 0, refetch: fetchAbsences, isFiltered: search.isFiltered },
         // Groups span the whole list, not one page.
         { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy, defaultSort: absenceViews.table.defaultSort },
     )

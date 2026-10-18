@@ -1,28 +1,31 @@
 "use client"
 
-import React, {useState, useEffect, useMemo} from 'react'
-import type { ColumnDef } from '@tanstack/react-table'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
-    DataTableView, SkeletonShell,
+    ActionConfirmModal,
     ToolbarCreateButton,
-    UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
-    AutoEntityCard
+    UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, StaleDataBanner,
 } from '@/components/shared'
+import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from '@/components/entity-view'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
-import { Button } from '@/components/ui/button'
 import { useCreditLines, useCreditLineMutations } from '../hooks/useCreditLines'
+import { creditLineEntity, creditLineViews } from '../entity-view/creditLine.entity'
 import { CreditLineDrawer } from './CreditLineDrawer'
+import { creditLineActions, type CreditLineActionsCtx } from './creditLineActions'
 import type { CreditLine } from './types'
 import type { TreasuryAccount } from '../types'
 import { treasuryApi } from '@/features/treasury'
-import { creditLineFields } from './creditLineFields'
+import { useConfirmAction } from '@/hooks/useConfirmAction'
 
 interface Props {
     bankId?: number
 }
 
+/** Search group keys → entity field ids (grouping uses the formatted cell text). */
+const CREDIT_LINE_GROUPS: Record<string, FieldId<typeof creditLineEntity.fields>> = { status: 'status' }
+
 export function CreditLinesClientView({ bankId }: Props) {
-    const { data: creditLines, isLoading, isError } = useCreditLines({ bank_id: bankId })
+    const { data: creditLines, isLoading, isError, refetch } = useCreditLines({ bank_id: bankId })
     const { remove } = useCreditLineMutations()
     const [drawerOpen, setDrawerOpen] = useState(false)
     const [editingLine, setEditingLine] = useState<CreditLine | null>(null)
@@ -37,7 +40,16 @@ export function CreditLinesClientView({ bankId }: Props) {
         ],
     }), [])
     const search = useUnifiedSearch(config)
-    const filteredData = useMemo(() => search.filterFn(creditLines ?? []), [search.filterFn, creditLines])
+    const { filterFn } = search
+    const filteredData = useMemo(() => filterFn(creditLines ?? []), [filterFn, creditLines])
+    const groupBy = search.groupBy ? CREDIT_LINE_GROUPS[search.groupBy] ?? null : null
+    const { view, onViewChange } = useCollectionViewMode('treasury.creditline')
+    // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
+    const collection = useEntityCollection(
+        creditLineEntity,
+        { rows: filteredData, isLoading, error: isError && (creditLines ?? []).length === 0, refetch, isFiltered: search.isFiltered },
+        { pagination: groupBy ? { mode: 'none' } : { mode: 'client' }, groupBy },
+    )
 
     useEffect(() => {
         if (bankId && !editingLine) {
@@ -50,77 +62,35 @@ export function CreditLinesClientView({ bankId }: Props) {
         setDrawerOpen(true)
     }
 
-    const columns: ColumnDef<CreditLine>[] = [
-        ...creditLineFields.toColumns(),
-        {
-            id: 'actions',
-            cell: ({ row }) => (
-                <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => { setEditingLine(row.original); setDrawerOpen(true) }}>
-                        Editar
-                    </Button>
-                    {row.original.status === 'ACTIVE' && (
-                        <Button variant="ghost" size="sm" onClick={() => remove.mutate(row.original.id)}>
-                            Archivar
-                        </Button>
-                    )}
-                </div>
-            ),
-        },
-    ]
+    // Archiving sits in the row menu next to edit: confirm it like every other treasury master.
+    const archiveConfirm = useConfirmAction<number>(async (id) => { await remove.mutateAsync(id) })
+    const actionsCtx: CreditLineActionsCtx = {
+        onEdit: (line) => { setEditingLine(line); setDrawerOpen(true) },
+        onArchive: (id) => archiveConfirm.requestConfirm(id),
+    }
+    const createAction = <ToolbarCreateButton label="Nueva Línea" onClick={handleNewLine} />
 
     return (
-        <SkeletonShell isLoading={isLoading} ariaLabel="Cargando líneas de crédito">
-        {isError && <StaleDataBanner className="mx-4 mt-2" />}
         <div className="space-y-4">
-            <DataTableView
-                columns={columns}
-                data={filteredData}
-                entityLabel="treasury.creditline"
-                createAction={
-                    <ToolbarCreateButton
-                        label="Nueva Línea"
-                        onClick={handleNewLine}
-                    />
-                }
-                isFiltered={search.isFiltered}
-                showReset={search.isFiltered}
-                onReset={search.clearAll}
-                unifiedSearch={<UnifiedSearchBar
-                    config={config}
-                    chips={search.chips}
-                    isFiltered={search.isFiltered}
-                    inputValue={search.inputValue}
-                    onInputChange={search.setInputValue}
-                    onApply={search.applyFilter}
-                    onRemove={search.removeFilter}
-                    onClearAll={search.clearAll}
-                    groupBy={search.groupBy}
-                    onGroupBySelect={search.setGroupBy}
-                    paramValues={search.paramValues}
-                    placeholder="Buscar por código, cuenta o límite..."
-                />}
-                renderCard={(line) => (
-                    <AutoEntityCard 
-                        key={line.id}
-                        data={line}
-                        fields={creditLineFields}
-
-                        entityLabel="treasury.creditline"
-                    >
-                        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border/50">
-                            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setEditingLine(line); setDrawerOpen(true) }}>
-                                Editar
-                            </Button>
-                            {line.status === 'ACTIVE' && (
-                                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); remove.mutate(line.id) }}>
-                                    Archivar
-                                </Button>
-                            )}
-                        </div>
-                    </AutoEntityCard>
-                )}
-            />
+            {/* Without rows the collection shows its own error state; with cached rows they stay, flagged as stale. */}
+            {isError && (creditLines?.length ?? 0) > 0 && <StaleDataBanner className="mx-4 mt-2" />}
+            <Collection.Root
+                collection={collection}
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(line) => actionsCtx.onEdit(line)}
+                actions={creditLineActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar config={config} {...bindUnifiedSearch(search)} placeholder="Buscar por código, cuenta o límite..." />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={creditLineViews.table}
+                    card={creditLineViews.card}
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
+                />
+            </Collection.Root>
 
             <CreditLineDrawer
                 open={drawerOpen}
@@ -133,7 +103,14 @@ export function CreditLinesClientView({ bankId }: Props) {
                 }
             />
 
+            <ActionConfirmModal
+                open={archiveConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) archiveConfirm.cancel() }}
+                onConfirm={archiveConfirm.confirm}
+                title="Archivar línea de crédito"
+                description="¿Archivar esta línea de crédito? Dejará de estar disponible para nuevos giros."
+                variant="destructive"
+            />
         </div>
-        </SkeletonShell>
     )
 }

@@ -2,14 +2,11 @@
 
 import React, { useMemo, useCallback } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import type { ColumnDef } from '@tanstack/react-table'
-import { FileText } from 'lucide-react'
 import {
-    DataTableView,
-    SkeletonShell, AutoEntityCard,
     ToolbarCreateButton,
-    UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
+    UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, StaleDataBanner,
 } from '@/components/shared'
+import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from '@/components/entity-view'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useLoans } from '../hooks/useLoans'
 import { LoanRegisterDrawer } from './LoanRegisterDrawer'
@@ -17,16 +14,18 @@ import { LoanViewDrawer } from './LoanViewDrawer'
 import { LoanDisburseDrawer } from './LoanDisburseDrawer'
 import { LoanDetailModal } from './LoanDetailModal'
 import { loanActions, type LoanActionsCtx } from './loanActions'
-import type { BankLoan } from './types'
-import { loanFields } from './loanFields'
+import { bankLoanEntity, bankLoanViews } from '../entity-view/bankLoan.entity'
 import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
+
+/** Search group keys → entity field ids (grouping uses the formatted cell text). */
+const LOAN_GROUPS: Record<string, FieldId<typeof bankLoanEntity.fields>> = { status: 'status' }
 
 export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}) {
     const searchParams = useSearchParams()
     const pathname = usePathname()
     const router = useRouter()
     const bankId = bankIdProp ?? (searchParams.get("bank") ? Number(searchParams.get("bank")) : undefined)
-    const { data: loans = [], isLoading, isError } = useLoans(
+    const { data: loans = [], isLoading, isError, refetch } = useLoans(
         bankId ? { lender: String(bankId) } : undefined,
     )
 
@@ -56,6 +55,15 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
         }
         return search.filterFn(result)
     }, [loans, search.filterFn, search.filters.loan_status])
+
+    const groupBy = search.groupBy ? LOAN_GROUPS[search.groupBy] ?? null : null
+    const { view, onViewChange } = useCollectionViewMode('treasury.bankloan')
+    // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
+    const collection = useEntityCollection(
+        bankLoanEntity,
+        { rows: filteredLoans, isLoading, error: isError && loans.length === 0, refetch, isFiltered },
+        { pagination: groupBy ? { mode: 'none' } : { mode: 'client' }, groupBy },
+    )
 
     const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
     const action = searchParams.get("action")
@@ -106,60 +114,29 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
         onDisburse: (loan) => openLoan(loan.id, "disburse"),
     }
 
-    const columns: ColumnDef<BankLoan>[] = [
-        ...loanFields.toColumns(),
-        loanActions.auto(actionsCtx),
-    ]
-
     return (
-        <SkeletonShell isLoading={isLoading} ariaLabel="Cargando créditos">
-        {isError && <StaleDataBanner className="mx-4 mt-2" />}
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    entityLabel="treasury.bankloan"
-                    columns={columns}
-                    data={filteredLoans}
-                    variant="embedded"
-                    createAction={registerAction}
-                    isFiltered={isFiltered}
-                    showReset={isFiltered}
-                    onReset={handleReset}
-                    unifiedSearch={<UnifiedSearchBar
-                        config={config}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar por ID, N° préstamo o banco..."
-                    />}
-                    emptyState={{
-                        context: 'treasury',
-                        icon: FileText,
-                        title: 'No hay créditos registrados',
-                        description: 'Registra tu primer crédito bancario para llevar el control de cuotas y amortización.',
-                    }}
-                    renderCard={(loan: BankLoan) => (
-                        <AutoEntityCard 
-                            key={loan.id}
-                            data={loan}
-                            fields={loanFields}
-                            entityLabel="treasury.bankloan"
-                            onClick={() => openLoan(loan.id, "detail")} 
-                            defaultAction={loanActions.defaultAction(actionsCtx)?.(loan) ?? null}
-
-                            actions={loanActions.render(loan, actionsCtx)}
-
-                        />
-                    )}
+            {/* Without rows the collection shows its own error state; with cached rows they stay, flagged as stale. */}
+            {isError && loans.length > 0 && <StaleDataBanner className="mx-4 mt-2" />}
+            <Collection.Root
+                collection={collection}
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(loan) => openLoan(loan.id, "detail")}
+                actions={loanActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar action={registerAction}>
+                    <UnifiedSearchBar config={config} {...bindUnifiedSearch(search)} placeholder="Buscar por ID, N° préstamo o banco..." />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={bankLoanViews.table}
+                    card={bankLoanViews.card}
+                    emptyTitle="No hay créditos registrados"
+                    emptyDescription="Registra tu primer crédito bancario para llevar el control de cuotas y amortización."
+                    emptyAction={registerAction}
+                    onResetFilters={handleReset}
                 />
-            </div>
+            </Collection.Root>
 
             <LoanRegisterDrawer
                 open={isCreateOpen}
@@ -182,6 +159,5 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                 onOpenChange={(open) => { if (!open) clearAll() }}
             />
         </div>
-        </SkeletonShell>
     )
 }
