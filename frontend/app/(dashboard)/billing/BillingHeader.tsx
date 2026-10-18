@@ -2,61 +2,77 @@
 
 import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
-import { getEntityIconName } from "@/lib/entity-registry"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
+import {
+  BILLING_TABS,
+  BILLING_CONFIG_SUB_TABS,
+  getBillingTab,
+  getBillingConfigSubTab,
+} from "@/features/billing/navigation"
+import { buildHeaderConfigFromTab } from "@/lib/navigation-helpers"
+import { getModuleHeaderConfig } from "@/lib/module-registry"
 
 export function BillingHeader() {
-    const pathname = usePathname()
-    const { getViewModeUrl } = useViewModePreference()
-    
-    const segments = pathname.split('/').filter(Boolean)
-    const currentSegment = segments[1] || 'sales'
-    
-    const activeValue = currentSegment === 'settings' ? 'config' : currentSegment
-    const subActiveValue = currentSegment === 'settings' ? (segments[2] || 'dtes') : undefined
+  const pathname = usePathname()
+  const { getViewModeUrl } = useViewModePreference()
 
-    const tabs = [
-        { value: "sales", label: "Emitidos (Ventas)", iconName: getEntityIconName('billing.invoice'), href: getViewModeUrl('billing.invoice', "/billing/sales") },
-        { value: "purchases", label: "Recibidos (Compras)", iconName: getEntityIconName('billing.purchaseinvoice'), href: getViewModeUrl('billing.invoice', "/billing/purchases") },
-        { 
-            value: "config", 
-            label: "Configuración", 
-            iconName: "settings", 
-            href: "/billing/settings",
-            subTabs: [
-                { value: "dtes", label: "Documentos", href: "/billing/settings/dtes", iconName: "file-text" }
-            ]
-        },
-    ]
+  const segments = pathname.split("/").filter(Boolean)
+  const currentSegment = segments[1] || "sales"
 
-    const navigation = {
-        moduleName: "Facturación",
-        moduleHref: getViewModeUrl('billing.invoice', "/billing/sales"),
-        tabs,
-        activeValue,
-        subActiveValue,
+  const activeValue = currentSegment === "settings" ? "config" : currentSegment
+  const subActiveValue = currentSegment === "settings" ? (segments[2] || "dtes") : undefined
+
+  // Module config from centralized registry
+  const moduleConfig = getModuleHeaderConfig("billing")
+
+  // Build navigation from canonical config
+  const tabs = BILLING_TABS.map((tab) => ({
+    value: tab.value,
+    label: tab.label,
+    iconName: tab.iconName,
+    href: tab.href,
+    subTabs: tab.subTabs?.map((st) => ({
+      value: st.value,
+      label: st.label,
+      iconName: st.iconName,
+      href: st.href,
+    })),
+  }))
+
+  const navigation = {
+    moduleName: moduleConfig?.moduleName ?? "Facturación",
+    moduleHref: moduleConfig?.moduleHref ?? getViewModeUrl("billing.invoice", "/billing/sales"),
+    tabs,
+    activeValue,
+    subActiveValue,
+  }
+
+  // Get header config from canonical navigation
+  const getHeaderConfig = () => {
+    const mainTab = getBillingTab(activeValue)
+    if (!mainTab) {
+      return { title: moduleConfig?.headerTitle ?? "Facturación", description: moduleConfig?.headerDescription ?? "", iconName: moduleConfig?.iconName ?? "file-text" as const }
     }
 
-    const getHeaderConfig = () => {
-        if (activeValue === 'config') return { title: "Configuración de Facturación", description: "Gestione los parámetros de documentos electrónicos.", iconName: "settings" }
-        return {
-            title: activeValue === 'sales' ? "Facturación de Ventas" : "Facturación de Compras",
-            description: activeValue === 'sales'
-                ? "Gestión de boletas, facturas y ordenes de venta emitidas a clientes."
-                : "Recepción y cuadratura de facturas y notas de crédito de proveedores.",
-            iconName: getEntityIconName(activeValue === 'sales' ? 'billing.invoice' : 'billing.purchaseinvoice'),
-        }
+    // Sub-tabs handling (config)
+    if (activeValue === "config" && subActiveValue) {
+      const subTab = getBillingConfigSubTab(subActiveValue)
+      if (subTab) return buildHeaderConfigFromTab(subTab)
     }
 
-    const config = getHeaderConfig()
+    // Default: main tab header
+    return buildHeaderConfigFromTab(mainTab)
+  }
 
-    return (
-        <PageHeader 
-            title={config.title} 
-            description={config.description} 
-            iconName={config.iconName} 
-            variant="minimal" 
-            navigation={navigation} 
-        />
-    )
+  const config = getHeaderConfig()
+
+  return (
+    <PageHeader
+      title={config.title}
+      description={config.description}
+      iconName={config.iconName}
+      variant="minimal"
+      navigation={navigation}
+    />
+  )
 }

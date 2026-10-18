@@ -16,7 +16,7 @@
 | 1 | Prerrequisitos R1–R5 + R7 + R8 + `EntityViewProvider` en el shell + paridad de URL | **completado (2026-10-17)** |
 | 2a | Capacidades + UoM + Productos (+ orden en servidor de productos, TC-041) | **Puerta D aprobada (2026-10-17)**, en curso |
 | 2b | OV (+ orden en servidor, foco del hub, endpoint de analítica de OV) | implementado y verificado (2026-10-17), §3.8 |
-| 2c | Compras (+ TC-043, TC-032) | — |
+| 2c | Compras (+ TC-043, TC-032) | **Puerta D aprobada (2026-10-17)**, en curso |
 | 3 | Líneas de documento + edición por lote P1 | — |
 | R6 | ADR de color (contraste warning/success) | aparte |
 
@@ -333,6 +333,28 @@ Rama: `refactor/entity-view-lote-2` (sigue tras `ff25775da`).
 - Stories 21/21.
 - pytest de `sales` 26/26.
 - App real tras reiniciar el backend: las mismas cifras sobre 178 órdenes.
+
+### 3.9 Lote 2c: plan (Puerta D, presentada el 2026-10-17)
+
+Inventario de `app/(dashboard)/purchasing/orders/components/PurchasingOrdersClientView.tsx` (1042 líneas; Explore, con `archivo:línea` en el informe):
+
+| Hallazgo | Evidencia | Propuesta |
+|---|---|---|
+| **Código muerto:** los modales de edición, registro, completar y folio, y las acciones de borrar, anular y forzar anulación, nunca se abren desde la lista (los `set*` solo se llaman con `null`; `requestConfirm` nunca se invoca). Las acciones reales van por la ficha (`useDocumentSheetRoute`) | V:76-85, 777-805, 861-1040 | eliminar de la lista (la ficha conserva las acciones); se mantiene el asistente de alta (`?modal=new`) |
+| **Modo "notas" inalcanzable:** `PurchasingPageClient` siempre pasa `viewMode="orders"` | V:45 | eliminar el modo y `usePurchasingNotes` de esta pantalla, y la precarga de notas de `page.tsx` |
+| **Analítica sobre la página visible** (`usePurchasingAnalyticsData(orders, …)`, igual que pasaba en OV); no hay endpoint | V:89; `hooks/usePurchasingAnalyticsData.ts:84` | **Decisión 1** |
+| **Facetas que filtran solo la página:** columnas ocultas `reception/billing/treasury_status` con `filterFn` en el cliente. El backend ya admite `receiving_status`, `billing_status`, `treasury_status` y `origin_status` | V:821-855; `backend/purchasing/views.py:25-45,95-100` | **Decisión 2** |
+| **TC-043 en Compras:** `page.tsx` precarga 200 filas y `usePurchasingOrders` aplica `initialData` a cualquier consulta (con `count` = 200) | `page.tsx`; `usePurchasing.ts:30`; V:57 | `initial` por consulta, con la consulta por defecto compartida (como Productos) |
+| Agrupación con tope de 5000 | V:56-69 | tope uniforme de 200 (Puerta D lote 2) |
+| Sin orden en servidor | `PurchaseOrderViewSet` sin `OrderingFilter` | `OrderingFilter` (number, date, supplier__name, receipt_date, total) + pytest |
+| Búsqueda sobre `lines__product__name` sin `distinct` (posibles filas duplicadas) | `views.py` `search_fields` | verificar con un test; si duplica, `DistinctSearchFilter` (como OV) |
+| `PurchaseInvoicesClientView.tsx:286` lee `.partner`, que nunca llega (TC-048) | — | usar `partner_id` y quitar `partner` del tipo `Invoice` |
+| Entidad del spike: la tabla no tiene la columna "Resumen" (workflow) que se ve hoy; el folio usa `display_id ?? number` | `purchaseOrder.entity.ts` | revisar la paridad de columnas al migrar |
+
+#### Decisiones de la Puerta D 2c (2026-10-17)
+1. **Quitar el código muerto:** modales y acciones inalcanzables desde la lista y el modo "notas". Se conserva el asistente de alta (`?modal=new`).
+2. **Analítica de Compras sobre la lista filtrada completa** con endpoint propio, siguiendo el patrón de OV.
+3. **Facetas de recepción, facturación y tesorería al servidor** (`receiving_status`, `billing_status`, `treasury_status`). Fuera las columnas ocultas.
 
 ## 4. Matriz por entidad
 

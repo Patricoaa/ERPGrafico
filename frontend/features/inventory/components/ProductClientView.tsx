@@ -551,17 +551,12 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 onOpen={(product) => openSelected(product.id)}
                 actions={productActions.forCollection(actionsCtx)}
             >
-                <Collection.Toolbar>
-                    <div className="flex items-center gap-2">
-                        <div className="flex-1 min-w-0">
-                            <UnifiedSearchBar
-                                config={config}
-                                {...bindUnifiedSearch(search)}
-                                placeholder="Buscar producto..."
-                            />
-                        </div>
-                        {createAction}
-                    </div>
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar
+                        config={config}
+                        {...bindUnifiedSearch(search)}
+                        placeholder="Buscar producto..."
+                    />
                 </Collection.Toolbar>
                 <Collection.View
                     table={productViews.table}

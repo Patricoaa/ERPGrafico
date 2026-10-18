@@ -1,36 +1,42 @@
 "use client"
 
 import { ToolbarCreateButton } from '@/components/shared'
-import { useSearchParams } from "next/navigation"
-import { PurchasingOrdersClientView } from "./components/PurchasingOrdersClientView"
-import type { PurchaseOrderAPI } from "@/features/purchasing"
-import type { Invoice } from "@/features/billing"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { PurchaseCheckoutWizard, PurchaseOrdersView, useRefreshPurchaseOrders } from "@/features/purchasing"
+import { useVatRate } from '@/hooks/useVatRate'
 
-interface PurchasingPageClientProps {
-    initialOrders?: PurchaseOrderAPI[]
-    initialNotes?: Invoice[]
-}
-
-export default function PurchasingPageClient({ initialOrders, initialNotes }: PurchasingPageClientProps) {
+export default function PurchasingPageClient() {
     const searchParams = useSearchParams()
+    const router = useRouter()
+    const pathname = usePathname()
+    const { rate } = useVatRate()
+    const refreshOrders = useRefreshPurchaseOrders()
 
-    const modalOpen = searchParams.get('modal') === 'new'
-    // ?selected= abre la ficha documental de la OC desde la propia lista (useDocumentSheetRoute)
-
-    const createAction = (
-        <ToolbarCreateButton
-            label="Nueva Orden"
-            href="/purchasing/orders?modal=new"
-        />
-    )
+    // ?modal=new opens the purchase wizard; ?selected= opens the order's document sheet (useDocumentSheetRoute)
+    const closeWizard = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('modal')
+        const query = params.toString()
+        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    }
 
     return (
-        <PurchasingOrdersClientView
-            viewMode="orders"
-            externalOpenCheckout={modalOpen}
-            createAction={createAction}
-            initialOrders={initialOrders}
-            initialNotes={initialNotes}
-        />
+        <>
+            <PurchaseOrdersView
+                viewMode="orders"
+                createAction={<ToolbarCreateButton label="Nueva Orden" href="/purchasing/orders?modal=new" />}
+            />
+            <PurchaseCheckoutWizard
+                open={searchParams.get('modal') === 'new'}
+                onOpenChange={(open) => { if (!open) closeWizard() }}
+                order={null}
+                orderLines={[{ product: "", product_name: "", quantity: 1, uom: "", uom_name: "", unit_cost: 0, tax_rate: rate }]}
+                total={0}
+                onComplete={() => {
+                    refreshOrders()
+                    closeWizard()
+                }}
+            />
+        </>
     )
 }

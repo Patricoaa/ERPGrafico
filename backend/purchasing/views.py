@@ -6,6 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
+from core.api.search import DistinctSearchFilter
 from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
 
@@ -104,9 +105,21 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHist
     def get_queryset(self):
         return PurchaseOrderSelector.get_base_queryset()
     pagination_class = StandardResultsSetPagination
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    # DistinctSearchFilter: searching by product name joins the lines (one row per matching line).
+    filter_backends = [DjangoFilterBackend, DistinctSearchFilter, filters.OrderingFilter]
     filterset_class = PurchaseOrderFilterSet
     search_fields = ["supplier__name", "supplier__tax_id", "number", "lines__product__name"]
+    # Server ordering (ADR-0087 lote 2c): `?ordering=<key>,id`; without it the model order is kept.
+    ordering_fields = ["id", "number", "date", "supplier__name", "receipt_date", "total"]
+
+    @action(detail=False, methods=["get"], url_path="analytics")
+    def analytics(self, request):
+        """Figures over the whole filtered list (same filters and search as the list endpoint)."""
+        from .analytics import PurchaseOrderAnalyticsService
+
+        queryset = self.filter_queryset(PurchaseOrderSelector.get_analytics_queryset()).order_by()
+        granularity = request.query_params.get("granularity", "month")
+        return Response(PurchaseOrderAnalyticsService.compute(queryset, granularity=granularity))
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:

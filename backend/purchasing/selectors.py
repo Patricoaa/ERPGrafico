@@ -19,6 +19,27 @@ class PurchaseOrderSelector:
             "receipts__lines__stock_move__product",
             "receipts__lines__product",
         ).all()
+
+    @staticmethod
+    def get_analytics_queryset():
+        """
+        Orders for `PurchaseOrderAnalyticsService`: only what its loop reads (supplier, warehouse,
+        payment methods, payments and their invoice — `total_paid` skips note payments —, invoices,
+        lines → product → category, receipts). The view drops the ordering after filtering.
+        """
+        from .models import PurchaseOrder
+
+        return PurchaseOrder.objects.select_related(
+            "supplier", "warehouse", "payment_method_ref"
+        ).prefetch_related(
+            "payments__payment_method_new",
+            "payments__invoice",
+            "payment_allocations__treasury_movement",
+            "invoices",
+            "lines__product__category",
+            "receipts",
+        )
+
     @staticmethod
     def get_cancel_impact(order) -> dict:
         """Returns a preview of what will happen when cancelling the purchase order."""

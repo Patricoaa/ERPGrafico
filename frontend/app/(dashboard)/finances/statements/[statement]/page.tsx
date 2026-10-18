@@ -1,39 +1,34 @@
 import { notFound } from "next/navigation"
 import { FinancialStatementsReport } from "@/features/finance"
+import {
+  FINANCES_STATEMENTS_SUB_TABS,
+  getFinancesStatementsSubTab,
+} from "@/features/finances/navigation"
+import { buildMetadataFromTab } from "@/lib/navigation-helpers"
 
-const STATEMENTS = {
-    bs: {
-        title: "Balance General",
-        description: "Situación patrimonial y financiera del período",
-    },
-    pl: {
-        title: "Estado de Resultados",
-        description: "Ingresos, costos y resultados del período",
-    },
-    cf: {
-        title: "Flujo de Caja",
-        description: "Movimientos de efectivo del período",
-    },
-} as const
+const STATEMENTS_CONFIG = FINANCES_STATEMENTS_SUB_TABS
 
-type StatementKey = keyof typeof STATEMENTS
+type StatementKey = "bs" | "pl" | "cf"
 
 export function generateStaticParams() {
-    return Object.keys(STATEMENTS).map((statement) => ({ statement }))
+  return STATEMENTS_CONFIG.map((s) => ({ statement: s.value }))
 }
 
 interface PageProps {
-    params: Promise<{ statement: string }>
+  params: Promise<{ statement: string }>
+}
+
+export async function generateMetadata({ params }: PageProps) {
+  const { statement } = await params
+  const tabConfig = getFinancesStatementsSubTab(statement)
+  if (!tabConfig) notFound()
+  return buildMetadataFromTab(tabConfig)
 }
 
 export default async function StatementPage({ params }: PageProps) {
-    const { statement } = await params
-    const config = STATEMENTS[statement as StatementKey]
-    if (!config) notFound()
+  const { statement } = await params
+  const tabConfig = getFinancesStatementsSubTab(statement)
+  if (!tabConfig) notFound()
 
-    return (
-        <>
-            <FinancialStatementsReport activeTab={statement} />
-        </>
-    )
+  return <FinancialStatementsReport activeTab={statement} />
 }

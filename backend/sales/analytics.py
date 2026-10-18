@@ -14,6 +14,8 @@ from decimal import Decimal
 from django.db.models import QuerySet
 from django.utils import timezone
 
+from core import analytics as stats
+
 PRICE_RANGES = [
     ("Hasta $50k", 0, 50_000),
     ("$50k - $200k", 50_000, 200_000),
@@ -22,50 +24,16 @@ PRICE_RANGES = [
     ("$1M - $5M", 1_000_000, 5_000_000),
     ("Más de $5M", 5_000_000, None),
 ]
-GRANULARITIES = ("day", "month", "year")
 TOP_CUSTOMERS = 10
-
-
-def _bucket(day: date, granularity: str) -> date:
-    """Representative date of the period (first day): the client labels it with granularityKey."""
-    if granularity == "day":
-        return day
-    if granularity == "year":
-        return date(day.year, 1, 1)
-    return date(day.year, day.month, 1)
-
-
-def _previous(bucket: date, granularity: str) -> date:
-    if granularity == "day":
-        return date.fromordinal(bucket.toordinal() - 1)
-    if granularity == "year":
-        return date(bucket.year - 1, 1, 1)
-    return date(bucket.year - 1, 12, 1) if bucket.month == 1 else date(bucket.year, bucket.month - 1, 1)
-
-
-def _num(value) -> Decimal:
-    """Exact sums: money is accumulated as Decimal and converted once, at the end (`_out`)."""
-    return value if isinstance(value, Decimal) else Decimal(str(value or 0))
-
-
-def _out(value):
-    """Decimal → float for the JSON response, recursively."""
-    if isinstance(value, Decimal):
-        return float(value)
-    if isinstance(value, dict):
-        return {key: _out(item) for key, item in value.items()}
-    if isinstance(value, list):
-        return [_out(item) for item in value]
-    return value
 
 
 class SaleOrderAnalyticsService:
     @staticmethod
     def compute(queryset: QuerySet, *, granularity: str = "month", today: date | None = None) -> dict:
-        granularity = granularity if granularity in GRANULARITIES else "month"
+        granularity = granularity if granularity in stats.GRANULARITIES else "month"
         # Local date (TIME_ZONE): the container clock is UTC and would shift "today" in the evening.
-        current = _bucket(today or timezone.localdate(), granularity)
-        previous = _previous(current, granularity)
+        current = stats.bucket(today or timezone.localdate(), granularity)
+        previous = stats.previous_bucket(current, granularity)
 
         zero = Decimal(0)
         money: defaultdict[str, Decimal] = defaultdict(Decimal)
@@ -81,12 +49,12 @@ class SaleOrderAnalyticsService:
         ranges: Counter[tuple] = Counter()
 
         for order in queryset:
-            total = _num(order.total)
-            paid = _num(order.total_paid)  # PaymentSelector once per order; pending derives from it
+            total = stats.num(order.total)
+            paid = stats.num(order.total_paid)  # PaymentSelector once per order; pending derives from it
             is_pos = order.channel == "POS"
             money["volume"] += total
             money["paid"] += paid
-            money["pending"] += _num(order.effective_total) - paid
+            money["pending"] += stats.num(order.effective_total) - paid
             counts["orders"] += 1
             if order.delivery_status == "DELIVERED":
                 counts["delivered"] += 1
@@ -110,25 +78,25 @@ class SaleOrderAnalyticsService:
                     break
 
             for line in order.lines.all():
-                subtotal = _num(line.subtotal)
+                subtotal = stats.num(line.subtotal)
                 if not subtotal:
                     continue
                 product = line.product
                 key = product.name if product else (line.description or "")
                 item = products.setdefault(key, {"product": key, "total": zero, "count": zero})
                 item["total"] += subtotal
-                item["count"] += _num(line.quantity)
+                item["count"] += stats.num(line.quantity)
                 product_types[product.get_product_type_display() if product else "General"] += subtotal
 
             if not order.date:
                 continue
-            bucket = _bucket(order.date, granularity)
+            bucket = stats.bucket(order.date, granularity)
             period = periods.setdefault(
                 bucket, {"bucket": bucket.isoformat(), "total": zero, "count": 0, "net": zero, "system": zero, "pos": zero, "delivered": 0}
             )
             period["total"] += total
             period["count"] += 1
-            period["net"] += _num(order.total_net)
+            period["net"] += stats.num(order.total_net)
             period["pos" if is_pos else "system"] += total
             if order.delivery_status == "DELIVERED":
                 period["delivered"] += 1
@@ -144,7 +112,7 @@ class SaleOrderAnalyticsService:
         if rest:
             # The whole list can hold thousands of customers: the chart gets the top N plus "Otros".
             top.append({"customer": "Otros", "total": sum((c["total"] for c in rest), zero), "order_count": sum(c["order_count"] for c in rest)})
-        return _out({
+        return stats.to_json({
             "granularity": granularity,
             "totals": {
                 "total_volume": money["volume"],
@@ -159,18 +127,15 @@ class SaleOrderAnalyticsService:
                 "system_order_count": counts["system"],
             },
             "trend": trend,
-            "channel": _ranked(channel),
-            "payment_method": _ranked(payment),
-            "delivery_status": _ranked(delivery),
+            "channel": stats.ranked(channel),
+            "payment_method": stats.ranked(payment),
+            "delivery_status": stats.ranked(delivery),
             "customers": top,
             "products": sorted(products.values(), key=lambda p: p["total"], reverse=True)[:8],
-            "product_types": _ranked(product_types),
+            "product_types": stats.ranked(product_types),
             "periods": [periods[k] for k in sorted(periods)],
             "price_ranges": [
                 {"id": label, "value": ranges[(low, high)]} for label, low, high in PRICE_RANGES if ranges[(low, high)]
             ],
         })
 
-
-def _ranked(counts: dict) -> list[dict]:
-    return sorted(({"id": key, "value": value} for key, value in counts.items()), key=lambda r: r["value"], reverse=True)

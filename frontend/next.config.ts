@@ -3,6 +3,11 @@ import { execSync } from "child_process";
 import packageJson from "./package.json";
 
 function getVersion(): string {
+  // En dev (Docker, sin .git) evitamos el spawn de `git describe` en cada carga
+  // de next.config — se lanza un shell que falla y sólo aporta latencia.
+  if (process.env.NODE_ENV === "development") {
+    return packageJson.version;
+  }
   try {
     const tag = execSync("git describe --tags --abbrev=0", {
       encoding: "utf-8",
@@ -61,7 +66,6 @@ const nextConfig: NextConfig = {
   },
   experimental: {
   },
-  transpilePackages: ["react-day-picker", "@nivo/core", "@nivo/bar", "@nivo/funnel", "@nivo/pie", "@nivo/line"],
   devIndicators: {
   },
 };

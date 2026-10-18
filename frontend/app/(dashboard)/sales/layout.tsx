@@ -1,11 +1,8 @@
-import { type Metadata } from "next"
 import { PageContainer } from "@/components/shared"
 import { SalesHeader } from "./SalesHeader"
+import { createAutoMetadata } from "@/lib/auto-metadata"
 
-export const metadata: Metadata = {
-    title: "Módulo de Ventas | ERPGrafico",
-    description: "Gestión integral de pedidos, terminales, cobranza y puntos de venta.",
-}
+export const generateMetadata = createAutoMetadata("sales")
 
 export default function SalesLayout({ children }: { children: React.ReactNode }) {
     return (

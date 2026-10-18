@@ -1,10 +1,10 @@
 # Progreso — Nuevo sistema de presentación
-- Fase actual: 7 · Lote 2b (OV) implementado y verificado (pendiente de commit) · Siguiente: Puerta D del 2c (Compras)
+- Fase actual: 7 · Lote 2c (Compras) · Puerta D aprobada · en implementación
 - Último completado: lote 2a — capacidades del núcleo (orden en servidor, agrupación, BulkBar, Analytics, estados vacíos) + UoM y Productos migrados + `OrderingFilter` de productos; `/simplify` + `/code-review` (9/10 corregidos); TC-041–TC-045; issues #178. Detalle en `07` §3.6
-- Próximo paso exacto: commit del 2b (cuando el usuario lo pida) → Puerta D del 2c (Compras: modos, 6 modales, TC-043 y TC-032 en Compras, quitar `partner` de Invoice, orden en servidor de OC)
+- Próximo paso exacto: 2c: backend (OrderingFilter + analítica de OC + test de duplicados en búsqueda) → hooks (initial por consulta, isError, ordering, facetas) → vista sin código muerto → PurchaseInvoicesClientView partner_id → ciclo completo
 - Rama: `refactor/entity-view-lote-2` (desde el lote 1 `b3ae3fac3`); issues abiertas #176, #177
-- Puertas: A ✅ · B ✅ · C ✅ · D lote 1 ✅ · D 2a ✅ · D 2b ✅ (2026-10-17)
-- Preguntas abiertas para el usuario: commit del 2b; cambio ajeno en `frontend/next.config.ts` (transpilePackages); desborde horizontal de la tabla de Productos; TC-049 (daphne sin autorrecarga)
+- Puertas: A ✅ · B ✅ · C ✅ · D lote 1 ✅ · D 2a ✅ · D 2b ✅ · D 2c ✅ (2026-10-17)
+- Preguntas abiertas para el usuario: —
 - Decisiones del usuario:
   - 2026-10-17: las tablas de wizard/modal entran como caso de uso específico · `as any` de `AutoEntityCard.tsx:390` espera al rediseño · `journalEntryFields` lo determina la auditoría (→ TC-016) · TC-012 se corrige en la migración
   - 2026-10-17 Puerta A: aprueba RC1–RC8 y la matriz C/F/E; pantallas de la Fase 4 = UoM, OV, Compras; aprueba `role="grid"` → `role="table"` en `compact`; **exportación = requisito** (aclarado)

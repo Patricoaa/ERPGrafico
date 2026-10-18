@@ -3,13 +3,12 @@ export { purchasingApi } from './api/purchasingApi'
 export {
     usePurchasingOrders,
     usePurchasingNotes,
+    useRefreshPurchaseOrders,
     usePurchasingOrder,
     PURCHASING_KEYS,
 } from './hooks/usePurchasing'
 
-export { usePurchasingAnalyticsData } from './hooks/usePurchasingAnalyticsData'
 export { useReceiptData } from './hooks/useReceiptData'
-export type { PurchasingAnalyticsData, TrendData } from './hooks/usePurchasingAnalyticsData'
 
 export type {
     PurchaseOrderAPI,
@@ -23,6 +22,7 @@ export type {
 } from './types'
 
 export { purchaseOrderActions } from './actions'
+export { PurchaseOrdersView } from './components/PurchaseOrdersView'
 export { purchaseOrderUnifiedSearchDef, subscriptionUnifiedSearchDef } from './unifiedSearchDef'
 
 export type { SubscriptionActionsCtx } from './subscriptionActions'

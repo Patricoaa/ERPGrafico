@@ -86,17 +86,12 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                 onOpen={(uom) => openSelected(uom.id)}
                 actions={uomActions.forCollection(actionsCtx)}
             >
-                <Collection.Toolbar>
-                    <div className="flex items-center gap-2">
-                        <div className="flex-1 min-w-0">
-                            <UnifiedSearchBar
-                                config={uomUnifiedSearchDef}
-                                {...bindUnifiedSearch(search)}
-                                placeholder="Buscar unidad..."
-                            />
-                        </div>
-                        {createAction}
-                    </div>
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar
+                        config={uomUnifiedSearchDef}
+                        {...bindUnifiedSearch(search)}
+                        placeholder="Buscar unidad..."
+                    />
                 </Collection.Toolbar>
                 <Collection.View
                     table={uomViews.table}

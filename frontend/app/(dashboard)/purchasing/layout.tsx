@@ -1,11 +1,8 @@
-import { type Metadata } from "next"
 import { PageContainer } from "@/components/shared"
 import { PurchasingHeader } from "./PurchasingHeader"
+import { createAutoMetadata } from "@/lib/auto-metadata"
 
-export const metadata: Metadata = {
-    title: "Módulo de Compras | ERPGrafico",
-    description: "Gestión integral de órdenes de compra, notas y configuración.",
-}
+export const generateMetadata = createAutoMetadata("purchasing")
 
 export default function PurchasingLayout({ children }: { children: React.ReactNode }) {
     return (

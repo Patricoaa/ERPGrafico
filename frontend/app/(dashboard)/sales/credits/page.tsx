@@ -1,28 +1,23 @@
-import { type Metadata } from "next"
+import type { Metadata } from "next"
 import { CreditPortfolioClientView } from "@/features/credits"
-import { ToolbarCreateButton } from '@/components/shared'
+import { ToolbarCreateButton } from "@/components/shared"
+import { getSalesCreditsSubTab } from "@/features/sales/navigation"
+import { buildMetadataFromTab } from "@/lib/navigation-helpers"
 
-export const metadata: Metadata = {
-    title: "Cartera de Créditos | ERPGrafico",
-    description: "Gestión de cartera crediticia, clasificación de deuda por antigüedad y control de deudores.",
-}
+const tabConfig = getSalesCreditsSubTab("portfolio")
+export const metadata: Metadata = tabConfig ? buildMetadataFromTab(tabConfig) : { title: "Cartera de Créditos | ERPGrafico" }
 
 interface PageProps {
-    searchParams: Promise<{ modal?: string }>
+  searchParams: Promise<{ modal?: string }>
 }
 
 export default async function CreditsPage({ searchParams }: PageProps) {
-    const { modal } = await searchParams
-    const createAction = (
-        <ToolbarCreateButton label="Asignar Crédito" href="/sales/credits/portfolio?modal=new" />
-    )
+  const { modal } = await searchParams
+  const createAction = <ToolbarCreateButton label="Asignar Crédito" href="/sales/credits/portfolio?modal=new" />
 
-    return (
-        <>
-            <CreditPortfolioClientView
-                activeTab="portfolio"
-                externalOpen={modal === 'new'}
-                createAction={createAction}
-            />
-        </>)
+  return (
+    <>
+      <CreditPortfolioClientView activeTab="portfolio" externalOpen={modal === "new"} createAction={createAction} />
+    </>
+  )
 }

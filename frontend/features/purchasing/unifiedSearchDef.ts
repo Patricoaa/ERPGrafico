@@ -1,5 +1,5 @@
 import type { UnifiedSearchConfig } from '@/types/unified-search'
-import { today, thisWeek, thisMonth, thisQuarter, thisYear } from '@/lib/date-presets'
+import { periodPresets } from '@/lib/date-presets'
 
 export const purchaseOrderUnifiedSearchDef: UnifiedSearchConfig = {
   searchFields: [
@@ -66,25 +66,13 @@ export const purchaseOrderUnifiedSearchDef: UnifiedSearchConfig = {
       type: 'date',
       key: 'created_at',
       label: 'Fecha de creación',
-      options: [
-        { label: 'Hoy', serverParamFrom: 'created_at_after', serverParamTo: 'created_at_before', getValue: today },
-        { label: 'Esta semana', serverParamFrom: 'created_at_after', serverParamTo: 'created_at_before', getValue: thisWeek },
-        { label: 'Este mes', serverParamFrom: 'created_at_after', serverParamTo: 'created_at_before', getValue: thisMonth },
-        { label: 'Este trimestre', serverParamFrom: 'created_at_after', serverParamTo: 'created_at_before', getValue: thisQuarter },
-        { label: 'Este año', serverParamFrom: 'created_at_after', serverParamTo: 'created_at_before', getValue: thisYear },
-      ],
+      options: periodPresets('created_at_after', 'created_at_before'),
     },
     {
       type: 'date',
       key: 'receipt_date',
       label: 'Fecha Entrega',
-      options: [
-        { label: 'Hoy', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: today },
-        { label: 'Esta semana', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: thisWeek },
-        { label: 'Este mes', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: thisMonth },
-        { label: 'Este trimestre', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: thisQuarter },
-        { label: 'Este año', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: thisYear },
-      ],
+      options: periodPresets('receipt_date_after', 'receipt_date_before'),
     },
   ],
   groupBy: [
@@ -124,13 +112,8 @@ export const subscriptionUnifiedSearchDef: UnifiedSearchConfig = {
     type: 'date',
     key: 'date',
     label: 'Fecha',
-    options: [
-      { label: 'Hoy', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: today },
-      { label: 'Esta semana', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisWeek },
-      { label: 'Este mes', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisMonth },
-      { label: 'Este trimestre', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisQuarter },
-      { label: 'Este año', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisYear },
-    ],
+    options: periodPresets('date_from', 'date_to'),
   }],
   basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
 }
+

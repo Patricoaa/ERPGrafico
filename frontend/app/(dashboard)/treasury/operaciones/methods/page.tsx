@@ -1,22 +1,24 @@
 import type { Metadata } from "next"
-import { ToolbarCreateButton } from '@/components/shared'
+import { ToolbarCreateButton } from "@/components/shared"
 import { TreasuryAccountsClientView } from "@/features/treasury"
+import { getOperacionesSubTab } from "@/features/treasury/navigation"
+import { buildMetadataFromTab } from "@/lib/navigation-helpers"
 
-export const metadata: Metadata = {
-    title: "Métodos de Pago | ERPGrafico",
-}
+const tabConfig = getOperacionesSubTab("methods")
+export const metadata: Metadata = tabConfig ? buildMetadataFromTab(tabConfig) : { title: "Métodos de Pago | ERPGrafico" }
 
 interface PageProps {
-    searchParams: Promise<{ modal?: string }>
+  searchParams: Promise<{ modal?: string }>
 }
 
 export default async function OperacionesMethodsPage({ searchParams }: PageProps) {
-    const { modal } = await searchParams
-    const modalOpen = modal === "new"
-    const action = <ToolbarCreateButton label="Nuevo Método" href="/treasury/operaciones/methods?modal=new" />
+  const { modal } = await searchParams
+  const modalOpen = modal === "new"
+  const action = <ToolbarCreateButton label="Nuevo Método" href="/treasury/operaciones/methods?modal=new" />
 
-    return (
-        <>
-            <TreasuryAccountsClientView activeTab="methods" externalOpen={modalOpen} createAction={action} />
-        </>)
+  return (
+    <>
+      <TreasuryAccountsClientView activeTab="methods" externalOpen={modalOpen} createAction={action} />
+    </>
+  )
 }

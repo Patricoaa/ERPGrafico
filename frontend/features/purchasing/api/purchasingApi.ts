@@ -6,7 +6,7 @@ import type { Invoice } from '@/features/billing'
 import { toPage } from '@/lib/pagination'
 import type { Page, PageParams } from '@/lib/pagination'
 
-interface OrderFilters extends PageParams {
+export interface OrderFilters extends PageParams {
     status?: string
     search?: string
     date_from?: string
@@ -26,6 +26,68 @@ interface OrderFilters extends PageParams {
     product_name?: string
     created_at_after?: string
     created_at_before?: string
+    ordering?: string
+}
+
+/** Filters shared by the order list and its analytics (same filtered set). */
+function orderListParams(filters?: OrderFilters): URLSearchParams {
+    const params = new URLSearchParams()
+    if (filters?.status) params.append('status', filters.status)
+    if (filters?.search) params.append('search', filters.search)
+    if (filters?.date_from) params.append('date_after', filters.date_from)
+    if (filters?.date_to) params.append('date_before', filters.date_to)
+    if (filters?.date_after) params.append('date_after', filters.date_after)
+    if (filters?.date_before) params.append('date_before', filters.date_before)
+    if (filters?.receiving_status) params.append('receiving_status', filters.receiving_status)
+    if (filters?.receipt_date_after) params.append('receipt_date_after', filters.receipt_date_after)
+    if (filters?.receipt_date_before) params.append('receipt_date_before', filters.receipt_date_before)
+    if (filters?.total_min) params.append('total_min', filters.total_min)
+    if (filters?.total_max) params.append('total_max', filters.total_max)
+    if (filters?.origin_status) params.append('origin_status', filters.origin_status)
+    if (filters?.billing_status) params.append('billing_status', filters.billing_status)
+    if (filters?.treasury_status) params.append('treasury_status', filters.treasury_status)
+    if (filters?.supplier_name) params.append('supplier_name', filters.supplier_name)
+    if (filters?.number) params.append('number', filters.number)
+    if (filters?.product_name) params.append('product_name', filters.product_name)
+    if (filters?.created_at_after) params.append('created_at_after', filters.created_at_after)
+    if (filters?.created_at_before) params.append('created_at_before', filters.created_at_before)
+    return params
+}
+
+type Ranked = { id: string; value: number }[]
+type ProductTotal = { product: string; total: number }
+
+/** Response of `GET /purchasing/orders/analytics/` (backend `purchasing/analytics.py`). */
+export interface PurchaseOrderAnalyticsResponse {
+    granularity: 'day' | 'month' | 'year'
+    totals: {
+        total_volume: number
+        order_count: number
+        overdue_count: number
+        pending_receipt_count: number
+        on_time_count: number
+        late_count: number
+        total_line_volume: number
+    }
+    /** Axis funnel (ADR-0084) over non-cancelled orders; stage ids DRAFT · CONFIRMED · RECEIVED · INVOICED · PAID. */
+    funnel: Ranked
+    /** Labelled by `TreasuryMovement.Method` choices. */
+    payment_method: Ranked
+    top_suppliers: { supplier: string; total: number; order_count: number }[]
+    /** Chronological; `bucket` is the first day of the period (ISO). */
+    periods: { bucket: string; total: number; count: number }[]
+    warehouses: { warehouse: string; count: number }[]
+    top_products: ProductTotal[]
+    product_types: Ranked
+    dte: Ranked
+    invoiced: { invoiced_count: number; invoiced_volume: number; pending_volume: number }
+    by_type: Record<'storable' | 'service' | 'subscription', {
+        top_products: (ProductTotal & { count: number })[]
+        periods: { bucket: string; total: number }[]
+        categories: Ranked
+        total_volume: number
+        order_count: number
+    }>
 }
 
 interface PartialReceivePayload {
@@ -44,30 +106,20 @@ export const purchasingApi = {
     // ========== Orders ==========
 
     getOrders: async (filters?: OrderFilters): Promise<Page<PurchaseOrderAPI>> => {
-        const params = new URLSearchParams()
+        const params = orderListParams(filters)
         if (filters?.page) params.append('page', String(filters.page))
         if (filters?.page_size) params.append('page_size', String(filters.page_size))
-        if (filters?.status) params.append('status', filters.status)
-        if (filters?.search) params.append('search', filters.search)
-        if (filters?.date_from) params.append('date_after', filters.date_from)
-        if (filters?.date_to) params.append('date_before', filters.date_to)
-        if (filters?.date_after) params.append('date_after', filters.date_after)
-        if (filters?.date_before) params.append('date_before', filters.date_before)
-        if (filters?.receiving_status) params.append('receiving_status', filters.receiving_status)
-        if (filters?.receipt_date_after) params.append('receipt_date_after', filters.receipt_date_after)
-        if (filters?.receipt_date_before) params.append('receipt_date_before', filters.receipt_date_before)
-        if (filters?.total_min) params.append('total_min', filters.total_min)
-        if (filters?.total_max) params.append('total_max', filters.total_max)
-        if (filters?.origin_status) params.append('origin_status', filters.origin_status)
-        if (filters?.billing_status) params.append('billing_status', filters.billing_status)
-        if (filters?.treasury_status) params.append('treasury_status', filters.treasury_status)
-        if (filters?.supplier_name) params.append('supplier_name', filters.supplier_name)
-        if (filters?.number) params.append('number', filters.number)
-        if (filters?.product_name) params.append('product_name', filters.product_name)
-        if (filters?.created_at_after) params.append('created_at_after', filters.created_at_after)
-        if (filters?.created_at_before) params.append('created_at_before', filters.created_at_before)
-        const res = await api.get('/purchasing/orders/', { params })
-        return toPage<PurchaseOrderAPI>(res.data, filters?.page ?? 1, filters?.page_size ?? 50)
+        if (filters?.ordering) params.append('ordering', filters.ordering)
+        const { data } = await api.get<unknown>('/purchasing/orders/', { params })
+        return toPage<PurchaseOrderAPI>(data, filters?.page ?? 1, filters?.page_size ?? 50)
+    },
+
+    /** Analytics over the whole filtered order list (same filters as `getOrders`, no paging). */
+    getOrderAnalytics: async (filters: OrderFilters | undefined, granularity: string): Promise<PurchaseOrderAnalyticsResponse> => {
+        const params = orderListParams(filters)
+        params.append('granularity', granularity)
+        const { data } = await api.get<PurchaseOrderAnalyticsResponse>('/purchasing/orders/analytics/', { params })
+        return data
     },
 
     getOrder: async (id: number): Promise<PurchaseOrderAPI> => {
@@ -85,14 +137,6 @@ export const purchasingApi = {
 
     updateOrder: async (id: number, data: Record<string, unknown>): Promise<void> => {
         await api.put(`/purchasing/orders/${id}/`, data)
-    },
-
-    deleteOrder: async (id: number): Promise<void> => {
-        await api.delete(`/purchasing/orders/${id}/`)
-    },
-
-    annulOrder: async (id: number, payload: { force: boolean, reason?: string }): Promise<void> => {
-        await api.post(`/purchasing/orders/${id}/annul/`, payload)
     },
 
     partialReceive: async (orderId: number, payload: PartialReceivePayload): Promise<void> => {
@@ -113,14 +157,15 @@ export const purchasingApi = {
 
     // ========== Billing ==========
 
-    getNotes: async (): Promise<Invoice[]> => {
-        const response = await api.get<{ results: Invoice[] }>('/billing/invoices/', {
-            params: {
-                dte_type__in: 'NOTA_CREDITO,NOTA_DEBITO',
-                purchase_order__isnull: false
-            }
-        })
-        return response.data.results
+    /** Credit/debit notes of purchase orders; `filters` are the `/billing/invoices/` params of the search bar. */
+    getNotes: async ({ filters, page = 1, page_size = 50 }: { filters?: Record<string, string> } & PageParams = {}): Promise<Page<Invoice>> => {
+        const params = new URLSearchParams(filters)
+        params.append('page', String(page))
+        params.append('page_size', String(page_size))
+        params.append('dte_type__in', 'NOTA_CREDITO,NOTA_DEBITO')
+        params.append('purchase_order__isnull', 'false')
+        const { data } = await api.get<unknown>('/billing/invoices/', { params })
+        return toPage<Invoice>(data, page, page_size)
     },
 
     getInvoice: async (id: number): Promise<Invoice> => {

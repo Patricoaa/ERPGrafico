@@ -1,22 +1,14 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { invalidateCrossFeature } from '@/lib/invalidation'
-import { toast } from 'sonner'
-import type { FilterState } from '@/components/shared'
-import type { Invoice } from '@/features/billing'
-import { useRealtime } from '@/features/realtime'
 import { useAuth } from '@/contexts/AuthContext'
 
-import { purchasingApi } from '../api/purchasingApi'
-import type { PurchaseOrderAPI } from '../types'
+import { purchasingApi, type OrderFilters } from '../api/purchasingApi'
 import { PURCHASING_KEYS } from './queryKeys'
-import type { Page } from '@/lib/pagination'
 import { staleTime } from '@/lib/query-config'
 
 export { PURCHASING_KEYS }
 
-export function usePurchasingOrders(filters?: FilterState & { page?: number, page_size?: number }, initialData?: Page<PurchaseOrderAPI>) {
-    const queryClient = useQueryClient()
-    const { markLocalMutation } = useRealtime()
+export function usePurchasingOrders({ filters }: { filters?: OrderFilters } = {}) {
     const { isAuthenticated } = useAuth()
 
     const { page = 1, page_size = 50, ...restFilters } = filters || {}
@@ -27,67 +19,51 @@ export function usePurchasingOrders(filters?: FilterState & { page?: number, pag
         queryFn: () => purchasingApi.getOrders(activeFilters),
         staleTime: staleTime.standard,
         enabled: isAuthenticated,
-        initialData,
         placeholderData: (prev) => prev,
     })
 
     const orders = query.data?.results ?? []
     const showSkeleton = query.isLoading && !orders.length
-    const isRefetching = query.isFetching && !showSkeleton
-    const refetch = query.refetch
-
-    const deleteMutation = useMutation({
-        mutationFn: (id: number) => purchasingApi.deleteOrder(id),
-        onSuccess: () => {
-            markLocalMutation()
-            invalidateCrossFeature(queryClient, [PURCHASING_KEYS.lists()])
-            toast.success('Orden de Compra eliminada')
-        },
-    })
-
-    const annulMutation = useMutation({
-        mutationFn: ({ id, force, reason }: { id: number, force: boolean, reason?: string }) =>
-            purchasingApi.annulOrder(id, { force, reason }),
-        onSuccess: () => {
-            markLocalMutation()
-            invalidateCrossFeature(queryClient, [PURCHASING_KEYS.all])
-            toast.success('Orden de Compra anulada correctamente.')
-        },
-        onError: (error: Error) => {
-            console.error("Error annulling order", error)
-        }
-    })
 
     return {
         page: query.data,
         orders,
         isLoading: showSkeleton,
-        isRefetching,
-        refetch,
-        deleteOrder: deleteMutation.mutateAsync,
-        annulOrder: annulMutation.mutateAsync,
-        isAnnulling: annulMutation.isPending,
+        isRefetching: query.isFetching && !showSkeleton,
+        isError: query.isError,
+        refetch: query.refetch,
     }
 }
 
-export function usePurchasingNotes(initialData?: Invoice[]) {
+/** Refreshes the order lists and their analytics (both live under `PURCHASING_KEYS.orders()`). */
+export function useRefreshPurchaseOrders() {
+    const queryClient = useQueryClient()
+    return () => invalidateCrossFeature(queryClient, [PURCHASING_KEYS.orders()])
+}
+
+export function usePurchasingNotes({ filters, page = 1, page_size = 50 }: { filters?: Record<string, string>; page?: number; page_size?: number } = {}) {
     const { isAuthenticated } = useAuth()
+    const activeFilters = { filters, page, page_size }
 
     const query = useQuery({
-        queryKey: PURCHASING_KEYS.notes(),
-        queryFn: () => purchasingApi.getNotes(),
+        queryKey: PURCHASING_KEYS.notes(activeFilters),
+        queryFn: () => purchasingApi.getNotes(activeFilters),
         staleTime: staleTime.standard,
         enabled: isAuthenticated,
-        initialData,
         placeholderData: (prev) => prev,
     })
 
-    const notes = query.data ?? []
+    const notes = query.data?.results ?? []
     const showSkeleton = query.isLoading && !notes.length
-    const isRefetching = query.isFetching && !showSkeleton
-    const refetch = query.refetch
 
-    return { notes, isLoading: showSkeleton, isRefetching, refetch }
+    return {
+        page: query.data,
+        notes,
+        isLoading: showSkeleton,
+        isRefetching: query.isFetching && !showSkeleton,
+        isError: query.isError,
+        refetch: query.refetch,
+    }
 }
 
 export function usePurchasingOrder(id: number) {

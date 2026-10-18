@@ -148,8 +148,10 @@ function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen,
 // ─── Toolbar ─────────────────────────────────────────────────────────────────
 
 export interface CollectionToolbarProps {
-    /** Search/filters slot (e.g. UnifiedSearchBar) and the create action. */
+    /** Search/filters slot (e.g. UnifiedSearchBar). */
     children?: React.ReactNode
+    /** Primary action (e.g. create button). Wraps below the search on narrow screens instead of covering it. */
+    action?: React.ReactNode
     views?: readonly CollectionViewMode[]
     /** Current filters, forwarded to the entity export hook (export-formats.md). */
     exportFilters?: Record<string, unknown>
@@ -161,14 +163,17 @@ const VIEW_BUTTONS = {
     analytics: { icon: BarChart3, label: "Analítica" },
 } as const
 
-function Toolbar({ children, views = ["table", "card"], exportFilters = {} }: CollectionToolbarProps) {
+function Toolbar({ children, action, views = ["table", "card"], exportFilters = {} }: CollectionToolbarProps) {
     const ctx = useCollectionContext<unknown>()
     const exportSpec = ctx.collection.entity.export
     // The analytics view is offered only while a `Collection.Analytics` is mounted.
     const modes = ctx.hasAnalytics && !views.includes("analytics") ? [...views, "analytics" as const] : views
     return (
         <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
-            <div className="flex-1 min-w-0">{children}</div>
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                <div className="min-w-56 flex-1">{children}</div>
+                {action}
+            </div>
             {exportSpec && <ExportButtons spec={exportSpec} filters={exportFilters} />}
             {modes.length > 1 && (
                 <div className="flex items-center gap-1" role="group" aria-label="Vista">

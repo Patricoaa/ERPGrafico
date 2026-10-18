@@ -1,12 +1,9 @@
 import { Suspense } from "react"
-import { type Metadata } from "next"
 import { PageContainer, Skeleton } from "@/components/shared"
 import { TreasuryHeader } from "./TreasuryHeader"
+import { createAutoMetadata } from "@/lib/auto-metadata"
 
-export const metadata: Metadata = {
-    title: "Módulo de Tesorería | ERPGrafico",
-    description: "Gestión centralizada de cuentas, movimientos y conciliación bancaria.",
-}
+export const generateMetadata = createAutoMetadata("treasury")
 
 function TreasuryFallback() {
     return (

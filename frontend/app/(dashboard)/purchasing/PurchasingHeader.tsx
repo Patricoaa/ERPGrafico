@@ -2,50 +2,67 @@
 
 import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
-import { getEntityIconName } from "@/lib/entity-registry"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
+import {
+  PURCHASING_TABS,
+  getPurchasingTab,
+} from "@/features/purchasing/navigation"
+import { buildHeaderConfigFromTab } from "@/lib/navigation-helpers"
+import { getModuleHeaderConfig } from "@/lib/module-registry"
 
 export function PurchasingHeader() {
-    const pathname = usePathname()
-    const { getViewModeUrl } = useViewModePreference()
-    
-    const segments = pathname.split('/').filter(Boolean)
-    const currentSegment = segments[1] || 'orders'
-    
-    const activeValue = currentSegment === 'settings' ? 'orders' : currentSegment
-    const subActiveValue = undefined
+  const pathname = usePathname()
+  const { getViewModeUrl } = useViewModePreference()
 
-    const tabs = [
-        { value: "orders", label: "Órdenes", iconName: getEntityIconName('purchasing.purchaseorder'), href: getViewModeUrl('purchasing.purchaseorder', "/purchasing/orders") },
-        { value: "subscriptions", label: "Suscripciones", iconName: "calendar-clock", href: getViewModeUrl('inventory.subscription', "/purchasing/subscriptions") },
-        { value: "notes", label: "Notas Crédito/Débito", iconName: "file-text", href: getViewModeUrl('billing.invoice', "/purchasing/notes") },
-    ]
+  const segments = pathname.split("/").filter(Boolean)
+  const currentSegment = segments[1] || "orders"
 
+  const activeValue = currentSegment
 
-    const navigation = {
-        moduleName: "Compras",
-        moduleHref: getViewModeUrl('purchasing.purchaseorder', "/purchasing/orders"),
-        tabs,
-        activeValue,
-        subActiveValue,
+  // Module config from centralized registry
+  const moduleConfig = getModuleHeaderConfig("purchasing")
+
+  // Build navigation from canonical config
+  const tabs = PURCHASING_TABS.map((tab) => ({
+    value: tab.value,
+    label: tab.label,
+    iconName: tab.iconName,
+    href: tab.href,
+    subTabs: tab.subTabs?.map((st) => ({
+      value: st.value,
+      label: st.label,
+      iconName: st.iconName,
+      href: st.href,
+    })),
+  }))
+
+  const navigation = {
+    moduleName: moduleConfig?.moduleName ?? "Compras",
+    moduleHref: moduleConfig?.moduleHref ?? getViewModeUrl("purchasing.purchaseorder", "/purchasing/orders"),
+    tabs,
+    activeValue,
+    subActiveValue: undefined,
+  }
+
+  // Get header config from canonical navigation
+  const getHeaderConfig = () => {
+    const mainTab = getPurchasingTab(activeValue)
+    if (!mainTab) {
+      return { title: moduleConfig?.headerTitle ?? "Compras", description: moduleConfig?.headerDescription ?? "", iconName: moduleConfig?.iconName ?? "shopping-bag" as const }
     }
 
-    const getHeaderConfig = () => {
-        if (activeValue === 'notes') return { title: "Notas de Crédito y Débito", description: "Gestión de notas de crédito y débito de proveedores", iconName: "file-text" as const }
-        if (activeValue === 'subscriptions') return { title: "Suscripciones", description: "Gestión de servicios recurrentes, contratos y facturación automática.", iconName: "calendar-clock" as const }
-        if (activeValue === 'receipts') return { title: "Recepciones de Compra", description: "Historial de ingresos de mercadería por compras y notas de débito", iconName: getEntityIconName('purchasing.purchasereceipt') ?? "package-check" as const }
-        return { title: "Órdenes de Compra", description: "Gestión integral de órdenes de compra y recepciones", iconName: getEntityIconName('purchasing.purchaseorder') ?? "shopping-bag" }
-    }
+    return buildHeaderConfigFromTab(mainTab)
+  }
 
-    const config = getHeaderConfig()
+  const config = getHeaderConfig()
 
-    return (
-        <PageHeader 
-            title={config.title} 
-            description={config.description} 
-            iconName={config.iconName} 
-            variant="minimal" 
-            navigation={navigation} 
-        />
-    )
+  return (
+    <PageHeader
+      title={config.title}
+      description={config.description}
+      iconName={config.iconName}
+      variant="minimal"
+      navigation={navigation}
+    />
+  )
 }

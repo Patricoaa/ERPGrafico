@@ -200,7 +200,7 @@ services:
       resources:
         limits:
           cpus: '2.0'
-          memory: 4G
+          memory: 5G
 
   # ── Nginx Reverse Proxy ─────────────────────────────────
   nginx:

@@ -26,3 +26,14 @@ export function thisYear() {
   const now = new Date()
   return { from: fmt(startOfYear(now)), to: fmt(endOfYear(now)) }
 }
+
+/** The five period presets of a search date filter, sent as `from`/`to` server params. */
+export function periodPresets(serverParamFrom: string, serverParamTo: string) {
+  return [
+    { label: 'Hoy', serverParamFrom, serverParamTo, getValue: today },
+    { label: 'Esta semana', serverParamFrom, serverParamTo, getValue: thisWeek },
+    { label: 'Este mes', serverParamFrom, serverParamTo, getValue: thisMonth },
+    { label: 'Este trimestre', serverParamFrom, serverParamTo, getValue: thisQuarter },
+    { label: 'Este año', serverParamFrom, serverParamTo, getValue: thisYear },
+  ]
+}

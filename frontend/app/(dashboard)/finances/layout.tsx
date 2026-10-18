@@ -1,11 +1,8 @@
-import { type Metadata } from "next"
 import { PageContainer } from "@/components/shared"
 import { FinancesHeader } from "./FinancesHeader"
+import { createAutoMetadata } from "@/lib/auto-metadata"
 
-export const metadata: Metadata = {
-    title: "Finanzas | ERPGrafico",
-    description: "Análisis financiero, presupuestos y estados de resultados.",
-}
+export const generateMetadata = createAutoMetadata("finances")
 
 export default function FinancesLayout({ children }: { children: React.ReactNode }) {
     return (

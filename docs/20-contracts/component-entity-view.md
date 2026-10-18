@@ -136,7 +136,7 @@ Todo componente del núcleo tiene **≤ 12 props** (test de contrato). Lo que no
 | Componente | Props |
 |---|---|
 | `Collection.Root` | `collection`, `children`, `actions?: (row, surface: "table" \| "card") => ReactNode`, `onOpen?: (row) => void`, `selection?: "none" \| "bulk" \| "panel"`, `selectedId?`, `defaultView?`, `view?` + `onViewChange?` (vista controlada), `label?` |
-| `Collection.Toolbar` | `children?` (búsqueda `UnifiedSearchBar`, botón de crear), `views?`, `exportFilters?` |
+| `Collection.Toolbar` | `children?` (búsqueda `UnifiedSearchBar`), `action?` (acción primaria, p. ej. crear; en pantallas angostas baja bajo la búsqueda en vez de taparla — lote 2c), `views?`, `exportFilters?` |
 | `Collection.View` | `table?`, `card?`, `emptyTitle?`, `emptyDescription?`, `emptyAction?` (p. ej. crear), `onResetFilters?` ("Limpiar filtros" en el vacío filtrado): elige la superficie activa |
 | `Collection.Table` / `Collection.Grid` | la superficie concreta, para pantallas con una sola vista. Con `groupBy` pintan un `<tbody>` por grupo con su cabecera `th scope="rowgroup"` (tabla) o una sección con encabezado (cards) |
 | `Collection.BulkBar` | `actions: BulkAction<T>[]`: el mismo tipo y la misma barra (`SelectionDock`) que el sistema antiguo; aparece con la selección (`selection="bulk"`) |

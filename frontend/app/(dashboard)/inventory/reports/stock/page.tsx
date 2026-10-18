@@ -1,12 +1,11 @@
 import { type Metadata } from "next"
 import { StockReport } from "@/features/inventory"
+import { getInventoryReportsSubTab } from "@/features/inventory/navigation"
+import { buildMetadataFromTab } from "@/lib/navigation-helpers"
 
-export const metadata: Metadata = {
-    title: "Stock e Inventario | ERPGrafico",
-    description: "Gestión de existencias, almacenes y reabastecimiento.",
-}
+const tabConfig = getInventoryReportsSubTab("stock")
+export const metadata: Metadata = tabConfig ? buildMetadataFromTab(tabConfig) : { title: "Existencias | ERPGrafico" }
 
-// El título (incluido `product_name`) lo publica InventoryHeader en la topbar.
 export default function StockReportPage() {
-    return <StockReport />
+  return <StockReport />
 }

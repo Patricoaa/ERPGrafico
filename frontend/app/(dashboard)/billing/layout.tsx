@@ -1,11 +1,8 @@
-import { type Metadata } from "next"
 import { PageContainer } from "@/components/shared"
 import { BillingHeader } from "./BillingHeader"
+import { createAutoMetadata } from "@/lib/auto-metadata"
 
-export const metadata: Metadata = {
-    title: "Módulo de Facturación | ERPGrafico",
-    description: "Gestión centralizada de documentos electrónicos emitidos y recibidos.",
-}
+export const generateMetadata = createAutoMetadata("billing")
 
 export default function BillingLayout({ children }: { children: React.ReactNode }) {
     return (

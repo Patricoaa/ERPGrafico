@@ -283,7 +283,7 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
                     onOpenChange={(open) => !open && setCompletingDoc(null)}
                     invoiceId={completingDoc.id}
                     invoiceType={completingDoc.dte_type}
-                    contactId={completingDoc.partner || completingDoc.supplier}
+                    contactId={completingDoc.partner_id ?? completingDoc.supplier}
                     isPurchase={true}
                     onComplete={async (invoiceId, formData) => {
                         await billingApi.confirmInvoice(invoiceId, formData)

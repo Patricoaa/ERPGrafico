@@ -2,59 +2,77 @@
 
 import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
-import { getEntityIconName } from "@/lib/entity-registry"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
+import {
+  ACCOUNTING_TABS,
+  ACCOUNTING_CONFIG_SUB_TABS,
+  getAccountingTab,
+  getAccountingConfigSubTab,
+} from "@/features/accounting/navigation"
+import { buildHeaderConfigFromTab } from "@/lib/navigation-helpers"
+import { getModuleHeaderConfig } from "@/lib/module-registry"
 
 export function AccountingHeader() {
-    const pathname = usePathname()
-    const { getViewModeUrl } = useViewModePreference()
+  const pathname = usePathname()
+  const { getViewModeUrl } = useViewModePreference()
 
-    const segments = pathname.split('/').filter(Boolean)
-    const currentSegment = segments[1] || 'ledger'
+  const segments = pathname.split("/").filter(Boolean)
+  const currentSegment = segments[1] || "ledger"
 
-    const activeValue = currentSegment === 'settings' ? 'config' : currentSegment
-    const subActiveValue = currentSegment === 'settings' ? (segments[2] || 'vat-rates') : undefined
+  const activeValue = currentSegment === "settings" ? "config" : currentSegment
+  const subActiveValue = currentSegment === "settings" ? (segments[2] || "vat-rates") : undefined
 
-    const tabs = [
-        { value: "ledger", label: "Plan de Cuentas", iconName: getEntityIconName('accounting.account'), href: getViewModeUrl('accounting.account', "/accounting/ledger") },
-        { value: "entries", label: "Asientos", iconName: getEntityIconName('accounting.journalentry'), href: getViewModeUrl('accounting.journalentry', "/accounting/entries") },
-        { value: "closures", label: "Cierres", iconName: getEntityIconName('accounting.fiscalyear'), href: getViewModeUrl('accounting.fiscalyear', "/accounting/closures") },
-        {
-            value: "config",
-            label: "Configuración",
-            iconName: "settings",
-            href: "/accounting/settings",
-            subTabs: [
-                { value: "vat-rates", label: "Tasas de IVA", href: "/accounting/settings/vat-rates", iconName: "percent" }
-            ]
-        },
-    ]
+  // Module config from centralized registry
+  const moduleConfig = getModuleHeaderConfig("accounting")
 
-    const navigation = {
-        moduleName: "Contabilidad",
-        moduleHref: getViewModeUrl('accounting.account', "/accounting/ledger"),
-        tabs,
-        activeValue,
-        subActiveValue,
+  // Build navigation from canonical config
+  const tabs = ACCOUNTING_TABS.map((tab) => ({
+    value: tab.value,
+    label: tab.label,
+    iconName: tab.iconName,
+    href: tab.href,
+    subTabs: tab.subTabs?.map((st) => ({
+      value: st.value,
+      label: st.label,
+      iconName: st.iconName,
+      href: st.href,
+    })),
+  }))
+
+  const navigation = {
+    moduleName: moduleConfig?.moduleName ?? "Contabilidad",
+    moduleHref: moduleConfig?.moduleHref ?? getViewModeUrl("accounting.account", "/accounting/ledger"),
+    tabs,
+    activeValue,
+    subActiveValue,
+  }
+
+  // Get header config from canonical navigation
+  const getHeaderConfig = () => {
+    const mainTab = getAccountingTab(activeValue)
+    if (!mainTab) {
+      return { title: moduleConfig?.headerTitle ?? "Contabilidad", description: moduleConfig?.headerDescription ?? "", iconName: moduleConfig?.iconName ?? "calculator" as const }
     }
 
-    const getHeaderConfig = () => {
-        if (activeValue === 'ledger') return { title: "Plan de Cuentas", description: "Estructura contable y clasificación de cuentas.", iconName: getEntityIconName('accounting.account') }
-        if (activeValue === 'entries') return { title: "Asientos Contables", description: "Libro diario y registro cronológico de transacciones.", iconName: getEntityIconName('accounting.journalentry') }
-        if (activeValue === 'closures') return { title: "Gestión de Cierres", description: "Periodos tributarios (F29), cierres contables mensuales y cierre de ejercicios anuales.", iconName: getEntityIconName('accounting.fiscalyear') }
-        if (activeValue === 'config') return { title: "Configuración de Contabilidad", description: "Gestión de tasas de IVA y parámetros contables.", iconName: "settings" }
-        return { title: "Contabilidad", description: "", iconName: getEntityIconName('accounting.account') ?? "calculator" }
+    // Sub-tabs handling (config)
+    if (activeValue === "config" && subActiveValue) {
+      const subTab = getAccountingConfigSubTab(subActiveValue)
+      if (subTab) return buildHeaderConfigFromTab(subTab)
     }
 
-    const config = getHeaderConfig()
+    // Default: main tab header
+    return buildHeaderConfigFromTab(mainTab)
+  }
 
-    return (
-        <PageHeader 
-            title={config.title} 
-            description={config.description} 
-            iconName={config.iconName} 
-            variant="minimal" 
-            navigation={navigation} 
-        />
-    )
+  const config = getHeaderConfig()
+
+  return (
+    <PageHeader
+      title={config.title}
+      description={config.description}
+      iconName={config.iconName}
+      variant="minimal"
+      navigation={navigation}
+    />
+  )
 }
