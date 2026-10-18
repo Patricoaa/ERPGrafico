@@ -45,11 +45,13 @@ export function ModuleSidebarPanel({ currentModuleId, navigation, isHeaderReady,
                 )}
             </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-2 pt-2 pb-4 flex flex-col gap-3">
+            {/* Utilidades globales fijas en la parte superior (simetría con SidebarQuickActions abajo) */}
+            <div className="shrink-0 bg-background/40 px-2 pt-2 flex flex-col gap-px">
                 <SidebarUtilityNav isInboxOpen={isInboxOpen} onInboxToggle={onInboxToggle} />
-
                 <div className="h-px bg-border/60 mx-2" aria-hidden />
+            </div>
 
+            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-2 pt-2 pb-4 flex flex-col gap-3">
                 {hasModuleNav ? (
                     <ModuleNavTree navigation={navigation} onNavigate={onNavigate} />
                 ) : isHeaderReady || navigation ? (
