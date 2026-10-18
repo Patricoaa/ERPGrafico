@@ -22,7 +22,7 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: accounts, isLoading, refetch } = useQuery({
+    const { data: accounts, isLoading, isError, refetch } = useQuery({
         queryKey: [...ACCOUNTS_QUERY_KEY, filters],
         queryFn: () => accountingApi.getAccounts(filters),
         staleTime: staleTime.reference, // 15 min — datos quasi-estáticos
@@ -68,6 +68,8 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
     return {
         accounts: accounts || EMPTY_ARRAY,
         isLoading,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError,
         refetch,
         createAccount: createMutation.mutateAsync,
         updateAccount: updateMutation.mutateAsync,

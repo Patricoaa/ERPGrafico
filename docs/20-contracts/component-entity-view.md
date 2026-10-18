@@ -96,6 +96,7 @@ Reglas:
 - **Ids de campo:** unión literal inferida. `columns`, `primary`, `defaultSort`, `footer.sum`, `title`, `subtitle`, `meta`, `trailing`, las secciones del cuerpo, `.without()` y `context` de `defineEditable` solo aceptan esos ids (TY-3). TC-012 no puede repetirse.
 - **`label`:** etiqueta del tipo `EntityLabel` (unión de las claves de `ENTITY_REGISTRY`, R8): una etiqueta no registrada no compila. La identidad (nombre, icono, URL canónica, drawer) se queda en el registro; la presentación (`viewPolicy`, `cardConfig`, `workflow`, `partnerField`) se muda a la definición conforme migra cada entidad.
 - **Colecciones embebidas sin ficha propia** (p. ej. líneas de documento, que no están en el registro): en lugar de `label` se declara `title` (la identidad es una unión discriminada `label` | `title`: una de las dos, nunca ambas) (nombre accesible, p. ej. "Líneas"). Sin `label` no hay acción por defecto (solo `onOpen` explícito) ni icono del registro.
+- **Jerarquía (`tree`):** `tree: { children: (row) => hijos | null | undefined, defaultExpanded?: boolean }` (por defecto todo abierto). La tabla sangra los hijos bajo su padre, con el botón de plegar en la **primera columna** y "Expandir/Contraer todo" en su cabecera; el botón no abre la fila. Con paginación en cliente cada página lleva ramas completas; `groupBy` no aplica (la búsqueda de una pantalla en árbol no debe ofrecer agrupación); en cards las filas visibles se muestran planas. El pie (`footer.sum`) suma solo las raíces (los padres ya traen el total de sus hijos); marcar un padre selecciona solo esa fila; `total` cuenta todas las filas; sin `aria-rowindex`/`aria-rowcount` (no es una secuencia plana). Los hijos son del mismo tipo de fila (para tipos distintos, una unión discriminada). Ejemplo: `features/accounting/entity-view/account.entity.ts` (ADR-0087, enmienda 2026-10-18).
 - **Sin escapes opacos:** no hay `computed`. Lo específico es un kind de la feature (§3) o una sección `custom` de card (§6.3). `as any`, `as unknown as` y `: any` están prohibidos en entidades (test de contrato, con una deuda permitida hasta R5).
 
 ## 5. Estado de colección — `useEntityCollection(entity, source, options?)`
@@ -261,6 +262,7 @@ Mientras falte una capacidad, la pantalla que la necesita **se queda en el siste
 | Paridad de URL con el sistema actual: `?view=` (`useCollectionViewMode`), filtros de `UnifiedSearchBar` (nuqs) y `?selected=` (ADR-0020) | **hecho** | lote 1 |
 | Orden y página en la URL (hoy son estado local también en el sistema antiguo) | mejora opcional (`06-spec.md` §5.3) | — |
 | Agrupación, panel de analítica, acciones masivas, orden en servidor | **hecho** | lote 2a |
+| Filas jerárquicas (árbol plegable) | **hecho** | oleada A3 |
 | Foco del hub: con `selection="panel"` y `selectedId`, las cards no seleccionadas se atenúan | **hecho** | lote 2b |
 | Filas expandibles, kanban/timeline | especificado como composición (`06-spec.md` §6.6) | por demanda |
 | Exportación real | el hook existe; falta el endpoint (Pd-backend) | — |

@@ -23,9 +23,7 @@ export const accountUnifiedSearchDef: UnifiedSearchConfig = {
       ],
     },
   ],
-  groupBy: [
-    { key: 'account_type', label: 'Tipo de cuenta', field: 'account_type' },
-  ],
+  // No groupBy: the chart of accounts is a tree (the hierarchy is the grouping).
 }
 
 export const journalEntryUnifiedSearchDef: UnifiedSearchConfig = {

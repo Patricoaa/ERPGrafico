@@ -68,6 +68,11 @@ Gate A (2026-10-17) approved these causes, the common/frequent/specific requirem
     - ~~`fromLegacyFields()` adapts schemas that have no `computed`.~~ **Amended 2026-10-18:** dropped. A runtime adapter turns typed field ids back into `string` (the TC-012 defect class) and saves little: the definition is ~10 % of a migration, the screen is the rest. Migration follows the recipe in `component-entity-view.md` §10.2.
     - Migration runs in waves (Phase 7 replan, `docs/50-audit/Tablascards/07-migration-matrix.md` §6); a ratchet test (`LEGACY_CONSUMERS`) lets the legacy consumer list only shrink. The legacy system is removed when it has zero consumers (ADR-0072 precedent).
 
+### Amendment 2026-10-18 · hierarchical rows (tree)
+
+- `EntitySpec.tree = { children(row), defaultExpanded? }` declares a hierarchy on the entity (same row type). The table indents children under their parent, with a fold toggle in its first column and an expand/collapse-all control in that column's header; client pages hold whole branches (`paginateExpandedRows: false`); grouping does not apply to a tree; cards show the visible rows flat.
+- **Exception to the ≥3 entities / ≥2 features rule, approved by the user (Gate D, oleada A3):** today one consumer (chart of accounts), with fiscal closures, financial statements and other folding views announced as the next ones.
+
 ### Amendment 2026-10-18 · collection states and client paging (oleada A1 code review)
 
 - State precedence becomes `loading` → `ready` → `error` → `empty`: a failed background refetch with cached rows keeps the rows visible (legacy `DataTableView` parity). Before, every migrated list passing `error: isError` hid its data behind the error panel on a network blip.

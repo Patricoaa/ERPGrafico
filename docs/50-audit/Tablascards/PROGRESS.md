@@ -1,11 +1,11 @@
 # Progreso — Nuevo sistema de presentación
-- **Avance (2026-10-18): 29 entidades `defineEntity` · 69 pantallas y 106 consumidores en el sistema antiguo** (`bash frontend/scripts/entity-view-progress.sh`)
-- Fase actual: 7 · oleada A · A3 implementado + `/code-review` aplicado (`07` §6.17), sin commitear · esperando al usuario
+- **Avance (2026-10-18): 30 entidades `defineEntity` · 104 consumidores en el sistema antiguo** (`bash frontend/scripts/entity-view-progress.sh`)
+- Fase actual: 7 · oleada A · árbol en el núcleo + plan de cuentas implementados y revisados (`07` §6.18), sin commitear · esperando al usuario
 - Último completado: lote 3a. Líneas de la ficha (OV/OC/factura) sobre `orderLineEntity`; `DeliveryDrawer` y `ReceiptModal` con `EditableCollection` + RHF; núcleo con `processed`/`check`/`rowStatus` y `core/define-editable.ts`. TC-012 y TC-056 corregidos; TC-057 y TC-058 encontrados y corregidos; TC-059 para el usuario. Detalle en `07` §5.7
-- Próximo paso exacto: el usuario autoriza el commit del A3 y decide los casos específicos (plan de cuentas, cierres) → A4 (contactos y LdM)
+- Próximo paso exacto: el usuario autoriza el commit del árbol y decide el diseño de cierres (`07` §6.19) → A4 (contactos y LdM)
 - Rama: `refactor/entity-view-lote-3` (3a commiteado en `7ef87d7a7`); issues abiertas #176, #177
 - Puertas: A ✅ · B ✅ · C ✅ · D lote 1 ✅ · D 2a ✅ · D 2b ✅ · D 2c ✅ (2026-10-17) · D lote 3 ✅ (2026-10-18) · replanificación ✅ (2026-10-18) · D A1 ✅ (2026-10-18)
-- Preguntas abiertas para el usuario: commit del A3; casos específicos plan de cuentas (árbol) y cierres (superficie propia); credenciales de demo para verificar en la app
+- Preguntas abiertas para el usuario: commit del árbol + plan de cuentas; diseño de cierres como árbol (§6.19); credenciales de demo
 - Decisiones del usuario:
   - 2026-10-17: las tablas de wizard/modal entran como caso de uso específico · `as any` de `AutoEntityCard.tsx:390` espera al rediseño · `journalEntryFields` lo determina la auditoría (→ TC-016) · TC-012 se corrige en la migración
   - 2026-10-17 Puerta A: aprueba RC1–RC8 y la matriz C/F/E; pantallas de la Fase 4 = UoM, OV, Compras; aprueba `role="grid"` → `role="table"` en `compact`; **exportación = requisito** (aclarado)
@@ -48,3 +48,5 @@
   - 2026-10-18 A2 commiteado. Mutagen: sesión vieja (.93) terminada; local y .86 sin diferencias de contenido (TC-064 resuelto). Tras un reinicio de contenedores nginx daba 502 (upstream con la IP vieja del backend): `docker compose restart nginx`.
   - 2026-10-18 A3 implementado (tesorería). Plan de cuentas y cierres contables salen como casos específicos.
   - 2026-10-18 `/code-review` del A3: 7 corregidos (error con filtro en cliente en las 12 vistas que filtran → regla en la receta), 3 registrados (TC-067).
+  - 2026-10-18 Usuario: filas jerárquicas al núcleo (excepción a ≥3/≥2; cierres, estados financieros). Implementado `tree` + plan de cuentas; cierres como propuesta de diseño (§6.19).
+  - 2026-10-18 `/code-review` del árbol: 10 hallazgos corregidos (pie, selección de hijos y de padres, control de expandir todo, ARIA, total, agrupación inútil, componente muerto, solapamiento, memo).

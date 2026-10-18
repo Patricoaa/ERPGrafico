@@ -14,8 +14,6 @@ export const LEGACY_CONSUMERS: readonly string[] = [
     "app/(dashboard)/settings/audit/AuditPageClient.tsx",
     "app/(dashboard)/settings/jobs/JobsView.tsx",
     "components/selectors/AccountSelector.tsx",
-    "features/accounting/accountFields.ts",
-    "features/accounting/components/AccountsClientView.tsx",
     "features/accounting/components/closures/AccountingClosuresClientView.tsx",
     "features/accounting/components/LedgerDrawer.tsx",
     "features/accounting/fiscalYearFields.tsx",

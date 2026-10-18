@@ -3,10 +3,12 @@
 import * as React from "react"
 import {
     getCoreRowModel,
+    getExpandedRowModel,
     getPaginationRowModel,
     getSortedRowModel,
     useReactTable,
     type ColumnDef,
+    type ExpandedState,
     type PaginationState,
     type Row,
     type RowSelectionState,
@@ -138,6 +140,9 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
     const serverSortingState = React.useMemo(() => toSorting(serverSpec), [serverSpec])
     const sorting = serverSorting ? serverSortingState : localSorting
     const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
+    const tree = entity.tree
+    // `true` = every branch open (TanStack's "all expanded"); toggling a row switches to a per-row map.
+    const [expanded, setExpanded] = React.useState<ExpandedState>(() => (tree && tree.defaultExpanded !== false ? true : {}))
     const [clientPagination, setClientPagination] = React.useState<PaginationState>({
         pageIndex: 0,
         pageSize: pagination.mode === "client" ? pagination.pageSize ?? 20 : 20,
@@ -164,10 +169,21 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
         state: {
             sorting,
             rowSelection,
+            ...(tree ? { expanded } : {}),
             // Omitted (not `undefined`) without pagination, so TanStack keeps its default pagination state.
             ...(pagination.mode === "none" ? {} : { pagination: pagination.mode === "server" ? pagination.state : clientPage }),
         },
         getRowId: (row) => rowIdOf(entity, row),
+        ...(tree
+            ? {
+                getSubRows: (row: T) => (tree.children(row) ?? undefined) as T[] | undefined,
+                getExpandedRowModel: getExpandedRowModel(),
+                onExpandedChange: setExpanded,
+                // A client page holds whole branches (children render on their parent's page). TanStack then
+                // expands inside its pagination model, so this only applies when that model exists.
+                paginateExpandedRows: pagination.mode !== "client",
+            }
+            : {}),
         onSortingChange: (updater) => {
             const next = typeof updater === "function" ? updater(sorting) : updater
             if (sortingOption.mode === "server") sortingOption.onChange(toSpec<FieldId<F>>(next))
@@ -189,6 +205,8 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
         autoResetPageIndex: false,
         rowCount: isServer ? source.rowCount : undefined,
         enableRowSelection: true,
+        // Ticking a parent selects that row only, never its whole subtree.
+        enableSubRowSelection: false,
     })
 
     // Rows win over a failed background refetch: cached data stays visible (legacy DataTableView parity).
@@ -200,7 +218,8 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
                 ? "error"
                 : "empty"
 
-    const groupBy = options.groupBy ?? null
+    // Grouping does not apply to a tree (the hierarchy already is the grouping).
+    const groupBy = tree ? null : options.groupBy ?? null
     const pageRows = table.getRowModel().rows
     const groups = React.useMemo<CollectionGroup<T>[] | null>(() => {
         if (!groupBy) return null
@@ -222,7 +241,8 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
         status,
         isRefetching: !!source.isRefetching,
         // `rowCount` is the server total whenever the page passes it (server pages, or one bounded page while grouping).
-        total: source.rowCount ?? rows.length,
+        // A tree counts every row, not only its roots.
+        total: source.rowCount ?? (tree ? table.getCoreRowModel().flatRows.length : rows.length),
         paginated: pagination.mode !== "none",
         refetch: source.refetch,
         isFiltered: !!source.isFiltered,

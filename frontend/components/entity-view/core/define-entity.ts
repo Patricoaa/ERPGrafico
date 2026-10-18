@@ -215,6 +215,19 @@ export type EntitySpec<T, F extends FieldMap<T>> = EntityIdentity & {
     export?: ExportSpec<Record<string, unknown>>
     /** Stable row id. Defaults to `row.id`. */
     rowId?: (row: T) => string | number
+    /**
+     * Hierarchical rows (chart of accounts, fiscal year → periods, financial statements). The table
+     * indents children under their parent with a fold toggle in its first column; pages hold whole
+     * branches. Grouping does not apply to a tree.
+     */
+    tree?: TreeSpec<T>
+}
+
+export interface TreeSpec<T> {
+    /** Child rows (same row type), or nothing for a leaf. */
+    children: (row: T) => readonly T[] | null | undefined
+    /** Starts with every branch open. Defaults to `true`. */
+    defaultExpanded?: boolean
 }
 
 export type Entity<T, F extends FieldMap<T>> = EntitySpec<T, F> & {

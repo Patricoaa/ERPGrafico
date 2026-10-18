@@ -241,3 +241,123 @@ describe("failed background refetch (code review, oleada A1)", () => {
         expect(screen.getByText(/No pudimos cargar/)).toBeInTheDocument()
     })
 })
+
+describe("hierarchical rows (tree)", () => {
+    interface Account {
+        id: number
+        code: string
+        name: string
+        children?: Account[]
+    }
+    const accounts: Account[] = [
+        { id: 1, code: "1", name: "Activo", children: [
+            { id: 11, code: "1.1", name: "Caja", children: [{ id: 111, code: "1.1.1", name: "Caja chica" }] },
+            { id: 12, code: "1.2", name: "Bancos" },
+        ] },
+        { id: 2, code: "2", name: "Pasivo" },
+    ]
+    const build = (defaultExpanded?: boolean) =>
+        defineEntity<Account>()((f) => ({
+            title: "Cuentas",
+            tree: { children: (a) => a.children, defaultExpanded },
+            fields: { code: f.code("code", { label: "Código" }), name: f.text("name", { label: "Nombre" }) },
+        }))
+    const treeEntity = build()
+    const treeViews = treeEntity.views({ table: { columns: ["code", "name"] } })
+
+    function Tree({ entityDef = treeEntity, pageSize, onOpen }: { entityDef?: typeof treeEntity; pageSize?: number; onOpen?: (a: Account) => void }) {
+        const collection = useEntityCollection(entityDef, { rows: accounts }, { pagination: pageSize ? { mode: "client", pageSize } : { mode: "none" } })
+        return (
+            <Collection.Root collection={collection} onOpen={onOpen}>
+                <Collection.View table={treeViews.table} />
+            </Collection.Root>
+        )
+    }
+
+    it("starts with every branch open, children under their parent", () => {
+        render(<Tree />)
+        const names = screen.getAllByRole("row").slice(1).map((r) => within(r).getAllByRole("cell")[1].textContent)
+        expect(names).toEqual(["Activo", "Caja", "Caja chica", "Bancos", "Pasivo"])
+    })
+
+    it("folds a branch from its toggle without opening the row", async () => {
+        const onOpen = vi.fn()
+        render(<Tree onOpen={onOpen} />)
+        await userEvent.click(screen.getByRole("button", { name: "Contraer 1.1" }))
+        expect(screen.queryByText("Caja chica")).not.toBeInTheDocument()
+        expect(screen.getByRole("button", { name: "Expandir 1.1" })).toHaveAttribute("aria-expanded", "false")
+        expect(onOpen).not.toHaveBeenCalled()
+    })
+
+    it("collapses and expands every branch from the header", async () => {
+        render(<Tree />)
+        await userEvent.click(screen.getByRole("button", { name: "Contraer todo" }))
+        expect(screen.queryByText("Caja")).not.toBeInTheDocument()
+        await userEvent.click(screen.getByRole("button", { name: "Expandir todo" }))
+        expect(screen.getByText("Caja chica")).toBeInTheDocument()
+    })
+
+    it("can start folded", () => {
+        render(<Tree entityDef={build(false)} />)
+        expect(screen.getByText("Activo")).toBeInTheDocument()
+        expect(screen.queryByText("Caja")).not.toBeInTheDocument()
+    })
+
+    it("the header control reads 'Contraer todo' again once every branch is reopened by hand", async () => {
+        render(<Tree />)
+        await userEvent.click(screen.getByRole("button", { name: "Contraer todo" }))
+        await userEvent.click(screen.getByRole("button", { name: "Expandir 1" }))
+        await userEvent.click(screen.getByRole("button", { name: "Expandir 1.1" }))
+        expect(screen.getByRole("button", { name: "Contraer todo" })).toBeInTheDocument()
+    })
+
+    it("sums roots only in the footer, whatever is folded", async () => {
+        interface Line { id: number; name: string; amount: number; children?: Line[] }
+        const lines: Line[] = [{ id: 1, name: "Activo", amount: 100, children: [{ id: 2, name: "Caja", amount: 60 }, { id: 3, name: "Bancos", amount: 40 }] }]
+        const lineEntity = defineEntity<Line>()((f) => ({
+            title: "Saldos",
+            tree: { children: (l) => l.children },
+            fields: { name: f.text("name", { label: "Cuenta" }), amount: f.number("amount", { label: "Monto" }) },
+        }))
+        const lineViews = lineEntity.views({ table: { columns: ["name", "amount"], footer: { sum: ["amount"] } } })
+        function Sums() {
+            const collection = useEntityCollection(lineEntity, { rows: lines }, { pagination: { mode: "none" } })
+            return (
+                <Collection.Root collection={collection}>
+                    <Collection.View table={lineViews.table} />
+                </Collection.Root>
+            )
+        }
+        const { container } = render(<Sums />)
+        expect(container.querySelector("tfoot")?.textContent).toContain("100")
+        expect(container.querySelector("tfoot")?.textContent).not.toContain("200")
+        await userEvent.click(screen.getByRole("button", { name: "Contraer todo" }))
+        expect(container.querySelector("tfoot")?.textContent).toContain("100")
+    })
+
+    it("bulk selection: a child reaches the bulk actions, a parent does not drag its subtree", async () => {
+        const onRun = vi.fn()
+        function Bulk() {
+            const collection = useEntityCollection(treeEntity, { rows: accounts }, { pagination: { mode: "none" } })
+            return (
+                <Collection.Root collection={collection} selection="bulk">
+                    <Collection.View table={treeViews.table} />
+                    <Collection.BulkBar actions={[{ key: "run", label: "Ejecutar", onClick: onRun }]} />
+                </Collection.Root>
+            )
+        }
+        render(<Bulk />)
+        const rowOf = (name: string) => screen.getByText(name).closest("tr") as HTMLElement
+        await userEvent.click(within(rowOf("Caja chica")).getByRole("checkbox"))
+        await userEvent.click(within(rowOf("Activo")).getByRole("checkbox"))
+        expect(within(rowOf("Caja")).getByRole("checkbox")).not.toBeChecked()
+        await userEvent.click(screen.getByRole("button", { name: /Ejecutar/ }))
+        expect(onRun.mock.calls[0][0].map((a: Account) => a.name).sort()).toEqual(["Activo", "Caja chica"])
+    })
+
+    it("paginates whole branches: children stay on their parent's page", () => {
+        render(<Tree pageSize={1} />)
+        expect(screen.getByText("Caja chica")).toBeInTheDocument()
+        expect(screen.queryByText("Pasivo")).not.toBeInTheDocument()
+    })
+})

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, LayoutGrid, Rows3 } from "lucide-react"
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, ChevronDown, ChevronRight, LayoutGrid, Rows3 } from "lucide-react"
 import { BulkActionButtons, DataTablePagination, EmptyState, EntityCard, SelectionDock, type BulkAction } from "@/components/shared"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -39,7 +39,7 @@ export type CollectionViewMode = "table" | "card" | "analytics"
 export type SelectionMode = "none" | "bulk" | "panel"
 
 /** What the surfaces read from the entity: label and fields (the literal field-id map `F` is erased). */
-type EntityRef<T> = EntityIdentity & Pick<EntitySpec<T, FieldMap<T>>, "fields" | "export">
+type EntityRef<T> = EntityIdentity & Pick<EntitySpec<T, FieldMap<T>>, "fields" | "export" | "tree">
 
 interface CollectionContextValue<T> {
     collection: Omit<EntityCollection<T, FieldMap<T>>, "entity"> & { entity: EntityRef<T> }
@@ -293,7 +293,8 @@ function BulkBar<T>({ actions }: CollectionBulkBarProps<T>) {
     // actions receive the fresh rows, not the objects that were selected.
     const coreRows = table.getCoreRowModel()
     const selected = React.useMemo(
-        () => (Object.keys(rowSelection).length === 0 ? [] : coreRows.rows.filter((row) => rowSelection[row.id]).map((row) => row.original)),
+        // `flatRows`: in a tree, selected children are not in the top-level `rows`.
+        () => (Object.keys(rowSelection).length === 0 ? [] : coreRows.flatRows.filter((row) => rowSelection[row.id]).map((row) => row.original)),
         [coreRows, rowSelection],
     )
     return (
@@ -326,6 +327,58 @@ function SortIcon({ dir }: { dir: false | "asc" | "desc" }) {
 
 const ARIA_SORT = { asc: "ascending", desc: "descending" } as const
 
+/** Indent + fold toggle of a tree row (first column). Leaves keep the toggle's width so siblings align. */
+function TreeCell<T>({ row, label, children }: { row: Row<T>; label: string; children: React.ReactNode }) {
+    const canExpand = row.getCanExpand()
+    const isExpanded = row.getIsExpanded()
+    return (
+        <div className="flex min-w-0 items-center gap-1" style={{ paddingLeft: `${row.depth * 1.25}rem` }}>
+            {canExpand ? (
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 shrink-0 p-0 text-muted-foreground"
+                    aria-expanded={isExpanded}
+                    aria-label={`${isExpanded ? "Contraer" : "Expandir"} ${label}`}
+                    // The row itself opens on click: folding must not.
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        row.toggleExpanded()
+                    }}
+                >
+                    {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                </Button>
+            ) : (
+                <span className="h-6 w-6 shrink-0" aria-hidden />
+            )}
+            <div className="min-w-0 flex-1">{children}</div>
+        </div>
+    )
+}
+
+/**
+ * Header control of a tree table: expands or collapses every branch. "All open" is computed over the
+ * expandable rows: TanStack's own check also wants every leaf in the per-row map, which hand-expanding
+ * parents never adds, so its label would stick on "Expandir todo".
+ */
+function TreeToggleAll<T>({ table }: { table: EntityCollection<T, FieldMap<T>>["table"] }) {
+    const all = table.getIsAllRowsExpanded() || table.getCoreRowModel().flatRows.filter((r) => r.getCanExpand()).every((r) => r.getIsExpanded())
+    return (
+        <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="-ml-1 h-6 w-6 shrink-0 p-0 text-muted-foreground"
+            aria-label={all ? "Contraer todo" : "Expandir todo"}
+            title={all ? "Contraer todo" : "Expandir todo"}
+            onClick={() => table.toggleAllRowsExpanded(!all)}
+        >
+            {all ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+        </Button>
+    )
+}
+
 function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id> }) {
     const ctx = useCollectionContext<T>()
     const { table, status, isRefetching, total, groups } = ctx.collection
@@ -343,7 +396,11 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
         }),
         [layout.columns, entity],
     )
-    const originals = rows.map((r) => r.original)
+    const isTree = !!entity.tree
+    // A tree sums its roots only: parents already carry their children's totals, and the footer must not
+    // change when a branch is folded.
+    const originals = (isTree ? rows.filter((r) => r.depth === 0) : rows).map((r) => r.original)
+    const treeColumn = cols[0]?.id
     const colSpan = cols.length + (isBulk ? 1 : 0) + (hasActions ? 1 : 0)
     const renderRow = (row: Row<T>, index: number) => {
         const isSelected = ctx.selectedId === row.id || row.getIsSelected()
@@ -351,7 +408,8 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
             <tr
                 key={row.id}
                 // Grouped rows are not a flat sequence: no row index (the group header carries the context).
-                aria-rowindex={groups ? undefined : table.getState().pagination.pageIndex * table.getState().pagination.pageSize + index + 2}
+                // Grouped and tree rows are not a flat sequence of the total: no row index.
+                aria-rowindex={groups || isTree ? undefined : table.getState().pagination.pageIndex * table.getState().pagination.pageSize + index + 2}
                 aria-selected={ctx.selection !== "none" ? isSelected : undefined}
                 className={cn("group border-b border-border/40 table-row-hover transition-colors", ctx.canOpen && "cursor-pointer", isSelected && "bg-primary/5")}
                 // Mouse enhancement only: the keyboard path is the primary cell button (AX-3).
@@ -362,19 +420,22 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
                         <Checkbox aria-label="Seleccionar fila" checked={row.getIsSelected()} onCheckedChange={(v) => row.toggleSelected(!!v)} />
                     </td>
                 )}
-                {cols.map(({ id, def, align, shrink }) => (
-                    // Shrinkable columns (text, names) may go below their content width (`max-w-0` lets the
-                    // auto layout shrink them, their renderer ellipsizes); the rest keep their width: no
-                    // horizontal scroll while the fixed columns fit.
-                    // The primary column identifies the row: it keeps a minimum width so the others shrink first.
-                    <td key={id} className={cn(CELL, "align-middle whitespace-nowrap", shrink && "max-w-0", shrink && id === primary && "min-w-28", ALIGN_TEXT[align])}>
-                        {id === primary && ctx.canOpen ? (
-                            <PrimaryCell def={def} row={row.original} onOpen={ctx.open} align={align} />
-                        ) : (
-                            <FieldValue def={def} row={row.original} surface="table" align={align} />
-                        )}
-                    </td>
-                ))}
+                {cols.map(({ id, def, align, shrink }) => {
+                    const value = id === primary && ctx.canOpen ? (
+                        <PrimaryCell def={def} row={row.original} onOpen={ctx.open} align={align} />
+                    ) : (
+                        <FieldValue def={def} row={row.original} surface="table" align={align} />
+                    )
+                    return (
+                        // Shrinkable columns (text, names) may go below their content width (`max-w-0` lets the
+                        // auto layout shrink them, their renderer ellipsizes); the rest keep their width: no
+                        // horizontal scroll while the fixed columns fit.
+                        // The primary column identifies the row: it keeps a minimum width so the others shrink first.
+                        <td key={id} className={cn(CELL, "align-middle whitespace-nowrap", shrink && "max-w-0", shrink && id === primary && "min-w-28", ALIGN_TEXT[align])}>
+                            {isTree && id === treeColumn ? <TreeCell row={row} label={resolveField(def, row.original).text}>{value}</TreeCell> : value}
+                        </td>
+                    )
+                })}
                 {hasActions && (
                     <td className={cn(CELL, "text-right")} onClick={(e) => e.stopPropagation()}>
                         {ctx.actions?.(row.original, "table")}
@@ -393,7 +454,7 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
                     data-density="compact"
                     aria-label={ctx.label}
                     aria-busy={status === "loading" || isRefetching}
-                    aria-rowcount={total + 1}
+                    aria-rowcount={isTree ? undefined : total + 1}
                 >
                     <thead className="sticky top-0 z-10 bg-background">
                         <tr className="border-b">
@@ -417,16 +478,19 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
                                         // Fixed columns hug their content (`w-px` + nowrap); the free width goes to the shrinkable ones.
                                         className={cn("h-(--table-header-h) px-(--table-header-px) py-(--table-header-py) whitespace-nowrap", !shrink && "w-px", HEADER_TEXT, ALIGN_TEXT[align])}
                                     >
-                                        {column?.getCanSort() ? (
-                                            // Compact header height; the Fitts guard is lifted by `data-density="compact"` (R3).
-                                            <Button variant="ghost" size="sm" className={cn("-mx-2 h-7 gap-1", align === "end" && "flex-row-reverse")} onClick={column.getToggleSortingHandler()}>
-                                                {/* Same header text treatment as DataTableColumnHeader (canonical header, track B). */}
-                                                <span className={HEADER_TEXT}>{def.header ?? def.label}</span>
-                                                <SortIcon dir={dir} />
-                                            </Button>
-                                        ) : (
-                                            def.header ?? def.label
-                                        )}
+                                        <span className={cn(isTree && id === treeColumn && "inline-flex items-center gap-2")}>
+                                            {isTree && id === treeColumn && <TreeToggleAll table={table} />}
+                                            {column?.getCanSort() ? (
+                                                // Compact header height; the Fitts guard is lifted by `data-density="compact"` (R3).
+                                                <Button variant="ghost" size="sm" className={cn("-mx-2 h-7 gap-1", align === "end" && "flex-row-reverse")} onClick={column.getToggleSortingHandler()}>
+                                                    {/* Same header text treatment as DataTableColumnHeader (canonical header, track B). */}
+                                                    <span className={HEADER_TEXT}>{def.header ?? def.label}</span>
+                                                    <SortIcon dir={dir} />
+                                                </Button>
+                                            ) : (
+                                                def.header ?? def.label
+                                            )}
+                                        </span>
                                     </th>
                                 )
                             })}

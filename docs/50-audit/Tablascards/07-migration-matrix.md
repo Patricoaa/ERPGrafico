@@ -914,3 +914,55 @@ Sin cambio (registrados):
 
 Verificación posterior: `tsc` y `eslint` sin errores; vitest `components/entity-view` + contrato y `features/{treasury,accounting,hr,inventory,sales,settings}` en verde.
 
+
+### 6.18 Filas jerárquicas en el núcleo + plan de cuentas (2026-10-18)
+
+**Decisión del usuario (Puerta D, tras el A3):** añadir filas jerárquicas al núcleo como excepción a la regla ≥3/≥2. Consumidores anunciados: plan de cuentas, cierres contables, estados financieros y otras vistas plegables.
+
+**Núcleo**
+- `EntitySpec.tree = { children(row), defaultExpanded? }` (`core/define-entity.ts`, tipo `TreeSpec`).
+- `useEntityCollection`: `getSubRows` + `getExpandedRowModel`, estado de expansión (todo abierto por defecto), `paginateExpandedRows: false` solo con paginación en cliente (TanStack expande dentro de su modelo de paginación: con `none`/`server` no habría expansión). `groupBy` se ignora con árbol.
+- Tabla: sangría por nivel y botón de plegar (`aria-expanded`, `aria-label` "Expandir/Contraer {valor}") en la primera columna, sin abrir la fila; "Expandir/Contraer todo" en la cabecera de esa columna.
+- Contrato `component-entity-view.md` §4 y §10.1; ADR-0087, enmienda "hierarchical rows (tree)".
+- Tests (5): árbol abierto con los hijos bajo su padre; plegar una rama sin abrir la fila; contraer/expandir todo; `defaultExpanded: false`; paginación por ramas completas.
+
+**Plan de cuentas** (`accounting/AccountsClientView` → `accounting/entity-view/account.entity.ts`)
+- La columna de código escrita a mano (sangría + `IconButton` + `DataTableExpandHeader`) desaparece: la da `tree`.
+- Diferencias: el código no es ordenable (el árbol ya viene en orden de código y un orden de texto pondría "1.10" antes de "1.2"); todo el plan en una página (antes `defaultPageSize={500}`); la fila abre la edición (antes solo el menú).
+- `useAccounts` expone `isError`. Borrado `features/accounting/accountFields.ts`.
+
+**`/code-review` medium del árbol (10 hallazgos, todos corregidos)**
+1. El pie sumaba padres e hijos (subtotales dobles, y cambiaba al plegar): ahora suma solo raíces.
+2. La barra masiva buscaba la selección entre las raíces (`rows`): un hijo marcado no llegaba a las acciones. Ahora `flatRows`.
+3. Marcar un padre seleccionaba todo su subárbol (`enableSubRowSelection` de TanStack): desactivado.
+4. "Expandir/Contraer todo" se quedaba en "Expandir todo" tras reabrir ramas a mano (TanStack exige también las hojas en el mapa): el estado se calcula sobre las filas expandibles.
+5. ARIA: `aria-rowcount`/`aria-rowindex` mezclaban raíces y filas planas: se omiten en árbol.
+6. `total` contaba solo raíces: ahora todas las filas.
+7. La búsqueda del plan de cuentas ofrecía "Agrupar por tipo", que no hace nada en un árbol: quitado de `accountUnifiedSearchDef`.
+8. `DataTableExpandHeader` quedó sin consumidores (duplicado por el control del árbol): borrado con su test y su export.
+9. El botón de expandir todo se solapaba con el botón de orden de la cabecera: van en una fila flex con separación.
+10. Acciones del plan de cuentas recreadas en cada render: `useMemo`.
+
+Tests nuevos: estado del control tras reabrir a mano, suma de raíces con ramas plegadas, selección masiva de hijos sin arrastrar subárboles (verificado por mutación). vitest: entity-view + contrato 83/83, `components/shared` 80/80, `features/{accounting,inventory,treasury}` 14/14.
+
+**Cierres contables: propuesta de diseño pendiente** (ver §6.19). No se migran sin aprobación: pasar de cards a árbol es un rediseño del flujo de cierre, no paridad (M1).
+
+### 6.19 Propuesta: cierres contables como árbol (pendiente de aprobación)
+
+Hoy: una card por ejercicio (estado, progreso "F29 n/12 · Contable n/12", botón "Cerrar Ejercicio") con una cuadrícula de 12 `CombinedPeriodCard` (cada mes: estado contable + estado F29 y hasta 7 acciones en iconos con tooltip).
+
+Propuesta (árbol de una entidad con fila unión `ejercicio | mes`):
+
+```
+ ▾ Ejercicio 2026   Abierto   Contable 9/12   F29 8/12              [Cerrar ejercicio] ⋮
+     Enero          Cerrado   F29 Cerrado                                              ⋮
+     …
+     Octubre        Abierto   F29 Declarado   (pagar antes de cerrar)                  ⋮
+     Noviembre      —         —                                     [Abrir periodo]
+ ▸ Ejercicio 2025   Cerrado   Contable 12/12  F29 12/12                                ⋮
+```
+
+- Columnas: Periodo · Estado contable · Estado F29 · Avance (solo años) · acciones.
+- Acciones del mes en el menú de fila (`ROW_ACTIONS`): abrir periodo, cerrar/reabrir contable (con la confirmación actual de `useReopenConfirm`), declarar F29, pagar F29, cerrar/reabrir F29, ver comprobante. Las reglas de habilitación de `CombinedPeriodCard` se conservan tal cual (bloqueado por F29, contable cerrado, etc.).
+- Acciones del año: las de `fiscalYearActions` (ejecutar cierre / reabrir).
+- Se pierde la vista de cuadrícula de 12 meses de un vistazo; se gana orden, teclado, y el mismo patrón que el plan de cuentas y los futuros estados financieros.

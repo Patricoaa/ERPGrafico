@@ -1,6 +1,6 @@
 import { type Account } from "../types"
 
-interface AccountWithChildren extends Account {
+export interface AccountWithChildren extends Account {
     children?: AccountWithChildren[]
 }
 
