@@ -187,7 +187,7 @@ export const DataCell = {
                         if (onClick) onClick(e);
                         else if (contactId) openEntity('contacts.contact', Number(contactId));
                     }}
-                    className={cn("flex justify-center items-center gap-1.5 text-xs font-sans font-medium hover:underline hover:text-cyan transition-colors text-foreground h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none")}
+                    className={cn("flex min-w-0 max-w-full justify-center items-center gap-1.5 text-xs font-sans font-medium hover:underline hover:text-cyan transition-colors text-foreground h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none")}
                     {...props}
                 >
                     <User className="h-3 w-3 text-cyan/50 group-hover:text-cyan transition-colors flex-shrink-0" />

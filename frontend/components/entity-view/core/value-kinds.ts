@@ -75,6 +75,11 @@ export interface ValueKindSpec<K extends ValueKind> {
     sortValue?: (value: KindValue<K>, options: KindOptions<K>) => string | number | null
     /** Default alignment in tables (numbers right-aligned). */
     align?: Align
+    /**
+     * The value can shrink with an ellipsis when the table is narrower than its content (free text,
+     * names). Numbers, money, dates and statuses keep their width. The renderer must truncate.
+     */
+    shrink?: boolean
     render: ComponentType<ValueRenderProps<K>>
     /**
      * Phrasing-content renderer (spans only), used where the value sits inside a link or button

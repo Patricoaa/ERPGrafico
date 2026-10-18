@@ -32,12 +32,19 @@ export function registerCoreValueKinds(): void {
 
     registerValueKind("text", {
         format: (v) => formatText(v),
+        shrink: true,
         render: ({ value, options, align }) => {
             const Cell = options.tone === "secondary" ? DataCell.Secondary : DataCell.Text
             if (isMissing(value)) return <DataCell.Empty align={align} />
-            return <Cell align={align} className={cn(options.truncate && "truncate")}>{formatText(value)}</Cell>
+            const text = formatText(value)
+            // The span is the flex item that ellipsizes when the column shrinks; the full text stays in the tooltip.
+            return <Cell align={align}><span className="min-w-0 truncate" title={text}>{text}</span></Cell>
         },
-        inline: ({ value }) => (isMissing(value) ? <DataCell.Empty inline /> : <DataCell.Text inline>{formatText(value)}</DataCell.Text>),
+        inline: ({ value }) => {
+            if (isMissing(value)) return <DataCell.Empty inline />
+            const text = formatText(value)
+            return <DataCell.Text inline className="min-w-0 max-w-full"><span className="min-w-0 truncate" title={text}>{text}</span></DataCell.Text>
+        },
     })
 
     registerValueKind("code", {
@@ -135,6 +142,7 @@ export function registerCoreValueKinds(): void {
 
     registerValueKind("contact", {
         format: (v) => (v ? v.name : EMPTY),
+        shrink: true,
         sortValue: (v) => v?.name ?? null,
         render: ({ value, align }) =>
             value ? (

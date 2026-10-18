@@ -334,7 +334,7 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
     const cols = React.useMemo(
         () => layout.columns.map((id) => {
             const def = fieldById(entity, id)
-            return { id, def, align: alignOf(def) }
+            return { id, def, align: alignOf(def), shrink: !!getValueKind(def.kind).shrink }
         }),
         [layout.columns, entity],
     )
@@ -357,8 +357,12 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
                         <Checkbox aria-label="Seleccionar fila" checked={row.getIsSelected()} onCheckedChange={(v) => row.toggleSelected(!!v)} />
                     </td>
                 )}
-                {cols.map(({ id, def, align }) => (
-                    <td key={id} className={cn(CELL, "align-middle whitespace-nowrap", ALIGN_TEXT[align])}>
+                {cols.map(({ id, def, align, shrink }) => (
+                    // Shrinkable columns (text, names) may go below their content width (`max-w-0` lets the
+                    // auto layout shrink them, their renderer ellipsizes); the rest keep their width: no
+                    // horizontal scroll while the fixed columns fit.
+                    // The primary column identifies the row: it keeps a minimum width so the others shrink first.
+                    <td key={id} className={cn(CELL, "align-middle whitespace-nowrap", shrink && "max-w-0", shrink && id === primary && "min-w-28", ALIGN_TEXT[align])}>
                         {id === primary && ctx.canOpen ? (
                             <PrimaryCell def={def} row={row.original} onOpen={ctx.open} align={align} />
                         ) : (
@@ -397,7 +401,7 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
                                     />
                                 </th>
                             )}
-                            {cols.map(({ id, def, align }) => {
+                            {cols.map(({ id, def, align, shrink }) => {
                                 const column = table.getColumn(id)
                                 const dir = column?.getIsSorted() ?? false
                                 return (
@@ -405,7 +409,8 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
                                         key={id}
                                         scope="col"
                                         aria-sort={dir ? ARIA_SORT[dir] : undefined}
-                                        className={cn("h-(--table-header-h) px-(--table-header-px) py-(--table-header-py) whitespace-nowrap", HEADER_TEXT, ALIGN_TEXT[align])}
+                                        // Fixed columns hug their content (`w-px` + nowrap); the free width goes to the shrinkable ones.
+                                        className={cn("h-(--table-header-h) px-(--table-header-px) py-(--table-header-py) whitespace-nowrap", !shrink && "w-px", HEADER_TEXT, ALIGN_TEXT[align])}
                                     >
                                         {column?.getCanSort() ? (
                                             // Compact header height; the Fitts guard is lifted by `data-density="compact"` (R3).
@@ -492,7 +497,7 @@ function PrimaryCell<T>({ def, row, onOpen, align }: { def: FieldDef<T, ValueKin
         // Natural height: the table's `data-density="compact"` lifts the Fitts guard on fine pointers (R3).
         <Button
             variant="link"
-            className="h-auto p-0 text-xs font-medium text-foreground underline-offset-2 hover:underline focus-visible:underline"
+            className="h-auto max-w-full min-w-0 p-0 text-xs font-medium text-foreground underline-offset-2 hover:underline focus-visible:underline"
             onClick={(e) => {
                 e.stopPropagation()
                 onOpen(row)

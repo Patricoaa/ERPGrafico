@@ -142,6 +142,8 @@ Todo componente del núcleo tiene **≤ 12 props** (test de contrato). Lo que no
 | `Collection.BulkBar` | `actions: BulkAction<T>[]`: el mismo tipo y la misma barra (`SelectionDock`) que el sistema antiguo; aparece con la selección (`selection="bulk"`) |
 | `Collection.Analytics` | `children`: añade la vista "Analítica" al selector de la barra (modo `analytics`, `?view=analytics`). Mientras está activa, su contenido reemplaza la tabla o las cards. El contenido es de la feature (p. ej. `AnalyticsPanelContent`) |
 
+**Ancho de columnas (sin scroll horizontal):** un kind declara `shrink: true` si su valor puede encogerse con elipsis (`text`, `contact`; el renderer trunca y deja el texto completo en `title`). En la tabla, esas columnas encogen (`max-w-0`) y las demás se ajustan a su contenido (`w-px`, `nowrap`). La columna principal conserva un mínimo (`min-w-28`), así encogen antes las otras. Solo hay scroll horizontal si las columnas fijas no caben.
+
 **Acciones de fila por superficie:** `actions={xActions.forCollection(ctx)}` (`createEntityActions`). En la tabla, si hay una sola acción visible se muestra `ActionSingle`; si hay varias, el menú kebab (lo mismo que `.auto()`). En la card se usa `.render`. La barra de `BulkBar` es el `SelectionDock` compartido (`components/shared/ActionDock.tsx`), el mismo que usa `DataTable`.
 
 ### 6.2 `TableLayout`
