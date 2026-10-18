@@ -56,11 +56,12 @@ export const searchableEntityRoutes: Record<string, string> = {
     // Inventory
     // categories/warehouses/stock-moves viven en tabs dentro de otras páginas — T-99
     'inventory.product':             '/inventory/products',
-    'inventory.productcategory':     '/inventory/products/categories',
+    'inventory.productcategory':     '/inventory/settings/categories',
     'inventory.warehouse':           '/inventory/operations/warehouses',
     'inventory.stockmove':           '/inventory/reports/movements',
     'inventory.inventorydocument':   '/inventory/operations/documents',
-    'inventory.subscription':        '/inventory/products/subscriptions',
+    // subscription: vive en /purchasing/subscriptions (módulo Compras) — T-99
+    'inventory.subscription':        '/purchasing/subscriptions',
 
     // Treasury
     'treasury.treasurymovement': '/treasury/operaciones/movements',

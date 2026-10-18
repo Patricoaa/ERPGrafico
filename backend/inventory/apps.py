@@ -79,7 +79,7 @@ class InventoryConfig(AppConfig):
                     display_template=f"{EntityPrefix.SUBSCRIPTION}-{{id}} · {{product.name}}",
                     subtitle_template="{supplier.name}",
                     extra_info_template="{status}",
-                    list_url="/inventory/products/subscriptions",
+                    list_url="/purchasing/subscriptions",
                     detail_url_pattern="/inventory/products/{id}",
                     permission="inventory.view_subscription",
                 )

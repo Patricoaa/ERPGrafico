@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { useRealtime } from '@/features/realtime'
-import { PRODUCTS_KEYS } from './queryKeys'
+import { PRODUCTS_KEYS } from '@/features/inventory'
 import type { FilterState } from '@/components/shared'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { staleTime } from '@/lib/query-config'

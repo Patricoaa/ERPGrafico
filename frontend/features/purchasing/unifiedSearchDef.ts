@@ -94,3 +94,43 @@ export const purchaseOrderUnifiedSearchDef: UnifiedSearchConfig = {
   ],
   basePeriod: { serverParamFrom: 'date_after', serverParamTo: 'date_before' },
 }
+
+export const subscriptionUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    {
+      key: 'search',
+      label: 'Producto',
+      serverParam: 'search',
+    },
+  ],
+  filters: [
+    {
+      type: 'single',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'Activo', value: 'ACTIVE' },
+        { label: 'Pausado', value: 'PAUSED' },
+        { label: 'Cancelado', value: 'CANCELLED' },
+      ],
+    },
+  ],
+  groupBy: [
+    { key: 'status', label: 'Estado', field: 'status' },
+    { key: 'recurrence_period', label: 'Período', field: 'recurrence_period' },
+  ],
+  dateFilters: [{
+    type: 'date',
+    key: 'date',
+    label: 'Fecha',
+    options: [
+      { label: 'Hoy', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: today },
+      { label: 'Esta semana', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisWeek },
+      { label: 'Este mes', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisMonth },
+      { label: 'Este trimestre', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisQuarter },
+      { label: 'Este año', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisYear },
+    ],
+  }],
+  basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
+}

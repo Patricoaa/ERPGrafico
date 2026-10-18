@@ -9,8 +9,6 @@ export * from './ProductInsightsModal';
 export * from './ProductInsightsPanel';
 export * from './ProductClientView';
 export * from './StockReport';
-export * from './SubscriptionHistoryModal';
-export * from './SubscriptionsClientView';
 export * from './UoMCategoryClientView';
 export * from './UoMClientView';
 export * from './WarehouseClientView';

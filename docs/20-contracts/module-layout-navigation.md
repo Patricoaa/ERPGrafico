@@ -141,7 +141,7 @@ La página `[id]/page.tsx` es un **Server Component** que:
 | `billing` | `/billing` | Split: `/billing/sales` (ventas) + `/billing/purchases` (compras) |
 | `contacts` | `/contacts` | |
 | `accounting` | `/accounting` | Excepción: `Budget` vive en `/finances` (decisión UX preexistente) |
-| `inventory` | `/inventory` | |
+| `inventory` | `/inventory` | Excepción: `Subscription` vive en `/purchasing/subscriptions` (módulo Compras) |
 | `treasury` | `/treasury` | |
 | `hr` | `/hr` | |
 | `production` | `/production` | |
@@ -167,7 +167,7 @@ La página `[id]/page.tsx` es un **Server Component** que:
 | `accounting.fiscalyear` | `/accounting/closures` | `/accounting/closures/{id}` | ✅ | No |
 | `accounting.budget` | `/finances/budgets` | `/finances/budgets/{id}` | ✅ | No |
 | `inventory.product` | `/inventory/products` | `/inventory/products/{id}` | ✅ | No |
-| `inventory.productcategory` | `/inventory/products/categories` | `/inventory/products/categories/{id}` | ❌ (vía `?selected`) | No |
+| `inventory.productcategory` | `/inventory/settings/categories` | `/inventory/settings/categories/{id}` | ❌ (vía `?selected`) | No |
 | `inventory.warehouse` | `/inventory/warehouses` | `/inventory/warehouses/{id}` | ✅ | No |
 | `inventory.stockmove` | `/inventory/stock-moves` | `/inventory/stock-moves/{id}` | ✅ | **Sí** |
 | `treasury.treasurymovement` | `/treasury/operaciones/movements` | `/treasury/operaciones/movements/{id}` | ❌ (vía `?selected`) | No |

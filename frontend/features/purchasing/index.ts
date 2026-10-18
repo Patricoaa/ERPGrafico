@@ -23,7 +23,18 @@ export type {
 } from './types'
 
 export { purchaseOrderActions } from './actions'
-export { purchaseOrderUnifiedSearchDef } from './unifiedSearchDef'
+export { purchaseOrderUnifiedSearchDef, subscriptionUnifiedSearchDef } from './unifiedSearchDef'
+
+export type { SubscriptionActionsCtx } from './subscriptionActions'
+export { subscriptionActions } from './subscriptionActions'
+export { subscriptionFields } from './subscriptionFields'
+export type { Subscription, SubscriptionStats } from './hooks/useSubscriptions'
+export {
+  SUBSCRIPTIONS_QUERY_KEY,
+  useSubscriptions,
+  useSubscriptionStats,
+  useSubscriptionHistory,
+} from './hooks/useSubscriptions'
 
 
 export {
@@ -39,6 +50,8 @@ export {
   Step4_Receipt,
   PurchaseNoteSummarySidebar,
   PurchaseOrderModal,
+  SubscriptionsClientView,
+  SubscriptionHistoryModal,
 } from './components'
 
 export type {

@@ -60,5 +60,5 @@ def inventory_document_relations(doc):
 
 
 DocumentTypeRegistry.register(DocumentType(
-    label="inventory.subscription", canonical_url="/inventory/products/subscriptions?selected={id}",
+    label="inventory.subscription", canonical_url="/purchasing/subscriptions?selected={id}",
 ))

@@ -18,21 +18,18 @@ import {
 import { toast } from "sonner"
 
 import { ActionConfirmModal, AutoEntityCard } from '@/components/shared'
-import { ProductDrawer } from "@/features/inventory/components/ProductDrawer"
+import { ProductDrawer, ArchivingRestrictionsModal, useProducts, type Restriction } from "@/features/inventory"
 import type { ProductInitialData } from "@/types/forms"
-import { SubscriptionHistoryModal } from "@/features/inventory/components/SubscriptionHistoryModal"
-import { ArchivingRestrictionsModal } from "@/features/inventory/components/ArchivingRestrictionsModal"
+import { SubscriptionHistoryModal } from "./SubscriptionHistoryModal"
 import { DataTableView, DataCell } from '@/components/shared'
 import type { Product } from "@/types/entities"
 import type { KpiCardDef } from '@/components/shared'
-import { subscriptionActions, type SubscriptionActionsCtx } from "@/features/inventory/subscriptionActions"
+import { subscriptionActions, type SubscriptionActionsCtx } from "../subscriptionActions"
 import { PageHeader, PageHeaderButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
-import { type Restriction } from "@/features/inventory/types"
 
 
-import { useSubscriptions, useSubscriptionStats, type Subscription } from "@/features/inventory/hooks/useSubscriptions"
-import { useProducts } from "@/features/inventory/hooks/useProducts"
-import { subscriptionUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
+import { useSubscriptions, useSubscriptionStats, type Subscription } from "../hooks/useSubscriptions"
+import { subscriptionUnifiedSearchDef } from "../unifiedSearchDef"
 import { subscriptionFields } from "../subscriptionFields"
 
 // Subscription type imported from useSubscriptions hook
@@ -301,7 +298,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
         <div className="flex-1 min-h-0 flex flex-col">
             {!hideHeader && (
                 <PageHeader
-                    title="Suscripciones y Recurrentes"
+                    title="Suscripciones"
                     description="Gestión de servicios mensuales, contratos y facturación automática."
                     variant="minimal"
                     iconName="calendar-clock"
