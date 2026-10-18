@@ -91,7 +91,8 @@
 ### TC-016 · Decisión propuesta · `journalEntryFields` canónico
 - Evidencia: `diff` → solo difieren en la línea 49 (la copia de `app/` tiene `meta.title`); la copia de `features/accounting/` no tiene importadores ni export de barrel; el único consumidor es `app/(dashboard)/accounting/entries/EntriesClientView.tsx:10`
 - Determinación: el contenido canónico es el de `app/`; la ubicación canónica es `features/accounting/`; la copia de `features/` está muerta. Ambas se sustituyen al migrar la entidad (Fase 7).
-- Estado: pendiente de la Puerta A
+- 2026-10-18 (oleada 0): borrada la copia muerta de `features/accounting/`. La de `app/` se sustituye en la oleada B2.
+- Estado: implementado (parcial)
 
 ### TC-017 · Pendiente-backend
 - Evidencia: cadenas de fallback en `get` (`features/orders/orderLineFields.tsx:36,:44`) y en columnas de notas (`PurchasingOrdersClientView.tsx:751`)
@@ -315,7 +316,8 @@
 ### TC-059 · Defecto del sistema actual · Verificado (app real, 390 px)
 - Evidencia: `BaseModal` envuelve el cuerpo en el `ScrollArea` de Radix, cuyo contenedor interno usa `display: table; min-width: 100%` y crece hasta el ancho del contenido. A 390 px el modal de recepción mide 749 px por dentro y recorta por la derecha la fecha, las notas y la tabla. Afecta a todos los modales con contenido ancho
 - Propuesta: en `BaseModal` (o en `ui/scroll-area`), forzar `display: block` en el hijo del viewport (`[&>[data-radix-scroll-area-viewport]>div]:!block`). Es un cambio compartido, fuera del lote
-- Estado: pendiente (decisión del usuario)
+- Decisión del usuario (2026-10-18): se corrige después, fuera de la migración
+- Estado: pendiente (aplazado)
 
 ### TC-060 · Proceso · Verificado
 - Evidencia: tras los lotes 1–3a, 7 entidades con `defineEntity` y unos 10 de 82 contextos migrados (~12 %); 84 pantallas siguen en el sistema antiguo (`toColumns` 57 → 55, `renderCard` 43 → 40, `AutoEntityCard` 47 → 43). `fromLegacyFields()` especificado (`06` §13.1) pero no implementado. Comandos en `07` §6.1

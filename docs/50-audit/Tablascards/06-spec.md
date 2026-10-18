@@ -494,7 +494,7 @@ npx tsc --noEmit -p tsconfig.json                                               
 
 ## 13. Coexistencia y migración (entrada a la Fase 7)
 
-### 13.1 Adaptador `fromLegacyFields()` (especificado)
+### 13.1 Adaptador `fromLegacyFields()` (especificado; **descartado el 2026-10-18**, ver `07` §6.12 y la receta de `component-entity-view.md` §10.2, que reutiliza la tabla de abajo)
 
 ```ts
 export function fromLegacyFields<T>(fields: LegacyEntityFields<T>, label: EntityLabel): Entity<T, FieldMap<T>>

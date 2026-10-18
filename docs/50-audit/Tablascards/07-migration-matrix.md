@@ -17,7 +17,7 @@
 | 2a | Capacidades + UoM + Productos (+ orden en servidor de productos, TC-041) | **completado (2026-10-17)**, §3.6 |
 | 2b | OV (+ orden en servidor, foco del hub, endpoint de analítica de OV) | **completado (2026-10-17)**, §3.8 |
 | 2c | Compras (+ TC-043, TC-032) | **completado (2026-10-18)**, §3.10 |
-| 3a | Líneas de la ficha + DeliveryDrawer + ReceiptModal | **implementado (2026-10-18)**, §5.7 · `/simplify` + `/code-review` aplicados · esperando al usuario |
+| 3a | Líneas de la ficha + DeliveryDrawer + ReceiptModal | **completado (2026-10-18)**, §5.7 · commit `7ef87d7a7` · TC-059 aplazado |
 | 3b | Asistentes Step3, Step4, Step2 + NoteLogisticsModal | **congelado (2026-10-18)** → oleada E, §6 |
 | 3c | Step1 + NoteStep_LineItems + líneas de movimientos | **congelado (2026-10-18)**: las líneas de solo lectura pasan a la oleada D y la edición a la oleada E, §6 |
 | 0 | Habilitadores de la migración masiva: `fromLegacyFields()`, ratchet de consumidores antiguos, métrica de avance | **aprobado (2026-10-18)**, §6.3 |
@@ -638,19 +638,10 @@ Revisión pedida por el usuario: el objetivo de `AUDIT-PROMPT.md` es **reemplaza
 ### 6.1 Métrica de avance (se reporta al cerrar cada sub-lote, primera línea de `PROGRESS.md`)
 
 ```bash
-cd frontend
-# Pantallas que aún usan el sistema antiguo (objetivo: 0)
-grep -rlE 'toColumns\(|AutoEntityCard|<DataTable\b|createEntityFields' --include=*.tsx features app components \
-  | grep -vE '__tests__|stories|Fields\.tsx$|^components/(shared|entity-view)/' | wc -l      # 2026-10-18: 84
-# Definiciones antiguas y escapes
-find features components -name '*Fields.ts*' -not -path '*/__tests__/*' | wc -l            # 60
-grep -rl '\.toColumns(' --include=*.ts* features components app | grep -v __tests__ | wc -l  # 55
-grep -rl 'AutoEntityCard' --include=*.tsx features app | wc -l                               # 43
-grep -rl 'renderCard' --include=*.tsx features app | wc -l                                   # 40
-grep -rn "type: ['\"]computed" --include=*.ts* features | wc -l                              # 45
-# Entidades nuevas
-grep -rln 'defineEntity' --include=*.ts* features | grep -v __tests__ | wc -l                # 7
+cd frontend && bash scripts/entity-view-progress.sh
 ```
+
+Línea base del script (2026-10-18, tras la limpieza de la oleada 0): 7 entidades `defineEntity` · **87 pantallas** en el sistema antiguo · 59 `*Fields` · 45 `computed` · 54 `toColumns()` · 43 `AutoEntityCard` · 41 `renderCard` · **146 consumidores** en `LEGACY_CONSUMERS`. El script cuenta también `DataTableView` y `components/`, por eso da 87 pantallas y no las 84 del barrido manual de §6.0.
 
 ### 6.2 Reglas de la migración masiva (aprobadas el 2026-10-18)
 
@@ -666,6 +657,15 @@ grep -rln 'defineEntity' --include=*.ts* features | grep -v __tests__ | wc -l   
 | M8 | **Ratchet de consumidores antiguos** en `entity-view.contract.test.ts`: el número de archivos de §6.1 solo puede bajar. | evita repetir la deriva sin que se note |
 
 ### 6.3 Oleada 0 — habilitadores (1 sub-lote corto)
+
+**Estado (2026-10-18):** completada. `fromLegacyFields()` se descartó (§6.12) y se sustituye por la receta de `component-entity-view.md` §10.2; lo ya migrado se alineó con ella (§6.14).
+- 3a cerrado (`7ef87d7a7`); TC-059 aplazado.
+- Ratchet M8: `lib/__tests__/entity-view.legacy-consumers.ts` (146 archivos) + dos aserciones en `entity-view.contract.test.ts` (ningún consumidor nuevo; cada entrada sigue usando el sistema antiguo). Verificado por mutación: quitar una entrada y añadir una pantalla ya migrada hacen fallar el test.
+- Script `frontend/scripts/entity-view-progress.sh`.
+- Borrados `features/inventory/inventoryCountLineFields.ts` y `features/accounting/journalEntryFields.ts` (sin importadores; TC-016).
+- Verificación: `tsc` sin errores, `eslint` sin errores, test de contrato 17/17.
+
+Plan original:
 
 - Cerrar el 3a: commit del usuario y decisión sobre TC-059.
 - Implementar `fromLegacyFields()` (`06` §13.1) con sus tests de tipos; vive en `components/entity-view/core/` y se borra con el último `*Fields`.
@@ -733,3 +733,57 @@ Cuando §6.1 dé 0 pantallas: se borran `entity-fields.tsx`, `AutoEntityCard`, `
 1. Se aprueban la congelación del 3b/3c y el orden de oleadas 0 → A → B → C → D → E.
 2. Se aprueban las reglas M1–M8, incluidas la Puerta D por oleada (M4) y el proceso ligero de la oleada A (M5).
 3. TC-055 espera a la oleada E (no se corrige como arreglo puntual).
+
+### 6.12 `fromLegacyFields()`: descartado (decisión del usuario, 2026-10-18)
+
+Al preparar la oleada 0 se midió dónde está el coste real de migrar un maestro (V):
+
+- La **definición** es lo de menos: `uomCategoryFields.ts` tiene 10 líneas y `uom.entity.ts`, 23. Se convierte a mano en minutos con la tabla de `06` §13.1.
+- El coste está en la **pantalla**: `UoMCategoryClientView.tsx` tiene 216 líneas (columna de selección a mano, `renderCard`, `DataTableView` con 15 props). `UoMClientView.tsx` migrado tiene 135. El adaptador no toca esa parte.
+- Un adaptador en tiempo de ejecución **pierde el tipado** que justifica el sistema nuevo. Las claves antiguas son `string`, así que el resultado sería un `FieldMap<T>` con ids sin comprobar: `views()` y `without()` volverían a aceptar claves inexistentes (la clase de defecto de TC-012, RC8).
+- Además mantendría vivo el tipo `FieldDef` antiguo dentro de `components/entity-view/core/`, acoplando el núcleo nuevo al sistema congelado.
+
+**Recomendación:** no construirlo. En su lugar, una **receta de migración de maestro** (tabla de `06` §13.1 para los campos + el patrón de `UoMClientView.tsx` para la pantalla) en el contrato `component-entity-view.md`. Hay que corregir la mención en ADR-0087 (línea 68) y en el contrato (línea 250): es una nota sobre la herramienta de migración, no un cambio de API.
+
+### 6.13 Puerta D de la oleada A · sub-lote A1 (presentada el 2026-10-18)
+
+Barrido propio (`grep` de capacidades por archivo). Todas usan `DataTableView` + acciones `*.auto()` → `*.forCollection()` (ya existe en `components/shared/entity-actions.tsx:136`).
+
+| Pantalla (líneas) | Qué tiene hoy | Qué necesita en entity-view | Riesgo |
+|---|---|---|---|
+| `inventory/UoMCategoryClientView` (216) | selección + borrado masivo, `renderCard`, búsqueda unificada | igual que `UoMClientView` | bajo |
+| `inventory/WarehouseClientView` (230) | selección + masivo, card sin `toColumns` | igual | bajo |
+| `inventory/CategoryClientView` (163) | 1 `computed` | un kind existente o `text` con accessor; revisar el `computed` | bajo |
+| `inventory/AttributesClientView` (237) | selección + masivo, 1 `computed` | igual que Category | bajo |
+| `inventory/PricingRuleClientView` (263) | **5 columnas en línea** (`applies_to`, `condition`, `uom`, `validity`, `value`) | `dateRange` (vigencia), `quantity`/`money`, `text` con accessor; si alguna no cabe, kind de `inventory` | medio |
+| `settings/GroupsClientView` (131) | lista simple | trivial | bajo |
+| `settings/UsersSettingsClientView` (175) | **paginación en servidor**, columna `contact` en línea, 1 `computed` | `useServerPage` (lote 2) + kind `contact` | medio |
+
+Proceso (M5): `type-check` + `lint` + tests del ámbito + una captura por pantalla (1440, y 390 en las que tienen card) + `/code-review` al cierre. Cada pantalla sale de `LEGACY_CONSUMERS` junto con su `*Fields`.
+
+#### Decisiones de la Puerta D del A1 (2026-10-18)
+
+1. `fromLegacyFields()` se descarta; la receta va en el contrato (§10.2), y **se evalúa si lo ya migrado debe ajustarse a ella** (§6.14).
+2. Se aprueba el A1.
+3. Se commitea la oleada 0 antes de empezar el A1.
+
+### 6.14 Alineación de lo ya migrado con la receta (2026-10-18)
+
+Revisión de las 7 entidades y las 6 pantallas migradas en los lotes 2a–3a contra la receta.
+
+| Pantalla / pieza | Desvío | Acción |
+|---|---|---|
+| `inventory/ProductClientView` | **Las 3 consultas de analítica (`useProductAnalytics`) se pedían en cada carga de la lista**, con el panel cerrado. OV y OC ya las condicionaban a la vista (V: `SalesOrdersView.tsx:83`, `PurchaseOrdersView.tsx`) | `useProductAnalytics(params, enabled)`; la pantalla pasa `activeView === "analytics"`. **Corregido** |
+| `inventory/ProductClientView` | armado de la analítica dentro de la pantalla (~285 líneas, con JSX) | movido a `productAnalyticsScreen.ts` sin JSX (el `StockReport` llega por `ui.stockReport`). La pantalla pasa de 639 a 376 líneas. **Corregido** |
+| `inventory/ProductClientView` | agrupación con un ternario | mapa `PRODUCT_GROUPS`. **Corregido** |
+| `sales/SalesOrdersView` | armado de la analítica dentro de la pantalla (~240 líneas) | movido a `saleOrderAnalyticsScreen.ts` (435 → 194 líneas). **Corregido** |
+| `purchasing/PurchaseOrdersView` | — | es la referencia del patrón "documento con servidor" |
+| `inventory/UoMClientView` | — | es la referencia del patrón "maestro" |
+| Entidades `saleOrder`, `saleNote`, `purchaseOrder`, `purchaseNote`, `uom`, `orderLine` | — | conformes |
+| `product.entity.tsx` (`productPrice` registrado en el archivo de la entidad) | distinto de `docRef` (builder + archivo del kind) | **sin cambio**: un kind de una sola entidad vive en su `.entity.tsx`; el patrón de `docRef` es para kinds usados desde otras features. La receta recoge las dos formas |
+| `ProductClientView`: archivado con 6 `useState` en vez de `useConfirmAction` | no es de entity-view | sin cambio (M1); registrado como deuda de la pantalla |
+
+Verificación:
+- `tsc` sin errores; `eslint` sin errores ni avisos en los archivos tocados.
+- vitest: contrato + entity-view 71, inventory 10, sales 7, purchasing 3.
+- **Sin verificar en la app real:** el servidor de desarrollo estaba fuera de la red (`ssh: No route to host`, ping 100 % perdido). Pendiente: comprobar con el panel cerrado que la lista de Productos no pide `/inventory/products/analytics/`, que su analítica (Resumen, Ventas, Compras, Existencias) se ve igual, y que la de OV también.

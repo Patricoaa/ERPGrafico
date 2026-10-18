@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs"
 import { join } from "node:path"
 import { describe, it, expect } from "vitest"
+import { LEGACY_CONSUMERS } from "./entity-view.legacy-consumers"
 
 /**
  * Entity view system contract (ADR-0087 §9, docs/20-contracts/component-entity-view.md §9).
@@ -197,6 +198,13 @@ const ADHOC_TABLE_ALLOWLIST = [
 ]
 const ADHOC_TABLE = /<table[\s>/]|from ["']@\/components\/ui\/table["']/
 
+/** Legacy authoring API in use (M8). The legacy system itself and its replacement are out of scope. */
+const LEGACY_USE = /toColumns\(|AutoEntityCard|<DataTable\b|DataTableView|createEntityFields/
+const legacyScope = () =>
+    [...FEATURE_FILES, ...collect("app"), ...collect("components")].filter(
+        (rel) => !/^components\/(shared|entity-view|ui)\//.test(rel) && !/\.stories\.tsx$/.test(rel),
+    )
+
 describe("legacy presentation system is frozen", () => {
     it.each(LEGACY_CEILINGS)("$name has at most $max props", ({ file, name, max }) => {
         expect(interfaceMembers(read(file), name).length).toBeLessThanOrEqual(max)
@@ -220,6 +228,19 @@ describe("legacy presentation system is frozen", () => {
         for (const rel of ADHOC_TABLE_ALLOWLIST) {
             expect(existsSync(join(ROOT, rel)), `${rel} is missing — remove it from the allowlist`).toBe(true)
             expect(ADHOC_TABLE.test(read(rel)), `${rel} no longer holds a table — remove it from the allowlist`).toBe(true)
+        }
+    })
+
+    it("no new file consumes the legacy system", () => {
+        const allow = new Set(LEGACY_CONSUMERS)
+        const offenders = legacyScope().filter((rel) => !allow.has(rel) && LEGACY_USE.test(read(rel)))
+        expect(offenders).toEqual([])
+    })
+
+    it("legacy consumer entries still exist and still use the legacy system", () => {
+        for (const rel of LEGACY_CONSUMERS) {
+            expect(existsSync(join(ROOT, rel)), `${rel} is missing — remove it from LEGACY_CONSUMERS`).toBe(true)
+            expect(LEGACY_USE.test(read(rel)), `${rel} migrated — remove it from LEGACY_CONSUMERS`).toBe(true)
         }
     })
 })

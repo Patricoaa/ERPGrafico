@@ -4,7 +4,7 @@ doc: component-entity-view
 status: active
 owner: frontend-team
 created: 2026-10-17
-last_review: 2026-10-17
+last_review: 2026-10-18
 stability: stable
 adr: 0087
 supersedes_for_new_code:
@@ -239,6 +239,7 @@ No existe inferencia por rol, por regex de nombre de clave ni por capacidad de z
 | Ubicación de entidades y prohibición de casts | `defineEntity` fuera de `features/*/entity-view/*.entity.ts(x)`; `as any` y `as unknown as` | ídem |
 | Congelación del sistema antiguo | Que crezcan `DataTableProps` (57), `DataTableViewProps` (12), `AutoEntityCardProps` (22) o `FieldType` (15) | ídem |
 | Ratchet de tablas ad hoc | Tablas crudas nuevas en `features/` o `app/` (23 archivos en la lista, que solo puede encoger) | ídem |
+| Ratchet de consumidores antiguos | Un archivo nuevo que use `createEntityFields`, `toColumns()`, `AutoEntityCard`, `DataTable` o `DataTableView`; o una entrada de `LEGACY_CONSUMERS` que ya migró | ídem + `lib/__tests__/entity-view.legacy-consumers.ts` |
 | Tests de tipos | 16 configuraciones inválidas rechazadas en compilación | `components/entity-view/__tests__/define-entity.types.test.ts` |
 
 "Código construido con entity-view" = un archivo bajo `components/entity-view/` o `features/*/entity-view/`, o que importa `@/components/entity-view`.
@@ -247,7 +248,7 @@ No existe inferencia por rol, por regex de nombre de clave ni por capacidad de z
 
 - **Congelado:** `createEntityFields`/`*Fields.ts`/`toColumns()`, `AutoEntityCard`, `DataTable`/`DataTableView` y `renderCard`/`renderCustomView`. No admiten props, `FieldType` ni consumidores nuevos. Siguen rigiéndose por [component-fields.md](./component-fields.md) y [component-datatable-views.md](./component-datatable-views.md) mientras tengan consumidores.
 - **Se heredan sin cambios:** los tokens de densidad `--table-*`, la cabecera canónica, el hover único y los bordes, sombras y radios (`component-datatable-views.md` §10); `StatusBadge` como único renderer de estado; `ROW_ACTIONS` para las acciones de fila y de card (`component-row-actions.md`); y `EntityCard` como shell visual.
-- **Migración:** por lotes de ≤5 entidades (Fase 7, `docs/50-audit/Tablascards/07-migration-matrix.md`). El adaptador `fromLegacyFields()` cubre los `*Fields.ts` sin `computed`. El sistema antiguo se retira cuando no le queda ningún consumidor (precedente: ADR-0072).
+- **Migración:** por oleadas (Fase 7 replanificada, `docs/50-audit/Tablascards/07-migration-matrix.md` §6) con la receta de §10.2. No hay adaptador en tiempo de ejecución: `fromLegacyFields()` se descartó (2026-10-18) porque perdía el tipado de los ids. El ratchet `LEGACY_CONSUMERS` (§9) solo puede encoger, y el sistema antiguo se retira cuando queda vacío (precedente: ADR-0072).
 
 ### 10.1 Capacidades aún no disponibles en entity-view
 
@@ -262,3 +263,46 @@ Mientras falte una capacidad, la pantalla que la necesita **se queda en el siste
 | Filas expandibles, kanban/timeline | especificado como composición (`06-spec.md` §6.6) | por demanda |
 | Exportación real | el hook existe; falta el endpoint (Pd-backend) | — |
 | `label` tipado (R8), contexto y registro con un único puente cada uno (R7), provider en el shell | **hecho** | lote 1 |
+
+### 10.2 Receta de migración (una pantalla del sistema antiguo → entity-view)
+
+Se migra **con el comportamiento de hoy** (paridad). Las mejoras se registran y se hacen aparte.
+
+**1. Campos: `*Fields.ts` → `features/<feature>/entity-view/<entidad>.entity.ts`.** Se reescribe a mano; las claves pasan a ser accesores tipados.
+
+| `type` antiguo | Builder | Notas |
+|---|---|---|
+| `text` / `secondary` | `f.text` (`tone: "secondary"`) | |
+| `code` | `f.code` | |
+| `date` / `dateTime` | `f.date` (`time: true`) | |
+| `currency` | `f.money` | `currency` por fila si hacía falta |
+| `currencyFlow` | `f.flow` | `direction` como opción por fila |
+| `number` / `numericFlow` | `f.number` / `f.quantity` | `suffix`/`unit` → `uom` |
+| `status` (+ `getLabel`) | `f.status((r) => ({ status, label }))` | siempre `StatusBadge` |
+| `contact` (+ `getDisplay`) | `f.contact((r) => ({ id, name }))` | |
+| `chip` / `chip-category` | `f.tags` (`domain`) | |
+| `sourceDest`, referencia a documento | `docRef(f, …)` de `@/features/documents` | |
+| `computed` | kind existente con accesor, o kind de la feature (§3) | nunca JSX en la definición |
+| `placement` / `fieldRole` / `meta.title` | `views()`: `title`/`subtitle`/`trailing` de la card; `columns` en el orden de hoy | |
+| `tableOptions.enableSorting: false` | `sortable: false` | |
+| columna en línea de la vista | un campo más de la entidad | |
+
+**2. Pantalla.** Dos patrones de referencia; se copia el que corresponda:
+
+| Patrón | Referencia | Piezas |
+|---|---|---|
+| Maestro con datos en cliente | `features/inventory/components/UoMClientView.tsx` | `useEntityCollection(entity, { rows, isLoading, error, refetch, isFiltered })` · `Collection.Root selection="bulk" onOpen actions={xActions.forCollection(ctx)}` · `Collection.Toolbar action` + `UnifiedSearchBar {...bindUnifiedSearch(search)}` · `Collection.View table card empty*` · `Collection.BulkBar` |
+| Documento con servidor | `features/purchasing/components/PurchaseOrdersView.tsx` | lo anterior + `useServerPage`, `sorting: { mode: "server" }` con `orderingParam`, `selection="panel"` con `useDocumentSheetRoute`, `groupBy` con `GROUP_ROW_LIMIT` |
+
+Reglas de la pantalla:
+
+- **Selección:** la columna `select` a mano, `renderCard` y `AutoEntityCard` desaparecen; las da `selection`.
+- **Agrupación:** un mapa a nivel de módulo `const X_GROUPS: Record<string, FieldId<typeof xEntity.fields>>` traduce la clave de la búsqueda al campo.
+- **Analítica:**
+  - el armado vive en `components/<entidad>AnalyticsScreen.ts`, sin JSX: `buildXAnalyticsScreen(data, ui): AnalyticsPanelContentProps`;
+  - las consultas se piden solo con la vista abierta (`enabled: view === "analytics"`);
+  - se monta en `Collection.Analytics`.
+- **Extensiones:** un kind usado por una sola entidad vive en su `.entity.tsx` (p. ej. `productPrice`). Uno usado desde otras features exporta un builder sin imports en tiempo de ejecución como primera exportación del barrel de la feature (p. ej. `docRef`).
+- **Drawers, modales y confirmaciones** de la pantalla no cambian.
+
+**3. Cierre.** Se borra el `*Fields.ts` (si no le quedan consumidores), se quita la pantalla de `LEGACY_CONSUMERS` (y de `ADHOC_TABLE_ALLOWLIST` si estaba), y se reporta `bash frontend/scripts/entity-view-progress.sh`.

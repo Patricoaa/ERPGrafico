@@ -1,11 +1,11 @@
 # Progreso — Nuevo sistema de presentación
-- **Avance (2026-10-18): ~10/82 contextos (~12 %) · 84 pantallas en el sistema antiguo · 7 entidades `defineEntity`** (comando: `07` §6.1)
-- Fase actual: 7 · **replanificada y aprobada** (`07` §6, TC-060) · lote 3a implementado, esperando al usuario (commit y TC-059) · 3b/3c congelados
+- **Avance (2026-10-18): 7 entidades `defineEntity` · 87 pantallas y 146 consumidores en el sistema antiguo** (`bash frontend/scripts/entity-view-progress.sh`)
+- Fase actual: 7 · oleada 0 completada (receta en el contrato §10.2; lo ya migrado alineado, `07` §6.14) · Puerta D del A1 aprobada
 - Último completado: lote 3a. Líneas de la ficha (OV/OC/factura) sobre `orderLineEntity`; `DeliveryDrawer` y `ReceiptModal` con `EditableCollection` + RHF; núcleo con `processed`/`check`/`rowStatus` y `core/define-editable.ts`. TC-012 y TC-056 corregidos; TC-057 y TC-058 encontrados y corregidos; TC-059 para el usuario. Detalle en `07` §5.7
-- Próximo paso exacto: oleada 0 (`07` §6.3): cerrar 3a (commit del usuario + TC-059), `fromLegacyFields()`, ratchet M8 + script de métrica, limpieza → Puerta D de la oleada A (sub-lote A1: inventario y configuración)
-- Rama: `refactor/entity-view-lote-3` (desde `refactor/entity-view-lote-2`, sin commitear); issues abiertas #176, #177
-- Puertas: A ✅ · B ✅ · C ✅ · D lote 1 ✅ · D 2a ✅ · D 2b ✅ · D 2c ✅ (2026-10-17) · D lote 3 ✅ (2026-10-18) · replanificación ✅ (2026-10-18)
-- Preguntas abiertas para el usuario: commit del 3a; TC-059 (`BaseModal` a 390 px, cambio compartido)
+- Próximo paso exacto: verificar en la app la alineación de §6.14 cuando vuelva el servidor de desarrollo → migrar A1 (UoMCategory, Warehouse, Category, Attributes, PricingRule, Groups, Users) con la receta
+- Rama: `refactor/entity-view-lote-3` (3a commiteado en `7ef87d7a7`); issues abiertas #176, #177
+- Puertas: A ✅ · B ✅ · C ✅ · D lote 1 ✅ · D 2a ✅ · D 2b ✅ · D 2c ✅ (2026-10-17) · D lote 3 ✅ (2026-10-18) · replanificación ✅ (2026-10-18) · D A1 ✅ (2026-10-18)
+- Preguntas abiertas para el usuario: ninguna. Bloqueo: el servidor de desarrollo 192.168.1.93 no está en la red (2026-10-18)
 - Decisiones del usuario:
   - 2026-10-17: las tablas de wizard/modal entran como caso de uso específico · `as any` de `AutoEntityCard.tsx:390` espera al rediseño · `journalEntryFields` lo determina la auditoría (→ TC-016) · TC-012 se corrige en la migración
   - 2026-10-17 Puerta A: aprueba RC1–RC8 y la matriz C/F/E; pantallas de la Fase 4 = UoM, OV, Compras; aprueba `role="grid"` → `role="table"` en `compact`; **exportación = requisito** (aclarado)
@@ -38,3 +38,6 @@
   - 2026-10-18 Puerta D del lote 3 presentada. Hallazgos: TC-012 sigue vivo; ninguna superficie P1 usa `OrderLine` (8 tipos locales); el "al menos una" de `editableSchema` cuenta cualquier celda (falla con costo inicial > 0); TC-055 (UoM en Step3); TC-056 (paridad Facturado/Recibido).
   - 2026-10-18 Lote 3a implementado. El ciclo de imports (barrels de shared → features) obligó a mover la mitad pura de la superficie editable a `core/` y a dejar `docRef` sin imports, como primera exportación de su barrel. TC-057: las acciones de la ficha nunca abrían su drawer (corregido en `Drawer`). TC-058: bodegas vacías en el despacho. `/simplify` (4 revisores) y `/code-review` (8 de 10 corregidos).
   - 2026-10-18 Revisión del objetivo pedida por el usuario: la migración iba al ~12 % y derivaba a asistentes/formularios y backend (TC-060). Fase 7 replanificada en oleadas 0 y A–E con reglas M1–M8 (`07` §6); 3b/3c congelados.
+  - 2026-10-18 Lote 3a cerrado: commit `7ef87d7a7` autorizado por el usuario. TC-059 se corrige después.
+  - 2026-10-18 Oleada 0: ratchet `LEGACY_CONSUMERS` (146, verificado por mutación), script de avance, 2 `*Fields` muertos borrados (TC-016). Al medir, `fromLegacyFields()` resulta de poco valor y rompe el tipado de ids (`07` §6.12).
+  - 2026-10-18 Usuario: descarta `fromLegacyFields()` (receta en el contrato) y pide alinear lo ya migrado; aprueba el A1 y el commit de la oleada 0. Alineación: Productos pedía 3 analíticas en cada carga (corregido); builders de analítica fuera de las pantallas de Productos y OV. Servidor de desarrollo caído: verificación en la app pendiente.
