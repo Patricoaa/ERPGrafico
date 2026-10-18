@@ -531,7 +531,7 @@ El resultado se **revisa a mano** (es una migración asistida, no un modo de com
 | 1 | R1–R5 (`DataCell` `align`/`span`/`—`, regla Fitts, `EntityCard` selección/meta, `getHubStatuses` tipado) + R7 + R8 + `EntityViewProvider` en el shell + `useCollectionUrlState` (§5.3) | prerrequisitos; elimina los parches del spike |
 | 2 | Compras (órdenes + notas), OV, UoM, Productos: lo prototipado | RC1, RC4, RC5 |
 | 3 | Líneas de documento (OV/OC/factura, `orderLineFields`) + P1 (`DeliveryDrawer`, `Step3_Delivery`, `ReceiptModal`, `Step4_Receipt`) | RC3 (placement), tablas crudas P1 |
-| 4+ | Por causa de rigidez (`01` §3): documentos con hub, tesorería con flujo, maestros simples con `fromLegacyFields()` | — |
+| 4+ | Por causa de rigidez (`01` §3): documentos con hub, tesorería con flujo, maestros simples con `fromLegacyFields()`. **Replanificado el 2026-10-18 en oleadas 0 y A–E: `07` §6** | — |
 | R6 | ADR de color aparte (contraste warning/success) | independiente |
 
 Ciclo por lote: el del prompt (§4 Fase 7). Cada archivo que sale del sistema antiguo se **quita de `ADHOC_TABLE_ALLOWLIST`** si tenía una tabla cruda, y los techos de props bajan cuando se elimina una prop antigua.

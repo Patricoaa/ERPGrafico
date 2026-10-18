@@ -121,6 +121,15 @@ const ENTITY_FILES = FEATURE_FILES.filter((rel) => /\/entity-view\/[^/]+\.entity
 /** Cast debt inside entity definitions. Emptied by R5 (typed getHubStatuses); must stay empty. */
 const ENTITY_CAST_ALLOWLIST: string[] = []
 
+describe("extension builders used across features (lote 3a)", () => {
+    it("docRef is the first export of @/features/documents and has no runtime imports", () => {
+        const barrel = read("features/documents/index.ts").split("\n").filter((l) => /^(export|import)\b/.test(l))
+        expect(barrel[0]).toMatch(/^export \{ docRef\b.*from '\.\/entity-view\/docRef'/)
+        const runtimeImports = read("features/documents/entity-view/docRef.ts").split("\n").filter((l) => /^import\b/.test(l) && !/^import type\b/.test(l))
+        expect(runtimeImports).toEqual([])
+    })
+})
+
 describe("entity definitions", () => {
     it("live in features/<feature>/entity-view/<entity>.entity.ts(x)", () => {
         const misplaced = [...FEATURE_FILES, ...collect("app"), ...collect("components/shared")].filter(
@@ -180,9 +189,7 @@ const ADHOC_TABLE_ALLOWLIST = [
     "features/purchasing/components/checkout/Step1_ProductSelection.tsx",
     "features/purchasing/components/checkout/Step4_Receipt.tsx",
     "features/purchasing/components/PurchaseOrderModal.tsx",
-    "features/purchasing/components/ReceiptModal.tsx",
     "features/sales/components/checkout/Step3_Delivery.tsx",
-    "features/sales/components/DeliveryDrawer.tsx",
     "features/settings/components/partners/CreateDistributionFlow.tsx",
     "features/settings/components/partners/MassPaymentWizard.tsx",
     "features/settings/components/partners/MobilizeEarningsWizard.tsx",

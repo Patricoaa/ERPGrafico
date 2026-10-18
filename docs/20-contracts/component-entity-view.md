@@ -66,7 +66,9 @@ Una extensión tiene tres partes y vive en `features/<dueña>/entity-view/<kind>
 2. **Registro idempotente** con `registerValueKind("miKind", { format, sortValue?, align?, render, inline? })`. `inline` es un renderer que solo usa contenido de frase (`span`); se usa cuando el valor va dentro de un enlace o botón, como la celda principal. Sin él, ahí se muestra el texto formateado. En el núcleo lo tienen `text` y `code`.
 3. **Constructor de campo** `miKind<T>(f, accessor, input)` que llama al registro y devuelve `f.value("miKind", …)`. **Es la única forma pública de declarar el campo**: un campo no puede existir sin su kind registrado (A1).
 
-El constructor se exporta por el **barrel de la feature dueña** (`export { docRef } from './entity-view/docRef.kind'`). Otra feature lo importa de `@/features/<dueña>`, nunca de `@/features/<dueña>/entity-view/*` (invariante #3; lo bloquea ESLint).
+El constructor se exporta por el **barrel de la feature dueña**. Otra feature lo importa de `@/features/<dueña>`, nunca de `@/features/<dueña>/entity-view/*` (invariante #3; lo bloquea ESLint).
+
+**Si otra feature declara entidades con el kind** (como `docRef`), el constructor va en un módulo **sin imports en tiempo de ejecución** (`<kind>.ts`, solo tipos y `f.value(…)`). Es la **primera** exportación del barrel. El registro (`<kind>.kind.tsx`) se importa como efecto del mismo barrel y se ejecuta al evaluarse. Así, una definición que se evalúa dentro de un ciclo de imports que pasa por el barrel encuentra el constructor inicializado (lote 3a). Llegar al constructor implica evaluar el barrel, y por tanto el registro: se mantiene la garantía A1.
 
 Extensiones vigentes: `docRef` (`@/features/documents`, referencia a documento o entidad con `DocumentRefLink`) y `productPrice` (`features/inventory`, local a productos).
 
@@ -167,9 +169,14 @@ Todo componente del núcleo tiene **≤ 12 props** (test de contrato). Lo que no
 
 Cubre los patrones P1 (cantidad a procesar por línea) y P2 (reparto contra un tope) de wizards y modales.
 
-- **Definición** (`defineEditable(entity, spec)`): `rowKey`, `context` (ids de campo de solo lectura), `inputs` (`kind: "quantity" | "money"`, `header`, `label(row)` (nombre accesible), `min?`, `max?(row)`, `step?(row)`, `initial?(row)`, `unit?(row)`), `eligible?(row)`, `footer.sum?`, `bulk?: ["fillToMax", "clear"]`, `bulkLabels?`.
+- **Definición** (`defineEditable(entity, spec)`, en `core/define-editable.ts`): `rowKey`, `context` (ids de campo de solo lectura), `inputs` (`kind: "quantity" | "money"`, `header`, `label(row)` (nombre accesible), `min?`, `max?(row)`, `step?(row)`, `initial?(row)`, `unit?(row)`, `check?(row, value)`), `eligible?(row)`, `processed?`, `rowStatus?(row, values)`, `footer.sum?`, `bulk?: ["fillToMax", "clear"]`, `bulkLabels?`.
+  - `processed`: los inputs que procesan la fila (la cantidad, no su costo unitario). Cuentan para "al menos una", para el tope "sin pendiente" y para las ayudas masivas: "Limpiar" no borra el costo. Por defecto, todos.
+  - `check`: regla de dominio de la celda además del tope (p. ej. "Stock insuficiente (3 disponibles)"). Corre dentro del schema de zod, así que el resolver sigue siendo la única validación.
+  - `rowStatus`: estado de la fila derivado de lo ingresado (Completo, Parcial, Excede pendiente). Se pinta con `StatusBadge` en una columna "Estado".
+  - Una definición que se usa en otra feature se declara junto a su entidad y se lee al llamarla (schema, render), nunca a nivel de módulo: así no lee una entidad que un ciclo de imports todavía está evaluando (lote 3a).
 - **Props del componente:** `definition`, `rows`, `value`, `onChange`, `errors?`, `label`, `disabled?`.
 - **Formulario:** react-hook-form + `zodResolver(editableSchema(def, rows))` (invariante #9). El resolver es la **única** validación. Los errores llegan con `editableErrorsFromForm(form.formState.errors.<campo>, value)`.
+- **Foco:** `form.handleSubmit(onValid, () => focusFirstEditableError())` lleva el foco a la primera celda inválida (AX-6). La primera columna queda fija al desplazar en horizontal.
 - **Prohibido:** `min`/`max` nativos en el `<input>`. La validación del navegador bloquea el submit antes de que corra el resolver. El tope se muestra como pista "Máx. N".
 - Una fila con tope 0 o no elegible queda deshabilitada y con su motivo. El pie agrupa los totales por unidad o moneda y excluye las celdas inválidas.
 

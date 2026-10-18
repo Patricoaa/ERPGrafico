@@ -104,7 +104,7 @@ Gate A (2026-10-17) approved these causes, the common/frequent/specific requirem
 - **A1 applied:** `docRef` is exported from the `@/features/documents` barrel.
 - **Specified, not yet built (Phase 7 batch 1):** URL state (`useCollectionUrlState`), typed label (R8), cast-free context (R7), mounting `EntityViewProvider` in the app shell, and the `fromLegacyFields()` adapter.
 
-### Phase 7 amendments to the contract (2026-10-17/18, batches 1–2c)
+### Phase 7 amendments to the contract (2026-10-17/18, batches 1–3a)
 
 All recorded in `component-entity-view.md`; each approved at its Gate D (`docs/50-audit/Tablascards/07-migration-matrix.md`):
 
@@ -121,6 +121,12 @@ All recorded in `component-entity-view.md`; each approved at its Gate D (`docs/5
   - **default sorting change:** with server pagination and no `sorting` option no header sorts (a single page is never reordered);
   - `Collection.Analytics` detected as a direct child of `Root`, and an `analytics` view without it falls back to the table.
 - **Batch 2c:** `Collection.Toolbar` `action` slot (primary/create action). It wraps below the search on narrow screens instead of covering it (found at 390 px in Compras, Productos and UoM).
+- **Batch 3a (Gate D lote 3, 2026-10-18):**
+  - editable definitions gain `processed` (inputs that count as processing), `check(row, value)` (domain rule inside the schema) and `rowStatus(row, values)` (rendered by `StatusBadge`);
+  - the pure half of the editable surface moves to `core/define-editable.ts` (no `@/components/shared` dependency), so definitions evaluated inside an import cycle find it initialized;
+  - `focusFirstEditableError()` for the invalid submit handler, and a sticky first column;
+  - **exception to the ≥3/≥2 rule, approved by the user:** text input and row-enabling selection (E2/E3) enter the core with 2 consumers (implemented in 3c);
+  - the `docRef` builder has no runtime imports and is the first export of `@/features/documents`; the kind registers itself when the barrel is evaluated.
 
 ## Consequences
 

@@ -96,11 +96,21 @@ describe("getOrderLifecycle", () => {
     })
 })
 
-describe("orderLineFields", () => {
+describe("orderLineViews", () => {
     it("keeps the owner-defined column order with Subtotal last", async () => {
-        const { orderLineFields } = await import("../orderLineFields")
-        const ids = orderLineFields.toColumns().map((c) => c.id ?? (c as { accessorKey?: string }).accessorKey)
-        expect(ids).toEqual(["product_name", "quantity", "unit_price", "quantity_delivered", "quantity_invoiced", "work_order_summary", "subtotal_net"])
+        const { orderLineViews } = await import("../entity-view/orderLine.entity")
+        expect(orderLineViews.sale.columns).toEqual(["product", "quantity", "unitPrice", "delivered", "invoiced", "workOrder", "subtotal"])
+    })
+
+    it("OC shows 'Recibido' and no OT column (TC-012, TC-056)", async () => {
+        const { orderLineEntity, orderLineViews } = await import("../entity-view/orderLine.entity")
+        expect(orderLineViews.purchase.columns).toEqual(["product", "quantity", "unitPrice", "received", "invoiced", "subtotal"])
+        expect(orderLineEntity.field("received").label).toBe("Recibido")
+    })
+
+    it("invoice: product · quantity · unit price · subtotal last", async () => {
+        const { orderLineViews } = await import("../entity-view/orderLine.entity")
+        expect(orderLineViews.invoice.columns).toEqual(["product", "quantity", "unitPrice", "subtotal"])
     })
 })
 
@@ -168,10 +178,35 @@ describe("getInvoiceLifecycle (U3)", () => {
     })
 })
 
-describe("invoiceLineFields", () => {
-    it("product · quantity · unit price · subtotal last", async () => {
-        const { invoiceLineFields } = await import("../invoiceLineFields")
-        const ids = invoiceLineFields.toColumns().map((c) => c.id ?? (c as { accessorKey?: string }).accessorKey)
-        expect(ids).toEqual(["product_name", "quantity", "unit_price", "subtotal_net"])
+describe("line editables (lote 3a)", () => {
+    const base = { id: 1, product: 10, product_name: "Papel", quantity: 10, quantity_delivered: 4, price_unit: 100, subtotal: 1000 }
+
+    it("dispatch: caps at pending and blocks over the warehouse stock", async () => {
+        const { deliveryLinesEditable } = await import("../entity-view/lineEditables")
+        const { editableSchema } = await import("@/components/entity-view")
+        const line = { ...base, product_type: "STORABLE" as const, track_inventory: true, available_stock: 3 }
+        const messages = (qty: number) => editableSchema(deliveryLinesEditable, [line]).safeParse([{ key: "1", values: { toDeliver: qty } }]).error?.issues.map((i) => i.message) ?? []
+        expect(messages(7)).toEqual(["Máx. 6,00"])
+        expect(messages(5)).toEqual(["Stock insuficiente (3 disponibles)"])
+        expect(messages(3)).toEqual([])
+        const unknown = { ...line, available_stock: undefined }
+        expect(editableSchema(deliveryLinesEditable, [unknown]).safeParse([{ key: "1", values: { toDeliver: 5 } }]).success).toBe(true)
+    })
+
+    it("dispatch: advanced manufacturing waits for its finished work order", async () => {
+        const { deliveryLinesEditable } = await import("../entity-view/lineEditables")
+        const { eligibilityOf } = await import("@/components/entity-view")
+        const line = { ...base, product_type: "MANUFACTURABLE" as const, requires_advanced_manufacturing: true, work_order_summary: { id: 5, status: "IN_PROGRESS" } }
+        expect(eligibilityOf(deliveryLinesEditable, line)).toEqual({ ok: false, reason: "Producción pendiente (la OT debe estar terminada)" })
+        expect(eligibilityOf(deliveryLinesEditable, { ...line, is_production_finished: true })).toEqual({ ok: true })
+    })
+
+    it("payloads keep only lines with a quantity; an explicit cost of 0 is kept, a missing one falls back", async () => {
+        const { toLineQuantities, toReceiptLineData } = await import("../entity-view/lineEditables")
+        expect(toLineQuantities([{ key: "1", values: { toDeliver: 2 } }, { key: "2", values: { toDeliver: 0 } }])).toEqual({ 1: 2 })
+        expect(toReceiptLineData([{ key: "1", values: { quantity: 3, unitCost: 0 } }, { key: "2", values: { quantity: 0, unitCost: 50 } }], [{ ...base, unit_cost: 800 }]))
+            .toEqual([{ line_id: 1, quantity: 3, unit_cost: 0 }])
+        expect(toReceiptLineData([{ key: "1", values: { quantity: 3 } }], [{ ...base, unit_cost: 800 }]))
+            .toEqual([{ line_id: 1, quantity: 3, unit_cost: 800 }])
     })
 })

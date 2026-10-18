@@ -45,6 +45,9 @@ export interface OrderLine {
     quantity: number | string
     quantity_received?: number | string
     quantity_delivered?: number | string
+    quantity_invoiced?: number | string
+    /** Pendiente de despachar/recibir, calculado por el backend. */
+    quantity_pending?: number | string
     received_quantity?: number | string
     delivered_quantity?: number | string
     price_unit: number | string
@@ -52,8 +55,16 @@ export interface OrderLine {
     /** Neto por línea en documentos gross-first (OV): reparto exacto de total_net (ADR-0083). */
     subtotal_net?: number | string
     unit_price_net?: number | string
+    unit_price?: number | string
+    /** OC: costo unitario neto. */
+    unit_cost?: number | string
     is_manufacturable?: boolean
     requires_advanced_manufacturing?: boolean
+    is_production_finished?: boolean
+    track_inventory?: boolean
+    manufacturable_quantity?: number | null
+    /** Stock disponible en la bodega elegida; no viene del backend, lo agrega el despacho al consultar la bodega. */
+    available_stock?: number
     work_order_summary?: WorkOrderSummary
     [key: string]: unknown
 }

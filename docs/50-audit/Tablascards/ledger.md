@@ -68,7 +68,7 @@
 - Evidencia: `features/orders/components/sheet/OrderSummaryTab.tsx:51` → `exclude: ["work_order_summary"]`; `toColumns` filtra por la clave de la definición (`components/shared/entity-fields.tsx:905`), que es `work_order` (`features/orders/orderLineFields.tsx:55`)
 - Efecto: la columna "OT" no se excluye en las líneas de OC
 - Restricción raíz: RC8 (`column()` usa la clave del dato y `exclude`, la de la definición; ambas son `string`)
-- Estado: pendiente. **Decisión del usuario (2026-10-17): se corrige en la migración** (lote de `orders`/líneas de documento, Fase 7).
+- Estado: **corregido en el lote 3a** (2026-10-18). `orderLineViews.purchase` declara sus columnas y `without()` solo acepta ids de campo. Verificado en la app: la OC 10 no muestra OT.
 
 ### TC-013 · Rigidez · Verificado
 - Evidencia: 43 `placement: 'detail'` en 9 `*Fields` de líneas; comentario explícito en `features/orders/orderLineFields.tsx:9`
@@ -291,3 +291,35 @@
 - Evidencia: el commit `25e43a64f feat(navigation)` (2026-10-18 01:34) incluye todo el lote 2c sin commitear: backend, frontend, evidencias y documentos de contrato. También incluye `docker-compose.yml`. Los archivos nuevos del lote estaban marcados con `git add -N` (intent-to-add), lo que facilita que un `git add -A`/`commit -a` los arrastre
 - Decisión: no reescribir la historia. El usuario elige (2026-10-18) un commit de seguimiento en la rama con las correcciones del `/code-review`, los documentos y TC-053. En adelante, no usar `git add -N`
 - Estado: resuelto
+
+### TC-055 · Defecto del sistema actual · Verificado (código)
+- Evidencia: `features/sales/components/checkout/Step3_Delivery.tsx:243` busca la UoM actual con `pq.productId === line.id` (compara el producto con el id de la línea), mientras que la escritura (`:247`) busca por `pq.lineId === line.id` o `pq.productId === line.product`
+- Efecto probable: el selector de UoM del despacho parcial del POS no refleja la unidad elegida (vuelve a `line.uom`) salvo que coincidan por azar el id de producto y el de línea
+- Estado: pendiente; se corrige en la oleada E (`07` §6.8, decisión del usuario 2026-10-18; la clave de fila pasa a ser `rowKey`)
+
+### TC-056 · Paridad de las líneas · Verificado
+- Evidencia: `orderLineFields.tsx` muestra "Facturado" (`quantity_invoiced`, :48) y rotula la columna de avance "Entregado" en OV y "Recibido" en OC (:75, :77). `orderLine.entity.ts` del spike no tiene "Facturado" y usa "Entregado" en ambas
+- Decisión del usuario (Puerta D lote 3): se restauran. `received` ("Recibido") en OC e `invoiced` ("Facturado") en ambas, como progreso `n/total`
+- Estado: corregido (lote 3a)
+
+### TC-057 · Defecto del sistema actual · Verificado (app real, antes y después)
+- Evidencia: en la ficha de OV/OC, "Acciones → Registrar Despacho/Recepción" cierra la ficha y no abre nada. `useOrderActionEngine` monta el drawer o modal de la acción como hermano de `DocumentDrawerShell` (`OrderSheet.tsx`, `{engine.host}`). Al abrirse, la ficha recibe `onOpenChange(false)`, la página borra `?selected` y se desmonta la ficha junto con el drawer. Reproducido igual con la versión anterior al lote (`git stash`)
+- Decisión (lote 3a): `OrderSheet` e `InvoiceSheet` ignoran el cierre mientras `engine.isModalOpen`. Los modales de `related.host` no están cubiertos
+- Estado: mitigado; pendiente la corrección de fondo (ver `/simplify` del 3a)
+
+### TC-058 · Defecto del sistema actual · Verificado (app real)
+- Evidencia: `GET /api/inventory/warehouses/` devuelve un array sin paginar. `useDeliveryData` leía `response.data.results` (undefined → "Query data cannot be undefined"), así que el selector de bodega del despacho quedaba vacío y el stock no se consultaba
+- Decisión: el hook acepta las dos formas (lote 3a)
+- Estado: corregido
+
+### TC-059 · Defecto del sistema actual · Verificado (app real, 390 px)
+- Evidencia: `BaseModal` envuelve el cuerpo en el `ScrollArea` de Radix, cuyo contenedor interno usa `display: table; min-width: 100%` y crece hasta el ancho del contenido. A 390 px el modal de recepción mide 749 px por dentro y recorta por la derecha la fecha, las notas y la tabla. Afecta a todos los modales con contenido ancho
+- Propuesta: en `BaseModal` (o en `ui/scroll-area`), forzar `display: block` en el hijo del viewport (`[&>[data-radix-scroll-area-viewport]>div]:!block`). Es un cambio compartido, fuera del lote
+- Estado: pendiente (decisión del usuario)
+
+### TC-060 · Proceso · Verificado
+- Evidencia: tras los lotes 1–3a, 7 entidades con `defineEntity` y unos 10 de 82 contextos migrados (~12 %); 84 pantallas siguen en el sistema antiguo (`toColumns` 57 → 55, `renderCard` 43 → 40, `AutoEntityCard` 47 → 43). `fromLegacyFields()` especificado (`06` §13.1) pero no implementado. Comandos en `07` §6.1
+- Causa: el lote 3 derivó a asistentes y formularios (fuera de alcance en `AUDIT-PROMPT.md` §3), los lotes 2b/2c incluyeron trabajo de backend, el proceso por lote no escala a los maestros simples y el "lote 4+" nunca se planificó
+- Decisión propuesta: congelar 3b/3c; oleadas 0 (habilitadores) y A–E por causa de rigidez; reglas M1–M8 con ratchet de consumidores antiguos (`07` §6)
+- Decisión del usuario (2026-10-18): aprobada la replanificación (oleadas, reglas M1–M8); TC-055 espera a la oleada E
+- Estado: aprobado

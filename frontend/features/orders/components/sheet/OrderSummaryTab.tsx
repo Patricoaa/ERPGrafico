@@ -1,9 +1,8 @@
 "use client"
 
-import { useMemo } from "react"
 import { Package } from "lucide-react"
-import { DataCell, DataTable, DocumentFieldGrid, FormSection } from "@/components/shared"
-import { orderLineFields, purchaseOrderLineFields } from "../../orderLineFields"
+import { DataCell, DocumentFieldGrid, FormSection } from "@/components/shared"
+import { DocumentLinesTable } from "./DocumentLinesTable"
 import { DocumentTotalsBox } from "./DocumentTotalsBox"
 import type { Order, OrderLine } from "../../types"
 
@@ -47,10 +46,6 @@ export function OrderSummaryTab({ order, kind }: OrderSummaryTabProps) {
     const when = documentDateTime(order)
 
     const lines: OrderLine[] = order.lines ?? order.items ?? []
-    const columns = useMemo(
-        () => (isSale ? orderLineFields.toColumns() : purchaseOrderLineFields.toColumns({ exclude: ["work_order_summary"] })),
-        [isSale],
-    )
     const subtotal = lines.reduce((sum, line) => sum + num(line.subtotal_net ?? line.subtotal), 0)
     const total = num(order.effective_total ?? order.total)
 
@@ -83,7 +78,7 @@ export function OrderSummaryTab({ order, kind }: OrderSummaryTabProps) {
 
             <section className="space-y-4">
                 <FormSection title="Productos" icon={Package} />
-                <DataTable columns={columns} data={lines} variant="minimal" />
+                <DocumentLinesTable lines={lines} kind={kind} />
                 <DocumentTotalsBox
                     subtotal={subtotal}
                     tax={num(order.total_tax)}

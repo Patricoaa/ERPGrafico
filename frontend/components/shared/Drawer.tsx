@@ -206,10 +206,24 @@ export function Drawer({
             : icon
         : null
 
+    // A dialog or drawer opened over this one from a sibling portal (e.g. an action of a document
+    // sheet) is not "outside": interacting with it or moving focus into it must not close this drawer (TC-057).
+    // Only overlays mounted after this drawer count (portals append in opening order): clicking a drawer
+    // underneath (an openEntity stack) still dismisses this one.
+    const keepOpenForOverlays = (event: Event) => {
+        const target = event.target
+        const overlay = target instanceof Element ? target.closest('[role="dialog"], [role="alertdialog"]') : null
+        const self = document.getElementById(contentId)
+        if (overlay && self && overlay !== self && self.compareDocumentPosition(overlay) & Node.DOCUMENT_POSITION_FOLLOWING) {
+            event.preventDefault()
+        }
+    }
+
     return (
         <Sheet open={open} onOpenChange={onOpenChange} modal={finalModal}>
             <SheetContent
                 id={contentId}
+                onInteractOutside={keepOpenForOverlays}
                 side={side}
                 hideOverlay={!finalShowOverlay}
                 isPlainOverlay={!finalModal}

@@ -17,8 +17,14 @@
 | 2a | Capacidades + UoM + Productos (+ orden en servidor de productos, TC-041) | **completado (2026-10-17)**, §3.6 |
 | 2b | OV (+ orden en servidor, foco del hub, endpoint de analítica de OV) | **completado (2026-10-17)**, §3.8 |
 | 2c | Compras (+ TC-043, TC-032) | **completado (2026-10-18)**, §3.10 |
-| 3 | Líneas de documento + edición por lote P1 | — |
+| 3a | Líneas de la ficha + DeliveryDrawer + ReceiptModal | **implementado (2026-10-18)**, §5.7 · `/simplify` + `/code-review` aplicados · esperando al usuario |
+| 3b | Asistentes Step3, Step4, Step2 + NoteLogisticsModal | **congelado (2026-10-18)** → oleada E, §6 |
+| 3c | Step1 + NoteStep_LineItems + líneas de movimientos | **congelado (2026-10-18)**: las líneas de solo lectura pasan a la oleada D y la edición a la oleada E, §6 |
+| 0 | Habilitadores de la migración masiva: `fromLegacyFields()`, ratchet de consumidores antiguos, métrica de avance | **aprobado (2026-10-18)**, §6.3 |
+| A–E | Oleadas por causa de rigidez (82 contextos → 0 consumidores del sistema antiguo) | **aprobado (2026-10-18)**, §6 · Puerta D por oleada (M4) |
 | R6 | ADR de color (contraste warning/success) | aparte |
+
+> **Avance (2026-10-18):** 7 entidades con `defineEntity`, unos 10 de 82 contextos migrados (~12 %). Quedan **84** archivos de pantalla en el sistema antiguo, 60 `*Fields`, 55 `toColumns`, 43 `AutoEntityCard`, 40 `renderCard` y 45 `computed`. Comando en §6.1.
 
 ## 2. Lote 1: plan (Puerta D)
 
@@ -423,6 +429,307 @@ Si se cambian, debe ser en el modelo y el serializer, no solo en la analítica.
 
 | Entidad | Pantalla | Antes | Después | Extensiones | Diferencias | Tests | Resultado | Deuda |
 |---|---|---|---|---|---|---|---|---|
-| — | — | — | — | — | — | — | — | — |
+| Línea de documento (`orderLineEntity`) | Ficha OV/OC, Resumen | `orderLineFields`/`purchaseOrderLineFields` + `DataTable` (2 `computed`, 7 `placement: 'detail'`, TC-012) | `orderLineViews.sale/purchase` en `Collection` | `docRef` | sin orden por columnas; "Facturado" como progreso; cabe en 705 px (antes se desbordaba) | `orderSheet.test.ts` (vistas) | ✅ app real | `sortable` por campo |
+| Línea de documento | Ficha factura, Resumen | `invoiceLineFields` + `DataTable` (1 `computed`) | `orderLineViews.invoice` | `docRef` | — | `orderSheet.test.ts` | ✅ (sin captura propia) | — |
+| Línea de documento (editable) | `DeliveryDrawer` | `<Table>` a mano, `useState`, toasts de stock | `deliveryLinesEditable` / `serviceDeliveryLinesEditable` + RHF | `docRef`, `status` | producción avanzada no elegible; stock como error de celda | `orderSheet.test.ts`, `EditableCollection.test.tsx`, story | ✅ app real (envío interceptado) | stock por producto (Pd-backend) |
+| Línea de documento (editable) | `ReceiptModal` | `<Table>` a mano, 2 `useState`, sin form | `receiptLinesEditable` / `returnLinesEditable` + RHF | `status` | devolución con tope = recibido; sin `Math.ceil` en cantidad | `orderSheet.test.ts`, `EditableCollection.test.tsx` | ✅ app real (envío interceptado) | cast de `PurchaseOrderAPI` (3b); TC-059 |
 
-(Se llena desde el lote 2.)
+(Desde el lote 3a. Los lotes 2a–2c están detallados en §3.6–§3.10.)
+
+## 5. Lote 3: plan (Puerta D, presentada el 2026-10-18)
+
+Inventario: subagente Explore (`archivo:línea` en su informe) y verificación propia de TC-012, TC-055, la allowlist y los consumidores (`grep -rn "export const [a-zA-Z]*LineFields" features`).
+
+### 5.1 Líneas de solo lectura
+
+| Pantalla | Archivo (líneas) | Hoy | Tipo de fila | Notas |
+|---|---|---|---|---|
+| Ficha OV/OC, pestaña Resumen | `features/orders/components/sheet/OrderSummaryTab.tsx` (97) | `orderLineFields` / `purchaseOrderLineFields.toColumns({ exclude: ["work_order_summary"] })` (:51) + totales | `OrderLine` | **TC-012 sigue vivo** (`entity-fields.tsx:903` filtra por la clave del mapa `work_order`); TC-056 (Facturado, Recibido) |
+| Ficha factura, pestaña Resumen | `features/orders/components/sheet/InvoiceSummaryTab.tsx` (99) | `invoiceLineFields.toColumns()` + `DataTable variant="minimal"` + totales | `OrderLine` | 44 líneas de definición |
+| Despacho / devolución de venta | `features/sales/components/SaleDeliveryDrawer.tsx` (95), `SaleReturnDrawer.tsx` (98) | `saleDeliveryLineFields`, `saleReturnLineFields` | `DeliveryLine`, `ReturnLine` | simples |
+| Recepción / devolución de compra | `features/purchasing/components/PurchaseReceiptDrawer.tsx`, `PurchaseReturnDrawer.tsx` | `purchaseReceiptLineFields`, `purchaseReturnLineFields` | `ReceiptLine`, `ReturnLine` | simples |
+
+### 5.2 Edición por lote P1 (8 superficies; 7 en `ADHOC_TABLE_ALLOWLIST`)
+
+| Superficie (líneas) | Celdas editables | Estado | Elegibilidad | Extra | Salida |
+|---|---|---|---|---|---|
+| `sales/DeliveryDrawer` (553) | cantidad | RHF solo cabecera; cantidades en `useState` | tipo SERVICE/PRODUCT; stock; producción | stock por bodega, OT, `StatusBadge` por fila | `line_quantities: {[lineId]: qty}` |
+| `sales/checkout/Step3_Delivery` (326) | cantidad + **UoM** | estado del wizard | `isEligible` + motivo | **`NumpadModal`** (táctil, POS); TC-055 | `partialQuantities[{lineId, productId, dispatchedQty, uom}]` |
+| `purchasing/ReceiptModal` (389) | cantidad + **costo** | 2 `useState` | sin bodega → botón deshabilitado | chip de UoM, estado por fila (Completo/Parcial/Excede) | `line_data[{line_id, quantity, unit_cost}]` (llamada directa a `purchasingApi`, sin hook) |
+| `purchasing/checkout/Step4_Receipt` (360) | cantidad + **UoM** | estado del wizard | solo si `type === 'PARTIAL'` | 2.ª subtabla de fecha por fila (:284) | `partialQuantities` |
+| `billing/checkout/Step2_Logistics` (354) | cantidad + **UoM** | estado del wizard | "Requiere producción" / "Sin control de stock" | — | `line_data[{line_id, product_id, quantity, uom_id}]` |
+| `orders/NoteLogisticsModal` (225) | cantidad | `useState` **por producto** | pendiente ≤ 0 | — | `useProcessLogistics` |
+| `billing/checkout/Step1_Items` (235) | **checkbox** + cantidad + precio + **motivo** | estado del wizard | la fila se edita al marcarla | stock, fabricable, badge MAX | `selectedItems[]` |
+| `notes/steps/NoteStep_LineItems` (486) | igual que Step1 (modo `select`) + modo `edit` sobre `DataTable` con columnas JSX en línea | props del padre | al marcarla | — | `onLinesChange` |
+
+Ninguna usa `OrderLine`: cada pantalla tiene su tipo local (`SaleOrderLine`, `PurchaseOrderLine`, `CheckoutLine`, `InvoiceLine`, `NoteLineItem` o un cast en línea).
+
+### 5.3 Capacidades que faltan en `EditableCollection` (hoy: `quantity`/`money`, `eligible`, `footer.sum`, `bulk`)
+
+| # | Capacidad | Consumidores | Regla ≥3/≥2 | Diseño propuesto |
+|---|---|---|---|---|
+| E1 | Input **UoM por fila** | Step3, Step4, Step2 (3 entidades, 3 features) | cumple | registro abierto de **kinds de input**, igual que los value kinds (A1): el núcleo trae `quantity`/`money`/`text`; `features/inventory` registra `uom` con `UoMSelector`. Sin `render` opaco |
+| E2 | Input **texto** (motivo) | Step1, NoteStep | no (2) | kind `text` del núcleo: es un tipo básico, no un caso de feature |
+| E3 | **Selección que habilita la fila** | Step1, NoteStep | no (2) | opción `select?: { label(row) }` en la definición; fila no marcada = no procesada. Alternativa: dejar Step1/NoteStep para un lote posterior |
+| E4 | **Estado por fila derivado del valor** (Completo/Parcial/Excede) | DeliveryDrawer, ReceiptModal | no (2) | `rowStatus?: (row, values) => { label, tone }` pintado con `StatusBadge` (invariante #7). Alternativa: quitar la columna y apoyarse en la pista "Máx. N" + el error por celda |
+| E5 | Teclado numérico táctil | Step3 (1) | no | `inputMode="decimal"` ya abre el teclado numérico del móvil; `NumpadModal` sale o queda como acción de la feature |
+| E6 | Varias celdas editables por fila (cantidad + costo/precio) | ReceiptModal, Step1, NoteStep | ya existe | `inputs` admite varias; el "al menos una" (ED-3) hoy cuenta cualquier celda > 0 (`EditableCollection.tsx`, `editableSchema`): con un costo inicial > 0 pasaría con todas las cantidades en 0. Hay que declarar qué input es la cantidad que se procesa |
+| E7 | Subtabla de fecha por fila | Step4 | no (1) | composición en la feature, fuera del `EditableCollection` |
+| E8 | Payload del dominio | 8 | — | función pura por feature `toXxxPayload(def, rows, value)`; nada en el núcleo |
+| E9 | Foco en el primer error y primera columna fija a 390 px (ED-5, AX-6) | 8 | — | se cierra en este lote |
+
+Techo de props de `EditableCollection`: 7 de 12. E1–E4 son opciones de la **definición**, no props.
+
+### 5.4 Propuesta de partición (≤5 entidades por lote)
+
+- **3a — Líneas de la ficha + P1 de drawers/modales.** `orderLine` (OV/OC; TC-012, TC-056), `invoiceLine`, y `DeliveryDrawer` + `ReceiptModal` (RHF completo, estado por fila, costo). Entidades: orderLine, invoiceLine, línea de despacho, línea de recepción (4). Capacidades: E4, E6, E8, E9. Sale `orderLineFields`, `invoiceLineFields` y 2 entradas de la allowlist.
+- **3b — P1 de wizards.** Step3 (TC-055), Step4, Step2, NoteLogisticsModal. Capacidades: E1 (kinds de input + `uom`), E5. Salen 4 entradas de la allowlist.
+- **3c — Selección + motivo y líneas de movimientos.** Step1, NoteStep_LineItems (E2, E3), y las 4 líneas de solo lectura de despacho/devolución/recepción (`fromLegacyFields()` o a mano).
+
+### 5.5 Decisiones para el usuario
+
+1. **Partición** 3a / 3b / 3c (o 3a+3b juntos).
+2. **Entidad de fila:** ¿una entidad por pantalla con su tipo local (lo mínimo), o se unifican los tipos locales en `OrderLine` (`SaleOrderLine`/`PurchaseOrderLine`) y se reutiliza `orderLineEntity`?
+3. **Estado del wizard (Step2/3/4, Step1):** el estado sigue en el wizard (controlado `value/onChange`) y la validez del paso sale de `editableSchema(...).safeParse`. Convertir los wizards a RHF queda fuera. ¿De acuerdo?
+4. **E4 estado por fila:** ¿opción `rowStatus` en la definición, o se retira la columna?
+5. **E3/E2 con 2 consumidores:** ¿entran al núcleo ya (excepción a la regla ≥3) o se aplazan a 3c y se decide entonces?
+6. **E5 `NumpadModal`** del POS: ¿se conserva como acción de la feature o se reemplaza por el teclado nativo?
+7. **TC-056:** añadir "Facturado" y "Recibido" en OC (paridad con hoy).
+
+### 5.6 Decisiones de la Puerta D del lote 3 (2026-10-18)
+
+1. **Partición por separado:** 3a, 3b y 3c, cada uno con su Puerta D. 3c se parte si pasa de 5 entidades.
+2. **Tipos unificados:** los tipos locales de línea (`SaleOrderLine`, `PurchaseOrderLine`, `CheckoutLine`, `InvoiceLine`, `NoteLineItem` y los casts en línea) convergen en `OrderLine`, y las superficies reutilizan `orderLineEntity` (con vistas y definiciones editables por contexto).
+3. **Los asistentes pasan a react-hook-form + zod dentro del lote** que migra cada uno (invariante #9). La validez del paso sale del resolver.
+4. **E4 = opción `rowStatus(row, values)`** en la definición, pintada con `StatusBadge`.
+5. **E2 (texto) y E3 (selección que habilita la fila) entran al núcleo** como excepción a la regla ≥3/≥2. Queda registrada en ADR-0087 cuando se implementen.
+6. **`NumpadModal` se conserva** como acción de la feature (POS).
+7. **TC-056:** se restauran "Facturado" y la etiqueta "Recibido" en la OC.
+
+### 5.7 Resultado del lote 3a — líneas de la ficha + despacho + recepción (2026-10-18)
+
+Rama `refactor/entity-view-lote-3` (desde `refactor/entity-view-lote-2`).
+
+**Núcleo (`components/entity-view`)**
+- `core/define-editable.ts` (nuevo): la mitad pura de la superficie editable sale de `surfaces/`.
+  - Contiene la definición, los valores iniciales, el schema y el mapeo de errores.
+  - Sin dependencia de `@/components/shared`, así una definición evaluada dentro de un ciclo de imports la encuentra inicializada.
+- `defineEditable` gana tres opciones:
+  - `processed`: el costo unitario ya no cuenta para "al menos una" ni lo borra "Limpiar";
+  - `check(row, value)`: regla de dominio dentro del schema;
+  - `rowStatus(row, values)`: estado por fila pintado con `StatusBadge`.
+- `EditableCollection`:
+  - primera columna fija y `focusFirstEditableError()` (ED-5, AX-6);
+  - contexto sin cortes de línea y superficie `bg-card`;
+  - elegibilidad y campos de contexto memorizados.
+
+**Entidad y extensiones**
+- `orderLineEntity` (features/orders) es la entidad única de líneas de OV, OC y factura.
+  - Incluye `received`, `invoiced` (progreso), `unitCost`, `receivedQty`, `pending` y `availability` (stock de la bodega elegida, como `status`).
+  - Todos sus campos son `sortable: false`: en un documento manda el orden del propio documento.
+- Vistas `sale`, `purchase` e `invoice`.
+  - **TC-012:** OC sin OT, ahora declarado en `purchase`.
+  - **TC-056:** "Recibido" y "Facturado" restaurados.
+- `lineEditables.ts`:
+  - definiciones `deliveryLinesEditable`, `serviceDeliveryLinesEditable`, `receiptLinesEditable` y `returnLinesEditable`;
+  - payloads `toLineQuantities` y `toReceiptLineData`;
+  - helpers `hasPartialLines` y `matchesLineType`.
+  - Viven junto a la entidad (TDZ en ciclos) y se exportan por el barrel de `orders`.
+- `docRef`:
+  - el constructor está en `docRef.ts`, sin imports en tiempo de ejecución, y es la primera exportación de `@/features/documents`. Una guarda de contrato lo verifica;
+  - el kind se registra al evaluarse el barrel;
+  - `fallback` es por fila: una línea sin producto muestra su nombre.
+
+**Pantallas**
+- Fichas OV/OC y factura: `DocumentLinesTable` sobre `Collection` (sale `DataTable` + `*LineFields`). Se borran `orderLineFields.tsx`, `invoiceLineFields.tsx` y `OrderLineLinks.tsx`.
+- `DeliveryDrawer`:
+  - RHF + zod también para las líneas, con el schema en `features/sales/schema.ts`;
+  - `EditableCollection` con stock (`useDeliveryStock`, cacheado por producto y bodega);
+  - estado por fila;
+  - error "Stock insuficiente (n disponibles)" junto a la celda en vez de un toast.
+- `ReceiptModal`:
+  - RHF + zod, con el schema en `features/purchasing/schema.ts`;
+  - modo devolución con tope = recibido, cuando antes usaba el pendiente;
+  - sin tope en la recepción: el servidor acepta recibir más de lo pedido y "Excede pendiente" queda como estado.
+- Las bodegas vienen de `useWarehouses()` de inventory: se quitan la consulta duplicada y un `as unknown as`.
+- `ADHOC_TABLE_ALLOWLIST`: −2 (`DeliveryDrawer`, `ReceiptModal`).
+
+**Defectos del sistema actual encontrados y corregidos**
+- **TC-057:** las acciones de la ficha que abren un drawer o modal cerraban la ficha y no abrían nada. Reproducido también con la versión anterior.
+  - Corrección de fondo en `components/shared/Drawer.tsx`: un diálogo de un portal hermano no es "fuera".
+  - Verificado que el clic fuera sigue cerrando la ficha.
+- **TC-058:** las bodegas del despacho leían `.results` de un endpoint sin paginar, así que el selector quedaba vacío y no había stock.
+- Pendiente para el usuario: **TC-059** (`BaseModal` crece hasta el ancho del contenido a 390 px).
+
+**Diferencias intencionales frente a la versión anterior**
+- La producción avanzada sin OT terminada queda **no elegible** (antes: propuesta y bloqueada por un toast al enviar).
+- El despacho total (`dispatch`) se usa solo con `filterType = ALL` y sin líneas parciales. Antes un filtro de servicios podía terminar en despacho total.
+- Ni la cantidad recibida ni el costo inicial se redondean hacia arriba (`Math.ceil`): el paso de la cantidad sale de la UoM y el costo parte del valor exacto de la OC.
+- "Facturado" se muestra como progreso `n/total`, igual que "Entregado".
+
+**Verificación**
+- `tsc` sin errores; `eslint` sin errores en los archivos del lote; vitest 18 archivos y 121 tests (entity-view, contrato, orders, sales, purchasing, documents, billing, inventory), con las stories incluidas.
+- App real (servidor de desarrollo; envíos interceptados con `page.route`, sin tocar datos), evidencias en `evidence/lote3a/`:
+  - ficha OV-174: antes, "OT" y "Subtotal" quedaban fuera del panel de 705 px; ahora la tabla mide 705/705, sin botones de orden y con el producto como enlace;
+  - ficha OCS-10: "Recibido 8/20", "Facturado 8/20", sin OT;
+  - despacho:
+    - bodega y stock reales; con 5 aparece el error "Máx. 3,00" y el foco pasa a la celda;
+    - con 2, "Despacho parcial" y su aviso;
+    - payload `{"warehouse_id":2,"delivery_date":"2026-10-18","line_quantities":{"176":2}}`, la misma forma que antes;
+  - recepción:
+    - costo inicial 900; "Limpiar" conserva el costo y el envío pide "Ingresa al menos una cantidad";
+    - con 15, "Excede pendiente";
+    - payload `{… "line_data":[{"line_id":11,"quantity":5,"unit_cost":900}]}`;
+  - 390 px: el modal de recepción no desborda la página, pero se recorta por dentro (TC-059, previo).
+
+**`/simplify` (4 revisores)**
+- Corregido:
+  - TC-057 movido al `Drawer` compartido, en vez de un guarda por ficha;
+  - `useWarehouses()` compartido;
+  - `matchesLineType` y `hasPartialLines` comunes;
+  - `nameOf`, `amount` y `unit` compartidos;
+  - props muertas (`onCancel`, `filterType` redeclarado);
+  - resolver memorizado;
+  - elegibilidad y campos de contexto memorizados;
+  - tipos sin consumidores fuera del barrel;
+  - guarda de contrato del orden de `docRef`.
+- Omitido, registrado como deuda:
+  - endpoint de stock por lotes (`?product_ids=`) y `quantity_pending` siempre emitido por el serializer (Pd-backend);
+  - `sortable` a nivel de entidad (cambio de contrato; hoy es `...fixed` por campo);
+  - conversión de fecha con `toISOString` (patrón preexistente en 63 sitios; sin efecto con husos negativos);
+  - el cast restante `orderData as unknown as PurchaseOrder` (se va con la unificación de `PurchaseOrderLineAPI` en 3b).
+
+**`/code-review` medium (10 hallazgos)**
+
+Corregidos (8):
+1. El stock desconocido (cargando) contaba como 0 y bloqueaba líneas con stock.
+   - Ahora el stock desconocido no se valida.
+   - El envío espera a que termine la consulta de stock.
+   - Tras el primer envío, las líneas se revalidan cuando llega el stock o cambia la bodega.
+2. La producción avanzada con `track_inventory` pasaba por el control de stock; antes solo regía la OT terminada. Restaurado.
+3. `ReceiptForm` se montaba con la orden cargada pero las bodegas aún no: la bodega por defecto quedaba vacía. Ahora espera a ambas.
+4. `Drawer`: la regla de TC-057 bloqueaba también los clics en diálogos que quedan **debajo**. Ahora solo cuentan los montados después (encima).
+   - En la app, `openEntity` reemplaza el contenido ("Volver a OV"), así que no hay dos diálogos apilados.
+5. Un costo 0 explícito se reemplazaba por el de la OC (`||`). Ahora usa `??` y el test lo fija.
+6. El costo inicial se redondeaba hacia arriba (`Math.ceil`, heredado) y se enviaba sin tocar. Ahora parte del costo exacto.
+7. El stock se consultaba para todas las líneas visibles. Ahora solo para las que llevan inventario, sin repetir producto.
+8. `...fixed` se había colado en los valores `DocRefValue` (reemplazo por regex), y un JSDoc había quedado huérfano. Corregidos.
+
+Sin cambio (registrados):
+- `useWarehouses()` sin `enabled`: los dos consumidores solo montan el modal o drawer al abrirlo.
+- Dependencia del orden del barrel de `documents`: es deliberada y la fija una guarda de contrato. Romper el ciclo de barrels es trabajo aparte (TC-044).
+
+Verificación posterior:
+- `tsc` sin errores; `eslint` sin errores en los archivos del lote.
+- vitest 24 archivos y 205 tests (entity-view, contrato, orders, sales, purchasing, documents, billing, inventory, shared).
+- App real: despacho y recepción con los mismos resultados y payloads de arriba (costo 900 exacto); el clic fuera sigue cerrando la ficha.
+
+## 6. Replanificación de la Fase 7 (2026-10-18)
+
+### 6.0 Por qué se replanifica
+
+Revisión pedida por el usuario: el objetivo de `AUDIT-PROMPT.md` es **reemplazar** el sistema antiguo y llegar a ≥85 % de colecciones sin código a medida (Puerta B). Tras los lotes 1–3a la medición (V, §6.1) da unos 10 de 82 contextos migrados (~12 %), y el sistema antiguo casi no ha retrocedido (`toColumns` 57 → 55, `renderCard` 43 → 40). Causas (registradas como TC-060):
+
+1. **El lote 3 derivó a asistentes y formularios.** `AUDIT-PROMPT.md` §3 deja fuera formularios y asistentes. La Puerta A los admitió como "caso de uso específico", pero 3b/3c terminaron incluyendo la conversión de asistentes a RHF, la unificación de 8 tipos de línea y capacidades nuevas del núcleo (E1–E4, kinds de input) con excepciones a la regla ≥3/≥2. Ninguna de esas 12 superficies es una lista de entidad.
+2. **Trabajo de backend dentro de los lotes** (endpoints de analítica, orden en servidor, `core/analytics.py`). Tiene valor, pero el prompt lo dejaba como *Pendiente-backend* y fue la razón de partir el lote 2 en tres.
+3. **Proceso uniforme y pesado**: Puerta D, capturas antes/después, `/simplify` con 4 revisores y `/code-review` por cada lote de ≤5 entidades. Proporcionado para OV/Compras, no para ~25 maestros simples.
+4. **El "lote 4+" de la spec (§13.2) nunca se planificó**, y su herramienta principal, `fromLegacyFields()` (`06` §13.1), no se construyó (V: `grep -rn fromLegacyFields frontend` vacío).
+
+### 6.1 Métrica de avance (se reporta al cerrar cada sub-lote, primera línea de `PROGRESS.md`)
+
+```bash
+cd frontend
+# Pantallas que aún usan el sistema antiguo (objetivo: 0)
+grep -rlE 'toColumns\(|AutoEntityCard|<DataTable\b|createEntityFields' --include=*.tsx features app components \
+  | grep -vE '__tests__|stories|Fields\.tsx$|^components/(shared|entity-view)/' | wc -l      # 2026-10-18: 84
+# Definiciones antiguas y escapes
+find features components -name '*Fields.ts*' -not -path '*/__tests__/*' | wc -l            # 60
+grep -rl '\.toColumns(' --include=*.ts* features components app | grep -v __tests__ | wc -l  # 55
+grep -rl 'AutoEntityCard' --include=*.tsx features app | wc -l                               # 43
+grep -rl 'renderCard' --include=*.tsx features app | wc -l                                   # 40
+grep -rn "type: ['\"]computed" --include=*.ts* features | wc -l                              # 45
+# Entidades nuevas
+grep -rln 'defineEntity' --include=*.ts* features | grep -v __tests__ | wc -l                # 7
+```
+
+### 6.2 Reglas de la migración masiva (aprobadas el 2026-10-18)
+
+| # | Regla | Motivo |
+|---|---|---|
+| M1 | **Paridad primero.** Una pantalla se migra con el comportamiento que tiene hoy. Mejoras de producto, endpoints nuevos y defectos no bloqueantes se registran (TC o issue) y se hacen después. | §6.0 punto 2 |
+| M2 | **Nada nuevo en el núcleo** salvo que bloquee ≥3 pantallas de la oleada en curso (regla ≥3/≥2 sin excepciones). Lo demás es kind o sección de la feature. | §6.0 punto 1 |
+| M3 | **Backend solo si la paridad lo exige** (p. ej. un campo que falta para la columna que ya existe). El resto, *Pendiente-backend*. | `AUDIT-PROMPT.md` §3 |
+| M4 | **Una Puerta D por oleada**, no por sub-lote. Dentro de la oleada, los sub-lotes avanzan sin parar salvo que aparezca una decisión de contrato, de producto o un cambio compartido. | §6.0 punto 3 |
+| M5 | **Proceso proporcional.** Oleada A: `type-check` + `lint` + tests del ámbito + una captura por pantalla (1440, y 390 si tiene card); `/code-review` una vez por sub-lote; sin `/simplify` salvo diff grande. Oleadas B–C: el ciclo completo (§ cabecera). | §6.0 punto 3 |
+| M6 | **Formularios y asistentes al final** (oleada E), y solo su tabla: convertir un asistente a RHF es trabajo de formularios, fuera de esta migración salvo que la tabla no se pueda migrar sin ello. | `AUDIT-PROMPT.md` §3 |
+| M7 | **Al migrar se borra.** El `*Fields` y la entrada de `ADHOC_TABLE_ALLOWLIST` salen en el mismo sub-lote; el ratchet de M8 baja. | `06` §13.2 |
+| M8 | **Ratchet de consumidores antiguos** en `entity-view.contract.test.ts`: el número de archivos de §6.1 solo puede bajar. | evita repetir la deriva sin que se note |
+
+### 6.3 Oleada 0 — habilitadores (1 sub-lote corto)
+
+- Cerrar el 3a: commit del usuario y decisión sobre TC-059.
+- Implementar `fromLegacyFields()` (`06` §13.1) con sus tests de tipos; vive en `components/entity-view/core/` y se borra con el último `*Fields`.
+- Ratchet M8 y la métrica §6.1 en un script (`frontend/scripts/entity-view-progress.sh`).
+- Limpieza sin riesgo (V):
+  - `inventoryCountLineFields.ts`: 0 consumidores;
+  - `journalEntryFields.ts` duplicado en `app/(dashboard)/accounting/entries/` y `features/accounting/`;
+  - `salesOrderFields` y `purchaseOrderFields` solo los usa `ContactDrawer` (las listas ya migraron): se resuelven en la oleada D con `saleOrderEntity`/`purchaseOrderEntity`.
+
+### 6.4 Oleada A — maestros simples (0–1 `computed`, sin hub ni flujo)
+
+Candidatas naturales a `fromLegacyFields()` + revisión a mano. Patrón común: `*ClientView` con `toColumns` + `AutoEntityCard` + `renderCard`.
+
+| Sub-lote | Pantallas (`frontend/features/…`) | `*Fields` (computed) |
+|---|---|---|
+| **A1 · Inventario y configuración** | `inventory/components/UoMCategoryClientView.tsx`, `WarehouseClientView.tsx`, `CategoryClientView.tsx`, `AttributesClientView.tsx`, `PricingRuleClientView.tsx`, `settings/components/GroupsClientView.tsx`, `UsersSettingsClientView.tsx` | uomCategory (0), warehouse (0), category (1), attribute (1), pricingRule (0), group (0), user (1) |
+| **A2 · RR. HH. y POS** | `hr/components/EmployeeClientView.tsx`, `AbsenceClientView.tsx`, `SalaryAdvanceClientView.tsx`, `sales/components/PosTerminalClientView.tsx`, `POSSessionsClientView.tsx`, `purchasing/components/SubscriptionsClientView.tsx` | employee (0), absence (0), salaryAdvance (1), posTerminal (0), posSession (0), subscription (0) |
+| **A3 · Maestros de tesorería y contabilidad** | `treasury/components/PaymentHardwareClientView.tsx` (2 vistas), `PaymentMethodClientView.tsx`, `BankCenterClientView.tsx` + `BankCheckingSection`/`BankCreditSection`/`BankLoanSection`, `treasury/credit-lines/CreditLinesClientView.tsx`, `treasury/loans/LoansClientView.tsx`, `accounting/components/AccountsClientView.tsx`, `closures/AccountingClosuresClientView.tsx` | terminalProvider (0), terminalDevice (0), paymentMethod (1), bankCenter (0), creditLine (0), loan (0), account (0), fiscalYear (0) |
+| **A4 · Contactos y producción** | `contacts/components/ContactsClientView.tsx`, `production/components/BOMClientView.tsx` | contact (1), bom (1) |
+
+Resultado esperado: −25 archivos de pantalla del sistema antiguo (84 → 59) y −23 `*Fields`. Con la oleada A el avance pasa de ~12 % a ~40 % de los contextos.
+
+### 6.5 Oleada B — documentos con estado/hub (RC1, RC4, RC5)
+
+Reutilizan lo construido en 2b/2c (`docRef`, hub con etiqueta, modos, analítica). Ciclo completo.
+
+| Sub-lote | Pantallas | Nota |
+|---|---|---|
+| **B1 · Facturación** | `billing/components/SalesInvoicesClientView.tsx`, `PurchaseInvoicesClientView.tsx` | prefijo DTE; NC sin signo de flujo (`02` #3) |
+| **B2 · Contabilidad e impuestos** | `app/(dashboard)/accounting/entries/EntriesClientView.tsx`, `tax/components/TaxDeclarationsClientView.tsx` | TC-016 (`journalEntryFields`) |
+| **B3 · Inventario documental** | `inventory/components/DocumentsClientView.tsx`, `InventoryDocumentDrawer.tsx`, `InventoryCountClientView.tsx` (lista; la celda editable va a E) | |
+| **B4 · Órdenes de trabajo (imprenta)** | `app/(dashboard)/production/orders/WorkOrdersPageClient.tsx` + `WorkOrderKanban`/`WorkOrderTimeline` | kanban y timeline como superficies; la pantalla específica de imprenta (`02` #22). Puerta D propia por tamaño |
+| **B5 · Nómina, presupuestos y socios** | `hr/components/PayrollClientView.tsx`, `finance/components/BudgetsClientView.tsx` + `BudgetDetailView.tsx`, `settings/components/partners/PartnersClientView.tsx` | |
+
+### 6.6 Oleada C — tesorería, crédito y stock con flujo/saldo (RC1, RC8)
+
+| Sub-lote | Pantallas |
+|---|---|
+| **C1 · Movimientos y cuentas** | `treasury/components/TreasuryMovementsClientView.tsx`, `BankMovementsClientView.tsx`, `TreasuryAccountsClientView.tsx`, `TerminalBatchesClientView.tsx`, `treasury/checks/ChecksClientView.tsx` |
+| **C2 · Tarjetas** | `treasury/card-statements/StatementsClientView.tsx`, `StatementDetailModal.tsx`, `UnbilledChargesClientView.tsx` |
+| **C3 · Crédito y libros** | `credits/components/CreditPortfolioClientView.tsx`, `PortfolioTable.tsx`, `BlacklistClientView.tsx`, `accounting/components/LedgerDrawer.tsx`, `app/(dashboard)/accounting/accounts/[id]/ledger/page.tsx`, `settings/components/partners/PartnerLedgerDrawer.tsx` |
+| **C4 · Stock** | `inventory/components/MovementClientView.tsx`, `StockReport.tsx`, `ProductInsightsPanel.tsx`, `ProductInsightsModal.tsx` |
+| **C5 · Conciliación (lista)** | `finance/bank-reconciliation/components/StatementsClientView.tsx`, `StatementDetailPanel.tsx` |
+
+### 6.7 Oleada D — listas embebidas de solo lectura
+
+`contacts/components/ContactDrawer.tsx` (4 sublistas; borra `salesOrderFields`/`purchaseOrderFields`), `sales/components/SaleDeliveryDrawer.tsx`, `SaleReturnDrawer.tsx`, `purchasing/components/PurchaseReceiptDrawer.tsx`, `PurchaseReturnDrawer.tsx` (la parte de solo lectura del antiguo 3c), `settings/components/ProfitDistributionDrawer.tsx`, `partners/ProfitDistributionsTab.tsx`, `treasury/loans/LoanRegisterDrawer.tsx`, `LoanDetailModal.tsx`, `orders/components/PaymentHistoryModal.tsx`, `purchasing/components/SubscriptionHistoryModal.tsx`, `app/(dashboard)/settings/audit/AuditPageClient.tsx`, `app/(dashboard)/settings/jobs/JobsView.tsx`, `profile/components/ProfileView.tsx`, `PartnerProfileTab.tsx`, `settings/components/HRSettingsView.tsx`, `pos/components/DraftCartsClientView.tsx`, `components/selectors/AccountSelector.tsx`. Se parte en sub-lotes de ~6 en su Puerta D.
+
+### 6.8 Oleada E — edición dentro de formularios y asistentes (al final)
+
+El antiguo 3b + la parte editable del 3c, y el resto de tablas de edición: `sales/checkout/Step3_Delivery.tsx` (TC-055), `purchasing/checkout/Step4_Receipt.tsx`, `billing/checkout/Step2_Logistics.tsx`, `orders/NoteLogisticsModal.tsx`, `billing/checkout/Step1_Items.tsx`, `notes/steps/NoteStep_LineItems.tsx`, `sales/checkout/Step2_ManufacturingDetails.tsx`, `production/steps/MaterialAssignmentStep.tsx`, `RectificationStep.tsx`, `production/components/BOMManager.tsx`, `finance/bank-reconciliation/*` (`ReconciliationPanel`, `ImportPreviewStep`, `SimulationResults`, `StatementImportModal`, `SplitAllocationDialog`), `finance/components/MappingConfigDrawer.tsx`, `settings/InitialCapitalModal.tsx`, `partners/AddPartnerModal.tsx`, `InventoryCountClientView` (celdas editables). Las decisiones 2–6 de §5.6 siguen vigentes para estas pantallas, pero se reevalúan en su Puerta D a la luz de M2 y M6 (p. ej. convertir el asistente a RHF solo si su tabla lo exige). TC-055 es un defecto vivo: si urge, se corrige como arreglo puntual sin esperar a la oleada.
+
+### 6.9 Fin de la migración
+
+Cuando §6.1 dé 0 pantallas: se borran `entity-fields.tsx`, `AutoEntityCard`, `DataTable` y su familia, `DataCell` y las columnas `createXColumn` que no tengan consumidores, `fromLegacyFields()` y la congelación del sistema antiguo en la invariante #13 (ADR de cierre, invariante #12).
+
+### 6.10 Decisiones para el usuario (Puerta D de la oleada 0/A)
+
+1. ¿Se aprueban la congelación del 3b/3c y el orden 0 → A → B → C → D → E?
+2. ¿Se aprueban las reglas M1–M8, en especial la Puerta D por oleada (M4) y el proceso ligero de la oleada A (M5)?
+3. ¿TC-055 (UoM en el despacho parcial del POS) se corrige ya como arreglo puntual, o espera a la oleada E?
+
+### 6.11 Decisiones del usuario (2026-10-18)
+
+1. Se aprueban la congelación del 3b/3c y el orden de oleadas 0 → A → B → C → D → E.
+2. Se aprueban las reglas M1–M8, incluidas la Puerta D por oleada (M4) y el proceso ligero de la oleada A (M5).
+3. TC-055 espera a la oleada E (no se corrige como arreglo puntual).

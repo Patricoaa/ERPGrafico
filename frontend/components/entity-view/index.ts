@@ -12,6 +12,7 @@ export * from "./core/formatters"
 export * from "./core/define-entity"
 export * from "./core/use-entity-collection"
 export * from "./core/use-server-page"
+export * from "./core/define-editable"
 
 import { registerCoreValueKinds } from "./kinds/core-kinds"
 

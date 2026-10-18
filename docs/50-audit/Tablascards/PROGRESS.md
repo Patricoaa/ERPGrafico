@@ -1,10 +1,11 @@
 # Progreso — Nuevo sistema de presentación
-- Fase actual: 7 · Lote 2c (Compras) · implementado, `/simplify` + `/code-review` aplicados, verificado en la app · esperando al usuario (TC-054: el lote ya quedó dentro del commit de navigación)
-- Último completado: lote 2a — capacidades del núcleo (orden en servidor, agrupación, BulkBar, Analytics, estados vacíos) + UoM y Productos migrados + `OrderingFilter` de productos; `/simplify` + `/code-review` (9/10 corregidos); TC-041–TC-045; issues #178. Detalle en `07` §3.6
-- Próximo paso exacto: Puerta D del lote 3 (líneas de documento + edición por lote P1): inventario de pantallas con Explore, capacidades que faltan, partición y decisiones → presentar al usuario. Contexto: `07-migration-matrix.md` §1 y §4, `06-spec.md` (líneas y edición por lote), ledger TC-012/TC-040
-- Rama: `refactor/entity-view-lote-2` (desde el lote 1 `b3ae3fac3`); issues abiertas #176, #177
-- Puertas: A ✅ · B ✅ · C ✅ · D lote 1 ✅ · D 2a ✅ · D 2b ✅ · D 2c ✅ (2026-10-17)
-- Preguntas abiertas para el usuario: —
+- **Avance (2026-10-18): ~10/82 contextos (~12 %) · 84 pantallas en el sistema antiguo · 7 entidades `defineEntity`** (comando: `07` §6.1)
+- Fase actual: 7 · **replanificada y aprobada** (`07` §6, TC-060) · lote 3a implementado, esperando al usuario (commit y TC-059) · 3b/3c congelados
+- Último completado: lote 3a. Líneas de la ficha (OV/OC/factura) sobre `orderLineEntity`; `DeliveryDrawer` y `ReceiptModal` con `EditableCollection` + RHF; núcleo con `processed`/`check`/`rowStatus` y `core/define-editable.ts`. TC-012 y TC-056 corregidos; TC-057 y TC-058 encontrados y corregidos; TC-059 para el usuario. Detalle en `07` §5.7
+- Próximo paso exacto: oleada 0 (`07` §6.3): cerrar 3a (commit del usuario + TC-059), `fromLegacyFields()`, ratchet M8 + script de métrica, limpieza → Puerta D de la oleada A (sub-lote A1: inventario y configuración)
+- Rama: `refactor/entity-view-lote-3` (desde `refactor/entity-view-lote-2`, sin commitear); issues abiertas #176, #177
+- Puertas: A ✅ · B ✅ · C ✅ · D lote 1 ✅ · D 2a ✅ · D 2b ✅ · D 2c ✅ (2026-10-17) · D lote 3 ✅ (2026-10-18) · replanificación ✅ (2026-10-18)
+- Preguntas abiertas para el usuario: commit del 3a; TC-059 (`BaseModal` a 390 px, cambio compartido)
 - Decisiones del usuario:
   - 2026-10-17: las tablas de wizard/modal entran como caso de uso específico · `as any` de `AutoEntityCard.tsx:390` espera al rediseño · `journalEntryFields` lo determina la auditoría (→ TC-016) · TC-012 se corrige en la migración
   - 2026-10-17 Puerta A: aprueba RC1–RC8 y la matriz C/F/E; pantallas de la Fase 4 = UoM, OV, Compras; aprueba `role="grid"` → `role="table"` en `compact`; **exportación = requisito** (aclarado)
@@ -12,6 +13,8 @@
   - 2026-10-17 Puerta C: ADR-0087 → Accepted (con A1–A3, R1–R8); ADR-0078 → Superseded; R1–R5 = primer lote de la Fase 7; R6 = ADR de color aparte; estado unificado como **hub con etiqueta** en tabla y card; comparación con la app real hecha (usuario de demo; credenciales no guardadas); commit del spike autorizado
   - 2026-10-17 Fase 6: aprueba las invariantes #6 y #13, y "Zero N+1" como #14; el lote 1 incluye R1–R5 + R7 + R8 + el provider en el shell + el estado en la URL; TC-034 va como tarea aparte → issue #176
   - 2026-10-17 Puerta D lote 1: R2 global ("—"); R3 = exención `[data-density="compact"]` con `pointer: fine` + excepción en GOVERNANCE #17; URL solo paridad; lote aprobado
+  - 2026-10-18 Puerta D lote 3: 3a/3b/3c por separado; tipos de línea unificados en `OrderLine`; los asistentes pasan a RHF dentro del lote; `rowStatus` en la definición; E2/E3 entran al núcleo (excepción); `NumpadModal` se conserva; TC-056 se restaura
+  - 2026-10-18 Replanificación (`07` §6.11): oleadas 0 → A → B → C → D → E; reglas M1–M8 (Puerta D por oleada, proceso ligero en A); 3b/3c congelados; TC-055 espera a la oleada E
   - 2026-10-17 Puerta D lote 2: partición 2a/2b; agrupación con tope uniforme de 200; `Collection.Analytics` en el núcleo; **orden en servidor ahora** (OrderingFilter + ordering_fields)
 - Entorno: mutagen ✅ · tests remotos ✅ (vitest en contenedor, Node 20.20.2; el contenedor no tiene Chromium de Playwright) · Node local v18.19.1 por defecto, **Node 24 disponible en nvm** (`/home/pato/.nvm/versions/node/v24.18.0/bin`): vitest, Storybook y playwright-cli corren en local con él
 - Bitácora:
@@ -32,3 +35,6 @@
   - 2026-10-18 Lote 2c (Compras) implementado: endpoint de analítica de OC (solo las cifras que se muestran), orden en servidor, vista nueva (1042 → ~180 líneas), notas migradas (el modo sí estaba vivo, TC-051), `Collection.Toolbar action` (TC-050), helpers de analítica comunes en `core/analytics.py`. El servidor de desarrollo cayó durante la verificación posterior a `/simplify` (TC-052).
   - 2026-10-18 `/code-review` del 2c: 7 corregidos (orden por defecto del ViewSet, iterator, productos por id, test con líneas, modelo en vez de serializer, Toolbar vacío, import de story); 3 sin cambio por paridad. Verificación final en la app hecha. TC-053 y TC-054 para el usuario.
   - 2026-10-18 Usuario: commit de seguimiento del 2c (TC-054) y corrección de TC-053 (dos páginas con `"use client"` + `metadata`). Lote 2c cerrado.
+  - 2026-10-18 Puerta D del lote 3 presentada. Hallazgos: TC-012 sigue vivo; ninguna superficie P1 usa `OrderLine` (8 tipos locales); el "al menos una" de `editableSchema` cuenta cualquier celda (falla con costo inicial > 0); TC-055 (UoM en Step3); TC-056 (paridad Facturado/Recibido).
+  - 2026-10-18 Lote 3a implementado. El ciclo de imports (barrels de shared → features) obligó a mover la mitad pura de la superficie editable a `core/` y a dejar `docRef` sin imports, como primera exportación de su barrel. TC-057: las acciones de la ficha nunca abrían su drawer (corregido en `Drawer`). TC-058: bodegas vacías en el despacho. `/simplify` (4 revisores) y `/code-review` (8 de 10 corregidos).
+  - 2026-10-18 Revisión del objetivo pedida por el usuario: la migración iba al ~12 % y derivaba a asistentes/formularios y backend (TC-060). Fase 7 replanificada en oleadas 0 y A–E con reglas M1–M8 (`07` §6); 3b/3c congelados.

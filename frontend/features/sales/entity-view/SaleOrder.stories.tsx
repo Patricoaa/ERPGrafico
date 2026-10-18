@@ -14,16 +14,15 @@ import {
     useEntityCollection,
 } from "@/components/entity-view"
 import { withEntityView } from "@/components/entity-view/stories/withEntityView"
-import { deliveryLinesEditable, orderLineEntity, orderLineViews } from "@/features/orders/entity-view/orderLine.entity"
-import type { OrderLine } from "@/features/orders/types"
+import { deliveryLinesEditable, orderLineEntity, orderLineViews, type OrderLine } from "@/features/orders"
 import type { SaleOrder } from "../types"
 import { saleOrderEntity, saleOrderViews } from "./saleOrder.entity"
 
 const LINES: OrderLine[] = [
     { id: 11, product: 1, product_name: "Papel couché 150 g", uom_name: "Hoja", quantity: 1000, quantity_delivered: 400, price_unit: 1190, unit_price_net: 1000, subtotal: 1190000, subtotal_net: 1000000 },
-    { id: 12, product: 4, product_name: "Tarjetas de visita 4/4", uom_name: "Millar", quantity: 5, quantity_delivered: 0, price_unit: 29750, unit_price_net: 25000, subtotal: 148750, subtotal_net: 125000, requires_advanced_manufacturing: true, work_order_summary: { id: 77, status: "IN_PROGRESS", display_id: "OT-0077" } },
+    { id: 12, product: 4, product_name: "Tarjetas de visita 4/4", uom_name: "Millar", quantity: 5, quantity_delivered: 0, price_unit: 29750, unit_price_net: 25000, subtotal: 148750, subtotal_net: 125000, product_type: "MANUFACTURABLE", requires_advanced_manufacturing: true, work_order_summary: { id: 77, status: "IN_PROGRESS", display_id: "OT-0077" } },
     { id: 13, product: 3, product_name: "Diseño de pieza gráfica", uom_name: "Unidad", quantity: 1, quantity_delivered: 1, price_unit: 59500, unit_price_net: 50000, subtotal: 59500, subtotal_net: 50000 },
-    { id: 14, product: 9, product_name: "Volantes 1/0 carta", uom_name: "Millar", quantity: 3, quantity_delivered: 0, price_unit: 35700, unit_price_net: 30000, subtotal: 107100, subtotal_net: 90000, requires_advanced_manufacturing: true },
+    { id: 14, product: 9, product_name: "Volantes 1/0 carta", uom_name: "Millar", quantity: 3, quantity_delivered: 0, price_unit: 35700, unit_price_net: 30000, subtotal: 107100, subtotal_net: 90000, product_type: "MANUFACTURABLE", requires_advanced_manufacturing: true },
 ]
 
 const ORDERS = [
@@ -90,7 +89,7 @@ export const Table: Story = {}
 export const Cards: Story = { args: { defaultView: "card" } }
 export const Dark: Story = { args: { defaultView: "card" }, globals: { theme: "dark" } }
 
-/** Lines in the document sheet: references via the documents extension, footer total, OC without the OT column. */
+/** Lines in the document sheet: references via the documents extension; OC shows "Recibido" and no OT column. */
 export const Lines: Story = { render: () => <OrderLines /> }
 export const PurchaseLines: Story = { render: () => <OrderLines purchase /> }
 

@@ -100,3 +100,66 @@ describe("EditableCollection inside an RHF + zod form (P1)", () => {
         expect(input).toHaveValue(6)
     })
 })
+
+// ─── Lote 3a: processed inputs, domain check and per-row status ─────────────
+
+const receiptDef = defineEditable(entity, {
+    rowKey: (l) => l.id,
+    context: ["name"],
+    inputs: {
+        qty: { kind: "quantity", header: "A recibir", label: (l) => `Cantidad — ${l.name}`, initial: () => 0, check: (l, v) => (v > l.quantity ? "Excede lo pedido" : undefined) },
+        cost: { kind: "money", header: "Costo", label: (l) => `Costo — ${l.name}`, initial: () => 1000 },
+    },
+    processed: ["qty"],
+    rowStatus: (l, v) => (v.qty <= 0 ? null : v.qty === l.quantity ? { status: "received", label: "Completo", intent: "success" } : { status: "partial", label: "Parcial", intent: "warning" }),
+    bulk: ["clear"],
+})
+
+const RECEIPT_ROWS: Line[] = [{ id: 7, name: "Tinta", quantity: 5, delivered: 0, blocked: false }]
+
+function ReceiptForm() {
+    const schema = React.useMemo(() => z.object({ lines: editableSchema(receiptDef, RECEIPT_ROWS) }), [])
+    const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { lines: initialEditableValues(receiptDef, RECEIPT_ROWS) } })
+    const lines = form.watch("lines")
+    return (
+        <form onSubmit={form.handleSubmit(() => undefined)}>
+            <Controller
+                control={form.control}
+                name="lines"
+                render={({ field }) => (
+                    <EditableCollection definition={receiptDef} rows={RECEIPT_ROWS} value={field.value} onChange={field.onChange} errors={editableErrorsFromForm(form.formState.errors.lines, lines)} label="Recepción" />
+                )}
+            />
+            <Button type="submit">Recibir</Button>
+        </form>
+    )
+}
+
+describe("EditableCollection · processed / check / rowStatus", () => {
+    it("a non-processed input (cost) does not satisfy 'at least one'", () => {
+        const result = editableSchema(receiptDef, RECEIPT_ROWS).safeParse(initialEditableValues(receiptDef, RECEIPT_ROWS))
+        expect(result.success).toBe(false)
+        expect(result.error?.issues.map((i) => i.message)).toContain("Ingresa al menos una cantidad")
+    })
+
+    it("runs the domain check inside the schema", () => {
+        const result = editableSchema(receiptDef, RECEIPT_ROWS).safeParse([{ key: "7", values: { qty: 9, cost: 1000 } }])
+        expect(result.error?.issues[0]).toMatchObject({ path: [0, "values", "qty"], message: "Excede lo pedido" })
+    })
+
+    it("shows the per-row status from the entered values and 'Limpiar' keeps the cost", async () => {
+        const user = userEvent.setup()
+        render(<ReceiptForm />)
+        const qty = screen.getByRole("spinbutton", { name: "Cantidad — Tinta" })
+        await user.clear(qty)
+        await user.type(qty, "2")
+        expect(screen.getByText("Parcial")).toBeInTheDocument()
+        await user.clear(qty)
+        await user.type(qty, "5")
+        expect(screen.getByText("Completo")).toBeInTheDocument()
+        await user.click(screen.getByRole("button", { name: "Limpiar" }))
+        expect(qty).toHaveValue(0)
+        expect(screen.getByRole("spinbutton", { name: "Costo — Tinta" })).toHaveValue(1000)
+        expect(screen.queryByText("Completo")).not.toBeInTheDocument()
+    })
+})
