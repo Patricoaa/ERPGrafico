@@ -2,21 +2,21 @@
 
 import React from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { EmployeeDrawer } from "@/features/hr"
-import type { Employee } from "@/types/hr"
-import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableView, AutoEntityCard } from '@/components/shared'
+import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
+import { EmployeeDrawer, useEmployees } from "@/features/hr"
 import { employeeActions, type EmployeeActionsCtx } from "@/features/hr/employeeActions"
-import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
-import { getEntityIcon } from "@/lib/entity-registry"
+import type { Employee } from "@/types/hr"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { useEmployees } from "@/features/hr"
 import { employeeUnifiedSearchDef } from "../unifiedSearchDef"
-import { employeeFields } from "../employeeFields"
+import { employeeEntity, employeeViews } from "../entity-view/employee.entity"
 
 interface EmployeeClientViewProps {
     initialEmployees?: Employee[]
 }
+
+/** Search group keys → entity field ids (grouping uses the formatted cell text). */
+const EMPLOYEE_GROUPS: Record<string, FieldId<typeof employeeEntity.fields>> = { status: "status", contract_type: "contractType", department: "department" }
 
 export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps) {
     const createAction = <ToolbarCreateButton label="Nuevo Empleado" href="/hr/employees?modal=new" />
@@ -25,6 +25,14 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
     const searchParams = useSearchParams()
     const search = useUnifiedSearch(employeeUnifiedSearchDef)
     const { employees, isLoading: loading, isRefetching, refetch: fetchEmployees, error } = useEmployees(search.filters, initialEmployees)
+    const groupBy = search.groupBy ? EMPLOYEE_GROUPS[search.groupBy] ?? null : null
+    const { view, onViewChange } = useCollectionViewMode("hr.employee")
+    const collection = useEntityCollection(
+        employeeEntity,
+        { rows: employees, isLoading: loading, isRefetching, error, refetch: fetchEmployees, isFiltered: search.isFiltered },
+        // Groups span the whole list, not one page.
+        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
+    )
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Employee>({
         endpoint: '/hr/employees'
     })
@@ -52,71 +60,31 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
         },
     }
 
-    const columns: ColumnDef<Employee>[] = [
-        ...employeeFields.toColumns(),
-        employeeActions.auto(actionsCtx),
-    ]
-
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            {error && (
-                <div className="mx-4 mt-2 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                    Error al cargar empleados: {error.message}
-                </div>
-            )}
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    entityLabel="hr.employee"
-                    columns={columns}
-                    data={employees}
-                    isLoading={loading}
-                    isRefetching={isRefetching}
-                    variant="embedded"
-                    unifiedSearch={<UnifiedSearchBar
+            <Collection.Root
+                collection={collection}
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(emp) => actionsCtx.onEdit(emp.id)}
+                actions={employeeActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar
                         config={employeeUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
+                        {...bindUnifiedSearch(search)}
                         placeholder="Buscar por nombre o RUT..."
-                    />}
-                    unifiedSearchConfig={employeeUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    defaultPageSize={20}
-                    createAction={createAction}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "users",
-                        title: "Aún no hay empleados",
-                        description: "Registra a tu personal para gestionar nóminas, anticipos e inasistencias.",
-                    }}
-                    renderCard={(emp: Employee) => (
-                        <AutoEntityCard
-                            key={emp.id}
-                            data={emp}
-                            fields={employeeFields}
-                            entityLabel="hr.employee"
-                            icon={getEntityIcon('hr.employee')}
-                            iconClassName="text-primary bg-primary/10"
-                            actions={employeeActions.render(emp, actionsCtx)}
-                            defaultAction={employeeActions.defaultAction(actionsCtx)?.(emp) ?? (() => {
-                                const params = new URLSearchParams(searchParams.toString())
-                                params.set('selected', String(emp.id))
-                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                            })}
-
-                        />
-                    )}
+                    />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={employeeViews.table}
+                    card={employeeViews.card}
+                    emptyTitle="Aún no hay empleados"
+                    emptyDescription="Registra a tu personal para gestionar nóminas, anticipos e inasistencias."
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+            </Collection.Root>
             <EmployeeDrawer
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}

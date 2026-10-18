@@ -36,7 +36,7 @@ export function useSubscriptions(filters?: FilterState) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: subscriptions, isLoading, refetch } = useQuery({
+    const { data: subscriptions, isLoading, isError, refetch } = useQuery({
         queryKey: [...SUBSCRIPTIONS_QUERY_KEY, filters],
         queryFn: async (): Promise<Subscription[]> => {
             const params = new URLSearchParams()
@@ -67,6 +67,8 @@ export function useSubscriptions(filters?: FilterState) {
     return {
         subscriptions: subscriptions ?? [],
         isLoading,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError,
         refetch,
         pauseSubscription: pauseMutation.mutateAsync,
         resumeSubscription: resumeMutation.mutateAsync,

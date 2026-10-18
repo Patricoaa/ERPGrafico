@@ -27,7 +27,6 @@ export { purchaseOrderUnifiedSearchDef, subscriptionUnifiedSearchDef } from './u
 
 export type { SubscriptionActionsCtx } from './subscriptionActions'
 export { subscriptionActions } from './subscriptionActions'
-export { subscriptionFields } from './subscriptionFields'
 export type { Subscription, SubscriptionStats } from './hooks/useSubscriptions'
 export {
   SUBSCRIPTIONS_QUERY_KEY,

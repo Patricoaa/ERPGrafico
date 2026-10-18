@@ -29,6 +29,8 @@ export function useAbsences(filters?: FilterState, initialData?: Absence[]) {
     return {
         absences,
         isLoading: showSkeleton,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError: query.isError,
         refetch,
         isRefetching,
     }

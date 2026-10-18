@@ -4,33 +4,32 @@ import { showApiError } from "@/lib/errors"
 
 import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import {
-    type ColumnDef
-} from "@tanstack/react-table"
-import { Checkbox } from "@/components/ui/checkbox"
-import type { BulkAction } from "@/components/shared"
-import {
-    Pause,
-    Play,
-    AlertCircle,
-    Archive
-} from "lucide-react"
+import { Pause, Play, AlertCircle, Archive } from "lucide-react"
 import { toast } from "sonner"
-
-import { ActionConfirmModal, AutoEntityCard } from '@/components/shared'
+import {
+    ActionConfirmModal,
+    DataCell,
+    PageHeader,
+    PageHeaderButton,
+    StatCard,
+    UnifiedSearchBar,
+    bindUnifiedSearch,
+    useUnifiedSearch,
+    type BulkAction,
+    type KpiCardDef,
+} from "@/components/shared"
+import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
 import { ProductDrawer, ArchivingRestrictionsModal, useProducts, type Restriction } from "@/features/inventory"
 import type { ProductInitialData } from "@/types/forms"
-import { SubscriptionHistoryModal } from "./SubscriptionHistoryModal"
-import { DataTableView, DataCell } from '@/components/shared'
 import type { Product } from "@/types/entities"
-import type { KpiCardDef } from '@/components/shared'
+import { SubscriptionHistoryModal } from "./SubscriptionHistoryModal"
 import { subscriptionActions, type SubscriptionActionsCtx } from "../subscriptionActions"
-import { PageHeader, PageHeaderButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
-
-
 import { useSubscriptions, useSubscriptionStats, type Subscription } from "../hooks/useSubscriptions"
 import { subscriptionUnifiedSearchDef } from "../unifiedSearchDef"
-import { subscriptionFields } from "../subscriptionFields"
+import { subscriptionEntity, subscriptionViews } from "../entity-view/subscription.entity"
+
+/** Search group keys → entity field ids (grouping uses the formatted cell text). */
+const SUBSCRIPTION_GROUPS: Record<string, FieldId<typeof subscriptionEntity.fields>> = { status: "status", recurrence_period: "period" }
 
 // Subscription type imported from useSubscriptions hook
 
@@ -50,7 +49,15 @@ interface SubscriptionsClientViewProps {
 
 export function SubscriptionsClientView({ hideHeader = false, externalOpen = false, createAction }: SubscriptionsClientViewProps) {
     const search = useUnifiedSearch(subscriptionUnifiedSearchDef)
-    const { subscriptions, isLoading: loading, refetch: fetchSubscriptions, pauseSubscription, resumeSubscription } = useSubscriptions(search.filters)
+    const { subscriptions, isLoading: loading, isError, refetch: fetchSubscriptions, pauseSubscription, resumeSubscription } = useSubscriptions(search.filters)
+    const groupBy = search.groupBy ? SUBSCRIPTION_GROUPS[search.groupBy] ?? null : null
+    const { view, onViewChange } = useCollectionViewMode("inventory.subscription")
+    const collection = useEntityCollection(
+        subscriptionEntity,
+        { rows: subscriptions, isLoading: loading, error: isError, refetch: fetchSubscriptions, isFiltered: search.isFiltered },
+        // Groups span the whole list, not one page.
+        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
+    )
     const { data: stats } = useSubscriptionStats<Stats>()
     const kpiCards = useMemo<KpiCardDef[] | undefined>(() => {
         if (!stats) return undefined
@@ -211,41 +218,6 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
         },
     }), [subscriptions, handlePause, handleResume, openSubscription])
 
-    const columns = useMemo<ColumnDef<Subscription>[]>(() => {
-        return [
-            {
-                id: "select",
-                header: ({ table }) => (
-                    <Checkbox
-                        checked={
-                        table.getIsAllPageRowsSelected()
-                            ? true
-                            : table.getIsSomePageRowsSelected()
-                            ? "indeterminate"
-                            : false
-                    }
-                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                        aria-label="Select all"
-                        variant="circle"
-                    />
-                ),
-                cell: ({ row }) => (
-                    <Checkbox
-                        checked={row.getIsSelected()}
-                        onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label="Select row"
-                        variant="circle"
-                    />
-                ),
-                enableSorting: false,
-                enableHiding: false,
-                size: 40,
-            },
-            ...subscriptionFields.toColumns(),
-            subscriptionActions.auto(actionsCtx),
-        ]
-    }, [actionsCtx])
-
     const bulkActions = useMemo<BulkAction<Subscription>[]>(() => [
         {
             key: "pause",
@@ -319,54 +291,37 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                 </PageHeader>
             )}
 
-            <DataTableView
-                kpiCards={kpiCards}
-                entityLabel="inventory.subscription"
-                columns={columns}
-                data={subscriptions}
-                isLoading={loading}
-                variant="embedded"
-                unifiedSearch={<UnifiedSearchBar
-                    config={subscriptionUnifiedSearchDef}
-                    chips={search.chips}
-                    isFiltered={search.isFiltered}
-                    inputValue={search.inputValue}
-                    onInputChange={search.setInputValue}
-                    onApply={search.applyFilter}
-                    onRemove={search.removeFilter}
-                    onClearAll={search.clearAll}
-                    groupBy={search.groupBy}
-                    onGroupBySelect={search.setGroupBy}
-                    paramValues={search.paramValues}
-                    placeholder="Buscar suscripciones..."
-                />}
-                unifiedSearchConfig={subscriptionUnifiedSearchDef}
-                currentGroupBy={search.groupBy}
-                showReset={search.isFiltered}
-                onReset={search.clearAll}
-                defaultPageSize={20}
-                bulkActions={bulkActions}
-                createAction={createAction}
-                isFiltered={search.isFiltered}
-                emptyState={{
-                    context: "inventory",
-                    title: "Aún no hay suscripciones",
-                    description: "Crea una suscripción para gestionar cobros o pagos recurrentes.",
-                }}
-                renderCard={(sub: Subscription) => (
-                    <AutoEntityCard 
-                        key={sub.id} 
-                        data={sub}
-                        fields={subscriptionFields}
+            {kpiCards && (
+                <div className="grid shrink-0 gap-4 md:grid-cols-4">
+                    {kpiCards.map((card) => <StatCard key={card.label} {...card} loading={loading} />)}
+                </div>
+            )}
 
-                        entityLabel="inventory.subscription"
-                        onClick={() => openSubscription(sub.id, "edit")} 
-                        defaultAction={subscriptionActions.defaultAction(actionsCtx)?.(sub) ?? null}
-
-                        actions={subscriptionActions.render(sub, actionsCtx)}
+            <Collection.Root
+                collection={collection}
+                selection="bulk"
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(sub) => openSubscription(sub.id, "edit")}
+                actions={subscriptionActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar
+                        config={subscriptionUnifiedSearchDef}
+                        {...bindUnifiedSearch(search)}
+                        placeholder="Buscar suscripciones..."
                     />
-                )}
-            />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={subscriptionViews.table}
+                    card={subscriptionViews.card}
+                    emptyTitle="Aún no hay suscripciones"
+                    emptyDescription="Crea una suscripción para gestionar cobros o pagos recurrentes."
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
+                />
+                <Collection.BulkBar actions={bulkActions} />
+            </Collection.Root>
 
             <ProductDrawer
                 open={isEditOpen}

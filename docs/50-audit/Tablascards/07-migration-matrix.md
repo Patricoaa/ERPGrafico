@@ -832,3 +832,44 @@ Sin cambio (registrados como diferencias intencionales):
 
 Verificación posterior: `tsc` y `eslint` limpios en los archivos tocados; vitest `components/entity-view` + contrato 75/75; `features/{inventory,settings,users,sales,purchasing,orders}` 38/38.
 
+
+### 6.16 Resultado del sub-lote A2 — RR. HH., POS y suscripciones (2026-10-18)
+
+6 pantallas, 6 entidades, 6 `*Fields` borrados (más el export `subscriptionFields` del barrel de purchasing).
+
+| Pantalla | Entidad | Diferencias intencionales frente a la versión anterior |
+|---|---|---|
+| `hr/EmployeeClientView` | `hr/entity-view/employee.entity.ts` | el banner de error propio se sustituye por el estado de error de la colección; agrupación por estado, tipo de contrato (campo oculto `contractType`) y departamento sobre la lista completa |
+| `hr/AbsenceClientView` | `absence.entity.ts` | orden inicial por inicio descendente; se mantiene el `confirm()` nativo al borrar (M1, deuda) |
+| `hr/SalaryAdvanceClientView` | `salaryAdvance.entity.ts` | el `computed` de dos líneas (nombre + código) pasa a dos columnas; **las cards ya no se agrupan por fecha** (`cardGroupBy`, 1 solo consumidor → no entra al núcleo, M2); orden por fecha descendente; el monto pierde el tono `warning` |
+| `sales/PosTerminalClientView` | `sales/entity-view/posTerminal.entity.ts` | etiqueta única `treasury.terminal` (antes `sales.posterminal` en la card); la card inactiva usa tono `muted` en vez de `grayscale` |
+| `sales/POSSessionsClientView` | `posSession.entity.ts` | folio con `formatEntityDisplay("pos.session", { id })` sin `as unknown as`; abrir la fila abre el informe X/Z según el estado (igual que antes) |
+| `purchasing/SubscriptionsClientView` | `purchasing/entity-view/subscription.entity.ts` | las 4 tarjetas KPI se componen encima de la colección con `StatCard` (2 consumidores de `kpiCards` → composición, no núcleo); el monto usa la moneda de la suscripción; agrupación por estado y período (campo oculto `period`) |
+
+Hooks con `isError`: `useAbsences`, `useSalaryAdvances`, `usePosTerminals`, `usePOSSessions`, `useSubscriptions` (`useEmployees` ya exponía `error`).
+
+**Incidente (TC-064):** durante el A2 reaparecieron como no rastreados los 9 `*Fields` borrados en los commits de la oleada 0 y del A1, todos con la misma marca de tiempo (18:59:50) y permisos `-rw-------`. Probable origen: una sincronización (mutagen reconfigurado a 192.168.1.86 por el usuario, o el cliente de Nextcloud) que no conocía los borrados. El ratchet `LEGACY_CONSUMERS` lo detectó ("no new file consumes the legacy system"). Se verificó que los 9 eran idénticos a su versión previa en git y se borraron. Hay que revisar la sincronización antes de volver a conectarla.
+
+**Verificación**
+- `tsc` sin errores; `eslint` sin errores ni avisos en los archivos tocados.
+- vitest: `components/entity-view` + contrato 75/75; `features/{hr,sales,pos,purchasing,inventory}` 31/31.
+- Avance: 20 entidades · 74 pantallas · 46 `*Fields` · 41 `computed` · 42 `toColumns` · 30 `AutoEntityCard` · 120 consumidores.
+- **Sin verificar en la app real** (servidor sin sincronizar).
+
+**`/code-review` medium del A2 (10 hallazgos)**
+
+Corregidos (3):
+1. **TC-065 · Ventas de la sesión POS:** `total_cash_sales + total_card_sales` concatenaba texto (DRF serializa `DecimalField` como string y no hay `COERCE_DECIMAL_TO_STRING`). El sistema antiguo hacía lo mismo y `parseFloat("1000.00500.00")` mostraba solo el efectivo. Ahora suma con `toNumber`; test de regresión.
+2. Agrupar inasistencias por tipo mostraba el código (`PERMISO_SIN_GOCE`) en la cabecera del grupo: campo oculto `absenceTypeLabel` sobre `absence_type_display`.
+3. El monto de suscripciones con moneda por fila redondeaba USD sin decimales: se vuelve a la paridad (sin `currency`, M1).
+
+Sin cambio (registrados):
+- `cardGroupBy` y el estilo del monto/empleado en anticipos: diferencias intencionales ya listadas arriba.
+- Sueldo base vacío muestra "—" en vez de $0: regla global R2 del lote 1.
+- **TC-066:** la búsqueda "N° Anticipo" filtra en cliente por `display_id`, que `SalaryAdvance` no tiene. Ya pasaba con el sistema antiguo (mismo `filterFn` y misma definición de búsqueda): defecto previo, fuera de la migración (M1).
+- `POSSession` se tipa desde el archivo del componente (igual que antes); el tipo de `types/pos.ts` difiere (sin `CLOSING` ni `id_display`), unificarlo es trabajo aparte.
+- `forCollection(ctx)` sin memorizar: es el patrón de la referencia (`UoMClientView`); sin medición de coste no se cambia.
+- Rejilla de KPI duplicada respecto de `DataTable`: 2 consumidores; se extraerá a `@/components/shared` si aparece un tercero (M2).
+
+Verificación posterior: `tsc` y `eslint` limpios; vitest `components/entity-view` + contrato 75/75; `features/{hr,sales,pos,purchasing}` 22/22.
+

@@ -2,20 +2,18 @@
 
 import { useMemo } from "react"
 import { useSearchParams, usePathname, useRouter } from "next/navigation"
+import { Plus } from "lucide-react"
+import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { Button } from "@/components/ui/button"
 import { usePosTerminals } from "@/features/sales"
 import type { Terminal } from "@/features/treasury"
-import { Button } from "@/components/ui/button"
-
-import { ActionConfirmModal, DataTableView, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { posTerminalActions, type PosTerminalActionsCtx } from "@/features/sales/posTerminalActions"
 import { terminalPosUnifiedSearchDef } from "@/features/pos/unifiedSearchDef"
-import { type ColumnDef } from "@tanstack/react-table"
-import { posTerminalFields } from "../posTerminalFields"
-import { Plus } from "lucide-react"
-
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { posTerminalEntity, posTerminalViews } from "../entity-view/posTerminal.entity"
 import { PosTerminalDrawer } from "./PosTerminalDrawer"
 
 interface PosTerminalClientViewProps {
@@ -25,7 +23,7 @@ interface PosTerminalClientViewProps {
 }
 
 export function PosTerminalClientView({ externalOpen, onExternalOpenChange, createAction }: PosTerminalClientViewProps) {
-    const { terminals, toggleActive, deleteTerminal, refetch, isLoading } = usePosTerminals()
+    const { terminals, toggleActive, deleteTerminal, refetch, isLoading, isError } = usePosTerminals()
     const search = useUnifiedSearch(terminalPosUnifiedSearchDef)
     const searchParams = useSearchParams()
     const pathname = usePathname()
@@ -79,62 +77,41 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
         onDelete: (terminal) => handleDelete(terminal),
     }
 
-    const columns: ColumnDef<Terminal>[] = [
-        ...posTerminalFields.toColumns(),
-        posTerminalActions.auto(actionsCtx),
-    ]
+    const { view, onViewChange } = useCollectionViewMode("treasury.terminal")
+    const collection = useEntityCollection(
+        posTerminalEntity,
+        { rows: filteredTerminals, isLoading, error: isError, refetch, isFiltered: search.isFiltered },
+        { pagination: { mode: "client", pageSize: 20 } },
+    )
+    const toolbarAction = createAction || (
+        <Button onClick={() => {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set("modal", "new")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        }} className="h-9">
+            <Plus className="mr-2 h-4 w-4" /> Crear Punto de Venta
+        </Button>
+    )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    entityLabel="treasury.terminal"
-                    columns={columns}
-                    data={filteredTerminals}
-                    isLoading={isLoading}
-                    variant="embedded"
-                    defaultPageSize={20}
-                    unifiedSearch={<UnifiedSearchBar
-                        config={terminalPosUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                    />}
-                    unifiedSearchConfig={terminalPosUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    createAction={createAction || (
-                        <Button onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString())
-                            params.set("modal", "new")
-                            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-                        }} className="h-9">
-                            <Plus className="mr-2 h-4 w-4" /> Crear Punto de Venta
-                        </Button>
-                    )}
-                    renderCard={(terminal: Terminal) => (
-                            <AutoEntityCard 
-                                key={terminal.id} 
-                                data={terminal}
-                                fields={posTerminalFields}
-
-                                entityLabel="sales.posterminal"
-                                onClick={() => openSelected(terminal.id)} 
-                                defaultAction={posTerminalActions.defaultAction(actionsCtx)?.(terminal) ?? null} 
-                                className={!terminal.is_active ? "grayscale bg-muted/20" : ""}
-                                actions={posTerminalActions.render(terminal, actionsCtx)}
-                            />
-                        )}
+            <Collection.Root
+                collection={collection}
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(terminal) => openSelected(terminal.id)}
+                actions={posTerminalActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar action={toolbarAction}>
+                    <UnifiedSearchBar config={terminalPosUnifiedSearchDef} {...bindUnifiedSearch(search)} />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={posTerminalViews.table}
+                    card={posTerminalViews.card}
+                    emptyAction={toolbarAction}
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+            </Collection.Root>
 
             <PosTerminalDrawer
                 open={dialogOpen}
