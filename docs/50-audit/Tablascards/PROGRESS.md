@@ -1,11 +1,11 @@
 # Progreso — Nuevo sistema de presentación
 - **Avance (2026-10-18): 33 entidades `defineEntity` · 62 pantallas y 98 consumidores en el sistema antiguo** (`bash frontend/scripts/entity-view-progress.sh`)
-- Fase actual: 7 · oleada A **completa y commiteada** (A1-A4 + cierres, `07` §6.21) · TC-071/TC-072 corregidos (`07` §6.22) · próximo: Puerta D de la oleada B
-- Último completado: TC-071/TC-072 — `CreditLineDrawer.tsx` y `JournalEntryDrawer.tsx` quedaron sin compilar tras dos commits directos del usuario (migración de antipatrones de formulario a `Labeled*` incompleta); corregidos con `Controller` (RHF) y `LabeledContainer` respectivamente. `tsc` limpio en todo el frontend. Detalle en `07` §6.22
-- Próximo paso exacto: Puerta D de la oleada B (documentos con hub: facturas, asientos, impuestos)
+- Fase actual: 7 · oleada A **completa y commiteada** (A1-A4 + cierres, `07` §6.21) · TC-071/TC-072 corregidos (`07` §6.22) · Puerta D de la oleada B **presentada** (`07` §6.23), esperando decisión del usuario
+- Último completado: Puerta D de la oleada B — forense de B1 (facturación), B2 (asientos/impuestos), B3 (documental de inventario), B5 (nómina/presupuestos/socios); B4 (órdenes de trabajo) queda fuera con Puerta D propia. 3 preguntas abiertas: orden de sub-lotes, proceso ligero vs. completo (M5) para B1-B3, y si `BudgetDetailView` va en B5 o se mueve a la oleada D. Detalle en `07` §6.23
+- Próximo paso exacto: decisión del usuario sobre la Puerta D de la oleada B → implementar B1 (facturas)
 - Rama: `refactor/entity-view-lote-3` (oleada A + cierres + TC-071/072 commiteados en `d919808b4`, `3e1114377` y el commit pendiente de esta corrección); issues abiertas #176, #177
 - Puertas: A ✅ · B ✅ · C ✅ · D lote 1 ✅ · D 2a ✅ · D 2b ✅ · D 2c ✅ (2026-10-17) · D lote 3 ✅ (2026-10-18) · replanificación ✅ (2026-10-18) · D A1 ✅ (2026-10-18) · oleada A completa ✅ (2026-10-18)
-- Preguntas abiertas para el usuario: credenciales de demo
+- Preguntas abiertas para el usuario: Puerta D de la oleada B (`07` §6.23, 3 preguntas); credenciales de demo
 - Decisiones del usuario:
   - 2026-10-17: las tablas de wizard/modal entran como caso de uso específico · `as any` de `AutoEntityCard.tsx:390` espera al rediseño · `journalEntryFields` lo determina la auditoría (→ TC-016) · TC-012 se corrige en la migración
   - 2026-10-17 Puerta A: aprueba RC1–RC8 y la matriz C/F/E; pantallas de la Fase 4 = UoM, OV, Compras; aprueba `role="grid"` → `role="table"` en `compact`; **exportación = requisito** (aclarado)
