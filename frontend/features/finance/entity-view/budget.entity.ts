@@ -11,7 +11,7 @@ export const budgetEntity = defineEntity<Budget>()((f) => ({
     fields: {
         name: f.text("name", { label: "Nombre" }),
         description: f.text("description", { label: "Descripción", tone: "secondary" }),
-        period: f.text((b) => `${b.start_date} - ${b.end_date}`, { label: "Periodo" }),
+        period: f.dateRange((b) => ({ from: b.start_date, to: b.end_date }), { label: "Periodo" }),
     },
 }))
 

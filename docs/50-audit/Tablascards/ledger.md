@@ -397,3 +397,13 @@
 - Efecto: 1 test en rojo (`lib/__tests__/entity-view.contract.test.ts`), aislado a este archivo; no bloquea la oleada B (la pantalla de lista, `EntriesClientView.tsx`, abre la ficha vía `useDocumentSheetRoute` y no depende de los internos de `JournalEntrySheet.tsx`)
 - Estado: pendiente del usuario; es su propio código (ficha documental de asientos, fuera de la migración de entity-view). No se corrige aquí: migrar esa tabla de líneas a `entity-view`/`EditableCollection` es trabajo de la ficha documental, no de B2
 
+### TC-074 · Defecto del sistema actual · Verificado (`/code-review` del B5)
+- Evidencia: el estado de error de `Collection` (`components/entity-view/surfaces/Collection.tsx:260`) muestra un mensaje genérico ("No pudimos cargar…") y nunca lee `error.message`. `PartnersClientView.tsx` legacy mostraba el mensaje real del backend (`Error al cargar socios: {error.message}`); al migrar se pierde ese detalle
+- Efecto: ninguno nuevo de este sub-lote — es el comportamiento ya establecido de `Collection` que usa **toda** pantalla migrada hasta ahora (A1-B5); perder el `error.message` específico es una compensación sistémica ya aceptada, no algo que B5 introduce
+- Estado: registrado para el núcleo (`Collection`), no para esta pantalla. Si se decide mostrar el mensaje real, es una mejora de `component-entity-view.md`/`Collection.tsx` que toca todas las pantallas migradas, no un arreglo puntual de B5
+
+### TC-075 · Falso positivo · Descartado (`/code-review` del B5, verificado y rechazado)
+- Hallazgo reportado: el kind local `partnerBalance` (dinero con tono condicional por signo) "reinventa" un patrón que ya existiría como una opción `tone` en otros kinds de dinero (citando `salesInvoice.entity.ts`, `journalEntry.entity.ts`, `saleOrder.entity.ts`, `posTerminal.entity.ts`, `paymentMethod.entity.ts`)
+- Verificación: los 5 archivos citados usan `tone` exclusivamente en `media: { tone: (fila) => ... }` — el color de fondo del ícono de la **card**, una opción de `CardMedia<T>` (nivel de la ficha completa, un valor por fila), no una opción del kind `money` ni de ningún otro kind de **valor de celda**. Ningún archivo del proyecto aplica un tono condicional al texto de un monto por signo; `grep` confirmado
+- Estado: descartado — no hay patrón existente que reusar; `partnerBalance` llena un hueco real (igual que concluyó el revisor de "altitude" del `/simplify` del mismo sub-lote)
+

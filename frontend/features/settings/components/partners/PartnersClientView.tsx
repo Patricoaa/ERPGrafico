@@ -3,31 +3,26 @@
 import React, { useEffect, useState, useMemo } from "react"
 import {
     Plus,
-    AlertCircle,
     MoveHorizontal,
-    PieChart as PieChartIcon,
     Wallet,
-    Gauge,
-    TrendingUp
 } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { Button } from "@/components/ui/button"
 
 import { usePartners, netEquityPercentages } from "@/features/contacts"
-import type { Partner } from "@/features/contacts"
-import { formatCurrency } from "@/lib/money"
 import {
-    SkeletonShell,
-    DataTableView,
-    DataCell,
+    AnalyticsPanelContent,
     UnifiedSearchBar,
+    bindUnifiedSearch,
     useUnifiedSearch,
-    AutoEntityCard,
 } from "@/components/shared"
-import type { AnalyticsPanelConfig, UnifiedSearchConfig } from "@/components/shared"
+import type { UnifiedSearchConfig } from "@/components/shared"
+import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { usePartnerAnalyticsData } from "@/features/settings/hooks/usePartnerAnalyticsData"
 import { usePartnerEvolutionData } from "@/features/settings/hooks/usePartnerEvolutionData"
 import type { Granularity } from "@/lib/analytics-helpers"
-import { partnerFields } from '../../partnerFields'
+import { partnerEntity, partnerViews } from "@/features/settings/entity-view/partner.entity"
+import { buildPartnerAnalyticsScreen } from "./partnerAnalyticsScreen"
 import { partnerActions, type PartnerActionsCtx } from './partnerActions'
 import {
     SubscriptionMovementModal,
@@ -40,7 +35,6 @@ import { AddPartnerModal } from "@/features/settings/components/partners/AddPart
 import { InitialCapitalModal } from "@/features/settings/components/InitialCapitalModal"
 import { MobilizeEarningsWizard } from "@/features/settings/components/partners/MobilizeEarningsWizard"
 import { PartnerLedgerDrawer } from "@/features/settings/components/partners/PartnerLedgerDrawer"
-import { type ColumnDef } from "@tanstack/react-table"
 
 const partnerUnifiedSearchDef: UnifiedSearchConfig = {
     searchFields: [
@@ -90,6 +84,7 @@ export function PartnersClientView({
 }: PartnersClientViewProps) {
     const search = useUnifiedSearch(partnerUnifiedSearchDef)
     const { partners = [], isLoading, isFetching, refetch, error } = usePartners()
+    const { view, onViewChange } = useCollectionViewMode("settings.partner")
     const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false)
     const [isTransferOpen, setIsTransferOpen] = useState(false)
     const [isInitialSetupOpen, setIsInitialSetupOpen] = useState(false)
@@ -148,20 +143,10 @@ export function PartnersClientView({
 
     const analyticsData = usePartnerAnalyticsData(partners, granularity)
     const evolutionData = usePartnerEvolutionData(24, granularity)
-
-    const equityEvolutionChart = useMemo(() => evolutionData.periods.length > 0 ? [{
-        id: "Patrimonio Neto",
-        data: evolutionData.periods.map(p => ({ x: p.period, y: Number(p.net_equity) })),
-    }] : [], [evolutionData.periods])
-
-    const compositionEvolutionChart = useMemo(() => evolutionData.periods.length > 0 ? [
-        { id: "Aportes", data: evolutionData.periods.map(p => ({ x: p.period, y: Number(p.total_contributions) })) },
-        { id: "Retiros", data: evolutionData.periods.map(p => ({ x: p.period, y: Number(p.total_withdrawals) })) },
-        { id: "Utilidades", data: evolutionData.periods.map(p => ({ x: p.period, y: Number(p.total_earnings) })) },
-        { id: "Dividendos", data: evolutionData.periods.map(p => ({ x: p.period, y: Number(p.total_dividends) })) },
-    ] : [], [evolutionData.periods])
-
-
+    const analyticsScreen = useMemo(
+        () => buildPartnerAnalyticsScreen(analyticsData, evolutionData, { activeTab: analyticsActiveTab, onTabChange: setAnalyticsActiveTab, granularity, onGranularityChange: setGranularity }),
+        [analyticsData, evolutionData, analyticsActiveTab, granularity],
+    )
 
     const filteredPartners = useMemo(() => {
         let result = search.filterFn(partners)
@@ -189,253 +174,6 @@ export function PartnersClientView({
         })),
     [filteredPartners, equityPctById])
 
-    const analyticsPanel: AnalyticsPanelConfig = useMemo(() => ({
-        screen: {
-            entityName: "Composición Societaria",
-            activeTab: analyticsActiveTab,
-            onTabChange: setAnalyticsActiveTab,
-            granularity,
-            onGranularityChange: setGranularity,
-            tabs: [
-                {
-                    value: "composicion",
-                    label: "Composición",
-                    icon: PieChartIcon,
-                    columns: [
-                        {
-                            id: "col-kpis",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "neto-kpi",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Patrimonio Neto",
-                                            value: formatCurrency(analyticsData.totalNetEquity),
-                                            icon: TrendingUp,
-                                            accent: "primary",
-                                            valueSize: "xl",
-                                            subtext: "Valor Libro de la Compañía",
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "socios-kpi",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Socios",
-                                            value: analyticsData.partnerCount.toString(),
-                                            icon: PieChartIcon,
-                                            accent: "info",
-                                            valueSize: "xl",
-                                            subtext: "Total activos",
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                        {
-                            id: "col-evolution",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "evolution-chart",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Evolución del Patrimonio Neto",
-                                            variant: "chart",
-                                            loading: evolutionData.isLoading,
-                                            subtext: evolutionData.periods.length === 0 && !evolutionData.isLoading ? "Sin datos históricos de evolución" : undefined,
-                                            chart: {
-                                                type: "line-chart",
-                                                preset: "card",
-                                                data: equityEvolutionChart,
-                                                enableArea: true,
-                                                valueFormat: "currency",
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                    ],
-                },
-                {
-                    value: "socios",
-                    label: "Socios",
-                    icon: Gauge,
-                    columns: [
-                        {
-                            id: "col-dist",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "dist-pie",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Distribución Patrimonial",
-                                            variant: "chart",
-                                            subtext: analyticsData.equityDistribution.length === 0 ? "Sin datos de distribución" : undefined,
-                                            chart: {
-                                                type: "pie-chart",
-                                                preset: "card",
-                                                data: analyticsData.equityDistribution,
-                                                valueFormat: "currency",
-                                                innerRadius: 0.6,
-                                                enableArcLinkLabels: false,
-                                                arcLabel: (d: { id: string; value: number }) => {
-                                                    const total = analyticsData.equityDistribution.reduce((s, item) => s + item.value, 0)
-                                                    return total > 0 ? `${((d.value / total) * 100).toFixed(1)}%` : "0%"
-                                                },
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                        {
-                            id: "col-capital",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "capital-bar",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Capital Enterado vs Pendiente",
-                                            variant: "chart",
-                                            chart: {
-                                                type: "bar-chart",
-                                                preset: "card",
-                                                data: analyticsData.capitalComparison,
-                                                keys: ["paid", "pending"],
-                                                indexBy: "name",
-                                                valueFormat: "$,.0f",
-                                                borderRadius: 6,
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                        {
-                            id: "col-composition",
-                            sections: [
-                                {
-                                    id: "composition-line",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Composición Patrimonial",
-                                            variant: "chart",
-                                            loading: evolutionData.isLoading,
-                                            subtext: evolutionData.periods.length === 0 && !evolutionData.isLoading ? "Sin datos históricos de evolución" : undefined,
-                                            chart: {
-                                                type: "line-chart",
-                                                preset: "card",
-                                                data: compositionEvolutionChart,
-                                                enableArea: true,
-                                                valueFormat: "currency",
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                    ],
-                },
-                {
-                    value: "saldos",
-                    label: "Saldos",
-                    icon: Wallet,
-                    columns: [
-                        {
-                            id: "col-kpis",
-                            sections: [
-                                {
-                                    id: "retiros-kpi",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Retiros Provisorios Totales",
-                                            value: formatCurrency(analyticsData.totalWithdrawals),
-                                            icon: Wallet,
-                                            accent: "destructive",
-                                            valueSize: "xl",
-                                            subtext: "Saldos provisorios",
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "utilidades-kpi",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Utilidades Acumuladas",
-                                            value: formatCurrency(analyticsData.totalEarnings),
-                                            icon: TrendingUp,
-                                            accent: "success",
-                                            valueSize: "xl",
-                                            subtext: "Resultados retenidos",
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "dividendos-kpi",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Dividendos por Pagar",
-                                            value: formatCurrency(analyticsData.totalDividendsPayable),
-                                            icon: Wallet,
-                                            accent: "warning",
-                                            valueSize: "xl",
-                                            subtext: "Obligaciones pendientes",
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                        {
-                            id: "col-balance",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "balance-bar",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Composición de Saldos por Socio",
-                                            variant: "chart",
-                                            chart: {
-                                                type: "bar-chart",
-                                                preset: "card",
-                                                data: analyticsData.balanceComposition.map(b => ({
-                                                    name: b.name,
-                                                    patrimonio: b.equity,
-                                                    utilidades: b.earnings,
-                                                    pendiente: b.pending,
-                                                    retiros: b.withdrawals,
-                                                })),
-                                                keys: ["patrimonio", "utilidades", "pendiente", "retiros"],
-                                                indexBy: "name",
-                                                valueFormat: "$,.0f",
-                                                borderRadius: 6,
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                    ],
-                },
-            ],
-        },
-    }), [analyticsData, analyticsActiveTab, equityEvolutionChart, compositionEvolutionChart, granularity, evolutionData])
 
     const hasPartners = partners.length > 0
 
@@ -457,85 +195,64 @@ export function PartnersClientView({
         },
     }
 
-    const columns: ColumnDef<Partner>[] = [
-        {
-            accessorKey: "name",
-            header: () => <div className="text-center">Socio</div>,
-            cell: ({ row }) => (
-                <div className="flex flex-col gap-1 py-1 items-center">
-                    <DataCell.ContactLink contactId={row.original.id}>
-                        {row.original.name}
-                    </DataCell.ContactLink>
-                    {Number(row.original.partner_excess_capital) > 0 && (
-                        <div className="mt-1.5 p-1.5 bg-warning/10 border border-warning/20 rounded-sm flex items-center gap-2 overflow-hidden ring-1 ring-warning/10">
-                            <div className="flex items-center gap-1.5 text-4xs text-warning font-bold uppercase tracking-tighter">
-                                <AlertCircle className="h-2.5 w-2.5 shrink-0" />
-                                Exceso: +{formatCurrency(row.original.partner_excess_capital)}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            ),
-            meta: { title: "Socio" },
-        },
-        ...partnerFields.toColumns(),
-        partnerActions.auto(partnerActionsCtx)
-    ]
+    const toolbarActionButtons = !hasPartners
+        ? (
+            <Button size="sm" onClick={() => setIsInitialSetupOpen(true)}>
+                <Plus className="h-4 w-4 mr-1.5" />
+                Configuración Inicial
+            </Button>
+        ) : (
+            <>
+                <Button size="sm" onClick={() => setIsSubscriptionOpen(true)}>
+                    <Plus className="h-4 w-4 mr-1.5" />
+                    Nueva Suscripción
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => { setContributionTarget({}); setIsContributionOpen(true) }}>
+                    <Wallet className="h-4 w-4 mr-1.5" />
+                    Registrar Aporte
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setIsTransferOpen(true)}>
+                    <MoveHorizontal className="h-4 w-4 mr-1.5" />
+                    Transferencia
+                </Button>
+            </>
+        )
+
+    const partnerActionButtons = <>{createAction}{toolbarActionButtons}</>
+
+    const collection = useEntityCollection(
+        partnerEntity,
+        // The core already favors cached rows over a failed background refetch (ADR-0087 — rows
+        // win over `error` whenever rows.length > 0). This gate only covers the narrower case the
+        // core can't see on its own: a client filter (search.filterFn + the 4 toggle filters) that
+        // empties the *filtered* rows while the *unfiltered* list still has data — without it, that
+        // combination would read as "error" instead of "no results for this filter".
+        { rows: partnersWithPct, isLoading, isRefetching: isFetching, error: !!error && partners.length === 0, refetch, isFiltered: search.isFiltered },
+        { pagination: { mode: "client", pageSize: 20 } },
+    )
 
     return (
-        <SkeletonShell isLoading={isLoading} ariaLabel="Cargando composición societaria">
-            <div className="flex-1 min-h-0 flex flex-col">
-                {error && (
-                    <div className="mx-4 mt-2 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                        Error al cargar socios: {error.message}
-                    </div>
-                )}
-                <div className="flex-1 min-h-0">
-                    <DataTableView
-                        entityLabel="settings.partner"
-                        columns={columns}
-                        data={partnersWithPct}
-                        isRefetching={isFetching}
-                        variant="embedded"
-                        createAction={createAction}
-                        analyticsPanel={analyticsPanel}
-                        unifiedSearch={<UnifiedSearchBar
-                            config={partnerUnifiedSearchDef}
-                            chips={search.chips}
-                            isFiltered={search.isFiltered}
-                            inputValue={search.inputValue}
-                            onInputChange={search.setInputValue}
-                            onApply={search.applyFilter}
-                            onRemove={search.removeFilter}
-                            onClearAll={search.clearAll}
-                            groupBy={search.groupBy}
-                            onGroupBySelect={search.setGroupBy}
-                            paramValues={search.paramValues}
-                            placeholder="Buscar socio por nombre o ID fiscal..."
-                        />}
-                        showReset={search.isFiltered}
-                        onReset={search.clearAll}
-                        toolbarActions={
-                            !hasPartners
-                                ? [{ key: 'initial-setup', label: 'Configuración Inicial', icon: Plus, onClick: () => setIsInitialSetupOpen(true), intent: 'primary' }]
-                                : [
-                                    { key: 'new-subscription', label: 'Nueva Suscripción', icon: Plus, onClick: () => setIsSubscriptionOpen(true), intent: 'primary' },
-                                    { key: 'contribution', label: 'Registrar Aporte', icon: Wallet, onClick: () => { setContributionTarget({}); setIsContributionOpen(true) }, intent: 'success' },
-                                    { key: 'transfer', label: 'Transferencia', icon: MoveHorizontal, onClick: () => setIsTransferOpen(true), intent: 'primary' },
-                                ]
-                        }
-                        renderCard={(partner) => (
-                            <AutoEntityCard 
-                                key={partner.id}
-                                data={partner}
-                                fields={partnerFields}
-                                entityLabel="settings.partner"
-                                actions={partnerActions.render(partner, partnerActionsCtx)}
-
-                            />
-                        )}
-                    />
-                </div>
+        <div className="flex-1 min-h-0 flex flex-col">
+            <Collection.Root
+                collection={collection}
+                view={view}
+                onViewChange={onViewChange}
+                actions={partnerActions.forCollection(partnerActionsCtx)}
+            >
+                <Collection.Toolbar action={partnerActionButtons}>
+                    <UnifiedSearchBar config={partnerUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar socio por nombre o ID fiscal..." />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={partnerViews.table}
+                    card={partnerViews.card}
+                    emptyTitle="Aún no hay socios"
+                    emptyAction={partnerActionButtons}
+                    onResetFilters={search.clearAll}
+                />
+                <Collection.Analytics>
+                    <AnalyticsPanelContent {...analyticsScreen} />
+                </Collection.Analytics>
+            </Collection.Root>
 
             <SubscriptionMovementModal
                 open={isSubscriptionOpen}
@@ -606,7 +323,6 @@ export function PartnersClientView({
                 onOpenChange={setIsInitialSetupOpen}
                 onSuccess={() => refetch()}
             />
-            </div>
-        </SkeletonShell>
+        </div>
     )
 }

@@ -23,7 +23,7 @@ function PartnerNameCell({ value: partner }: ValueRenderProps<"partnerName">) {
                 <div className="mt-1.5 p-1.5 bg-warning/10 border border-warning/20 rounded-sm flex items-center gap-2 overflow-hidden ring-1 ring-warning/10">
                     <div className="flex items-center gap-1.5 text-4xs text-warning font-bold uppercase tracking-tighter">
                         <AlertCircle className="h-2.5 w-2.5 shrink-0" />
-                        Exceso: +{formatMoneyValue(partner.partner_excess_capital)}
+                        Exceso: +{formatMoneyValue(excess)}
                     </div>
                 </div>
             )}
@@ -41,7 +41,7 @@ const TONE_CLASS = {
 function PartnerBalanceCell({ value, options }: ValueRenderProps<"partnerBalance">) {
     const n = toNumber(value) ?? 0
     if (options.dashIfZero && n <= 0) return <DataCell.Empty align="end" />
-    return <DataCell.Text align="end" className={n > 0 ? TONE_CLASS[options.tone] : "text-muted-foreground/30"}>{formatMoneyValue(value)}</DataCell.Text>
+    return <DataCell.Text align="end" className={n > 0 ? TONE_CLASS[options.tone] : "text-muted-foreground/30"}>{formatMoneyValue(n)}</DataCell.Text>
 }
 
 let registered = false
