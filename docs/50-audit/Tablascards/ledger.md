@@ -392,3 +392,8 @@
 - Corrección: los 4 campos pasan de `LabeledInput value={<JSX/>} readOnly` a `LabeledContainer` (el primitivo del contrato — `component-input.md` — para contenido no-input dentro del notched field) con el `JSX` como `children`; se agregó `LabeledContainer` al import de `@/components/shared`; se quitó `readOnly` (no existe en `LabeledContainerProps`, no aplica a children arbitrarios)
 - Estado: corregido (`tsc --noEmit` y `eslint` limpios; sin test dedicado — el drawer no tenía tests antes de este cambio)
 
+### TC-073 · Defecto del sistema actual · Verificado (ratchet)
+- Evidencia: `features/accounting/components/JournalEntrySheet.tsx` (commit directo del usuario `27d4527b2 refactor(accounting): canonize JournalEntryDrawer into Sheet + FormDrawer`, ajeno a esta migración) renderiza las líneas del asiento con un `<table>`/`<thead>`/`<tbody>` escritos a mano (línea 244), sin pasar por `entity-view` ni por el sistema legacy. El test `entity-view.contract.test.ts > no new hand-written table appears in features or app` lo detecta como una tabla nueva — viola la invariante #13 / regla M7 del ratchet (el conteo de tablas a medida no debe subir)
+- Efecto: 1 test en rojo (`lib/__tests__/entity-view.contract.test.ts`), aislado a este archivo; no bloquea la oleada B (la pantalla de lista, `EntriesClientView.tsx`, abre la ficha vía `useDocumentSheetRoute` y no depende de los internos de `JournalEntrySheet.tsx`)
+- Estado: pendiente del usuario; es su propio código (ficha documental de asientos, fuera de la migración de entity-view). No se corrige aquí: migrar esa tabla de líneas a `entity-view`/`EditableCollection` es trabajo de la ficha documental, no de B2
+

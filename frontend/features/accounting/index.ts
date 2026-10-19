@@ -7,6 +7,7 @@ export { useAccountingSettings, ACCOUNTING_SETTINGS_QUERY_KEY } from './hooks/us
 export { useFiscalYears } from './hooks/useFiscalYears'
 export { useAccountMutations } from './hooks/useAccountMutations'
 export { useJournalEntry, useJournalEntries, useDeleteJournalEntry, usePostJournalEntry, useReverseJournalEntry, type JournalEntry } from './hooks/useJournalEntries'
+export { journalEntryEntity, journalEntryViews } from './entity-view/journalEntry.entity'
 export { useAccountingAccounts } from './hooks/useAccounts'
 export { useAccountSearch } from './hooks/useAccountSearch'
 export { useLedger, LEDGER_QUERY_KEY } from './hooks/useLedger'

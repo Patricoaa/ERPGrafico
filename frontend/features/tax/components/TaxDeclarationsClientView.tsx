@@ -1,12 +1,11 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
 
-import React, { useState, useEffect, useCallback, useMemo } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
     CheckCircle2,
     AlertCircle,
-    Package,
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -16,17 +15,13 @@ import { F29PaymentModal } from "@/features/tax/components/F29PaymentModal"
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
-import { DataTableView, EntityCard } from '@/components/shared'
-import { type ColumnDef } from "@tanstack/react-table"
+import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { taxDeclarationActions, type TaxDeclarationActionsCtx } from './taxDeclarationActions'
-import { cn } from "@/lib/utils"
-import { taxPeriodFields } from '../taxPeriodFields'
-import { AutoEntityCard } from '@/components/shared'
+import { taxPeriodEntity, taxPeriodViews } from '../entity-view/taxPeriod.entity'
 
 import { type TaxPeriod, type TaxDeclaration, type TaxPaymentData } from "../types"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { type Row, type Table } from "@tanstack/react-table"
-import { SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { SkeletonShell, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useTaxPeriods, useLazyTaxDeclarations } from "../hooks/useTaxQueries"
 import { useCreateTaxPayment } from "../hooks/useTaxMutations"
@@ -46,7 +41,7 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
         endpoint: '/tax/periods'
     })
 
-    const { taxPeriods: periodsData, isLoading: isLoadingPeriods, refetch: refetchPeriods } = useTaxPeriods()
+    const { taxPeriods: periodsData, isLoading: isLoadingPeriods, isError: isPeriodsError, refetch: refetchPeriods } = useTaxPeriods()
     const { fetchDeclarations } = useLazyTaxDeclarations()
     const { createTaxPayment } = useCreateTaxPayment()
 
@@ -170,14 +165,18 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
     const currentVatToPay = latestPeriod?.declaration_summary?.vat_to_pay || 0
 
     const taxDeclarationActionsCtx: TaxDeclarationActionsCtx = {
-        onPayment: (period) => handleOpenPayment(period as TaxPeriod),
-        onWizard: (period) => handleOpenWizard(period as TaxPeriod),
+        onPayment: handleOpenPayment,
+        onWizard: handleOpenWizard,
     }
 
-    const columns: ColumnDef<TaxPeriod>[] = useMemo(() => [
-        ...taxPeriodFields.toColumns(),
-        taxDeclarationActions.auto(taxDeclarationActionsCtx) as ColumnDef<TaxPeriod>,
-    ], [])
+    const { view, onViewChange } = useCollectionViewMode("tax.taxperiod", "card")
+    const collection = useEntityCollection(
+        taxPeriodEntity,
+        // Client-filtered: gate `error` on the unfiltered length, so a filter that matches nothing
+        // reads as "no results" rather than "error" (component-entity-view.md §10.2).
+        { rows: filteredPeriods, isLoading, error: isPeriodsError && periods.length === 0, refetch: refetchPeriods, isFiltered: search.isFiltered },
+        { pagination: { mode: "none" } },
+    )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -235,71 +234,24 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
                 </SkeletonShell>
             </div>
 
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    columns={columns}
-                    data={filteredPeriods}
-                    isLoading={isLoading}
-                    entityLabel="tax.taxperiod"
-                    variant="embedded"
-                    unifiedSearch={<UnifiedSearchBar
-                        config={config}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar período..."
-                    />}
-                    createAction={createAction}
-                    renderLoadingView={useCallback(() => (
-                        <div className="grid gap-3 pt-2">
-                            {Array.from({ length: 6 }).map((_, i) => (
-                                <EntityCard.Skeleton key={i} variant="compact" />
-                            ))}
-                        </div>
-                    ), [])}
-                    renderCustomView={useCallback((table: Table<TaxPeriod>) => {
-                        const rows = table.getRowModel().rows
-
-                        if (rows.length === 0) {
-                            return (
-                                <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-md border-2 border-dashed">
-                                    <Package className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-                                    <p className="text-muted-foreground font-medium">No se encontraron períodos</p>
-                                </div>
-                            )
-                        }
-                        return (
-                            <div className="grid gap-3 pt-2">
-                                {rows.map((row: Row<TaxPeriod>) => {
-                                    const period = row.original
-                                    const canOpenChecklist = period.status === 'OPEN'
-
-                                        return (
-                                        <AutoEntityCard
-                                            key={period.id}
-
-                                            data={period}
-                                            fields={taxPeriodFields}
-                                            className={cn(
-                                                "flex flex-col justify-between",
-                                                canOpenChecklist ? "cursor-pointer" : "cursor-default"
-                                            )}
-                                            onClick={() => canOpenChecklist ? handleOpenWizard(period) : null}
-                                            actions={taxDeclarationActions.render(period, taxDeclarationActionsCtx)}
-                                        />
-                                    )
-                                })}
-                            </div>
-                        )
-                    }, [handleOpenWizard, handleOpenPayment])}
-                />
+            <div className="flex-1 min-h-0 flex flex-col">
+                <Collection.Root
+                    collection={collection}
+                    view={view}
+                    onViewChange={onViewChange}
+                    onOpen={(period) => { if (period.status === 'OPEN') handleOpenWizard(period) }}
+                    actions={taxDeclarationActions.forCollection(taxDeclarationActionsCtx)}
+                >
+                    <Collection.Toolbar action={createAction}>
+                        <UnifiedSearchBar config={config} {...bindUnifiedSearch(search)} placeholder="Buscar período..." />
+                    </Collection.Toolbar>
+                    <Collection.View
+                        table={taxPeriodViews.table}
+                        card={taxPeriodViews.card}
+                        emptyTitle="No se encontraron períodos"
+                        onResetFilters={search.clearAll}
+                    />
+                </Collection.Root>
             </div>
             <DeclarationWizard
                 isOpen={isWizardOpen || !!externalOpen}

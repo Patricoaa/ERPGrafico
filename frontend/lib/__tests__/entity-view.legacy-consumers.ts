@@ -8,8 +8,6 @@
  */
 export const LEGACY_CONSUMERS: readonly string[] = [
     "app/(dashboard)/accounting/accounts/[id]/ledger/page.tsx",
-    "app/(dashboard)/accounting/entries/EntriesClientView.tsx",
-    "app/(dashboard)/accounting/entries/journalEntryFields.ts",
     "app/(dashboard)/production/orders/WorkOrdersPageClient.tsx",
     "app/(dashboard)/settings/audit/AuditPageClient.tsx",
     "app/(dashboard)/settings/jobs/JobsView.tsx",
@@ -81,8 +79,6 @@ export const LEGACY_CONSUMERS: readonly string[] = [
     "features/settings/partnerFields.ts",
     "features/settings/partnerLedgerFields.tsx",
     "features/settings/profitDistributionLineFields.tsx",
-    "features/tax/components/TaxDeclarationsClientView.tsx",
-    "features/tax/taxPeriodFields.tsx",
     "features/treasury/accountFields.tsx",
     "features/treasury/card-statements/cardStatementFields.tsx",
     "features/treasury/card-statements/statementChargeFields.tsx",

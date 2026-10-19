@@ -1,20 +1,17 @@
 import { createEntityActions } from '@/components/shared'
 import { DollarSign, History as HistoryIcon } from 'lucide-react'
+import type { TaxPeriod } from '../types'
 
 export interface TaxDeclarationActionsCtx {
-    onPayment: (period: unknown) => void
-    onWizard: (period: unknown) => void
+    onPayment: (period: TaxPeriod) => void
+    onWizard: (period: TaxPeriod) => void
 }
 
-export const taxDeclarationActions = createEntityActions<unknown, TaxDeclarationActionsCtx>((period, ctx) => {
-    const p = period as {
-        declaration_summary?: { is_fully_paid?: boolean } | null
-        status?: string
-    }
-    const summary = p.declaration_summary
+export const taxDeclarationActions = createEntityActions<TaxPeriod, TaxDeclarationActionsCtx>((period, ctx) => {
+    const summary = period.declaration_summary
     const isFullyPaid = summary?.is_fully_paid
-    const showPaymentButton = !!summary || p.status === 'CLOSED'
-    const canOpenChecklist = p.status === 'OPEN'
+    const showPaymentButton = !!summary || period.status === 'CLOSED'
+    const canOpenChecklist = period.status === 'OPEN'
 
     return [
         {

@@ -56,7 +56,7 @@ export function useJournalEntry(id: string | number | undefined) {
 
 export function useJournalEntries(filters?: FilterState & { page?: number; page_size?: number }) {
     const { page = 1, page_size = 50, ...restFilters } = filters || {}
-    const { data: pageData, isLoading, refetch } = useQuery({
+    const { data: pageData, isLoading, isFetching, isError, refetch } = useQuery({
         queryKey: [...JOURNAL_ENTRIES_QUERY_KEY, { page, page_size, ...restFilters }],
         queryFn: async () => {
             const params: Record<string, unknown> = { page, page_size }
@@ -75,6 +75,8 @@ export function useJournalEntries(filters?: FilterState & { page?: number; page_
         page: pageData,
         entries: (pageData?.results ?? []) as JournalEntry[],
         isLoading,
+        isRefetching: isFetching && !isLoading,
+        isError,
         refetch,
     }
 }
