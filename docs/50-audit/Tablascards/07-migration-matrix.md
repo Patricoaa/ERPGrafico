@@ -1156,7 +1156,7 @@ Forense por archivo (`*Fields`, hooks, patrones ya en uso). Oleada más grande h
 **Decisiones de la Puerta D de la oleada C (2026-10-19):**
 
 1. Ciclo completo (M5) en toda la oleada C, no solo en C2/C4 — capturas antes/después + `/simplify` + `/code-review` por sub-lote.
-2. C3: se construye un componente único de tabla de libro auxiliar (tipo `DocumentLinesTable.tsx`) antes de migrar las 4 pantallas que lo necesitan, en vez de migrar cada una por separado y consolidar después.
+2. C3: se construye una pieza compartida antes de migrar las 4 pantallas que lo necesitan, en vez de migrar cada una por separado y consolidar después. **Revisado en §6.30** tras leer las 4 implementaciones completas: no es viable un componente único tipo `DocumentLinesTable.tsx` (4 tipos de fila genuinamente distintos, Debe/Haber real en una de ellas) — queda en 3 `defineEntity` propias de cada feature + 1 kind compartido (`ledgerDate`).
 3. C4 (`ProductInsightsPanel`/`ProductInsightsModal`): Puerta D propia, como B4 — no entra en esta ronda.
 4. Orden: C1 → C3 → C5 → C2 (C4 aparte, con su propia Puerta D).
 
@@ -1179,5 +1179,30 @@ Forense por archivo (`*Fields`, hooks, patrones ya en uso). Oleada más grande h
 
 **Verificación:** `tsc --noEmit` 0 errores en todo el proyecto; `eslint` 0/0 en los 4 archivos tocados por `/simplify`+`/code-review` (`terminalBatch.entity.tsx`, `treasuryAccount.entity.tsx`, `useTreasuryMovements.ts`, `TerminalBatchesClientView.tsx`) + el test corregido (TC-076). vitest: `features/treasury` y `components/entity-view` en verde, contrato 17/17 salvo TC-073 (aislado a `JournalEntrySheet.tsx`, ajeno). **Sin verificar en la app real con capturas** — el servidor de desarrollo volvió a responder (`/`, `/login`, `/treasury` → 200 rápido) tras el fix del commit `3e7e9eb57`, pero `/treasury/operaciones` y `/treasury/bank-center` siguen colgando (timeout a 90 s) al probarlos; no se investigó más a fondo (fuera del alcance de C1, y las rutas reales de movimientos/cuentas de C1 no están aún confirmadas en ese árbol de rutas).
 
-Cierra C1 (movimientos, cuentas, lotes de terminal, cheques). Pendiente: aprobación de commit de los fixes de `/simplify` (2) + `/code-review` (1, TC-077) + TC-076 — el C1 de tesorería en sí ya está commiteado por el usuario en `361201848`. Próximo: construir el componente único de "libro auxiliar" (decisión de la Puerta D de la oleada C) antes de C3.
+Cierra C1 (movimientos, cuentas, lotes de terminal, cheques). Fixes de `/simplify`+`/code-review`+TC-076 commiteados (`7247af1cc`), aprobados por el usuario. Próximo: el componente/pieza compartida de "libro auxiliar" antes de C3 (§6.30).
+
+### 6.30 Pieza compartida de "libro auxiliar" antes de C3 (2026-10-19)
+
+La Puerta D de la oleada C (§6.28) proponía "un componente único de tabla de libro auxiliar" para las 4 pantallas de C3, por analogía con `DocumentLinesTable.tsx`. Al leer las 4 implementaciones completas (no solo su tamaño/estructura, que es lo que alimentó el forense de §6.28), esa premisa no se sostiene: a diferencia de `OrderLine` (un solo tipo de backend reusado por 3 tipos de documento), las 4 pantallas tienen 4 tipos de fila genuinamente distintos, de 3 features distintas, con un modelo de monto que difiere de forma real (no incidental):
+
+| Pantalla | Tipo de fila | Modelo de monto | Extras propios |
+|---|---|---|---|
+| `credits/PortfolioTable` + `BlacklistClientView` | `CreditLedgerEntry` | 3 columnas de dinero (total/pagado/saldo) | estado de mora, chip de origen, acción de castigo condicional |
+| `accounting/LedgerDrawer` (Libro Mayor) | `LedgerMovement` | **Debe/Haber en 2 columnas** (convención contable real, no un neto firmado) | descripción con tooltip, abre `JournalEntryDrawer` |
+| `app/.../accounts/[id]/ledger/page.tsx` | mismo `LedgerMovement`, sin tipar | igual Debe/Haber | columna "Tercero" + enlace a documento origen — **no es un duplicado a reemplazar**: `lib/searchableEntityRoutes.ts` la documenta como excepción deliberada ("vista standalone", T-99/F9), decisión anterior a esta migración que se respeta — migra aparte en C3, no por redirect |
+| `settings/PartnerLedgerDrawer` | `PartnerTransaction` | monto firmado único, **saldo corrido calculado en el cliente** (no viene del backend) | chip de tipo de transacción, 2 wizards de acción (aporte/retiro) |
+
+Forzar las 4 en un único tipo normalizado perdería las columnas/acciones propias de cada feature o rompería la convención Debe/Haber. Lo único duplicado **literalmente** (no solo parecido) es la celda de fecha: `accounting/ledgerMovementFields.tsx` y `settings/partnerLedgerFields.tsx` repiten el mismo JSX para "fecha de negocio (puede diferir de hoy) + hora de `created_at` como badge mudo" — un caso que el kind `date`/`{time:true}` del núcleo no cubre (ese kind lee fecha y hora del mismo valor; aquí son 2 campos distintos).
+
+**Decisión revisada (aprobada por el usuario):** en vez de un componente monolítico, cada feature mantiene su propia `defineEntity<T>()` (3, no 1: créditos, contabilidad, socios — la 4ª pantalla, `page.tsx`, reusará la misma entidad que `LedgerDrawer` al migrarse en C3) con sus columnas/acciones reales, compartiendo solo un kind nuevo `ledgerDate`.
+
+**Implementado en esta sesión (antes de C3):**
+- `components/entity-view/core/formatters.ts`: `formatTimeOfDay(value)` — nuevo formateador puro (solo la hora `HH:mm` de un datetime), reusa el `TIME_FORMAT` ya privado de `formatDate`. Necesario porque la regla ESLint `entity-view/no-adhoc-format` prohíbe `toLocaleTimeString`/`Intl.*` fuera de `core/formatters.ts`.
+- `features/accounting/entity-view/ledgerDate.kind.tsx` (nuevo): kind `ledgerDate` — valor `{date, createdAt}`, renderiza la fecha de negocio + hora de `createdAt` como badge mudo (idéntico al JSX duplicado que reemplaza), o `DataCell.Empty` si no hay fecha. Registrado al evaluar el módulo (mismo patrón que `docRef.kind.tsx` de `features/documents`). Vive en `accounting` (dueño natural del concepto de libro mayor/auxiliar, mismo razonamiento que `docRef` viviendo en `documents`); `settings` lo consumirá vía el barrel `@/features/accounting` al migrar en C3.
+- `features/accounting/index.ts`: `import './entity-view/ledgerDate.kind'` (side-effect, misma convención que el import de `docRef.kind` en `features/documents/index.ts`).
+- **Revertido tras verificar:** se había escrito un `redirect()` para `app/.../accounts/[id]/ledger/page.tsx` (mismo patrón que otros `[id]/page.tsx` de esta migración) antes de notar que `searchableEntityRoutes.ts` la excluye explícitamente de ese patrón a propósito. Revertido; la página se migra aparte en C3 como vista standalone real.
+
+**Verificación:** `tsc --noEmit` 0 errores; `eslint` 0/0 en los 3 archivos tocados; vitest `lib/__tests__/entity-view` (17 tests, 1 fallo ajeno TC-073) y `components/entity-view` (66/66) y `features/accounting` (11/11) en verde.
+
+Pendiente: aprobación de commit de `ledgerDate.kind.tsx` + `formatters.ts` + `features/accounting/index.ts`. Luego, C3 migra las 4 pantallas usando esta pieza.
 

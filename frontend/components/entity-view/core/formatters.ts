@@ -60,6 +60,13 @@ export function formatDate(value: ISODate | null | undefined, time = false): str
 
 const TIME_FORMAT = new Intl.DateTimeFormat("es-CL", { hour: "2-digit", minute: "2-digit" })
 
+/** Just the `HH:mm` of a datetime value — for a separate audit-trail timestamp shown next to an unrelated business date (e.g. `ledgerDate`). */
+export function formatTimeOfDay(value: string | null | undefined): string {
+    if (isMissing(value) || !value) return EMPTY
+    const d = new Date(value)
+    return Number.isNaN(d.getTime()) ? EMPTY : TIME_FORMAT.format(d)
+}
+
 export function formatDateRange(range: { from: ISODate; to: ISODate | null } | null): string {
     if (!range) return EMPTY
     if (!range.to || range.to === range.from) return formatDate(range.from)

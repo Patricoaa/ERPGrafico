@@ -419,3 +419,8 @@
 - Corrección: se agrega `TERMINAL_BATCH_GROUPS` (`{ date: "salesDate", status: "status" }`, mismo patrón que `MOVEMENT_GROUPS`/`CHECK_GROUPS`) y se conecta `search.groupBy` → `groupBy` en `useEntityCollection`, con `pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }` (mismo patrón que `ChecksClientView`)
 - Estado: corregido (`TerminalBatchesClientView.tsx`); `tsc`/`eslint` limpios; vitest sin regresión (contrato 17/17 salvo TC-073, ajeno)
 
+### TC-078 · Error propio evitado antes de commitear · Verificado (preparación de C3)
+- Evidencia: al preparar el kind compartido `ledgerDate` se escribió un `redirect()` para `app/.../accounts/[id]/ledger/page.tsx` (mismo patrón que otros `[id]/page.tsx` de esta migración, ej. `accounting/accounts/[id]/page.tsx`), asumiendo que era una página-duplicado de `LedgerDrawer`. Antes de dar por cerrado el cambio, `lib/searchableEntityRoutes.ts` resultó documentar esa ruta exacta como excepción deliberada ("vista standalone", decisión T-99/F9, anterior a esta migración)
+- Efecto: ninguno — el `redirect()` nunca se commiteó; se revirtió (`git checkout --`) en cuanto se encontró el comentario de excepción, antes de pedir aprobación al usuario
+- Estado: revertido; la página se migra aparte en C3 como vista standalone (mismo tipo `LedgerMovement`/`ledgerDate` que `LedgerDrawer`, pero sin colapsar a un redirect)
+

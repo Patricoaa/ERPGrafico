@@ -8,6 +8,8 @@ export { useFiscalYears } from './hooks/useFiscalYears'
 export { useAccountMutations } from './hooks/useAccountMutations'
 export { useJournalEntry, useJournalEntries, useDeleteJournalEntry, usePostJournalEntry, useReverseJournalEntry, type JournalEntry } from './hooks/useJournalEntries'
 export { journalEntryEntity, journalEntryViews } from './entity-view/journalEntry.entity'
+// entity-view extension (ADR-0087 C3): registers the `ledgerDate` kind, shared with settings' partner ledger.
+import './entity-view/ledgerDate.kind'
 export { useAccountingAccounts } from './hooks/useAccounts'
 export { useAccountSearch } from './hooks/useAccountSearch'
 export { useLedger, LEDGER_QUERY_KEY } from './hooks/useLedger'
