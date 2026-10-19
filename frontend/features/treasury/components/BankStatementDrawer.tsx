@@ -1,82 +1,36 @@
 "use client"
 
-import { Drawer, MoneyDisplay, SkeletonShell, StatusBadge, StaleDataBanner } from "@/components/shared"
-import { useDrawerIdentity } from "@/features/_shared"
+import { useState, useEffect } from "react"
+import { BankStatementSheet } from "./BankStatementSheet"
 import { useBankStatement } from "../hooks/useBankStatement"
+import { useDrawerIdentity } from "@/features/_shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 
-interface BankStatementData {
-    id: number
-    display_id: string
-    treasury_account_name: string
-    status: string
-    opening_balance: number
-    closing_balance: number
-    reconciliation_progress: number
-}
-
-interface BankStatementDrawerProps {
+/**
+ * Wrapper para BankStatementDrawer que delega a BankStatementSheet (modo view).
+ * Mantiene compatibilidad con ENTITY_DRAWERS registry.
+ */
+export interface BankStatementDrawerProps {
     statementId: number | null
     open: boolean
     onOpenChange: (open: boolean) => void
     onSuccess?: () => void
 }
 
-export function BankStatementDrawer({ statementId, open, onOpenChange }: BankStatementDrawerProps) {
-    const { statement, isLoading, isError } = useBankStatement<BankStatementData>(statementId, open)
-    const identity = useDrawerIdentity('treasury.bankstatement', 'view', statement, {
-        overrideTitle: statement ? `Cartola ${statement.display_id || statement.id}` : "Cartola Bancaria",
-    })
+export function BankStatementDrawer({ statementId, open, onOpenChange, onSuccess }: BankStatementDrawerProps) {
+    const { statement, isLoading, isError } = useBankStatement(statementId, open)
+
+    // Show skeleton while fetching
+    if (statementId && isLoading) {
+        return <BankStatementSheet id={statementId} open={open} onOpenChange={onOpenChange} onActionSuccess={onSuccess} />
+    }
 
     return (
-        <Drawer
-            mode="view"
+        <BankStatementSheet
+            id={statementId}
             open={open}
             onOpenChange={onOpenChange}
-            side="left"
-            boundary="embedded"
-            defaultSize={formDrawerWidth("master", false)}
-            title={identity.title}
-            subtitle={identity.subtitle}
-            icon={identity.icon}
-        >
-            {isError && <StaleDataBanner className="mx-4 mt-2" />}
-            <SkeletonShell isLoading={isLoading} ariaLabel="Cargando cartola">
-                {statement ? (
-                    <div className="p-4 space-y-4">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <span className="text-muted-foreground">Cuenta</span>
-                                <p className="font-medium">{statement.treasury_account_name}</p>
-                            </div>
-                            <div>
-                                <span className="text-muted-foreground">Estado</span>
-                                <p><StatusBadge status={statement.status} variant="badge" /></p>
-                            </div>
-                            <div>
-                                <span className="text-muted-foreground">Saldo Inicial</span>
-                                <p className="font-medium"><MoneyDisplay amount={statement.opening_balance || 0} inline weight="medium" /></p>
-                            </div>
-                            <div>
-                                <span className="text-muted-foreground">Saldo Final</span>
-                                <p className="font-medium"><MoneyDisplay amount={statement.closing_balance || 0} inline weight="medium" /></p>
-                            </div>
-                        </div>
-                        {statement.reconciliation_progress != null && (
-                            <div>
-                                <span className="text-muted-foreground text-sm">Progreso de Conciliación</span>
-                                <div className="mt-1 h-2 bg-muted rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-primary transition-all"
-                                        style={{ width: `${statement.reconciliation_progress}%` }}
-                                    />
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1">{statement.reconciliation_progress}%</p>
-                            </div>
-                        )}
-                    </div>
-                ) : null}
-            </SkeletonShell>
-        </Drawer>
+            onActionSuccess={onSuccess}
+        />
     )
 }

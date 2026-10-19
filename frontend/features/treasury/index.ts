@@ -62,6 +62,7 @@ export { PaymentDrawer } from './components/PaymentDrawer'
 export { PaymentSheet } from './components/PaymentSheet'
 export { PaymentFormDrawer } from './components/PaymentFormDrawer'
 export { paymentActions } from './paymentActions'
+export { BankStatementSheet } from './components/BankStatementSheet'
 export { TerminalBatchesClientView } from './components/TerminalBatchesClientView'
 export { PaymentHardwareClientView } from './components/PaymentHardwareClientView'
 /** @deprecated Use TerminalBatchSelectionModal */
