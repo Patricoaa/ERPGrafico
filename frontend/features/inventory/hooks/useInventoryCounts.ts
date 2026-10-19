@@ -9,7 +9,7 @@ export const INVENTORY_COUNTS_QUERY_KEY = ['inventory', 'counts'] as const
 
 export function useInventoryCounts(filters: InventoryCountFilters = {}) {
     const { page = 1, page_size = 50, ...rest } = filters
-    const { data: page_, isLoading, isFetching, refetch } = useQuery({
+    const { data: page_, isLoading, isFetching, isError, refetch } = useQuery({
         queryKey: [...INVENTORY_COUNTS_QUERY_KEY, { page, page_size, ...rest }],
         queryFn: () => inventoryApi.getInventoryCounts({ page, page_size, ...rest }),
         staleTime: staleTime.standard,
@@ -18,7 +18,7 @@ export function useInventoryCounts(filters: InventoryCountFilters = {}) {
         page: page_,
         counts: page_?.results ?? [],
         totalCount: page_?.count ?? 0,
-        isLoading, isFetching, refetch,
+        isLoading, isFetching, isRefetching: isFetching && !isLoading, isError, refetch,
     }
 }
 

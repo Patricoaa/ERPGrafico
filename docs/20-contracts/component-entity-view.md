@@ -308,6 +308,7 @@ Reglas de la pantalla:
   - las consultas se piden solo con la vista abierta (`enabled: view === "analytics"`);
   - se monta en `Collection.Analytics`.
 - **Extensiones:** un kind usado por una sola entidad vive en su `.entity.tsx` (p. ej. `productPrice`). Uno usado desde otras features exporta un builder sin imports en tiempo de ejecución como primera exportación del barrel de la feature (p. ej. `docRef`).
+- **Un archivo no puede mezclar ambos sistemas.** El eslint `entity-view/no-legacy-presentation` (`eslint-rules/entity-view-guards.mjs`) prohíbe que un archivo importe `@/components/entity-view` y a la vez `DataTableView`/`AutoEntityCard`/`<DataTable>`/`createEntityFields`/`toColumns()` — aunque la parte legacy esté deliberadamente diferida a otra oleada (p. ej. una celda editable que espera a la oleada E). Si la pantalla mezcla una lista ya migrable con una pieza que no, se separa en dos archivos: el padre (entity-view) y un componente propio para la pieza legacy (que entra a `LEGACY_CONSUMERS`), comunicados por props simples (id/open/onOpenChange), nunca por estado compartido a través de un contexto o barrel que obligue a importar ambos sistemas en el mismo archivo.
 - **Drawers, modales y confirmaciones** de la pantalla no cambian.
 
 **3. Cierre.** Se borra el `*Fields.ts` (si no le quedan consumidores), se quita la pantalla de `LEGACY_CONSUMERS` (y de `ADHOC_TABLE_ALLOWLIST` si estaba), y se reporta `bash frontend/scripts/entity-view-progress.sh`.

@@ -1,17 +1,18 @@
 "use client"
 
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useRef } from "react"
 import { Ban, Check, Package } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
 import { toast } from "sonner"
-import { DataCell, DataTable } from "@/components/shared"
+import { DataCell } from "@/components/shared"
+import { Collection, useEntityCollection } from "@/components/entity-view"
 import { PrintableLayout } from "@/features/_shared"
 import { DocumentSheet, SHEET_LEFT } from "@/features/documents"
 import { formatCurrency } from "@/lib/money"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { showApiError } from "@/lib/errors"
 import { useInventoryDocument, useInventoryDocumentMutations } from "../hooks/useInventoryDocuments"
-import { inventoryDocumentDetailFields } from "../inventoryDocumentDetailFields"
+import { inventoryDocumentDetailEntity, inventoryDocumentDetailViews } from "../entity-view/inventoryDocumentDetail.entity"
 
 interface InventoryDocumentDrawerProps {
     documentId?: number | null
@@ -31,7 +32,7 @@ export function InventoryDocumentDrawer({ documentId, id, open, onOpenChange, on
     const { data: document, isLoading, isError } = useInventoryDocument(entityId)
     const { confirmDocument, isConfirming, annulDocument, isAnnulling } = useInventoryDocumentMutations(entityId ?? undefined)
     const { setEntityDisplay } = useGlobalModalActions()
-    const columns = useMemo(() => inventoryDocumentDetailFields.toColumns(), [])
+    const linesCollection = useEntityCollection(inventoryDocumentDetailEntity, { rows: document?.details ?? [] }, { pagination: { mode: "none" } })
 
     useEffect(() => {
         if (document?.id && document.display_id) {
@@ -108,13 +109,9 @@ export function InventoryDocumentDrawer({ documentId, id, open, onOpenChange, on
                     title: "Productos",
                     icon: Package,
                     content: (
-                        <DataTable
-                            columns={columns}
-                            data={document?.details ?? []}
-                            variant="minimal"
-                            hidePagination
-                            emptyState={{ title: "Sin líneas", description: "El documento no tiene productos." }}
-                        />
+                        <Collection.Root collection={linesCollection} label="Productos">
+                            <Collection.View table={inventoryDocumentDetailViews.table} emptyTitle="Sin líneas" emptyDescription="El documento no tiene productos." />
+                        </Collection.Root>
                     ),
                 }]}
             />
