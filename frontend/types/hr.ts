@@ -153,7 +153,10 @@ export interface Payroll {
   employer_contribution?: string
   other_deductions?: string
   advances_total?: string
+  previred_paid_amount?: string
+  remuneration_paid_amount?: string
   previred_paid_status?: 'PENDING' | 'PARTIAL' | 'PAID'
+  total_previred?: string
   notes: string
   created_at: string
   updated_at: string

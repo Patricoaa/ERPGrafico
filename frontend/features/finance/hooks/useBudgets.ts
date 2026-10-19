@@ -37,7 +37,7 @@ export function useBudgets() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data, isLoading, refetch } = useQuery({
+    const { data, isLoading, isError, refetch } = useQuery({
         queryKey: FINANCE_KEYS.budgets.lists(),
         queryFn: financeApi.getBudgets,
         staleTime: staleTime.stable,
@@ -74,6 +74,7 @@ export function useBudgets() {
         page: data,
         budgets: data?.results ?? [],
         isLoading,
+        isError,
         refetch,
         createBudget: createMutation.mutateAsync,
         updateBudget: updateMutation.mutateAsync,
