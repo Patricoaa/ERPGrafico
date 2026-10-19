@@ -149,6 +149,11 @@ export interface Payroll {
   advances?: SalaryAdvance[]
   payments?: PayrollPayment[]
   remuneration_paid_status?: 'PENDING' | 'PARTIAL' | 'PAID'
+  legal_deductions_worker?: string
+  employer_contribution?: string
+  other_deductions?: string
+  advances_total?: string
+  previred_paid_status?: 'PENDING' | 'PARTIAL' | 'PAID'
   notes: string
   created_at: string
   updated_at: string

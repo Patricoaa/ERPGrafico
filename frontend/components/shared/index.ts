@@ -92,6 +92,7 @@ export * from './FormSection';
 // Loading States
 export * from './LoadingFallback';
 export * from './StaleDataBanner';
+export * from './SkeletonPresets';
 
 // Animations
 export * from './FadeIn';
