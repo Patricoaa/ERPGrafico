@@ -151,5 +151,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0085](0085-stock-moves-owned-by-business-document.md) | Stock moves owned by the business document — `StockMove.source_document` GFK, `InventoryDocument` reserved for standalone operations | Accepted |
 | [0086](0086-document-drilldown-canonical-navigation.md) | Document drilldown navigates to the target's canonical route — URL and module follow the relationship | Proposed |
 | [0087](0087-entity-view-system.md) | Entity view system — semantic entity definitions + per-surface composition (replaces createEntityFields / AutoEntityCard / DataTable authoring) | Accepted |
+| [0088](0088-remove-actionslidebutton.md) | Remove ActionSlideButton — button layer standardized on shadcn Button + ActionButtons (kinetic slide animation retired) | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.
