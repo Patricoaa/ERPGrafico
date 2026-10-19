@@ -9,7 +9,7 @@ import { Smartphone } from "lucide-react"
 import { useTerminalDevices, useTerminalProviders, type PaymentTerminalProvider, type PaymentTerminalDevice } from "@/features/treasury"
 import { Form, FormField } from "@/components/ui/form"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
-import { Drawer, CancelButton, ActionSlideButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, MultiSelectTagInput } from "@/components/shared"
+import { Drawer, CancelButton, SubmitButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, MultiSelectTagInput } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
 
@@ -138,9 +138,9 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                         actions={
                             <>
                                 <CancelButton onClick={() => onOpenChange(false)} />
-                                <ActionSlideButton type="submit" loading={loading} onClick={form.handleSubmit(onSubmit)}>
+                                <SubmitButton type="submit" loading={loading} onClick={form.handleSubmit(onSubmit)}>
                                     {mode === 'create' ? "Registrar" : "Guardar Cambios"}
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />

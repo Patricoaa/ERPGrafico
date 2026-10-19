@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Drawer, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
+import { Drawer, FormFooter, CancelButton, SubmitButton } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { User, Paintbrush, X } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
@@ -146,9 +146,9 @@ export function AdvancedManufacturingDrawer({
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton onClick={handleConfirm}>
+                            <SubmitButton onClick={handleConfirm}>
                                 Validar Producción
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />

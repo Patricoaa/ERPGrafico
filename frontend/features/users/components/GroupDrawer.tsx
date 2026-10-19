@@ -6,14 +6,7 @@ import * as z from "zod"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { usersApi } from "../api/usersApi"
 
-import {
-    Drawer,
-    ActionSlideButton,
-    LabeledInput,
-    CancelButton,
-    FormFooter,
-    FormSplitLayout,
-} from "@/components/shared"
+import { Drawer, SubmitButton, LabeledInput, CancelButton, FormFooter, FormSplitLayout } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit"
 import { Form, FormField } from "@/components/ui/form"
 import { showApiError } from "@/lib/errors"
@@ -161,9 +154,9 @@ export function GroupDrawer({
                         actions={
                             <>
                                 <CancelButton onClick={() => setOpen(false)} disabled={isLoading} />
-                                <ActionSlideButton type="submit" form="group-form" loading={isLoading}>
+                                <SubmitButton type="submit" form="group-form" loading={isLoading}>
                                     Guardar
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />

@@ -24,7 +24,7 @@ import { ActivitySidebar } from "@/features/audit"
 
 // Import dialogs
 import { PricingRuleDrawer } from "@/features/sales"
-import { CancelButton, ActionSlideButton } from "@/components/shared"
+import { CancelButton, SubmitButton } from "@/components/shared"
 
 import { formDrawerWidth } from "@/lib/form-widths"
 import { PrintableLayout } from "@/features/_shared"
@@ -623,9 +623,9 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
 
     const footerSlot = drawerFooter(isView, <>
         <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
-        <ActionSlideButton type="submit" form="product-form" loading={form.formState.isSubmitting}>
+        <SubmitButton type="submit" form="product-form" loading={form.formState.isSubmitting}>
             {mode === 'create' ? "Crear Producto" : "Guardar Cambios"}
-        </ActionSlideButton>
+        </SubmitButton>
     </>)
 
     const formContent = (

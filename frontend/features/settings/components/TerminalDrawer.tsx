@@ -5,7 +5,7 @@ import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { ActionSlideButton, Drawer } from '@/components/shared'
+import { SubmitButton, Drawer } from "@/components/shared"
 import {
     Form,
     FormField,
@@ -226,9 +226,9 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                         actions={
                             <>
                                 <CancelButton onClick={() => onOpenChange(false)} />
-                                <ActionSlideButton type="submit" form="terminal-form" loading={loading}>
+                                <SubmitButton type="submit" form="terminal-form" loading={loading}>
                                     {terminal ? "Guardar Cambios" : "Crear Terminal"}
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />

@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useEmployeeMutations } from '../hooks/useEmployeeMutations'
 import type { Employee, EmployeeConceptAmount } from "@/types/hr"
-import { ActionSlideButton, CancelButton } from "@/components/shared"
+import { SubmitButton, CancelButton } from "@/components/shared"
 import { UserCog, CalendarCheck2, Plus, ShieldCheck } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit"
 import { FormSplitLayout } from "@/components/shared"
@@ -250,13 +250,13 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
             actions={
                 <>
                     <CancelButton onClick={() => onOpenChange(false)} disabled={saving} />
-                    <ActionSlideButton
+                    <SubmitButton
                         type="submit"
                         loading={saving}
                         onClick={form.handleSubmit(onSubmit, onSubmitError)}
                     >
                         {employee ? "Actualizar Registro" : "Confirmar Contratación"}
-                    </ActionSlideButton>
+                    </SubmitButton>
                 </>
             }
         />

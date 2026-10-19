@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useCallback } from "react"
-import { DataTableView, DataCell, StatusBadge, UnifiedSearchBar, useUnifiedSearch, Drawer, SkeletonShell, QuantityDisplay, DataTableColumnHeader, ActionSlideButton } from '@/components/shared'
+import { DataTableView, DataCell, StatusBadge, UnifiedSearchBar, useUnifiedSearch, Drawer, SkeletonShell, QuantityDisplay, DataTableColumnHeader, SubmitButton } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ClipboardCheck, Check, Equal } from "lucide-react"
@@ -292,33 +292,30 @@ export function InventoryCountDetailDrawer({ countId, open, onOpenChange, onAppl
                         <StatusBadge status={count.status} variant="badge" />
                         {isInProgress && (
                             <>
-                                <ActionSlideButton
-                                    variant="muted"
-                                    size="sm"
+                                <SubmitButton
+                                    variant="outline"
                                     onClick={handleSetAllToTheoretical}
+                                    className="text-muted-foreground"
                                     icon={<Equal className="h-4 w-4" />}
                                 >
                                     Igual a Stock Teórico
-                                </ActionSlideButton>
-                                <ActionSlideButton
-                                    variant="success"
-                                    size="sm"
+                                </SubmitButton>
+                                <SubmitButton
                                     onClick={handleSaveAll}
                                     disabled={editedLines.size === 0}
                                     loading={isSaving}
+                                    className="bg-success hover:bg-success/90 text-success-foreground"
                                     icon={<Check className="h-4 w-4" />}
                                 >
                                     Guardar ({editedLines.size})
-                                </ActionSlideButton>
-                                <ActionSlideButton
-                                    variant="primary"
-                                    size="sm"
+                                </SubmitButton>
+                                <SubmitButton
                                     onClick={handleApply}
                                     loading={isApplying}
                                     icon={<ClipboardCheck className="h-4 w-4" />}
                                 >
                                     Aplicar Conteo
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         )}
                     </div>

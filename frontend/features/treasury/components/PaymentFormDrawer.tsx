@@ -16,7 +16,7 @@ import { toast } from "sonner"
 import { financeApi } from "@/features/finance/api/financeApi"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { Landmark, ArrowRightLeft, Hash, Wallet, ClipboardList, CreditCard } from "lucide-react"
-import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, ActionSlideButton, SkeletonShell, FormSplitLayout, StatusBadge } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, SubmitButton, SkeletonShell, FormSplitLayout, StatusBadge } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useBillingInvoices } from "@/features/finance"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
@@ -349,9 +349,9 @@ export function PaymentFormDrawer({
                         actions={
                             <>
                                 <CancelButton onClick={() => setOpen(false)} />
-                                <ActionSlideButton type="submit" form="payment-form" loading={loading}>
+                                <SubmitButton type="submit" form="payment-form" loading={loading}>
                                     {initialData ? "Actualizar" : "Registrar Pago"}
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />

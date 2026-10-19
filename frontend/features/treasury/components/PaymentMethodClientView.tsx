@@ -13,11 +13,7 @@ import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Form, FormField } from "@/components/ui/form"
-import {
-    CancelButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput,
-    BaseModal, FormFooter, FormSplitLayout, ActionSlideButton, ActionConfirmModal,
-    UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch
-} from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput, BaseModal, FormFooter, FormSplitLayout, SubmitButton, ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { paymentMethodUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { usePaymentMethods } from "@/features/treasury/hooks/useMasterData"
@@ -286,7 +282,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton
+                            <SubmitButton
                                 type="submit"
                                 form="method-form"
                                 loading={isSaving}
@@ -294,7 +290,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                                 onClick={form.handleSubmit(onSubmit)}
                             >
                                 {method ? "Guardar Cambios" : "Crear Método"}
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />

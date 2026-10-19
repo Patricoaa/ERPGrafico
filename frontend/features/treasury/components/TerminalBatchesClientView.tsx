@@ -2,7 +2,7 @@
 
 import React, { useState, lazy, Suspense, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { BaseModal, FormFooter, CancelButton, ActionSlideButton } from '@/components/shared'
+import { BaseModal, FormFooter, CancelButton, SubmitButton } from "@/components/shared"
 import { Plus } from "lucide-react"
 
 import { useTerminalBatches } from "@/features/treasury"
@@ -130,9 +130,9 @@ function TerminalBatchModal({ open, onOpenChange, onSuccess }: { open: boolean, 
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton type="submit" form="terminal-batch-form" loading={footerState.isCreating} disabled={footerState.isCreating || !footerState.isValid || !footerState.providerId || !footerState.depositMethodId}>
+                            <SubmitButton type="submit" form="terminal-batch-form" loading={footerState.isCreating} disabled={footerState.isCreating || !footerState.isValid || !footerState.providerId || !footerState.depositMethodId}>
                                 Registrar Liquidación
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />

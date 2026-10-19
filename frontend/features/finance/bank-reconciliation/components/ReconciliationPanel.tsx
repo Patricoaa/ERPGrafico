@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
-import { ActionConfirmModal, ActionDock, ActionSlideButton, BaseModal, CancelButton, Chip, CollapsibleSheet, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, UnifiedSearchBar, useUnifiedSearch, SEG_TRIGGER, SEG_WRAPPER, StaleDataBanner } from '@/components/shared'
+import { ActionConfirmModal, ActionDock, SubmitButton, BaseModal, CancelButton, Chip, CollapsibleSheet, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, UnifiedSearchBar, useUnifiedSearch, SEG_TRIGGER, SEG_WRAPPER, StaleDataBanner } from "@/components/shared"
 import { reconciliationUnifiedSearchDef } from "../unifiedSearchDef"
 
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
@@ -750,14 +750,12 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <ActionSlideButton
+                                <SubmitButton
                                     onClick={() => setActionDialog({ open: true, type: 'automatch' })}
-                                    variant="success"
-                                    size="icon"
                                     loading={isAutoMatching}
                                     icon={<Wand2 className="h-4 w-4 group-hover:rotate-12 transition-transform" />}
                                     className="h-9 w-9 p-0 bg-success/5 hover:bg-success/10 text-success group transition-all"
-                                />
+                                >{null}</SubmitButton>
                             </TooltipTrigger>
                             <TooltipContent side="top">Auto-Match</TooltipContent>
                         </Tooltip>
@@ -1403,8 +1401,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             Limpiar
                         </Button>
 
-                        <ActionSlideButton
-                            variant="primary"
+                        <SubmitButton
                             loading={matching}
                             icon={<CheckCircle2 className="mr-2 h-4 w-4" />}
                             onClick={() => setActionDialog({ open: true, type: 'confirm_match' })}
@@ -1412,7 +1409,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             className="h-9 rounded-full px-6 text-xs font-bold shadow-floating transition-transform active:scale-95"
                         >
                             Conciliar
-                        </ActionSlideButton>
+                        </SubmitButton>
                     </ActionDock.Actions>
                 </ActionDock>
 

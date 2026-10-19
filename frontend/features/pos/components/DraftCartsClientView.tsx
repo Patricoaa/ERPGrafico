@@ -20,7 +20,7 @@ import {
     Lock,
     Wallet,
 } from "lucide-react"
-import { ActionConfirmModal, ActionSlideButton, BaseModal, DataTable, Chip } from '@/components/shared'
+import { ActionConfirmModal, DangerButton, BaseModal, DataTable, Chip } from "@/components/shared"
 import type { ColumnDef } from "@tanstack/react-table"
 import type { SyncDraft } from '@/features/pos/hooks/useDraftSync'
 
@@ -401,8 +401,7 @@ export function DraftCartsClientView({
                                 const cannotLoad = lockedByOther || isCurrentDraft
                                 return (
                                     <>
-                                        <ActionSlideButton
-                                            size="sm"
+                                        <DangerButton
                                             variant="destructive"
                                             className={cn(
                                                 "h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity",
@@ -416,7 +415,7 @@ export function DraftCartsClientView({
                                                 setConfirmDeleteName(d.name)
                                             }}
                                             icon={Trash2}
-                                        />
+                                        >{null}</DangerButton>
                                         <Button
                                             size="sm"
                                             variant="ghost"

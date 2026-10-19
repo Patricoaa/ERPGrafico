@@ -13,7 +13,7 @@ import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactS
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Form, FormField } from "@/components/ui/form"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
-import { Drawer, CancelButton, ActionSlideButton, LabeledInput, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
+import { Drawer, CancelButton, SubmitButton, LabeledInput, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
 
@@ -163,9 +163,9 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                         actions={
                             <>
                                 <CancelButton onClick={() => onOpenChange(false)} />
-                                <ActionSlideButton type="submit" loading={loading} onClick={form.handleSubmit(onSubmit)}>
+                                <SubmitButton type="submit" loading={loading} onClick={form.handleSubmit(onSubmit)}>
                                     {mode === 'create' ? "Crear Proveedor" : "Guardar Cambios"}
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />

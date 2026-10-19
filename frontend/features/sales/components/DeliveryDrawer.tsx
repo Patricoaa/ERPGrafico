@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { Controller, useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
-import { ActionSlideButton, CancelButton, Drawer, FormFooter, FormSection, LabeledSelect, PeriodValidationDateInput, StatusBadge } from '@/components/shared'
+import { SubmitButton, CancelButton, Drawer, FormFooter, FormSection, LabeledSelect, PeriodValidationDateInput, StatusBadge } from "@/components/shared"
 import { EditableCollection, editableErrorsFromForm, focusFirstEditableError, initialEditableValues } from "@/components/entity-view"
 import { deliveryLinesEditable, hasPartialLines, matchesLineType, serviceDeliveryLinesEditable, toLineQuantities, type LineTypeFilter } from "@/features/orders"
 import type { Warehouse } from "@/features/inventory"
@@ -70,13 +70,13 @@ function DeliveryDrawerInner({ open, onOpenChange, orderId, onSuccess, filterTyp
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
-                            <ActionSlideButton
+                            <SubmitButton
                                 type="submit"
                                 form={`${formId}-form`}
                                 loading={loading}
                             >
                                 {isServiceMode ? 'Confirmar Entrega' : 'Confirmar Despacho'}
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />

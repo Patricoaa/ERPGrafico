@@ -3,10 +3,7 @@
 import React, { useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Banknote, AlertCircle, Calendar, TrendingDown, DollarSign, Eye, FileQuestion } from 'lucide-react'
-import {
-    BaseModal, FormFooter, ActionSlideButton, StatCard,
-    Skeleton, EmptyState, DataTable, DataTableColumnHeader, DataCell, StaleDataBanner, Chip,
-} from '@/components/shared'
+import { BaseModal, FormFooter, DangerButton, StatCard, Skeleton, EmptyState, DataTable, DataTableColumnHeader, DataCell, StaleDataBanner, Chip } from "@/components/shared"
 import { Button } from '@/components/ui/button'
 import { useLoan } from '../hooks/useLoans'
 import { LoanPayInstallmentModal } from './LoanPayInstallmentModal'
@@ -90,12 +87,12 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                     isActive ? (
                         <FormFooter
                             actions={
-                                <ActionSlideButton
+                                <DangerButton
                                     variant="destructive"
                                     onClick={() => setShowPrepayModal(true)}
                                 >
                                     Prepago Total
-                                </ActionSlideButton>
+                                </DangerButton>
                             }
                         />
                     ) : undefined

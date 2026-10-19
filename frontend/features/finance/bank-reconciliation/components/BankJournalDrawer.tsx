@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/form"
 import { financeApi } from "../../api/financeApi"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, SubmitButton } from "@/components/shared"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -144,9 +144,9 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                         actions={
                             <>
                                 <CancelButton onClick={() => setOpen(false)} />
-                                <ActionSlideButton type="submit" form="bank-journal-form" loading={loading}>
+                                <SubmitButton type="submit" form="bank-journal-form" loading={loading}>
                                     {mode === 'create' ? "Crear Caja/Banco" : "Guardar Cambios"}
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />

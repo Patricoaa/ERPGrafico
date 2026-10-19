@@ -31,7 +31,7 @@ import { Check, ChevronRight, ChevronLeft, ShoppingCart } from "lucide-react"
 import { useVatRate } from '@/hooks/useVatRate'
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { useServerDate } from "@/hooks/useServerDate"
-import { Drawer, ActionSlideButton, CancelButton, FormFooter } from '@/components/shared'
+import { Drawer, SubmitButton, CancelButton, FormFooter } from "@/components/shared"
 import { useRef } from "react"
 
 interface PurchaseCheckoutWizardProps {
@@ -439,15 +439,14 @@ export function PurchaseCheckoutWizard({
                                 <ChevronRight className="ml-2 h-4 w-4" />
                             </Button>
                         ) : (
-                            <ActionSlideButton
+                            <SubmitButton
                                 onClick={handleFinish}
                                 loading={loading}
                                 className="w-48 bg-success hover:bg-success/90 text-success-foreground font-bold transition-all shadow-elevated shadow-success/20"
-                                variant="success"
                                 icon={Check}
                             >
                                 Finalizar Compra
-                            </ActionSlideButton>
+                            </SubmitButton>
                         )
                     }
                 />

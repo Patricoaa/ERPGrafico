@@ -8,7 +8,7 @@ import { useStatementQuery } from "../hooks/useReconciliationQueries"
 import type { BankStatement } from "../types"
 import { StatementImportModal, StatementDetailPanel, ReconciliationPanel } from "@/features/finance"
 import { useConfirmStatement } from "@/features/treasury"
-import { UnifiedSearchBar, useUnifiedSearch, Drawer, EmptyState, ActionConfirmModal, ActionSlideButton } from "@/components/shared"
+import { UnifiedSearchBar, useUnifiedSearch, Drawer, EmptyState, ActionConfirmModal, SubmitButton } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { statementEntity, statementViews } from "@/features/finance"
 import type { UnifiedSearchConfig, MultiSelectOption } from "@/types/unified-search"
@@ -283,15 +283,14 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                 contentClassName="p-0 flex flex-col overflow-hidden"
                 headerActions={
                     workbenchStatement && workbenchStatement.reconciliation_progress === 100 && workbenchStatement.state !== "CONFIRMED" ? (
-                        <ActionSlideButton
+                        <SubmitButton
                             onClick={() => confirmAction.requestConfirm()}
                             loading={confirmAction.isConfirming}
                             icon={CheckCircle2}
-                            variant="success"
                             className="bg-success hover:bg-success/90 shadow-card px-5 font-bold text-sm"
                         >
                             {confirmAction.isConfirming ? "Finalizando..." : "Confirmar Cartola"}
-                        </ActionSlideButton>
+                        </SubmitButton>
                     ) : undefined
                 }
             >

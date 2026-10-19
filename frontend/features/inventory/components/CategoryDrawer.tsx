@@ -8,7 +8,7 @@ import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { ActionSlideButton, CancelButton, Drawer, FormFooter, FormSection, FormSplitLayout, LabeledContainer, LabeledInput, LabeledSwitch } from '@/components/shared'
+import { SubmitButton, CancelButton, Drawer, FormFooter, FormSection, FormSplitLayout, LabeledContainer, LabeledInput, LabeledSwitch } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -466,9 +466,9 @@ export function CategoryDrawer({
                         actions={
                             <>
                                 <CancelButton onClick={() => setOpen(false)} />
-                                <ActionSlideButton type="submit" form="category-form" loading={loading}>
+                                <SubmitButton type="submit" form="category-form" loading={loading}>
                                     {mode === 'create' ? "Crear Categoría" : "Guardar Cambios"}
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />

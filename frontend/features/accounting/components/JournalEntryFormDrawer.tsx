@@ -24,7 +24,7 @@ import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { useServerDate } from "@/hooks/useServerDate"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { formatCurrency } from "@/lib/money"
-import { Chip, Drawer, LabeledInput, LabeledContainer, CancelButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell, StatusBadge } from "@/components/shared";
+import { Chip, Drawer, LabeledInput, LabeledContainer, CancelButton, IconButton, PeriodValidationDateInput, SubmitButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell, StatusBadge } from "@/components/shared"
 import { SourceDocumentSelector, type SourceDocument } from "@/components/selectors/SourceDocumentSelector";
 import { formDrawerWidth } from "@/lib/form-widths";
 import { ActivitySidebar } from "@/features/audit";
@@ -442,9 +442,9 @@ export function JournalEntryFormDrawer({
                         actions={
                             <>
                                 <CancelButton onClick={() => setOpen(false)} />
-                                <ActionSlideButton type="submit" form="journal-entry-form" loading={loading}>
+                                <SubmitButton type="submit" form="journal-entry-form" loading={loading}>
                                     {mode === 'create' ? "Crear Asiento" : "Actualizar Asiento"}
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />

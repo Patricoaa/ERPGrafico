@@ -8,11 +8,7 @@ import type { Resolver } from 'react-hook-form'
 import * as z from 'zod'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Form, FormField } from '@/components/ui/form'
-import {
-    Drawer, LabeledInput, LabeledSelect, FormSection, FormFooter,
-    CancelButton, ActionSlideButton,
-    DataTable,
-} from '@/components/shared'
+import { Drawer, LabeledInput, LabeledSelect, FormSection, FormFooter, CancelButton, SubmitButton, DataTable } from "@/components/shared"
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Banknote, Calculator } from 'lucide-react'
@@ -246,13 +242,13 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton
+                            <SubmitButton
                                 loading={isCreating}
                                 disabled={isCreating}
                                 onClick={form.handleSubmit(onSubmit)}
                             >
                                 Registrar Crédito
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />

@@ -14,7 +14,7 @@ import { posApi } from "../api/posApi"
 import { POSReport, type POSReportData } from "@/features/pos/components/POSReport"
 import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
 import { SessionOpenModal } from "@/features/pos/components/SessionOpenModal"
-import { ActionSlideButton } from '@/components/shared'
+import { SubmitButton } from "@/components/shared"
 import { forwardRef, useImperativeHandle } from "react"
 
 import { cn } from "@/lib/utils"
@@ -208,9 +208,9 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
     if (loading) {
         return (
-            <ActionSlideButton variant="muted" loading className="gap-2">
+            <SubmitButton variant="outline" loading className="gap-2 text-muted-foreground border-border/50">
                 Cargando...
-            </ActionSlideButton>
+            </SubmitButton>
         )
     }
 

@@ -3,7 +3,7 @@
 import React from "react"
 import { BaseModal, type BaseModalProps } from "./BaseModal"
 import { Drawer } from "./Drawer"
-import { ActionSlideButton } from "./ActionSlideButton"
+import { SubmitButton } from "./ActionButtons"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -50,7 +50,7 @@ export interface GenericWizardProps extends Omit<BaseModalProps, "children" | "t
  * GenericWizard
  *
  * Industrial-themed multi-step wizard built on BaseModal or Drawer.
- * Uses ActionSlideButton for primary navigation (matching the kinetic interaction contract).
+ * Uses SubmitButton for primary navigation (Capa 2 action button, ADR-0088).
  * Includes a monospaced industrial step counter for prepress-style progress indication.
  */
 export function GenericWizard({
@@ -165,29 +165,25 @@ export function GenericWizard({
                 </div>
 
                 {isLastStep ? (
-                    <ActionSlideButton
-                        variant="success"
-                        size={touchMode ? "lg" : undefined}
+                    <SubmitButton
                         onClick={() => startTransition(handleNext)}
                         disabled={currentStepData.isValid === false || isCompleting || isStepTransitioning}
                         loading={isCompleting || isStepTransitioning}
                         icon={isCompleting || isStepTransitioning ? undefined : (completeButtonIcon ?? CheckCircle2)}
-                        className={cn(touchMode && "active:scale-[0.98]")}
+                        className={cn("bg-success hover:bg-success/90 text-success-foreground", touchMode && "h-12 px-6 text-xs active:scale-[0.98]")}
                     >
                         {completeButtonLabel}
-                    </ActionSlideButton>
+                    </SubmitButton>
                 ) : (
-                    <ActionSlideButton
-                        variant="primary"
-                        size={touchMode ? "lg" : undefined}
+                    <SubmitButton
                         onClick={() => startTransition(handleNext)}
                         disabled={currentStepData.isValid === false || isCompleting || isStepTransitioning}
                         loading={isStepTransitioning}
                         icon={isStepTransitioning ? undefined : ChevronRight}
-                        className={cn(touchMode && "active:scale-[0.98]")}
+                        className={cn(touchMode && "h-12 px-6 text-xs active:scale-[0.98]")}
                     >
                         Siguiente
-                    </ActionSlideButton>
+                    </SubmitButton>
                 )}
             </div>
         </div>

@@ -16,7 +16,7 @@ import { useTreasuryAccounts, treasuryApi, useCreditLineMutations, CreditLineDra
 import type { Bank, TreasuryAccount, TreasuryAccountCreatePayload, TreasuryAccountUpdatePayload } from "../types"
 import type { CreditLine } from "../credit-lines/types"
 
-import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, Drawer, Chip, SkeletonShell, StatusBadge, MoneyDisplay } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, SubmitButton, Drawer, Chip, SkeletonShell, StatusBadge, MoneyDisplay } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { Form, FormField } from "@/components/ui/form"
 
@@ -230,13 +230,13 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                     {isSystemManaged ? "Cerrar" : "Cancelar"}
                                 </CancelButton>
                                 {!isSystemManaged && (
-                                    <ActionSlideButton
+                                    <SubmitButton
                                         loading={isSubmitting || loading}
                                         disabled={isSubmitting || loading}
                                         onClick={form.handleSubmit(onSubmit)}
                                     >
                                         {accountId ? "Guardar Cambios" : "Crear Cuenta"}
-                                    </ActionSlideButton>
+                                    </SubmitButton>
                                 )}
                             </>
                         }

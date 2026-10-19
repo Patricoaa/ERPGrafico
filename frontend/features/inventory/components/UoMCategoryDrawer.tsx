@@ -7,7 +7,7 @@ import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Drawer, CancelButton, LabeledInput, FormFooter, ActionSlideButton } from "@/components/shared"
+import { Drawer, CancelButton, LabeledInput, FormFooter, SubmitButton } from "@/components/shared"
 import {
     Form,
     FormField,
@@ -154,9 +154,9 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
                         actions={
                             <>
                                 <CancelButton onClick={() => setOpen(false)} disabled={isSaving} />
-                                <ActionSlideButton type="submit" form="uom-category-form" loading={isSaving}>
+                                <SubmitButton type="submit" form="uom-category-form" loading={isSaving}>
                                     {mode === 'create' ? "Crear Categoría" : "Guardar Cambios"}
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />

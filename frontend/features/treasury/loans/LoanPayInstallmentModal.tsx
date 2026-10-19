@@ -2,10 +2,7 @@
 
 import React, { useState } from 'react'
 import { Banknote, ArrowRight, Coins, AlertTriangle } from 'lucide-react'
-import {
-    BaseModal, FormFooter, CancelButton, ActionSlideButton, LabeledSelect,
-    MoneyDisplay, LabeledInput,
-} from '@/components/shared'
+import { BaseModal, FormFooter, CancelButton, SubmitButton, LabeledSelect, MoneyDisplay, LabeledInput } from "@/components/shared"
 import { useServerDate } from '@/hooks/useServerDate'
 import { useTreasuryAccounts } from '../hooks/useTreasuryAccounts'
 import { useLoanMutations } from '../hooks/useLoans'
@@ -95,13 +92,13 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton
+                            <SubmitButton
                                 onClick={handlePay}
                                 loading={isPaying}
                                 disabled={isPaying || !paymentAccount}
                             >
                                 Registrar Pago
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />

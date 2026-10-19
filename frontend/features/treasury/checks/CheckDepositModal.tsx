@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
-import {BaseModal, FormFooter, CancelButton, ActionSlideButton} from '@/components/shared'
+import { BaseModal, FormFooter, CancelButton, SubmitButton } from "@/components/shared"
 import { formatMoney } from '@/lib/money'
 import { TreasuryAccountSelector } from '@/components/selectors/TreasuryAccountSelector'
 import { useCheckMutations } from '../hooks/useChecks'
@@ -41,13 +41,13 @@ export function CheckDepositModal({ check, open, onOpenChange }: Props) {
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton
+                            <SubmitButton
                                 loading={saving}
                                 disabled={saving || !accountId}
                                 onClick={handleDeposit}
                             >
                                 Confirmar Depósito
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />

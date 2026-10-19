@@ -10,7 +10,7 @@ import { changePassword, changePin, downloadPayrollPdf, downloadMultiplePayrollP
 import type { MyProfile } from "@/types/profile"
 import type { Payroll } from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { ActionSlideButton, FadeIn, MoneyDisplay } from '@/components/shared'
+import { SubmitButton, FadeIn, MoneyDisplay } from "@/components/shared"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
@@ -300,10 +300,10 @@ function PasswordChangeCard() {
                         </div>
 
                         <div className="flex justify-end pt-2">
-                            <ActionSlideButton type="submit" loading={saving} disabled={saving} className="rounded-sm text-xs font-bold gap-2">
+                            <SubmitButton type="submit" loading={saving} disabled={saving} className="rounded-sm text-xs font-bold gap-2">
                                 <KeyRound className="h-4 w-4" />
                                 Cambiar Contraseña
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </div>
                     </form>
                 </Form>
@@ -588,8 +588,8 @@ function PersonalTab({
                     <div className="flex-1 min-h-0 flex flex-col">
                         {selectedPayrolls.length > 0 && (
                             <div className="px-6 py-2 border-b bg-muted/10 flex justify-end">
-                                <ActionSlideButton
-                                    size="sm"
+                                <SubmitButton
+                                    variant="outline"
                                     className="gap-2 rounded-sm text-xs font-bold border-primary/30 text-primary hover:bg-primary/5"
                                     onClick={onBulkDownload}
                                     disabled={downloadingAll}
@@ -597,7 +597,7 @@ function PersonalTab({
                                 >
                                     {!downloadingAll && <Download className="h-3.5 w-3.5" />}
                                     Descargar {selectedPayrolls.length} seleccionada(s)
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </div>
                         )}
                         <div className="flex-1 min-h-0 flex flex-col">
@@ -750,10 +750,10 @@ function PinChangeCard() {
                         </div>
 
                         <div className="flex justify-end pt-2">
-                            <ActionSlideButton type="submit" loading={saving} disabled={saving} className="rounded-sm text-xs font-bold gap-2">
+                            <SubmitButton type="submit" loading={saving} disabled={saving} className="rounded-sm text-xs font-bold gap-2">
                                 <Wallet className="h-4 w-4" />
                                 Guardar PIN
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </div>
                     </form>
                 </Form>

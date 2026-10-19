@@ -14,7 +14,7 @@ import {
     FormItem,
 } from "@/components/ui/form"
 import { RadioGroup } from "@/components/ui/radio-group"
-import { ActionSlideButton, CancelButton } from "@/components/shared"
+import { SubmitButton, CancelButton } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useContact, useContactCreditLedger } from "../hooks/useContacts"
 import { type Contact, type ContactPayload } from "../types"
@@ -261,9 +261,9 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                         actions={
                             <>
                                 <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
-                                <ActionSlideButton type="submit" form="contact-form" loading={form.formState.isSubmitting}>
+                                <SubmitButton type="submit" form="contact-form" loading={form.formState.isSubmitting}>
                                     {mode === 'create' ? "Crear Contacto" : "Guardar Cambios"}
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />

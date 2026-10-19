@@ -10,7 +10,7 @@ import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { Settings2 } from "lucide-react"
 
-import { ActionConfirmModal, ActionSlideButton, AutoSaveStatusBadge, BaseModal, Chip, FadeIn, LabeledInput, LabeledSelect, SkeletonShell, ToolbarCreateButton } from '@/components/shared'
+import { ActionConfirmModal, SubmitButton, AutoSaveStatusBadge, BaseModal, Chip, FadeIn, LabeledInput, LabeledSelect, SkeletonShell, ToolbarCreateButton } from "@/components/shared"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
@@ -395,9 +395,9 @@ function ConceptDialog({ concept, onSaved, open: controlledOpen, onOpenChange: s
                 description="Defina el comportamiento y la cuenta contable de este ítem de nómina."
                 footer={
                     <div className="flex w-full gap-3 justify-end pt-2 border-t">
-                        <ActionSlideButton type="submit" form="concept-form" loading={saving} disabled={saving} className="w-full h-10 font-bold uppercase tracking-widest text-2xs">
+                        <SubmitButton type="submit" form="concept-form" loading={saving} disabled={saving} className="w-full h-10 font-bold uppercase tracking-widest text-2xs">
                             Validar y Guardar Cambios
-                        </ActionSlideButton>
+                        </SubmitButton>
                     </div>
                 }
             >
@@ -588,9 +588,9 @@ function AFPDialog({ afp, onSaved, onCreate, onUpdate }: { afp?: AFP, onSaved: (
                 description="Configure las tasas vigentes para las cotizaciones previsionales."
                 footer={
                     <div className="flex w-full gap-3 justify-end pt-2 border-t">
-                        <ActionSlideButton type="submit" form="afp-form" loading={saving} disabled={saving} className="w-full h-10 font-bold uppercase tracking-widest text-2xs bg-primary hover:bg-primary/90 text-primary-foreground">
+                        <SubmitButton type="submit" form="afp-form" loading={saving} disabled={saving} className="w-full h-10 font-bold uppercase tracking-widest text-2xs">
                             Guardar Institución
-                        </ActionSlideButton>
+                        </SubmitButton>
                     </div>
                 }
             >

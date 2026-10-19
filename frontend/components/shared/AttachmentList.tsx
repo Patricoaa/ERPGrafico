@@ -94,7 +94,7 @@ export function AttachmentList({
                                 disabled={isDeleting === file.id}
                             >
                                 {isDeleting === file.id ? (
-                                    // eslint-disable-next-line no-restricted-syntax -- icon-only delete spinner; ActionSlideButton requires text content
+                                    // eslint-disable-next-line no-restricted-syntax -- icon-only delete spinner; action buttons require text content
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
                                     <Trash2 className="h-4 w-4" />

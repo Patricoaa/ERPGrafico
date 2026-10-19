@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button"
 import {
     Form, FormField
 } from "@/components/ui/form"
-import { ActionConfirmModal, ActionSlideButton, BaseModal, CancelButton, FormFooter, LabeledInput, LabeledSelect, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, SubmitButton, BaseModal, CancelButton, FormFooter, LabeledInput, LabeledSelect, StatusBadge } from "@/components/shared"
 
 import {
     BookOpen,
@@ -179,9 +179,7 @@ export function PayrollDetailView({
                         {viewMode === 'admin' && <DocumentRelationsButton label="hr.payroll" id={payroll.id} />}
                         {viewMode === 'admin' && !isPosted && (
                             <>
-                                <ActionSlideButton
-                                    variant="primary"
-                                    size="sm"
+                                <SubmitButton
                                     className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
                                     onClick={handleGenerateProforma}
                                     loading={generating}
@@ -189,17 +187,16 @@ export function PayrollDetailView({
                                 >
                                     <span className="hidden sm:inline">Propuesta Inicial</span>
                                     <span className="sm:hidden">Propuesta</span>
-                                </ActionSlideButton>
+                                </SubmitButton>
 
-                                <ActionSlideButton
-                                    size="sm"
+                                <SubmitButton
                                     className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
                                     loading={posting}
                                     onClick={() => setPostConfirmOpen(true)}
                                     icon={BookOpen}
                                 >
                                     Contabilizar
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         )}
                         {viewMode === 'admin' && isPosted && (
@@ -295,9 +292,7 @@ export function PayrollDetailView({
                     <div className="flex items-center gap-2 sm:gap-3">
                         {viewMode === 'admin' && !isPosted && (
                             <>
-                                <ActionSlideButton
-                                    variant="primary"
-                                    size="sm"
+                                <SubmitButton
                                     className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
                                     onClick={handleGenerateProforma}
                                     loading={generating}
@@ -305,17 +300,16 @@ export function PayrollDetailView({
                                 >
                                     <span className="hidden sm:inline">Propuesta Inicial</span>
                                     <span className="sm:hidden">Propuesta</span>
-                                </ActionSlideButton>
+                                </SubmitButton>
 
-                                <ActionSlideButton
-                                    size="sm"
+                                <SubmitButton
                                     className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
                                     loading={posting}
                                     onClick={() => setPostConfirmOpen(true)}
                                     icon={BookOpen}
                                 >
                                     Contabilizar
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         )}
                         {viewMode === 'admin' && isPosted && (
@@ -510,13 +504,13 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared }
                     actions={
                         <>
                             <CancelButton onClick={() => { setOpen(false); onEditCleared(); }} />
-                            <ActionSlideButton
+                            <SubmitButton
                                 form="payroll-item-form"
                                 type="submit"
                                 loading={saving}
                             >
                                 {item && item.id ? "Actualizar Item" : "Añadir a Liquidación"}
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />

@@ -2,10 +2,7 @@
 
 import React, { useState, useMemo } from 'react'
 import { Banknote, ArrowRight, Coins, Calculator } from 'lucide-react'
-import {
-    BaseModal, FormFooter, CancelButton, ActionSlideButton, LabeledSelect,
-    MoneyDisplay, LabeledInput,
-} from '@/components/shared'
+import { BaseModal, FormFooter, CancelButton, DangerButton, LabeledSelect, MoneyDisplay, LabeledInput } from "@/components/shared"
 import { useServerDate } from '@/hooks/useServerDate'
 import { useTreasuryAccounts } from '../hooks/useTreasuryAccounts'
 import { useLoanMutations } from '../hooks/useLoans'
@@ -92,14 +89,14 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton
+                            <DangerButton
                                 variant="destructive"
                                 onClick={handlePrepay}
                                 loading={isPrepaying}
                                 disabled={isPrepaying || !paymentAccount}
                             >
                                 Confirmar Prepago Total
-                            </ActionSlideButton>
+                            </DangerButton>
                         </>
                     }
                 />

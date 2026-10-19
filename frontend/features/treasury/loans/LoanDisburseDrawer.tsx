@@ -7,10 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import type { Resolver } from 'react-hook-form'
 import * as z from 'zod'
 import { Form, FormField } from '@/components/ui/form'
-import {
-    Drawer, LabeledInput, FormSection, FormFooter,
-    CancelButton, ActionSlideButton, MoneyDisplay,
-} from '@/components/shared'
+import { Drawer, LabeledInput, FormSection, FormFooter, CancelButton, SubmitButton, MoneyDisplay } from "@/components/shared"
 import { Send, AlertCircle, Settings } from 'lucide-react'
 import { useLoanMutations } from '../hooks/useLoans'
 import { showApiError } from '@/lib/errors'
@@ -144,13 +141,13 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton
+                            <SubmitButton
                                 loading={isDisbursing}
                                 disabled={isDisbursing}
                                 onClick={form.handleSubmit(onSubmit)}
                             >
                                 Confirmar Desembolso
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />

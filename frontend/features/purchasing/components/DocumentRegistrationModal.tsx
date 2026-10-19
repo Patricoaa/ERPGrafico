@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 
 import { Label } from "@/components/ui/label"
 import {FileText, Upload} from "lucide-react"
-import {BaseModal, ActionSlideButton, CancelButton, DocumentAttachmentDropzone, FolioValidationInput, FormFooter, FormSection, LabeledSelect, PeriodValidationDateInput} from '@/components/shared'
+import { BaseModal, SubmitButton, CancelButton, DocumentAttachmentDropzone, FolioValidationInput, FormFooter, FormSection, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { formatEntityDisplay } from "@/lib/entity-registry"
@@ -113,13 +113,13 @@ export function DocumentRegistrationModal({
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
-                            <ActionSlideButton 
+                            <SubmitButton 
                                 onClick={handleSubmit} 
                                 loading={submitting}
                                 disabled={!isPending && (!isPeriodValid || !isFolioValid)}
                             >
                                 Registrar Documento
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />

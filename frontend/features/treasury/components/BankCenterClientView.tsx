@@ -11,11 +11,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Form, FormField } from "@/components/ui/form"
-import {
-    CancelButton, LabeledInput,
-    BaseModal, FormFooter, FormSplitLayout, ActionSlideButton, ActionConfirmModal,
-    UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch
-} from "@/components/shared"
+import { CancelButton, LabeledInput, BaseModal, FormFooter, FormSplitLayout, SubmitButton, ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { bankUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { useBanks } from "@/features/treasury/hooks/useMasterData"
 import { useAllBanksOverview } from "@/features/treasury/hooks/useAllBanksOverview"
@@ -236,7 +232,7 @@ function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton
+                            <SubmitButton
                                 type="submit"
                                 form="bank-form"
                                 loading={isSaving}
@@ -244,7 +240,7 @@ function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
                                 onClick={form.handleSubmit(onSubmit)}
                             >
                                 {bank ? "Guardar Cambios" : "Crear Banco"}
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />

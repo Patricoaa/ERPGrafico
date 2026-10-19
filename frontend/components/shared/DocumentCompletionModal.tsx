@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useServerDate } from "@/hooks/useServerDate"
 import { BaseModal } from '@/components/shared'
 import { Button } from "@/components/ui/button"
-import { ActionSlideButton } from '@/components/shared'
+import { SubmitButton } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {FileEdit, CheckCircle2} from "lucide-react"
@@ -117,9 +117,9 @@ export function DocumentCompletionModal({
                     <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
                         Cancelar
                     </Button>
-                    <ActionSlideButton onClick={handleSubmit} loading={submitting} disabled={submitting || !isFolioValid}>
+                    <SubmitButton onClick={handleSubmit} loading={submitting} disabled={submitting || !isFolioValid}>
                         Finalizar Documento
-                    </ActionSlideButton>
+                    </SubmitButton>
                 </>
             }
         >

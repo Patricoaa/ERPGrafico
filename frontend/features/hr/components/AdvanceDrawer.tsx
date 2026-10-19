@@ -10,7 +10,7 @@ import { useEmployees } from '@/features/hr/hooks/useEmployees'
 import { usePayrolls } from '@/features/hr/hooks/usePayrolls'
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { ActivitySidebar } from "@/features/audit"
-import { CancelButton, ActionSlideButton } from "@/components/shared"
+import { CancelButton, SubmitButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
@@ -139,9 +139,9 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                         actions={
                             <>
                                 <CancelButton onClick={() => onOpenChange(false)} />
-                                <ActionSlideButton type="submit" form="advance-form" loading={saving}>
+                                <SubmitButton type="submit" form="advance-form" loading={saving}>
                                     {mode === 'create' ? "Registrar" : "Actualizar"}
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />

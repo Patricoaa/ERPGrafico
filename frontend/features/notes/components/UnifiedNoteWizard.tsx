@@ -25,7 +25,7 @@ import { ChevronLeft, ChevronRight, CheckCircle2, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 
-import { Drawer, ActionSlideButton, Chip, SkeletonShell } from '@/components/shared'
+import { Drawer, SubmitButton, Chip, SkeletonShell } from "@/components/shared"
 
 // Shared steps
 import {
@@ -339,23 +339,23 @@ export function UnifiedNoteWizard({
                     </Button>
 
                     {!isLastStep ? (
-                        <ActionSlideButton
+                        <SubmitButton
                             onClick={handleNext}
                             loading={submitting || initializing}
                             className="w-40 h-12 font-bold shadow-elevated transition-all"
                         >
                             Siguiente
                             <ChevronRight className="ml-2 h-4 w-4" />
-                        </ActionSlideButton>
+                        </SubmitButton>
                     ) : (
-                        <ActionSlideButton
+                        <SubmitButton
                             onClick={handleFinish}
                             className="w-48 h-12 bg-success hover:bg-success font-bold shadow-elevated transition-all"
                             loading={submitting}
                         >
                             <CheckCircle2 className="mr-2 h-4 w-4" />
                             Finalizar Proceso
-                        </ActionSlideButton>
+                        </SubmitButton>
                     )}
                 </div>
             }

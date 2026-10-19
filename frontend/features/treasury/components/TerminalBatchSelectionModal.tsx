@@ -20,7 +20,7 @@ import { useVatRate } from '@/hooks/useVatRate'
 import { useTerminalProviders, usePaymentMethods, useTerminalMovements, useTerminalBatchMutations } from "@/features/treasury"
 import type { TreasuryMovement } from "@/features/treasury/types"
 
-import { BaseModal, ActionSlideButton, CancelButton, SubmitButton, LabeledContainer, LabeledInput, LabeledCheckboxGroup, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
+import { BaseModal, SubmitButton, CancelButton, LabeledContainer, LabeledInput, LabeledCheckboxGroup, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
 
 const terminalBatchSchema = z.object({
     providerId: z.string().min(1, "Seleccione un proveedor"),
@@ -262,7 +262,7 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
                                             : "Vincule las ventas del terminal para calcular el lote automáticamente."
                                         }
                                         action={
-                                            <ActionSlideButton
+                                            <SubmitButton
                                                 type="button"
                                                 onClick={handleAutoCalculate}
                                                 disabled={!providerId || !dateRange?.from}
@@ -270,7 +270,7 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
                                                 className="min-w-[200px]"
                                             >
                                                 Vincular Ventas
-                                            </ActionSlideButton>
+                                            </SubmitButton>
                                         }
                                     />
                                 </div>

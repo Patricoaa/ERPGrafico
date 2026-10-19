@@ -8,7 +8,7 @@ import * as z from "zod"
 import { useAbsenceMutations } from '../hooks/useAbsenceMutations'
 import { useEmployees } from '@/features/hr/hooks/useEmployees'
 import type { Absence, Employee } from "@/types/hr"
-import { CancelButton, ActionSlideButton } from "@/components/shared"
+import { CancelButton, SubmitButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
@@ -108,9 +108,9 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
             actions={
                 <>
                     <CancelButton onClick={() => onOpenChange(false)} />
-                    <ActionSlideButton type="submit" disabled={saving} onClick={form.handleSubmit(onSubmit)} loading={saving}>
+                    <SubmitButton type="submit" disabled={saving} onClick={form.handleSubmit(onSubmit)} loading={saving}>
                         {mode === 'create' ? "Registrar" : "Actualizar"}
-                    </ActionSlideButton>
+                    </SubmitButton>
                 </>
             }
         />

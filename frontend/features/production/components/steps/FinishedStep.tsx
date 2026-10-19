@@ -1,7 +1,7 @@
 "use client"
 
 import {CheckCircle2, AlertTriangle, Copy} from 'lucide-react'
-import { ActionSlideButton } from '@/components/shared'
+import { SubmitButton } from "@/components/shared"
 import type { WorkOrder } from '../../types'
 import { getDomainConceptTitle } from "@/lib/entity-registry"
 
@@ -53,9 +53,9 @@ export function FinishedStep({ order, onPrintCopy, isDuplicating }: FinishedStep
       <div className="flex gap-3 flex-wrap justify-center">
 
         {onPrintCopy && (
-          <ActionSlideButton variant="primary" className="gap-2" loading={isDuplicating} onClick={onPrintCopy} icon={Copy}>
+          <SubmitButton className="gap-2" loading={isDuplicating} onClick={onPrintCopy} icon={Copy}>
             Imprimir copia
-          </ActionSlideButton>
+          </SubmitButton>
         )}
 
       </div>

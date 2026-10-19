@@ -23,7 +23,7 @@ import { productionApi, useAllowedDteTypes } from "../hooks"
 import { useUoMs, useProductionVariants } from "../hooks"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
 import type { Product } from "@/types/entities"
-import { ActionSlideButton, CancelButton, DataCell, Drawer, FormFooter, FormLineItemsTable, IconButton, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell } from '@/components/shared'
+import { SubmitButton, CancelButton, DataCell, Drawer, FormFooter, FormLineItemsTable, IconButton, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
 import { useVatRate } from "@/hooks/useVatRate"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -344,7 +344,7 @@ export function BOMDrawer({
                         actions={
                             <>
                                 <CancelButton onClick={() => onOpenChange(false)} />
-                                <ActionSlideButton
+                                <SubmitButton
                                     form="bom-form"
                                     type="submit"
                                     loading={form.formState.isSubmitting}
@@ -352,7 +352,7 @@ export function BOMDrawer({
                                     disabled={form.formState.isSubmitting}
                                 >
                                     {bomToEdit ? "Guardar Cambios" : "Crear Receta"}
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />
