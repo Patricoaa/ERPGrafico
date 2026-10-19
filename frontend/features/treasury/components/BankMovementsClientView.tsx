@@ -1,9 +1,8 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
-import { DataTableView, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
-import { type ColumnDef } from "@tanstack/react-table"
-import { resolveTreasuryMovementIcon } from "@/lib/movement-icons"
+import React from "react"
+import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared'
+import { Collection, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT, type FieldId } from "@/components/entity-view"
 
 import { treasuryMovementActions, type TreasuryMovementActionsCtx } from './treasuryMovementActions'
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
@@ -11,11 +10,14 @@ import { useGlobalModalActions } from "@/components/providers/GlobalModalProvide
 import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
 import { treasuryMovementsUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { toast } from "sonner"
 import type { TreasuryMovement } from "@/features/treasury/types"
-import { movementFields } from "@/features/treasury/movementFields"
+import { treasuryMovementEntity, treasuryMovementViews } from "@/features/treasury/entity-view/treasuryMovement.entity"
 
 import { CashMovementDrawer } from "@/features/treasury/components/CashMovementDrawer"
+
+/** Search group keys → entity field ids (grouping uses the formatted cell text). */
+const MOVEMENT_GROUPS: Record<string, FieldId<typeof treasuryMovementEntity.fields>> = { date: "date", movement_type: "movementType", payment_method: "paymentMethod" }
+const DEFAULT_PAGE = { pageIndex: 0, pageSize: 50 }
 
 interface BankMovementsClientViewProps {
     bankId: number
@@ -29,22 +31,14 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
         ...search.filters,
         bank: bankId,
     }
-    const isGrouping = search.groupBy !== null
-    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
-    const { page, movements, totalCount, isLoading } = useTreasuryMovements({
+    const groupBy = search.groupBy ? MOVEMENT_GROUPS[search.groupBy] ?? null : null
+    const [pageState, setPageState] = useServerPage([allFilters, groupBy], DEFAULT_PAGE)
+    const { view, onViewChange } = useCollectionViewMode("treasury.treasurymovement")
+    const { movements, totalCount, isLoading, isRefetching, isError, refetch } = useTreasuryMovements({
         ...(allFilters as TreasuryMovementFilters),
-        page: isGrouping ? 1 : pageState.pageIndex + 1,
-        page_size: isGrouping ? 200 : pageState.pageSize,
+        page: groupBy ? 1 : pageState.pageIndex + 1,
+        page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
     })
-
-    const isOverLimit = isGrouping && totalCount > 200
-    const effectiveGrouping = isGrouping && !isOverLimit
-
-    useEffect(() => {
-        if (isOverLimit) {
-            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
-        }
-    }, [isOverLimit, totalCount])
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TreasuryMovement>({
         endpoint: '/treasury/movements'
@@ -57,79 +51,37 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
         openEntity("treasury.treasurymovement", id)
     }, [openEntity])
 
-    const { clearAll } = search
-    const handleReset = React.useCallback(() => {
-        clearAll()
-    }, [clearAll])
-
     const actionsCtx: TreasuryMovementActionsCtx = React.useMemo(
         () => ({ onDetail: handleViewDetails }),
         [handleViewDetails]
     )
 
-    const columns = React.useMemo<ColumnDef<TreasuryMovement>[]>(() => [
-        ...movementFields.toColumns(),
-        treasuryMovementActions.auto(actionsCtx)
-    ], [actionsCtx])
+    const collection = useEntityCollection(
+        treasuryMovementEntity,
+        { rows: movements, rowCount: totalCount, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
+        { pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState }, groupBy },
+    )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    entityLabel="treasury.treasurymovement"
-                    columns={columns}
-                    data={movements}
-                    isLoading={isLoading}
-                    variant="embedded"
-                    manualPagination={!effectiveGrouping}
-                    pageCount={effectiveGrouping ? 1 : page ? Math.ceil(page.count / page.pageSize) : 0}
-                    rowCount={totalCount}
-                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 200 } : pageState}
-                    onPaginationChange={effectiveGrouping ? undefined : setPageState}
-                    unifiedSearch={<UnifiedSearchBar
-                        config={treasuryMovementsUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar movimiento..."
-                    />}
-                    unifiedSearchConfig={treasuryMovementsUnifiedSearchDef}
-                    currentGroupBy={effectiveGrouping ? search.groupBy : null}
-                    showReset={search.isFiltered}
-                    onReset={handleReset}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "treasury",
-                        title: "Aún no hay movimientos bancarios",
-                        description: "Los movimientos registrados en las cuentas de este banco aparecerán aquí.",
-                    }}
-                    renderCard={(m) => {
-                        const { icon, iconClassName } = resolveTreasuryMovementIcon(m)
-
-                        return (
-                            <AutoEntityCard 
-                                key={m.id} 
-                                data={m}
-                                fields={movementFields}
-                                entityLabel="treasury.bankmovement"
-                                onClick={() => handleViewDetails(m.id)}
-                                icon={icon}
-                                iconClassName={iconClassName}
-                                actions={treasuryMovementActions.render(m, { onDetail: (id) => handleViewDetails(id) })}
-
-                            />
-                        )
-                    }}
-                    cardSkeleton={{ showBody: false }}
+            <Collection.Root
+                collection={collection}
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(m) => handleViewDetails(m.id)}
+                actions={treasuryMovementActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar>
+                    <UnifiedSearchBar config={treasuryMovementsUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar movimiento..." />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={treasuryMovementViews.table}
+                    card={treasuryMovementViews.card}
+                    emptyTitle="Aún no hay movimientos bancarios"
+                    emptyDescription="Los movimientos registrados en las cuentas de este banco aparecerán aquí."
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+            </Collection.Root>
 
             {selectedMovementId && (
                 <CashMovementDrawer

@@ -48,13 +48,15 @@ interface UseTreasuryAccountsReturn {
     isCreating: boolean
     isUpdating: boolean
     isLoading: boolean
+    isRefetching: boolean
+    isError: boolean
 }
 
 export function useTreasuryAccounts({ filters }: { filters?: TreasuryAccountFilters } = {}): UseTreasuryAccountsReturn {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: accounts, isLoading, refetch } = useQuery({
+    const { data: accounts, isLoading, isFetching, isError, refetch } = useQuery({
         queryKey: [...TREASURY_ACCOUNTS_KEYS.lists(), filters],
         queryFn: () => treasuryApi.getAccounts(filters),
         staleTime: staleTime.stable,
@@ -110,6 +112,8 @@ export function useTreasuryAccounts({ filters }: { filters?: TreasuryAccountFilt
         deleteAccount: deleteMutation.mutateAsync,
         isCreating: createMutation.isPending,
         isUpdating: updateMutation.isPending,
-        isLoading
+        isLoading,
+        isRefetching: isFetching && !isLoading,
+        isError,
     }
 }

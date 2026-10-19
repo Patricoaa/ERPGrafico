@@ -1117,3 +1117,46 @@ Cierra la oleada B. 3 pantallas, 3 entidades nuevas, 3 `*Fields` borrados. Ciclo
 
 Cierra la oleada B (B1-B3, B5; B4 queda con Puerta D propia por tamaño, §6.5).
 
+### 6.28 Puerta D de la oleada C (presentada el 2026-10-19)
+
+Forense por archivo (`*Fields`, hooks, patrones ya en uso). Oleada más grande hasta ahora: 20 archivos, ~6000 líneas. M5 dice ciclo completo para B-C, pero dado el tamaño propongo ajustar el proceso por sub-lote (ver decisiones).
+
+| Sub-lote | Pantalla (líneas) | `*Fields` (computed) | Qué tiene hoy | Riesgo |
+|---|---|---|---|---|
+| **C1 · Movimientos y cuentas** | `treasury/TreasuryMovementsClientView` (471) | `movementFields.ts` (0) | Analítica propia (dirección IN/OUT); comparte el hook `useTreasuryMovements` con `BankMovementsClientView` (145, mismo `movementFields`) — una sola entidad, dos pantallas (la de banco es un recorte por `bankId`, igual que `documentTypeFilter` en B3) | medio |
+| | `treasury/TreasuryAccountsClientView` (260) | `accountFields.tsx` (1) | — | bajo |
+| | `treasury/TerminalBatchesClientView` (170) | `terminalBatchFields.tsx` (2) | — | bajo |
+| | `treasury/checks/ChecksClientView` (190) | `checkFields.tsx` (1) | — | bajo |
+| **C2 · Tarjetas** | `treasury/card-statements/StatementsClientView` (544) | `cardStatementFields.tsx` (0) | la más grande de C2 | medio |
+| | `treasury/card-statements/StatementDetailModal` (156) | `statementChargeFields` (`toColumns` + `DataTableView`, sin `Collection`) | tabla embebida de cargos dentro de un modal — mismo patrón "líneas de documento" de B3 | bajo |
+| | `treasury/card-statements/UnbilledChargesClientView` (610) | `unbilledChargeFields.tsx` (0) | la más grande de la oleada entera | medio-alto (tamaño) |
+| **C3 · Crédito y libros** | `credits/CreditPortfolioClientView` (209) | `creditContactFields.tsx` (0) + `creditHistoryEntryFields.tsx` (0) | lista + historial embebido | medio |
+| | `credits/PortfolioTable` (164) | `creditLedgerEntryFields.tsx` (0, `toColumns`+`<DataTable>`) | tabla de libro auxiliar embebida | bajo |
+| | `credits/BlacklistClientView` (270) | `blacklistFields.ts` (0) + `creditLedgerEntryFields.tsx` (**el mismo que `PortfolioTable`**) | — | bajo |
+| | `accounting/LedgerDrawer` (313) | `ledgerMovementFields.tsx` (1, `toColumns`+`<DataTable>`) | libro auxiliar de una cuenta contable | bajo |
+| | `app/.../accounts/[id]/ledger/page.tsx` (121) | sin `*Fields` propio (`<DataTable>` con columnas en línea) | página de libro auxiliar (¿duplica `LedgerDrawer`?) | medio (a confirmar) |
+| | `settings/partners/PartnerLedgerDrawer` (172) | `partnerLedgerFields` (`toColumns`+`<DataTable>`) | libro auxiliar de un socio | bajo |
+| **C4 · Stock** | `inventory/MovementClientView` (375) | `stockMoveFields.tsx` (0) | — | medio |
+| | `inventory/StockReport` (228) | `stockReportFields.ts` (2) | orquesta `ProductInsightsPanel` y `ProductInsightsModal` | medio |
+| | `inventory/ProductInsightsPanel` (697) | sin `*Fields` (4-5 `DataTableView`/`DataTable` embebidas: historial de precio, de costo, uso en producción, ventas) | la pieza más fragmentada de la oleada; consumida por `ProductClientView` y `StockReport` | alto (tamaño + fragmentación) |
+| | `inventory/ProductInsightsModal` (514) | sin `*Fields` (3 `<DataTable>` embebidas) | implementación independiente de `ProductInsightsPanel` (no es un envoltorio), consumida por `StockReport` | alto (tamaño + ¿solapa con el Panel?) |
+| **C5 · Conciliación (lista)** | `finance/bank-reconciliation/StatementsClientView` (379) | `statementFields.tsx` (2) | — | bajo |
+| | `finance/bank-reconciliation/StatementDetailPanel` (373) | sin `*Fields` (`<DataTable>` con columnas en línea) | panel de detalle, probablemente embebido | medio |
+
+**Patrón repetido en C3 — 4 "libros auxiliares" casi idénticos** (`PortfolioTable`, `LedgerDrawer`, `app/.../ledger/page.tsx`, `PartnerLedgerDrawer`), cada uno con su propia tabla embebida (`toColumns`+`<DataTable>` o columnas en línea) para mostrar movimientos de una cuenta/socio/cliente. `PortfolioTable` y `BlacklistClientView` ya comparten literalmente el mismo `creditLedgerEntryFields.tsx`. Candidato claro a un componente compartido único (tipo `DocumentLinesTable.tsx` de `features/orders`, que ya resolvió el mismo problema para líneas de documento) en vez de migrar 4 tablas casi iguales por separado.
+
+**Decisiones pendientes de la Puerta D de la oleada C:**
+
+1. **Proceso por sub-lote:** propongo ligero (tipo oleada A) para C1, C3 y C5 — patrones ya probados, `*Fields` simples o inexistentes; ciclo completo (M5, capturas + `/simplify` + `/code-review`) para C2 (`UnbilledChargesClientView`, 610 líneas, la pantalla más grande) y C4 (`ProductInsightsPanel`/`Modal`, fragmentación alta). ¿Se aprueba, o se aplica el mismo criterio a toda la oleada C?
+2. **Libro auxiliar compartido (C3):** ¿se construye un componente único de "tabla de libro auxiliar" (reemplazando las 4 implementaciones casi idénticas) antes de migrar C3, o se migra cada pantalla por separado primero y se consolida después?
+3. **`app/.../accounts/[id]/ledger/page.tsx` vs. `LedgerDrawer.tsx`:** a confirmar si la página es una ruta antigua que debería redirigir a la ficha documental (como pasó con otras páginas-duplicadas de esta migración) o si sirve un propósito distinto (ej. acceso directo por URL/impresión).
+4. **`ProductInsightsPanel` vs. `ProductInsightsModal` (C4):** ambos están en uso real (no es código muerto) pero implementan la misma idea por separado. ¿Se migra cada uno tal cual (duplicando el trabajo), o esto amerita su propia Puerta D más chica — como B4 — para decidir si se consolida en un solo componente antes de migrar?
+5. **Orden:** propongo C1 → C3 → C5 → C2 → C4 (de menor a mayor riesgo/tamaño, dejando C4 al final dado que puede necesitar su propia Puerta D).
+
+**Decisiones de la Puerta D de la oleada C (2026-10-19):**
+
+1. Ciclo completo (M5) en toda la oleada C, no solo en C2/C4 — capturas antes/después + `/simplify` + `/code-review` por sub-lote.
+2. C3: se construye un componente único de tabla de libro auxiliar (tipo `DocumentLinesTable.tsx`) antes de migrar las 4 pantallas que lo necesitan, en vez de migrar cada una por separado y consolidar después.
+3. C4 (`ProductInsightsPanel`/`ProductInsightsModal`): Puerta D propia, como B4 — no entra en esta ronda.
+4. Orden: C1 → C3 → C5 → C2 (C4 aparte, con su propia Puerta D).
+

@@ -1,17 +1,16 @@
 "use client"
 
-import React, { useState, lazy, Suspense, useMemo, useCallback } from "react"
+import React, { useState, lazy, Suspense, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { BaseModal, DataTableView, AutoEntityCard, FormFooter, CancelButton, ActionSlideButton } from '@/components/shared'
-import type { ColumnDef } from "@tanstack/react-table"
+import { BaseModal, FormFooter, CancelButton, ActionSlideButton } from '@/components/shared'
 import { Plus } from "lucide-react"
 
 import { useTerminalBatches } from "@/features/treasury"
-import type { TerminalBatch } from "@/features/treasury/types"
-import { UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared'
+import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { SkeletonShell } from "@/components/shared"
 import { terminalBatchUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
-import { terminalBatchFields } from "../terminalBatchFields"
+import { terminalBatchEntity, terminalBatchViews } from "../entity-view/terminalBatch.entity"
 
 // Lazy load feature components
 const LazyTerminalBatchSelectionModal = lazy(() => import("./TerminalBatchSelectionModal"))
@@ -27,8 +26,9 @@ export function TerminalBatchesClientView({
     const router = useRouter()
     const searchParams = useSearchParams()
     const search = useUnifiedSearch(terminalBatchUnifiedSearchDef)
-    const { batches, isLoading, refetch } = useTerminalBatches(search.filters)
+    const { batches, isLoading, isRefetching, isError, refetch } = useTerminalBatches(search.filters)
     const filteredBatches = search.filterFn(batches)
+    const { view, onViewChange } = useCollectionViewMode("treasury.terminalbatch")
     const openCreate = searchParams.get('modal') === 'batch'
     const openInvoice = searchParams.get('modal') === 'invoice'
 
@@ -41,64 +41,40 @@ export function TerminalBatchesClientView({
         }
     }, [router])
 
+    const handleOpenBatch = useCallback(() => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('modal', 'batch')
+        router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false })
+    }, [router, searchParams])
 
-
-    const columns = useMemo<ColumnDef<TerminalBatch>[]>(() => {
-        return [
-            ...terminalBatchFields.toColumns(),
-        ]
-    }, [])
+    // Client-filtered (search.filterFn): gate `error` on the unfiltered length, so a filter that
+    // matches nothing reads as "no results", not "error".
+    const collection = useEntityCollection(
+        terminalBatchEntity,
+        { rows: filteredBatches, isLoading, isRefetching, error: isError && batches.length === 0, refetch, isFiltered: search.isFiltered },
+        { pagination: { mode: "client", pageSize: 20 } },
+    )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    entityLabel="treasury.terminalbatch"
-                    columns={columns}
-                    data={filteredBatches}
-                    isLoading={isLoading}
-                    variant="embedded"
-                    unifiedSearch={<UnifiedSearchBar
-                        config={terminalBatchUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar liquidación..."
-                    />}
-                    unifiedSearchConfig={terminalBatchUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    createAction={createAction}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "treasury",
-                        title: "Aún no hay liquidaciones",
-                        description: "Las liquidaciones de terminales de pago aparecerán aquí.",
-                    }}
-                    renderCard={(batch: TerminalBatch) => (
-                        <AutoEntityCard 
-                            key={batch.id}
-                            data={batch}
-                            fields={terminalBatchFields}
-
-                            entityLabel="treasury.terminalbatch"
-                            onClick={() => {
-                                const params = new URLSearchParams(searchParams.toString())
-                                params.set('modal', 'batch')
-                                router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false })
-                            }}
-                        />
-                    )}
+            <Collection.Root
+                collection={collection}
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={handleOpenBatch}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar config={terminalBatchUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar liquidación..." />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={terminalBatchViews.table}
+                    card={terminalBatchViews.card}
+                    emptyTitle="Aún no hay liquidaciones"
+                    emptyDescription="Las liquidaciones de terminales de pago aparecerán aquí."
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+            </Collection.Root>
 
              <SkeletonShell isLoading={isLoading} ariaLabel="Cargando modal de lote de terminal">
                  <Suspense fallback={<div />}>

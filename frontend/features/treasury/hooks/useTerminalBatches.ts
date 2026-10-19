@@ -20,7 +20,7 @@ export function useTerminalBatches(filters?: FilterState) {
     if (filters?.date_from) params.date_from = filters.date_from
     if (filters?.date_to) params.date_to = filters.date_to
 
-    const { data: batches, isLoading, refetch } = useQuery({
+    const { data: batches, isLoading, isFetching, isError, refetch } = useQuery({
         queryKey: [...BATCHES_KEYS.list(), filters],
         queryFn: () => treasuryApi.getTerminalBatches(Object.keys(params).length > 0 ? params : undefined),
         staleTime: staleTime.standard,
@@ -39,6 +39,8 @@ export function useTerminalBatches(filters?: FilterState) {
     return {
         batches: batches ?? [],
         isLoading,
+        isRefetching: isFetching && !isLoading,
+        isError,
         refetch,
         createBatch: createBatch.mutateAsync,
         isCreating: createBatch.isPending,
