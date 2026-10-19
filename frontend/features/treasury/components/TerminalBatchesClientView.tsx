@@ -7,7 +7,7 @@ import { Plus } from "lucide-react"
 
 import { useTerminalBatches } from "@/features/treasury"
 import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared'
-import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
 import { SkeletonShell } from "@/components/shared"
 import { terminalBatchUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { terminalBatchEntity, terminalBatchViews } from "../entity-view/terminalBatch.entity"
@@ -15,6 +15,9 @@ import { terminalBatchEntity, terminalBatchViews } from "../entity-view/terminal
 // Lazy load feature components
 const LazyTerminalBatchSelectionModal = lazy(() => import("./TerminalBatchSelectionModal"))
 const MonthlyInvoiceModal = lazy(() => import("./MonthlyInvoiceModal"))
+
+/** Search group keys → entity field ids (grouping uses the formatted cell text). */
+const TERMINAL_BATCH_GROUPS: Record<string, FieldId<typeof terminalBatchEntity.fields>> = { date: "salesDate", status: "status" }
 
 interface TerminalBatchesClientViewProps {
     createAction?: React.ReactNode
@@ -47,12 +50,14 @@ export function TerminalBatchesClientView({
         router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false })
     }, [router, searchParams])
 
+    const groupBy = search.groupBy ? TERMINAL_BATCH_GROUPS[search.groupBy] ?? null : null
+
     // Client-filtered (search.filterFn): gate `error` on the unfiltered length, so a filter that
     // matches nothing reads as "no results", not "error".
     const collection = useEntityCollection(
         terminalBatchEntity,
         { rows: filteredBatches, isLoading, isRefetching, error: isError && batches.length === 0, refetch, isFiltered: search.isFiltered },
-        { pagination: { mode: "client", pageSize: 20 } },
+        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
     )
 
     return (

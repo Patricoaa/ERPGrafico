@@ -58,7 +58,6 @@ export function useTreasuryMovements(filters: TreasuryMovementFilters = {}) {
         movements: page_?.results ?? [],
         totalCount: page_?.count ?? 0,
         isLoading,
-        isFetching,
         isRefetching: isFetching && !isLoading,
         isError,
         refetch,

@@ -1,6 +1,7 @@
 "use client"
 
 import { Building2 } from "lucide-react"
+import { DataCell } from "@/components/shared"
 import { toNumber } from "@/components/entity-view"
 import { defineEntity, registerValueKind, type ValueRenderProps } from "@/components/entity-view"
 import type { TerminalBatch } from "../types"
@@ -15,13 +16,11 @@ declare module "@/components/entity-view/core/value-kinds" {
 function TerminalBatchProviderCell({ value: batch }: ValueRenderProps<"terminalBatchProvider">) {
     return (
         <div className="flex flex-col items-center">
-            <span className="font-bold flex items-center justify-center gap-1.5 text-center w-full">
+            <DataCell.Text weight="bold" className="flex items-center gap-1.5">
                 <Building2 className="h-3.5 w-3.5 text-primary" />
                 {batch.provider_name}
-            </span>
-            <span className="text-3xs text-muted-foreground uppercase tracking-wide text-center">
-                {batch.payment_method_name} (Depósito)
-            </span>
+            </DataCell.Text>
+            <DataCell.Secondary className="uppercase tracking-wide">{batch.payment_method_name} (Depósito)</DataCell.Secondary>
         </div>
     )
 }

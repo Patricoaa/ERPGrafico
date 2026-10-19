@@ -103,7 +103,9 @@ describe("entity-view barrel evaluation order", () => {
         const lines = read("components/entity-view/index.ts").split("\n")
         const lastCore = Math.max(...lines.map((l, i) => (/from "\.\/core\//.test(l) ? i : -1)))
         expect(lastCore).toBeGreaterThan(-1)
-        expect(firstIndex(lines, /from "\.\/kinds\//)).toBeGreaterThan(lastCore)
+        // Kinds may be a bare side-effect import (`import "./kinds/x"`, no `from` — the
+        // self-registration pattern), not just a re-export, so the pattern omits `from `.
+        expect(firstIndex(lines, /"\.\/kinds\//)).toBeGreaterThan(lastCore)
         expect(firstIndex(lines, /from "\.\/surfaces\//)).toBeGreaterThan(lastCore)
     })
 

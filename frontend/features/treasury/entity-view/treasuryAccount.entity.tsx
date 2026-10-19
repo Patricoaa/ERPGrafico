@@ -25,6 +25,10 @@ const ACCOUNT_TYPE_TONE: Record<string, CardTone> = {
     ISSUED_CHECKS: "warning",
 }
 
+function accountTypeKey(a: TreasuryAccount): string {
+    return a.account_type?.toUpperCase() ?? ""
+}
+
 /** Feature extension: the bank + POS terminal providers linked to a treasury account — 0..N badges. */
 declare module "@/components/entity-view/core/value-kinds" {
     interface ValueKinds {
@@ -84,8 +88,8 @@ export const treasuryAccountViews = treasuryAccountEntity.views({
         trailing: ["balance"],
         meta: ["links"],
         media: {
-            iconFor: (a) => ACCOUNT_TYPE_ICON[a.account_type?.toUpperCase()] ?? Wallet,
-            tone: (a) => ACCOUNT_TYPE_TONE[a.account_type?.toUpperCase()] ?? "default",
+            iconFor: (a) => ACCOUNT_TYPE_ICON[accountTypeKey(a)] ?? Wallet,
+            tone: (a) => ACCOUNT_TYPE_TONE[accountTypeKey(a)] ?? "default",
         },
     },
 })
