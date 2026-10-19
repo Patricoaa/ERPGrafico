@@ -73,7 +73,7 @@ export function FilterSection({
       )}
 
       {toggleFilters.length > 0 && accordionFilters.length > 0 && (
-        <div className="border-t border-border/60" />
+        <div className="border-t border-border/50" />
       )}
 
       <div className="space-y-0.5 p-1.5">

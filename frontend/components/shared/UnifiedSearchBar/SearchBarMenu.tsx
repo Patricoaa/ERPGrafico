@@ -14,6 +14,7 @@ import type {
 import { FilterSection } from './FilterSection'
 import { GroupBySection } from './GroupBySection'
 import { DisplaySection } from './DisplaySection'
+import { SectionHeader } from './SectionHeader'
 
 interface SearchBarMenuProps {
   filters?: DropdownFilterDef[]
@@ -78,11 +79,8 @@ export function SearchBarMenu({
   return (
     <div className={`grid ${gridCols} gap-0`}>
       {/* Column 1: Filtrar por */}
-      <div className="border-r border-border/60">
-        <div className="flex items-center gap-1.5 px-3 py-2 text-2xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/60">
-          <Filter className="h-3 w-3" />
-          Filtrar por
-        </div>
+      <div className="border-r border-border/50">
+        <SectionHeader icon={Filter} label="Filtrar por" />
         <ScrollArea className="max-h-[80vh]">
           <div className="p-1.5">
             <FilterSection
@@ -99,11 +97,8 @@ export function SearchBarMenu({
 
       {/* Column 2: Agrupar por */}
       {hasGroupBySection && (
-        <div className="border-r border-border/60">
-          <div className="flex items-center gap-1.5 px-3 py-2 text-2xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/60">
-            <Layers className="h-3 w-3" />
-            Agrupar por
-          </div>
+        <div className="border-r border-border/50">
+          <SectionHeader icon={Layers} label="Agrupar por" />
           <ScrollArea className="max-h-[80vh]">
             <div className="p-1.5">
               {hasGroupBy && groupBy && (

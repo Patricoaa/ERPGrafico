@@ -180,7 +180,7 @@ function Toolbar({ children, action, views = ["table", "card"], exportFilters = 
                     {modes.map((mode) => {
                         const { icon: Icon, label: viewLabel } = VIEW_BUTTONS[mode]
                         return (
-                            <Button key={mode} variant={ctx.view === mode ? "secondary" : "ghost"} size="icon" aria-label={viewLabel} aria-pressed={ctx.view === mode} onClick={() => ctx.setView(mode)}>
+                            <Button key={mode} variant={ctx.view === mode ? "secondary" : "ghost"} size="icon-sm" aria-label={viewLabel} aria-pressed={ctx.view === mode} onClick={() => ctx.setView(mode)}>
                                 <Icon className="size-4" aria-hidden />
                             </Button>
                         )

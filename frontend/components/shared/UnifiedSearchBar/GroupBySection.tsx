@@ -18,8 +18,10 @@ export function GroupBySection({ options, currentGroupBy, onSelect }: GroupBySec
         variant="ghost"
         size="sm"
         onClick={() => onSelect(null)}
-        className={`w-full justify-start px-2 py-1.5 text-xs rounded-sm ${
-          currentGroupBy === null ? 'text-primary font-semibold' : 'text-muted-foreground'
+        className={`w-full justify-start px-2 py-1.5 text-xs rounded-sm transition-colors ${
+          currentGroupBy === null
+            ? 'bg-primary/5 text-primary font-semibold'
+            : 'text-muted-foreground hover:text-foreground'
         }`}
       >
         Ninguno
@@ -31,8 +33,10 @@ export function GroupBySection({ options, currentGroupBy, onSelect }: GroupBySec
           variant="ghost"
           size="sm"
           onClick={() => onSelect(option.key)}
-          className={`w-full justify-start px-2 py-1.5 text-xs rounded-sm ${
-            currentGroupBy === option.key ? 'text-primary font-semibold' : 'text-muted-foreground'
+          className={`w-full justify-start px-2 py-1.5 text-xs rounded-sm transition-colors ${
+            currentGroupBy === option.key
+              ? 'bg-primary/5 text-primary font-semibold'
+              : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           {option.label}

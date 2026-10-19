@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
@@ -57,17 +57,20 @@ export function RangeFilterAccordion({
         size="sm"
         onClick={() => setExpanded(!expanded)}
         className={cn(
-          "w-full justify-start gap-2 px-2 py-1.5 text-xs font-medium rounded-sm",
-          isActive && "text-primary",
+          "w-full justify-start gap-2 px-2 py-1.5 text-xs font-medium rounded-sm transition-colors",
+          isActive && "bg-primary/5 text-primary",
         )}
       >
-        <ChevronRight className={cn("h-3 w-3 transition-transform", expanded && "rotate-90")} />
+        <ChevronRight
+          className={cn("size-3 shrink-0 transition-transform motion-reduce:transition-none", expanded && "rotate-90")}
+          aria-hidden
+        />
         <span>{def.label}</span>
-        {isActive && <span className="ml-auto text-3xs text-muted-foreground">✓</span>}
+        {isActive && <Check className="ml-auto size-3 shrink-0 text-primary" aria-hidden />}
       </Button>
 
       {expanded && (
-        <div className="ml-4 border-l border-border/40 pl-2 space-y-1.5 py-1.5">
+        <div className="ml-4 border-l border-border/50 pl-2 space-y-1.5 py-1.5">
           <div className="flex items-center gap-1.5">
             <span className="text-3xs text-muted-foreground w-10 shrink-0">Desde</span>
             <Input
@@ -75,7 +78,7 @@ export function RangeFilterAccordion({
               value={from}
               onChange={(e) => setFrom(e.target.value)}
               placeholder={def.placeholderFrom ?? '0'}
-              className="h-7 text-xs"
+              className="h-8 rounded-sm text-xs"
             />
           </div>
           <div className="flex items-center gap-1.5">
@@ -85,7 +88,7 @@ export function RangeFilterAccordion({
               value={to}
               onChange={(e) => setTo(e.target.value)}
               placeholder={def.placeholderTo ?? '999999'}
-              className="h-7 text-xs"
+              className="h-8 rounded-sm text-xs"
             />
           </div>
           <div className="flex items-center gap-2 pt-1">

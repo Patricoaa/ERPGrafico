@@ -114,7 +114,7 @@ export function UnifiedSearchBar({
   const hasSearchText = inputValue.trim().length > 0
 
   return (
-    <div className={cn("flex items-center w-full", className)}>
+    <div className={cn("flex items-center w-full", className)} role="search" aria-label="Búsqueda y filtros">
       <Popover open={menuOpen} onOpenChange={(open) => { setMenuOpen(open); if (!open) setForceFilters(false) }}>
         <PopoverTrigger asChild>
           <div className="flex items-center w-full">
@@ -122,13 +122,15 @@ export function UnifiedSearchBar({
               ref={containerRef}
               onClick={handleBarClick}
               className={cn(
-                "flex items-center flex-1 h-9 bg-background rounded-sm px-2 gap-1",
-                "cursor-pointer",
+                "flex items-center flex-1 h-9 rounded-sm border border-border/40 bg-background px-2.5 gap-1.5",
+                "cursor-pointer transition-colors",
+                "hover:border-border/60",
+                "focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/15",
               )}
             >
               {prefix}
 
-              <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
 
               <div className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto">
                 {chips.length > 0 && (
@@ -137,7 +139,7 @@ export function UnifiedSearchBar({
                       <span
                         key={chip.id}
                         className={cn(
-                          "inline-flex items-center gap-1 h-5 px-1.5 rounded-sm text-2xs font-medium whitespace-nowrap shrink-0 max-w-[180px]",
+                          "inline-flex items-center gap-1 h-5 px-2 rounded-full text-2xs font-medium whitespace-nowrap shrink-0 max-w-[180px]",
                           chip.variant === 'search' && "bg-muted text-muted-foreground",
                           chip.variant === 'filter' && "bg-primary/10 text-primary",
                           chip.variant === 'date' && "bg-info/10 text-info",
@@ -149,10 +151,11 @@ export function UnifiedSearchBar({
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label={`Quitar ${formatChipLabel(chip)}`}
                           onClick={(e) => { e.stopPropagation(); chip.onRemove() }}
-                          className="h-4 w-4 hover:bg-background/50 rounded-sm p-[1px] shrink-0"
+                          className="size-4 shrink-0 rounded-full p-0 hover:bg-foreground/10"
                         >
-                          <X className="h-2.5 w-2.5" />
+                          <X className="size-2.5" aria-hidden />
                         </Button>
                       </span>
                     ))}
@@ -166,7 +169,8 @@ export function UnifiedSearchBar({
                   onChange={(e) => { setForceFilters(false); onInputChange(e.target.value) }}
                   onKeyDown={handleKeyDown}
                   placeholder={chips.length === 0 ? placeholder : ''}
-                  className="flex-1 min-w-[80px] bg-transparent border-none outline-none text-xs text-foreground placeholder:text-muted-foreground/60 h-full"
+                  aria-label={placeholder}
+                  className="flex-1 h-full min-w-[80px] border-none bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground"
                 />
               </div>
 
@@ -174,9 +178,21 @@ export function UnifiedSearchBar({
                 variant="ghost"
                 size="icon"
                 onClick={(e) => { e.stopPropagation(); setForceFilters(true); setMenuOpen(prev => !prev) }}
-                className="h-9 w-7 shrink-0 border-l border-border rounded-none"
+                aria-label="Abrir filtros y búsqueda"
+                aria-expanded={menuOpen}
+                className={cn(
+                  "relative size-8 shrink-0 cursor-pointer rounded-none rounded-r-sm outline-none transition-colors",
+                  "hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                  "before:absolute before:inset-y-1.5 before:left-0 before:w-px before:bg-border/40",
+                )}
               >
-                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                <ChevronDown
+                  className={cn(
+                    "size-4 text-muted-foreground transition-transform duration-200 motion-reduce:transition-none",
+                    menuOpen && "rotate-180",
+                  )}
+                  aria-hidden
+                />
               </Button>
             </div>
           </div>
@@ -187,7 +203,7 @@ export function UnifiedSearchBar({
           side="bottom"
           sideOffset={4}
           style={{ width: triggerWidth > 0 ? triggerWidth : undefined }}
-          className="p-0 border-border/80 shadow-floating rounded-sm"
+          className="p-0 border-border/80 shadow-floating"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           {hasSearchText && !forceFilters ? (

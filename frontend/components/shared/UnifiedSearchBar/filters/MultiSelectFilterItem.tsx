@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Check } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -65,11 +65,14 @@ export function MultiSelectFilterItem({
         size="sm"
         onClick={() => setExpanded(!expanded)}
         className={cn(
-          "w-full justify-start gap-2 px-2 py-1.5 text-xs font-medium rounded-sm",
-          isActive && "text-primary",
+          "w-full justify-start gap-2 px-2 py-1.5 text-xs font-medium rounded-sm transition-colors",
+          isActive && "bg-primary/5 text-primary",
         )}
       >
-        <ChevronRight className={cn("h-3 w-3 transition-transform shrink-0", expanded && "rotate-90")} />
+        <ChevronRight
+          className={cn("size-3 shrink-0 transition-transform motion-reduce:transition-none", expanded && "rotate-90")}
+          aria-hidden
+        />
         <span>{def.label}</span>
         {selectedValues.length > 0 && (
           <span className="ml-auto text-3xs text-muted-foreground">
@@ -77,12 +80,12 @@ export function MultiSelectFilterItem({
           </span>
         )}
         {isActive && selectedValues.length === 0 && (
-          <span className="ml-auto text-3xs text-muted-foreground">✓</span>
+          <Check className="ml-auto size-3 shrink-0 text-primary" aria-hidden />
         )}
       </Button>
 
       {expanded && (
-        <div className="ml-4 border-l border-border/40 pl-2 py-1 grid grid-cols-3 gap-1 max-h-[200px] overflow-y-auto">
+        <div className="ml-4 border-l border-border/50 pl-2 py-1 grid grid-cols-3 gap-1 max-h-[200px] overflow-y-auto">
           {options.map((opt) => (
             <label
               key={opt.value}
