@@ -14,12 +14,14 @@ export * from "./core/use-entity-collection"
 export * from "./core/use-server-page"
 export * from "./core/define-editable"
 
-import { registerCoreValueKinds } from "./kinds/core-kinds"
+// Side-effect registration (same pattern as `features/documents/entity-view/docRef.kind.tsx`):
+// the module is "use client", so its exports are client references in the server graph and
+// cannot be called from there (Next 16 throws at module evaluation). Self-registering on
+// evaluation keeps the kinds available in the SSR and client graphs, where the surfaces render.
+import "./kinds/core-kinds"
 
 export * from "./surfaces/Collection"
 export * from "./surfaces/EditableCollection"
 export * from "./surfaces/EntityViewProvider"
 export * from "./surfaces/CollectionModes"
 export * from "./surfaces/useCollectionViewMode"
-
-registerCoreValueKinds()

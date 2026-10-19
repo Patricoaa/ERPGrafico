@@ -25,7 +25,7 @@ const codeContent = (value: string | number | null | undefined, prefix?: string)
 
 let registered = false
 
-/** Registers the core kinds. Idempotent; called by the barrel on import. */
+/** Registers the core kinds. Idempotent; called on module evaluation (barrel side-effect import). */
 export function registerCoreValueKinds(): void {
     if (registered) return
     registered = true
@@ -192,3 +192,7 @@ export function registerCoreValueKinds(): void {
             ),
     })
 }
+
+// Registered when the module is evaluated (barrel side-effect import), mirroring the feature
+// kinds (`<kind>.kind.tsx`): calling a "use client" export from the server graph is not allowed.
+registerCoreValueKinds()
