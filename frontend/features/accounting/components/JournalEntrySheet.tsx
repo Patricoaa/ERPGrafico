@@ -214,14 +214,6 @@ function JournalEntrySummaryTab({ entry }: { entry: JournalEntry }) {
             label: "Fecha",
             value: entry.date ? format(toDate(entry.date), "dd/MM/yyyy") : "—",
         },
-        {
-            label: "Origen",
-            value: entry.source_document ? (
-                <a href={entry.source_document.url ?? "#"} className="text-primary underline hover:text-primary/80">
-                    {entry.source_document.display_id}
-                </a>
-            ) : "—",
-        },
         ...(entry.reversal_of ? [{
             label: "Reversión de",
             value: (

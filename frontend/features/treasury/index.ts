@@ -59,6 +59,9 @@ export { TreasuryAccountsClientView } from './components/TreasuryAccountsClientV
 export { CashMovementModal } from './components/CashMovementModal'
 export { CashMovementDrawer } from './components/CashMovementDrawer'
 export { PaymentDrawer } from './components/PaymentDrawer'
+export { PaymentSheet } from './components/PaymentSheet'
+export { PaymentFormDrawer } from './components/PaymentFormDrawer'
+export { paymentActions } from './paymentActions'
 export { TerminalBatchesClientView } from './components/TerminalBatchesClientView'
 export { PaymentHardwareClientView } from './components/PaymentHardwareClientView'
 /** @deprecated Use TerminalBatchSelectionModal */
