@@ -6,9 +6,7 @@ import { PageHeader } from "@/components/shared"
 import { useBanks } from "@/features/treasury"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
 import {
-  TREASURY_TABS,
-  OPERACIONES_SUB_TABS,
-  TERMINAL_COBRO_SUB_TABS,
+  buildTreasuryTabs,
   buildBankSubTabs,
   getTreasuryTab,
   getOperacionesSubTab,
@@ -50,26 +48,8 @@ export function TreasuryHeader() {
   // Module config from centralized registry
   const moduleConfig = getModuleHeaderConfig("treasury")
 
-  // Build navigation from canonical config
-  const tabs = useMemo(() => {
-    const baseTabs = TREASURY_TABS.map((tab) => ({
-      value: tab.value,
-      label: tab.label,
-      iconName: tab.iconName,
-      href: tab.href,
-      subTabs: tab.subTabs?.map((st) => ({
-        value: st.value,
-        label: st.label,
-        iconName: st.iconName,
-        href: st.href,
-      })),
-    }))
-
-    // Replace bank-center subTabs with dynamic ones
-    return baseTabs.map((tab) =>
-      tab.value === "bank-center" ? { ...tab, subTabs: bankSubTabs } : tab
-    )
-  }, [bankSubTabs])
+  // Build navigation from canonical config (fuente única: buildTreasuryTabs)
+  const tabs = useMemo(() => buildTreasuryTabs(banks), [banks])
 
   const navigation = {
     moduleName: moduleConfig?.moduleName ?? "Tesorería",

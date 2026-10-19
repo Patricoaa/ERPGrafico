@@ -146,6 +146,61 @@ export const BANK_SUB_VIEWS: NavTabConfig[] = [
 ]
 
 // ============================================
+// SUB-VISTAS AGREGADAS: BANK CENTER (todos los bancos)
+// ============================================
+// Rutas estáticas bajo /treasury/bank-center (preceden a [bankId], que sólo
+// captura ids numéricos). No incluyen "overview": la vista consolidada es la
+// propia lista de bancos.
+
+export const ALL_BANKS_SUB_VIEWS: NavTabConfig[] = [
+  {
+    value: "movements",
+    label: "Movimientos Bancarios",
+    href: "/treasury/bank-center/movements",
+    iconName: "arrow-right-left",
+    headerTitle: "Movimientos Bancarios",
+    headerDescription: "Movimientos de todas las cuentas bancarias.",
+    metadataTitle: "Movimientos Bancarios | ERPGrafico",
+  },
+  {
+    value: "checks",
+    label: "Cheques",
+    href: "/treasury/bank-center/checks",
+    iconName: "check-square",
+    headerTitle: "Cheques",
+    headerDescription: "Cheques vinculados a todos los bancos.",
+    metadataTitle: "Cheques | ERPGrafico",
+  },
+  {
+    value: "loans",
+    label: "Préstamos Bancarios",
+    href: "/treasury/bank-center/loans",
+    iconName: "landmark",
+    headerTitle: "Préstamos Bancarios",
+    headerDescription: "Préstamos y líneas de crédito de todos los bancos.",
+    metadataTitle: "Préstamos Bancarios | ERPGrafico",
+  },
+  {
+    value: "cards",
+    label: "Tarjetas de Crédito",
+    href: "/treasury/bank-center/cards/unbilled",
+    iconName: "credit-card",
+    headerTitle: "Tarjetas de Crédito",
+    headerDescription: "Cargos no facturados y estados de cuenta de todas las tarjetas.",
+    metadataTitle: "Tarjetas de Crédito | ERPGrafico",
+  },
+  {
+    value: "reconciliation",
+    label: "Conciliación Bancaria",
+    href: "/treasury/bank-center/reconciliation",
+    iconName: "git-compare",
+    headerTitle: "Conciliación Bancaria",
+    headerDescription: "Conciliación de cartolas de todos los bancos.",
+    metadataTitle: "Conciliación Bancaria | ERPGrafico",
+  },
+]
+
+// ============================================
 // TABS PRINCIPALES (nivel 1)
 // ============================================
 
@@ -183,8 +238,8 @@ export const TREASURY_TABS: NavTabConfig[] = [
 ]
 
 /**
- * Construye tabs del Bank Center con sub-tabs por banco.
- * Incluye tab "Todos" + un tab por cada banco activo.
+ * Construye los sub-tabs del Bank Center: tab "Todos" (con las sub-vistas
+ * agregadas) + un tab por cada banco activo (con sus sub-vistas navegables).
  */
 export function buildBankSubTabs(
   banks: { id: number; is_active: boolean; name: string }[]
@@ -197,10 +252,7 @@ export function buildBankSubTabs(
     headerTitle: "Centro de Bancos",
     headerDescription: "Vista consolidada de todos sus bancos, productos financieros y vencimientos.",
     metadataTitle: "Centro de Bancos | ERPGrafico",
-    subTabs: BANK_SUB_VIEWS.map((sv) => ({
-      ...sv,
-      href: `/treasury/bank-center${sv.href === "/cards/unbilled" ? "/cards/unbilled" : sv.href}`,
-    })),
+    subTabs: ALL_BANKS_SUB_VIEWS,
   }
 
   const bankTabs: NavTabConfig[] = banks
@@ -215,11 +267,53 @@ export function buildBankSubTabs(
       metadataTitle: `${bank.name} | ERPGrafico`,
       subTabs: BANK_SUB_VIEWS.map((sv) => ({
         ...sv,
-        href: `/treasury/bank-center/${bank.id}${sv.href === "/cards/unbilled" ? "/cards/unbilled" : sv.href}`,
+        href: `/treasury/bank-center/${bank.id}${sv.href}`,
       })),
     }))
 
   return [allTab, ...bankTabs]
+}
+
+// ============================================
+// ÁRBOL DE NAVEGACIÓN DEL RIEL (fuente única)
+// ============================================
+
+/** Nodo de navegación del riel (shape que consume `HeaderProvider`). */
+export interface TreasuryNavTab {
+  value: string
+  label: string
+  href: string
+  iconName?: string
+  subTabs?: TreasuryNavTab[]
+}
+
+/** Convierte un `NavTabConfig` canónico al shape del riel, preservando anidamiento. */
+function toNavTab(tab: NavTabConfig): TreasuryNavTab {
+  return {
+    value: tab.value,
+    label: tab.label,
+    href: tab.href,
+    iconName: tab.iconName,
+    subTabs: tab.subTabs?.map(toNavTab),
+  }
+}
+
+/**
+ * Árbol de navegación completo de Tesorería para el riel (ADR-0079).
+ *
+ * Fuente única de verdad para `TreasuryHeader` (layout) y `BankPageHeader`
+ * (página de banco): sin esto, un header podía aplanar u omitir los `subTabs`
+ * de cada banco y dejar sus sub-vistas fuera del riel.
+ */
+export function buildTreasuryTabs(
+  banks: { id: number; is_active: boolean; name: string }[]
+): TreasuryNavTab[] {
+  const bankSubTabs = buildBankSubTabs(banks)
+  return TREASURY_TABS.map((tab) => {
+    const node = toNavTab(tab)
+    if (tab.value === "bank-center") node.subTabs = bankSubTabs.map(toNavTab)
+    return node
+  })
 }
 
 // ============================================

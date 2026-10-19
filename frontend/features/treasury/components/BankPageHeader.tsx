@@ -4,11 +4,8 @@ import { PageHeader } from "@/components/shared"
 import { useBanks } from "@/features/treasury"
 import type { PageHeaderStatus } from "@/components/shared"
 import {
-  TREASURY_TABS,
-  OPERACIONES_SUB_TABS,
-  TERMINAL_COBRO_SUB_TABS,
+  buildTreasuryTabs,
   buildBankSubTabs,
-  getBankSubView,
 } from "@/features/treasury/navigation"
 import { buildHeaderConfigFromTab, overrideHeaderConfig } from "@/lib/navigation-helpers"
 import { getModuleHeaderConfig } from "@/lib/module-registry"
@@ -43,16 +40,9 @@ export function BankPageHeader({
   // Module config from centralized registry
   const moduleConfig = getModuleHeaderConfig("treasury")
 
-  // Build navigation from canonical config (TREASURY_TABS)
-  const tabs = TREASURY_TABS.map((tab) => ({
-    value: tab.value,
-    label: tab.label,
-    iconName: tab.iconName,
-    href: tab.href,
-    subTabs: tab.value === "bank-center"
-      ? bankSubTabs.map((st) => ({ value: st.value, label: st.label, iconName: st.iconName, href: st.href }))
-      : tab.subTabs?.map((st) => ({ value: st.value, label: st.label, iconName: st.iconName, href: st.href })),
-  }))
+  // Build navigation from canonical config (fuente única: buildTreasuryTabs).
+  // Preserva los subTabs anidados de cada banco para que el riel muestre sus sub-vistas.
+  const tabs = buildTreasuryTabs(banks)
 
   const navigation = {
     moduleName: moduleConfig?.moduleName ?? "Tesorería",

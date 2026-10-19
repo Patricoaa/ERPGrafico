@@ -20,16 +20,17 @@ const MOVEMENT_GROUPS: Record<string, FieldId<typeof treasuryMovementEntity.fiel
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 50 }
 
 interface BankMovementsClientViewProps {
-    bankId: number
+    /** Banco específico. Si se omite, agrega los movimientos de todas las cuentas bancarias. */
+    bankId?: number
 }
 
-export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps) {
+export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps = {}) {
     const { openEntity } = useGlobalModalActions()
     const search = useUnifiedSearch(treasuryMovementsUnifiedSearchDef)
 
-    const allFilters = {
+    const allFilters: TreasuryMovementFilters = {
         ...search.filters,
-        bank: bankId,
+        ...(bankId ? { bank: bankId } : { bank_only: true }),
     }
     const groupBy = search.groupBy ? MOVEMENT_GROUPS[search.groupBy] ?? null : null
     const [pageState, setPageState] = useServerPage([allFilters, groupBy], DEFAULT_PAGE)
@@ -78,7 +79,9 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                     table={treasuryMovementViews.table}
                     card={treasuryMovementViews.card}
                     emptyTitle="Aún no hay movimientos bancarios"
-                    emptyDescription="Los movimientos registrados en las cuentas de este banco aparecerán aquí."
+                    emptyDescription={bankId
+                        ? "Los movimientos registrados en las cuentas de este banco aparecerán aquí."
+                        : "Los movimientos registrados en las cuentas bancarias aparecerán aquí."}
                     onResetFilters={search.clearAll}
                 />
             </Collection.Root>

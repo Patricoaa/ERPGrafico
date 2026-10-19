@@ -1428,10 +1428,16 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
         from .selectors import CardSelector
         acc_id = request.query_params.get('card_account')
-        if not acc_id: return Response({'detail': 'card_account req.'}, status=400)
+        bank_id = request.query_params.get('bank')
         c_date_str = request.query_params.get('cut_off_date')
         c_date = _date.fromisoformat(c_date_str) if c_date_str else None
-        return Response(CardSelector.get_unbilled_charges_data(int(acc_id), c_date))
+        return Response(
+            CardSelector.get_unbilled_charges_data(
+                int(acc_id) if acc_id else None,
+                c_date,
+                bank_id=int(bank_id) if bank_id else None,
+            )
+        )
 
     @action(detail=False, methods=["post"], url_path="add-charge")
     def add_charge(self, request):

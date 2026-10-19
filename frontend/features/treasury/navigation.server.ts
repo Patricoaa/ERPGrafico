@@ -4,7 +4,7 @@
  */
 
 import type { Metadata } from "next"
-import { BANK_SUB_VIEWS } from "./navigation"
+import { ALL_BANKS_SUB_VIEWS, BANK_SUB_VIEWS } from "./navigation"
 import { buildMetadataFromTab } from "@/lib/navigation-helpers"
 
 /**
@@ -32,18 +32,14 @@ export function buildBankMetadata(
 }
 
 /**
- * Build metadata for "Todos" (all banks) view with specific sub-view.
+ * Build metadata for "Todos" (all banks) aggregated sub-views
+ * (`/treasury/bank-center/<subView>`).
  */
-export function buildAllBanksMetadata(subView: string = "overview"): Metadata {
-  const subViewConfig = BANK_SUB_VIEWS.find((sv) => sv.value === subView)
+export function buildAllBanksMetadata(subView: string): Metadata {
+  const subViewConfig = ALL_BANKS_SUB_VIEWS.find((sv) => sv.value === subView)
   if (!subViewConfig) {
     return { title: "Centro de Bancos | ERPGrafico" }
   }
 
-  return buildMetadataFromTab({
-    ...subViewConfig,
-    headerTitle: subViewConfig.headerTitle,
-    headerDescription: subViewConfig.headerDescription,
-    metadataTitle: `${subViewConfig.headerTitle} | ERPGrafico`,
-  })
+  return buildMetadataFromTab(subViewConfig)
 }

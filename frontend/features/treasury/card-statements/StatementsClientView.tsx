@@ -13,8 +13,7 @@ import {
 } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useCardStatements } from '../hooks/useCardStatements'
-import { useBankOverview } from '../hooks/useBankOverview'
-import type { BankOverviewData } from '../hooks/useBankOverview'
+import { useCardAccounts } from '../hooks/useCardAccounts'
 import { StatementDetailModal } from './StatementDetailModal'
 import { PayStatementModal } from './PayStatementModal'
 import { statementActions, type StatementActionsCtx } from './statementActions'
@@ -25,19 +24,14 @@ import { cardStatementFields } from './cardStatementFields'
 import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
 
 interface StatementsClientViewProps {
-    bankId: number
+    /** Banco específico. Si se omite, agrega las tarjetas de todos los bancos. */
+    bankId?: number
 }
 
 export function StatementsClientView({ bankId }: StatementsClientViewProps) {
     const searchParams = useSearchParams()
-    const { data: overview, isLoading: overviewLoading } = useBankOverview(bankId)
-    const overviewData = (overview && !overviewLoading ? overview : null) as BankOverviewData | null
-    const creditCardAccounts = useMemo(
-        () => (overviewData?.accounts?.filter(
-            (acc) => acc.account_type === 'CREDIT_CARD'
-        ).map(a => ({ id: a.id, name: a.name, currency: a.currency })) ?? []),
-        [overviewData],
-    )
+    const { cardAccounts: creditCardAccounts, isLoading: overviewLoading } = useCardAccounts(bankId)
+    const isAggregate = !bankId
 
     const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
     const action = searchParams.get("action")
@@ -55,8 +49,11 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                 key: 'card',
                 label: 'Tarjeta',
                 serverParam: 'card',
-                defaultValue: String(creditCardAccounts[0]?.id ?? ''),
-                options: creditCardAccounts.map(a => ({ label: a.name, value: String(a.id) })),
+                defaultValue: isAggregate ? 'all' : String(creditCardAccounts[0]?.id ?? ''),
+                options: [
+                    ...(isAggregate ? [{ label: 'Todas las tarjetas', value: 'all' }] : []),
+                    ...creditCardAccounts.map(a => ({ label: a.name, value: String(a.id) })),
+                ],
             },
         ],
         dateFilters: [
@@ -82,7 +79,9 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
 
     const search = useUnifiedSearch(unifiedConfig)
 
-    const cardAccountId = search.filters.card ? Number(search.filters.card) : (creditCardAccounts[0]?.id ?? null)
+    const cardFilter = search.filters.card
+    const selectedCardId = cardFilter && cardFilter !== 'all' ? Number(cardFilter) : null
+    const cardAccountId = selectedCardId ?? (bankId ? (creditCardAccounts[0]?.id ?? null) : null)
 
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState("rendimiento")
     const [granularity, setGranularity] = useState<Granularity>("month")
@@ -91,7 +90,12 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
     if (bankId) params.bank = String(bankId)
     if (cardAccountId) params.card_account = String(cardAccountId)
 
-    const hubData = useStatementsAnalyticsData(cardAccountId, 24, granularity)
+    // En modo banco: undefined (deshabilitado) si no hay tarjeta seleccionada.
+    // En modo agregado: null → analítica consolidada de todas las tarjetas.
+    const analyticsCardId: number | null | undefined = bankId
+        ? (cardAccountId ?? undefined)
+        : cardAccountId
+    const hubData = useStatementsAnalyticsData(analyticsCardId, 24, granularity)
 
     const { data: statements = [], isLoading, isError } = useCardStatements(
         Object.keys(params).length > 0 ? params : undefined,

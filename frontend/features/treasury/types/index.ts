@@ -314,6 +314,8 @@ export interface TreasuryMovement {
 
 export interface TreasuryMovementFilters {
     bank?: string | number
+    /** Solo movimientos de cuentas bancarias (agregado de todos los bancos). */
+    bank_only?: boolean
     treasury_account?: string | number
     movement_type?: 'INBOUND' | 'OUTBOUND' | 'TRANSFER' | 'ADJUSTMENT'
     date?: string

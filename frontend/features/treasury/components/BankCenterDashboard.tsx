@@ -1,9 +1,8 @@
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"
-import { EntityCard, PageSectionHeader, StaleDataBanner, TabBar } from "@/components/shared"
+import { EntityCard, StaleDataBanner, TabBar } from "@/components/shared"
 import { useBankOverview, type BankOverviewData } from "../hooks/useBankOverview"
-import { getSubViewTabs } from "../constants"
 import { BankUpcomingMaturitiesPanel } from "./BankUpcomingMaturities"
 import { BankRecentActivity } from "./BankRecentActivity"
 import { BankCheckingSection } from "./BankCheckingSection"
@@ -39,8 +38,6 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
         ? overviewData.accounts.filter((a: { account_type: string }) => a.account_type === "CHECKING").map((a: { id: number; name: string }) => ({ id: a.id, name: a.name }))
         : []
 
-    const subViewTabs = getSubViewTabs(bankId)
-
     const cardSubTabs = activeTab === "cards" ? [
         { value: "unbilled", label: "Cargos No Facturados", href: `/treasury/bank-center/${bankId}/cards/unbilled` },
         { value: "statements", label: "Cargos Facturados", href: `/treasury/bank-center/${bankId}/cards/statements` },
@@ -49,10 +46,6 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
 
     return (
         <div className="flex-1 min-h-0 flex flex-col overflow-y-auto custom-scrollbar">
-            <PageSectionHeader
-                subTabs={subViewTabs}
-                subTabsBelow
-            />
             {activeTab === "cards" && cardSubTabs && (
                 <div className="flex justify-start pt-2">
                     <TabBar

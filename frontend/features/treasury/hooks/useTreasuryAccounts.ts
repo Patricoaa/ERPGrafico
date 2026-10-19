@@ -52,13 +52,14 @@ interface UseTreasuryAccountsReturn {
     isError: boolean
 }
 
-export function useTreasuryAccounts({ filters }: { filters?: TreasuryAccountFilters } = {}): UseTreasuryAccountsReturn {
+export function useTreasuryAccounts({ filters, enabled = true }: { filters?: TreasuryAccountFilters; enabled?: boolean } = {}): UseTreasuryAccountsReturn {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
     const { data: accounts, isLoading, isFetching, isError, refetch } = useQuery({
         queryKey: [...TREASURY_ACCOUNTS_KEYS.lists(), filters],
         queryFn: () => treasuryApi.getAccounts(filters),
+        enabled,
         staleTime: staleTime.stable,
     })
 

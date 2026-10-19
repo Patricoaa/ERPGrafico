@@ -4,7 +4,7 @@ doc: module-layout-navigation
 status: active
 owner: frontend-team
 stability: stable
-last_review: 2026-10-13
+last_review: 2026-10-19
 ---
 
 # Contrato: Layout y Navegación Dinámica por Módulo
@@ -68,6 +68,17 @@ El tope del panel contiene **Buscar** (Ctrl+K) y **Bandeja de entrada** (`Sideba
 La **topbar** (ancho completo, no se desplaza al abrir sheets) muestra el título de la vista como **único `<h1>`** de la página (la `description` es su tooltip), `breadcrumbs`, `status`, `titleActions`, `children` y los accesos POS / Calculadora a tamaño de riel. Las vistas **no** renderizan título ni descripción propios; `PageSectionHeader` solo dibuja pestañas internas.
 
 Una vista puede montar su propio `<PageHeader>` (p. ej. para `titleActions`) **sin** `navigation`: el sidebar conserva la navegación del módulo (`HeaderProvider.moduleNavigation`).
+
+### 2.2 Sub-vistas de módulo en el riel (caso Tesorería / Centro de Bancos)
+
+Todo acceso a una sub-vista DEBE quedar declarado en el árbol de navegación del módulo (`navigation.ts`), que es la **fuente única** de la que dependen tanto `[Module]Header` como cualquier header de sección (`BankPageHeader`). Reglas:
+
+- **Sin nav aplanada por headers de página**: ningún header de página puede publicar `navigation` recortando o reescribiendo `subTabs`; si lo hace, deja sub-vistas fuera del riel. La construcción del árbol vive en un helper compartido (`buildTreasuryTabs`).
+- **Rutas físicas = ítems del riel**: cada sub-vista es una ruta real. Las rutas **agregadas** ("todos los bancos") son segmentos estáticos que preceden al dinámico (`bank-center/<subView>` antes de `bank-center/[bankId]`); no colisionan porque `[bankId]` es numérico.
+- **Páginas agregadas sin header propio**: reutilizan el título/navegación que ya publica el `[Module]Header` del layout; no montan `BankPageHeader`.
+- **`TabBar` de página solo para sub-tabs intra-vista** (p. ej. Tarjeta: Cargos No Facturados / Cargos Facturados). El resto de la navegación es exclusivamente del riel.
+
+Caso de referencia: `/treasury/bank-center` expone `overview`, `movements`, `checks`, `loans`, `cards/*` y `reconciliation`, tanto agregados como por banco (`/treasury/bank-center/<bankId>/...`).
 
 ## 3. El Layout del Módulo (`layout.tsx`)
 

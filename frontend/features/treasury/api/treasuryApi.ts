@@ -320,8 +320,9 @@ export const treasuryApi = {
     // ========== Unbilled Charges (Credit Card) ==========
 
     getUnbilledCharges: async (
-        cardAccountId: number,
+        cardAccountId?: number,
         cutOffDate?: string,
+        bankId?: number,
     ): Promise<{
         charges: PendingChargeRow[]
         upcoming_installments: UpcomingInstallment[]
@@ -333,9 +334,9 @@ export const treasuryApi = {
         }
         forecast: UnbilledForecast
     }> => {
-        const params: Record<string, string | number> = {
-            card_account: cardAccountId,
-        }
+        const params: Record<string, string | number> = {}
+        if (cardAccountId) params.card_account = cardAccountId
+        if (bankId) params.bank = bankId
         if (cutOffDate) {
             params.cut_off_date = cutOffDate
         }

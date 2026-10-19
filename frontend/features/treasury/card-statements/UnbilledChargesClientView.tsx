@@ -26,8 +26,7 @@ import {
     type ToolbarActionItem,
 } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
-import { useBankOverview } from '../hooks/useBankOverview'
-import type { BankOverviewData } from '../hooks/useBankOverview'
+import { useCardAccounts } from '../hooks/useCardAccounts'
 import type { PendingChargeRow, UpcomingInstallment, UnbilledItemRow } from '../types'
 import { mapToUnbilledItemRows } from './utils'
 import { CardPendingChargeDrawer } from './CardPendingChargeDrawer'
@@ -43,7 +42,8 @@ import type { Granularity } from "@/lib/analytics-helpers"
 import { unbilledChargeFields } from './unbilledChargeFields'
 
 interface UnbilledChargesClientViewProps {
-    bankId: number
+    /** Banco específico. Si se omite, agrega las tarjetas de todos los bancos. */
+    bankId?: number
 }
 
 interface UnbilledSummary {
@@ -55,7 +55,7 @@ interface UnbilledSummary {
 
 export function UnbilledChargesClientView({
     bankId,
-}: UnbilledChargesClientViewProps) {
+}: UnbilledChargesClientViewProps = {}) {
 
     const [showBillCharges, setShowBillCharges] = useState(false)
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState("cupo")
@@ -68,15 +68,8 @@ export function UnbilledChargesClientView({
     const { selectedId, openSelected, clearActions } = useEntityRouteActions()
     const isNewModal = searchParams.get('modal') === 'new'
 
-    const { data: overview, isLoading: overviewLoading } = useBankOverview(bankId)
-    const overviewData = (overview && !overviewLoading ? overview : null) as BankOverviewData | null
-
-    const creditCardAccounts = useMemo(
-        () => (overviewData?.accounts?.filter(
-            (acc) => acc.account_type === 'CREDIT_CARD'
-        ).map(a => ({ id: a.id, name: a.name, currency: a.currency })) ?? []),
-        [overviewData],
-    )
+    const { cardAccounts: creditCardAccounts, isLoading: overviewLoading } = useCardAccounts(bankId)
+    const isAggregate = !bankId
 
     const unifiedConfig: UnifiedSearchConfig = useMemo(() => ({
         searchFields: [
@@ -100,8 +93,11 @@ export function UnbilledChargesClientView({
                 key: 'card',
                 label: 'Tarjeta',
                 serverParam: 'card',
-                defaultValue: String(creditCardAccounts[0]?.id ?? ''),
-                options: creditCardAccounts.map(a => ({ label: a.name, value: String(a.id) })),
+                defaultValue: isAggregate ? 'all' : String(creditCardAccounts[0]?.id ?? ''),
+                options: [
+                    ...(isAggregate ? [{ label: 'Todas las tarjetas', value: 'all' }] : []),
+                    ...creditCardAccounts.map(a => ({ label: a.name, value: String(a.id) })),
+                ],
             },
         ],
         dateFilters: [
@@ -123,14 +119,22 @@ export function UnbilledChargesClientView({
 
     const search = useUnifiedSearch(unifiedConfig)
 
-    const selectedCardAccount = search.filters.card ? Number(search.filters.card) : (creditCardAccounts[0]?.id ?? 0)
+    const cardFilter = search.filters.card
+    const selectedCardId = cardFilter && cardFilter !== 'all' ? Number(cardFilter) : null
+    const isAllCards = isAggregate && selectedCardId === null
+    const selectedCardAccount = selectedCardId ?? (bankId ? (creditCardAccounts[0]?.id ?? null) : null)
     const currentAccount = creditCardAccounts.find(a => a.id === selectedCardAccount)
     const cardAccountName = currentAccount?.name ?? ''
     const currency = currentAccount?.currency ?? 'CLP'
 
     const cutOffDate = (search.filters.scope ?? 'month') !== 'all' ? new Date().toISOString().split('T')[0] : undefined
 
-    const { data: result, isLoading } = useUnbilledCharges(selectedCardAccount, cutOffDate)
+    const { data: result, isLoading } = useUnbilledCharges({
+        cardAccountId: selectedCardAccount ?? undefined,
+        bankId: isAllCards ? undefined : bankId,
+        cutOffDate,
+        enabled: creditCardAccounts.length > 0,
+    })
 
     const charges: PendingChargeRow[] = result?.charges ?? []
     // ── Derive chargeToEdit from URL param (selectedId) ───────────
@@ -161,7 +165,7 @@ export function UnbilledChargesClientView({
         return result
     }, [mergedRows, search.filterFn, search.filters])
 
-    const chargeDrawerOpen = isNewModal || !!(selectedId && chargeToEdit)
+    const chargeDrawerOpen = !isAllCards && (isNewModal || !!(selectedId && chargeToEdit))
 
     // Side effect only: clear URL when selectedId points to a missing charge
     useEffect(() => {
@@ -184,7 +188,7 @@ export function UnbilledChargesClientView({
 
     const handleChargeDrawerSuccess = () => {
         handleChargeDrawerOpenChange(false)
-        invalidateCrossFeature(queryClient, [['unbilled-charges', selectedCardAccount]])
+        invalidateCrossFeature(queryClient, [['unbilled-charges']])
     }
 
     const handleAddChargeClick = () => {
@@ -195,7 +199,7 @@ export function UnbilledChargesClientView({
 
     const handleBillChargesSuccess = () => {
         setShowBillCharges(false)
-        invalidateCrossFeature(queryClient, [['unbilled-charges', selectedCardAccount], ['card-statements']])
+        invalidateCrossFeature(queryClient, [['unbilled-charges'], ['card-statements']])
         toast.success('Cargos facturados exitosamente')
     }
 
@@ -353,6 +357,7 @@ export function UnbilledChargesClientView({
                     isFiltered={search.isFiltered}
                     onReset={search.clearAll}
                     onRowClick={(row: UnbilledItemRow) => {
+                        if (isAllCards) return
                         if (row.source === 'pending' && row.originalPendingCharge) {
                             openSelected(row.originalPendingCharge.id)
                         }
@@ -561,13 +566,15 @@ export function UnbilledChargesClientView({
                             ],
                         },
                     }}
-                    createAction={<ToolbarCreateButton label="Agregar Cargo" onClick={handleAddChargeClick} />}
-                    toolbarActions={toolbarActions}
+                    createAction={isAllCards ? undefined : <ToolbarCreateButton label="Agregar Cargo" onClick={handleAddChargeClick} />}
+                    toolbarActions={isAllCards ? [] : toolbarActions}
                     emptyState={{
                         context: 'treasury',
                         icon: CreditCard,
                         title: 'No hay cargos no facturados',
-                        description: 'Los cargos de esta tarjeta de crédito aparecerán aquí antes de ser facturados.',
+                        description: isAggregate
+                            ? 'Los cargos de todas las tarjetas aparecerán aquí antes de ser facturados.'
+                            : 'Los cargos de esta tarjeta de crédito aparecerán aquí antes de ser facturados.',
                     }}
                     renderCard={(item: UnbilledItemRow) => (
                         <AutoEntityCard 
@@ -584,7 +591,7 @@ export function UnbilledChargesClientView({
             <CardPendingChargeDrawer
                 open={chargeDrawerOpen}
                 onOpenChange={handleChargeDrawerOpenChange}
-                cardAccountId={selectedCardAccount}
+                cardAccountId={selectedCardAccount ?? 0}
                 cardAccountName={cardAccountName}
                 currency={currency}
                 charge={chargeToEdit}
@@ -593,7 +600,7 @@ export function UnbilledChargesClientView({
 
             {showBillCharges && (
                 <BillChargesModal
-                    cardAccountId={selectedCardAccount}
+                    cardAccountId={selectedCardAccount ?? 0}
                     cardAccountName={cardAccountName}
                     total={summary?.total || 0}
                     charges={charges}
