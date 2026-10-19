@@ -93,6 +93,7 @@ export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) 
         invoices,
         isLoading: showSkeleton,
         isRefetching,
+        isError: query.isError,
         refetch,
         annulInvoice: annulMutation.mutateAsync,
         isAnnulling: annulMutation.isPending,

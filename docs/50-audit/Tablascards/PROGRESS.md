@@ -1,11 +1,11 @@
 # Progreso — Nuevo sistema de presentación
 - **Avance (2026-10-18): 33 entidades `defineEntity` · 62 pantallas y 98 consumidores en el sistema antiguo** (`bash frontend/scripts/entity-view-progress.sh`)
-- Fase actual: 7 · oleada A **completa y commiteada** (A1-A4 + cierres, `07` §6.21) · TC-071/TC-072 corregidos (`07` §6.22) · Puerta D de la oleada B **presentada** (`07` §6.23), esperando decisión del usuario
-- Último completado: Puerta D de la oleada B — forense de B1 (facturación), B2 (asientos/impuestos), B3 (documental de inventario), B5 (nómina/presupuestos/socios); B4 (órdenes de trabajo) queda fuera con Puerta D propia. 3 preguntas abiertas: orden de sub-lotes, proceso ligero vs. completo (M5) para B1-B3, y si `BudgetDetailView` va en B5 o se mueve a la oleada D. Detalle en `07` §6.23
-- Próximo paso exacto: decisión del usuario sobre la Puerta D de la oleada B → implementar B1 (facturas)
-- Rama: `refactor/entity-view-lote-3` (oleada A + cierres + TC-071/072 commiteados en `d919808b4`, `3e1114377` y el commit pendiente de esta corrección); issues abiertas #176, #177
-- Puertas: A ✅ · B ✅ · C ✅ · D lote 1 ✅ · D 2a ✅ · D 2b ✅ · D 2c ✅ (2026-10-17) · D lote 3 ✅ (2026-10-18) · replanificación ✅ (2026-10-18) · D A1 ✅ (2026-10-18) · oleada A completa ✅ (2026-10-18)
-- Preguntas abiertas para el usuario: Puerta D de la oleada B (`07` §6.23, 3 preguntas); credenciales de demo
+- Fase actual: 7 · oleada A **completa y commiteada** (A1-A4 + cierres, `07` §6.21) · TC-071/TC-072 corregidos (`07` §6.22) · Puerta D de la oleada B decidida (`07` §6.23) · **B1 implementado** (`07` §6.24), esperando aprobación de commit
+- Último completado: B1 (facturación) — `salesInvoice`/`purchaseInvoice.entity.ts` nuevos, ambas pantallas reescritas sobre `Collection`; se borra código muerto en `SalesInvoicesClientView` (confirmado por `/code-review`: la única acción de fila era "hub", ningún otro *setter* era alcanzable); `PurchaseInvoicesClientView` conserva su menú completo de acciones. `/code-review`: 0 hallazgos. `tsc`/`eslint`/vitest (68/68) limpios en el ámbito de `billing`. Sin verificar en la app real (servidor no respondió). Detalle en `07` §6.24
+- Próximo paso exacto: aprobación de commit de B1 → B2 (asientos/impuestos)
+- Rama: `refactor/entity-view-lote-3` (oleada A + cierres commiteados en `d919808b4`/`3e1114377`/usuario; TC-071/072 en `daf4e9ecf`; Puerta D de la oleada B en `2c998c406`; B1 pendiente de aprobación); issues abiertas #176, #177
+- Puertas: A ✅ · B ✅ · C ✅ · D lote 1 ✅ · D 2a ✅ · D 2b ✅ · D 2c ✅ (2026-10-17) · D lote 3 ✅ (2026-10-18) · replanificación ✅ (2026-10-18) · D A1 ✅ (2026-10-18) · oleada A completa ✅ (2026-10-18) · D oleada B ✅ (2026-10-18)
+- Preguntas abiertas para el usuario: credenciales de demo (para verificar en la app real)
 - Decisiones del usuario:
   - 2026-10-17: las tablas de wizard/modal entran como caso de uso específico · `as any` de `AutoEntityCard.tsx:390` espera al rediseño · `journalEntryFields` lo determina la auditoría (→ TC-016) · TC-012 se corrige en la migración
   - 2026-10-17 Puerta A: aprueba RC1–RC8 y la matriz C/F/E; pantallas de la Fase 4 = UoM, OV, Compras; aprueba `role="grid"` → `role="table"` en `compact`; **exportación = requisito** (aclarado)
@@ -54,3 +54,5 @@
   - 2026-10-18 `/code-review` de cierres: 8 corregidos, entre ellos la acción única deshabilitada pero clicable en `createEntityActions` (compartido). TC-068: tests de WorkOrderWizard rotos desde antes.
   - 2026-10-18 A4 implementado (contactos, BOM): cierra la oleada A. TC-069 (riesgo sin tipo), TC-070 (campos de BOM sin tipo).
   - 2026-10-18 Usuario commitea cierres + A4 junto con una migración propia de antipatrones `Form*` → `Labeled*` (`d919808b4`, `3e1114377`), que rompió `CreditLineDrawer.tsx` y `JournalEntryDrawer.tsx`. Usuario pide terminarla yo mismo. TC-071/TC-072 corregidos con `Controller` (RHF) y `LabeledContainer`. `tsc` limpio en todo el frontend.
+  - 2026-10-18 Puerta D de la oleada B presentada y decidida: proceso ligero en B1-B3, completo en B5; `BudgetDetailView` se mueve a la oleada D; orden B1→B2→B3→B5, B4 aparte.
+  - 2026-10-18 B1 implementado (facturación). Durante la implementación, se detecta que `JournalEntryDrawer.tsx` está siendo reescrito en paralelo (fuera de esta sesión) hacia el patrón de ficha documental — no se toca, documentado en `07` §6.23.

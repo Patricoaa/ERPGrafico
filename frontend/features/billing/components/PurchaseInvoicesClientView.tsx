@@ -2,7 +2,8 @@
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef } from "react"
-import { ActionConfirmModal, DocumentCompletionModal, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { ActionConfirmModal, DocumentCompletionModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared'
+import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
 import { purchaseInvoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
 import { billingApi } from "@/features/billing/api/billingApi"
 import { toast } from "sonner"
@@ -11,15 +12,17 @@ import { ReceiptModal } from "@/features/purchasing"
 import { UnifiedNoteWizard } from '@/features/notes'
 import { LazyDrawer } from "@/features/_shared"
 
-import { DataTableView, AutoEntityCard } from '@/components/shared'
-import { purchaseInvoiceFields } from "@/features/billing/purchaseInvoiceFields"
 import { purchaseInvoiceActions, type PurchaseInvoiceActionsCtx } from "@/features/billing/purchaseInvoiceActions"
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
 import { type Invoice, type InvoiceFilters } from "@/features/billing/types"
-import { getDtePrefix, formatEntityDisplay, getEntityIcon } from "@/lib/entity-registry"
+import { getDtePrefix, formatEntityDisplay } from "@/lib/entity-registry"
+import { purchaseInvoiceEntity, purchaseInvoiceViews } from "../entity-view/purchaseInvoice.entity"
+
+/** Search group keys → entity field ids (grouping uses the formatted cell text). */
+const INVOICE_GROUPS: Record<string, FieldId<typeof purchaseInvoiceEntity.fields>> = { date: "date", status: "hub" }
 
 interface Props {
     createAction?: React.ReactNode
@@ -27,7 +30,7 @@ interface Props {
 
 export function PurchaseInvoicesClientView({ createAction }: Props) {
     const search = useUnifiedSearch(purchaseInvoiceUnifiedSearchDef)
-    const { invoices: documents, isLoading, refetch: fetchDocuments } = usePurchaseInvoices({ filters: { ...search.filters } as InvoiceFilters })
+    const { invoices: documents, isLoading, isRefetching, isError, refetch: fetchDocuments } = usePurchaseInvoices({ filters: { ...search.filters } as InvoiceFilters })
     const [payingDoc, setPayingDoc] = useState<Invoice | null>(null)
     const [receivingDoc, setReceivingDoc] = useState<Invoice | null>(null)
     const [notingDoc, setNotingDoc] = useState<Invoice | null>(null)
@@ -36,6 +39,8 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
 
     // ?selected abre la ficha documental de la factura de compra (ADR-0083)
     const sheet = useDocumentSheetRoute("billing.invoice")
+    const groupBy = search.groupBy ? INVOICE_GROUPS[search.groupBy] ?? null : null
+    const { view, onViewChange } = useCollectionViewMode("billing.invoice")
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -108,12 +113,10 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
         }
     }
 
-    const toggleHub = (doc: Invoice) => sheet.toggle(doc.id)
-
     const actionsCtx: PurchaseInvoiceActionsCtx = {
         onDetail: (doc) => setViewingTransaction({ type: 'invoice', id: String(doc.id) }),
         onPay: (doc) => setPayingDoc(doc),
-        onHub: (doc) => toggleHub(doc),
+        onHub: (doc) => sheet.toggle(doc.id),
         onReceive: (doc) => setReceivingDoc(doc),
         onCompleteFolio: (doc) => setCompletingDoc(doc),
         onCreateNote: (doc) => setNotingDoc(doc),
@@ -122,64 +125,35 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
         onAnnul: (id) => annulConfirm.requestConfirm(id),
     }
 
-    const columns = [
-        ...purchaseInvoiceFields.toColumns(),
-        purchaseInvoiceActions.auto(actionsCtx),
-    ]
+    const collection = useEntityCollection(
+        purchaseInvoiceEntity,
+        { rows: documents, isLoading, isRefetching, error: isError, refetch: fetchDocuments, isFiltered: search.isFiltered },
+        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
+    )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    entityLabel="billing.invoice"
-                    defaultView="card"
-                    columns={columns}
-                    data={documents}
-                    isLoading={isLoading}
-                    onRowClick={(row: Invoice) => toggleHub(row)}
-                    variant="embedded"
-                    hidePagination={isLoading}
-                    unifiedSearch={<UnifiedSearchBar
-                        config={purchaseInvoiceUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar facturas de compra..."
-                    />}
-                    unifiedSearchConfig={purchaseInvoiceUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    defaultPageSize={20}
-                    createAction={createAction}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "purchase",
-                        title: "Aún no hay documentos de compra",
-                        description: "Los documentos de compra registrados aparecerán aquí.",
-                    }}
-                    renderCard={(data: Invoice) => (
-                        <AutoEntityCard
-                            key={data.id}
-                            data={data}
-                            fields={purchaseInvoiceFields}
-                            entityLabel="billing.invoice"
-                            icon={getEntityIcon('billing.invoice')}
-                            iconClassName="text-info bg-info/10"
-                            isSelected={sheet.selectedId === data.id}
-                            onClick={() => toggleHub(data)}
-                            actions={purchaseInvoiceActions.render(data, actionsCtx)}
-                        />
-                    )}
+            <Collection.Root
+                collection={collection}
+                selection="panel"
+                selectedId={sheet.selectedId ?? null}
+                onOpen={(doc) => sheet.toggle(doc.id)}
+                view={view}
+                onViewChange={onViewChange}
+                actions={purchaseInvoiceActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar config={purchaseInvoiceUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar facturas de compra..." />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={purchaseInvoiceViews.table}
+                    card={purchaseInvoiceViews.card}
+                    emptyTitle="Aún no hay documentos de compra"
+                    emptyDescription="Los documentos de compra registrados aparecerán aquí."
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+            </Collection.Root>
 
             {viewingTransaction && (
                 <LazyDrawer

@@ -89,6 +89,7 @@ export function useInvoices({ filters }: UseInvoicesProps = {}) {
         invoices,
         isLoading: showSkeleton,
         isRefetching,
+        isError: query.isError,
         refetch,
         annulInvoice: annulMutation.mutateAsync,
         isAnnulling: annulMutation.isPending,
