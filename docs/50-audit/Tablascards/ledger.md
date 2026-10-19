@@ -380,3 +380,15 @@
 - Decisión: añadidos a `BOM` (A4); `bomActions` pasa a tiparse sobre `BOM`
 - Estado: corregido
 
+### TC-071 · Entorno · Verificado
+- Evidencia: `features/treasury/credit-lines/CreditLineDrawer.tsx` falla `tsc` (6 errores: `FormField` sin importar, `field`/`v` implícitos `any`, opciones `readonly` no asignables, `LabeledCheckboxProps` incompleto). El archivo **no está en el diff de esta sesión** (`git diff HEAD` vacío); viene commiteado en `d919808b4 fix(form): migrate antipatterns to canonical notched-field components`, el commit en la punta de la rama, posterior a los de esta sesión y hecho directamente por el usuario
+- Efecto: `npx tsc --noEmit` falla en la rama *antes* de cualquier cambio de esta sesión; aislado a ese único archivo (verificado por archivo)
+- Causa raíz adicional (hallada al corregir): los dos `LabeledSelect` restantes (`currency`, `rate_basis`) y el `LabeledCheckbox` (`auto_renewal`) recibían `{...form.register(...)}` — válido para `LabeledInput` (input nativo) pero no para `LabeledSelect`/`LabeledCheckbox` (envuelven Radix `Select`/`Checkbox`, que esperan `onChange(value)`/`onCheckedChange(checked)`, no un `ChangeEvent`). `tsc` no lo marcaba porque el tipo de `register()` (`ChangeHandler = (event: any) => ...`) es estructuralmente compatible por el `any`, pero en runtime habría roto la selección/el checkbox
+- Corrección: los tres campos ahora usan `Controller` (de `react-hook-form`, mismo patrón que `DeviceDrawer.tsx`) con `value`/`onChange` (`LabeledSelect`) o `checked`/`onCheckedChange` (`LabeledCheckbox`); se quitó el `as const` de `currencyOptions`/`rateBasisOptions` (tipo `readonly [...]` no asignable a `LabeledSelectOption[]`); se quitó el import sin uso de `LabeledContainer`
+- Estado: corregido (`tsc --noEmit` y `eslint` limpios en el archivo; sin test dedicado — el drawer no tenía tests antes de este cambio)
+
+### TC-072 · Entorno · Verificado
+- Evidencia: `features/accounting/components/JournalEntryDrawer.tsx` fallaba `tsc` (4 errores, TS2322) en los campos de solo lectura "Estado", "Origen" y "Documento Origen" (×2): `3e1114377 fix(form): replace ad-hoc notched-field with LabeledInput for read-only display fields` (commit directo del usuario, misma punta de rama que TC-071) les pasó un `<StatusBadge>`/`<Chip>`/`<DocumentRefLink>`/`<span>` (JSX) como `value`, pero `LabeledInput.value` es el `value` nativo de `<input>` (`string | number | readonly string[] | undefined`), no `ReactNode`
+- Corrección: los 4 campos pasan de `LabeledInput value={<JSX/>} readOnly` a `LabeledContainer` (el primitivo del contrato — `component-input.md` — para contenido no-input dentro del notched field) con el `JSX` como `children`; se agregó `LabeledContainer` al import de `@/components/shared`; se quitó `readOnly` (no existe en `LabeledContainerProps`, no aplica a children arbitrarios)
+- Estado: corregido (`tsc --noEmit` y `eslint` limpios; sin test dedicado — el drawer no tenía tests antes de este cambio)
+

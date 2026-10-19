@@ -1005,9 +1005,21 @@ Verificación: `tsc` sin errores; vitest por partes de toda la suite: todo en ve
 
 Hooks con `isError`/`isCategoriesError` añadidos: `useContacts`, `useAllBOMs` (vía `useBOMs.ts`).
 
+**`/code-review` medium del A4 (1 hallazgo, corregido):** `BOMListItem` (alias local de `BOMClientView.tsx`) quedó redundante con `BOM`, que esta migración ya amplió con `product_code`/`lines_count`/`total_cost`. Se borra el alias y los 2 `as unknown as BOMListItem`; `editingBomData` (tipo `any` del API, preexistente) se castea una sola vez a `BOM | undefined`. Verificación: sin errores nuevos de `/code-review` (confirmó paridad campo por campo contra `contactFields.tsx`/`bomFields.tsx` vía `git show HEAD`).
+
 **Verificación**
 - `tsc` sin errores; `eslint` sin errores nuevos (2 avisos preexistentes en `useBOMs.ts`/`BOMClientView.tsx`, confirmados comparando con el stash previo a esta sesión).
 - vitest: `components/entity-view` + contrato 83/83; `features/{contacts,production,accounting}` en verde salvo `WorkOrderWizard` (TC-068, previo).
 - Avance (`scripts/entity-view-progress.sh`): 33 entidades · 62 pantallas · 36 `*Fields` · 38 `computed` · 33 `toColumns` · 20 `AutoEntityCard` · 98 consumidores.
-- `/code-review` en curso.
+
+Oleada A cerrada (A1–A4). Commiteado por el usuario junto con cierres (§6.20) en `d919808b4`.
+
+### 6.22 TC-071/TC-072 — migración `Labeled*` rota por un commit del usuario, corregida (2026-10-18)
+
+El commit `d919808b4` (directo del usuario, en la punta de la rama) barrió la oleada A + cierres junto con una migración propia de antipatrones de formulario (`Form`/`FormField`/`FormLabel`/`FormControl` → `LabeledInput`/`LabeledSelect`/`LabeledCheckbox`/`LabeledContainer`, per [component-input.md](../../20-contracts/component-input.md)) que dejó `CreditLineDrawer.tsx` sin compilar (TC-071). El commit siguiente, `3e1114377` (también directo), rompió además `JournalEntryDrawer.tsx` (TC-072) con el mismo tipo de migración incompleta. El usuario pidió terminarlas yo mismo.
+
+- **TC-071 — `CreditLineDrawer.tsx`:** el cuerpo seguía usando `<FormField>` (ya no importado) en el campo `treasury_account`; además `currency`, `rate_basis` y `auto_renewal` recibían `{...form.register(...)}`, válido solo para `LabeledInput` (input nativo) — `LabeledSelect`/`LabeledCheckbox` envuelven Radix `Select`/`Checkbox` y esperan `onChange(value)`/`onCheckedChange(checked)`, no un `ChangeEvent`; `tsc` no lo marcaba (el tipo `any` de `ChangeHandler` de RHF lo hacía estructuralmente compatible) pero habría roto la selección en runtime. Corregido con `Controller` de `react-hook-form` (mismo patrón que `DeviceDrawer.tsx`) en los 4 campos; quitado el `as const` de las opciones (`readonly [...]` no asignable a `LabeledSelectOption[]`); quitado el import sin uso de `LabeledContainer`.
+- **TC-072 — `JournalEntryDrawer.tsx`:** los campos de solo lectura "Estado", "Origen" y "Documento Origen" (×2) pasaban un `<StatusBadge>`/`<Chip>`/`<DocumentRefLink>`/`<span>` como `value` de `LabeledInput`, cuyo `value` es el nativo de `<input>` (no `ReactNode`). Corregido reemplazándolos por `LabeledContainer` (el primitivo del contrato para contenido no-input dentro del notched field) con el JSX como `children`.
+
+Verificación: `tsc --noEmit` limpio en todo el frontend (antes: 10 errores, 6 en `CreditLineDrawer.tsx` + 4 en `JournalEntryDrawer.tsx`); `eslint` limpio en ambos archivos; vitest por partes de la suite relacionada (cierres, contactos, BOM, tesorería, núcleo, `entity-actions`) 60/63 en verde, los 3 restantes son `WorkOrderWizard` (TC-068, previo). Ninguno de los dos drawers tenía test dedicado antes de este cambio.
 

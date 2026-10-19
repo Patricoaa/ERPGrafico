@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useInitializeDrawerForm } from '@/hooks/useInitializeDrawerForm'
-import { useForm, type Resolver } from 'react-hook-form'
+import { useForm, Controller, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useCreditLineMutations } from '../hooks/useCreditLines'
@@ -14,7 +14,7 @@ import {
     SheetDescription,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { LabeledInput, LabeledSelect, LabeledCheckbox, LabeledContainer } from '@/components/shared'
+import { LabeledInput, LabeledSelect, LabeledCheckbox } from '@/components/shared'
 import type { CreditLine, CreditLineCreatePayload } from './types'
 import type { TreasuryAccount } from '../types'
 import { treasuryApi } from '@/features/treasury'
@@ -146,12 +146,12 @@ export function CreditLineDrawer({ open, onOpenChange, creditLine, creditLineId,
     const currencyOptions = [
         { value: 'CLP', label: 'CLP' },
         { value: 'UF', label: 'UF' },
-    ] as const
+    ]
 
     const rateBasisOptions = [
         { value: 'MONTHLY', label: 'Mensual' },
         { value: 'ANNUAL', label: 'Anual' },
-    ] as const
+    ]
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -165,19 +165,18 @@ export function CreditLineDrawer({ open, onOpenChange, creditLine, creditLineId,
 
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-6">
                     {/* Cuenta Bancaria */}
-                    <FormField control={form.control} name="treasury_account" render={({ field }) => (
+                    <Controller control={form.control} name="treasury_account" render={({ field }) => (
                         treasuryAccountId ? (
                             <LabeledInput
-                                {...field}
+                                name={field.name}
                                 value={accountName || `Cuenta #${treasuryAccountId}`}
                                 disabled
                                 label="Cuenta Bancaria"
                             />
                         ) : (
                             <LabeledSelect
-                                {...field}
                                 value={field.value ? String(field.value) : ''}
-                                onValueChange={(v) => {
+                                onChange={(v) => {
                                     field.onChange(Number(v))
                                     const acc = checkingAccounts.find((a: TreasuryAccount) => a.id === Number(v))
                                     setAccountName(acc?.name ?? '')
@@ -198,11 +197,14 @@ export function CreditLineDrawer({ open, onOpenChange, creditLine, creditLineId,
                         />
 
                         {/* Moneda */}
-                        <LabeledSelect
-                            {...form.register('currency')}
-                            label="Moneda"
-                            options={currencyOptions}
-                        />
+                        <Controller control={form.control} name="currency" render={({ field }) => (
+                            <LabeledSelect
+                                value={field.value}
+                                onChange={field.onChange}
+                                label="Moneda"
+                                options={currencyOptions}
+                            />
+                        )} />
                     </div>
 
                     {/* Límite de Crédito */}
@@ -225,11 +227,14 @@ export function CreditLineDrawer({ open, onOpenChange, creditLine, creditLineId,
                         />
 
                         {/* Base */}
-                        <LabeledSelect
-                            {...form.register('rate_basis')}
-                            label="Base"
-                            options={rateBasisOptions}
-                        />
+                        <Controller control={form.control} name="rate_basis" render={({ field }) => (
+                            <LabeledSelect
+                                value={field.value}
+                                onChange={field.onChange}
+                                label="Base"
+                                options={rateBasisOptions}
+                            />
+                        )} />
 
                         {/* Spread % */}
                         <LabeledInput
@@ -258,10 +263,14 @@ export function CreditLineDrawer({ open, onOpenChange, creditLine, creditLineId,
                     </div>
 
                     {/* Renovación Automática */}
-                    <LabeledCheckbox
-                        {...form.register('auto_renewal')}
-                        label="Renovación Automática"
-                    />
+                    <Controller control={form.control} name="auto_renewal" render={({ field }) => (
+                        <LabeledCheckbox
+                            label="Renovación Automática"
+                            description="Renovar la línea de crédito automáticamente al vencer"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                        />
+                    )} />
 
                     {form.watch('auto_renewal') && (
                         <LabeledInput

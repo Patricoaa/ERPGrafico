@@ -25,7 +25,7 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { formatCurrency } from "@/lib/money"
 import { useJournalEntry } from "@/features/accounting/hooks/useJournalEntries"
-import { Chip, Drawer, LabeledInput, CancelButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell, StatusBadge } from "@/components/shared";
+import { Chip, Drawer, LabeledInput, LabeledContainer, CancelButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell, StatusBadge } from "@/components/shared";
 import { SourceDocumentSelector, type SourceDocument } from "@/components/selectors/SourceDocumentSelector";
 import { formDrawerWidth } from "@/lib/form-widths";
 import { ActivitySidebar } from "@/features/audit";
@@ -318,28 +318,20 @@ export function JournalEntryDrawer({
                 <fieldset disabled={isViewMode} className="contents">
                     <div className="grid grid-cols-12 gap-4 ">
                         <div className="col-span-3">
-                            <LabeledInput
-                                label="Estado"
-                                value={<StatusBadge status={entryStatus} size="sm" variant="badge" />}
-                                disabled
-                                readOnly
-                                containerClassName="pointer-events-none"
-                            />
+                            <LabeledContainer label="Estado" disabled containerClassName="pointer-events-none">
+                                <StatusBadge status={entryStatus} size="sm" variant="badge" />
+                            </LabeledContainer>
                         </div>
                         <div className="col-span-3">
-                            <LabeledInput
-                                label="Origen"
-                                value={isViewMode ? (
+                            <LabeledContainer label="Origen" disabled containerClassName="pointer-events-none">
+                                {isViewMode ? (
                                     <Chip size="xs" intent={viewEntry?.is_manual ? "neutral" : viewEntry?.reversal_of ? "warning" : "info"}>
                                         {viewEntry?.is_manual ? "Manual" : viewEntry?.reversal_of ? "Reversión" : "Automático"}
                                     </Chip>
                                 ) : (
                                     <Chip size="xs" intent="neutral">Manual</Chip>
                                 )}
-                                disabled
-                                readOnly
-                                containerClassName="pointer-events-none"
-                            />
+                            </LabeledContainer>
                         </div>
                         <div className="col-span-6">
                             <FormField
@@ -378,25 +370,17 @@ export function JournalEntryDrawer({
                         </div>
                         <div className="col-span-6">
                             {isViewMode && viewEntry?.source_document ? (
-                                <LabeledInput
-                                    label="Documento Origen"
-                                    value={viewEntry.source_document.accessible ? (
+                                <LabeledContainer label="Documento Origen" disabled containerClassName="h-full pointer-events-none">
+                                    {viewEntry.source_document.accessible ? (
                                         <DocumentRefLink documentRef={viewEntry.source_document} />
                                     ) : (
                                         <span className="text-xs text-muted-foreground">{viewEntry.source_document.display_id} · sin acceso</span>
                                     )}
-                                    disabled
-                                    readOnly
-                                    containerClassName="h-full pointer-events-none"
-                                />
+                                </LabeledContainer>
                             ) : isViewMode ? (
-                                <LabeledInput
-                                    label="Documento Origen"
-                                    value={<span className="text-muted-foreground text-sm">—</span>}
-                                    disabled
-                                    readOnly
-                                    containerClassName="h-full pointer-events-none"
-                                />
+                                <LabeledContainer label="Documento Origen" disabled containerClassName="h-full pointer-events-none">
+                                    <span className="text-muted-foreground text-sm">—</span>
+                                </LabeledContainer>
                             ) : (
                                 <SourceDocumentSelector
                                     value={sourceDocument}
