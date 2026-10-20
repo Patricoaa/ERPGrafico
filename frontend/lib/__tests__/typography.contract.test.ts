@@ -34,7 +34,6 @@ const shell = {
   panelHeader: read('../../components/shared/PanelHeader.tsx'),
   sectionHeader: read('../../components/shared/SectionHeader.tsx'),
   formSection: read('../../components/shared/FormSection.tsx'),
-  actionSlideButton: read('../../components/shared/ActionSlideButton.tsx'),
   actionButtons: read('../../components/shared/ActionButtons.tsx'),
 };
 
@@ -98,7 +97,7 @@ describe('typography contract', () => {
   });
 
   it('action buttons use font-black (Submit/Danger/Cancel share the scale)', () => {
-    expect(/text-3xs"?,\s*"font-black tracking-widest uppercase/.test(shell.actionSlideButton)).toBe(true);
+    expect(/text-3xs"?,\s*"font-black tracking-widest uppercase/.test(shell.actionButtons)).toBe(true);
     expect(/h-9 px-5 text-3xs font-black tracking-widest uppercase/.test(shell.actionButtons)).toBe(true);
   });
 });

@@ -326,7 +326,7 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       },
       {
         selector: "JSXElement[openingElement.name.name='Button'] JSXElement[openingElement.name.name='Loader2']",
-        message: "Violación de Diseño Industrial: No inyecte Loader2 manualmente en Button. Utilice <SubmitButton loading={...}> o <ActionSlideButton loading={...}>."
+        message: "Violación de Diseño Industrial: No inyecte Loader2 manualmente en Button. Utilice <SubmitButton loading={...}> (o <DangerButton loading={...}> para acciones destructivas)."
       },
       {
         // Row/card action anti-pattern: <Button>...<RegistryIcon/>...</Button>.

@@ -29,7 +29,6 @@ export * from './GenericWizard';
 
 // Buttons & Actions
 export * from './ActionFoldButton';
-export * from './ActionSlideButton';
 export * from './ToolbarCreateButton';
 export * from './ActionButtons'
 export * from './StepHeader';

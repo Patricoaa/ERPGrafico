@@ -600,22 +600,6 @@ table [data-notched-field] {
     text-wrap: pretty;
   }
 
-  /*
-   * CMY PROCESS GRADIENT — Cyan → Magenta → Yellow (sin black)
-   * Transición gradual entre los tres colores de proceso.
-   * Usado para tags decorativos o acentos estáticos muy sutiles.
-   */
-  :root {
-    --gradient-cmyk: linear-gradient(
-      90deg,
-      var(--color-cyan) 0%,
-      var(--color-cyan) 10%,
-      var(--color-magenta) 50%,
-      var(--color-yellow) 90%,
-      var(--color-yellow) 100%
-    );
-  }
-
   /* Tabular figures for financial/numeric data */
   .tabular-nums {
     font-variant-numeric: tabular-nums;
