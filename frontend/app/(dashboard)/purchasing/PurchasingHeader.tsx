@@ -7,6 +7,7 @@ import {
   PURCHASING_TABS,
   getPurchasingTab,
   getPurchasingDtesSubTab,
+  getPurchasingConfigSubTab,
 } from "@/features/purchasing/navigation"
 import { buildHeaderConfigFromTab } from "@/lib/navigation-helpers"
 import { getModuleHeaderConfig } from "@/lib/module-registry"
@@ -16,12 +17,23 @@ export function PurchasingHeader() {
   const { getViewModeUrl } = useViewModePreference()
 
   const segments = pathname.split("/").filter(Boolean)
-  const currentSegment = segments[1] || "orders"
+  const currentSegment = segments[1] || "dtes"
 
-  const activeValue = currentSegment
+  // ADR-0090: `dtes` es el tab Documentos (sub-segmentos orders/receipts/returns),
+  // `settings` es el tab Configuración de Compras.
+  const segmentToTab: Record<string, string> = {
+    dtes: "dtes",
+    settings: "config",
+  }
 
-  // Determine subActiveValue from path segments (tab Documentos)
-  const subActiveValue = activeValue === "dtes" ? (segments[2] || "dtes") : undefined
+  const activeValue = segmentToTab[currentSegment] || "dtes"
+
+  // Determine subActiveValue from path segments
+  const subActiveValue = (() => {
+    if (activeValue === "dtes") return segments[2] || "dtes"
+    if (activeValue === "config") return segments[2] || "dtes"
+    return undefined
+  })()
 
   // Module config from centralized registry
   const moduleConfig = getModuleHeaderConfig("purchasing")
@@ -42,7 +54,7 @@ export function PurchasingHeader() {
 
   const navigation = {
     moduleName: moduleConfig?.moduleName ?? "Compras",
-    moduleHref: moduleConfig?.moduleHref ?? getViewModeUrl("purchasing.purchaseorder", "/purchasing/orders"),
+    moduleHref: moduleConfig?.moduleHref ?? getViewModeUrl("purchasing.purchaseorder", "/purchasing/dtes"),
     tabs,
     activeValue,
     subActiveValue,
@@ -58,6 +70,12 @@ export function PurchasingHeader() {
     // Sub-tabs handling (tab Documentos)
     if (activeValue === "dtes" && subActiveValue) {
       const subTab = getPurchasingDtesSubTab(subActiveValue)
+      if (subTab) return buildHeaderConfigFromTab(subTab)
+    }
+
+    // Sub-tabs handling (tab Configuración de Compras)
+    if (activeValue === "config" && subActiveValue) {
+      const subTab = getPurchasingConfigSubTab(subActiveValue)
       if (subTab) return buildHeaderConfigFromTab(subTab)
     }
 

@@ -38,7 +38,7 @@ def test_credit_ledger_entry_exposes_sale_order_document(credit_customer):
     ref = ledger[0]["document"]
     assert ref["label"] == "sales.saleorder"
     assert ref["id"] == ledger[0]["id"]
-    assert ref["url"] == f"/sales/orders?selected={ref['id']}"
+    assert ref["url"] == f"/sales/dtes/orders?selected={ref['id']}"
 
 
 def test_sale_order_serializer_exposes_self_document(credit_customer):
@@ -48,4 +48,4 @@ def test_sale_order_serializer_exposes_self_document(credit_customer):
 
     assert ref["label"] == "sales.saleorder"
     assert ref["id"] == order.id
-    assert ref["url"] == f"/sales/orders?selected={order.id}"
+    assert ref["url"] == f"/sales/dtes/orders?selected={order.id}"

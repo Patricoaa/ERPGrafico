@@ -24,7 +24,7 @@ export default function PurchasingPageClient() {
         <>
             <PurchaseOrdersView
                 viewMode="orders"
-                createAction={<ToolbarCreateButton label="Nueva Orden" href="/purchasing/orders?modal=new" />}
+                createAction={<ToolbarCreateButton label="Nueva Orden" href="/purchasing/dtes/orders?modal=new" />}
             />
             <PurchaseCheckoutWizard
                 open={searchParams.get('modal') === 'new'}

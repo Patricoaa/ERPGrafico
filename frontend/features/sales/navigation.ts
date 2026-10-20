@@ -8,49 +8,6 @@ import type { NavTabConfig } from "@/lib/navigation-types"
  */
 
 // ============================================
-// SUB-TABS: ÓRDENES
-// ============================================
-
-export const SALES_ORDERS_SUB_TABS: NavTabConfig[] = [
-  {
-    value: "orders",
-    label: getDomainConceptTitle("ov", true),
-    href: "/sales/orders",
-    iconName: getEntityIconName("sales.saleorder") ?? "shopping-cart",
-    headerTitle: getDomainConceptTitle("ov", true),
-    headerDescription: "Seguimiento de pedidos, estados de fabricación y logística de entregas.",
-    metadataTitle: `${getDomainConceptTitle("ov", true)} | ERPGrafico`,
-  },
-  {
-    value: "notes",
-    label: "Notas de Crédito y Débito",
-    href: "/sales/orders/notes",
-    iconName: "file-text",
-    headerTitle: "Notas de Crédito y Débito",
-    headerDescription: "Gestión de devoluciones, correcciones de facturación y ajustes de cuenta.",
-    metadataTitle: "Notas de Crédito y Débito | ERPGrafico",
-  },
-  {
-    value: "deliveries",
-    label: "Guías de Despacho",
-    href: "/sales/orders/deliveries",
-    iconName: "truck",
-    headerTitle: "Guías de Despacho",
-    headerDescription: "Historial de envíos y entregas a clientes, incluyendo notas de débito.",
-    metadataTitle: "Guías de Despacho | ERPGrafico",
-  },
-  {
-    value: "returns",
-    label: "Devoluciones",
-    href: "/sales/returns",
-    iconName: "rotate-ccw",
-    headerTitle: "Devoluciones",
-    headerDescription: "Gestión de devoluciones de productos y notas de crédito asociadas.",
-    metadataTitle: "Devoluciones | ERPGrafico",
-  },
-]
-
-// ============================================
 // SUB-TABS: POS
 // ============================================
 
@@ -110,10 +67,19 @@ export const SALES_CREDITS_SUB_TABS: NavTabConfig[] = [
 ]
 
 // ============================================
-// SUB-TABS: DOCUMENTOS (DTE)
+// SUB-TABS: DOCUMENTOS
 // ============================================
 
 export const SALES_DTES_SUB_TABS: NavTabConfig[] = [
+  {
+    value: "orders",
+    label: getDomainConceptTitle("ov", true),
+    href: "/sales/dtes/orders",
+    iconName: getEntityIconName("sales.saleorder") ?? "shopping-cart",
+    headerTitle: getDomainConceptTitle("ov", true),
+    headerDescription: "Seguimiento de pedidos, estados de fabricación y logística de entregas.",
+    metadataTitle: `${getDomainConceptTitle("ov", true)} | ERPGrafico`,
+  },
   {
     value: "dtes",
     label: "DTE de Ventas",
@@ -124,13 +90,22 @@ export const SALES_DTES_SUB_TABS: NavTabConfig[] = [
     metadataTitle: "DTE de Ventas | ERPGrafico",
   },
   {
-    value: "settings",
-    label: "Configuración de Documentos",
-    href: "/sales/dtes/settings",
-    iconName: "settings",
-    headerTitle: "Configuración de Documentos",
-    headerDescription: "Tipos de documentos electrónicos habilitados para ser emitidos.",
-    metadataTitle: "Configuración de Documentos | ERPGrafico",
+    value: "deliveries",
+    label: "Guías de Despacho",
+    href: "/sales/dtes/deliveries",
+    iconName: "truck",
+    headerTitle: "Guías de Despacho",
+    headerDescription: "Documentos de entrega a clientes, con su origen en la orden de venta.",
+    metadataTitle: "Guías de Despacho | ERPGrafico",
+  },
+  {
+    value: "returns",
+    label: "Devoluciones",
+    href: "/sales/dtes/returns",
+    iconName: "rotate-ccw",
+    headerTitle: "Devoluciones",
+    headerDescription: "Devoluciones de producto recibidas de clientes y su reingreso a bodega.",
+    metadataTitle: "Devoluciones | ERPGrafico",
   },
 ]
 
@@ -157,6 +132,15 @@ export const SALES_CONFIG_SUB_TABS: NavTabConfig[] = [
     headerDescription: "Parámetros de puntos de venta, terminales y métodos de pago.",
     metadataTitle: "Configuración de POS | ERPGrafico",
   },
+  {
+    value: "dtes",
+    label: "Documentos DTE",
+    href: "/sales/settings/dtes",
+    iconName: "settings",
+    headerTitle: "Documentos DTE",
+    headerDescription: "Tipos de documentos electrónicos habilitados para ser emitidos.",
+    metadataTitle: "Documentos DTE | ERPGrafico",
+  },
 ]
 
 // ============================================
@@ -165,22 +149,12 @@ export const SALES_CONFIG_SUB_TABS: NavTabConfig[] = [
 
 export const SALES_TABS: NavTabConfig[] = [
   {
-    value: "orders",
-    label: getDomainConceptTitle("ov", true),
-    href: "/sales/orders",
-    iconName: getEntityIconName("sales.saleorder") ?? "shopping-cart",
-    headerTitle: getDomainConceptTitle("ov", true),
-    headerDescription: "Seguimiento de pedidos, estados de fabricación y logística de entregas.",
-    metadataTitle: `${getDomainConceptTitle("ov", true)} | ERPGrafico`,
-    subTabs: SALES_ORDERS_SUB_TABS,
-  },
-  {
     value: "dtes",
     label: "Documentos",
     href: "/sales/dtes",
     iconName: getEntityIconName("billing.invoice") ?? "file-text",
     headerTitle: "Documentos",
-    headerDescription: "Boletas, facturas y notas electrónicas emitidas a clientes.",
+    headerDescription: "Órdenes, DTE, entregas y devoluciones del ciclo comercial de venta.",
     metadataTitle: "Documentos | ERPGrafico",
     subTabs: SALES_DTES_SUB_TABS,
   },
@@ -210,7 +184,7 @@ export const SALES_TABS: NavTabConfig[] = [
     href: "/sales/settings",
     iconName: "settings",
     headerTitle: "Configuración de Ventas",
-    headerDescription: "Gestione las políticas de crédito y parámetros del POS.",
+    headerDescription: "Políticas de crédito, parámetros del POS y documentos electrónicos.",
     metadataTitle: "Configuración de Ventas | ERPGrafico",
     subTabs: SALES_CONFIG_SUB_TABS,
   },
@@ -225,11 +199,6 @@ import { findTabConfig } from "@/lib/navigation-helpers"
 /** Busca tab principal de ventas */
 export function getSalesTab(value: string): NavTabConfig | undefined {
   return findTabConfig(SALES_TABS, value)
-}
-
-/** Busca sub-tab de Órdenes */
-export function getSalesOrdersSubTab(value: string): NavTabConfig | undefined {
-  return findTabConfig(SALES_ORDERS_SUB_TABS, value)
 }
 
 /** Busca sub-tab de POS */
@@ -250,9 +219,4 @@ export function getSalesDtesSubTab(value: string): NavTabConfig | undefined {
 /** Busca sub-tab de Configuración */
 export function getSalesConfigSubTab(value: string): NavTabConfig | undefined {
   return findTabConfig(SALES_CONFIG_SUB_TABS, value)
-}
-
-/** Busca sub-tab de Devoluciones (bajo Órdenes) */
-export function getSalesReturnsSubTab(value: string): NavTabConfig | undefined {
-  return findTabConfig(SALES_ORDERS_SUB_TABS, value)
 }

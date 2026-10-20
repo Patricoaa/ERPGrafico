@@ -5,7 +5,7 @@ from core.documents.details import display, join, lines_count
 
 # OV: `?selected` abre su ficha documental (ADR-0083). Área "origin": encabeza el ciclo.
 DocumentTypeRegistry.register(DocumentType(
-    label="sales.saleorder", canonical_url="/sales/orders?selected={id}", domain="origin",
+    label="sales.saleorder", canonical_url="/sales/dtes/orders?selected={id}", domain="origin",
     detail=lambda o: join(display(o, "channel"), lines_count(o)),
 ))
 # Despacho: su lista usa `?selected` con id de OV → resolvedor /d/ (valor por defecto).
@@ -66,7 +66,8 @@ def sale_delivery_relations(delivery):
         yield Link("posting", "outgoing", "journal_entry", delivery.journal_entry)
 
 
-DocumentTypeRegistry.register(DocumentType(label="sales.salereturn", canonical_url="/sales/returns/{id}"))
+# Devolución: su lista (`/sales/dtes/returns`) abre el drawer con id propio → resolvedor /d/ (valor por defecto).
+DocumentTypeRegistry.register(DocumentType(label="sales.salereturn"))
 
 
 @relation_provider("sales.salereturn")

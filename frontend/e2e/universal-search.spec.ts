@@ -10,7 +10,7 @@ test.describe('Universal Search Navigation', () => {
                         id: 1000,
                         type: 'sale_order',
                         display: 'OV-1000 - Juan Perez',
-                        detail_url: '/sales/orders/1000',
+                        detail_url: '/sales/dtes/orders/1000',
                         icon: 'receipt-text',
                         label: 'Orden de Venta'
                     }
@@ -52,7 +52,7 @@ test.describe('Universal Search Navigation', () => {
         await result.click();
 
         // Check if URL changed correctly
-        await expect(page).toHaveURL(/.*\/sales\/orders\/1000/);
+        await expect(page).toHaveURL(/.*\/sales\/dtes\/orders\?selected=1000/);
 
         // Check if the EntityDetailPage rendered
         await expect(page.locator('text=Orden de Venta')).toBeVisible();

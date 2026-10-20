@@ -41,7 +41,7 @@ const actions = [
     {
         title: "Órdenes de Compra",
         icon: ShoppingBag,
-        url: "/purchasing/orders",
+        url: "/purchasing/dtes/orders",
         color: "text-warning",
         permission: "purchasing.view_dashboard_purchasing",
     },

@@ -28,13 +28,14 @@
 
 export const searchableEntityRoutes: Record<string, string> = {
     // Sales
-    'sales.saleorder':     '/sales/orders',
-    'sales.saledelivery':  '/sales/orders/deliveries',
-    'sales.salereturn':    '/sales/returns',
+    'sales.saleorder':     '/sales/dtes/orders',
+    'sales.saledelivery':  '/sales/dtes/deliveries',
+    'sales.salereturn':    '/sales/dtes/returns',
 
     // Purchasing
-    'purchasing.purchaseorder': '/purchasing/orders',
-    // purchased return/receipt: drawers desde /purchasing/orders (ADR-0022 DRAWER_ENTITIES)
+    'purchasing.purchaseorder': '/purchasing/dtes/orders',
+    'purchasing.purchasereceipt': '/purchasing/dtes/receipts',
+    'purchasing.purchasereturn': '/purchasing/dtes/returns',
 
     // Billing (split entries — each resolves to its own list, ADR-0089)
     'billing.invoice_sales':     '/sales/dtes',

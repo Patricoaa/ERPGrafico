@@ -5,17 +5,11 @@ import { PageHeader } from "@/components/shared"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
 import {
   SALES_TABS,
-  SALES_ORDERS_SUB_TABS,
-  SALES_POS_SUB_TABS,
-  SALES_CREDITS_SUB_TABS,
-  SALES_CONFIG_SUB_TABS,
   getSalesTab,
-  getSalesOrdersSubTab,
   getSalesPosSubTab,
   getSalesCreditsSubTab,
   getSalesConfigSubTab,
   getSalesDtesSubTab,
-  getSalesReturnsSubTab,
 } from "@/features/sales/navigation"
 import { buildHeaderConfigFromTab } from "@/lib/navigation-helpers"
 import { getModuleHeaderConfig } from "@/lib/module-registry"
@@ -25,25 +19,23 @@ export function SalesHeader() {
   const { getViewModeUrl } = useViewModePreference()
 
   const segments = pathname.split("/").filter(Boolean)
-  const currentSegment = segments[1] || "orders"
+  const currentSegment = segments[1] || "dtes"
 
-  // Map physical routes to tab values
+  // Map physical routes to tab values (ADR-0090: `dtes` es el tab Documentos y
+  // contiene orders/deliveries/returns como sub-segmentos; `settings` es tab propio).
   const segmentToTab: Record<string, string> = {
-    orders: "orders",
     dtes: "dtes",
     pos: "pos",
     credits: "credits",
     sessions: "pos",
     settings: "config",
-    returns: "orders", // returns is a sub-tab of orders
   }
 
-  const activeValue = segmentToTab[currentSegment] || "orders"
+  const activeValue = segmentToTab[currentSegment] || "dtes"
 
   // Determine subActiveValue from path segments
   const subActiveValue = (() => {
     if (activeValue === "config") return segments[2] || "credit"
-    if (activeValue === "orders") return segments[2] || "orders"
     if (activeValue === "dtes") return segments[2] || "dtes"
     if (activeValue === "pos") {
       if (currentSegment === "sessions") return "sessions"
@@ -72,7 +64,7 @@ export function SalesHeader() {
 
   const navigation = {
     moduleName: moduleConfig?.moduleName ?? "Ventas",
-    moduleHref: moduleConfig?.moduleHref ?? getViewModeUrl("sales.saleorder", "/sales/orders"),
+    moduleHref: moduleConfig?.moduleHref ?? getViewModeUrl("sales.saleorder", "/sales/dtes"),
     tabs,
     activeValue,
     subActiveValue,
@@ -86,11 +78,6 @@ export function SalesHeader() {
     }
 
     // Sub-tabs handling
-    if (activeValue === "orders" && subActiveValue) {
-      const subTab = getSalesOrdersSubTab(subActiveValue)
-      if (subTab) return buildHeaderConfigFromTab(subTab)
-    }
-
     if (activeValue === "dtes" && subActiveValue) {
       const subTab = getSalesDtesSubTab(subActiveValue)
       if (subTab) return buildHeaderConfigFromTab(subTab)

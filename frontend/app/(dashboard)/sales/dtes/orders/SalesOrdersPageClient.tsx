@@ -12,7 +12,7 @@ export default function SalesOrdersPageClient() {
     // Backward compatibility for legacy ?id=
     useEffect(() => {
         if (legacyId) {
-            router.replace(`/sales/orders/${legacyId}`)
+            router.replace(`/sales/dtes/orders/${legacyId}`)
         }
     }, [legacyId, router])
 

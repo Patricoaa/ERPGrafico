@@ -89,7 +89,7 @@ test.describe('Universal Search — Entidades adicionales (T-79)', () => {
                         id: 801,
                         type: 'sales.salereturn',
                         display: 'DEV-801',
-                        detail_url: '/sales/returns/801',
+                        detail_url: '/d/sales.salereturn/801',
                         icon: 'undo-2',
                         label: 'sales.salereturn',
                     }],
@@ -112,7 +112,7 @@ test.describe('Universal Search — Entidades adicionales (T-79)', () => {
         const result = page.locator('text=DEV-801').first();
         await expect(result).toBeVisible();
         await result.click();
-        await expect(page).toHaveURL(/.*\/sales\/returns\/801/);
+        await expect(page).toHaveURL(/.*\/d\/sales\.salereturn\/801/);
     });
 
     // ---------------------------------------------------------------------------
@@ -126,7 +126,7 @@ test.describe('Universal Search — Entidades adicionales (T-79)', () => {
                         id: 802,
                         type: 'purchasing.purchaseorder',
                         display: 'OCS-802 · Proveedor Test',
-                        detail_url: '/purchasing/orders/802',
+                        detail_url: '/purchasing/dtes/orders/802',
                         icon: 'shopping-cart',
                         label: 'purchasing.purchaseorder',
                     }],
@@ -150,7 +150,7 @@ test.describe('Universal Search — Entidades adicionales (T-79)', () => {
         const result = page.locator('text=OCS-802 · Proveedor Test').first();
         await expect(result).toBeVisible();
         await result.click();
-        await expect(page).toHaveURL(/.*\/purchasing\/orders\/802/);
+        await expect(page).toHaveURL(/.*\/purchasing\/dtes\/orders\?selected=802/);
     });
 
     // ---------------------------------------------------------------------------

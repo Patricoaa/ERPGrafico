@@ -35,7 +35,7 @@ def test_origin_document_is_sale_order(env):
 
     assert ref["label"] == "sales.saleorder"
     assert ref["id"] == so.id
-    assert ref["url"] == f"/sales/orders?selected={so.id}"
+    assert ref["url"] == f"/sales/dtes/orders?selected={so.id}"
 
 
 def test_origin_document_is_purchase_order(env):
@@ -46,7 +46,7 @@ def test_origin_document_is_purchase_order(env):
 
     assert ref["label"] == "purchasing.purchaseorder"
     assert ref["id"] == po.id
-    assert ref["url"] == f"/purchasing/orders?selected={po.id}"
+    assert ref["url"] == f"/purchasing/dtes/orders?selected={po.id}"
 
 
 def test_origin_document_prefers_corrected_invoice(env):

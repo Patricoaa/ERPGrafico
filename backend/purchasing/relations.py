@@ -5,7 +5,7 @@ from core.documents.details import join, lines_count
 
 # OC: `?selected` abre su ficha documental (ADR-0083). Área "origin": encabeza el ciclo.
 DocumentTypeRegistry.register(DocumentType(
-    label="purchasing.purchaseorder", canonical_url="/purchasing/orders?selected={id}", domain="origin",
+    label="purchasing.purchaseorder", canonical_url="/purchasing/dtes/orders?selected={id}", domain="origin",
     detail=lambda o: join(getattr(o.warehouse, "name", None), lines_count(o)),
 ))
 # Recepción: sin lista con `?selected` propio → resolvedor /d/ (valor por defecto).

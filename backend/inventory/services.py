@@ -1800,7 +1800,7 @@ class ProductService:
                     "description": f"Hay {pending_sales.count()} Nota(s) de Venta con despachos pendientes.",
                     "action_hint": "Complete los despachos o anule las Ordenes de Venta para proceder.",
                     "count": pending_sales.count(),
-                    "link": "/sales/dtes",
+                    "link": "/sales/dtes/orders",
                 }
             )
 
@@ -1823,7 +1823,7 @@ class ProductService:
                     "description": f"Hay {pending_purchases.count()} Orden(es) de Compra pendientes de recepción.",
                     "action_hint": "Finalice las recepciones o anule las órdenes para proceder.",
                     "count": pending_purchases.count(),
-                    "link": "/purchasing/dtes",
+                    "link": "/purchasing/dtes/orders",
                 }
             )
 

@@ -62,7 +62,7 @@ en rutas propias. La auditoría de T-108 reveló dos categorías que no:
 (launch desde otra lista) o como tab/sección dentro de una página padre. Se omiten
 de ambos invariantes (`test_list_url_matches_frontend_routes` y
 `test_search_routes_match_app_router`). Sus `list_url`:
-`/purchasing/orders` (returns/receipts), `/contacts` (partnertransaction),
+`/contacts` (partnertransaction),
 `/finances/partners/distributions` (profitdistributionresolution),
 `/treasury/bank-center` (bankloan, creditcardstatement, cardpurchasegroup,
 cardpurchaseinstallment, loaninstallment, creditline), `/hr/settings/concepts`
@@ -73,7 +73,9 @@ contra `searchableEntityRoutes`), pero su detalle es un drawer: no existe
 `[id]/page.tsx`. Se omiten solo del invariante de detalle (T-79). Actuales:
 `production.bom`, `treasury.check`, `treasury.paymentmethod`,
 `treasury.treasurymovement`, `treasury.treasuryaccount`, `hr.absence`,
-`hr.salaryadvance`, `sales.saledelivery`, `inventory.inventorydocument`.
+`hr.salaryadvance`, `sales.saledelivery`, `sales.salereturn`,
+`purchasing.purchasereceipt`, `purchasing.purchasereturn`,
+`inventory.inventorydocument`.
 
 ---
 
@@ -131,7 +133,7 @@ Detalles corregidos:
 | `accounting.budget` | `/finances/budgets/{id}` (typo `/finance/...`) |
 | `contacts.partnertransaction` | `/contacts` (parent, DRAWER_ENTITIES) |
 | `contacts.profitdistributionresolution` | `/finances/partners/distributions` (parent, DRAWER_ENTITIES) |
-| `purchasing.purchasereturn` / `purchasereceipt` | `/purchasing/orders` (parent, DRAWER_ENTITIES) |
+| `purchasing.purchasereturn` / `purchasereceipt` | `/purchasing/orders` (parent, DRAWER_ENTITIES) — **superado por ADR-0090**: ahora tienen lista propia |
 | `treasury.bankloan` / `loaninstallment` | `/treasury/bank-center` (hub, DRAWER_ENTITIES) |
 | `treasury.creditcardstatement` | `/treasury/bank-center` (se dropea `?statement=`) |
 | `hr.payrollconcept` | `/hr/settings/concepts` |
@@ -155,3 +157,4 @@ Los redirects `[id]/page.tsx` que usaban `&selected=` sobre `list_url` sin query
 
 - **2026-05-09**: ADR creado (F9, T-103). 5 divergencias corregidas en backend. Test arquitectónico agregado.
 - **2026-10-09**: Reconciliación T-108. Mapa frontend estaba obsoleto (rutas inexistentes). Categorías `DRAWER_ENTITIES` (sin lista propia) y `DRAWER_DETAIL_ENTITIES` (detalle en drawer) documentadas y reflejadas en los invariantes. Corregidos list_url/detail de budget, saledelivery, stockmove, warehouse, bankstatement, check, taxperiod y redirects `&selected=` rotos.
+- **2026-10-20**: ADR-0090 (listas propias de documentos comerciales). `purchasing.purchasereturn` y `purchasing.purchasereceipt` ganan listas propias (`/purchasing/dtes/returns`, `/purchasing/dtes/receipts`) → pasan de `DRAWER_ENTITIES` a `DRAWER_DETAIL_ENTITIES`. `sales.salereturn` también (lista `/sales/dtes/returns`). `sales.saleorder`/`purchasing.purchaseorder` se mueven a `/sales/dtes/orders` y `/purchasing/dtes/orders`.

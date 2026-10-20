@@ -70,7 +70,7 @@ def test_delivery_serializer_exposes_order_document_ref(sales_setup):
     ref = data["sale_order_document"]
     assert ref["label"] == "sales.saleorder"
     assert ref["id"] == sales_setup["order"].id
-    assert ref["url"] == f"/sales/orders?selected={sales_setup['order'].id}"
+    assert ref["url"] == f"/sales/dtes/orders?selected={sales_setup['order'].id}"
 
 
 def test_delivery_line_serializer_exposes_stock_move_document_ref(sales_setup):
@@ -95,7 +95,7 @@ def test_delivery_serializer_document_ref_without_lines(db):
     )
 
     ref = SaleDeliverySerializer(delivery).data["sale_order_document"]
-    assert ref["url"] == f"/sales/orders?selected={order.id}"
+    assert ref["url"] == f"/sales/dtes/orders?selected={order.id}"
 
 
 def test_return_serializer_exposes_order_document_ref(sales_setup):
@@ -107,4 +107,4 @@ def test_return_serializer_exposes_order_document_ref(sales_setup):
     ref = SaleReturnSerializer(ret).data["sale_order_document"]
     assert ref["label"] == "sales.saleorder"
     assert ref["id"] == sales_setup["order"].id
-    assert ref["url"] == f"/sales/orders?selected={sales_setup['order'].id}"
+    assert ref["url"] == f"/sales/dtes/orders?selected={sales_setup['order'].id}"

@@ -113,7 +113,7 @@ Las páginas dentro de los directorios de vista (sub-carpetas) tienen un contrat
 ---
 
 ## 6. Beneficios del Patrón
-- **URLs Semánticas**: `/sales/orders` en lugar de `/sales?view=orders`.
+- **URLs Semánticas**: `/sales/dtes/orders` en lugar de `/sales?view=orders`.
 - **Persistencia Visual**: El Header no se re-renderiza al navegar entre sub-vistas del mismo módulo.
 - **Desacople**: Las vistas se enfocan en los datos y el contenido, no en la navegación global.
 
@@ -167,10 +167,12 @@ La página `[id]/page.tsx` es un **Server Component** que:
 
 | app.model | `list_url` | `detail_url_pattern` | `[id]` existe | read-only |
 |-----------|------------|----------------------|---------------|-----------|
-| `sales.saleorder` | `/sales/orders` | `/sales/orders/{id}` | ✅ | No |
-| `sales.saledelivery` | `/sales/orders/deliveries` | `/sales/orders/deliveries/{id}` | ❌ (vía `?selected` sobre la lista) | No |
-| `sales.salereturn` | `/sales/returns` | `/sales/returns/{id}` | ✅ | No |
-| `purchasing.purchaseorder` | `/purchasing/orders` | `/purchasing/orders/{id}` | ✅ | No |
+| `sales.saleorder` | `/sales/dtes/orders` | `/sales/dtes/orders/{id}` | ✅ | No |
+| `sales.saledelivery` | `/sales/dtes/deliveries` | `/d/sales.saledelivery/{id}` (resolvedor; ADR-0090) | ❌ (vía `?selected` sobre la lista) | No |
+| `sales.salereturn` | `/sales/dtes/returns` | `/d/sales.salereturn/{id}` (resolvedor; ADR-0090) | ✅ | No |
+| `purchasing.purchaseorder` | `/purchasing/dtes/orders` | `/purchasing/dtes/orders/{id}` | ✅ | No |
+| `purchasing.purchasereceipt` | `/purchasing/dtes/receipts` | `/d/purchasing.purchasereceipt/{id}` (resolvedor; ADR-0090) | ✅ | No |
+| `purchasing.purchasereturn` | `/purchasing/dtes/returns` | `/d/purchasing.purchasereturn/{id}` (resolvedor; ADR-0090) | ✅ | No |
 | `billing.invoice` | `/sales/dtes` | `/d/billing.invoice/{id}` (resolvedor; ADR-0089) | ✅ | No |
 | `contacts.contact` | `/contacts` | `/contacts/{id}` | ✅ | No |
 | `accounting.account` | `/accounting/accounts` | `/accounting/accounts/{id}` | ✅ | Parcial |

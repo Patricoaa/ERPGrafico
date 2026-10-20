@@ -88,7 +88,7 @@ def test_document_ref(pilot):
 
     assert res.status_code == 200
     assert res.data["display_id"] == order.display_id
-    assert res.data["url"] == f"/sales/orders?selected={order.id}"
+    assert res.data["url"] == f"/sales/dtes/orders?selected={order.id}"
     assert res.data["partner_name"] == "Imprenta Norte"
     assert res.data["accessible"] and res.data["exists"]
     assert res.data["domain"] == "origin"
@@ -224,7 +224,7 @@ def test_sale_return_relations_d6(pilot):
     assert _targets(data, "stock_move"), "la devolución enlaza el movimiento que repone stock"
     assert ("return", "sales.salereturn", sale_return.id) in _targets(
         _relations(pilot["client"], "sales.saleorder", order.id))
-    assert data["document"]["url"] == f"/sales/returns/{sale_return.id}"
+    assert data["document"]["url"] == f"/d/sales.salereturn/{sale_return.id}"
 
 
 @pytest.mark.django_db
