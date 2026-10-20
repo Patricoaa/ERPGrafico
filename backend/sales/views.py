@@ -380,13 +380,22 @@ class SaleOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryM
 class SaleDeliveryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     serializer_class = SaleDeliverySerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    # ADR-0090: la lista de entregas es una vista documental propia (orden por columna).
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = SaleDeliveryFilter
     search_fields = [
         "number",
         "sale_order__customer__name",
         "sale_order__number",
     ]
+    ordering_fields = [
+        "number",
+        "delivery_date",
+        "total_cost",
+        "status",
+        "sale_order__customer__name",
+    ]
+    ordering = ["-delivery_date", "-id"]
 
     def get_queryset(self):
         return SaleDeliverySelector.get_base_queryset()

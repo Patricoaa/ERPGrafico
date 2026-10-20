@@ -117,3 +117,65 @@ export const subscriptionUnifiedSearchDef: UnifiedSearchConfig = {
   basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
 }
 
+
+/**
+ * ADR-0090: las listas de recepciones y devoluciones de compra son vistas documentales propias.
+ * Los `serverParam` coinciden con `PurchaseReceiptFilter` / `PurchaseReturnFilter` del backend.
+ */
+export const purchaseReceiptUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    { key: 'purchase_order_number', label: 'Orden de Compra', serverParam: 'purchase_order_number' },
+    { key: 'supplier_name', label: 'Proveedor', serverParam: 'supplier_name' },
+  ],
+  filters: [
+    {
+      type: 'multi',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'Borrador', value: 'DRAFT' },
+        { label: 'Confirmado', value: 'CONFIRMED' },
+        { label: 'Anulado', value: 'CANCELLED' },
+      ],
+    },
+  ],
+  dateFilters: [
+    { type: 'date', key: 'receipt_date', label: 'Fecha de recepción', options: periodPresets('date_after', 'date_before') },
+  ],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'receipt_date' },
+    { key: 'supplier', label: 'Proveedor', field: 'supplier_name' },
+    { key: 'status', label: 'Estado', field: 'status' },
+  ],
+  basePeriod: { serverParamFrom: 'date_after', serverParamTo: 'date_before' },
+}
+
+export const purchaseReturnUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    { key: 'purchase_order_number', label: 'Orden de Compra', serverParam: 'purchase_order_number' },
+    { key: 'supplier_name', label: 'Proveedor', serverParam: 'supplier_name' },
+  ],
+  filters: [
+    {
+      type: 'multi',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'Borrador', value: 'DRAFT' },
+        { label: 'Confirmado', value: 'CONFIRMED' },
+        { label: 'Anulado', value: 'CANCELLED' },
+      ],
+    },
+  ],
+  dateFilters: [
+    { type: 'date', key: 'date', label: 'Fecha de devolución', options: periodPresets('date_after', 'date_before') },
+  ],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'date' },
+    { key: 'supplier', label: 'Proveedor', field: 'supplier_name' },
+    { key: 'status', label: 'Estado', field: 'status' },
+  ],
+  basePeriod: { serverParamFrom: 'date_after', serverParamTo: 'date_before' },
+}

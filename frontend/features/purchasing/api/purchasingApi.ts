@@ -232,6 +232,7 @@ export const purchasingApi = {
         if (filters?.warehouse_id) params.append('warehouse_id', String(filters.warehouse_id))
         if (filters?.search) params.append('search', String(filters.search))
         if (filters?.note_type) params.append('note_type', String(filters.note_type))
+        if (filters?.ordering) params.append('ordering', String(filters.ordering))
         const res = await api.get('/purchasing/receipts/', { params })
         return toPage<Record<string, unknown>>(res.data, page, page_size)
     },
@@ -252,5 +253,27 @@ export const purchasingApi = {
     getReturn: async (id: number): Promise<Record<string, unknown>> => {
         const res = await api.get(`/purchasing/returns/${id}/`)
         return res.data
+    },
+
+    /**
+     * Fetch purchase returns (paginated, standalone list) — ADR-0090.
+     * `filters` match `PurchaseReturnFilter` (status, date_after/before, supplier_name, purchase_order_number, warehouse_id).
+     */
+    getReturnsPaginated: async (filters?: Record<string, unknown>): Promise<Page<Record<string, unknown>>> => {
+        const params = new URLSearchParams()
+        const page = Number(filters?.page ?? 1)
+        const page_size = Number(filters?.page_size ?? 50)
+        if (filters?.page) params.append('page', String(filters.page))
+        if (filters?.page_size) params.append('page_size', String(filters.page_size))
+        if (filters?.status) params.append('status', String(filters.status))
+        if (filters?.date_after) params.append('date_after', String(filters.date_after))
+        if (filters?.date_before) params.append('date_before', String(filters.date_before))
+        if (filters?.supplier_name) params.append('supplier_name', String(filters.supplier_name))
+        if (filters?.purchase_order_number) params.append('purchase_order_number', String(filters.purchase_order_number))
+        if (filters?.warehouse_id) params.append('warehouse_id', String(filters.warehouse_id))
+        if (filters?.search) params.append('search', String(filters.search))
+        if (filters?.ordering) params.append('ordering', String(filters.ordering))
+        const res = await api.get('/purchasing/returns/', { params })
+        return toPage<Record<string, unknown>>(res.data, page, page_size)
     },
 }

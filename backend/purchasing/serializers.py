@@ -262,6 +262,7 @@ class PurchaseReceiptSerializer(serializers.ModelSerializer):
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
     supplier_name = serializers.CharField(source="purchase_order.supplier.name", read_only=True)
     supplier_id = serializers.IntegerField(source="purchase_order.supplier_id", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
     receipt_type = serializers.SerializerMethodField()
     related_note_display = serializers.SerializerMethodField()
     # Orden de compra como DocumentRef (ADR-0086): el frontend navega a su URL canónica.

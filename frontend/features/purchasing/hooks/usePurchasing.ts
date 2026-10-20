@@ -3,6 +3,8 @@ import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useAuth } from '@/contexts/AuthContext'
 
 import { purchasingApi, type OrderFilters } from '../api/purchasingApi'
+import type { PurchaseReceipt } from '../entity-view/purchaseReceipt.entity'
+import type { PurchaseReturn } from '../entity-view/purchaseReturn.entity'
 import { PURCHASING_KEYS } from './queryKeys'
 import { staleTime } from '@/lib/query-config'
 
@@ -87,10 +89,11 @@ export function usePurchaseReceipts(filters?: Record<string, unknown>) {
 
     return {
         page: query.data,
-        receipts: query.data?.results ?? [],
+        receipts: (query.data?.results ?? []) as unknown as PurchaseReceipt[],
         totalCount: query.data?.count ?? 0,
         isLoading: query.isLoading,
         isFetching: query.isFetching,
+        isError: query.isError,
         refetch: query.refetch,
     }
 }
@@ -115,4 +118,25 @@ export function usePurchaseReturn(id: number | null, enabled = true) {
     })
 
     return { returnData, isLoading }
+}
+
+/** Paginated list of purchase returns (ADR-0090: "Devoluciones" is its own document list). */
+export function usePurchaseReturns(filters?: Record<string, unknown>) {
+    const page = Number(filters?.page ?? 1)
+    const pageSize = Number(filters?.page_size ?? 50)
+    const query = useQuery({
+        queryKey: [...PURCHASING_KEYS.all, 'returns', { page, page_size: pageSize, ...filters }],
+        queryFn: () => purchasingApi.getReturnsPaginated({ page, page_size: pageSize, ...filters }),
+        staleTime: staleTime.standard,
+    })
+
+    return {
+        page: query.data,
+        returns: (query.data?.results ?? []) as unknown as PurchaseReturn[],
+        totalCount: query.data?.count ?? 0,
+        isLoading: query.isLoading,
+        isFetching: query.isFetching,
+        isError: query.isError,
+        refetch: query.refetch,
+    }
 }

@@ -5,6 +5,8 @@ export {
     usePurchasingNotes,
     useRefreshPurchaseOrders,
     usePurchasingOrder,
+    usePurchaseReceipts,
+    usePurchaseReturns,
     PURCHASING_KEYS,
 } from './hooks/usePurchasing'
 
@@ -23,7 +25,9 @@ export type {
 
 export { purchaseOrderActions } from './actions'
 export { PurchaseOrdersView } from './components/PurchaseOrdersView'
-export { purchaseOrderUnifiedSearchDef, subscriptionUnifiedSearchDef } from './unifiedSearchDef'
+export { PurchaseReceiptsView } from './components/PurchaseReceiptsView'
+export { PurchaseReturnsView } from './components/PurchaseReturnsView'
+export { purchaseOrderUnifiedSearchDef, subscriptionUnifiedSearchDef, purchaseReceiptUnifiedSearchDef, purchaseReturnUnifiedSearchDef } from './unifiedSearchDef'
 
 export type { SubscriptionActionsCtx } from './subscriptionActions'
 export { subscriptionActions } from './subscriptionActions'

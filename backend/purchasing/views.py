@@ -260,13 +260,22 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHist
 class PurchaseReceiptViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     serializer_class = PurchaseReceiptSerializer
     pagination_class = StandardResultsSetPagination
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    # ADR-0090: la lista de recepciones es una vista documental propia (orden por columna).
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = PurchaseReceiptFilter
     search_fields = [
         "number",
         "purchase_order__supplier__name",
         "purchase_order__number",
     ]
+    ordering_fields = [
+        "number",
+        "receipt_date",
+        "total_cost",
+        "status",
+        "purchase_order__supplier__name",
+    ]
+    ordering = ["-receipt_date", "-id"]
 
     def get_queryset(self):
         return PurchaseReceiptSelector.get_base_queryset()
