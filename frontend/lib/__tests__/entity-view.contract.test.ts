@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs"
 import { join } from "node:path"
 import { describe, it, expect } from "vitest"
-import { LEGACY_CONSUMERS } from "./entity-view.legacy-consumers"
+import { LEGACY_CONSUMERS, EXEMPT_CONSUMERS } from "./entity-view.legacy-consumers"
 
 /**
  * Entity view system contract (ADR-0087 §9, docs/20-contracts/component-entity-view.md §9).
@@ -235,7 +235,7 @@ describe("legacy presentation system is frozen", () => {
     })
 
     it("no new file consumes the legacy system", () => {
-        const allow = new Set(LEGACY_CONSUMERS)
+        const allow = new Set([...LEGACY_CONSUMERS, ...EXEMPT_CONSUMERS])
         const offenders = legacyScope().filter((rel) => !allow.has(rel) && LEGACY_USE.test(read(rel)))
         expect(offenders).toEqual([])
     })
@@ -244,6 +244,13 @@ describe("legacy presentation system is frozen", () => {
         for (const rel of LEGACY_CONSUMERS) {
             expect(existsSync(join(ROOT, rel)), `${rel} is missing — remove it from LEGACY_CONSUMERS`).toBe(true)
             expect(LEGACY_USE.test(read(rel)), `${rel} migrated — remove it from LEGACY_CONSUMERS`).toBe(true)
+        }
+    })
+
+    it("exempt consumer entries still exist and still use the legacy system", () => {
+        for (const rel of EXEMPT_CONSUMERS) {
+            expect(existsSync(join(ROOT, rel)), `${rel} is missing — remove it from EXEMPT_CONSUMERS`).toBe(true)
+            expect(LEGACY_USE.test(read(rel)), `${rel} migrated — remove it from EXEMPT_CONSUMERS`).toBe(true)
         }
     })
 })

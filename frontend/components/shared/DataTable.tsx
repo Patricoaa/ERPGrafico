@@ -461,9 +461,9 @@ export function DataTable<TData, TValue>({
                 !noBorder && "rounded-md border"
             )}>
                 <Table>
-                    <TableHeader className="bg-muted/30">
+                    <TableHeader className="bg-background">
                         {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id} className="border-none hover:bg-transparent">
+                            <TableRow key={headerGroup.id} className="hover:bg-transparent">
                                 {headerGroup.headers.map((header) => (
                                     <TableHead key={header.id} className="text-muted-foreground">
                                         {header.isPlaceholder
@@ -729,7 +729,7 @@ export function DataTable<TData, TValue>({
                         </div>
                     ) : (
                         <div className="flex-1 flex flex-col min-h-0">
-                            <div className="flex-shrink-0 bg-background rounded-t-sm overflow-hidden mb-1" style={{ scrollbarGutter: 'stable' }}>
+                            <div className="flex-shrink-0 bg-background rounded-t-sm overflow-hidden border-b" style={{ scrollbarGutter: 'stable' }}>
                                 <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
                                     <colgroup>
                                         {embeddedHeaderGroups[0]?.headers.map(header => (
@@ -740,7 +740,7 @@ export function DataTable<TData, TValue>({
                                         {embeddedHeaderGroups.map((headerGroup) => (
                                             <TableRow
                                                 key={headerGroup.id}
-                                                className="border-none hover:bg-transparent"
+                                                className="hover:bg-transparent"
                                             >
                                                 {headerGroup.headers.map((header) => (
                                                     <TableHead key={header.id} className="text-muted-foreground" style={{ width: header.getSize() }}>
@@ -823,7 +823,7 @@ export function DataTable<TData, TValue>({
                         />
                     </div>
                     <div className={cn("flex flex-col min-h-0", !isInModal && NON_MODAL_TABLE_MAX_HEIGHT, tableContainerClassName)}>
-                        <div className="flex-shrink-0 bg-background rounded-t-sm overflow-hidden mb-1" style={{ scrollbarGutter: 'stable' }}>
+                        <div className="flex-shrink-0 bg-background rounded-t-sm overflow-hidden border-b" style={{ scrollbarGutter: 'stable' }}>
                             <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
                                 <colgroup>
                                     {classicHeaderGroups[0]?.headers.map(header => (
@@ -832,7 +832,7 @@ export function DataTable<TData, TValue>({
                                 </colgroup>
                                 <TableHeader className="bg-background">
                                     {classicHeaderGroups.map((headerGroup) => (
-                                        <TableRow key={headerGroup.id} className="border-none hover:bg-transparent">
+                                        <TableRow key={headerGroup.id} className="hover:bg-transparent">
                                             {headerGroup.headers.map((header) => {
                                                 return (
                                                     <TableHead key={header.id} className="text-muted-foreground">

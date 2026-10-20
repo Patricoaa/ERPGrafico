@@ -7,10 +7,21 @@
  * the legacy system is deleted (§6.9).
  */
 export const LEGACY_CONSUMERS: readonly string[] = [
+    "features/notes/components/steps/NoteStep_LineItems.tsx",
+    "features/profile/components/ProfileView.tsx",
+]
+
+/**
+ * Files permanently exempt from entity-view migration: they use `<DataTable>` directly
+ * (no `createEntityFields` / `toColumns()` / legacy data layer) but are architecturally
+ * incompatible with entity-view — DnD, per-cell form controls, WebSocket locks, or
+ * sub-component row expansion that entity-view has no API for.
+ *
+ * Entries are removed only when the architectural blocker is lifted and the file migrates.
+ */
+export const EXEMPT_CONSUMERS: readonly string[] = [
     "features/finance/bank-reconciliation/components/ReconciliationPanel.tsx",
     "features/finance/bank-reconciliation/components/StatementImportModal.tsx",
     "features/finance/components/MappingConfigDrawer.tsx",
-    "features/notes/components/steps/NoteStep_LineItems.tsx",
     "features/pos/components/DraftCartsClientView.tsx",
-    "features/profile/components/ProfileView.tsx",
 ]
