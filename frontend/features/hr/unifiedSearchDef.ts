@@ -120,12 +120,6 @@ export const salaryAdvanceUnifiedSearchDef: UnifiedSearchConfig = {
       serverParam: 'employee_name',
       clientKey: ['employee_name'],
     },
-    {
-      key: 'display_id',
-      label: 'N° Anticipo',
-      serverParam: 'display_id',
-      clientKey: ['display_id'],
-    },
   ],
   filters: [
     {

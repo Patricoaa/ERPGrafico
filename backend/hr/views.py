@@ -326,10 +326,11 @@ class SalaryAdvanceFilter(django_filters.FilterSet):
     is_discounted = django_filters.BooleanFilter()
     date_from = django_filters.DateFilter(field_name="date", lookup_expr="gte")
     date_to = django_filters.DateFilter(field_name="date", lookup_expr="lte")
+    employee_name = django_filters.CharFilter(field_name="employee__contact__name", lookup_expr="icontains")
 
     class Meta:
         model = SalaryAdvance
-        fields = ["employee", "payroll", "is_discounted", "date_from", "date_to"]
+        fields = ["employee", "payroll", "is_discounted", "date_from", "date_to", "employee_name"]
 
 
 class SalaryAdvanceViewSet(viewsets.ModelViewSet):

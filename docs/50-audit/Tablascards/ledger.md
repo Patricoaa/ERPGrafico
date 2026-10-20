@@ -354,10 +354,11 @@
 - Decisión: `toNumber` en la entidad (A2), test `features/sales/entity-view/__tests__/posSession.entity.test.ts`
 - Estado: corregido
 
-### TC-066 · Defecto del sistema actual · Probable
-- Evidencia: `salaryAdvanceUnifiedSearchDef` declara `clientKey: ['display_id']` para "N° Anticipo", pero `SalaryAdvance` (`types/hr.ts`) no tiene `display_id`; `filterFn` en cliente no puede coincidir
-- Decisión: fuera de la migración (M1); revisar con el serializer de anticipos
-- Estado: pendiente
+### TC-066 · Defecto del sistema actual · Corregido (2026-10-20)
+- Evidencia: `salaryAdvanceUnifiedSearchDef` declaraba `clientKey: ['display_id']` para "N° Anticipo", pero `SalaryAdvance` no tiene `display_id` en modelo ni serializer — el campo no existe
+- Causa raíz: `SalaryAdvance` no tiene número secuencial; la búsqueda "N° Anticipo" era semánticamente incorrecta
+- Fix: (1) eliminado el campo `display_id` de `salaryAdvanceUnifiedSearchDef`; (2) agregado `employee_name = CharFilter(field_name="employee__contact__name", lookup_expr="icontains")` a `SalaryAdvanceFilter` para que la búsqueda por empleado funcione en servidor
+- Estado: corregido
 
 ### TC-067 · Defecto del sistema actual · Verificado (código)
 - Evidencia: `terminalDeviceFields.ts` (y ahora `terminalDevice.entity.ts`) traduce `supported_payment_methods` con `{1: CREDIT_CARD, 2: DEBIT_CARD}`: depende de las pk de `PaymentMethod`
