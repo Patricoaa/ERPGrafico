@@ -3,14 +3,13 @@ import { formatPlainDate, parseDateOnly } from "@/lib/utils"
 import { formatCurrency } from "@/lib/money"
 import { getChartPalette } from "@/lib/chart-colors"
 
-import React, { useState, useMemo } from "react"
+import { useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Chip, ChartLegend, DataCell, DataTable, DataTableColumnHeader, SectionCard, SkeletonShell, StatCard, PieChart, StaleDataBanner } from '@/components/shared'
-import { partnerTransactionActions, type PartnerTransactionActionsCtx } from './partnerTransactionActions'
-import { type ColumnDef } from "@tanstack/react-table"
-import { type PartnerTransaction, usePartners, netEquityPercentages } from "@/features/contacts"
-import { LazyDrawer } from "@/features/_shared/transaction-drawer/drawerRegistry"
+import { ChartLegend, SectionCard, SkeletonShell, StatCard, PieChart, StaleDataBanner } from '@/components/shared'
+import { usePartners, netEquityPercentages } from "@/features/contacts"
+import { Collection, useEntityCollection } from "@/components/entity-view"
 import { usePartnerStatement } from "../hooks/usePartnerStatement"
+import { partnerTransactionEntity, partnerTransactionViews } from "../entity-view/partnerTransaction.entity"
 
 interface Props {
     contactId: number
@@ -24,18 +23,6 @@ const isOutflow = (type: string) =>
 
 export function PartnerProfileTab({ contactId }: Props) {
     const { data: statement, isLoading, isError } = usePartnerStatement(contactId)
-
-    const [viewConfig, setViewConfig] = useState<{ type: string; id: number } | null>(null)
-
-    const handleViewDocument = (type: string, id: number) => {
-        setViewConfig({ type, id })
-    }
-
-    const closeDrawer = () => {
-        setViewConfig(null)
-    }
-
-    const actionsCtx: PartnerTransactionActionsCtx = { onViewDocument: handleViewDocument }
 
     const { partners } = usePartners()
 
@@ -71,71 +58,7 @@ export function PartnerProfileTab({ contactId }: Props) {
             }))
     }, [partners, equityPctById, statement?.contact?.name])
 
-    const columns: ColumnDef<PartnerTransaction & { balance_after: number }>[] = [
-        {
-            accessorKey: "date",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Fecha" />,
-            cell: ({ row }) => {
-                const created = row.original.created_at
-                return (
-                    <div className="flex justify-center w-full">
-                        <div className="flex justify-center items-center w-full text-center text-sm font-sans font-medium text-foreground whitespace-nowrap">
-                            {formatPlainDate(row.original.date)}
-                            {created && (
-                                <span className="text-xs text-muted-foreground/60 ml-1.5">
-                                    {new Date(created).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "transaction_type",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Operación" />,
-            cell: ({ row }) => {
-                const tx = row.original
-                const type = tx.transaction_type
-                let intent: 'success' | 'warning' | 'info' | 'neutral' = 'neutral'
-
-                if (type === 'CAPITAL_CASH' || type === 'CAPITAL_INVENTORY' || type === 'TRANSFER_IN') {
-                    intent = 'success'
-                } else if (type === 'WITHDRAWAL' || type === 'REDUCTION' || type === 'TRANSFER_OUT') {
-                    intent = 'warning'
-                } else if (type === 'SUBSCRIPTION') {
-                    intent = 'info'
-                }
-
-                return (
-                    <div className="flex justify-center w-full">
-                        <Chip size="xs" intent={intent}>
-                            {tx.transaction_type_display || type}
-                        </Chip>
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "amount",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Monto" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency value={row.getValue("amount")} />
-                </div>
-            ),
-        },
-        {
-            accessorKey: "balance_after",
-            header: () => <div className="text-right">Saldo</div>,
-            cell: ({ row }) => (
-                <div className="text-right font-mono text-2xs font-bold text-foreground px-2 py-1">
-                    {formatCurrency(row.getValue("balance_after"))}
-                </div>
-            ),
-        },
-        partnerTransactionActions.auto(actionsCtx) as ColumnDef<PartnerTransaction & { balance_after: number }>,
-    ]
+    const txCollection = useEntityCollection(partnerTransactionEntity, { rows: txsWithBalance }, { pagination: { mode: "none" } })
 
     if (!statement) return null
 
@@ -223,24 +146,15 @@ export function PartnerProfileTab({ contactId }: Props) {
                         <CardTitle className="text-sm text-primary">Historial de Capital</CardTitle>
                     </CardHeader>
                     <CardContent className="pt-0">
-                        <DataTable
-                            columns={columns}
-                            data={txsWithBalance}
-                            variant="embedded"
-                            noBorder={true}
-                            defaultPageSize={10}
-                        />
+                        <Collection.Root collection={txCollection} label="Historial de Capital">
+                            <Collection.View
+                                table={partnerTransactionViews.table}
+                                emptyTitle="Sin movimientos"
+                                emptyDescription="No hay movimientos de capital registrados."
+                            />
+                        </Collection.Root>
                     </CardContent>
                 </Card>
-
-            {viewConfig && (
-                <LazyDrawer
-                    type={viewConfig.type}
-                    id={viewConfig.id}
-                    open={true}
-                    onOpenChange={(open) => !open && closeDrawer()}
-                />
-            )}
             </div>
         </SkeletonShell>
     )

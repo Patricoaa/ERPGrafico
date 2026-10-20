@@ -22,7 +22,6 @@ export const LEGACY_CONSUMERS: readonly string[] = [
     "features/production/components/BOMManager.tsx",
     "features/production/components/steps/MaterialAssignmentStep.tsx",
     "features/production/components/steps/RectificationStep.tsx",
-    "features/profile/components/PartnerProfileTab.tsx",
     "features/profile/components/ProfileView.tsx",
     "features/purchasing/components/SubscriptionHistoryModal.tsx",
     "features/sales/components/checkout/Step2_ManufacturingDetails.tsx",
@@ -31,6 +30,4 @@ export const LEGACY_CONSUMERS: readonly string[] = [
     "features/settings/components/partners/AddPartnerModal.tsx",
     "features/settings/components/partners/ProfitDistributionsTab.tsx",
     "features/treasury/loans/LoanDetailModal.tsx",
-    "features/treasury/loans/LoanRegisterDrawer.tsx",
-    "features/treasury/loans/loanRegisterFields.ts",
 ]
