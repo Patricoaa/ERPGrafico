@@ -1,9 +1,8 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 
-import { Button } from "@/components/ui/button"
 import { Step2_PurchaseDTE } from "./checkout/Step2_PurchaseDTE"
 import { Step3_PurchasePayment } from "./checkout/Step3_PurchasePayment"
 import { Step4_Receipt } from "./checkout/Step4_Receipt"
@@ -27,12 +26,11 @@ function generateUUID(): string {
 }
 import { Step0_Supplier } from "./checkout/Step0_Supplier"
 import { Step1_ProductSelection } from "./checkout/Step1_ProductSelection"
-import { Check, ChevronRight, ChevronLeft, ShoppingCart } from "lucide-react"
+import { ChevronLeft, ShoppingCart } from "lucide-react"
 import { useVatRate } from '@/hooks/useVatRate'
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { useServerDate } from "@/hooks/useServerDate"
-import { Drawer, SubmitButton, CancelButton, FormFooter } from "@/components/shared"
-import { useRef } from "react"
+import { GenericWizard, CancelButton, type WizardStep } from "@/components/shared"
 
 interface PurchaseCheckoutWizardProps {
     open: boolean
@@ -44,6 +42,15 @@ interface PurchaseCheckoutWizardProps {
     initialSupplierId?: string | null
     initialWarehouseId?: string
     orderId?: number | null
+}
+
+/** Human labels for the checkout steps (used by the wizard counter). */
+const PURCHASE_STEP_LABELS: Record<number, string> = {
+    1: 'Proveedor',
+    2: 'Productos',
+    3: 'Factura (DTE)',
+    4: 'Recepción',
+    5: 'Pago',
 }
 
 export function PurchaseCheckoutWizard({
@@ -291,16 +298,22 @@ export function PurchaseCheckoutWizard({
         return true
     }
 
-    const handleNext = async () => {
+    /**
+     * Per-step gate used by GenericWizard before advancing. It validates the
+     * current step and advances the local `step` index (the wizard mirrors it
+     * through `initialStep`).
+     */
+    const handleStepNext = async (): Promise<boolean> => {
         const isValid = await validateCurrentStep(step)
-        if (!isValid) return
+        if (!isValid) return false
 
         if (step === 3 && !dteData.isPending && !isFolioValid) {
             toast.error("El número de folio ya ha sido utilizado para este proveedor. Ingrese uno válido para continuar.")
-            return
+            return false
         }
 
         setStep(prev => prev + 1)
+        return true
     }
 
     const handleBack = () => setStep(prev => prev - 1)
@@ -403,57 +416,93 @@ export function PurchaseCheckoutWizard({
 
     // const totalSteps = 5 -- calculated dynamically now
 
+    // Content for a given 1-based step index. Kept as a function so the wizard
+    // step definitions (counter + sidebars) and the rendered content stay in sync.
+    const renderStepContent = (stepIndex: number): React.ReactNode => {
+        switch (stepIndex) {
+            case 1:
+                return (
+                    <Step0_Supplier
+                        selectedSupplierId={selectedSupplierId}
+                        setSelectedSupplierId={setSelectedSupplierId}
+                        setSelectedSupplierName={setSelectedSupplierName}
+                        selectedWorkOrderId={selectedWorkOrderId}
+                        setSelectedWorkOrderId={setSelectedWorkOrderId}
+                    />
+                )
+            case 2:
+                return (
+                    <Step1_ProductSelection
+                        orderLines={currentOrderLines}
+                        setOrderLines={setCurrentOrderLines}
+                        selectedWarehouseId={selectedWarehouseId}
+                        onWarehouseChange={setSelectedWarehouseId}
+                        selectedSupplierId={selectedSupplierId}
+                    />
+                )
+            case 3:
+                return (
+                    <Step2_PurchaseDTE
+                        dteData={dteData}
+                        setDteData={setDteData}
+                        contactId={selectedSupplierId}
+                        onValidityChange={(isValid) => setIsFolioValid(isValid)}
+                        onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
+                    />
+                )
+            case 4:
+                return (
+                    <Step4_Receipt
+                        receiptData={receiptData}
+                        setReceiptData={(data) => {
+                            setReceiptData(data)
+                            if (typeof data !== 'function' && data.warehouseId) {
+                                setSelectedWarehouseId(data.warehouseId)
+                            }
+                        }}
+                        orderLines={currentOrderLines}
+                    />
+                )
+            case 5:
+                return <Step3_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />
+            default:
+                return null
+        }
+    }
+
+    const wizardSteps: WizardStep[] = Array.from({ length: totalSteps }, (_, i) => ({
+        id: i + 1,
+        title: PURCHASE_STEP_LABELS[i + 1] ?? `Paso ${i + 1}`,
+        component: renderStepContent(i + 1),
+        isValid: !(step === 3 && !dteData.isPending && (!isFolioValid || !isPeriodValid)),
+        onNext: handleStepNext,
+    }))
+
     return (
-        <Drawer
+        <GenericWizard
             open={open}
             onOpenChange={onOpenChange}
+            onClose={() => onOpenChange(false)}
+            surface="drawer"
+            drawerSide="bottom"
+            drawerBoundary="embedded"
             icon={ShoppingCart}
             title="Procesar Compra"
             subtitle="Asistente de compra rápida, facturación y recepción de inventario."
-            side="bottom"
-            defaultSize="100%"
-            boundary="embedded"
-            contentClassName="p-0 flex flex-col"
-            headerClassName="border-b pb-2 px-6 py-3"
-            footer={
-                <FormFooter
-                    leftActions={
-                        step > 1 ? (
-                            <CancelButton
-                                onClick={handleBack}
-                                disabled={loading}
-                            >
-                                <ChevronLeft className="mr-1.5 h-3.5 w-3.5" />
-                                Atrás
-                            </CancelButton>
-                        ) : undefined
-                    }
-                    actions={
-                        step < totalSteps ? (
-                            <Button 
-                                onClick={handleNext} 
-                                className="w-40"
-                                disabled={step === 3 && !dteData.isPending && (!isFolioValid || !isPeriodValid)}
-                            >
-                                Siguiente
-                                <ChevronRight className="ml-2 h-4 w-4" />
-                            </Button>
-                        ) : (
-                            <SubmitButton
-                                onClick={handleFinish}
-                                loading={loading}
-                                className="w-48 bg-success hover:bg-success/90 text-success-foreground font-bold transition-all shadow-elevated shadow-success/20"
-                                icon={Check}
-                            >
-                                Finalizar Compra
-                            </SubmitButton>
-                        )
-                    }
-                />
+            steps={wizardSteps}
+            initialStep={step - 1}
+            onComplete={handleFinish}
+            isCompleting={loading}
+            completeButtonLabel="Finalizar Compra"
+            footerLeft={
+                step > 1 ? (
+                    <CancelButton onClick={handleBack} disabled={loading}>
+                        <ChevronLeft className="mr-1.5 h-3.5 w-3.5" />
+                        Atrás
+                    </CancelButton>
+                ) : undefined
             }
-        >
-            <div className="flex flex-1 overflow-hidden h-full">
-                {/* Left Sidebar - Process Summary */}
+            leftSidebar={
                 <PurchaseProcessSummarySidebar
                     currentStep={step}
                     totalSteps={totalSteps}
@@ -467,63 +516,15 @@ export function PurchaseCheckoutWizard({
                         pendingDebt: currentTotal - paymentData.amount
                     } : undefined}
                 />
-
-                {/* Center - Content Area Wrapper */}
-                <div className="flex-1 flex flex-col min-w-0">
-                    {/* Scrollable Content */}
-                    <div className="flex-1 p-6 overflow-y-auto">
-                        {step === 1 && (
-                            <Step0_Supplier
-                                selectedSupplierId={selectedSupplierId}
-                                setSelectedSupplierId={setSelectedSupplierId}
-                                setSelectedSupplierName={setSelectedSupplierName}
-                                selectedWorkOrderId={selectedWorkOrderId}
-                                setSelectedWorkOrderId={setSelectedWorkOrderId}
-                            />
-                        )}
-                        {step === 2 && (
-                            <Step1_ProductSelection
-                                orderLines={currentOrderLines}
-                                setOrderLines={setCurrentOrderLines}
-                                selectedWarehouseId={selectedWarehouseId}
-                                onWarehouseChange={setSelectedWarehouseId}
-                                selectedSupplierId={selectedSupplierId}
-                            />
-                        )}
-                        {step === 3 && (
-                            <Step2_PurchaseDTE 
-                                dteData={dteData} 
-                                setDteData={setDteData} 
-                                contactId={selectedSupplierId}
-                                onValidityChange={(isValid) => setIsFolioValid(isValid)}
-                                onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
-                            />
-                        )}
-                        {step === 4 && (
-                            <Step4_Receipt
-                                receiptData={receiptData}
-                                setReceiptData={(data) => {
-                                    setReceiptData(data)
-                                    if (typeof data !== 'function' && data.warehouseId) {
-                                        setSelectedWarehouseId(data.warehouseId)
-                                    }
-                                }}
-                                orderLines={currentOrderLines}
-                            />
-                        )}
-                        {step === 5 && <Step3_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />}
-                    </div>
-                </div>
-
-                {/* Right Sidebar - Product Summary */}
-                <div className="w-80 hidden lg:block border-l">
-                    <PurchaseOrderSummaryCard
-                        orderLines={currentOrderLines}
-                        total={currentTotal}
-                        dteType={dteData.type}
-                    />
-                </div>
-            </div>
-        </Drawer>
+            }
+            rightSidebar={
+                <PurchaseOrderSummaryCard
+                    orderLines={currentOrderLines}
+                    total={currentTotal}
+                    dteType={dteData.type}
+                />
+            }
+            contentClassName="p-6"
+        />
     )
 }

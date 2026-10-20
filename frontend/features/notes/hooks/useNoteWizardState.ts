@@ -99,6 +99,8 @@ export interface NoteWizardState {
     totalStepsCount: number
     isLastStep: boolean
     canGoBack: boolean
+    /** Runs the per-step validation (shows a toast and returns false when blocked). */
+    validateCurrentStep: () => boolean
 
     handleNext: () => Promise<void>
     handleBack: () => void
@@ -407,6 +409,7 @@ export function useNoteWizardState({
         totalStepsCount: stepsSequence.length,
         isLastStep,
         canGoBack,
+        validateCurrentStep,
 
         handleNext,
         handleBack,
