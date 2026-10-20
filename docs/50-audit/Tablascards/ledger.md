@@ -360,11 +360,10 @@
 - Fix: (1) eliminado el campo `display_id` de `salaryAdvanceUnifiedSearchDef`; (2) agregado `employee_name = CharFilter(field_name="employee__contact__name", lookup_expr="icontains")` a `SalaryAdvanceFilter` para que la búsqueda por empleado funcione en servidor
 - Estado: corregido
 
-### TC-067 · Defecto del sistema actual · Verificado (código)
-- Evidencia: `terminalDeviceFields.ts` (y ahora `terminalDevice.entity.ts`) traduce `supported_payment_methods` con `{1: CREDIT_CARD, 2: DEBIT_CARD}`: depende de las pk de `PaymentMethod`
-- Efecto: en otra base (reseed, tenant nuevo) los chips salen mal o no salen
-- Decisión: Pd-backend: exponer `method_type` en el serializer del dispositivo
-- Estado: pendiente
+### TC-067 · Defecto del sistema actual · Corregido (2026-10-20)
+- Evidencia: `terminalDevice.entity.ts` traducía `supported_payment_methods` con `{1: "CREDIT_CARD", 2: "DEBIT_CARD"}` — mapeo por entero mágico, frágil ante reseed
+- Fix: `PaymentTerminalDeviceSerializer` expone `supported_payment_method_types: list[str]` via `SerializerMethodField`; la entidad usa directamente `d.supported_payment_method_types ?? []`; el mapeo mágico desapareció del frontend
+- Estado: corregido
 
 ### TC-068 · Tests rotos previos · Verificado
 - Evidencia: `features/production/components/__tests__/WorkOrderWizard.test.tsx`: 3 tests no encuentran los títulos "Crear Orden de Trabajo" / "Gestión de Orden de Trabajo". Reproducido en un worktree en `b04d3927e` (antes de los cambios de esta sesión)

@@ -725,9 +725,19 @@ class PaymentTerminalProviderSerializer(serializers.ModelSerializer):
         return value
 
 
+_TERMINAL_CODE_TO_TYPE = {1: "CREDIT_CARD", 2: "DEBIT_CARD"}
+
+
 class PaymentTerminalDeviceSerializer(serializers.ModelSerializer):
     provider_name = serializers.CharField(source="provider.name", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
+    # TC-067: translate integer codes to stable method_type strings so the frontend
+    # never needs a pk-based magic mapping.
+    supported_payment_method_types = serializers.SerializerMethodField()
+
+    def get_supported_payment_method_types(self, obj) -> list[str]:
+        codes = obj.supported_payment_methods or []
+        return [_TERMINAL_CODE_TO_TYPE[c] for c in codes if c in _TERMINAL_CODE_TO_TYPE]
 
     class Meta:
         model = PaymentTerminalDevice

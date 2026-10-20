@@ -157,6 +157,8 @@ export interface PaymentTerminalDevice {
     status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE'
     is_active: boolean
     supported_payment_methods?: number[]
+    /** TC-067: stable method_type strings derived server-side from supported_payment_methods codes. */
+    supported_payment_method_types?: string[]
 }
 
 // Terminal Batch Types
