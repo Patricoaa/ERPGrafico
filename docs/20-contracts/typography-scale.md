@@ -124,10 +124,9 @@ h-9  text-3xs  font-black  uppercase  tracking-widest
 
 | Componente | Variante | Nota |
 |------------|----------|------|
-| `<SubmitButton>` | Primary (slide) | `px-4 h-9 text-3xs font-black` |
+| `<SubmitButton>` | Primary (relleno) | `px-4 h-9 text-3xs font-black`; touch mode vía `className="h-12 px-6 text-xs"` |
 | `<CancelButton>` | Outline | `px-5 h-9 text-3xs font-black shadow-card` |
-| `<DangerButton>` | Destructive | Extremo izquierdo del footer |
-| `<ActionSlideButton>` | Custom | Base de Submit y Cancel; variante `size="lg"` → `h-12 text-xs` |
+| `<DangerButton>` | Destructive | Extremo izquierdo del footer; icono opcional |
 | `<ToolbarCreateButton>` | Primary (toolbar) | Excepción: `h-9 text-xs font-semibold tracking-widest` (superficie toolbar, no footer de formulario) |
 
 **Fuente del contrato:** [component-button.md](component-button.md) + [form-layout-architecture.md](form-layout-architecture.md)

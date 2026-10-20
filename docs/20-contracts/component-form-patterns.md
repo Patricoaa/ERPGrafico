@@ -203,7 +203,7 @@ Cada formulario opera en un **contexto** que determina su comportamiento, surfac
 | **Creación** | BaseModal (`lg`) | `form.reset()` al abrir, sin datos previos | `CancelButton` + `SubmitButton "Crear {Entidad}"` | No |
 | **Creación con dependencias asíncronas** | BaseModal (`lg`) | Fetch de catálogos al abrir (UoMs, cuentas, etc.); SkeletonShell overlay mientras carga | `CancelButton` + `SubmitButton "Crear {Entidad}"` | No |
 | **Edición** | BaseModal (`xl`) | Pre-fill desde `initialData`, dirty tracking | `CancelButton` + `SubmitButton "Guardar Cambios"` | `FormSplitLayout` + `ActivitySidebar` |
-| **Ficha maestra** | BaseModal (`full`) | Tabs + insights + sidebar, mixta edición/lectura | `CancelButton` + `ActionSlideButton` | `FormSplitLayout` + `ActivitySidebar` |
+| **Ficha maestra** | BaseModal (`full`) | Tabs + insights + sidebar, mixta edición/lectura | `CancelButton` + `SubmitButton` | `FormSplitLayout` + `ActivitySidebar` |
 | **Configuración** | Page-level o BaseModal (`xl`) | Settings globales, cambios aplican a todo el sistema | `CancelButton` + `SubmitButton "Aplicar"` | Opcional |
 | **Quick edit** | Inline (row/popover) | Sin modal, edición in-situ | Auto-save o botón confirm inline | No |
 
@@ -317,7 +317,7 @@ Surface (BaseModal | Page)
   │    │         │    └─ FormSection ...
   │    │         └─ ActivitySidebar (w-72, border-l proveído por FormSplitLayout, solo edit mode)
   │    └─ footer (FormFooter | TabBar footer slot)
-  │         └─ CancelButton + SubmitButton | ActionSlideButton
+  │         └─ CancelButton + SubmitButton
   └─ (Sin TabBar)
        └─ FormSplitLayout (si edit mode)
             ├─ form

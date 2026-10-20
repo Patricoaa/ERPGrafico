@@ -358,7 +358,7 @@ Props: `items: FormTabItem[]` (✅), `value` (✅), `onValueChange` (✅), `orie
 
 ## Buttons
 
-> 📄 [component-button.md](./component-button.md) — `SubmitButton`, `CancelButton`, `DangerButton`, `IconButton`, `ToolbarCreateButton`, `ActionSlideButton`.
+> 📄 [component-button.md](./component-button.md) — `SubmitButton`, `CancelButton`, `DangerButton`, `IconButton`, `ToolbarCreateButton`.
 
 **PageHeaderButton** 🟡 — botón estándar para `PageHeader.actions`.
 

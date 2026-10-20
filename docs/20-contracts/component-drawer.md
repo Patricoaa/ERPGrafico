@@ -29,7 +29,7 @@ supersedes:
       actions={
         <>
           <CancelButton onClick={() => onOpenChange(false)} />
-          <ActionSlideButton form="my-form">Guardar</ActionSlideButton>
+          <SubmitButton form="my-form">Guardar</SubmitButton>
         </>
       }
     />
@@ -185,9 +185,9 @@ footer={
     actions={
       <>
         <CancelButton onClick={() => onOpenChange(false)} />
-        <ActionSlideButton form="my-form" loading={isPending}>
+        <SubmitButton form="my-form" loading={isPending}>
           Guardar
-        </ActionSlideButton>
+        </SubmitButton>
       </>
     }
   />
@@ -196,7 +196,7 @@ footer={
 
 Drawers de solo lectura (sin formulario) pueden omitir el footer o pasar un `<Button>Cerrar</Button>` directo.
 
-> Ver [component-button.md](./component-button.md) para API completa de `CancelButton`, `ActionSlideButton`.  
+> Ver [component-button.md](./component-button.md) para API completa de `CancelButton`, `SubmitButton`.  
 > Ver [form-layout-architecture.md §FormFooter](./form-layout-architecture.md) para props completas de `FormFooter`.
 
 ## Drawers de solo lectura (bottom drawer)

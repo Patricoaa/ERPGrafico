@@ -120,7 +120,7 @@ Si la entidad requiere un Drawer para Crear/Editar, este es el esqueleto obligat
 import { useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Drawer, FormSplitLayout, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
+import { Drawer, FormSplitLayout, FormFooter, CancelButton, SubmitButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit"
 import { useDrawerMode, useDrawerIdentity, type DrawerBaseProps } from "@/features/_shared"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -176,9 +176,9 @@ export function EntityDrawer({
       footer={isView ? undefined : (
         <FormFooter actions={<>
           <CancelButton onClick={() => onOpenChange(false)} />
-          <ActionSlideButton type="submit" form="entity-form" loading={isSaving}>
+          <SubmitButton type="submit" form="entity-form" loading={isSaving}>
             {mode === 'create' ? "Crear" : "Guardar Cambios"}
-          </ActionSlideButton>
+          </SubmitButton>
         </>} />
       )}
     >
