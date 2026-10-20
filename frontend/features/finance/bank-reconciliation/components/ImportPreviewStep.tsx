@@ -4,8 +4,9 @@ import React from "react"
 import { formatCurrency } from "@/lib/money"
 import { CheckCircle2, Calendar, FileText, DollarSign, Wallet } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import {DataTable, DataCell, FormSection} from "@/components/shared"
-import type { ColumnDef } from "@tanstack/react-table"
+import { FormSection } from "@/components/shared"
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { importWarningEntity, importWarningViews, type ImportWarning } from "../entity-view/importWarning.entity"
 
 export interface DryRunWarning {
     line: number | null
@@ -137,32 +138,14 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
 }
 
 function WarningTable({ warnings }: { warnings: DryRunWarning[] }) {
-    const columns: ColumnDef<DryRunWarning>[] = [
-        {
-            header: "Línea",
-            cell: ({ row }) => (
-                <DataCell.Code>{row.original.line ?? "General"}</DataCell.Code>
-            ),
-        },
-        {
-            header: "Tipo",
-            cell: () => <DataCell.Chip intent="warning">Advertencia</DataCell.Chip>,
-        },
-        {
-            header: "Mensaje",
-            cell: ({ row }) => (
-                <DataCell.Secondary>{row.original.message}</DataCell.Secondary>
-            ),
-        },
-    ]
-
+    const collection = useEntityCollection(
+        importWarningEntity,
+        { rows: warnings as ImportWarning[] },
+        { pagination: { mode: "none" } }
+    )
     return (
-        <DataTable
-            columns={columns}
-            data={warnings}
-            variant="minimal"
-            hidePagination
-            noBorder
-        />
+        <Collection.Root collection={collection} label="Advertencias de importación">
+            <Collection.View table={importWarningViews.table} />
+        </Collection.Root>
     )
 }

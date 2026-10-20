@@ -2,11 +2,14 @@
 import { formatCurrency } from "@/lib/money"
 import { parseDateOnly } from "@/lib/utils"
 
-import { BaseModal, Chip, DateRangeFilter, EmptyState, SkeletonShell, StatusBadge } from '@/components/shared'
+import { BaseModal, DateRangeFilter, EmptyState, SkeletonShell, StatusBadge } from '@/components/shared'
 
 import { useState, useMemo } from "react"
 
-import { DataTable, StatCard } from "@/components/shared"
+import { StatCard } from "@/components/shared"
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { subscriptionOrderEntity, subscriptionOrderViews, type SubscriptionOrderEntry } from "../entity-view/subscriptionOrder.entity"
+import { subscriptionNoteEntity, subscriptionNoteViews, type SubscriptionNoteEntry } from "../entity-view/subscriptionNote.entity"
 import {
     History,
     FileText,
@@ -19,12 +22,9 @@ import { es } from "date-fns/locale"
 import { DataCell } from '@/components/shared'
 
 import { TabBar, TabBarContent } from "@/components/shared"
-import type { ColumnDef } from "@tanstack/react-table"
 import { BarChart } from "@/components/shared"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useOnEntityStackClose } from "@/hooks/useOnEntityStackClose"
 
-import { translateStatus } from "@/lib/utils"
 
 interface SubscriptionHistoryModalProps {
     subscriptionId: number | null
@@ -77,7 +77,6 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
     // callback de éxito desde acciones del Hub que mutan datos vinculados.
     const { data, isLoading: loading, refetch: refetchHistory } = useSubscriptionHistory<SubscriptionHistory>(open ? subscriptionId : null)
     // Fichas documentales (ADR-0083); al volver se refresca el historial
-    const { openEntity } = useGlobalModals()
     useOnEntityStackClose(() => { void refetchHistory() })
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
     const [activeTab, setActiveTab] = useState("historial")
@@ -198,20 +197,14 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                         {/* ORDERS TAB */}
                                         <TabBarContent value="orders" className="mt-0">
                                             <div className="rounded-md border shadow-card overflow-hidden bg-card">
-                                                <OrderTable
-                                                    orders={data.orders}
-                                                    onOpenHub={(orderId) => openEntity('purchasing.purchaseorder', orderId)}
-                                                />
+                                                <OrderTable orders={data.orders} />
                                             </div>
                                         </TabBarContent>
 
                                         {/* NOTES TAB */}
                                         <TabBarContent value="notes" className="mt-0">
                                             <div className="rounded-md border shadow-card overflow-hidden bg-card">
-                                                <NoteTable
-                                                    notes={data.notes}
-                                                    onOpenHub={(invoiceId) => openEntity('billing.invoice', invoiceId)}
-                                                />
+                                                <NoteTable notes={data.notes} />
                                             </div>
                                         </TabBarContent>
                                     </div>
@@ -225,135 +218,36 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
     )
 }
 
-function OrderTable({ orders, onOpenHub }: { orders: OrderHistoryEntry[]; onOpenHub: (orderId: number) => void }) {
-    const columns: ColumnDef<OrderHistoryEntry>[] = [
-        {
-            header: "Documento",
-            cell: ({ row }) => (
-                <span className="font-black text-sm text-primary">{row.original.display_id}</span>
-            ),
-        },
-        {
-            header: "Fecha",
-            cell: ({ row }) => <DataCell.Date value={row.original.date} />,
-        },
-        {
-            header: "Estado",
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <StatusBadge
-                        status={row.original.payment_status === 'PAID' || row.original.receiving_status === 'RECEIVED' ? 'SUCCESS' : 'NEUTRAL'}
-                        label={translateStatus(row.original.status)}
-                        variant="badge"
-                    />
-                </div>
-            ),
-        },
-        {
-            header: "Monto Total",
-            cell: ({ row }) => (
-                <DataCell.Currency value={row.original.total} weight="black" className="text-right" />
-            ),
-        },
-        {
-            header: "Acciones",
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <DataCell.ActionGroup>
-                        <DataCell.Action
-                            action="hub"
-                            title="Gestionar OCS"
-                            onClick={() => onOpenHub(row.original.id)}
-                        />
-                    </DataCell.ActionGroup>
-                </div>
-            ),
-        },
-    ]
-
+function OrderTable({ orders }: { orders: OrderHistoryEntry[] }) {
+    const collection = useEntityCollection(
+        subscriptionOrderEntity,
+        { rows: orders as SubscriptionOrderEntry[] },
+        { pagination: { mode: "none" } }
+    )
     return (
-        <DataTable
-            columns={columns}
-            data={orders}
-            variant="embedded"
-            hidePagination
-            emptyState={{
-                context: "search",
-                title: "Sin órdenes",
-                description: "No se encontraron órdenes de compra para esta suscripción.",
-            }}
-        />
+        <Collection.Root collection={collection} label="Órdenes de compra">
+            <Collection.View
+                table={subscriptionOrderViews.table}
+                emptyTitle="Sin órdenes"
+                emptyDescription="No se encontraron órdenes de compra para esta suscripción."
+            />
+        </Collection.Root>
     )
 }
 
-function NoteTable({ notes, onOpenHub }: { notes: NoteHistoryEntry[]; onOpenHub: (invoiceId: number) => void }) {
-    const columns: ColumnDef<NoteHistoryEntry>[] = [
-        {
-            header: "Nota",
-            cell: ({ row }) => (
-                <div className="flex flex-col">
-                    <span className="font-black text-sm text-primary">{row.original.display_id}</span>
-                    <span className="text-4xs text-muted-foreground font-bold uppercase">{row.original.dte_type.replace('_', ' ')}</span>
-                </div>
-            ),
-        },
-        {
-            header: "OCS Relacionada",
-            cell: ({ row }) => (
-                <Chip size="xs" className="whitespace-nowrap">
-                    OCS-{row.original.purchase_order_number}
-                </Chip>
-            ),
-        },
-        {
-            header: "Fecha",
-            cell: ({ row }) => <DataCell.Date value={row.original.date} />,
-        },
-        {
-            header: "Estado",
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <StatusBadge
-                        status={row.original.status === 'POSTED' ? 'SUCCESS' : 'NEUTRAL'}
-                        label={translateStatus(row.original.status)}
-                        variant="badge"
-                    />
-                </div>
-            ),
-        },
-        {
-            header: "Monto Total",
-            cell: ({ row }) => (
-                <DataCell.Currency value={row.original.total} weight="black" className="text-right" />
-            ),
-        },
-        {
-            header: "Acciones",
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <DataCell.ActionGroup>
-                        <DataCell.Action
-                            action="hub"
-                            title="Gestionar nota"
-                            onClick={() => onOpenHub(row.original.id)}
-                        />
-                    </DataCell.ActionGroup>
-                </div>
-            ),
-        },
-    ]
-
+function NoteTable({ notes }: { notes: NoteHistoryEntry[] }) {
+    const collection = useEntityCollection(
+        subscriptionNoteEntity,
+        { rows: notes as SubscriptionNoteEntry[] },
+        { pagination: { mode: "none" } }
+    )
     return (
-        <DataTable
-            columns={columns}
-            data={notes}
-            variant="embedded"
-            hidePagination
-            emptyState={{
-                context: "search",
-                title: "Sin notas",
-                description: "No se encontraron notas asociadas a este producto.",
-            }}
-        />
+        <Collection.Root collection={collection} label="Notas de crédito / débito">
+            <Collection.View
+                table={subscriptionNoteViews.table}
+                emptyTitle="Sin notas"
+                emptyDescription="No se encontraron notas asociadas a este producto."
+            />
+        </Collection.Root>
     )
 }
