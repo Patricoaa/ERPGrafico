@@ -1,13 +1,14 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect } from "react"
 import { Package } from "lucide-react"
-import { DataCell, DataTable } from "@/components/shared"
+import { DataCell } from "@/components/shared"
+import { Collection, useEntityCollection } from "@/components/entity-view"
 import { PrintableLayout, usePrintableDrawer } from "@/features/_shared"
 import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { usePurchaseReturn } from "../hooks/usePurchasing"
-import { purchaseReturnLineFields } from "../purchaseReturnLineFields"
+import { purchaseReturnLineEntity, purchaseReturnLineViews, type PurchaseReturnLine } from "../entity-view/purchaseReturnLine.entity"
 
 interface PurchaseReturnDrawerProps {
     returnId?: number | null
@@ -28,9 +29,9 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
     const { returnData, isLoading } = usePurchaseReturn(entityId, open)
     const { printRef, handlePrint } = usePrintableDrawer()
     const { setEntityDisplay } = useGlobalModalActions()
-    const columns = useMemo(() => purchaseReturnLineFields.toColumns(), [])
     const r = returnData as Row | undefined
-    const lines = (r?.lines as Row[] | undefined) ?? []
+    const lines = (r?.lines as PurchaseReturnLine[] | undefined) ?? []
+    const collection = useEntityCollection(purchaseReturnLineEntity, { rows: lines }, { pagination: { mode: "none" } })
 
     useEffect(() => {
         if (r?.id && r.display_id) {
@@ -85,13 +86,9 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
                     title: "Productos",
                     icon: Package,
                     content: (
-                        <DataTable
-                            columns={columns}
-                            data={lines}
-                            variant="minimal"
-                            hidePagination
-                            emptyState={{ title: "No hay líneas", description: "La devolución no tiene líneas." }}
-                        />
+                        <Collection.Root collection={collection} label="Productos">
+                            <Collection.View table={purchaseReturnLineViews.table} emptyTitle="No hay líneas" emptyDescription="La devolución no tiene líneas." />
+                        </Collection.Root>
                     ),
                 }]}
             />

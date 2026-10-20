@@ -1,21 +1,20 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect } from "react"
 import { Package } from "lucide-react"
-import { DataCell, DataTable } from "@/components/shared"
+import { DataCell } from "@/components/shared"
+import { Collection, useEntityCollection } from "@/components/entity-view"
 import { PrintableLayout, usePrintableDrawer } from "@/features/_shared"
 import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { usePurchaseReceipt } from "../hooks/usePurchasing"
-import { purchaseReceiptLineFields } from "../purchaseReceiptLineFields"
+import { purchaseReceiptLineEntity, purchaseReceiptLineViews, type PurchaseReceiptLine } from "../entity-view/purchaseReceiptLine.entity"
 
 interface PurchaseReceiptDrawerProps {
     id?: number | null
     open: boolean
     onOpenChange: (open: boolean) => void
 }
-
-type Row = Record<string, unknown>
 
 /**
  * Ficha documental de la recepción (GAP-06, ADR-0083): contexto (proveedor, fecha, bodega,
@@ -25,8 +24,8 @@ export function PurchaseReceiptDrawer({ id, open, onOpenChange }: PurchaseReceip
     const { receipt, isLoading } = usePurchaseReceipt(id ?? null, open)
     const { printRef, handlePrint } = usePrintableDrawer()
     const { setEntityDisplay } = useGlobalModalActions()
-    const columns = useMemo(() => purchaseReceiptLineFields.toColumns(), [])
-    const lines = (receipt?.lines as Row[] | undefined) ?? []
+    const lines = (receipt?.lines as PurchaseReceiptLine[] | undefined) ?? []
+    const collection = useEntityCollection(purchaseReceiptLineEntity, { rows: lines }, { pagination: { mode: "none" } })
 
     useEffect(() => {
         if (receipt?.id && receipt.display_id) {
@@ -79,13 +78,9 @@ export function PurchaseReceiptDrawer({ id, open, onOpenChange }: PurchaseReceip
                 title: "Productos",
                 icon: Package,
                 content: (
-                    <DataTable
-                        columns={columns}
-                        data={lines}
-                        variant="minimal"
-                        hidePagination
-                        emptyState={{ title: "No hay líneas", description: "La recepción no tiene líneas." }}
-                    />
+                    <Collection.Root collection={collection} label="Productos">
+                        <Collection.View table={purchaseReceiptLineViews.table} emptyTitle="No hay líneas" emptyDescription="La recepción no tiene líneas." />
+                    </Collection.Root>
                 ),
             }]}
         />

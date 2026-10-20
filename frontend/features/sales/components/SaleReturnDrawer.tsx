@@ -1,13 +1,14 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect } from "react"
 import { Package } from "lucide-react"
-import { DataCell, DataTable } from "@/components/shared"
+import { DataCell } from "@/components/shared"
+import { Collection, useEntityCollection } from "@/components/entity-view"
 import { PrintableLayout, usePrintableDrawer } from "@/features/_shared"
 import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useSaleReturn } from "../hooks/useSaleDeliveries"
-import { saleReturnLineFields } from "../saleReturnLineFields"
+import { saleReturnLineEntity, saleReturnLineViews, type SaleReturnLine } from "../entity-view/saleReturnLine.entity"
 import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 interface SaleReturnDrawerProps {
@@ -26,7 +27,6 @@ export function SaleReturnDrawer({ id, open, onOpenChange }: SaleReturnDrawerPro
     const { data: returnData, isLoading } = useSaleReturn(id ?? null, open)
     const { printRef, handlePrint } = usePrintableDrawer()
     const { setEntityDisplay } = useGlobalModalActions()
-    const columns = useMemo(() => saleReturnLineFields.toColumns(), [])
     const r = returnData as Row | undefined
 
     useEffect(() => {
@@ -34,7 +34,8 @@ export function SaleReturnDrawer({ id, open, onOpenChange }: SaleReturnDrawerPro
             setEntityDisplay('sales.salereturn', Number(r.id), String(r.display_id))
         }
     }, [r?.id, r?.display_id, setEntityDisplay])
-    const lines = (r?.lines as Row[] | undefined) ?? []
+    const lines = (r?.lines as SaleReturnLine[] | undefined) ?? []
+    const collection = useEntityCollection(saleReturnLineEntity, { rows: lines }, { pagination: { mode: "none" } })
 
     return (
         <>
@@ -83,13 +84,9 @@ export function SaleReturnDrawer({ id, open, onOpenChange }: SaleReturnDrawerPro
                     title: "Productos",
                     icon: Package,
                     content: (
-                        <DataTable
-                            columns={columns}
-                            data={lines}
-                            variant="minimal"
-                            hidePagination
-                            emptyState={{ title: "No hay líneas", description: "La devolución no tiene líneas." }}
-                        />
+                        <Collection.Root collection={collection} label="Productos">
+                            <Collection.View table={saleReturnLineViews.table} emptyTitle="No hay líneas" emptyDescription="La devolución no tiene líneas." />
+                        </Collection.Root>
                     ),
                 }]}
             />

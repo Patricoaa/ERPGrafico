@@ -1,13 +1,14 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect } from "react"
 import { Package } from "lucide-react"
-import { DataCell, DataTable } from "@/components/shared"
+import { DataCell } from "@/components/shared"
+import { Collection, useEntityCollection } from "@/components/entity-view"
 import { PrintableLayout, usePrintableDrawer } from "@/features/_shared"
 import { DocumentRefLink, DocumentSheet, SHEET_LEFT } from "@/features/documents"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useSaleDelivery } from "../hooks/useSaleDeliveries"
-import { saleDeliveryLineFields } from "../saleDeliveryLineFields"
+import { saleDeliveryLineEntity, saleDeliveryLineViews, type SaleDeliveryLine } from "../entity-view/saleDeliveryLine.entity"
 import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 interface SaleDeliveryDrawerProps {
@@ -15,8 +16,6 @@ interface SaleDeliveryDrawerProps {
     open: boolean
     onOpenChange: (open: boolean) => void
 }
-
-type Row = Record<string, unknown>
 
 /**
  * Ficha documental del despacho (GAP-06, ADR-0083): contexto (cliente, fecha, bodega, OV)
@@ -26,8 +25,8 @@ export function SaleDeliveryDrawer({ id, open, onOpenChange }: SaleDeliveryDrawe
     const { data: delivery, isLoading, isError } = useSaleDelivery(open ? id ?? null : null)
     const { printRef, handlePrint } = usePrintableDrawer()
     const { setEntityDisplay } = useGlobalModalActions()
-    const columns = useMemo(() => saleDeliveryLineFields.toColumns(), [])
-    const lines = (delivery?.lines as Row[] | undefined) ?? []
+    const lines = (delivery?.lines as SaleDeliveryLine[] | undefined) ?? []
+    const collection = useEntityCollection(saleDeliveryLineEntity, { rows: lines }, { pagination: { mode: "none" } })
 
     useEffect(() => {
         if (delivery?.id && delivery.display_id) {
@@ -80,13 +79,9 @@ export function SaleDeliveryDrawer({ id, open, onOpenChange }: SaleDeliveryDrawe
                 title: "Productos",
                 icon: Package,
                 content: (
-                    <DataTable
-                        columns={columns}
-                        data={lines}
-                        variant="minimal"
-                        hidePagination
-                        emptyState={{ title: "No hay líneas", description: "El despacho no tiene líneas." }}
-                    />
+                    <Collection.Root collection={collection} label="Productos">
+                        <Collection.View table={saleDeliveryLineViews.table} emptyTitle="No hay líneas" emptyDescription="El despacho no tiene líneas." />
+                    </Collection.Root>
                 ),
             }]}
         />
