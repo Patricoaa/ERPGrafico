@@ -372,7 +372,7 @@ export function DataTable<TData, TValue>({
     if (isLoading) {
         return (
             <div ref={containerRef} className={cn(
-                isEmbedded && "relative flex flex-col h-full w-full space-y-1 min-h-0",
+                isEmbedded && "relative flex flex-col h-full w-full gap-2 min-h-0",
                 !isEmbedded && !isMinimal && "w-full space-y-4",
                 isMinimal && "space-y-0",
                 className
@@ -696,7 +696,7 @@ export function DataTable<TData, TValue>({
         const isTableEmpty = !renderCustomView && table.getRowModel().rows.length === 0
 
         return (
-            <div ref={containerRef} className={cn("relative flex flex-col h-full w-full space-y-1 min-h-0", className)}>
+            <div ref={containerRef} className={cn("relative flex flex-col h-full w-full gap-2 min-h-0", className)}>
                 {/* Toolbar Section (Outside) */}
                 {kpiCardsNode}
 
@@ -757,16 +757,16 @@ export function DataTable<TData, TValue>({
                                     </TableHeader>
                                 </table>
                             </div>
-                            <div className={cn("flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-background", isTableEmpty && "flex flex-col")} style={{ scrollbarGutter: 'stable' }}>
+                            <div className={cn("flex-1 min-h-0 overflow-y-auto custom-scrollbar", isTableEmpty && "flex flex-col")} style={{ scrollbarGutter: 'stable' }}>
                                 <table aria-label={ariaLabel} className={cn("w-full text-sm", isTableEmpty && "h-full")} style={{ tableLayout: 'fixed' }}>
                                     <colgroup>
                                         {embeddedHeaderGroups[0]?.headers.map(header => (
                                             <col key={header.id} style={{ width: header.getSize() }} />
                                         ))}
                                     </colgroup>
-                                    <TableBody>
+                                    <tbody>
                                         {tableBody}
-                                    </TableBody>
+                                    </tbody>
                                 </table>
                             </div>
                         </div>
@@ -850,14 +850,14 @@ export function DataTable<TData, TValue>({
                                 </TableHeader>
                             </table>
                         </div>
-                        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-background" style={{ scrollbarGutter: 'stable' }}>
+                        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar" style={{ scrollbarGutter: 'stable' }}>
                             <table aria-label={ariaLabel} className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
                                 <colgroup>
                                     {classicHeaderGroups[0]?.headers.map(header => (
                                         <col key={header.id} style={{ width: header.getSize() }} />
                                     ))}
                                 </colgroup>
-                                <TableBody>
+                                <tbody>
                                     {table.getRowModel().rows?.length ? (
                                         table.getRowModel().rows.map((row) => (
                                             <React.Fragment key={row.id}>
@@ -928,7 +928,7 @@ export function DataTable<TData, TValue>({
                                             </TableCell>
                                         </TableRow>
                                     )}
-                                </TableBody>
+                                </tbody>
                             </table>
                         </div>
                         {renderFooter && (

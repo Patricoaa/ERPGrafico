@@ -20,7 +20,7 @@ import {
     Lock,
     Wallet,
 } from "lucide-react"
-import { ActionConfirmModal, DangerButton, BaseModal, DataTable, Chip } from "@/components/shared"
+import { ActionConfirmModal, DangerButton, BaseModal, DataTable, Chip, DataCell } from "@/components/shared"
 import type { ColumnDef } from "@tanstack/react-table"
 import type { SyncDraft } from '@/features/pos/hooks/useDraftSync'
 
@@ -336,19 +336,17 @@ export function DraftCartsClientView({
             id: 'items',
             header: 'Ítems',
             cell: ({ row }) => (
-                <span className="flex items-center gap-0.5 text-2xs text-muted-foreground justify-center">
-                    <ShoppingCart className="h-3 w-3" />
-                    {row.original.item_count}
-                </span>
+                <div className="flex items-center gap-0.5 justify-center">
+                    <ShoppingCart className="h-3 w-3 text-muted-foreground" />
+                    <DataCell.Number value={row.original.item_count} align="center" />
+                </div>
             ),
         },
         {
             id: 'total',
             header: 'Total',
             cell: ({ row }) => (
-                <span className="text-sm font-semibold text-right tabular-nums">
-                    {formatCurrency(row.original.total_gross)}
-                </span>
+                <DataCell.Currency value={row.original.total_gross} />
             ),
         },
     ], [resolveLockInfo, formatRelative])
