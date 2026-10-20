@@ -8,6 +8,8 @@ export interface ContactCreditDocument {
     display_id?: string | null
     balance: number | string
     document?: DocumentRef | null
+    status?: string
+    status_display?: string
     [key: string]: unknown
 }
 
@@ -22,12 +24,18 @@ export const contactCreditDocumentEntity = defineEntity<ContactCreditDocument>()
             (l) => l.document
                 ? { label: l.document.label, id: l.document.id, display: l.document.display_id, url: l.document.url }
                 : null,
-            { ...fixed, label: "Número" },
+            { ...fixed, label: "Número", fallback: (l) => l.display_id ?? l.number ?? undefined },
         ),
         balance: f.money((l) => Number(l.balance), { ...fixed, label: "Saldo" }),
+        hub: f.hubStatus((l) => l, {
+            ...fixed,
+            label: "Estado",
+            entity: "sales.saleorder",
+            caption: (l) => ({ status: l.status ?? "", label: l.status_display ?? "" }),
+        }),
     },
 }))
 
 export const contactCreditDocumentViews = contactCreditDocumentEntity.views({
-    table: { columns: ["date", "number", "balance"] },
+    table: { columns: ["date", "number", "balance", "hub"] },
 })

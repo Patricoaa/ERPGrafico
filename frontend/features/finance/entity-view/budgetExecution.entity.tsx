@@ -20,14 +20,10 @@ function BudgetAccountCell({ value }: ValueRenderProps<"budgetAccount">) {
     )
 }
 
-let _registered = false
-if (!_registered) {
-    _registered = true
-    registerValueKind("budgetAccount", {
-        format: (v) => v.name,
-        render: BudgetAccountCell,
-    })
-}
+registerValueKind("budgetAccount", {
+    format: (v) => v.name,
+    render: BudgetAccountCell,
+})
 
 export interface BudgetExecutionItem {
     account_name: string

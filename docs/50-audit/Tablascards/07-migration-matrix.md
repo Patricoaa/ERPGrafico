@@ -1206,3 +1206,44 @@ Forzar las 4 en un único tipo normalizado perdería las columnas/acciones propi
 
 Pendiente: aprobación de commit de `ledgerDate.kind.tsx` + `formatters.ts` + `features/accounting/index.ts`. Luego, C3 migra las 4 pantallas usando esta pieza.
 
+### 6.31–6.35 Resultados de C3, C5, C2, C4 (oleada C completa) y B4
+
+Sub-lotes completados y commiteados en la sesión 2026-10-20:
+- **C3** (`55e6933ac`+`599d3ec20`): créditos (`CreditPortfolioClientView`, `PortfolioTable`, `BlacklistClientView`), libro mayor (`LedgerDrawer`, `app/.../ledger/page.tsx`) y socio (`PartnerLedgerDrawer`) — 4 entidades, kind compartido `ledgerDate`.
+- **C5** (`aeafaaae5`): `StatementsClientView` (conciliación) + `StatementDetailPanel` — 2 entidades (`statementEntity`, `statementLineEntity`), kinds `statementLines`/`statementLineDesc`, `statementFields.tsx` borrado.
+- **C4** (`4b153721e`): `MovementClientView`, `StockReport`, `ProductInsightsPanel`, `ProductInsightsModal` — oleada C cerrada con Puerta D propia por tamaño de C4.
+- **C2** (`e8d0e4cda`): `StatementsClientView` (tarjetas), `StatementDetailModal`, `UnbilledChargesClientView` — oleada C completa.
+- **B4** (`38ae47588`+`fc5d5a243`): `WorkOrdersPageClient` con kanban/timeline + `workOrder.entity.tsx` con kinds `workOrderStatus`/`workOrderSaleRef`; `workOrderFields.tsx` conservado temporalmente.
+
+**Oleada C completa** (C1–C5 + B4). Ratchet decrementado progresivamente a 42 al entrar en oleada D.
+
+### 6.36 Puerta D de la oleada D (presentada y ejecutada el 2026-10-20)
+
+"Oleada D" = fichas documentales y tablas embebidas de solo lectura que no caben en A–C: líneas de despacho/devolución/recepción, libro de crédito del contacto, historial de socio, tabla de amortización del préstamo, y vista de ejecución presupuestaria. Todas siguen el patrón establecido en el 3a (embedded read-only tables) sin capacidades nuevas en el núcleo.
+
+| Sub-lote | Pantallas / vistas | Entidades nuevas | `*Fields` borrados | Ratchet |
+|---|---|---|---|---|
+| D1 | `SaleDeliveryDrawer`, `SaleReturnDrawer`, `PurchaseReceiptDrawer`, `PurchaseReturnDrawer`, `ProfitDistributionDrawer`, `BudgetDetailView` | `saleDeliveryLine`, `saleReturnLine`, `purchaseReceiptLine`, `purchaseReturnLine`, `profitDistributionLine`, `budgetExecution` (+ kind `budgetAccount`) | `saleDeliveryLineFields`, `saleReturnLineFields`, `purchaseReceiptLineFields`, `purchaseReturnLineFields`, `profitDistributionLineFields` | 42 → 31 |
+| D2 | `ContactDrawer` (InsightsTable × 3 tipos + CreditLedgerTable) | `contactCreditDocument` | `contactCreditDocumentFields`, `salesOrderFields`, `purchaseOrderFields`, `workOrderFields` | 31 → 26 |
+| D3 | `PartnerProfileTab`, `LoanRegisterDrawer` | `partnerTransaction` (multi-source `docRef`), `loanScheduleRow` | `loanRegisterFields` | 26 → 23 |
+
+**Proceso M5:**
+- `/simplify` (4 revisores): sin hallazgos bloqueantes; aplicado sobre el diff `bbd4a412c^..0e217d1c3`.
+- `tsc --noEmit`: 0 errores.
+- `eslint`: 0 errores en los archivos del diff (205 errores globales son pre-existentes en archivos ajenos, verificado).
+- `/code-review`: ejecutado sobre el mismo diff.
+
+**Oleada D completa.** Ratchet final: 23 consumidores legacy.
+
+### 6.37 Wave E — plan (pendiente Puerta D)
+
+Los 23 consumidores restantes del ratchet son todos Wave E:
+
+| Categoría | Archivos | Razón de aplazamiento |
+|---|---|---|
+| UnifiedSearch avanzado + DataTableView | `AuditPageClient.tsx`, `JobsView.tsx` | client-side column filtering, complex chip/icon cells |
+| Real-time (WebSocket) | `DraftCartsClientView.tsx` | lock state ticker en tiempo real; comment explícito en el archivo |
+| Picker modal | `AccountSelector.tsx` | DataTable con `onRowClick` para selección, no vista de colección |
+| Acción compleja por estado de fila | `LoanDetailModal.tsx` | columna de acción abre modales distintos según estado |
+| Formularios / wizards / modales de alta | 19 archivos restantes | regla M6 (forms/wizards → Wave E) |
+

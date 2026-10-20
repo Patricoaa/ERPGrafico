@@ -664,12 +664,12 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
             <div className="flex-1 overflow-hidden p-0">
                 {type === 'sale' && (
                     <Collection.Root collection={saleCollection} label={title}>
-                        <Collection.View table={saleOrderViews.table.without("channel")} emptyTitle="Sin historial" emptyDescription="No hay órdenes de venta para este contacto." />
+                        <Collection.View table={saleOrderViews.table.without("channel", "customer")} emptyTitle="Sin historial" emptyDescription="No hay órdenes de venta para este contacto." />
                     </Collection.Root>
                 )}
                 {type === 'purchase' && (
                     <Collection.Root collection={purchaseCollection} label={title}>
-                        <Collection.View table={purchaseOrderViews.table} emptyTitle="Sin historial" emptyDescription="No hay órdenes de compra para este contacto." />
+                        <Collection.View table={purchaseOrderViews.table.without("supplier")} emptyTitle="Sin historial" emptyDescription="No hay órdenes de compra para este contacto." />
                     </Collection.Root>
                 )}
                 {type === 'work_order' && (
