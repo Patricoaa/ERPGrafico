@@ -2,16 +2,14 @@
 
 import React, { useMemo, useState } from 'react'
 import { CheckCircle, XCircle, ShoppingCart } from 'lucide-react'
-import {
-    BaseModal, StatusBadge, SkeletonShell,
-    DataTableView,
-} from '@/components/shared'
+import { BaseModal, StatusBadge, SkeletonShell } from '@/components/shared'
+import { Collection, useEntityCollection } from '@/components/entity-view'
 import { Button } from '@/components/ui/button'
 import { useCardStatement, useStatementCharges, useCardStatementMutations } from '../hooks/useCardStatements'
 import { PayStatementModal } from './PayStatementModal'
 import { mapToStatementChargeRows } from './utils'
 import { parseDateOnly } from '@/lib/utils'
-import { statementChargeFields } from './statementChargeFields'
+import { statementChargeEntity, statementChargeViews } from '../entity-view/statementCharge.entity'
 
 interface StatementDetailModalProps {
     statementId: number | null
@@ -34,6 +32,12 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
         [movements, installments, pendingCharges],
     )
 
+    const collection = useEntityCollection(
+        statementChargeEntity,
+        { rows: mergedRows, isLoading: chargesLoading },
+        { pagination: { mode: "client" } },
+    )
+
     if (!open || !statementId) return null
 
     const handleCancel = async () => {
@@ -43,17 +47,11 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
         }
     }
 
-    const chargesColumns = statementChargeFields.toColumns()
-
     const canAct = stmt && (stmt.status === 'OPEN' || stmt.status === 'OVERDUE')
 
     const footerBtns = canAct ? (
         <div className="flex items-center justify-end gap-2 w-full">
-            <Button
-                variant="outline"
-                onClick={handleCancel}
-                disabled={isCanceling}
-            >
+            <Button variant="outline" onClick={handleCancel} disabled={isCanceling}>
                 <XCircle className="h-4 w-4 mr-1" />
                 Anular
             </Button>
@@ -124,22 +122,14 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
                                 </div>
                             )}
 
-                            <div className="flex-1 min-h-0 flex flex-col">
-                                <div className="flex-1 min-h-0 [&_thead]:!bg-transparent [&_thead_tr]:!bg-transparent">
-                                    <DataTableView
-                                        entityLabel="treasury.treasurymovement"
-                                        columns={chargesColumns}
-                                        data={mergedRows}
-                                        isLoading={chargesLoading}
-                                        variant="embedded"
-                                        emptyState={{
-                                            context: 'treasury',
-                                            icon: ShoppingCart,
-                                            title: 'Sin cargos',
-                                            description: 'No hay movimientos vinculados a este statement.',
-                                        }}
+                            <div className="flex-1 min-h-0 flex flex-col [&_thead]:!bg-transparent [&_thead_tr]:!bg-transparent">
+                                <Collection.Root collection={collection}>
+                                    <Collection.View
+                                        table={statementChargeViews.table}
+                                        emptyTitle="Sin cargos"
+                                        emptyDescription="No hay movimientos vinculados a este estado de cuenta."
                                     />
-                                </div>
+                                </Collection.Root>
                             </div>
                         </div>
                     ) : null}

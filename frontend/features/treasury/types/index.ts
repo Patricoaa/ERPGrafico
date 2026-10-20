@@ -233,6 +233,8 @@ export interface UnbilledItemRow {
     reference: string | null
     notes: string | null
     amount: number
+    /** ISO 4217 currency code de la tarjeta; opcional, inyectado por el componente padre. */
+    currency?: string
     installmentNumber: number | null
     totalInstallments: number | null
     purchaseGroupDetail: CardPurchaseGroup | null
