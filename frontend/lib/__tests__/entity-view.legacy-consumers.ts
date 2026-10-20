@@ -15,7 +15,4 @@ export const LEGACY_CONSUMERS: readonly string[] = [
     "features/notes/components/steps/NoteStep_LineItems.tsx",
     "features/pos/components/DraftCartsClientView.tsx",
     "features/profile/components/ProfileView.tsx",
-    "features/settings/components/HRSettingsView.tsx",
-    "features/settings/components/InitialCapitalModal.tsx",
-    "features/settings/components/partners/AddPartnerModal.tsx",
 ]

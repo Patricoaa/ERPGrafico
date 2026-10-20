@@ -1,19 +1,16 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import React, { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 
-import {BaseModal, CancelButton, DataCell, DataTable, IconButton, LabeledContainer, SubmitButton} from '@/components/shared'
-import { Input } from "@/components/ui/input"
-import { useMemo } from "react"
-import type { ColumnDef } from "@tanstack/react-table"
-
+import { BaseModal, CancelButton, DataCell, LabeledContainer, SubmitButton } from '@/components/shared'
 import { toast } from "sonner"
 import { partnersApi } from "@/features/contacts"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import {Trash2, Users} from "lucide-react"
-
+import { Users } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { partnerEntryEntity, partnerEntryViews, type PartnerEntryRow } from "../entity-view/partnerEntry.entity"
 
 interface InitialCapitalModalProps {
     open: boolean
@@ -51,18 +48,34 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
         setEntries([...entries, { contact_id: id, name: contact?.name || `Contacto #${id}`, amount: 0 }])
     }
 
-    const handleUpdateAmount = (index: number, amount: string) => {
+    const handleUpdateAmount = useCallback((index: number, amount: string) => {
         const value = parseFloat(amount) || 0
-        const newEntries = [...entries]
-        newEntries[index].amount = value
-        setEntries(newEntries)
-    }
+        setEntries(prev => {
+            const next = [...prev]
+            next[index] = { ...next[index], amount: value }
+            return next
+        })
+    }, [])
 
-    const handleRemovePartner = (index: number) => {
-        const newEntries = [...entries]
-        newEntries.splice(index, 1)
-        setEntries(newEntries)
-    }
+    const handleRemovePartner = useCallback((index: number) => {
+        setEntries(prev => prev.filter((_, i) => i !== index))
+    }, [])
+
+    const augmentedEntries = useMemo<PartnerEntryRow[]>(() =>
+        entries.map((e, i) => ({
+            ...e,
+            _totalCapital: totalCapital,
+            _index: i,
+            _onAmountChange: handleUpdateAmount,
+        })),
+        [entries, totalCapital, handleUpdateAmount]
+    )
+
+    const partnerEntryCollection = useEntityCollection(
+        partnerEntryEntity,
+        { rows: augmentedEntries },
+        { pagination: { mode: "none" } }
+    )
 
     const handleSubmit = async () => {
         if (entries.length === 0) {
@@ -92,63 +105,6 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
         }
     }
 
-    const columns = useMemo<ColumnDef<PartnerEntry>[]>(() => [
-        {
-            header: "Socio",
-            cell: ({ row }) => (
-                <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-3xs font-bold text-primary shrink-0">
-                        #{row.index + 1}
-                    </div>
-                    <DataCell.Text className="justify-start text-left font-medium">{row.original.name}</DataCell.Text>
-                </div>
-            )
-        },
-        {
-            id: "amount",
-            header: () => <div className="text-right">Monto Aportado</div>,
-            cell: ({ row }) => (
-                <div className="relative w-full max-w-[200px] ml-auto">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono">$</span>
-                    <Input
-                        type="number"
-                        value={row.original.amount || ""}
-                        onChange={(e) => handleUpdateAmount(row.index, e.target.value)}
-                        className="pl-7 text-right font-mono h-9"
-                        placeholder="0"
-                    />
-                </div>
-            ),
-            meta: { align: 'right' }
-        },
-        {
-            id: "percentage",
-            header: "Participación",
-            cell: ({ row }) => {
-                const percentage = totalCapital > 0 ? (row.original.amount / totalCapital) * 100 : 0
-                return (
-                    <DataCell.Chip size="sm" intent="primary" className="font-bold justify-center w-full">
-                        {percentage.toFixed(2)}%
-                    </DataCell.Chip>
-                )
-            },
-            meta: { align: 'center' }
-        },
-        {
-            id: "actions",
-            header: "",
-            cell: ({ row }) => (
-                <IconButton
-                    variant="ghost"
-                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => handleRemovePartner(row.index)}
-                >
-                    <Trash2 className="h-4 w-4" />
-                </IconButton>
-            ),
-            meta: { align: 'center' }
-        }
-    ], [totalCapital, handleUpdateAmount, handleRemovePartner])
 
     return (
         <BaseModal
@@ -192,18 +148,24 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
                     </LabeledContainer>
 
                     <div className="border rounded-md overflow-hidden flex flex-col">
-                        <DataTable
-                            columns={columns}
-                            data={entries}
-                            variant="compact"
-                            hidePagination
-                            noBorder
-                            emptyState={{
-                                context: "users",
-                                title: "No hay socios agregados",
-                                description: "Use el buscador superior para agregar socios."
-                            }}
-                        />
+                        <Collection.Root
+                            collection={partnerEntryCollection}
+                            label="Socios del capital inicial"
+                            actions={(row) => (
+                                <DataCell.ActionGroup>
+                                    <DataCell.Action
+                                        action="delete"
+                                        onClick={() => handleRemovePartner(row._index)}
+                                    />
+                                </DataCell.ActionGroup>
+                            )}
+                        >
+                            <Collection.View
+                                table={partnerEntryViews.table}
+                                emptyTitle="No hay socios agregados"
+                                emptyDescription="Use el buscador superior para agregar socios."
+                            />
+                        </Collection.Root>
                         {entries.length > 0 && (
                             <div className="bg-muted/30 font-bold border-t flex items-center px-4 py-3 text-sm">
                                 <div className="flex-1 text-right pr-4 uppercase tracking-wider">Total Capital Suscrito</div>

@@ -23,10 +23,9 @@ import type {
 import { FormulaBuilder } from "@/features/hr"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
-import { DataTable } from '@/components/shared'
-import { type ColumnDef } from "@tanstack/react-table"
-;
 import { payrollConceptActions, type PayrollConceptActionsCtx } from './payrollConceptActions'
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { payrollConceptEntity, payrollConceptViews } from "../entity-view/payrollConcept.entity"
 
 import { globalSettingsSchema, conceptSchema, afpSchema, type GlobalHRFormValues, type ConceptFormValues, type AFPFormValues } from "./HRSettingsView.schema"
 
@@ -97,56 +96,11 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
         onDelete: (id) => conceptDeleteConfirm.requestConfirm(id),
     }
 
-    const conceptColumns: ColumnDef<PayrollConcept>[] = [
-        {
-            accessorKey: "name",
-            header: "Concepto de Nómina",
-            cell: ({ row }) => (
-                <div className="flex items-center gap-2 py-1">
-                    <span className="font-black text-xs tracking-tight uppercase leading-none">{row.getValue("name")}</span>
-                    {row.original.is_system && (
-                        <Chip size="xs" intent="primary">SYSTEM</Chip>
-                    )}
-                </div>
-            ),
-            meta: { title: "Concepto de Nómina" },
-        },
-        {
-            accessorKey: "category_display",
-            header: "Categoría",
-            cell: ({ row }) => {
-                const category = row.original.category
-                const isHaber = category.includes('HABER')
-                return (
-                    <Chip size="xs" intent={isHaber ? "success" : "destructive"}>
-                        {row.getValue("category_display")}
-                    </Chip>
-                )
-            },
-            meta: { title: "Categoría" },
-        },
-        {
-            accessorKey: "formula_type_display",
-            header: "Lógica / Fórmula",
-            cell: ({ row }) => (
-                <span className="text-3xs font-medium text-muted-foreground italic">
-                    {row.getValue("formula_type_display")}
-                </span>
-            ),
-            meta: { title: "Lógica / Fórmula" },
-        },
-        {
-            accessorKey: "account_code",
-            header: "Cuenta Contable",
-            cell: ({ row }) => (
-                <Chip size="xs" intent="primary" className="font-mono">
-                    {row.getValue("account_code")}
-                </Chip>
-            ),
-            meta: { title: "Cuenta Contable" },
-        },
-        payrollConceptActions.auto(payrollConceptActionsCtx),
-    ]
+    const conceptCollection = useEntityCollection(
+        payrollConceptEntity,
+        { rows: concepts },
+        { pagination: { mode: "none" } }
+    )
 
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando configuración de RRHH">
@@ -232,13 +186,18 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                             <ConceptDialog onSaved={() => refetch()} onCreate={createConcept} onUpdate={updateConcept} />
                         </div>
 
-                        <div className="flex-1 min-h-0">
-                            <DataTable
-                                columns={conceptColumns}
-                                data={concepts}
-                                isLoading={isLoading}
-                                variant="embedded"
-                            />
+                        <div className="flex-1 min-h-0 border rounded-md overflow-x-auto">
+                            <Collection.Root
+                                collection={conceptCollection}
+                                label="Conceptos de nómina"
+                                actions={payrollConceptActions.forCollection(payrollConceptActionsCtx)}
+                            >
+                                <Collection.View
+                                    table={payrollConceptViews.table}
+                                    emptyTitle="Sin conceptos"
+                                    emptyDescription="Cree el primer concepto de nómina."
+                                />
+                            </Collection.Root>
                         </div>
                     </div>
                 )}

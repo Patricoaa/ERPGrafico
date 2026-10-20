@@ -1,20 +1,17 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
-import { cn } from "@/lib/utils"
 
 import { showApiError } from "@/lib/errors"
-import React, { useEffect, useState, useMemo } from "react"
-import { BaseModal, CancelButton, SubmitButton, Chip } from '@/components/shared'
-
-import { DataTable, LabeledInput, LabeledContainer, PeriodValidationDateInput, DataCell } from "@/components/shared"
+import { useEffect, useState, useMemo } from "react"
+import { BaseModal, CancelButton, SubmitButton, Chip, LabeledInput, LabeledContainer, PeriodValidationDateInput } from '@/components/shared'
 import { partnersApi, subscribedPercentages } from "@/features/contacts"
 import { type Partner } from "@/features/contacts"
 import { toast } from "sonner"
-import {UserPlus, TrendingDown} from "lucide-react"
+import { UserPlus, TrendingDown } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import type { ColumnDef } from "@tanstack/react-table"
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { projectionRowEntity, projectionRowViews, type ProjectionRow } from "../../entity-view/projectionRow.entity"
 
 interface AddPartnerModalProps {
     open: boolean
@@ -163,53 +160,6 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
     )
 }
 
-interface ProjectionRow {
-    id: string
-    name: string
-    type: "existing" | "new"
-    capital: number
-    currentPerc: string
-    projectedPerc: string
-}
-
-const projColumns: ColumnDef<ProjectionRow>[] = [
-    {
-        header: "Socio",
-        accessorKey: "name",
-        cell: ({ row }) => (
-            <DataCell.Text className={cn("text-left justify-start text-xs font-semibold", row.original.type === "new" && "text-primary")}>
-                {row.original.name}
-            </DataCell.Text>
-        ),
-    },
-    {
-        header: "Capital Actual",
-        accessorKey: "capital",
-        cell: ({ row }) => (
-            <DataCell.Currency value={row.original.capital} weight={row.original.type === "new" ? "bold" : undefined} className={cn(row.original.type === "new" && "text-primary")} />
-        ),
-        meta: { align: "right" as const },
-    },
-    {
-        header: "Actual %",
-        id: "currentPerc",
-        cell: ({ row }) => (
-            <DataCell.Text className="text-right text-xs font-mono">{row.original.currentPerc}</DataCell.Text>
-        ),
-        meta: { align: "right" as const },
-    },
-    {
-        header: "Proyectado %",
-        id: "projectedPerc",
-        cell: ({ row }) => (
-            <DataCell.Text className="text-right text-xs font-bold text-primary font-mono">
-                {row.original.projectedPerc}
-            </DataCell.Text>
-        ),
-        meta: { align: "right" as const },
-    },
-]
-
 function RowTable({ partners, projectedTotal, newAmount }: { partners: Partner[]; projectedTotal: number; newAmount: number }) {
     const subscribedPctById = useMemo(() => subscribedPercentages(partners), [partners])
     const rows: ProjectionRow[] = useMemo(() => {
@@ -243,18 +193,21 @@ function RowTable({ partners, projectedTotal, newAmount }: { partners: Partner[]
         ]
     }, [partners, projectedTotal, newAmount, subscribedPctById])
 
+    const collection = useEntityCollection(
+        projectionRowEntity,
+        { rows },
+        { pagination: { mode: "none" } }
+    )
+
     return (
-        <DataTable
-            columns={projColumns}
-            data={rows}
-            variant="embedded"
-            hidePagination
-            renderRow={(row, children) => {
-                const extra = row.original.type === "new" ? "bg-primary/5 font-bold" : "opacity-70 grayscale-[0.5]"
-                return React.cloneElement(children as React.ReactElement<{ className?: string }>, {
-                    className: `${(children as React.ReactElement<{ className?: string }>).props.className ?? ""} ${extra}`,
-                })
-            }}
-        />
+        <div className="border rounded-md overflow-x-auto">
+            <Collection.Root collection={collection} label="Proyección de participación">
+                <Collection.View
+                    table={projectionRowViews.table}
+                    emptyTitle="Sin socios"
+                    emptyDescription="No hay socios registrados."
+                />
+            </Collection.Root>
+        </div>
     )
 }
