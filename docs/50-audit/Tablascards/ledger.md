@@ -225,10 +225,11 @@
 - Decisión: se corrige al migrar UoM (lote 2); `entity-registry-routes.contract.test.ts` debería haberlo detectado (revisar su alcance)
 - Estado: pendiente
 
-### TC-042 · Defecto del registro · Verificado
+### TC-042 · Defecto del registro · Corregido (2026-10-20)
 - Evidencia: el test de rutas solo comprobaba `detailUrlPattern` y aceptaba que un segmento literal coincidiera con `[param]`. Al extenderlo a `listUrl` (exigiendo una página estática) aparecen **23 entidades** cuyo `listUrl` no existe (p. ej. `sales.saledelivery → /sales/deliveries`, `pos.session → /pos/sessions`). No hay redirecciones en `next.config` ni rutas catch-all que las resuelvan
 - Decisión: corregidas `inventory.uom` e `inventory.uomcategory` (lote 2a); el resto queda como ratchet `KNOWN_BROKEN_LIST_URLS` en `lib/__tests__/entity-registry-routes.contract.test.ts` (verificado por mutación); tarea aparte aprobada por el usuario
-- Estado: https://github.com/Patricoaa/ERPGrafico/issues/178
+- Fix (2026-10-20): corregidas las 20 `listUrl` restantes del ratchet — ver #178. Todas apuntan ahora a páginas existentes: ADR-0090 renames (fulfillment/manual-operations), rutas de inventario, treasury, POS y workflow actualizadas.
+- Estado: corregido (issue #178)
 
 ### TC-043 · Defecto del sistema actual · Verificado
 - Evidencia: `features/inventory/components/ProductClientView.tsx` pasaba `initialData` (datos renderizados en servidor) a `useProducts`, y TanStack Query lo usa para *cualquier* `queryKey` nueva mientras la caché esté vacía, además de tratarlo como fresco (`staleTime.stable`). En la app real, al ordenar no se hacía ninguna petición (captura de red de Playwright, 2026-10-17). `page.tsx` además pedía otra consulta (200 filas, con variantes) y fabricaba `count = results.length`
