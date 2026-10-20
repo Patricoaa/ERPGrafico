@@ -13,11 +13,31 @@ export interface WizardSummarySidebarProps {
     className?: string
     /** Width class override. Defaults to 'w-80' */
     width?: string
+    /**
+     * Which edge the sidebar sits on. Drives the separator border.
+     * Defaults to 'left' (border on the right edge, next to the content).
+     */
+    side?: "left" | "right"
+    /** Extra classes for the scrollable body container */
+    scrollAreaClassName?: string
 }
 
-export function WizardSummarySidebar({ header, body, footer, className, width = "w-80" }: WizardSummarySidebarProps) {
+export function WizardSummarySidebar({
+    header,
+    body,
+    footer,
+    className,
+    width = "w-80",
+    side = "left",
+    scrollAreaClassName,
+}: WizardSummarySidebarProps) {
     return (
-        <div className={cn("border-r bg-transparent flex flex-col h-full overflow-hidden", width, className)}>
+        <div className={cn(
+            "bg-transparent flex flex-col h-full overflow-hidden",
+            side === "right" ? "border-l" : "border-r",
+            width,
+            className
+        )}>
             {header && (
                 <div className="p-6 border-b bg-transparent flex-shrink-0">
                     {header}
@@ -25,7 +45,7 @@ export function WizardSummarySidebar({ header, body, footer, className, width = 
             )}
 
             {body && (
-                <div className="flex-1 overflow-y-auto">
+                <div className={cn("flex-1 overflow-y-auto", scrollAreaClassName)}>
                     <div className="p-6 space-y-6">
                         {body}
                     </div>
