@@ -94,7 +94,7 @@ Universal search returns `detail_url = DocumentTypeRegistry.url_for(label, id)` 
 |---|---|
 | `sales.saleorder` | `/sales/orders?selected={id}` (document sheet, ADR-0083) |
 | `purchasing.purchaseorder` | `/purchasing/orders?selected={id}` (document sheet, ADR-0083) |
-| `billing.invoice` | sale: `/billing/sales?selected={id}` (document sheet) · purchase: resolver |
+| `billing.invoice` | sale: `/sales/dtes?selected={id}` (document sheet) · purchase: resolver (ADR-0089) |
 | `treasury.treasurymovement` | `/treasury/operaciones/movements?selected={id}` |
 | `accounting.journalentry` | `/accounting/entries?selected={id}` |
 | `inventory.stockmove` | `/inventory/reports/movements?selected={id}` |
