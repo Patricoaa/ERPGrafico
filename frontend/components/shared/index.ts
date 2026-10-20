@@ -164,6 +164,7 @@ export * from './DataTableCells';
 export * from './DynamicIcon'
 export * from './ErrorBoundary'
 export * from './CmykRing'
+export * from './SelectionRing'
 export * from './PrepressPanel'
 export * from './Numpad'
 export * from './NumpadModal'

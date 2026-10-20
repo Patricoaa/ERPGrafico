@@ -2,8 +2,8 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
+import { SelectionRing } from "@/components/shared/SelectionRing"
 import { StatusBadge } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { alignOf, fieldById, type FieldMap } from "../core/define-entity"
@@ -145,11 +145,12 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                                     {/* E3: per-row selection checkbox */}
                                     {hasSelect && (
                                         <td className={cn(CELL, "text-center align-middle")}>
-                                            <Checkbox
+                                            <SelectionRing
                                                 checked={byKey.get(key)?.selected ?? false}
                                                 onCheckedChange={(v) => setSelected(key, !!v)}
                                                 disabled={disabled || !eligible.ok}
                                                 aria-label={def.select?.label(row) ?? ""}
+                                                size="sm"
                                             />
                                         </td>
                                     )}

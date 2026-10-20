@@ -2,10 +2,9 @@
 
 import * as React from "react"
 import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, ChevronDown, ChevronRight, LayoutGrid, Rows3 } from "lucide-react"
-import { BulkActionButtons, DataTablePagination, EmptyState, EntityCard, SelectionDock, type BulkAction } from "@/components/shared"
+import { BulkActionButtons, DataTablePagination, EmptyState, EntityCard, SelectionDock, SelectionRing, type BulkAction } from "@/components/shared"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
@@ -417,7 +416,12 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
             >
                 {isBulk && (
                     <td className={CELL} onClick={(e) => e.stopPropagation()}>
-                        <Checkbox aria-label="Seleccionar fila" checked={row.getIsSelected()} onCheckedChange={(v) => row.toggleSelected(!!v)} />
+                        <SelectionRing
+                            aria-label="Seleccionar fila"
+                            checked={row.getIsSelected()}
+                            onCheckedChange={(v: boolean) => row.toggleSelected(v)}
+                            size="sm"
+                        />
                     </td>
                 )}
                 {cols.map(({ id, def, align, shrink }) => {
@@ -460,10 +464,11 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
                         <tr className="border-b">
                             {isBulk && (
                                 <th scope="col" className="w-8 px-(--table-header-px) py-(--table-header-py)">
-                                    <Checkbox
+                                    <SelectionRing
                                         aria-label="Seleccionar todas las filas visibles"
-                                        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-                                        onCheckedChange={(v) => table.toggleAllPageRowsSelected(!!v)}
+                                        checked={table.getIsAllPageRowsSelected() ? true : table.getIsSomePageRowsSelected() ? "indeterminate" : false}
+                                        onCheckedChange={(v: boolean) => table.toggleAllPageRowsSelected(v)}
+                                        size="sm"
                                     />
                                 </th>
                             )}

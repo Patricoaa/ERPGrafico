@@ -10,7 +10,7 @@ import type { LucideIcon } from "lucide-react"
 import { ArrowRight, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Checkbox } from "@/components/ui/checkbox"
+import { SelectionRing } from "@/components/shared/SelectionRing"
 
 // ─── Base props ───────────────────────────────────────────────────────────────
 
@@ -127,22 +127,18 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
     const { selectable, checked, onCheckedChange, isAnySelected, selectionLabel } = React.useContext(EntityCardSelectionContext)
 
     const checkboxNode = selectable && (
-        <div
+        <SelectionRing
+            aria-label={selectionLabel ?? "Seleccionar"}
+            checked={checked}
+            onCheckedChange={onCheckedChange}
+            size="sm"
             className={cn(
                 "shrink-0 z-10 self-center flex items-center justify-center transition-all duration-300",
                 isAnySelected
                     ? "opacity-100 w-5 mr-1"
                     : "opacity-0 w-0 pointer-events-none group-hover:opacity-100 group-hover:w-5 group-hover:pointer-events-auto group-hover:mr-1 group-focus-within:opacity-100 group-focus-within:w-5 group-focus-within:pointer-events-auto group-focus-within:mr-1 overflow-hidden"
             )}
-            onClick={(e) => e.stopPropagation()}
-        >
-            <Checkbox
-                variant="circle"
-                aria-label={selectionLabel ?? "Seleccionar"}
-                checked={checked}
-                onCheckedChange={onCheckedChange}
-            />
-        </div>
+        />
     )
 
     if (center) {
