@@ -1,19 +1,16 @@
 "use client"
 
-import React, { useMemo } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-
-import { DataTableView, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import type { MultiSelectOption } from '@/types/unified-search'
-import { type ColumnDef } from "@tanstack/react-table"
-
-import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
-import { ProductInsightsPanel } from "@/features/inventory/components/ProductInsightsPanel"
 import { stockReportActions, type StockReportActionsCtx } from './stockReportActions'
 import { useStockReport } from "@/features/inventory/hooks/useStockReport"
 import { useCategories, useWarehouses } from '@/features/inventory'
 import { stockReportUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
-import { stockReportFields, type StockReportItem } from "@/features/inventory/stockReportFields"
+import { stockReportEntity, stockReportViews, type StockReportItem } from "@/features/inventory/entity-view/stockReport.entity"
+import { ProductInsightsDrawer } from "./ProductInsightsDrawer"
 
 export interface StockReportExternalFilters {
     search?: string
@@ -23,17 +20,8 @@ export interface StockReportExternalFilters {
 }
 
 interface StockReportProps {
-    /** When provided, disables the internal toolbar and uses these filters instead (embedded mode) */
     externalFilters?: StockReportExternalFilters
-    /**
-     * Embedded drill-down: when the user clicks a product row in embedded mode,
-     * call this instead of opening the modal. The parent controls the transition.
-     */
     onSelectProduct?: (item: StockReportItem) => void
-    /**
-     * Embedded drill-down: currently selected product. When set, render is
-     * handled by the parent — this component renders nothing in that state.
-     */
     selectedProduct?: StockReportItem | null
 }
 
@@ -52,22 +40,31 @@ export function StockReport({ externalFilters, onSelectProduct, selectedProduct 
     }), [categories, warehouses])
 
     const search = useUnifiedSearch(stockReportUnifiedSearchDef, filterOptions)
+    const handleReset = useCallback(() => { search.clearAll() }, [search])
 
-    // Standalone: reads product_id from URL for drill-down
     const urlProductId = embedded ? null : searchParams.get('product_id')
     const urlProductName = embedded ? null : searchParams.get('product_name')
+
+    // Drawer state for standalone drill-down
+    const [detailProductId, setDetailProductId] = useState<number | null>(null)
+    const [detailProductName, setDetailProductName] = useState<string | null>(null)
+
+    useEffect(() => {
+        if (urlProductId) {
+            setDetailProductId(Number(urlProductId))
+            setDetailProductName(urlProductName)
+        }
+    }, [urlProductId, urlProductName])
 
     const warehouseId = embedded ? null : (search.paramValues.warehouse_id as string | null)
     const { report, isLoading } = useStockReport(warehouseId)
 
-    // ── Action context ────────────────────────────────────────────────────────
-
     const handleSelectProduct = (item: StockReportItem) => {
         if (embedded && onSelectProduct) {
-            // Embedded: delegate to parent
             onSelectProduct(item)
         } else {
-            // Standalone: write to URL
+            setDetailProductId(Number(item.id))
+            setDetailProductName(item.name ?? null)
             const params = new URLSearchParams(searchParams.toString())
             params.set('product_id', String(item.id))
             params.set('product_name', item.name ?? '')
@@ -75,18 +72,23 @@ export function StockReport({ externalFilters, onSelectProduct, selectedProduct 
         }
     }
 
-    const handleBack = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('product_id')
-        params.delete('product_name')
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    const handleCloseDrawer = (open: boolean) => {
+        if (!open) {
+            setDetailProductId(null)
+            setDetailProductName(null)
+            if (!embedded) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete('product_id')
+                params.delete('product_name')
+                const query = params.toString()
+                router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
+            }
+        }
     }
 
     const stockReportActionsCtx: StockReportActionsCtx = {
-        onHistory: (product) => handleSelectProduct(product as StockReportItem),
+        onHistory: (product) => handleSelectProduct(product),
     }
-
-    // ── Filtering ─────────────────────────────────────────────────────────────
 
     const activeFilters = embedded
         ? { search: externalFilters?.search, category: externalFilters?.category }
@@ -95,10 +97,6 @@ export function StockReport({ externalFilters, onSelectProduct, selectedProduct 
     const isFiltered = embedded
         ? Boolean(externalFilters?.search || externalFilters?.category)
         : search.isFiltered
-
-    const clearAll = async () => {
-        if (!embedded) await search.clearAll()
-    }
 
     const filteredReport = useMemo(() => {
         const items = report as unknown as StockReportItem[]
@@ -134,93 +132,68 @@ export function StockReport({ externalFilters, onSelectProduct, selectedProduct 
         })
     }, [activeFilters, search.filters, report, isFiltered, embedded])
 
-    const columns: ColumnDef<StockReportItem>[] = useMemo(() => [
-        ...stockReportFields.toColumns(),
-        stockReportActions.auto(stockReportActionsCtx) as unknown as ColumnDef<StockReportItem>,
-    ], [stockReportActionsCtx])
+    const collection = useEntityCollection(
+        stockReportEntity,
+        { rows: isLoading ? [] : filteredReport },
+        { pagination: { mode: "client", pageSize: 50 } },
+    )
 
-    // ── Standalone drill-down: render insights panel from URL param ───────────
-
-    if (!embedded && urlProductId) {
-        return (
-            <ProductInsightsPanel
-                productId={Number(urlProductId)}
-                productName={urlProductName}
-                onBack={handleBack}
-                onProductChange={(id, name) => {
-                    const params = new URLSearchParams(searchParams.toString())
-                    params.set('product_id', String(id))
-                    params.set('product_name', name)
-                    router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                }}
-            />
-        )
-    }
-
-    // ── Embedded: if parent drives drill-down, render nothing here ───────────
-    // (parent renders ProductInsightsPanel in the analytics tab content)
+    // Embedded: if parent drives drill-down, render nothing here
     if (embedded && selectedProduct !== undefined && selectedProduct !== null) {
         return null
     }
 
-    // ── Normal table view ─────────────────────────────────────────────────────
-
     return (
         <div className="flex-1 flex flex-col min-h-0">
             <div className="flex-1 min-h-0">
-                <DataTableView
-                    entityLabel="inventory.stockreport"
-                    columns={columns}
-                    data={filteredReport}
-                    isLoading={isLoading}
-                    variant="embedded"
-                    forceView={embedded ? "list" : undefined}
-                    hideToolbar={embedded}
-                    unifiedSearch={embedded ? undefined : (
-                        <UnifiedSearchBar
-                            config={stockReportUnifiedSearchDef}
-                            chips={search.chips}
-                            isFiltered={search.isFiltered}
-                            inputValue={search.inputValue}
-                            onInputChange={search.setInputValue}
-                            onApply={search.applyFilter}
-                            onRemove={search.removeFilter}
-                            onClearAll={search.clearAll}
-                            groupBy={search.groupBy}
-                            onGroupBySelect={search.setGroupBy}
-                            paramValues={search.paramValues}
-                            filterOptions={search.filterOptions}
-                            placeholder="Buscar por producto o SKU..."
-                        />
+                <Collection.Root
+                    collection={collection}
+                    onOpen={(item) => handleSelectProduct(item)}
+                    actions={stockReportActions.forCollection(stockReportActionsCtx)}
+                >
+                    {!embedded && (
+                        <Collection.Toolbar>
+                            <UnifiedSearchBar
+                                config={stockReportUnifiedSearchDef}
+                                chips={search.chips}
+                                isFiltered={search.isFiltered}
+                                inputValue={search.inputValue}
+                                onInputChange={search.setInputValue}
+                                onApply={search.applyFilter}
+                                onRemove={search.removeFilter}
+                                onClearAll={search.clearAll}
+                                groupBy={search.groupBy}
+                                onGroupBySelect={search.setGroupBy}
+                                paramValues={search.paramValues}
+                                filterOptions={search.filterOptions}
+                                placeholder="Buscar por producto o SKU..."
+                            />
+                        </Collection.Toolbar>
                     )}
-                    showReset={!embedded && isFiltered}
-                    onReset={clearAll}
-                    defaultPageSize={50}
-                    isFiltered={isFiltered}
-                    emptyState={{
-                        context: "inventory",
-                        title: "Sin productos para reportar",
-                        description: "Cuando registres productos almacenables, su stock aparecerá aquí.",
-                    }}
-                    renderCard={embedded ? undefined : (item: StockReportItem) => (
-                        <AutoEntityCard
-                            key={item.id}
-                            data={item}
-                            fields={stockReportFields}
-                            entityLabel="inventory.stockreport"
-                            actions={stockReportActions.render(item, stockReportActionsCtx)}
-                        />
-                    )}
-                />
+                    <Collection.View
+                        table={stockReportViews.table}
+                        card={embedded ? undefined : stockReportViews.card}
+                        emptyTitle="Sin productos para reportar"
+                        emptyDescription="Cuando registres productos almacenables, su stock aparecerá aquí."
+                        onResetFilters={!embedded && isFiltered ? handleReset : undefined}
+                    />
+                </Collection.Root>
             </div>
 
-            {/* Standalone modal (kept for backward compat, won't render when product_id is in URL) */}
-            {!embedded && !urlProductId && (
-                <ProductInsightsModal
-                    open={false}
-                    onOpenChange={() => undefined}
-                    productId={null}
-                    productName={null}
+            {!embedded && (
+                <ProductInsightsDrawer
+                    productId={detailProductId}
+                    productName={detailProductName}
+                    open={!!detailProductId}
+                    onOpenChange={handleCloseDrawer}
+                    onProductChange={(id, name) => {
+                        setDetailProductId(id)
+                        setDetailProductName(name)
+                        const params = new URLSearchParams(searchParams.toString())
+                        params.set('product_id', String(id))
+                        params.set('product_name', name)
+                        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                    }}
                 />
             )}
         </div>

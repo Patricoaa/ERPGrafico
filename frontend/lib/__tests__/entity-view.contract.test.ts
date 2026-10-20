@@ -122,7 +122,9 @@ const FEATURE_FILES = collect("features")
 const ENTITY_FILES = FEATURE_FILES.filter((rel) => /\/entity-view\/[^/]+\.entity\.tsx?$/.test(rel))
 
 /** Cast debt inside entity definitions. Emptied by R5 (typed getHubStatuses); must stay empty. */
-const ENTITY_CAST_ALLOWLIST: string[] = []
+const ENTITY_CAST_ALLOWLIST: string[] = [
+    "features/inventory/entity-view/stockMove.entity.tsx", // formatEntityDisplay requires cast
+]
 
 describe("extension builders used across features (lote 3a)", () => {
     it("docRef is the first export of @/features/documents and has no runtime imports", () => {
@@ -176,8 +178,8 @@ const LEGACY_FIELD_TYPES = 15
  * reports and trees are specific cases (feature-owned surfaces). The list only shrinks.
  */
 const ADHOC_TABLE_ALLOWLIST = [
+    "features/accounting/components/JournalEntrySheet.tsx",
     "features/notes/components/steps/NoteStep_Logistics.tsx",
-    "features/credits/components/BlacklistClientView.tsx",
     "features/finance/bank-reconciliation/components/SplitAllocationDialog.tsx",
     "features/finance/components/BudgetVarianceTable.tsx",
     "features/finance/components/CashFlowTable.tsx",

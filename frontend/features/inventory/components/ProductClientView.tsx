@@ -13,10 +13,10 @@ import { Plus, AlertTriangle } from "lucide-react"
 import { toast } from "sonner"
 import { Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"
-import { ProductInsightsPanel } from "./ProductInsightsPanel"
+import { ProductInsightsDrawer } from "./ProductInsightsDrawer"
 import { StockReport } from "./StockReport"
 import { buildProductAnalyticsScreen } from "./productAnalyticsScreen"
-import type { StockReportItem } from "@/features/inventory/stockReportFields"
+import type { StockReportItem } from "@/features/inventory/entity-view/stockReport.entity"
 
 import { productEntity, productViews } from "../entity-view/product.entity"
 import { DEFAULT_PRODUCT_LIST_QUERY, useProducts } from "@/features/inventory/hooks/useProducts"
@@ -270,7 +270,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 ),
             },
         ),
-        [analyticsActiveTab, resumenData, ventasData, comprasData, filters, selectedStockProduct],
+        [analyticsActiveTab, resumenData, ventasData, comprasData, filters],
     )
 
     const collection = useEntityCollection(
@@ -309,16 +309,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     onResetFilters={search.clearAll}
                 />
                 <Collection.Analytics>
-                    {selectedStockProduct ? (
-                        <ProductInsightsPanel
-                            productId={selectedStockProduct.id as number}
-                            productName={selectedStockProduct.name ?? null}
-                            onBack={() => setSelectedStockProduct(null)}
-                            onProductChange={(id, name) => setSelectedStockProduct({ ...selectedStockProduct, id, name })}
-                        />
-                    ) : (
-                        <AnalyticsPanelContent {...analyticsScreen} />
-                    )}
+                    <AnalyticsPanelContent {...analyticsScreen} />
                 </Collection.Analytics>
                 <Collection.BulkBar actions={bulkActions} />
             </Collection.Root>
@@ -328,6 +319,14 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 onOpenChange={handleCloseModal}
                 initialData={(selectedFromUrl || undefined) as ProductInitialData | undefined}
                 onSuccess={refetch}
+            />
+
+            <ProductInsightsDrawer
+                productId={selectedStockProduct ? (selectedStockProduct.id as number) : null}
+                productName={selectedStockProduct?.name ?? null}
+                open={!!selectedStockProduct}
+                onOpenChange={(open) => { if (!open) setSelectedStockProduct(null) }}
+                onProductChange={(id, name) => setSelectedStockProduct(selectedStockProduct ? { ...selectedStockProduct, id, name } : null)}
             />
 
             <ArchivingRestrictionsModal
