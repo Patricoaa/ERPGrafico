@@ -172,7 +172,10 @@ States handled: loading (during `onConfirm`), error (console only — caller man
 
 ## GenericWizard 🟢
 
-Multi-step wizard modal. Handles step navigation, validation, and success screen.
+Multi-step wizard, built on `BaseModal`, `Drawer` or a bare inline layout.
+Handles step navigation, validation, sidebars and the success screen. It is
+the canonical shell for every multi-step flow (notes, purchasing checkout,
+sales checkout, production work orders); prefer it over bespoke step machines.
 
 ```tsx
 <GenericWizard
@@ -186,6 +189,9 @@ Multi-step wizard modal. Handles step navigation, validation, and success screen
   onComplete={handleComplete}
   completeButtonLabel="Crear"
   isCompleting={isPending}
+  // v2 — three-column layout with render-prop sidebars
+  leftSidebar={({ step, totalSteps }) => <ProcessRail current={step} total={totalSteps} />}
+  rightSidebar={<OrderSummary items={items} />}
 />
 ```
 
@@ -197,6 +203,29 @@ interface WizardStep {
   component: ReactNode
   isValid?: boolean               // disables Next when false
   onNext?: () => Promise<boolean | void>  // return false to block advance
+}
+
+// Render context handed to render-prop slots (leftSidebar / rightSidebar / footer)
+interface WizardRenderContext {
+  step: number          // 0-based
+  totalSteps: number
+  isFirstStep: boolean
+  isLastStep: boolean
+  goNext: () => Promise<void>
+  goBack: () => void
+  goTo: (index: number) => void
+}
+
+type WizardSlot = ReactNode | ((ctx: WizardRenderContext) => ReactNode)
+
+// Imperative handle (for external navigation, e.g. a POS header)
+interface GenericWizardHandle {
+  goNext: () => Promise<void>
+  goBack: () => void
+  goTo: (index: number) => void
+  finish: () => Promise<void>
+  step: number          // 0-based
+  totalSteps: number
 }
 ```
 
@@ -215,10 +244,61 @@ interface WizardStep {
 | `footerLeft` | `ReactNode` | ❌ | — | Left slot in footer |
 | `touchMode` | `boolean` | ❌ | `false` | Pantalla táctil: step counter, título y footer agrandados (targets ≥ 48px). Usar con `useTouchMode()` |
 | `onStepChange` | `(index: number) => void` | ❌ | — | Notifica el paso activo (0-indexed) al avanzar/retroceder/saltar |
+| `surface` | `'modal' \| 'drawer' \| 'inline'` | ❌ | `'modal'` | `'inline'` no monta chrome: el consumidor pinta header/footer |
+| `drawerSide` | `'top' \| 'right' \| 'bottom' \| 'left'` | ❌ | `'right'` | Solo con `surface='drawer'` |
+| `drawerBoundary` | `'screen' \| 'embedded'` | ❌ | `'embedded'` | Solo con `surface='drawer'` |
+| `subtitle` | `ReactNode` | ❌ | — | Reemplaza el contador industrial `01 / 03 — Título` del header |
+| `leftSidebar` | `WizardSlot` | ❌ | — | Rail izquierdo (oculto < `md`). Acepta nodo o render prop |
+| `rightSidebar` | `WizardSlot` | ❌ | — | Rail derecho (oculto < `lg`). Acepta nodo o render prop |
+| `leftSidebarWidth` | `string` | ❌ | `'w-64'` | Clase de ancho del rail izquierdo |
+| `rightSidebarWidth` | `string` | ❌ | `'w-80'` | Clase de ancho del rail derecho |
+| `footer` | `WizardSlot \| null` | ❌ | — | Reemplaza el footer de navegación. `null` = sin footer |
+| `contentClassName` | `string` | ❌ | — | Clases extra del contenedor scrolleable del paso |
+| `bodyClassName` | `string` | ❌ | — | Clases extra de la columna central |
+| `handleRef` | `Ref<GenericWizardHandle>` | ❌ | — | Handle imperativo (navegación externa) |
 
 Inherits `BaseModal` props except `children`, `title`, `description`, `footer`.
 
+When any sidebar slot is present the wizard owns scrolling (`hideScrollArea`
+in modal mode, `fillContent` in drawer mode) and lays out three columns:
+rail izquierdo · contenido · rail derecho.
+
 States handled: loading (isLoading), step blocked (isValid=false or onNext returns false), completing (isCompleting), success (successContent).
+
+### Sidebar primitives
+
+The rails are meant to be composed from two shared building blocks (both
+re-exported from `@/components/shared`):
+
+- **`WizardStepsSidebar`** — step rail. Props: `title`, `currentStep` (1-based),
+  `steps: WizardSidebarStep[]` (with `status: 'active' | 'past' | 'future'`,
+  `disabled`, `icon`, `detail`, `className`), `onStepClick(index)` (0-based),
+  `renderStepActions(step, index)`, `width`, `footer`.
+- **`WizardSummarySidebar`** — summary rail. Props: `header`, `body`, `footer`,
+  `side: 'left' | 'right'` (drives the separator border), `width`,
+  `scrollAreaClassName`.
+
+Domain-rich rails become **thin adapters** over these two: e.g. production's
+`WizardProcessSidebar` maps per-stage governance onto `status` + `disabled` +
+`renderStepActions`, and `WizardRightSidebar` delegates its shell to
+`WizardSummarySidebar`.
+
+### Surface recipes
+
+- **Modal (default)** — the canonical wizard modal; sidebars optional.
+- **Drawer** — `surface="drawer"` + `drawerSide`/`drawerBoundary`; used by the
+  notes and purchasing checkout flows.
+- **Inline** — `surface="inline"`; the wizard renders only the columns and an
+  optional footer. Use `footer={null}` and `handleRef` when navigation lives
+  outside (e.g. the POS header + cart footer driving the sales checkout).
+
+### Single source of truth for navigation
+
+GenericWizard keeps its own step index. When the domain component already owns
+a step machine (a hook or imperative view), do **not** let both advance:
+mirror the domain index into `initialStep` and delegate the footer (`footer`
+render prop or `handleRef`) back to the domain. Two independent machines
+double-advance.
 
 ---
 
