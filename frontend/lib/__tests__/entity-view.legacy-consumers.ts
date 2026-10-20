@@ -14,7 +14,6 @@ export const LEGACY_CONSUMERS: readonly string[] = [
     "features/inventory/components/InventoryCountDetailDrawer.tsx",
     "features/notes/components/steps/NoteStep_LineItems.tsx",
     "features/pos/components/DraftCartsClientView.tsx",
-    "features/production/components/BOMManager.tsx",
     "features/production/components/steps/MaterialAssignmentStep.tsx",
     "features/production/components/steps/RectificationStep.tsx",
     "features/profile/components/ProfileView.tsx",
@@ -22,6 +21,4 @@ export const LEGACY_CONSUMERS: readonly string[] = [
     "features/settings/components/HRSettingsView.tsx",
     "features/settings/components/InitialCapitalModal.tsx",
     "features/settings/components/partners/AddPartnerModal.tsx",
-    "features/settings/components/partners/ProfitDistributionsTab.tsx",
-    "features/treasury/loans/LoanDetailModal.tsx",
 ]

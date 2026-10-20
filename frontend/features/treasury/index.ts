@@ -111,3 +111,4 @@ export { BankUpcomingMaturitiesPanel } from './components/BankUpcomingMaturities
 export { BankRecentActivity } from './components/BankRecentActivity'
 export { statementLineUnmatchActions } from './components/statementLineUnmatchActions'
 export type { StatementLineUnmatchActionsCtx } from './components/statementLineUnmatchActions'
+export { loanInstallmentEntity, loanInstallmentViews, type LoanInstallmentRow } from './entity-view/loanInstallment.entity'

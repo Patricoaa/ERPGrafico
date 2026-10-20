@@ -56,3 +56,4 @@ export { bomUnifiedSearchDef, workOrderUnifiedSearchDef } from './unifiedSearchD
 export { workOrderActions } from './workOrderActions'
 export type { WorkOrderActionsCtx } from './workOrderActions'
 export { workOrderEntity, workOrderViews } from './entity-view/workOrder.entity'
+export { bomManagerEntity, bomManagerViews, type BOMManagerRow } from './entity-view/bomManager.entity'
