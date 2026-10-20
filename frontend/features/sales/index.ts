@@ -26,4 +26,5 @@ export { SaleReturnDrawer } from './components/SaleReturnDrawer'
 export { SalesCheckoutWizardView, type CheckoutWizardState } from './components/checkout/SalesCheckoutWizardView'
 export type { SalesCheckoutWizardViewHandle } from './components/checkout/SalesCheckoutWizardView'
 export { Step2_ManufacturingDetails } from './components/checkout/Step2_ManufacturingDetails'
+export { saleOrderEntity, saleOrderViews } from './entity-view/saleOrder.entity'
 

@@ -56,3 +56,4 @@ export type {
   PurchaseProcessSummarySidebarProps,
   Step0_SupplierProps,
 } from './components'
+export { purchaseOrderEntity, purchaseOrderViews } from './entity-view/purchaseOrder.entity'

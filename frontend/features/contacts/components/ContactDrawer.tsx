@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/form"
 import { RadioGroup } from "@/components/ui/radio-group"
 import { SubmitButton, CancelButton } from "@/components/shared"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useContact, useContactCreditLedger } from "../hooks/useContacts"
 import { type Contact, type ContactPayload } from "../types"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
@@ -26,20 +25,16 @@ import { ActivitySidebar } from "@/features/audit"
 
 import {ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, Mail, MapPin} from "lucide-react"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, useDrawerMode, type DrawerMode } from "@/features/_shared"
-import { DataCell, EmptyState, Chip } from '@/components/shared'
-import { contactDocumentActions, type ContactDocumentActionsCtx } from './contactDocumentActions'
-import { salesOrderFields } from "@/features/sales/salesOrderFields"
-import { purchaseOrderFields } from "@/features/purchasing/purchaseOrderFields"
-import { workOrderFields } from "@/features/production/workOrderFields"
+import { EmptyState, Chip } from '@/components/shared'
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { saleOrderEntity, saleOrderViews, type SaleOrder } from "@/features/sales"
+import { purchaseOrderEntity, purchaseOrderViews, type PurchaseOrderAPI } from "@/features/purchasing"
+import { workOrderEntity, workOrderViews, type WorkOrder } from "@/features/production"
+import { contactCreditDocumentEntity, contactCreditDocumentViews, type ContactCreditDocument } from '../entity-view/contactCreditDocument.entity'
 
-import { DataTable } from '@/components/shared'
-
-import { type ColumnDef, type CellContext } from "@tanstack/react-table"
 import { type LucideIcon } from "lucide-react"
-import { contactCreditDocumentFields, type ContactCreditDocument } from '../contactCreditDocumentFields'
 
 import { getHubStatuses } from '@/features/orders'
-import { DocumentRefLink } from '@/features/documents'
 import { LabeledInput, LabeledContainer, RadioCard, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
 import { getDomainConceptTitle, getDomainConceptCode } from "@/lib/entity-registry"
@@ -548,7 +543,6 @@ interface InsightsTableProps {
 }
 
 function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
-    const { openEntity } = useGlobalModals()
     const [activeFilter, setActiveFilter] = useState<'all' | 'financial' | 'logistics' | 'billing' | 'pending'>('all')
 
     // Metrics Calculation
@@ -608,33 +602,9 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
         }
     }, [data, activeFilter])
 
-    const contactDocumentActionsCtx: ContactDocumentActionsCtx = {
-        onHub: (item) => {
-            if (type === 'work_order') {
-                openEntity('production.workorder', item.id as number)
-            } else {
-                // Ficha documental de la orden (ADR-0083)
-                openEntity(type === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder', item.id as number)
-            }
-        },
-    }
-
-    const columns = useMemo<ColumnDef<Record<string, unknown>>[]>(() => {
-        let baseColumns: ColumnDef<Record<string, unknown>>[] = []
-        if (type === 'sale') {
-            baseColumns = salesOrderFields.toColumns({ exclude: ['contactDisplayName', 'channel'] }) as unknown as ColumnDef<Record<string, unknown>>[]
-        } else if (type === 'purchase') {
-            baseColumns = purchaseOrderFields.toColumns({ exclude: ['contactDisplayName'] }) as unknown as ColumnDef<Record<string, unknown>>[]
-        } else if (type === 'work_order') {
-            baseColumns = workOrderFields.toColumns({ exclude: ['contactDisplayName'] }) as unknown as ColumnDef<Record<string, unknown>>[]
-        }
-
-        return [
-            ...baseColumns,
-            contactDocumentActions.auto(contactDocumentActionsCtx)
-        ]
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [type])
+    const saleCollection = useEntityCollection(saleOrderEntity, { rows: type === 'sale' ? filteredData as unknown as SaleOrder[] : [] }, { pagination: { mode: "none" } })
+    const purchaseCollection = useEntityCollection(purchaseOrderEntity, { rows: type === 'purchase' ? filteredData as unknown as PurchaseOrderAPI[] : [] }, { pagination: { mode: "none" } })
+    const workOrderCollection = useEntityCollection(workOrderEntity, { rows: type === 'work_order' ? filteredData as unknown as WorkOrder[] : [] }, { pagination: { mode: "none" } })
 
     return (
         <div className="flex flex-col h-full">
@@ -692,67 +662,37 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
 
             <FormSection title={title} icon={Icon} className="pb-6" />
             <div className="flex-1 overflow-hidden p-0">
-                    <DataTable
-                        columns={columns}
-                        data={filteredData}
-                        variant="embedded"
-                        defaultPageSize={10}
-                        currentView="list"
-                    />
+                {type === 'sale' && (
+                    <Collection.Root collection={saleCollection} label={title}>
+                        <Collection.View table={saleOrderViews.table.without("channel")} emptyTitle="Sin historial" emptyDescription="No hay órdenes de venta para este contacto." />
+                    </Collection.Root>
+                )}
+                {type === 'purchase' && (
+                    <Collection.Root collection={purchaseCollection} label={title}>
+                        <Collection.View table={purchaseOrderViews.table} emptyTitle="Sin historial" emptyDescription="No hay órdenes de compra para este contacto." />
+                    </Collection.Root>
+                )}
+                {type === 'work_order' && (
+                    <Collection.Root collection={workOrderCollection} label={title}>
+                        <Collection.View table={workOrderViews.table} emptyTitle="Sin historial" emptyDescription="No hay órdenes de trabajo para este contacto." />
+                    </Collection.Root>
+                )}
             </div>
         </div>
     )
 }
 
 function CreditLedgerTable({ data, loading }: { data: ContactCreditDocument[], loading: boolean }) {
-
-    // Placeholder tipado para el ledger - sigue el patrón del contrato
     const LEDGER_SKELETON: ContactCreditDocument[] = Array.from({ length: 5 }, (_, i) => ({
         id: i + 1,
         display_id: "————————————",
         number: "————————————",
         date: "",
-        total: 0,
-        pending_amount: 0,
         balance: 0,
-        status: "pending" as const,
-        customer: { id: 0, name: "————————————" },
-        supplier: { id: 0, name: "————————————" },
-        customer_name: "————————————",
-        supplier_name: "————————————",
-        customer_id: 0,
-        supplier_id: 0,
-        lines: [] as unknown[],
-        invoices: [],
-        serialized_payments: []
-    }));
+    }))
 
-    const columns = useMemo<ColumnDef<ContactCreditDocument>[]>(() => [
-        ...contactCreditDocumentFields.toColumns().map(col => {
-            const key = col.id || (col as { accessorKey?: string | number }).accessorKey;
-
-            if (key === 'number') {
-                return {
-                    ...col,
-                    cell: ({ row }: CellContext<ContactCreditDocument, unknown>) => <DocumentRefLink documentRef={row.original.document} />,
-                }
-            }
-
-            if (key === 'balance') {
-                return {
-                    ...col,
-                    cell: ({ row }: CellContext<ContactCreditDocument, unknown>) => <DataCell.Currency value={row.original.balance as number} weight="bold" className="text-left text-destructive" />,
-                }
-            }
-
-            return col;
-        }),
-        {
-            id: "status",
-            header: "Estados",
-            cell: ({ row }: CellContext<ContactCreditDocument, unknown>) => <DomainHubStatus data={row.original} label="sales.saleorder" />
-        } as ColumnDef<ContactCreditDocument>
-    ], [])
+    const rows = loading ? LEDGER_SKELETON : data
+    const collection = useEntityCollection(contactCreditDocumentEntity, { rows }, { pagination: { mode: "none" } })
 
     if (!loading && !data.length) {
         return (
@@ -766,17 +706,9 @@ function CreditLedgerTable({ data, loading }: { data: ContactCreditDocument[], l
 
     return (
         <SkeletonShell isLoading={loading} ariaLabel="Cargando libro de cuenta">
-            <div className="space-y-4">
-                <div className="flex-1 overflow-hidden p-0">
-                    <DataTable
-                        columns={columns}
-                        data={loading ? LEDGER_SKELETON : data}
-                        variant="embedded"
-                        defaultPageSize={10}
-                        currentView="list"
-                    />
-                </div>
-            </div>
+            <Collection.Root collection={collection} label="Documentos de crédito">
+                <Collection.View table={contactCreditDocumentViews.table} emptyTitle="Sin documentos" emptyDescription="No hay documentos pendientes." />
+            </Collection.Root>
         </SkeletonShell>
     )
 }
