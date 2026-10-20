@@ -6,11 +6,12 @@ import { getEntityIcon } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-import { BaseModal, DataTable, LabeledContainer, SearchablePopover, DataCell } from '@/components/shared'
+import { BaseModal, LabeledContainer, SearchablePopover } from '@/components/shared'
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { selectorAccountEntity, selectorAccountViews } from "./entity-view/selectorAccount.entity"
 import { Input } from "@/components/ui/input"
 import { useAccountSearch, useSingleAccount } from "@/features/accounting/hooks/useAccountSearch"
 import { type Account } from "@/types/entities"
-import type { ColumnDef } from "@tanstack/react-table"
 
 const AccountIcon = getEntityIcon('accounting.account')
 
@@ -27,30 +28,6 @@ interface AccountSelectorProps {
     error?: string
     className?: string
 }
-
-const accountColumns: ColumnDef<Account, unknown>[] = [
-    {
-        id: 'code',
-        header: 'Código',
-        cell: ({ row }) => (
-            <span className="font-mono text-xs font-semibold text-primary">{row.original.code}</span>
-        ),
-    },
-    {
-        id: 'name',
-        header: 'Nombre',
-        cell: ({ row }) => (
-            <span className="text-sm truncate">{row.original.name}</span>
-        ),
-    },
-    {
-        id: 'type',
-        header: 'Tipo',
-        cell: ({ row }) => (
-            <DataCell.Status status={row.original.account_type} size="xs" />
-        ),
-    },
-]
 
 export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false, isReconcilable, disabled = false, required, label, error, className }: AccountSelectorProps) {
     const [open, setOpen] = useState(false)
@@ -114,6 +91,12 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
         setOpen(false)
         setModalOpen(false)
     }
+
+    const accountCollection = useEntityCollection(
+        selectorAccountEntity,
+        { rows: filteredAccounts, isLoading: accountsLoading },
+        { pagination: { mode: "none" } },
+    )
 
     const searchAccounts = (val: string) => {
         setSearchTerm(val)
@@ -198,15 +181,16 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                         value={searchTerm}
                         onChange={(e) => searchAccounts(e.target.value)}
                     />
-                    <DataTable
-                        variant="compact"
-                        gridTemplate="grid-cols-[1fr_2fr_1fr]"
-                        columns={accountColumns}
-                        data={filteredAccounts}
-                        isLoading={accountsLoading}
-                        onRowClick={handleSelect}
-                        emptyState={{ context: "search", title: "No se encontraron resultados" }}
-                    />
+                    <Collection.Root
+                        collection={accountCollection}
+                        label="Búsqueda de cuentas"
+                        onOpen={handleSelect}
+                    >
+                        <Collection.View
+                            table={selectorAccountViews.table}
+                            emptyTitle="No se encontraron resultados"
+                        />
+                    </Collection.Root>
                 </div>
             </BaseModal>
         </LabeledContainer>

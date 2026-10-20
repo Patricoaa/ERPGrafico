@@ -7,11 +7,9 @@
  * the legacy system is deleted (§6.9).
  */
 export const LEGACY_CONSUMERS: readonly string[] = [
-    "components/selectors/AccountSelector.tsx",
     "features/finance/bank-reconciliation/components/ReconciliationPanel.tsx",
     "features/finance/bank-reconciliation/components/StatementImportModal.tsx",
     "features/finance/components/MappingConfigDrawer.tsx",
-    "features/inventory/components/InventoryCountDetailDrawer.tsx",
     "features/notes/components/steps/NoteStep_LineItems.tsx",
     "features/pos/components/DraftCartsClientView.tsx",
     "features/profile/components/ProfileView.tsx",
