@@ -55,15 +55,7 @@ export const INVENTORY_PRODUCTS_SUB_TABS: NavTabConfig[] = [
 // ============================================
 
 export const INVENTORY_REPORTS_SUB_TABS: NavTabConfig[] = [
-  {
-    value: "stock",
-    label: "Existencias",
-    href: "/inventory/reports/stock",
-    iconName: "package",
-    headerTitle: "Existencias",
-    headerDescription: "Estado actual del inventario por almacén, valorizado en tiempo real.",
-    metadataTitle: "Existencias | ERPGrafico",
-  },
+  // Moved to Operations
 ]
 
 // ============================================
@@ -97,6 +89,15 @@ export const INVENTORY_OPERATIONS_SUB_TABS: NavTabConfig[] = [
     headerTitle: "Conteo de Inventario",
     headerDescription: "Conteo rápido de stock teórico vs real y generación de ajustes.",
     metadataTitle: "Conteo de Inventario | ERPGrafico",
+  },
+  {
+    value: "stock",
+    label: "Existencias",
+    href: "/inventory/operations/stock",
+    iconName: "package",
+    headerTitle: "Existencias",
+    headerDescription: "Estado actual del inventario por almacén, valorizado en tiempo real.",
+    metadataTitle: "Existencias | ERPGrafico",
   },
 ]
 
@@ -148,16 +149,6 @@ export const INVENTORY_TABS: NavTabConfig[] = [
     headerDescription: "Gestión de bienes físicos, servicios y consumibles.",
     metadataTitle: "Catálogo de Productos | ERPGrafico",
     subTabs: INVENTORY_PRODUCTS_SUB_TABS,
-  },
-  {
-    value: "reports",
-    label: "Reportes",
-    href: "/inventory/reports/stock",
-    iconName: "file-text",
-    headerTitle: "Reportes",
-    headerDescription: "Existencias, movimientos y análisis de inventario.",
-    metadataTitle: "Reportes | ERPGrafico",
-    subTabs: INVENTORY_REPORTS_SUB_TABS,
   },
   {
     value: "operations",

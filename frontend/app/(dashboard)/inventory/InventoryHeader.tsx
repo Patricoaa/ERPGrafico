@@ -6,12 +6,10 @@ import { useViewModePreference } from "@/hooks/useViewModePreference"
 import {
   INVENTORY_TABS,
   INVENTORY_PRODUCTS_SUB_TABS,
-  INVENTORY_REPORTS_SUB_TABS,
   INVENTORY_OPERATIONS_SUB_TABS,
   INVENTORY_CONFIG_SUB_TABS,
   getInventoryTab,
   getInventoryProductsSubTab,
-  getInventoryReportsSubTab,
   getInventoryOperationsSubTab,
   getInventoryConfigSubTab,
 } from "@/features/inventory/navigation"
@@ -32,7 +30,6 @@ export function InventoryHeader() {
     if (activeValue === "products") {
       return segments[2] || "products"
     }
-    if (activeValue === "reports") return segments[2] || "stock"
     if (activeValue === "operations") return segments[2] || "warehouses"
     if (activeValue === "config") return segments[2] || "valuation"
     return undefined
@@ -76,20 +73,17 @@ export function InventoryHeader() {
       if (subTab) return buildHeaderConfigFromTab(subTab)
     }
 
-    if (activeValue === "reports" && subActiveValue) {
-      const productName = searchParams.get("product_name")
-      const subTab = getInventoryReportsSubTab(subActiveValue)
+    if (activeValue === "operations" && subActiveValue) {
+      const subTab = getInventoryOperationsSubTab(subActiveValue)
       if (subTab) {
-        if (subActiveValue === "stock" && productName) {
-          return { ...buildHeaderConfigFromTab(subTab), title: productName }
+        if (subActiveValue === "stock") {
+          const productName = searchParams.get("product_name")
+          if (productName) {
+            return { ...buildHeaderConfigFromTab(subTab), title: productName }
+          }
         }
         return buildHeaderConfigFromTab(subTab)
       }
-    }
-
-    if (activeValue === "operations" && subActiveValue) {
-      const subTab = getInventoryOperationsSubTab(subActiveValue)
-      if (subTab) return buildHeaderConfigFromTab(subTab)
     }
 
     if (activeValue === "config" && subActiveValue) {
