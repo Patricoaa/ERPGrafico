@@ -722,7 +722,7 @@ export function DataTable<TData, TValue>({
                     </div>
                 )}
 
-                <div className={cn("flex-1 flex flex-col min-h-0 h-full", !noBorder && !renderCustomView && "rounded-md border border-border/25")}>
+                <div className={cn("flex-1 flex flex-col min-h-0 h-full", !noBorder && !renderCustomView && "overflow-hidden rounded-md border")}>
                     {renderCustomView ? (
                         <div className="flex-1 min-h-0 h-full overflow-y-auto custom-scrollbar overflow-x-auto flex flex-col py-0">
                             {renderCustomView(table)}
@@ -740,7 +740,7 @@ export function DataTable<TData, TValue>({
                                         {embeddedHeaderGroups.map((headerGroup) => (
                                             <TableRow
                                                 key={headerGroup.id}
-                                                className="hover:bg-transparent"
+                                                className="border-none hover:bg-transparent"
                                             >
                                                 {headerGroup.headers.map((header) => (
                                                     <TableHead key={header.id} className="text-muted-foreground" style={{ width: header.getSize() }}>
@@ -813,7 +813,7 @@ export function DataTable<TData, TValue>({
             {renderCustomView ? (
                 renderCustomView(table)
             ) : (
-                <div className={cn("relative flex-1 flex flex-col min-h-0", !noBorder && "rounded-md border")}>
+                <div className={cn("relative flex-1 flex flex-col min-h-0", !noBorder && "overflow-hidden rounded-md border")}>
                     <div className="absolute top-0 left-0 right-0 h-0.5 overflow-hidden pointer-events-none">
                         <div
                             className={cn(
@@ -832,7 +832,7 @@ export function DataTable<TData, TValue>({
                                 </colgroup>
                                 <TableHeader className="bg-background">
                                     {classicHeaderGroups.map((headerGroup) => (
-                                        <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                                        <TableRow key={headerGroup.id} className="border-none hover:bg-transparent">
                                             {headerGroup.headers.map((header) => {
                                                 return (
                                                     <TableHead key={header.id} className="text-muted-foreground">
