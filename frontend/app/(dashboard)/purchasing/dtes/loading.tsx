@@ -1,6 +1,6 @@
 import { PageLayoutSkeleton } from "@/components/shared"
 
-export default function BillingSalesLoading() {
+export default function PurchasingDtesLoading() {
     return (
         <PageLayoutSkeleton
             hasToolbar

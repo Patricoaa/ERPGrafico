@@ -8,6 +8,31 @@ import type { NavTabConfig } from "@/lib/navigation-types"
  */
 
 // ============================================
+// SUB-TABS: DOCUMENTOS (DTE)
+// ============================================
+
+export const PURCHASING_DTES_SUB_TABS: NavTabConfig[] = [
+  {
+    value: "dtes",
+    label: "DTE de Compras",
+    href: "/purchasing/dtes",
+    iconName: getEntityIconName("billing.invoice") ?? "file-text",
+    headerTitle: "DTE de Compras",
+    headerDescription: "Recepción y cuadratura de facturas y notas de crédito de proveedores.",
+    metadataTitle: "DTE de Compras | ERPGrafico",
+  },
+  {
+    value: "settings",
+    label: "Configuración de Documentos",
+    href: "/purchasing/dtes/settings",
+    iconName: "settings",
+    headerTitle: "Configuración de Documentos",
+    headerDescription: "Tipos de documentos electrónicos habilitados para ser registrados.",
+    metadataTitle: "Configuración de Documentos | ERPGrafico",
+  },
+]
+
+// ============================================
 // TABS PRINCIPALES (nivel 1)
 // ============================================
 
@@ -21,6 +46,16 @@ export const PURCHASING_TABS: NavTabConfig[] = [
     headerDescription: "Gestión integral de órdenes de compra y recepciones",
     metadataTitle: "Órdenes de Compra | ERPGrafico",
     subTabs: [],
+  },
+  {
+    value: "dtes",
+    label: "Documentos",
+    href: "/purchasing/dtes",
+    iconName: getEntityIconName("billing.invoice") ?? "file-text",
+    headerTitle: "Documentos",
+    headerDescription: "Facturas y notas de proveedores recibidas, con cuadratura contra recepción.",
+    metadataTitle: "Documentos | ERPGrafico",
+    subTabs: PURCHASING_DTES_SUB_TABS,
   },
   {
     value: "subscriptions",
@@ -53,4 +88,9 @@ import { findTabConfig } from "@/lib/navigation-helpers"
 /** Busca tab principal de compras */
 export function getPurchasingTab(value: string): NavTabConfig | undefined {
   return findTabConfig(PURCHASING_TABS, value)
+}
+
+/** Busca sub-tab de Documentos (DTE) */
+export function getPurchasingDtesSubTab(value: string): NavTabConfig | undefined {
+  return findTabConfig(PURCHASING_DTES_SUB_TABS, value)
 }

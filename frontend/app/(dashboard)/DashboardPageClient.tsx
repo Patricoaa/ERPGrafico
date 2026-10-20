@@ -3,12 +3,11 @@
 import { useAuth } from "@/contexts/AuthContext"
 
 import { ModuleGrid, PageContainer, PageHeader, Skeleton, type ModuleGridItem } from '@/components/shared'
-import { Calculator, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, Receipt, UserCog, Users } from "lucide-react"
+import { Calculator, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, UserCog, Users } from "lucide-react"
 import { ProductionMetricsCard } from "@/features/production"
 
 const modules: ModuleGridItem[] = [
   { id: "accounting", icon: Calculator, label: "Contabilidad", url: "/accounting" },
-  { id: "billing", icon: Receipt, label: "Facturación", url: "/billing" },
   { id: "sales", icon: ShoppingCart, label: "Ventas", url: "/sales" },
   { id: "contacts", icon: Users, label: "Contactos", url: "/contacts" },
   { id: "inventory", icon: Package, label: "Inventario", url: "/inventory" },

@@ -6,9 +6,10 @@ from core.documents.types import RESOLVER_URL
 
 
 def _invoice_url(invoice):
-    # Factura de venta: `?selected` abre el Order Hub de la factura. Compra: resolvedor /d/.
+    # Factura de venta: `?selected` abre la ficha documental de la factura (ADR-0089:
+    # la lista vive en /sales/dtes). Compra: resolvedor /d/ (ADR-0086).
     if invoice.is_sale_document():
-        return f"/billing/sales?selected={invoice.pk}"
+        return f"/sales/dtes?selected={invoice.pk}"
     return RESOLVER_URL.format(label="billing.invoice", id=invoice.pk)
 
 

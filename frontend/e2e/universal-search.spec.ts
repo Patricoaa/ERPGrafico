@@ -59,8 +59,8 @@ test.describe('Universal Search Navigation', () => {
         await expect(page.locator('text=OV-1000')).toBeVisible();
     });
 
-    test('Navigates to invoice detail page correctly and handles server-side split', async ({ page }) => {
-        // Mock the Universal Search API response
+    test('Navigates to invoice via document resolver and opens the purchase sheet (ADR-0089)', async ({ page }) => {
+        // Mock the Universal Search API response (detail_url = resolvedor /d/, ADR-0080/0089)
         await page.route('**/api/search/universal/?q=FAC-1001', async route => {
             const json = {
                 results: [
@@ -68,7 +68,7 @@ test.describe('Universal Search Navigation', () => {
                         id: 1001,
                         type: 'invoice',
                         display: 'FACTURA 1001 - Proveedor A',
-                        detail_url: '/billing/invoices/1001',
+                        detail_url: '/d/billing.invoice/1001',
                         icon: 'file-text',
                         label: 'Factura/Boleta'
                     }
@@ -77,7 +77,30 @@ test.describe('Universal Search Navigation', () => {
             await route.fulfill({ json });
         });
 
-        // Mock the detail page API response to return a PURCHASE_INV
+        // Mock del ref documental: factura de compra sin URL canónica de lista → el resolvedor
+        // abre la ficha registrada en ENTITY_DRAWERS (ADR-0086: lado compra = drawer)
+        await page.route('**/api/core/documents/billing.invoice/1001/', async route => {
+            const json = {
+                label: 'billing.invoice',
+                id: 1001,
+                display_id: 'FACTURA 1001',
+                title: 'Factura/DTE',
+                icon: 'file-text',
+                domain: 'billing',
+                status: 'POSTED',
+                amount: '100000',
+                detail: null,
+                status_display: 'Emitida',
+                date: null,
+                partner_name: 'Proveedor A',
+                url: '/d/billing.invoice/1001',
+                accessible: true,
+                exists: true
+            };
+            await route.fulfill({ json });
+        });
+
+        // Mock del detalle de la factura (lo consume la ficha documental InvoiceSheet)
         await page.route('**/api/billing/invoices/1001/', async route => {
             const json = {
                 id: 1001,
@@ -112,10 +135,10 @@ test.describe('Universal Search Navigation', () => {
         // Click the result
         await result.click();
 
-        // Check if URL changed and redirected correctly to purchases
-        await expect(page).toHaveURL(/.*\/billing\/purchases\/1001/);
+        // Check if the resolver route was opened
+        await expect(page).toHaveURL(/.*\/d\/billing\.invoice\/1001/);
 
-        // Check if the EntityDetailPage rendered
+        // Check that the purchase invoice sheet opened as a drawer
         await expect(page.locator('text=Factura de Compra')).toBeVisible();
     });
 

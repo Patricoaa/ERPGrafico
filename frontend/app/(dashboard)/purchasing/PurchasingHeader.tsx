@@ -6,6 +6,7 @@ import { useViewModePreference } from "@/hooks/useViewModePreference"
 import {
   PURCHASING_TABS,
   getPurchasingTab,
+  getPurchasingDtesSubTab,
 } from "@/features/purchasing/navigation"
 import { buildHeaderConfigFromTab } from "@/lib/navigation-helpers"
 import { getModuleHeaderConfig } from "@/lib/module-registry"
@@ -18,6 +19,9 @@ export function PurchasingHeader() {
   const currentSegment = segments[1] || "orders"
 
   const activeValue = currentSegment
+
+  // Determine subActiveValue from path segments (tab Documentos)
+  const subActiveValue = activeValue === "dtes" ? (segments[2] || "dtes") : undefined
 
   // Module config from centralized registry
   const moduleConfig = getModuleHeaderConfig("purchasing")
@@ -41,7 +45,7 @@ export function PurchasingHeader() {
     moduleHref: moduleConfig?.moduleHref ?? getViewModeUrl("purchasing.purchaseorder", "/purchasing/orders"),
     tabs,
     activeValue,
-    subActiveValue: undefined,
+    subActiveValue,
   }
 
   // Get header config from canonical navigation
@@ -49,6 +53,12 @@ export function PurchasingHeader() {
     const mainTab = getPurchasingTab(activeValue)
     if (!mainTab) {
       return { title: moduleConfig?.headerTitle ?? "Compras", description: moduleConfig?.headerDescription ?? "", iconName: moduleConfig?.iconName ?? "shopping-bag" as const }
+    }
+
+    // Sub-tabs handling (tab Documentos)
+    if (activeValue === "dtes" && subActiveValue) {
+      const subTab = getPurchasingDtesSubTab(subActiveValue)
+      if (subTab) return buildHeaderConfigFromTab(subTab)
     }
 
     return buildHeaderConfigFromTab(mainTab)

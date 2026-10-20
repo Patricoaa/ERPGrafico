@@ -27,7 +27,6 @@ async function loadModuleNavigation(moduleKey: string): Promise<NavTabConfig[] |
       accounting: () => import("@/features/accounting/navigation").then(m => ({ TABS: m.ACCOUNTING_TABS })),
       sales: () => import("@/features/sales/navigation").then(m => ({ TABS: m.SALES_TABS })),
       purchasing: () => import("@/features/purchasing/navigation").then(m => ({ TABS: m.PURCHASING_TABS })),
-      billing: () => import("@/features/billing/navigation").then(m => ({ TABS: m.BILLING_TABS })),
       hr: () => import("@/features/hr/navigation").then(m => ({ TABS: m.HR_TABS })),
       finances: () => import("@/features/finances/navigation").then(m => ({ TABS: m.FINANCES_TABS })),
       inventory: () => import("@/features/inventory/navigation").then(m => ({ TABS: m.INVENTORY_TABS })),

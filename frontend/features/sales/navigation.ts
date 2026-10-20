@@ -110,6 +110,31 @@ export const SALES_CREDITS_SUB_TABS: NavTabConfig[] = [
 ]
 
 // ============================================
+// SUB-TABS: DOCUMENTOS (DTE)
+// ============================================
+
+export const SALES_DTES_SUB_TABS: NavTabConfig[] = [
+  {
+    value: "dtes",
+    label: "DTE de Ventas",
+    href: "/sales/dtes",
+    iconName: getEntityIconName("billing.invoice") ?? "file-text",
+    headerTitle: "DTE de Ventas",
+    headerDescription: "Gestión de boletas, facturas y notas emitidas a clientes.",
+    metadataTitle: "DTE de Ventas | ERPGrafico",
+  },
+  {
+    value: "settings",
+    label: "Configuración de Documentos",
+    href: "/sales/dtes/settings",
+    iconName: "settings",
+    headerTitle: "Configuración de Documentos",
+    headerDescription: "Tipos de documentos electrónicos habilitados para ser emitidos.",
+    metadataTitle: "Configuración de Documentos | ERPGrafico",
+  },
+]
+
+// ============================================
 // SUB-TABS: CONFIGURACIÓN
 // ============================================
 
@@ -148,6 +173,16 @@ export const SALES_TABS: NavTabConfig[] = [
     headerDescription: "Seguimiento de pedidos, estados de fabricación y logística de entregas.",
     metadataTitle: `${getDomainConceptTitle("ov", true)} | ERPGrafico`,
     subTabs: SALES_ORDERS_SUB_TABS,
+  },
+  {
+    value: "dtes",
+    label: "Documentos",
+    href: "/sales/dtes",
+    iconName: getEntityIconName("billing.invoice") ?? "file-text",
+    headerTitle: "Documentos",
+    headerDescription: "Boletas, facturas y notas electrónicas emitidas a clientes.",
+    metadataTitle: "Documentos | ERPGrafico",
+    subTabs: SALES_DTES_SUB_TABS,
   },
   {
     value: "pos",
@@ -205,6 +240,11 @@ export function getSalesPosSubTab(value: string): NavTabConfig | undefined {
 /** Busca sub-tab de Créditos/Cartera */
 export function getSalesCreditsSubTab(value: string): NavTabConfig | undefined {
   return findTabConfig(SALES_CREDITS_SUB_TABS, value)
+}
+
+/** Busca sub-tab de Documentos (DTE) */
+export function getSalesDtesSubTab(value: string): NavTabConfig | undefined {
+  return findTabConfig(SALES_DTES_SUB_TABS, value)
 }
 
 /** Busca sub-tab de Configuración */

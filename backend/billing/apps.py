@@ -35,8 +35,9 @@ class BillingConfig(AppConfig):
                     display_template="{dte_type} {number}",
                     subtitle_template="{partner_name}",
                     extra_info_template="{status}",
-                    list_url="/billing/sales",
-                    detail_url_pattern="/billing/invoices/{id}",
+                    # ADR-0089: módulo Facturación fusionado en Ventas/Compras
+                    list_url="/sales/dtes",
+                    detail_url_pattern="/d/billing.invoice/{id}",
                     permission="billing.view_invoice",
                 )
             )

@@ -14,6 +14,7 @@ import {
   getSalesPosSubTab,
   getSalesCreditsSubTab,
   getSalesConfigSubTab,
+  getSalesDtesSubTab,
   getSalesReturnsSubTab,
 } from "@/features/sales/navigation"
 import { buildHeaderConfigFromTab } from "@/lib/navigation-helpers"
@@ -29,6 +30,7 @@ export function SalesHeader() {
   // Map physical routes to tab values
   const segmentToTab: Record<string, string> = {
     orders: "orders",
+    dtes: "dtes",
     pos: "pos",
     credits: "credits",
     sessions: "pos",
@@ -42,6 +44,7 @@ export function SalesHeader() {
   const subActiveValue = (() => {
     if (activeValue === "config") return segments[2] || "credit"
     if (activeValue === "orders") return segments[2] || "orders"
+    if (activeValue === "dtes") return segments[2] || "dtes"
     if (activeValue === "pos") {
       if (currentSegment === "sessions") return "sessions"
       return segments[2] || "cajas"
@@ -85,6 +88,11 @@ export function SalesHeader() {
     // Sub-tabs handling
     if (activeValue === "orders" && subActiveValue) {
       const subTab = getSalesOrdersSubTab(subActiveValue)
+      if (subTab) return buildHeaderConfigFromTab(subTab)
+    }
+
+    if (activeValue === "dtes" && subActiveValue) {
+      const subTab = getSalesDtesSubTab(subActiveValue)
       if (subTab) return buildHeaderConfigFromTab(subTab)
     }
 

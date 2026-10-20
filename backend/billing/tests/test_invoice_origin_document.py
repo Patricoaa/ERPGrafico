@@ -63,7 +63,7 @@ def test_origin_document_prefers_corrected_invoice(env):
 
     assert ref["label"] == "billing.invoice"
     assert ref["id"] == original.id
-    assert ref["url"] == f"/billing/sales?selected={original.id}"
+    assert ref["url"] == f"/sales/dtes?selected={original.id}"
 
 
 def test_origin_document_null_for_standalone(env):

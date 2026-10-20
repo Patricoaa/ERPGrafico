@@ -17,7 +17,6 @@ export interface ModuleConfig {
 
 export const MODULE_REGISTRY: Record<string, ModuleConfig> = {
   accounting:  { id: "accounting",  label: "Contabilidad",  icon: Home,          iconName: "home",          primaryEntityLabel: 'accounting.account',                   permission: "accounting.view_dashboard_accounting",       defaultUrl: "/accounting/ledger?view=list", headerTitle: "Contabilidad", headerDescription: "Gestión centralizada del plan de cuentas, asientos, periodos y cumplimiento tributario." },
-  billing:     { id: "billing",     label: "Facturación",   icon: Home,          iconName: "home",           primaryEntityLabel: 'billing.invoice',                      permission: "billing.view_dashboard_billing",             defaultUrl: "/billing/sales?view=card", headerTitle: "Facturación", headerDescription: "Gestión centralizada de documentos electrónicos emitidos y recibidos." },
   sales:       { id: "sales",       label: "Ventas",        icon: Home,          iconName: "home",           primaryEntityLabel: 'sales.saleorder',                      permission: "sales.view_dashboard_sales",                defaultUrl: "/sales/orders?view=card", headerTitle: "Ventas", headerDescription: "Gestión integral de pedidos, terminales, cobranza y puntos de venta." },
   contacts:    { id: "contacts",    label: "Contactos",     icon: Home,          iconName: "home",          primaryEntityLabel: 'contacts.contact',                     permission: null,                                         defaultUrl: "/contacts?view=list", headerTitle: "Contactos", headerDescription: "Gestión de clientes, proveedores y contactos comerciales." },
   inventory:   { id: "inventory",   label: "Inventario",    icon: Package,        iconName: "package",        primaryEntityLabel: 'inventory.product',                    permission: "inventory.view_dashboard_inventory",        defaultUrl: "/inventory/products?view=card", headerTitle: "Inventario", headerDescription: "Gestión centralizada de productos, existencias, almacenes y configuración." },
@@ -28,7 +27,7 @@ export const MODULE_REGISTRY: Record<string, ModuleConfig> = {
   hr:          { id: "hr",          label: "RRHH",          icon: Home,          iconName: "home",           primaryEntityLabel: 'hr.employee',                          permission: "hr.view_dashboard_hr",                     defaultUrl: "/hr/employees?view=list", headerTitle: "Recursos Humanos", headerDescription: "Gestión centralizada de personal, inasistencias, anticipos y liquidaciones." },
 } as const
 
-export const MODULE_ORDER = ["accounting", "billing", "sales", "contacts", "inventory", "production", "treasury", "purchasing", "finances", "hr"] as const
+export const MODULE_ORDER = ["accounting", "sales", "contacts", "inventory", "production", "treasury", "purchasing", "finances", "hr"] as const
 
 export function getModuleConfig(id: string): ModuleConfig | undefined {
   return MODULE_REGISTRY[id]

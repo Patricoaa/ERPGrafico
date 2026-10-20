@@ -55,7 +55,6 @@ function hasStaticRoute(url: string, routes: string[]): boolean {
  */
 const KNOWN_BROKEN_LIST_URLS = [
     "accounting.budget",
-    "billing.purchaseinvoice",
     "inventory.attribute",
     "inventory.inventorycount",
     "inventory.stockmove",

@@ -16,7 +16,8 @@
  *   - /treasury/reconciliation/[id]/workbench → Mesa de Conciliación (UI compleja)
  *   - /finances/budgets/[id]            → BudgetDetailView (UI propia preexistente)
  *   - /hr/payrolls/[id]                 → PayrollDetailView (UI propia preexistente)
- *   - /billing/invoices/[id]            → Router client-side que split por is_sale_document
+ *   - /d/billing.invoice/[id]       → Resolvedor ADR-0080 (redirige a la lista según lado:
+ *                                    venta → /sales/dtes?selected · compra → drawer)
  *
  * ─── ENTIDADES ELIMINADAS DEL REGISTRY (F9) ──────────────────────────────
  *   - core.attachment  (T-101): sin viewset ni /files/page.tsx
@@ -35,9 +36,9 @@ export const searchableEntityRoutes: Record<string, string> = {
     'purchasing.purchaseorder': '/purchasing/orders',
     // purchased return/receipt: drawers desde /purchasing/orders (ADR-0022 DRAWER_ENTITIES)
 
-    // Billing (split entries — each resolves to its own list)
-    'billing.invoice_sales':     '/billing/sales',
-    'billing.invoice_purchases': '/billing/purchases',
+    // Billing (split entries — each resolves to its own list, ADR-0089)
+    'billing.invoice_sales':     '/sales/dtes',
+    'billing.invoice_purchases': '/purchasing/dtes',
 
     // Contacts
     'contacts.contact': '/contacts',
