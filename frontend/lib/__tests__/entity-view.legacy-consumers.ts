@@ -7,7 +7,6 @@
  * the legacy system is deleted (§6.9).
  */
 export const LEGACY_CONSUMERS: readonly string[] = [
-    "app/(dashboard)/production/orders/WorkOrdersPageClient.tsx",
     "app/(dashboard)/settings/audit/AuditPageClient.tsx",
     "app/(dashboard)/settings/jobs/JobsView.tsx",
     "components/selectors/AccountSelector.tsx",

@@ -3,11 +3,9 @@
 import { useState, useMemo, useCallback, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTableView } from '@/components/shared'
+import { ActionConfirmModal } from '@/components/shared'
 import { getDomainConceptTitle, getDomainConceptCode } from '@/lib/entity-registry'
-import { DataTableColumnHeader, DataCell } from '@/components/shared'
 import { workOrderActions, type WorkOrderActionsCtx } from '@/features/production'
-import { type ColumnDef, type Row, type Table } from "@tanstack/react-table"
 import type { Page } from '@/lib/pagination'
 
 import { useViewMode } from "@/hooks/useViewMode"
@@ -18,22 +16,28 @@ import {
     useWorkOrders,
     useWorkOrderListActions,
 } from "@/features/production"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Chip, FadeIn } from "@/components/shared"
-import { isWorkOrderOverdue } from "@/features/production/utils"
-import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { FadeIn, ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { workOrderUnifiedSearchDef, workOrderFields } from "@/features/production"
+import { workOrderUnifiedSearchDef } from "@/features/production"
 import { toast } from "sonner"
+import { Collection, useEntityCollection, type CollectionViewMode } from "@/components/entity-view"
+import { workOrderEntity, workOrderViews, type WorkOrder } from "@/features/production/entity-view/workOrder.entity"
 
-import type { WorkOrder, WizardMode, StageId } from "@/features/production/types"
+import type { WizardMode, StageId } from "@/features/production/types"
 
 interface WorkOrdersPageClientProps {
     initialOrders?: WorkOrder[]
 }
 
+/** Maps useViewMode string to CollectionViewMode (kanban/timeline fall back to "table"). */
+function toCollectionView(v: string): CollectionViewMode {
+    if (v === "card") return "card"
+    if (v === "analytics") return "analytics"
+    return "table"
+}
+
 export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageClientProps) {
-    const { currentView } = useViewMode("production.workorder")
+    const { currentView, handleViewChange } = useViewMode("production.workorder")
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
@@ -42,7 +46,7 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
     const allFilters = { ...search.filters }
     const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
-    const { page, orders, isLoading: loading, isRefetching, refetch: refetchOrders } = useWorkOrders({
+    const { page, orders, isLoading, isRefetching, refetch: refetchOrders } = useWorkOrders({
         ...allFilters,
         page: isGrouping ? 1 : pageState.pageIndex + 1,
         page_size: isGrouping ? 5000 : pageState.pageSize,
@@ -92,206 +96,126 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
 
     const closeWizard = useCallback(() => {
         const params = new URLSearchParams(searchParams.toString())
-            ;['new', 'modal', 'selected', 'type', 'product_id', 'step'].forEach(p => params.delete(p))
+        ;['new', 'modal', 'selected', 'type', 'product_id', 'step'].forEach(p => params.delete(p))
         router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     }, [router, pathname, searchParams])
 
-    const deleteConfirm = useConfirmAction<number>(async (id) => {
-        await deleteOrder({ id })
-    })
+    const deleteConfirm = useConfirmAction<number>(async (id) => { await deleteOrder({ id }) })
+    const cancelConfirm = useConfirmAction<number>(async (id) => { await annulOrder({ id }) })
+    const duplicateConfirm = useConfirmAction<number>(async (id) => { await duplicateOrder({ id }) })
 
     const handleDelete = useCallback((id: number) => deleteConfirm.requestConfirm(id), [deleteConfirm])
-
-    const cancelConfirm = useConfirmAction<number>(async (id) => {
-        await annulOrder({ id })
-    })
-
     const handleCancel = useCallback((id: number) => cancelConfirm.requestConfirm(id), [cancelConfirm])
-
-    const duplicateConfirm = useConfirmAction<number>(async (id) => {
-        await duplicateOrder({ id })
-    })
-
     const handleDuplicate = useCallback((id: number) => duplicateConfirm.requestConfirm(id), [duplicateConfirm])
 
     const workOrderActionsCtx: WorkOrderActionsCtx = {
-        onEdit: (id) => {
-            const params = new URLSearchParams(searchParams.toString())
-            params.set('selected', String(id))
-            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        },
+        onEdit: (id) => handleManage(id),
         onDuplicate: handleDuplicate,
         onAnnul: handleCancel,
         onDelete: handleDelete,
     }
 
-    const columns = useMemo<ColumnDef<WorkOrder>[]>(() => {
-        return [
-            {
-                id: "select",
-                header: ({ table }) => (
-                    <Checkbox
-                        checked={
-                        table.getIsAllPageRowsSelected()
-                            ? true
-                            : table.getIsSomePageRowsSelected()
-                            ? "indeterminate"
-                            : false
-                    }
-                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                        aria-label="Select all"
-                        className="translate-y-[2px]"
-                        variant="circle"
-                    />
-                ),
-                cell: ({ row }) => (
-                    <Checkbox
-                        checked={row.getIsSelected()}
-                        onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label="Select row"
-                        className="translate-y-[2px]"
-                        variant="circle"
-                    />
-                ),
-                enableSorting: false,
-                enableHiding: false,
-                size: 40,
-                minSize: 40,
-            },
-            {
-                accessorKey: "number",
-                header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title="Folio" className="justify-center" />
-                ),
-                cell: ({ row }) => (
-                    <div className="flex justify-center">
-                        <DataCell.Entity
-                            entityLabel="production.workorder"
-                            number={row.getValue("number")}
-                        />
-                    </div>
-                ),
-            },
-            workOrderFields.column("sale_order_number"),
-            workOrderFields.column("start_date"),
-            workOrderFields.column("product_description"),
-            {
-                accessorKey: "status",
-                header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
-                ),
-                cell: ({ row }) => {
-                    const status = row.original.status
-                    return (
-                    <div className="flex justify-center gap-1.5 items-center flex-wrap">
-                        <DataCell.Status status={status} />
-                        {isWorkOrderOverdue(row.original) && (
-                            <Chip size="sm" intent="destructive">Atrasada</Chip>
-                        )}
-                    </div>
-                    )
-                },
-                filterFn: (row, id, value) => {
-                    return value.includes(row.getValue(id))
-                },
-            },
-            workOrderFields.column("current_stage"),
-            workOrderFields.column("due_date"),
-            workOrderActions.auto(workOrderActionsCtx) as ColumnDef<WorkOrder>,
-        ]
-    }, [handleDuplicate, handleCancel, handleDelete, searchParams, router, pathname, workOrderActionsCtx])
+    const groupBy = null // WorkOrder groupBy uses search.groupBy for data fetch, not entity-view groupBy
 
-    const renderKanbanView = useCallback((table: Table<WorkOrder>) => (
-        <div className="relative">
-            <div className="min-h-[600px]">
-                <WorkOrderKanban
-                    orders={table.getFilteredRowModel().rows.map((row: Row<WorkOrder>) => row.original)}
-                    onManage={handleManage}
-                    onDuplicate={handleDuplicate}
-                    onAnnul={handleCancel}
-                    onDelete={handleDelete}
-                    isLoading={loading}
-                />
-            </div>
-        </div>
-    ), [loading, handleManage, handleDuplicate, handleCancel, handleDelete])
+    const collection = useEntityCollection(
+        workOrderEntity,
+        {
+            rows: orders as WorkOrder[],
+            rowCount: totalCount,
+            isLoading,
+            isRefetching,
+            isFiltered: search.isFiltered,
+        },
+        {
+            pagination: effectiveGrouping
+                ? { mode: "none" }
+                : { mode: "server", state: pageState, onChange: setPageState },
+            groupBy,
+        },
+    )
 
-    const renderTimelineView = useCallback((table: Table<WorkOrder>) => (
-        <WorkOrderTimeline
-            orders={table.getFilteredRowModel().rows.map((row: Row<WorkOrder>) => row.original)}
-            onManage={handleManage}
-            isLoading={loading}
-        />
-    ), [loading, handleManage])
+    const collectionView = toCollectionView(currentView)
+    const isCustomView = currentView === "kanban" || currentView === "timeline"
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-
-            {/* Unified WorkOrderWizard */}
             {wizardMode && (
                 <WorkOrderWizard
                     mode={wizardMode}
                     open={true}
-                    onOpenChange={(open) => {
-                        if (!open) closeWizard()
-                    }}
-                    onSuccess={() => {
-                        refetchOrders()
-                    }}
+                    onOpenChange={(open) => { if (!open) closeWizard() }}
+                    onSuccess={() => { void refetchOrders() }}
                 />
             )}
 
             <div className="mt-2 flex-1 min-h-0 flex flex-col">
                 <FadeIn key={currentView} className="h-full">
-                    <DataTableView
-                        entityLabel="production.workorder"
-                        columns={columns}
-                        data={orders}
-                        isLoading={loading}
-                        isRefetching={isRefetching}
-                        variant="embedded"
-                        defaultPageSize={50}
-                        manualPagination={!effectiveGrouping}
-                        pageCount={effectiveGrouping ? 1 : page ? Math.ceil(page.count / page.pageSize) : 0}
-                        rowCount={page?.count ?? 0}
-                        pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : pageState}
-                        onPaginationChange={effectiveGrouping ? undefined : setPageState}
-                        isFiltered={search.isFiltered}
-                        emptyState={{
-                            context: "production",
-                            title: "Aún no hay órdenes de trabajo",
-                            description: "Crea una orden de trabajo para planificar y seguir la fabricación.",
-                        }}
-                        unifiedSearch={<UnifiedSearchBar
-                            config={workOrderUnifiedSearchDef}
-                            chips={search.chips}
-                            isFiltered={search.isFiltered}
-                            inputValue={search.inputValue}
-                            onInputChange={search.setInputValue}
-                            onApply={search.applyFilter}
-                            onRemove={search.removeFilter}
-                            onClearAll={search.clearAll}
-                            groupBy={search.groupBy}
-                            onGroupBySelect={search.setGroupBy}
-                            paramValues={search.paramValues}
-                            placeholder="Buscar OTs..."
-                        />}
-                        unifiedSearchConfig={workOrderUnifiedSearchDef}
-                        currentGroupBy={effectiveGrouping ? search.groupBy : null}
-                        showReset={search.isFiltered}
-                        onReset={search.clearAll}
-                        renderCustomView={
-                            currentView === "kanban" ? renderKanbanView :
-                                currentView === "timeline" ? renderTimelineView :
-                                    undefined
-                        }
-                        createAction={<ToolbarCreateButton label="Nueva OT" href="/production/orders?modal=new" />}
-                        bulkActions={[
-                            { key: 'print', label: 'Imprimir todas', intent: 'default' as const,
+                    <Collection.Root
+                        collection={collection}
+                        selection="bulk"
+                        view={collectionView}
+                        onViewChange={(v) => handleViewChange(v === "table" ? "list" : v)}
+                        onOpen={(order: WorkOrder) => handleManage(order.id)}
+                        actions={workOrderActions.forCollection(workOrderActionsCtx)}
+                    >
+                        <Collection.Toolbar action={<ToolbarCreateButton label="Nueva OT" href="/production/orders?modal=new" />}>
+                            <UnifiedSearchBar
+                                config={workOrderUnifiedSearchDef}
+                                chips={search.chips}
+                                isFiltered={search.isFiltered}
+                                inputValue={search.inputValue}
+                                onInputChange={search.setInputValue}
+                                onApply={search.applyFilter}
+                                onRemove={search.removeFilter}
+                                onClearAll={search.clearAll}
+                                groupBy={search.groupBy}
+                                onGroupBySelect={search.setGroupBy}
+                                paramValues={search.paramValues}
+                                placeholder="Buscar OTs..."
+                            />
+                        </Collection.Toolbar>
+
+                        {!isCustomView && (
+                            <Collection.View
+                                table={workOrderViews.table}
+                                card={workOrderViews.card}
+                                emptyTitle="Aún no hay órdenes de trabajo"
+                                emptyDescription="Crea una orden de trabajo para planificar y seguir la fabricación."
+                                onResetFilters={search.clearAll}
+                            />
+                        )}
+
+                        {currentView === "kanban" && (
+                            <WorkOrderKanban
+                                orders={orders as WorkOrder[]}
+                                onManage={handleManage}
+                                onDuplicate={handleDuplicate}
+                                onAnnul={handleCancel}
+                                onDelete={handleDelete}
+                                isLoading={isLoading}
+                            />
+                        )}
+
+                        {currentView === "timeline" && (
+                            <WorkOrderTimeline
+                                orders={orders as WorkOrder[]}
+                                onManage={handleManage}
+                                isLoading={isLoading}
+                            />
+                        )}
+
+                        <Collection.BulkBar actions={[
+                            {
+                                key: 'print',
+                                label: 'Imprimir todas',
+                                intent: 'default',
                                 disabled: () => isBulkPrinting,
-                                onClick: async (items: Array<{ id: number }>) => { await bulkPrint({ ids: items.map(o => o.id) }) } },
-                        ]}
-                    />
+                                onClick: async (items: WorkOrder[]) => {
+                                    await bulkPrint({ ids: items.map(o => o.id) })
+                                },
+                            },
+                        ]} />
+                    </Collection.Root>
                 </FadeIn>
             </div>
 
@@ -303,7 +227,6 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                 description="¿Está seguro de que desea eliminar esta OT? Esta acción es irreversible."
                 variant="destructive"
             />
-
             <ActionConfirmModal
                 open={cancelConfirm.isOpen}
                 onOpenChange={(open) => { if (!open) cancelConfirm.cancel() }}
@@ -312,7 +235,6 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                 description={`¿Está seguro de que desea ANULAR esta ${getDomainConceptCode('ot')}? Esto detendrá el proceso y liberará reservas.`}
                 variant="destructive"
             />
-
             <ActionConfirmModal
                 open={duplicateConfirm.isOpen}
                 onOpenChange={(open) => { if (!open) duplicateConfirm.cancel() }}
@@ -321,6 +243,6 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                 description={`Se creará una nueva ${getDomainConceptCode('ot')} en Borrador con los mismos materiales y configuración. No se vinculará a la ${getDomainConceptTitle('ov')} original.`}
                 variant="default"
             />
-        </div >
+        </div>
     )
 }
