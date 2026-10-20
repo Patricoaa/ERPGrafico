@@ -6,17 +6,9 @@ class BillingConfig(AppConfig):
     name = "billing"
 
     def ready(self):
-        try:
-            from core.permissions import PermissionRegistry
-
-            PermissionRegistry.register(
-                "billing",
-                [
-                    ("view_dashboard_billing", "Can view billing dashboard"),
-                ],
-            )
-        except ImportError:
-            pass
+        # ADR-0089: el módulo Facturación se fusionó en Ventas/Compras; el permiso
+        # de dashboard `view_dashboard_billing` se retira del registro. Los permisos
+        # de objeto (view/add/change/delete sobre Invoice) no cambian.
 
         try:
             from billing.models import Invoice
