@@ -173,7 +173,7 @@ export function CreditPortfolioClientView({
             />
 
             {activeTab === 'portfolio' ? (
-                <div className="flex-1 min-h-0">
+                <div className="flex-1 flex flex-col min-h-0">
                     <Collection.Root
                         collection={portfolioCollection}
                         actions={portfolioActions.forCollection(portfolioCtx)}
@@ -203,7 +203,7 @@ export function CreditPortfolioClientView({
                     </Collection.Root>
                 </div>
             ) : (
-                <div className="mt-2 flex-1 min-h-0">
+                <div className="mt-2 flex-1 flex flex-col min-h-0">
                     <Collection.Root collection={historyCollection}>
                         <Collection.Toolbar>
                             <UnifiedSearchBar
