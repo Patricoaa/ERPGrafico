@@ -27,12 +27,12 @@ export const PURCHASING_DTES_SUB_TABS: NavTabConfig[] = [
   },
   {
     value: "dtes",
-    label: "DTE de Compras",
+    label: "Documentos Tributarios",
     href: "/purchasing/dtes",
     iconName: getEntityIconName("billing.invoice") ?? "file-text",
-    headerTitle: "DTE de Compras",
+    headerTitle: "Documentos Tributarios",
     headerDescription: "Recepción y cuadratura de facturas y notas de crédito de proveedores.",
-    metadataTitle: "DTE de Compras | ERPGrafico",
+    metadataTitle: "Documentos Tributarios | ERPGrafico",
   },
   {
     value: "fulfillment",
@@ -46,18 +46,18 @@ export const PURCHASING_DTES_SUB_TABS: NavTabConfig[] = [
 ]
 
 // ============================================
-// SUB-TABS: CONFIGURACIÓN DE COMPRAS
+// SUB-TABS: CONFIGURACIÓN
 // ============================================
 
 export const PURCHASING_CONFIG_SUB_TABS: NavTabConfig[] = [
   {
     value: "dtes",
-    label: "Documentos DTE",
+    label: "Documentos Tributarios",
     href: "/purchasing/settings/dtes",
     iconName: "settings",
-    headerTitle: "Documentos DTE",
+    headerTitle: "Documentos Tributarios",
     headerDescription: "Tipos de documentos electrónicos habilitados para ser registrados.",
-    metadataTitle: "Documentos DTE | ERPGrafico",
+    metadataTitle: "Documentos Tributarios | ERPGrafico",
   },
 ]
 
@@ -88,12 +88,12 @@ export const PURCHASING_TABS: NavTabConfig[] = [
   },
   {
     value: "config",
-    label: "Configuración de Compras",
+    label: "Configuración",
     href: "/purchasing/settings",
     iconName: "settings",
-    headerTitle: "Configuración de Compras",
+    headerTitle: "Configuración",
     headerDescription: "Parámetros de abastecimiento y documentos electrónicos de proveedores.",
-    metadataTitle: "Configuración de Compras | ERPGrafico",
+    metadataTitle: "Configuración | ERPGrafico",
     subTabs: PURCHASING_CONFIG_SUB_TABS,
   },
 ]

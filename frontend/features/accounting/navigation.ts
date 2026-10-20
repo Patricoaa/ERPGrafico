@@ -60,12 +60,12 @@ export const ACCOUNTING_TABS: NavTabConfig[] = [
   },
   {
     value: "config",
-    label: "Configuración de Contabilidad",
+    label: "Configuración",
     href: "/accounting/settings",
     iconName: "settings",
-    headerTitle: "Configuración de Contabilidad",
+    headerTitle: "Configuración",
     headerDescription: "Gestión de tasas de IVA y parámetros contables.",
-    metadataTitle: "Configuración de Contabilidad | ERPGrafico",
+    metadataTitle: "Configuración | ERPGrafico",
     subTabs: ACCOUNTING_CONFIG_SUB_TABS,
   },
 ]

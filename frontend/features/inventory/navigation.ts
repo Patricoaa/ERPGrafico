@@ -162,12 +162,12 @@ export const INVENTORY_TABS: NavTabConfig[] = [
   },
   {
     value: "config",
-    label: "Configuración de Inventario",
+    label: "Configuración",
     href: "/inventory/settings",
     iconName: "settings",
-    headerTitle: "Configuración de Inventario",
+    headerTitle: "Configuración",
     headerDescription: "Parámetros generales del módulo de inventario.",
-    metadataTitle: "Configuración de Inventario | ERPGrafico",
+    metadataTitle: "Configuración | ERPGrafico",
     subTabs: INVENTORY_CONFIG_SUB_TABS,
   },
 ]

@@ -88,12 +88,12 @@ export const HR_TABS: NavTabConfig[] = [
   },
   {
     value: "config",
-    label: "Configuración de RRHH",
+    label: "Configuración",
     href: "/hr/settings",
     iconName: "settings",
-    headerTitle: "Configuración de RRHH",
+    headerTitle: "Configuración",
     headerDescription: "Gestione indicadores económicos, conceptos de nómina e instituciones previsionales.",
-    metadataTitle: "Configuración de RRHH | ERPGrafico",
+    metadataTitle: "Configuración | ERPGrafico",
     subTabs: HR_CONFIG_SUB_TABS,
   },
 ]
