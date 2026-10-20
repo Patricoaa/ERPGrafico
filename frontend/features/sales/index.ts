@@ -2,6 +2,7 @@ export { salesOrderUnifiedSearchDef, salesNoteUnifiedSearchDef, saleDeliveryUnif
 export { salesApi } from './api/salesApi'
 export type { SaleNoteFilters } from './hooks/useSalesOrders'
 export { useSaleOrder, useSalesNotes, useSalesOrders } from './hooks/useSalesOrders'
+export { EMPTY_SALES_ANALYTICS, useSaleOrderAnalytics, type SalesAnalyticsData, type TrendData } from './hooks/useSalesAnalyticsData'
 export { SalesOrdersClientView } from './components/SalesOrdersClientView'
 export { SalesOrdersView } from './components/SalesOrdersView'
 export { SalesDeliveriesView } from './components/SalesDeliveriesView'
