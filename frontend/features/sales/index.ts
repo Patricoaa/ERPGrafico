@@ -27,4 +27,5 @@ export { SalesCheckoutWizardView, type CheckoutWizardState } from './components/
 export type { SalesCheckoutWizardViewHandle } from './components/checkout/SalesCheckoutWizardView'
 export { Step2_ManufacturingDetails } from './components/checkout/Step2_ManufacturingDetails'
 export { saleOrderEntity, saleOrderViews } from './entity-view/saleOrder.entity'
+export { mfgDetailLineEntity, mfgDetailLineViews, getMfgLineSubType, type ManufacturableLine } from './entity-view/mfgDetailLine.entity'
 
