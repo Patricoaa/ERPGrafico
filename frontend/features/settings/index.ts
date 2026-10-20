@@ -20,3 +20,5 @@ export type { GroupActionsCtx, PayrollConceptActionsCtx, Terminal, TreasuryAccou
 export { BillingSettingsView, CompanySettingsView, GroupsClientView, HRSettingsView, InitialCapitalModal, PartnerEditDrawer, PartnersSettingsView, SalesSettingsView, TerminalDrawer, UnifiedAccountsView, UsersSettingsClientView, VatRatesView, groupActions, payrollConceptActions, userActions } from './components'
 export { ACCOUNT_TABS, VALID_ACCOUNT_TABS, DEFAULT_ACCOUNT_TAB } from './constants'
 export { partnerLedgerEntity, partnerLedgerViews, isInflowType, isOutflowType, partnerTxDirection, PARTNER_TRANSACTION_TYPE_OPTIONS, type PartnerLedgerRow } from './entity-view/partnerLedger.entity'
+export { auditLogEntity, auditLogViews, type AuditLog, type AuditHistoryType, type AuditActionValue } from './entity-view/auditLog.entity'
+export { backgroundJobEntity, backgroundJobViews, JobCardBody, type BackgroundJobRow, type JobProgressValue, type JobActionsValue } from './entity-view/backgroundJob.entity'
