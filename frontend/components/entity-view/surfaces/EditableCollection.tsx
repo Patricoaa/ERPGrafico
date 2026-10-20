@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { StatusBadge } from "@/components/shared"
 import { cn } from "@/lib/utils"
@@ -59,13 +60,28 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
         [def],
     )
     const idBase = React.useId()
+    const hasSelect = def.select !== undefined
 
     const setValue = (key: string, name: string, next: number) =>
         onChange(value.map((v) => (v.key === key ? { ...v, values: { ...v.values, [name]: next } } : v)))
 
+    const setTextValue = (key: string, name: string, next: string) =>
+        onChange(value.map((v) => (v.key === key ? { ...v, textValues: { ...v.textValues, [name]: next } } : v)))
+
+    const setSelected = (key: string, next: boolean) =>
+        onChange(value.map((v) => (v.key === key ? { ...v, selected: next } : v)))
+
+    // E3: row is "active" (inputs enabled) when no select spec, or when selected.
+    const isRowActive = (key: string): boolean => {
+        if (!hasSelect) return true
+        return byKey.get(key)?.selected ?? false
+    }
+
     const bulk = (mode: "fillToMax" | "clear") =>
         onChange(
             value.map((v) => {
+                // E3: bulk only affects selected rows (or all when no select spec).
+                if (hasSelect && !v.selected) return v
                 const row = rowByKey.get(v.key)
                 if (!row) return v
                 const eligible = eligibility.get(v.key) ?? { ok: true }
@@ -99,17 +115,22 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                 <table className="w-full text-sm" aria-label={label}>
                     <thead className="bg-card">
                         <tr className="border-b">
+                            {/* E3: selection checkbox column header */}
+                            {hasSelect && <th scope="col" className={cn("px-(--table-header-px) py-(--table-header-py) w-10", HEADER_TEXT)} aria-label="Selección" />}
                             {contextFields.map(({ id, field, align }, i) => (
                                 // The first column absorbs the free width so the inputs sit next to their reference columns.
-                                <th key={id} scope="col" className={cn("px-(--table-header-px) py-(--table-header-py) whitespace-nowrap", HEADER_TEXT, i === 0 && cn("w-full", STICKY), ALIGN_TEXT[align])}>
+                                <th key={id} scope="col" className={cn("px-(--table-header-px) py-(--table-header-py) whitespace-nowrap", HEADER_TEXT, i === 0 && cn("w-full", !hasSelect && STICKY), ALIGN_TEXT[align])}>
                                     {field.header ?? field.label}
                                 </th>
                             ))}
-                            {inputNames.map((name) => (
-                                <th key={name} scope="col" className={cn("px-(--table-header-px) py-(--table-header-py) text-right", HEADER_TEXT)}>
-                                    {def.inputs[name].header}
-                                </th>
-                            ))}
+                            {inputNames.map((name) => {
+                                const input = def.inputs[name]
+                                return (
+                                    <th key={name} scope="col" className={cn("px-(--table-header-px) py-(--table-header-py)", input.kind === "text" ? "text-left" : "text-right", HEADER_TEXT)}>
+                                        {input.header}
+                                    </th>
+                                )
+                            })}
                             {hasStatus && <th scope="col" className={cn("px-(--table-header-px) py-(--table-header-py)", HEADER_TEXT)}>Estado</th>}
                         </tr>
                     </thead>
@@ -117,11 +138,23 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                         {rows.map((row) => {
                             const key = String(def.rowKey(row))
                             const eligible = eligibility.get(key) ?? { ok: true }
+                            const rowActive = isRowActive(key)
                             const reasonId = `${idBase}-${key}-reason`
                             return (
-                                <tr key={key} className={cn("border-b border-border/40", !eligible.ok && "opacity-60")}>
+                                <tr key={key} className={cn("border-b border-border/40", (!eligible.ok || (hasSelect && !rowActive)) && "opacity-60")}>
+                                    {/* E3: per-row selection checkbox */}
+                                    {hasSelect && (
+                                        <td className={cn(CELL, "text-center align-middle")}>
+                                            <Checkbox
+                                                checked={byKey.get(key)?.selected ?? false}
+                                                onCheckedChange={(v) => setSelected(key, !!v)}
+                                                disabled={disabled || !eligible.ok}
+                                                aria-label={def.select?.label(row) ?? ""}
+                                            />
+                                        </td>
+                                    )}
                                     {contextFields.map(({ id, field, align }, i) => (
-                                        <td key={id} className={cn(CELL, "align-middle", i === 0 ? STICKY : "whitespace-nowrap", ALIGN_TEXT[align])}>
+                                        <td key={id} className={cn(CELL, "align-middle", i === 0 && !hasSelect ? STICKY : "whitespace-nowrap", ALIGN_TEXT[align])}>
                                             <FieldValue def={field} row={row} surface="table" align={align} />
                                             {i === 0 && !eligible.ok && (
                                                 <span id={reasonId} className="block text-2xs text-muted-foreground">{eligible.reason}</span>
@@ -132,6 +165,41 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                                         const input = def.inputs[name]
                                         const error = errors[key]?.[name]
                                         const errorId = `${idBase}-${key}-${name}-error`
+                                        const isDisabled = disabled || !eligible.ok || (hasSelect && !rowActive)
+                                        const isReadOnly = typeof input.readOnly === "function" ? input.readOnly(row) : (input.readOnly ?? false)
+                                        // E2: text inputs use textValues, align left
+                                        if (input.kind === "text") {
+                                            return (
+                                                <td key={name} className={cn(CELL, "align-top text-left")}>
+                                                    <Input
+                                                        type="text"
+                                                        placeholder={input.placeholder}
+                                                        aria-label={input.label(row)}
+                                                        aria-invalid={!!error}
+                                                        aria-describedby={error ? errorId : undefined}
+                                                        disabled={isDisabled}
+                                                        value={byKey.get(key)?.textValues?.[name] ?? ""}
+                                                        onChange={(e) => setTextValue(key, name, e.target.value)}
+                                                        className={cn("h-8 w-40", error && "border-destructive")}
+                                                    />
+                                                    {error && (
+                                                        <span id={errorId} role="alert" className="mt-0.5 block text-2xs text-destructive">{error}</span>
+                                                    )}
+                                                </td>
+                                            )
+                                        }
+                                        // readOnly: show formatted value as text (E2.5)
+                                        if (isReadOnly) {
+                                            const currentVal = byKey.get(key)?.values[name] ?? 0
+                                            const formatted = input.kind === "money"
+                                                ? formatMoneyValue(currentVal)
+                                                : formatNumber(currentVal, decimalsFor(input, row))
+                                            return (
+                                                <td key={name} className={cn(CELL, "align-middle text-right text-sm tabular-nums text-muted-foreground")}>
+                                                    {formatted}
+                                                </td>
+                                            )
+                                        }
                                         const max = input.max?.(row)
                                         const hintId = `${idBase}-${key}-${name}-hint`
                                         return (
@@ -145,7 +213,7 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                                                     aria-invalid={!!error}
                                                     aria-describedby={cn(error && errorId, max !== undefined && eligible.ok && hintId, !eligible.ok && reasonId) || undefined}
                                                     step={input.step?.(row) ?? "any"}
-                                                    disabled={disabled || !eligible.ok}
+                                                    disabled={isDisabled}
                                                     value={byKey.get(key)?.values[name] ?? 0}
                                                     onChange={(e) => setValue(key, name, e.target.value === "" ? 0 : Number(e.target.value))}
                                                     className={cn("ml-auto h-8 w-28 text-right tabular-nums", error && "border-destructive")}
@@ -158,7 +226,7 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                                             </td>
                                         )
                                     })}
-                                    {hasStatus && <RowStatusCell def={def} row={row} values={byKey.get(key)?.values ?? {}} />}
+                                    {hasStatus && <RowStatusCell def={def} row={row} values={byKey.get(key)?.values ?? {}} isActive={rowActive} />}
                                 </tr>
                             )
                         })}
@@ -166,12 +234,15 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                     {sums.length > 0 && (
                         <tfoot className="border-t bg-muted/30">
                             <tr>
-                                <td colSpan={def.context.length} className={cn(CELL, HEADER_TEXT)}>Total</td>
+                                <td colSpan={def.context.length + (hasSelect ? 1 : 0)} className={cn(CELL, HEADER_TEXT)}>Total</td>
                                 {inputNames.map((name) => {
                                     if (!sums.includes(name)) return <td key={name} />
                                     const input = def.inputs[name]
+                                    if (input.kind === "text") return <td key={name} />
                                     const totals = new Map<string, number>()
                                     for (const v of value) {
+                                        // E3: skip unselected rows in footer sums
+                                        if (hasSelect && !v.selected) continue
                                         if (errors[v.key]?.[name]) continue // invalid cells do not count toward the total
                                         const row = rowByKey.get(v.key)
                                         const unit = (row && input.unit?.(row)) ?? ""
@@ -193,9 +264,13 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
     )
 }
 
-function RowStatusCell<T, F extends FieldMap<T>, I extends Record<string, EditableInput<T>>>({ def, row, values }: { def: EditableDefinition<T, F, I>; row: T; values: Record<string, number> }) {
+function RowStatusCell<T, F extends FieldMap<T>, I extends Record<string, EditableInput<T>>>({ def, row, values, isActive }: { def: EditableDefinition<T, F, I>; row: T; values: Record<string, number>; isActive: boolean }) {
+    // E3: empty cell for unselected rows
+    if (def.select && !isActive) return <td className={cn(CELL, "align-middle")} />
     // Missing inputs read as 0, so the callback always receives every declared input.
-    const full = Object.fromEntries(Object.keys(def.inputs).map((name) => [name, values[name] ?? 0])) as Record<keyof I & string, number>
+    const full = Object.fromEntries(
+        Object.keys(def.inputs).filter((n) => def.inputs[n].kind !== "text").map((name) => [name, values[name] ?? 0])
+    ) as Record<keyof I & string, number>
     const status = def.rowStatus?.(row, full)
     return (
         <td className={cn(CELL, "align-middle whitespace-nowrap")} aria-live="polite">
@@ -203,4 +278,3 @@ function RowStatusCell<T, F extends FieldMap<T>, I extends Record<string, Editab
         </td>
     )
 }
-

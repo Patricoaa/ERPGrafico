@@ -29,6 +29,9 @@ import { CancelButton, SubmitButton } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { PrintableLayout } from "@/features/_shared"
 import { useDrawerMode, useDrawerIdentity, usePrintableDrawer, drawerFooter, type DrawerMode } from "@/features/_shared"
+import { DataCell } from "@/components/shared"
+import { ArrowRightLeft } from "lucide-react"
+import { ProductInsightsDrawer } from "./ProductInsightsDrawer"
 
 // Product subcomponents and schema
 import { ProductBasicInfo } from "./product/ProductBasicInfo"
@@ -74,6 +77,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
     const isFetchingInitialData = open && (isLoadingUoMs || isLoadingWarehouses || isLoadingProducts || (initialData?.id ? isLoadingPricingRules : false))
 
     const [activeTab, setActiveTab] = useState("general")
+    const [insightsOpen, setInsightsOpen] = useState(false)
 
     const width = formDrawerWidth("master", !!initialData?.id)
 
@@ -601,9 +605,26 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
 
     const drawerIdentity = useDrawerIdentity('inventory.product', mode, initialData, {
         overrideSubtitle: initialData ? form.watch("name") : "Maestro de Producto",
-        printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
+        printable: false, // We'll handle print manually in custom headerActions
         onPrint: handlePrint,
     })
+
+    // Custom header actions: Print + Ver Kardex
+    const customHeaderActions = (
+        <>
+            {drawerIdentity.headerActions}
+            {initialData?.id && (
+                <DataCell.Action
+                    action="detail"
+                    onClick={() => setInsightsOpen(true)}
+                    title="Ver Kardex (Movimientos de Stock)"
+                    aria-label="Ver Kardex"
+                >
+                    <ArrowRightLeft className="h-4 w-4" />
+                </DataCell.Action>
+            )}
+        </>
+    )
 
     const tabHeader = (
         <div className="flex flex-col p-6 pb-2">
@@ -800,13 +821,21 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                 className="h-[90vh]"
                 icon={drawerIdentity.icon}
                 title={drawerIdentity.title}
-                headerActions={drawerIdentity.headerActions}
+                headerActions={customHeaderActions}
                 subtitle={drawerIdentity.subtitle}
                 mode={mode}
                 footer={footerSlot}
                 side="left"
             >
             {formContent}
+
+            {/* Product Insights Drawer (Kardex) */}
+            <ProductInsightsDrawer
+                productId={initialData?.id ?? null}
+                productName={initialData?.name ?? null}
+                open={insightsOpen}
+                onOpenChange={setInsightsOpen}
+            />
 
             {/* ActionConfirmModal for closing with unsaved changes */}
             <ActionConfirmModal

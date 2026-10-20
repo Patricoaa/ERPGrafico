@@ -240,7 +240,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                             <TableCell className="text-sm text-muted-foreground font-medium">
                                                 <UoMSelector
                                                     line={line}
-                                                    currentUom={(deliveryData.partialQuantities || []).find((pq: NonNullable<CheckoutDeliveryData["partialQuantities"]>[number]) => pq.productId === line.id)?.uom || line.uom}
+                                                    currentUom={(deliveryData.partialQuantities || []).find((pq: NonNullable<CheckoutDeliveryData["partialQuantities"]>[number]) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product))?.uom || line.uom}
                                                     onUomChange={(uomId) => {
                                                         setDeliveryData((prev: CheckoutDeliveryData) => {
                                                             const pqs = [...(prev.partialQuantities || [])];

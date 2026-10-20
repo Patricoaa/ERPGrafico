@@ -64,15 +64,6 @@ export const INVENTORY_REPORTS_SUB_TABS: NavTabConfig[] = [
     headerDescription: "Estado actual del inventario por almacén, valorizado en tiempo real.",
     metadataTitle: "Existencias | ERPGrafico",
   },
-  {
-    value: "movements",
-    label: "Movimientos de Stock",
-    href: "/inventory/reports/movements",
-    iconName: getEntityIconName("inventory.stockmove") ?? "arrow-right-left",
-    headerTitle: "Movimientos de Stock",
-    headerDescription: "Histórico de entradas, salidas y transferencias entre ubicaciones.",
-    metadataTitle: "Movimientos de Stock | ERPGrafico",
-  },
 ]
 
 // ============================================
@@ -90,13 +81,13 @@ export const INVENTORY_OPERATIONS_SUB_TABS: NavTabConfig[] = [
     metadataTitle: "Almacenes y Ubicaciones | ERPGrafico",
   },
   {
-    value: "documents",
-    label: "Recepciones, Entregas y Ajustes",
-    href: "/inventory/operations/documents",
+    value: "manual-operations",
+    label: "Ajustes y Transferencias Manuales",
+    href: "/inventory/operations/manual-operations",
     iconName: "file-text",
-    headerTitle: "Recepciones, Entregas y Ajustes",
-    headerDescription: "Historial y gestión de movimientos físicos, transferencias y mermas.",
-    metadataTitle: "Recepciones, Entregas y Ajustes | ERPGrafico",
+    headerTitle: "Ajustes y Transferencias Manuales",
+    headerDescription: "Ajustes de inventario, transferencias entre bodegas, producción manual y aportes de socios.",
+    metadataTitle: "Ajustes y Transferencias Manuales | ERPGrafico",
   },
   {
     value: "counts",

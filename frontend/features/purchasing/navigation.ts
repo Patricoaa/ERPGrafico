@@ -35,22 +35,13 @@ export const PURCHASING_DTES_SUB_TABS: NavTabConfig[] = [
     metadataTitle: "DTE de Compras | ERPGrafico",
   },
   {
-    value: "receipts",
-    label: "Recepciones",
-    href: "/purchasing/dtes/receipts",
+    value: "fulfillment",
+    label: "Recepciones y Devoluciones",
+    href: "/purchasing/dtes/fulfillment",
     iconName: "package-check",
-    headerTitle: "Recepciones",
-    headerDescription: "Documentos de recepción de mercadería, con su origen en la orden de compra.",
-    metadataTitle: "Recepciones | ERPGrafico",
-  },
-  {
-    value: "returns",
-    label: "Devoluciones",
-    href: "/purchasing/dtes/returns",
-    iconName: "rotate-ccw",
-    headerTitle: "Devoluciones",
-    headerDescription: "Devoluciones de mercadería a proveedores y su salida de bodega.",
-    metadataTitle: "Devoluciones | ERPGrafico",
+    headerTitle: "Recepciones y Devoluciones",
+    headerDescription: "Recepciones de mercadería, devoluciones a proveedores y su trazabilidad de stock.",
+    metadataTitle: "Recepciones y Devoluciones | ERPGrafico",
   },
 ]
 

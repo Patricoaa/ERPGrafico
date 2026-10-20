@@ -90,22 +90,13 @@ export const SALES_DTES_SUB_TABS: NavTabConfig[] = [
     metadataTitle: "DTE de Ventas | ERPGrafico",
   },
   {
-    value: "deliveries",
-    label: "Guías de Despacho",
-    href: "/sales/dtes/deliveries",
+    value: "fulfillment",
+    label: "Despachos y Devoluciones",
+    href: "/sales/dtes/fulfillment",
     iconName: "truck",
-    headerTitle: "Guías de Despacho",
-    headerDescription: "Documentos de entrega a clientes, con su origen en la orden de venta.",
-    metadataTitle: "Guías de Despacho | ERPGrafico",
-  },
-  {
-    value: "returns",
-    label: "Devoluciones",
-    href: "/sales/dtes/returns",
-    iconName: "rotate-ccw",
-    headerTitle: "Devoluciones",
-    headerDescription: "Devoluciones de producto recibidas de clientes y su reingreso a bodega.",
-    metadataTitle: "Devoluciones | ERPGrafico",
+    headerTitle: "Despachos y Devoluciones",
+    headerDescription: "Entregas a clientes, devoluciones recibidas y su trazabilidad de stock.",
+    metadataTitle: "Despachos y Devoluciones | ERPGrafico",
   },
 ]
 

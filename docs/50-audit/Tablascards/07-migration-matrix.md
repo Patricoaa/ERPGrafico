@@ -720,7 +720,11 @@ El antiguo 3b + la parte editable del 3c, y el resto de tablas de edición: `sal
 
 ### 6.9 Fin de la migración
 
-Cuando §6.1 dé 0 pantallas: se borran `entity-fields.tsx`, `AutoEntityCard`, `DataTable` y su familia, `DataCell` y las columnas `createXColumn` que no tengan consumidores, `fromLegacyFields()` y la congelación del sistema antiguo en la invariante #13 (ADR de cierre, invariante #12).
+Cuando `LEGACY_CONSUMERS` llegue a 0: se borran `entity-fields.tsx`, `AutoEntityCard`, `DataTableView`, `createEntityFields`/`toColumns` y todos los `*Fields.ts` que queden, y la congelación del sistema antiguo en la invariante #13 (ADR de cierre, invariante #12).
+
+**`DataTable` (el componente) y `DataTableColumnHeader` NO se eliminan.** Los cuatro `EXEMPT_CONSUMERS` del ratchet (`ReconciliationPanel`, `StatementImportModal`, `MappingConfigDrawer`, `DraftCartsClientView`) los usan directamente con columnas en línea por razones arquitectónicas permanentes (DnD, controles de formulario por celda, locks de WebSocket) que entity-view no puede modelar sin violar M2 (regla ≥3/≥2). Esos cuatro archivos se sacan de `EXEMPT_CONSUMERS` solo si entity-view algún día incorpora esas capacidades con suficiente demanda.
+
+`DataCell` y las columnas `createXColumn` se evalúan consumidor a consumidor al llegar a 0 pantallas legacy: los que no tengan consumidores externos se borran; los que usen los exempt se conservan.
 
 ### 6.10 Decisiones para el usuario (Puerta D de la oleada 0/A)
 

@@ -267,3 +267,47 @@ export const saleReturnUnifiedSearchDef: UnifiedSearchConfig = {
   ],
   basePeriod: { serverParamFrom: 'date_after', serverParamTo: 'date_before' },
 }
+
+/**
+ * ADR-0090: Unified search for "Despachos y Devoluciones" (fulfillment).
+ * Merges SaleDelivery and SaleReturn with a `fulfillment_type` filter.
+ */
+export const saleFulfillmentUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    { key: 'sale_order_number', label: 'Orden de Venta', serverParam: 'sale_order_number' },
+    { key: 'customer_name', label: 'Cliente', serverParam: 'customer_name' },
+  ],
+  filters: [
+    {
+      type: 'multi',
+      key: 'fulfillment_type',
+      label: 'Tipo',
+      serverParam: 'fulfillment_type',
+      options: [
+        { label: 'Despacho', value: 'DELIVERY' },
+        { label: 'Devolución', value: 'RETURN' },
+      ],
+    },
+    {
+      type: 'multi',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'Borrador', value: 'DRAFT' },
+        { label: 'Confirmado', value: 'CONFIRMED' },
+        { label: 'Anulado', value: 'CANCELLED' },
+      ],
+    },
+  ],
+  dateFilters: [
+    { type: 'date', key: 'date', label: 'Fecha', options: periodPresets('date_after', 'date_before') },
+  ],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'date' },
+    { key: 'customer', label: 'Cliente', field: 'customer_name' },
+    { key: 'status', label: 'Estado', field: 'status' },
+    { key: 'type', label: 'Tipo', field: 'fulfillment_type' },
+  ],
+  basePeriod: { serverParamFrom: 'date_after', serverParamTo: 'date_before' },
+}

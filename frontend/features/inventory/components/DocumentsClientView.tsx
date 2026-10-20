@@ -13,7 +13,7 @@ import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { showApiError } from "@/lib/errors"
 
 interface DocumentsClientViewProps {
-    documentTypeFilter?: 'RECEIPT' | 'DELIVERY' | 'TRANSFER' | 'ADJUSTMENT' | 'PRODUCTION'
+    documentTypeFilter?: 'RECEIPT' | 'DELIVERY' | 'TRANSFER' | 'ADJUSTMENT' | 'PRODUCTION' | 'PARTNER_CONTRIBUTION' | 'PARTNER_WITHDRAWAL'
     createAction?: React.ReactNode
 }
 

@@ -1,5 +1,3 @@
-export { purchasingApi } from './api/purchasingApi'
-
 export {
     usePurchasingOrders,
     usePurchasingNotes,
@@ -7,6 +5,7 @@ export {
     usePurchasingOrder,
     usePurchaseReceipts,
     usePurchaseReturns,
+    usePurchaseFulfillment,
     PURCHASING_KEYS,
 } from './hooks/usePurchasing'
 
@@ -27,7 +26,8 @@ export { purchaseOrderActions } from './actions'
 export { PurchaseOrdersView } from './components/PurchaseOrdersView'
 export { PurchaseReceiptsView } from './components/PurchaseReceiptsView'
 export { PurchaseReturnsView } from './components/PurchaseReturnsView'
-export { purchaseOrderUnifiedSearchDef, subscriptionUnifiedSearchDef, purchaseReceiptUnifiedSearchDef, purchaseReturnUnifiedSearchDef } from './unifiedSearchDef'
+export { PurchaseFulfillmentView } from './components/PurchaseFulfillmentView'
+export { purchaseOrderUnifiedSearchDef, subscriptionUnifiedSearchDef, purchaseReceiptUnifiedSearchDef, purchaseReturnUnifiedSearchDef, purchaseFulfillmentUnifiedSearchDef } from './unifiedSearchDef'
 
 export type { SubscriptionActionsCtx } from './subscriptionActions'
 export { subscriptionActions } from './subscriptionActions'

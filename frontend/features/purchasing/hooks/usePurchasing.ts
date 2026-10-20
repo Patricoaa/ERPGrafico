@@ -140,3 +140,58 @@ export function usePurchaseReturns(filters?: Record<string, unknown>) {
         refetch: query.refetch,
     }
 }
+
+/** Unified list of receipts + returns (fulfillment documents). */
+export function usePurchaseFulfillment(filters?: Record<string, unknown>) {
+    const page = Number(filters?.page ?? 1)
+    const pageSize = Number(filters?.page_size ?? 50)
+    const typeFilter = filters?.fulfillment_type as string | undefined
+
+    const receiptsQuery = useQuery({
+        queryKey: PURCHASING_KEYS.receipts({ page, page_size: pageSize, ...filters }),
+        queryFn: () => purchasingApi.getReceiptsPaginated({ page, page_size: pageSize, ...filters }),
+        staleTime: staleTime.standard,
+        enabled: !typeFilter || typeFilter === 'RECEIPT',
+    })
+
+    const returnsQuery = useQuery({
+        queryKey: [...PURCHASING_KEYS.all, 'returns', { page, page_size: pageSize, ...filters }],
+        queryFn: () => purchasingApi.getReturnsPaginated({ page, page_size: pageSize, ...filters }),
+        staleTime: staleTime.standard,
+        enabled: !typeFilter || typeFilter === 'RETURN',
+    })
+
+    const isLoading = receiptsQuery.isLoading || returnsQuery.isLoading
+    const isFetching = receiptsQuery.isFetching || returnsQuery.isFetching
+    const isError = receiptsQuery.isError || returnsQuery.isError
+
+    const receiptResults = (receiptsQuery.data?.results ?? []) as unknown as PurchaseReceipt[]
+    const returnResults = (returnsQuery.data?.results ?? []) as unknown as PurchaseReturn[]
+
+    // Merge and add fulfillment_type discriminator
+    // Map receipt_date to date for RECEIPT type
+    const merged: PurchaseFulfillment[] = [
+        ...receiptResults.map(r => ({ ...r, fulfillment_type: 'RECEIPT' as const, date: r.receipt_date })),
+        ...returnResults.map(r => ({ ...r, fulfillment_type: 'RETURN' as const })),
+    ]
+
+    // Sort by date desc (newest first)
+    merged.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+    // Apply pagination manually on merged results
+    const start = (page - 1) * pageSize
+    const paginated = merged.slice(start, start + pageSize)
+    const totalCount = merged.length
+
+    return {
+        page: { count: totalCount, results: paginated, next: null, previous: null },
+        fulfillments: paginated,
+        totalCount,
+        isLoading,
+        isFetching,
+        isError,
+        refetch: () => { receiptsQuery.refetch(); returnsQuery.refetch(); },
+    }
+}
+
+import type { PurchaseFulfillment } from '../entity-view/purchaseFulfillment.entity'

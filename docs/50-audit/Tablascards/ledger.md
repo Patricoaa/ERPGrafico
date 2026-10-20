@@ -293,10 +293,10 @@
 - Decisión: no reescribir la historia. El usuario elige (2026-10-18) un commit de seguimiento en la rama con las correcciones del `/code-review`, los documentos y TC-053. En adelante, no usar `git add -N`
 - Estado: resuelto
 
-### TC-055 · Defecto del sistema actual · Verificado (código)
-- Evidencia: `features/sales/components/checkout/Step3_Delivery.tsx:243` busca la UoM actual con `pq.productId === line.id` (compara el producto con el id de la línea), mientras que la escritura (`:247`) busca por `pq.lineId === line.id` o `pq.productId === line.product`
-- Efecto probable: el selector de UoM del despacho parcial del POS no refleja la unidad elegida (vuelve a `line.uom`) salvo que coincidan por azar el id de producto y el de línea
-- Estado: pendiente; se corrige en la oleada E (`07` §6.8, decisión del usuario 2026-10-18; la clave de fila pasa a ser `rowKey`)
+### TC-055 · Defecto del sistema actual · Corregido (2026-10-20)
+- Evidencia: `features/sales/components/checkout/Step3_Delivery.tsx:243` buscaba la UoM actual con `pq.productId === line.id` (compara el producto con el id de la línea), mientras que la escritura (`:247`) buscaba correctamente por `pq.lineId === line.id` o `pq.productId === line.product`
+- Corrección: la expresión de lectura (`:243`) ahora usa el mismo predicado que la escritura — `(line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product)`. Sin cambios de tipo (`tsc` limpio en el archivo).
+- Estado: **corregido** (sin commitear; pendiente junto con oleada G y ADR-0090)
 
 ### TC-056 · Paridad de las líneas · Verificado
 - Evidencia: `orderLineFields.tsx` muestra "Facturado" (`quantity_invoiced`, :48) y rotula la columna de avance "Entregado" en OV y "Recibido" en OC (:75, :77). `orderLine.entity.ts` del spike no tiene "Facturado" y usa "Entregado" en ambas

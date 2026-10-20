@@ -6,10 +6,7 @@
  * Ratchet: entries are only removed — that removal IS the migration. When this list is empty
  * the legacy system is deleted (§6.9).
  */
-export const LEGACY_CONSUMERS: readonly string[] = [
-    "features/notes/components/steps/NoteStep_LineItems.tsx",
-    "features/profile/components/ProfileView.tsx",
-]
+export const LEGACY_CONSUMERS: readonly string[] = []
 
 /**
  * Files permanently exempt from entity-view migration: they use `<DataTable>` directly
