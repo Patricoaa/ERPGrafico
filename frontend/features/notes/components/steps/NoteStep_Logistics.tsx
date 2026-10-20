@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
 import {LabeledInput, LabeledContainer, PeriodValidationDateInput, QuantityDisplay, RadioCard, StepHeader} from "@/components/shared"
 import {RadioGroup} from "@/components/ui/radio-group"
 import { Truck, Package, Calendar, AlertTriangle, ShoppingBag } from "lucide-react"
-import { billingApi } from "../../api/billingApi"
+import { useAllowedUoMs } from "@/features/inventory"
 import { cn } from "@/lib/utils"
 import { useServerDate } from "@/hooks/useServerDate"
 import {
@@ -24,23 +24,13 @@ import {
 } from "@/components/ui/select"
 
 function UoMSelector({ line: l, currentUom, onUomChange }: { line: Record<string, unknown>, currentUom: number, onUomChange: (uomId: number) => void }) {
-    const [allowedUoms, setAllowedUoms] = useState<Record<string, unknown>[]>([])
-
     const productId = l.productId ?? l.product_id;
-    const lineId = l.lineId ?? l.line_id;
     const uomName = l.uomName ?? l.uom_name;
 
-    useEffect(() => {
-        const fetchAllowed = async () => {
-            try {
-                const uoms = await billingApi.getAllowedUoms((productId as number) || (l.product as number), 'sale')
-                setAllowedUoms(uoms)
-            } catch (err) {
-                console.error("Error fetching allowed UoMs", err)
-            }
-        }
-        fetchAllowed()
-    }, [lineId, productId])
+    const { data: allowedUoms = [] } = useAllowedUoMs(
+        (productId as number) || (l.product as number),
+        'sale',
+    )
 
     if (allowedUoms.length <= 1) return <span className="text-xs text-muted-foreground">{uomName as string}</span>
 
@@ -50,9 +40,9 @@ function UoMSelector({ line: l, currentUom, onUomChange }: { line: Record<string
                 <SelectValue />
             </SelectTrigger>
             <SelectContent>
-                {allowedUoms.map((u: Record<string, unknown>) => (
-                    <SelectItem key={u.id as number} value={(u.id as number).toString()} className="text-3xs">
-                        {u.name as string}
+                {allowedUoms.map((u: { id: number, name: string }) => (
+                    <SelectItem key={u.id} value={u.id.toString()} className="text-3xs">
+                        {u.name}
                     </SelectItem>
                 ))}
             </SelectContent>
@@ -60,22 +50,20 @@ function UoMSelector({ line: l, currentUom, onUomChange }: { line: Record<string
     )
 }
 
-interface Step2_LogisticsProps {
+interface NoteStepLogisticsProps {
     isCreditNote: boolean
     data: Record<string, unknown>
     setData: (data: Record<string, unknown>) => void
     selectedItems: Record<string, unknown>[]
 }
 
-export function Step2_Logistics({
+export function NoteStep_Logistics({
     isCreditNote,
     data,
     setData,
     selectedItems
-}: Step2_LogisticsProps) {
+}: NoteStepLogisticsProps) {
     const { dateString } = useServerDate()
-    const [, setWarehouses] = useState<Record<string, unknown>[]>([])
-    const [, setFetchingWarehouses] = useState(true)
 
     // Check for "Manufacturable" products (Simple or Advanced) - ONLY block for Debit Notes
     const restrictedItems = selectedItems.filter(item => {
@@ -88,30 +76,17 @@ export function Step2_Logistics({
 
     // Initialize data if null or missing fields
     useEffect(() => {
-        let cancelled = false
-        ;(async () => {
-            if (!data || !data.delivery_type) {
-                const initialType = hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE';
-                if (!cancelled) {
-                    setData({
-                        warehouse_id: data?.warehouse_id || "",
-                        date: data?.date || dateString || "",
-                        delivery_type: initialType,
-                        line_data: [],
-                        notes: data?.notes || ""
-                    })
-                }
-            }
-            try {
-                const warehouses = await billingApi.getWarehouses()
-                if (!cancelled) setWarehouses(warehouses)
-            } catch (err) {
-                if (!cancelled) console.error("Error fetching warehouses", err)
-            } finally {
-                if (!cancelled) setFetchingWarehouses(false)
-            }
-        })()
-        return () => { cancelled = true }
+        if (!data || !data.delivery_type) {
+            const initialType = hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE';
+            setData({
+                warehouse_id: data?.warehouse_id || "",
+                date: data?.date || dateString || "",
+                delivery_type: initialType,
+                line_data: [],
+                notes: data?.notes || ""
+            })
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- initialize once per step mount
     }, [])
 
     const formData = (data || {
@@ -133,6 +108,7 @@ export function Step2_Logistics({
         if (dateString && !formData.date) {
             requestAnimationFrame(() => setData({ ...formData, date: dateString }))
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-sync when the server date arrives
     }, [dateString])
 
     // If restricted items exist and type is IMMEDIATE, switch to SCHEDULED automatically

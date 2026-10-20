@@ -34,26 +34,26 @@ import {
     NoteRegistrationStep,
     NoteReviewStep,
     NotePaymentStep,
+    NoteStep_Logistics,
 } from './steps'
 
-// Sales-only steps (stay in their feature, imported directly)
-import { Step2_Logistics, NoteProcessSidebar, NoteItemsSummary } from '@/features/billing'
-import { Step2_ManufacturingDetails } from '@/features/sales'
-
-// Sidebars (each feature keeps its own)
-import { PurchaseNoteSummarySidebar } from '@/features/purchasing'
+// Note-owned sidebars (moved here from billing / purchasing so notes has no
+// cross-feature imports).
+import { NoteProcessSidebar } from './sidebars/NoteProcessSidebar'
+import { NoteItemsSummary } from './sidebars/NoteItemsSummary'
+import { PurchaseNoteSummarySidebar } from './sidebars/PurchaseNoteSummarySidebar'
 
 // Hook + types
 import { useNoteWizardState } from '../hooks/useNoteWizardState'
 import { useServerDate } from '@/hooks/useServerDate'
 import type {
+    NoteLineItem,
     NoteType,
     NoteWizardFeatures,
     NoteWizardMode,
     NoteWizardPayload,
     NoteWizardSourceDocument,
 } from '../types'
-import type { SaleOrderLine } from '@/features/sales'
 
 // ---------------------------------------------------------------------------
 // Props
@@ -96,6 +96,17 @@ export interface UnifiedNoteWizardProps {
     supplierName?: string
     warehouseName?: string
     orderReference?: string
+
+    /**
+     * Manufacturing step slot. Sales-owned callers inject
+     * `Step2_ManufacturingDetails` here so `notes` never imports `sales`.
+     * Only required when `features.manufacturing` is enabled and the flow
+     * reaches the manufacturing step.
+     */
+    renderManufacturingStep?: (ctx: {
+        lines: NoteLineItem[]
+        setLines: (lines: NoteLineItem[]) => void
+    }) => React.ReactNode
 }
 
 // ---------------------------------------------------------------------------
@@ -116,6 +127,7 @@ export function UnifiedNoteWizard({
     supplierName,
     warehouseName,
     orderReference,
+    renderManufacturingStep,
 }: UnifiedNoteWizardProps) {
     const { dateString } = useServerDate()
 
@@ -241,17 +253,13 @@ export function UnifiedNoteWizard({
                 )
 
             case 'manufacturing':
-                return (
-                    <Step2_ManufacturingDetails
-                        // Step2_ManufacturingDetails expects SaleOrderLine[] shape
-                        orderLines={lines as unknown as SaleOrderLine[]}
-                        setOrderLines={setLines as unknown as (lines: SaleOrderLine[]) => void}
-                    />
-                )
+                return renderManufacturingStep
+                    ? renderManufacturingStep({ lines, setLines })
+                    : <div className="text-sm text-muted-foreground">Etapa de fabricación no configurada.</div>
 
             case 'logistics':
                 return (
-                    <Step2_Logistics
+                    <NoteStep_Logistics
                         isCreditNote={isCreditNote}
                         data={logisticsData as Record<string, unknown>}
                         setData={setLogisticsData}

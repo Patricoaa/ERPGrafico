@@ -256,6 +256,28 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       ],
     }],
   },
+}, // Layering: `features/notes` is a reusable wizard layer consumed by
+// sales / purchasing / billing / orders. It must never import back into those
+// features — callers inject the domain-specific pieces (steps, sidebars) via
+// props / render props. Enforced with no-restricted-imports (boundaries cannot
+// express per-feature rules with the shared element vocabulary used here).
+{
+  files: ["features/notes/**/*.ts", "features/notes/**/*.tsx"],
+  rules: {
+    "no-restricted-imports": ["error", {
+      patterns: [
+        {
+          group: [
+            "@/features/sales", "@/features/sales/*", "@/features/sales/**",
+            "@/features/purchasing", "@/features/purchasing/*", "@/features/purchasing/**",
+            "@/features/billing", "@/features/billing/*", "@/features/billing/**",
+            "@/features/orders", "@/features/orders/*", "@/features/orders/**",
+          ],
+          message: "features/notes must not import sales/purchasing/billing/orders — inject that piece from the caller instead (render prop).",
+        },
+      ],
+    }],
+  },
 }, // FSD invariant #5 — components must not import @/lib/api directly.
 // Lives in a custom rule (not no-restricted-imports) because flat-config does
 // not merge no-restricted-imports across blocks: layering a second block here

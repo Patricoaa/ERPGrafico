@@ -8,7 +8,7 @@ import { ShoppingBag } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
-import type { NoteLineItem } from "@/features/notes"
+import type { NoteLineItem } from "../../types"
 
 interface NoteItemsSummaryProps {
     items: NoteLineItem[]

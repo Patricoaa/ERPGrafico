@@ -8,6 +8,18 @@ import { type SaleOrder, SalesOrdersView } from "@/features/sales"
 const UnifiedNoteWizard = lazy(() =>
     import("@/features/notes").then(m => ({ default: m.UnifiedNoteWizard }))
 )
+const Step2_ManufacturingDetails = lazy(() =>
+    import("@/features/sales").then(m => ({ default: m.Step2_ManufacturingDetails }))
+)
+
+/** Sales-owned manufacturing step injected into the notes wizard (notes must not import sales). */
+function SalesManufacturingStep({ lines, setLines }: { lines: unknown[]; setLines: (lines: unknown[]) => void }) {
+    return (
+        <Suspense fallback={<div />}>
+            <Step2_ManufacturingDetails orderLines={lines as never} setOrderLines={setLines as never} />
+        </Suspense>
+    )
+}
 
 export default function ReturnsPageClient() {
     const router = useRouter()
@@ -30,6 +42,9 @@ export default function ReturnsPageClient() {
                         mode="sales"
                         initialType="NOTA_CREDITO"
                         features={{ logistics: true, manufacturing: true }}
+                        renderManufacturingStep={({ lines, setLines }) => (
+                            <SalesManufacturingStep lines={lines as unknown[]} setLines={setLines as (l: unknown[]) => void} />
+                        )}
                         referenceLabel={selectedOrder?.invoices?.[0]?.number as string | undefined}
                         fetchSource={async () => {
                             const invoiceId = selectedOrder?.invoices?.[0]?.id as number || 0;

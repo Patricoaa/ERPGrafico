@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import React, { useState, useRef } from "react"
+import React, { useState, useRef, lazy, Suspense } from "react"
 import { ActionConfirmModal, DocumentCompletionModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared'
 import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
 import { purchaseInvoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
@@ -9,7 +9,6 @@ import { billingApi } from "@/features/billing/api/billingApi"
 import { toast } from "sonner"
 import { PaymentModal } from "@/features/treasury"
 import { ReceiptModal } from "@/features/purchasing"
-import { UnifiedNoteWizard } from '@/features/notes'
 import { LazyDrawer } from "@/features/_shared"
 
 import { purchaseInvoiceActions, type PurchaseInvoiceActionsCtx } from "@/features/billing/purchaseInvoiceActions"
@@ -23,6 +22,12 @@ import { purchaseInvoiceEntity, purchaseInvoiceViews } from "../entity-view/purc
 
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
 const INVOICE_GROUPS: Record<string, FieldId<typeof purchaseInvoiceEntity.fields>> = { date: "date", status: "hub" }
+
+// Lazy: `notes` is a downstream consumer of `billing`; importing it statically
+// created a hard cycle (billing ⇄ notes). See ADR on feature layering.
+const UnifiedNoteWizard = lazy(() =>
+    import("@/features/notes").then(m => ({ default: m.UnifiedNoteWizard }))
+)
 
 interface Props {
     createAction?: React.ReactNode
@@ -189,6 +194,7 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
             )}
 
             {notingDoc && (
+                <Suspense fallback={null}>
                 <UnifiedNoteWizard
                     open={!!notingDoc}
                     onOpenChange={(open) => !open && setNotingDoc(null)}
@@ -249,6 +255,7 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
                     }}
                     onSuccess={fetchDocuments}
                 />
+                </Suspense>
             )}
 
             {completingDoc && (

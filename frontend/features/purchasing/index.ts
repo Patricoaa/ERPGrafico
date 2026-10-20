@@ -47,7 +47,6 @@ export {
   Step2_PurchaseDTE,
   Step3_PurchasePayment,
   Step4_Receipt,
-  PurchaseNoteSummarySidebar,
   PurchaseOrderModal,
   SubscriptionsClientView,
   SubscriptionHistoryModal,

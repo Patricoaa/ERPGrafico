@@ -20,6 +20,19 @@ const ReceiptModal = dynamic(() => import("@/features/purchasing/components/Rece
 const PaymentHistoryModal = dynamic(() => import("../components/PaymentHistoryModal").then(m => m.PaymentHistoryModal))
 const PaymentModal = dynamic(() => import("@/features/treasury/components/PaymentModal").then(m => m.PaymentModal))
 const UnifiedNoteWizard = dynamic(() => import("@/features/notes").then(m => ({ default: m.UnifiedNoteWizard })))
+const Step2_ManufacturingDetails = dynamic(() => import("@/features/sales").then(m => m.Step2_ManufacturingDetails), { ssr: false })
+
+/** Sales-owned manufacturing step injected into the notes wizard (notes must not import sales). */
+function SalesManufacturingStep({ lines, setLines }: { lines: unknown[]; setLines: (lines: unknown[]) => void }) {
+    return (
+        <Suspense fallback={<div />}>
+            <Step2_ManufacturingDetails
+                orderLines={lines as never}
+                setOrderLines={setLines as never}
+            />
+        </Suspense>
+    )
+}
 const NoteLogisticsModal = dynamic(() => import("../components/NoteLogisticsModal").then(m => m.NoteLogisticsModal))
 const WorkOrderWizard = dynamic(() => import("@/features/production").then(m => m.WorkOrderWizard))
 const InvoiceFromLinesModal = dynamic(() => import("@/features/billing").then(m => m.InvoiceFromLinesModal))
@@ -280,6 +293,9 @@ export function useOrderActionEngine({ order, posSessionId = null, onActionSucce
                         mode="sales"
                         initialType={activeModal === 'create-debit-note' ? 'NOTA_DEBITO' : 'NOTA_CREDITO'}
                         features={{ logistics: true, manufacturing: true }}
+                        renderManufacturingStep={({ lines, setLines }) => (
+                            <SalesManufacturingStep lines={lines as unknown[]} setLines={setLines as (l: unknown[]) => void} />
+                        )}
                         referenceLabel={noteSourceInvoice?.number}
                         fetchSource={async () => {
                             const { billingApi } = await import('@/features/billing/api/billingApi')
