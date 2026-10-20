@@ -149,7 +149,7 @@ La página `[id]/page.tsx` es un **Server Component** que:
 |------------|------------------|-------|
 | `sales` | `/sales` | |
 | `purchasing` | `/purchasing` | |
-| `billing` | `/billing` | Split: `/billing/sales` (ventas) + `/billing/purchases` (compras) |
+| `billing` | — | **Sin módulo propio (ADR-0089):** sus vistas DTE viven en `/sales/dtes` (emisión) y `/purchasing/dtes` (recepción) |
 | `contacts` | `/contacts` | |
 | `accounting` | `/accounting` | Excepción: `Budget` vive en `/finances` (decisión UX preexistente) |
 | `inventory` | `/inventory` | Excepción: `Subscription` vive en `/purchasing/subscriptions` (módulo Compras) |
@@ -171,7 +171,7 @@ La página `[id]/page.tsx` es un **Server Component** que:
 | `sales.saledelivery` | `/sales/orders/deliveries` | `/sales/orders/deliveries/{id}` | ❌ (vía `?selected` sobre la lista) | No |
 | `sales.salereturn` | `/sales/returns` | `/sales/returns/{id}` | ✅ | No |
 | `purchasing.purchaseorder` | `/purchasing/orders` | `/purchasing/orders/{id}` | ✅ | No |
-| `billing.invoice` | `/billing/sales` | `/billing/sales/{id}` o `/billing/purchases/{id}` | ✅ | No |
+| `billing.invoice` | `/sales/dtes` | `/d/billing.invoice/{id}` (resolvedor; ADR-0089) | ✅ | No |
 | `contacts.contact` | `/contacts` | `/contacts/{id}` | ✅ | No |
 | `accounting.account` | `/accounting/accounts` | `/accounting/accounts/{id}` | ✅ | Parcial |
 | `accounting.journalentry` | `/accounting/entries` | `/accounting/entries/{id}` | ✅ | No |
