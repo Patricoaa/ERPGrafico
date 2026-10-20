@@ -153,5 +153,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0087](0087-entity-view-system.md) | Entity view system — semantic entity definitions + per-surface composition (replaces createEntityFields / AutoEntityCard / DataTable authoring) | Accepted |
 | [0088](0088-remove-actionslidebutton.md) | Remove ActionSlideButton — button layer standardized on shadcn Button + ActionButtons (kinetic slide animation retired) | Accepted |
 | [0089](0089-fusion-billing-module-into-sales-purchasing.md) | Fin del módulo Facturación — las vistas DTE se mudan a Ventas y Compras | Accepted |
+| [0090](0090-documentos-comerciales-listas-propias.md) | Documentos comerciales — un solo tab Documentos por módulo, con cada lista sobre su propia entidad | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

@@ -1,7 +1,7 @@
 import django_filters
 from django_filters.rest_framework import FilterSet
 
-from .models import SaleDelivery
+from .models import SaleDelivery, SaleReturn
 
 
 class SaleDeliveryFilter(FilterSet):
@@ -36,3 +36,31 @@ class SaleDeliveryFilter(FilterSet):
         elif value == "debit_note":
             return queryset.filter(related_note__isnull=False)
         return queryset
+
+
+class SaleReturnFilter(FilterSet):
+    """ADR-0090: la lista de devoluciones es una vista documental propia, así que
+    necesita los mismos filtros que su hermana SaleDeliveryFilter."""
+
+    date_after = django_filters.DateFilter(field_name="date", lookup_expr="gte")
+    date_before = django_filters.DateFilter(field_name="date", lookup_expr="lte")
+    customer_name = django_filters.CharFilter(
+        field_name="sale_order__customer__name", lookup_expr="icontains"
+    )
+    sale_order_number = django_filters.CharFilter(
+        field_name="sale_order__number", lookup_expr="icontains"
+    )
+    warehouse_id = django_filters.NumberFilter(field_name="warehouse_id")
+    customer_id = django_filters.NumberFilter(field_name="sale_order__customer_id")
+
+    class Meta:
+        model = SaleReturn
+        fields = [
+            "status",
+            "date_after",
+            "date_before",
+            "customer_name",
+            "sale_order_number",
+            "warehouse_id",
+            "customer_id",
+        ]

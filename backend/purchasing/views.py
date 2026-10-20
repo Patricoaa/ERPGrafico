@@ -10,7 +10,7 @@ from core.api.search import DistinctSearchFilter
 from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
 
-from .filters import PurchaseReceiptFilter
+from .filters import PurchaseReceiptFilter, PurchaseReturnFilter
 from .models import PurchaseOrder, PurchaseReturn
 from .return_services import PurchaseReturnService
 from .selectors import PurchaseOrderSelector, PurchaseReceiptSelector
@@ -293,6 +293,12 @@ class PurchaseReturnViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHis
         ).all()
     serializer_class = PurchaseReturnSerializer
     pagination_class = StandardResultsSetPagination
+    # ADR-0090: la lista de devoluciones de compra es una vista documental propia (filtros + orden).
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = PurchaseReturnFilter
+    search_fields = ["number", "purchase_order__supplier__name", "purchase_order__number"]
+    ordering_fields = ["number", "date", "total_cost", "status", "purchase_order__supplier__name"]
+    ordering = ["-date", "-id"]
 
     @action(detail=True, methods=["post"])
     def annul(self, request, pk=None):

@@ -11,7 +11,7 @@ from core.api.pagination import StandardResultsSetPagination
 from core.api.search import DistinctSearchFilter
 from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
 
-from .filters import SaleDeliveryFilter
+from .filters import SaleDeliveryFilter, SaleReturnFilter
 from .models import SaleOrder, SaleReturn, SalesSettings
 from .selectors import SaleDeliverySelector, SaleOrderSelector
 from .serializers import (
@@ -412,6 +412,12 @@ class SaleReturnViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         .all()
     )
     serializer_class = SaleReturnSerializer
+    # ADR-0090: la lista de devoluciones es una vista documental propia (filtros + orden).
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = SaleReturnFilter
+    search_fields = ["number", "sale_order__customer__name", "sale_order__number"]
+    ordering_fields = ["number", "date", "total_cost", "status", "sale_order__customer__name"]
+    ordering = ["-date", "-id"]
 
     @action(detail=True, methods=["post"])
     def annul(self, request, pk=None):
