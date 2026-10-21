@@ -5,16 +5,6 @@
     "rule": "R3"
   },
   {
-    "file": "features/accounting/components/closures/FiscalYearClosingWizard.tsx",
-    "line": 185,
-    "rule": "R1"
-  },
-  {
-    "file": "features/accounting/components/closures/NewFiscalYearDrawer.tsx",
-    "line": 102,
-    "rule": "R1"
-  },
-  {
     "file": "features/inventory/components/UoMDrawer.tsx",
     "line": 268,
     "rule": "R4"
@@ -53,20 +43,5 @@
     "file": "features/production/components/steps/ManufacturingConfigSummary.tsx",
     "line": 476,
     "rule": "R4"
-  },
-  {
-    "file": "features/profile/components/ProfileView.tsx",
-    "line": 200,
-    "rule": "R1"
-  },
-  {
-    "file": "features/settings/components/UnifiedAccountsView.tsx",
-    "line": 820,
-    "rule": "R1"
-  },
-  {
-    "file": "features/treasury/components/TerminalBatchSelectionModal.tsx",
-    "line": 328,
-    "rule": "R1"
   }
 ]

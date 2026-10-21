@@ -325,7 +325,6 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
 
                                     <LabeledInput
                                         label="Monto Neto a Depositar"
-                                        labelClassName="text-income font-bold"
                                         type="number"
                                         step="1"
                                         value={netDeposit}

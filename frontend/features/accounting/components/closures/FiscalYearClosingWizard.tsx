@@ -182,7 +182,6 @@ export function FiscalYearClosingWizard({
 
                     <LabeledContainer
                         label="Cuenta de Capital/Utilidades"
-                        labelClassName="text-3xs font-bold uppercase text-muted-foreground tracking-widest px-1"
                     >
                         <div className="p-5 border-2 border-primary/30 bg-muted/20 rounded-md flex items-center justify-between">
                             <div className="flex items-center gap-4">

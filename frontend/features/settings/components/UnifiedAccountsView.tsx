@@ -817,7 +817,6 @@ function EstructuraForm() {
                                         disabled
                                         readOnly
                                         className="bg-background/50 font-mono font-bold tracking-tighter text-primary text-sm"
-                                        labelClassName="text-3xs text-primary/80"
                                         containerClassName="border-primary/20"
                                     />
                                     <div className="space-y-4">

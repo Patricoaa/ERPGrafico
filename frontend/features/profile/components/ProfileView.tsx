@@ -197,7 +197,6 @@ function InfoField({ icon, label, value }: { icon: React.ReactNode; label: strin
             readOnly
             icon={icon}
             className="bg-background/50 text-foreground"
-            labelClassName="text-3xs text-muted-foreground"
             containerClassName="pointer-events-none"
         />
     )
