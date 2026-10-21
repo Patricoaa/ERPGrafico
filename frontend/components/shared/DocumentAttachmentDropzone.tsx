@@ -67,10 +67,11 @@ export function DocumentAttachmentDropzone({
                         <div className="flex flex-col min-w-0">
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <span className="text-xs font-bold truncate max-w-[220px] text-success">{file.name}</span>
+                                    <span className="text-sm text-foreground truncate max-w-[220px]">{file.name}</span>
                                 </TooltipTrigger>
                                 <TooltipContent side="top">{file.name}</TooltipContent>
                             </Tooltip>
+                            {/* typography-allow: meta - N5 */}
                             <span className="text-3xs uppercase font-bold text-muted-foreground">
                                 {(file.size / 1024).toFixed(1)} KB
                             </span>

@@ -180,11 +180,11 @@ describe('typography contract', () => {
     it('LabeledSelect value uses text-sm, placeholder uses text-sm text-muted-foreground/60', () => {
       const src = formPrimitives.labeledSelect;
       // Value (SelectValue) gets text-sm text-foreground via the trigger class override
-      expect(/\[&_\*:data-\[slot=select-value\]\]:text-sm/.test(src)).toBe(true);
-      expect(/\[&_\*:data-\[slot=select-value\]\]:text-foreground/.test(src)).toBe(true);
+      expect(/\[&_\*\[data-slot=select-value\]\]:text-sm/.test(src)).toBe(true);
+      expect(/\[&_\*\[data-slot=select-value\]\]:text-foreground/.test(src)).toBe(true);
       // Placeholder gets text-sm text-muted-foreground/60
-      expect(/\[&_\*:data-\[placeholder\]\]:text-sm/.test(src)).toBe(true);
-      expect(/\[&_\*:data-\[placeholder\]\]:text-muted-foreground\/60/.test(src)).toBe(true);
+      expect(/\[&_\*\[data-placeholder\]\]:text-sm/.test(src)).toBe(true);
+      expect(/\[&_\*\[data-placeholder\]\]:text-muted-foreground\/60/.test(src)).toBe(true);
       // No font-medium on value/placeholder
       expect(/font-medium text-sm/.test(src)).toBe(false);
     });

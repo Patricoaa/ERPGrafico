@@ -207,7 +207,7 @@ function checkNode(
       for (const attr of attributes) {
         if (!ts.isJsxAttribute(attr)) continue;
         if (attr.name.getText(sourceFile) === 'variant') {
-          const valueText = getAttributeText(attr.initializer, sourceFile);
+          const valueText = getAttributeText(attr.initializer ?? undefined, sourceFile);
           if (valueText === 'inline' || valueText === '"inline"' || valueText === "'inline'") {
             violations.push({
               file: relative(ROOT, sourceFile.fileName),
@@ -269,7 +269,7 @@ function checkNode(
       if (node.children.length > 0) {
         for (const child of node.children) {
           if (ts.isJsxText(child)) content += child.getText(sourceFile);
-          else if (ts.isJsxExpression(child)) content += child.expression.getText(sourceFile);
+          else if (ts.isJsxExpression(child) && child.expression) content += child.expression.getText(sourceFile);
         }
       }
 
@@ -338,7 +338,8 @@ function checkNode(
   );
 }
 
-function getAttributeText(initializer: ts.Node, sourceFile: ts.SourceFile): string | null {
+function getAttributeText(initializer: ts.JsxAttributeValue | undefined, sourceFile: ts.SourceFile): string | null {
+  if (!initializer) return null;
   if (ts.isJsxExpression(initializer)) {
     if (initializer.expression) {
       return initializer.expression.getText(sourceFile);

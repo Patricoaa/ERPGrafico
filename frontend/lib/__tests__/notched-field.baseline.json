@@ -1,47 +1,17 @@
 [
   {
-    "file": "components/shared/DocumentAttachmentDropzone.tsx",
-    "line": 70,
-    "rule": "R3"
-  },
-  {
-    "file": "features/inventory/components/UoMDrawer.tsx",
-    "line": 268,
-    "rule": "R4"
-  },
-  {
-    "file": "features/inventory/components/UoMDrawer.tsx",
-    "line": 360,
-    "rule": "R4"
-  },
-  {
     "file": "features/production/components/forms/WorkOrderBasicStep/WorkOrderBasicInfo.tsx",
-    "line": 307,
-    "rule": "R3"
-  },
-  {
-    "file": "features/production/components/forms/WorkOrderBasicStep/WorkOrderBasicInfo.tsx",
-    "line": 318,
+    "line": 319,
     "rule": "R4"
   },
   {
     "file": "features/production/components/steps/ManufacturingConfigStep.tsx",
-    "line": 512,
-    "rule": "R3"
-  },
-  {
-    "file": "features/production/components/steps/ManufacturingConfigStep.tsx",
-    "line": 523,
+    "line": 524,
     "rule": "R4"
   },
   {
     "file": "features/production/components/steps/ManufacturingConfigSummary.tsx",
-    "line": 470,
-    "rule": "R3"
-  },
-  {
-    "file": "features/production/components/steps/ManufacturingConfigSummary.tsx",
-    "line": 476,
+    "line": 477,
     "rule": "R4"
   }
 ]

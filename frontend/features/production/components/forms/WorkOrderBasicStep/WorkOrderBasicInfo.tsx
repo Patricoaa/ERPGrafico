@@ -301,16 +301,17 @@ export function WorkOrderBasicInfo({
                     />
                     <LabeledContainer label="Contacto Relacionado">
                         {selectedContact ? (
-                            <div className="flex items-center justify-between w-full h-[1.5rem]">
+                            <div className="flex items-center justify-between w-full h-6">
                                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                     <User className="h-3.5 w-3.5 text-primary shrink-0" />
-                                    <span className="font-semibold text-sm truncate">{selectedContact.name}</span>
+                                    <span className="text-sm text-foreground truncate">{selectedContact.name}</span>
                                     {selectedContact.tax_id && (
                                         <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">
                                             [{selectedContact.tax_id}]
                                         </span>
                                     )}
                                 </div>
+                                {/* typography-allow: meta - clear button */}
                                 <Button
                                     type="button"
                                     variant="ghost"
@@ -332,8 +333,8 @@ export function WorkOrderBasicInfo({
                                 }}
                                 onChange={() => { }}
                                 placeholder="Buscar contacto..."
-                                variant="inline"
-                                className="h-[1.5rem] px-0 border-none bg-transparent hover:bg-transparent shadow-none text-sm text-muted-foreground font-normal"
+                                variant="standalone"
+                                className="h-6 px-0 border-none bg-transparent hover:bg-transparent shadow-none text-sm text-muted-foreground font-normal"
                             />
                         )}
                     </LabeledContainer>

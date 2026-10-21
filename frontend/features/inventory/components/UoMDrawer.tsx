@@ -265,11 +265,11 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                             <Button
                                                                 variant="ghost"
                                                                 role="combobox"
-                                                                className={cn("w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
+                                                                className={cn("w-full justify-between font-normal text-sm h-6 py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent")}
                                                             >
                                                                 {field.value
                                                                     ? categories?.find(cat => cat.id === field.value)?.name
-                                                                    : "Seleccionar categoría..."}
+                                                                    : <span className="text-sm text-muted-foreground/60">Seleccionar categoría...</span>}
                                                             </Button>
                                                         </PopoverTrigger>
                                                         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
@@ -357,12 +357,12 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                             <Button
                                                                 variant="ghost"
                                                                 role="combobox"
-                                                                className={cn("w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
+                                                                className={cn("w-full justify-between font-normal text-sm h-6 py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent")}
                                                             >
                                                                 {field.value === 'REFERENCE' ? 'Referencia (Base)' :
                                                                     field.value === 'BIGGER' ? 'Más Grande que base' :
                                                                         field.value === 'SMALLER' ? 'Más Pequeña que base' :
-                                                                            "Seleccionar tipo..."}
+                                                                            <span className="text-sm text-muted-foreground/60">Seleccionar tipo...</span>}
                                                             </Button>
                                                         </PopoverTrigger>
                                                         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
