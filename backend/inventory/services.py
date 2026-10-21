@@ -54,6 +54,7 @@ class SubscriptionService:
 
 class InventoryService:
     @staticmethod
+    @transaction.atomic
     def recalcular_stock(product_id: int, warehouse_id: int):
         """
         Recalcula el stock total a partir del histórico de StockMove y actualiza la entidad Stock.
@@ -92,6 +93,7 @@ class InventoryService:
         return stock
 
     @staticmethod
+    @transaction.atomic
     def actualizar_stock(product_id: int, warehouse_id: int, quantity_change: Decimal):
         """
         Actualiza el stock sumando (o restando) la cantidad indicada de manera atómica.
