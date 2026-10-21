@@ -72,7 +72,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     }
 
     const actionCtx = React.useMemo<AccountActionsCtx>(() => ({
-        onViewLedger: () => {}, // Now handled via tabs in AccountDrawer
         onEdit: (account) => {
             const params = new URLSearchParams(searchParams.toString())
             params.set('selected', String(account.id))
