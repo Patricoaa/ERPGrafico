@@ -50,9 +50,9 @@ Entidades con FK `journal_entry` (o que generan movimientos de tesorería), seg�
 
 | Entidad | Observación |
 |---|---|
-| `PayrollPayment` | `ModelViewSet` sin override; `amount` editable; solo `id`/fechas read-only. Admite `DELETE`. |
-| `F29Declaration` | `F29DeclarationWriteSerializer` sin `validate` de estado; no se encontró chequeo de período tributario cerrado en la edición. |
-| `F29Payment` | `ModelViewSet` sin override de edición; solo `journal_entry` read-only. |
+| `PayrollPayment` | `ModelViewSet` sin override; `amount` editable; solo `id`/fechas read-only. Admite `DELETE`. Además `POST` directo creaba un "pago" sin movimiento ni asiento. **Resuelto 2026-10-21: API de solo lectura (los pagos nacen de `pay_salary`/`pay_previred`) + EditPolicy.** |
+| `F29Declaration` | `F29DeclarationWriteSerializer` sin `validate` de estado; no se encontró chequeo de período tributario cerrado en la edición. Más grave: `POST /tax/declarations/` (`create_or_update_declaration`) hacía `update_or_create` y **sobrescribía los montos de una declaración ya registrada**. **Resuelto 2026-10-21: EditPolicy (registrada → solo `notes`/`document`) aplicada en API y en el servicio.** |
+| `F29Payment` | `ModelViewSet` sin override de edición; solo `journal_entry` read-only. Además el `queryset` hacía `select_related("payment_method")` sobre un `CharField`: **toda lectura por API respondía 500**. **Resuelto 2026-10-21 (EditPolicy + queryset).** |
 | `SaleDelivery`, `SaleReturn` | Solo `id`/`number`/`status` read-only. **Sin `NoDestroyModelMixin`**: aceptan `DELETE` por defecto aunque tengan stock moves y asiento (contradice `deletion-policy.md`). |
 | `PurchaseReceipt`, `PurchaseReturn` | Solo `id`/`number`/`status` read-only; tienen `NoDestroyModelMixin` y `annul`, pero no guard de edición. |
 
@@ -127,3 +127,8 @@ Sí, pero estratificado y forzado por el test de contrato (§5.3), que exige cla
 | D. Config / logs / hijos | Clasificación explícita; los logs son append-only; los hijos heredan el bloqueo del padre | settings, auditoría, líneas |
 
 La clase C es un problema distinto (integridad histórica de referencias, no editabilidad del documento) y merece su propia evaluación después de A.
+
+## 9. Pendientes surgidos en la implementación
+
+- **Ruta de corrección para `PayrollPayment` y `F29Payment`:** ya no se editan, pero tampoco tienen anulación propia. Anular su `TreasuryMovement` desde Tesorería deja el pago vivo (cuenta como pagado en la liquidación / el F29). Requiere un `annul` por entidad, como el del anticipo.
+- **`TreasuryMovement` anulado con documento de RRHH/impuestos vinculado:** `annul_movement` no avisa al documento dueño. Evaluar que tesorería rechace anular movimientos con dueño y derive al `annul` del documento.

@@ -8,7 +8,7 @@ from rest_framework.test import APIClient
 
 from accounting.models import Account, AccountType
 from contacts.models import Contact
-from hr.models import Employee, Payroll, PayrollConcept, PayrollItem
+from hr.models import Employee, Payroll, PayrollConcept, PayrollItem, PayrollPayment
 
 User = get_user_model()
 
@@ -98,6 +98,20 @@ def test_draft_payroll_items_are_editable(client, employee, concept):
     assert res.status_code == 200, res.data
     item.refresh_from_db()
     assert item.amount == Decimal("20000")
+
+
+@pytest.mark.django_db
+def test_payroll_payments_api_is_read_only(client, employee, concept):
+    payroll, _ = _payroll(employee, concept, Payroll.Status.POSTED)
+    payment = PayrollPayment.objects.create(
+        payroll=payroll, amount=Decimal("1000"), date="2026-09-30"
+    )
+    url = f"/api/hr/payroll-payments/{payment.pk}/"
+    assert client.patch(url, {"amount": "1"}, format="json").status_code == 405
+    assert client.delete(url).status_code == 405
+    body = {"payroll": payroll.pk, "amount": "1", "date": "2026-09-30"}
+    assert client.post("/api/hr/payroll-payments/", body, format="json").status_code == 405
+    assert client.get(url).status_code == 200
 
 
 @pytest.mark.django_db

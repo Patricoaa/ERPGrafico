@@ -9,6 +9,7 @@ from django.utils.dateparse import parse_date
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, JournalEntry, JournalItem
 from billing.models import Invoice
+from core.edit_policy import assert_editable, changed_fields
 from workflow.services import WorkflowService
 
 from .models import F29Declaration, F29Payment, TaxPeriod
@@ -267,7 +268,10 @@ class F29CalculationService:
             except F29Declaration.DoesNotExist:
                 pass
 
-        # Get or create declaration
+        existing = F29Declaration.objects.filter(tax_period=tax_period).first()
+        if existing is not None:
+            assert_editable(existing, changed_fields(existing, declaration_data))
+
         declaration, _ = F29Declaration.objects.update_or_create(
             tax_period=tax_period, defaults=declaration_data
         )

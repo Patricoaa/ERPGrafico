@@ -412,7 +412,9 @@ class PayrollPaymentFilter(django_filters.FilterSet):
         fields = ["payroll", "payment_type"]
 
 
-class PayrollPaymentViewSet(viewsets.ModelViewSet):
+class PayrollPaymentViewSet(viewsets.ReadOnlyModelViewSet):
+    """Payments are created only by PayrollViewSet.pay_salary / pay_previred (ADR-0091)."""
+
     pagination_class = StandardResultsSetPagination
     queryset = PayrollPayment.objects.select_related(
         "payroll", "payroll__employee", "payroll__employee__contact"

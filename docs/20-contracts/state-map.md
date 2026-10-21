@@ -183,6 +183,8 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 **Edit restrictions:** Campos inmutables: `id`, `number`, `display_id`, `status`, `total_haberes`, `total_descuentos`, `net_salary`, `journal_entry`.
 
+**Edit policy (ADR-0091):** `Payroll` editable/eliminable solo en `DRAFT` (`POSTED`: solo `notes`; `recalculate` rechazado). `PayrollItem` bloqueado si la liquidación no está en `DRAFT` (crear/editar/borrar). `PayrollPayment`: API de solo lectura; se crea solo vía `pay_salary`/`pay_previred` y queda bloqueado al tener asiento.
+
 ## SalaryAdvance (Anticipo de Sueldo)
 
 | Status | Intent | Transitions allowed to |
@@ -423,6 +425,10 @@ statement esté en `OPEN` (no pagado, no anulado).
 | `COMPLETED` | `success` | — |
 | `REJECTED` | `destructive` | `PENDING` (reassign) |
 | `CANCELLED` | `destructive` | — |
+
+## F29Declaration / F29Payment
+
+**Edit policy (ADR-0091):** `F29Declaration` registrada (con `journal_entry`) solo admite `notes` y `document`; no se elimina; `create_or_update_declaration` rechaza recalcular un período ya registrado. `F29Payment` con asiento es inmutable y no se elimina.
 
 ## TaxPeriod / AccountingPeriod
 

@@ -9,6 +9,7 @@ from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
 from core.idempotency import idempotent_endpoint
+from core.mixins import EditPolicyMixin
 
 from .models import AccountingPeriod, F29Declaration, F29Payment, TaxPeriod
 from .serializers import (
@@ -80,7 +81,7 @@ class TaxPeriodViewSet(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=400)
 
 
-class F29DeclarationViewSet(viewsets.ModelViewSet):
+class F29DeclarationViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     queryset = F29Declaration.objects.select_related("tax_period").all()
     serializer_class = F29DeclarationSerializer
@@ -163,9 +164,9 @@ class F29DeclarationViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(instance).data)
 
 
-class F29PaymentViewSet(viewsets.ModelViewSet):
+class F29PaymentViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
-    queryset = F29Payment.objects.select_related("declaration", "treasury_account", "payment_method", "journal_entry").all()
+    queryset = F29Payment.objects.select_related("declaration", "treasury_account", "journal_entry").all()
     serializer_class = F29PaymentSerializer
     permission_classes = [IsAuthenticated]
     filterset_fields = ["declaration", "payment_date", "payment_method"]

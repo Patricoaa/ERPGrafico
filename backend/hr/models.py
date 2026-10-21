@@ -606,6 +606,12 @@ class PayrollPayment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    edit_policy = EditPolicy(
+        is_locked=lambda p: p.journal_entry_id is not None,
+        deletable=True,
+        locked_message="El pago ya está contabilizado en tesorería y no se puede modificar.",
+    )
+
     class Meta:
         ordering = ["-date"]
         verbose_name = _("Pago de Remuneración")
