@@ -5,6 +5,7 @@ import { DataCell } from "@/components/shared"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
 import { formatQuantity } from "@/lib/money"
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, RotateCcw, Package } from "lucide-react"
 
 export interface StockMove {
     id: number
@@ -118,5 +119,25 @@ export const stockMoveViews = stockMoveEntity.views({
         subtitle: ["productName"],
         meta: ["date", "quantity"],
         trailing: ["flow"],
+        media: {
+            iconFor: (m) => {
+                switch (m.direction) {
+                    case 'IN': return ArrowDownLeft
+                    case 'OUT': return ArrowUpRight
+                    case 'TRANSFER': return ArrowLeftRight
+                    case 'ADJUSTMENT': return RotateCcw
+                    default: return Package
+                }
+            },
+            tone: (m) => {
+                switch (m.direction) {
+                    case 'IN': return 'success'
+                    case 'OUT': return 'destructive'
+                    case 'TRANSFER': return 'info'
+                    case 'ADJUSTMENT': return 'warning'
+                    default: return 'default'
+                }
+            },
+        },
     },
 })

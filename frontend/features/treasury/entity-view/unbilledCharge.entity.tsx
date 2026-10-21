@@ -97,9 +97,9 @@ export const unbilledChargeViews = unbilledChargeEntity.views({
     },
     card: {
         title: "reference",
-        sections: [
-            { fields: ["chargeType", "date", "amount"] },
-            { fields: ["installmentFraction", "description"] },
-        ],
+        subtitle: ["chargeType", "date"],
+        meta: ["installmentFraction", "description"],
+        trailing: ["amount"],
+        media: { tone: "warning" },
     },
 })

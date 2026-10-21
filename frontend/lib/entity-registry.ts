@@ -374,7 +374,7 @@ const REGISTRY = {
     shortTemplate: 'MOV-{id}',
     listUrl: '/inventory/operations/stock',
     detailUrlPattern: '/inventory/stock-moves/{id}',
-    viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'full' },
+    viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'full' },
   },
   'inventory.inventorydocument': {
     label: 'inventory.inventorydocument',
@@ -428,7 +428,7 @@ const REGISTRY = {
     shortTemplate: '{code}',
     listUrl: '/inventory/operations/warehouses',
     detailUrlPattern: '/inventory/warehouses/{id}',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', cardVariant: 'highlights' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'highlights' },
   },
   'inventory.attribute': {
     label: 'inventory.attribute',
@@ -565,7 +565,7 @@ const REGISTRY = {
     shortTemplate: 'AS-{number}',
     listUrl: '/accounting/entries',
     detailUrlPattern: '/accounting/entries/{id}',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'highlights' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'highlights' },
   },
   'tax.taxperiod': {
     label: 'tax.taxperiod',
@@ -615,7 +615,7 @@ const REGISTRY = {
     listUrl: '/hr/absences',
     detailUrlPattern: '/d/hr.absence/{id}',
     partnerField: 'employee_name',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'highlights' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'highlights' },
   },
   'hr.payroll': {
     label: 'hr.payroll',
@@ -701,7 +701,7 @@ const REGISTRY = {
     shortTemplate: 'JOB-{id}',
     listUrl: '/settings/jobs',
     detailUrlPattern: '/settings/jobs',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'multi-column', cardVariant: 'full' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'multi-column', cardVariant: 'full' },
   },
   'settings.group': {
     label: 'settings.group',
@@ -812,7 +812,7 @@ const REGISTRY = {
     shortTemplate: '{name}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center/{id}/overview',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'multi-column', cardVariant: 'full' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'multi-column', cardVariant: 'full' },
   },
   'treasury.paymentmethod': {
     label: 'treasury.paymentmethod',
@@ -824,7 +824,7 @@ const REGISTRY = {
     shortTemplate: '{name}',
     listUrl: '/treasury/operaciones/methods',
     detailUrlPattern: '/treasury/operaciones/methods?selected={id}',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'multi-column', cardVariant: 'full' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'multi-column', cardVariant: 'full' },
   },
   'treasury.treasuryaccount': {
     label: 'treasury.treasuryaccount',
@@ -863,7 +863,7 @@ const REGISTRY = {
     shortTemplate: 'CHQ-{number}',
     listUrl: '/treasury/operaciones/movements',
     detailUrlPattern: '/treasury/operaciones/movements?check={id}',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', cardVariant: 'full' },
   },
   'treasury.bankloan': {
     label: 'treasury.bankloan',
@@ -875,7 +875,7 @@ const REGISTRY = {
     shortTemplate: 'CRE-{code}',
     listUrl: '/treasury/bank-center/loans',
     detailUrlPattern: '/treasury/bank-center',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', cardVariant: 'summary' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'summary' },
   },
   'treasury.creditline': {
     label: 'treasury.creditline',
@@ -888,7 +888,7 @@ const REGISTRY = {
     shortTemplate: 'CL-{code}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', cardVariant: 'full' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
   'treasury.cardpendingcharge': {
     label: 'treasury.cardpendingcharge',
@@ -900,6 +900,7 @@ const REGISTRY = {
     shortTemplate: 'CHG-{id}',
     listUrl: '/treasury/bank-center/cards/unbilled',
     detailUrlPattern: '/treasury/bank-center',
+    viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'card', cardComponent: 'entity', cardVariant: 'full' },
   },
   'treasury.terminal': {
     label: 'treasury.terminal',
@@ -1108,6 +1109,7 @@ const REGISTRY = {
     shortTemplate: 'FC-{id}',
     listUrl: '/purchasing/dtes',
     detailUrlPattern: '/purchasing/dtes/{id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'workflow' },
   },
   'treasury.cashmovement': {
     label: 'treasury.cashmovement',
@@ -1119,6 +1121,7 @@ const REGISTRY = {
     shortTemplate: 'MC-{id}',
     listUrl: '/treasury/operaciones/movements',
     detailUrlPattern: '/treasury/operaciones/movements',
+    viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'full' },
   },
   'sales.posterminal': {
     label: 'sales.posterminal',
@@ -1142,6 +1145,7 @@ const REGISTRY = {
     shortTemplate: 'MB-{id}',
     listUrl: '/treasury/operaciones/movements',
     detailUrlPattern: '/treasury/operaciones/movements',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'full' },
   },
   'inventory.inventorycount': {
     label: 'inventory.inventorycount',
@@ -1164,6 +1168,7 @@ const REGISTRY = {
     shortTemplate: 'CHG-{id}',
     listUrl: '/treasury/bank-center/cards/unbilled',
     detailUrlPattern: '/treasury/bank-center',
+    viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'card', cardComponent: 'entity', cardVariant: 'full' },
   },
   'treasury.cardstatement': {
     label: 'treasury.cardstatement',
