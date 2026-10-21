@@ -8,6 +8,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
+from core.edit_policy import EditPolicy
 from core.models import AuditedModel, TimeStampedModel
 from core.utils import get_current_date
 
@@ -1489,6 +1490,14 @@ class FiscalYear(models.Model):
     Tracks the annual closing process: closing P&L accounts and
     transferring the result to equity.
     """
+
+    # ADR-0091: dates are frozen once closing starts; close/reopen go through actions.
+    edit_policy = EditPolicy(
+        editable_statuses=frozenset({"OPEN"}),
+        is_locked=lambda fy: fy.closing_entry_id is not None,
+        deletable=True,
+        locked_message="El ejercicio está en cierre o cerrado; reábralo para modificarlo.",
+    )
 
     class Status(models.TextChoices):
         OPEN = "OPEN", _("Abierto")

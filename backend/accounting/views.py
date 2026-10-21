@@ -32,7 +32,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin as AuditHistory
-from core.mixins import BulkImportMixin
+from core.mixins import BulkImportMixin, EditPolicyMixin
 
 from .fiscal_year_service import FiscalYearClosingService
 from .selectors import (
@@ -304,7 +304,7 @@ class BudgetItemViewSet(viewsets.ModelViewSet):
     serializer_class = BudgetItemSerializer
 
 
-class FiscalYearViewSet(viewsets.ModelViewSet):
+class FiscalYearViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     """
     CRUD + custom actions for Fiscal Year management and annual closing.
     """

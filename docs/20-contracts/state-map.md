@@ -472,6 +472,8 @@ statement esté en `OPEN` (no pagado, no anulado).
 
 **Edit restrictions:** Campos inmutables: `status`, `closing_entry`, `opening_entry`, `net_result`, `closed_at`, `closed_by`.
 
+
+**Edit policy (ADR-0091):** editable solo en `OPEN` sin asiento de cierre; en `CLOSING`/`CLOSED` solo `notes`. Cierre y reapertura van por sus acciones.
 ## Employee
 
 | Status | Intent |
