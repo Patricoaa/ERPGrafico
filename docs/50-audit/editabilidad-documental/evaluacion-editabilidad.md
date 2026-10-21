@@ -130,5 +130,7 @@ La clase C es un problema distinto (integridad histórica de referencias, no edi
 
 ## 9. Pendientes surgidos en la implementación
 
-- **Ruta de corrección para `PayrollPayment` y `F29Payment`:** ya no se editan, pero tampoco tienen anulación propia. Anular su `TreasuryMovement` desde Tesorería deja el pago vivo (cuenta como pagado en la liquidación / el F29). Requiere un `annul` por entidad, como el del anticipo.
-- **`TreasuryMovement` anulado con documento de RRHH/impuestos vinculado:** `annul_movement` no avisa al documento dueño. Evaluar que tesorería rechace anular movimientos con dueño y derive al `annul` del documento.
+- **Ruta de corrección para `PayrollPayment` y `F29Payment`:** **Resuelto 2026-10-21** — `status` POSTED/CANCELLED + `annul` por entidad; los anulados no cuentan como pagados.
+- **`TreasuryMovement` anulado con documento de RRHH/impuestos vinculado:** **Resuelto 2026-10-21** — `cancel_movement`/`annul_movement` rechazan movimientos con dueño salvo `from_owner=True`.
+- **Hallazgo — asientos mal imputados (resuelto hacia adelante, 2026-10-21):** pagos de sueldo, Previred y anticipo debitaban Proveedores (la rama RRHH quedaba detrás del comodín `default_payable_account`); el pago F29 generaba dos asientos (banco acreditado dos veces). Datos previos del dev server no se corrigieron (decisión: opción b).
+- **Hallazgo — `TreasuryMovementViewSet` define dos veces `cancel`, `cancel_impact`, `annul`, `register_return`, `suggestions`, `allocate`, `allocations`** (bloque duplicado idéntico; rige la segunda copia). Limpiar.

@@ -422,3 +422,14 @@ class PayrollPaymentViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = PayrollPaymentSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = PayrollPaymentFilter
+
+    @action(detail=True, methods=["post"])
+    def annul(self, request, pk=None):
+        try:
+            payment = PayrollPaymentService.annul_payment(
+                self.get_object(), reason=request.data.get("reason", ""), user=request.user
+            )
+        except ValidationError as e:
+            msg = e.messages[0] if getattr(e, "messages", None) else str(e)
+            return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(payment).data)

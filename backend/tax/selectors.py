@@ -3,7 +3,7 @@ class TaxSelectorExt:
     def get_declaration_summary(obj):
         d = obj.declarations.first()
         if not d: return None
-        pays = d.payments.all()
+        pays = [p for p in d.payments.all() if p.status == p.Status.POSTED]
         paid = sum(p.amount for p in pays)
         due = d.total_amount_due
         return {

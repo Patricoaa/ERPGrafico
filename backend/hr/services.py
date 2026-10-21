@@ -762,6 +762,27 @@ class PayrollPaymentService:
     """Handles Previred and salary payment registration for a posted payroll."""
 
     @staticmethod
+    @transaction.atomic
+    def annul_payment(payment, *, reason: str, user=None):
+        """Anula un pago de remuneración o Previred: reversa su movimiento de
+        tesorería y lo deja CANCELLED; el saldo vuelve a quedar pendiente."""
+        from core.services.document import lock_document
+        from treasury.services import TreasuryService
+
+        from .models import PayrollPayment
+
+        lock_document(payment)
+        if payment.status == PayrollPayment.Status.CANCELLED:
+            return payment
+        movement = getattr(payment.journal_entry, "treasury_movement", None)
+        if movement is None:
+            raise ValidationError(_("El pago no tiene un movimiento de tesorería asociado."))
+        TreasuryService.annul_movement(movement, user=user, reason=reason, from_owner=True)
+        payment.status = PayrollPayment.Status.CANCELLED
+        payment.save(update_fields=["status"])
+        return payment
+
+    @staticmethod
     def _parse_payment_request(request):
         treasury_account_id = request.data.get("treasury_account_id")
         if not treasury_account_id:
@@ -836,6 +857,7 @@ class PayrollPaymentService:
         paid = PayrollPayment.objects.filter(
             payroll=payroll,
             payment_type=PayrollPayment.PaymentType.PREVIRED,
+            status=PayrollPayment.Status.POSTED,
         ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
 
         remaining = previred_total - paid
@@ -921,6 +943,7 @@ class PayrollPaymentService:
         paid_salary = PayrollPayment.objects.filter(
             payroll=payroll,
             payment_type=PayrollPayment.PaymentType.SALARIO,
+            status=PayrollPayment.Status.POSTED,
         ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
 
         remaining = payroll.net_salary - total_advances - paid_salary
@@ -1044,7 +1067,7 @@ class SalaryAdvanceService:
         movement = getattr(advance.journal_entry, "treasury_movement", None)
         if movement is None:
             raise ValidationError(_("El anticipo no tiene un pago de tesorería asociado."))
-        TreasuryService.annul_movement(movement, user=user, reason=reason)
+        TreasuryService.annul_movement(movement, user=user, reason=reason, from_owner=True)
 
         advance.status = SalaryAdvance.Status.CANCELLED
         advance.save(update_fields=["status"])

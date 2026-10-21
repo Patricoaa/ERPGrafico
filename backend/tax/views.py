@@ -191,6 +191,17 @@ class F29PaymentViewSet(EditPolicyMixin, viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": f"Error inesperado: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=["post"])
+    def annul(self, request, pk=None):
+        try:
+            payment = F29PaymentService.annul_payment(
+                self.get_object(), reason=request.data.get("reason", ""), user=request.user
+            )
+        except DjangoValidationError as e:
+            msg = e.messages[0] if getattr(e, "messages", None) else str(e)
+            return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(payment).data)
+
 
 class AccountingPeriodViewSet(viewsets.ModelViewSet):
     queryset = AccountingPeriod.objects.select_related("journal_entry").all()

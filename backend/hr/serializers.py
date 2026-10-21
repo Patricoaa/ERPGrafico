@@ -264,6 +264,7 @@ class PayrollListSerializer(serializers.ModelSerializer):
             p.amount
             for p in obj.payments.all()
             if p.payment_type == PayrollPayment.PaymentType.PREVIRED
+            and p.status == PayrollPayment.Status.POSTED
         ) or 0
 
     def get_remuneration_paid_amount(self, obj):
@@ -272,6 +273,7 @@ class PayrollListSerializer(serializers.ModelSerializer):
             p.amount
             for p in obj.payments.all()
             if p.payment_type == PayrollPayment.PaymentType.SALARIO
+            and p.status == PayrollPayment.Status.POSTED
         ) or 0
 
     def get_total_previred(self, obj):
@@ -499,6 +501,7 @@ class PayrollPaymentSerializer(serializers.ModelSerializer):
     payroll_display_id = serializers.CharField(source="payroll.display_id", read_only=True)
     employee_name = serializers.CharField(source="payroll.employee.contact.name", read_only=True)
     payment_type_display = serializers.CharField(source="get_payment_type_display", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
 
     class Meta:
         model = PayrollPayment
@@ -512,11 +515,13 @@ class PayrollPaymentSerializer(serializers.ModelSerializer):
             "amount",
             "date",
             "notes",
+            "status",
+            "status_display",
             "journal_entry",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "status", "journal_entry", "created_at", "updated_at"]
 
 
 class EmployeePayrollPreviewSerializer(serializers.ModelSerializer):
@@ -587,6 +592,7 @@ class EmployeePayrollPreviewSerializer(serializers.ModelSerializer):
         try:
             return any(
                 p.payment_type == PayrollPayment.PaymentType.SALARIO.value
+                and p.status == PayrollPayment.Status.POSTED
                 for p in obj.payments.all()
             )
         except Exception:
@@ -596,6 +602,7 @@ class EmployeePayrollPreviewSerializer(serializers.ModelSerializer):
         try:
             return any(
                 p.payment_type == PayrollPayment.PaymentType.PREVIRED.value
+                and p.status == PayrollPayment.Status.POSTED
                 for p in obj.payments.all()
             )
         except Exception:

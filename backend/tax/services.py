@@ -643,7 +643,7 @@ class TaxPeriodService:
 
         # Validate payment if amount due
         if declaration.total_amount_due > 0:
-            total_paid = sum(p.amount for p in declaration.payments.all())
+            total_paid = sum(p.amount for p in declaration.payments.all() if p.status == F29Payment.Status.POSTED)
             if total_paid < declaration.total_amount_due:
                 pending = declaration.total_amount_due - total_paid
                 raise ValidationError(
@@ -764,7 +764,7 @@ class TaxPeriodService:
 
         # Check if taxes are paid (if owed)
         if declaration and declaration.vat_to_pay > 0:
-            total_paid = sum(p.amount for p in declaration.payments.all())
+            total_paid = sum(p.amount for p in declaration.payments.all() if p.status == F29Payment.Status.POSTED)
             checklist["has_payment"] = total_paid >= declaration.vat_to_pay
         else:
             checklist["has_payment"] = True  # No payment needed
@@ -776,6 +776,27 @@ class F29PaymentService:
     """
     Service for managing F29 tax payments.
     """
+
+    @staticmethod
+    @transaction.atomic
+    def annul_payment(payment, *, reason: str, user=None):
+        """Anula un pago F29: reversa su movimiento de tesorería y lo deja CANCELLED."""
+        from core.services.document import lock_document
+        from treasury.services import TreasuryService
+
+        lock_document(payment)
+        if payment.status == F29Payment.Status.CANCELLED:
+            return payment
+        movement = getattr(payment.journal_entry, "treasury_movement", None)
+        if movement is None:
+            raise ValidationError(
+                "El pago no tiene un movimiento de tesorería asociado "
+                "(registrado antes de la corrección de asientos F29); anúlelo manualmente."
+            )
+        TreasuryService.annul_movement(movement, user=user, reason=reason, from_owner=True)
+        payment.status = F29Payment.Status.CANCELLED
+        payment.save(update_fields=["status"])
+        return payment
 
     @staticmethod
     @transaction.atomic

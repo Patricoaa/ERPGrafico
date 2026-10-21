@@ -895,6 +895,30 @@ class TreasuryService:
             return settings.pos_cashback_error_account
         return None
 
+    # Documents whose payment movement must be annulled through the document
+    # itself (ADR-0091): (reverse accessor on JournalEntry, is_many, label).
+    _OWNER_ACCESSORS = (
+        ("salary_advances", True, "el anticipo de sueldo"),
+        ("payroll_payments", True, "el pago de la liquidación"),
+        ("f29_payment", False, "el pago F29"),
+    )
+
+    @staticmethod
+    def assert_not_owned(movement: TreasuryMovement):
+        entry = movement.journal_entry
+        if entry is None:
+            return
+        for accessor, is_many, label in TreasuryService._OWNER_ACCESSORS:
+            owned = (
+                getattr(entry, accessor).exists()
+                if is_many
+                else getattr(entry, accessor, None) is not None
+            )
+            if owned:
+                raise ValidationError(
+                    f"Este movimiento pertenece a {label}; anúlelo desde ese documento."
+                )
+
     @staticmethod
     def validate_purge(movement: TreasuryMovement):
         """
@@ -911,7 +935,9 @@ class TreasuryService:
 
     @staticmethod
     @transaction.atomic
-    def cancel_movement(movement: TreasuryMovement, user=None, reason: str = ""):
+    def cancel_movement(
+        movement: TreasuryMovement, user=None, reason: str = "", from_owner: bool = False
+    ):
         """
         Cancels a DRAFT movement: deletes the unposted journal entry and marks
         the movement as CANCELLED. No reversals — a movement with a POSTED
@@ -924,6 +950,9 @@ class TreasuryService:
 
         if movement.status == TreasuryMovement.MovementStatus.CANCELLED:
             return movement
+
+        if not from_owner:
+            TreasuryService.assert_not_owned(movement)
 
         if movement.is_reconciled:
             raise ValidationError("No se puede cancelar un movimiento conciliado.")
@@ -962,6 +991,7 @@ class TreasuryService:
         reason: str = "",
         treasury_account_id: int = None,
         amount: Decimal = None,
+        from_owner: bool = False,
     ):
         """
         Annuls a movement: reverses its POSTED journal entry (reversal dated
@@ -976,6 +1006,9 @@ class TreasuryService:
 
         if movement.status == TreasuryMovement.MovementStatus.CANCELLED:
             return movement
+
+        if not from_owner:
+            TreasuryService.assert_not_owned(movement)
 
         if not reason:
             raise ValidationError("Debe indicar el motivo de la anulación.")

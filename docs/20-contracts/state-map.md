@@ -191,7 +191,7 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 **Edit restrictions:** Campos inmutables: `id`, `number`, `display_id`, `status`, `total_haberes`, `total_descuentos`, `net_salary`, `journal_entry`.
 
-**Edit policy (ADR-0091):** `Payroll` editable/eliminable solo en `DRAFT` (`POSTED`: solo `notes`; `recalculate` rechazado). `PayrollItem` bloqueado si la liquidación no está en `DRAFT` (crear/editar/borrar). `PayrollPayment`: API de solo lectura; se crea solo vía `pay_salary`/`pay_previred` y queda bloqueado al tener asiento.
+**Edit policy (ADR-0091):** `Payroll` editable/eliminable solo en `DRAFT` (`POSTED`: solo `notes`; `recalculate` rechazado). `PayrollItem` bloqueado si la liquidación no está en `DRAFT` (crear/editar/borrar). `PayrollPayment` (`POSTED` → `CANCELLED`): API de solo lectura; se crea solo vía `pay_salary`/`pay_previred` y queda bloqueado al tener asiento. Se corrige con `POST /hr/payroll-payments/{id}/annul/` (motivo obligatorio): reversa su movimiento y libera el saldo pendiente.
 
 ## SalaryAdvance (Anticipo de Sueldo)
 
@@ -238,7 +238,7 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 **Edit restrictions:** If `is_reconciled == True` → bloquea cancelación. Si tiene `journal_entry.status == POSTED` → solo annul vía reverso. Movimientos en período contable cerrado se bloquean.
 
-**Edit policy (ADR-0091, `TreasuryMovement.edit_policy`):** editable solo en `DRAFT` **y sin asiento** (cualquier asiento, aun borrador, deriva de sus campos). Bloqueado: solo `notes` y `justify_reason` editables; la API responde 422 `DOCUMENT_LOCKED`. Hard delete solo de `CANCELLED` sin asiento (purga admin). `is_editable` expuesto en el detalle.
+**Edit policy (ADR-0091, `TreasuryMovement.edit_policy`):** editable solo en `DRAFT` **y sin asiento** (cualquier asiento, aun borrador, deriva de sus campos). Bloqueado: solo `notes` y `justify_reason` editables; la API responde 422 `DOCUMENT_LOCKED`. Hard delete solo de `CANCELLED` sin asiento (purga admin). `is_editable` expuesto en el detalle. **Movimientos con documento dueño** (anticipo, pago de liquidación, pago F29): `cancel`/`annul` directos se rechazan; se anulan desde el documento (`TreasuryService.assert_not_owned`).
 
 ## POSSession
 
@@ -436,7 +436,7 @@ statement esté en `OPEN` (no pagado, no anulado).
 
 ## F29Declaration / F29Payment
 
-**Edit policy (ADR-0091):** `F29Declaration` registrada (con `journal_entry`) solo admite `notes` y `document`; no se elimina; `create_or_update_declaration` rechaza recalcular un período ya registrado. `F29Payment` con asiento es inmutable y no se elimina.
+**Edit policy (ADR-0091):** `F29Declaration` registrada (con `journal_entry`) solo admite `notes` y `document`; no se elimina; `create_or_update_declaration` rechaza recalcular un período ya registrado. `F29Payment` (`POSTED` → `CANCELLED`) con asiento es inmutable y no se elimina; se corrige con `POST /tax/payments/{id}/annul/`. Los pagos anulados no cuentan como pagados.
 
 ## TaxPeriod / AccountingPeriod
 

@@ -465,6 +465,14 @@ class F29Payment(models.Model):
         related_name="f29_payment",
         verbose_name=_("Asiento Contable"),
     )
+
+    class Status(models.TextChoices):
+        POSTED = "POSTED", _("Contabilizado")
+        CANCELLED = "CANCELLED", _("Anulado")
+
+    status = models.CharField(
+        _("Estado"), max_length=20, choices=Status.choices, default=Status.POSTED
+    )
     notes = models.TextField(_("Observaciones"), blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)

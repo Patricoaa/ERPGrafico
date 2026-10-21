@@ -37,6 +37,8 @@ export const taxApi = {
     /* Payments */
     createPayment: (data: Record<string, unknown>) =>
         api.post('/tax/payments/', data).then(r => r.data),
+    annulPayment: (id: number, reason: string) =>
+        api.post(`/tax/payments/${id}/annul/`, { reason }).then(r => r.data),
 
     /* Documents */
     attachDeclarationDocument: (declarationId: number, file: File) => {

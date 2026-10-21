@@ -603,6 +603,14 @@ class PayrollPayment(models.Model):
         verbose_name=_("Asiento Contable"),
     )
 
+    class Status(models.TextChoices):
+        POSTED = "POSTED", _("Contabilizado")
+        CANCELLED = "CANCELLED", _("Anulado")
+
+    status = models.CharField(
+        _("Estado"), max_length=20, choices=Status.choices, default=Status.POSTED
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

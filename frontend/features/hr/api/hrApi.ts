@@ -209,6 +209,11 @@ export async function getPendingAdvancesForEmployee(employeeId: number): Promise
   return res.data.results
 }
 
+export async function annulPayrollPayment(id: number, reason: string): Promise<PayrollPayment> {
+  const res = await api.post<PayrollPayment>(`/hr/payroll-payments/${id}/annul/`, { reason })
+  return res.data
+}
+
 export async function annulAdvance(id: number, reason: string): Promise<SalaryAdvance> {
   const res = await api.post<SalaryAdvance>(`/hr/advances/${id}/annul/`, { reason })
   return res.data

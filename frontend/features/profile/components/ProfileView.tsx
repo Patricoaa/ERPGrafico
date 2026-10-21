@@ -314,7 +314,7 @@ function PersonalTab({
             typeLabel: p.payment_type_display || p.payment_type,
             amount: p.amount,
             payroll_display_id: p.payroll_display_id || null,
-            statusKey: 'PAID'
+            statusKey: p.status === 'CANCELLED' ? 'CANCELLED' : 'PAID'
         }))
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()), [advances, payments])
 

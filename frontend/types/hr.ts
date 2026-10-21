@@ -193,6 +193,8 @@ export interface PayrollPayment {
   amount: string
   date: string
   notes: string
+  status: 'POSTED' | 'CANCELLED'
+  status_display?: string
   journal_entry: number | null
   created_at: string
   updated_at: string

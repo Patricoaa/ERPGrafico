@@ -11,7 +11,7 @@ import * as z from "zod"
 import {
     postPayroll, generateProformaPayroll, deletePayroll,
     createPayrollItem, updatePayrollItem, deletePayrollItem, payPrevired, paySalary,
-    updateAdvance, getPendingAdvancesForEmployee,
+    updateAdvance, getPendingAdvancesForEmployee, annulPayrollPayment,
 } from '@/features/hr/api/hrApi'
 import { PaymentModal } from "@/features/treasury"
 import type { PayrollItem, PayrollConcept, PayrollPayment, SalaryAdvance } from "@/types/hr"
@@ -141,15 +141,16 @@ export function PayrollDetailView({
     }
 
     const isPosted = payroll?.status === 'POSTED'
-    const salaroPaid = payments.some((p: PayrollPayment) => p.payment_type === 'SALARIO')
-    const previredPaid = payments.some((p: PayrollPayment) => p.payment_type === 'PREVIRED')
+    const activePayments = payments.filter((p: PayrollPayment) => p.status === 'POSTED')
+    const salaroPaid = activePayments.some((p: PayrollPayment) => p.payment_type === 'SALARIO')
+    const previredPaid = activePayments.some((p: PayrollPayment) => p.payment_type === 'PREVIRED')
 
     const netSalary = parseFloat(payroll?.net_salary || "0")
     const totalAdvances = payroll?.advances?.reduce((s: number, a: SalaryAdvance) => s + parseFloat(a.amount), 0) || 0
-    const totalSalaryPaid = payments.filter((p: PayrollPayment) => p.payment_type === 'SALARIO').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0)
+    const totalSalaryPaid = activePayments.filter((p: PayrollPayment) => p.payment_type === 'SALARIO').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0)
     const pendingSalary = Math.max(0, netSalary - totalAdvances - totalSalaryPaid)
     const totalPrevired = payroll?.items?.filter((i: PayrollItem) => i.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR').reduce((s: number, i: PayrollItem) => s + parseFloat(i.amount || "0"), 0) || 0
-    const pendingPrevired = Math.max(0, totalPrevired - payments.filter((p: PayrollPayment) => p.payment_type === 'PREVIRED').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0))
+    const pendingPrevired = Math.max(0, totalPrevired - activePayments.filter((p: PayrollPayment) => p.payment_type === 'PREVIRED').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0))
 
     useEffect(() => {
         if (isSheet && onHeaderDataChange && payroll) {
@@ -375,6 +376,10 @@ export function PayrollDetailView({
                         className={isSheet ? "" : ""}
                     />
 
+                    {viewMode === 'admin' && payments.length > 0 && (
+                        <PaymentsSection payments={payments} onChanged={() => { fetchPayroll(); onUpdate?.() }} />
+                    )}
+
                     {viewMode === 'admin' && (
                         <AdvancesSection
                             payrollId={payrollId}
@@ -452,6 +457,57 @@ export function PayrollDetailView({
             />
         </div>
         </SkeletonShell>
+    )
+}
+
+function PaymentsSection({ payments, onChanged }: { payments: PayrollPayment[], onChanged: () => void }) {
+    const [toAnnul, setToAnnul] = useState<PayrollPayment | null>(null)
+
+    return (
+        <div className="mt-6 border rounded-md p-4 space-y-3">
+            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Pagos registrados</span>
+            <div className="space-y-1.5">
+                {payments.map(p => (
+                    <div key={p.id} className="flex items-center justify-between text-xs py-1 border-b last:border-0">
+                        <span className="text-muted-foreground">{p.date}</span>
+                        <span>{p.payment_type_display}</span>
+                        <MoneyDisplay amount={p.amount} className="font-medium text-xs" />
+                        <StatusBadge status={p.status} size="sm" variant="badge" />
+                        {p.status === 'POSTED' && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-xs text-muted-foreground hover:text-destructive"
+                                onClick={() => setToAnnul(p)}
+                            >
+                                Anular
+                            </Button>
+                        )}
+                    </div>
+                ))}
+            </div>
+
+            <ActionConfirmModal
+                open={toAnnul !== null}
+                onOpenChange={(o) => { if (!o) setToAnnul(null) }}
+                title="Anular pago"
+                description="Se anulará el egreso en tesorería con su asiento de reversa y el monto volverá a quedar pendiente en la liquidación."
+                variant="destructive"
+                confirmText="Anular"
+                requireReason
+                onConfirm={async (reason) => {
+                    if (!toAnnul || !reason) return
+                    try {
+                        await annulPayrollPayment(toAnnul.id, reason)
+                        toast.success("Pago anulado")
+                        setToAnnul(null)
+                        onChanged()
+                    } catch (e) {
+                        showApiError(e, "Error al anular el pago")
+                    }
+                }}
+            />
+        </div>
     )
 }
 

@@ -3854,7 +3854,7 @@ class Command(BaseCommand):
 
             # 3. Pay F29 if amount due > 0
             if declaration.total_amount_due > 0:
-                already_paid = sum(p.amount for p in declaration.payments.all())
+                already_paid = sum(p.amount for p in declaration.payments.all() if p.status == "POSTED")
                 remaining = declaration.total_amount_due - already_paid
                 if remaining > 0:
                     try:

@@ -202,7 +202,9 @@ def generate_payroll_pdf(payroll) -> BytesIO:
         )
 
     for pay in PayrollPayment.objects.filter(
-        payroll=payroll, payment_type=PayrollPayment.PaymentType.SALARIO
+        payroll=payroll,
+        payment_type=PayrollPayment.PaymentType.SALARIO,
+        status=PayrollPayment.Status.POSTED,
     ):
         unified_payments.append(
             {
