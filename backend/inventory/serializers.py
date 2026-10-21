@@ -446,6 +446,35 @@ class ProductListSerializer(serializers.ModelSerializer):
             return float(obj.annotated_current_stock or 0.0) - float(obj.annotated_qty_reserved or 0.0)
         return 0.0
 
+    variants_count = serializers.SerializerMethodField()
+    def get_variants_count(self, obj):
+        return getattr(obj, "variants_count", 0) or 0
+
+    # Variant card hints. Read from the `variants` prefetch of `list_products` (no extra queries).
+    variant_axis_label = serializers.SerializerMethodField()
+    def get_variant_axis_label(self, obj):
+        """Single attribute name shared by every variant ("Gramaje"), or None when mixed/absent."""
+        if not obj.has_variants:
+            return None
+        names = {
+            value.attribute.name
+            for variant in obj.variants.all()
+            for value in variant.attribute_values.all()
+        }
+        return next(iter(names)) if len(names) == 1 else None
+
+    min_variant_price = serializers.SerializerMethodField()
+    def get_min_variant_price(self, obj):
+        if not obj.has_variants:
+            return None
+        prices = [variant.sale_price for variant in obj.variants.all() if variant.sale_price is not None]
+        return min(prices) if prices else None
+
+    manufacturable_quantity = serializers.SerializerMethodField()
+    def get_manufacturable_quantity(self, obj):
+        qty = obj.get_manufacturable_quantity()
+        return float(qty) if qty is not None else None
+
     image_thumbnail = serializers.SerializerMethodField()
     def get_image_thumbnail(self, obj):
         if obj.image and hasattr(obj, "image_thumbnail"):
@@ -469,7 +498,10 @@ class ProductListSerializer(serializers.ModelSerializer):
             "sale_price", "cost_price", "effective_price",
             "current_stock", "qty_reserved", "qty_available",
             "track_inventory", "can_be_sold", "can_be_purchased",
-            "has_variants", "is_variable_amount", "is_dynamic_pricing"
+            "has_variants", "variants_count", "variant_axis_label", "min_variant_price",
+            "is_variable_amount", "is_dynamic_pricing",
+            "has_bom", "requires_advanced_manufacturing", "mfg_auto_finalize",
+            "manufacturable_quantity",
         ]
 
 class ProductWriteSerializer(serializers.ModelSerializer):
