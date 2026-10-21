@@ -11,6 +11,7 @@ from imagekit.processors import ResizeToFill
 from simple_history.models import HistoricalRecords
 
 from accounting.models import Account, AccountType
+from core.edit_policy import EditPolicy
 from core.models import TimeStampedModel
 from core.storages import PublicMediaStorage
 from core.utils import generic_upload_path, get_current_date
@@ -1300,6 +1301,13 @@ ADJUSTMENT_VIRTUAL_NAMES = (
 
 
 class StockMove(models.Model):
+    # ADR-0085/0091: stock moves are append-only; corrections are counter-moves.
+    edit_policy = EditPolicy(
+        is_locked=lambda move: True,
+        mutable_when_locked=frozenset(),
+        locked_message="Los movimientos de stock no se modifican; registre un contramovimiento.",
+    )
+
     class Type(models.TextChoices):
         IN = "IN", _("Entrada")
         OUT = "OUT", _("Salida")
