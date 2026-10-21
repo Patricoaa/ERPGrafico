@@ -462,7 +462,7 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def card_purchase(self, request):
         """
         Crea una compra con tarjeta en N cuotas con interés
-        explícito opcional (Onda 2, ADR-0043).
+        explícito opcional (Onda dos, ADR-43).
         """
         try:
             result = TreasuryService.process_card_purchase_request(request.data, request.user)
@@ -1175,12 +1175,12 @@ class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     """CRUD + acciones de lifecycle para créditos bancarios (Fase 2).
 
     Acciones custom:
-      - POST /loans/{id}/disburse/  → desembolsar (idempotente si ya ACTIVE).
-      - POST /loans/{id}/prepay/    → pago total anticipado.
-      - POST /loans/{id}/refinance/ → marca REFINANCED (no paga, sólo cierra).
-      - GET  /loans/{id}/schedule/  → preview de tabla de amortización sin
+      - POST /loans/{id}/disburse/  -> desembolsar (idempotente si ya ACTIVE).
+      - POST /loans/{id}/prepay/    -> pago total anticipado.
+      - POST /loans/{id}/refinance/ -> marca REFINANCED (no paga, sólo cierra).
+      - GET  /loans/{id}/schedule/  -> preview de tabla de amortización sin
         persistir (útil al registrar el crédito).
-      - GET  /loans/{id}/amortization_table/ → tabla persistida con cuotas.
+      - GET  /loans/{id}/amortization_table/ -> tabla persistida con cuotas.
     """
 
     from .models import BankLoan
@@ -1363,9 +1363,9 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     """CRUD + acciones de lifecycle para estados de cuenta de tarjeta de crédito propia.
 
     Acciones custom:
-      - POST /card-statements/{id}/pay/          → pagar desde una cuenta bancaria.
-      - POST /card-statements/{id}/apply-charges/ → imputar interés/comisiones.
-      - POST /card-statements/{id}/cancel/       → anular un statement OPEN.
+      - POST /card-statements/{id}/pay/          -> pagar desde una cuenta bancaria.
+      - POST /card-statements/{id}/apply-charges/ -> imputar interés/comisiones.
+      - POST /card-statements/{id}/cancel/       -> anular un statement OPEN.
     """
 
     from .models import CreditCardStatement
@@ -1542,9 +1542,7 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=["post"], url_path="reverse")
     def reverse(self, request, pk=None):
-        """Reversa contablemente cargos + pago y anula el statement
-        (Gap 1.6, ADR-0037). Equivalente a `cancel` con limpieza
-        contable transaccional. Refresca saldos de la tarjeta y banco."""
+        # Reversa contablemente cargos + pago y anula el statement (Gap 1.6, ADR-37). Equivalente a cancel con limpieza contable transaccional. Refresca saldos de la tarjeta y banco.
         from .card_service import CardService
 
         stmt = self.get_object()

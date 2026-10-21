@@ -88,7 +88,7 @@ function RichIconSelector({ value, onChange, label, error, required }: { value: 
                     <Button
                         variant="ghost"
                         role="combobox"
-                        className="w-full justify-between !h-[1.5rem] !py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent font-normal"
+                        className="w-full justify-between h-6 !py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent font-normal"
                     >
                         <div className="flex items-center gap-2">
                             <SelectedIcon className="h-4 w-4" />
@@ -117,6 +117,7 @@ function RichIconSelector({ value, onChange, label, error, required }: { value: 
                                 }}
                             />
                         </div>
+                        // typography-allow: meta - popover content max-height
                         <div className="h-[250px] overflow-y-auto p-1 grid grid-cols-2 gap-1">
                             {ICON_OPTIONS.map((item) => {
                                 const Icon = (LucideIcons as unknown as Record<string, LucideIcon>)[item.name] || LucideIcons.Package

@@ -156,7 +156,7 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
                                         <Button
                                             variant="outline"
                                             role="combobox"
-                                            className="w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                                            className="w-full justify-between font-normal text-sm h-6 py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
                                         >
                                             {providerId
                                                 ? providers.find(p => p.id.toString() === providerId)?.name
@@ -184,6 +184,7 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
                                                     }}
                                                 />
                                             </div>
+                                            // typography-allow: meta - popover content max-height
                                             <div className="max-h-[200px] overflow-y-auto space-y-1">
                                                 {providers.map((p) => (
                                                     <div

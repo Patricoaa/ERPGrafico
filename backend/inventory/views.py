@@ -120,11 +120,8 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
     def perform_update(self, serializer):
         serializer.save()
 
-    def partial_update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        active_val = request.data.get("is_active")
-
-        # If we are archiving (is_active: True -> False)
+    def _check_archiving(self, instance, active_val):
+        """Check archiving restrictions when is_active goes from True to False."""
         if active_val is False and instance.is_active is True:
             restrictions = ProductService.check_archiving_restrictions(instance)
             if restrictions:
@@ -135,7 +132,22 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+        return None
 
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        active_val = request.data.get("is_active")
+        error_response = self._check_archiving(instance, active_val)
+        if error_response:
+            return error_response
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        active_val = request.data.get("is_active")
+        error_response = self._check_archiving(instance, active_val)
+        if error_response:
+            return error_response
         return super().partial_update(request, *args, **kwargs)
 
     @action(detail=False, methods=["get"])

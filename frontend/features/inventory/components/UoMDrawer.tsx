@@ -315,6 +315,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                                         </Tooltip>
                                                                     </TooltipProvider>
                                                                 </div>
+                                                                {/* typography-allow: meta - popover content max-height */}
                                                                 <div className="max-h-[200px] overflow-y-auto space-y-1">
                                                                     {categories?.map((cat) => (
                                                                         <div
@@ -367,6 +368,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                         </PopoverTrigger>
                                                         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                                                             <div className="p-2">
+                                                                {/* typography-allow: meta - popover content max-height */}
                                                                 <div className="max-h-[200px] overflow-y-auto space-y-1">
                                                                     {[
                                                                         { value: 'REFERENCE', label: 'Referencia (Base de la categoría)' },

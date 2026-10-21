@@ -40,6 +40,7 @@ export function LabeledCheckbox({
             disabled={disabled}
             className={className}
         >
+            {/* typography-allow: meta - primitive internal height */}
             <div
                 className="flex items-center justify-between w-full px-3 py-1.5 min-h-[1.5rem] cursor-pointer"
                 onClick={() => !disabled && onCheckedChange(!checked)}

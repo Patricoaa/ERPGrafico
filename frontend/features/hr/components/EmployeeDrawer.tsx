@@ -450,7 +450,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                     error={fieldState.error?.message}
                                                                     {...field}
                                                                     onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                                                                    className="font-black h-[1.5rem]"
+                                                                    className="h-6"
                                                                 />
                                                             )} />
                                                         </div>
@@ -463,7 +463,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                     step="0.5"
                                                                     error={fieldState.error?.message}
                                                                     {...field}
-                                                                    className="font-black h-[1.5rem]"
+                                                                    className="h-6"
                                                                 />
                                                             )} />
                                                         </div>
@@ -534,7 +534,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                         hint="Se descontará el mayor entre el 7% y este monto."
                                                                         error={fieldState.error?.message}
                                                                         {...field}
-                                                                        className="font-mono font-black h-[1.5rem]"
+                                                                        className="font-mono h-6"
                                                                     />
                                                                 )} />
                                                             </div>
@@ -567,7 +567,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                     error={fieldState.error?.message}
                                                                     {...field}
                                                                     onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                                                                    className="font-black h-[1.5rem]"
+                                                                    className="h-6"
                                                                 />
                                                             )} />
                                                         </div>
@@ -590,7 +590,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                             const current = form.getValues("concept_amounts") || {}
                                                                             form.setValue("concept_amounts", { ...current, [concept.id]: e.target.value }, { shouldDirty: true })
                                                                         }}
-                                                                        className="font-mono font-black h-[1.5rem]"
+                                                                        className="font-mono h-6"
                                                                     />
                                                                 </div>
                                                             ))}

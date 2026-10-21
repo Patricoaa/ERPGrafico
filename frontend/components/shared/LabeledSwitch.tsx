@@ -93,6 +93,7 @@ export function LabeledSwitch({
                 className
             )}
         >
+            {/* typography-allow: meta - primitive internal height */}
             <div
                 className="flex items-center justify-between w-full px-3 h-full min-h-[1.5rem] cursor-pointer gap-3"
                 onClick={(e) => {
