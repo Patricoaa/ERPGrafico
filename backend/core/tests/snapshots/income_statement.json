@@ -29,6 +29,16 @@
               "name": "Venta de Servicios",
               "type": "INCOME",
               "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "4.1.03",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Ingresos por Suscripciones",
+              "type": "INCOME",
+              "variance": 0.0
             }
           ],
           "code": "4.1",
@@ -75,6 +85,16 @@
               "comp_balance": 0.0,
               "id": "<id>",
               "name": "Costo de Servicios Prestados",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.1.04",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Costo por Suscripciones",
               "type": "EXPENSE",
               "variance": 0.0
             }
@@ -306,6 +326,86 @@
             {
               "balance": 0.0,
               "children": [],
+              "code": "5.2.20",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Gasto por Mora / Penalizaciones",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.21",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Gasto por Comisión de Apertura",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.22",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Gasto por Impuesto de Timbres (ITE)",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.23",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Otros Egresos Operativos (POS)",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.24",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Error de Vuelto POS",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.25",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Error de Sistema POS",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.26",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Gasto Incobrabilidad",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.27",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Gasto por Depreciación y Amortización",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
               "code": "5.2.99",
               "comp_balance": 0.0,
               "id": "<id>",
@@ -404,6 +504,26 @@
               "comp_balance": 0.0,
               "id": "<id>",
               "name": "Ingreso por Corrección Monetaria",
+              "type": "INCOME",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "4.2.08",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Revalorización de Stock",
+              "type": "INCOME",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "4.2.09",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Otros Ingresos Operativos (POS)",
               "type": "INCOME",
               "variance": 0.0
             }

@@ -3,6 +3,7 @@
   "movements": [
     {
       "balance": 10000000.0,
+      "created_at": "<id>",
       "credit": 10000000.0,
       "date": "2026-01-01",
       "debit": 0.0,
@@ -12,10 +13,11 @@
       "label": "",
       "partner": "",
       "reference": "APERTURA-2026",
-      "source_document": null
+      "source": null
     }
   ],
   "opening_balance": 0.0,
   "period_credit": 10000000.0,
-  "period_debit": 0.0
+  "period_debit": 0.0,
+  "truncated": false
 }

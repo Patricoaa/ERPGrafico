@@ -3,6 +3,7 @@
   "movements": [
     {
       "balance": -200000.0,
+      "created_at": "<id>",
       "credit": 200000.0,
       "date": "2026-01-28",
       "debit": 0.0,
@@ -12,10 +13,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-01",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -400000.0,
+      "created_at": "<id>",
       "credit": 200000.0,
       "date": "2026-02-28",
       "debit": 0.0,
@@ -25,10 +27,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-02",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -600000.0,
+      "created_at": "<id>",
       "credit": 200000.0,
       "date": "2026-03-28",
       "debit": 0.0,
@@ -38,10 +41,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-03",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -800000.0,
+      "created_at": "<id>",
       "credit": 200000.0,
       "date": "2026-04-28",
       "debit": 0.0,
@@ -51,10 +55,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-04",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1000000.0,
+      "created_at": "<id>",
       "credit": 200000.0,
       "date": "2026-05-28",
       "debit": 0.0,
@@ -64,10 +69,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-05",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1200000.0,
+      "created_at": "<id>",
       "credit": 200000.0,
       "date": "2026-06-28",
       "debit": 0.0,
@@ -77,10 +83,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-06",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1400000.0,
+      "created_at": "<id>",
       "credit": 200000.0,
       "date": "2026-07-28",
       "debit": 0.0,
@@ -90,10 +97,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-07",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1600000.0,
+      "created_at": "<id>",
       "credit": 200000.0,
       "date": "2026-08-28",
       "debit": 0.0,
@@ -103,10 +111,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-08",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1800000.0,
+      "created_at": "<id>",
       "credit": 200000.0,
       "date": "2026-09-28",
       "debit": 0.0,
@@ -116,10 +125,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-09",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2000000.0,
+      "created_at": "<id>",
       "credit": 200000.0,
       "date": "2026-10-28",
       "debit": 0.0,
@@ -129,10 +139,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-10",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2200000.0,
+      "created_at": "<id>",
       "credit": 200000.0,
       "date": "2026-11-28",
       "debit": 0.0,
@@ -142,10 +153,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-11",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2400000.0,
+      "created_at": "<id>",
       "credit": 200000.0,
       "date": "2026-12-28",
       "debit": 0.0,
@@ -155,10 +167,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-12",
-      "source_document": null
+      "source": null
     }
   ],
   "opening_balance": 0.0,
   "period_credit": 2400000.0,
-  "period_debit": 0.0
+  "period_debit": 0.0,
+  "truncated": false
 }

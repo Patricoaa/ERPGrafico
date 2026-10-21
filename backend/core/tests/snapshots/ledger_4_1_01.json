@@ -3,6 +3,7 @@
   "movements": [
     {
       "balance": 349000.0,
+      "created_at": "<id>",
       "credit": 349000.0,
       "date": "2026-01-02",
       "debit": 0.0,
@@ -12,10 +13,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000065",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 776000.0,
+      "created_at": "<id>",
       "credit": 427000.0,
       "date": "2026-01-06",
       "debit": 0.0,
@@ -25,10 +27,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000093",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 604990.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-01-15",
       "debit": 171010.0,
@@ -38,10 +41,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000015",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 695990.0,
+      "created_at": "<id>",
       "credit": 91000.0,
       "date": "2026-01-20",
       "debit": 0.0,
@@ -51,10 +55,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000069",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 1021990.0,
+      "created_at": "<id>",
       "credit": 326000.0,
       "date": "2026-01-21",
       "debit": 0.0,
@@ -64,10 +69,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000058",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 1306990.0,
+      "created_at": "<id>",
       "credit": 285000.0,
       "date": "2026-01-24",
       "debit": 0.0,
@@ -77,10 +83,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000010",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 1590990.0,
+      "created_at": "<id>",
       "credit": 284000.0,
       "date": "2026-02-01",
       "debit": 0.0,
@@ -90,10 +97,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000073",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 1915990.0,
+      "created_at": "<id>",
       "credit": 325000.0,
       "date": "2026-02-03",
       "debit": 0.0,
@@ -103,10 +111,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000074",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 1975990.0,
+      "created_at": "<id>",
       "credit": 60000.0,
       "date": "2026-02-11",
       "debit": 0.0,
@@ -116,10 +125,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000045",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 2458990.0,
+      "created_at": "<id>",
       "credit": 483000.0,
       "date": "2026-02-12",
       "debit": 0.0,
@@ -129,10 +139,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000009",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 2957990.0,
+      "created_at": "<id>",
       "credit": 499000.0,
       "date": "2026-02-12",
       "debit": 0.0,
@@ -142,10 +153,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000037",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 2913400.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-02-17",
       "debit": 44590.0,
@@ -155,10 +167,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000005",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 3113400.0,
+      "created_at": "<id>",
       "credit": 200000.0,
       "date": "2026-02-18",
       "debit": 0.0,
@@ -168,10 +181,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000011",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 2918790.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-02-19",
       "debit": 194610.0,
@@ -181,10 +195,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000007",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 3002790.0,
+      "created_at": "<id>",
       "credit": 84000.0,
       "date": "2026-02-20",
       "debit": 0.0,
@@ -194,10 +209,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000067",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 3300790.0,
+      "created_at": "<id>",
       "credit": 298000.0,
       "date": "2026-02-24",
       "debit": 0.0,
@@ -207,10 +223,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000039",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 3687790.0,
+      "created_at": "<id>",
       "credit": 387000.0,
       "date": "2026-03-05",
       "debit": 0.0,
@@ -220,10 +237,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000040",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 3888790.0,
+      "created_at": "<id>",
       "credit": 201000.0,
       "date": "2026-03-07",
       "debit": 0.0,
@@ -233,10 +251,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000063",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 4208790.0,
+      "created_at": "<id>",
       "credit": 320000.0,
       "date": "2026-03-09",
       "debit": 0.0,
@@ -246,10 +265,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000041",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 4494790.0,
+      "created_at": "<id>",
       "credit": 286000.0,
       "date": "2026-03-09",
       "debit": 0.0,
@@ -259,10 +279,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000056",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 4579790.0,
+      "created_at": "<id>",
       "credit": 85000.0,
       "date": "2026-03-12",
       "debit": 0.0,
@@ -272,10 +293,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000075",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 4823790.0,
+      "created_at": "<id>",
       "credit": 244000.0,
       "date": "2026-03-15",
       "debit": 0.0,
@@ -285,10 +307,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000018",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 4683650.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-03-17",
       "debit": 140140.0,
@@ -298,10 +321,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000013",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 4814650.0,
+      "created_at": "<id>",
       "credit": 131000.0,
       "date": "2026-03-21",
       "debit": 0.0,
@@ -311,10 +335,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000027",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 5194650.0,
+      "created_at": "<id>",
       "credit": 380000.0,
       "date": "2026-03-22",
       "debit": 0.0,
@@ -324,10 +349,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000072",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 5460650.0,
+      "created_at": "<id>",
       "credit": 266000.0,
       "date": "2026-03-23",
       "debit": 0.0,
@@ -337,10 +363,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000007",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 5311810.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-03-25",
       "debit": 148840.0,
@@ -350,10 +377,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000016",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 5776810.0,
+      "created_at": "<id>",
       "credit": 465000.0,
       "date": "2026-03-26",
       "debit": 0.0,
@@ -363,10 +391,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000092",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 6185810.0,
+      "created_at": "<id>",
       "credit": 409000.0,
       "date": "2026-03-26",
       "debit": 0.0,
@@ -376,10 +405,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000095",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 6145010.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-03-27",
       "debit": 40800.0,
@@ -389,10 +419,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000001",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 6532010.0,
+      "created_at": "<id>",
       "credit": 387000.0,
       "date": "2026-04-01",
       "debit": 0.0,
@@ -402,10 +433,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000098",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 6705010.0,
+      "created_at": "<id>",
       "credit": 173000.0,
       "date": "2026-04-02",
       "debit": 0.0,
@@ -415,10 +447,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000038",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 6771010.0,
+      "created_at": "<id>",
       "credit": 66000.0,
       "date": "2026-04-03",
       "debit": 0.0,
@@ -428,10 +461,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000047",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 6870010.0,
+      "created_at": "<id>",
       "credit": 99000.0,
       "date": "2026-04-04",
       "debit": 0.0,
@@ -441,10 +475,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000051",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 7297010.0,
+      "created_at": "<id>",
       "credit": 427000.0,
       "date": "2026-04-05",
       "debit": 0.0,
@@ -454,10 +489,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000002",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 7538010.0,
+      "created_at": "<id>",
       "credit": 241000.0,
       "date": "2026-04-05",
       "debit": 0.0,
@@ -467,10 +503,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000035",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 7796010.0,
+      "created_at": "<id>",
       "credit": 258000.0,
       "date": "2026-04-06",
       "debit": 0.0,
@@ -480,10 +517,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000059",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 8120010.0,
+      "created_at": "<id>",
       "credit": 324000.0,
       "date": "2026-04-07",
       "debit": 0.0,
@@ -493,10 +531,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000055",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 8428010.0,
+      "created_at": "<id>",
       "credit": 308000.0,
       "date": "2026-04-08",
       "debit": 0.0,
@@ -506,10 +545,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000004",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 8404250.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-04-12",
       "debit": 23760.0,
@@ -519,10 +559,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000012",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 8755250.0,
+      "created_at": "<id>",
       "credit": 351000.0,
       "date": "2026-04-15",
       "debit": 0.0,
@@ -532,10 +573,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000006",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 9191250.0,
+      "created_at": "<id>",
       "credit": 436000.0,
       "date": "2026-04-18",
       "debit": 0.0,
@@ -545,10 +587,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000042",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 8987130.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-04-21",
       "debit": 204120.0,
@@ -558,10 +601,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000019",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 9173130.0,
+      "created_at": "<id>",
       "credit": 186000.0,
       "date": "2026-04-22",
       "debit": 0.0,
@@ -571,10 +615,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000016",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 9389130.0,
+      "created_at": "<id>",
       "credit": 216000.0,
       "date": "2026-04-22",
       "debit": 0.0,
@@ -584,10 +629,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000019",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 9763130.0,
+      "created_at": "<id>",
       "credit": 374000.0,
       "date": "2026-04-22",
       "debit": 0.0,
@@ -597,10 +643,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000081",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 10145130.0,
+      "created_at": "<id>",
       "credit": 382000.0,
       "date": "2026-04-23",
       "debit": 0.0,
@@ -610,10 +657,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000005",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 9998070.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-04-23",
       "debit": 147060.0,
@@ -623,10 +671,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000022",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 10220070.0,
+      "created_at": "<id>",
       "credit": 222000.0,
       "date": "2026-04-25",
       "debit": 0.0,
@@ -636,10 +685,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000008",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 10286070.0,
+      "created_at": "<id>",
       "credit": 66000.0,
       "date": "2026-04-27",
       "debit": 0.0,
@@ -649,10 +699,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000020",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 10387070.0,
+      "created_at": "<id>",
       "credit": 101000.0,
       "date": "2026-04-28",
       "debit": 0.0,
@@ -662,10 +713,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000014",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 10438070.0,
+      "created_at": "<id>",
       "credit": 51000.0,
       "date": "2026-05-02",
       "debit": 0.0,
@@ -675,10 +727,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000083",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 10596070.0,
+      "created_at": "<id>",
       "credit": 158000.0,
       "date": "2026-05-03",
       "debit": 0.0,
@@ -688,10 +741,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000021",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 10700070.0,
+      "created_at": "<id>",
       "credit": 104000.0,
       "date": "2026-05-04",
       "debit": 0.0,
@@ -701,10 +755,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000079",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 10440310.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-05-04",
       "debit": 259760.0,
@@ -714,10 +769,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000010",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 10714310.0,
+      "created_at": "<id>",
       "credit": 274000.0,
       "date": "2026-05-06",
       "debit": 0.0,
@@ -727,10 +783,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000076",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 11073310.0,
+      "created_at": "<id>",
       "credit": 359000.0,
       "date": "2026-05-10",
       "debit": 0.0,
@@ -740,10 +797,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000080",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 11530310.0,
+      "created_at": "<id>",
       "credit": 457000.0,
       "date": "2026-05-12",
       "debit": 0.0,
@@ -753,10 +811,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000088",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 11408250.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-05-15",
       "debit": 122060.0,
@@ -766,10 +825,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000020",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 11308890.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-05-19",
       "debit": 99360.0,
@@ -779,10 +839,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000023",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 11411890.0,
+      "created_at": "<id>",
       "credit": 103000.0,
       "date": "2026-05-22",
       "debit": 0.0,
@@ -792,10 +853,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000078",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 11323090.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-05-22",
       "debit": 88800.0,
@@ -805,10 +867,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000026",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 11158690.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-05-23",
       "debit": 164400.0,
@@ -818,10 +881,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000002",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 11536690.0,
+      "created_at": "<id>",
       "credit": 378000.0,
       "date": "2026-05-25",
       "debit": 0.0,
@@ -831,10 +895,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000031",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 11987690.0,
+      "created_at": "<id>",
       "credit": 451000.0,
       "date": "2026-05-26",
       "debit": 0.0,
@@ -844,10 +909,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000061",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 12072690.0,
+      "created_at": "<id>",
       "credit": 85000.0,
       "date": "2026-05-28",
       "debit": 0.0,
@@ -857,10 +923,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000099",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 12471690.0,
+      "created_at": "<id>",
       "credit": 399000.0,
       "date": "2026-06-07",
       "debit": 0.0,
@@ -870,10 +937,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000089",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 12941690.0,
+      "created_at": "<id>",
       "credit": 470000.0,
       "date": "2026-06-10",
       "debit": 0.0,
@@ -883,10 +951,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000097",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 13089690.0,
+      "created_at": "<id>",
       "credit": 148000.0,
       "date": "2026-06-19",
       "debit": 0.0,
@@ -896,10 +965,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000012",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 13399690.0,
+      "created_at": "<id>",
       "credit": 310000.0,
       "date": "2026-06-21",
       "debit": 0.0,
@@ -909,10 +979,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000100",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 13735690.0,
+      "created_at": "<id>",
       "credit": 336000.0,
       "date": "2026-06-25",
       "debit": 0.0,
@@ -922,10 +993,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000090",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 13491290.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-06-26",
       "debit": 244400.0,
@@ -935,10 +1007,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000006",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 13625290.0,
+      "created_at": "<id>",
       "credit": 134000.0,
       "date": "2026-07-02",
       "debit": 0.0,
@@ -948,10 +1021,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000060",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 13966290.0,
+      "created_at": "<id>",
       "credit": 341000.0,
       "date": "2026-07-04",
       "debit": 0.0,
@@ -961,10 +1035,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000068",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 13867130.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-07-12",
       "debit": 99160.0,
@@ -974,10 +1049,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000021",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 14156130.0,
+      "created_at": "<id>",
       "credit": 289000.0,
       "date": "2026-07-14",
       "debit": 0.0,
@@ -987,10 +1063,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000052",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 14410130.0,
+      "created_at": "<id>",
       "credit": 254000.0,
       "date": "2026-07-19",
       "debit": 0.0,
@@ -1000,10 +1077,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000025",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 14242730.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-07-19",
       "debit": 167400.0,
@@ -1013,10 +1091,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000017",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 14086670.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-07-22",
       "debit": 156060.0,
@@ -1026,10 +1105,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000028",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 14004930.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-07-27",
       "debit": 81740.0,
@@ -1039,10 +1119,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000008",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 14156930.0,
+      "created_at": "<id>",
       "credit": 152000.0,
       "date": "2026-08-08",
       "debit": 0.0,
@@ -1052,10 +1133,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000096",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 14108290.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-08-13",
       "debit": 48640.0,
@@ -1065,10 +1147,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000009",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 13960970.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-08-13",
       "debit": 147320.0,
@@ -1078,10 +1161,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000025",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 14241970.0,
+      "created_at": "<id>",
       "credit": 281000.0,
       "date": "2026-08-17",
       "debit": 0.0,
@@ -1091,10 +1175,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000044",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 14732970.0,
+      "created_at": "<id>",
       "credit": 491000.0,
       "date": "2026-08-26",
       "debit": 0.0,
@@ -1104,10 +1189,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000057",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 15088970.0,
+      "created_at": "<id>",
       "credit": 356000.0,
       "date": "2026-09-01",
       "debit": 0.0,
@@ -1117,10 +1203,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000036",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 15508970.0,
+      "created_at": "<id>",
       "credit": 420000.0,
       "date": "2026-09-05",
       "debit": 0.0,
@@ -1130,10 +1217,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000049",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 15700970.0,
+      "created_at": "<id>",
       "credit": 192000.0,
       "date": "2026-09-08",
       "debit": 0.0,
@@ -1143,10 +1231,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000048",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 16033970.0,
+      "created_at": "<id>",
       "credit": 333000.0,
       "date": "2026-09-09",
       "debit": 0.0,
@@ -1156,10 +1245,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000029",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 16129970.0,
+      "created_at": "<id>",
       "credit": 96000.0,
       "date": "2026-09-16",
       "debit": 0.0,
@@ -1169,10 +1259,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000026",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 16270970.0,
+      "created_at": "<id>",
       "credit": 141000.0,
       "date": "2026-09-25",
       "debit": 0.0,
@@ -1182,10 +1273,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000033",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 16053810.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-09-27",
       "debit": 217160.0,
@@ -1195,10 +1287,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000027",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 16300810.0,
+      "created_at": "<id>",
       "credit": 247000.0,
       "date": "2026-10-03",
       "debit": 0.0,
@@ -1208,10 +1301,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000028",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 16474810.0,
+      "created_at": "<id>",
       "credit": 174000.0,
       "date": "2026-10-16",
       "debit": 0.0,
@@ -1221,10 +1315,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000050",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 16685810.0,
+      "created_at": "<id>",
       "credit": 211000.0,
       "date": "2026-10-17",
       "debit": 0.0,
@@ -1234,10 +1329,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000070",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 16810810.0,
+      "created_at": "<id>",
       "credit": 125000.0,
       "date": "2026-10-18",
       "debit": 0.0,
@@ -1247,10 +1343,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000087",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 16947810.0,
+      "created_at": "<id>",
       "credit": 137000.0,
       "date": "2026-10-21",
       "debit": 0.0,
@@ -1260,10 +1357,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000017",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 17076810.0,
+      "created_at": "<id>",
       "credit": 129000.0,
       "date": "2026-10-24",
       "debit": 0.0,
@@ -1273,10 +1371,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000091",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 17460810.0,
+      "created_at": "<id>",
       "credit": 384000.0,
       "date": "2026-10-26",
       "debit": 0.0,
@@ -1286,10 +1385,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000077",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 17522810.0,
+      "created_at": "<id>",
       "credit": 62000.0,
       "date": "2026-11-04",
       "debit": 0.0,
@@ -1299,10 +1399,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000001",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 17471560.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-11-05",
       "debit": 51250.0,
@@ -1312,10 +1413,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000003",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 17916560.0,
+      "created_at": "<id>",
       "credit": 445000.0,
       "date": "2026-11-08",
       "debit": 0.0,
@@ -1325,10 +1427,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000013",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 18048560.0,
+      "created_at": "<id>",
       "credit": 132000.0,
       "date": "2026-11-09",
       "debit": 0.0,
@@ -1338,10 +1441,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000084",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 18528560.0,
+      "created_at": "<id>",
       "credit": 480000.0,
       "date": "2026-11-10",
       "debit": 0.0,
@@ -1351,10 +1455,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000034",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 18651560.0,
+      "created_at": "<id>",
       "credit": 123000.0,
       "date": "2026-11-15",
       "debit": 0.0,
@@ -1364,10 +1469,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000023",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 18575450.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-11-22",
       "debit": 76110.0,
@@ -1377,10 +1483,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000018",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 18785450.0,
+      "created_at": "<id>",
       "credit": 210000.0,
       "date": "2026-11-23",
       "debit": 0.0,
@@ -1390,10 +1497,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000071",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 18893450.0,
+      "created_at": "<id>",
       "credit": 108000.0,
       "date": "2026-11-24",
       "debit": 0.0,
@@ -1403,10 +1511,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000030",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 18828260.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-11-26",
       "debit": 65190.0,
@@ -1416,10 +1525,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000014",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 19064260.0,
+      "created_at": "<id>",
       "credit": 236000.0,
       "date": "2026-11-27",
       "debit": 0.0,
@@ -1429,10 +1539,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000015",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 19490260.0,
+      "created_at": "<id>",
       "credit": 426000.0,
       "date": "2026-11-28",
       "debit": 0.0,
@@ -1442,10 +1553,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000094",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 19447060.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-12-01",
       "debit": 43200.0,
@@ -1455,10 +1567,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000004",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 19396900.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-12-02",
       "debit": 50160.0,
@@ -1468,10 +1581,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000024",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 19650900.0,
+      "created_at": "<id>",
       "credit": 254000.0,
       "date": "2026-12-10",
       "debit": 0.0,
@@ -1481,10 +1595,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000043",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 19808900.0,
+      "created_at": "<id>",
       "credit": 158000.0,
       "date": "2026-12-11",
       "debit": 0.0,
@@ -1494,10 +1609,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000022",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 20267900.0,
+      "created_at": "<id>",
       "credit": 459000.0,
       "date": "2026-12-11",
       "debit": 0.0,
@@ -1507,10 +1623,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000054",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 20123940.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-12-13",
       "debit": 143960.0,
@@ -1520,10 +1637,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000030",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 20448940.0,
+      "created_at": "<id>",
       "credit": 325000.0,
       "date": "2026-12-18",
       "debit": 0.0,
@@ -1533,10 +1651,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000024",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 20899940.0,
+      "created_at": "<id>",
       "credit": 451000.0,
       "date": "2026-12-24",
       "debit": 0.0,
@@ -1546,10 +1665,11 @@
       "label": "",
       "partner": "",
       "reference": "OV-000062",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 20606180.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-12-31",
       "debit": 293760.0,
@@ -1559,10 +1679,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000011",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 20508220.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-12-31",
       "debit": 97960.0,
@@ -1572,10 +1693,11 @@
       "label": "",
       "partner": "",
       "reference": "NC-000029",
-      "source_document": null
+      "source": null
     }
   ],
   "opening_balance": 0.0,
   "period_credit": 24341000.0,
-  "period_debit": 3832780.0
+  "period_debit": 3832780.0,
+  "truncated": false
 }

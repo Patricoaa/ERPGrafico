@@ -3,6 +3,7 @@
   "movements": [
     {
       "balance": -5307.0,
+      "created_at": "<id>",
       "credit": 5307.0,
       "date": "2026-01-15",
       "debit": 0.0,
@@ -12,10 +13,11 @@
       "label": "",
       "partner": "",
       "reference": "ADJ-01",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -25552.0,
+      "created_at": "<id>",
       "credit": 20245.0,
       "date": "2026-02-15",
       "debit": 0.0,
@@ -25,10 +27,11 @@
       "label": "",
       "partner": "",
       "reference": "ADJ-02",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -39977.0,
+      "created_at": "<id>",
       "credit": 14425.0,
       "date": "2026-03-15",
       "debit": 0.0,
@@ -38,10 +41,11 @@
       "label": "",
       "partner": "",
       "reference": "ADJ-03",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -62887.0,
+      "created_at": "<id>",
       "credit": 22910.0,
       "date": "2026-04-15",
       "debit": 0.0,
@@ -51,10 +55,11 @@
       "label": "",
       "partner": "",
       "reference": "ADJ-04",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -73063.0,
+      "created_at": "<id>",
       "credit": 10176.0,
       "date": "2026-05-15",
       "debit": 0.0,
@@ -64,10 +69,11 @@
       "label": "",
       "partner": "",
       "reference": "ADJ-05",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -80483.0,
+      "created_at": "<id>",
       "credit": 7420.0,
       "date": "2026-06-15",
       "debit": 0.0,
@@ -77,10 +83,11 @@
       "label": "",
       "partner": "",
       "reference": "ADJ-06",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -99957.0,
+      "created_at": "<id>",
       "credit": 19474.0,
       "date": "2026-07-15",
       "debit": 0.0,
@@ -90,10 +97,11 @@
       "label": "",
       "partner": "",
       "reference": "ADJ-07",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -116280.0,
+      "created_at": "<id>",
       "credit": 16323.0,
       "date": "2026-08-15",
       "debit": 0.0,
@@ -103,10 +111,11 @@
       "label": "",
       "partner": "",
       "reference": "ADJ-08",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -140533.0,
+      "created_at": "<id>",
       "credit": 24253.0,
       "date": "2026-09-15",
       "debit": 0.0,
@@ -116,10 +125,11 @@
       "label": "",
       "partner": "",
       "reference": "ADJ-09",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -155335.0,
+      "created_at": "<id>",
       "credit": 14802.0,
       "date": "2026-10-15",
       "debit": 0.0,
@@ -129,10 +139,11 @@
       "label": "",
       "partner": "",
       "reference": "ADJ-10",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -174238.0,
+      "created_at": "<id>",
       "credit": 18903.0,
       "date": "2026-11-15",
       "debit": 0.0,
@@ -142,10 +153,11 @@
       "label": "",
       "partner": "",
       "reference": "ADJ-11",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -187433.0,
+      "created_at": "<id>",
       "credit": 13195.0,
       "date": "2026-12-15",
       "debit": 0.0,
@@ -155,10 +167,11 @@
       "label": "",
       "partner": "",
       "reference": "ADJ-12",
-      "source_document": null
+      "source": null
     }
   ],
   "opening_balance": 0.0,
   "period_credit": 187433.0,
-  "period_debit": 0.0
+  "period_debit": 0.0,
+  "truncated": false
 }

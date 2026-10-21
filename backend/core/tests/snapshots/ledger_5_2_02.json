@@ -3,6 +3,7 @@
   "movements": [
     {
       "balance": 800000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-01-05",
       "debit": 800000.0,
@@ -12,10 +13,11 @@
       "label": "",
       "partner": "",
       "reference": "RENT-01",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 1000000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-01-28",
       "debit": 200000.0,
@@ -25,10 +27,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-01",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 1800000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-02-05",
       "debit": 800000.0,
@@ -38,10 +41,11 @@
       "label": "",
       "partner": "",
       "reference": "RENT-02",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 2000000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-02-28",
       "debit": 200000.0,
@@ -51,10 +55,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-02",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 2800000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-03-05",
       "debit": 800000.0,
@@ -64,10 +69,11 @@
       "label": "",
       "partner": "",
       "reference": "RENT-03",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 3000000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-03-28",
       "debit": 200000.0,
@@ -77,10 +83,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-03",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 3800000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-04-05",
       "debit": 800000.0,
@@ -90,10 +97,11 @@
       "label": "",
       "partner": "",
       "reference": "RENT-04",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 4000000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-04-28",
       "debit": 200000.0,
@@ -103,10 +111,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-04",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 4800000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-05-05",
       "debit": 800000.0,
@@ -116,10 +125,11 @@
       "label": "",
       "partner": "",
       "reference": "RENT-05",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 5000000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-05-28",
       "debit": 200000.0,
@@ -129,10 +139,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-05",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 5800000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-06-05",
       "debit": 800000.0,
@@ -142,10 +153,11 @@
       "label": "",
       "partner": "",
       "reference": "RENT-06",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 6000000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-06-28",
       "debit": 200000.0,
@@ -155,10 +167,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-06",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 6800000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-07-05",
       "debit": 800000.0,
@@ -168,10 +181,11 @@
       "label": "",
       "partner": "",
       "reference": "RENT-07",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 7000000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-07-28",
       "debit": 200000.0,
@@ -181,10 +195,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-07",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 7800000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-08-05",
       "debit": 800000.0,
@@ -194,10 +209,11 @@
       "label": "",
       "partner": "",
       "reference": "RENT-08",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 8000000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-08-28",
       "debit": 200000.0,
@@ -207,10 +223,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-08",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 8800000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-09-05",
       "debit": 800000.0,
@@ -220,10 +237,11 @@
       "label": "",
       "partner": "",
       "reference": "RENT-09",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 9000000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-09-28",
       "debit": 200000.0,
@@ -233,10 +251,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-09",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 9800000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-10-05",
       "debit": 800000.0,
@@ -246,10 +265,11 @@
       "label": "",
       "partner": "",
       "reference": "RENT-10",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 10000000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-10-28",
       "debit": 200000.0,
@@ -259,10 +279,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-10",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 10800000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-11-05",
       "debit": 800000.0,
@@ -272,10 +293,11 @@
       "label": "",
       "partner": "",
       "reference": "RENT-11",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 11000000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-11-28",
       "debit": 200000.0,
@@ -285,10 +307,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-11",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 11800000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-12-05",
       "debit": 800000.0,
@@ -298,10 +321,11 @@
       "label": "",
       "partner": "",
       "reference": "RENT-12",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 12000000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-12-28",
       "debit": 200000.0,
@@ -311,10 +335,11 @@
       "label": "",
       "partner": "",
       "reference": "DEP-12",
-      "source_document": null
+      "source": null
     }
   ],
   "opening_balance": 0.0,
   "period_credit": 0.0,
-  "period_debit": 12000000.0
+  "period_debit": 12000000.0,
+  "truncated": false
 }
