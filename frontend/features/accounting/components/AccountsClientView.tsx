@@ -6,7 +6,6 @@ import { toast } from "sonner"
 import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { AccountDrawer } from "@/features/finance"
-import { LedgerDrawer } from "@/features/accounting/components/LedgerDrawer"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { showApiError } from "@/lib/errors"
 import { type Account } from "@/features/accounting/types"
@@ -28,7 +27,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     const { accounts: flatAccounts, isLoading, isError, refetch, archiveAccount } = useAccounts({ filters: search.filters as unknown as Record<string, unknown> })
     const [archiveTarget, setArchiveTarget] = useState<Account | null>(null)
     const [formParentId, setFormParentId] = useState<string | null>(null)
-    const [ledgerTarget, setLedgerTarget] = useState<{ id: number; name: string; code: string } | null>(null)
 
     const accounts = React.useMemo(() => {
         if (flatAccounts.length > 0) {
@@ -74,12 +72,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     }
 
     const actionCtx = React.useMemo<AccountActionsCtx>(() => ({
-        onViewLedger: (account) => {
-            const params = new URLSearchParams(searchParams.toString())
-            params.set('ledger_account', String(account.id))
-            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-            setLedgerTarget({ id: account.id, name: account.name, code: account.code })
-        },
+        onViewLedger: () => {}, // Now handled via tabs in AccountDrawer
         onEdit: (account) => {
             const params = new URLSearchParams(searchParams.toString())
             params.set('selected', String(account.id))
@@ -125,7 +118,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                         <ActivitySidebar entityId={editingAccount.id} entityType="account" />
                     ) : undefined
                 }
-                mode="create"
+                mode={editingAccount ? 'edit' : 'create'}
                 onSuccess={() => {
                     refetch()
                 }}
@@ -136,15 +129,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                     }
                 }}
             />
-
-            {ledgerTarget && (
-                <LedgerDrawer
-                    accountId={ledgerTarget.id}
-                    accountName={ledgerTarget.name}
-                    accountCode={ledgerTarget.code}
-                    noTrigger
-                />
-            )}
 
             <ActionConfirmModal
                 open={archiveTarget !== null}

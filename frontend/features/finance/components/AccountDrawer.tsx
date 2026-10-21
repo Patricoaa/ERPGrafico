@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { showApiError } from "@/lib/errors"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Plus } from "lucide-react"
+import { Plus, Book, Search } from "lucide-react"
 import {
     Form,
     FormField,
@@ -15,10 +15,15 @@ import { Button } from "@/components/ui/button"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccountMutations } from "@/features/accounting"
 import { type AccountPayload } from "@/features/accounting"
-import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, FormSplitLayout, SubmitButton } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, FormSplitLayout, SubmitButton, TabBar, TabBarContent, UnifiedSearchBar, DateRangeFilter, SkeletonShell, useUnifiedSearch, type UnifiedSearchConfig } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useLedger } from "@/features/accounting/hooks/useLedger"
+import { LedgerSummaryPanel } from "@/features/accounting/components/LedgerSummaryPanel"
+import { formatCurrency } from "@/lib/money"
+import { format } from "date-fns"
+import { useServerDate } from "@/hooks/useServerDate"
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),
@@ -233,6 +238,49 @@ export function AccountDrawer({
         </Form>
     )
 
+    // Ledger tab state
+    const [activeTab, setActiveTab] = useState<"form" | "ledger">("form")
+    const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | undefined>(undefined)
+    const { serverDate } = useServerDate()
+
+    useEffect(() => {
+        if (serverDate && !dateRange && activeTab === "ledger") {
+            requestAnimationFrame(() => {
+                setDateRange({
+                    from: new Date(serverDate.getFullYear(), serverDate.getMonth(), 1),
+                    to: serverDate
+                })
+            })
+        }
+    }, [serverDate, dateRange, activeTab])
+
+    // Fetch ledger data only when on ledger tab and have account ID
+    const accountId = initialData?.id as number | undefined
+    const startStr = dateRange ? format(dateRange.from, 'yyyy-MM-dd') : ''
+    const endStr = dateRange ? format(dateRange.to, 'yyyy-MM-dd') : ''
+    const { data: ledgerData, isLoading: ledgerLoading } = useLedger(accountId ?? 0, startStr, endStr)
+
+    // UnifiedSearch for ledger movements
+    const ledgerSearchConfig = useMemo<UnifiedSearchConfig>(() => ({
+        searchFields: [
+            { key: 'description', label: 'Descripción', serverParam: 'search', clientKey: ['description', 'label'] },
+        ],
+    }), [])
+    const ledgerSearch = useUnifiedSearch(ledgerSearchConfig)
+
+    const handleTabChange = useCallback((value: string) => {
+        setActiveTab(value as "form" | "ledger")
+    }, [])
+
+    const identity = useDrawerIdentity('accounting.account', mode, initialData as Record<string, unknown> | undefined, {
+        overrideTitle: isViewMode ? `Ficha de Cuenta #${initialData?.id}` : undefined,
+        overrideSubtitle: isViewMode
+            ? `${(initialData?.code as string) || ""} • ${form.watch("name") || "Vista de detalle"}`
+            : `${(initialData?.code as string) || ""} • ${form.watch("name") || "Plan de Cuentas • Contabilidad General"}`,
+        printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
+        onPrint: handlePrint,
+    })
+
     const formContent = (
         <FormSplitLayout
             sidebar={initialData?.id ? (
@@ -244,14 +292,99 @@ export function AccountDrawer({
         </FormSplitLayout>
     )
 
-    const identity = useDrawerIdentity('accounting.account', mode, initialData as Record<string, unknown> | undefined, {
-        overrideTitle: isViewMode ? `Ficha de Cuenta #${initialData?.id}` : undefined,
-        overrideSubtitle: isViewMode
-            ? `${(initialData?.code as string) || ""} • ${form.watch("name") || "Vista de detalle"}`
-            : `${(initialData?.code as string) || ""} • ${form.watch("name") || "Plan de Cuentas • Contabilidad General"}`,
-        printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
-        onPrint: handlePrint,
-    })
+    const filteredMovements = useMemo(() => ledgerSearch.filterFn(ledgerData?.movements ?? []), [ledgerSearch.filterFn, ledgerData?.movements])
+
+    const ledgerContent = accountId ? (
+        <SkeletonShell isLoading={ledgerLoading} ariaLabel="Cargando libro mayor" className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
+            <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden gap-4 p-6">
+                {dateRange && (
+                    <LedgerSummaryPanel
+                        openingBalance={ledgerData?.opening_balance}
+                        periodDebit={ledgerData?.period_debit}
+                        periodCredit={ledgerData?.period_credit}
+                        closingBalance={ledgerData?.closing_balance}
+                        fromDate={dateRange?.from}
+                        toDate={dateRange?.to}
+                    />
+                )}
+
+                {/* Table — fills remaining height */}
+                <div className="flex-1 min-h-0 overflow-hidden">
+                    {dateRange ? (
+                        <div className="h-full flex flex-col">
+                            <div className="flex items-center gap-2 border-b pb-3 mb-4">
+                                <UnifiedSearchBar
+                                    config={ledgerSearchConfig}
+                                    chips={ledgerSearch.chips}
+                                    isFiltered={ledgerSearch.isFiltered}
+                                    inputValue={ledgerSearch.inputValue}
+                                    onInputChange={ledgerSearch.setInputValue}
+                                    onApply={ledgerSearch.applyFilter}
+                                    onRemove={ledgerSearch.removeFilter}
+                                    onClearAll={ledgerSearch.clearAll}
+                                    groupBy={ledgerSearch.groupBy}
+                                    onGroupBySelect={ledgerSearch.setGroupBy}
+                                    paramValues={ledgerSearch.paramValues}
+                                    placeholder="Buscar por descripción..."
+                                    toolbarActions={
+                                        <DateRangeFilter
+                                            defaultRange={dateRange || undefined}
+                                            onDateChange={(range) => {
+                                                if (range?.from && range?.to) {
+                                                    setDateRange({ from: range.from, to: range.to })
+                                                }
+                                            }}
+                                            className="bg-background border-none shadow-none rounded-sm"
+                                            variant="outline"
+                                        />
+                                    }
+                                />
+                            </div>
+                            <div className="flex-1 overflow-y-auto">
+                                {filteredMovements.length > 0 ? (
+                                    <div className="text-4xs">
+                                        <div className="grid grid-cols-[60px,1fr,50px,50px,50px] gap-1 font-bold border-b mb-1 pb-1 sticky top-0 bg-background z-10">
+                                            <span>Fecha</span>
+                                            <span>Descripción</span>
+                                            <span className="text-right">Debe</span>
+                                            <span className="text-right">Haber</span>
+                                            <span className="text-right">Saldo</span>
+                                        </div>
+                                        {filteredMovements.map((item, idx) => (
+                                            <div key={idx} className="grid grid-cols-[60px,1fr,50px,50px,50px] gap-1 border-b border-dashed py-0.5 break-inside-avoid">
+                                                <span>{format(new Date(item.date + 'T00:00:00'), 'dd/MM/yyyy')}</span>
+                                                <span className="truncate">{item.label || item.description || '-'}</span>
+                                                <span className="text-right">{Number(item.debit) > 0 ? formatCurrency(Number(item.debit)) : '-'}</span>
+                                                <span className="text-right">{Number(item.credit) > 0 ? formatCurrency(Number(item.credit)) : '-'}</span>
+                                                <span className="text-right">{formatCurrency(Number(item.balance))}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                                        Sin movimientos para el período seleccionado.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                            Seleccione un rango de fechas para ver los movimientos.
+                        </div>
+                    )}
+                </div>
+            </div>
+        </SkeletonShell>
+    ) : (
+        <div className="flex-1 flex items-center justify-center text-muted-foreground p-6">
+            Seleccione una cuenta para ver su Libro Mayor.
+        </div>
+    )
+
+    const tabs = [
+        { value: "form", label: "Ficha", icon: Book },
+        { value: "ledger", label: "Libro Mayor", icon: Book },
+    ] as const
 
     if (inline) {
         return <>{formContent}</>
@@ -306,7 +439,21 @@ export function AccountDrawer({
                     />
                 )}
             >
-                {formContent}
+                <TabBar
+                    items={tabs.map((t, i) => ({ ...t, badge: i === 1 && filteredMovements.length ? filteredMovements.length : undefined }))}
+                    value={activeTab}
+                    onValueChange={handleTabChange}
+                    variant="underline"
+                    className="flex-1 flex flex-col overflow-hidden"
+                    contentClassName="bg-transparent"
+                >
+                    <TabBarContent value="form" className="mt-0 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                        {formContent}
+                    </TabBarContent>
+                    <TabBarContent value="ledger" className="mt-0 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                        {ledgerContent}
+                    </TabBarContent>
+                </TabBar>
             </Drawer>
         </>
     )
