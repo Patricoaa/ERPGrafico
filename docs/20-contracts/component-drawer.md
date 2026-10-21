@@ -74,6 +74,8 @@ supersedes:
 | `titleClassName` | `string` | ❌ | — | |
 | `centered` | `boolean` | ❌ | — | Centra el contenido del header (compartido con `BaseModal` via `PanelHeader`) |
 
+> **Botón de cierre:** `Drawer` renderiza internamente `PanelHeader` con `onClose={() => onOpenChange(false)}`, lo que muestra el `SheetCloseButton` canónico (circular ghost 32px) en la esquina superior derecha del header. No pasar `hideCloseButton` ni `showCloseButton` — se controla automáticamente. Ver [component-contracts.md #SheetCloseButton](./component-contracts.md#SheetCloseButton-🟢) y [ADR-0091](../10-architecture/adr/0091-single-close-button.md).
+
 > **Nota:** `description` NO es prop de `Drawer` — solo existe en `BaseModal` (`components/shared/BaseModal.tsx`, `description?: ReactNode`). Para texto bajo el título en un Drawer usar `subtitle`. `descriptionClassName` no existe en ningún componente; eliminar cualquier uso.
 
 ## Tamaños dinámicos

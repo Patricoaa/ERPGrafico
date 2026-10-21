@@ -157,3 +157,17 @@ graph TD
 - **`FormSection`**: Separador visual dentro de un tab o formulario sin tabs.
 - **`FormFooter`**: **Obligatorio** en todo formulario modal. Layout de botones: danger (izquierda) + cancel/submit (derecha). Nunca `<div>` raw.
 - **`Drawer`**: Para subvistas que se superponen sobre la página sin perder su contexto. Compatible con formularios CRUD y subvistas de solo lectura (tablas, históricos). Ancho recomendado: `40%–75%` según categoría del formulario (ver [component-drawer.md](./component-drawer.md)).
+
+---
+
+## 6. Botón de cierre (Cross) — Regla canónica
+
+**`SheetCloseButton` (`@/components/shared/SheetCloseButton`) es la única cruz permitida** en toda la aplicación: modales, drawers, sheets y panels.
+
+- ✅ `BaseModal` y `Drawer` ya renderizan `SheetCloseButton` vía `PanelHeader` (prop `showCloseButton` / `onClose`).
+- ✅ `UniversalSearch` usa `SheetCloseButton` inline (excepción autorizada).
+- ❌ **Prohibido**: usar el X nativo de Radix (`DialogPrimitive.Close` / `SheetPrimitive.Close` desde `@/components/ui/`).
+- ❌ **Prohibido**: `<X />` o `<Button><X /></Button>` inline como botón de cerrar.
+- ❌ **Prohibido**: modificar `components/ui/dialog.tsx` o `components/ui/sheet.tsx` para cambiar el estilo del X.
+
+El ESLint rule `dialog/no-direct-usage` (error) bloquea imports directos de `DialogContent`/`SheetContent` fuera de la allowlist. Ver [ADR-0091](../10-architecture/adr/0091-single-close-button.md) y [component-contracts.md](./component-contracts.md#SheetCloseButton-🟢).

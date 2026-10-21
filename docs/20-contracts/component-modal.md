@@ -66,7 +66,7 @@ Primitiva base de todos los modales del proyecto. Wrappea `Dialog` de Shadcn con
 | `headerActions` | `ReactNode` | ❌ | — | Slot derecho del header (ej. botones de acción extra) |
 | `size` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| '2xl' \| 'full'` | ❌ | `'md'` | Ver tabla de anchos abajo |
 | `variant` | `'default' \| 'transaction' \| 'wizard' \| 'form-tabs' \| 'raw'` | ❌ | `'default'` | Controla estilos de header/footer |
-| `showCloseButton` | `boolean` | ❌ | `true` | Botón X en esquina superior derecha |
+| `showCloseButton` | `boolean` | ❌ | `true` | Botón X en esquina superior derecha (renderiza `SheetCloseButton` canónico vía `PanelHeader`) |
 | `hideScrollArea` | `boolean` | ❌ | `false` | Desactiva `ScrollArea`; obligatorio cuando se usa `TabBar` vertical |
 | `allowOverflow` | `boolean` | ❌ | `false` | Permite que el contenido sobresalga (ej. para rieles de pestañas negativos) |
 | `className` | `string` | ❌ | — | Clases para `DialogContent` |

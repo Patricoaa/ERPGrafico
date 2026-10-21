@@ -424,6 +424,8 @@ Botón de cierre universal (32px circular ghost) para Modals, Sheets y Panels.
 
 Props: `onClick` (✅), `label?` (default `'Cerrar'`), `showTooltip?`, `tooltipText?`.
 
+> **Regla de uso obligatorio:** `SheetCloseButton` es la **única cruz permitida** en modales, drawers y panels. No usar el `X` nativo de Radix (`DialogPrimitive.Close` / `SheetPrimitive.Close`) ni `<X />` inline. Ver [ADR-0091](../10-architecture/adr/0091-single-close-button.md).
+
 ---
 
 ## Deprecated 🔴
