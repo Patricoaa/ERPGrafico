@@ -67,7 +67,7 @@ export function DatePicker({
             <BaseModal
                 open={open}
                 onOpenChange={handleOpenChange}
-                icon={CalendarIcon}
+                centered={true}
                 title={placeholder}
                 description={tempDate ? (
                     <p className="text-center text-2xl font-bold text-primary">
@@ -76,7 +76,7 @@ export function DatePicker({
                 ) : undefined}
                 size="sm"
                 hideScrollArea
-                contentClassName="flex flex-col items-center"
+                contentClassName="flex flex-col items-center pb-6"
                 footer={
                     <>
                         <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} className="flex-1 h-10">

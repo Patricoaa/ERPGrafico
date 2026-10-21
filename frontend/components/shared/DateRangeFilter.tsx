@@ -97,7 +97,7 @@ export function DateRangeFilter({
             <BaseModal
                 open={open}
                 onOpenChange={handleOpenChange}
-                icon={CalendarIcon}
+                centered={true}
                 title={label}
                 description={tempRange?.from ? (
                     <p className="text-center text-base font-semibold text-primary">
@@ -108,7 +108,7 @@ export function DateRangeFilter({
                 ) : undefined}
                 size="md"
                 hideScrollArea
-                contentClassName="flex flex-col items-center"
+                contentClassName="flex flex-col items-center pb-6"
                 footer={
                     <>
                         <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} className="flex-1 h-10">
