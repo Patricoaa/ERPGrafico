@@ -28,6 +28,8 @@ export interface JournalEntryDrawerProps {
     onLoadingChange?: (loading: boolean) => void
     mode?: DrawerMode
     journalEntryId?: number
+    /** Lado del drawer para drilldown: "left" | "right". Default: "left". */
+    side?: "left" | "right"
 }
 
 export function JournalEntryDrawer({
@@ -41,6 +43,7 @@ export function JournalEntryDrawer({
     onLoadingChange,
     mode: modeProp,
     journalEntryId,
+    side = "left",
 }: JournalEntryDrawerProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
@@ -68,7 +71,7 @@ export function JournalEntryDrawer({
 
     // Show skeleton while fetching for view mode
     if (isView && entityId && isFetching) {
-        return <JournalEntrySheet id={entityId} open={open} onOpenChange={setOpen} onActionSuccess={onSuccess} />
+        return <JournalEntrySheet id={entityId} open={open} onOpenChange={setOpen} onActionSuccess={onSuccess} side={side} />
     }
 
     // Delegate based on mode
@@ -79,6 +82,7 @@ export function JournalEntryDrawer({
                 open={open}
                 onOpenChange={setOpen}
                 onActionSuccess={onSuccess}
+                side={side}
             />
         )
     }

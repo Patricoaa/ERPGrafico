@@ -381,6 +381,7 @@ export function AccountDrawer({
                                     mode="view"
                                     open={!!viewingEntry}
                                     onOpenChange={(open) => !open && closeEntry()}
+                                    side="right"
                                 />
                             )}
                         </div>
@@ -467,7 +468,7 @@ export function AccountDrawer({
                     <TabBarContent value="form" className="mt-0 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
                         {formContent}
                     </TabBarContent>
-                    <TabBarContent value="ledger" className="mt-0 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden">
+                    <TabBarContent value="ledger" className="mt-0 flex flex-1 flex-col min-h-0 overflow-hidden">
                         {ledgerContent}
                     </TabBarContent>
                 </TabBar>

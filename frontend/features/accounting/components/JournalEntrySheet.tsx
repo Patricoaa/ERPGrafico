@@ -46,9 +46,11 @@ export interface JournalEntrySheetProps {
     onOpenChange: (open: boolean) => void
     embedded?: boolean
     onActionSuccess?: () => void
+    /** Lado del drawer para drilldown: "left" | "right". Default: "left". */
+    side?: "left" | "right"
 }
 
-export function JournalEntrySheet({ id, open, onOpenChange, embedded = false, onActionSuccess }: JournalEntrySheetProps) {
+export function JournalEntrySheet({ id, open, onOpenChange, embedded = false, onActionSuccess, side = "left" }: JournalEntrySheetProps) {
     const { data: journalEntry, isLoading: loading, isError, refetch: fetchEntryDetails } = useJournalEntry(id ?? undefined)
     const { data: relations } = useDocumentRelations(LABEL, id)
     const invalidateDocuments = useInvalidateDocuments()
@@ -167,6 +169,7 @@ export function JournalEntrySheet({ id, open, onOpenChange, embedded = false, on
                 open={open}
                 onOpenChange={onOpenChange}
                 embedded={embedded}
+                side={side}
                 title={identity.title}
                 subtitle={identity.subtitle}
                 icon={identity.icon}
