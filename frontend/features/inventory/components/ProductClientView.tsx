@@ -221,7 +221,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             label: "Restaurar",
             icon: Plus,
             intent: "success",
-            disabled: (items) => items.length === 0 || !items.every(p => !p.is_active),
+            hidden: (items) => items.length === 0 || !items.every(p => !p.is_active),
             onClick: async (items) => {
                 try {
                     await Promise.all(items.map(p => updateProduct({ id: p.id, payload: { is_active: true } })))
@@ -237,7 +237,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             label: "Archivar",
             icon: ArchiveIcon,
             intent: "destructive",
-            disabled: (items) => items.length === 0 || !items.every(p => p.is_active),
+            hidden: (items) => items.length === 0 || !items.every(p => p.is_active),
             onClick: async (items) => {
                 try {
                     await Promise.all(items.map(p => updateProduct({ id: p.id, payload: { is_active: false } })))
