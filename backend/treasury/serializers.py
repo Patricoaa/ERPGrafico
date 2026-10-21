@@ -643,6 +643,29 @@ class BankStatementLineSerializer(serializers.ModelSerializer):
     class Meta:
         model = BankStatementLine
         fields = "__all__"
+        read_only_fields = [
+            "statement",
+            "line_number",
+            "reconciliation_match",
+            "reconciled_at",
+            "reconciled_by",
+            "difference_amount",
+            "difference_reason",
+            "difference_journal_entry",
+            "has_warning",
+            "warning_message",
+        ]
+
+    # Matching/reconciling go through their actions; PATCH only excludes or restores.
+    PATCHABLE_STATUSES = ("UNRECONCILED", "EXCLUDED")
+
+    def validate_reconciliation_status(self, value):
+        current = getattr(self.instance, "reconciliation_status", None)
+        if value != current and value not in self.PATCHABLE_STATUSES:
+            raise serializers.ValidationError(
+                "Use las acciones de conciliación para cambiar a este estado."
+            )
+        return value
 
 
 class BankStatementSerializer(serializers.ModelSerializer):
@@ -800,7 +823,10 @@ class TerminalBatchSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "created_at",
             "created_by",
+            "status",
             "settlement_journal_entry",
+            "settlement_movement",
+            "reconciliation_match",
             "bank_statement_line",
             "supplier_invoice",
         ]

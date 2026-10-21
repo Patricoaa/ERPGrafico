@@ -41,6 +41,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _t
 
 from accounting.glosa_builder import GlosaBuilder, Roles
+from core.edit_policy import assert_editable, changed_fields
 from core.prefix_registry import EntityPrefix
 
 from .models import (
@@ -109,10 +110,11 @@ class CardService:
         from .serializers import CardPendingChargeSerializer
         cid = request.data.get('id')
         if not cid: raise ValidationError('id del cargo requerido.')
-        try: charge = CardPendingCharge.objects.get(pk=cid, is_billed=False)
+        try: charge = CardPendingCharge.objects.get(pk=cid)
         except CardPendingCharge.DoesNotExist: raise ValidationError('Cargo no encontrado.')
         serializer = CardPendingChargeSerializer(charge, data=request.data, partial=True, context={'request': request})
         serializer.is_valid(raise_exception=True)
+        assert_editable(charge, changed_fields(charge, serializer.validated_data))
         serializer.save()
         return serializer.data
 
@@ -123,8 +125,9 @@ class CardService:
         from .models import CardPendingCharge
         cid = request.data.get('id')
         if not cid: raise ValidationError('id del cargo requerido.')
-        try: charge = CardPendingCharge.objects.get(pk=cid, is_billed=False)
+        try: charge = CardPendingCharge.objects.get(pk=cid)
         except CardPendingCharge.DoesNotExist: raise ValidationError('Cargo no encontrado.')
+        charge.edit_policy.assert_deletable(charge)
         charge.delete()
 
     """Operaciones sobre la tarjeta de crédito propia."""

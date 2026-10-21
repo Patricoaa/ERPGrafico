@@ -730,7 +730,7 @@ class BankStatementViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=500)
 
 
-class BankStatementLineViewSet(viewsets.ModelViewSet):
+class BankStatementLineViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     """ViewSet for bank statement lines"""
 
     queryset = BankStatementLine.objects.all().select_related(
@@ -1156,7 +1156,7 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
             return Response({'error': str(e)}, status=400)
 
 
-class TerminalBatchViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class TerminalBatchViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     """
     ViewSet for managing Terminal Batches (Settlements).

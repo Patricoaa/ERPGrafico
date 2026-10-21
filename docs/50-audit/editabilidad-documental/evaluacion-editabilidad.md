@@ -58,7 +58,9 @@ Entidades con FK `journal_entry` (o que generan movimientos de tesorería), seg�
 
 ### 3.4 No revisadas en detalle
 
-`CardPendingCharge`, `BankStatementLine`, `TerminalBatch`, `POSSessionAudit`, `Check` (este último declara en `state-map.md` "inmutable salvo `notes`"; su serializer marca varios campos read-only, falta verificar que cubra los económicos).
+**Resuelto 2026-10-21:** `CardPendingCharge` (bloqueado al facturarse), `BankStatementLine` (serializer `__all__` totalmente escribible, incluso `reconciliation_status` → ahora EditPolicy + read-only + transiciones PATCH limitadas a excluir/restaurar), `TerminalBatch` (`status` era escribible), `POSSessionAudit` (sin escritura por API).
+
+Pendiente: `Check` (este último declara en `state-map.md` "inmutable salvo `notes`"; su serializer marca varios campos read-only, falta verificar que cubra los económicos).
 
 ## 4. Causa raíz
 

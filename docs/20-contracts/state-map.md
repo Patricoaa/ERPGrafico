@@ -240,6 +240,8 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 **Edit policy (ADR-0091, `TreasuryMovement.edit_policy`):** editable solo en `DRAFT` **y sin asiento** (cualquier asiento, aun borrador, deriva de sus campos). Bloqueado: solo `notes` y `justify_reason` editables; la API responde 422 `DOCUMENT_LOCKED`. Hard delete solo de `CANCELLED` sin asiento (purga admin). `is_editable` expuesto en el detalle. **Movimientos con documento dueño** (anticipo, pago de liquidación, pago F29): `cancel`/`annul` directos se rechazan; se anulan desde el documento (`TreasuryService.assert_not_owned`).
 
+**Edit policy (ADR-0091):** bloqueada si está `MATCHED`/`RECONCILED` o tiene `difference_journal_entry` (solo `notes`); no se elimina. Campos del sistema (`reconciliation_match`, `reconciled_*`, `difference_*`, `statement`, `line_number`, `has_warning`) read-only. `PATCH` solo cambia el estado a `EXCLUDED`/`UNRECONCILED`; conciliar va por acciones.
+
 ## POSSession
 
 | Status | Intent | Transitions allowed to |
@@ -251,6 +253,8 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 `treasury_account` es un snapshot inmutable de `terminal.default_treasury_account` capturado
 al abrir. La API expone `treasury_account_name` con fallback al default del terminal.
 Campos no editables: `treasury_account` (snapshot).
+
+**Edit policy (ADR-0091):** `POSSessionAudit` (arqueo) es inmutable una vez contabilizado; sin escritura por API.
 
 ## TerminalBatch
 
@@ -382,6 +386,8 @@ Una fila por mes del calendario de amortización. Backend: `treasury.LoanInstall
 `Notification` tipo `LOAN_INSTALLMENT_UPCOMING` a superusuarios activos.
 Dedup por día vía `Notification.data.target_date` (ISO).
 
+**Edit policy (ADR-0091):** `TerminalBatch` editable solo en `PENDING` sin asiento de liquidación; `status`, `settlement_*` y `reconciliation_match` read-only; no se elimina.
+
 ## CreditCardStatement (Estado de Cuenta Tarjeta de Crédito)
 
 Estado de cuenta mensual de la tarjeta de crédito propia.
@@ -415,6 +421,8 @@ de la compra (F2.7), no del statement.
 cargos (`interest_charged`/`fees_charged`) solo editables mientras el
 statement esté en `OPEN` (no pagado, no anulado).
 
+
+**Edit policy (ADR-0091):** `CardPendingCharge` facturado (`is_billed`) no se edita ni elimina.
 ## Subscription
 
 | Status | Intent | Transitions allowed to |

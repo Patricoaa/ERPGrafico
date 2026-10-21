@@ -753,6 +753,14 @@ class CardPendingCharge(models.Model):
     facturados (ADR-0046 D-3 bis).
     """
 
+    # ADR-0091: once billed in a statement the charge belongs to it.
+    edit_policy = EditPolicy(
+        is_locked=lambda c: c.is_billed or c.journal_entry_id is not None,
+        mutable_when_locked=frozenset(),
+        deletable=True,
+        locked_message="El cargo ya fue facturado en un estado de cuenta y no se puede modificar.",
+    )
+
     class ChargeType(models.TextChoices):
         COMMISSION = "COMMISSION", _("Comisión")
         TAX = "TAX", _("Impuesto")
@@ -1359,6 +1367,15 @@ class BankStatement(models.Model):
 
 class BankStatementLine(models.Model):
     """Línea individual de la cartola bancaria"""
+
+    # ADR-0091: matched/reconciled lines change only through match/unmatch actions.
+    edit_policy = EditPolicy(
+        is_locked=lambda line: (
+            line.reconciliation_status in ("MATCHED", "RECONCILED")
+            or line.difference_journal_entry_id is not None
+        ),
+        locked_message="La línea está conciliada; deshaga la conciliación antes de modificarla.",
+    )
 
     class ReconciliationStatus(models.TextChoices):
         UNRECONCILED = "UNRECONCILED", _("No Reconciliado")
@@ -1993,6 +2010,12 @@ class TerminalBatch(models.Model):
     Representa la información que el terminal entrega 1-2 días después.
     """
 
+    edit_policy = EditPolicy(
+        editable_statuses=frozenset({"PENDING"}),
+        is_locked=lambda b: b.settlement_journal_entry_id is not None,
+        locked_message="El lote ya está liquidado y no se puede modificar.",
+    )
+
     class Status(models.TextChoices):
         PENDING = "PENDING", _("Pendiente Liquidación")
         SETTLED = "SETTLED", _("Liquidado")
@@ -2310,6 +2333,12 @@ class POSSessionAudit(models.Model):
     """
     Records the cash counting (arqueo) when closing a POS session.
     """
+
+    edit_policy = EditPolicy(
+        is_locked=lambda a: a.journal_entry_id is not None,
+        mutable_when_locked=frozenset(),
+        locked_message="El arqueo de caja ya está contabilizado y no se puede modificar.",
+    )
 
     session = models.OneToOneField(
         POSSession, on_delete=models.CASCADE, related_name="audit", verbose_name=_("Sesión")
