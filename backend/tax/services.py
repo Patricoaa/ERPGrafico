@@ -185,7 +185,7 @@ class F29CalculationService:
                     {
                         "id": inv.id,
                         "display_id": inv.display_id,
-                        "total": float(inv.total_amount),
+                        "total": float(inv.total),
                         "date": inv.date.isoformat(),
                         "type": "sale" if inv.sale_order_id else "purchase",
                     }

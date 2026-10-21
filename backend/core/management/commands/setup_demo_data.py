@@ -2972,9 +2972,13 @@ class Command(BaseCommand):
                 if delivery:
                     SalesService.confirm_delivery(delivery)
 
-                # ADR-0084: emitida = con folio. Una de cada cinco queda con folio pendiente
-                # (borrador pagado), el resto se emite con folio.
-                folio_pending = sale_idx % 5 == 4
+                # ADR-0084: emitida = con folio. Una de cada cinco ventas del mes en curso
+                # queda con folio pendiente (borrador pagado); los meses pasados se cierran
+                # (_close_past_periods) y no admiten asientos en borrador.
+                folio_pending = (
+                    sale_idx % 5 == 4
+                    and (order_date.year, order_date.month) == (today.year, today.month)
+                )
                 inv = BillingService.create_sale_invoice(
                     so, dte_type=Invoice.DTEType.FACTURA,
                     payment_method="TRANSFER", date=order_date,
