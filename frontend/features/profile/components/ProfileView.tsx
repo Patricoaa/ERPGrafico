@@ -305,7 +305,7 @@ function PersonalTab({
             typeLabel: 'Anticipo',
             amount: a.amount,
             payroll_display_id: a.payroll_display_id || null,
-            statusKey: a.is_discounted ? 'DESCONTADO' : 'PENDING'
+            statusKey: a.status
         })),
         ...payments.map(p => ({
             id: `pay-${p.id}`,

@@ -3,9 +3,11 @@
 import React, { useMemo, useState } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { showApiError } from "@/lib/errors"
+import { ActionConfirmModal, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
-import { AdvanceDrawer, createAdvance, deleteAdvance, useSalaryAdvances, salaryAdvanceActions, type SalaryAdvanceActionsCtx, useEmployees } from "@/features/hr"
+import { AdvanceDrawer, createAdvance, useSalaryAdvances, salaryAdvanceActions, type SalaryAdvanceActionsCtx, useEmployees } from "@/features/hr"
+import { useAdvanceMutations } from "../hooks/useAdvanceMutations"
 import { PaymentModal } from "@/features/treasury"
 import { salaryAdvanceUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import type { SalaryAdvance } from "@/types/hr"
@@ -42,6 +44,9 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
 
     const [paymentModalOpen, setPaymentModalOpen] = useState(false)
     const [tempAdvanceData, setTempAdvanceData] = useState<Record<string, unknown> | null>(null)
+    const [toDelete, setToDelete] = useState<SalaryAdvance | null>(null)
+    const [toAnnul, setToAnnul] = useState<SalaryAdvance | null>(null)
+    const { deleteAdvance, annulAdvance } = useAdvanceMutations()
 
     const handleClose = () => {
         clearSelection()
@@ -54,15 +59,8 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
 
     const salaryAdvanceActionsCtx: SalaryAdvanceActionsCtx = {
         onEdit: (advance) => openSelected(advance.id),
-        onDelete: async (id) => {
-            try {
-                await deleteAdvance(id)
-                toast.success("Anticipo eliminado")
-                refetchAdvances()
-            } catch {
-                toast.error("Error al eliminar anticipo")
-            }
-        },
+        onDelete: setToDelete,
+        onAnnul: setToAnnul,
     }
 
     return (
@@ -130,6 +128,43 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                         setTempAdvanceData(null)
                     } catch (e: unknown) {
                         toast.error((e as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Error al registrar anticipo")
+                    }
+                }}
+            />
+
+            <ActionConfirmModal
+                open={!!toDelete}
+                onOpenChange={(o) => { if (!o) setToDelete(null) }}
+                title="Eliminar anticipo"
+                description="El anticipo no tiene pago registrado. ¿Eliminarlo? Esta acción no se puede deshacer."
+                variant="destructive"
+                confirmText="Eliminar"
+                onConfirm={async () => {
+                    if (!toDelete) return
+                    try {
+                        await deleteAdvance(toDelete.id)
+                        setToDelete(null)
+                    } catch (e: unknown) {
+                        showApiError(e, "Error al eliminar anticipo")
+                    }
+                }}
+            />
+
+            <ActionConfirmModal
+                open={!!toAnnul}
+                onOpenChange={(o) => { if (!o) setToAnnul(null) }}
+                title="Anular anticipo"
+                description="Se anulará el pago del anticipo en tesorería con su asiento de reversa. Para corregir un monto, anule y registre un anticipo nuevo."
+                variant="destructive"
+                confirmText="Anular"
+                requireReason
+                onConfirm={async (reason) => {
+                    if (!toAnnul || !reason) return
+                    try {
+                        await annulAdvance({ id: toAnnul.id, reason })
+                        setToAnnul(null)
+                    } catch (e: unknown) {
+                        showApiError(e, "Error al anular anticipo")
                     }
                 }}
             />

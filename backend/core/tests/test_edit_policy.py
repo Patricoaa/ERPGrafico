@@ -28,7 +28,6 @@ UNPROTECTED_BASELINE = {
     "billing.Invoice": "validate_editable ad-hoc en BillingService; migrar a EditPolicy",
     "sales.SaleOrder": "validate_editable ad-hoc en SalesService; migrar a EditPolicy",
     "purchasing.PurchaseOrder": "validate_editable ad-hoc en PurchasingService; migrar a EditPolicy",
-    "hr.SalaryAdvance": "sin estado; requiere migración (informe §5.5)",
     "hr.PayrollPayment": "monto editable y DELETE abierto (informe §3.3)",
     "tax.F29Declaration": "sin guard de edición (informe §3.3)",
     "tax.F29Payment": "sin guard de edición (informe §3.3)",

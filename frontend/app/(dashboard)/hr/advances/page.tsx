@@ -7,7 +7,7 @@ import { buildMetadataFromTab } from "@/lib/navigation-helpers"
 const tabConfig = getHRTab("advances")
 export const metadata = tabConfig ? buildMetadataFromTab(tabConfig) : { title: "Anticipos de Sueldo | ERPGrafico" }
 
-const FILTER_PARAMS = new Set(["is_discounted"])
+const FILTER_PARAMS = new Set(["status"])
 
 interface PageProps {
   searchParams: Promise<Record<string, string | undefined>>

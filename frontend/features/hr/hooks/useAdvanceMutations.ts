@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { createAdvance, updateAdvance, deleteAdvance } from '../api/hrApi'
+import { createAdvance, updateAdvance, deleteAdvance, annulAdvance } from '../api/hrApi'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
 import { invalidateCrossFeature } from '@/lib/invalidation'
@@ -38,9 +38,15 @@ export function useAdvanceMutations() {
             toast.success('Anticipo eliminado')
             invalidate()
         },
-        onError: (e: Error) => {
-            toast.error(`Error al eliminar anticipo: ${e.message}`)
-        }
+    })
+
+    const annul = useMutation({
+        mutationFn: async ({ id, reason }: { id: number, reason: string }) => await annulAdvance(id, reason),
+        onSuccess: () => {
+            markLocalMutation()
+            toast.success('Anticipo anulado')
+            invalidate()
+        },
     })
 
     return {
@@ -48,5 +54,7 @@ export function useAdvanceMutations() {
         isSaving: saveAdvance.isPending,
         deleteAdvance: removeAdvance.mutateAsync,
         isDeleting: removeAdvance.isPending,
+        annulAdvance: annul.mutateAsync,
+        isAnnulling: annul.isPending,
     }
 }

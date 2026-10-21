@@ -360,17 +360,16 @@ class SalaryAdvanceFilter(django_filters.FilterSet):
     employee = django_filters.NumberFilter(field_name="employee__id")
     payroll = django_filters.NumberFilter(field_name="payroll__id")
     payroll_isnull = django_filters.BooleanFilter(field_name="payroll", lookup_expr="isnull")
-    is_discounted = django_filters.BooleanFilter()
     date_from = django_filters.DateFilter(field_name="date", lookup_expr="gte")
     date_to = django_filters.DateFilter(field_name="date", lookup_expr="lte")
     employee_name = django_filters.CharFilter(field_name="employee__contact__name", lookup_expr="icontains")
 
     class Meta:
         model = SalaryAdvance
-        fields = ["employee", "payroll", "payroll_isnull", "is_discounted", "date_from", "date_to", "employee_name"]
+        fields = ["employee", "payroll", "payroll_isnull", "status", "date_from", "date_to", "employee_name"]
 
 
-class SalaryAdvanceViewSet(viewsets.ModelViewSet):
+class SalaryAdvanceViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     queryset = SalaryAdvance.objects.select_related(
         "employee", "employee__contact", "payroll",
@@ -386,6 +385,19 @@ class SalaryAdvanceViewSet(viewsets.ModelViewSet):
         SalaryAdvanceService.create_advance_from_serializer(
             serializer, self.request.data, self.request.user
         )
+
+    @action(detail=True, methods=["post"])
+    def annul(self, request, pk=None):
+        from .services import SalaryAdvanceService
+
+        try:
+            advance = SalaryAdvanceService.annul_advance(
+                self.get_object(), reason=request.data.get("reason", ""), user=request.user
+            )
+        except ValidationError as e:
+            msg = e.messages[0] if getattr(e, "messages", None) else str(e)
+            return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(advance).data)
 
 
 # --- Payroll Payments ---

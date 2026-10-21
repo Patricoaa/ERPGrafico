@@ -124,12 +124,14 @@ export const salaryAdvanceUnifiedSearchDef: UnifiedSearchConfig = {
   filters: [
     {
       type: 'single',
-      key: 'is_discounted',
+      key: 'status',
       label: 'Estado',
-      serverParam: 'is_discounted',
+      serverParam: 'status',
       options: [
-        { label: 'Descontado', value: 'true' },
-        { label: 'Pendiente', value: 'false' },
+        { label: 'Borrador', value: 'DRAFT' },
+        { label: 'Pagado', value: 'PAID' },
+        { label: 'Descontado', value: 'DISCOUNTED' },
+        { label: 'Anulado', value: 'CANCELLED' },
       ],
     },
   ],

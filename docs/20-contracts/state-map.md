@@ -183,6 +183,21 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 **Edit restrictions:** Campos inmutables: `id`, `number`, `display_id`, `status`, `total_haberes`, `total_descuentos`, `net_salary`, `journal_entry`.
 
+## SalaryAdvance (Anticipo de Sueldo)
+
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `DRAFT` | `info` | `PAID` (pago registrado en tesorería) |
+| `PAID` | `success` | `DISCOUNTED` (al contabilizar la liquidación vinculada), `CANCELLED` (vía `annul`) |
+| `DISCOUNTED` | `success` | — (terminal) |
+| `CANCELLED` | `destructive` | — (terminal) |
+
+**Edit policy (ADR-0091, `SalaryAdvance.edit_policy`):** editable y eliminable solo en `DRAFT`. Desde `PAID` solo `notes` y el vínculo `payroll`. `status` y `journal_entry` read-only.
+
+**Payroll link:** solo un anticipo `PAID`; la liquidación de origen y la de destino deben estar en `DRAFT` y ser del mismo empleado; no se vincula al crear. `post_payroll` rechaza anticipos vinculados que no estén `PAID`.
+
+**Annul (`POST /hr/advances/{id}/annul/`, motivo obligatorio):** solo `PAID` sin liquidación; anula el `TreasuryMovement` (asiento `REVERSAL`) y deja `CANCELLED`. Corregir un monto = anular + registrar uno nuevo.
+
 ## BankStatement
 
 | Status | Intent | Transitions allowed to |

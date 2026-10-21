@@ -9,11 +9,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Sum
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from accounting.glosa_builder import GlosaBuilder, Roles
 
-from .models import Employee, EmployeeConceptAmount, Payroll
+from .models import Employee, EmployeeConceptAmount, Payroll, SalaryAdvance
 
 
 class EmployeeService:
@@ -617,6 +618,9 @@ def post_payroll(payroll):
     if payroll.status == Payroll.Status.POSTED:
         raise ValidationError(_("La liquidación ya está contabilizada."))
 
+    if payroll.advances.exclude(status=SalaryAdvance.Status.PAID).exists():
+        raise ValidationError(_("Solo se pueden descontar anticipos pagados."))
+
     settings = AccountingSettings.get_solo()
 
     if (
@@ -729,8 +733,8 @@ def post_payroll(payroll):
                     debit=Decimal("0"),
                     credit=adv.amount,
                 )
-            adv.is_discounted = True
-            adv.save(update_fields=["is_discounted"])
+            adv.status = SalaryAdvance.Status.DISCOUNTED
+            adv.save(update_fields=["status"])
 
         # 7. Pasivo Sueldo Líquido Ajustado (CREDIT)
         rem_por_pagar = payroll.net_salary - total_advances
@@ -1018,7 +1022,33 @@ class SalaryAdvanceService:
         )
         if movement and movement.journal_entry:
             advance.journal_entry = movement.journal_entry
-            advance.save(update_fields=["journal_entry"])
+            advance.status = SalaryAdvance.Status.PAID
+            advance.save(update_fields=["journal_entry", "status"])
+
+    @staticmethod
+    @transaction.atomic
+    def annul_advance(advance, *, reason: str, user=None):
+        """Anula un anticipo pagado y no descontado: anula su pago en tesorería
+        (asiento de reversa) y lo deja CANCELLED (ADR-0091)."""
+        from core.services.document import lock_document
+        from treasury.services import TreasuryService
+
+        lock_document(advance)
+        if advance.status == SalaryAdvance.Status.CANCELLED:
+            return advance
+        if advance.status != SalaryAdvance.Status.PAID:
+            raise ValidationError(_("Solo se pueden anular anticipos pagados y no descontados."))
+        if advance.payroll_id is not None:
+            raise ValidationError(_("Desvincule el anticipo de la liquidación antes de anularlo."))
+
+        movement = getattr(advance.journal_entry, "treasury_movement", None)
+        if movement is None:
+            raise ValidationError(_("El anticipo no tiene un pago de tesorería asociado."))
+        TreasuryService.annul_movement(movement, user=user, reason=reason)
+
+        advance.status = SalaryAdvance.Status.CANCELLED
+        advance.save(update_fields=["status"])
+        return advance
 
     @staticmethod
     @transaction.atomic

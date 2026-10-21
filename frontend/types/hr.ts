@@ -160,6 +160,8 @@ export interface Payroll {
   updated_at: string
 }
 
+export type SalaryAdvanceStatus = 'DRAFT' | 'PAID' | 'DISCOUNTED' | 'CANCELLED'
+
 export interface SalaryAdvance {
   id: number
   employee: number
@@ -170,7 +172,9 @@ export interface SalaryAdvance {
   amount: string
   date: string
   notes: string
-  is_discounted: boolean
+  status: SalaryAdvanceStatus
+  status_display?: string
+  is_editable?: boolean
   journal_entry: number | null
   payment_method_name?: string | null
   created_at: string

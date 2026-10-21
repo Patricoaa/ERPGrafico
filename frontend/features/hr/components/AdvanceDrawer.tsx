@@ -37,7 +37,9 @@ export interface AdvanceDrawerProps {
 export function AdvanceDrawer({ open, onOpenChange, advance, employees: employeesProp, onSaved, mode: modeProp }: AdvanceDrawerProps) {
     const { employees: fetchedEmployees } = useEmployees()
     const employees = employeesProp ?? fetchedEmployees
-    const mode: DrawerMode = modeProp ?? (advance ? 'edit' : 'create')
+    const mode: DrawerMode = !advance ? (modeProp ?? 'create')
+        : advance.is_editable === false ? 'view'
+        : (modeProp ?? 'edit')
     const isView = mode === 'view'
     const { printRef, handlePrint } = usePrintableDrawer()
     const { saveAdvance, isSaving: saving } = useAdvanceMutations()

@@ -526,8 +526,8 @@ function AdvancesSection({ payrollId, employeeId, advances, isPosted, onChanged 
                         <div key={adv.id} className="flex items-center justify-between text-xs py-1 border-b last:border-0">
                             <span className="text-muted-foreground">{adv.date}</span>
                             <MoneyDisplay amount={adv.amount} className="font-medium text-xs" />
-                            <StatusBadge status={adv.is_discounted ? "posted" : "draft"} size="sm" variant="badge" />
-                            {!isPosted && !adv.is_discounted && (
+                            <StatusBadge status={adv.status} size="sm" variant="badge" />
+                            {!isPosted && adv.status === "PAID" && (
                                 <Button
                                     variant="ghost"
                                     size="icon"

@@ -524,14 +524,32 @@ class SalaryAdvance(models.Model):
         blank=True,
         related_name="advances",
         verbose_name=_("Liquidación Asociada"),
-        help_text=_("Si ya fue descontado de una liquidación, se vincula aquí."),
+        help_text=_("Liquidación (en borrador o contabilizada) que descuenta el anticipo."),
     )
     amount = models.DecimalField(
         _("Monto"), max_digits=14, decimal_places=0, validators=[MinValueValidator(Decimal("0.01"))]
     )
     date = models.DateField(_("Fecha del Anticipo"))
     notes = models.TextField(_("Notas"), blank=True)
-    is_discounted = models.BooleanField(_("Descontado en Liquidación"), default=False)
+
+    class Status(models.TextChoices):
+        DRAFT = "DRAFT", _("Borrador")
+        PAID = "PAID", _("Pagado")
+        DISCOUNTED = "DISCOUNTED", _("Descontado")
+        CANCELLED = "CANCELLED", _("Anulado")
+
+    status = models.CharField(
+        _("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT
+    )
+
+    # ADR-0091: once paid, only notes and the payroll link (validated in the
+    # serializer) change; corrections go through annul_advance.
+    edit_policy = EditPolicy(
+        editable_statuses=frozenset({"DRAFT"}),
+        mutable_when_locked=frozenset({"notes", "payroll"}),
+        deletable=True,
+    )
+
     journal_entry = models.ForeignKey(
         "accounting.JournalEntry",
         on_delete=models.SET_NULL,

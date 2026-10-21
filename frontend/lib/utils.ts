@@ -227,7 +227,6 @@ export function translateFieldName(field: string): string {
     'net_salary': 'Sueldo Líquido',
     'remuneration_paid_status': 'Estado Remuneración',
     'previred_paid_status': 'Estado Previred',
-    'is_discounted': '¿Descontado?',
     'payroll_display_id': 'Liquidación',
     'line_number': 'Nº Línea',
     'transaction_date': 'Fecha Transacción',
