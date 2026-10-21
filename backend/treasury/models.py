@@ -1138,7 +1138,12 @@ class POSTerminal(models.Model):
     location = models.CharField(
         _("Ubicación"), max_length=200, blank=True, help_text=_("Ubicación física del terminal")
     )
-    is_active = models.BooleanField(_("Activo"), default=True)
+    is_active = models.BooleanField(
+        _("Activo"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar el terminal POS; las sesiones históricas lo siguen referenciando."),
+    )
 
     # ManyToMany: Cuentas de tesorería permitidas para este terminal
     allowed_payment_methods = models.ManyToManyField(
@@ -1567,7 +1572,12 @@ class Bank(models.Model):
         null=True,
         help_text=_("Código internacional para transferencias"),
     )
-    is_active = models.BooleanField(_("Activo"), default=True)
+    is_active = models.BooleanField(
+        _("Activo"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar el banco; los movimientos históricos lo siguen referenciando."),
+    )
 
     # Ejecutivos de cuenta
     account_executives = models.ManyToManyField(
@@ -1619,7 +1629,12 @@ class PaymentTerminalProvider(models.Model):
         related_name="terminal_providers",
         verbose_name=_("Proveedor (Contacto)"),
     )
-    is_active = models.BooleanField(_("Activo"), default=True)
+    is_active = models.BooleanField(
+        _("Activo"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar el proveedor de terminal; los terminales históricos lo siguen referenciando."),
+    )
     notes = models.TextField(_("Notas"), blank=True)
 
     # Configuración Contable
@@ -1804,7 +1819,12 @@ class PaymentMethod(models.Model):
             "Cuenta destino contable real. Para CARD_TERMINAL: cuenta puente del proveedor."
         ),
     )
-    is_active = models.BooleanField(_("Activo"), default=True)
+    is_active = models.BooleanField(
+        _("Activo"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar el método de pago; los movimientos históricos lo siguen referenciando."),
+    )
     linked_terminal_device = models.ForeignKey(
         "PaymentTerminalDevice",
         on_delete=models.SET_NULL,
@@ -2758,6 +2778,12 @@ class CreditLine(models.Model):
         choices=Status.choices,
         default=Status.ACTIVE,
     )
+    is_active = models.BooleanField(
+        _("Activa"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar la línea de crédito; los movimientos históricos la siguen referenciando."),
+    )
 
     # ── Auditoría ────────────────────────────────────────────────────────────
     created_at = models.DateTimeField(auto_now_add=True)
@@ -2851,6 +2877,7 @@ class BankLoan(models.Model):
         PAID = "PAID", _("Pagado")
         REFINANCED = "REFINANCED", _("Refinanciado")
         DEFAULTED = "DEFAULTED", _("En Mora / Incobrable")
+        CANCELLED = "CANCELLED", _("Cancelado")
 
     class Currency(models.TextChoices):
         CLP = "CLP", _("Pesos Chilenos (CLP)")

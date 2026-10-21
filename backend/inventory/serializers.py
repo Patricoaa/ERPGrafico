@@ -38,7 +38,7 @@ class ProductUoMPriceSerializer(serializers.ModelSerializer):
 class ProductAttributeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductAttribute
-        fields = ["id", "name", "created_at"]
+        fields = ["id", "name", "created_at", "is_active"]
 
 
 class ProductAttributeValueSerializer(serializers.ModelSerializer):
@@ -61,6 +61,7 @@ class ProductCategorySerializer(serializers.ModelSerializer):
             "asset_account",
             "income_account",
             "expense_account",
+            "is_active",
         ]
 
 

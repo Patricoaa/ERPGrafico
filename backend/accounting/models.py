@@ -1674,7 +1674,12 @@ class ClosingChecklistTemplate(models.Model):
     category = models.CharField(max_length=30, choices=Category.choices)
     is_required = models.BooleanField(default=True)
     order = models.PositiveSmallIntegerField(default=0)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(
+        _("Activa"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar la plantilla de cierre; los cierres históricos la siguen referenciando."),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

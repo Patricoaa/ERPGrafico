@@ -49,6 +49,7 @@ class PayrollConceptSerializer(serializers.ModelSerializer):
             "formula",
             "default_amount",
             "is_system",
+            "is_active",
         ]
 
 

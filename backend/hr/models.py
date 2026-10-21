@@ -83,7 +83,12 @@ class AFP(models.Model):
         verbose_name=_("Cuenta Contable Pasivo"),
     )
 
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(
+        _("Activa"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar la AFP; los empleados históricos la siguen referenciando."),
+    )
 
     class Meta:
         verbose_name = _("AFP")
@@ -136,6 +141,12 @@ class PayrollConcept(models.Model):
 
     is_system = models.BooleanField(
         default=False, help_text=_("Conceptos generados por el sistema para cálculos legales.")
+    )
+    is_active = models.BooleanField(
+        _("Activo"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar el concepto de nómina; las nóminas históricas lo siguen referenciando."),
     )
 
     class Meta:

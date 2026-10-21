@@ -146,6 +146,7 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
             "default_bank_format",
             "reconciliation_settings",
             "terminal_providers",
+            "is_active",
         ]
 
 
@@ -1234,6 +1235,7 @@ class CreditLineSerializer(serializers.ModelSerializer):
             "notes",
             "status",
             "status_display",
+            "is_active",
             "created_at",
             "updated_at",
             "created_by",
@@ -1273,6 +1275,7 @@ class CreditLineWriteSerializer(serializers.ModelSerializer):
             "collateral_notes",
             "notes",
             "status",
+            "is_active",
         ]
 
 

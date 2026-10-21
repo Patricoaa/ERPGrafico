@@ -40,6 +40,7 @@ class AccountSerializer(serializers.ModelSerializer):
             "balance",
             "is_category",
             "cf_category",
+            "is_active",
         ]
         extra_kwargs = {"code": {"required": False, "allow_blank": True}}
 

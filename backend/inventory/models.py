@@ -154,7 +154,12 @@ class ProductCategory(TimeStampedModel):
 class UoMCategory(TimeStampedModel):
     # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     name = models.CharField(_("Nombre"), max_length=100)
-    is_active = models.BooleanField(_("Activo"), default=True, db_index=True)
+    is_active = models.BooleanField(
+        _("Activo"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar la categoría de medida; las unidades históricas la siguen referenciando."),
+    )
     history = HistoricalRecords()
 
     class Meta:
@@ -183,7 +188,12 @@ class UoM(TimeStampedModel):
     )
     ratio = models.DecimalField(_("Ratio"), max_digits=12, decimal_places=5, default=1.0)
     rounding = models.DecimalField(_("Redondeo"), max_digits=12, decimal_places=5, default=0.01000)
-    is_active = models.BooleanField(default=True, db_index=True)
+    is_active = models.BooleanField(
+        _("Activo"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar la unidad de medida; los productos históricos la siguen referenciando."),
+    )
     history = HistoricalRecords()
 
     class FormMeta:
@@ -227,6 +237,12 @@ class ProductAttribute(TimeStampedModel):
     # NOTE: created_at heredado de TimeStampedModel (T-14); updated_at es nuevo.
     # created_at ya existía como campo manual en el modelo — ahora heredado.
     name = models.CharField(_("Nombre"), max_length=100)
+    is_active = models.BooleanField(
+        _("Activo"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar el atributo; los productos históricos lo siguen referenciando."),
+    )
     history = HistoricalRecords()
 
     class Meta:
@@ -1237,7 +1253,12 @@ class Location(models.Model):
         null=True, blank=True,
         help_text="Cuenta contable de contrapartida para ubicaciones virtuales."
     )
-    is_active = models.BooleanField(_("Activa"), default=True)
+    is_active = models.BooleanField(
+        _("Activa"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar la ubicación; los movimientos de stock históricos la siguen referenciando."),
+    )
 
     class Meta:
         verbose_name = _("Ubicación")

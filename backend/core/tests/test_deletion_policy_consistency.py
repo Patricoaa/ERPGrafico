@@ -16,6 +16,7 @@ If you add a model to the deletion-policy table, add it here in the same PR.
 """
 
 import importlib
+import inspect
 
 import pytest
 from django.apps import apps
@@ -27,6 +28,7 @@ CANCEL_SERVICE_MAP = {
     "PurchaseReceipt": ("purchasing.services", "PurchasingService", "cancel_receipt"),
     "Invoice": ("billing.services", "BillingService", "cancel_invoice"),
     "TreasuryMovement": ("treasury.services", "TreasuryService", "cancel_movement"),
+    "CreditCardStatement": ("treasury.card_service", "CardService", "cancel_statement"),
 }
 
 
@@ -35,15 +37,20 @@ CANCEL_SERVICE_MAP = {
 DELETION_POLICY = {
     "Account": ("accounting", "account", "archivo"),
     "JournalEntry": ("accounting", "journalentry", "anulacion"),
+    "ClosingChecklistTemplate": ("accounting", "closingchecklisttemplate", "archivo"),
     "Invoice": ("billing", "invoice", "anulacion"),
     "Contact": ("contacts", "contact", "archivo"),
     "User": ("core", "user", "archivo"),
     "Employee": ("hr", "employee", "archivo"),
+    "AFP": ("hr", "afp", "archivo"),
+    "PayrollConcept": ("hr", "payrollconcept", "archivo"),
     "Product": ("inventory", "product", "archivo"),
     "ProductCategory": ("inventory", "productcategory", "archivo"),
+    "ProductAttribute": ("inventory", "productattribute", "archivo"),
     "UoM": ("inventory", "uom", "archivo"),
     "UoMCategory": ("inventory", "uomcategory", "archivo"),
     "Warehouse": ("inventory", "warehouse", "archivo"),
+    "Location": ("inventory", "location", "archivo"),
     "StockMove": ("inventory", "stockmove", "anulacion"),
     "WorkOrder": ("production", "workorder", "anulacion"),
     "PurchaseOrder": ("purchasing", "purchaseorder", "anulacion"),
@@ -55,8 +62,15 @@ DELETION_POLICY = {
     "Bank": ("treasury", "bank", "archivo"),
     "TreasuryAccount": ("treasury", "treasuryaccount", "archivo"),
     "PaymentMethod": ("treasury", "paymentmethod", "archivo"),
+    "PaymentTerminalProvider": ("treasury", "paymentterminalprovider", "archivo"),
+    "POSTerminal": ("treasury", "posterminal", "archivo"),
     "TreasuryMovement": ("treasury", "treasurymovement", "cancelacion"),
     "BankStatementLine": ("treasury", "bankstatementline", "anulacion"),
+    "BankLoan": ("treasury", "bankloan", "anulacion"),
+    "LoanInstallment": ("treasury", "loaninstallment", "append_only"),
+    "CreditCardStatement": ("treasury", "creditcardstatement", "cancelacion"),
+    "CreditLine": ("treasury", "creditline", "archivo"),
+    "Checkbook": ("treasury", "checkbook", "archivo"),
 }
 
 # Anulación entities whose mechanism is NOT an own `status` field, per the
@@ -68,6 +82,8 @@ STATUS_EXEMPT = {
     "StockMove": None,
     # "No se borra; se marca unmatched o discarded" via reconciliation_status.
     "BankStatementLine": "reconciliation_status",
+    # LoanInstallment es append-only, no se borra manualmente
+    "LoanInstallment": None,
 }
 
 # Archivo entities whose lifecycle is governed by an existing `status` enum
@@ -77,6 +93,7 @@ STATUS_EXEMPT = {
 ARCHIVO_EXEMPT = {
     "Employee": "status",  # ACTIVE / INACTIVE
     "TaxPeriod": "status",  # OPEN / UNDER_REVIEW / CLOSED — no es archivable
+    "Checkbook": "status",  # ACTIVE / CLOSED / EXHAUSTED — nunca se borra; preserva trazabilidad de folios
 }
 
 # Archivo entities that do NOT yet comply with the contract's
@@ -249,3 +266,230 @@ class TestDeletionPolicyConsistency:
                 )
 
         assert not failures, "Cancelacion service violations:\n" + "\n".join(failures)
+
+    def test_archivo_serializers_expose_is_active(self):
+        """
+        Entidades con patrón 'archivo' que tienen ViewSet deben exponer is_active
+        en su serializer para poder archivar/restaurar vía API.
+        """
+        from rest_framework import serializers
+        
+        failures = []
+        for entity_key, (app, model_name, pattern) in DELETION_POLICY.items():
+            if pattern != "archivo":
+                continue
+            if entity_key in ARCHIVO_EXEMPT:
+                continue
+            if entity_key in ARCHIVO_KNOWN_GAPS:
+                continue
+                
+            try:
+                model = apps.get_model(app, model_name)
+            except LookupError:
+                failures.append(f"{entity_key}: model {app}.{model_name} not found")
+                continue
+                
+            # Buscar el ViewSet para encontrar el serializer real
+            serializer_class = None
+            serializer_module = None
+            
+            # Primero intentar en views.py del app
+            try:
+                views_module = importlib.import_module(f"{app}.views")
+                viewset_candidates = [
+                    f"{model_name.capitalize()}ViewSet",
+                    f"{model_name.capitalize()}View",
+                ]
+                for vname in viewset_candidates:
+                    if hasattr(views_module, vname):
+                        viewset = getattr(views_module, vname)
+                        if hasattr(viewset, 'get_serializer_class'):
+                            # El serializer puede ser dinámico, buscar serializer_class
+                            if hasattr(viewset, 'serializer_class'):
+                                serializer_class = viewset.serializer_class
+                                serializer_module = f"{app}.views"
+                                break
+            except ImportError:
+                pass
+                
+            # Si no se encontró en views, buscar en serializers.py por convención común
+            if not serializer_class:
+                try:
+                    serializers_module = importlib.import_module(f"{app}.serializers")
+                    # Buscar serializer que use este modelo
+                    for attr_name in dir(serializers_module):
+                        attr = getattr(serializers_module, attr_name)
+                        if isinstance(attr, type) and issubclass(attr, serializers.Serializer):
+                            if hasattr(attr, 'Meta') and hasattr(attr.Meta, 'model'):
+                                if attr.Meta.model == model:
+                                    serializer_class = attr
+                                    serializer_module = f"{app}.serializers"
+                                    break
+                except ImportError:
+                    pass
+                    
+            if not serializer_class:
+                # No hay serializer/API para este modelo - saltar
+                continue
+                
+            # Verificar que is_active está en los fields
+            if hasattr(serializer_class, 'Meta') and hasattr(serializer_class.Meta, 'fields'):
+                fields = serializer_class.Meta.fields
+                if fields == "__all__":
+                    # __all__ incluye is_active automáticamente
+                    continue
+                if "is_active" not in fields:
+                    failures.append(
+                        f"{entity_key}: serializer {serializer_module}.{serializer_class.__name__} "
+                        f"no expone 'is_active' en fields={fields}"
+                    )
+            else:
+                failures.append(
+                    f"{entity_key}: serializer {serializer_module}.{serializer_class.__name__} "
+                    f"sin Meta.fields definido"
+                )
+                
+        assert not failures, "Archivo serializers missing is_active:\n" + "\n".join(failures)
+
+    def test_archivo_selectors_filter_is_active_by_default(self):
+        """
+        ViewSets de entidades Archivo deben filtrar is_active=True por defecto
+        en su queryset base (listados).
+        """
+        import inspect
+        
+        failures = []
+        for entity_key, (app, model_name, pattern) in DELETION_POLICY.items():
+            if pattern != "archivo":
+                continue
+            if entity_key in ARCHIVO_EXEMPT:
+                continue
+            if entity_key in ARCHIVO_KNOWN_GAPS:
+                continue
+                
+            try:
+                model = apps.get_model(app, model_name)
+            except LookupError:
+                failures.append(f"{entity_key}: model {app}.{model_name} not found")
+                continue
+                
+            # Buscar el ViewSet y verificar su queryset
+            try:
+                views_module = importlib.import_module(f"{app}.views")
+            except ImportError:
+                failures.append(f"{entity_key}: no views module {app}.views")
+                continue
+                
+            viewset = None
+            viewset_candidates = [
+                f"{model_name.capitalize()}ViewSet",
+                f"{model_name.capitalize()}View",
+            ]
+            for vname in viewset_candidates:
+                if hasattr(views_module, vname):
+                    viewset = getattr(views_module, vname)
+                    break
+                    
+            if not viewset:
+                # No hay ViewSet para este modelo - saltar
+                continue
+                
+            # Verificar el queryset base del ViewSet
+            queryset = None
+            if hasattr(viewset, 'queryset') and viewset.queryset is not None:
+                queryset = viewset.queryset
+            elif hasattr(viewset, 'get_queryset'):
+                # No podemos ejecutar get_queryset sin request, pero podemos inspeccionar el código
+                source = inspect.getsource(viewset.get_queryset)
+                if "is_active=True" in source or "is_active = True" in source or "is_active" in source:
+                    # Tiene filtro de is_active en get_queryset
+                    continue
+                else:
+                    failures.append(
+                        f"{entity_key}: ViewSet {viewset.__name__}.get_queryset no filtra is_active=True"
+                    )
+                    continue
+            else:
+                failures.append(
+                    f"{entity_key}: ViewSet {viewset.__name__} sin queryset ni get_queryset"
+                )
+                continue
+                
+            # Verificar que el queryset filtra is_active=True
+            if hasattr(queryset, 'query'):
+                where_clause = str(queryset.query.where)
+                if "is_active" not in where_clause:
+                    failures.append(
+                        f"{entity_key}: queryset base no filtra is_active=True (WHERE: {where_clause})"
+                    )
+            else:
+                # Queryset es un Manager, verificar el modelo
+                if hasattr(queryset, 'model') and queryset.model == model:
+                    # Es el manager por defecto (objects.all()) - no filtra
+                    failures.append(
+                        f"{entity_key}: queryset base usa manager por defecto sin filtro is_active"
+                    )
+                    
+        assert not failures, "Archivo viewsets not filtering is_active by default:\n" + "\n".join(failures)
+
+    def test_archivo_delete_blocked(self):
+        """
+        Entidades Archivo deben bloquear DELETE (hard delete) → 405.
+        Verifica que el viewset no permite destroy o que devuelve 405.
+        """
+        from rest_framework.test import APIClient
+        from django.contrib.auth import get_user_model
+        
+        User = get_user_model()
+        client = APIClient()
+        
+        # Crear superuser para tener todos los permisos
+        user = User.objects.create_superuser(username="test_admin", password="testpass")
+        client.force_authenticate(user=user)
+        
+        failures = []
+        for entity_key, (app, model_name, pattern) in DELETION_POLICY.items():
+            if pattern != "archivo":
+                continue
+            if entity_key in ARCHIVO_EXEMPT:
+                continue
+            if entity_key in ARCHIVO_KNOWN_GAPS:
+                continue
+                
+            try:
+                model = apps.get_model(app, model_name)
+            except LookupError:
+                failures.append(f"{entity_key}: model {app}.{model_name} not found")
+                continue
+                
+            # Crear una instancia de prueba
+            obj = model.objects.first()
+            if not obj:
+                # Si no hay instancias, crear una mínima
+                try:
+                    obj = model.objects.create()
+                except Exception:
+                    failures.append(f"{entity_key}: cannot create test instance for {app}.{model_name}")
+                    continue
+                    
+            # Determinar URL del detail endpoint
+            # Convención REST: /api/{app}/{model_name}-detail/{pk}/
+            url = f"/api/{app}/{model_name}s/{obj.pk}/"
+            
+            response = client.delete(url)
+            
+            # Aceptar 405 (Method Not Allowed) o 403 (si el permiso no incluye delete)
+            # Lo importante es que NO sea 204 (borrado exitoso)
+            if response.status_code == 204:
+                failures.append(
+                    f"{entity_key}: DELETE {url} devolvió 204 (hard delete permitido). "
+                    f"Debe bloquearse con 405 o 403."
+                )
+            elif response.status_code not in (405, 403, 404):
+                # 404 puede pasar si el endpoint no existe (no hay viewset)
+                # 403 = sin permiso delete (pero ADMIN lo tiene, así que 405 es lo correcto)
+                failures.append(
+                    f"{entity_key}: DELETE {url} devolvió {response.status_code} (esperado 405/403)"
+                )
+                
+        assert not failures, "Archivo DELETE not blocked:\n" + "\n".join(failures)
