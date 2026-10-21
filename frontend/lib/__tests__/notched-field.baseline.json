@@ -21,17 +21,17 @@
   },
   {
     "file": "features/inventory/components/CategoryDrawer.tsx",
-    "line": 121,
+    "line": 119,
     "rule": "R2"
   },
   {
     "file": "features/inventory/components/UoMDrawer.tsx",
-    "line": 319,
+    "line": 321,
     "rule": "R2"
   },
   {
     "file": "features/inventory/components/UoMDrawer.tsx",
-    "line": 372,
+    "line": 376,
     "rule": "R2"
   },
   {

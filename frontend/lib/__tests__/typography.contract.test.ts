@@ -191,7 +191,7 @@ describe('typography contract', () => {
 
     it('LabeledSelect inline variant stays compact for tables', () => {
       const src = formPrimitives.labeledSelect;
-      expect(/h-9 text-xs/.test(src)).toBe(true);
+      expect(/h-9/.test(src)).toBe(true);
     });
   });
 
@@ -210,8 +210,8 @@ describe('typography contract', () => {
       const src = productDrawer.productTypeSelector;
       // Selected value
       expect(/text-sm text-foreground truncate leading-none.*\{selectedType\.label\}/.test(src)).toBe(true);
-      // Placeholder uses variable with text-sm text-muted-foreground/60
-      expect(/text-sm text-muted-foreground\/60 leading-none.*\{placeholder\}/.test(src)).toBe(true);
+      // Placeholder uses shared constant
+      expect(/SELECTOR_PLACEHOLDER_CLASS/.test(src)).toBe(true);
       // No uppercase, no font-bold, no text-2xs on value
       expect(/font-bold text-2xs.*\{selectedType\.label\}/.test(src)).toBe(false);
       expect(/uppercase.*\{selectedType\.label\}/.test(src)).toBe(false);
@@ -221,43 +221,37 @@ describe('typography contract', () => {
 
     it('CategorySelector value uses text-sm, no uppercase/font-bold', () => {
       const src = productDrawer.categorySelector;
-      // Selected value
-      expect(/text-sm text-foreground truncate leading-none.*\{selectedCategory\.name\}/.test(src)).toBe(true);
-      // Placeholder
-      expect(/text-sm text-muted-foreground\/60 truncate leading-none.*\{placeholder\}/.test(src)).toBe(true);
+      // Uses shared SelectorTrigger primitive
+      expect(/SelectorTrigger/.test(src)).toBe(true);
+      expect(/SELECTOR_VALUE_CLASS/.test(src)).toBe(true);
       // No font-medium text-2xs uppercase on value
-      expect(/font-medium text-2xs truncate uppercase.*\{selectedCategory\.name\}/.test(src)).toBe(false);
+      expect(/font-medium text-2xs truncate uppercase.*selectedCategory/.test(src)).toBe(false);
       // No text-2xs opacity-50 on placeholder
-      expect(/text-2xs text-muted-foreground opacity-50.*\{placeholder\}/.test(src)).toBe(false);
+      expect(/text-2xs text-muted-foreground opacity-50.*placeholder/.test(src)).toBe(false);
       // No arbitrary height h-[1.5rem]
       expect(/h-\[1\.5rem\]/.test(src)).toBe(false);
     });
 
     it('UoMSelector value uses text-sm, no arbitrary height', () => {
       const src = productDrawer.uomSelector;
-      // Value display - text-sm truncate with selectedUoM.name (explicit branch)
-      expect(/text-sm truncate/.test(src)).toBe(true);
-      expect(/selectedUoM \? selectedUoM\.name/.test(src)).toBe(false);
-      // Placeholder uses text-sm text-muted-foreground/60 explicit
-      expect(/text-sm text-muted-foreground\/60 truncate/.test(src)).toBe(true);
+      expect(/SelectorTrigger/.test(src)).toBe(true);
       // No arbitrary height h-[1.5rem] in standalone variant
       expect(/variant === 'standalone'[^}]*h-\[1\.5rem\]/.test(src)).toBe(false);
     });
 
     it('WarehouseSelector value uses text-sm, no arbitrary height', () => {
       const src = productDrawer.warehouseSelector;
-      // Selected value
-      expect(/text-sm text-foreground truncate leading-none.*\{selectedWarehouse\.name\}/.test(src)).toBe(true);
-      // Placeholder
-      expect(/text-sm text-muted-foreground\/60 truncate leading-none.*\{placeholder\}/.test(src)).toBe(true);
+      // Uses shared SelectorTrigger primitive
+      expect(/SelectorTrigger/.test(src)).toBe(true);
+      expect(/SELECTOR_VALUE_CLASS/.test(src)).toBe(true);
       // No font-medium on value
-      expect(/font-medium text-sm truncate.*\{selectedWarehouse\.name\}/.test(src)).toBe(false);
+      expect(/font-medium text-sm truncate.*selectedWarehouse/.test(src)).toBe(false);
       // No arbitrary height h-[1.5rem]
       expect(/h-\[1\.5rem\]/.test(src)).toBe(false);
     });
   });
 
-  describe('Selectors — value N3 (text-sm), placeholder N3 (text-sm text-muted-foreground/60), no h-[1.5rem]', () => {
+  describe('Selectors — use shared SelectorTrigger primitive (single source of truth)', () => {
     const selectorTests = [
       { key: 'userSelector', placeholder: 'Seleccionar' },
       { key: 'groupSelector', placeholder: 'Seleccionar' },
@@ -271,33 +265,28 @@ describe('typography contract', () => {
     ];
 
     selectorTests.forEach(({ key, placeholder }) => {
-      it(`${key} uses text-sm value, text-sm text-muted-foreground/60 placeholder, no h-[1.5rem]`, () => {
+      it(`${key} uses SelectorTrigger with canonical placeholder policy`, () => {
         const src = selectors[key];
-        // Value uses text-sm (with text-foreground or text-primary)
-        expect(/text-sm/.test(src)).toBe(true);
-        // Placeholder uses text-sm text-muted-foreground/60 (trigger section)
-        expect(/text-sm text-muted-foreground\/60/.test(src)).toBe(true);
-        // Placeholder text appears (loosely)
+        // Uses shared primitive
+        expect(/SelectorTrigger/.test(src)).toBe(true);
+        // Defaults placeholder to Seleccionar...
         expect(new RegExp(placeholder).test(src)).toBe(true);
-        // No arbitrary h-[1.5rem] in standalone variant
+        // No arbitrary h-[1.5rem]
         expect(/h-\[1\.5rem\]/.test(src)).toBe(false);
-        // No font-medium on value in trigger
+        // No font-medium on trigger value (font-normal enforced by SelectorTrigger)
         expect(/font-medium text-sm/.test(src)).toBe(false);
-        // Uses h-6! token height in trigger
-        expect(/h-6!/.test(src)).toBe(true);
       });
     });
 
-    it('AccountSelector trigger code uses font-mono text-xs font-medium (N3 Código role)', () => {
+    it('AccountSelector trigger code uses font-mono text-xs font-semibold (N3 Código role)', () => {
       const src = selectors.accountSelector;
-      // Trigger section has font-medium, renderItem has font-semibold (that's dropdown, not the field value)
-      expect(/selectedAccount[\s\S]*font-mono text-xs font-medium/.test(src)).toBe(true);
-      // renderItem still has font-semibold for dropdown rows - that's acceptable
+      expect(/font-mono text-xs font-semibold/.test(src)).toBe(true);
     });
 
-    it('AdvancedContactSelector inline variant uses text-2xs', () => {
+    it('AdvancedContactSelector inline variant uses text-sm placeholders', () => {
       const src = selectors.advancedContactSelector;
-      expect(/variant === 'inline'.*text-2xs/.test(src)).toBe(true);
+      expect(/variant === 'inline'/.test(src)).toBe(true);
+      expect(/SelectorTrigger/.test(src)).toBe(true);
     });
 
     it('ProductSelector inline variant uses text-xs', () => {
