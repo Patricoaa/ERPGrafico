@@ -70,6 +70,23 @@ from .serializers import (
 from .services import TerminalBatchService, TreasuryService
 
 
+def apply_archivo_is_active_filter(qs, request, action):
+    """Patrón Archivo: en el listado filtra ``is_active=True`` por defecto.
+
+    Acepta ``?is_active=all`` (sin filtro) y ``?is_active=false`` (archivados).
+    Fuera del listado (detail/update) no aplica el filtro para permitir
+    acceder a registros archivados.
+    """
+    if action == "list":
+        is_active = request.query_params.get("is_active")
+        if is_active == "all":
+            return qs
+        elif is_active == "false":
+            return qs.filter(is_active=False)
+        return qs.filter(is_active=True)
+    return qs
+
+
 class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Bank.objects.prefetch_related("account_executives").order_by("name")
     serializer_class = BankSerializer
@@ -77,14 +94,7 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        if self.action == "list":
-            is_active = self.request.query_params.get("is_active")
-            if is_active == "all":
-                return qs
-            elif is_active == "false":
-                return qs.filter(is_active=False)
-            return qs.filter(is_active=True)
-        return qs
+        return apply_archivo_is_active_filter(qs, self.request, self.action)
 
     @action(detail=True, methods=["get"])
     def overview(self, request, pk=None):
@@ -117,6 +127,29 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
+    def _check_archive_guard(self, instance):
+        # D4: un PATCH/PUT directo a is_active=false debe pasar el mismo
+        # guard que el endpoint dedicado /archive/.
+        val = self.request.data.get("is_active", None)
+        going_inactive = val == 0 or (isinstance(val, str) and val.lower() in ("false", "0"))
+        if instance.is_active and going_inactive:
+            ok, reason = BankDeletionService.can_archive(instance)
+            if not ok:
+                return Response({"detail": reason}, status=status.HTTP_409_CONFLICT)
+        return None
+
+    def update(self, request, *args, **kwargs):
+        guard = self._check_archive_guard(self.get_object())
+        if guard:
+            return guard
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        guard = self._check_archive_guard(self.get_object())
+        if guard:
+            return guard
+        return super().partial_update(request, *args, **kwargs)
+
 
 class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = PaymentMethod.objects.all().order_by("name")
@@ -141,16 +174,7 @@ class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if method_type:
             qs = qs.filter(method_type=method_type)
 
-        # List view: filter active by default; allow ?is_active=all/false
-        if self.action == "list":
-            is_active = self.request.query_params.get("is_active")
-            if is_active == "all":
-                return qs
-            elif is_active == "false":
-                return qs.filter(is_active=False)
-            return qs.filter(is_active=True)
-
-        return qs
+        return apply_archivo_is_active_filter(qs, self.request, self.action)
 
     def _check_integrated(self, instance):
         if instance.is_integrated:
@@ -222,15 +246,7 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         exclude_id = self.request.query_params.get("exclude_id")
         if exclude_id:
             qs = qs.exclude(id=exclude_id)
-        # List view: filter active by default; allow ?is_active=all/false
-        if self.action == "list":
-            is_active = self.request.query_params.get("is_active")
-            if is_active == "all":
-                return qs
-            elif is_active == "false":
-                return qs.filter(is_active=False)
-            return qs.filter(is_active=True)
-        return qs
+        return apply_archivo_is_active_filter(qs, self.request, self.action)
 
     def destroy(self, request, *args, **kwargs):
         # Archivo pattern: hard DELETE not allowed, use PATCH is_active=false to archive
@@ -294,14 +310,7 @@ class PaymentTerminalProviderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        if self.action == "list":
-            is_active = self.request.query_params.get("is_active")
-            if is_active == "all":
-                return qs
-            elif is_active == "false":
-                return qs.filter(is_active=False)
-            return qs.filter(is_active=True)
-        return qs
+        return apply_archivo_is_active_filter(qs, self.request, self.action)
 
     def destroy(self, request, *args, **kwargs):
         return Response(
@@ -1351,6 +1360,7 @@ class CreditLineViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        qs = apply_archivo_is_active_filter(qs, self.request, self.action)
         treasury_account_id = self.request.query_params.get("treasury_account_id")
         if treasury_account_id:
             qs = qs.filter(treasury_account_id=treasury_account_id)
@@ -1358,6 +1368,13 @@ class CreditLineViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if bank_id:
             qs = qs.filter(treasury_account__bank_id=bank_id)
         return qs
+
+    def destroy(self, request, *args, **kwargs):
+        # Archivo pattern: hard DELETE not allowed, use PATCH is_active=false to archive
+        return Response(
+            {"detail": "Hard delete not allowed for CreditLines. Use PATCH is_active=false to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):

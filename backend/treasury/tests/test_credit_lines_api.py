@@ -117,8 +117,18 @@ class TestCreditLineAPI:
         assert resp.data["credit_limit"] == "75000000.00"
 
     def test_delete_credit_line(self, api_client, credit_line):
+        # Patrón Archivo (D1): hard DELETE bloqueado → 405
         resp = api_client.delete(f"/api/treasury/credit-lines/{credit_line.id}/")
-        assert resp.status_code == status.HTTP_204_NO_CONTENT
+        assert resp.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+    def test_archive_credit_line_via_patch(self, api_client, credit_line):
+        # El archivado se hace vía PATCH is_active=false, no DELETE
+        resp = api_client.patch(
+            f"/api/treasury/credit-lines/{credit_line.id}/", {"is_active": False}, format="json"
+        )
+        assert resp.status_code == status.HTTP_200_OK
+        credit_line.refresh_from_db()
+        assert credit_line.is_active is False
 
     def test_overview_returns_movements(self, api_client, checking_account, credit_line):
         resp = api_client.get(f"/api/treasury/credit-lines/{credit_line.id}/overview/")

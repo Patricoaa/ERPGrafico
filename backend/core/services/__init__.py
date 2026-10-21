@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from rest_framework.exceptions import ValidationError
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils import timezone
@@ -255,11 +256,29 @@ class UserService:
 
         Reemplaza ``instance.is_active = False; instance.save()`` + log que estaban
         en ``UserViewSet.destroy``.
+
+        Guard: impide desactivar al último superuser activo del sistema.
         """
+        from django.db import transaction
+
         from core.models import ActionLog
 
-        user.is_active = False
-        user.save(update_fields=["is_active"])
+        with transaction.atomic():
+            locked = type(user).objects.select_for_update().get(pk=user.pk)
+            if locked.is_superuser and locked.is_active:
+                remaining = (
+                    type(user)
+                    .objects.filter(is_superuser=True, is_active=True)
+                    .exclude(pk=locked.pk)
+                    .count()
+                )
+                if remaining == 0:
+                    raise ValidationError(
+                        "No se puede desactivar al último superuser activo del sistema. "
+                        "Cree o active otro superuser antes de continuar."
+                    )
+            locked.is_active = False
+            locked.save(update_fields=["is_active"])
 
         ActionLoggingService.log_action(
             user=deactivated_by or user,

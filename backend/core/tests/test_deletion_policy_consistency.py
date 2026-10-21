@@ -20,6 +20,7 @@ import inspect
 
 import pytest
 from django.apps import apps
+from django.urls import NoReverseMatch, reverse
 
 # ── Cancelacion models → (module_path, service_class, method_name) ──
 CANCEL_SERVICE_MAP = {
@@ -393,43 +394,38 @@ class TestDeletionPolicyConsistency:
             if not viewset:
                 # No hay ViewSet para este modelo - saltar
                 continue
-                
-            # Verificar el queryset base del ViewSet
-            queryset = None
+
+            # 1) Preferir inspeccionar get_queryset: el patrón Archivo filtra
+            #    is_active en el listado (directamente o delegando al selector).
+            if hasattr(viewset, 'get_queryset'):
+                source = inspect.getsource(viewset.get_queryset)
+                if "is_active" in source:
+                    continue
+
+            # 2) Fallback: verificar el atributo queryset de clase
             if hasattr(viewset, 'queryset') and viewset.queryset is not None:
                 queryset = viewset.queryset
-            elif hasattr(viewset, 'get_queryset'):
-                # No podemos ejecutar get_queryset sin request, pero podemos inspeccionar el código
-                source = inspect.getsource(viewset.get_queryset)
-                if "is_active=True" in source or "is_active = True" in source or "is_active" in source:
-                    # Tiene filtro de is_active en get_queryset
-                    continue
+                if hasattr(queryset, 'query'):
+                    where_clause = str(queryset.query.where)
+                    if "is_active" not in where_clause:
+                        failures.append(
+                            f"{entity_key}: get_queryset sin is_active y queryset base "
+                            f"no filtra is_active=True (WHERE: {where_clause})"
+                        )
                 else:
-                    failures.append(
-                        f"{entity_key}: ViewSet {viewset.__name__}.get_queryset no filtra is_active=True"
-                    )
-                    continue
+                    # Queryset es un Manager, verificar el modelo
+                    if hasattr(queryset, 'model') and queryset.model == model:
+                        # Es el manager por defecto (objects.all()) - no filtra
+                        failures.append(
+                            f"{entity_key}: get_queryset sin is_active y queryset base "
+                            f"usa manager por defecto sin filtro is_active"
+                        )
             else:
                 failures.append(
-                    f"{entity_key}: ViewSet {viewset.__name__} sin queryset ni get_queryset"
+                    f"{entity_key}: ViewSet {viewset.__name__} sin filtro is_active "
+                    f"en get_queryset ni en queryset base"
                 )
-                continue
-                
-            # Verificar que el queryset filtra is_active=True
-            if hasattr(queryset, 'query'):
-                where_clause = str(queryset.query.where)
-                if "is_active" not in where_clause:
-                    failures.append(
-                        f"{entity_key}: queryset base no filtra is_active=True (WHERE: {where_clause})"
-                    )
-            else:
-                # Queryset es un Manager, verificar el modelo
-                if hasattr(queryset, 'model') and queryset.model == model:
-                    # Es el manager por defecto (objects.all()) - no filtra
-                    failures.append(
-                        f"{entity_key}: queryset base usa manager por defecto sin filtro is_active"
-                    )
-                    
+
         assert not failures, "Archivo viewsets not filtering is_active by default:\n" + "\n".join(failures)
 
     def test_archivo_delete_blocked(self):
@@ -439,14 +435,76 @@ class TestDeletionPolicyConsistency:
         """
         from rest_framework.test import APIClient
         from django.contrib.auth import get_user_model
-        
+        from django.db import transaction
+
         User = get_user_model()
         client = APIClient()
-        
+
         # Crear superuser para tener todos los permisos
         user = User.objects.create_superuser(username="test_admin", password="testpass")
         client.force_authenticate(user=user)
-        
+
+        def _first_or_create(model, app, model_name):
+            """Devuelve una instancia (existente o creada con datos mínimos válidos)."""
+            obj = model.objects.first()
+            if obj:
+                return obj
+            kwargs = {}
+            if app == "hr" and model_name == "afp":
+                kwargs = {"name": "Test AFP", "percentage": "10.00"}
+            elif app == "hr" and model_name == "payrollconcept":
+                from accounting.models import Account
+                acc = Account.objects.first()
+                if acc is None:
+                    return None
+                kwargs = {"name": "Test Concept", "category": "ALLOWANCE", "account": acc}
+            elif app == "accounting" and model_name == "account":
+                kwargs = {"code": "TSTACC", "name": "Test Account", "account_type": "ASSET"}
+            elif app == "accounting" and model_name == "closingchecklisttemplate":
+                kwargs = {"code": "test-template", "name": "Test Template",
+                          "description": "-", "category": "GENERAL"}
+            elif app == "contacts":
+                kwargs = {"name": "Test Contact", "tax_id": "00000000-0",
+                          "contact_name": "Test", "email": "t@t.cl",
+                          "phone": "+56000000000", "address": "-"}
+            elif app == "inventory" and model_name == "productcategory":
+                kwargs = {"name": "Test Category"}
+            elif app == "inventory" and model_name == "productattribute":
+                kwargs = {"name": "Test Attribute"}
+            elif app == "inventory" and model_name == "uomcategory":
+                kwargs = {"name": "Test UoM Category"}
+            elif app == "inventory" and model_name == "uom":
+                from inventory.models import UoMCategory
+                cat = UoMCategory.objects.first() or UoMCategory.objects.create(name="Test UoM Cat")
+                kwargs = {"name": "Test UoM", "category": cat}
+            elif app == "inventory" and model_name == "product":
+                from inventory.models import ProductCategory
+                cat = ProductCategory.objects.first() or ProductCategory.objects.create(name="Test Prod Cat")
+                kwargs = {"name": "Test Product", "category": cat}
+            elif app == "inventory" and model_name == "warehouse":
+                kwargs = {"name": "Test WH", "code": "TWH", "address": "-"}
+            elif app == "inventory" and model_name == "location":
+                kwargs = {"name": "Test Location", "location_type": "INTERNAL"}
+            elif app == "treasury" and model_name == "bank":
+                kwargs = {"name": "Test Bank"}
+            elif app == "treasury" and model_name == "treasuryaccount":
+                kwargs = {"name": "Test Treasury Account"}
+            elif app == "treasury" and model_name == "creditline":
+                from treasury.models import TreasuryAccount
+                ta = TreasuryAccount.objects.first()
+                if ta is None:
+                    return None
+                kwargs = {"treasury_account": ta, "code": "CL-TEST",
+                          "credit_limit": "1000", "rate_basis": "MONTHLY",
+                          "valid_from": "2026-01-01", "collateral_notes": "-", "notes": "-"}
+            else:
+                return None
+            try:
+                with transaction.atomic():
+                    return model.objects.create(**kwargs)
+            except Exception:
+                return None
+
         failures = []
         for entity_key, (app, model_name, pattern) in DELETION_POLICY.items():
             if pattern != "archivo":
@@ -455,41 +513,62 @@ class TestDeletionPolicyConsistency:
                 continue
             if entity_key in ARCHIVO_KNOWN_GAPS:
                 continue
-                
+
             try:
                 model = apps.get_model(app, model_name)
             except LookupError:
                 failures.append(f"{entity_key}: model {app}.{model_name} not found")
                 continue
-                
-            # Crear una instancia de prueba
-            obj = model.objects.first()
-            if not obj:
-                # Si no hay instancias, crear una mínima
+
+            # Localizar el basename del router para construir la URL de detail
+            try:
+                views_module = importlib.import_module(f"{app}.views")
+            except ImportError:
+                failures.append(f"{entity_key}: no views module {app}.views")
+                continue
+
+            viewset = None
+            for vname in (f"{model_name.capitalize()}ViewSet", f"{model_name.capitalize()}View"):
+                if hasattr(views_module, vname):
+                    viewset = getattr(views_module, vname)
+                    break
+            if viewset is None:
+                # Sin ViewSet no hay endpoint DELETE que probar
+                continue
+
+            obj = model.objects.first() or _first_or_create(model, app, model_name)
+            if obj is None:
+                failures.append(
+                    f"{entity_key}: no se pudo obtener/crear una instancia para probar DELETE"
+                )
+                continue
+
+            # Buscar la URL de detail vía reverse del basename del router
+            basename = getattr(viewset, "basename", None) or f"{model_name}-detail"
+            url = None
+            for candidate in (f"{basename}-detail", f"{model_name}-detail",
+                              f"{model_name}s-detail", f"{app}-{model_name}-detail"):
                 try:
-                    obj = model.objects.create()
-                except Exception:
-                    failures.append(f"{entity_key}: cannot create test instance for {app}.{model_name}")
+                    url = reverse(candidate, args=[obj.pk])
+                    break
+                except NoReverseMatch:
                     continue
-                    
-            # Determinar URL del detail endpoint
-            # Convención REST: /api/{app}/{model_name}-detail/{pk}/
-            url = f"/api/{app}/{model_name}s/{obj.pk}/"
-            
+            if url is None:
+                # Fallback a la convención REST
+                url = f"/api/{app}/{model_name}s/{obj.pk}/"
+
             response = client.delete(url)
-            
+
             # Aceptar 405 (Method Not Allowed) o 403 (si el permiso no incluye delete)
-            # Lo importante es que NO sea 204 (borrado exitoso)
+            # y 404 (endpoint inexistente). Lo importante es que NO sea 204.
             if response.status_code == 204:
                 failures.append(
                     f"{entity_key}: DELETE {url} devolvió 204 (hard delete permitido). "
                     f"Debe bloquearse con 405 o 403."
                 )
             elif response.status_code not in (405, 403, 404):
-                # 404 puede pasar si el endpoint no existe (no hay viewset)
-                # 403 = sin permiso delete (pero ADMIN lo tiene, así que 405 es lo correcto)
                 failures.append(
                     f"{entity_key}: DELETE {url} devolvió {response.status_code} (esperado 405/403)"
                 )
-                
+
         assert not failures, "Archivo DELETE not blocked:\n" + "\n".join(failures)

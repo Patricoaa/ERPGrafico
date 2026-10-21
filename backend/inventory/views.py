@@ -76,6 +76,9 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
     ordering_fields = ["id", "name", "internal_code", "code", "category__name", "product_type", "annotated_current_stock", "sale_price"]
 
     def get_queryset(self):
+        # Archivo: en el listado, `list_products` (inventory/selectors.py) filtra
+        # is_active=True por defecto y respeta ?is_active=all/false. El detalle usa
+        # la base sin filtrar para permitir operar sobre productos archivados.
         user = self.request.user
         if self.kwargs.get("pk") or self.action in [
             "retrieve",

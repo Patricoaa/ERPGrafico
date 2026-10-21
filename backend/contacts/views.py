@@ -2,7 +2,7 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, viewsets
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -57,9 +57,6 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if self.action == "partners":
             return PartnerListSerializer
         return ContactSerializer
-
-    def get_queryset(self):
-        return list_contacts(params=self.request.query_params)
 
     @action(detail=False, methods=["get"], url_path="filter-suggestions")
     def filter_suggestions(self, request):

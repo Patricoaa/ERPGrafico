@@ -190,7 +190,7 @@ class TreasuryMovement(models.Model):
     # Unified contact field
     contact = models.ForeignKey(
         "contacts.Contact",
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="treasury_movements",
