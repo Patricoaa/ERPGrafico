@@ -319,79 +319,81 @@ export function AccountDrawer({
     }
 
     const ledgerContent = accountId ? (
-        <SkeletonShell isLoading={ledgerLoading} ariaLabel="Cargando libro mayor" className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
-            <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden gap-4 p-6">
-                {dateRange && (
-                    <LedgerSummaryPanel
-                        openingBalance={ledgerData?.opening_balance}
-                        periodDebit={ledgerData?.period_debit}
-                        periodCredit={ledgerData?.period_credit}
-                        closingBalance={ledgerData?.closing_balance}
-                        fromDate={dateRange?.from}
-                        toDate={dateRange?.to}
-                    />
-                )}
+        <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
+            <SkeletonShell isLoading={ledgerLoading} ariaLabel="Cargando libro mayor">
+                <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden gap-4 p-6">
+                    {dateRange && (
+                        <LedgerSummaryPanel
+                            openingBalance={ledgerData?.opening_balance}
+                            periodDebit={ledgerData?.period_debit}
+                            periodCredit={ledgerData?.period_credit}
+                            closingBalance={ledgerData?.closing_balance}
+                            fromDate={dateRange?.from}
+                            toDate={dateRange?.to}
+                        />
+                    )}
 
-                {/* Table — fills remaining height */}
-                <div className="flex-1 min-h-0 overflow-hidden">
-                    {dateRange ? (
-                        <Collection.Root
-                            collection={collection}
-                            actions={ledgerMovementActions.forCollection(ledgerMovementActionsCtx)}
-                            onOpen={(mov) => openEntry(mov.entry_id)}
-                        >
-                            <Collection.Toolbar>
-                                <UnifiedSearchBar
-                                    config={ledgerSearchConfig}
-                                    chips={ledgerSearch.chips}
-                                    isFiltered={ledgerSearch.isFiltered}
-                                    inputValue={ledgerSearch.inputValue}
-                                    onInputChange={ledgerSearch.setInputValue}
-                                    onApply={ledgerSearch.applyFilter}
-                                    onRemove={ledgerSearch.removeFilter}
-                                    onClearAll={ledgerSearch.clearAll}
-                                    groupBy={ledgerSearch.groupBy}
-                                    onGroupBySelect={ledgerSearch.setGroupBy}
-                                    paramValues={ledgerSearch.paramValues}
-                                    placeholder="Buscar por descripción..."
-                                    toolbarActions={
-                                        <DateRangeFilter
-                                            defaultRange={dateRange || undefined}
-                                            onDateChange={(range) => {
-                                                if (range?.from && range?.to) {
-                                                    setDateRange({ from: range.from, to: range.to })
-                                                }
-                                            }}
-                                            className="bg-background border-none shadow-none rounded-sm"
-                                            variant="outline"
-                                        />
-                                    }
+                    {/* Table — fills remaining height */}
+                    <div className="flex-1 min-h-0 overflow-hidden">
+                        {dateRange ? (
+                            <Collection.Root
+                                collection={collection}
+                                actions={ledgerMovementActions.forCollection(ledgerMovementActionsCtx)}
+                                onOpen={(mov) => openEntry(mov.entry_id)}
+                            >
+                                <Collection.Toolbar>
+                                    <UnifiedSearchBar
+                                        config={ledgerSearchConfig}
+                                        chips={ledgerSearch.chips}
+                                        isFiltered={ledgerSearch.isFiltered}
+                                        inputValue={ledgerSearch.inputValue}
+                                        onInputChange={ledgerSearch.setInputValue}
+                                        onApply={ledgerSearch.applyFilter}
+                                        onRemove={ledgerSearch.removeFilter}
+                                        onClearAll={ledgerSearch.clearAll}
+                                        groupBy={ledgerSearch.groupBy}
+                                        onGroupBySelect={ledgerSearch.setGroupBy}
+                                        paramValues={ledgerSearch.paramValues}
+                                        placeholder="Buscar por descripción..."
+                                        toolbarActions={
+                                            <DateRangeFilter
+                                                defaultRange={dateRange || undefined}
+                                                onDateChange={(range) => {
+                                                    if (range?.from && range?.to) {
+                                                        setDateRange({ from: range.from, to: range.to })
+                                                    }
+                                                }}
+                                                className="bg-background border-none shadow-none rounded-sm"
+                                                variant="outline"
+                                            />
+                                        }
+                                    />
+                                </Collection.Toolbar>
+                                <Collection.View
+                                    table={ledgerMovementDrawerViews.table}
+                                    emptyTitle="Sin movimientos"
+                                    emptyDescription="No hay movimientos para el período seleccionado."
                                 />
-                            </Collection.Toolbar>
-                            <Collection.View
-                                table={ledgerMovementDrawerViews.table}
-                                emptyTitle="Sin movimientos"
-                                emptyDescription="No hay movimientos para el período seleccionado."
-                            />
-                        </Collection.Root>
-                    ) : (
-                        <div className="flex-1 flex items-center justify-center text-muted-foreground">
-                            Seleccione un rango de fechas para ver los movimientos.
-                        </div>
+                            </Collection.Root>
+                        ) : (
+                            <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                                Seleccione un rango de fechas para ver los movimientos.
+                            </div>
+                        )}
+                    </div>
+
+                    {viewingEntry && (
+                        <JournalEntryDrawer
+                            journalEntryId={Number(viewingEntry.id)}
+                            mode="view"
+                            open={!!viewingEntry}
+                            onOpenChange={(open) => !open && closeEntry()}
+                            side="left"
+                        />
                     )}
                 </div>
-
-                {viewingEntry && (
-                    <JournalEntryDrawer
-                        journalEntryId={Number(viewingEntry.id)}
-                        mode="view"
-                        open={!!viewingEntry}
-                        onOpenChange={(open) => !open && closeEntry()}
-                        side="left"
-                    />
-                )}
-            </div>
-        </SkeletonShell>
+            </SkeletonShell>
+        </div>
     ) : (
         <div className="flex-1 flex items-center justify-center text-muted-foreground p-6">
             Seleccione una cuenta para ver su Libro Mayor.

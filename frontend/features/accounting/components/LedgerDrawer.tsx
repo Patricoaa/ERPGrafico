@@ -169,17 +169,19 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
                 headerActions={identity.headerActions}
             >
                  {open && dateRange && (
-                     <SkeletonShell isLoading={isLoading} ariaLabel="Cargando libro mayor" className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
-                         <LedgerContent
-                             accountId={accountId}
-                             startDate={startStr}
-                             endDate={endStr}
-                             dateRange={dateRange}
-                             setDateRange={setDateRange}
-                             data={data}
-                             isLoading={isLoading}
-                         />
-                     </SkeletonShell>
+                     <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
+                         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando libro mayor">
+                             <LedgerContent
+                                 accountId={accountId}
+                                 startDate={startStr}
+                                 endDate={endStr}
+                                 dateRange={dateRange}
+                                 setDateRange={setDateRange}
+                                 data={data}
+                                 isLoading={isLoading}
+                             />
+                         </SkeletonShell>
+                     </div>
                  )}
              </Drawer>
         </>
