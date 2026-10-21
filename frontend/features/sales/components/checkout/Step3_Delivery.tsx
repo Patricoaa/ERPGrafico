@@ -34,7 +34,7 @@ function UoMSelector({ line, currentUom, onUomChange }: { line: SaleOrderLine, c
     return (
         <Select value={currentUom?.toString()} onValueChange={(val) => onUomChange(parseInt(val))}>
             <SelectTrigger className="h-7 text-xs w-24">
-                <SelectValue />
+                <SelectValue placeholder="Seleccionar..." />
             </SelectTrigger>
             <SelectContent>
                 {allowedUoms.map((u: {id: number, name: string}) => (

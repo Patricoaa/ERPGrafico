@@ -455,9 +455,13 @@ export function SessionOpenModal({
                                     <Button
                                         variant="outline"
                                         role="combobox"
-                                        className="w-full justify-between h-9 bg-background font-normal"
+                                        className="w-full justify-between h-6 bg-background font-normal"
                                     >
-                                        {selectedLabel || "Seleccione motivo..."}
+                                        {selectedLabel ? (
+                                            <span className="text-sm">{selectedLabel}</span>
+                                        ) : (
+                                            <span className="text-sm text-muted-foreground/60">Seleccionar...</span>
+                                        )}
                                         <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
                                 </PopoverTrigger>

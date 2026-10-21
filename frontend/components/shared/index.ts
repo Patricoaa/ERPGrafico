@@ -145,9 +145,10 @@ export * from './PeriodValidationDateInput';
 export * from './AccountField';
 export * from './AccountingLinesTable';
 export * from './FormLineItemsTable';
-
 export * from './EntityCard'
 export * from './AutoEntityCard'
+export * from './SelectorTrigger'
+export type { SelectorTriggerProps } from './SelectorTrigger'
 // ─── Migrated from components/ui — GOVERNANCE rule 21 compliance ─────────────
 // Table system
 export * from './emptyStateResolver';

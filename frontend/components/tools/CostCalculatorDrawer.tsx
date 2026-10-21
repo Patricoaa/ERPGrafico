@@ -267,7 +267,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                                     <div className="flex justify-center mt-0.5">
                                                         <Select value={String(item.uom_id ?? '')} onValueChange={val => updateUom(item.id, parseInt(val))}>
                                                             <SelectTrigger className="h-5 text-4xs border-muted-foreground/20 px-1.5 py-0 bg-background min-w-0">
-                                                                <SelectValue />
+                                                                <SelectValue placeholder="Seleccionar..." />
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 {(item.product.available_uoms || []).map(uom => (

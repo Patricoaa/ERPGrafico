@@ -312,14 +312,16 @@ export function SessionCloseModal({
                                     <Button
                                         variant="outline"
                                         role="combobox"
-                                        className="w-full justify-between h-9 bg-background font-normal"
+                                        className="w-full justify-between h-6 bg-background font-normal"
                                         disabled={settingsLoading}
                                     >
                                         {settingsLoading ? (
                                             /* eslint-disable-next-line no-restricted-syntax -- inline spinner in combobox trigger, not a submit/action button */
                                             <><Loader2 className="h-4 w-4 animate-spin mr-2 motion-reduce:animate-none" />Cargando...</>
+                                        ) : selectedLabel ? (
+                                            <span className="text-sm">{selectedLabel}</span>
                                         ) : (
-                                            <>{selectedLabel || "Seleccione motivo..."}</>
+                                            <span className="text-sm text-muted-foreground/60">Seleccionar...</span>
                                         )}
                                         <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>

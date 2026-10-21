@@ -37,7 +37,7 @@ function UoMSelector({ line: l, currentUom, onUomChange }: { line: Record<string
     return (
         <Select value={currentUom?.toString()} onValueChange={(val) => onUomChange(parseInt(val))}>
             <SelectTrigger className="h-7 text-3xs w-24">
-                <SelectValue />
+                <SelectValue placeholder="Seleccionar..." />
             </SelectTrigger>
             <SelectContent>
                 {allowedUoms.map((u: { id: number, name: string }) => (

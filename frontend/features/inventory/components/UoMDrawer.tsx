@@ -269,7 +269,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                             >
                                                                 {field.value
                                                                     ? categories?.find(cat => cat.id === field.value)?.name
-                                                                    : <span className="text-sm text-muted-foreground/60">Seleccionar categoría...</span>}
+                                                                    : <span className="text-sm text-muted-foreground/60">Seleccionar...</span>}
                                                             </Button>
                                                         </PopoverTrigger>
                                                         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
@@ -363,7 +363,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                                 {field.value === 'REFERENCE' ? 'Referencia (Base)' :
                                                                     field.value === 'BIGGER' ? 'Más Grande que base' :
                                                                         field.value === 'SMALLER' ? 'Más Pequeña que base' :
-                                                                            <span className="text-sm text-muted-foreground/60">Seleccionar tipo...</span>}
+                                                                            <span className="text-sm text-muted-foreground/60">Seleccionar...</span>}
                                                             </Button>
                                                         </PopoverTrigger>
                                                         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">

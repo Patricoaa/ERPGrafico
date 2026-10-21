@@ -160,7 +160,7 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
                                         >
                                             {providerId
                                                 ? providers.find(p => p.id.toString() === providerId)?.name
-                                                : "Seleccione proveedor..."}
+                                                : <span className="text-sm text-muted-foreground/60">Seleccionar...</span>}
                                             <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
                                     </PopoverTrigger>

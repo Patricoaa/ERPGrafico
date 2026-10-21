@@ -92,7 +92,7 @@ function RichIconSelector({ value, onChange, label, error, required }: { value: 
                     >
                         <div className="flex items-center gap-2">
                             <SelectedIcon className="h-4 w-4" />
-                            <span>{selectedLabel}</span>
+                            <span className="text-sm text-foreground">{selectedLabel}</span>
                         </div>
                         <LucideIcons.ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
