@@ -204,7 +204,7 @@ class F29PaymentViewSet(EditPolicyMixin, viewsets.ModelViewSet):
 
 
 class AccountingPeriodViewSet(viewsets.ModelViewSet):
-    queryset = AccountingPeriod.objects.select_related("journal_entry").all()
+    queryset = AccountingPeriod.objects.select_related("closed_by", "tax_period").all()
     serializer_class = AccountingPeriodSerializer
     pagination_class = None  # Master data
     permission_classes = [IsAuthenticated]
