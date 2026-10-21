@@ -68,7 +68,8 @@ class TestCashFlowIntegrity(TestCase):
 
         # 1. Post a movement to an UNMAPPED account
         bridge_acc = Account.objects.get(code="1.1.06.01")
-        self.assertIsNone(bridge_acc.cf_category)
+        from accounting.models import CFCategory
+        self.assertEqual(bridge_acc.cf_category, CFCategory.UNMAPPED)
 
         entry = JournalEntry.objects.create(
             date=date(2024, 2, 10), description="Movimiento Huérfano", status="POSTED"
