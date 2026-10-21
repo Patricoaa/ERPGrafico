@@ -163,6 +163,6 @@ Revisión posterior (2026-10-21) de los maestros que quedaron fuera:
 | `Location` | **Congelados** `location_type`, `warehouse` con movimientos | el stock se calcula por tipo de ubicación (sin API de escritura hoy; la regla queda declarada) |
 | `PayrollConcept.account` | Libre | solo afecta contabilizaciones futuras; el asiento guarda su cuenta |
 | `Warehouse` | Libre | sus campos son descriptivos; patrón Archivo |
-| `Contact.tax_id` | **Pendiente de decisión** | la factura no guarda copia del receptor: cambiar el RUT altera cómo se ven documentos emitidos. Opciones: snapshot fiscal en el documento al emitir, o congelar el RUT con documentos emitidos |
+| `Contact.tax_id` | **Libre — resuelto con copia fiscal (opción a, 2026-10-21)** | `Invoice` guarda `partner_name/tax_id/address_snapshot` al emitirse (`POSTED`); el serializer muestra la copia (`partner_name`, `partner_tax_id`) y en borradores los datos vivos. Migración `billing/0022` rellena los emitidos con los datos actuales |
 
 **Formularios (2026-10-21):** los serializers exponen `frozen_fields` (anotado con `Exists`, sin N+1) y los drawers deshabilitan esos campos.

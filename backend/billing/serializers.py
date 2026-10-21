@@ -24,6 +24,7 @@ class InvoiceListSerializer(serializers.ModelSerializer):
         source="purchase_order.number", read_only=True, allow_null=True
     )
     partner_name = serializers.SerializerMethodField()
+    partner_tax_id = serializers.CharField(source="partner_display_tax_id", read_only=True)
     partner_id = serializers.SerializerMethodField()
     # ADR-0084: eje de pago separado del estado del documento (UNPAID · PARTIAL · PAID)
     payment_status = serializers.CharField(read_only=True)
@@ -54,6 +55,7 @@ class InvoiceListSerializer(serializers.ModelSerializer):
             "sale_order_number",
             "purchase_order_number",
             "partner_name",
+            "partner_tax_id",
             "partner_id",
             "pending_amount",
             "payment_status",
@@ -67,13 +69,7 @@ class InvoiceListSerializer(serializers.ModelSerializer):
         ]
 
     def get_partner_name(self, obj):
-        if obj.sale_order and obj.sale_order.customer:
-            return obj.sale_order.customer.name
-        if obj.purchase_order and obj.purchase_order.supplier:
-            return obj.purchase_order.supplier.name
-        if obj.contact:
-            return obj.contact.name
-        return ""
+        return obj.partner_display_name
 
     def get_partner_id(self, obj):
         if obj.sale_order and obj.sale_order.customer:
@@ -142,6 +138,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
         source="purchase_order.receiving_status", read_only=True, allow_null=True
     )
     partner_name = serializers.SerializerMethodField()
+    partner_tax_id = serializers.CharField(source="partner_display_tax_id", read_only=True)
     partner_id = serializers.SerializerMethodField()
     lines = serializers.SerializerMethodField()
     # ADR-0084: eje de pago separado del estado del documento (UNPAID · PARTIAL · PAID)
@@ -192,6 +189,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "purchase_order_number",
             "po_receiving_status",
             "partner_name",
+            "partner_tax_id",
             "partner_id",
             "lines",
             "pending_amount",
@@ -235,13 +233,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
         return InvoiceSelectorExt.get_lines(obj)
 
     def get_partner_name(self, obj):
-        if obj.sale_order and obj.sale_order.customer:
-            return obj.sale_order.customer.name
-        if obj.purchase_order and obj.purchase_order.supplier:
-            return obj.purchase_order.supplier.name
-        if obj.contact:
-            return obj.contact.name
-        return ""
+        return obj.partner_display_name
 
     def get_partner_id(self, obj):
         if obj.sale_order and obj.sale_order.customer:
