@@ -16,12 +16,14 @@ import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccountMutations } from "@/features/accounting"
 import { type AccountPayload } from "@/features/accounting"
 import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, FormSplitLayout, SubmitButton, TabBar, TabBarContent, UnifiedSearchBar, DateRangeFilter, SkeletonShell, useUnifiedSearch, type UnifiedSearchConfig } from "@/components/shared"
+import { Collection, useEntityCollection } from "@/components/entity-view"
 import { ActivitySidebar } from "@/features/audit"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { useLedger } from "@/features/accounting/hooks/useLedger"
 import { LedgerSummaryPanel } from "@/features/accounting/components/LedgerSummaryPanel"
-import { formatCurrency } from "@/lib/money"
+import { ledgerMovementEntity, ledgerMovementDrawerViews } from "@/features/accounting"
+import { ledgerMovementActions, type LedgerMovementActionsCtx } from "@/features/accounting/components/ledgerMovementActions"
 import { format } from "date-fns"
 import { useServerDate } from "@/hooks/useServerDate"
 
@@ -294,6 +296,20 @@ export function AccountDrawer({
 
     const filteredMovements = useMemo(() => ledgerSearch.filterFn(ledgerData?.movements ?? []), [ledgerSearch.filterFn, ledgerData?.movements])
 
+    const collection = useEntityCollection(
+        ledgerMovementEntity,
+        { rows: filteredMovements },
+        { pagination: { mode: "none" } },
+    )
+
+    const ledgerMovementActionsCtx: LedgerMovementActionsCtx = {
+        onViewEntry: (entryId: number) => {
+            // For now, we don't have JournalEntryDrawer in finance feature
+            // This would need to be implemented or imported from accounting
+            console.log('View entry:', entryId)
+        },
+    }
+
     const ledgerContent = accountId ? (
         <SkeletonShell isLoading={ledgerLoading} ariaLabel="Cargando libro mayor" className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
             <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden gap-4 p-6">
@@ -311,8 +327,11 @@ export function AccountDrawer({
                 {/* Table — fills remaining height */}
                 <div className="flex-1 min-h-0 overflow-hidden">
                     {dateRange ? (
-                        <div className="h-full flex flex-col">
-                            <div className="flex items-center gap-2 border-b pb-3 mb-4">
+                        <Collection.Root
+                            collection={collection}
+                            actions={ledgerMovementActions.forCollection(ledgerMovementActionsCtx)}
+                        >
+                            <Collection.Toolbar>
                                 <UnifiedSearchBar
                                     config={ledgerSearchConfig}
                                     chips={ledgerSearch.chips}
@@ -339,34 +358,13 @@ export function AccountDrawer({
                                         />
                                     }
                                 />
-                            </div>
-                            <div className="flex-1 overflow-y-auto">
-                                {filteredMovements.length > 0 ? (
-                                    <div className="text-4xs">
-                                        <div className="grid grid-cols-[60px,1fr,50px,50px,50px] gap-1 font-bold border-b mb-1 pb-1 sticky top-0 bg-background z-10">
-                                            <span>Fecha</span>
-                                            <span>Descripción</span>
-                                            <span className="text-right">Debe</span>
-                                            <span className="text-right">Haber</span>
-                                            <span className="text-right">Saldo</span>
-                                        </div>
-                                        {filteredMovements.map((item, idx) => (
-                                            <div key={idx} className="grid grid-cols-[60px,1fr,50px,50px,50px] gap-1 border-b border-dashed py-0.5 break-inside-avoid">
-                                                <span>{format(new Date(item.date + 'T00:00:00'), 'dd/MM/yyyy')}</span>
-                                                <span className="truncate">{item.label || item.description || '-'}</span>
-                                                <span className="text-right">{Number(item.debit) > 0 ? formatCurrency(Number(item.debit)) : '-'}</span>
-                                                <span className="text-right">{Number(item.credit) > 0 ? formatCurrency(Number(item.credit)) : '-'}</span>
-                                                <span className="text-right">{formatCurrency(Number(item.balance))}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="flex-1 flex items-center justify-center text-muted-foreground">
-                                        Sin movimientos para el período seleccionado.
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                            </Collection.Toolbar>
+                            <Collection.View
+                                table={ledgerMovementDrawerViews.table}
+                                emptyTitle="Sin movimientos"
+                                emptyDescription="No hay movimientos para el período seleccionado."
+                            />
+                        </Collection.Root>
                     ) : (
                         <div className="flex-1 flex items-center justify-center text-muted-foreground">
                             Seleccione un rango de fechas para ver los movimientos.
