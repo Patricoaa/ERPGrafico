@@ -1,9 +1,11 @@
 # Evaluación — editabilidad de documentos con derivados contables (2026-10-21)
 
+> **Estado: CERRADO (2026-10-21).** Todos los hallazgos están implementados o descartados con motivo. Ver §11.
+
 > Origen: al editar el monto de un anticipo de sueldo ya pagado, ni el movimiento de tesorería ni el asiento se modifican, pero el anticipo se puede vincular a una liquidación con el monto nuevo → descuadre entre RRHH, tesorería y contabilidad.
 > Conclusión: **no es un caso puntual**. Las reglas de edición están documentadas (`docs/20-contracts/state-map.md`) pero su cumplimiento en el backend es opcional por ViewSet. Varias entidades que generan asientos o movimientos de tesorería aceptan `PATCH`/`DELETE` sin mirar su estado; en algunas solo la interfaz lo impide.
 
-Método: lectura de código (modelos, ViewSets, serializers, servicios, validadores). **No se ha reproducido aún contra el dev server**; los casos críticos (§3.2) deben confirmarse con un `PATCH` real antes de implementar.
+Método: lectura de código (modelos, ViewSets, serializers, servicios, validadores). Cada hallazgo implementado quedó cubierto por un test de API que reproduce el `PATCH`/`DELETE` y verifica el rechazo.
 
 ## 1. Caso anticipo de sueldo
 
@@ -69,7 +71,7 @@ Entidades con FK `journal_entry` (o que generan movimientos de tesorería), seg�
 3. **La UI decide la editabilidad.** El backend no expone si un registro es editable; cada drawer lo deduce, y los huecos del backend quedan ocultos.
 4. **Edición y borrado comparten el problema.** Los mismos documentos sin guard de edición suelen admitir `DELETE` por defecto.
 
-## 5. Propuesta (pendiente de decisión)
+## 5. Propuesta (aprobada e implementada — ADR-0091)
 
 ### 5.1 Principio — inmutabilidad económica (requiere ADR)
 
@@ -166,3 +168,33 @@ Revisión posterior (2026-10-21) de los maestros que quedaron fuera:
 | `Contact.tax_id` | **Libre — resuelto con copia fiscal (opción a, 2026-10-21)** | `Invoice` guarda `partner_name/tax_id/address_snapshot` al emitirse (`POSTED`); el serializer muestra la copia (`partner_name`, `partner_tax_id`) y en borradores los datos vivos. Migración `billing/0022` rellena los emitidos con los datos actuales |
 
 **Formularios (2026-10-21):** los serializers exponen `frozen_fields` (anotado con `Exists`, sin N+1) y los drawers deshabilitan esos campos.
+
+## 11. Cierre (2026-10-21)
+
+### Resultado
+- **Mecanismo:** `core/edit_policy.py` (`EditPolicy`, `DRAFT_ONLY_DOCUMENT`, `assert_editable`, `annotate_edit_usage`), `core.mixins.EditPolicyMixin`, `IsEditableField` / `FrozenFieldsField`. Un registro bloqueado responde **422 `DOCUMENT_LOCKED`**.
+- **Contrato:** `core/tests/test_edit_policy.py` exige política en todo modelo con FK a `JournalEntry` o `TreasuryMovement`; `UNPROTECTED_BASELINE` quedó **vacía**. Los ViewSets de esos modelos deben usar `EditPolicyMixin` y sus overrides llamar a `super()`.
+- **Documentos (clases A/B):** movimiento de tesorería, liquidación e ítems, anticipo (estado + anulación), pagos de liquidación y F29 (estado + anulación), F29, despachos/recepciones/devoluciones, factura, OV, OC, cartolas, lotes de terminal, cargos de tarjeta, arqueos, cheques, cuotas de préstamo, estados de cuenta, asignaciones, transacciones y resoluciones de socios, año fiscal, movimiento de stock.
+- **Maestros (clase C):** cuenta contable, producto, unidad de medida, cuenta de tesorería, concepto de remuneración, método de pago, ubicación — campos congelados con historia, deshabilitados en los formularios. Contraparte de factura protegida con copia fiscal.
+
+### Hallazgos colaterales corregidos
+- Contracuenta de pagos de sueldo, Previred y anticipo (cargaban Proveedores) y asiento duplicado del pago F29.
+- Tesorería rechaza anular movimientos con documento dueño.
+- `select_related` inválido en pagos F29 (500 en toda lectura); `timezone` faltante en pago de liquidación; `inv.total_amount` inexistente en el cálculo F29.
+- Purga muerta de OV/OC/factura eliminada; bloque duplicado en `TreasuryMovementViewSet` eliminado.
+- N+1 en el listado de cuentas contables.
+- Seed: folios pendientes solo en el mes en curso (los meses pasados cierran).
+
+### Migraciones a aplicar en entornos existentes
+`hr/0012` (estado del anticipo), `hr/0013` y `tax/0008` (estado de pagos), `billing/0022` (copia fiscal).
+
+### Cómo agregar un modelo nuevo
+1. Si tiene FK a `JournalEntry` o `TreasuryMovement`, declarar `edit_policy` (o reutilizar `DRAFT_ONLY_DOCUMENT`); el test de contrato falla si falta.
+2. Su ViewSet hereda `EditPolicyMixin`; overrides de `perform_update`/`perform_destroy` llaman a `super()`.
+3. Servicios o endpoints anidados que modifican el registro llaman a `assert_editable(instance, fields)`.
+4. Corrección de un registro bloqueado = acción de anulación con reversa, nunca edición.
+5. Maestros: `frozen_when_used` + `is_used` + `used_annotation`; anotar el queryset con `annotate_edit_usage` y exponer `FrozenFieldsField`.
+6. Documentar la política en `state-map.md`.
+
+### Fuera de alcance (preexistente, no relacionado)
+Fallos de tests que ya existían antes de este trabajo: `test_sprint2_dod`, `test_transfer_traceability`, `test_proportional_distribution`, `test_bank_loan_list` (N+1 de préstamos), `test_financial_baseline`, enlaces rotos en ADR antiguos, `test_p23_credit_portfolio_task`, `test_cash_flow_discrepancy_detection`; tests de rendimiento sin `pytest-benchmark` local; `test_reconciliation_dedup` por permisos de `backend/media` (owner `root`).

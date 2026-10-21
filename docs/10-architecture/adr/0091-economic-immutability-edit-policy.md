@@ -10,7 +10,7 @@ author: backend-team
 
 **Related:** evaluation `docs/50-audit/editabilidad-documental/evaluacion-editabilidad.md`, contract `docs/20-contracts/state-map.md` (edit restrictions, journal reversal flow), `docs/20-contracts/deletion-policy.md`, ADR-0084 (one status field per axis), ADR-0085 (stock moves owned by business document).
 
-**Status note:** Principle accepted 2026-10-21 by the project owner. The owner delegated the choice of mechanism (model vs. service) to a best-practice evaluation (§ "Mechanism") and chose to build the common mechanism before patching individual holes.
+**Status note:** Principle accepted and fully implemented 2026-10-21 by the project owner (see § Implementation). The owner delegated the choice of mechanism (model vs. service) to a best-practice evaluation (§ "Mechanism") and chose to build the common mechanism before patching individual holes.
 
 ## Context
 
@@ -61,6 +61,16 @@ Serializers expose `is_editable` (and `editable_fields` where partial editing ap
 - `SalaryAdvance` gains a status (`DRAFT` → `PAID` → `DISCOUNTED`, `CANCELLED`) and an entry in `state-map.md`.
 - `state-map.md` "Edit restrictions" become the human-readable mirror of each `EditPolicy`; drift is caught by the contract test.
 - Before locking, existing inconsistencies must be counted and fixed on the dev server (advance amount ≠ its movement; movement amount ≠ its journal entry).
+
+## Implementation (completed 2026-10-21)
+
+- `core/edit_policy.py`: `EditPolicy`, `DocumentLockedError` (422 `DOCUMENT_LOCKED`), `DRAFT_ONLY_DOCUMENT`, `assert_editable`, `is_editable`, `changed_fields`, `annotate_edit_usage`, `frozen_fields`.
+- `core/mixins.py`: `EditPolicyMixin`. `core/serializers/mixins.py`: `IsEditableField`, `FrozenFieldsField`. Frontend: `lib/edit-policy.ts` (`frozenFieldsOf`).
+- Contract test `core/tests/test_edit_policy.py` covers every model with a FK to `JournalEntry` or `TreasuryMovement`; the unprotected baseline is empty.
+- Annul flows added where locking would leave no correction path: `SalaryAdvance` (status `DRAFT/PAID/DISCOUNTED/CANCELLED`), `PayrollPayment` and `F29Payment` (status `POSTED/CANCELLED`). Treasury refuses to cancel/annul a movement owned by one of these documents.
+- Master data (class C) uses `frozen_when_used`; `Invoice` keeps a fiscal snapshot of the counterparty at issuance so contacts stay editable.
+- Documented exception: `CreditCardStatement` amounts stay editable while `OPEN` because `reapply_charges` reverses and re-imputes `charges_movement`.
+- Full record and per-entity decisions: evaluation report §7–§11.
 
 ## Alternatives considered
 

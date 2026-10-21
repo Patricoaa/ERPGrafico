@@ -48,6 +48,7 @@ Task routing — common intents:
 | TypeScript error / `any` escape hatch | [resolve-type-errors.md](docs/30-playbooks/resolve-type-errors.md) |
 | Loading state / skeleton / refetch CLS / loading.tsx | [component-skeleton.md](docs/20-contracts/component-skeleton.md) |
 | Deletion / annul / archive / soft-delete / hard delete | [deletion-policy.md](docs/20-contracts/deletion-policy.md) |
+| Edit lock / posted document editability / `EditPolicy` / frozen master fields | [ADR-0091](docs/10-architecture/adr/0091-economic-immutability-edit-policy.md) + [state-map.md](docs/20-contracts/state-map.md) |
 | Realtime (WebSocket / SSE / Django Channels / push) | [realtime-channels.md](docs/20-contracts/realtime-channels.md) |
 | Idempotency-Key for write endpoints / double-click safety | [idempotency.md](docs/20-contracts/idempotency.md) |
 | Export PDF / Excel / CSV (WeasyPrint / openpyxl) | [export-formats.md](docs/20-contracts/export-formats.md) |
