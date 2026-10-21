@@ -92,7 +92,7 @@ export const LabeledSelect = forwardRef<
                 className={cn(
                     "w-full shadow-none focus:ring-0 focus:ring-offset-0 transition-all !py-0",
                     variant === 'standalone'
-                        ? "h-6! border-0 bg-transparent hover:bg-primary/[0.03] [&_*:data-[slot=select-value]]:text-sm [&_*:data-[slot=select-value]]:text-foreground [&_*:data-[placeholder]]:text-sm [&_*:data-[placeholder]]:text-muted-foreground/60"
+                        ? "h-6! border-0 bg-transparent hover:bg-primary/[0.03] [&_*[data-slot=select-value]]:text-sm [&_*[data-slot=select-value]]:text-foreground [&_*[data-placeholder]]:text-sm [&_*[data-placeholder]]:text-muted-foreground/60"
                 : cn("h-9 text-xs bg-transparent hover:bg-primary/[0.02]", className),
                     !value && "text-muted-foreground font-normal"
                 )}
