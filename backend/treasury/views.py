@@ -353,35 +353,6 @@ class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             {"detail": "Hard delete not allowed for POSTerminals. Use PATCH is_active=false to archive."},
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
-        """
-        from django.db.models.deletion import ProtectedError
-
-        try:
-            return super().destroy(request, *args, **kwargs)
-        except ProtectedError:
-            return Response(
-                {
-                    "error": "No se puede eliminar el terminal porque tiene sesiones asociadas.",
-                    "detail": "Para deshabilitar el terminal, use la opción 'Desactivar' en su lugar.",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-    @action(detail=True, methods=['get'])
-    def available_accounts(self, request, pk=None):
-        terminal = self.get_object()
-        pm = request.query_params.get('payment_method')
-        accounts = terminal.get_accounts_for_method(pm) if pm else terminal.allowed_treasury_accounts.all()
-        return Response(TreasuryAccountSerializer(accounts, many=True).data)
-
-    @action(detail=True, methods=['get'])
-    def allowed_payment_methods(self, request, pk=None):
-        from .selectors import POSSelector
-        terminal = self.get_object()
-        op = request.query_params.get('operation')
-        methods = POSSelector.get_payment_methods_for_terminal(terminal, operation=op)
-        return Response(PaymentMethodSerializer(methods, many=True).data)
-
 
 class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = TreasuryMovement.objects.all().order_by("-date", "-created_at")
@@ -472,6 +443,93 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except Exception as e:
             import traceback
             traceback.print_exc()
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=["post"])
+    def cancel(self, request, pk=None):
+        movement = self.get_object()
+        reason = request.data.get("reason", "")
+        try:
+            movement = TreasuryService.cancel_movement(movement, user=request.user, reason=reason)
+            return Response(TreasuryMovementSerializer(movement).data)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=["get"])
+    def cancel_impact(self, request, pk=None):
+        from .selectors import TreasuryMovementSelector
+        movement = self.get_object()
+        return Response(TreasuryMovementSelector.get_cancel_impact(movement))
+
+    @action(detail=True, methods=["post"])
+    def annul(self, request, pk=None):
+        movement = self.get_object()
+        reason = request.data.get("reason", "")
+        treasury_account_id = request.data.get("treasury_account_id")
+        amount = request.data.get("amount")
+        try:
+            amount_dec = Decimal(str(amount)) if amount else None
+            movement = TreasuryService.annul_movement(
+                movement,
+                user=request.user,
+                reason=reason,
+                treasury_account_id=treasury_account_id,
+                amount=amount_dec,
+            )
+            return Response(TreasuryMovementSerializer(movement).data)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'])
+    def register_return(self, request, pk=None):
+        try:
+            from treasury.return_services import TreasuryReturnService
+            payment = self.get_object()
+            rp = TreasuryReturnService.register_payment_return_from_request(request, payment)
+            return Response({'message': 'Devolución de pago registrada exitosamente', 'return_payment_id': rp.id, 'return_payment': TreasuryMovementSerializer(rp).data}, status=201)
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)
+
+    @action(detail=True, methods=["get"])
+    def suggestions(self, request, pk=None):
+        """Get bank statement line suggestions for this payment"""
+        try:
+            suggestions = MatchingService.suggest_lines_for_payment(pk)
+            return Response({"suggestions": suggestions})
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @idempotent_endpoint(scope="treasury.allocation.create")
+    @action(detail=True, methods=["post"])
+    def allocate(self, request, pk=None):
+        """S5.2: Set partial allocations for a payment"""
+        movement = self.get_object()
+
+        try:
+            from treasury.allocation_service import AllocationService
+            created = AllocationService.allocate_from_request(request, movement)
+            return Response(
+                PaymentAllocationSerializer(created, many=True).data, status=status.HTTP_201_CREATED
+            )
+        except ValidationError as e:
+            err = e.message if hasattr(e, "message") else str(e)
+            return Response({"error": err}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=["get"])
+    def allocations(self, request, pk=None):
+        """S5.2: Get allocations for a payment"""
+        try:
+            from treasury.allocation_service import AllocationService
+
+            allocs = AllocationService.get_allocations(pk)
+            return Response(PaymentAllocationSerializer(allocs, many=True).data)
+        except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=["post"])
