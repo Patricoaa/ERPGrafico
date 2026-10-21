@@ -335,7 +335,7 @@ export function AccountDrawer({
                 {/* Table — fills remaining height */}
                 <div className="flex-1 min-h-0 overflow-hidden">
                     {dateRange ? (
-                        <div className="flex flex-col">
+                        <>
                             <Collection.Root
                                 collection={collection}
                                 actions={ledgerMovementActions.forCollection(ledgerMovementActionsCtx)}
@@ -381,10 +381,10 @@ export function AccountDrawer({
                                     mode="view"
                                     open={!!viewingEntry}
                                     onOpenChange={(open) => !open && closeEntry()}
-                                    side="right"
+                                    side="left"
                                 />
                             )}
-                        </div>
+                        </>
                     ) : (
                         <div className="flex-1 flex items-center justify-center text-muted-foreground">
                             Seleccione un rango de fechas para ver los movimientos.

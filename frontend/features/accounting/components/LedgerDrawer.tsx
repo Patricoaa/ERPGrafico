@@ -300,7 +300,7 @@ function LedgerContent({
                     mode="view"
                     open={!!viewingEntry}
                     onOpenChange={(open) => !open && closeEntry()}
-                    side="right"
+                    side="left"
                 />
             )}
         </div>
