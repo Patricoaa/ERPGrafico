@@ -7,8 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useAdvanceMutations } from '../hooks/useAdvanceMutations'
 import { useEmployees } from '@/features/hr/hooks/useEmployees'
-import { usePayrolls } from '@/features/hr/hooks/usePayrolls'
-import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
+import type { SalaryAdvance, Employee } from "@/types/hr"
 import { ActivitySidebar } from "@/features/audit"
 import { CancelButton, SubmitButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
@@ -21,7 +20,6 @@ export const advanceSchema = z.object({
     employee: z.string().min(1, "Empleado requerido"),
     amount: z.string().min(1).refine(v => parseFloat(v) > 0, "El monto debe ser mayor a 0"),
     date: z.string().min(1, "Fecha requerida"),
-    payroll: z.string().min(1, "Vincular a una liquidación es obligatorio"),
     notes: z.string().optional(),
 })
 
@@ -32,16 +30,13 @@ export interface AdvanceDrawerProps {
     onOpenChange: (o: boolean) => void
     advance: SalaryAdvance | null
     employees?: Employee[]
-    payrolls?: Payroll[]
     onSaved: (data?: Record<string, unknown>) => void
     mode?: DrawerMode
 }
 
-export function AdvanceDrawer({ open, onOpenChange, advance, employees: employeesProp, payrolls: payrollsProp, onSaved, mode: modeProp }: AdvanceDrawerProps) {
+export function AdvanceDrawer({ open, onOpenChange, advance, employees: employeesProp, onSaved, mode: modeProp }: AdvanceDrawerProps) {
     const { employees: fetchedEmployees } = useEmployees()
-    const { payrolls: fetchedPayrolls } = usePayrolls()
     const employees = employeesProp ?? fetchedEmployees
-    const payrolls = payrollsProp ?? fetchedPayrolls
     const mode: DrawerMode = modeProp ?? (advance ? 'edit' : 'create')
     const isView = mode === 'view'
     const { printRef, handlePrint } = usePrintableDrawer()
@@ -56,7 +51,6 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
             employee: "",
             amount: "",
             date: dateString,
-            payroll: "",
             notes: "",
         }
     })
@@ -69,14 +63,12 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
             employee: data.employee.toString(),
             amount: data.amount.toString(),
             date: data.date,
-            payroll: data.payroll ? data.payroll.toString() : "",
             notes: data.notes || "",
         }),
         defaultValues: () => ({
             employee: "",
             amount: "",
             date: dateString,
-            payroll: "",
             notes: "",
         }),
     })
@@ -87,23 +79,19 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                 employee: parseInt(data.employee),
                 amount: data.amount,
                 date: data.date,
-                payroll: parseInt(data.payroll),
                 notes: data.notes || "",
             }
             if (advance) {
                 await saveAdvance({ id: advance.id, payload })
                 onSaved()
             } else {
-                // For NEW advances, we just pass the data to the next step (PaymentDialog)
+                // For NEW advances, pass data to next step (PaymentDialog)
                 onSaved(payload)
             }
         } catch (e: unknown) {
             showApiError(e, "Error al guardar anticipo")
         }
     }
-
-    const selectedEmployee = form.watch("employee")
-    const employeePayrolls = payrolls.filter(p => p.employee.toString() === selectedEmployee && p.status === 'DRAFT')
 
     const identity = useDrawerIdentity('hr.salaryadvance', mode, advance, {
         overrideSubtitle: advance ? "Revise y modifique los datos del anticipo solicitado." : "Registre una entrega de dinero a cuenta de la próxima liquidación.",
@@ -183,7 +171,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                             )} />
                                             <FormField control={form.control} name="date" render={({ field }) => (
                                                 <PeriodValidationDateInput
-                                                    label="Fecha Propuesta"
+                                                    label="Fecha"
                                                     required
                                                     date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
                                                     onDateChange={(d) => {
@@ -197,20 +185,13 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                                 />
                                             )} />
 
-                                            <FormField control={form.control} name="payroll" render={({ field, fieldState }) => (
-                                                <LabeledSelect
-                                                    label="Vincular a Liquidación"
-                                                    required
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    error={fieldState.error?.message}
-                                                    placeholder="Seleccionar liquidación..."
-                                                    options={employeePayrolls.map(p => ({
-                                                        value: p.id.toString(),
-                                                        label: `${p.display_id} – ${p.period_label} (${p.status_display})`
-                                                    }))}
+                                            {advance?.payroll_display_id && (
+                                                <LabeledInput
+                                                    label="Liquidación vinculada"
+                                                    value={advance.payroll_display_id}
+                                                    readOnly
                                                 />
-                                            )} />
+                                            )}
 
                                             <FormField control={form.control} name="notes" render={({ field }) => (
                                                 <LabeledInput
@@ -260,7 +241,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                             )} />
                                             <FormField control={form.control} name="date" render={({ field }) => (
                                                 <PeriodValidationDateInput
-                                                    label="Fecha Propuesta"
+                                                    label="Fecha"
                                                     required
                                                     date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
                                                     onDateChange={(d) => {
@@ -271,21 +252,6 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                                         field.onChange(d.toISOString().split('T')[0])
                                                     }}
                                                     validationType="accounting"
-                                                />
-                                            )} />
-
-                                            <FormField control={form.control} name="payroll" render={({ field, fieldState }) => (
-                                                <LabeledSelect
-                                                    label="Vincular a Liquidación"
-                                                    required
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    error={fieldState.error?.message}
-                                                    placeholder="Seleccionar liquidación..."
-                                                    options={employeePayrolls.map(p => ({
-                                                        value: p.id.toString(),
-                                                        label: `${p.display_id} – ${p.period_label} (${p.status_display})`
-                                                    }))}
                                                 />
                                             )} />
 

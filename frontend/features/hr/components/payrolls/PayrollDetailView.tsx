@@ -11,6 +11,7 @@ import * as z from "zod"
 import {
     postPayroll, generateProformaPayroll, deletePayroll,
     createPayrollItem, updatePayrollItem, deletePayrollItem, payPrevired, paySalary,
+    updateAdvance, getPendingAdvancesForEmployee,
 } from '@/features/hr/api/hrApi'
 import { PaymentModal } from "@/features/treasury"
 import type { PayrollItem, PayrollConcept, PayrollPayment, SalaryAdvance } from "@/types/hr"
@@ -19,12 +20,12 @@ import { Button } from "@/components/ui/button"
 import {
     Form, FormField
 } from "@/components/ui/form"
-import { ActionConfirmModal, SubmitButton, BaseModal, CancelButton, FormFooter, LabeledInput, LabeledSelect, StatusBadge } from "@/components/shared"
+import { ActionConfirmModal, SubmitButton, BaseModal, CancelButton, FormFooter, LabeledInput, LabeledSelect, StatusBadge, MoneyDisplay } from "@/components/shared"
 
 import {
     BookOpen,
     DollarSign, ShieldCheck, Sparkles,
-    CheckCircle2, FileText, ArrowLeft
+    CheckCircle2, FileText, ArrowLeft, Link2, X, Loader2,
 } from "lucide-react"
 import { DataCell } from "@/components/shared"
 import { SkeletonShell } from "@/components/shared"
@@ -373,6 +374,16 @@ export function PayrollDetailView({
                         showEmployerContributions={viewMode === 'admin'}
                         className={isSheet ? "" : ""}
                     />
+
+                    {viewMode === 'admin' && (
+                        <AdvancesSection
+                            payrollId={payrollId}
+                            employeeId={payroll.employee}
+                            advances={payroll.advances ?? []}
+                            isPosted={isPosted}
+                            onChanged={fetchPayroll}
+                        />
+                    )}
                 </div>
             </div>
 
@@ -441,6 +452,138 @@ export function PayrollDetailView({
             />
         </div>
         </SkeletonShell>
+    )
+}
+
+function AdvancesSection({ payrollId, employeeId, advances, isPosted, onChanged }: {
+    payrollId: number
+    employeeId: number
+    advances: SalaryAdvance[]
+    isPosted: boolean
+    onChanged: () => void
+}) {
+    const [linkOpen, setLinkOpen] = useState(false)
+    const [pending, setPending] = useState<SalaryAdvance[]>([])
+    const [loadingPending, setLoadingPending] = useState(false)
+    const [linking, setLinking] = useState<number | null>(null)
+    const [unlinking, setUnlinking] = useState<number | null>(null)
+
+    const openLinkModal = async () => {
+        setLinkOpen(true)
+        setLoadingPending(true)
+        try {
+            const results = await getPendingAdvancesForEmployee(employeeId)
+            setPending(results)
+        } catch (e) {
+            showApiError(e, "Error al cargar anticipos pendientes")
+        } finally {
+            setLoadingPending(false)
+        }
+    }
+
+    const handleLink = async (advanceId: number) => {
+        setLinking(advanceId)
+        try {
+            await updateAdvance(advanceId, { payroll: payrollId } as Partial<SalaryAdvance>)
+            onChanged()
+            setLinkOpen(false)
+        } catch (e) {
+            showApiError(e, "Error al vincular anticipo")
+        } finally {
+            setLinking(null)
+        }
+    }
+
+    const handleUnlink = async (advanceId: number) => {
+        setUnlinking(advanceId)
+        try {
+            await updateAdvance(advanceId, { payroll: null } as Partial<SalaryAdvance>)
+            onChanged()
+        } catch (e) {
+            showApiError(e, "Error al desvincular anticipo")
+        } finally {
+            setUnlinking(null)
+        }
+    }
+
+    return (
+        <div className="mt-6 border rounded-md p-4 space-y-3">
+            <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Anticipos vinculados</span>
+                {!isPosted && (
+                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 rounded-sm" onClick={openLinkModal}>
+                        <Link2 className="h-3.5 w-3.5" />
+                        Vincular anticipo
+                    </Button>
+                )}
+            </div>
+
+            {advances.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Sin anticipos vinculados.</p>
+            ) : (
+                <div className="space-y-1.5">
+                    {advances.map(adv => (
+                        <div key={adv.id} className="flex items-center justify-between text-xs py-1 border-b last:border-0">
+                            <span className="text-muted-foreground">{adv.date}</span>
+                            <MoneyDisplay amount={adv.amount} className="font-medium text-xs" />
+                            <StatusBadge status={adv.is_discounted ? "posted" : "draft"} size="sm" variant="badge" />
+                            {!isPosted && !adv.is_discounted && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-5 w-5 text-muted-foreground hover:text-destructive"
+                                    onClick={() => handleUnlink(adv.id)}
+                                    disabled={unlinking === adv.id}
+                                    aria-label="Desvincular"
+                                >
+                                    <X className="h-3.5 w-3.5" />
+                                </Button>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <BaseModal
+                open={linkOpen}
+                onOpenChange={setLinkOpen}
+                icon={Link2}
+                title="Vincular anticipo"
+                description="Anticipos pendientes del empleado sin liquidación asignada"
+                footer={
+                    <FormFooter actions={<CancelButton onClick={() => setLinkOpen(false)} />} />
+                }
+            >
+                <div className="px-6 pb-4 pt-2 min-h-[80px]">
+                    {loadingPending ? (
+                        <div className="flex items-center justify-center py-8">
+                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                        </div>
+                    ) : pending.length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-4">No hay anticipos pendientes para este empleado.</p>
+                    ) : (
+                        <div className="space-y-2">
+                            {pending.map(adv => (
+                                <div key={adv.id} className="flex items-center justify-between border rounded-sm px-3 py-2 text-sm">
+                                    <div className="flex flex-col">
+                                        <MoneyDisplay amount={adv.amount} className="font-medium text-sm" />
+                                        <span className="text-xs text-muted-foreground">{adv.date}</span>
+                                    </div>
+                                    <SubmitButton
+                                        size="sm"
+                                        className="h-7 text-xs rounded-sm"
+                                        onClick={() => handleLink(adv.id)}
+                                        loading={linking === adv.id}
+                                    >
+                                        Vincular
+                                    </SubmitButton>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </BaseModal>
+        </div>
     )
 }
 

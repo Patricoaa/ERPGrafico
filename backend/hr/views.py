@@ -355,6 +355,7 @@ class EmployeeConceptAmountViewSet(viewsets.ModelViewSet):
 class SalaryAdvanceFilter(django_filters.FilterSet):
     employee = django_filters.NumberFilter(field_name="employee__id")
     payroll = django_filters.NumberFilter(field_name="payroll__id")
+    payroll_isnull = django_filters.BooleanFilter(field_name="payroll", lookup_expr="isnull")
     is_discounted = django_filters.BooleanFilter()
     date_from = django_filters.DateFilter(field_name="date", lookup_expr="gte")
     date_to = django_filters.DateFilter(field_name="date", lookup_expr="lte")
@@ -362,7 +363,7 @@ class SalaryAdvanceFilter(django_filters.FilterSet):
 
     class Meta:
         model = SalaryAdvance
-        fields = ["employee", "payroll", "is_discounted", "date_from", "date_to", "employee_name"]
+        fields = ["employee", "payroll", "payroll_isnull", "is_discounted", "date_from", "date_to", "employee_name"]
 
 
 class SalaryAdvanceViewSet(viewsets.ModelViewSet):

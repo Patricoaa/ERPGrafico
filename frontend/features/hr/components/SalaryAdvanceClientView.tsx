@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
-import { AdvanceDrawer, createAdvance, deleteAdvance, useSalaryAdvances, salaryAdvanceActions, type SalaryAdvanceActionsCtx, useEmployees, usePayrolls } from "@/features/hr"
+import { AdvanceDrawer, createAdvance, deleteAdvance, useSalaryAdvances, salaryAdvanceActions, type SalaryAdvanceActionsCtx, useEmployees } from "@/features/hr"
 import { PaymentModal } from "@/features/treasury"
 import { salaryAdvanceUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import type { SalaryAdvance } from "@/types/hr"
@@ -34,7 +34,6 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
         { pagination: { mode: "client", pageSize: 20 }, defaultSort: salaryAdvanceViews.table.defaultSort },
     )
     const { employees } = useEmployees()
-    const { payrolls } = usePayrolls()
 
     const isNewModalOpen = searchParams.get("modal") === "new"
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<SalaryAdvance>({ endpoint: '/hr/advances' })
@@ -97,7 +96,6 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                 onOpenChange={(o) => { if (!o) handleClose() }}
                 advance={selectedFromUrl}
                 employees={employees}
-                payrolls={payrolls}
                 onSaved={(data) => {
                     if (selectedFromUrl) {
                         refetchAdvances()

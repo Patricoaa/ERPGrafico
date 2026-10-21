@@ -202,6 +202,13 @@ export async function getAdvances(params?: Record<string, string>): Promise<Sala
   return res.data.results
 }
 
+export async function getPendingAdvancesForEmployee(employeeId: number): Promise<SalaryAdvance[]> {
+  const res = await api.get<{ results: SalaryAdvance[] }>('/hr/advances/', {
+    params: { employee: String(employeeId), payroll_isnull: 'true', is_discounted: 'false' },
+  })
+  return res.data.results
+}
+
 export async function createAdvance(data: Partial<SalaryAdvance>): Promise<SalaryAdvance> {
   const res = await api.post('/hr/advances/', data)
   return res.data
