@@ -57,17 +57,6 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
         }
     })
 
-    const deleteMutation = useMutation({
-        mutationFn: salesApi.deleteOrder,
-        onSuccess: () => {
-            markLocalMutation()
-            toast.success(`${getDomainConceptTitle('ov')} eliminada`)
-            invalidateSales()
-        },
-        onError: () => {
-            toast.error('Error al eliminar')
-        }
-    })
 
     const registerNoteMutation = useMutation({
         mutationFn: ({ orderId, payload }: { orderId: number, payload: FormData }) =>
@@ -115,13 +104,11 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
         refetch,
         createOrder: createMutation.mutateAsync,
         updateOrder: updateMutation.mutateAsync,
-        deleteOrder: deleteMutation.mutateAsync,
         registerNoteOnOrder: registerNoteMutation.mutateAsync,
         dispatchOrder: dispatchMutation.mutateAsync,
         dispatchOrderPartial: partialDispatchMutation.mutateAsync,
         isCreating: createMutation.isPending,
         isUpdating: updateMutation.isPending,
-        isDeleting: deleteMutation.isPending,
         isRegisteringNote: registerNoteMutation.isPending,
         isDispatching: dispatchMutation.isPending || partialDispatchMutation.isPending,
     }

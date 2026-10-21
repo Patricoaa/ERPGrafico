@@ -1085,12 +1085,6 @@ class PurchasingService:
         return invoice
 
     @staticmethod
-    def validate_can_purge(order: PurchaseOrder, user):
-        if not user.is_staff:
-            raise ValidationError("Solo administradores pueden purgar documentos cancelados.")
-        PurchasingService.validate_purge(order)
-
-    @staticmethod
     def purchase_checkout_response(result: dict) -> dict:
         from workflow.services import WorkflowService
         WorkflowService.sync_hub_tasks(result["order"])
@@ -1105,26 +1099,6 @@ class PurchasingService:
             "payment": TreasuryMovementSerializer(result["payment"]).data if result["payment"] else None,
             "receipt": PurchaseReceiptSerializer(result["receipt"]).data if result["receipt"] else None,
         }
-
-    @staticmethod
-    def validate_purge(order: PurchaseOrder):
-        """
-        Un documento solo puede purgarse (hard delete) si está CANCELLED y no dejó
-        huella contable: documentos anulados con reversos se conservan por auditoría.
-        """
-        if order.status != PurchaseOrder.Status.CANCELLED:
-            raise ValidationError("Use POST /cancel/ para cancelar documentos activos.")
-        has_accounting_trace = (
-            order.journal_entry_id is not None
-            or order.invoices.filter(journal_entry__isnull=False).exists()
-            or order.payments.filter(journal_entry__isnull=False).exists()
-            or order.receipts.filter(journal_entry__isnull=False).exists()
-        )
-        if has_accounting_trace:
-            raise ValidationError(
-                "No se puede eliminar: el documento tiene asientos contables asociados. "
-                "Los documentos anulados se conservan como pista de auditoría."
-            )
 
     @staticmethod
     @transaction.atomic

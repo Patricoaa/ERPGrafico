@@ -103,12 +103,6 @@ export const salesApi = {
         return data
     },
 
-    /**
-     * Delete a sale order
-     */
-    deleteOrder: async (id: number): Promise<void> => {
-        await api.delete(`/sales/orders/${id}/`)
-    },
 
     /**
      * Despacha (cierra logística) una orden de venta completa.

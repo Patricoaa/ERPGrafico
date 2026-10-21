@@ -128,13 +128,6 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelV
             return WritePurchaseOrderSerializer
         return PurchaseOrderSerializer
 
-    def destroy(self, request, *args, **kwargs):
-        try:
-            PurchasingService.validate_can_purge(self.get_object(), request.user)
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return super().destroy(request, *args, **kwargs)
-
     @action(detail=True, methods=["get"])
     def cancel_impact(self, request, pk=None):
         """Preview what will happen when cancelling this purchase order."""

@@ -1509,24 +1509,6 @@ class BillingService:
         )
 
     @staticmethod
-    def validate_purge(invoice: Invoice):
-        """
-        Una factura solo puede purgarse (hard delete) si está CANCELLED y no dejó
-        huella contable: facturas anuladas con reversos se conservan por auditoría.
-        """
-        if invoice.status != Invoice.Status.CANCELLED:
-            raise ValidationError("Use el endpoint de cancelación para facturas activas.")
-        has_accounting_trace = (
-            invoice.journal_entry_id is not None
-            or invoice.payments.filter(journal_entry__isnull=False).exists()
-        )
-        if has_accounting_trace:
-            raise ValidationError(
-                "No se puede eliminar: la factura tiene asientos contables asociados. "
-                "Los documentos anulados se conservan como pista de auditoría."
-            )
-
-    @staticmethod
     @transaction.atomic
     def cancel_invoice(invoice: Invoice, user=None, reason: str = ""):
         """

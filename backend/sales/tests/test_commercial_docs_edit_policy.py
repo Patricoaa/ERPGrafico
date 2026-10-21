@@ -62,3 +62,18 @@ def test_posted_invoice_locked(client, contact):
     )
     res = client.patch(f"/api/billing/invoices/{invoice.pk}/", {"date": "2026-09-20"}, format="json")
     assert res.status_code == 422
+
+
+@pytest.mark.django_db
+def test_commercial_documents_are_never_hard_deleted(client, contact):
+    order = SaleOrder.objects.create(
+        customer=contact, date=date(2026, 9, 1), status=SaleOrder.Status.CANCELLED
+    )
+    po = PurchaseOrder.objects.create(supplier=contact, status=PurchaseOrder.Status.CANCELLED)
+    invoice = Invoice.objects.create(
+        sale_order=order, contact=contact, date=date(2026, 9, 1),
+        dte_type=Invoice.DTEType.FACTURA, status=Invoice.Status.CANCELLED,
+    )
+    assert client.delete(f"/api/sales/orders/{order.pk}/").status_code == 405
+    assert client.delete(f"/api/purchasing/orders/{po.pk}/").status_code == 405
+    assert client.delete(f"/api/billing/invoices/{invoice.pk}/").status_code == 405

@@ -862,26 +862,6 @@ class SalesService:
         return SalesService.dispatch_order(order, warehouse, delivery_date)
 
     @staticmethod
-    def validate_purge(order: SaleOrder):
-        """
-        Un documento solo puede purgarse (hard delete) si está CANCELLED y no dejó
-        huella contable: documentos anulados con reversos se conservan por auditoría.
-        """
-        if order.status != SaleOrder.Status.CANCELLED:
-            raise ValidationError("Use POST /cancel/ para cancelar documentos activos.")
-        has_accounting_trace = (
-            order.journal_entry_id is not None
-            or order.invoices.filter(journal_entry__isnull=False).exists()
-            or order.payments.filter(journal_entry__isnull=False).exists()
-            or order.deliveries.filter(journal_entry__isnull=False).exists()
-        )
-        if has_accounting_trace:
-            raise ValidationError(
-                "No se puede eliminar: el documento tiene asientos contables asociados. "
-                "Los documentos anulados se conservan como pista de auditoría."
-            )
-
-    @staticmethod
     @transaction.atomic
     def annul_delivery(delivery: SaleDelivery, user=None, reason: str = ""):
         """

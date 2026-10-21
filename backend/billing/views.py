@@ -80,20 +80,6 @@ class InvoiceViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if not request.user.is_staff:
-            return Response(
-                {"error": "Solo administradores pueden purgar documentos cancelados."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        try:
-            BillingService.validate_purge(instance)
-        except ValidationError as e:
-            msg = e.messages[0] if getattr(e, "messages", None) else str(e)
-            return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
-        return super().destroy(request, *args, **kwargs)
-
     @action(detail=False, methods=["post"])
     def create_from_order(self, request):
         serializer = CreateInvoiceSerializer(data=request.data)
