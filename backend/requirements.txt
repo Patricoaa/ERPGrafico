@@ -33,3 +33,4 @@ channels-redis>=4.1.0
 weasyprint
 qrcode[pil]
 sentry-sdk[django]>=2.18.0
+pytest-benchmark
