@@ -199,15 +199,16 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                 const uomLabel = primaryUom?.abbreviation || p.uom_name || "UN"
                                 return (
                                     <>
-                                        <span className="text-base font-black text-primary">
+                                        <span className="text-lg font-semibold tabular-nums">
                                             {formatCurrency(p.cost_price || 0)}
                                         </span>
-                                        <span className="text-3xs text-muted-foreground ml-1 uppercase">
-                                            /{uomLabel}
+                                        <span className="text-2xs text-muted-foreground ml-1">
+                                            / {uomLabel.toLowerCase()}
                                         </span>
                                     </>
                                 )
                             }}
+                            priceLabel="Costo"
                         />
                     )}
                 </div>

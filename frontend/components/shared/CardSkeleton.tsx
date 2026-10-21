@@ -144,16 +144,19 @@ export function CardSkeleton({
                 )}
             >
                 {Array.from({ length: count }).map((_, i) => (
-                    <div key={`product-${i}`} className="flex flex-col overflow-hidden rounded-md border border-border/40 bg-card/5">
-                        <Skeleton className="aspect-square w-full rounded-none" />
-                        <div className="p-3 flex flex-col gap-2">
-                            <div className="flex justify-center gap-1">
-                                <Skeleton className="h-3 w-10" />
-                                <Skeleton className="h-3 w-10" />
+                    <div key={`product-${i}`} className="flex flex-col overflow-hidden rounded-md border border-border bg-card">
+                        <Skeleton className="aspect-[16/7] w-full rounded-none" />
+                        <div className="flex flex-1 flex-col gap-1 px-3 pb-3 pt-2.5">
+                            <Skeleton className="h-3 w-14" />
+                            <Skeleton className="h-4 w-3/4" />
+                            <Skeleton className="h-3 w-1/2" />
+                            <div className="mt-auto flex items-end justify-between pt-2">
+                                <div className="flex flex-col gap-1">
+                                    <Skeleton className="h-2.5 w-14" />
+                                    <Skeleton className="h-5 w-20" />
+                                </div>
+                                <Skeleton className="h-4 w-4" />
                             </div>
-                            <Skeleton className="h-4 w-full" />
-                            <Skeleton className="h-4 w-2/3 mx-auto" />
-                            <Skeleton className="h-5 w-16 mx-auto mt-1" />
                         </div>
                     </div>
                 ))}
