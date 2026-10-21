@@ -18,7 +18,6 @@ import { closureEntity, closureViews } from '../../entity-view/closure.entity';
 import { buildClosureTree } from '../../utils/closureTree';
 import { useReopenConfirm } from '../../hooks/useReopenConfirm';
 import { closureActions, type ClosureActionsCtx } from './closureActions';
-import { SkeletonShell } from '@/components/shared';
 import { fiscalYearUnifiedSearchDef } from '../../unifiedSearchDef';
 import { toast } from 'sonner';
 
@@ -310,10 +309,6 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     // Reopen confirmations (they lived in each month card): one per period type, for the whole tree.
     const { confirmAndExecute: confirmReopenPeriod, dialog: reopenPeriodDialog } = useReopenConfirm(reopenPeriod, { periodType: 'contable' })
     const { confirmAndExecute: confirmReopenTaxPeriod, dialog: reopenTaxPeriodDialog } = useReopenConfirm(handleReopenTaxPeriod, { periodType: 'tributario (F29)' })
-
-    if (isLoading) {
-        return <SkeletonShell isLoading ariaLabel="Cargando ejercicios..." />;
-    }
 
     if (groupedData.length === 0) {
         return (
