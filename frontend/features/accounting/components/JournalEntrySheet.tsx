@@ -29,6 +29,8 @@ import { useInvalidateDocuments } from "@/features/documents/hooks/useInvalidate
 import type { JournalEntry } from "@/features/accounting/hooks/useJournalEntries"
 import { SourceDocumentSelector, type SourceDocument } from "@/components/selectors/SourceDocumentSelector"
 import { Chip } from "@/components/shared"
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { journalEntryLineEntity, journalEntryLineSheetViews } from "@/features/accounting"
 import { resolveRegistryActions, type ResolvedDocumentAction } from "@/features/documents/utils/actions"
 import { journalEntryActions } from "@/features/accounting/journalEntryActions"
 
@@ -227,6 +229,12 @@ function JournalEntrySummaryTab({ entry }: { entry: JournalEntry }) {
         }] : []),
     ]
 
+    const collection = useEntityCollection(
+        journalEntryLineEntity,
+        { rows: lines },
+        { pagination: { mode: "none" } },
+    )
+
     return (
         <div className="space-y-8">
             <section aria-label="Contexto">
@@ -235,37 +243,16 @@ function JournalEntrySummaryTab({ entry }: { entry: JournalEntry }) {
 
             <section className="space-y-4">
                 <FormSection title="Líneas del Asiento" icon={FileText} />
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b border-border text-left text-3xs font-bold uppercase tracking-widest text-muted-foreground">
-                                <th className="pb-2 pr-4">Cuenta</th>
-                                <th className="pb-2 pr-4 text-right">Debe</th>
-                                <th className="pb-2 pr-4 text-right">Haber</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border/50">
-                            {lines.map((item: typeof lines[0], idx: number) => (
-                                <tr key={item.id ?? idx} className="hover:bg-muted/30">
-                                    <td className="py-2 pr-4">
-                                        <div className="font-medium">{item.account_code}</div>
-                                        <div className="text-xs text-muted-foreground truncate max-w-xs">{item.account_name}</div>
-                                    </td>
-                                    <td className="py-2 pr-4 text-right tabular-nums">
-                                        {item.debit > 0 ? formatCurrency(item.debit) : <span className="text-muted-foreground/40">—</span>}
-                                    </td>
-                                    <td className="py-2 text-right tabular-nums">
-                                        {item.credit > 0 ? formatCurrency(item.credit) : <span className="text-muted-foreground/40">—</span>}
-                                    </td>
-                                </tr>
-                            ))}
-                            <tr className="font-bold border-t">
-                                <td className="py-2 pr-4">Total</td>
-                                <td className="py-2 pr-4 text-right">{formatCurrency(totalDebit)}</td>
-                                <td className="py-2 text-right">{formatCurrency(totalCredit)}</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <Collection.Root collection={collection}>
+                    <Collection.View
+                        table={journalEntryLineSheetViews.table}
+                        emptyTitle="Sin líneas"
+                        emptyDescription="El asiento no tiene líneas."
+                    />
+                </Collection.Root>
+                <div className="flex justify-end gap-4 pt-2 border-t text-sm font-semibold tabular-nums">
+                    <div>Total Debe: {formatCurrency(totalDebit)}</div>
+                    <div>Total Haber: {formatCurrency(totalCredit)}</div>
                 </div>
             </section>
         </div>
