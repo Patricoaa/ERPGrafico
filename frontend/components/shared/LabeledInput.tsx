@@ -17,9 +17,9 @@ interface LabeledInputBaseProps {
     error?: string
     /** Helper hint shown below when there is no error. */
     hint?: React.ReactNode
-    /** Additional classes for the label `<legend>` or header. */
+    /** @deprecated Use FieldLegend (N2) instead. Legend typography is now centralized. */
     labelClassName?: string
-    /** Additional classes for the hint text. */
+    /** @deprecated Use FieldLegend (N2) instead. Legend typography is now centralized. */
     hintClassName?: string
     /** Additional classes for the outer wrapper `<div>`. */
     containerClassName?: string

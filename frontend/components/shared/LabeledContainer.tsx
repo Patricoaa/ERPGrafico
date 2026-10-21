@@ -21,7 +21,7 @@ interface LabeledContainerProps {
     icon?: ReactNode
     /** Text or element shown as a suffix (inside the fieldset). */
     suffix?: ReactNode
-    /** Additional classes for the label `<legend>`. */
+    /** @deprecated Use FieldLegend (N2) instead. Legend typography is now centralized. */
     labelClassName?: string
     /** Whether the container is disabled. */
     disabled?: boolean

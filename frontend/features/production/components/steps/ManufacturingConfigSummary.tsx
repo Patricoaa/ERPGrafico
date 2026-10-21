@@ -469,7 +469,7 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
                                         <User className="h-3.5 w-3.5 text-primary shrink-0" />
                                         <span className="text-sm text-foreground truncate">{(form.watch("contact") as Contact).name}</span>
                                     </div>
-                                    {/* typography-allow: meta - clear button */}
+                                    // typography-allow: meta - clear button
                                     <Button
                                         variant="ghost"
                                         type="button"

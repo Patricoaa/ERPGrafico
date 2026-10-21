@@ -361,12 +361,26 @@ function hasForbiddenValueWeight(className: string): boolean {
 }
 
 function hasAllowComment(node: ts.Node, sourceFile: ts.SourceFile): boolean {
-  const start = node.getStart(sourceFile);
-  const leadingComments = ts.getLeadingCommentRanges(sourceFile.text, start);
-  if (!leadingComments) return false;
-  for (const comment of leadingComments) {
-    const text = sourceFile.text.slice(comment.pos, comment.end);
-    if (text.includes('typography-allow:') && text.includes('meta')) return true;
+  // Check the node and its ancestors (up to JSX element) for allow comments
+  let current: ts.Node | undefined = node;
+  let depth = 0;
+  while (current && depth < 10) {
+    const start = current.getStart(sourceFile);
+    const leadingComments = ts.getLeadingCommentRanges(sourceFile.text, start);
+    if (leadingComments && leadingComments.length > 0) {
+      for (const comment of leadingComments) {
+        const text = sourceFile.text.slice(comment.pos, comment.end);
+        if (text.includes('typography-allow:') && text.includes('meta')) {
+          return true;
+        }
+      }
+    }
+    if (ts.isJsxElement(current) || ts.isJsxSelfClosingElement(current)) {
+      // Found the JSX element, check its comments and stop
+      break;
+    }
+    current = current.parent;
+    depth++;
   }
   return false;
 }

@@ -305,3 +305,28 @@ Para evitar fatiga visual, los iconos dentro de componentes (selectores, seccion
 // ❌ Mezcla de pesos en el mismo patrón semántico
 // (Label+Value con semibold/bold/medium mezclados)
 ```
+
+---
+
+## Reglas de contrato para notched-field (LabeledContainer / LabeledInput / LabeledSelect)
+
+| Regla | Descripción | Fix |
+|---|---|---|
+| **R1** | `labelClassName` / `hintClassName` no admiten overrides tipográficos | Eliminar → delega en `FieldLegend` (N2) |
+| **R2** | Alturas arbitrarias `h-[…]` prohibidas en primitivas e hijos | Usar `h-6` / `h-6!` (1.5rem = 24px) |
+| **R3** | Valor primario: `text-sm text-foreground` (sin `font-medium/semibold/bold/black`) | Peso normal |
+| **R4** | Placeholder: `text-sm text-muted-foreground/60` explícito (span dedicado) | No conditional class |
+| **R5** | `variant="inline"` dentro de `LabeledContainer` = doble chrome prohibido | Usar `variant="standalone"` o quitar wrapper |
+
+### Opt-out para meta-información legítima (N5)
+
+```tsx
+// typography-allow: meta - N5
+<span className="text-3xs text-muted-foreground">{contact.tax_id}</span>
+```
+
+Se permite `text-3xs` / `text-2xs` / `font-bold` solo para metadatos secundarios (email, RUT, saldo, código) que no son el valor principal del campo.
+
+### Deprecación
+
+`labelClassName` y `hintClassName` en `LabeledContainer`, `LabeledInput`, `LabeledSelect` → **deprecated**. No usar. Toda la tipografía de legend se gestiona vía `FieldLegend` (N2: `text-2xs font-bold uppercase tracking-widest`).
