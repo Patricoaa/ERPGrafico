@@ -30,7 +30,7 @@ interface AdvancedWorkOrderSelectorProps {
 export function AdvancedWorkOrderSelector({
     value,
     onChange,
-    placeholder = `Vincular a ${getDomainConceptTitle('ot')} (Opcional)...`,
+    placeholder = "Seleccionar...",
     disabled = false,
     label,
     error,

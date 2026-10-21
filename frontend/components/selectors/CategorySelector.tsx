@@ -31,7 +31,7 @@ interface CategorySelectorProps {
 export function CategorySelector({
     value,
     onChange,
-    placeholder = "",
+    placeholder = "Seleccionar...",
     disabled,
     label,
     error,

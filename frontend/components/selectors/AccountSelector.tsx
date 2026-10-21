@@ -29,7 +29,7 @@ interface AccountSelectorProps {
     className?: string
 }
 
-export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false, isReconcilable, disabled = false, required, label, error, className }: AccountSelectorProps) {
+export function AccountSelector({ value, onChange, placeholder = "Seleccionar...", accountType, showAll = false, isReconcilable, disabled = false, required, label, error, className }: AccountSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")

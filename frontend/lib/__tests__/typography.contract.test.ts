@@ -210,8 +210,8 @@ describe('typography contract', () => {
       const src = productDrawer.productTypeSelector;
       // Selected value
       expect(/text-sm text-foreground truncate leading-none.*\{selectedType\.label\}/.test(src)).toBe(true);
-      // Placeholder
-      expect(/text-sm text-muted-foreground\/60 leading-none.*Seleccionar tipo/.test(src)).toBe(true);
+      // Placeholder uses variable with text-sm text-muted-foreground/60
+      expect(/text-sm text-muted-foreground\/60 leading-none.*\{placeholder\}/.test(src)).toBe(true);
       // No uppercase, no font-bold, no text-2xs on value
       expect(/font-bold text-2xs.*\{selectedType\.label\}/.test(src)).toBe(false);
       expect(/uppercase.*\{selectedType\.label\}/.test(src)).toBe(false);
@@ -259,15 +259,15 @@ describe('typography contract', () => {
 
   describe('Selectors — value N3 (text-sm), placeholder N3 (text-sm text-muted-foreground/60), no h-[1.5rem]', () => {
     const selectorTests = [
-      { key: 'userSelector', placeholder: 'Seleccionar usuario\\.\\.\\.' },
-      { key: 'groupSelector', placeholder: 'Seleccionar grupo\\.\\.\\.' },
-      { key: 'accountSelector', placeholder: 'Seleccionar cuenta\\.\\.\\.' },
-      { key: 'treasuryAccountSelector', placeholder: 'Seleccionar\\.\\.\\.' },
-      { key: 'sourceDocumentSelector', placeholder: 'Buscar documento origen\\.\\.\\.' },
-      { key: 'advancedWorkOrderSelector', placeholder: 'Vincular a' },
+      { key: 'userSelector', placeholder: 'Seleccionar' },
+      { key: 'groupSelector', placeholder: 'Seleccionar' },
+      { key: 'accountSelector', placeholder: 'Seleccionar' },
+      { key: 'treasuryAccountSelector', placeholder: 'Seleccionar' },
+      { key: 'sourceDocumentSelector', placeholder: 'Seleccionar' },
+      { key: 'advancedWorkOrderSelector', placeholder: 'Seleccionar' },
       { key: 'advancedSaleOrderSelector', placeholder: 'Seleccionar' },
-      { key: 'advancedContactSelector', placeholder: 'Seleccionar contacto\\.\\.\\.' },
-      { key: 'productSelector', placeholder: 'Seleccionar producto\\.\\.\\.' },
+      { key: 'advancedContactSelector', placeholder: 'Seleccionar' },
+      { key: 'productSelector', placeholder: 'Seleccionar' },
     ];
 
     selectorTests.forEach(({ key, placeholder }) => {

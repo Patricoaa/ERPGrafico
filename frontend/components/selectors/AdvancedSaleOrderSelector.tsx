@@ -31,7 +31,7 @@ interface AdvancedSaleOrderSelectorProps {
 export function AdvancedSaleOrderSelector({
     value,
     onChange,
-    placeholder = `Seleccionar ${getDomainConceptTitle('ov').toLowerCase()}...`,
+    placeholder = "Seleccionar...",
     disabled = false,
     customFilter,
     label,

@@ -25,7 +25,7 @@ interface WarehouseSelectorProps {
 export function WarehouseSelector({
     value,
     onChange,
-    placeholder = "Seleccionar bodega...",
+    placeholder = "Seleccionar...",
     disabled,
     label,
     error,

@@ -22,7 +22,7 @@ interface UserSelectorProps {
     error?: string
 }
 
-export function UserSelector({ value, onChange, placeholder = "Seleccionar usuario...", disabled = false, label, error }: UserSelectorProps) {
+export function UserSelector({ value, onChange, placeholder = "Seleccionar...", disabled = false, label, error }: UserSelectorProps) {
     const [open, setOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 500)

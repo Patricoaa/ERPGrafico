@@ -14,6 +14,8 @@ interface ProductTypeSelectorProps {
     required?: boolean
     error?: string
     lockedType?: string
+    /** Placeholder when no value is selected. Default: "Seleccionar..." */
+    placeholder?: string
 }
 
 const PRODUCT_TYPES = [
@@ -31,7 +33,8 @@ export function ProductTypeSelector({
     label = "Tipo de Producto",
     required,
     error,
-    lockedType
+    lockedType,
+    placeholder = "Seleccionar..."
 }: ProductTypeSelectorProps) {
     const [, setOpen] = useState(false)
     const selectedType = PRODUCT_TYPES.find(t => t.id === value)
@@ -63,7 +66,7 @@ export function ProductTypeSelector({
                                 <span className="text-sm text-foreground truncate leading-none">{selectedType.label}</span>
                             </div>
                         ) : (
-                            <span className="text-sm text-muted-foreground/60 leading-none">Seleccionar tipo...</span>
+                            <span className="text-sm text-muted-foreground/60 leading-none">{placeholder}</span>
                         )}
                     </div>
                 </SelectTrigger>

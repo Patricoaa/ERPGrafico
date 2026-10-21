@@ -51,7 +51,7 @@ interface ProductSelectorProps {
 export function ProductSelector({
     value,
     onChange,
-    placeholder = "Seleccionar producto...",
+    placeholder = "Seleccionar...",
     productTypes,
     disabled = false,
     restrictStock = false,

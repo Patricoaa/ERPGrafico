@@ -41,7 +41,7 @@ interface AdvancedContactSelectorProps {
 export function AdvancedContactSelector({
     value,
     onChange,
-    placeholder = "Seleccionar contacto...",
+    placeholder = "Seleccionar...",
     contactType,
     onSelectContact,
     disabled,

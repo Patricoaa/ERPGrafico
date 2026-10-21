@@ -37,6 +37,8 @@ interface UoMSelectorProps {
     variant?: 'inline' | 'standalone'
     className?: string
     required?: boolean
+    /** Placeholder when no value is selected. Default: "Seleccionar..." */
+    placeholder?: string
 }
 
 export function UoMSelector({
@@ -53,7 +55,8 @@ export function UoMSelector({
     quantity = 1,
     variant = 'standalone',
     className,
-    required
+    required,
+    placeholder = 'Seleccionar...'
 }: UoMSelectorProps) {
     // Get filtered UoMs based on context
     const filteredUoMs = useMemo(() => {
@@ -135,7 +138,7 @@ export function UoMSelector({
                     {selectedUoM ? (
                         <span className="text-sm truncate">{selectedUoM.name}</span>
                     ) : (
-                        <span className="text-sm text-muted-foreground/60 truncate">Und</span>
+                        <span className="text-sm text-muted-foreground/60 truncate">{placeholder}</span>
                     )}
                     <ChevronDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
                 </Button>
@@ -146,6 +149,7 @@ export function UoMSelector({
                         <Search className="mr-2 h-3.5 w-3.5 shrink-0 opacity-50" />
                         <input
                             className="flex h-8 w-full rounded-md bg-transparent py-2 text-xs outline-none placeholder:text-muted-foreground"
+                            placeholder="Buscar UdM..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             autoFocus

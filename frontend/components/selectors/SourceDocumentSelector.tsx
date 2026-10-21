@@ -26,6 +26,8 @@ interface SourceDocumentSelectorProps {
     error?: string
     className?: string
     allowedLabels?: string[]
+    /** Placeholder when no value is selected. Default: "Seleccionar..." */
+    placeholder?: string
 }
 
 export function SourceDocumentSelector({
@@ -36,6 +38,7 @@ export function SourceDocumentSelector({
     error,
     className,
     allowedLabels,
+    placeholder = "Seleccionar..."
 }: SourceDocumentSelectorProps) {
     const [open, setOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
@@ -133,7 +136,7 @@ export function SourceDocumentSelector({
                                 )}
                             </div>
                         ) : (
-                            <span className="text-sm text-muted-foreground/60 truncate">Buscar documento origen...</span>
+                            <span className="text-sm text-muted-foreground/60 truncate">{placeholder}</span>
                         )}
                         <div className="flex items-center gap-1">
                             {value && (

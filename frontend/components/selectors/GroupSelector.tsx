@@ -19,7 +19,7 @@ interface GroupSelectorProps {
     error?: string
 }
 
-export function GroupSelector({ value, onChange, placeholder = "Seleccionar grupo...", disabled = false, label, error }: GroupSelectorProps) {
+export function GroupSelector({ value, onChange, placeholder = "Seleccionar...", disabled = false, label, error }: GroupSelectorProps) {
     const [open, setOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 500)
