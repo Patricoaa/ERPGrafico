@@ -836,53 +836,19 @@ class F29PaymentService:
             notes=payment_data.get("notes", ""),
         )
 
-        # Create treasury movement (outflow)
-        TreasuryService.create_movement(
+        period_label = f"{declaration.tax_period.get_month_display()} {declaration.tax_period.year}"
+        movement = TreasuryService.create_movement(
             from_account=treasury_account,
             movement_type=TreasuryMovement.Type.OUTBOUND,
-            amount=payment_data["amount"],
+            amount=payment.amount,
             date=payment.payment_date,
-            notes=f"Pago F29 {declaration.tax_period}",
-            reference=payment_data.get("reference", ""),
+            notes=f"Pago F29 {period_label}",
+            reference=payment.reference or f"F29 {period_label}",
+            counterpart_account=settings.vat_payable_account,
             created_by=user,
         )
-
-        period_label = f"{declaration.tax_period.get_month_display()} {declaration.tax_period.year}"
-        doc_ref = payment.reference or "F29"
-
-        journal_entry = JournalEntry.objects.create(
-            date=payment.payment_date,
-            description=GlosaBuilder.build(
-                GlosaBuilder.PAGO_F29, doc_ref, amount=payment.amount, extra=[period_label],
-            ),
-            reference=f"Pago-{payment.reference}",
-        )
-
-        # Debit: IVA por Pagar (reduce liability)
-        JournalItem.objects.create(
-            entry=journal_entry,
-            account=settings.vat_payable_account,
-            debit=payment.amount,
-            credit=Decimal("0"),
-            label=GlosaBuilder.item(Roles.IVA_PAGAR, period_label, doc_ref),
-        )
-
-        # Credit: Treasury Account (cash out)
-        treasury_account_obj = payment.treasury_account.account
-        JournalItem.objects.create(
-            entry=journal_entry,
-            account=treasury_account_obj,
-            debit=Decimal("0"),
-            credit=payment.amount,
-            label=GlosaBuilder.item(Roles.EFECTIVO, payment.treasury_account.name, doc_ref),
-        )
-
-        # Post the entry
-        journal_entry.status = JournalEntry.State.POSTED
-        journal_entry.save()
-
-        payment.journal_entry = journal_entry
-        payment.save()
+        payment.journal_entry = movement.journal_entry
+        payment.save(update_fields=["journal_entry"])
 
         # Auto-complete recurrent task if exists
         # Note: We use the period of the declaration
