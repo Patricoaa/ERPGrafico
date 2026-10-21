@@ -312,11 +312,11 @@ export function Drawer({
                 )}
 
                 {(title || subtitle || headerActions || icon) && (
-                    <SheetHeader className={cn("px-6 py-3 border-b border-border shrink-0 bg-card", headerClassName)}>
+                    <SheetHeader className={cn("px-6 py-1.5 border-b border-border shrink-0 bg-card", headerClassName)}>
                         <PanelHeader
                             icon={iconElement}
                             title={
-                                <SheetTitle className={cn("text-xl font-black tracking-tight text-foreground leading-none", titleClassName)}>
+                                <SheetTitle className={cn("text-base font-black tracking-tight text-foreground leading-none", titleClassName)}>
                                     {title}
                                 </SheetTitle>
                             }
