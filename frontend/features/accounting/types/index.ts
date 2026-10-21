@@ -1,4 +1,6 @@
 export interface Account {
+    /** Campos congelados por historia contable (ADR-0091) */
+    frozen_fields?: string[]
     id: number
     code: string
     name: string

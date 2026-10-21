@@ -7,6 +7,7 @@ from typing import Any
 from core.exceptions import DomainError
 
 DEFAULT_MUTABLE_WHEN_LOCKED = frozenset({"notes"})
+USED_ANNOTATION = "_edit_policy_used"
 
 
 class DocumentLockedError(DomainError):
@@ -35,6 +36,9 @@ class EditPolicy:
     # Master data: fields frozen once the record has history (``is_used``).
     frozen_when_used: frozenset[str] = frozenset()
     is_used: Callable[[Any], bool] | None = None
+    # Exists() expression equivalent to is_used, so querysets can precompute it
+    # (annotate_edit_usage) and serializers read it without queries.
+    used_annotation: Callable[[], Any] | None = None
     used_message: str = (
         "El registro ya tiene movimientos contabilizados; estos campos no se pueden cambiar."
     )
@@ -54,6 +58,19 @@ class EditPolicy:
             return True
         return bool(self.is_locked and self.is_locked(instance))
 
+    def used(self, instance: Any) -> bool:
+        if instance.pk is None:
+            return False
+        annotated = getattr(instance, USED_ANNOTATION, None)
+        if annotated is not None:
+            return bool(annotated)
+        return bool(self.is_used and self.is_used(instance))
+
+    def frozen_fields(self, instance: Any) -> list[str]:
+        if not self.frozen_when_used or not self.used(instance):
+            return []
+        return sorted(self.frozen_when_used)
+
     def assert_editable(self, instance: Any, fields: Iterable[str] | None = None) -> None:
         if self.locked(instance):
             blocked = (
@@ -62,10 +79,10 @@ class EditPolicy:
             if blocked:
                 raise DocumentLockedError(self.locked_message, blocked - {"*"})
             return
-        if fields is None or not self.is_used or instance.pk is None:
+        if fields is None:
             return
         frozen = set(fields) & self.frozen_when_used
-        if frozen and self.is_used(instance):
+        if frozen and self.used(instance):
             raise DocumentLockedError(self.used_message, frozen)
 
     def assert_deletable(self, instance: Any) -> None:
@@ -106,3 +123,16 @@ def changed_fields(instance: Any, validated_data: dict[str, Any]) -> set[str]:
         for name, value in validated_data.items()
         if not hasattr(instance, name) or getattr(instance, name) != value
     }
+
+
+def annotate_edit_usage(queryset):
+    """Precompute the model's ``is_used`` so ``frozen_fields`` costs no queries."""
+    policy = get_edit_policy(queryset.model)
+    if policy is None or policy.used_annotation is None:
+        return queryset
+    return queryset.annotate(**{USED_ANNOTATION: policy.used_annotation()})
+
+
+def frozen_fields(instance: Any) -> list[str]:
+    policy = get_edit_policy(instance)
+    return [] if policy is None else policy.frozen_fields(instance)

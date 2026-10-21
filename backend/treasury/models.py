@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import Exists, ExpressionWrapper, OuterRef
 from django.utils.translation import gettext_lazy as _
 
 # from sales.models import SaleOrder
@@ -875,6 +876,11 @@ class TreasuryAccount(models.Model):
     edit_policy = EditPolicy(
         frozen_when_used=frozenset({"account", "account_type", "currency"}),
         is_used=lambda ta: ta.movements_from.exists() or ta.movements_to.exists(),
+        used_annotation=lambda: ExpressionWrapper(
+            Exists(TreasuryMovement.objects.filter(from_account=OuterRef("pk")))
+            | Exists(TreasuryMovement.objects.filter(to_account=OuterRef("pk"))),
+            output_field=models.BooleanField(),
+        ),
         deletable=True,
         used_message="La cuenta de tesorería ya tiene movimientos; su cuenta contable, tipo y moneda no se pueden cambiar.",
     )

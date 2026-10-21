@@ -1,7 +1,7 @@
 
 from rest_framework import serializers
 
-from core.edit_policy import is_editable
+from core.edit_policy import frozen_fields, is_editable
 
 
 class CreatedByMixin:
@@ -24,3 +24,16 @@ class IsEditableField(serializers.ReadOnlyField):
 
     def to_representation(self, instance):
         return is_editable(instance)
+
+
+class FrozenFieldsField(serializers.ReadOnlyField):
+    """Fields the form must disable because the record already has history (ADR-0091).
+
+    Requires the viewset queryset to go through ``annotate_edit_usage``.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(source="*", **kwargs)
+
+    def to_representation(self, instance):
+        return frozen_fields(instance)

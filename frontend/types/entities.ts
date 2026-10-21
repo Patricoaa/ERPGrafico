@@ -31,6 +31,8 @@ export interface ProductVariant {
 }
 
 export interface Product {
+    /** Campos congelados por historia contable (ADR-0091) */
+    frozen_fields?: string[]
     id: number
     code: string
     internal_code?: string
@@ -138,6 +140,8 @@ export type AccountType =
     | 'EXPENSE'
 
 export interface Account {
+    /** Campos congelados por historia contable (ADR-0091) */
+    frozen_fields?: string[]
     id: number
     code: string
     name: string
@@ -179,6 +183,8 @@ export interface Contact {
 export type TreasuryAccountType = 'BANK' | 'CASH' | 'CARD'
 
 export interface TreasuryAccount {
+    /** Campos congelados por historia contable (ADR-0091) */
+    frozen_fields?: string[]
     id: number
     name: string
     account_type: TreasuryAccountType
@@ -247,6 +253,8 @@ export interface WorkOrder {
 // ─── UoM (Unit of Measure) ───────────────────────────────
 
 export interface UoM {
+    /** Campos congelados por historia contable (ADR-0091) */
+    frozen_fields?: string[]
     id: number
     name: string
     name_singular?: string

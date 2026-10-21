@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useCallback } from "react"
+import { frozenFieldsOf } from "@/lib/edit-policy"
 import { showApiError } from "@/lib/errors"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
@@ -103,7 +104,7 @@ export function AccountDrawer({
     const isEditMode = !!initialData?.id
     const init = initialData as Record<string, unknown> | undefined
     const hasParent = isEditMode && !!init?.parent
-    const hasPostedItems = isEditMode && !!init?.has_posted_items
+    const frozen = frozenFieldsOf(initialData)
     const hasChildren = isEditMode && !init?.is_selectable
 
     useInitializeDrawerForm({
@@ -211,7 +212,7 @@ export function AccountDrawer({
                             value={field.value}
                             onChange={field.onChange}
                             error={fieldState.error?.message}
-                            disabled={isViewMode || hasParent || hasPostedItems || hasChildren || (!!parentId && parentId !== "__none__" && parentId !== "none")}
+                            disabled={isViewMode || hasParent || frozen.has("account_type") || hasChildren || (!!parentId && parentId !== "__none__" && parentId !== "none")}
                             options={[
                                 { value: "ASSET", label: "Activo" },
                                 { value: "LIABILITY", label: "Pasivo" },
@@ -232,7 +233,7 @@ export function AccountDrawer({
                             onChange={field.onChange}
                             showAll={true}
                             error={fieldState.error?.message}
-                            disabled={isViewMode || hasPostedItems || hasChildren}
+                            disabled={isViewMode || frozen.has("parent") || hasChildren}
                         />
                     )}
                 />

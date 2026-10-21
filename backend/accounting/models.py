@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import Exists, OuterRef
 from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
@@ -35,6 +36,7 @@ class CFCategory(models.TextChoices):
     INVESTING = "INVESTING", _("Actividades de Inversión")
     FINANCING = "FINANCING", _("Actividades de Financiación")
     DEP_AMORT = "DEP_AMORT", _("Depreciación y Amortización (No Efectivo)")
+    UNMAPPED = "UNMAPPED", _("Sin Categoría (Cuenta Puente)")
 
 
 class BSCategory(models.TextChoices):
@@ -50,10 +52,11 @@ class Account(TimeStampedModel):
 
     # ADR-0091 (clase C): type and posting role are frozen once the account has entries.
     edit_policy = EditPolicy(
-        frozen_when_used=frozenset({"account_type", "is_category"}),
+        frozen_when_used=frozenset({"account_type", "is_category", "parent"}),
         is_used=lambda acc: acc.journal_items.exists(),
+        used_annotation=lambda: Exists(JournalItem.objects.filter(account=OuterRef("pk"))),
         deletable=True,
-        used_message="La cuenta ya tiene asientos; su tipo y si es de agrupación no se pueden cambiar.",
+        used_message="La cuenta ya tiene asientos; su tipo, cuenta padre y si es de agrupación no se pueden cambiar.",
     )
     code = models.CharField(
         _("Código"), max_length=20, unique=True, blank=True, help_text="Ej: 1.1.01.001"

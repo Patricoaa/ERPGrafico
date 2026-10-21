@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from core.serializers.mixins import FrozenFieldsField
+
 from .models import (
     Account,
     AccountingSettings,
@@ -14,6 +16,7 @@ from .models import (
 
 
 class AccountSerializer(serializers.ModelSerializer):
+    frozen_fields = FrozenFieldsField()
     account_type_display = serializers.CharField(source="get_account_type_display", read_only=True)
     bs_category_display = serializers.CharField(source="get_bs_category_display", read_only=True)
     debit_total = serializers.DecimalField(max_digits=20, decimal_places=2, read_only=True)
@@ -24,6 +27,7 @@ class AccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         fields = [
+            "frozen_fields",
             "id",
             "code",
             "name",

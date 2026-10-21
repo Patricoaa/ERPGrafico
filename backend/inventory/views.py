@@ -6,6 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
+from core.edit_policy import annotate_edit_usage
 from core.mixins import AuditHistoryMixin as AuditHistory
 from core.mixins import BulkImportMixin, EditPolicyMixin, NoDestroyModelMixin
 
@@ -86,8 +87,8 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
             "partial_update",
             "destroy",
         ]:
-            return get_product_base_queryset(user=user)
-        return list_products(user=user, params=self.request.query_params)
+            return annotate_edit_usage(get_product_base_queryset(user=user))
+        return annotate_edit_usage(list_products(user=user, params=self.request.query_params))
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -365,7 +366,7 @@ class UoMViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, Au
     search_fields = ["name", "abbreviation"]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = annotate_edit_usage(super().get_queryset())
         if self.action == "list":
             # Default to active only; allow ?is_active=all or ?is_active=false
             is_active = self.request.query_params.get("is_active")

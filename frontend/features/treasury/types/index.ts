@@ -35,6 +35,8 @@ export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'LOAN' | 'CASH' |
 
 // Treasury Account types
 export interface TreasuryAccount {
+    /** Campos congelados por historia contable (ADR-0091) */
+    frozen_fields?: string[]
     id: number
     name: string
     code: string | null

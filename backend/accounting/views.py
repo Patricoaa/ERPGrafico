@@ -31,6 +31,7 @@ from django.core.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 
 from core.idempotency import idempotent_endpoint
+from core.edit_policy import annotate_edit_usage
 from core.mixins import AuditHistoryMixin as AuditHistory
 from core.mixins import BulkImportMixin, EditPolicyMixin
 
@@ -95,9 +96,9 @@ class AccountViewSet(EditPolicyMixin, BulkImportMixin, AuditHistory, viewsets.Mo
     def get_queryset(self):
         # List view uses selector with is_active filter
         if self.action == "list":
-            return list_accounts(params=self.request.query_params)
+            return annotate_edit_usage(list_accounts(params=self.request.query_params))
         # Detail/update/retrieve use full queryset (allows accessing archived)
-        return super().get_queryset()
+        return annotate_edit_usage(super().get_queryset())
 
     def create(self, request, *args, **kwargs):
         print("DEBUG: ACCOUNT CREATE CALLED")

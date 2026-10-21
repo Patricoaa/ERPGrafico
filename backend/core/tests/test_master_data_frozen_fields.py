@@ -61,3 +61,35 @@ def test_treasury_account_gl_frozen_once_it_has_movements(api_client, account_as
     url = f"/api/treasury/accounts/{ta.pk}/"
     assert api_client.patch(url, {"account": other.pk}, format="json").status_code == 422
     assert api_client.patch(url, {"name": "Caja Chica Local"}, format="json").status_code == 200
+
+
+@pytest.mark.django_db
+def test_frozen_fields_exposed_for_forms(api_client, account_asset):
+    url = f"/api/accounting/accounts/{account_asset.pk}/"
+    assert api_client.get(url).data["frozen_fields"] == []
+    entry = JournalEntry.objects.create(date=timezone.localdate(), description="x", status="POSTED")
+    JournalItem.objects.create(entry=entry, account=account_asset, debit=Decimal("10"), credit=0)
+    assert api_client.get(url).data["frozen_fields"] == ["account_type", "is_category", "parent"]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("model_path", [
+    "accounting.models.Account", "inventory.models.Product",
+    "inventory.models.UoM", "treasury.models.TreasuryAccount",
+])
+def test_frozen_fields_cost_no_queries_on_annotated_rows(
+    model_path, product, account_asset, django_assert_num_queries
+):
+    import importlib
+
+    from core.edit_policy import annotate_edit_usage, frozen_fields
+
+    module, name = model_path.rsplit(".", 1)
+    model = getattr(importlib.import_module(module), name)
+    if name == "TreasuryAccount":
+        model.objects.create(name="Caja", account=account_asset, account_type=model.Type.CASH)
+    rows = list(annotate_edit_usage(model.objects.all()))
+    assert rows
+    with django_assert_num_queries(0):
+        for row in rows:
+            frozen_fields(row)

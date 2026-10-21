@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from core.serializers.mixins import IsEditableField
+from core.serializers.mixins import FrozenFieldsField, IsEditableField
 
 from .models import (
     Bank,
@@ -68,6 +68,7 @@ class PaymentMethodSerializer(serializers.ModelSerializer):
 
 
 class TreasuryAccountSerializer(serializers.ModelSerializer):
+    frozen_fields = FrozenFieldsField()
     account_name = serializers.CharField(source="account.name", read_only=True)
     account_code = serializers.CharField(source="account.code", read_only=True)
     bank_name = serializers.CharField(source="bank.name", read_only=True, allow_null=True)
@@ -122,6 +123,7 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = TreasuryAccount
         fields = [
+            "frozen_fields",
             "id",
             "name",
             "code",

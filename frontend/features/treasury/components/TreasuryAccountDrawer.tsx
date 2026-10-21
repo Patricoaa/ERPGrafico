@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import { frozenFieldsOf } from "@/lib/edit-policy"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -69,6 +70,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
     const type = useWatch({ control: form.control, name: "account_type" })
     const isSubmitting = isCreating || isUpdating
     const isSystemManaged = SYSTEM_MANAGED_TYPES.has(type)
+    const frozen = frozenFieldsOf(entityData)
     const mode: DrawerMode = modeProp ?? (accountId ? 'edit' : 'create')
     const isView = mode === 'view' || isSystemManaged
     const { printRef, handlePrint } = usePrintableDrawer()
@@ -313,7 +315,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                                     required
                                                     value={field.value}
                                                     onChange={field.onChange}
-                                                    disabled={isSystemManaged}
+                                                    disabled={isSystemManaged || frozen.has("currency")}
                                                     error={fieldState.error?.message}
                                                     options={[
                                                         { value: "CLP", label: "Pesos (CLP)" },
@@ -476,7 +478,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                                     accountType={isLiabilityType(type) ? "LIABILITY" : "ASSET"}
                                                     isReconcilable={isLiabilityType(type) ? undefined : true}
                                                     placeholder="Seleccione cuenta..."
-                                                    disabled={isSystemManaged}
+                                                    disabled={isSystemManaged || frozen.has("account")}
                                                     error={fieldState.error?.message}
                                                 />
                                             )}

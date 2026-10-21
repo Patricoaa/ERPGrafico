@@ -17,6 +17,7 @@ from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
 from core.idempotency import idempotent_endpoint
+from core.edit_policy import annotate_edit_usage
 from core.mixins import AuditHistoryMixin, EditPolicyMixin
 
 from .deletion_service import BankDeletionService
@@ -230,7 +231,7 @@ class TreasuryAccountViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistor
     search_fields = ["name"]
 
     def get_queryset(self):
-        qs = (
+        qs = annotate_edit_usage(
             super()
             .get_queryset()
             .select_related("bank", "account")

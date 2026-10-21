@@ -3,6 +3,8 @@ import logging
 from rest_framework import serializers
 from rest_framework.fields import empty
 
+from core.serializers.mixins import FrozenFieldsField
+
 logger = logging.getLogger(__name__)
 
 from core.serializers import AttachmentSerializer
@@ -72,6 +74,7 @@ class UoMCategorySerializer(serializers.ModelSerializer):
 
 
 class UoMSerializer(serializers.ModelSerializer):
+    frozen_fields = FrozenFieldsField()
     category_name = serializers.CharField(source="category.name", read_only=True)
 
     class Meta:
@@ -196,6 +199,7 @@ class ProductSimpleSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    frozen_fields = FrozenFieldsField()
     category_name = serializers.CharField(source="category.name", read_only=True)
     uom_name = serializers.CharField(source="uom.name", read_only=True)
     uom_category = serializers.SerializerMethodField()
@@ -372,6 +376,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
+            "frozen_fields",
             "id", "internal_code", "code", "name", "category", "product_type",
             "image", "image_thumbnail", "image_catalog",
             "has_bom", "requires_advanced_manufacturing",
@@ -412,6 +417,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
 class ProductListSerializer(serializers.ModelSerializer):
     """Optimized serializer for list views."""
+    frozen_fields = FrozenFieldsField()
     category_name = serializers.CharField(source="category.name", read_only=True)
     uom_name = serializers.CharField(source="uom.name", read_only=True)
     sale_uom_name = serializers.CharField(source="sale_uom.name", read_only=True)
@@ -456,6 +462,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
+            "frozen_fields",
             "id", "internal_code", "code", "name", "category", "category_name",
             "product_type", "image_thumbnail", "is_active", "is_favorite",
             "uom", "uom_name", "sale_uom", "sale_uom_name",

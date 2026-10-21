@@ -2,6 +2,7 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
+import { FROZEN_FIELD_HINT, frozenFieldsOf } from "@/lib/edit-policy"
 import { useState } from "react"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm, type Resolver } from "react-hook-form"
@@ -51,6 +52,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
     const setOpen = onOpenChange || setOpenState
 
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
+    const frozen = frozenFieldsOf(initialData)
     const isView = mode === 'view'
     const { printRef, handlePrint } = usePrintableDrawer()
 
@@ -263,6 +265,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                     <Popover>
                                                         <PopoverTrigger asChild>
                                                             <Button
+                                                                disabled={frozen.has("category")}
                                                                 variant="ghost"
                                                                 role="combobox"
                                                                 className={cn("w-full justify-between font-normal text-sm h-6 py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent")}
@@ -356,6 +359,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                     <Popover>
                                                         <PopoverTrigger asChild>
                                                             <Button
+                                                                disabled={frozen.has("uom_type")}
                                                                 variant="ghost"
                                                                 role="combobox"
                                                                 className={cn("w-full justify-between font-normal text-sm h-6 py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent")}
@@ -413,11 +417,12 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                             step="0.00001"
                                                             error={fieldState.error?.message}
                                                             className="font-mono text-sm"
-                                                            hint={watchType === 'BIGGER'
+                                                            hint={frozen.has("ratio") ? FROZEN_FIELD_HINT : watchType === 'BIGGER'
                                                                 ? 'Cuántas unidades base equivalen a esta unidad'
                                                                 : 'Cuántas unidades de estas equivalen a la unidad base'}
                                                             {...field}
                                                             value={field.value ?? ""}
+                                                            disabled={frozen.has("ratio")}
                                                         />
                                                     )}
                                                 />

@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import Exists, ExpressionWrapper, OuterRef
 from django.utils.translation import gettext_lazy as _
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFill
@@ -180,6 +181,24 @@ _UOM_HISTORY_MODELS = frozenset({
 })
 
 
+def _uom_history_relations(uom_model):
+    return [
+        rel for rel in uom_model._meta.related_objects
+        if rel.related_model._meta.label in _UOM_HISTORY_MODELS and not rel.many_to_many
+    ]
+
+
+def _uom_history_annotation():
+    exists = [
+        Exists(rel.related_model.objects.filter(**{rel.field.name: OuterRef("pk")}))
+        for rel in _uom_history_relations(UoM)
+    ]
+    condition = exists[0]
+    for expr in exists[1:]:
+        condition = condition | expr
+    return ExpressionWrapper(condition, output_field=models.BooleanField())
+
+
 def _uom_has_history(uom) -> bool:
     return any(
         getattr(uom, rel.get_accessor_name()).exists()
@@ -193,6 +212,7 @@ class UoM(TimeStampedModel):
     edit_policy = EditPolicy(
         frozen_when_used=frozenset({"ratio", "category", "uom_type"}),
         is_used=lambda uom: _uom_has_history(uom),
+        used_annotation=lambda: _uom_history_annotation(),
         deletable=True,
         used_message="La unidad ya se usó en movimientos o documentos; su factor, categoría y tipo no se pueden cambiar.",
     )
@@ -301,6 +321,7 @@ class Product(models.Model):
     edit_policy = EditPolicy(
         frozen_when_used=frozenset({"uom", "product_type", "track_inventory"}),
         is_used=lambda p: p.stock_moves.exists(),
+        used_annotation=lambda: Exists(StockMove.objects.filter(product=OuterRef("pk"))),
         deletable=True,
         used_message="El producto ya tiene movimientos de stock; su unidad base, tipo y control de inventario no se pueden cambiar.",
     )
