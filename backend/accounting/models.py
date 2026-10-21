@@ -47,6 +47,14 @@ class BSCategory(models.TextChoices):
 
 
 class Account(TimeStampedModel):
+
+    # ADR-0091 (clase C): type and posting role are frozen once the account has entries.
+    edit_policy = EditPolicy(
+        frozen_when_used=frozenset({"account_type", "is_category"}),
+        is_used=lambda acc: acc.journal_items.exists(),
+        deletable=True,
+        used_message="La cuenta ya tiene asientos; su tipo y si es de agrupación no se pueden cambiar.",
+    )
     code = models.CharField(
         _("Código"), max_length=20, unique=True, blank=True, help_text="Ej: 1.1.01.001"
     )

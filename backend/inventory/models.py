@@ -172,7 +172,30 @@ class UoMCategory(TimeStampedModel):
         return self.name
 
 
+_UOM_HISTORY_MODELS = frozenset({
+    "inventory.StockMove",
+    "sales.SaleLine", "sales.SaleDeliveryLine", "sales.SaleReturnLine",
+    "purchasing.PurchaseLine", "purchasing.PurchaseReceiptLine", "purchasing.PurchaseReturnLine",
+    "billing.InvoiceLine", "production.WorkOrderMaterial",
+})
+
+
+def _uom_has_history(uom) -> bool:
+    return any(
+        getattr(uom, rel.get_accessor_name()).exists()
+        for rel in uom._meta.related_objects
+        if rel.related_model._meta.label in _UOM_HISTORY_MODELS and not rel.many_to_many
+    )
+
 class UoM(TimeStampedModel):
+
+    # ADR-0091 (clase C): conversions of recorded quantities depend on these fields.
+    edit_policy = EditPolicy(
+        frozen_when_used=frozenset({"ratio", "category", "uom_type"}),
+        is_used=lambda uom: _uom_has_history(uom),
+        deletable=True,
+        used_message="La unidad ya se usó en movimientos o documentos; su factor, categoría y tipo no se pueden cambiar.",
+    )
     # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     class Type(models.TextChoices):
         REFERENCE = "REFERENCE", _("Referencia para esta categoría")
@@ -273,6 +296,14 @@ class ProductAttributeValue(TimeStampedModel):
 
 
 class Product(models.Model):
+
+    # ADR-0091 (clase C): stock quantities are expressed in these settings.
+    edit_policy = EditPolicy(
+        frozen_when_used=frozenset({"uom", "product_type", "track_inventory"}),
+        is_used=lambda p: p.stock_moves.exists(),
+        deletable=True,
+        used_message="El producto ya tiene movimientos de stock; su unidad base, tipo y control de inventario no se pueden cambiar.",
+    )
     class Type(models.TextChoices):
         CONSUMABLE = "CONSUMABLE", _("Consumible")
         STORABLE = "STORABLE", _("Almacenable")

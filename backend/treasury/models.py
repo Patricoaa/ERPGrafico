@@ -870,6 +870,14 @@ class TreasuryAccountManager(models.Manager):
 
 
 class TreasuryAccount(models.Model):
+
+    # ADR-0091 (clase C): balances and ledger depend on these fields.
+    edit_policy = EditPolicy(
+        frozen_when_used=frozenset({"account", "account_type", "currency"}),
+        is_used=lambda ta: ta.movements_from.exists() or ta.movements_to.exists(),
+        deletable=True,
+        used_message="La cuenta de tesorería ya tiene movimientos; su cuenta contable, tipo y moneda no se pueden cambiar.",
+    )
     class Type(models.TextChoices):
         CHECKING = "CHECKING", _("Cuenta Bancaria (Corriente/Vista)")
         CREDIT_CARD = "CREDIT_CARD", _("Tarjeta de Crédito (Cta. Propia)")

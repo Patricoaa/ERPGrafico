@@ -142,3 +142,21 @@ La clase C es un problema distinto (integridad histórica de referencias, no edi
 - **`StockMove`:** política inmutable declarada (append-only).
 - **`FiscalYear` (2026-10-21):** fechas y año bloqueados en `CLOSING`/`CLOSED`. **La baseline del test de contrato quedó vacía:** todo modelo con FK a `JournalEntry` declara `edit_policy`.
 - **Contrato ampliado (2026-10-21):** el test de ADR-0091 ahora detecta también FK a `TreasuryMovement`. Aparecieron y se cubrieron: `Check` (PATCH de monto/fechas/banco y DELETE abiertos → inmutable salvo `notes`), `LoanInstallment` (bloqueada al pagarse), `CreditCardStatement` (editable solo en `OPEN`; **excepción documentada**: mientras está abierto se editan montos aunque exista `charges_movement`, porque `reapply_charges` reversa y reimputa), `PaymentAllocation` y `ProfitDistributionPayment` (inmutables por API).
+
+## 10. Clase C — datos maestros con historia (2026-10-21)
+
+Mecanismo: `EditPolicy.frozen_when_used` + `is_used`. El maestro sigue editable; solo se rechazan (422 `DOCUMENT_LOCKED`) los campos que redefinirían su historia.
+
+| Maestro | Campos congelados | "Usado" = | Motivo |
+|---|---|---|---|
+| `Account` | `account_type`, `is_category` | tiene `JournalItem` | signo del saldo y clasificación en estados financieros; una cuenta con asientos no puede volverse de agrupación |
+| `Product` | `uom`, `product_type`, `track_inventory` | tiene `StockMove` | las cantidades en stock están en esa unidad; cambiar tipo/control deja stock huérfano |
+| `UoM` | `ratio`, `category`, `uom_type` | aparece en `StockMove` o líneas de documentos | cambia la conversión de cantidades ya registradas |
+| `TreasuryAccount` | `account`, `account_type`, `currency` | tiene movimientos | partiría el saldo entre dos cuentas contables |
+
+Evaluados y fuera de alcance:
+- `Contact.tax_id`: corregir un RUT mal tipeado es legítimo; los DTE emitidos conservan sus datos en el documento. Reevaluar si se agrega snapshot fiscal.
+- `PaymentMethod.treasury_account`, `PayrollConcept.account`: solo afectan operaciones futuras; lo ya contabilizado guarda su cuenta en el asiento.
+- `Warehouse`, `Location`: patrón Archivo (`deletion-policy.md`).
+
+Pendiente opcional: exponer en los serializers los campos congelados para deshabilitarlos en los formularios (hoy el usuario ve el error 422 al guardar).

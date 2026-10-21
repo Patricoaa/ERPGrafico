@@ -221,7 +221,7 @@ class TreasuryAccountFilterSet(FilterSet):
         fields = ["name", "account_type", "bank_id"]
 
 
-class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class TreasuryAccountViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = TreasuryAccount.objects.all().order_by("account_type", "name")
     serializer_class = TreasuryAccountSerializer
     pagination_class = None  # Master data

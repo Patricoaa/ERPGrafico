@@ -7,7 +7,7 @@ from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
 from core.mixins import AuditHistoryMixin as AuditHistory
-from core.mixins import BulkImportMixin, NoDestroyModelMixin
+from core.mixins import BulkImportMixin, EditPolicyMixin, NoDestroyModelMixin
 
 from .filters import ProductFilter, StockMoveFilter, UoMFilter
 from .models import (
@@ -57,7 +57,7 @@ from .services import (
 )
 
 
-class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
+class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
@@ -119,9 +119,6 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
                 {"detail": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED
             )
         return Response({"is_favorite": ProductService.toggle_favorite(product, request.user)})
-
-    def perform_update(self, serializer):
-        serializer.save()
 
     def _check_archiving(self, instance, active_val):
         """Check archiving restrictions when is_active goes from True to False."""
@@ -359,7 +356,7 @@ class WarehouseViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory)
         return super().get_queryset()
 
 
-class UoMViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
+class UoMViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = UoM.objects.all()
     serializer_class = UoMSerializer
     pagination_class = None  # Master data

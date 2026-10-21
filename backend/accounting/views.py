@@ -87,7 +87,7 @@ class AccountingSettingsViewSet(viewsets.ModelViewSet):
         return Response({"rate": rate_float, "multiplier": round(1 + rate_float / 100, 10)})
 
 
-class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
+class AccountViewSet(EditPolicyMixin, BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = Account.objects.all()  # Base queryset includes archived for detail/update
     serializer_class = AccountSerializer
     pagination_class = None  # Master data

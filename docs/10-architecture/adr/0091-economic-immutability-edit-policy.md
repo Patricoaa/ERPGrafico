@@ -32,6 +32,8 @@ author: backend-team
   - `is_locked(instance)` — predicate for models whose lock is not a status (e.g. `TreasuryMovement`: its journal entry is `POSTED`; `SalaryAdvance`: it has a payment),
   - `mutable_when_locked` — field names still writable when locked (default `{"notes"}`),
   - `deletable` — whether an unlocked record may be hard-deleted.
+  - `is_purgeable(instance)` — a locked record that may still be hard-deleted (cancelled, no accounting trace).
+  - **Master data (class C, added 2026-10-21):** `frozen_when_used` + `is_used(instance)` — the record stays editable, but these fields are rejected once it has history (e.g. `Account.account_type` with journal items, `Product.uom` with stock moves).
 - **Enforcement:**
   - API: a ViewSet mixin applies the policy in `update`, `partial_update` and `destroy`, comparing the incoming validated fields against `mutable_when_locked`.
   - Services and nested endpoints (payroll items, advance linking, Celery tasks): call `assert_editable(instance, fields)` from the same policy.

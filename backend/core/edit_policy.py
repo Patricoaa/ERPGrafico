@@ -32,6 +32,12 @@ class EditPolicy:
     mutable_when_locked: frozenset[str] = DEFAULT_MUTABLE_WHEN_LOCKED
     deletable: bool = False
     is_purgeable: Callable[[Any], bool] | None = None
+    # Master data: fields frozen once the record has history (``is_used``).
+    frozen_when_used: frozenset[str] = frozenset()
+    is_used: Callable[[Any], bool] | None = None
+    used_message: str = (
+        "El registro ya tiene movimientos contabilizados; estos campos no se pueden cambiar."
+    )
     status_field: str = "status"
     locked_message: str = (
         "El registro tiene efectos contables o de tesorería y no se puede modificar. "
@@ -49,13 +55,18 @@ class EditPolicy:
         return bool(self.is_locked and self.is_locked(instance))
 
     def assert_editable(self, instance: Any, fields: Iterable[str] | None = None) -> None:
-        if not self.locked(instance):
+        if self.locked(instance):
+            blocked = (
+                {"*"} if fields is None else set(fields) - self.mutable_when_locked
+            )
+            if blocked:
+                raise DocumentLockedError(self.locked_message, blocked - {"*"})
             return
-        blocked = (
-            {"*"} if fields is None else set(fields) - self.mutable_when_locked
-        )
-        if blocked:
-            raise DocumentLockedError(self.locked_message, blocked - {"*"})
+        if fields is None or not self.is_used or instance.pk is None:
+            return
+        frozen = set(fields) & self.frozen_when_used
+        if frozen and self.is_used(instance):
+            raise DocumentLockedError(self.used_message, frozen)
 
     def assert_deletable(self, instance: Any) -> None:
         if self.is_purgeable and self.is_purgeable(instance):
