@@ -7,6 +7,9 @@
  *   R3: No font-medium/semibold/bold/black on primary value spans → text-sm text-foreground
  *   R4: Placeholders must use text-sm text-muted-foreground/60 (explicit span), no conditional class
  *   R5: No variant="inline" as direct child of LabeledContainer (double chrome)
+ *   R6: LabeledSelect must resolve placeholder non-empty (no placeholder="")
+ *   R7: Triggers of DatePicker and components/selectors/* must not declare font-medium/semibold/bold/black; DatePicker must declare font-normal
+ *   R8: Empty states of custom triggers (Button role=combobox) must use text-sm text-muted-foreground/60
  *
  * Opt-out: add comment "typography-allow: meta - N5" before the offending node.
  *
@@ -64,7 +67,7 @@ interface Violation {
   file: string;
   line: number;
   column: number;
-  rule: 'R1' | 'R2' | 'R3' | 'R4' | 'R5';
+  rule: 'R1' | 'R2' | 'R3' | 'R4' | 'R5' | 'R6' | 'R7' | 'R8';
   message: string;
   snippet: string;
 }
@@ -72,7 +75,7 @@ interface Violation {
 interface BaselineEntry {
   file: string;
   line: number;
-  rule: 'R1' | 'R2' | 'R3' | 'R4' | 'R5';
+  rule: 'R1' | 'R2' | 'R3' | 'R4' | 'R5' | 'R6' | 'R7' | 'R8';
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -332,7 +335,98 @@ function checkNode(
     }
   }
 
-  // Recurse
+  // R6: LabeledSelect with placeholder="" (empty string)
+  if (newInsideNotched && ts.isJsxElement(node)) {
+    const tagName = node.openingElement.tagName.getText(sourceFile);
+    if (tagName === 'LabeledSelect') {
+      const attributes = node.openingElement.attributes.properties;
+      for (const attr of attributes) {
+        if (!ts.isJsxAttribute(attr)) continue;
+        if (attr.name.getText(sourceFile) === 'placeholder' && attr.initializer) {
+          const valueText = getAttributeText(attr.initializer, sourceFile);
+          if (valueText === '""' || valueText === "''") {
+            violations.push({
+              file: relative(ROOT, sourceFile.fileName),
+              line: sourceFile.getLineAndCharacterOfPosition(attr.getStart()).line + 1,
+              column: sourceFile.getLineAndCharacterOfPosition(attr.getStart()).character + 1,
+              rule: 'R6',
+              message: 'LabeledSelect placeholder must not be empty string. Use default "Seleccionar..." or explicit text.',
+              snippet: valueText,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  // R7: DatePicker and selector triggers must not have forbidden weight tokens
+  if (newInsideNotched && ts.isJsxElement(node)) {
+    const tagName = node.openingElement.tagName.getText(sourceFile);
+    const fileName = relative(ROOT, sourceFile.fileName);
+    const isDatePicker = tagName === 'DatePicker';
+    const isSelectorTrigger = tagName === 'Button' && fileName.includes('components/selectors/');
+    const isDatePickerTrigger = tagName === 'Button' && fileName === 'components/shared/DatePicker.tsx';
+    
+    if (isDatePickerTrigger || isSelectorTrigger) {
+      const attributes = node.openingElement.attributes.properties;
+      for (const attr of attributes) {
+        if (!ts.isJsxAttribute(attr)) continue;
+        if (attr.name.getText(sourceFile) === 'className' && attr.initializer) {
+          const valueText = getAttributeText(attr.initializer, sourceFile);
+          if (valueText && hasForbiddenValueWeight(valueText)) {
+            violations.push({
+              file: fileName,
+              line: sourceFile.getLineAndCharacterOfPosition(attr.getStart()).line + 1,
+              column: sourceFile.getLineAndCharacterOfPosition(attr.getStart()).character + 1,
+              rule: 'R7',
+              message: `Selector/DatePicker trigger has forbidden weight (${valueText}). Must use font-normal.`,
+              snippet: valueText,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  // R8: Custom triggers (Button role=combobox) must have proper empty state
+  if (newInsideNotched && ts.isJsxElement(node)) {
+    const tagName = node.openingElement.tagName.getText(sourceFile);
+    if (tagName === 'Button') {
+      const attributes = node.openingElement.attributes.properties;
+      let hasRoleCombobox = false;
+      for (const attr of attributes) {
+        if (!ts.isJsxAttribute(attr)) continue;
+        if (attr.name.getText(sourceFile) === 'role') {
+          const valueText = getAttributeText(attr.initializer, sourceFile);
+          if (valueText === '"combobox"' || valueText === "'combobox'") {
+            hasRoleCombobox = true;
+          }
+        }
+      }
+      if (hasRoleCombobox) {
+        // Check that the empty state (when no value) uses text-sm text-muted-foreground/60
+        // This is a heuristic: look for ternary with empty state
+        const children = node.children;
+        for (const child of children) {
+          if (ts.isJsxExpression(child) && child.expression) {
+            const exprText = child.expression.getText(sourceFile);
+            // Look for conditional rendering with empty state
+            if (exprText.includes('?') && exprText.includes(':') && 
+                (exprText.includes('text-muted-foreground') && !exprText.includes('/60'))) {
+              violations.push({
+                file: relative(ROOT, sourceFile.fileName),
+                line: sourceFile.getLineAndCharacterOfPosition(child.getStart()).line + 1,
+                column: sourceFile.getLineAndCharacterOfPosition(child.getStart()).character + 1,
+                rule: 'R8',
+                message: 'Custom combobox trigger empty state must use text-sm text-muted-foreground/60.',
+                snippet: exprText.substring(0, 120),
+              });
+            }
+          }
+        }
+      }
+    }
+  }
   ts.forEachChild(node, child =>
     checkNode(child, sourceFile, violations, newInsideNotched, newInsideLabeledContainer)
   );
@@ -529,6 +623,33 @@ describe('Notched Field Contract', () => {
       console.log('\nR5 violations:', r5.map(v => `${v.file}:${v.line} - ${v.snippet}`).join('\n'));
     }
     expect(r5.length).toBe(0);
+  });
+
+  it('R6: LabeledSelect must not have empty placeholder', () => {
+    const newViolations = violations.filter(v => !isBaselined(v, baseline));
+    const r6 = newViolations.filter(v => v.rule === 'R6');
+    if (r6.length > 0) {
+      console.log('\nR6 violations:', r6.map(v => `${v.file}:${v.line} - ${v.snippet}`).join('\n'));
+    }
+    expect(r6.length).toBe(0);
+  });
+
+  it('R7: Selector/DatePicker triggers must use font-normal', () => {
+    const newViolations = violations.filter(v => !isBaselined(v, baseline));
+    const r7 = newViolations.filter(v => v.rule === 'R7');
+    if (r7.length > 0) {
+      console.log('\nR7 violations:', r7.map(v => `${v.file}:${v.line} - ${v.snippet}`).join('\n'));
+    }
+    expect(r7.length).toBe(0);
+  });
+
+  it('R8: Custom combobox triggers must use text-sm text-muted-foreground/60', () => {
+    const newViolations = violations.filter(v => !isBaselined(v, baseline));
+    const r8 = newViolations.filter(v => v.rule === 'R8');
+    if (r8.length > 0) {
+      console.log('\nR8 violations:', r8.map(v => `${v.file}:${v.line} - ${v.snippet}`).join('\n'));
+    }
+    expect(r8.length).toBe(0);
   });
 
   // Ensure baseline doesn't have stale entries

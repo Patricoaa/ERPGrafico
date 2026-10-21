@@ -48,10 +48,12 @@ Esto garantiza que todos los campos del formulario tengan la misma altura (`min-
 ```tsx
 <div className="flex items-center gap-1.5 min-w-0 flex-1">
   <SomeIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
-  <span className="font-medium text-sm truncate">{entity.name}</span>
-  <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">{entity.secondary}</span>
+  <span className="text-sm text-foreground truncate">{entity.name}</span>
+  <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">{entity.secondary}</span>
 </div>
 ```
+
+> **Nota de contrato (N3):** El valor seleccionado usa `text-sm text-foreground` (peso normal), no `font-medium`. El texto secundario usa `text-3xs` (token) en vez de `text-[10px]`.
 
 ---
 
@@ -83,7 +85,7 @@ Combobox for accounting accounts (Chart of Accounts). Popover + advanced modal s
 |------|------|----------|---------|-------|
 | `value` | `string \| number \| null` | ❌ | — | Controlled; account `id` |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | Returns `id.toString()` or `null` |
-| `placeholder` | `string` | ❌ | `'Seleccionar cuenta...'` | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `accountType` | `string \| string[]` | ❌ | — | Filter by `account_type` field (`'asset' \| 'liability' \| 'equity' \| 'income' \| 'expense'`) |
 | `showAll` | `boolean` | ❌ | `false` | `true`: include parent accounts. `false`: leaf accounts only |
 | `isReconcilable` | `boolean` | ❌ | — | Filter reconcilable accounts (journal entry use) |
@@ -113,7 +115,7 @@ Combobox for inventory products. Popover + advanced modal. Shows price and stock
 |------|------|----------|---------|-------|
 | `value` | `string \| number \| null` | ❌ | — | Product `id` |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | |
-| `placeholder` | `string` | ❌ | — | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `productType` | `string` | ❌ | — | Filter by `product_type` |
 | `allowedTypes` | `string[]` | ❌ | — | Multiple type filter |
 | `disabled` | `boolean` | ❌ | `false` | |
@@ -148,7 +150,7 @@ Combobox for customers/suppliers. Debounced search, RUT display. Lazy-loads `Con
 |------|------|----------|---------|-------|
 | `value` | `string \| number \| null` | ❌ | — | Contact `id` |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | |
-| `placeholder` | `string` | ❌ | `'Seleccionar contacto...'` | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `contactType` | `'CUSTOMER' \| 'SUPPLIER' \| 'BOTH' \| 'NONE'` | ❌ | — | Filter by contact type |
 | `onSelectContact` | `(contact: Contact) => void` | ❌ | — | Full Contact object (for auto-fill) |
 | `disabled` | `boolean` | ❌ | `false` | |
@@ -177,7 +179,7 @@ Combobox for sale orders. Debounced search, inline preview via the entity drawer
 |------|------|----------|---------|-------|
 | `value` | `string \| number \| null` | ❌ | — | SaleOrder `id` |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | |
-| `placeholder` | `string` | ❌ | — | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `disabled` | `boolean` | ❌ | `false` | |
 | `customFilter` | `(order: SaleOrder) => boolean` | ❌ | — | Client-side filter |
 | `label` | `string` | ❌ | — | |
@@ -204,7 +206,7 @@ Combobox for work orders. Debounced search, inline preview. Clear button built-i
 |------|------|----------|---------|-------|
 | `value` | `string \| number \| null` | ❌ | — | WorkOrder `id` |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | Pass `null` to clear |
-| `placeholder` | `string` | ❌ | `'Vincular a Orden de Trabajo (Opcional)...'` | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `disabled` | `boolean` | ❌ | `false` | |
 | `label` | `string` | ❌ | — | |
 | `error` | `string` | ❌ | — | |
@@ -231,7 +233,7 @@ Combobox for treasury accounts (bank/cash). Filters by payment context.
 |------|------|----------|---------|-------|
 | `value` | `string \| number \| null` | ❌ | — | Account `id` |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | |
-| `placeholder` | `string` | ❌ | — | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `disabled` | `boolean` | ❌ | `false` | |
 | `context` | `PaymentContext` | ❌ | — | `'POS' \| 'STANDARD' \| ...` — see `useTreasuryAccounts` |
 | `terminalId` | `number` | ❌ | — | Filter accounts linked to specific terminal |
@@ -260,7 +262,7 @@ Combobox for system users. Debounced search by name.
 |------|------|----------|---------|-------|
 | `value` | `number \| null` | ❌ | — | User `id` (integer, not UUID) |
 | `onChange` | `(value: number \| null) => void` | ✅ | — | |
-| `placeholder` | `string` | ❌ | `'Seleccionar usuario...'` | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `disabled` | `boolean` | ❌ | `false` | |
 | `label` | `string` | ❌ | — | |
 | `error` | `string` | ❌ | — | |
@@ -285,7 +287,7 @@ Combobox for user groups/roles. Value is group **name** (string), not id.
 |------|------|----------|---------|-------|
 | `value` | `string \| null` | ❌ | — | Group **name** string |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | |
-| `placeholder` | `string` | ❌ | `'Seleccionar grupo...'` | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `disabled` | `boolean` | ❌ | `false` | |
 | `label` | `string` | ❌ | — | |
 | `error` | `string` | ❌ | — | |
@@ -385,7 +387,7 @@ Combobox para categorías de producto. Usa `SearchablePopover` con soporte para 
 |------|------|----------|---------|-------|
 | `value` | `string \| number \| null` | ❌ | — | Category `id` |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | Returns `id.toString()` or `null` |
-| `placeholder` | `string` | ❌ | `''` | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `disabled` | `boolean` | ❌ | — | |
 | `label` | `string` | ❌ | — | |
 | `error` | `string` | ❌ | — | |
@@ -417,7 +419,7 @@ Combobox para bodegas. Muestra nombre y código.
 |------|------|----------|---------|-------|
 | `value` | `string \| number \| null` | ❌ | — | Warehouse `id` |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | |
-| `placeholder` | `string` | ❌ | `'Seleccionar bodega...'` | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `disabled` | `boolean` | ❌ | — | |
 | `label` | `string` | ❌ | — | |
 | `error` | `string` | ❌ | — | |

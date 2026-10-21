@@ -317,6 +317,9 @@ Para evitar fatiga visual, los iconos dentro de componentes (selectores, seccion
 | **R3** | Valor primario: `text-sm text-foreground` (sin `font-medium/semibold/bold/black`) | Peso normal |
 | **R4** | Placeholder: `text-sm text-muted-foreground/60` explícito (span dedicado) | No conditional class |
 | **R5** | `variant="inline"` dentro de `LabeledContainer` = doble chrome prohibido | Usar `variant="standalone"` o quitar wrapper |
+| **R6** | `LabeledSelect` no debe tener `placeholder=""` (vacío) | Default canónico: `"Seleccionar..."` |
+| **R7** | Triggers de `DatePicker` y `components/selectors/*` no pueden declarar `font-medium/semibold/bold/black`; `DatePicker` debe declarar `font-normal` | `font-normal` explícito |
+| **R8** | Empty states de triggers custom (`Button role="combobox"`) deben usar `text-sm text-muted-foreground/60` | Span explícito con `/60` |
 
 ### Opt-out para meta-información legítima (N5)
 
