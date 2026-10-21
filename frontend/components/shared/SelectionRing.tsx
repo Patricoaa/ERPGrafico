@@ -59,20 +59,22 @@ export function SelectionRing({
   }
 
   // Size mapping for the inner ring + hit area
+  // Matches original Checkbox: h-4 w-4 (16px) hit area with CmykRing xs (12px) inside
   const SIZE_CLASSES: Record<SelectionRingSize, string> = {
-    "2xs": "h-4 w-4",
-    xs: "h-5 w-5",
-    sm: "h-6 w-6",
-    md: "h-8 w-8",
-    lg: "h-10 w-10",
+    "2xs": "h-3 w-3",
+    xs: "h-3.5 w-3.5",
+    sm: "h-4 w-4",
+    md: "h-5 w-5",
+    lg: "h-6 w-6",
   }
 
+  // CmykRing is one size smaller than hit area for visual padding
   const ringSizeMap: Record<SelectionRingSize, "2xs" | "xs" | "sm" | "md" | "lg"> = {
     "2xs": "2xs",
-    xs: "xs",
-    sm: "sm",
-    md: "md",
-    lg: "lg",
+    xs: "2xs",
+    sm: "xs",
+    md: "sm",
+    lg: "md",
   }
 
   return (
