@@ -25,8 +25,6 @@ PROJECT_APPS = {
 # Models with journal-entry derivatives still lacking an edit_policy.
 # Remove the entry in the same PR that adds the policy. Never add new ones.
 UNPROTECTED_BASELINE = {
-    "contacts.PartnerTransaction": "no revisado; agregar al informe",
-    "contacts.ProfitDistributionResolution": "no revisado; agregar al informe",
     "accounting.FiscalYear": "período con asientos de apertura/cierre; clase B",
 }
 

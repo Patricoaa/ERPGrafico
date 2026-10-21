@@ -454,3 +454,11 @@ class ProfitDistributionResolutionSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+        read_only_fields = [
+            "status",
+            "approved_by",
+            "approved_at",
+            "executed_by",
+            "executed_at",
+            "journal_entry",
+        ]
