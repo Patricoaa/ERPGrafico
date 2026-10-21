@@ -572,3 +572,43 @@ class TestDeletionPolicyConsistency:
                 )
 
         assert not failures, "Archivo DELETE not blocked:\n" + "\n".join(failures)
+
+    def test_system_managed_guards_never_500(self):
+        """
+        Regresión: los guards de entidades gestionadas por el sistema no deben
+        reventar con AttributeError (500). Referenciaban ``bank_provisioned``,
+        campo eliminado del modelo TreasuryAccount/PaymentMethod (ver drift
+        0056–0058). PATCH/DELETE sobre una cuenta de treasury NO
+        system-managed debe devolver 200 (archivo) o 405, nunca 500.
+        """
+        from rest_framework.test import APIClient
+        from django.contrib.auth import get_user_model
+        from treasury.models import TreasuryAccount
+
+        User = get_user_model()
+        client = APIClient()
+        user = User.objects.create_superuser(
+            username="test_guard_admin", password="testpass"
+        )
+        client.force_authenticate(user=user)
+
+        # Una cuenta NO gestionada por el sistema (fuera de los tipos no-cash).
+        account = TreasuryAccount.objects.exclude(
+            account_type__in=TreasuryAccount._NON_CASH_EQUIVALENT_TYPES
+        ).first()
+        if account is None:
+            account = TreasuryAccount.objects.create(name="QA Guard Account")
+
+        url = f"/api/treasury/accounts/{account.pk}/"
+        for method in ("patch", "delete"):
+            resp = getattr(client, method)(url)
+            assert resp.status_code != 500, (
+                f"{method.upper()} {url} devolvió 500 "
+                f"(guard _check_system_managed roto): {getattr(resp, 'data', None)}"
+            )
+        # DELETE en entidad Archivo debe bloquearse con 405 (nunca 204 hard delete).
+        resp = client.delete(url)
+        assert resp.status_code == 405, (
+            f"DELETE {url} devolvió {resp.status_code}; TreasuryAccount es Archivo "
+            f"y debe bloquear hard delete con 405"
+        )

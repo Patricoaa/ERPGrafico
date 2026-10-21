@@ -184,13 +184,6 @@ class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
-        if instance.bank_provisioned:
-            return Response(
-                {
-                    "detail": "Este método de pago fue creado automáticamente al provisionar el banco. Gestiónelo desde el Centro de Bancos."
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
 
     def update(self, request, *args, **kwargs):
         err = self._check_integrated(self.get_object())
@@ -250,6 +243,9 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     def destroy(self, request, *args, **kwargs):
         # Archivo pattern: hard DELETE not allowed, use PATCH is_active=false to archive
+        err = self._check_system_managed(self.get_object())
+        if err:
+            return err
         return Response(
             {"detail": "Hard delete not allowed for TreasuryAccounts. Use PATCH is_active=false to archive."},
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
@@ -260,13 +256,6 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response(
                 {
                     "detail": f"Las cuentas de tipo {instance.get_account_type_display()} son gestionadas por el sistema (vinculadas a un proveedor de terminal). Modifique el proveedor en su lugar."
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        if instance.bank_provisioned:
-            return Response(
-                {
-                    "detail": "Esta cuenta fue creada automáticamente al provisionar el banco. Gestiónela desde el Centro de Bancos."
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -282,12 +271,6 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if err:
             return err
         return super().partial_update(request, *args, **kwargs)
-
-    def destroy(self, request, *args, **kwargs):
-        err = self._check_system_managed(self.get_object())
-        if err:
-            return err
-        return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=["post"])
     def provision(self, request):
