@@ -1,26 +1,19 @@
 "use client"
 
 // ProductSelector/ProductGrid
-// Grid display of products with availability indicators
+// Virtualised grid of ProductCard. The card owns the anatomy; this file owns layout and lookups.
 // Extracted from @/features/pos/components/ProductGrid (PR-2: ProductSelector migration).
-// 
-// Requires a parent container with explicit height (e.g. `flex-1 min-h-0`) 
+//
+// Requires a parent container with explicit height (e.g. `flex-1 min-h-0`)
 // to work correctly with VirtuosoGrid.
 
-import { Button } from "@/components/ui/button"
-import { Card } from '@/components/ui/card'
-
-import Image from 'next/image'
+import { memo, useMemo } from 'react'
+import { VirtuosoGrid } from 'react-virtuoso'
 import { cn } from '@/lib/utils'
-import { formatCurrency } from "@/lib/money"
-import { PricingUtils } from '@/lib/pricing-utils'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
 import type { BaseProduct, ProductCategory } from '@/features/inventory'
-import { Plus, Heart } from 'lucide-react'
-import { memo } from 'react'
-import { DynamicIcon, EmptyState } from '@/components/shared'
-import { resolveMediaUrl } from '@/lib/media-url'
-import { VirtuosoGrid } from 'react-virtuoso'
+import { EmptyState } from '@/components/shared'
+import { ProductCard } from './ProductCard'
 
 // Define StockLimits locally here since they are passed from POS but might not be present in other contexts
 export type SharedStockLimits = Record<string, number | undefined>
@@ -35,23 +28,30 @@ export interface ProductGridProps {
     onProductClick: (product: BaseProduct) => void
     /** Provide this to show the favorite toggle button */
     onToggleFavorite?: (productId: number) => void
-    /** Optional custom renderer for the price section. If not provided, defaults to displaying sale_price */
+    /** Optional custom renderer for the price amount. Returning null hides the price block. Defaults to sale price c/IVA. */
     priceRenderer?: (product: BaseProduct) => React.ReactNode
-    /** IDs of selected products (in cart, calculator, etc). Shows CMY ribbon on each. */
+    /** Caption above the price ("Venta c/IVA" by default, "Costo" in the calculator). */
+    priceLabel?: string
+    /** IDs of selected products (in cart, calculator, etc). Shows the CMYK ribbon + check on each. */
     selectedProductIds?: Set<number>
 }
+
+const NEVER_DISABLED = () => false
+const NO_LIMITS: SharedStockLimits = {}
 
 function ProductGridComponent({
     products,
     categories,
-    limits = {},
-    isProductDisabled = () => false,
+    limits = NO_LIMITS,
+    isProductDisabled = NEVER_DISABLED,
     onProductClick,
     onToggleFavorite,
     priceRenderer,
+    priceLabel,
     selectedProductIds
 }: ProductGridProps) {
     const { isTouchPOS, isSmallScreen } = useDeviceContext()
+    const categoriesById = useMemo(() => new Map(categories.map(c => [Number(c.id), c])), [categories])
 
     if (products.length === 0) {
         return (
@@ -76,200 +76,28 @@ function ProductGridComponent({
     return (
         <VirtuosoGrid
             totalCount={products.length}
-            listClassName={cn("grid gap-4 pb-2", gridCols)}
+            listClassName={cn("grid gap-3 pb-2", gridCols)}
             style={{ height: '100%' }}
             overscan={400}
             itemContent={(index) => {
                 const product = products[index]
-                const categoryId = typeof product.category === 'object'
-                    ? product.category?.id
-                    : product.category
-                const catData = categories.find(c => Number(c.id) === Number(categoryId))
-                const categoryIcon = (typeof product.category === 'object'
-                    ? product.category?.icon
-                    : catData?.icon) || null
-
-                // Uses the injected strategy to determine if disabled
-                const isDisabled = isProductDisabled(product)
-
-                // Used only for visual badges
-                const isManufacturable = product.product_type === 'MANUFACTURABLE'
-                const mfgSubType = isManufacturable
-                    ? (product.requires_advanced_manufacturing ? 'ADVANCED'
-                        : product.mfg_auto_finalize ? 'EXPRESS' : 'SIMPLE')
-                    : null
+                const categoryObject = typeof product.category === 'object' ? product.category : undefined
+                const category = categoryObject ?? categoriesById.get(Number(product.category))
 
                 return (
-                    <Card
-                        role="button"
-                        tabIndex={isDisabled ? -1 : 0}
-                        aria-disabled={isDisabled || undefined}
-                        aria-label={product.name}
-                        className={cn(
-                            "group cursor-pointer hover:shadow-elevated transition-all border border-border/50 overflow-hidden flex flex-col h-full rounded-md p-2 bg-card shadow-card shadow-black/5",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                            selectedProductIds?.has(product.id) && "ribbon-cmyk",
-                            isTouchPOS && "active:scale-95",
-                            isDisabled && "opacity-50 grayscale cursor-not-allowed"
-                        )}
-                        onClick={() => !isDisabled && onProductClick(product)}
-                        onKeyDown={(e) => {
-                            if (isDisabled) return
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault()
-                                onProductClick(product)
-                            }
-                        }}
-                    >
-                        <div className={cn(
-                            "aspect-square bg-muted/20 rounded-sm flex items-center justify-center relative overflow-hidden border shadow-card",
-                            isTouchPOS && "min-h-[120px]"
-                        )}>
-                            {product.image ? (
-                                <Image src={resolveMediaUrl(product.image) ?? ''} alt={product.name} fill className="object-cover group-hover:scale-105 transition-transform" />
-                            ) : (
-                                <DynamicIcon
-                                    name={categoryIcon || "Package"}
-                                    className="h-10 w-10 text-muted-foreground/30 group-hover:scale-110 transition-transform"
-                                />
-                            )}
-
-                            {/* Hover Indicator (Centered Large Icon) */}
-                            {!isDisabled && (
-                                <div className="absolute inset-0 bg-background/10 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity z-10 flex items-center justify-center">
-                                    <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-floating flex items-center justify-center transform scale-50 group-hover:scale-100 transition-transform duration-300 ease-out">
-                                        <Plus className="h-6 w-6" />
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Top overlay: Favorites + Availability badges */}
-                            <div className="absolute top-2 left-2 right-2 z-20 flex items-center justify-between">
-                                {/* Left side Favorite Badge */}
-                                {onToggleFavorite && (
-                                    <Button
-                                        variant="ghost"
-                                        className={cn(
-                                            "flex items-center justify-center rounded-full bg-background/90 backdrop-blur-sm border shadow-floating hover:scale-110 active:scale-95 transition-all p-0",
-                                            isTouchPOS ? "h-10 w-10" : "h-7 w-7",
-                                            product.is_favorite ? "text-destructive border-destructive/10 bg-destructive/10" : "text-muted-foreground"
-                                        )}
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            onToggleFavorite(product.id)
-                                        }}
-                                        title={product.is_favorite ? "Quitar de favoritos" : "Marcar como favorito"}
-                                    >
-                                        <Heart
-                                            className={cn(
-                                                "transition-colors",
-                                                isTouchPOS ? "h-5 w-5" : "h-3.5 w-3.5",
-                                                product.is_favorite ? "fill-current" : ""
-                                            )}
-                                        />
-                                    </Button>
-                                )}
-
-                                {/* Right side badges (Availability) */}
-                                <div className="flex flex-col gap-2 items-end">
-
-                                {/* Variant templates: la disponibilidad vive en las variantes, no en la plantilla */}
-                                {product.has_variants && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-2xs font-bold text-muted-foreground">
-                                        <div className="h-2 w-2 rounded-full bg-primary/70" />
-                                        {product.variants_count ?? 0} variantes
-                                    </div>
-                                )}
-
-                                {/* Stock/Availability Badge */}
-                                {!product.has_variants && product.product_type === 'STORABLE' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-2xs font-bold text-muted-foreground">
-                                        <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0 ? 'bg-success' : 'bg-destructive'}`} />
-                                        {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
-                                    </div>
-                                )}
-
-                                {/* MANUFACTURABLE badges */}
-                                {!product.has_variants && isManufacturable && mfgSubType === 'SIMPLE' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-2xs font-bold text-muted-foreground">
-                                        <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0 ? 'bg-success' : 'bg-destructive'}`} />
-                                        {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
-                                    </div>
-                                )}
-
-                                {!product.has_variants && isManufacturable && mfgSubType === 'EXPRESS' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-3xs font-bold text-muted-foreground">
-                                        {!product.has_bom ? (
-                                            <>
-                                                <div className="h-2 w-2 rounded-full bg-muted-foreground" />
-                                                Sin LdM
-                                            </>
-                                        ) : (
-                                            <>
-                                                <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity ?? 0) > 0 ? 'bg-primary' : 'bg-destructive'}`} />
-                                                {`${product.manufacturable_quantity ?? 0} fab.`}
-                                            </>
-                                        )}
-                                    </div>
-                                )}
-
-                                {!product.has_variants && isManufacturable && mfgSubType === 'ADVANCED' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-3xs font-bold text-muted-foreground">
-                                        {product.has_bom ? (
-                                            <>
-                                                <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity ?? 0) > 0 ? 'bg-primary' : 'bg-warning'}`} />
-                                                {`${product.manufacturable_quantity ?? 0} fab.`}
-                                            </>
-                                        ) : (
-                                            <>
-                                                <div className="h-2 w-2 rounded-full bg-primary" />
-                                                Disponible
-                                            </>
-                                        )}
-                                    </div>
-                                )}
-
-                                {!product.has_variants && (product.product_type === 'SERVICE' ||
-                                    product.product_type === 'SUBSCRIPTION' ||
-                                    product.product_type === 'CONSUMABLE') && (
-                                        <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-3xs font-bold text-muted-foreground">
-                                            <div className="h-2 w-2 rounded-full bg-success" />
-                                            Disponible
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className={cn(
-                            "pt-3 pb-1 px-1 flex items-start justify-between gap-3",
-                            isTouchPOS && "pt-4"
-                        )}>
-                            <h3 className={cn(
-                                "font-bold line-clamp-2 text-left flex-1 leading-tight",
-                                isTouchPOS ? "text-base" : "text-sm"
-                            )}>
-                                {product.name}
-                            </h3>
-                            <div className={cn(
-                                "text-primary font-black text-right shrink-0",
-                                isTouchPOS ? "text-lg" : "text-base"
-                            )}>
-                                {priceRenderer ? priceRenderer(product) : (
-                                    product.is_dynamic_pricing ? (
-                                        <span className="text-4xs font-bold uppercase px-1.5 py-0.5 rounded border border-warning/20 bg-warning/10 text-warning">
-                                            Dinámico
-                                        </span>
-                                    ) : (
-                                        <div className="flex flex-col items-end">
-                                            <span>{formatCurrency(PricingUtils.netToGross(Number(product.sale_price || 0)))}</span>
-                                            <span className="text-4xs text-muted-foreground uppercase font-semibold leading-none mt-0.5">c/IVA</span>
-                                        </div>
-                                    )
-                                )}
-                            </div>
-                        </div>
-                    </Card>
+                    <ProductCard
+                        product={product}
+                        categoryName={category?.name ?? product.category_name}
+                        categoryIcon={category?.icon}
+                        limit={limits[`prod_${product.id}`]}
+                        isDisabled={isProductDisabled(product)}
+                        isSelected={selectedProductIds?.has(product.id) ?? false}
+                        isTouch={isTouchPOS}
+                        onProductClick={onProductClick}
+                        onToggleFavorite={onToggleFavorite}
+                        priceRenderer={priceRenderer}
+                        priceLabel={priceLabel}
+                    />
                 )
             }}
         />
@@ -280,11 +108,13 @@ function ProductGridComponent({
 export const ProductGrid = memo(ProductGridComponent, (prevProps, nextProps) => {
     return (
         prevProps.products === nextProps.products &&
+        prevProps.categories === nextProps.categories &&
         prevProps.limits === nextProps.limits &&
         prevProps.onProductClick === nextProps.onProductClick &&
         prevProps.onToggleFavorite === nextProps.onToggleFavorite &&
         prevProps.isProductDisabled === nextProps.isProductDisabled &&
         prevProps.priceRenderer === nextProps.priceRenderer &&
+        prevProps.priceLabel === nextProps.priceLabel &&
         prevProps.selectedProductIds === nextProps.selectedProductIds
     )
 })
