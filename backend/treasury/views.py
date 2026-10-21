@@ -152,13 +152,13 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         return super().partial_update(request, *args, **kwargs)
 
 
-class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class PaymentMethodViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = PaymentMethod.objects.all().order_by("name")
     serializer_class = PaymentMethodSerializer
     pagination_class = None  # Master data
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = annotate_edit_usage(super().get_queryset())
         treasury_account = self.request.query_params.get("treasury_account")
         if treasury_account:
             qs = qs.filter(treasury_account_id=treasury_account)
@@ -204,12 +204,6 @@ class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             {"detail": "Hard delete not allowed for PaymentMethods. Use PATCH is_active=false to archive."},
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
-
-    def perform_create(self, serializer):
-        serializer.save()
-
-    def perform_update(self, serializer):
-        serializer.save()
 
 
 class TreasuryAccountFilterSet(FilterSet):

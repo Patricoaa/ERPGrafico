@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import Exists, OuterRef
 from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
@@ -103,6 +104,17 @@ class PayrollConcept(models.Model):
     """
     Definición dinámica de Haberes o Descuentos.
     """
+
+    # ADR-0091 (clase C): posted payrolls classify their lines by the current category.
+    edit_policy = EditPolicy(
+        frozen_when_used=frozenset({"category"}),
+        is_used=lambda c: c.items.filter(payroll__status="POSTED").exists(),
+        used_annotation=lambda: Exists(
+            PayrollItem.objects.filter(concept=OuterRef("pk"), payroll__status="POSTED")
+        ),
+        deletable=True,
+        used_message="El concepto ya figura en liquidaciones contabilizadas; su categoría no se puede cambiar.",
+    )
 
     class Category(models.TextChoices):
         HABER_IMPONIBLE = "HABER_IMPONIBLE", _("Haber Imponible")

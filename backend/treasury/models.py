@@ -1828,6 +1828,15 @@ class PaymentTerminalDevice(models.Model):
 class PaymentMethod(models.Model):
     """Métodos de pago específicos asociados a una cuenta de tesorería"""
 
+    # ADR-0091 (clase C): reports map past movements through method → account.
+    edit_policy = EditPolicy(
+        frozen_when_used=frozenset({"method_type", "treasury_account"}),
+        is_used=lambda pm: pm.movements.exists(),
+        used_annotation=lambda: Exists(TreasuryMovement.objects.filter(payment_method_new=OuterRef("pk"))),
+        deletable=True,
+        used_message="El método ya tiene movimientos; su tipo y cuenta de tesorería no se pueden cambiar. Cree un método nuevo.",
+    )
+
     class Type(models.TextChoices):
         CASH = "CASH", _("Efectivo Directo")
         CARD = "CARD", _("Tarjeta (Manual)")

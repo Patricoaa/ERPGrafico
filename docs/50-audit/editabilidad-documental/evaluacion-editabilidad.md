@@ -154,9 +154,15 @@ Mecanismo: `EditPolicy.frozen_when_used` + `is_used`. El maestro sigue editable;
 | `UoM` | `ratio`, `category`, `uom_type` | aparece en `StockMove` o líneas de documentos | cambia la conversión de cantidades ya registradas |
 | `TreasuryAccount` | `account`, `account_type`, `currency` | tiene movimientos | partiría el saldo entre dos cuentas contables |
 
-Evaluados y fuera de alcance:
-- `Contact.tax_id`: corregir un RUT mal tipeado es legítimo; los DTE emitidos conservan sus datos en el documento. Reevaluar si se agrega snapshot fiscal.
-- `PaymentMethod.treasury_account`, `PayrollConcept.account`: solo afectan operaciones futuras; lo ya contabilizado guarda su cuenta en el asiento.
-- `Warehouse`, `Location`: patrón Archivo (`deletion-policy.md`).
+Revisión posterior (2026-10-21) de los maestros que quedaron fuera:
 
-Pendiente opcional: exponer en los serializers los campos congelados para deshabilitarlos en los formularios (hoy el usuario ve el error 422 al guardar).
+| Maestro | Decisión | Motivo |
+|---|---|---|
+| `PayrollConcept` | **Congelado** `category` si figura en liquidaciones `POSTED` | el PDF y los totales de la liquidación clasifican sus líneas por la categoría actual: cambiarla reescribía liquidaciones contabilizadas |
+| `PaymentMethod` | **Congelados** `method_type`, `treasury_account` con movimientos | los informes mapean movimientos pasados vía método → cuenta; se crea un método nuevo |
+| `Location` | **Congelados** `location_type`, `warehouse` con movimientos | el stock se calcula por tipo de ubicación (sin API de escritura hoy; la regla queda declarada) |
+| `PayrollConcept.account` | Libre | solo afecta contabilizaciones futuras; el asiento guarda su cuenta |
+| `Warehouse` | Libre | sus campos son descriptivos; patrón Archivo |
+| `Contact.tax_id` | **Pendiente de decisión** | la factura no guarda copia del receptor: cambiar el RUT altera cómo se ven documentos emitidos. Opciones: snapshot fiscal en el documento al emitir, o congelar el RUT con documentos emitidos |
+
+**Formularios (2026-10-21):** los serializers exponen `frozen_fields` (anotado con `Exists`, sin N+1) y los drawers deshabilitan esos campos.

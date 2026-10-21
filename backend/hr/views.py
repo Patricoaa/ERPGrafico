@@ -8,7 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
-from core.edit_policy import assert_editable
+from core.edit_policy import annotate_edit_usage, assert_editable
 from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin as AuditHistory
 from core.mixins import EditPolicyMixin
@@ -116,7 +116,7 @@ class PayrollConceptFilter(django_filters.FilterSet):
         fields = ["category", "is_system"]
 
 
-class PayrollConceptViewSet(viewsets.ModelViewSet):
+class PayrollConceptViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     queryset = PayrollConcept.objects.select_related("account").all()
     serializer_class = PayrollConceptSerializer
     pagination_class = None  # Master data
@@ -126,12 +126,13 @@ class PayrollConceptViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if self.action == "list":
             is_active = self.request.query_params.get("is_active")
-            if is_active == "all":
-                return PayrollConcept.objects.select_related("account").all()
-            elif is_active == "false":
-                return PayrollConcept.objects.filter(is_active=False).select_related("account")
-            return PayrollConcept.objects.filter(is_active=True).select_related("account")
-        return super().get_queryset()
+            qs = PayrollConcept.objects.select_related("account")
+            if is_active == "false":
+                qs = qs.filter(is_active=False)
+            elif is_active != "all":
+                qs = qs.filter(is_active=True)
+            return annotate_edit_usage(qs)
+        return annotate_edit_usage(super().get_queryset())
 
     def destroy(self, request, *args, **kwargs):
         return Response(

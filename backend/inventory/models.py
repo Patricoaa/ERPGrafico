@@ -1290,6 +1290,19 @@ class Warehouse(models.Model):
 
 
 class Location(models.Model):
+
+    # ADR-0091 (clase C): stock balances are computed by location type.
+    edit_policy = EditPolicy(
+        frozen_when_used=frozenset({"location_type", "warehouse"}),
+        is_used=lambda loc: loc.moves_in.exists() or loc.moves_out.exists(),
+        used_annotation=lambda: ExpressionWrapper(
+            Exists(StockMove.objects.filter(source_location=OuterRef("pk")))
+            | Exists(StockMove.objects.filter(destination_location=OuterRef("pk"))),
+            output_field=models.BooleanField(),
+        ),
+        deletable=True,
+        used_message="La ubicación ya tiene movimientos de stock; su tipo y bodega no se pueden cambiar.",
+    )
     class Type(models.TextChoices):
         VENDOR = "VENDOR", "Proveedor"
         CUSTOMER = "CUSTOMER", "Cliente"

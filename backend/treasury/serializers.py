@@ -45,6 +45,7 @@ class BankSerializer(serializers.ModelSerializer):
 
 
 class PaymentMethodSerializer(serializers.ModelSerializer):
+    frozen_fields = FrozenFieldsField()
     method_type_display = serializers.CharField(source="get_method_type_display", read_only=True)
     treasury_account_name = serializers.CharField(source="treasury_account.name", read_only=True)
 

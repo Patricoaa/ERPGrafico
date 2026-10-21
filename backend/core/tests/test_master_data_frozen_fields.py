@@ -93,3 +93,56 @@ def test_frozen_fields_cost_no_queries_on_annotated_rows(
     with django_assert_num_queries(0):
         for row in rows:
             frozen_fields(row)
+
+
+@pytest.mark.django_db
+def test_payroll_concept_category_frozen_once_in_posted_payroll(api_client, account_asset):
+    from contacts.models import Contact
+    from hr.models import Employee, Payroll, PayrollConcept, PayrollItem
+
+    concept = PayrollConcept.objects.create(
+        name="Bono", category=PayrollConcept.Category.HABER_IMPONIBLE, account=account_asset,
+        formula_type=PayrollConcept.FormulaType.FIXED, default_amount=1000,
+    )
+    url = f"/api/hr/concepts/{concept.pk}/"
+    employee = Employee.objects.create(
+        contact=Contact.objects.create(name="E", tax_id="99999999-9"), base_salary=1, dias_pactados=30
+    )
+    draft = Payroll.objects.create(employee=employee, period_year=2026, period_month=8, base_salary=1)
+    PayrollItem.objects.create(payroll=draft, concept=concept, amount=Decimal("1000"))
+    assert api_client.get(url).data["frozen_fields"] == []
+
+    posted = Payroll.objects.create(
+        employee=employee, period_year=2026, period_month=9, base_salary=1, status="POSTED"
+    )
+    PayrollItem.objects.create(payroll=posted, concept=concept, amount=Decimal("1000"))
+    res = api_client.patch(url, {"category": PayrollConcept.Category.HABER_NO_IMPONIBLE}, format="json")
+    assert res.status_code == 422
+    assert api_client.get(url).data["frozen_fields"] == ["category"]
+
+
+@pytest.mark.django_db
+def test_payment_method_account_frozen_once_it_has_movements(api_client, account_asset):
+    from treasury.models import PaymentMethod
+
+    ta = TreasuryAccount.objects.create(name="Caja", account=account_asset, account_type=TreasuryAccount.Type.CASH)
+    other_acc = Account.objects.create(name="Caja 3", code="1.1.01.960", account_type=AccountType.ASSET)
+    other = TreasuryAccount.objects.create(name="Caja 3", account=other_acc, account_type=TreasuryAccount.Type.CASH)
+    pm = PaymentMethod.objects.create(name="Efectivo", method_type="CASH", treasury_account=ta)
+    TreasuryMovement.objects.create(
+        movement_type=TreasuryMovement.Type.INBOUND, to_account=ta, amount=Decimal("5"), payment_method_new=pm
+    )
+    url = f"/api/treasury/payment-methods/{pm.pk}/"
+    assert api_client.patch(url, {"treasury_account": other.pk}, format="json").status_code == 422
+    assert api_client.patch(url, {"name": "Efectivo caja"}, format="json").status_code == 200
+
+
+@pytest.mark.django_db
+def test_location_type_frozen_once_it_has_moves(product, internal_location):
+    from core.edit_policy import DocumentLockedError, assert_editable
+
+    assert_editable(internal_location, {"location_type"})
+    _move(product, internal_location)
+    with pytest.raises(DocumentLockedError):
+        assert_editable(internal_location, {"location_type"})
+    assert_editable(internal_location, {"name"})

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from contacts.models import Contact
-from core.serializers.mixins import IsEditableField
+from core.serializers.mixins import FrozenFieldsField, IsEditableField
 
 from .models import (
     AFP,
@@ -30,6 +30,7 @@ class AFPSerializer(serializers.ModelSerializer):
 
 
 class PayrollConceptSerializer(serializers.ModelSerializer):
+    frozen_fields = FrozenFieldsField()
     category_display = serializers.CharField(source="get_category_display", read_only=True)
     formula_type_display = serializers.CharField(source="get_formula_type_display", read_only=True)
     account_code = serializers.CharField(source="account.code", read_only=True)
@@ -38,6 +39,7 @@ class PayrollConceptSerializer(serializers.ModelSerializer):
     class Meta:
         model = PayrollConcept
         fields = [
+            "frozen_fields",
             "id",
             "name",
             "category",

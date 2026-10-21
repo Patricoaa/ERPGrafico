@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import { frozenFieldsOf } from "@/lib/edit-policy"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type * as z from "zod"
@@ -284,6 +285,7 @@ function ConceptDialog({ concept, onSaved, open: controlledOpen, onOpenChange: s
     onCreate: (data: Record<string, unknown>) => Promise<unknown>
     onUpdate: (id: number, data: Record<string, unknown>) => Promise<unknown>
 }) {
+    const frozen = frozenFieldsOf(concept)
     const [internalOpen, setInternalOpen] = useState(false)
     const [saving, setSaving] = useState(false)
 
@@ -379,6 +381,7 @@ function ConceptDialog({ concept, onSaved, open: controlledOpen, onOpenChange: s
                             render={({ field, fieldState }) => (
                                 <LabeledSelect
                                     label="Categoría Nómina"
+                                    disabled={frozen.has("category")}
                                     value={field.value}
                                     onChange={field.onChange}
                                     error={fieldState.error?.message}

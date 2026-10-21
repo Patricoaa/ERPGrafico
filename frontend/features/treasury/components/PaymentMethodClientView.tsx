@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import { frozenFieldsOf } from "@/lib/edit-policy"
 import { CreditCard, Lock, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -194,6 +195,7 @@ interface PaymentMethodModalProps {
 }
 
 function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMethodModalProps) {
+    const frozen = frozenFieldsOf(method)
     const { createMethod, updateMethod, isCreating, isUpdating } = usePaymentMethods()
     const isSaving = isCreating || isUpdating
 
@@ -333,6 +335,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                                     render={({ field, fieldState }) => (
                                         <LabeledSelect
                                             label="Tipo"
+                                            disabled={frozen.has("method_type")}
                                             value={field.value}
                                             onChange={field.onChange}
                                             error={fieldState.error?.message}
@@ -355,6 +358,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                                     render={({ field, fieldState }) => (
                                         <TreasuryAccountSelector
                                             label="Cuenta de tesorería"
+                                            disabled={frozen.has("treasury_account")}
                                             value={field.value}
                                             onChange={field.onChange}
                                             error={fieldState.error?.message}
