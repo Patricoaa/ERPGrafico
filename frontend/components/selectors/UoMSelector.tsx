@@ -126,16 +126,17 @@ export function UoMSelector({
                     role="combobox"
                     disabled={disabled || (context !== 'stock' && !product && !categoryId)}
                     className={cn(
-                        "w-full justify-between shadow-none focus-visible:ring-0 font-normal transition-all",
+                        "w-full justify-between shadow-none focus-visible:ring-0 font-normal transition-all h-full",
                         variant === 'standalone' 
-                            ? "h-[1.5rem] py-0 px-3 border-none bg-transparent hover:bg-transparent" 
+                            ? "py-0 px-3 border-none bg-transparent hover:bg-transparent" 
                             : cn(className),
-                        !value && "text-muted-foreground"
                     )}
                 >
-                    <span className="truncate">
-                        {selectedUoM ? selectedUoM.name : "Und"}
-                    </span>
+                    {selectedUoM ? (
+                        <span className="text-sm truncate">{selectedUoM.name}</span>
+                    ) : (
+                        <span className="text-sm text-muted-foreground/60 truncate">Und</span>
+                    )}
                     <ChevronDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>

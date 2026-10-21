@@ -54,16 +54,16 @@ export function ProductTypeSelector({
                 <SelectTrigger 
                     role="combobox"
                     size="sm"
-                    className="w-full h-[1.5rem]! min-h-0! py-0 px-2 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                    className="w-full h-6! min-h-0! py-0 px-2 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
                 >
                     <div className="flex items-center gap-2 flex-1 min-w-0 h-full">
                         {selectedType ? (
                             <div className="flex items-center gap-1.5 min-w-0 flex-1 h-full">
                                 <selectedType.icon className={cn("h-3 w-3 shrink-0", selectedType.color)} />
-                                <span className="font-bold text-2xs truncate uppercase tracking-tight leading-none">{selectedType.label}</span>
+                                <span className="text-sm text-foreground truncate leading-none">{selectedType.label}</span>
                             </div>
                         ) : (
-                            <span className="text-2xs text-muted-foreground opacity-50 leading-none">Seleccionar tipo...</span>
+                            <span className="text-sm text-muted-foreground/60 leading-none">Seleccionar tipo...</span>
                         )}
                     </div>
                 </SelectTrigger>

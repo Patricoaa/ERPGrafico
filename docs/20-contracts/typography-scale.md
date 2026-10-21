@@ -75,6 +75,8 @@ Equivalencias canónicas (el rango micro es **fijo**, no fluido, y exclusivo par
 | **N2 — Wizard step** | GenericWizard step indicator | `text-3xs font-black` | `tracking-wider` | `uppercase` | "PASO 1 DE 3" |
 | **N2 — Paginación** | DataTablePagination | `text-xs font-medium` | normal | normal | "Registros por página" |
 | **N3 — Valor de input** | LabeledInput input | `text-sm` | normal | normal | "Juan Pérez" |
+| **N3 — Valor de selector** | SelectTrigger, SearchablePopover trigger | `text-sm text-foreground` | normal | normal | "Almacenable" |
+| **N3 — Placeholder** | LabeledInput, SelectTrigger placeholder | `text-sm text-muted-foreground/60` | normal | normal | "Seleccionar tipo…" |
 | **N3 — Dato primario** | DataCell.Text, DataCell.Date | `text-xs font-medium` | normal | normal | "15/03/2026" |
 | **N3 — Dato secundario** | DataCell.Secondary, helper hints | `text-xs text-muted-foreground` | normal | normal | "3 documentos" |
 | **N3 — Código/ID** | DataCell.Code, DataCell.Entity | `text-xs font-mono font-medium` | normal | `uppercase` | "OV-000123" |
@@ -291,8 +293,8 @@ Para evitar fatiga visual, los iconos dentro de componentes (selectores, seccion
 <span className="text-red-400">
 
 // ❌ Reemplazar el sistema de capas con px crudos o clases semánticas
-<legend className="text-[10px]">  // Usar text-3xs (N2)
-<legend className="text-xs">       // Usar text-3xs (N2)
+<legend className="text-[10px]">  // Usar text-2xs (N2)
+<legend className="text-xs">       // Usar text-2xs (N2)
 
 // ❌ Tamaños px crudos en el chrome del shell
 <nav className="text-[13px]">  // Usar text-xs

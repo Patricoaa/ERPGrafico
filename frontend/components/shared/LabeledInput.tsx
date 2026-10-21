@@ -2,6 +2,7 @@
 
 import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes } from "react"
 import { cn } from "@/lib/utils"
+import { fieldLegendClasses } from "./FieldLegend"
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -127,8 +128,7 @@ export const LabeledInput = forwardRef<
             >
                 {label && (
                     <legend className={cn(
-                        "px-1.5 text-2xs font-bold uppercase tracking-widest transition-colors duration-200",
-                        hasError ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary",
+                        fieldLegendClasses(hasError, disabled),
                         labelClassName
                     )}>
                         {label}

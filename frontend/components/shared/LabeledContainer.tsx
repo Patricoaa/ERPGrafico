@@ -9,6 +9,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { fieldLegendClasses } from "./FieldLegend"
 
 interface LabeledContainerProps {
     /** Label text rendered inside the fieldset legend (notched border). */
@@ -73,8 +74,8 @@ export function LabeledContainer({
             >
                 {label && (
                     <legend className={cn(
-                        "px-1.5 text-3xs font-bold uppercase tracking-widest transition-colors duration-200 flex items-center gap-1",
-                        hasError ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary",
+                        fieldLegendClasses(hasError, disabled),
+                        "flex items-center gap-1",
                         labelClassName
                     )}>
                         {label}

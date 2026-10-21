@@ -95,27 +95,27 @@ export function WarehouseSelector({
                 trigger={
                     <Button
                         className={cn(
-                            "w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent font-medium",
+                            "w-full justify-between overflow-hidden h-full py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
                             icon && "pl-1"
                         )}
                         disabled={disabled}
                     >
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-1 min-w-0 h-full">
                             {icon && (
                                 <div className="flex items-center justify-center text-muted-foreground/60 transition-colors shrink-0">
                                     {icon}
                                 </div>
                             )}
                             {selectedWarehouse ? (
-                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5 min-w-0 flex-1 h-full">
                                     {!icon && <Home className="h-3.5 w-3.5 shrink-0 text-primary" />}
-                                    <span className="font-medium text-sm truncate">{selectedWarehouse.name}</span>
+                                    <span className="text-sm text-foreground truncate leading-none">{selectedWarehouse.name}</span>
                                 </div>
                             ) : (
-                                <span className="text-muted-foreground truncate">{placeholder}</span>
+                                <span className="text-sm text-muted-foreground/60 truncate leading-none">{placeholder}</span>
                             )}
                         </div>
-                        {!disabled && <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
+                        {!disabled && <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-30" />}
                     </Button>
                 }
             />

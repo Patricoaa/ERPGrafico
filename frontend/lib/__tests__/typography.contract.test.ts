@@ -14,6 +14,8 @@
  *    nav item, breadcrumb, status pill, rail initials + tooltip, panel title,
  *  - micro-label weight is `font-bold` (N1/N2/N4) while `font-black` is
  *    reserved for action buttons (Submit/Danger/Cancel).
+ *  - field legends (N2) share a single source: FieldLegend → text-2xs font-bold
+ *  - input/select values (N3) use text-sm, no uppercase, no custom weight
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -35,6 +37,20 @@ const shell = {
   sectionHeader: read('../../components/shared/SectionHeader.tsx'),
   formSection: read('../../components/shared/FormSection.tsx'),
   actionButtons: read('../../components/shared/ActionButtons.tsx'),
+};
+
+const formPrimitives = {
+  fieldLegend: read('../../components/shared/FieldLegend.tsx'),
+  labeledInput: read('../../components/shared/LabeledInput.tsx'),
+  labeledContainer: read('../../components/shared/LabeledContainer.tsx'),
+};
+
+const productDrawer = {
+  productBasicInfo: read('../../features/inventory/components/product/ProductBasicInfo.tsx'),
+  productTypeSelector: read('../../components/selectors/ProductTypeSelector.tsx'),
+  categorySelector: read('../../components/selectors/CategorySelector.tsx'),
+  uomSelector: read('../../components/selectors/UoMSelector.tsx'),
+  warehouseSelector: read('../../components/selectors/WarehouseSelector.tsx'),
 };
 
 describe('typography contract', () => {
@@ -99,5 +115,100 @@ describe('typography contract', () => {
   it('action buttons use font-black (Submit/Danger/Cancel share the scale)', () => {
     expect(/text-3xs"?,\s*"font-black tracking-widest uppercase/.test(shell.actionButtons)).toBe(true);
     expect(/h-9 px-5 text-3xs font-black tracking-widest uppercase/.test(shell.actionButtons)).toBe(true);
+  });
+
+  describe('N2 field legends — single source via FieldLegend', () => {
+    it('FieldLegend exports text-2xs font-bold uppercase tracking-widest', () => {
+      const src = formPrimitives.fieldLegend;
+      expect(/text-2xs font-bold uppercase tracking-widest/.test(src)).toBe(true);
+      expect(/text-3xs/.test(src)).toBe(false);
+    });
+
+    it('LabeledInput delegates to fieldLegendClasses (no inline legend styles)', () => {
+      const src = formPrimitives.labeledInput;
+      expect(/fieldLegendClasses\(/.test(src)).toBe(true);
+      // No inline legend class with text-2xs/text-3xs duplication
+      expect(/legend className=\{cn\([^}]*"px-1\.5 text-2xs font-bold"/.test(src)).toBe(false);
+    });
+
+    it('LabeledContainer delegates to fieldLegendClasses (no inline legend styles)', () => {
+      const src = formPrimitives.labeledContainer;
+      expect(/fieldLegendClasses\(/.test(src)).toBe(true);
+      // No inline legend class with text-2xs/text-3xs duplication
+      expect(/legend className=\{cn\([^}]*"px-1\.5 text-(2xs|3xs) font-bold"/.test(src)).toBe(false);
+    });
+
+    it('Neither primitive uses text-3xs in legend', () => {
+      for (const [name, src] of Object.entries(formPrimitives)) {
+        if (name === 'fieldLegend') continue;
+        // Look for legend className with text-3xs
+        expect(
+          /legend[^>]*className[^>]*text-3xs/.test(src),
+          `${name} must not use text-3xs in legend`
+        ).toBe(false);
+      }
+    });
+  });
+
+  describe('Product drawer — no local overrides, selectors follow N3', () => {
+    it('ProductBasicInfo has no font-bold/text-xs overrides on inputs', () => {
+      const src = productDrawer.productBasicInfo;
+      // No className="font-bold text-xs" on LabeledInput
+      expect(/LabeledInput[^>]*className="font-bold text-xs"/.test(src)).toBe(false);
+      // No className="font-mono font-bold text-xs" on LabeledInput
+      expect(/LabeledInput[^>]*className="font-mono font-bold text-xs"/.test(src)).toBe(false);
+      // ID display uses font-medium, not font-black
+      expect(/font-mono font-black text-primary text-xs/.test(src)).toBe(false);
+    });
+
+    it('ProductTypeSelector value uses text-sm, no uppercase/font-bold', () => {
+      const src = productDrawer.productTypeSelector;
+      // Selected value
+      expect(/text-sm text-foreground truncate leading-none.*\{selectedType\.label\}/.test(src)).toBe(true);
+      // Placeholder
+      expect(/text-sm text-muted-foreground\/60 leading-none.*Seleccionar tipo/.test(src)).toBe(true);
+      // No uppercase, no font-bold, no text-2xs on value
+      expect(/font-bold text-2xs.*\{selectedType\.label\}/.test(src)).toBe(false);
+      expect(/uppercase.*\{selectedType\.label\}/.test(src)).toBe(false);
+      // No arbitrary height h-[1.5rem]
+      expect(/h-\[1\.5rem\]/.test(src)).toBe(false);
+    });
+
+    it('CategorySelector value uses text-sm, no uppercase/font-bold', () => {
+      const src = productDrawer.categorySelector;
+      // Selected value
+      expect(/text-sm text-foreground truncate leading-none.*\{selectedCategory\.name\}/.test(src)).toBe(true);
+      // Placeholder
+      expect(/text-sm text-muted-foreground\/60 truncate leading-none.*\{placeholder\}/.test(src)).toBe(true);
+      // No font-medium text-2xs uppercase on value
+      expect(/font-medium text-2xs truncate uppercase.*\{selectedCategory\.name\}/.test(src)).toBe(false);
+      // No text-2xs opacity-50 on placeholder
+      expect(/text-2xs text-muted-foreground opacity-50.*\{placeholder\}/.test(src)).toBe(false);
+      // No arbitrary height h-[1.5rem]
+      expect(/h-\[1\.5rem\]/.test(src)).toBe(false);
+    });
+
+    it('UoMSelector value uses text-sm, no arbitrary height', () => {
+      const src = productDrawer.uomSelector;
+      // Value display - text-sm truncate with selectedUoM.name (explicit branch)
+      expect(/text-sm truncate/.test(src)).toBe(true);
+      expect(/selectedUoM \? selectedUoM\.name/.test(src)).toBe(false);
+      // Placeholder uses text-sm text-muted-foreground/60 explicit
+      expect(/text-sm text-muted-foreground\/60 truncate/.test(src)).toBe(true);
+      // No arbitrary height h-[1.5rem] in standalone variant
+      expect(/variant === 'standalone'[^}]*h-\[1\.5rem\]/.test(src)).toBe(false);
+    });
+
+    it('WarehouseSelector value uses text-sm, no arbitrary height', () => {
+      const src = productDrawer.warehouseSelector;
+      // Selected value
+      expect(/text-sm text-foreground truncate leading-none.*\{selectedWarehouse\.name\}/.test(src)).toBe(true);
+      // Placeholder
+      expect(/text-sm text-muted-foreground\/60 truncate leading-none.*\{placeholder\}/.test(src)).toBe(true);
+      // No font-medium on value
+      expect(/font-medium text-sm truncate.*\{selectedWarehouse\.name\}/.test(src)).toBe(false);
+      // No arbitrary height h-[1.5rem]
+      expect(/h-\[1\.5rem\]/.test(src)).toBe(false);
+    });
   });
 });
