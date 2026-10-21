@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { memo, useState, useRef, useEffect, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { BaseModal } from "@/components/shared"
 import { cn } from '@/lib/utils'
 import { formatCurrency } from "@/lib/money"
 import { useTouchMode } from '@/hooks/useTouchMode'
@@ -342,32 +342,35 @@ function CartItemComponent({
                 </div>
             </div>
 
-            <Dialog open={uomDialogOpen} onOpenChange={setUomDialogOpen}>
-                <DialogContent className="w-[260px] rounded-xl p-4">
-                    <DialogHeader>
-                        <DialogTitle className="text-center font-bold">Seleccionar Unidad</DialogTitle>
-                    </DialogHeader>
-                    <div className="flex flex-col gap-1 mt-2">
-                        {saleUoms.map(uom => (
-                            <Button
-                                key={uom.id}
-                                variant="ghost"
-                                type="button"
-                                className={cn(
-                                    "w-full text-center px-4 py-3 text-sm rounded-lg hover:bg-muted transition-colors border border-transparent shadow-none",
-                                    item.uom === uom.id && "bg-primary/5 border-primary/20 text-primary font-medium"
-                                )}
-                                onClick={() => {
-                                    handleUomChange(String(uom.id))
-                                    setUomDialogOpen(false)
-                                }}
-                            >
-                                {uom.name}
-                            </Button>
-                        ))}
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <BaseModal
+                open={uomDialogOpen}
+                onOpenChange={setUomDialogOpen}
+                title="Seleccionar Unidad"
+                size="xs"
+                className="w-[260px]"
+                hideScrollArea
+                contentClassName="p-0"
+            >
+                <div className="flex flex-col gap-1 mt-2 px-4 pb-4">
+                    {saleUoms.map(uom => (
+                        <Button
+                            key={uom.id}
+                            variant="ghost"
+                            type="button"
+                            className={cn(
+                                "w-full text-center px-4 py-3 text-sm rounded-lg hover:bg-muted transition-colors border border-transparent shadow-none",
+                                item.uom === uom.id && "bg-primary/5 border-primary/20 text-primary font-medium"
+                            )}
+                            onClick={() => {
+                                handleUomChange(String(uom.id))
+                                setUomDialogOpen(false)
+                            }}
+                        >
+                            {uom.name}
+                        </Button>
+                    ))}
+                </div>
+            </BaseModal>
         </div>
     )
 }

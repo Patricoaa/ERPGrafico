@@ -16,15 +16,7 @@ import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { SubmitButton } from "@/components/shared"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { SubmitButton, BaseModal } from "@/components/shared"
 
 interface NewCountFormValues {
     warehouse: number
@@ -83,6 +75,16 @@ export function InventoryCountClientView() {
         </Button>
     )
 
+    // Preserve the onPointerDownOutside handler to prevent modal closing when clicking on select dropdowns
+    const onPointerDownOutside = useCallback((e: Event) => {
+        const target = e.target as HTMLElement
+        if (target.closest('[data-slot="select-content"]') ||
+            target.closest('[role="listbox"]') ||
+            target.closest('[data-radix-popper-content-wrapper]')) {
+            e.preventDefault()
+        }
+    }, [])
+
     return (
         <div className="flex-1 min-h-0 overflow-y-auto p-4">
             <Collection.Root
@@ -112,33 +114,30 @@ export function InventoryCountClientView() {
                 onApplied={refetchCounts}
             />
 
-            {/* New Count Dialog */}
-            <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
-                <DialogContent
-                    className="sm:max-w-[400px]"
-                    onPointerDownOutside={(e) => {
-                        const target = e.target as HTMLElement
-                        if (target.closest('[data-slot="select-content"]') ||
-                            target.closest('[role="listbox"]') ||
-                            target.closest('[data-radix-popper-content-wrapper]')) {
-                            e.preventDefault()
-                        }
-                    }}
-                >
-                    <DialogHeader>
-                        <DialogTitle>Nuevo Conteo de Inventario</DialogTitle>
-                        <DialogDescription>
-                            Selecciona el almacén para cargar el stock teórico y comenzar el conteo.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <NewCountForm
-                        warehouses={warehouses}
-                        onSubmit={handleCreateCount}
-                        isSubmitting={isCreating}
-                        onCancel={() => setShowNewDialog(false)}
-                    />
-                </DialogContent>
-            </Dialog>
+            {/* New Count Dialog - migrated to BaseModal */}
+            <BaseModal
+                open={showNewDialog}
+                onOpenChange={setShowNewDialog}
+                title="Nuevo Conteo de Inventario"
+                description="Selecciona el almacén para cargar el stock teórico y comenzar el conteo."
+                size="xs"
+                onPointerDownOutside={onPointerDownOutside}
+                footer={
+                    <>
+                        <Button type="button" variant="ghost" onClick={() => setShowNewDialog(false)}>
+                            Cancelar
+                        </Button>
+                        <SubmitButton type="submit" form="new-count-form" loading={isCreating}>
+                            Crear Conteo
+                        </SubmitButton>
+                    </>
+                }
+            >
+                <NewCountForm
+                    warehouses={warehouses}
+                    onSubmit={handleCreateCount}
+                />
+            </BaseModal>
         </div>
     )
 }
@@ -146,13 +145,9 @@ export function InventoryCountClientView() {
 function NewCountForm({
     warehouses,
     onSubmit,
-    isSubmitting,
-    onCancel,
 }: {
     warehouses: Array<{ id: number; name: string }>
     onSubmit: (values: NewCountFormValues) => void
-    isSubmitting: boolean
-    onCancel: () => void
 }) {
     const form = useForm<NewCountFormData>({
         resolver: zodResolver(newCountSchema),
@@ -176,14 +171,6 @@ function NewCountForm({
                 placeholder="Motivo del conteo"
                 {...form.register("notes")}
             />
-            <DialogFooter>
-                <Button type="button" variant="ghost" onClick={onCancel}>
-                    Cancelar
-                </Button>
-                <SubmitButton type="submit" form="new-count-form" loading={isSubmitting}>
-                    Crear Conteo
-                </SubmitButton>
-            </DialogFooter>
         </form>
     )
 }

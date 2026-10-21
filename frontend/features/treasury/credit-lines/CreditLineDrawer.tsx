@@ -6,15 +6,8 @@ import { useForm, Controller, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useCreditLineMutations } from '../hooks/useCreditLines'
-import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetDescription,
-} from '@/components/ui/sheet'
+import { Drawer, SubmitButton, LabeledInput, LabeledSelect, LabeledCheckbox } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { LabeledInput, LabeledSelect, LabeledCheckbox } from '@/components/shared'
 import type { CreditLine, CreditLineCreatePayload } from './types'
 import type { TreasuryAccount } from '../types'
 import { treasuryApi } from '@/features/treasury'
@@ -153,158 +146,159 @@ export function CreditLineDrawer({ open, onOpenChange, creditLine, creditLineId,
         { value: 'ANNUAL', label: 'Anual' },
     ]
 
+    // Use boundary="screen" since this drawer opens on top of another drawer (TreasuryAccountDrawer)
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-                <SheetHeader>
-                    <SheetTitle>{isEditing ? 'Editar' : 'Nueva'} Línea de Crédito</SheetTitle>
-                    <SheetDescription>
-                        Configure los términos del sobregiro para la cuenta bancaria.
-                    </SheetDescription>
-                </SheetHeader>
-
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-6">
-                    {/* Cuenta Bancaria */}
-                    <Controller control={form.control} name="treasury_account" render={({ field }) => (
-                        treasuryAccountId ? (
-                            <LabeledInput
-                                name={field.name}
-                                value={accountName || `Cuenta #${treasuryAccountId}`}
-                                disabled
-                                label="Cuenta Bancaria"
-                            />
-                        ) : (
-                            <LabeledSelect
-                                value={field.value ? String(field.value) : ''}
-                                onChange={(v) => {
-                                    field.onChange(Number(v))
-                                    const acc = checkingAccounts.find((a: TreasuryAccount) => a.id === Number(v))
-                                    setAccountName(acc?.name ?? '')
-                                }}
-                                label="Cuenta Bancaria"
-                                options={accountOptions}
-                                placeholder="Seleccionar cuenta"
-                            />
-                        )
-                    )} />
-
-                    <div className="grid grid-cols-2 gap-4">
-                        {/* Código */}
+        <Drawer
+            open={open}
+            onOpenChange={onOpenChange}
+            side="right"
+            title={isEditing ? 'Editar Línea de Crédito' : 'Nueva Línea de Crédito'}
+            subtitle="Configure los términos del sobregiro para la cuenta bancaria."
+            className="w-full sm:max-w-lg overflow-y-auto"
+            boundary="screen"
+            footer={
+                <div className="flex justify-end gap-3 pt-4">
+                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                        Cancelar
+                    </Button>
+                    <SubmitButton type="submit" form="credit-line-form" loading={create.isPending || update.isPending}>
+                        {isEditing ? 'Guardar' : 'Crear'}
+                    </SubmitButton>
+                </div>
+            }
+        >
+            <form id="credit-line-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-6">
+                {/* Cuenta Bancaria */}
+                <Controller control={form.control} name="treasury_account" render={({ field }) => (
+                    treasuryAccountId ? (
                         <LabeledInput
-                            {...form.register('code')}
-                            label="Código"
-                            placeholder="Código opcional"
+                            name={field.name}
+                            value={accountName || `Cuenta #${treasuryAccountId}`}
+                            disabled
+                            label="Cuenta Bancaria"
                         />
+                    ) : (
+                        <LabeledSelect
+                            value={field.value ? String(field.value) : ''}
+                            onChange={(v) => {
+                                field.onChange(Number(v))
+                                const acc = checkingAccounts.find((a: TreasuryAccount) => a.id === Number(v))
+                                setAccountName(acc?.name ?? '')
+                            }}
+                            label="Cuenta Bancaria"
+                            options={accountOptions}
+                            placeholder="Seleccionar cuenta"
+                        />
+                    )
+                )} />
 
-                        {/* Moneda */}
-                        <Controller control={form.control} name="currency" render={({ field }) => (
-                            <LabeledSelect
-                                value={field.value}
-                                onChange={field.onChange}
-                                label="Moneda"
-                                options={currencyOptions}
-                            />
-                        )} />
-                    </div>
-
-                    {/* Límite de Crédito */}
+                <div className="grid grid-cols-2 gap-4">
+                    {/* Código */}
                     <LabeledInput
-                        {...form.register('credit_limit')}
-                        label="Límite de Crédito"
+                        {...form.register('code')}
+                        label="Código"
+                        placeholder="Código opcional"
+                    />
+
+                    {/* Moneda */}
+                    <Controller control={form.control} name="currency" render={({ field }) => (
+                        <LabeledSelect
+                            value={field.value}
+                            onChange={field.onChange}
+                            label="Moneda"
+                            options={currencyOptions}
+                        />
+                    )} />
+                </div>
+
+                {/* Límite de Crédito */}
+                <LabeledInput
+                    {...form.register('credit_limit')}
+                    label="Límite de Crédito"
+                    type="number"
+                    step="1"
+                    placeholder="Ej: 5000000"
+                />
+
+                <div className="grid grid-cols-3 gap-4">
+                    {/* Tasa % */}
+                    <LabeledInput
+                        {...form.register('interest_rate')}
+                        label="Tasa %"
                         type="number"
-                        step="1"
-                        placeholder="Ej: 5000000"
+                        step="0.0001"
+                        placeholder="Ej: 1.5"
                     />
 
-                    <div className="grid grid-cols-3 gap-4">
-                        {/* Tasa % */}
-                        <LabeledInput
-                            {...form.register('interest_rate')}
-                            label="Tasa %"
-                            type="number"
-                            step="0.0001"
-                            placeholder="Ej: 1.5"
-                        />
-
-                        {/* Base */}
-                        <Controller control={form.control} name="rate_basis" render={({ field }) => (
-                            <LabeledSelect
-                                value={field.value}
-                                onChange={field.onChange}
-                                label="Base"
-                                options={rateBasisOptions}
-                            />
-                        )} />
-
-                        {/* Spread % */}
-                        <LabeledInput
-                            {...form.register('spread')}
-                            label="Spread %"
-                            type="number"
-                            step="0.0001"
-                            placeholder="0"
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        {/* Vigencia Desde */}
-                        <LabeledInput
-                            {...form.register('valid_from')}
-                            label="Vigencia Desde"
-                            type="date"
-                        />
-
-                        {/* Vigencia Hasta */}
-                        <LabeledInput
-                            {...form.register('valid_until')}
-                            label="Vigencia Hasta"
-                            type="date"
-                        />
-                    </div>
-
-                    {/* Renovación Automática */}
-                    <Controller control={form.control} name="auto_renewal" render={({ field }) => (
-                        <LabeledCheckbox
-                            label="Renovación Automática"
-                            description="Renovar la línea de crédito automáticamente al vencer"
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
+                    {/* Base */}
+                    <Controller control={form.control} name="rate_basis" render={({ field }) => (
+                        <LabeledSelect
+                            value={field.value}
+                            onChange={field.onChange}
+                            label="Base"
+                            options={rateBasisOptions}
                         />
                     )} />
 
-                    {form.watch('auto_renewal') && (
-                        <LabeledInput
-                            {...form.register('renewal_term_months')}
-                            label="Plazo Renovación (meses)"
-                            type="number"
-                            placeholder="Ej: 12"
-                        />
-                    )}
-
-                    {/* Garantías */}
+                    {/* Spread % */}
                     <LabeledInput
-                        {...form.register('collateral_notes')}
-                        label="Garantías"
-                        placeholder="Detalle de garantías..."
+                        {...form.register('spread')}
+                        label="Spread %"
+                        type="number"
+                        step="0.0001"
+                        placeholder="0"
+                    />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    {/* Vigencia Desde */}
+                    <LabeledInput
+                        {...form.register('valid_from')}
+                        label="Vigencia Desde"
+                        type="date"
                     />
 
-                    {/* Notas */}
+                    {/* Vigencia Hasta */}
                     <LabeledInput
-                        {...form.register('notes')}
-                        label="Notas"
-                        placeholder="Notas adicionales..."
+                        {...form.register('valid_until')}
+                        label="Vigencia Hasta"
+                        type="date"
                     />
+                </div>
 
-                    <div className="flex justify-end gap-3 pt-4">
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                            Cancelar
-                        </Button>
-                        <Button type="submit" disabled={create.isPending || update.isPending}>
-                            {isEditing ? 'Guardar' : 'Crear'}
-                        </Button>
-                    </div>
-                </form>
-            </SheetContent>
-        </Sheet>
+                {/* Renovación Automática */}
+                <Controller control={form.control} name="auto_renewal" render={({ field }) => (
+                    <LabeledCheckbox
+                        label="Renovación Automática"
+                        description="Renovar la línea de crédito automáticamente al vencer"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                    />
+                )} />
+
+                {form.watch('auto_renewal') && (
+                    <LabeledInput
+                        {...form.register('renewal_term_months')}
+                        label="Plazo Renovación (meses)"
+                        type="number"
+                        placeholder="Ej: 12"
+                    />
+                )}
+
+                {/* Garantías */}
+                <LabeledInput
+                    {...form.register('collateral_notes')}
+                    label="Garantías"
+                    placeholder="Detalle de garantías..."
+                />
+
+                {/* Notas */}
+                <LabeledInput
+                    {...form.register('notes')}
+                    label="Notas"
+                    placeholder="Notas adicionales..."
+                />
+            </form>
+        </Drawer>
     )
 }
