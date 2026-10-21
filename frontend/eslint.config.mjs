@@ -16,6 +16,7 @@ import componentNamingSuffix from "./eslint-rules/component-naming-suffix.mjs";
 import statusMustUseStatusbadge from "./eslint-rules/status-must-use-statusbadge.mjs";
 import mutationMustMarkLocal from "./eslint-rules/mutation-must-mark-local.mjs";
 import drawerNoRounded from "./eslint-rules/drawer-no-rounded.mjs";
+import noDirectDialogUsage from "./eslint-rules/no-direct-dialog-usage.mjs";
 import entityViewGuards from "./eslint-rules/entity-view-guards.mjs";
 import { NO_UNSAFE_ALLOWLIST_FILES } from "./eslint-rules/no-unsafe-allowlist.mjs";
 
@@ -429,7 +430,7 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   rules: {
     "mutation/must-mark-local": "warn",
   },
-}, // Edge panels are always square — ADR-0073 (Drawer/CollapsibleSheet, rounded-none)
+}, // }, // Edge panels are always square — ADR-0073 (Drawer/CollapsibleSheet, rounded-none)
 {
   files: ["**/*.tsx"],
   plugins: {
@@ -438,7 +439,18 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   rules: {
     "drawer/no-rounded": "error",
   },
-}, // Entity view system guards — ADR-0087 §9, component-entity-view.md §9
+},
+// No direct DialogContent/SheetContent — ADR-0091 (use BaseModal/Drawer with SheetCloseButton)
+{
+  files: ["**/*.ts", "**/*.tsx"],
+  plugins: {
+    dialog: { rules: { "no-direct-usage": noDirectDialogUsage } },
+  },
+  rules: {
+    "dialog/no-direct-usage": "error",
+  },
+},
+// Entity view system guards — ADR-0087 §9, component-entity-view.md §9 — ADR-0087 §9, component-entity-view.md §9
 {
   files: ["**/*.ts", "**/*.tsx"],
   plugins: {
