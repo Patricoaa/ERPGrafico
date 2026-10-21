@@ -419,7 +419,6 @@ export function BOMDrawer({
                                                             onChange={(val) => {
                                                                 if (!val) setSelectedProduct(null)
                                                             }}
-                                                            placeholder="Seleccionar producto..."
                                                             productTypes={['MANUFACTURABLE']}
                                                             shouldResolveVariants={false}
                                                             className="!rounded-sm"
@@ -430,7 +429,6 @@ export function BOMDrawer({
                                                         <div className="sm:col-span-1 animate-in fade-in slide-in-from-left-2">
                                                             <LabeledSelect
                                                                 label="Variante (opcional)"
-                                                                placeholder="Plantilla Base..."
                                                                 value={selectedVariant?.id?.toString() || "template"}
                                                                 onChange={(val) => {
                                                                     if (!val || val === "template") {
@@ -657,7 +655,6 @@ export function BOMDrawer({
                                                                                     form.setValue(`lines.${index}.component_cost`, effectiveCost)
                                                                                 }
                                                                             }}
-                                                                            placeholder="V..."
                                                                             variant="inline"
                                                                             className={cn(tableInputClass, "w-[40px] bg-primary/5")}
                                                                             options={lineVars.map(v => ({ value: v.id.toString(), label: v.variant_display_name || v.name }))}
@@ -864,7 +861,6 @@ if (p.has_variants) fetchLineVariants(p.id)
                                                                                     // Service lines do not have component_uom_category
                                                                                 }
                                                                             }}
-                                                                            placeholder="V..."
                                                                             className={cn(tableInputClass, "w-[40px] bg-primary/5")}
                                                                             options={lineVars.map(v => ({ value: v.id.toString(), label: v.variant_display_name || v.name }))}
                                                                         />
@@ -888,7 +884,6 @@ if (p.has_variants) fetchLineVariants(p.id)
                                                                     onSelectContact={(contact) => {
                                                                         if (contact) form.setValue(`service_lines.${index}.supplier_name`, contact.name)
                                                                     }}
-                                                                    placeholder="Proveedor..."
                                                                     contactType="SUPPLIER"
                                                                     variant="inline"
                                                                     className={cn(tableInputClass, "text-left font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}

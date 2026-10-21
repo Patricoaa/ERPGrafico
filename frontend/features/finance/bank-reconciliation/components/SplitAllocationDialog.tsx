@@ -169,7 +169,7 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                                             onValueChange={(val) => form.setValue(`allocations.${idx}.invoice`, parseInt(val))}
                                         >
                                             <SelectTrigger className="w-full h-8 text-xs">
-                                                <SelectValue placeholder={loadingInvoices ? "Cargando..." : "Seleccionar"} />
+                                                <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {invoiceOptions.map((opt) => (
@@ -184,8 +184,7 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                                         <Input
                                             {...form.register(`allocations.${idx}.notes`)}
                                             className="h-8 text-xs"
-                                            placeholder="Notas opcionales..."
-                                        />
+                                            />
                                     </TableCell>
                                     <TableCell>
                                         <Input

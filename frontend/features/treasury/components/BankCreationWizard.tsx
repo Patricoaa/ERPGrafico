@@ -344,8 +344,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                                         options={TENDER_OPTIONS}
                                         value={acc.tenders}
                                         onChange={(v) => updateAccount(i, { tenders: v })}
-                                        placeholder="Seleccionar..."
-                                    />
+                                        />
                                 </ItemCard>
                             ))}
                         </div>
@@ -505,8 +504,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                                             value={loan.disbursement_account}
                                             onChange={(v) => updateLoan(i, { disbursement_account: v })}
                                             options={disbursementOptions}
-                                            placeholder="Cuenta corriente..."
-                                        />
+                                            />
                                         <AccountSelector
                                             label="Cuenta contable de pasivo (2.x) *"
                                             value={loan.liability_account}

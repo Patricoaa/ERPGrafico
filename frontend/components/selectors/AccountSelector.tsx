@@ -177,7 +177,6 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
             >
                 <div className="space-y-4 pt-4">
                     <Input
-                        placeholder="Buscar por código o nombre..."
                         value={searchTerm}
                         onChange={(e) => searchAccounts(e.target.value)}
                     />

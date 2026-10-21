@@ -164,7 +164,6 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                                             <LabeledInput
                                                 label="Nombre"
                                                 required
-                                                placeholder="Banco Estado Cta Cte"
                                                 error={fieldState.error?.message}
                                                 {...field}
                                             />

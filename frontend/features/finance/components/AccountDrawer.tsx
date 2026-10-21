@@ -174,7 +174,6 @@ export function AccountDrawer({
                     render={({ field }) => (
                         <LabeledInput
                             label="Código"
-                            placeholder="Auto"
                             disabled={true}
                             hint="Jerárquico"
                             {...field}
@@ -225,7 +224,6 @@ export function AccountDrawer({
                             value={field.value}
                             onChange={field.onChange}
                             showAll={true}
-                            placeholder="Sin padre (Raíz)"
                             error={fieldState.error?.message}
                             disabled={isViewMode || hasPostedItems || hasChildren}
                         />

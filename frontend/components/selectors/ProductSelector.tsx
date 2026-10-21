@@ -227,7 +227,6 @@ export function ProductSelector({
                                 "flex h-10 w-full rounded-md bg-transparent py-3 outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
                                 variant === 'inline' ? "text-xs" : "text-sm"
                             )}
-                            placeholder="Buscar código o nombre..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />

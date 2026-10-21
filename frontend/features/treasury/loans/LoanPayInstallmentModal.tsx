@@ -211,7 +211,6 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
                     <LabeledSelect
                         label="Pagar desde cuenta"
                         required
-                        placeholder="Seleccionar cuenta…"
                         options={disbursementAccounts.map((a) => ({
                             value: String(a.id), label: `${a.name} (${a.code})`,
                         }))}

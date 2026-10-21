@@ -258,7 +258,7 @@ export function MappingConfigDrawer({
                                             isModified && "ring-1 ring-primary/50 border-primary/50 bg-primary/5",
                                             (!fieldValue || fieldValue === "none") && !isModified && "text-warning border-warning/30 bg-warning/5"
                                         )}>
-                                            <SelectValue placeholder="Sin mapeo" />
+                                            <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent className="w-[var(--radix-select-trigger-width)]">
                                             <SelectItem value="none" className="text-muted-foreground italic">Sin mapeo</SelectItem>
@@ -328,7 +328,7 @@ export function MappingConfigDrawer({
                             <Select onValueChange={(value) => handleBulkUpdate(items, value, clear)}>
                                 <SelectTrigger className="h-9 rounded-sm border-border/40 bg-muted/30 text-xs font-bold uppercase tracking-widest w-[200px] hover:bg-muted/50 transition-colors">
                                     <Tag className="mr-2 h-3.5 w-3.5" />
-                                    <SelectValue placeholder="Asignar Categoría" />
+                                    <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="w-[var(--radix-select-trigger-width)]">
                                     <SelectItem value="none" className="text-muted-foreground italic">Quitar mapeo</SelectItem>

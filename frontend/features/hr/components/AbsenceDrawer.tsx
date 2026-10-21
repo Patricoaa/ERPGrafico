@@ -159,7 +159,6 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
-                                                    placeholder="Seleccione empleado"
                                                     options={employees.map(e => ({
                                                         value: e.id.toString(),
                                                         label: e.contact_detail?.name || ""
@@ -229,7 +228,6 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                             <FormField control={form.control} name="notes" render={({ field, fieldState }) => (
                                                 <LabeledInput
                                                     label="Notas Adicionales"
-                                                    placeholder="Opcional..."
                                                     error={fieldState.error?.message}
                                                     {...field}
                                                 />
@@ -255,7 +253,6 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
-                                                    placeholder="Seleccione empleado"
                                                     options={employees.map(e => ({
                                                         value: e.id.toString(),
                                                         label: e.contact_detail?.name || ""
@@ -325,7 +322,6 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                             <FormField control={form.control} name="notes" render={({ field, fieldState }) => (
                                                 <LabeledInput
                                                     label="Notas Adicionales"
-                                                    placeholder="Opcional..."
                                                     error={fieldState.error?.message}
                                                     {...field}
                                                 />

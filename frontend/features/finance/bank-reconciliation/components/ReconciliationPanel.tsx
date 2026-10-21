@@ -1210,7 +1210,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             rows={4}
                             value={diffNotes}
                             onChange={e => setDiffNotes(e.target.value)}
-                            placeholder="Ej. Comisión por transferencia internacional..."
                             className="text-xs font-medium"
                         />
                     </div>

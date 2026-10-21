@@ -93,7 +93,7 @@ export function BudgetVarianceView() {
                         <Select value={selectedBudget} onValueChange={setSelectedBudget}>
                             <SelectTrigger className="w-[200px] h-9 bg-background">
                                 <Target className="mr-2 h-4 w-4 text-primary" />
-                                <SelectValue placeholder="Seleccionar Presupuesto" />
+                                <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                                 {budgets.map((b: { id: number; name: string }) => (

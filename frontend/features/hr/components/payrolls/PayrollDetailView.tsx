@@ -528,7 +528,6 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared }
                             value={field.value}
                             onChange={field.onChange}
                             error={fieldState.error?.message}
-                            placeholder="Seleccionar..."
                             options={concepts.map(c => ({
                                 value: c.id.toString(),
                                 label: c.name
@@ -550,7 +549,6 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared }
                         <LabeledInput
                             {...field}
                             label="Observaciones (Opcional)"
-                            placeholder="Detalle adicional..."
                             error={fieldState.error?.message}
                         />
                     )} />

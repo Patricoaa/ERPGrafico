@@ -148,7 +148,6 @@ export function AdvancedContactSelector({
                 <div className="p-2">
                     <div className="flex items-center gap-2 mb-2">
                         <SearchBar
-                            placeholder="Buscar por nombre, rut, código..."
                             value={searchTerm}
                             onChange={setSearchTerm}
                             autoFocus

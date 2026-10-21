@@ -169,7 +169,6 @@ function ReceiptForm({ order, warehouses, isRefund, filterType, onSubmittingChan
                         value: warehouse.id.toString(),
                         label: `${warehouse.name} (${warehouse.code})`
                     }))}
-                    placeholder="Seleccione bodega"
                     error={errors.warehouseId?.message}
                 />
                 <PeriodValidationDateInput

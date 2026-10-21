@@ -161,7 +161,6 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                         containerClassName="flex-1"
                                         value={selectedVariantId}
                                         onChange={setSelectedVariantId}
-                                        placeholder="Seleccione variante..."
                                         className="font-mono h-10"
                                         options={[
                                             { value: "all", label: "-- Ver Todas las Recetas --" },

@@ -266,7 +266,6 @@ export function PaymentFormDrawer({
                                                 onChange={field.onChange}
                                                 disabled={isFetchingInvoices}
                                                 error={fieldState.error?.message}
-                                                placeholder="Seleccione..."
                                                 options={[
                                                     { value: "__none__", label: "Sin vínculo" },
                                                     ...orders.map((o) => ({

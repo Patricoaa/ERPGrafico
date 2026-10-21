@@ -181,7 +181,6 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                             label="Bodega de Despacho"
                             value={warehouseId?.toString() || ''}
                             onChange={(val) => form.setValue("warehouseId", Number(val))}
-                            placeholder="Seleccione bodega"
                             error={form.formState.errors.warehouseId?.message}
                             options={warehouses.map((warehouse) => ({
                                 value: warehouse.id.toString(),

@@ -146,7 +146,6 @@ export function UoMSelector({
                         <Search className="mr-2 h-3.5 w-3.5 shrink-0 opacity-50" />
                         <input
                             className="flex h-8 w-full rounded-md bg-transparent py-2 text-xs outline-none placeholder:text-muted-foreground"
-                            placeholder="Buscar UdM..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             autoFocus

@@ -165,7 +165,6 @@ export function PaymentForm({
                                     onChange={field.onChange}
                                     disabled={isFetchingInvoices || !orders.length}
                                     error={fieldState.error?.message}
-                                    placeholder="Seleccione..."
                                     options={[
                                         { value: "__none__", label: "Sin vínculo" },
                                         ...orders.map((o) => ({

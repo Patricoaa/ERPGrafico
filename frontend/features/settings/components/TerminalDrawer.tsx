@@ -396,7 +396,6 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                                                         error={fieldState.error?.message}
                                                         onChange={field.onChange}
                                                         value={field.value || ""}
-                                                        placeholder="Seleccionar..."
                                                         options={[
                                                             { value: "__none__", label: "-- Ninguna (Solicitar al iniciar) --" },
                                                             ...treasuryAccounts

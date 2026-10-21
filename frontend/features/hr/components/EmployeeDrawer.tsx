@@ -337,7 +337,6 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                             <FormField control={form.control} name="position" render={({ field, fieldState }) => (
                                                                 <LabeledInput
                                                                     label="Cargo (opcional)"
-                                                                    placeholder="Ej: Vendedor"
                                                                     error={fieldState.error?.message}
                                                                     {...field}
                                                                 />
@@ -347,7 +346,6 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                             <FormField control={form.control} name="department" render={({ field, fieldState }) => (
                                                                 <LabeledInput
                                                                     label="Departamento (opcional)"
-                                                                    placeholder="Ventas"
                                                                     error={fieldState.error?.message}
                                                                     {...field}
                                                                 />
@@ -499,7 +497,6 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                     value={field.value || ""}
                                                                     onChange={field.onChange}
                                                                     error={fieldState.error?.message}
-                                                                    placeholder="Seleccionar..."
                                                                     options={afps.map(afp => ({
                                                                         value: afp.id.toString(),
                                                                         label: `${afp.name} (${afp.percentage}%)`

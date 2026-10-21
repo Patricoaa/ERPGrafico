@@ -76,6 +76,9 @@ export const LabeledSelect = forwardRef<
         ...rest
     } = props
 
+    // Default placeholder per typography contract R6
+    const effectivePlaceholder = placeholder ?? 'Seleccionar...'
+
     const hasError = !!error
 
     const selectTrigger = (
@@ -97,7 +100,7 @@ export const LabeledSelect = forwardRef<
                     !value && "text-muted-foreground font-normal"
                 )}
             >
-                <SelectValue placeholder={placeholder} />
+                <SelectValue placeholder={effectivePlaceholder} />
             </SelectTrigger>
             <SelectContent position="popper" align="start" className="w-[var(--radix-select-trigger-width)]">
                 {options.map((opt) => (

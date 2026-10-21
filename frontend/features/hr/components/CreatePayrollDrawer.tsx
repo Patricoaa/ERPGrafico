@@ -136,7 +136,6 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved }: CreatePayro
                                 value={field.value}
                                 onChange={field.onChange}
                                 error={fieldState.error?.message}
-                                placeholder="Seleccionar empleado..."
                                 options={employees.map(e => ({
                                     value: String(e.id),
                                     label: `${e.contact_detail?.name} — ${e.contact_detail?.tax_id}`
@@ -174,7 +173,6 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved }: CreatePayro
                         <FormField control={form.control} name="notes" render={({ field, fieldState }) => (
                             <LabeledInput
                                 label="Notas (Opcional)"
-                                placeholder="Información adicional..."
                                 error={fieldState.error?.message}
                                 {...field}
                             />

@@ -331,7 +331,6 @@ export function PaymentMethodSelector({
                         />
                         <LabeledSelect
                             label="Banco Emisor"
-                            placeholder="Seleccione banco..."
                             value={currentAlloc.checkBankId?.toString() || ""}
                             onChange={(val) => update({ checkBankId: val ? parseInt(val) : null })}
                             options={banks.filter(b => b.is_active).map(b => ({ value: b.id.toString(), label: b.name }))}

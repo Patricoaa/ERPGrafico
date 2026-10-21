@@ -164,7 +164,6 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
-                                                    placeholder="Seleccionar empleado..."
                                                     options={employees.map(e => ({
                                                         value: e.id.toString(),
                                                         label: e.contact_detail?.name || ""
@@ -218,7 +217,6 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                                     as="textarea"
                                                     label="Notas"
                                                     rows={2}
-                                                    placeholder="Descripción opcional..."
                                                     {...field}
                                                 />
                                             )} />
@@ -243,7 +241,6 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
-                                                    placeholder="Seleccionar empleado..."
                                                     options={employees.map(e => ({
                                                         value: e.id.toString(),
                                                         label: e.contact_detail?.name || ""
@@ -297,7 +294,6 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                                     as="textarea"
                                                     label="Notas"
                                                     rows={2}
-                                                    placeholder="Descripción opcional..."
                                                     {...field}
                                                 />
                                             )} />

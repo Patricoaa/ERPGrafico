@@ -367,7 +367,6 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                                 render={({ field, fieldState }) => (
                                                     <LabeledSelect
                                                         label="Entidad Bancaria"
-                                                        placeholder="Seleccione banco..."
                                                         value={field.value || ""}
                                                         onChange={field.onChange}
                                                         disabled={isSystemManaged}

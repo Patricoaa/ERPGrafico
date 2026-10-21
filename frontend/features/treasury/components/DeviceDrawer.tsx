@@ -174,7 +174,6 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                                                 required
                                                 value={field.value || ""}
                                                 onChange={(v) => field.onChange(v)}
-                                                placeholder="Seleccione..."
                                                 options={providers.map(p => ({ value: p.id.toString(), label: p.name }))}
                                             />
                                         )}
