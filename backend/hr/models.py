@@ -5,6 +5,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
+from core.edit_policy import EditPolicy
 from core.models import TimeStampedModel
 
 
@@ -379,6 +380,12 @@ class Payroll(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    edit_policy = EditPolicy(
+        editable_statuses=frozenset({"DRAFT"}),
+        deletable=True,
+        locked_message="La liquidación está contabilizada y no se puede modificar.",
+    )
+
     class Meta:
         ordering = ["-period_year", "-period_month", "-id"]
         unique_together = ["employee", "period_year", "period_month"]
@@ -428,6 +435,13 @@ class Payroll(models.Model):
 
 class PayrollItem(models.Model):
     """Línea de la liquidación vinculada a un concepto dinámico."""
+
+    edit_policy = EditPolicy(
+        is_locked=lambda item: item.payroll.status != "DRAFT",
+        mutable_when_locked=frozenset(),
+        deletable=True,
+        locked_message="La liquidación está contabilizada; sus líneas no se pueden modificar.",
+    )
 
     payroll = models.ForeignKey(Payroll, on_delete=models.CASCADE, related_name="items")
     concept = models.ForeignKey(

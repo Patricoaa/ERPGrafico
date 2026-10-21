@@ -41,7 +41,7 @@ Entidades con FK `journal_entry` (o que generan movimientos de tesorería), seg�
 
 | Entidad | Hueco | Consecuencia |
 |---|---|---|
-| `TreasuryMovement` | Serializer `fields="__all__"`; `read_only_fields` solo `created_by`, `created_at`, `history`, `is_pending_registration`. `perform_update` (`treasury/views.py:387`) guarda y recalcula el documento relacionado sin mirar estado. | Se puede cambiar `amount`, cuentas o fecha de un movimiento con asiento `POSTED`: saldo de tesorería ≠ libro mayor. Además recalcula el saldo pendiente de facturas/OV/OC con el monto editado. |
+| `TreasuryMovement` | `TreasuryMovementWriteSerializer` (usado en `update`/`partial_update`) deja escribibles `amount`, `account`, `from_account`, `to_account`, `date`, `contact`, `invoice`, `sale_order`, `purchase_order`, `bank_statement_line`… `perform_update` (`treasury/views.py:387`) guarda y recalcula el documento relacionado sin mirar estado. **Resuelto 2026-10-21 (EditPolicy).** | Se puede cambiar `amount`, cuentas o fecha de un movimiento con asiento `POSTED`: saldo de tesorería ≠ libro mayor. Además recalcula el saldo pendiente de facturas/OV/OC con el monto editado. |
 | `Payroll` | `PayrollWriteSerializer` deja editables `base_salary`, `agreed_days`, `absent_days`, `worked_days`… `PayrollValidator` (`hr/validators.py`) no mira `status`. | Liquidación `POSTED` editable vía API; su asiento no cambia. |
 | `PayrollItem` | `PayrollItemViewSet` (`hr/views.py:320`) crea/edita/borra ítems y llama `recalculate_totals()` sin mirar el estado de la liquidación. | Totales de una liquidación contabilizada cambian; el asiento no. |
 | `SalaryAdvance` | Sin estado y sin guard (ver §1). | Descuadre de la cuenta de anticipos. |

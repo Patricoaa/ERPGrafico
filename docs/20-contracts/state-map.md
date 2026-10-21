@@ -213,6 +213,8 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 **Edit restrictions:** If `is_reconciled == True` → bloquea cancelación. Si tiene `journal_entry.status == POSTED` → solo annul vía reverso. Movimientos en período contable cerrado se bloquean.
 
+**Edit policy (ADR-0091, `TreasuryMovement.edit_policy`):** editable solo en `DRAFT` **y sin asiento** (cualquier asiento, aun borrador, deriva de sus campos). Bloqueado: solo `notes` y `justify_reason` editables; la API responde 422 `DOCUMENT_LOCKED`. Hard delete solo de `CANCELLED` sin asiento (purga admin). `is_editable` expuesto en el detalle.
+
 ## POSSession
 
 | Status | Intent | Transitions allowed to |

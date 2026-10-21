@@ -17,6 +17,28 @@ class NoDestroyModelMixin:
         raise MethodNotAllowed("DELETE", detail="La eliminación de este registro no está permitida.")
 
 
+class EditPolicyMixin:
+    """
+    Enforces the model's ``edit_policy`` (ADR-0091) on update and destroy.
+    ViewSets overriding ``perform_update``/``perform_destroy`` must call super().
+    """
+
+    def perform_update(self, serializer):
+        from core.edit_policy import assert_editable, changed_fields
+
+        instance = serializer.instance
+        assert_editable(instance, changed_fields(instance, serializer.validated_data))
+        super().perform_update(serializer)
+
+    def perform_destroy(self, instance):
+        from core.edit_policy import get_edit_policy
+
+        policy = get_edit_policy(instance)
+        if policy is not None:
+            policy.assert_deletable(instance)
+        super().perform_destroy(instance)
+
+
 class BulkImportMixin:
     """
     Mixin to add bulk import functionality from CSV to a ViewSet.

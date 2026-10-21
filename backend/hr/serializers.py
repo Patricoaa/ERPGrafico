@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from contacts.models import Contact
+from core.serializers.mixins import IsEditableField
 
 from .models import (
     AFP,
@@ -396,6 +397,7 @@ class PayrollDetailSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     items = PayrollItemSerializer(many=True, read_only=True)
     advances = SalaryAdvanceSerializer(many=True, read_only=True)
+    is_editable = IsEditableField()
 
     class Meta:
         model = Payroll
@@ -410,6 +412,7 @@ class PayrollDetailSerializer(serializers.ModelSerializer):
             "period_label",
             "status",
             "status_display",
+            "is_editable",
             "base_salary",
             "agreed_days",
             "absent_days",

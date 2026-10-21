@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from core.serializers.mixins import IsEditableField
+
 from .models import (
     Bank,
     BankStatement,
@@ -333,6 +335,7 @@ class TreasuryMovementWriteSerializer(serializers.ModelSerializer):
         read_only_fields = ["is_reconciled", "is_pending_registration"]
 
 class TreasuryMovementSerializer(serializers.ModelSerializer):
+    is_editable = IsEditableField()
     partner_name = serializers.SerializerMethodField()
     partner_id = serializers.SerializerMethodField()
     account_name = serializers.CharField(source="account.name", read_only=True)

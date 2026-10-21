@@ -12,6 +12,7 @@ from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
 from accounting.models import Account, AccountType
+from core.edit_policy import EditPolicy
 from core.models import TimeStampedModel
 from core.storages import PrivateMediaStorage
 from core.utils import get_current_date
@@ -405,6 +406,14 @@ class TreasuryMovement(models.Model):
         choices=MovementStatus.choices,
         default=MovementStatus.DRAFT,
         help_text=_("Estado del movimiento: Borrador, Contabilizado o Anulado."),
+    )
+
+    # ADR-0091: any journal entry (even draft) is derived from these fields.
+    edit_policy = EditPolicy(
+        editable_statuses=frozenset({"DRAFT"}),
+        is_locked=lambda m: m.journal_entry_id is not None,
+        mutable_when_locked=frozenset({"notes", "justify_reason"}),
+        is_purgeable=lambda m: m.status == "CANCELLED" and m.journal_entry_id is None,
     )
 
     created_at = models.DateTimeField(auto_now_add=True)

@@ -8,8 +8,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
+from core.edit_policy import assert_editable
 from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin as AuditHistory
+from core.mixins import EditPolicyMixin
 
 from . import services
 from .models import (
@@ -203,7 +205,7 @@ class PayrollFilter(django_filters.FilterSet):
         fields = ["employee", "period_year", "period_month", "status", "date_from", "date_to"]
 
 
-class PayrollViewSet(viewsets.ModelViewSet):
+class PayrollViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     def get_queryset(self):
         return (
@@ -243,6 +245,7 @@ class PayrollViewSet(viewsets.ModelViewSet):
     def recalculate(self, request, pk=None):
         """Recalcula los totales."""
         payroll = self.get_object()
+        assert_editable(payroll)
         payroll.recalculate_totals()
         return Response(PayrollDetailSerializer(payroll).data)
 
@@ -317,27 +320,28 @@ class PayrollViewSet(viewsets.ModelViewSet):
 # --- PayrollItems ---
 
 
-class PayrollItemViewSet(viewsets.ModelViewSet):
+class PayrollItemViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     serializer_class = PayrollItemSerializer
 
     def get_queryset(self):
         return PayrollItem.objects.filter(payroll_id=self.kwargs.get("payroll_pk")).select_related(
-            "concept"
+            "concept", "payroll"
         )
 
     def perform_create(self, serializer):
         payroll = Payroll.objects.get(pk=self.kwargs["payroll_pk"])
+        assert_editable(payroll, {"items"})
         serializer.save(payroll=payroll)
         payroll.recalculate_totals()
 
     def perform_update(self, serializer):
-        item = serializer.save()
-        item.payroll.recalculate_totals()
+        super().perform_update(serializer)
+        serializer.instance.payroll.recalculate_totals()
 
     def perform_destroy(self, instance):
         payroll = instance.payroll
-        instance.delete()
+        super().perform_destroy(instance)
         payroll.recalculate_totals()
 
 

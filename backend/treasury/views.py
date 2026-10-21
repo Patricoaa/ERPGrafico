@@ -17,7 +17,7 @@ from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
 from core.idempotency import idempotent_endpoint
-from core.mixins import AuditHistoryMixin
+from core.mixins import AuditHistoryMixin, EditPolicyMixin
 
 from .deletion_service import BankDeletionService
 from .difference_service import DifferenceService
@@ -346,7 +346,7 @@ class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
-class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class TreasuryMovementViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = TreasuryMovement.objects.all().order_by("-date", "-created_at")
     serializer_class = TreasuryMovementSerializer
     pagination_class = StandardResultsSetPagination
@@ -385,9 +385,8 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         return super().destroy(request, *args, **kwargs)
 
     def perform_update(self, serializer):
-        instance = serializer.save()
-        # Trigger status update on related documents
-        TreasuryService.update_related_document_status(instance)
+        super().perform_update(serializer)
+        TreasuryService.update_related_document_status(serializer.instance)
 
     @idempotent_endpoint(scope='treasury.movement.create')
     def create(self, request, *args, **kwargs):
