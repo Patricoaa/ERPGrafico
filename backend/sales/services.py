@@ -852,11 +852,6 @@ class SalesService:
         return order
 
     @staticmethod
-    def validate_editable(instance):
-        if instance.status != "DRAFT":
-            raise ValidationError("Solo se pueden editar ordenes de venta en estado Borrador.")
-
-    @staticmethod
     def dispatch_order_by_id(order: SaleOrder, warehouse_id, delivery_date=None):
         from inventory.models import Warehouse
 

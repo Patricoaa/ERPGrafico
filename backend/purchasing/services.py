@@ -1085,11 +1085,6 @@ class PurchasingService:
         return invoice
 
     @staticmethod
-    def validate_editable(order: PurchaseOrder):
-        if order.status != "DRAFT":
-            raise ValidationError("Solo se pueden editar órdenes en estado Borrador.")
-
-    @staticmethod
     def validate_can_purge(order: PurchaseOrder, user):
         if not user.is_staff:
             raise ValidationError("Solo administradores pueden purgar documentos cancelados.")

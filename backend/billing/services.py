@@ -1493,11 +1493,6 @@ class BillingService:
 
     @staticmethod
     @staticmethod
-    def validate_editable(instance):
-        if instance.status != "DRAFT":
-            raise ValidationError("Solo se pueden editar facturas en estado Borrador.")
-
-    @staticmethod
     def check_folio_from_request(request):
         from .selectors import InvoiceSelectorExt
 

@@ -8,7 +8,7 @@ from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
 from core.idempotency import idempotent_endpoint
-from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
+from core.mixins import AuditHistoryMixin, EditPolicyMixin, NoDestroyModelMixin
 
 from .invoice_from_lines import InvoiceFromLinesService
 from .models import Invoice
@@ -51,7 +51,7 @@ class InvoiceFilterSet(django_filters.FilterSet):
         }
 
 
-class InvoiceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class InvoiceViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     serializer_class = InvoiceSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
@@ -79,22 +79,6 @@ class InvoiceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMix
     @idempotent_endpoint(scope="billing.invoice.create")
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
-
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        try:
-            BillingService.validate_editable(instance)
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return super().update(request, *args, **kwargs)
-
-    def partial_update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        try:
-            BillingService.validate_editable(instance)
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return super().partial_update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()

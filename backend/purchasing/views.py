@@ -101,7 +101,7 @@ class PurchaseOrderFilterSet(FilterSet):
         return filter_by_payment_status(queryset.exclude(status="CANCELLED"), value)
 
 
-class PurchaseOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class PurchaseOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     def get_queryset(self):
         return PurchaseOrderSelector.get_base_queryset()
     pagination_class = StandardResultsSetPagination
@@ -127,20 +127,6 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHist
         if self.action in ["create", "update", "partial_update"]:
             return WritePurchaseOrderSerializer
         return PurchaseOrderSerializer
-
-    def update(self, request, *args, **kwargs):
-        try:
-            PurchasingService.validate_editable(self.get_object())
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return super().update(request, *args, **kwargs)
-
-    def partial_update(self, request, *args, **kwargs):
-        try:
-            PurchasingService.validate_editable(self.get_object())
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return super().partial_update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         try:

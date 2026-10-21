@@ -25,9 +25,6 @@ PROJECT_APPS = {
 # Models with journal-entry derivatives still lacking an edit_policy.
 # Remove the entry in the same PR that adds the policy. Never add new ones.
 UNPROTECTED_BASELINE = {
-    "billing.Invoice": "validate_editable ad-hoc en BillingService; migrar a EditPolicy",
-    "sales.SaleOrder": "validate_editable ad-hoc en SalesService; migrar a EditPolicy",
-    "purchasing.PurchaseOrder": "validate_editable ad-hoc en PurchasingService; migrar a EditPolicy",
     "inventory.StockMove": "API de solo lectura; declarar política para servicios",
     "contacts.PartnerTransaction": "no revisado; agregar al informe",
     "contacts.ProfitDistributionResolution": "no revisado; agregar al informe",

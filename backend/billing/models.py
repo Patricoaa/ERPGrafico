@@ -4,6 +4,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from accounting.models import JournalEntry
+from core.edit_policy import DRAFT_ONLY_DOCUMENT
 from core.models import TransactionalDocument
 from core.storages import PrivateMediaStorage
 from core.utils import generic_upload_path, get_current_date
@@ -13,6 +14,8 @@ from sales.models import SaleOrder
 
 
 class Invoice(TransactionalDocument):
+    edit_policy = DRAFT_ONLY_DOCUMENT  # ADR-0091
+
     class DTEType(models.TextChoices):
         FACTURA = "FACTURA", _("Factura Electrónica")
         FACTURA_EXENTA = "FACTURA_EXENTA", _("Factura No Afecta o Exenta")

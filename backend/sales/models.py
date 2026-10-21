@@ -14,6 +14,8 @@ from core.utils import get_current_date
 
 
 class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
+    edit_policy = DRAFT_ONLY_DOCUMENT  # ADR-0091
+
     class Status(models.TextChoices):
         DRAFT = "DRAFT", _("Borrador")
         CONFIRMED = "CONFIRMED", _("Confirmado")

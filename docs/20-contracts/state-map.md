@@ -46,6 +46,8 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 **Edit restrictions:** Solo editable en `DRAFT`. Campos inmutables: `number`, `status`, `total_net`, `total_tax`, `total`, `journal_entry`.
 
+**Edit policy (ADR-0091, `DRAFT_ONLY_DOCUMENT`):** editable solo en `DRAFT` sin asiento; bloqueado solo admite `notes` (API 422 `DOCUMENT_LOCKED`; antes 400 y bloqueaba también `notes`).
+
 ## PurchaseOrder
 
 | Status | ReceivingStatus | Intent | Transitions allowed to |
@@ -65,6 +67,8 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 | `RECEIVED` | `success` | Todas las líneas recibidas |
 
 **Edit restrictions:** Solo editable en `DRAFT`. Campos inmutables: `id`, `number`, `status`, `receiving_status`, `total_net`, `total_tax`, `total`.
+
+**Edit policy (ADR-0091, `DRAFT_ONLY_DOCUMENT`):** editable solo en `DRAFT` sin asiento; bloqueado solo admite `notes` (API 422 `DOCUMENT_LOCKED`; antes 400 y bloqueaba también `notes`).
 
 ## WorkOrder
 
@@ -117,6 +121,8 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 **Edit restrictions:** Solo editable en `DRAFT`. Campos inmutables: `id`, `number`, `status`, `total_net`, `total_tax`, `total`, `journal_entry`, `tax_period_closed`.
 
 **Annul rules:** If folio assigned → requires Nota de Crédito. If confirmed deliveries/receipts exist → blocks. If posted payments exist → blocks (unless `force=True` cascades).
+
+**Edit policy (ADR-0091, `DRAFT_ONLY_DOCUMENT`):** editable solo en `DRAFT` sin asiento; bloqueado solo admite `notes` (API 422 `DOCUMENT_LOCKED`; antes 400 y bloqueaba también `notes`).
 
 ## JournalEntry
 
