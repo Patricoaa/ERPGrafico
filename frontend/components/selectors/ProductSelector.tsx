@@ -198,7 +198,7 @@ export function ProductSelector({
                     className={cn(
                         "w-full justify-between overflow-hidden shadow-none focus-visible:ring-0 transition-all",
                         variant === 'standalone'
-                            ? "h-[1.5rem] px-0 border-none bg-transparent hover:bg-transparent"
+                            ? "h-6! px-0 border-none bg-transparent hover:bg-transparent"
                             : cn("h-9 text-xs px-2 bg-background hover:bg-primary/[0.02]", className)
                     )}
                 >
@@ -206,14 +206,14 @@ export function ProductSelector({
                         <div className="flex items-center justify-between gap-1.5 min-w-0 flex-1">
                             <div className="flex items-center gap-1.5 min-w-0">
                                 <ProductIcon className={cn("h-3.5 w-3.5 shrink-0 text-primary", variant === 'inline' && "h-3 w-3")} />
-                                <span className={cn("font-medium text-sm truncate", variant === 'inline' && "text-xs")}>{selectedProduct.name}</span>
+                                <span className={cn("text-sm text-foreground truncate", variant === 'inline' && "text-xs")}>{selectedProduct.name}</span>
                             </div>
                             <span className={cn("text-muted-foreground shrink-0 pr-1 text-right", variant === 'inline' ? "text-3xs" : "text-xs")}>
                                 {PricingUtils.formatCurrency(Number(selectedProduct.sale_price_gross ?? selectedProduct.sale_price))}
                             </span>
                         </div>
                     ) : (
-                        <span className={cn("text-muted-foreground truncate", variant === 'inline' && "text-xs")}>{placeholder}</span>
+                        <span className={cn("text-sm text-muted-foreground/60 truncate", variant === 'inline' && "text-xs")}>{placeholder}</span>
                     )}
                     <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 opacity-50", variant === 'inline' && "h-3 w-3")} />
                 </Button>

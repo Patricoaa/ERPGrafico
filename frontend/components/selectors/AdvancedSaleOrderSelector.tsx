@@ -155,7 +155,7 @@ export function AdvancedSaleOrderSelector({
                             aria-expanded={open}
                             disabled={disabled}
                             className={cn(
-                                "w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
+                                "w-full justify-between overflow-hidden h-6! py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
                                 disabled && "opacity-50 cursor-not-allowed",
                                 icon && "pl-1.5"
                             )}
@@ -163,11 +163,11 @@ export function AdvancedSaleOrderSelector({
                             {selectedOrder ? (
                                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                     <SaleOrderIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                    <span className="font-semibold text-sm shrink-0">{formatEntityDisplay('sales.saleorder', selectedOrder as unknown as Record<string, unknown>)}</span>
+                                    <span className="text-sm shrink-0">{formatEntityDisplay('sales.saleorder', selectedOrder as unknown as Record<string, unknown>)}</span>
                                     <span className="text-sm text-muted-foreground truncate">{selectedOrder.customer_name}</span>
                                 </div>
                             ) : (
-                                <span className="text-muted-foreground truncate">{placeholder}</span>
+                                <span className="text-sm text-muted-foreground/60 truncate">{placeholder}</span>
                             )}
                             <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>

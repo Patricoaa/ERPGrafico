@@ -140,16 +140,16 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                         role="combobox"
                         aria-expanded={open}
                         disabled={disabled}
-                        className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                        className="w-full justify-between overflow-hidden h-6! py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
                     >
                         {selectedAccount ? (
                             <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                 <AccountIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                <span className="font-mono text-xs font-semibold shrink-0 text-primary">{selectedAccount.code}</span>
+                                <span className="font-mono text-xs font-medium shrink-0 text-primary">{selectedAccount.code}</span>
                                 <span className="text-sm truncate text-foreground">{selectedAccount.name}</span>
                             </div>
                         ) : (
-                            <span className="text-muted-foreground truncate">{placeholder}</span>
+                            <span className="text-sm text-muted-foreground/60 truncate">{placeholder}</span>
                         )}
                         <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>

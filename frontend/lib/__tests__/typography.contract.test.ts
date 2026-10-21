@@ -54,6 +54,18 @@ const productDrawer = {
   warehouseSelector: read('../../components/selectors/WarehouseSelector.tsx'),
 };
 
+const selectors: Record<string, string> = {
+  userSelector: read('../../components/selectors/UserSelector.tsx'),
+  groupSelector: read('../../components/selectors/GroupSelector.tsx'),
+  accountSelector: read('../../components/selectors/AccountSelector.tsx'),
+  treasuryAccountSelector: read('../../components/selectors/TreasuryAccountSelector.tsx'),
+  sourceDocumentSelector: read('../../components/selectors/SourceDocumentSelector.tsx'),
+  advancedWorkOrderSelector: read('../../components/selectors/AdvancedWorkOrderSelector.tsx'),
+  advancedSaleOrderSelector: read('../../components/selectors/AdvancedSaleOrderSelector.tsx'),
+  advancedContactSelector: read('../../components/selectors/AdvancedContactSelector.tsx'),
+  productSelector: read('../../components/selectors/ProductSelector.tsx'),
+};
+
 describe('typography contract', () => {
   it('micro N5 tokens keep their declared px values', () => {
     expect(/--text-4xs:\s*0\.5625rem/.test(css), 'text-4xs = 9px').toBe(true);
@@ -242,6 +254,55 @@ describe('typography contract', () => {
       expect(/font-medium text-sm truncate.*\{selectedWarehouse\.name\}/.test(src)).toBe(false);
       // No arbitrary height h-[1.5rem]
       expect(/h-\[1\.5rem\]/.test(src)).toBe(false);
+    });
+  });
+
+  describe('Selectors — value N3 (text-sm), placeholder N3 (text-sm text-muted-foreground/60), no h-[1.5rem]', () => {
+    const selectorTests = [
+      { key: 'userSelector', placeholder: 'Seleccionar usuario\\.\\.\\.' },
+      { key: 'groupSelector', placeholder: 'Seleccionar grupo\\.\\.\\.' },
+      { key: 'accountSelector', placeholder: 'Seleccionar cuenta\\.\\.\\.' },
+      { key: 'treasuryAccountSelector', placeholder: 'Seleccionar\\.\\.\\.' },
+      { key: 'sourceDocumentSelector', placeholder: 'Buscar documento origen\\.\\.\\.' },
+      { key: 'advancedWorkOrderSelector', placeholder: 'Vincular a' },
+      { key: 'advancedSaleOrderSelector', placeholder: 'Seleccionar' },
+      { key: 'advancedContactSelector', placeholder: 'Seleccionar contacto\\.\\.\\.' },
+      { key: 'productSelector', placeholder: 'Seleccionar producto\\.\\.\\.' },
+    ];
+
+    selectorTests.forEach(({ key, placeholder }) => {
+      it(`${key} uses text-sm value, text-sm text-muted-foreground/60 placeholder, no h-[1.5rem]`, () => {
+        const src = selectors[key];
+        // Value uses text-sm (with text-foreground or text-primary)
+        expect(/text-sm/.test(src)).toBe(true);
+        // Placeholder uses text-sm text-muted-foreground/60 (trigger section)
+        expect(/text-sm text-muted-foreground\/60/.test(src)).toBe(true);
+        // Placeholder text appears (loosely)
+        expect(new RegExp(placeholder).test(src)).toBe(true);
+        // No arbitrary h-[1.5rem] in standalone variant
+        expect(/h-\[1\.5rem\]/.test(src)).toBe(false);
+        // No font-medium on value in trigger
+        expect(/font-medium text-sm/.test(src)).toBe(false);
+        // Uses h-6! token height in trigger
+        expect(/h-6!/.test(src)).toBe(true);
+      });
+    });
+
+    it('AccountSelector trigger code uses font-mono text-xs font-medium (N3 Código role)', () => {
+      const src = selectors.accountSelector;
+      // Trigger section has font-medium, renderItem has font-semibold (that's dropdown, not the field value)
+      expect(/selectedAccount[\s\S]*font-mono text-xs font-medium/.test(src)).toBe(true);
+      // renderItem still has font-semibold for dropdown rows - that's acceptable
+    });
+
+    it('AdvancedContactSelector inline variant uses text-2xs', () => {
+      const src = selectors.advancedContactSelector;
+      expect(/variant === 'inline'.*text-2xs/.test(src)).toBe(true);
+    });
+
+    it('ProductSelector inline variant uses text-xs', () => {
+      const src = selectors.productSelector;
+      expect(/variant === 'inline'.*text-xs/.test(src)).toBe(true);
     });
   });
 });

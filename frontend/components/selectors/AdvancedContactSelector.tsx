@@ -114,7 +114,7 @@ export function AdvancedContactSelector({
                     className={cn(
                         "w-full justify-between overflow-hidden py-0 shadow-none focus-visible:ring-0 transition-all",
                         variant === 'standalone'
-                            ? "h-[1.5rem] px-3 border-none bg-transparent hover:bg-primary/[0.03]"
+                            ? "h-6! px-3 border-none bg-transparent hover:bg-primary/[0.03]"
                             : cn("h-9 text-xs px-2 bg-background hover:bg-primary/[0.02]", className),
                         icon && "pl-1"
                     )}
@@ -132,13 +132,13 @@ export function AdvancedContactSelector({
                                     ? <Building2 className={cn("h-3.5 w-3.5 shrink-0", disabled ? "text-muted-foreground" : "text-primary")} />
                                     : <User className={cn("h-3.5 w-3.5 shrink-0", disabled ? "text-muted-foreground" : "text-primary")} />
                                 }
-                                <span className={cn("font-medium text-sm truncate", variant === 'inline' && "text-2xs")}>{selectedContact.name}</span>
+                                <span className={cn("text-sm text-foreground truncate", variant === 'inline' && "text-2xs")}>{selectedContact.name}</span>
                                 <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">
                                     {selectedContact.tax_id ? formatRUT(selectedContact.tax_id) : 'S/Rut'}
                                 </span>
                             </div>
                         ) : (
-                            <span className={cn("text-muted-foreground", variant === 'inline' && "text-2xs")}>{placeholder}</span>
+                            <span className={cn("text-sm text-muted-foreground/60", variant === 'inline' && "text-2xs")}>{placeholder}</span>
                         )}
                     </div>
                     {!disabled && <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 opacity-50", variant === 'inline' && "h-3 w-3")} />}

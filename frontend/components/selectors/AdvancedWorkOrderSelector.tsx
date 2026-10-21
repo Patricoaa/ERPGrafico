@@ -152,18 +152,18 @@ export function AdvancedWorkOrderSelector({
                             aria-expanded={open}
                             disabled={disabled}
                             className={cn(
-                                "w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
+                                "w-full justify-between overflow-hidden h-6! py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
                                 disabled && "opacity-50 cursor-not-allowed"
                             )}
                         >
                             {selectedOrder ? (
                                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                     <WorkOrderIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                    <span className="font-semibold text-sm text-primary shrink-0">{formatEntityDisplay('production.workorder', selectedOrder as unknown as Record<string, unknown>)}</span>
+                                    <span className="text-sm text-primary shrink-0">{formatEntityDisplay('production.workorder', selectedOrder as unknown as Record<string, unknown>)}</span>
                                     <span className="text-sm text-muted-foreground truncate">{selectedOrder.product_name}</span>
                                 </div>
                             ) : (
-                                <span className="text-muted-foreground italic text-sm truncate">{placeholder}</span>
+                                <span className="text-sm text-muted-foreground/60 truncate">{placeholder}</span>
                             )}
                             <div className="flex items-center gap-2">
                                 {selectedOrder && (

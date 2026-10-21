@@ -111,7 +111,7 @@ export function SourceDocumentSelector({
                         role="combobox"
                         aria-expanded={open}
                         disabled={disabled}
-                        className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                        className="w-full justify-between overflow-hidden h-6! py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
                     >
                         {value ? (
                             <div className="flex items-center gap-1.5 min-w-0 flex-1">
@@ -133,7 +133,7 @@ export function SourceDocumentSelector({
                                 )}
                             </div>
                         ) : (
-                            <span className="text-muted-foreground truncate">Buscar documento origen...</span>
+                            <span className="text-sm text-muted-foreground/60 truncate">Buscar documento origen...</span>
                         )}
                         <div className="flex items-center gap-1">
                             {value && (
