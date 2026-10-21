@@ -391,6 +391,17 @@ export function PaymentMethodSelector({
         if (!isMultiPayment) {
             // ── Single mode: original grid + "Múltiple" card ──
             const allMethods = availableMethods.map(m => ({ ...m, isMultiple: false }))
+
+            if (!loadingMethods && availableMethods.length === 0) {
+                return (
+                    <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+                        No hay métodos de pago habilitados para egresos.
+                        <br />
+                        <span className="text-xs">Configurá los métodos en Tesorería → Métodos de pago.</span>
+                    </div>
+                )
+            }
+
             allMethods.unshift({
                 id: '__MULTIPLE__',
                 label: 'Múltiple',
@@ -488,8 +499,8 @@ export function PaymentMethodSelector({
                     })}
                 </div>
 
-                {/* Crédito Asignado — delta no cubierto en single mode */}
-                {paymentData.amount > 0 && paymentData.amount < total && (
+                {/* Crédito Asignado — delta no cubierto en single mode — solo ventas */}
+                {operation !== 'purchases' && paymentData.amount > 0 && paymentData.amount < total && (
                     <div className={cn(
                         methodCardClass,
                         "self-start h-auto border-2 border-primary accent-visible rounded-sm"
@@ -540,7 +551,7 @@ export function PaymentMethodSelector({
                                         {METHOD_META[p.method]?.label || p.method}: {formatMoney(p.amount)}
                                     </span>
                                 ))}
-                                {!isFullyPaid && remaining > 0 && (
+                                {operation !== 'purchases' && !isFullyPaid && remaining > 0 && (
                                     <span className="text-3xs font-semibold bg-primary-foreground/15 text-primary-foreground px-2 py-0.5 rounded-sm whitespace-nowrap">
                                         Crédito: {formatMoney(remaining)}
                                     </span>
@@ -669,7 +680,7 @@ export function PaymentMethodSelector({
                     </div>
                 )}
 
-                {!isFullyPaid && remaining > 0 && (
+                {operation !== 'purchases' && !isFullyPaid && remaining > 0 && (
                     <div className={cn(
                         methodCardClass,
                         "self-start h-auto border-2 border-primary accent-visible rounded-sm"
