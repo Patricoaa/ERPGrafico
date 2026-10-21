@@ -908,7 +908,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             return Response({'session': POSSessionSerializer(session).data, 'message': 'Movimiento registrado correctamente'})
         except Exception as e:
             return Response({'error': str(e)}, status=500)
-class CheckViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class CheckViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     """CRUD + transiciones de estado para cheques recibidos."""
 
@@ -1297,7 +1297,7 @@ class CreditLineViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         )
 
 
-class LoanInstallmentViewSet(viewsets.ModelViewSet):
+class LoanInstallmentViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     """Listado y pago de cuotas. Creación/edición no expuestas (se generan
     vía `BankLoan.generate_schedule` y se cierran vía acciones de pago)."""
@@ -1328,7 +1328,7 @@ class LoanInstallmentViewSet(viewsets.ModelViewSet):
 # ── F3.5: Tarjeta de crédito propia — estados de cuenta ─────────────────────
 
 
-class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class CreditCardStatementViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     """CRUD + acciones de lifecycle para estados de cuenta de tarjeta de crédito propia.
 
@@ -1383,7 +1383,7 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         from django.core.exceptions import ValidationError as DjangoValidationError
 
         try:
-            serializer.save()
+            super().perform_update(serializer)
         except DjangoValidationError as e:
             raise drf_serializers.ValidationError(
                 e.message_dict if hasattr(e, "message_dict") else e.messages

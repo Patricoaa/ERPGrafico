@@ -321,6 +321,8 @@ Backend: `treasury.Check`. Lifecycle gobernado por `treasury.check_service.Check
 - `issue()` toma siguiente folio automáticamente si check_number es None.
 - Validación: unicidad check_number por banco.
 
+**Edit policy (ADR-0091):** aplicada por `Check.edit_policy` — PATCH de otros campos → 422, DELETE → 422.
+
 **Edit restrictions:** Cheque inmutable salvo `notes` y campos de auditoría
 (`deposited_at`/`cleared_at`/`bounced_at`); cambios de estado pasan exclusivamente
 por `CheckService`.

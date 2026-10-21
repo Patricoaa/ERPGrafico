@@ -504,6 +504,12 @@ class ProfitDistributionPayment(models.Model):
     Registra pagos parciales o totales de dividendos aprobados en una resolución.
     """
 
+    edit_policy = EditPolicy(
+        is_locked=lambda p: p.treasury_movement_id is not None,
+        mutable_when_locked=frozenset(),
+        locked_message="El pago de utilidades ya está registrado en tesorería y no se puede modificar.",
+    )
+
     resolution = models.ForeignKey(
         ProfitDistributionResolution,
         on_delete=models.CASCADE,

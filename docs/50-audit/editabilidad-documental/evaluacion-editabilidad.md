@@ -60,7 +60,7 @@ Entidades con FK `journal_entry` (o que generan movimientos de tesorería), seg�
 
 **Resuelto 2026-10-21:** `CardPendingCharge` (bloqueado al facturarse), `BankStatementLine` (serializer `__all__` totalmente escribible, incluso `reconciliation_status` → ahora EditPolicy + read-only + transiciones PATCH limitadas a excluir/restaurar), `TerminalBatch` (`status` era escribible), `POSSessionAudit` (sin escritura por API).
 
-Pendiente: `Check` (este último declara en `state-map.md` "inmutable salvo `notes`"; su serializer marca varios campos read-only, falta verificar que cubra los económicos).
+**Resuelto 2026-10-21 (verificado: no estaba protegido):** `Check` (este último declara en `state-map.md` "inmutable salvo `notes`"; su serializer marca varios campos read-only, falta verificar que cubra los económicos).
 
 ## 4. Causa raíz
 
@@ -141,3 +141,4 @@ La clase C es un problema distinto (integridad histórica de referencias, no edi
 - **Socios (2026-10-21):** `PartnerTransaction` inmutable con asiento (solo `description`; sin API de escritura). `ProfitDistributionResolution`: el serializer dejaba escribir `status`, `journal_entry`, `approved_*`, `executed_*` (se podía marcar como ejecutada sin ejecutarla) → read-only + EditPolicy (editable en DRAFT; bloqueada admite `notes`/`acta_number`; se elimina si no está ejecutada).
 - **`StockMove`:** política inmutable declarada (append-only).
 - **`FiscalYear` (2026-10-21):** fechas y año bloqueados en `CLOSING`/`CLOSED`. **La baseline del test de contrato quedó vacía:** todo modelo con FK a `JournalEntry` declara `edit_policy`.
+- **Contrato ampliado (2026-10-21):** el test de ADR-0091 ahora detecta también FK a `TreasuryMovement`. Aparecieron y se cubrieron: `Check` (PATCH de monto/fechas/banco y DELETE abiertos → inmutable salvo `notes`), `LoanInstallment` (bloqueada al pagarse), `CreditCardStatement` (editable solo en `OPEN`; **excepción documentada**: mientras está abierto se editan montos aunque exista `charges_movement`, porque `reapply_charges` reversa y reimputa), `PaymentAllocation` y `ProfitDistributionPayment` (inmutables por API).

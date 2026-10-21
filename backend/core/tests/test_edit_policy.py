@@ -33,15 +33,18 @@ EXEMPT = {
 
 
 def _models_with_journal_entry():
+    """FK to a journal entry or to a treasury movement (ADR-0091)."""
     from accounting.models import JournalEntry
+    from treasury.models import TreasuryMovement
 
+    derivatives = (JournalEntry, TreasuryMovement)
     for model in apps.get_models():
-        if model._meta.app_label not in PROJECT_APPS or model is JournalEntry:
+        if model._meta.app_label not in PROJECT_APPS or model in derivatives:
             continue
         if model.__name__.startswith("Historical"):
             continue
         if any(
-            f.is_relation and f.related_model is JournalEntry
+            f.is_relation and f.related_model in derivatives
             for f in model._meta.concrete_fields
         ):
             yield model

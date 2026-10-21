@@ -2402,6 +2402,12 @@ class PaymentAllocation(models.Model):
     Exactamente 1 FK destino debe estar definida por registro (validado en clean()).
     """
 
+    edit_policy = EditPolicy(
+        is_locked=lambda a: True,
+        mutable_when_locked=frozenset(),
+        locked_message="Las asignaciones se cambian con la acción allocate del pago.",
+    )
+
     from decimal import Decimal as _Decimal
 
     treasury_movement = models.ForeignKey(
@@ -2522,6 +2528,12 @@ class Check(models.Model):
     un cheque de tercero a un proveedor. Ver `CheckService` y
     `docs/20-contracts/state-map.md` para el state machine vigente.
     """
+
+    # state-map: inmutable salvo notes; lifecycle via deposit/clear/bounce/void.
+    edit_policy = EditPolicy(
+        is_locked=lambda c: True,
+        locked_message="El cheque no se modifica; use sus acciones (depositar, cobrar, protestar, anular).",
+    )
 
     class Direction(models.TextChoices):
         RECEIVED = "RECEIVED", _("Recibido")
@@ -3141,6 +3153,12 @@ class LoanInstallment(models.Model):
       morosidad sin tener que recorrer el historial.
     """
 
+    edit_policy = EditPolicy(
+        is_locked=lambda i: i.payment_movement_id is not None,
+        mutable_when_locked=frozenset(),
+        locked_message="La cuota ya está pagada y no se puede modificar.",
+    )
+
     class Status(models.TextChoices):
         PENDING = "PENDING", _("Pendiente")
         PAID = "PAID", _("Pagada")
@@ -3278,6 +3296,13 @@ class CreditCardStatement(models.Model):
 
     Ver `docs/50-audit/bancos/fase-3-tarjeta-credito.md` (F3.2–F3.4).
     """
+
+    # ADR-0091 exception: while OPEN, amounts stay editable because
+    # CardService.reapply_charges reverses and re-imputes charges_movement.
+    edit_policy = EditPolicy(
+        editable_statuses=frozenset({"OPEN"}),
+        locked_message="El estado de cuenta ya no está abierto y no se puede modificar.",
+    )
 
     class Status(models.TextChoices):
         OPEN = "OPEN", _("Abierto")
