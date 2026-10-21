@@ -2,9 +2,8 @@
 import { formatEntityDisplay, getEntityIcon, getDomainConceptTitle } from "@/lib/entity-registry"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronDown } from "lucide-react"
+import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { DataCell } from "@/components/shared"
 import { useDebounce } from "@/hooks/useDebounce"
 import { format } from "date-fns"
@@ -12,6 +11,7 @@ import { format } from "date-fns"
 import { useSaleOrderSearch } from "@/features/orders/hooks/useSaleOrderSearch"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { LabeledContainer, SearchablePopover } from '@/components/shared'
+import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
 import { type SaleOrder } from "@/types/entities"
 
 const SaleOrderIcon = getEntityIcon('sales.saleorder')
@@ -149,28 +149,17 @@ export function AdvancedSaleOrderSelector({
                         </div>
                     )}
                     trigger={
-                        <Button
-                            variant="ghost"
-                            role="combobox"
-                            aria-expanded={open}
+                        <SelectorTrigger
+                            hasValue={!!selectedOrder}
+                            placeholder={placeholder}
+                            icon={<SaleOrderIcon className="h-3.5 w-3.5 shrink-0 text-primary" />}
+                            open={open}
                             disabled={disabled}
-                            className={cn(
-                                "w-full justify-between overflow-hidden h-6! py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
-                                disabled && "opacity-50 cursor-not-allowed",
-                                icon && "pl-1.5"
-                            )}
+                            className={cn(disabled && "opacity-50 cursor-not-allowed", icon && "pl-1.5")}
                         >
-                            {selectedOrder ? (
-                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                    <SaleOrderIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                    <span className="text-sm shrink-0">{formatEntityDisplay('sales.saleorder', selectedOrder as unknown as Record<string, unknown>)}</span>
-                                    <span className="text-sm text-muted-foreground truncate">{selectedOrder.customer_name}</span>
-                                </div>
-                            ) : (
-                                <span className="text-sm text-muted-foreground/60 truncate">{placeholder}</span>
-                            )}
-                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
+                            <span className="text-sm shrink-0">{formatEntityDisplay('sales.saleorder', selectedOrder as unknown as Record<string, unknown>)}</span>
+                            <span className="text-sm text-muted-foreground truncate">{selectedOrder?.customer_name}</span>
+                        </SelectorTrigger>
                     }
                 />
             </div>

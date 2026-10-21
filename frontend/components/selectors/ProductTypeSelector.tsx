@@ -5,6 +5,7 @@ import { Package, Zap, Factory, Wrench, Repeat } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { LabeledContainer } from "@/components/shared"
+import { SELECTOR_PLACEHOLDER_CLASS, SELECTOR_TRIGGER_BASE } from "@/components/shared/SelectorTrigger"
 
 interface ProductTypeSelectorProps {
     value?: string | null
@@ -54,10 +55,13 @@ export function ProductTypeSelector({
                 value={value || undefined}
                 onOpenChange={setOpen}
             >
-                <SelectTrigger 
+                <SelectTrigger
                     role="combobox"
                     size="sm"
-                    className="w-full h-6! min-h-0! py-0 px-2 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                    className={cn(
+                        SELECTOR_TRIGGER_BASE,
+                        "h-6! min-h-0! py-0 px-2 border-none bg-transparent hover:bg-transparent"
+                    )}
                 >
                     <div className="flex items-center gap-2 flex-1 min-w-0 h-full">
                         {selectedType ? (
@@ -66,7 +70,7 @@ export function ProductTypeSelector({
                                 <span className="text-sm text-foreground truncate leading-none">{selectedType.label}</span>
                             </div>
                         ) : (
-                            <span className="text-sm text-muted-foreground/60 leading-none">{placeholder}</span>
+                            <span className={cn(SELECTOR_PLACEHOLDER_CLASS, "leading-none")}>{placeholder}</span>
                         )}
                     </div>
                 </SelectTrigger>

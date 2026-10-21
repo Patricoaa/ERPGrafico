@@ -1,17 +1,18 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Check, ChevronDown } from "lucide-react"
+import { Check } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 
 import { BaseModal, LabeledContainer, SearchablePopover } from '@/components/shared'
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { selectorAccountEntity, selectorAccountViews } from "./entity-view/selectorAccount.entity"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { useAccountSearch, useSingleAccount } from "@/features/accounting/hooks/useAccountSearch"
 import { type Account } from "@/types/entities"
+import { SelectorTrigger, SELECTOR_VALUE_CLASS } from "@/components/shared/SelectorTrigger"
 
 const AccountIcon = getEntityIcon('accounting.account')
 
@@ -135,24 +136,16 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar...
                     </>
                 )}
                 trigger={
-                    <Button
-                        variant="ghost"
-                        role="combobox"
-                        aria-expanded={open}
+                    <SelectorTrigger
+                        hasValue={!!selectedAccount}
+                        placeholder={placeholder}
+                        icon={<AccountIcon className="h-3.5 w-3.5 shrink-0 text-primary" />}
+                        open={open}
                         disabled={disabled}
-                        className="w-full justify-between overflow-hidden h-6! py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
                     >
-                        {selectedAccount ? (
-                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                <AccountIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                <span className="font-mono text-xs font-medium shrink-0 text-primary">{selectedAccount.code}</span>
-                                <span className="text-sm truncate text-foreground">{selectedAccount.name}</span>
-                            </div>
-                        ) : (
-                            <span className="text-sm text-muted-foreground/60 truncate">{placeholder}</span>
-                        )}
-                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
+                        <span className="font-mono text-xs font-semibold text-primary shrink-0">{selectedAccount?.code}</span>
+                        <span className={cn(SELECTOR_VALUE_CLASS, "truncate")}>{selectedAccount?.name}</span>
+                    </SelectorTrigger>
                 }
             >
                 <Button

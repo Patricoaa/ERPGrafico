@@ -93,11 +93,13 @@ export const LabeledSelect = forwardRef<
             <SelectTrigger
                 ref={ref}
                 className={cn(
-                    "w-full shadow-none focus:ring-0 focus:ring-offset-0 transition-all !py-0",
+                    "w-full shadow-none focus:ring-0 focus:ring-offset-0 transition-all !py-0 font-normal",
+                    "[&_*[data-slot=select-value]]:text-sm [&_*[data-slot=select-value]]:text-foreground [&_*[data-slot=select-value]]:font-normal",
+                    "[&_*[data-placeholder]]:text-sm [&_*[data-placeholder]]:text-muted-foreground/60 [&_*[data-placeholder]]:font-normal",
                     variant === 'standalone'
-                        ? "h-6! border-0 bg-transparent hover:bg-primary/[0.03] [&_*[data-slot=select-value]]:text-sm [&_*[data-slot=select-value]]:text-foreground [&_*[data-placeholder]]:text-sm [&_*[data-placeholder]]:text-muted-foreground/60"
-                : cn("h-9 text-xs bg-transparent hover:bg-primary/[0.02]", className),
-                    !value && "text-muted-foreground font-normal"
+                        ? "h-6! border-0 bg-transparent hover:bg-primary/[0.03]"
+                        : cn("h-9 bg-transparent hover:bg-primary/[0.02]", className),
+                    !value && "text-muted-foreground"
                 )}
             >
                 <SelectValue placeholder={effectivePlaceholder} />
