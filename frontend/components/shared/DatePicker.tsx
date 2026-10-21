@@ -61,14 +61,13 @@ export function DatePicker({
         disabled={disabled}
         onClick={() => handleOpenChange(true)}
         className={cn(
-          "flex items-center gap-1 justify-start text-left text-sm text-foreground",
+          "flex items-center gap-1 justify-start text-left text-sm text-foreground font-normal h-6",
           "cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
-          !date && "text-muted-foreground",
           className
         )}
       >
         <CalendarIcon className="h-4 w-4 shrink-0" />
-        {date ? format(date, "PPP", { locale: es }) : <span>{placeholder}</span>}
+        {date ? format(date, "PPP", { locale: es }) : <span className="text-sm text-muted-foreground/60">{placeholder}</span>}
       </Button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>

@@ -395,7 +395,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                             }
                                                                             field.onChange(toDateOnlyISO(d))
                                                                         }}
-                                                                        className="h-[1.5rem] p-0 w-full border-none bg-transparent hover:bg-transparent shadow-none"
+                                                                        className="w-full border-none bg-transparent hover:bg-transparent shadow-none"
                                                                     />
                                                                 </LabeledContainer>
                                                             )} />
