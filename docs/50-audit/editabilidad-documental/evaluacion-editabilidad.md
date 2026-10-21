@@ -53,8 +53,8 @@ Entidades con FK `journal_entry` (o que generan movimientos de tesorería), seg�
 | `PayrollPayment` | `ModelViewSet` sin override; `amount` editable; solo `id`/fechas read-only. Admite `DELETE`. Además `POST` directo creaba un "pago" sin movimiento ni asiento. **Resuelto 2026-10-21: API de solo lectura (los pagos nacen de `pay_salary`/`pay_previred`) + EditPolicy.** |
 | `F29Declaration` | `F29DeclarationWriteSerializer` sin `validate` de estado; no se encontró chequeo de período tributario cerrado en la edición. Más grave: `POST /tax/declarations/` (`create_or_update_declaration`) hacía `update_or_create` y **sobrescribía los montos de una declaración ya registrada**. **Resuelto 2026-10-21: EditPolicy (registrada → solo `notes`/`document`) aplicada en API y en el servicio.** |
 | `F29Payment` | `ModelViewSet` sin override de edición; solo `journal_entry` read-only. Además el `queryset` hacía `select_related("payment_method")` sobre un `CharField`: **toda lectura por API respondía 500**. **Resuelto 2026-10-21 (EditPolicy + queryset).** |
-| `SaleDelivery`, `SaleReturn` | Solo `id`/`number`/`status` read-only. **Sin `NoDestroyModelMixin`**: aceptan `DELETE` por defecto aunque tengan stock moves y asiento (contradice `deletion-policy.md`). |
-| `PurchaseReceipt`, `PurchaseReturn` | Solo `id`/`number`/`status` read-only; tienen `NoDestroyModelMixin` y `annul`, pero no guard de edición. |
+| `SaleDelivery`, `SaleReturn` | Solo `id`/`number`/`status` read-only. **Sin `NoDestroyModelMixin`**: aceptan `DELETE` por defecto aunque tengan stock moves y asiento (contradice `deletion-policy.md`). **Resuelto 2026-10-21: `DRAFT_ONLY_DOCUMENT` (editable solo en DRAFT sin asiento; `notes` siempre) + `NoDestroyModelMixin`.** |
+| `PurchaseReceipt`, `PurchaseReturn` | Solo `id`/`number`/`status` read-only; tienen `NoDestroyModelMixin` y `annul`, pero no guard de edición. **Resuelto 2026-10-21: `DRAFT_ONLY_DOCUMENT` (editable solo en DRAFT sin asiento; `notes` siempre) + `NoDestroyModelMixin`.** |
 
 ### 3.4 No revisadas en detalle
 

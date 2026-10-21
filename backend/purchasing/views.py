@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from core.api.pagination import StandardResultsSetPagination
 from core.api.search import DistinctSearchFilter
 from core.idempotency import idempotent_endpoint
-from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
+from core.mixins import AuditHistoryMixin, EditPolicyMixin, NoDestroyModelMixin
 
 from .filters import PurchaseReceiptFilter, PurchaseReturnFilter
 from .models import PurchaseOrder, PurchaseReturn
@@ -257,7 +257,7 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHist
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class PurchaseReceiptViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class PurchaseReceiptViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     serializer_class = PurchaseReceiptSerializer
     pagination_class = StandardResultsSetPagination
     # ADR-0090: la lista de recepciones es una vista documental propia (orden por columna).
@@ -293,7 +293,7 @@ class PurchaseReceiptViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHi
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class PurchaseReturnViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class PurchaseReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     def get_queryset(self):
         return PurchaseReturn.objects.select_related(
             "purchase_order__supplier", "warehouse"

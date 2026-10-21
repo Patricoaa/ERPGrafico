@@ -66,6 +66,13 @@ class EditPolicy:
             )
 
 
+DRAFT_ONLY_DOCUMENT = EditPolicy(
+    editable_statuses=frozenset({"DRAFT"}),
+    is_locked=lambda doc: doc.journal_entry_id is not None,
+)
+"""Transactional documents corrected by cancel (DRAFT) / annul (CONFIRMED); never hard-deleted."""
+
+
 def get_edit_policy(model_or_instance: Any) -> EditPolicy | None:
     return getattr(model_or_instance, "edit_policy", None)
 

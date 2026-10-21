@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
 from core.api.search import DistinctSearchFilter
-from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
+from core.mixins import AuditHistoryMixin, EditPolicyMixin, NoDestroyModelMixin
 
 from .filters import SaleDeliveryFilter, SaleReturnFilter
 from .models import SaleOrder, SaleReturn, SalesSettings
@@ -377,7 +377,7 @@ class SaleOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryM
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class SaleDeliveryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class SaleDeliveryViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     serializer_class = SaleDeliverySerializer
     # ADR-0090: la lista de entregas es una vista documental propia (orden por columna).
@@ -413,7 +413,7 @@ class SaleDeliveryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class SaleReturnViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class SaleReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     queryset = (
         SaleReturn.objects.select_related("sale_order__customer", "warehouse")

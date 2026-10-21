@@ -144,6 +144,8 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 **Edit restrictions:** Campos inmutables: `id`, `number`, `status`.
 
+**Edit policy (ADR-0091, `DRAFT_ONLY_DOCUMENT`):** editable solo en `DRAFT` sin asiento; bloqueado solo admite `notes`; nunca hard delete (API 405): `DRAFT` se cancela, `CONFIRMED` se anula.
+
 ## SaleReturn
 
 | Status | Intent | Transitions allowed to |
@@ -153,6 +155,8 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 | `CANCELLED` | `destructive` | — |
 
 **Edit restrictions:** Campos inmutables: `id`, `number`, `status`.
+
+**Edit policy (ADR-0091, `DRAFT_ONLY_DOCUMENT`):** editable solo en `DRAFT` sin asiento; bloqueado solo admite `notes`; nunca hard delete (API 405): `DRAFT` se cancela, `CONFIRMED` se anula.
 
 ## PurchaseReceipt
 
@@ -164,6 +168,8 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 **Edit restrictions:** Campos inmutables: `id`, `number`, `status`.
 
+**Edit policy (ADR-0091, `DRAFT_ONLY_DOCUMENT`):** editable solo en `DRAFT` sin asiento; bloqueado solo admite `notes`; nunca hard delete (API 405): `DRAFT` se cancela, `CONFIRMED` se anula.
+
 ## PurchaseReturn
 
 | Status | Intent | Transitions allowed to |
@@ -173,6 +179,8 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 | `CANCELLED` | `destructive` | — |
 
 **Edit restrictions:** Campos inmutables: `id`, `number`, `status`.
+
+**Edit policy (ADR-0091, `DRAFT_ONLY_DOCUMENT`):** editable solo en `DRAFT` sin asiento; bloqueado solo admite `notes`; nunca hard delete (API 405): `DRAFT` se cancela, `CONFIRMED` se anula.
 
 ## Payroll
 
