@@ -480,6 +480,31 @@
 }
 
 /*
+ * RIBBON CMYK — Process-ink register strip along the top edge of a card (C · M · Y · K).
+ * Apply via className="ribbon-cmyk"; the host must clip its overflow (Card does).
+ * Marks "selected / in use" on cards (ProductCard, not-found).
+ */
+@utility ribbon-cmyk {
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    z-index: 30;
+    pointer-events: none;
+    background: linear-gradient(
+      to right,
+      var(--cyan) 0 25%,
+      var(--magenta) 25% 50%,
+      var(--yellow) 50% 75%,
+      var(--black) 75% 100%
+    );
+  }
+}
+
+/*
  * CARD BASE — Standard interactive card pattern
  * Apply via className="card-base".
  * Sanctioned surface for: KPI cards, dashboard panels, ModuleGrid items, floating modals.
