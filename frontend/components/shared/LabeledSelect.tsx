@@ -10,6 +10,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { type SelectProps } from "@radix-ui/react-select"
+import { FieldLegend } from "./FieldLegend"
 
 export interface LabeledSelectOption {
     value: string
@@ -34,7 +35,6 @@ export interface LabeledSelectProps extends Omit<SelectProps, "value" | "onValue
     /** Error message — turns border red and shows text below the field. */
     error?: string
     /** Helper hint shown below when there is no error. */
-    /** Helper hint shown below when there is no error. */
     hint?: React.ReactNode
     /** Additional classes for the outer wrapper `<div>`. */
     containerClassName?: string
@@ -42,6 +42,8 @@ export interface LabeledSelectProps extends Omit<SelectProps, "value" | "onValue
     className?: string
     /** Display variant: 'standalone' (notched fieldset) or 'inline' (clean trigger) */
     variant?: 'standalone' | 'inline'
+    /** Tooltip text shown on hover of a small ℹ icon inline in the legend. */
+    tooltip?: string
 }
 
 /**
@@ -70,6 +72,7 @@ export const LabeledSelect = forwardRef<
         onOpenChange,
         icon,
         variant = 'standalone',
+        tooltip,
         ...rest
     } = props
 
@@ -89,7 +92,7 @@ export const LabeledSelect = forwardRef<
                 className={cn(
                     "w-full shadow-none focus:ring-0 focus:ring-offset-0 transition-all !py-0",
                     variant === 'standalone'
-                        ? "!h-[1.5rem] border-0 bg-transparent hover:bg-primary/[0.03]"
+                        ? "h-6! border-0 bg-transparent hover:bg-primary/[0.03] [&_*:data-[slot=select-value]]:text-sm [&_*:data-[slot=select-value]]:text-foreground [&_*:data-[placeholder]]:text-sm [&_*:data-[placeholder]]:text-muted-foreground/60"
                 : cn("h-9 text-xs bg-transparent hover:bg-primary/[0.02]", className),
                     !value && "text-muted-foreground font-normal"
                 )}
@@ -118,20 +121,18 @@ export const LabeledSelect = forwardRef<
                     )}
                 >
                     {label && (
-                        <legend
-                            className={cn(
-                                "px-1.5 text-3xs font-bold uppercase tracking-loose transition-colors duration-200",
-                                hasError ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary"
-                            )}
-                        >
-                            {label}
-                            {required && <span className="text-destructive ml-0.5">*</span>}
-                        </legend>
+                        <FieldLegend
+                            label={label}
+                            required={required}
+                            hasError={hasError}
+                            disabled={disabled}
+                            tooltip={tooltip}
+                        />
                     )}
 
-                    <div className="flex items-center w-full">
+                    <div className="flex items-center w-full min-h-[1.5rem]">
                         {icon && (
-                            <div className="pl-3 flex items-center justify-center text-muted-foreground/60 group-focus-within:text-primary transition-colors shrink-0">
+                            <div className="pl-3 flex items-center justify-center text-muted-foreground/60 group-focus-within:text-primary transition-colors shrink-0 leading-none">
                                 {icon}
                             </div>
                         )}

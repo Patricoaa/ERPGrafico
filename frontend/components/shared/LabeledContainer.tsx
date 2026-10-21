@@ -2,14 +2,7 @@
 
 import { type ReactNode } from "react"
 import { cn } from "@/lib/utils"
-import { Info } from "lucide-react"
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { fieldLegendClasses } from "./FieldLegend"
+import { FieldLegend, fieldLegendClasses } from "./FieldLegend"
 
 interface LabeledContainerProps {
     /** Label text rendered inside the fieldset legend (notched border). */
@@ -73,26 +66,14 @@ export function LabeledContainer({
                 )}
             >
                 {label && (
-                    <legend className={cn(
-                        fieldLegendClasses(hasError, disabled),
-                        "flex items-center gap-1",
-                        labelClassName
-                    )}>
-                        {label}
-                        {required && <span className="text-destructive ml-0.5">*</span>}
-                        {tooltip && (
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Info className="h-2.5 w-2.5 opacity-50 hover:opacity-100 cursor-default transition-opacity" />
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top" className="max-w-[220px] text-xs">
-                                        {tooltip}
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        )}
-                    </legend>
+                    <FieldLegend
+                        label={label}
+                        required={required}
+                        hasError={hasError}
+                        disabled={disabled}
+                        className={cn("flex items-center gap-1", labelClassName)}
+                        tooltip={tooltip}
+                    />
                 )}
 
                 <div className="flex items-center w-full min-h-[1.5rem]">

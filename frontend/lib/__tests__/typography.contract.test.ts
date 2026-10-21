@@ -43,6 +43,7 @@ const formPrimitives = {
   fieldLegend: read('../../components/shared/FieldLegend.tsx'),
   labeledInput: read('../../components/shared/LabeledInput.tsx'),
   labeledContainer: read('../../components/shared/LabeledContainer.tsx'),
+  labeledSelect: read('../../components/shared/LabeledSelect.tsx'),
 };
 
 const productDrawer = {
@@ -124,16 +125,16 @@ describe('typography contract', () => {
       expect(/text-3xs/.test(src)).toBe(false);
     });
 
-    it('LabeledInput delegates to fieldLegendClasses (no inline legend styles)', () => {
+    it('LabeledInput delegates to FieldLegend component (no inline legend styles)', () => {
       const src = formPrimitives.labeledInput;
-      expect(/fieldLegendClasses\(/.test(src)).toBe(true);
+      expect(/<FieldLegend/.test(src)).toBe(true);
       // No inline legend class with text-2xs/text-3xs duplication
       expect(/legend className=\{cn\([^}]*"px-1\.5 text-2xs font-bold"/.test(src)).toBe(false);
     });
 
-    it('LabeledContainer delegates to fieldLegendClasses (no inline legend styles)', () => {
+    it('LabeledContainer delegates to FieldLegend component (no inline legend styles)', () => {
       const src = formPrimitives.labeledContainer;
-      expect(/fieldLegendClasses\(/.test(src)).toBe(true);
+      expect(/<FieldLegend/.test(src)).toBe(true);
       // No inline legend class with text-2xs/text-3xs duplication
       expect(/legend className=\{cn\([^}]*"px-1\.5 text-(2xs|3xs) font-bold"/.test(src)).toBe(false);
     });
@@ -147,6 +148,38 @@ describe('typography contract', () => {
           `${name} must not use text-3xs in legend`
         ).toBe(false);
       }
+    });
+  });
+
+  describe('LabeledSelect — legend N2, trigger N3, placeholder N3', () => {
+    it('LabeledSelect delegates to FieldLegend component', () => {
+      const src = formPrimitives.labeledSelect;
+      expect(/<FieldLegend/.test(src)).toBe(true);
+      // No inline legend class with text-2xs/text-3xs duplication
+      expect(/legend className=\{cn\([^}]*"px-1\.5 text-(2xs|3xs) font-bold"/.test(src)).toBe(false);
+    });
+
+    it('LabeledSelect standalone trigger uses h-6! token height (not h-[1.5rem])', () => {
+      const src = formPrimitives.labeledSelect;
+      expect(/h-6!/.test(src)).toBe(true);
+      expect(/!h-\[1\.5rem\]/.test(src)).toBe(false);
+    });
+
+    it('LabeledSelect value uses text-sm, placeholder uses text-sm text-muted-foreground/60', () => {
+      const src = formPrimitives.labeledSelect;
+      // Value (SelectValue) gets text-sm text-foreground via the trigger class override
+      expect(/\[&_\*:data-\[slot=select-value\]\]:text-sm/.test(src)).toBe(true);
+      expect(/\[&_\*:data-\[slot=select-value\]\]:text-foreground/.test(src)).toBe(true);
+      // Placeholder gets text-sm text-muted-foreground/60
+      expect(/\[&_\*:data-\[placeholder\]\]:text-sm/.test(src)).toBe(true);
+      expect(/\[&_\*:data-\[placeholder\]\]:text-muted-foreground\/60/.test(src)).toBe(true);
+      // No font-medium on value/placeholder
+      expect(/font-medium text-sm/.test(src)).toBe(false);
+    });
+
+    it('LabeledSelect inline variant stays compact for tables', () => {
+      const src = formPrimitives.labeledSelect;
+      expect(/h-9 text-xs/.test(src)).toBe(true);
     });
   });
 

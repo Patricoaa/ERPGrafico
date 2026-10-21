@@ -2,7 +2,7 @@
 
 import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes } from "react"
 import { cn } from "@/lib/utils"
-import { fieldLegendClasses } from "./FieldLegend"
+import { FieldLegend, fieldLegendClasses } from "./FieldLegend"
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -27,6 +27,8 @@ interface LabeledInputBaseProps {
     icon?: React.ReactNode
     /** Text or element shown as a suffix (inside the fieldset). */
     suffix?: React.ReactNode
+    /** Tooltip text shown on hover of a small ℹ icon inline in the legend. */
+    tooltip?: string
 }
 
 /** Props for a single-line input (`as` omitted or `as="input"`). */
@@ -104,6 +106,7 @@ export const LabeledInput = forwardRef<
         disabled,
         icon,
         suffix,
+        tooltip,
         ...rest
     } = props
 
@@ -127,17 +130,14 @@ export const LabeledInput = forwardRef<
                 data-disabled={disabled || undefined}
             >
                 {label && (
-                    <legend className={cn(
-                        fieldLegendClasses(hasError, disabled),
-                        labelClassName
-                    )}>
-                        {label}
-                        {required && (
-                            <span className="text-destructive ml-0.5" aria-hidden="true">
-                                *
-                            </span>
-                        )}
-                    </legend>
+                    <FieldLegend
+                        label={label}
+                        required={required}
+                        hasError={hasError}
+                        disabled={disabled}
+                        className={labelClassName}
+                        tooltip={tooltip}
+                    />
                 )}
 
                 <div className="flex items-center w-full h-full px-1">
