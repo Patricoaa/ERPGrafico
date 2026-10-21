@@ -15,8 +15,15 @@ def list_contacts(*, params: dict) -> QuerySet:
     - role filtering (CUSTOMER / SUPPLIER / RELATED / PARTNER / EMPLOYEE / USER)
     - partner filtering
     - terminal payment method filtering
+    - is_active filtering (default: active only; ?is_active=all/false to see archived)
     """
-    queryset = Contact.objects.all()
+    active_param = params.get("is_active")
+    if active_param == "all":
+        queryset = Contact.objects.all()
+    elif active_param == "false":
+        queryset = Contact.objects.filter(is_active=False)
+    else:
+        queryset = Contact.objects.filter(is_active=True)
 
     search_param = params.get("search")
     if search_param:

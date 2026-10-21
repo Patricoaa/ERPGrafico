@@ -1,5 +1,75 @@
 [
   {
+    "file": "components/shared/DocumentAttachmentDropzone.tsx",
+    "line": 46,
+    "rule": "R2"
+  },
+  {
+    "file": "components/shared/DocumentAttachmentDropzone.tsx",
+    "line": 54,
+    "rule": "R2"
+  },
+  {
+    "file": "components/shared/LabeledCheckbox.tsx",
+    "line": 44,
+    "rule": "R2"
+  },
+  {
+    "file": "components/shared/LabeledSwitch.tsx",
+    "line": 97,
+    "rule": "R2"
+  },
+  {
+    "file": "features/hr/components/EmployeeDrawer.tsx",
+    "line": 453,
+    "rule": "R2"
+  },
+  {
+    "file": "features/hr/components/EmployeeDrawer.tsx",
+    "line": 466,
+    "rule": "R2"
+  },
+  {
+    "file": "features/hr/components/EmployeeDrawer.tsx",
+    "line": 537,
+    "rule": "R2"
+  },
+  {
+    "file": "features/hr/components/EmployeeDrawer.tsx",
+    "line": 570,
+    "rule": "R2"
+  },
+  {
+    "file": "features/hr/components/EmployeeDrawer.tsx",
+    "line": 593,
+    "rule": "R2"
+  },
+  {
+    "file": "features/inventory/components/CategoryDrawer.tsx",
+    "line": 91,
+    "rule": "R2"
+  },
+  {
+    "file": "features/inventory/components/CategoryDrawer.tsx",
+    "line": 120,
+    "rule": "R2"
+  },
+  {
+    "file": "features/inventory/components/product/ProductSubscriptionTab.tsx",
+    "line": 182,
+    "rule": "R2"
+  },
+  {
+    "file": "features/inventory/components/UoMDrawer.tsx",
+    "line": 318,
+    "rule": "R2"
+  },
+  {
+    "file": "features/inventory/components/UoMDrawer.tsx",
+    "line": 370,
+    "rule": "R2"
+  },
+  {
     "file": "features/production/components/forms/WorkOrderBasicStep/WorkOrderBasicInfo.tsx",
     "line": 319,
     "rule": "R4"
@@ -13,5 +83,15 @@
     "file": "features/production/components/steps/ManufacturingConfigSummary.tsx",
     "line": 477,
     "rule": "R4"
+  },
+  {
+    "file": "features/treasury/components/TerminalBatchSelectionModal.tsx",
+    "line": 159,
+    "rule": "R2"
+  },
+  {
+    "file": "features/treasury/components/TerminalBatchSelectionModal.tsx",
+    "line": 187,
+    "rule": "R2"
   }
 ]

@@ -14,7 +14,14 @@ DEFAULT_LEDGER_LIMIT = 200
 
 def list_accounts(*, params: dict) -> QuerySet:
     """Base account list with optimized totals annotation."""
-    queryset = Account.objects.all()
+    # Default: filter active accounts; allow ?is_active=all or ?is_active=false
+    active_param = params.get("is_active")
+    if active_param == "all":
+        queryset = Account.objects.all()
+    elif active_param == "false":
+        queryset = Account.objects.filter(is_active=False)
+    else:
+        queryset = Account.objects.filter(is_active=True)
 
     # Annotate with posted totals to avoid N+1 queries during serialization
     queryset = queryset.annotate(

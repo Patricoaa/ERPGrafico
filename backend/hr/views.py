@@ -85,6 +85,22 @@ class AFPViewSet(viewsets.ModelViewSet):
     pagination_class = None  # Master data
     lookup_field = "id"
 
+    def get_queryset(self):
+        if self.action == "list":
+            is_active = self.request.query_params.get("is_active")
+            if is_active == "all":
+                return AFP.objects.all()
+            elif is_active == "false":
+                return AFP.objects.filter(is_active=False)
+            return AFP.objects.filter(is_active=True)
+        return super().get_queryset()
+
+    def destroy(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Hard delete not allowed for AFPs. Use PATCH is_active=false to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
 
 # --- Payroll Concept ---
 
@@ -104,6 +120,22 @@ class PayrollConceptViewSet(viewsets.ModelViewSet):
     pagination_class = None  # Master data
     filter_backends = [DjangoFilterBackend]
     filterset_class = PayrollConceptFilter
+
+    def get_queryset(self):
+        if self.action == "list":
+            is_active = self.request.query_params.get("is_active")
+            if is_active == "all":
+                return PayrollConcept.objects.select_related("account").all()
+            elif is_active == "false":
+                return PayrollConcept.objects.filter(is_active=False).select_related("account")
+            return PayrollConcept.objects.filter(is_active=True).select_related("account")
+        return super().get_queryset()
+
+    def destroy(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Hard delete not allowed for PayrollConcepts. Use PATCH is_active=false to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
 
 # --- Employee ---

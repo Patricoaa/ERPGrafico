@@ -75,6 +75,17 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     serializer_class = BankSerializer
     pagination_class = None  # Master data
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.action == "list":
+            is_active = self.request.query_params.get("is_active")
+            if is_active == "all":
+                return qs
+            elif is_active == "false":
+                return qs.filter(is_active=False)
+            return qs.filter(is_active=True)
+        return qs
+
     @action(detail=True, methods=["get"])
     def overview(self, request, pk=None):
         """Centro de Bancos: vista unificada por banco (F5.2)."""
@@ -100,24 +111,11 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         return Response(BankSerializer(bank).data)
 
     def destroy(self, request, *args, **kwargs):
-        """Hard delete deshabilitado para usuarios finales.
-
-        Por política (cf. [deletion-policy.md](../../../docs/20-contracts/deletion-policy.md))
-        los bancos se archivan, no se borran. Este endpoint existe solo como
-        fallback administrativo: captura ``ProtectedError`` y devuelve un
-        mensaje legible en ``409 Conflict`` cuando hay dependencias.
-        """
-        bank = self.get_object()
-        ok, reason = BankDeletionService.can_destroy(bank)
-        if not ok:
-            return Response({"detail": reason}, status=status.HTTP_409_CONFLICT)
-        try:
-            return super().destroy(request, *args, **kwargs)
-        except Exception as exc:  # ProtectedError u otros
-            return Response(
-                {"detail": str(exc) or "No se puede eliminar el banco."},
-                status=status.HTTP_409_CONFLICT,
-            )
+        # Archivo pattern: hard DELETE not allowed, use POST /archive/ instead
+        return Response(
+            {"detail": "Hard delete not allowed for Banks. Use POST /archive/ to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
 
 class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
@@ -142,6 +140,15 @@ class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         method_type = self.request.query_params.get("method_type")
         if method_type:
             qs = qs.filter(method_type=method_type)
+
+        # List view: filter active by default; allow ?is_active=all/false
+        if self.action == "list":
+            is_active = self.request.query_params.get("is_active")
+            if is_active == "all":
+                return qs
+            elif is_active == "false":
+                return qs.filter(is_active=False)
+            return qs.filter(is_active=True)
 
         return qs
 
@@ -174,10 +181,11 @@ class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         return super().partial_update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        err = self._check_integrated(self.get_object())
-        if err:
-            return err
-        return super().destroy(request, *args, **kwargs)
+        # Archivo pattern: hard DELETE not allowed, use PATCH is_active=false to archive
+        return Response(
+            {"detail": "Hard delete not allowed for PaymentMethods. Use PATCH is_active=false to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
     def perform_create(self, serializer):
         serializer.save()
@@ -214,7 +222,22 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         exclude_id = self.request.query_params.get("exclude_id")
         if exclude_id:
             qs = qs.exclude(id=exclude_id)
+        # List view: filter active by default; allow ?is_active=all/false
+        if self.action == "list":
+            is_active = self.request.query_params.get("is_active")
+            if is_active == "all":
+                return qs
+            elif is_active == "false":
+                return qs.filter(is_active=False)
+            return qs.filter(is_active=True)
         return qs
+
+    def destroy(self, request, *args, **kwargs):
+        # Archivo pattern: hard DELETE not allowed, use PATCH is_active=false to archive
+        return Response(
+            {"detail": "Hard delete not allowed for TreasuryAccounts. Use PATCH is_active=false to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
     def _check_system_managed(self, instance):
         if instance.account_type in TreasuryAccount._NON_CASH_EQUIVALENT_TYPES:
@@ -269,6 +292,23 @@ class PaymentTerminalProviderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     serializer_class = PaymentTerminalProviderSerializer
     pagination_class = None  # Master data
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.action == "list":
+            is_active = self.request.query_params.get("is_active")
+            if is_active == "all":
+                return qs
+            elif is_active == "false":
+                return qs.filter(is_active=False)
+            return qs.filter(is_active=True)
+        return qs
+
+    def destroy(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Hard delete not allowed for PaymentTerminalProviders. Use PATCH is_active=false to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
 
 class PaymentTerminalDeviceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = PaymentTerminalDevice.objects.all().order_by("name")
@@ -280,7 +320,7 @@ class PaymentTerminalDeviceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     """
     ViewSet for managing POS Terminals.
-    Supports filtering by active status via `?active_only=true` query param.
+    Supports filtering by active status via `?is_active=true/false/all` query param.
     """
 
     queryset = (
@@ -294,15 +334,25 @@ class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def get_queryset(self):
         qs = super().get_queryset()
 
-        # Filter by active status if requested
-        if self.request.query_params.get("active_only") == "true":
+        # Filter by is_active (default: true; allow ?is_active=all/false)
+        is_active = self.request.query_params.get("is_active")
+        if is_active == "all":
+            pass  # no filter
+        elif is_active == "false":
+            qs = qs.filter(is_active=False)
+        else:
             qs = qs.filter(is_active=True)
 
         return qs.order_by("code")
 
     def destroy(self, request, *args, **kwargs):
         """
-        Custom destroy to handle protected terminals (with sessions).
+        Archivo pattern: hard DELETE not allowed, use PATCH is_active=false to archive.
+        """
+        return Response(
+            {"detail": "Hard delete not allowed for POSTerminals. Use PATCH is_active=false to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
         """
         from django.db.models.deletion import ProtectedError
 

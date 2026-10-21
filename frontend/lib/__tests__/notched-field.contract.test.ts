@@ -47,7 +47,7 @@ const FORBIDDEN_VALUE_WEIGHTS = [
 ];
 
 // Arbitrary height pattern
-const ARBITRARY_HEIGHT = /h-\[[0-9.]+\]/;
+const ARBITRARY_HEIGHT = /h-\[[0-9.]+(?:px|rem|em)\]/;
 
 // Placeholder patterns
 const PLACEHOLDER_PATTERNS = [

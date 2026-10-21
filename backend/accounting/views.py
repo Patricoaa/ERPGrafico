@@ -88,12 +88,16 @@ class AccountingSettingsViewSet(viewsets.ModelViewSet):
 
 
 class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
-    queryset = Account.objects.all()
+    queryset = Account.objects.all()  # Base queryset includes archived for detail/update
     serializer_class = AccountSerializer
     pagination_class = None  # Master data
 
     def get_queryset(self):
-        return list_accounts(params=self.request.query_params)
+        # List view uses selector with is_active filter
+        if self.action == "list":
+            return list_accounts(params=self.request.query_params)
+        # Detail/update/retrieve use full queryset (allows accessing archived)
+        return super().get_queryset()
 
     def create(self, request, *args, **kwargs):
         print("DEBUG: ACCOUNT CREATE CALLED")
@@ -108,12 +112,11 @@ class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
             raise e
 
     def destroy(self, request, *args, **kwargs):
-        account = self.get_object()
-        try:
-            AccountingService.validate_account_deletion(account)
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return super().destroy(request, *args, **kwargs)
+        # Archivo pattern: hard DELETE not allowed, use archive/restore instead
+        return Response(
+            {"detail": "Hard delete not allowed for Accounts. Use archive (is_active=false) instead."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
     @action(detail=True, methods=["get"])
     def ledger(self, request, pk=None):

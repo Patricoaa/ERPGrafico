@@ -287,6 +287,16 @@ class ProductAttributeViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditH
     filter_backends = [filters.SearchFilter]
     search_fields = ["name"]
 
+    def get_queryset(self):
+        if self.action == "list":
+            is_active = self.request.query_params.get("is_active")
+            if is_active == "all":
+                return ProductAttribute.objects.all()
+            elif is_active == "false":
+                return ProductAttribute.objects.filter(is_active=False)
+            return ProductAttribute.objects.filter(is_active=True)
+        return super().get_queryset()
+
 
 class ProductAttributeValueViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = ProductAttributeValue.objects.all()
@@ -307,11 +317,31 @@ class CategoryViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     serializer_class = ProductCategorySerializer
     pagination_class = None  # Master data
 
+    def get_queryset(self):
+        if self.action == "list":
+            is_active = self.request.query_params.get("is_active")
+            if is_active == "all":
+                return ProductCategory.objects.all()
+            elif is_active == "false":
+                return ProductCategory.objects.filter(is_active=False)
+            return ProductCategory.objects.filter(is_active=True)
+        return super().get_queryset()
+
 
 class WarehouseViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = Warehouse.objects.all()
     serializer_class = WarehouseSerializer
     pagination_class = None  # Master data
+
+    def get_queryset(self):
+        if self.action == "list":
+            is_active = self.request.query_params.get("is_active")
+            if is_active == "all":
+                return Warehouse.objects.all()
+            elif is_active == "false":
+                return Warehouse.objects.filter(is_active=False)
+            return Warehouse.objects.filter(is_active=True)
+        return super().get_queryset()
 
 
 class UoMViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
@@ -321,6 +351,18 @@ class UoMViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = UoMFilter
     search_fields = ["name", "abbreviation"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.action == "list":
+            # Default to active only; allow ?is_active=all or ?is_active=false
+            is_active = self.request.query_params.get("is_active")
+            if is_active == "all":
+                return queryset
+            elif is_active == "false":
+                return queryset.filter(is_active=False)
+            return queryset.filter(is_active=True)
+        return queryset
 
     @action(detail=False, methods=["get"])
     def allowed(self, request):
@@ -348,6 +390,16 @@ class UoMCategoryViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistor
     queryset = UoMCategory.objects.all()
     serializer_class = UoMCategorySerializer
     pagination_class = None  # Master data
+
+    def get_queryset(self):
+        if self.action == "list":
+            is_active = self.request.query_params.get("is_active")
+            if is_active == "all":
+                return UoMCategory.objects.all()
+            elif is_active == "false":
+                return UoMCategory.objects.filter(is_active=False)
+            return UoMCategory.objects.filter(is_active=True)
+        return super().get_queryset()
 
 
 class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
