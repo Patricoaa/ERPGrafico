@@ -11,7 +11,7 @@ import { EmptyState, LabeledSelect } from '@/components/shared'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { Calculator, Search, ChevronDown, Check, MousePointerClick, Landmark } from "lucide-react"
+import { Calculator, Search, Check, MousePointerClick, Landmark } from "lucide-react"
 import { DateRangeFilter } from "@/components/shared"
 import { toast } from "sonner"
 import { type DateRange } from "react-day-picker"
@@ -21,6 +21,7 @@ import { useTerminalProviders, usePaymentMethods, useTerminalMovements, useTermi
 import type { TreasuryMovement } from "@/features/treasury/types"
 
 import { BaseModal, SubmitButton, CancelButton, LabeledContainer, LabeledInput, LabeledCheckboxGroup, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
+import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
 
 const terminalBatchSchema = z.object({
     providerId: z.string().min(1, "Seleccione un proveedor"),
@@ -153,16 +154,15 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
                             <LabeledContainer label="Proveedor de Pago">
                                 <Popover>
                                     <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            role="combobox"
-                                            className="w-full justify-between font-normal text-sm h-6 py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                                        <SelectorTrigger
+                                            hasValue={!!providerId}
+                                            placeholder="Seleccionar..."
+                                            className="h-6! py-0 px-3"
                                         >
-                                            {providerId
-                                                ? providers.find(p => p.id.toString() === providerId)?.name
-                                                : <span className="text-sm text-muted-foreground/60">Seleccionar...</span>}
-                                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
+                                            <span className="text-sm">
+                                                {providers.find(p => p.id.toString() === providerId)?.name}
+                                            </span>
+                                        </SelectorTrigger>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                                         <div className="p-2">

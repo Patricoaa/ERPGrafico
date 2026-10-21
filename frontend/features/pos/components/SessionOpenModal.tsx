@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner"
 import { posApi } from "../api/posApi"
 import { GenericWizard, Numpad, Chip, FadeIn, type WizardStep } from '@/components/shared'
+import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { useTouchMode } from "@/hooks/useTouchMode"
 
@@ -452,18 +453,14 @@ export function SessionOpenModal({
                             <Label className="text-xs">Motivo (Requerido)</Label>
                             <Popover open={openingJustifyOpen} onOpenChange={(open) => { setOpeningJustifyOpen(open); if (!open) setJustifySearchTerm("") }}>
                                 <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        className="w-full justify-between h-6 bg-background font-normal"
+                                    <SelectorTrigger
+                                        hasValue={!!selectedLabel}
+                                        placeholder="Seleccionar..."
+                                        buttonVariant="outline"
+                                        className="h-6! bg-background border"
                                     >
-                                        {selectedLabel ? (
-                                            <span className="text-sm">{selectedLabel}</span>
-                                        ) : (
-                                            <span className="text-sm text-muted-foreground/60">Seleccionar...</span>
-                                        )}
-                                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
+                                        <span className="text-sm">{selectedLabel}</span>
+                                    </SelectorTrigger>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                                     <div className="p-2">

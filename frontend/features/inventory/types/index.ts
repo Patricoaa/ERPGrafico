@@ -34,13 +34,19 @@ export interface BaseProduct {
     sale_price_gross?: string | number
     product_type?: 'STORABLE' | 'CONSUMABLE' | 'SERVICE' | 'MANUFACTURABLE' | 'SUBSCRIPTION' | string
     image?: string | null
+    image_thumbnail?: string | null
     /** Category as object OR as numeric FK */
     category?: { id: number; name: string; icon?: string | null } | number
+    category_name?: string
     uom?: number
     uom_name?: string
     is_favorite?: boolean
     has_variants?: boolean
     variants_count?: number
+    /** Attribute shared by every variant ("Gramaje"); null when mixed or absent */
+    variant_axis_label?: string | null
+    /** Lowest net sale price among active variants (templates only) */
+    min_variant_price?: string | number | null
     // Display fields used by ProductGrid and VariantSelectorModal visual badges
     qty_available?: number
     manufacturable_quantity?: number | null

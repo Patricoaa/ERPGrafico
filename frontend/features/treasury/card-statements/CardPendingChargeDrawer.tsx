@@ -69,7 +69,7 @@ export function CardPendingChargeDrawer({
         resolver: zodResolver(chargeSchema),
         defaultValues: {
             amount: "",
-            charge_type: "OTHER",
+            charge_type: "",
             date: "",
             description: "",
         },
@@ -81,13 +81,13 @@ export function CardPendingChargeDrawer({
         initialData: charge,
         defaultValues: () => ({
             amount: "",
-            charge_type: "OTHER",
+            charge_type: "",
             date: serverDate ? toDateOnlyISO(serverDate) : new Date().toISOString().split('T')[0],
             description: "",
         }),
         mapData: (data) => ({
             amount: String(Number(data.amount)),
-            charge_type: data.charge_type || 'OTHER',
+            charge_type: data.charge_type || '',
             date: data.date?.split('T')[0] ?? '',
             description: data.description ?? '',
         }),

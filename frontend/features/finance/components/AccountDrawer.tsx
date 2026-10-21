@@ -334,7 +334,7 @@ export function AccountDrawer({
                     )}
 
                     {/* Table — fills remaining height */}
-                    <div className="flex-1 min-h-0 overflow-hidden">
+                    <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                         {dateRange ? (
                             <Collection.Root
                                 collection={collection}

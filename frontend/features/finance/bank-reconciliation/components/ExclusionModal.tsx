@@ -32,7 +32,7 @@ export function ExclusionModal({
     const form = useForm<ExclusionFormValues>({
         resolver: zodResolver(exclusionSchema),
         defaultValues: {
-            reason: "DUPLICATE",
+            reason: "",
             notes: ""
         }
     })
@@ -41,7 +41,7 @@ export function ExclusionModal({
 
     useEffect(() => {
         if (open) {
-            form.reset({ reason: "DUPLICATE", notes: "" })
+            form.reset({ reason: "", notes: "" })
         }
     }, [open, form])
 

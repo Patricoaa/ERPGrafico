@@ -139,7 +139,8 @@ function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen,
     }
     return (
         <CollectionContext.Provider value={value}>
-            <div className="flex flex-1 flex-col gap-2 min-h-0">{children}</div>
+            {/* h-full keeps the height bound even when the parent is not a flex column. */}
+            <div className="flex h-full flex-1 flex-col gap-2 min-h-0">{children}</div>
         </CollectionContext.Provider>
     )
 }
@@ -417,7 +418,7 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
                 {isBulk && (
                     <td className={CELL} onClick={(e) => e.stopPropagation()}>
                         <SelectionRing
-                            aria-label="Seleccionar fila"
+                            ariaLabel="Seleccionar fila"
                             checked={row.getIsSelected()}
                             onCheckedChange={(v: boolean) => row.toggleSelected(v)}
                             size="sm"
@@ -452,7 +453,7 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
     return (
         // Fills the available height (Root is flex-1); rows scroll inside, header sticky, pagination fixed below.
         <div className="flex flex-1 flex-col min-h-0 overflow-hidden rounded-md border">
-            <div className="relative flex-1 min-h-0 overflow-auto">
+            <div className="relative flex-1 min-h-0 overflow-auto pb-2">
                 <table
                     className="w-full text-sm"
                     data-density="compact"
@@ -465,7 +466,7 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
                             {isBulk && (
                                 <th scope="col" className="w-8 px-(--table-header-px) py-(--table-header-py)">
                                     <SelectionRing
-                                        aria-label="Seleccionar todas las filas visibles"
+                                        ariaLabel="Seleccionar todas las filas visibles"
                                         checked={table.getIsAllPageRowsSelected() ? true : table.getIsSomePageRowsSelected() ? "indeterminate" : false}
                                         onCheckedChange={(v: boolean) => table.toggleAllPageRowsSelected(v)}
                                         size="sm"

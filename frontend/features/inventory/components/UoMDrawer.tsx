@@ -9,6 +9,7 @@ import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Drawer, CancelButton, LabeledInput, FormFooter, FormSplitLayout, LabeledContainer, SkeletonShell } from "@/components/shared"
+import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
 import {
     Form,
     FormField,
@@ -264,16 +265,17 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                 >
                                                     <Popover>
                                                         <PopoverTrigger asChild>
-                                                            <Button
+                                                            <SelectorTrigger
+                                                                hasValue={!!field.value}
                                                                 disabled={frozen.has("category")}
-                                                                variant="ghost"
-                                                                role="combobox"
-                                                                className={cn("w-full justify-between font-normal text-sm h-6 py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent")}
+                                                                placeholder="Seleccionar..."
+                                                                showChevron={false}
+                                                                className="h-6! py-0 px-3"
                                                             >
-                                                                {field.value
-                                                                    ? categories?.find(cat => cat.id === field.value)?.name
-                                                                    : <span className="text-sm text-muted-foreground/60">Seleccionar...</span>}
-                                                            </Button>
+                                                                <span className="text-sm">
+                                                                    {categories?.find(cat => cat.id === field.value)?.name}
+                                                                </span>
+                                                            </SelectorTrigger>
                                                         </PopoverTrigger>
                                                         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                                                             <div className="p-2">
@@ -358,17 +360,19 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                 >
                                                     <Popover>
                                                         <PopoverTrigger asChild>
-                                                            <Button
+                                                            <SelectorTrigger
+                                                                hasValue={!!field.value}
                                                                 disabled={frozen.has("uom_type")}
-                                                                variant="ghost"
-                                                                role="combobox"
-                                                                className={cn("w-full justify-between font-normal text-sm h-6 py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent")}
+                                                                placeholder="Seleccionar..."
+                                                                showChevron={false}
+                                                                className="h-6! py-0 px-3"
                                                             >
-                                                                {field.value === 'REFERENCE' ? 'Referencia (Base)' :
-                                                                    field.value === 'BIGGER' ? 'Más Grande que base' :
-                                                                        field.value === 'SMALLER' ? 'Más Pequeña que base' :
-                                                                            <span className="text-sm text-muted-foreground/60">Seleccionar...</span>}
-                                                            </Button>
+                                                                <span className="text-sm">
+                                                                    {field.value === 'REFERENCE' ? 'Referencia (Base)' :
+                                                                        field.value === 'BIGGER' ? 'Más Grande que base' :
+                                                                            field.value === 'SMALLER' ? 'Más Pequeña que base' : null}
+                                                                </span>
+                                                            </SelectorTrigger>
                                                         </PopoverTrigger>
                                                         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                                                             <div className="p-2">

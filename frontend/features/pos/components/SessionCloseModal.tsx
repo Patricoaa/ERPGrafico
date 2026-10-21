@@ -13,6 +13,7 @@ import { GenericWizard, Numpad, FadeIn, type WizardStep } from '@/components/sha
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 
 import { LabeledContainer } from "@/components/shared"
+import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
 import { cn } from "@/lib/utils"
 import { useTouchMode } from "@/hooks/useTouchMode"
 import { POSReport, type POSReportData } from "./POSReport"
@@ -309,22 +310,16 @@ export function SessionCloseModal({
                             <Label className="text-xs">Motivo (Requerido)</Label>
                             <Popover open={justifyOpen} onOpenChange={(open) => { setJustifyOpen(open); if (!open) setJustifySearchTerm("") }}>
                                 <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        className="w-full justify-between h-6 bg-background font-normal"
+                                    <SelectorTrigger
+                                        hasValue={!settingsLoading && !!selectedLabel}
+                                        placeholder={settingsLoading ? "Cargando..." : "Seleccionar..."}
+                                        icon={settingsLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2 motion-reduce:animate-none" /> : undefined}
+                                        buttonVariant="outline"
+                                        className="h-6! bg-background border"
                                         disabled={settingsLoading}
                                     >
-                                        {settingsLoading ? (
-                                            /* eslint-disable-next-line no-restricted-syntax -- inline spinner in combobox trigger, not a submit/action button */
-                                            <><Loader2 className="h-4 w-4 animate-spin mr-2 motion-reduce:animate-none" />Cargando...</>
-                                        ) : selectedLabel ? (
-                                            <span className="text-sm">{selectedLabel}</span>
-                                        ) : (
-                                            <span className="text-sm text-muted-foreground/60">Seleccionar...</span>
-                                        )}
-                                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
+                                        <span className="text-sm">{selectedLabel}</span>
+                                    </SelectorTrigger>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                                     <div className="p-2">

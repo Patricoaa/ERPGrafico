@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { SubmitButton, CancelButton, Drawer, FormFooter, FormSection, FormSplitLayout, LabeledContainer, LabeledInput, LabeledSwitch } from "@/components/shared"
+import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -85,17 +86,14 @@ function RichIconSelector({ value, onChange, label, error, required }: { value: 
         <LabeledContainer label={label} error={error} required={required}>
             <Popover>
                 <PopoverTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        role="combobox"
-                        className="w-full justify-between h-6 !py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent font-normal"
+                    <SelectorTrigger
+                        hasValue
+                        placeholder="Seleccionar..."
+                        className="h-6! !py-0 px-3"
                     >
-                        <div className="flex items-center gap-2">
-                            <SelectedIcon className="h-4 w-4" />
-                            <span className="text-sm text-foreground">{selectedLabel}</span>
-                        </div>
-                        <LucideIcons.ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
+                        <SelectedIcon className="h-4 w-4" />
+                        <span className="text-sm text-foreground">{selectedLabel}</span>
+                    </SelectorTrigger>
                 </PopoverTrigger>
                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                     <div className="p-2">

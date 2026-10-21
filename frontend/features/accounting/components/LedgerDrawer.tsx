@@ -254,7 +254,7 @@ function LedgerContent({
             />
 
             {/* Table — fills remaining height */}
-            <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                 <Collection.Root
                     collection={collection}
                     actions={ledgerMovementActions.forCollection(ledgerMovementActionsCtx)}
