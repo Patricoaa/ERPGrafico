@@ -85,10 +85,11 @@ export const contactEntity = defineEntity<Contact>()((f) => ({
         contactType: f.text((c) => resolveCategory("contact_type", c.contact_type).label, { label: "Tipo" }),
         // Grouping dimension only (search "Riesgo").
         riskLevel: f.text((c) => (c.credit_risk_level ? RISK_LABEL[c.credit_risk_level] : null), { label: "Riesgo" }),
+        isActive: f.status((c) => (c.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Archivado" }), { label: "Estado" }),
     },
 }))
 
 export const contactViews = contactEntity.views({
-    table: { columns: ["name", "taxId", "displayId", "email", "phone", "roles"], defaultSort: "name" },
-    card: { title: "name", subtitle: ["taxId", "displayId"], meta: ["email", "phone"], trailing: ["roles"], media: { avatar: ContactAvatar } },
+    table: { columns: ["name", "taxId", "displayId", "isActive", "email", "phone", "roles"], defaultSort: "name" },
+    card: { title: "name", subtitle: ["taxId", "displayId"], meta: ["email", "phone"], trailing: ["roles", "isActive"], media: { avatar: ContactAvatar } },
 })

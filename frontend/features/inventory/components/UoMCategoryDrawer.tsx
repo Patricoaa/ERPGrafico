@@ -17,11 +17,9 @@ import { useUoMMutations } from "../hooks/useUoMMutations"
 import { FormSplitLayout } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import type { UoMCategory } from "../hooks/useUoMs"
 
-export interface UoMCategory {
-    id: number
-    name: string
-}
+export type { UoMCategory }
 
 const categorySchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),

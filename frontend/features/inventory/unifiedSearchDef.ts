@@ -9,6 +9,18 @@ export const uomUnifiedSearchDef: UnifiedSearchConfig = {
       serverParam: 'search',
     },
   ],
+  filters: [
+    {
+      type: 'single',
+      key: 'is_active',
+      label: 'Estado',
+      serverParam: 'is_active',
+      options: [
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
+      ],
+    },
+  ],
 }
 
 export const categoryUnifiedSearchDef: UnifiedSearchConfig = {
@@ -18,6 +30,18 @@ export const categoryUnifiedSearchDef: UnifiedSearchConfig = {
       label: 'Nombre',
       serverParam: 'name',
       clientKey: ['name', 'parent_name'],
+    },
+  ],
+  filters: [
+    {
+      type: 'single',
+      key: 'is_active',
+      label: 'Estado',
+      serverParam: 'is_active',
+      options: [
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
+      ],
     },
   ],
 }
@@ -30,6 +54,18 @@ export const uomCategoryUnifiedSearchDef: UnifiedSearchConfig = {
       serverParam: 'search',
     },
   ],
+  filters: [
+    {
+      type: 'single',
+      key: 'is_active',
+      label: 'Estado',
+      serverParam: 'is_active',
+      options: [
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
+      ],
+    },
+  ],
 }
 
 export const attributeUnifiedSearchDef: UnifiedSearchConfig = {
@@ -38,6 +74,18 @@ export const attributeUnifiedSearchDef: UnifiedSearchConfig = {
       key: 'search',
       label: 'Nombre',
       serverParam: 'search',
+    },
+  ],
+  filters: [
+    {
+      type: 'single',
+      key: 'is_active',
+      label: 'Estado',
+      serverParam: 'is_active',
+      options: [
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
+      ],
     },
   ],
 }
@@ -49,6 +97,18 @@ export const warehouseUnifiedSearchDef: UnifiedSearchConfig = {
       label: 'Nombre / Código',
       serverParam: 'name',
       clientKey: ['name', 'code', 'address'],
+    },
+  ],
+  filters: [
+    {
+      type: 'single',
+      key: 'is_active',
+      label: 'Estado',
+      serverParam: 'is_active',
+      options: [
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
+      ],
     },
   ],
 }

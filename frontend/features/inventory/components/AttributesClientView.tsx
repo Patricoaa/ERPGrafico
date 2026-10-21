@@ -3,7 +3,7 @@
 import { showApiError } from "@/lib/errors"
 
 import React, { useCallback, useMemo } from "react"
-import { Trash2 } from "lucide-react"
+import { Archive, ArchiveRestore } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
@@ -31,7 +31,7 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
         isLoading,
         isError,
         refetch,
-        deleteAttribute,
+        archiveAttribute,
         deleteAttributeValue,
     } = useAttributes({ filters: search.filters })
     const { view, onViewChange } = useCollectionViewMode("inventory.attribute")
@@ -66,16 +66,15 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
         }
     }
 
-    const deleteAttrConfirm = useConfirmAction<number>(async (id) => {
+    const archiveConfirm = useConfirmAction<Attribute>(async (attribute) => {
+        const isArchiving = attribute.is_active
         try {
-            await deleteAttribute(id)
-            toast.success("Atributo eliminado")
+            await archiveAttribute({ id: attribute.id, is_active: !attribute.is_active })
+            toast.success(`Atributo ${isArchiving ? "archivado" : "restaurado"}`)
         } catch (error) {
-            showApiError(error, "Error al eliminar")
+            showApiError(error, `Error al ${isArchiving ? "archivar" : "restaurar"}`)
         }
     })
-
-    const handleDeleteAttribute = useCallback((id: number) => deleteAttrConfirm.requestConfirm(id), [deleteAttrConfirm])
 
     const deleteValueConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -90,28 +89,38 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
 
     const attributeActionsCtx: AttributeActionsCtx = {
         onEdit: (id) => openSelected(id),
-        onDelete: (id) => handleDeleteAttribute(id),
+        onArchive: (attribute) => archiveConfirm.requestConfirm(attribute),
     }
 
-    const bulkDeleteConfirm = useConfirmAction<Attribute[]>(async (items) => {
+    const bulkArchiveConfirm = useConfirmAction<Attribute[]>(async (items) => {
+        const isArchiving = items.every(a => a.is_active)
         try {
-            await Promise.all(items.map(a => deleteAttribute(a.id)))
-            toast.success(`${items.length} atributos eliminados`)
+            await Promise.all(items.map(a => archiveAttribute({ id: a.id, is_active: !isArchiving })))
+            toast.success(`${items.length} atributos ${isArchiving ? "archivados" : "restaurados"}`)
         } catch (error) {
-            showApiError(error, "Error al eliminar los atributos")
+            showApiError(error, `Error al ${isArchiving ? "archivar" : "restaurar"} los atributos`)
             throw error
         }
     })
 
     const bulkActions = useMemo<BulkAction<Attribute>[]>(() => [
         {
-            key: "delete",
-            label: "Eliminar",
-            icon: Trash2,
-            intent: "destructive",
-            onClick: async (items) => bulkDeleteConfirm.requestConfirm(items),
+            key: "restore",
+            label: "Restaurar",
+            icon: ArchiveRestore,
+            intent: "success",
+            hidden: (items) => items.length === 0 || !items.every(a => !a.is_active),
+            onClick: async (items) => bulkArchiveConfirm.requestConfirm(items),
         },
-    ], [bulkDeleteConfirm])
+        {
+            key: "archive",
+            label: "Archivar",
+            icon: Archive,
+            intent: "destructive",
+            hidden: (items) => items.length === 0 || !items.every(a => a.is_active),
+            onClick: async (items) => bulkArchiveConfirm.requestConfirm(items),
+        },
+    ], [bulkArchiveConfirm])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -156,12 +165,15 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
             />
 
             <ActionConfirmModal
-                open={deleteAttrConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) deleteAttrConfirm.cancel() }}
-                onConfirm={deleteAttrConfirm.confirm}
-                title="Eliminar Atributo"
-                description="¿Seguro que deseas eliminar este atributo y todos sus valores?"
-                variant="destructive"
+                open={archiveConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) archiveConfirm.cancel() }}
+                onConfirm={archiveConfirm.confirm}
+                title={archiveConfirm.payload?.is_active ? "Archivar Atributo" : "Restaurar Atributo"}
+                description={archiveConfirm.payload?.is_active
+                    ? "¿Seguro que deseas archivar este atributo? Dejará de estar disponible para nuevas variantes."
+                    : "¿Seguro que deseas restaurar este atributo?"}
+                variant={archiveConfirm.payload?.is_active ? "warning" : "default"}
+                confirmText={archiveConfirm.payload?.is_active ? "Archivar" : "Restaurar"}
             />
 
             <ActionConfirmModal
@@ -174,12 +186,13 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
             />
 
             <ActionConfirmModal
-                open={bulkDeleteConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) bulkDeleteConfirm.cancel() }}
-                onConfirm={bulkDeleteConfirm.confirm}
-                title="Eliminar Atributos"
-                description={`¿Está seguro de que desea eliminar ${bulkDeleteConfirm.payload?.length ?? 0} atributos y todos sus valores?`}
-                variant="destructive"
+                open={bulkArchiveConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) bulkArchiveConfirm.cancel() }}
+                onConfirm={bulkArchiveConfirm.confirm}
+                title={bulkArchiveConfirm.payload?.every(a => a.is_active) ? "Archivar Atributos" : "Restaurar Atributos"}
+                description={`¿Está seguro de que desea ${bulkArchiveConfirm.payload?.every(a => a.is_active) ? "archivar" : "restaurar"} ${bulkArchiveConfirm.payload?.length ?? 0} atributos?`}
+                variant={bulkArchiveConfirm.payload?.every(a => a.is_active) ? "warning" : "default"}
+                confirmText={bulkArchiveConfirm.payload?.every(a => a.is_active) ? "Archivar" : "Restaurar"}
             />
         </div>
     )

@@ -11,6 +11,7 @@ export interface Account {
     is_selectable: boolean
     has_posted_items: boolean
     is_reconcilable: boolean
+    is_active: boolean
     is_category: string | null
     cf_category: string | null
     bs_category: string | null
@@ -23,6 +24,7 @@ export interface AccountFilters {
     account_type?: string
     is_leaf?: boolean
     search?: string
+    is_active?: string
 }
 
 export interface LedgerData {
@@ -79,6 +81,7 @@ export interface AccountPayload {
     account_type: string
     parent?: number | null
     is_selectable?: boolean
+    is_active?: boolean
 }
 
 export type PeriodStatus = 'OPEN' | 'UNDER_REVIEW' | 'CLOSED';

@@ -79,6 +79,18 @@ export function useWarehouses() {
         },
     })
 
+    /** Archivo pattern: PATCH is_active (hard delete blocked server-side with 405). */
+    const archiveWarehouseMutation = useMutation({
+        mutationFn: async ({ id, is_active }: { id: number; is_active: boolean }) => {
+            const res = await api.patch<Warehouse>(`/inventory/warehouses/${id}/`, { is_active })
+            return res.data
+        },
+        onSuccess: () => {
+            markLocalMutation()
+            invalidate()
+        },
+    })
+
     return {
         warehouses: warehouses ?? [],
         isLoading,
@@ -89,6 +101,7 @@ export function useWarehouses() {
         isSaving: saveWarehouseMutation.isPending,
         deleteWarehouse: deleteWarehouseMutation.mutateAsync,
         isDeleting: deleteWarehouseMutation.isPending,
+        archiveWarehouse: archiveWarehouseMutation.mutateAsync,
     }
 }
 

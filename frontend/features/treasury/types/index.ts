@@ -50,6 +50,7 @@ export interface TreasuryAccount {
     allows_check: boolean
     /** true for BRIDGE — managed by provider, no manual edit/delete */
     is_system_managed: boolean
+    is_active: boolean
     current_balance?: number
     available_liquidity?: number
     credit_limit?: number | null
@@ -85,6 +86,7 @@ export interface TreasuryAccountCreatePayload {
     bank?: number | null
     account_number?: string | null
     credit_limit?: number | null
+    is_active?: boolean
 }
 
 export type TreasuryAccountUpdatePayload = Partial<TreasuryAccountCreatePayload>
@@ -418,6 +420,7 @@ export interface PaymentMethodCreatePayload {
     requires_reference?: boolean
     allow_for_sales?: boolean
     allow_for_purchases?: boolean
+    is_active?: boolean
 }
 
 export type PaymentMethodUpdatePayload = Partial<PaymentMethodCreatePayload>

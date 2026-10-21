@@ -22,6 +22,16 @@ export const accountUnifiedSearchDef: UnifiedSearchConfig = {
         { label: 'Gastos', value: 'EXPENSE' },
       ],
     },
+    {
+      type: 'single',
+      key: 'is_active',
+      label: 'Estado',
+      serverParam: 'is_active',
+      options: [
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
+      ],
+    },
   ],
   // No groupBy: the chart of accounts is a tree (the hierarchy is the grouping).
 }

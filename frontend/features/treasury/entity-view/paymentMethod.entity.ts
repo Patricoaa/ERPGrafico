@@ -43,15 +43,17 @@ export const paymentMethodEntity = defineEntity<PaymentMethod>()((f) => ({
         category: f.text((m) => m.method_type_display || METHOD_TYPE_LABELS[m.method_type] || m.method_type, { label: "Categoría Operativa", tone: "secondary" }),
         treasuryAccount: f.text("treasury_account_name", { label: "Cuenta de Tesorería" }),
         usage: f.tags(usage, { label: "Disponible para", sortable: false }),
+        isActive: f.status((m) => (m.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Archivado" }), { label: "Estado" }),
     },
 }))
 
 export const paymentMethodViews = paymentMethodEntity.views({
-    table: { columns: ["name", "category", "treasuryAccount", "usage"], defaultSort: "name" },
+    table: { columns: ["name", "category", "treasuryAccount", "isActive", "usage"], defaultSort: "name" },
     card: {
         title: "name",
         subtitle: ["category", "treasuryAccount"],
         meta: ["usage"],
+        trailing: ["isActive"],
         media: { iconFor: (m) => METHOD_ICON[m.method_type] ?? CreditCard, tone: (m) => METHOD_TONE[m.method_type] ?? "muted" },
     },
 })

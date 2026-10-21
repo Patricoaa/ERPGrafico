@@ -3,7 +3,7 @@ import type { UoM } from './hooks/useUoMs'
 
 export interface UoMActionsCtx {
     onEdit: (id: number) => void
-    onDelete: (id: number) => void
+    onArchive: (item: UoM) => void
 }
 
 export const uomActions = createEntityActions<
@@ -11,5 +11,5 @@ export const uomActions = createEntityActions<
     UoMActionsCtx
 >((item, ctx) => [
     { action: "edit", onClick: () => ctx.onEdit(item.id) },
-    { action: "delete", onClick: () => ctx.onDelete(item.id) },
+    { action: item.is_active ? "archive" : "restore", onClick: () => ctx.onArchive(item) },
 ])

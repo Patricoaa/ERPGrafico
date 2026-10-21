@@ -65,6 +65,19 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
         }
     })
 
+    /** Archivo pattern: soft-delete via `is_active=false`. Hard DELETE is blocked server-side (405). */
+    const archiveMutation = useMutation({
+        mutationFn: ({ id, is_active }: { id: number, is_active: boolean }) =>
+            accountingApi.archiveAccount(id, is_active),
+        onSuccess: () => {
+            markLocalMutation()
+            invalidateCrossFeature(queryClient, [ACCOUNTS_QUERY_KEY])
+        },
+        onError: (error: Error) => {
+            showApiError(error, 'Error al archivar la cuenta')
+        }
+    })
+
     return {
         accounts: accounts || EMPTY_ARRAY,
         isLoading,
@@ -74,6 +87,7 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
         createAccount: createMutation.mutateAsync,
         updateAccount: updateMutation.mutateAsync,
         deleteAccount: deleteMutation.mutateAsync,
+        archiveAccount: archiveMutation.mutateAsync,
         isCreating: createMutation.isPending,
         isUpdating: updateMutation.isPending,
         isDeleting: deleteMutation.isPending

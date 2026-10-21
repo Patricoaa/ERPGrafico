@@ -23,6 +23,16 @@ export const contactsUnifiedSearchDef: UnifiedSearchConfig = {
         { label: 'Usuario Sistema', value: 'USER' },
       ],
     },
+    {
+      type: 'single',
+      key: 'is_active',
+      label: 'Estado',
+      serverParam: 'is_active',
+      options: [
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
+      ],
+    },
   ],
   groupBy: [
     { key: 'contact_type', label: 'Tipo', field: 'contact_type' },

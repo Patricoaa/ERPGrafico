@@ -77,11 +77,12 @@ export const treasuryAccountEntity = defineEntity<TreasuryAccount>()((f) => ({
         linkedAccount: f.text((a) => (a.account_name ? `${a.account_code} - ${a.account_name}` : "Sin vincular"), { label: "Cuenta Contable", tone: "secondary" }),
         links: f.value("treasuryAccountLinks", (a) => a, { label: "Entidad Externa" }),
         balance: f.money("current_balance", { label: "Saldo", currency: (a) => a.currency }),
+        isActive: f.status((a) => (a.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Archivado" }), { label: "Estado" }),
     },
 }))
 
 export const treasuryAccountViews = treasuryAccountEntity.views({
-    table: { columns: ["name", "accountType", "linkedAccount", "links", "balance"], primary: "name" },
+    table: { columns: ["name", "accountType", "isActive", "linkedAccount", "links", "balance"], primary: "name" },
     card: {
         title: "name",
         subtitle: ["accountType", "linkedAccount"],

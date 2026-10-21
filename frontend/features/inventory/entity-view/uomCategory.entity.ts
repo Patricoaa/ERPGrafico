@@ -7,10 +7,11 @@ export const uomCategoryEntity = defineEntity<UoMCategory>()((f) => ({
     fields: {
         code: f.code("id", { label: "Código" }),
         name: f.text("name", { label: "Nombre" }),
+        isActive: f.status((c) => (c.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Archivado" }), { label: "Estado" }),
     },
 }))
 
 export const uomCategoryViews = uomCategoryEntity.views({
-    table: { columns: ["code", "name"], primary: "name", defaultSort: "name" },
-    card: { title: "name", trailing: ["code"] },
+    table: { columns: ["code", "name", "isActive"], primary: "name", defaultSort: "name" },
+    card: { title: "name", trailing: ["code", "isActive"] },
 })

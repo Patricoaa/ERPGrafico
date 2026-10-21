@@ -82,10 +82,24 @@ export function useContactMutations() {
         }
     })
 
+    /** Archivo pattern: soft-delete via `is_active=false` (hard DELETE is blocked server-side with 405). */
+    const archiveMutation = useMutation({
+        mutationFn: ({ id, is_active }: { id: number, is_active: boolean }) =>
+            contactsApi.archiveContact(id, is_active),
+        onSuccess: () => {
+            markLocalMutation()
+            invalidateCrossFeature(queryClient, [CONTACTS_KEYS.lists()])
+        },
+        onError: (error: Error) => {
+            showApiError(error, 'No se pudo archivar el contacto')
+        }
+    })
+
     return {
         createContact: createMutation.mutateAsync,
         updateContact: updateMutation.mutateAsync,
         deleteContact: deleteMutation.mutateAsync,
+        archiveContact: archiveMutation.mutateAsync,
         isCreating: createMutation.isPending,
         isUpdating: updateMutation.isPending,
         isDeleting: deleteMutation.isPending,

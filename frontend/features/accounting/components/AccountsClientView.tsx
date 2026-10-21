@@ -2,11 +2,13 @@
 
 import React, { useState } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { toast } from "sonner"
 import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { AccountDrawer } from "@/features/finance"
 import { LedgerDrawer } from "@/features/accounting/components/LedgerDrawer"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
+import { showApiError } from "@/lib/errors"
 import { type Account } from "@/features/accounting/types"
 import { ActivitySidebar } from "@/features/audit"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -23,8 +25,8 @@ interface AccountsClientViewProps {
 
 export function AccountsClientView({ externalOpen, onExternalOpenChange, createAction }: AccountsClientViewProps) {
     const search = useUnifiedSearch(accountUnifiedSearchDef)
-    const { accounts: flatAccounts, isLoading, isError, refetch, deleteAccount } = useAccounts({ filters: search.filters as unknown as Record<string, unknown> })
-    const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
+    const { accounts: flatAccounts, isLoading, isError, refetch, archiveAccount } = useAccounts({ filters: search.filters as unknown as Record<string, unknown> })
+    const [archiveTarget, setArchiveTarget] = useState<Account | null>(null)
     const [formParentId, setFormParentId] = useState<string | null>(null)
     const [ledgerTarget, setLedgerTarget] = useState<{ id: number; name: string; code: string } | null>(null)
 
@@ -58,14 +60,16 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
         }
     }
 
-    const confirmDelete = async () => {
-        if (!deleteTarget) return
+    const confirmArchive = async () => {
+        if (!archiveTarget) return
+        const isArchiving = archiveTarget.is_active
         try {
-            await deleteAccount(deleteTarget)
+            await archiveAccount({ id: archiveTarget.id, is_active: !archiveTarget.is_active })
+            toast.success(`Cuenta ${isArchiving ? "archivada" : "restaurada"} correctamente`)
         } catch (error) {
-            console.error("Failed to delete account", error)
+            showApiError(error, `Error al ${isArchiving ? "archivar" : "restaurar"} la cuenta`)
         } finally {
-            setDeleteTarget(null)
+            setArchiveTarget(null)
         }
     }
 
@@ -81,7 +85,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
             params.set('selected', String(account.id))
             router.push(`${pathname}?${params.toString()}`, { scroll: false })
         },
-        onDelete: (id) => setDeleteTarget(id),
+        onArchive: (account) => setArchiveTarget(account),
     }), [router, pathname, searchParams])
     // Stable row callbacks: the fully expanded chart re-renders every row when they change.
     const rowActions = React.useMemo(() => accountActions.forCollection(actionCtx), [actionCtx])
@@ -143,13 +147,15 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
             )}
 
             <ActionConfirmModal
-                open={deleteTarget !== null}
-                onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}
-                title="Eliminar Cuenta"
-                variant="destructive"
-                onConfirm={confirmDelete}
-                confirmText="Eliminar"
-                description="¿Está seguro de eliminar esta cuenta? Esta acción no se puede deshacer."
+                open={archiveTarget !== null}
+                onOpenChange={(open) => { if (!open) setArchiveTarget(null) }}
+                title={archiveTarget?.is_active ? "Archivar Cuenta" : "Restaurar Cuenta"}
+                variant={archiveTarget?.is_active ? "warning" : "default"}
+                onConfirm={confirmArchive}
+                confirmText={archiveTarget?.is_active ? "Archivar" : "Restaurar"}
+                description={archiveTarget?.is_active
+                    ? "¿Está seguro de archivar esta cuenta? Dejará de estar disponible para nuevas operaciones contables."
+                    : "¿Está seguro de restaurar esta cuenta?"}
             />
         </div>
     )

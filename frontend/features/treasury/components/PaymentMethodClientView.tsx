@@ -48,23 +48,19 @@ interface PaymentMethodClientViewProps {
 }
 
 export function PaymentMethodClientView({ externalOpen, onOpenChange, createAction }: PaymentMethodClientViewProps) {
-    const { methods, isLoading, isError, refetch, deleteMethod } = usePaymentMethods()
+    const { methods, isLoading, isError, refetch, archiveMethod } = usePaymentMethods()
     const search = useUnifiedSearch(paymentMethodUnifiedSearchDef)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null)
     const [usageFilter, setUsageFilter] = useState<string[]>([])
 
-    const deleteConfirm = useConfirmAction<number>(async (id) => {
+    const archiveConfirm = useConfirmAction<PaymentMethod>(async (method) => {
         try {
-            await deleteMethod(id)
+            await archiveMethod({ id: method.id, is_active: !method.is_active })
         } catch {
             // Error handled by hook
         }
     })
-
-    const handleDelete = (id: number) => {
-        deleteConfirm.requestConfirm(id)
-    }
 
     const openEdit = (method: PaymentMethod) => {
         setSelectedMethod(method)
@@ -73,17 +69,18 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
 
     const paymentMethodActionsCtx: PaymentMethodActionsCtx = {
         onEdit: openEdit,
-        onDelete: (id) => handleDelete(id),
+        onArchive: (method) => archiveConfirm.requestConfirm(method),
     }
 
     const isFiltered = search.isFiltered || usageFilter.length > 0
     const filteredMethods = React.useMemo(() => {
         let result = methods
         if (search.filters.method_type) result = result.filter(m => m.method_type === search.filters.method_type)
+        if (search.filters.is_active) result = result.filter(m => String(m.is_active) === search.filters.is_active)
         if (usageFilter.includes('sales')) result = result.filter(m => m.allow_for_sales)
         if (usageFilter.includes('purchases')) result = result.filter(m => m.allow_for_purchases)
         return search.filterFn(result)
-    }, [methods, search.filters.method_type, usageFilter, search.filterFn, search])
+    }, [methods, search.filters.method_type, search.filters.is_active, usageFilter, search.filterFn, search])
     const { view, onViewChange } = useCollectionViewMode("treasury.paymentmethod")
     // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
     const collection = useEntityCollection(
@@ -175,12 +172,15 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
             />
 
             <ActionConfirmModal
-                open={deleteConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
-                onConfirm={deleteConfirm.confirm}
-                title="Eliminar Método de Pago"
-                description="¿Está seguro de eliminar este método de pago? Esta acción no se puede deshacer."
-                variant="destructive"
+                open={archiveConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) archiveConfirm.cancel() }}
+                onConfirm={archiveConfirm.confirm}
+                title={archiveConfirm.payload?.is_active ? "Archivar Método de Pago" : "Restaurar Método de Pago"}
+                description={archiveConfirm.payload?.is_active
+                    ? "¿Está seguro de archivar este método de pago? Dejará de estar disponible para nuevas operaciones. Puede restaurarlo más adelante."
+                    : "¿Está seguro de restaurar este método de pago?"}
+                variant={archiveConfirm.payload?.is_active ? "warning" : "default"}
+                confirmText={archiveConfirm.payload?.is_active ? "Archivar" : "Restaurar"}
             />
         </div>
     )
@@ -203,7 +203,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
         resolver: zodResolver(paymentMethodSchema) as unknown as Resolver<PaymentMethodFormValues>,
         defaultValues: {
             name: "",
-            method_type: "DEBIT_CARD",
+            method_type: "",
             treasury_account: "",
             settlement_account: null,
             requires_reference: false,
@@ -222,7 +222,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
 
             form.reset({
                 name: method?.name || "",
-                method_type: method?.method_type || "DEBIT_CARD",
+                method_type: method?.method_type || "",
                 treasury_account: accountId,
                 settlement_account: settlementId,
                 requires_reference: method?.requires_reference || false,

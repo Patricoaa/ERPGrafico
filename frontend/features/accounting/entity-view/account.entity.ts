@@ -16,9 +16,10 @@ export const accountEntity = defineEntity<AccountWithChildren>()((f) => ({
         debitTotal: f.money("debit_total", { label: "Debe" }),
         creditTotal: f.money("credit_total", { label: "Haber" }),
         balance: f.money("balance", { label: "Saldo" }),
+        isActive: f.status((a) => (a.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Archivado" }), { label: "Estado" }),
     },
 }))
 
 export const accountViews = accountEntity.views({
-    table: { columns: ["code", "name", "accountType", "debitTotal", "creditTotal", "balance"], primary: "name" },
+    table: { columns: ["code", "name", "accountType", "isActive", "debitTotal", "creditTotal", "balance"], primary: "name" },
 })

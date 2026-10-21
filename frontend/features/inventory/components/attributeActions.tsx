@@ -3,7 +3,7 @@ import type { Attribute } from '@/features/inventory/hooks/useAttributes'
 
 export interface AttributeActionsCtx {
     onEdit: (id: number) => void
-    onDelete: (id: number) => void
+    onArchive: (item: Attribute) => void
 }
 
 export const attributeActions = createEntityActions<Attribute, AttributeActionsCtx>((item, ctx) => [
@@ -12,8 +12,7 @@ export const attributeActions = createEntityActions<Attribute, AttributeActionsC
         onClick: () => ctx.onEdit(item.id),
     },
     {
-        action: "delete",
-        className: "text-destructive",
-        onClick: () => ctx.onDelete(item.id),
+        action: item.is_active ? "archive" : "restore",
+        onClick: () => ctx.onArchive(item),
     },
 ])

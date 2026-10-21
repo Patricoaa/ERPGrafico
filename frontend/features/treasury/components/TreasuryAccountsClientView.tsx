@@ -1,8 +1,10 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import { toast } from "sonner"
 import { useTreasuryAccounts, type TreasuryAccount, treasuryAccountActions, type TreasuryAccountActionsCtx } from "@/features/treasury"
-import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared'
+import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, ActionConfirmModal } from '@/components/shared'
+import { showApiError } from "@/lib/errors"
 import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
 import { treasuryAccountUnifiedSearchDef } from "../unifiedSearchDef"
 import { treasuryAccountEntity, treasuryAccountViews } from "../entity-view/treasuryAccount.entity"
@@ -29,8 +31,9 @@ interface TreasuryAccountsClientViewProps {
 
 export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProps> = ({ activeTab, externalOpen, createAction }) => {
     const search = useUnifiedSearch(treasuryAccountUnifiedSearchDef)
-    const { accounts, isLoading, isRefetching, isError, deleteAccount, refetch } = useTreasuryAccounts({ filters: search.filters })
+    const { accounts, isLoading, isRefetching, isError, archiveAccount, refetch } = useTreasuryAccounts({ filters: search.filters })
     const { view, onViewChange } = useCollectionViewMode("treasury.treasuryaccount")
+    const [archiveTarget, setArchiveTarget] = useState<TreasuryAccount | null>(null)
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false)
     const [isLocalAccountModalOpen, setIsLocalAccountModalOpen] = useState(false)
@@ -88,17 +91,22 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
         }
     }, [externalOpen])
 
-    const handleDelete = async (id: number) => {
+    const confirmArchive = async () => {
+        if (!archiveTarget) return
+        const isArchiving = archiveTarget.is_active
         try {
-            await deleteAccount(id)
-        } catch {
-            // Error already handled by hook
+            await archiveAccount({ id: archiveTarget.id, is_active: !archiveTarget.is_active })
+            toast.success(`Cuenta ${isArchiving ? "archivada" : "restaurada"} correctamente`)
+        } catch (error) {
+            showApiError(error, `Error al ${isArchiving ? "archivar" : "restaurar"} la cuenta`)
+        } finally {
+            setArchiveTarget(null)
         }
     }
 
     const actionsCtx: TreasuryAccountActionsCtx = {
         onEdit: (item) => handleEdit(item),
-        onDelete: (id) => handleDelete(id),
+        onArchive: (item) => setArchiveTarget(item),
     }
 
     const groupBy = search.groupBy ? ACCOUNT_GROUPS[search.groupBy] ?? null : null
@@ -166,6 +174,18 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
             </TabsContent>
 
         </Tabs>
+
+        <ActionConfirmModal
+            open={archiveTarget !== null}
+            onOpenChange={(open) => { if (!open) setArchiveTarget(null) }}
+            title={archiveTarget?.is_active ? "Archivar Cuenta de Tesorería" : "Restaurar Cuenta de Tesorería"}
+            variant={archiveTarget?.is_active ? "warning" : "default"}
+            onConfirm={confirmArchive}
+            confirmText={archiveTarget?.is_active ? "Archivar" : "Restaurar"}
+            description={archiveTarget?.is_active
+                ? "¿Está seguro de archivar esta cuenta? Dejará de estar disponible para nuevas operaciones de tesorería."
+                : "¿Está seguro de restaurar esta cuenta de tesorería?"}
+        />
 
         <TreasuryAccountDrawer
             accountId={selectedAccountId}

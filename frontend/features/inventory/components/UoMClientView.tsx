@@ -4,7 +4,7 @@ import { showApiError } from "@/lib/errors"
 
 import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Trash2 } from "lucide-react"
+import { Archive, ArchiveRestore } from "lucide-react"
 import { toast } from "sonner"
 import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
@@ -25,7 +25,7 @@ interface UoMClientViewProps {
 
 export function UoMClientView({ externalOpen, onExternalOpenChange, createAction }: UoMClientViewProps) {
     const search = useUnifiedSearch(uomUnifiedSearchDef)
-    const { uoms, isLoading, isError, refetch, deleteUoM } = useUoMs(search.filters)
+    const { uoms, isLoading, isError, refetch, archiveUoM } = useUoMs(search.filters)
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
@@ -43,37 +43,48 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
             router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         }
     }
-    const deleteConfirm = useConfirmAction<number>(async (id) => {
+    const archiveConfirm = useConfirmAction<UoM>(async (uom) => {
+        const isArchiving = uom.is_active
         try {
-            await deleteUoM(id)
-            toast.success("Eliminada correctamente")
+            await archiveUoM({ id: uom.id, is_active: !uom.is_active })
+            toast.success(`Unidad ${isArchiving ? "archivada" : "restaurada"} correctamente`)
         } catch (error) {
-            showApiError(error, "No se puede eliminar (puede estar en uso)")
+            showApiError(error, `No se puede ${isArchiving ? "archivar" : "restaurar"} (puede estar en uso)`)
         }
     })
-    const bulkDeleteConfirm = useConfirmAction<UoM[]>(async (items) => {
+    const bulkArchiveConfirm = useConfirmAction<UoM[]>(async (items) => {
+        const isArchiving = items.every(u => u.is_active)
         try {
-            await Promise.all(items.map(u => deleteUoM(u.id)))
-            toast.success(`${items.length} unidades eliminadas`)
+            await Promise.all(items.map(u => archiveUoM({ id: u.id, is_active: !isArchiving })))
+            toast.success(`${items.length} unidades ${isArchiving ? "archivadas" : "restauradas"}`)
         } catch (error) {
-            showApiError(error, "Error al eliminar las unidades")
+            showApiError(error, `Error al ${isArchiving ? "archivar" : "restaurar"} las unidades`)
             throw error
         }
     })
     const actionsCtx: UoMActionsCtx = {
         onEdit: (id) => openSelected(id),
-        onDelete: (id) => deleteConfirm.requestConfirm(id),
+        onArchive: (uom) => archiveConfirm.requestConfirm(uom),
     }
 
     const bulkActions = useMemo<BulkAction<UoM>[]>(() => [
         {
-            key: "delete",
-            label: "Eliminar",
-            icon: Trash2,
-            intent: "destructive",
-            onClick: async (items) => bulkDeleteConfirm.requestConfirm(items),
+            key: "restore",
+            label: "Restaurar",
+            icon: ArchiveRestore,
+            intent: "success",
+            hidden: (items) => items.length === 0 || !items.every(u => !u.is_active),
+            onClick: async (items) => bulkArchiveConfirm.requestConfirm(items),
         },
-    ], [bulkDeleteConfirm])
+        {
+            key: "archive",
+            label: "Archivar",
+            icon: Archive,
+            intent: "destructive",
+            hidden: (items) => items.length === 0 || !items.every(u => u.is_active),
+            onClick: async (items) => bulkArchiveConfirm.requestConfirm(items),
+        },
+    ], [bulkArchiveConfirm])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -114,21 +125,25 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
             />
 
             <ActionConfirmModal
-                open={deleteConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
-                onConfirm={deleteConfirm.confirm}
-                title="Eliminar Unidad de Medida"
-                description="¿Seguro que deseas eliminar esta unidad de medida?"
-                variant="destructive"
+                open={archiveConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) archiveConfirm.cancel() }}
+                onConfirm={archiveConfirm.confirm}
+                title={archiveConfirm.payload?.is_active ? "Archivar Unidad de Medida" : "Restaurar Unidad de Medida"}
+                description={archiveConfirm.payload?.is_active
+                    ? "¿Seguro que deseas archivar esta unidad de medida? Dejará de estar disponible para nuevas operaciones."
+                    : "¿Seguro que deseas restaurar esta unidad de medida?"}
+                variant={archiveConfirm.payload?.is_active ? "warning" : "default"}
+                confirmText={archiveConfirm.payload?.is_active ? "Archivar" : "Restaurar"}
             />
 
             <ActionConfirmModal
-                open={bulkDeleteConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) bulkDeleteConfirm.cancel() }}
-                onConfirm={bulkDeleteConfirm.confirm}
-                title="Eliminar Unidades de Medida"
-                description={`¿Está seguro de que desea eliminar ${bulkDeleteConfirm.payload?.length ?? 0} unidades de medida?`}
-                variant="destructive"
+                open={bulkArchiveConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) bulkArchiveConfirm.cancel() }}
+                onConfirm={bulkArchiveConfirm.confirm}
+                title={bulkArchiveConfirm.payload?.every(u => u.is_active) ? "Archivar Unidades de Medida" : "Restaurar Unidades de Medida"}
+                description={`¿Está seguro de que desea ${bulkArchiveConfirm.payload?.every(u => u.is_active) ? "archivar" : "restaurar"} ${bulkArchiveConfirm.payload?.length ?? 0} unidades de medida?`}
+                variant={bulkArchiveConfirm.payload?.every(u => u.is_active) ? "warning" : "default"}
+                confirmText={bulkArchiveConfirm.payload?.every(u => u.is_active) ? "Archivar" : "Restaurar"}
             />
         </div>
     )

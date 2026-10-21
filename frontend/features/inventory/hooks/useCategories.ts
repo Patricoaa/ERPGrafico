@@ -16,6 +16,7 @@ export interface Category {
     income_account: number | null
     expense_account: number | null
     icon?: string
+    is_active: boolean
 }
 
 export type CategoryPayload = Omit<Category, 'id' | 'parent_name'>
@@ -89,6 +90,18 @@ export function useCategories(initialData?: Category[]) {
         },
     })
 
+    /** Archivo pattern: PATCH is_active (hard delete blocked server-side with 405). */
+    const archiveCategoryMutation = useMutation({
+        mutationFn: async ({ id, is_active }: { id: number; is_active: boolean }) => {
+            const res = await api.patch<Category>(`/inventory/categories/${id}/`, { is_active })
+            return res.data
+        },
+        onSuccess: () => {
+            markLocalMutation()
+            invalidate()
+        },
+    })
+
     return {
         categories,
         isLoading: showSkeleton,
@@ -100,6 +113,7 @@ export function useCategories(initialData?: Category[]) {
         isSaving: saveCategoryMutation.isPending,
         deleteCategory: deleteCategoryMutation.mutateAsync,
         isDeleting: deleteCategoryMutation.isPending,
+        archiveCategory: archiveCategoryMutation.mutateAsync,
     }
 }
 

@@ -39,10 +39,11 @@ export const attributeEntity = defineEntity<Attribute>()((f) => ({
     fields: {
         name: f.text("name", { label: "Atributo" }),
         values: f.value("attributeValues", (a) => a, { label: "Valores", sortable: false }),
+        isActive: f.status((a) => (a.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Archivado" }), { label: "Estado" }),
     },
 }))
 
 export const attributeViews = attributeEntity.views({
-    table: { columns: ["name", "values"], defaultSort: "name" },
-    card: { title: "name", trailing: ["values"], media: { icon: Tag } },
+    table: { columns: ["name", "values", "isActive"], defaultSort: "name" },
+    card: { title: "name", trailing: ["values", "isActive"], media: { icon: Tag } },
 })

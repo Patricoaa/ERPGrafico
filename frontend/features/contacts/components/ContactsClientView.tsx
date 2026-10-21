@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import React, {useState, lazy, Suspense} from "react"
+import { toast } from "sonner"
 import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
 import { contactActions, type ContactActionsCtx } from "@/features/contacts/contactActions"
 import { useContacts, type Contact } from "@/features/contacts"
@@ -28,12 +29,11 @@ interface ContactsClientViewProps {
 
 export function ContactsClientView({ isNewModalOpen = false, createAction, initialContacts }: ContactsClientViewProps) {
     const search = useUnifiedSearch(contactsUnifiedSearchDef)
-    const { contacts, isLoading, isRefetching, isError, refetch, deleteContact } = useContacts({
+    const { contacts, isLoading, isRefetching, isError, refetch, archiveContact } = useContacts({
         filters: search.filters as ContactFilters,
         initialData: initialContacts,
     })
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-    const [contactToDelete, setContactToDelete] = useState<Contact | null>(null)
+    const [archiveTarget, setArchiveTarget] = useState<Contact | null>(null)
     const router = useRouter()
     const searchParams = useSearchParams()
     const { openSelected } = useEntityRouteActions()
@@ -57,24 +57,22 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
         }
     }
 
-    const handleDelete = async (contact: Contact, isConfirmed = false) => {
-        if (!contact) return
-        if (!isConfirmed) {
-            setContactToDelete(contact)
-            setIsDeleteModalOpen(true)
-            return
-        }
+    const confirmArchive = async () => {
+        if (!archiveTarget) return
+        const isArchiving = archiveTarget.is_active
         try {
-            await deleteContact(contact.id)
-            setIsDeleteModalOpen(false)
+            await archiveContact({ id: archiveTarget.id, is_active: !archiveTarget.is_active })
+            toast.success(`Contacto ${isArchiving ? "archivado" : "restaurado"} correctamente`)
         } catch {
             // Error handling is done in the hook
+        } finally {
+            setArchiveTarget(null)
         }
     }
 
     const actionsCtx: ContactActionsCtx = {
         onEdit: (id) => openSelected(id),
-        onDelete: (contact) => handleDelete(contact),
+        onArchive: (contact) => setArchiveTarget(contact),
     }
 
     const groupBy = search.groupBy ? CONTACT_GROUPS[search.groupBy] ?? null : null
@@ -122,17 +120,23 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
 
             <Suspense fallback={<LoadingFallback />}>
                 <ActionConfirmModal
-                    open={isDeleteModalOpen}
-                    onOpenChange={(open: boolean) => setIsDeleteModalOpen(open)}
-                    title="Eliminar Contacto"
-                    variant="destructive"
-                    onConfirm={() => { if (contactToDelete) return handleDelete(contactToDelete, true) }}
-                    confirmText="Eliminar"
+                    open={archiveTarget !== null}
+                    onOpenChange={(open: boolean) => { if (!open) setArchiveTarget(null) }}
+                    title={archiveTarget?.is_active ? "Archivar Contacto" : "Restaurar Contacto"}
+                    variant={archiveTarget?.is_active ? "warning" : "default"}
+                    onConfirm={confirmArchive}
+                    confirmText={archiveTarget?.is_active ? "Archivar" : "Restaurar"}
                     description={
-                        <p>
-                            ¿Está seguro de que desea eliminar el contacto <strong>{contactToDelete?.name}</strong>?
-                            Esta acción no se puede deshacer y puede afectar documentos asociados.
-                        </p>
+                        archiveTarget?.is_active ? (
+                            <p>
+                                ¿Está seguro de que desea archivar el contacto <strong>{archiveTarget?.name}</strong>?
+                                Dejará de estar disponible para nuevas operaciones. Puede restaurarlo más adelante.
+                            </p>
+                        ) : (
+                            <p>
+                                ¿Está seguro de que desea restaurar el contacto <strong>{archiveTarget?.name}</strong>?
+                            </p>
+                        )
                     }
                 />
             </Suspense>

@@ -141,6 +141,17 @@ export function usePaymentMethods() {
         onError: () => toast.error('Error al eliminar'),
     })
 
+    /** Archivo pattern: soft-delete via `is_active=false` (hard DELETE is blocked server-side with 405). */
+    const archiveMutation = useMutation({
+        mutationFn: ({ id, is_active }: { id: number, is_active: boolean }) =>
+            treasuryApi.updatePaymentMethod(id, { is_active }),
+        onSuccess: () => {
+            markLocalMutation()
+            invalidate()
+        },
+        onError: () => toast.error('Error al archivar el método'),
+    })
+
     return {
         methods: methods ?? [],
         isLoading,
@@ -150,6 +161,7 @@ export function usePaymentMethods() {
         createMethod: createMutation.mutateAsync,
         updateMethod: updateMutation.mutateAsync,
         deleteMethod: deleteMutation.mutateAsync,
+        archiveMethod: archiveMutation.mutateAsync,
         isCreating: createMutation.isPending,
         isUpdating: updateMutation.isPending,
     }

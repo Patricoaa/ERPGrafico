@@ -45,6 +45,7 @@ interface UseTreasuryAccountsReturn {
     createAccount: (payload: TreasuryAccountCreatePayload) => Promise<TreasuryAccount>
     updateAccount: (params: { id: number, payload: TreasuryAccountUpdatePayload }) => Promise<TreasuryAccount>
     deleteAccount: (id: number) => Promise<void>
+    archiveAccount: (params: { id: number, is_active: boolean }) => Promise<TreasuryAccount>
     isCreating: boolean
     isUpdating: boolean
     isLoading: boolean
@@ -105,12 +106,26 @@ export function useTreasuryAccounts({ filters, enabled = true }: { filters?: Tre
         }
     })
 
+    /** Archivo pattern: soft-delete via `is_active=false` (hard DELETE is blocked server-side with 405). */
+    const archiveMutation = useMutation({
+        mutationFn: ({ id, is_active }: { id: number, is_active: boolean }) =>
+            treasuryApi.updateAccount(id, { is_active }),
+        onSuccess: () => {
+            markLocalMutation()
+            invalidate()
+        },
+        onError: (error: Error) => {
+            showApiError(error, 'Error al archivar la cuenta')
+        }
+    })
+
     return {
         accounts: (accounts as TreasuryAccount[]) ?? [],
         refetch,
         createAccount: createMutation.mutateAsync,
         updateAccount: updateMutation.mutateAsync,
         deleteAccount: deleteMutation.mutateAsync,
+        archiveAccount: archiveMutation.mutateAsync,
         isCreating: createMutation.isPending,
         isUpdating: updateMutation.isPending,
         isLoading,

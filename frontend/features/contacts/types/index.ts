@@ -14,6 +14,7 @@ export interface Contact {
     payment_terms: string | null
     is_default_customer: boolean
     is_default_vendor: boolean
+    is_active: boolean
 
     credit_enabled?: boolean
     credit_limit?: number | null
@@ -33,6 +34,7 @@ export interface ContactFilters {
     code?: string
     is_default_customer?: boolean
     is_default_vendor?: boolean
+    is_active?: string
 }
 
 export interface ContactPayload {
@@ -45,6 +47,7 @@ export interface ContactPayload {
     payment_terms?: string
     is_default_customer: boolean
     is_default_vendor: boolean
+    is_active?: boolean
 
     credit_enabled?: boolean
     credit_limit?: number | null

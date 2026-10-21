@@ -9,6 +9,7 @@ import { staleTime } from '@/lib/query-config'
 export interface UoMCategory {
     id: number
     name: string
+    is_active: boolean
 }
 
 export interface UoM {
@@ -25,7 +26,7 @@ export interface UoM {
     is_active: boolean
 }
 
-export type UoMCategoryPayload = Omit<UoMCategory, 'id'>
+export type UoMCategoryPayload = Omit<UoMCategory, 'id' | 'is_active'>
 
 // ─── Hierarchical query keys ──────────────────────────────────────────────────
 
@@ -110,6 +111,18 @@ export function useUoMs(filters?: FilterState) {
         },
     })
 
+    /** Archivo pattern: PATCH is_active (hard delete is blocked server-side with 405). */
+    const archiveMutation = useMutation({
+        mutationFn: async ({ id, is_active }: { id: number; is_active: boolean }) => {
+            const res = await api.patch<UoM>(`/inventory/uoms/${id}/`, { is_active })
+            return res.data
+        },
+        onSuccess: () => {
+            markLocalMutation()
+            invalidateCrossFeature(queryClient, [UOMS_KEYS.all])
+        },
+    })
+
     const saveMutation = useMutation({
         mutationFn: async (uom: Partial<UoM>) => {
             const res = uom.id
@@ -150,7 +163,17 @@ export function useUoMs(filters?: FilterState) {
             toast.error(`Error al eliminar la categoría: ${e.message}`)
         },
     })
-
+    /** Archivo pattern: PATCH is_active para categorías de UoM. */
+    const archiveCategoryMutation = useMutation({
+        mutationFn: async ({ id, is_active }: { id: number; is_active: boolean }) => {
+            const res = await api.patch<UoMCategory>(`/inventory/uom-categories/${id}/`, { is_active })
+            return res.data
+        },
+        onSuccess: () => {
+            markLocalMutation()
+            invalidateCrossFeature(queryClient, [UOM_CATEGORIES_KEYS.all, UOMS_KEYS.all])
+        },
+    })
     return {
         uoms: uoms ?? [],
         categories: categories ?? [],
@@ -166,8 +189,10 @@ export function useUoMs(filters?: FilterState) {
         deleteUoM: deleteMutation.mutateAsync,
         saveUoM: saveMutation.mutateAsync,
         isSaving: saveMutation.isPending,
+        archiveUoM: archiveMutation.mutateAsync,
         saveUoMCategory: saveCategoryMutation.mutateAsync,
         isSavingCategory: saveCategoryMutation.isPending,
         deleteUoMCategory: deleteCategoryMutation.mutateAsync,
+        archiveUoMCategory: archiveCategoryMutation.mutateAsync,
     }
 }

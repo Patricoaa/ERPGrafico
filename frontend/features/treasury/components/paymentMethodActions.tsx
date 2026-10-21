@@ -3,7 +3,7 @@ import type { PaymentMethod } from '@/features/treasury/types'
 
 export interface PaymentMethodActionsCtx {
     onEdit: (method: PaymentMethod) => void
-    onDelete: (id: number) => void
+    onArchive: (method: PaymentMethod) => void
 }
 
 export const paymentMethodActions = createEntityActions<
@@ -22,6 +22,6 @@ export const paymentMethodActions = createEntityActions<
     }
     return [
         { action: "edit", onClick: () => ctx.onEdit(item) },
-        { action: "delete", onClick: () => ctx.onDelete(item.id) },
+        { action: item.is_active ? "archive" : "restore", onClick: () => ctx.onArchive(item) },
     ]
 })
