@@ -1,7 +1,7 @@
 "use client"
 
 import { User, Wallet, Truck, Hammer, FileText } from "lucide-react"
-import {formatPlainDate} from "@/lib/utils"
+import { formatPlainDate } from "@/lib/utils"
 import { MoneyDisplay, WizardStepsSidebar, type WizardSidebarStep } from "@/components/shared"
 
 interface ProcessSummarySidebarProps {
@@ -49,13 +49,13 @@ export function ProcessSummarySidebar({
             id: 'customer',
             label: 'Cliente',
             icon: User,
-            detail: customerName ? <p className="text-xs font-semibold truncate">{customerName}</p> : undefined
+            detail: customerName ? <p className="text-3xs font-semibold truncate">{customerName}</p> : undefined
         },
         {
             id: 'dte',
             label: 'Documento',
             icon: FileText,
-            detail: dteType ? <p className="text-xs font-semibold">{dteType}</p> : undefined
+            detail: dteType ? <p className="text-3xs font-semibold">{dteType}</p> : undefined
         },
     ]
 
@@ -64,7 +64,7 @@ export function ProcessSummarySidebar({
             id: 'manufacturing',
             label: 'Fabricación',
             icon: Hammer,
-            detail: <p className="text-xs font-semibold">Fabricación configurada</p>
+            detail: <p className="text-3xs font-semibold">Fabricación configurada</p>
         })
     }
 
@@ -74,7 +74,7 @@ export function ProcessSummarySidebar({
         icon: Truck,
         detail: deliveryData ? (
             <div className="space-y-0.5">
-                <p className="text-xs font-semibold">{deliveryLabels[deliveryData.type]}</p>
+                <p className="text-3xs font-semibold">{deliveryLabels[deliveryData.type]}</p>
                 {deliveryData.date && (
                     <p className="text-3xs">{formatPlainDate(deliveryData.date)}</p>
                 )}
@@ -88,8 +88,8 @@ export function ProcessSummarySidebar({
         icon: Wallet,
         detail: paymentData ? (
             <div className="space-y-0.5">
-                <p className="text-xs font-semibold">{methodLabels[paymentData.method]}</p>
-                <MoneyDisplay amount={paymentData.amount} className="text-xs font-bold" />
+                <p className="text-3xs font-semibold">{methodLabels[paymentData.method]}</p>
+                <MoneyDisplay amount={paymentData.amount} className="text-3xs font-bold" />
                 {paymentData.creditAssigned !== undefined && paymentData.creditAssigned > 0 && (
                     <div className="text-3xs text-warning font-semibold flex items-center gap-1">
                         Crédito: <MoneyDisplay amount={paymentData.creditAssigned} inline />
@@ -104,6 +104,8 @@ export function ProcessSummarySidebar({
             title="Proceso de Venta"
             currentStep={currentStep}
             steps={steps}
+            showNumbers={true}
+            detailVisibility="both"
         />
     )
 }

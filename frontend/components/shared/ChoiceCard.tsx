@@ -177,17 +177,22 @@ function renderLightVariant({
             }}
             className={cn(
                 selectableCardClass({ selected, unavailable: disabled }),
-                // Light variant: horizontal row, no media strip
-                "flex-row items-stretch gap-0 whitespace-normal p-0 text-sm font-normal",
+                // Light variant: horizontal row, no media strip — intrinsic height, no h-10 from Button
+                "h-auto flex-row items-stretch gap-0 whitespace-normal p-0 text-sm font-normal",
+                // Light variant surface: visible border + subtle shadow (control-level)
+                cardAnatomy.lightSurface,
                 disabled ? "hover:bg-muted/40 dark:hover:bg-muted/40" : "hover:bg-card dark:hover:bg-card",
                 className
             )}
         >
-            <div className={cn(cardAnatomy.lightLead, "bg-muted", iconClassName ?? "text-muted-foreground/70")}>
+            <span className={cn(
+                cardAnatomy.lightLead,
+                disabled ? "text-muted-foreground/40" : (iconClassName ?? "text-muted-foreground/70")
+            )}>
                 <Icon className="size-5" aria-hidden />
-            </div>
+            </span>
             <div className={cardAnatomy.lightBody}>
-                <h3 className={cn(cardAnatomy.lightTitle, disabled && "text-muted-foreground")}>{title}</h3>
+                <span className={cn(cardAnatomy.lightTitle, disabled && "text-muted-foreground")}>{title}</span>
                 {description && <span className={cardAnatomy.lightDescription}>{description}</span>}
             </div>
             <SelectionRail selected={selected}>

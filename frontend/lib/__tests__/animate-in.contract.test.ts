@@ -44,7 +44,6 @@ const ANIMATE_ALLOWLIST = [
     "components/shared/MultiTagInput.tsx",
     "components/shared/PageContainer.tsx",
     "components/shared/SkeletonShell.tsx",
-    "components/shared/WizardStepsSidebar.tsx",
     "features/accounting/components/closures/FiscalYearClosingWizard.tsx",
     "features/accounting/components/closures/NewFiscalYearDrawer.tsx",
     "features/auth/components/LoginForm.tsx",

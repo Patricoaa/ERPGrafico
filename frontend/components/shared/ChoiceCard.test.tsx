@@ -58,6 +58,20 @@ describe("ChoiceCard (light)", () => {
         expect(button).toHaveClass("flex-row")
     })
 
+    it("has intrinsic height (h-auto, anti-regression for h-10 from Button)", () => {
+        const { container } = render(<ChoiceCard variant="light" selected={false} onSelect={() => {}} title="Efectivo" description="Caja o transferencia" icon={Package} />)
+        const button = container.querySelector('[role="radio"]')
+        expect(button).toHaveClass("h-auto")
+        expect(button).not.toHaveClass("h-10")
+    })
+
+    it("shows empty circle affordance in rail when not selected", () => {
+        render(<ChoiceCard variant="light" selected={false} onSelect={() => {}} title="Efectivo" icon={Package} />)
+        // The empty circle is a span with border-foreground/25 inside the rail
+        const circles = document.querySelectorAll('span[class*="border-foreground"]')
+        expect(circles.length).toBeGreaterThan(0)
+    })
+
     it("ignores clicks and leaves the tab order when disabled", async () => {
         const onSelect = vi.fn()
         render(<ChoiceCard variant="light" selected={false} onSelect={onSelect} disabled title="No disponible" icon={Package} />)
@@ -66,6 +80,16 @@ describe("ChoiceCard (light)", () => {
         expect(card).toHaveAttribute("tabindex", "-1")
         await userEvent.click(card)
         expect(onSelect).not.toHaveBeenCalled()
+    })
+
+    it("mutes icon color when disabled (even if iconClassName provided)", () => {
+        const { container } = render(
+            <ChoiceCard variant="light" selected={false} onSelect={() => {}} disabled title="No disponible" icon={Package} iconClassName="text-primary" />
+        )
+        const leadSpan = container.querySelector('[role="radio"] span:first-child') as HTMLElement | null
+        expect(leadSpan).toBeInTheDocument()
+        // The lead span should have the muted class, not the user-provided text-primary
+        expect(leadSpan?.className).toContain("text-muted-foreground/40")
     })
 
     it("TypeScript discriminates props: media/badge/footer/tone/size not allowed on light", () => {

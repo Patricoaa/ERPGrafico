@@ -24,19 +24,6 @@ interface WizardProcessSidebarProps {
     order: WorkOrder | null
 }
 
-/**
- * WizardProcessSidebar — Production adapter over the shared `WizardStepsSidebar`.
- *
- * Production has richer per-stage semantics than the generic rail:
- *  - a "viewing" index that can differ from the "actual" (owned) stage
- *  - per-stage governance (canEdit / canRewind) driven by `getStepCapabilities`
- *  - a step mode (view / edit-in-place / rewind) surfaced as an indicator dot
- *  - future stages are not clickable
- *
- * Those rules are mapped onto the shared API: `status` drives the base look,
- * `disabled` controls clickability, and `renderStepActions` renders the
- * governance buttons.
- */
 export function WizardProcessSidebar({
     stages,
     viewingStepIndex,
@@ -51,7 +38,22 @@ export function WizardProcessSidebar({
         const isCurrent = actualStepIndex === index
         const isFuture = actualStepIndex < index
 
-        const status: WizardStepStatus = isActive ? "active" : isPast ? "past" : "future"
+        // Determine effective status
+        let status: WizardStepStatus
+        if (isActive) {
+            status = "active"
+        } else if (isCurrent && !isActive) {
+            // The actual current stage (where the order really is) but we're viewing a different one
+            status = "current"
+        } else if (isPast) {
+            status = "past"
+        } else {
+            status = "future"
+        }
+
+        const capabilities = isPast && order
+            ? getStepCapabilities(stage.id as string, order)
+            : null
 
         return {
             id: stage.id,
@@ -59,20 +61,11 @@ export function WizardProcessSidebar({
             icon: stage.icon,
             status,
             disabled: isFuture,
-            // `group` enables the hover-reveal of the governance actions
-            // rendered by `renderStepActions`. The rest maps production's
-            // creation-step palette onto the shared status colours (cn/twMerge
-            // lets these override the base classes).
-            className: cn(
-                "group",
-                isFuture && "cursor-not-allowed",
-                isActive && (stage.isCreationStep ?? false) && "bg-accent text-accent-foreground",
-                isPast && (stage.isCreationStep ?? false) && "bg-success/5 hover:bg-success/10",
-                isPast && !(stage.isCreationStep ?? false) && "hover:bg-success/20",
-                isCurrent && !isActive && (stage.isCreationStep ?? false) && "bg-accent/50 border border-accent/20 hover:border-accent/50",
-                isCurrent && !isActive && !(stage.isCreationStep ?? false) && "bg-card border border-primary/20 hover:border-primary/50",
-                isFuture && (stage.isCreationStep ?? false) && "text-success/40 opacity-60",
-                isFuture && !(stage.isCreationStep ?? false) && "text-muted-foreground/60 opacity-60",
+            className: cn("group"),
+            badge: isCurrent && !isActive && (
+                <span className="text-3xs font-mono font-black text-primary/70 px-1.5 py-0.5 bg-primary/10 rounded border border-primary/20">
+                    actual
+                </span>
             ),
         }
     })
@@ -83,9 +76,11 @@ export function WizardProcessSidebar({
                 title="Etapas"
                 currentStep={viewingStepIndex + 1}
                 steps={steps}
-                width="w-52"
-                className="p-3 space-y-0.5 bg-transparent"
-                onStepClick={(index) => onStepClick(index, 'view')}
+                width="w-60"
+                className="p-2 space-y-0 bg-transparent"
+                onStepClick={(index) => onStepClick(index, "view")}
+                showNumbers={true}
+                detailVisibility="both"
                 renderStepActions={(step, index) => {
                     const isActive = viewingStepIndex === index
                     const isPast = actualStepIndex > index
@@ -98,8 +93,8 @@ export function WizardProcessSidebar({
 
                     // Mode indicator on the currently viewed step.
                     if (isActive) {
-                        if (stepMode === 'edit-in-place') return <div className="h-2 w-2 rounded-full bg-info animate-pulse" />
-                        if (stepMode === 'rewind') return <div className="h-2 w-2 rounded-full bg-warning animate-pulse" />
+                        if (stepMode === "edit-in-place") return <div className="h-1.5 w-1.5 rounded-full bg-info animate-pulse" />
+                        if (stepMode === "rewind") return <div className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse" />
                     }
 
                     if (!capabilities) {
@@ -112,7 +107,7 @@ export function WizardProcessSidebar({
                             )
                         }
                         if (isCurrent && !isActive) {
-                            return <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                            return <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
                         }
                         return null
                     }
@@ -136,9 +131,9 @@ export function WizardProcessSidebar({
                                             variant="ghost"
                                             className={cn(
                                                 "p-1 rounded hover:bg-accent transition-colors h-auto w-auto border-none bg-transparent shadow-none",
-                                                isActive && stepMode === 'view' && "bg-accent",
+                                                isActive && stepMode === "view" && "bg-accent",
                                             )}
-                                            onClick={() => onStepClick(index, 'view')}
+                                            onClick={() => onStepClick(index, "view")}
                                             aria-label="Ver etapa"
                                         >
                                             <Eye className="h-3.5 w-3.5" />
@@ -156,9 +151,9 @@ export function WizardProcessSidebar({
                                             className={cn(
                                                 "p-1 rounded hover:bg-accent transition-colors h-auto w-auto border-none bg-transparent shadow-none",
                                                 !capabilities.canEdit && "opacity-30 cursor-not-allowed",
-                                                isActive && stepMode === 'edit-in-place' && "bg-info/20",
+                                                isActive && stepMode === "edit-in-place" && "bg-info/20",
                                             )}
-                                            onClick={() => capabilities.canEdit && onStepClick(index, 'edit-in-place')}
+                                            onClick={() => capabilities.canEdit && onStepClick(index, "edit-in-place")}
                                             aria-label="Editar datos de etapa"
                                         >
                                             <Pencil className="h-3.5 w-3.5" />
@@ -180,9 +175,9 @@ export function WizardProcessSidebar({
                                             className={cn(
                                                 "p-1 rounded hover:bg-accent transition-colors h-auto w-auto border-none bg-transparent shadow-none",
                                                 !capabilities.canRewind && "opacity-30 cursor-not-allowed",
-                                                isActive && stepMode === 'rewind' && "bg-warning/20",
+                                                isActive && stepMode === "rewind" && "bg-warning/20",
                                             )}
-                                            onClick={() => capabilities.canRewind && onStepClick(index, 'rewind')}
+                                            onClick={() => capabilities.canRewind && onStepClick(index, "rewind")}
                                             aria-label="Retroceder a esta etapa"
                                         >
                                             <RotateCcw className="h-3.5 w-3.5" />

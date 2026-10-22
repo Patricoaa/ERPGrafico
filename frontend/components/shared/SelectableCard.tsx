@@ -75,6 +75,7 @@ export function SelectionCheck({
  * Right rail that hosts the selection marker for the light variant.
  * Unlike CardRail (decorative, aria-hidden), this rail is NOT aria-hidden so the
  * SelectionCheck's sr-only "Seleccionado" is announced.
+ * When not selected, shows an empty circle (affordance) that fills on selection.
  */
 export function SelectionRail({ selected, children }: { selected: boolean; children?: React.ReactNode }) {
     return (
@@ -86,6 +87,12 @@ export function SelectionRail({ selected, children }: { selected: boolean; child
             aria-hidden={false}
         >
             {children}
+            {!selected && (
+                <span
+                    className="size-4 rounded-full border border-foreground/25 transition-colors group-hover:border-foreground/50"
+                    aria-hidden="true"
+                />
+            )}
         </div>
     )
 }

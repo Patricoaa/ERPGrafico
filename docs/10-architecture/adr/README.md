@@ -157,5 +157,8 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0091](0091-economic-immutability-edit-policy.md) | Economic immutability — documents with posted derivatives are corrected by annul + recreate, enforced by a declarative edit policy | Accepted |
 | [0092](0092-productgrid-card-anatomy.md) | ProductGrid card anatomy — one card for POS, calculator and production, driven by a pure view-model | Accepted |
 | [0093](0093-choice-card-and-media-top-cards.md) | ChoiceCard y tarjetas con media arriba — un solo lenguaje de selección para los pasos del POS | Accepted |
+| [0094](0094-card-anatomy-kit-and-radius.md) | Card anatomy kit + radius system — CardSurface, CardRail, tokens, stacked/inline layouts | Accepted |
+| [0095](0095-row-variant-radio-card-entity-view.md) | CardRow variant + RadioCard removal + entity-view migration to CardSurface | Accepted |
+| [0096](0096-wizard-step-rail.md) | Wizard step rail redesign — numbered nodes, connector, a11y, detail on active | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

@@ -270,10 +270,31 @@ States handled: loading (isLoading), step blocked (isValid=false or onNext retur
 The rails are meant to be composed from two shared building blocks (both
 re-exported from `@/components/shared`):
 
-- **`WizardStepsSidebar`** — step rail. Props: `title`, `currentStep` (1-based),
-  `steps: WizardSidebarStep[]` (with `status: 'active' | 'past' | 'future'`,
-  `disabled`, `icon`, `detail`, `className`), `onStepClick(index)` (0-based),
-  `renderStepActions(step, index)`, `width`, `footer`.
+- **`WizardStepsSidebar`** — step rail.
+  - Props:
+    - `title`: string
+    - `currentStep`: number (1-based)
+    - `steps: WizardSidebarStep[]` — each with:
+      - `id: string | number`
+      - `label: string`
+      - `icon: LucideIcon`
+      - `detail?: ReactNode` — shown below label when visible
+      - `badge?: ReactNode` — optional chip (e.g. "actual")
+      - `status?: 'active' | 'past' | 'future' | 'current'` — explicit status override
+      - `disabled?: boolean` — disables click/keyboard
+      - `className?: string` — extra row classes
+    - `onStepClick?: (index: number) => void` (0-based)
+    - `renderStepActions?: (step, index) => ReactNode` — hover-reveal actions column
+    - `width?: string` (default `'w-64'`)
+    - `showNumbers?: boolean` (default `true`) — mono `01..N` on nodes
+    - `detailVisibility?: 'both' | 'active' | 'past' | 'none'` (default `'both'`)
+    - `showCounter?: boolean` (default `true`) — header `03 / 13`
+    - `density?: 'compact' | 'comfortable'` (default `'compact'`)
+    - `className?: string`
+  - A11y: each row is a `<button>` (stretched-link pattern) with `aria-current="step"` on active, `aria-disabled` on future/disabled. Actions render in a separate `z-10` column, never nested inside the button.
+  - Auto-scroll: the rail scrolls the active step into view on change (`block: 'nearest'`).
+  - Connector: vertical gradient line (success → border) left of nodes.
+  - Removed: `footer` prop (was unused).
 - **`WizardSummarySidebar`** — summary rail. Props: `header`, `body`, `footer`,
   `side: 'left' | 'right'` (drives the separator border), `width`,
   `scrollAreaClassName`.
@@ -282,6 +303,14 @@ Domain-rich rails become **thin adapters** over these two: e.g. production's
 `WizardProcessSidebar` maps per-stage governance onto `status` + `disabled` +
 `renderStepActions`, and `WizardRightSidebar` delegates its shell to
 `WizardSummarySidebar`.
+
+**Status palette (canonical, no consumer overrides):**
+| Status | Node | Label | Row background |
+|--------|------|-------|----------------|
+| `past` | `bg-success/15 text-success-foreground border-success/25` + ✓ | `text-foreground/80` | `hover:bg-success/5` |
+| `active` | `bg-primary text-primary-foreground` (K100) | `text-foreground font-semibold` | `bg-accent/40` |
+| `current` | `bg-primary/10 text-primary border-primary/30` | `text-foreground` | `bg-accent/20` |
+| `future` | `border border-border text-muted-foreground/50` | `text-muted-foreground` | — |
 
 ### Surface recipes
 

@@ -106,13 +106,15 @@ Es un `Button` de shadcn con `role="radio"`. Los íconos usan clases `size-*` (e
 
 ## Variante ligera (`variant="light"`) — ADR-0096
 
-Para wizards y pasos de checkout sin media strip real (icono + título + 1 línea descripción, 2–3 por fila). Anatomía compacta ~60px alto (vs ~142px stacked):
+Para wizards y pasos de checkout sin media strip real (icono + título + 1–2 líneas descripción, 2–3 por fila). Anatomía compacta ~60px alto (vs ~142px stacked):
 
 ```
-┌──────────────────────────────────────┐
-│ ◨  Título                      │ ◉  │  ← lead 32×32 (icono) | cuerpo | rail w-9 con SelectionCheck
-│    descripción                    │    │
-└──────────────────────────────────────┘
+┌────────────────────────────────────────────┐
+│▌  ◨  Título                      │ ●  │  ← lead 40px (icono centrado, sin fondo) | cuerpo | rail 36px con ● / ○
+│▌     descripción                    │    │     ○ = círculo vacío (affordance), ● = check relleno al elegir
+└────────────────────────────────────────────┘
+  ↑ lightSurface: border-foreground/20 + shadow-xs  (borde de control, no de card)
+  ↑ h-auto (intrínseco, no h-10 heredado de Button)
 ```
 
 **Props discriminadas** (TypeScript impide mezclar):
@@ -122,9 +124,21 @@ Para wizards y pasos de checkout sin media strip real (icono + título + 1 líne
 | `stacked` (default) | todas | — |
 | `light` | `selected`, `onSelect`, `title`, `description`, `icon`, `iconClassName`, `disabled`, `className` | `meta`, `media`, `badge`, `tone`, `footer`, `size`, `children` |
 
-**Tokens específicos** (`cardAnatomy`): `lightLead`, `lightBody`, `lightTitle`, `lightDescription`, `lightRail`, `lightRailSelected`.
+**Tokens específicos** (`cardAnatomy`): `lightLead`, `lightBody`, `lightTitle`, `lightDescription`, `lightRail`, `lightRailSelected`, `lightSurface`.
 
-**Shell**: mismo `Button` + `selectableCardClass` con override `flex-row`. El riel aloja `SelectionCheck` (con `placement="inline"`) cuando `selected`; vacío y apagado cuando no. La cinta CMYK superior se mantiene.
+| Token | Valor | Nota |
+|---|---|---|
+| `lightLead` | `flex w-10 shrink-0 items-center justify-center self-stretch` | Columna transparente a toda la altura, icono centrado |
+| `lightBody` | `flex min-w-0 flex-1 flex-col gap-0.5 py-2.5 pl-3 pr-2` | |
+| `lightTitle` | `line-clamp-1 text-left text-sm font-semibold leading-snug` | |
+| `lightDescription` | `line-clamp-2 text-2xs leading-snug text-muted-foreground` | |
+| `lightRail` | `flex w-9 shrink-0 items-center justify-center border-l border-border/60 bg-muted/20 transition-colors` | |
+| `lightRailSelected` | `border-primary/30 bg-primary/5` | |
+| `lightSurface` | `border-foreground/20 shadow-xs` | **NUEVO**: borde visible de control (gana sobre border-border) |
+
+**Shell**: mismo `Button` + `selectableCardClass` con override `h-auto flex-row items-stretch`. El riel (`SelectionRail`) muestra un círculo vacío decorativo (`○`, `border-foreground/25`, `group-hover:border-foreground/50`) cuando `!selected`; al elegir (`selected`) aparece el `SelectionCheck` relleno (`●`, check blanco en fondo primario). La cinta CMYK superior se mantiene.
+
+**Comportamiento del icono en `disabled`**: el color se fuerza a `text-muted-foreground/40` aunque el caller pase `iconClassName="text-primary"` (caso `NoteStep_Logistics`).
 
 **Sitios migrados** (14 instancias):
 

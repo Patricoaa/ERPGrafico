@@ -51,8 +51,8 @@ export const cardAnatomy = {
     inlineAmount: "flex items-baseline gap-1 font-semibold tabular-nums text-sm",
 
     // ── Light variant (no media strip, icon lead + text + right rail) ──────────────
-    /** Leading slot for icon — 32×32, centered, rounded-sm. */
-    lightLead: "flex h-8 w-8 shrink-0 items-center justify-center rounded-sm",
+    /** Leading slot for icon — full-height transparent column, icon centered. */
+    lightLead: "flex w-10 shrink-0 items-center justify-center self-stretch",
     /** Light body: title + description in a compact column. */
     lightBody: "flex min-w-0 flex-1 flex-col gap-0.5 py-2.5 pl-3 pr-2",
     /** Title in light variant — single line, clamped. */
@@ -63,6 +63,8 @@ export const cardAnatomy = {
     lightRail: "flex w-9 shrink-0 items-center justify-center border-l border-border/60 bg-muted/20 transition-colors",
     /** Rail when selected — primary-tinted. */
     lightRailSelected: "border-primary/30 bg-primary/5",
+    /** Surface for light variant — visible border + subtle shadow (control-level, not card-level). */
+    lightSurface: "border-foreground/20 shadow-xs",
 
 } as const
 
