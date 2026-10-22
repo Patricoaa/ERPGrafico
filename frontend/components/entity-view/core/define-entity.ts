@@ -147,6 +147,13 @@ export interface CardMedia<T> {
     tone?: CardTone | ((row: T) => CardTone)
     image?: (row: T) => string | null | undefined
     avatar?: ComponentType<{ row: T }>
+    /**
+     * `inline` (default): small icon/image beside the title. `top`: a media strip above the title, the
+     * ProductCard anatomy (ADR-0093). Opt-in; collections that do not set it are unchanged.
+     */
+    placement?: "inline" | "top"
+    /** Chip over the strip's top-left corner. Only with `placement: "top"`. */
+    badge?: (row: T) => string | null | undefined
 }
 
 /** Registrable body sections. `custom` is the typed per-feature escape (receives the row, lives in the feature). */

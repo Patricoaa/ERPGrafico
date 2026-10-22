@@ -482,7 +482,10 @@
 /*
  * RIBBON CMYK — Process-ink register strip along the top edge of a card (C · M · Y · K).
  * Apply via className="ribbon-cmyk"; the host must clip its overflow (Card does).
- * Marks "selected / in use" on cards (ProductCard, not-found).
+ * Marks "selected / in use" on cards (ProductCard, not-found). The K plate uses the foreground
+ * token so it stays visible on dark surfaces.
+ * Add "ribbon-cmyk-hover" next to it to show the strip only while the card is hovered or has
+ * keyboard focus (hover preview of the selected state); omit it for an always-on ribbon.
  */
 @utility ribbon-cmyk {
   position: relative;
@@ -491,16 +494,36 @@
     content: "";
     position: absolute;
     inset: 0 0 auto 0;
-    height: 3px;
+    height: 4px;
     z-index: 30;
     pointer-events: none;
+    opacity: var(--ribbon-opacity, 1);
     background: linear-gradient(
       to right,
       var(--cyan) 0 25%,
       var(--magenta) 25% 50%,
       var(--yellow) 50% 75%,
-      var(--black) 75% 100%
+      var(--foreground) 75% 100%
     );
+  }
+}
+
+@utility ribbon-cmyk-hover {
+  --ribbon-opacity: 0;
+
+  &::before {
+    transition: opacity 150ms ease-out;
+  }
+
+  &:hover,
+  &:focus-visible {
+    --ribbon-opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::before {
+      transition: none;
+    }
   }
 }
 

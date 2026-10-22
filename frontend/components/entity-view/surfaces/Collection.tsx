@@ -636,6 +636,7 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
         const data = row.original
         const media = layout.media
         const Avatar = media?.avatar
+        const mediaOnTop = media?.placement === "top"
         const icon = media?.iconFor?.(data) ?? media?.icon ?? (entity.label !== undefined ? getEntityIcon(entity.label) : undefined)
         const tone = pick(media?.tone, data) ?? "default"
         const subtitle = (layout.subtitle ?? [])
@@ -660,11 +661,20 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                     isAnySelected
                     selectionLabel={`Seleccionar ${title}`}
                 >
+                    {mediaOnTop && (
+                        <EntityCard.Media
+                            icon={icon}
+                            iconClassName={TONE_CLASS[tone]}
+                            imageSrc={media?.image?.(data) ?? undefined}
+                            avatar={Avatar ? <Avatar row={data} /> : undefined}
+                            badge={media?.badge?.(data) ?? undefined}
+                        />
+                    )}
                     <EntityCard.Header
-                        icon={icon}
+                        icon={mediaOnTop ? undefined : icon}
                         iconClassName={TONE_CLASS[tone]}
-                        imageSrc={media?.image?.(data) ?? undefined}
-                        avatar={Avatar ? <Avatar row={data} /> : undefined}
+                        imageSrc={mediaOnTop ? undefined : media?.image?.(data) ?? undefined}
+                        avatar={!mediaOnTop && Avatar ? <Avatar row={data} /> : undefined}
                         title={
                             ctx.canOpen ? (
                                 <Button variant="link" className="h-7 p-0 text-sm font-semibold text-foreground underline-offset-2 hover:underline focus-visible:underline" onClick={() => ctx.open(data)}>
