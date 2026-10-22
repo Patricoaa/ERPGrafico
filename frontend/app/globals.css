@@ -855,10 +855,11 @@ table [data-notched-field] {
     color: var(--primary);
   }
 
-  /* Strip border/outline from the actual control — fieldset provides the border */
+  /* Strip border/outline from the actual control — fieldset provides the border.
+     Exclude [role="radio"] (ChoiceCard in ChoiceGroup) which must keep its own border. */
   fieldset.notched-field input,
   fieldset.notched-field textarea,
-  fieldset.notched-field button,
+  fieldset.notched-field button:not([role="radio"]),
   fieldset.notched-field [role="combobox"] {
     border: none !important;
     outline: none !important;
@@ -871,8 +872,8 @@ table [data-notched-field] {
     resize: none;
   }
 
-  /* Normalize trigger buttons (date pickers) to match input height — exclude combobox, handled above */
-  fieldset.notched-field button:not([role="combobox"]) {
+  /* Normalize trigger buttons (date pickers) to match input height — exclude combobox & radio, handled above */
+  fieldset.notched-field button:not([role="combobox"]):not([role="radio"]) {
     height: auto !important;
     padding-top: 0.125rem !important;
     padding-bottom: 0.125rem !important;
