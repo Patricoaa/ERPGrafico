@@ -127,7 +127,9 @@ services:
         condition: service_healthy
     # Sobreescribe el entrypoint para NO correr migraciones en cada worker
     entrypoint: []
-    command: [ "celery", "-A", "config", "worker", "-l", "INFO", "--concurrency=2" ]
+    # concurrency=1 (antes 2): libera ~150MB para el frontend, que es el que
+    # sufre los picos de memoria de Turbopack en un host de 6.8GB
+    command: [ "celery", "-A", "config", "worker", "-l", "INFO", "--concurrency=1" ]
     deploy:
       resources:
         limits:
@@ -177,7 +179,8 @@ services:
     env_file: .env.dev
     environment:
       NODE_ENV: development
-      NODE_OPTIONS: --max-old-space-size=1024
+      # Alineado con el script npm dev (frontend/package.json) — el script lo pisa igualmente
+      NODE_OPTIONS: --max-old-space-size=2048
       NEXT_TELEMETRY_DISABLED: "1"
       # La API se llama a través de nginx en el navegador (URL pública)
       # Dentro de la red Docker, el backend se llama directamente
@@ -204,7 +207,10 @@ services:
       resources:
         limits:
           cpus: '2.0'
-          memory: 5G
+          # 6G (antes 5G): el techo de 5G disparaba el OOM-kill de cgroup del
+          # next-server en sesiones largas. Host: 6.8G + 4G swap; el resto del
+          # stack usa ~1G, así que el pico puntual se absorbe vía swap.
+          memory: 6G
 
   # ── Nginx Reverse Proxy ─────────────────────────────────
   nginx:
