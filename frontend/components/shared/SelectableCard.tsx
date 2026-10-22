@@ -21,7 +21,7 @@ export interface SelectableCardState {
 /** Surface classes for a pressable card. Compose with layout classes (`h-full`, `p-0`…) at the call site. */
 export function selectableCardClass({ selected = false, unavailable = false }: SelectableCardState = {}): string {
     return cn(
-        "group relative flex flex-col overflow-hidden rounded-md border border-border bg-card text-left shadow-none transition-colors",
+        "group relative flex flex-col overflow-hidden rounded-sm border border-border bg-card text-left shadow-none transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         unavailable
             ? "cursor-not-allowed border-border/60 bg-muted/40 opacity-50"
