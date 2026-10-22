@@ -693,10 +693,6 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                     isAnySelected
                     selectionLabel={`Seleccionar ${title}`}
                 >
-                    {/* Bulk mode: selecting is the card's first action (click anywhere, like the product grid). Pointer-only: the checkbox is the accessible control. */}
-                    {isBulk && (
-                        <button type="button" tabIndex={-1} aria-hidden="true" data-card-select className="absolute inset-0 z-[1] cursor-pointer" onClick={() => row.toggleSelected()} />
-                    )}
                     {mediaOnTop && (
                         <EntityCard.Media
                             icon={icon}
@@ -715,7 +711,7 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                         avatar={!mediaOnTop && !rail && Avatar ? <Avatar row={data} /> : undefined}
                         title={
                             ctx.canOpen ? (
-                                <Button data-card-open variant="link" className={cn("h-7 min-w-0 max-w-full justify-start p-0 text-sm font-semibold text-foreground underline-offset-2 focus-visible:underline focus-visible:ring-0", isBulk ? "relative z-10 hover:underline" : "after:absolute after:inset-0 after:content-['']")} onClick={() => ctx.open(data)}>
+                                <Button data-card-open variant="link" className="h-7 min-w-0 max-w-full justify-start p-0 text-sm font-semibold text-foreground underline-offset-2 after:absolute after:inset-0 after:content-[''] focus-visible:underline focus-visible:ring-0" onClick={() => ctx.open(data)}>
                                     {/* A flex button cannot ellipsize its own text: the span does. */}
                                     <span className="truncate">{title}</span>
                                 </Button>

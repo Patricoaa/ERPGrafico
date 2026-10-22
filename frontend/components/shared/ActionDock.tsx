@@ -1,9 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { X, type LucideIcon } from "lucide-react"
+import { Check, X, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { CmykRing } from "./CmykRing"
 
 import { cn } from "@/lib/utils"
 
@@ -115,7 +114,9 @@ export function SelectionDock({ count, onClear, children }: SelectionDockProps) 
     return (
         <ActionDock isVisible>
             <div className="flex items-center gap-2" aria-live="polite">
-                <CmykRing className="h-2.5 w-2.5 animate-pulse" />
+                <span className="flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground" aria-hidden="true">
+                    <Check className="size-2.5" strokeWidth={3} />
+                </span>
                 <span className="text-xs font-bold uppercase tracking-widest text-foreground whitespace-nowrap">
                     {`${count} ${count === 1 ? "seleccionado" : "seleccionados"}`}
                 </span>

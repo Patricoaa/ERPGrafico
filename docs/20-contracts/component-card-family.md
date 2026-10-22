@@ -25,7 +25,7 @@ Import: `import { CardSurface, CardLead, CardRail, cardAnatomy } from '@/compone
 
 **Regla del ribbon CMYK:** se previsualiza al hover y queda fijo cuando la card está elegida (`choice`, y las cards de entity-view, que comparten el lenguaje del product grid: ribbon + anillo + marca CMYK en el checkbox). En `item` de otras superficies (bandeja, kanban) y en `nav` solo aparece seleccionada. Nunca en `panel`/`metric`.
 
-**Selección por lote en entity-view:** con `selection="bulk"`, la acción primaria de la card es seleccionarla (clic en cualquier parte, solo puntero; el checkbox es el control accesible) y el título abre el registro. Sin lote, el título es el enlace extendido que abre.
+**Selección por lote en entity-view:** el clic en la card **siempre** ejecuta la acción principal de la entidad (abrir, por enlace extendido del título); solo el checkbox selecciona. La marca de selección es el *check* (círculo primario con check, como `SelectionCheck`), no `CmykRing`: lo usan `SelectionRing` (filas, cabeceras, cards) y el indicador de `SelectionDock`.
 
 ## 2. Superficies (CSS)
 

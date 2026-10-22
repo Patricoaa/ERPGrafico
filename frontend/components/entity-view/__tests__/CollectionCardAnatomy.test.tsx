@@ -134,25 +134,20 @@ describe("Collection card anatomy (ADR-0097)", () => {
         expect(first.firstElementChild?.className).toContain("border-primary")
     })
 
-    it("in bulk mode clicking the card selects it (first action) while the title still opens it", async () => {
+    it("in bulk mode the card click still performs the primary action (open); only the checkbox selects", async () => {
         const user = userEvent.setup()
         const onOpen = vi.fn()
         render(<Harness source={{ rows }} onOpen={onOpen} withRail={false} catalog bulk />)
         const first = within(screen.getByRole("list", { name: "Documentos" })).getAllByRole("listitem")[0]
-        const overlay = first.querySelector("[data-card-select]") as HTMLElement
-        expect(overlay).not.toBeNull()
-        expect(overlay).toHaveAttribute("aria-hidden", "true")
-        await user.click(overlay)
-        expect(within(first).getByRole("checkbox")).toBeChecked()
-        expect(onOpen).not.toHaveBeenCalled()
-        await user.click(within(first).getByRole("button", { name: "Imprenta Sur" }))
+        const open = within(first).getByRole("button", { name: "Imprenta Sur" })
+        expect(open.className).toContain("after:absolute")
+        expect(first.querySelector("[data-card-select]")).toBeNull()
+        await user.click(open)
         expect(onOpen).toHaveBeenCalledWith(rows[0])
+        expect(within(first).getByRole("checkbox")).not.toBeChecked()
+        await user.click(within(first).getByRole("checkbox"))
+        expect(within(first).getByRole("checkbox")).toBeChecked()
+        expect(onOpen).toHaveBeenCalledTimes(1)
     })
 
-    it("without bulk selection the title is the stretched link and there is no select overlay", () => {
-        render(<Harness source={{ rows }} onOpen={vi.fn()} />)
-        const first = within(screen.getByRole("list", { name: "Documentos" })).getAllByRole("listitem")[0]
-        expect(first.querySelector("[data-card-select]")).toBeNull()
-        expect(within(first).getByRole("button", { name: "Imprenta Sur" }).className).toContain("after:absolute")
-    })
 })

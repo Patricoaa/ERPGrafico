@@ -29,7 +29,7 @@ last_review: 2026-05-28
     -   **`card-focus-spin-cmyk`** — 2px cyan→magenta→yellow gradient border that rotates on hover and speeds up on focus/selected (`accent-visible`). Included in `card-base` for entity cards. See `app/globals.css`.
 5.  **Selection Language (cards vs controls):**
     -   **Interactive/selectable cards** (ProductCard, ChoiceCard stacked/light, ContactCard, MfgLineCard, EntityCard, PaymentMethodSelector chosen surface): **cinta CMYK (`ribbon-cmyk`) + `SelectionCheck` + anillo K100 (`border-primary ring-1`)**. La cinta previsualiza en hover/foco; `SelectionCheck` aparece al elegir. `CmykRing` **no** se usa en cards.
-    -   **Controles / selección múltiple en tablas**: `Checkbox`, `SelectionRing` (bulk), `ActionDock` (pulso de carga) → **`CmykRing`**.
+    -   **Selección múltiple (bulk)**: `SelectionRing` (filas, cabeceras, cards) y el indicador de `SelectionDock` usan el **check** (círculo primario con check; minus en parcial), no `CmykRing`. `Checkbox variant="circle"` conserva `CmykRing`.
     -   Ver ADR-0094, ADR-0095, ADR-0096.
 6.  **Semantic Styling:** Never use hardcoded colors or spacing if a semantic token exists.
 
