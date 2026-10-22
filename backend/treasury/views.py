@@ -324,16 +324,19 @@ class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         accounts = terminal.get_accounts_for_method(pm) if pm else terminal.allowed_treasury_accounts.all()
         return Response(TreasuryAccountSerializer(accounts, many=True).data)
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=["get"], url_path="allowed_payment_methods")
     def allowed_payment_methods(self, request, pk=None):
         from .selectors import POSSelector
+        from .serializers import PaymentMethodSerializer
+
         terminal = self.get_object()
-        op = request.query_params.get('operation')
-        methods = POSSelector.get_payment_methods_for_terminal(terminal, operation=op)
-        return Response(PaymentMethodSerializer(methods, many=True).data)
+        operation = request.query_params.get("operation")
+        methods = POSSelector.get_payment_methods_for_terminal(terminal, operation=operation)
+        serializer = PaymentMethodSerializer(methods, many=True)
+        return Response(serializer.data)
 
 
-class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class TreasuryMovementViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = TreasuryMovement.objects.all().order_by("-date", "-created_at")
     serializer_class = TreasuryMovementSerializer
     pagination_class = StandardResultsSetPagination
