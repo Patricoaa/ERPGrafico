@@ -1,6 +1,6 @@
 import { useState } from "react"
 import type { Meta, StoryObj } from "@storybook/nextjs-vite"
-import { Banknote, Building2, Calendar, ClipboardList, CreditCard, FileText, Layers, Package, Receipt, Truck } from "lucide-react"
+import { Banknote, Building2, Calendar, ClipboardList, CreditCard, FileText, Layers, Package, Receipt, Truck, Wallet, Clock } from "lucide-react"
 import type { Contact } from "@/types/entities"
 import { ChoiceCard, ChoiceGroup } from "./ChoiceCard"
 import { ContactCard } from "./ContactSelector"
@@ -97,3 +97,40 @@ export const Contacts: Story = {
 
 export const ContactsDark: Story = { ...Contacts, globals: { theme: "dark" } }
 export const PaymentMethodsDark: Story = { ...PaymentMethods, globals: { theme: "dark" } }
+
+/** Variante ligera: icon lead | title+description | right rail con check.
+ * Usada en wizards y pasos de checkout sin media strip real. */
+export const LightVariant: Story = {
+    render: () => (
+        <Pick initial="CASH" options={["CASH", "ASSETS"] as const}>
+            {(value, set) => (
+                <div className="w-[28rem]">
+                    <ChoiceGroup label="Tipo de Recurso" columns="grid-cols-2">
+                        <ChoiceCard variant="light" selected={value === "CASH"} onSelect={() => set("CASH")} icon={Wallet} title="Efectivo" description="Caja, banco o transferencia." />
+                        <ChoiceCard variant="light" selected={value === "ASSETS"} onSelect={() => set("ASSETS")} icon={Package} title="Bienes / Stock" description="Materias primas, insumos o productos." />
+                    </ChoiceGroup>
+                </div>
+            )}
+        </Pick>
+    ),
+}
+
+/** Modo de Producción (ProductManufacturingTab) — 3 opciones en grid-cols-3. */
+export const LightManufacturingMode: Story = {
+    render: () => (
+        <Pick initial="simple" options={["simple", "express", "advanced"] as const}>
+            {(value, set) => (
+                <div className="w-[48rem]">
+                    <ChoiceGroup label="Modo de Producción" columns="grid-cols-3">
+                        <ChoiceCard variant="light" selected={value === "simple"} onSelect={() => set("simple")} icon={Package} title="Simple" description="Manual / Lote" />
+                        <ChoiceCard variant="light" selected={value === "express"} onSelect={() => set("express")} icon={Clock} title="Express" description="Auto-cierre" />
+                        <ChoiceCard variant="light" selected={value === "advanced"} onSelect={() => set("advanced")} icon={Layers} title="Avanzado" description="Wizard Etapas" />
+                    </ChoiceGroup>
+                </div>
+            )}
+        </Pick>
+    ),
+}
+
+export const LightVariantDark: Story = { ...LightVariant, globals: { theme: "dark" } }
+export const LightManufacturingModeDark: Story = { ...LightManufacturingMode, globals: { theme: "dark" } }
