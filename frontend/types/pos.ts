@@ -105,6 +105,7 @@ export interface WizardState {
     selectedCustomerName?: string
     selectedCustomerId?: string | number | null
     isWaitingPayment?: boolean
+    phaseId?: string
     [key: string]: unknown
 }
 

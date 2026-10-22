@@ -41,6 +41,7 @@ export interface CheckoutWizardState {
     selectedCustomerName: string
     isQuickSale: boolean
     isWaitingPayment: boolean
+    phaseId?: 'customer' | 'dte' | 'manufacturing' | 'delivery' | 'payment'
 }
 
 export interface SalesCheckoutWizardViewProps {
@@ -277,10 +278,11 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                 approvalTaskId,
                 isWaitingApproval,
                 isQuickSale: quickSale,
-                isWaitingPayment: step === totalSteps
+                isWaitingPayment: step === totalSteps,
+                phaseId: steps[step - 1]?.id
             } as unknown as CheckoutWizardState)
         }
-    }, [step, dteData, paymentData, deliveryData, approvalTaskId, isWaitingApproval, isApproved, loading, quickSale, onStateChange, selectedCustomerId, selectedCustomerName, totalSteps])
+    }, [step, dteData, paymentData, deliveryData, approvalTaskId, isWaitingApproval, isApproved, loading, quickSale, onStateChange, selectedCustomerId, selectedCustomerName, totalSteps, steps])
 
 
 

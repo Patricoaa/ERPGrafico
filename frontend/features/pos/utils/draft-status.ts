@@ -6,15 +6,29 @@
  * Single source of truth for: number formatting, state priority, chip config.
  */
 
-import { Lock, Wallet, ClipboardCheck, Loader2 } from "lucide-react"
+import { Lock, Wallet, ShieldAlert, CheckCircle2, ShoppingCart, User, FileWarning, Factory, Truck } from "lucide-react"
 import type { SyncDraft } from "../hooks/useDraftSync"
 import type { LucideIcon } from "lucide-react"
 
-export interface DraftStatusChip {
-    key: string
+export interface DraftPhase {
+    id: string
     label: string
-    intent: "destructive" | "warning" | "primary" | "success" | "neutral"
     icon: LucideIcon
+}
+
+export const DRAFT_PHASES: DraftPhase[] = [
+    { id: "cart", label: "Carrito", icon: ShoppingCart },
+    { id: "customer", label: "Cliente", icon: User },
+    { id: "dte", label: "Documento", icon: FileWarning },
+    { id: "manufacturing", label: "Fabricación", icon: Factory },
+    { id: "delivery", label: "Entrega", icon: Truck },
+    { id: "payment", label: "Pago", icon: Wallet },
+]
+
+export interface DraftStatus {
+    icon: LucideIcon
+    tone: "destructive" | "warning" | "success" | "muted" | "primary"
+    label: string
 }
 
 /**
@@ -29,83 +43,169 @@ export function formatDraftNumber(draft: SyncDraft | { session_local_id?: number
 }
 
 /**
- * Resolve the ordered list of status chips for a draft.
- * Priority (highest first):
- *   1. Locked by another user  → En uso (destructive, Lock)
- *   2. isWaitingPayment        → Por Pagar (warning, Wallet)
- *   3. wizard_state.step       → P{n} (warning, ClipboardCheck) — shown even when waiting payment
- *   4. isWaitingApproval       → Auth (primary, Loader2)
- *   5. isApproved              → OK (success, ClipboardCheck)
- *
- * The "Tú" chip (own lock) is intentionally omitted — it's shown
- * only in the full list view (DraftCartsClientView) where there's room.
+ * Resolve the phase for a draft.
+ * Uses phaseId (exact, from wizard); fallback to step-based heuristic for legacy drafts.
  */
-export function resolveDraftStatuses(
-    draft: SyncDraft,
-    _opts?: { isOwnLock?: boolean }
-): DraftStatusChip[] {
+export function resolveDraftPhase(draft: SyncDraft): DraftPhase | null {
     const ws = draft.wizard_state
-    const chips: DraftStatusChip[] = []
+    if (ws?.phaseId) {
+        const phase = DRAFT_PHASES.find(p => p.id === ws.phaseId)
+        if (phase) return phase
+    }
+    // Legacy fallback based on step
+    if (ws?.step) {
+        const stepMap: Record<number, string> = {
+            1: "customer",
+            2: "dte",
+            3: "delivery",
+            4: "payment",
+            5: "payment",
+        }
+        // Adjust for manufacturing step if present (step 3=manufacturing, 4=delivery, 5=payment)
+        // We can't know for sure without phaseId, so assume no manufacturing for legacy
+        const legacyPhaseId = stepMap[ws.step]
+        if (legacyPhaseId) {
+            const phase = DRAFT_PHASES.find(p => p.id === legacyPhaseId)
+            if (phase) return phase
+        }
+    }
+    return null
+}
+
+/**
+ * Resolve the single highest-priority status for a draft.
+ * Priority:
+ *   1. Locked by another user → En uso (destructive, Lock)
+ *   2. Waiting for approval → Esperando aprobación (warning, ShieldAlert)
+ *   3. Approved → Aprobado (success, CheckCircle2)
+ *   4. Phase = payment & isWaitingPayment → Pendiente de pago (warning, Wallet)
+ *   5. Other phase → fase (muted, icono de fase)
+ *   6. None → null
+ *
+ * Lock propio ("Tú") is intentionally omitted — shown only in the full list.
+ */
+export function resolveDraftStatus(
+    draft: SyncDraft,
+    opts?: { isOwnLock?: boolean }
+): DraftStatus | null {
+    const ws = draft.wizard_state
 
     // 1. Locked by someone else — strongest signal
-    if (draft.is_locked && draft.locked_by_name) {
-        chips.push({
-            key: "locked",
-            label: "En uso",
-            intent: "destructive",
+    if (draft.is_locked && draft.locked_by_name && !opts?.isOwnLock) {
+        return {
             icon: Lock,
-        })
+            tone: "destructive",
+            label: `En uso por ${draft.locked_by_name}`
+        }
     }
 
-    // 2. Waiting for payment
-    if (ws?.isWaitingPayment) {
-        chips.push({
-            key: "waiting_payment",
-            label: "Por Pagar",
-            intent: "warning",
-            icon: Wallet,
-        })
-    }
-
-    // 3. Wizard step (P1, P2, P3...) — shown even when waiting for payment
-    if (ws?.step) {
-        chips.push({
-            key: `step_${ws.step}`,
-            label: `P${ws.step}`,
-            intent: "warning",
-            icon: ClipboardCheck,
-        })
-    }
-
-    // 4. Waiting for approval
+    // 2. Waiting for approval
     if (ws?.isWaitingApproval) {
-        chips.push({
-            key: "waiting_approval",
-            label: "Auth",
-            intent: "primary",
-            icon: Loader2,
-        })
+        return {
+            icon: ShieldAlert,
+            tone: "warning",
+            label: "Esperando aprobación"
+        }
     }
 
-    // 5. Approved
+    // 3. Approved
     if (ws?.isApproved) {
-        chips.push({
-            key: "approved",
-            label: "OK",
-            intent: "success",
-            icon: ClipboardCheck,
-        })
+        return {
+            icon: CheckCircle2,
+            tone: "success",
+            label: "Aprobado"
+        }
+    }
+
+    // 4. Phase = payment & waiting for payment
+    const phase = resolveDraftPhase(draft)
+    if (ws?.isWaitingPayment && phase?.id === "payment") {
+        return {
+            icon: Wallet,
+            tone: "warning",
+            label: "Pendiente de pago"
+        }
+    }
+
+    // 5. Other phase
+    if (phase) {
+        return {
+            icon: phase.icon,
+            tone: "muted",
+            label: `Fase: ${phase.label}`
+        }
+    }
+
+    return null
+}
+
+/**
+ * Resolve all status chips for the full list view (DraftCartsClientView).
+ * Returns array ordered by priority. Includes own-lock chip ("Tú").
+ */
+export function resolveDraftStatusChips(
+    draft: SyncDraft,
+    opts?: { isOwnLock?: boolean }
+): Array<{ key: string; icon: LucideIcon; intent: "destructive" | "warning" | "success" | "primary" | "neutral"; label: string }> {
+    const ws = draft.wizard_state
+    const chips: Array<{ key: string; icon: LucideIcon; intent: "destructive" | "warning" | "success" | "primary" | "neutral"; label: string }> = []
+
+    // 1. Locked by another user
+    if (draft.is_locked && draft.locked_by_name && !opts?.isOwnLock) {
+        chips.push({ key: "locked", icon: Lock, intent: "destructive", label: `En uso por ${draft.locked_by_name}` })
+    }
+
+    // 2. Own lock
+    if (opts?.isOwnLock) {
+        chips.push({ key: "own_lock", icon: Lock, intent: "primary", label: "Tú" })
+    }
+
+    // 3. Waiting for approval
+    if (ws?.isWaitingApproval) {
+        chips.push({ key: "waiting_approval", icon: ShieldAlert, intent: "warning", label: "Esperando aprobación" })
+    }
+
+    // 4. Approved
+    if (ws?.isApproved) {
+        chips.push({ key: "approved", icon: CheckCircle2, intent: "success", label: "Aprobado" })
+    }
+
+    // 5. Phase-based
+    const phase = resolveDraftPhase(draft)
+    if (ws?.isWaitingPayment && phase?.id === "payment") {
+        // "Por Pagar" replaces the phase chip when in payment phase
+        chips.push({ key: "waiting_payment", icon: Wallet, intent: "warning", label: "Por Pagar" })
+    } else if (phase) {
+        chips.push({ key: `phase_${phase.id}`, icon: phase.icon, intent: "neutral", label: phase.label })
     }
 
     return chips
 }
 
 /**
- * Get the single highest-priority chip for compact contexts (top strip).
- * Returns null if no status applies.
+ * Map tone string to background CSS class for the top strip button.
  */
-export function getPrimaryDraftStatus(
-    draft: SyncDraft
-): DraftStatusChip | null {
-    return resolveDraftStatuses(draft)[0] ?? null
+export function statusToneBg(tone: DraftStatus["tone"]): string {
+    switch (tone) {
+        case "destructive": return "bg-destructive/10"
+        case "warning": return "bg-warning/10"
+        case "success": return "bg-success/10"
+        case "primary": return "bg-primary/10"
+        case "muted":
+        default: return "bg-muted/40"
+    }
+}
+
+/**
+ * Map tone string to text/icon color class.
+ */
+export function statusToneText(tone: DraftStatus["tone"]): string {
+    switch (tone) {
+        case "destructive": return "text-destructive"
+        case "warning": return "text-warning"
+        case "success": return "text-success"
+        case "primary": return "text-primary"
+        case "muted":
+        default: return "text-muted-foreground"
+    }
 }

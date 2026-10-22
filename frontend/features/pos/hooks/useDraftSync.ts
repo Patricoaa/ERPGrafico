@@ -16,6 +16,7 @@ export interface SyncDraftWizardState {
     isWaitingPayment?: boolean
     isWaitingApproval?: boolean
     isApproved?: boolean
+    phaseId?: string
 }
 
 export interface SyncDraft {

@@ -23,7 +23,7 @@ import {
 import { ActionConfirmModal, DangerButton, BaseModal, DataTable, Chip, DataCell } from "@/components/shared"
 import type { ColumnDef } from "@tanstack/react-table"
 import type { SyncDraft } from '@/features/pos/hooks/useDraftSync'
-import { formatDraftNumber, resolveDraftStatuses, type DraftStatusChip } from '../utils/draft-status'
+import { formatDraftNumber, resolveDraftStatusChips } from '../utils/draft-status'
 
 export interface DraftCart {
     id: number
@@ -275,7 +275,7 @@ export function DraftCartsClientView({
                 const isOwnLock = lockInfo.isOwnLock
 
                 // Use shared status resolver for consistent chips
-                const statusChips = resolveDraftStatuses(draft as unknown as SyncDraft, { isOwnLock })
+                const statusChips = resolveDraftStatusChips(draft as unknown as SyncDraft, { isOwnLock })
                 // Filter out the "locked by other" chip here since we show it separately with tooltip
                 const filteredChips = statusChips.filter(c => c.key !== 'locked')
 
@@ -299,11 +299,6 @@ export function DraftCartsClientView({
                                         No se puede cargar hasta que termine.
                                     </TooltipContent>
                                 </Tooltip>
-                            )}
-                            {isOwnLock && (
-                                <Chip size="xs" intent="primary" icon={Lock}>
-                                    Tú
-                                </Chip>
                             )}
                             {filteredChips.map(chip => (
                                 <Chip

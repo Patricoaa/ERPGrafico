@@ -44,7 +44,7 @@ ERPGrafico usa **tres canales realtime complementarios**, no uno solo. La elecci
 
 | Caso | Canal | Backend | Frontend | Propósito |
 |------|-------|---------|----------|-----------|
-| POS draft sync multi-terminal | WebSocket por-feature | `sales.consumers.POSDraftConsumer` + `sales.signals` | `features/pos/hooks/useDraftSync.ts` | Bidireccional: cliente renueva lock (`HEARTBEAT`), server broadcast de cambios a otros terminales. Payload incluye `session_local_id` (N° temporal 1,2,3… por sesión) |
+| POS draft sync multi-terminal | WebSocket por-feature | `sales.consumers.POSDraftConsumer` + `sales.signals` | `features/pos/hooks/useDraftSync.ts` | Bidireccional: cliente renueva lock (`HEARTBEAT`), server broadcast de cambios a otros terminales. Payload incluye `session_local_id` (N° temporal 1,2,3… por sesión) y `wizard_state.phaseId` (fase actual del checkout) |
 | Notificaciones globales | WebSocket por-feature | `workflow.consumers.NotificationConsumer` + `workflow.signals.push_notification_to_channels` | `features/notifications/hooks/useNotifications.ts` | Solo recepción de notificaciones por usuario — ruta `ws/notifications/` |
 | **Entity Bus (refresh de listados/modales)** | **WS multiplexado** | `core.entity_bus` (`ALLOWLIST` + `PARENT_BROADCASTS`) + `core.consumers.EntityBusConsumer` | `RealtimeProvider` + `useEntitySubscription` | **Activo** en `sales.SaleOrder` e `inventory.Product/ProductCategory/UoM`. Ver [ADR-0026](../10-architecture/adr/0026-entity-bus-realtime-invalidation.md) |
 | **SSE** | — | **NO implementado** (ninguna ruta `text/event-stream` en el codebase) | — | Especificación canónica §SSE disponible para el futuro; hoy todo broadcast va por WS |

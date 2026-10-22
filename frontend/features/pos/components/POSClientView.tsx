@@ -51,7 +51,7 @@ import { type CheckoutResponse, type SaleOrderLine, type CheckoutDTEData, type C
 import type { Product, WizardState } from '../types'
 import type { TransactionData } from '@/types/transactions'
 import { type DraftCart } from './DraftCartsClientView'
-import { formatDraftNumber, getPrimaryDraftStatus } from '../utils/draft-status'
+import { formatDraftNumber, resolveDraftStatus, resolveDraftPhase, statusToneBg, statusToneText } from '../utils/draft-status'
 
 import { CategoryDropdown, CategoryFilter, ProductGrid, SearchBar } from '@/components/selectors/ProductGridPicker'
 import { Cart } from './Cart'
@@ -460,51 +460,63 @@ export function POSClientView() {
                                 {quickDrafts.map(d => {
                                     const lockInfo = getLockInfo(d.id)
                                     const lockedByOther = lockInfo.isLocked && !lockInfo.isOwnLock
-                                    const primaryStatus = getPrimaryDraftStatus(d)
-                                    const draftNumber = formatDraftNumber(d)
+                                    const isOwnLock = lockInfo.isOwnLock
                                     const isCurrent = currentDraftId === d.id
+                                    const draftNumber = formatDraftNumber(d)
 
-                                    // Build tooltip: name + customer + items + total
+                                    // Resolve status for this draft
+                                    const status = resolveDraftStatus(d, { isOwnLock })
+
+                                    // Build tooltip with all relevant info
                                     const tooltipParts: string[] = []
                                     if (d.name) tooltipParts.push(`Borrador: ${d.name}`)
                                     if (d.customer_name) tooltipParts.push(`Cliente: ${d.customer_name}`)
+                                    const phase = resolveDraftPhase(d)
+                                    if (phase) tooltipParts.push(`Fase: ${phase.label}`)
                                     tooltipParts.push(`Items: ${d.item_count}`)
                                     tooltipParts.push(`Total: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(d.total_gross)}`)
-                                    if (lockedByOther) tooltipParts.unshift(`En uso por ${lockInfo.lockedByName}`)
-                                    const title = tooltipParts.join('\n')
+                                    if (status) tooltipParts.unshift(status.label)
+                                    const tooltip = tooltipParts.join('\n')
+
+                                    // Background color based on status tone
+                                    const bgClass = status ? statusToneBg(status.tone) : "bg-muted/20"
+                                    const textClass = status ? statusToneText(status.tone) : "text-muted-foreground"
 
                                     return (
-                                        <Button
-                                            key={d.id}
-                                            variant="outline"
-                                            size="sm"
-                                            className={cn(
-                                                "h-10 min-w-[40px] px-2 text-2xs font-medium transition-all duration-300 gap-1.5 relative rounded-sm flex-nowrap",
-                                                isCurrent ? "bg-primary/5 border-primary text-primary shadow-card border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
-                                                isSaving && isCurrent && "animate-pulse opacity-70 motion-reduce:animate-none",
-                                                lockedByOther && "border-destructive/40 opacity-60",
-                                                primaryStatus?.intent === 'warning' && !isCurrent && !lockedByOther && "border-warning text-warning bg-warning/10 shadow-card border-solid ring-1 ring-warning/30 animate-in zoom-in-95 duration-500 motion-reduce:animate-none"
-                                            )}
-                                            onClick={() => handleLoadDraft(d)}
-                                            title={title}
-                                        >
-                                            <span className="font-mono tabular-nums">{draftNumber}</span>
-                                            {primaryStatus && (
-                                                <Chip
-                                                    key={primaryStatus.key}
-                                                    size="xs"
-                                                    intent={primaryStatus.intent}
-                                                    icon={primaryStatus.icon}
-                                                    className="shrink-0"
-                                                >
-                                                    {primaryStatus.label}
-                                                </Chip>
-                                            )}
-                                            {lockedByOther && !primaryStatus && (
-                                                <Lock className="mr-0.5 h-2.5 w-2.5 text-destructive" />
-                                            )}
-                                            {isSaving && isCurrent && <Loader2 className="ml-1 h-2 w-2 animate-spin motion-reduce:animate-none" />}
-                                        </Button>
+                                        <TooltipProvider key={d.id} delayDuration={200}>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className={cn(
+                                                            "h-10 min-w-[40px] px-2 text-2xs font-medium transition-all duration-300 gap-1.5 relative rounded-sm flex-nowrap",
+                                                            isCurrent
+                                                                ? "bg-primary/5 border-primary shadow-card border-solid ring-1 ring-primary/20"
+                                                                : "border-dashed",
+                                                            bgClass,
+                                                            textClass,
+                                                            isSaving && isCurrent && "animate-pulse opacity-70 motion-reduce:animate-none",
+                                                            lockedByOther && "border-destructive/40 opacity-60"
+                                                        )}
+                                                        onClick={() => handleLoadDraft(d)}
+                                                        aria-label={tooltip}
+                                                    >
+                                                        <span className="font-mono tabular-nums">{draftNumber}</span>
+                                                        {status && (
+                                                            <status.icon
+                                                                className={`h-3.5 w-3.5 shrink-0 ${statusToneText(status.tone)}`}
+                                                                aria-hidden="true"
+                                                            />
+                                                        )}
+                                                        {isSaving && isCurrent && <Loader2 className="ml-1 h-2 w-2 animate-spin motion-reduce:animate-none" />}
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top" className="max-w-[300px] text-xs">
+                                                    {tooltip}
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
                                     )
                                 })}
                                 {currentDraftId === null && items.length > 0 && (
