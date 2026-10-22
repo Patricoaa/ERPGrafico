@@ -69,6 +69,8 @@ El componente `Card` acepta una propiedad `variant` que modifica su apariencia p
 | `dashed` | Bordes punteados, fondo tenue, esquinas redondeadas estándar (`rounded-md`). | Secciones de formularios, sub-bloques visuales o contenido destacable donde se desee menor jerarquía visual que una tarjeta estándar. |
 | `transparent` | Borde sólido, sin fondo (`bg-transparent`), sin sombra (`shadow-none`), esquinas redondeadas estándar (`rounded-md`). | Vistas de configuración densas (Settings views) o bloques secundarios integrados en layouts complejos. |
 
+> **Nota sobre la familia interactiva/seleccionable (POS):** `ProductCard`, `ChoiceCard`, `ContactCard`, `MfgLineCard` y `PaymentMethodSelector` **no** usan `Card` directamente. Usan `CardSurface` (en `components/shared/CardSurface.tsx`), que envuelve `Card variant="default"` + `selectableCardClass()` y neutraliza `gap-6/py-6/shadow-card/rounded-md` para aplicar `rounded-sm` (8px) + tokens `cardAnatomy`. Ver ADR-0094 y `design-system.md` §2.
+
 ---
 
 ## 3. Anti-Patrones a Evitar 🚫

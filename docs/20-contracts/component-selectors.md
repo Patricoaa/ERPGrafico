@@ -370,9 +370,9 @@ Rich catalog picker with card grid, category filter, and search. Lives in `@/com
 
 **Related subcomponents:** `VariantSelectorModal` (variant selection via `useVariants` hook), `ProductGrid` (pure virtualized grid — use standalone if you need a custom layout), `ProductCard` (the card itself, see below).
 
-### Card anatomy ([ADR-0092](../10-architecture/adr/0092-productgrid-card-anatomy.md))
+### Card anatomy ([ADR-0092](../10-architecture/adr/0092-productgrid-card-anatomy.md), [ADR-0094](../10-architecture/adr/0094-card-anatomy-kit-and-radius.md))
 
-One anatomy for every context (POS, calculator, production); only the price and availability sources change.
+One anatomy for every context (POS, calculator, production); only the price and availability sources change. **Implemented via `CardSurface` + `cardAnatomy` tokens**; radius `rounded-sm` (8px) — see ADR-0094 exception.
 
 ```
 ┌─────────────────────────┐ ← ribbon-cmyk: always when selected, on hover/focus otherwise

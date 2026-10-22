@@ -21,7 +21,7 @@ Tras rediseñar `ProductCard` (ADR-0092), los demás pasos del POS conservaban o
 1. **`SelectableCard`** (`selectableCardClass`, `SelectionCheck`) concentra la apariencia de elegido / hover / no disponible: cinta CMYK + anillo K100 + check; la cinta se previsualiza en hover; no disponible = tarjeta lavada con cursor `not-allowed`. `ProductCard` se migra a él.
 2. **`ChoiceCard` + `ChoiceGroup`** (shared, API pública nueva): opción con franja de media arriba, `meta` mono, título, descripción y `footer`; el grupo es un `radiogroup` con flechas y `activation` configurable. Migran `Step2_DTE`, `Step3_Delivery`, el selector de métodos de pago y `ContactCardGrid`.
 3. **`ContactCard`** usa `Blobatar` como media y muestra RUT en mono y la posición de crédito en el pie.
-4. **`entity-view`** (contrato, cambio aditivo): `CardMedia.placement?: "inline" | "top"` y `badge?`; `EntityCard.Media` dibuja la franja. Las colecciones existentes no cambian. `mfgDetailLineViews` lo usa para el paso de fabricación.
+4. **`entity-view`** (contrato, cambio aditivo): `CardMedia.placement?: "inline" | "top"` y `badge?`; `EntityCard.Media` dibuja la franja. Las colecciones existentes no cambian. ~~`mfgDetailLineViews` lo usa para el paso de fabricación.~~ **Actualizado en ADR-0094:** el paso de fabricación usa `MfgLineCard` + `CardRail` (anatomía horizontal con riel de estado), no `mfgDetailLineViews`.
 5. **`RadioCard` no se elimina**: sigue en compras, notas y ajustes; solo se retira de los pasos del POS. `CmykRing` sigue en `Checkbox`/`RadioGroup`/`SelectionRing`.
 6. `PaymentMethodSelector` es compartido: compras y notas heredan el mismo aspecto.
 
