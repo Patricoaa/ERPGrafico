@@ -155,7 +155,9 @@ Todo componente del núcleo tiene **≤ 12 props** (test de contrato). Lo que no
 
 ### 6.3 `CardLayout` (slots, sin inferencia)
 
-`title` (1 campo; enlace a la ficha) · `subtitle?` (unidos con " · ") · `meta?` (pares etiqueta/valor bajo la cabecera) · `trailing?` (estado o KPI a la derecha) · `media?` (`icon`, `iconFor(row)`, `tone` (`CardTone` o función por fila), `image(row)`, `avatar`) · `body?`:
+> `media.placement: "top"` (opt-in, [ADR-0093](../10-architecture/adr/0093-choice-card-and-media-top-cards.md)) dibuja una franja de media sobre el título —anatomía de `ProductCard`— con `badge(row)` como chip en la esquina. Por defecto (`inline`) la tarjeta no cambia.
+
+`title` (1 campo; enlace a la ficha) · `subtitle?` (unidos con " · ") · `meta?` (pares etiqueta/valor bajo la cabecera) · `trailing?` (estado o KPI a la derecha) · `media?` (`icon`, `iconFor(row)`, `tone` (`CardTone` o función por fila), `image(row)`, `avatar`, `placement?: "inline" | "top"`, `badge?(row)`) · `body?`:
 
 | Sección | Para |
 |---|---|

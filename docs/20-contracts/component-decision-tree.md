@@ -116,12 +116,14 @@ graph TD
     A -->|Rango de fechas - Filtro| G(DateRangeFilter)
     A -->|"Input en celda de tabla editable"| H(["Table Cell Input \n raw shadcn — ver contrato"])
     A -->|"Búsqueda/filtro en toolbar"| I(["Toolbar Filter Input \n raw shadcn — ver contrato"])
+    A -->|"Elegir 1 opción visual (documento, entrega, pago, contacto)"| J(ChoiceCard + ChoiceGroup)
 ```
 
 - **`LabeledInput`**: Primitivo estándar. Renderiza `fieldset + legend` (patrón Notched). Soporta `as="textarea"`. Compatible con `react-hook-form` via `{...field}`. Ver [component-input.md](./component-input.md).
 - **`PeriodValidationDateInput`**: Obligatorio en documentos donde la fecha impacte contabilidad o impuestos para validar si el periodo está cerrado.
 - **`FolioValidationInput`**: Úsalo para prevenir folios duplicados por proveedor asíncronamente mientras el usuario tipea.
 - **Table Cell Input**: `<Input>` de shadcn sin notched, dentro de `<TableCell>` en una tabla editable (spreadsheet). Ver [component-table-cell-input.md](./component-table-cell-input.md). Usar el shell `FormLineItemsTable` o `AccountingLinesTable`.
+- **`ChoiceCard` + `ChoiceGroup`**: "Elige una de estas cartas" en pasos de checkout (documento tributario, entrega, método de pago, contacto). Ver [component-choice-card.md](./component-choice-card.md). `RadioCard` queda para formularios densos fuera de los pasos del POS.
 - **Toolbar Filter Input**: `<Input>` de shadcn para filtros/búsqueda en toolbars compactos. Ver sección de excepciones en [component-input.md](./component-input.md#toolbar-filter-input).
 
 ## 4. Layout de Página

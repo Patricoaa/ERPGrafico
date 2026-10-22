@@ -333,12 +333,12 @@ No feature hook — caller provides `uoms` list.
 
 ---
 
-## ProductSelector 🟢
+## ProductGridPicker 🟢
 
-Rich catalog selector with image grid, category filter, and search. Lives in `@/components/shared`. Use for full-catalog browsing; **not** for simple form fields or narrow popovers (requires ≥40vh height).
+Rich catalog picker with card grid, category filter, and search. Lives in `@/components/selectors/ProductGridPicker` (relocated and renamed by [ADR-0076](../10-architecture/adr/0076-productselector-grid-picker-relocation.md); the single-value dropdown is `ProductSelector` above). Use for full-catalog browsing; **not** for simple form fields or narrow popovers (requires ≥40vh height).
 
 ```tsx
-<ProductSelector
+<ProductGridPicker
   products={products}
   categories={categories}
   searchTerm={search}
@@ -363,10 +363,37 @@ Rich catalog selector with image grid, category filter, and search. Lives in `@/
 | `onProductClick` | `(product: BaseProduct) => void` | ✅ | |
 | `onToggleFavorite` | `(productId: number) => void` | ❌ | |
 | `isProductDisabled` | `(product: BaseProduct) => boolean` | ❌ | inject business rules |
-| `limits` | `Record<number, number>` | ❌ | |
-| `priceRenderer` | `(product: BaseProduct) => ReactNode` | ❌ | override default price display |
+| `limits` | `Record<string, number \| undefined>` | ❌ | branch stock override keyed `prod_<id>`; replaces `qty_available`, never adds to it |
+| `priceRenderer` | `(product: BaseProduct) => ReactNode` | ❌ | replaces the price amount; returning `null` hides the whole price block |
+| `priceLabel` | `string` | ❌ | caption above the price; default `"Venta c/IVA"` (calculator passes `"Costo"`) |
+| `selectedProductIds` | `Set<number>` | ❌ | CMYK ribbon + check + `aria-pressed` on those cards |
 
-**Related subcomponents:** `VariantSelectorModal` (variant selection via `useVariants` hook), `ProductGrid` (pure virtualized grid — use standalone if you need a custom layout).
+**Related subcomponents:** `VariantSelectorModal` (variant selection via `useVariants` hook), `ProductGrid` (pure virtualized grid — use standalone if you need a custom layout), `ProductCard` (the card itself, see below).
+
+### Card anatomy ([ADR-0092](../10-architecture/adr/0092-productgrid-card-anatomy.md))
+
+One anatomy for every context (POS, calculator, production); only the price and availability sources change.
+
+```
+┌─────────────────────────┐ ← ribbon-cmyk: always when selected, on hover/focus otherwise
+│ [Categoría]        (♡)  │   icon strip (photo when `image_thumbnail`/`image` exist), 88 px
+│        ⬚                │
+│ [⧉ 4 gramajes]      (✓) │   variant chip (templates) · selected check
+├─────────────────────────┤
+│ PAP-001              🔒 │   mono code · lock when unavailable
+│ Papel couché mate 150 g │   name, 2 lines max
+│ ▢ 1.240 pliegos disp.   │   availability line (icon + text, never colour alone)
+│ Venta c/IVA · desde     │
+│ $571 / pliego         › │   price c/IVA + unit · action glyph  + › –
+                               (dynamic pricing: "Precio dinámico" replaces the amount)
+└─────────────────────────┘
+```
+
+- What the card says lives in `product-card-model.ts` (`getProductCardModel`, pure, unit-tested): availability by product type, action glyph (`+` add, `›` configure for variants / dynamic price, `–` unavailable) and price kind (`fixed` / `from` / `pending`). `ProductCard.tsx` only draws it.
+- Price is **c/IVA** (`PricingUtils.netToGross`). Templates show `min_variant_price` as "desde"; dynamic-pricing products show "Precio dinámico" **in place of** the amount.
+- Variant hints (`variants_count`, `variant_axis_label`, `min_variant_price`) come from `ProductListSerializer`, read from the `variants` prefetch of `list_products` (no N+1; pinned by `inventory/tests/test_product_list_card_fields.py`).
+- Unavailable (disabled by the caller, or a template with no active variants): whole card at 50 % opacity on a washed `bg-muted/40`, grey name/price/availability (never red), lock, `–`, `cursor-not-allowed`, no ribbon, no hover; the reason is the availability text ("Sin existencias", "Sin variantes"). The favourite stays clickable.
+- Loading: `CardSkeleton variant="product"` mirrors the same strip + rows to avoid CLS.
 
 **⚠️ VirtuosoGrid constraint:** The parent container **must** have a defined height (`flex-1 min-h-0` or fixed px). A zero-height container renders nothing.
 

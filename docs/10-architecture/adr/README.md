@@ -155,5 +155,7 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0089](0089-fusion-billing-module-into-sales-purchasing.md) | Fin del módulo Facturación — las vistas DTE se mudan a Ventas y Compras | Accepted |
 | [0090](0090-documentos-comerciales-listas-propias.md) | Documentos comerciales — un solo tab Documentos por módulo, con cada lista sobre su propia entidad | Accepted |
 | [0091](0091-economic-immutability-edit-policy.md) | Economic immutability — documents with posted derivatives are corrected by annul + recreate, enforced by a declarative edit policy | Accepted |
+| [0092](0092-productgrid-card-anatomy.md) | ProductGrid card anatomy — one card for POS, calculator and production, driven by a pure view-model | Accepted |
+| [0093](0093-choice-card-and-media-top-cards.md) | ChoiceCard y tarjetas con media arriba — un solo lenguaje de selección para los pasos del POS | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.
