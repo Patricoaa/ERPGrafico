@@ -133,6 +133,14 @@ Los ~60 bloques `border rounded` sueltos no son cards (avisos y grupos de campos
 - Corregida la card de estados de cuenta (formato antiguo `sections`). Subtítulos a 2 líneas en lugar de truncar.
 - Personas y listas de configuración (contactos, usuarios, empleados, UoM, reglas de precio, grupos, socios) mantienen su layout.
 
+## Implemented in the ninth step (selection language and last entities)
+
+- **Ribbon en entity-view:** `EntityCard` usa `kind="choice"` + `CardSurface pressable` (aspecto pulsable sin rol ni tab stop): ribbon CMYK al hover y fijo al seleccionar por lote, con anillo y marca CMYK en el checkbox. Corrige que el ribbon no aparecía. Esto reemplaza la regla anterior de "ribbon solo seleccionada" para entity-view; bandeja y kanban la conservan.
+- **Selección como primera acción:** en `selection="bulk"` el clic en cualquier parte de la card la selecciona (capa solo puntero, `aria-hidden`; el checkbox es el control accesible) y el título abre el registro. Sin lote, el título es el enlace extendido.
+- `CardSurface` ya no emite `aria-pressed`/`aria-checked` si no es interactivo.
+- `EntityCard.Meta` apila los pares en una columna cuando la card mide menos de 18rem (catálogos de 4–5 columnas).
+- **Plantilla catálogo:** contactos (blobatar en la franja, código `CON-n`), grupos, socios (patrimonio en el pie) y órdenes de trabajo (fecha de entrega en el pie; ya no usan riel). **Plantilla documento:** unidades de medida y reglas de precio (riel con estado activo/inactivo).
+
 ## Plan (pendiente)
 
 1. Verificar en la app real (Productos, Órdenes de venta, Facturas, Almacenes, Bancos) y decidir si `footer` con monto se extiende a documentos.

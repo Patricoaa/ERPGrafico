@@ -118,4 +118,41 @@ describe("Collection card anatomy (ADR-0097)", () => {
         expect(list.className).toContain("@4xl:grid-cols-[repeat(4,minmax(0,1fr))]")
         expect(list.className).toContain("@7xl:grid-cols-[repeat(5,minmax(0,1fr))]")
     })
+
+    it("cards use the product-grid selection language: ribbon on hover, ribbon when bulk-selected", async () => {
+        const user = userEvent.setup()
+        render(<Harness source={{ rows }} onOpen={vi.fn()} withRail={false} catalog bulk />)
+        const first = within(screen.getByRole("list", { name: "Documentos" })).getAllByRole("listitem")[0]
+        const card = first.firstElementChild as HTMLElement
+        expect(card).toHaveClass("ribbon-cmyk", "ribbon-cmyk-hover", "cursor-pointer")
+        // Looks pressable but is not the control: no role, no tab stop, no pressed state.
+        expect(card).not.toHaveAttribute("role")
+        expect(card).not.toHaveAttribute("aria-pressed")
+        await user.click(within(first).getByRole("checkbox"))
+        expect(first.firstElementChild).toHaveClass("ribbon-cmyk")
+        expect(first.firstElementChild).not.toHaveClass("ribbon-cmyk-hover")
+        expect(first.firstElementChild?.className).toContain("border-primary")
+    })
+
+    it("in bulk mode clicking the card selects it (first action) while the title still opens it", async () => {
+        const user = userEvent.setup()
+        const onOpen = vi.fn()
+        render(<Harness source={{ rows }} onOpen={onOpen} withRail={false} catalog bulk />)
+        const first = within(screen.getByRole("list", { name: "Documentos" })).getAllByRole("listitem")[0]
+        const overlay = first.querySelector("[data-card-select]") as HTMLElement
+        expect(overlay).not.toBeNull()
+        expect(overlay).toHaveAttribute("aria-hidden", "true")
+        await user.click(overlay)
+        expect(within(first).getByRole("checkbox")).toBeChecked()
+        expect(onOpen).not.toHaveBeenCalled()
+        await user.click(within(first).getByRole("button", { name: "Imprenta Sur" }))
+        expect(onOpen).toHaveBeenCalledWith(rows[0])
+    })
+
+    it("without bulk selection the title is the stretched link and there is no select overlay", () => {
+        render(<Harness source={{ rows }} onOpen={vi.fn()} />)
+        const first = within(screen.getByRole("list", { name: "Documentos" })).getAllByRole("listitem")[0]
+        expect(first.querySelector("[data-card-select]")).toBeNull()
+        expect(within(first).getByRole("button", { name: "Imprenta Sur" }).className).toContain("after:absolute")
+    })
 })

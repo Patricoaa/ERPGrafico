@@ -47,7 +47,7 @@ function ContactNameCell({ value: contact, align }: ValueRenderProps<"contactNam
 }
 
 function ContactAvatar({ row }: { row: Contact }) {
-    return <Blobatar name={row.name} className="h-10 w-10 shrink-0 rounded-md" />
+    return <Blobatar name={row.name} className="h-12 w-12 shrink-0 rounded-md" />
 }
 
 let registered = false
@@ -91,5 +91,5 @@ export const contactEntity = defineEntity<Contact>()((f) => ({
 
 export const contactViews = contactEntity.views({
     table: { columns: ["name", "taxId", "displayId", "isActive", "email", "phone", "roles"], defaultSort: "name" },
-    card: { title: "name", subtitle: ["taxId", "displayId"], meta: ["email", "phone"], trailing: ["roles", "isActive"], media: { avatar: ContactAvatar } },
+    card: { code: "displayId", title: "name", subtitle: ["taxId"], meta: ["email", "phone"], trailing: ["roles", "isActive"], media: { placement: "top", avatar: ContactAvatar } },
 })

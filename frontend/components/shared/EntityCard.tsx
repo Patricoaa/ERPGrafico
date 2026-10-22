@@ -78,16 +78,16 @@ function EntityCardRoot({
         <EntityCardSelectionContext.Provider value={{ selectable, checked, onCheckedChange, isAnySelected, selectionLabel }}>
             <CardSurface
                 layout={rail ? "inline" : "stacked"}
-                kind="item"
-                // Only a selected card is a pressed toggle; undefined keeps navigable cards out of aria-pressed.
-                selected={isSelected ? true : undefined}
+                // Same selection language as the POS product grid: CMYK ribbon on hover and once open/checked.
+                kind="choice"
+                pressable={openable || selectable}
+                selected={isSelected || checked ? true : undefined}
                 unavailable={false}
                 role={onClick || defaultAction ? "button" : undefined}
                 onClick={onClick}
                 className={cn(
                     "group relative transition-all duration-300",
                     rail ? "flex-row" : cn("flex flex-col", padding),
-                    checked && "border-primary/40 bg-primary/5 shadow-sm",
                     (onClick || defaultAction) && "cursor-pointer select-none",
                     openable && "cursor-pointer hover:border-foreground/30 has-[[data-card-open]:focus-visible]:ring-2 has-[[data-card-open]:focus-visible]:ring-ring",
                     className
@@ -748,11 +748,12 @@ interface EntityCardMetaProps {
  * Label/value pairs below the header (ADR-0087 R4). In the header center they squeezed the title.
  * Two fixed columns (not flex-wrap) so the same field starts at the same x on every card of a grid.
  * The first column is wider (1.4fr): put the long value (email, tags) first, the short one (phone, state) second.
+ * Cards narrower than 18rem (4-5 column catalog grids) stack the pairs in one column instead of truncating them.
  */
 function EntityCardMeta({ items, className }: EntityCardMetaProps) {
     if (items.length === 0) return null
     return (
-        <dl className={cn("grid min-w-0 grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-start gap-x-4 gap-y-1.5 [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10", className)}>
+        <dl className={cn("grid min-w-0 grid-cols-1 @[18rem]:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-start gap-x-4 gap-y-1.5 [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10", className)}>
             {items.map((item) => (
                 <div key={item.key} className={cn("flex min-w-0 flex-col items-start", item.className)}>
                     <dt className={cn(cardAnatomy.eyebrow, "max-w-full truncate")}>{item.label}</dt>

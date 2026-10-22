@@ -84,10 +84,11 @@ export const workOrderViews = workOrderEntity.views({
         primary: "productDescription",
     },
     card: {
-        rail: { status: (r) => r.status, icon: Wrench },
+        code: "number",
         title: "productDescription",
-        subtitle: ["number"],
-        meta: ["saleOrderNumber", "currentStage", "startDate", "dueDate"],
+        meta: ["saleOrderNumber", "currentStage"],
         trailing: ["status"],
+        footer: { value: "dueDate" },
+        media: { placement: "top", icon: Wrench },
     },
 })

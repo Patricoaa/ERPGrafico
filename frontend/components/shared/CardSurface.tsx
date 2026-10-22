@@ -43,6 +43,11 @@ export interface CardSurfaceProps
      * When false: no cursor-pointer, no hover border, no ribbon preview.
      */
     interactive?: boolean
+    /**
+     * Looks pressable (pointer cursor, hover border and ribbon) without being the control: no role,
+     * no tabIndex, no keyboard handler. For cards whose real control is a child (stretched link, checkbox).
+     */
+    pressable?: boolean
     /** Surface role (ADR-0097): `choice` previews the ribbon on hover, `item` only when selected. */
     kind?: "choice" | "item"
 }
@@ -62,6 +67,7 @@ export function CardSurface({
     className,
     layout = "stacked",
     interactive,
+    pressable = false,
     kind,
     ...props
 }: CardSurfaceProps) {
@@ -85,10 +91,10 @@ export function CardSurface({
             role={isInteractive ? role : undefined}
             tabIndex={unavailable ? -1 : isInteractive ? 0 : undefined}
             aria-disabled={unavailable || undefined}
-            aria-pressed={hasExplicitSelected && role === "button" ? selected : undefined}
-            aria-checked={hasExplicitSelected && role === "radio" ? selected : undefined}
+            aria-pressed={isInteractive && hasExplicitSelected && role === "button" ? selected : undefined}
+            aria-checked={isInteractive && hasExplicitSelected && role === "radio" ? selected : undefined}
             className={cn(
-                selectableCardClass({ selected: selected === true, unavailable, interactive: isInteractive, kind }),
+                selectableCardClass({ selected: selected === true, unavailable, interactive: isInteractive || pressable, kind }),
                 "shadow-none",
                 layoutPadding,
                 className

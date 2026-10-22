@@ -26,7 +26,8 @@ export interface SelectableCardState {
     interactive?: boolean
     /**
      * Role of the surface (ADR-0097). `choice` (default): pick-one, the CMYK ribbon previews on hover.
-     * `item`: opens/navigates (entity cards, inbox) — the ribbon only appears once selected.
+     * `item`: opens/navigates (inbox, kanban) — the ribbon only appears once selected.
+     * Entity cards use `choice`: they share the product grid language (ribbon on hover and when selected).
      */
     kind?: "choice" | "item"
 }

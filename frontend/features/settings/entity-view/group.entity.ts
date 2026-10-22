@@ -13,5 +13,5 @@ export const groupEntity = defineEntity<Group>()((f) => ({
 
 export const groupViews = groupEntity.views({
     table: { columns: ["name", "userCount"], defaultSort: "name" },
-    card: { title: "name", meta: ["userCount"], media: { icon: Users } },
+    card: { title: "name", meta: ["userCount"], media: { placement: "top", icon: Users } },
 })

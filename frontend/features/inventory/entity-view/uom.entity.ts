@@ -1,3 +1,4 @@
+import { Ruler } from "lucide-react"
 import { defineEntity, type StatusValue } from "@/components/entity-view"
 import type { UoM } from "../hooks/useUoMs"
 
@@ -23,5 +24,5 @@ export const uomEntity = defineEntity<UoM>()((f) => ({
 
 export const uomViews = uomEntity.views({
     table: { columns: ["name", "abbreviation", "category", "type", "isActive", "ratio"], defaultSort: "name" },
-    card: { title: "name", subtitle: ["abbreviation", "category"], trailing: ["type", "isActive"] },
+    card: { rail: { status: (u) => (u.is_active ? "active" : "inactive"), icon: Ruler }, title: "name", subtitle: ["abbreviation", "category"], trailing: ["type", "isActive"] },
 })

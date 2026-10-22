@@ -23,7 +23,9 @@ Import: `import { CardSurface, CardLead, CardRail, cardAnatomy } from '@/compone
 | `metric` | informativa o enlace | `surface-panel` + tipografía `kpi-value` | `StatCard` |
 | `panel` | ninguna | `Card` shadcn / `surface-panel` | secciones de Settings, filas de configuración, paneles de edición, Cart, errores |
 
-**Regla del ribbon CMYK:** pertenece a `choice` (se previsualiza al hover). En `item` y `nav` solo aparece cuando la card está seleccionada. Nunca en `panel`/`metric`.
+**Regla del ribbon CMYK:** se previsualiza al hover y queda fijo cuando la card está elegida (`choice`, y las cards de entity-view, que comparten el lenguaje del product grid: ribbon + anillo + marca CMYK en el checkbox). En `item` de otras superficies (bandeja, kanban) y en `nav` solo aparece seleccionada. Nunca en `panel`/`metric`.
+
+**Selección por lote en entity-view:** con `selection="bulk"`, la acción primaria de la card es seleccionarla (clic en cualquier parte, solo puntero; el checkbox es el control accesible) y el título abre el registro. Sin lote, el título es el enlace extendido que abre.
 
 ## 2. Superficies (CSS)
 
