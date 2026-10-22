@@ -49,6 +49,7 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
 
                 <Collection.Root
                     collection={mfgCollection}
+                    defaultView="card"
                     label="Líneas fabricables"
                     actions={(row) => {
                         const subtype = getMfgLineSubType(row)
@@ -76,6 +77,7 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                 >
                     <Collection.View
                         table={mfgDetailLineViews.table}
+                        card={mfgDetailLineViews.card}
                         emptyTitle="Sin productos fabricables"
                         emptyDescription="No hay productos fabricables en esta orden."
                     />

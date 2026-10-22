@@ -1,6 +1,5 @@
 "use client"
 
-import {RadioGroup} from "@/components/ui/radio-group"
 import {
     FileText,
     Receipt,
@@ -11,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useBillingSettingsQuery } from "@/features/settings"
 import { useServerDate } from "@/hooks/useServerDate"
 
-import {DocumentAttachmentDropzone, FolioValidationInput, StepHeader, PeriodValidationDateInput, LabeledContainer, LabeledSwitch, RadioCard} from "@/components/shared"
+import {DocumentAttachmentDropzone, FolioValidationInput, StepHeader, PeriodValidationDateInput, LabeledContainer, LabeledSwitch, ChoiceCard, ChoiceGroup} from "@/components/shared"
 
 import type { CheckoutDTEData } from "../../types"
 
@@ -55,10 +54,10 @@ export function Step2_DTE({
     }, [dateString, dteData.date, dteData.type, setDteData, dteData])
 
     const dteOptions = [
-        { id: "BOLETA", label: "Boleta Electrónica", code: "39", icon: Receipt },
-        { id: "FACTURA", label: "Factura Electrónica", code: "33", icon: FileText },
-        { id: "BOLETA_EXENTA", label: "Boleta Exenta", code: "41", icon: Receipt, color: "text-warning" },
-        { id: "FACTURA_EXENTA", label: "Factura Exenta", code: "34", icon: FileText, color: "text-warning" },
+        { id: "BOLETA", label: "Boleta Electrónica", code: "39", description: "Venta a consumidor final.", icon: Receipt },
+        { id: "FACTURA", label: "Factura Electrónica", code: "33", description: "Venta afecta a IVA con crédito fiscal.", icon: FileText },
+        { id: "BOLETA_EXENTA", label: "Boleta Exenta", code: "41", description: "Venta a consumidor final exenta de IVA.", icon: Receipt, tone: "warning" as const },
+        { id: "FACTURA_EXENTA", label: "Factura Exenta", code: "34", description: "Venta exenta de IVA.", icon: FileText, tone: "warning" as const },
     ]
 
     const filteredOptions = useMemo(() => {
@@ -73,23 +72,20 @@ export function Step2_DTE({
         <div className="space-y-6">
             <StepHeader title="Documento Tributario" description="Seleccione el tipo de documento a emitir para esta venta." icon={FileText} />
 
-            <RadioGroup
-                value={dteData.type}
-                onValueChange={(val) => setDteData({ ...dteData, type: val })}
-                className="grid grid-cols-1 gap-3 w-full"
-            >
-            {filteredOptions.map((opt) => (
-                <RadioCard
-                    key={opt.id}
-                    id={`type-${opt.id.toLowerCase().replace("_", "-")}`}
-                    value={opt.id}
-                    label={opt.label}
-                    description={`Código SII: ${opt.code}`}
-                    icon={<opt.icon className="h-4 w-4" />}
-                    iconColor={opt.color}
-                />
-            ))}
-            </RadioGroup>
+            <ChoiceGroup label="Documento tributario" columns="grid-cols-1 sm:grid-cols-2">
+                {filteredOptions.map((opt) => (
+                    <ChoiceCard
+                        key={opt.id}
+                        selected={dteData.type === opt.id}
+                        onSelect={() => setDteData({ ...dteData, type: opt.id })}
+                        icon={opt.icon}
+                        tone={opt.tone}
+                        meta={`Código SII ${opt.code}`}
+                        title={opt.label}
+                        description={opt.description}
+                    />
+                ))}
+            </ChoiceGroup>
 
             {(dteData.type === "FACTURA" || dteData.type === "FACTURA_EXENTA") && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">

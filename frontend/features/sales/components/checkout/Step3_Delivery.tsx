@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import {LabeledInput, PeriodValidationDateInput, QuantityDisplay, RadioCard} from "@/components/shared"
-import {RadioGroup} from "@/components/ui/radio-group"
+import {LabeledInput, PeriodValidationDateInput, QuantityDisplay, ChoiceCard, ChoiceGroup} from "@/components/shared"
 import {Truck, Package, Calendar, Info, AlertTriangle} from "lucide-react"
 import { useAllowedUoMs } from "@/features/inventory"
 import {
@@ -126,39 +125,30 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
 
     return (
         <div className="space-y-6">
-            <RadioGroup
-                value={deliveryData.type}
-                onValueChange={(val) => setDeliveryData((prev: CheckoutDeliveryData) => ({ ...prev, type: val as 'IMMEDIATE' | 'SCHEDULED' | 'PARTIAL' }))}
-                className="grid grid-cols-1 gap-3 w-full"
-            >
-            <RadioCard
-                id="del-immediate"
-                value="IMMEDIATE"
-                label={isMixedMode ? "Despacho y Cumplimiento Inmediato" : "Despacho Inmediato"}
-                description="Rebajar stock y entregar ahora mismo."
-                icon={<Package className="h-4 w-4" />}
-                disabled={hasRestrictedItems}
-                iconColor="text-primary"
-            />
-
-            <RadioCard
-                id="del-scheduled"
-                value="SCHEDULED"
-                label={isMixedMode ? "Programar Entrega y Cumplimiento" : "Programar Entrega"}
-                description="Reservar para fecha futura."
-                icon={<Calendar className="h-4 w-4" />}
-                iconColor="text-primary"
-            />
-
-            <RadioCard
-                id="del-partial"
-                value="PARTIAL"
-                label="Despacho Parcial"
-                description="Entregar disponibles hoy."
-                icon={<Truck className="h-4 w-4" />}
-                iconColor="text-primary"
-            />
-            </RadioGroup>
+            <ChoiceGroup label="Tipo de entrega" columns="grid-cols-1 sm:grid-cols-3">
+                <ChoiceCard
+                    selected={deliveryData.type === 'IMMEDIATE'}
+                    onSelect={() => setDeliveryData((prev: CheckoutDeliveryData) => ({ ...prev, type: 'IMMEDIATE' }))}
+                    icon={Package}
+                    title={isMixedMode ? "Despacho y Cumplimiento Inmediato" : "Despacho Inmediato"}
+                    description={hasRestrictedItems ? "No disponible: hay productos que requieren fabricación." : "Rebajar stock y entregar ahora mismo."}
+                    disabled={hasRestrictedItems}
+                />
+                <ChoiceCard
+                    selected={deliveryData.type === 'SCHEDULED'}
+                    onSelect={() => setDeliveryData((prev: CheckoutDeliveryData) => ({ ...prev, type: 'SCHEDULED' }))}
+                    icon={Calendar}
+                    title={isMixedMode ? "Programar Entrega y Cumplimiento" : "Programar Entrega"}
+                    description="Reservar para fecha futura."
+                />
+                <ChoiceCard
+                    selected={deliveryData.type === 'PARTIAL'}
+                    onSelect={() => setDeliveryData((prev: CheckoutDeliveryData) => ({ ...prev, type: 'PARTIAL' }))}
+                    icon={Truck}
+                    title="Despacho Parcial"
+                    description="Entregar disponibles hoy."
+                />
+            </ChoiceGroup>
 
             {deliveryData.type === 'PARTIAL' && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
