@@ -2,6 +2,7 @@
 
 // ProductSelector/VariantSelectorModal
 // Extracted from @/features/pos/components/POSVariantSelectorModal (PR-3)
+// Migrated to CardRow (ADR-0095)
 
 import React, { useEffect, useState } from "react"
 import Image from "next/image"
@@ -10,8 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Package, ImageIcon } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
 import { PricingUtils } from '@/lib/pricing-utils'
-import { cn } from "@/lib/utils"
-import { BaseModal, Chip } from '@/components/shared'
+import { BaseModal, Chip, CardRow, GlyphChevron } from '@/components/shared'
 import { resolveMediaUrl } from '@/lib/media-url'
 import type { BaseProduct } from '@/features/inventory'
 import { useVariants } from '@/features/inventory'
@@ -100,65 +100,54 @@ export function VariantSelectorModal({
                                 const limit = variantLimits[v.id]
                                 const disabled = isVariantDisabled(v)
 
-                                return (
-                                    <div
-                                        key={v.id}
-                                        onClick={() => !disabled && handleSelect(v)}
-                                        className={cn(
-                                            "relative flex items-center gap-4 p-4 rounded-md border-2 transition-all cursor-pointer",
-                                            disabled ? "opacity-50 grayscale pointer-events-none bg-muted/20 border-dashed" : "border-muted bg-card hover:border-primary/50 hover:bg-muted/30 active:scale-[0.98]"
-                                        )}
-                                    >
-                                        {/* Variant Image or Placeholder */}
-                                        <div className="w-16 h-16 rounded-md bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
-                                            {v.image || product.image ? (
-                                                <Image
-                                                    src={resolveMediaUrl(v.image || product.image) ?? ""}
-                                                    alt={v.variant_display_name || v.name}
-                                                    fill
-                                                    className="object-cover"
-                                                />
-                                            ) : (
-                                                <ImageIcon className="h-6 w-6 text-muted-foreground/40" />
-                                            )}
-                                        </div>
+                                // Build status badge
+                                const StatusBadge = () => {
+                                    if (v.has_active_bom) {
+                                        return <Chip size="xs" intent={!disabled ? "success" : "destructive"}>
+                                            {limit !== undefined ? limit : (v.manufacturable_quantity || 0)} fab.
+                                        </Chip>
+                                    }
+                                    if (v.product_type === 'MANUFACTURABLE' || v.requires_advanced_manufacturing) {
+                                        return <Chip size="xs" intent="primary">Disponible</Chip>
+                                    }
+                                    return <Chip size="xs" intent={!disabled ? "success" : "destructive"}>
+                                        {limit !== undefined ? limit : v.qty_available} stock
+                                    </Chip>
+                                }
 
-                                        {/* Info */}
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className="font-bold text-sm truncate">
-                                                {v.variant_display_name || v.name}
-                                            </h4>
-                                            <div className="flex flex-wrap gap-1 mt-1">
+                                return (
+                                    <CardRow
+                                        key={v.id}
+                                        lead={
+                                            <div className="w-16 h-16 rounded-md bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                {v.image || product.image ? (
+                                                    <Image
+                                                        src={resolveMediaUrl(v.image || product.image) ?? ""}
+                                                        alt={v.variant_display_name || v.name}
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                ) : (
+                                                    <ImageIcon className="h-6 w-6 text-muted-foreground/40" />
+                                                )}
+                                            </div>
+                                        }
+                                        title={v.variant_display_name || v.name}
+                                        description={
+                                            <div className="flex flex-wrap gap-1">
                                                 {v.attribute_values_data?.map((av) => (
                                                     <Chip key={av.id} size="xs" intent="neutral" className="bg-background">
                                                         {av.value}
                                                     </Chip>
                                                 ))}
                                             </div>
-                                            <div className="mt-2 flex items-center justify-between">
-                                                <span className="text-primary font-bold">
-                                                    {formatCurrency(Number(v.sale_price_gross) || PricingUtils.netToGross(Number(v.sale_price)))}
-                                                </span>
-
-                                                {/* Status Badge */}
-                                                {v.has_active_bom ? (
-                                                    <Chip size="xs" intent={!disabled ? "success" : "destructive"}>
-                                                        {limit !== undefined ? limit : (v.manufacturable_quantity || 0)} fab.
-                                                    </Chip>
-                                                ) : (
-                                                    (v.product_type === 'MANUFACTURABLE' || v.requires_advanced_manufacturing) ? (
-                                                        <Chip size="xs" intent="primary">
-                                                            Disponible
-                                                        </Chip>
-                                                    ) : (
-                                                        <Chip size="xs" intent={!disabled ? "success" : "destructive"}>
-                                                            {limit !== undefined ? limit : v.qty_available} stock
-                                                        </Chip>
-                                                    )
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
+                                        }
+                                        amount={formatCurrency(Number(v.sale_price_gross) || PricingUtils.netToGross(Number(v.sale_price)))}
+                                        trailing={<StatusBadge />}
+                                        glyph={<GlyphChevron />}
+                                        unavailable={disabled}
+                                        onClick={() => handleSelect(v)}
+                                    />
                                 );
                             })}
                         </div>

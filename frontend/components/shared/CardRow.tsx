@@ -14,7 +14,7 @@ export interface CardRowProps {
     /** Primary title line. */
     title: string
     /** Optional secondary description under the title. */
-    description?: string
+    description?: React.ReactNode
     /** Optional caption (qty, unit, "desde"). */
     caption?: string
     /** Main amount/price, tabular numerals. */
