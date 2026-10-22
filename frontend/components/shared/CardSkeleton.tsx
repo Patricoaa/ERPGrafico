@@ -60,26 +60,21 @@ export function CardSkeleton({
                 {Array.from({ length: count }).map((_, i) => (
                     <div
                         key={`contact-card-${i}`}
-                        className="flex flex-col overflow-hidden rounded-md border border-border/40 bg-card/5"
+                        className="flex flex-col overflow-hidden rounded-md border border-border bg-card"
                     >
-                        <div className="flex items-center justify-between gap-2 p-2.5 pb-1.5">
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <Skeleton className="h-7 w-7 rounded-md shrink-0" />
-                                <div className="min-w-0 flex-1 space-y-1">
-                                    <Skeleton className="h-3 w-3/4" />
-                                    <Skeleton className="h-2 w-1/2 opacity-60" />
-                                </div>
-                            </div>
-                            <Skeleton className="h-4 w-4 rounded-full shrink-0" />
+                        <div className="flex h-20 items-center justify-center bg-muted">
+                            <Skeleton className="size-14 rounded-md" />
                         </div>
-                        <div className="mt-auto flex items-center gap-1.5 border-t border-border/30 px-2.5 pb-2 pt-1.5">
-                            <Skeleton className="h-2 w-12" />
-                            <Skeleton className="h-2 w-6 opacity-60" />
-                            <Skeleton className="h-2 w-3 opacity-40" />
-                            <Skeleton className="h-2 w-12" />
-                            <Skeleton className="h-2 w-6 opacity-60" />
-                            <Skeleton className="h-2 w-3 opacity-40" />
-                            <Skeleton className="h-2 w-10" />
+                        <div className="flex flex-1 flex-col gap-1 px-3 pb-3 pt-2.5">
+                            <Skeleton className="h-3 w-16" />
+                            <Skeleton className="h-4 w-3/4" />
+                            <div className="mt-auto flex items-end justify-between pt-2">
+                                <div className="flex flex-col gap-1">
+                                    <Skeleton className="h-2.5 w-16" />
+                                    <Skeleton className="h-4 w-20" />
+                                </div>
+                                <Skeleton className="h-2.5 w-14" />
+                            </div>
                         </div>
                     </div>
                 ))}
@@ -145,7 +140,7 @@ export function CardSkeleton({
             >
                 {Array.from({ length: count }).map((_, i) => (
                     <div key={`product-${i}`} className="flex flex-col overflow-hidden rounded-md border border-border bg-card">
-                        <Skeleton className="aspect-[16/7] w-full rounded-none" />
+                        <Skeleton className="h-22 w-full rounded-none" />
                         <div className="flex flex-1 flex-col gap-1 px-3 pb-3 pt-2.5">
                             <Skeleton className="h-3 w-14" />
                             <Skeleton className="h-4 w-3/4" />

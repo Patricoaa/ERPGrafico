@@ -5,7 +5,9 @@ const config: StorybookConfig = {
     "../stories/**/*.mdx",
     "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)",
     "../components/entity-view/**/*.stories.@(ts|tsx)",
-    "../features/*/entity-view/**/*.stories.@(ts|tsx)"
+    "../features/*/entity-view/**/*.stories.@(ts|tsx)",
+    "../components/selectors/**/*.stories.@(ts|tsx)",
+    "../components/shared/**/*.stories.@(ts|tsx)"
   ],
   "addons": [
     "@chromatic-com/storybook",

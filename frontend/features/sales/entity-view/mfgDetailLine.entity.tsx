@@ -3,7 +3,7 @@
 import { defineEntity, registerValueKind, type ValueRenderProps } from "@/components/entity-view"
 import { Chip } from "@/components/shared"
 import { Settings2, Zap, Package, CheckCircle2, AlertCircle } from "lucide-react"
-import type { SaleOrderLine } from "@/features/sales"
+import type { SaleOrderLine } from "../types"
 
 export interface ManufacturableLine extends SaleOrderLine {
     originalIndex: number
@@ -108,6 +108,8 @@ export const mfgDetailLineEntity = defineEntity<ManufacturableLine>()((f) => ({
             internalCode: r.internal_code,
             code: r.code,
         }), { ...fixed, label: "Producto" }),
+        name: f.text((r) => r.product_name || r.description || "", { ...fixed, label: "Producto" }),
+        code: f.text((r) => r.internal_code || r.code || "", { ...fixed, label: "Código" }),
         qty: f.number((r) => r.qty ?? r.quantity, { ...fixed, label: "Cantidad" }),
         subtype: f.value("mfgLineSubtype", getMfgLineSubType, { ...fixed, label: "Tipo" }),
         status: f.value("mfgLineStatus", (r) => ({
@@ -117,6 +119,21 @@ export const mfgDetailLineEntity = defineEntity<ManufacturableLine>()((f) => ({
     },
 }))
 
+const SUBTYPE_ICON = { ADVANCED: Settings2, EXPRESS: Zap, SIMPLE: Package } as const
+const SUBTYPE_LABEL = { ADVANCED: "Avanzada", EXPRESS: "Express", SIMPLE: "Simple" } as const
+
 export const mfgDetailLineViews = mfgDetailLineEntity.views({
     table: { columns: ["product", "qty", "subtype", "status"] },
+    card: {
+        title: "name",
+        subtitle: ["code"],
+        meta: ["qty", "status"],
+        media: {
+            placement: "top",
+            iconFor: (r) => SUBTYPE_ICON[getMfgLineSubType(r)],
+            // Advanced lines wait for their configuration; everything else needs nothing from the operator.
+            tone: (r) => (getMfgLineSubType(r) === "ADVANCED" ? (r.manufacturing_data ? "success" : "warning") : "default"),
+            badge: (r) => SUBTYPE_LABEL[getMfgLineSubType(r)],
+        },
+    },
 })

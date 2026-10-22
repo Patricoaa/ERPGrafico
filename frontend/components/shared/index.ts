@@ -131,6 +131,8 @@ export * from './DateRangeFilter';
 export * from './ReportToolbar';
 export * from './FacetedFilter'
 export * from './RadioCard';
+export * from './SelectableCard';
+export * from './ChoiceCard';
 export * from './FolioValidationInput';
 export * from './LabeledInput';
 export * from './LabeledSelect';
