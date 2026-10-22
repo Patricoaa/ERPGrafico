@@ -123,7 +123,7 @@ graph TD
 - **`PeriodValidationDateInput`**: Obligatorio en documentos donde la fecha impacte contabilidad o impuestos para validar si el periodo está cerrado.
 - **`FolioValidationInput`**: Úsalo para prevenir folios duplicados por proveedor asíncronamente mientras el usuario tipea.
 - **Table Cell Input**: `<Input>` de shadcn sin notched, dentro de `<TableCell>` en una tabla editable (spreadsheet). Ver [component-table-cell-input.md](./component-table-cell-input.md). Usar el shell `FormLineItemsTable` o `AccountingLinesTable`.
-- **`ChoiceCard` + `ChoiceGroup`**: "Elige una de estas cartas" en pasos de checkout (documento tributario, entrega, método de pago, contacto). Ver [component-choice-card.md](./component-choice-card.md). `RadioCard` queda para formularios densos fuera de los pasos del POS.
+- **`ChoiceCard` + `ChoiceGroup`**: "Elige una de estas cartas" en pasos de checkout (documento tributario, entrega, método de pago, contacto) y wizards/selectores ligeros (modo de producción, tipo de recurso, preferencias comerciales). Ver [component-choice-card.md](./component-choice-card.md) — variantes `stacked` (media strip) y `light` (lead + texto + rail).
 - **Toolbar Filter Input**: `<Input>` de shadcn para filtros/búsqueda en toolbars compactos. Ver sección de excepciones en [component-input.md](./component-input.md#toolbar-filter-input).
 
 ## 4. Layout de Página

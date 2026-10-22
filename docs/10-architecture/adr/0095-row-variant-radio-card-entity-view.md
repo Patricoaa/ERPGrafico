@@ -8,7 +8,7 @@ author: frontend-team
 
 # 0095 — CardRow variant, RadioCard removal, and entity-view migration
 
-**Related:** ADR-0092 (ProductCard anatomy), ADR-0093 (ChoiceCard & media-top cards), ADR-0094 (Card anatomy kit + radius), ADR-0087 (entity-view), `docs/20-contracts/component-choice-card.md`, `docs/20-contracts/component-selectors.md`, `docs/20-contracts/component-card.md`, `docs/10-architecture/design-system.md`
+**Related:** ADR-0092 (ProductCard anatomy), ADR-0093 (ChoiceCard & media-top cards), ADR-0094 (Card anatomy kit + radius), ADR-0087 (entity-view), **ADR-0096 (ChoiceCard light variant + inline fix)**, `docs/20-contracts/component-choice-card.md`, `docs/20-contracts/component-selectors.md`, `docs/20-contracts/component-card.md`, `docs/10-architecture/design-system.md`
 
 ---
 
@@ -75,3 +75,9 @@ Tras ADR-0094 (kit de anatomía + radio 8px + CardSurface + CardRail), quedaban 
 - **`component-selectors.md`**: `VariantSelectorModal` → `CardRow`; `SaleOrderProductStep` → `CardSurface` + `CardRow`.
 - **`component-card.md`**: `EntityCard` usa `CardSurface` stacked; `Card variant="flat"` solo `TaskInbox`.
 - **`component-entity-view.md`** (nuevo/actualizado): `EntityCard` usa `CardSurface`; `accent-visible` solo para bulk `checked`.
+
+---
+
+## Enmienda (ADR-0096)
+
+ADR-0096 añade la variante ligera `ChoiceCard variant="light"` y corrige el layout inline de `CardSurface` (B2). La decisión de **mantener `CmykRing` restringido a `Checkbox`/`SelectionRing`/`ActionDock`** (sección 2, Consequences) **no cambia** — el Ajuste 1 del usuario se revirtió tras evaluar la coherencia del lenguaje CMYK.

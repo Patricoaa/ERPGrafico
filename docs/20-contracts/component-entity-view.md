@@ -314,3 +314,34 @@ Reglas de la pantalla:
 - **Drawers, modales y confirmaciones** de la pantalla no cambian.
 
 **3. Cierre.** Se borra el `*Fields.ts` (si no le quedan consumidores), se quita la pantalla de `LEGACY_CONSUMERS` (y de `ADHOC_TABLE_ALLOWLIST` si estaba), y se reporta `bash frontend/scripts/entity-view-progress.sh`.
+
+---
+
+## 11. Cobertura del kit de anatomía (Ajuste 3 / ADR-0096)
+
+La migración de `EntityCard` a `CardSurface` (ADR-0095, Fase 2d) trajo la anatomía unificada a **todas las vistas Collection**.
+
+### Rutas que adoptan el kit actual
+
+| Ruta | Archivos | Estado |
+|---|---|---|
+| **Canónica** (`entity-view/Collection.tsx` → `EntityCard`) | **102 archivos** renderizan `<Collection>` (22 vistas Collection + drawers + modales) | ✅ Kit completo (`CardSurface layout="stacked"` + `cardAnatomy` + `selectableCardClass`) |
+| **Directos tesorería** (`EntityCard.ListItem`) | 3 (`BankCenterDashboard`, `BankRecentActivity`, `BankUpcomingMaturities`) | 🟡 Fuera del kit — usan `card-base` a mano |
+
+### Fuera del kit (fuera de alcance declarado)
+
+53 archivos usan `components/ui/card` directo (`Card variant="default"|"flat"|"transparent"`). Principales:
+
+| Archivo | `<Card>` count | Notas |
+|---|---|---|
+| `UnifiedAccountsView` | 115 | Dashboard contable |
+| `ProfileView` | 25 | `accent-visible` legacy |
+| `StatementDetailPanel` | 20 | Conciliación bancaria |
+| `TaxDeclarationsClientView` | 15 | Impuestos |
+| `SalesSettingsView` | 14 | Ajustes |
+| `WorkflowSettings` | 13 | Workflow |
+| `StatCard` | 10 | Métricas |
+| `TaskInbox` | — | `Card variant="flat"` (excepción declarada ADR-0095) |
+| `ModuleLauncher` | — | Excepción declarada ADR-0095 |
+
+**Conclusión**: la **totalidad de las vistas Collection de entity-view** (102 pantallas) adoptan el kit actual. Los 3 usos directos de tesorería y los 53 archivos con `Card` directo quedan fuera por diseño (legacy o excepciones declaradas).

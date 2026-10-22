@@ -102,6 +102,42 @@ Es un `Button` de shadcn con `role="radio"`. Los íconos usan clases `size-*` (e
 | Producción: Origen (`OriginSelectionStep`) | **`CardSurface`** stacked + tokens (2 cards) |
 | entity-view Collection | **`EntityCard`** → `CardSurface` stacked + tokens |
 
+---
+
+## Variante ligera (`variant="light"`) — ADR-0096
+
+Para wizards y pasos de checkout sin media strip real (icono + título + 1 línea descripción, 2–3 por fila). Anatomía compacta ~60px alto (vs ~142px stacked):
+
+```
+┌──────────────────────────────────────┐
+│ ◨  Título                      │ ◉  │  ← lead 32×32 (icono) | cuerpo | rail w-9 con SelectionCheck
+│    descripción                    │    │
+└──────────────────────────────────────┘
+```
+
+**Props discriminadas** (TypeScript impide mezclar):
+
+| Variante | Props permitidas | Props **prohibidas** |
+|---|---|---|
+| `stacked` (default) | todas | — |
+| `light` | `selected`, `onSelect`, `title`, `description`, `icon`, `iconClassName`, `disabled`, `className` | `meta`, `media`, `badge`, `tone`, `footer`, `size`, `children` |
+
+**Tokens específicos** (`cardAnatomy`): `lightLead`, `lightBody`, `lightTitle`, `lightDescription`, `lightRail`, `lightRailSelected`.
+
+**Shell**: mismo `Button` + `selectableCardClass` con override `flex-row`. El riel aloja `SelectionCheck` (con `placement="inline"`) cuando `selected`; vacío y apagado cuando no. La cinta CMYK superior se mantiene.
+
+**Sitios migrados** (14 instancias):
+
+| Archivo | Contexto | Grid |
+|---|---|---|
+| `Step2_PurchaseDTE` | Tipo de documento | `1 / md:3` |
+| `Step4_Receipt` | Tipo de recepción | `1 / md:3` |
+| `NoteStep_Logistics` | Opciones de procesamiento | `1 / md:3` (1 disabled) |
+| `ContactDrawer` | Preferencias comerciales | `2` |
+| `ProductManufacturingTab` | Modo de producción | `3` |
+| `PartnerWithdrawalWizard` | Tipo de recurso | `2` |
+| `PartnerContributionWizard` | Tipo de recurso | `2` |
+
 ## `RadioCard` — **Eliminado** (ADR-0095)
 
 14 instancias migradas a `ChoiceCard` (total 37 usos). Diferencia visual: `ChoiceCard` usa media strip (icono en banda) vs `RadioCard` centrado vertical. `CmykRing` restringido a `Checkbox`/`SelectionRing` (controles/tabla).
