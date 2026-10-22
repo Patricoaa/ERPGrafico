@@ -41,7 +41,23 @@ export function selectableCardClass({ selected = false, unavailable = false, int
 }
 
 /** Check chip for the media strip of a selected card (bottom-right by default). */
-export function SelectionCheck({ className }: { className?: string }) {
+export function SelectionCheck({
+    className,
+    placement = "overlay",
+}: { className?: string; placement?: "overlay" | "inline" }) {
+    if (placement === "inline") {
+        return (
+            <span
+                className={cn(
+                    "flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground",
+                    className
+                )}
+            >
+                <Check className="size-3" aria-hidden />
+                <span className="sr-only">Seleccionado</span>
+            </span>
+        )
+    }
     return (
         <span
             className={cn(
@@ -52,5 +68,24 @@ export function SelectionCheck({ className }: { className?: string }) {
             <Check className="size-3" aria-hidden />
             <span className="sr-only">Seleccionado</span>
         </span>
+    )
+}
+
+/**
+ * Right rail that hosts the selection marker for the light variant.
+ * Unlike CardRail (decorative, aria-hidden), this rail is NOT aria-hidden so the
+ * SelectionCheck's sr-only "Seleccionado" is announced.
+ */
+export function SelectionRail({ selected, children }: { selected: boolean; children?: React.ReactNode }) {
+    return (
+        <div
+            className={cn(
+                "flex w-9 shrink-0 items-center justify-center border-l border-border/60 bg-muted/20 transition-colors",
+                selected && "border-primary/30 bg-primary/5"
+            )}
+            aria-hidden={false}
+        >
+            {children}
+        </div>
     )
 }

@@ -6,18 +6,21 @@
 // SelectableCard (CMYK ribbon + K100 ring + check; hover previews the ribbon; unavailable is muted).
 //
 // Use inside <ChoiceGroup> so the options form a radiogroup with arrow-key navigation.
+//
+// Variant "light" — compact row for settings/wizards: icon lead (32×32) | title+description | right rail with check.
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Chip } from "./Chip"
-import { SelectionCheck, selectableCardClass } from "./SelectableCard"
+import { SelectionCheck, SelectionRail, selectableCardClass } from "./SelectableCard"
 import { cardAnatomy } from "./card-anatomy"
 
-export interface ChoiceCardProps {
+type StackedProps = {
+    /** Visual variant. Default "stacked" = media strip on top (ProductCard anatomy). */
+    variant?: "stacked"
     selected: boolean
     onSelect: () => void
-    /** Cannot be picked. Say why in `description`. */
     disabled?: boolean
     title: string
     description?: string
@@ -42,7 +45,41 @@ export interface ChoiceCardProps {
     className?: string
 }
 
-export function ChoiceCard({
+type LightProps = {
+    /** Visual variant. "light" = compact row: icon lead | text | right rail with check. */
+    variant: "light"
+    selected: boolean
+    onSelect: () => void
+    disabled?: boolean
+    title: string
+    description?: string
+    /** Icon rendered in the leading slot (32×32). Required for light variant. */
+    icon: React.ComponentType<{ className?: string }>
+    /** Overrides the icon colour (semantic text token, e.g. `text-success`). Muted when disabled. */
+    iconClassName?: string
+    className?: string
+    // Props explicitly NOT allowed on light variant:
+    meta?: never
+    media?: never
+    badge?: never
+    tone?: never
+    footer?: never
+    size?: never
+    children?: never
+}
+
+export type ChoiceCardProps = StackedProps | LightProps
+
+export function ChoiceCard(props: ChoiceCardProps) {
+    const { selected, onSelect, disabled = false, title, description, className } = props
+
+    if (props.variant === "light") {
+        return renderLightVariant(props)
+    }
+    return renderStackedVariant(props)
+}
+
+function renderStackedVariant({
     selected,
     onSelect,
     disabled = false,
@@ -58,7 +95,7 @@ export function ChoiceCard({
     size = "default",
     children,
     className,
-}: ChoiceCardProps) {
+}: StackedProps) {
     const compact = size === "compact"
 
     return (
@@ -115,6 +152,49 @@ export function ChoiceCard({
                 {children}
                 {footer && <span className={cardAnatomy.footer}>{footer}</span>}
             </span>
+        </Button>
+    )
+}
+
+function renderLightVariant({
+    selected,
+    onSelect,
+    disabled = false,
+    title,
+    description,
+    icon: Icon,
+    iconClassName,
+    className,
+}: LightProps) {
+    return (
+        <Button
+            type="button"
+            variant="ghost"
+            role="radio"
+            aria-checked={selected}
+            aria-disabled={disabled || undefined}
+            tabIndex={disabled ? -1 : 0}
+            onClick={() => {
+                if (!disabled) onSelect()
+            }}
+            className={cn(
+                selectableCardClass({ selected, unavailable: disabled }),
+                // Light variant: horizontal row, no media strip
+                "flex-row items-stretch gap-0 whitespace-normal p-0 text-sm font-normal",
+                disabled ? "hover:bg-muted/40 dark:hover:bg-muted/40" : "hover:bg-card dark:hover:bg-card",
+                className
+            )}
+        >
+            <div className={cn(cardAnatomy.lightLead, "bg-muted", iconClassName ?? "text-muted-foreground/70")}>
+                <Icon className="size-5" aria-hidden />
+            </div>
+            <div className={cardAnatomy.lightBody}>
+                <h3 className={cn(cardAnatomy.lightTitle, disabled && "text-muted-foreground")}>{title}</h3>
+                {description && <span className={cardAnatomy.lightDescription}>{description}</span>}
+            </div>
+            <SelectionRail selected={selected}>
+                {selected && <SelectionCheck placement="inline" />}
+            </SelectionRail>
         </Button>
     )
 }
