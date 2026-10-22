@@ -6,13 +6,18 @@ import { cn } from "@/lib/utils"
 import { selectableCardClass } from "./SelectableCard"
 import { cardAnatomy } from "./card-anatomy"
 
+export type CardLayout = "stacked" | "inline"
+
 export interface CardSurfaceProps
     extends Omit<React.ComponentProps<"div">, "onClick" | "onKeyDown"> {
     /** Selection state for the visual language (ribbon + ring + check). */
     selected?: boolean
     /** Cannot be interacted with (disabled by caller or ruled out by data). */
     unavailable?: boolean
-    /** ARIA role — "radio" for choices, "button" for object actions. */
+    /**
+     * ARIA role — "radio" for choices, "button" for object actions.
+     * Only emitted when `selected` is explicitly passed (true or false).
+     */
     role?: "radio" | "button"
     /** Click handler (only when not unavailable). */
     onClick?: () => void
@@ -22,6 +27,18 @@ export interface CardSurfaceProps
     children: React.ReactNode
     /** Additional className merged after the surface classes. */
     className?: string
+    /**
+     * Layout variant. "stacked" = media strip on top (ProductCard, ChoiceCard).
+     * "inline" = horizontal row, no media strip (MfgLineCard, VariantSelectorModal).
+     * Affects internal padding only; callers still compose anatomy tokens.
+     */
+    layout?: CardLayout
+    /**
+     * Whether the card is an interactive target (click/keyboard → action).
+     * Derived from `onClick` by default; override only for edge cases.
+     * When false: no cursor-pointer, no hover border, no ribbon preview.
+     */
+    interactive?: boolean
 }
 
 /**
@@ -37,32 +54,37 @@ export function CardSurface({
     onKeyDown,
     children,
     className,
+    layout = "stacked",
+    interactive,
     ...props
 }: CardSurfaceProps) {
+    const isInteractive = interactive ?? (onClick !== undefined)
+    const hasExplicitSelected = selected !== undefined
+
     const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
         if (onKeyDown) onKeyDown(e)
-        if (!e.defaultPrevented && (e.key === "Enter" || e.key === " ")) {
+        if (!e.defaultPrevented && isInteractive && (e.key === "Enter" || e.key === " ")) {
             e.preventDefault()
             onClick?.()
         }
     }
 
+    const layoutPadding = layout === "inline" ? "p-0" : "gap-0 p-0"
+
     return (
         <Card
-            role={role}
-            tabIndex={unavailable ? -1 : 0}
+            role={isInteractive ? role : undefined}
+            tabIndex={unavailable ? -1 : isInteractive ? 0 : undefined}
             aria-disabled={unavailable || undefined}
-            aria-pressed={role === "button" ? selected : undefined}
-            aria-checked={role === "radio" ? selected : undefined}
+            aria-pressed={hasExplicitSelected && role === "button" ? selected : undefined}
+            aria-checked={hasExplicitSelected && role === "radio" ? selected : undefined}
             className={cn(
-                // Base surface: Card's default variant (rounded-md, border, shadow, py-6) is overridden
-                // by selectableCardClass (border, bg, shadow-none, rounded-sm via selectableCardClass)
-                // and then by our explicit neutralisation of gap/padding/shadow.
-                selectableCardClass({ selected, unavailable }),
-                "gap-0 p-0 shadow-none",
+                selectableCardClass({ selected, unavailable, interactive: isInteractive }),
+                "shadow-none",
+                layoutPadding,
                 className
             )}
-            onClick={unavailable ? undefined : onClick}
+            onClick={unavailable || !isInteractive ? undefined : onClick}
             onKeyDown={handleKeyDown}
             {...props}
         >
@@ -74,8 +96,8 @@ export function CardSurface({
 export interface CardRailProps {
     /** Semantic tone of the rail — drives border/background/text colour. */
     tone: "warning" | "success" | "neutral"
-    /** Icon or content centred in the rail (e.g. Settings2, Check). */
-    children: React.ReactNode
+    /** Icon or content centred in the rail (e.g. Settings2, Check). Optional for empty decorative rails. */
+    children?: React.ReactNode
     /** Additional className. */
     className?: string
 }

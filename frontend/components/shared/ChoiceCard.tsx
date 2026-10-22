@@ -107,7 +107,7 @@ export function ChoiceCard({
 
             <span className={cn(
                 "flex w-full flex-1 flex-col gap-1 px-3 pb-3 text-left",
-                compact ? "pt-2" : cardAnatomy.body.includes("pt-2.5") ? "pt-2.5" : "pt-2"
+                compact ? "pt-2" : "pt-2.5"
             )}>
                 {meta && <span className={cardAnatomy.code}>{meta}</span>}
                 <span className={cn(cardAnatomy.title, disabled && "text-muted-foreground")}>{title}</span>

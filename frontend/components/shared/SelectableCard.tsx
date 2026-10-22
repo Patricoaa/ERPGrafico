@@ -16,17 +16,26 @@ export interface SelectableCardState {
     selected?: boolean
     /** Cannot be picked: disabled by the caller or ruled out by the data. */
     unavailable?: boolean
+    /**
+     * Whether the card is an interactive target (click/keyboard → action).
+     * When false the card is selectable (can show selected state) but not pressable:
+     * no cursor-pointer, no hover border, no ribbon preview.
+     * Default true for backward compat with ProductCard/ChoiceCard/ContactCard/MfgLineCard.
+     */
+    interactive?: boolean
 }
 
 /** Surface classes for a pressable card. Compose with layout classes (`h-full`, `p-0`…) at the call site. */
-export function selectableCardClass({ selected = false, unavailable = false }: SelectableCardState = {}): string {
+export function selectableCardClass({ selected = false, unavailable = false, interactive = true }: SelectableCardState = {}): string {
     return cn(
         "group relative flex flex-col overflow-hidden rounded-sm border border-border bg-card text-left shadow-none transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         unavailable
             ? "cursor-not-allowed border-border/60 bg-muted/40 opacity-50"
-            : "cursor-pointer hover:border-foreground/30 ribbon-cmyk",
-        !unavailable && !selected && "ribbon-cmyk-hover",
+            : interactive
+                ? "cursor-pointer hover:border-foreground/30 ribbon-cmyk"
+                : "cursor-default",
+        !unavailable && !selected && interactive && "ribbon-cmyk-hover",
         selected && "border-primary ring-1 ring-primary"
     )
 }

@@ -30,6 +30,26 @@ export const cardAnatomy = {
 
     /** Decorative action glyph (add / configure / chevron) at bottom-right. */
     glyph: "h-4 w-4 shrink-0 transition-colors text-muted-foreground group-hover:text-foreground",
+
+    // ── Inline / row variant (no media strip) ──────────────────────────────────
+    /** Leading slot for photo / icon / avatar — 40×40, shrinks to fit. */
+    lead: "flex-shrink-0 w-10 h-10 rounded-sm overflow-hidden bg-muted",
+
+    /** Inline body: code + title + description + footer in a horizontal flow. */
+    inlineBody: "flex min-w-0 flex-1 flex-col gap-1 px-3 py-2.5",
+
+    /** Code in inline layout — slightly larger, not truncated in same way. */
+    inlineCode: "font-mono text-3xs text-muted-foreground",
+
+    /** Title in inline layout — single line, grows to fill. */
+    inlineTitle: "line-clamp-1 text-sm font-semibold leading-snug",
+
+    /** Footer in inline layout — flex row with caption + amount + glyph. */
+    inlineFooter: "flex items-end justify-between gap-3 mt-auto pt-1",
+
+    /** Caption + amount combined for inline (qty · $price). */
+    inlineAmount: "flex items-baseline gap-1 font-semibold tabular-nums text-sm",
+
 } as const
 
 export type CardAnatomyKey = keyof typeof cardAnatomy
