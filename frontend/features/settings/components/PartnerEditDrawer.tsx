@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
-import { Drawer, CancelButton, FormFooter, LabeledCheckbox, ActionSlideButton } from "@/components/shared"
+import { Drawer, CancelButton, FormFooter, LabeledCheckbox, SubmitButton } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import {Form, FormField} from "@/components/ui/form"
 
@@ -106,9 +106,9 @@ export function PartnerEditDrawer({ open, onOpenChange, contact, onSuccess, mode
                         actions={
                             <>
                                 <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
-                                <ActionSlideButton type="submit" form="partner-edit-form" loading={submitting} className="font-bold">
+                                <SubmitButton type="submit" form="partner-edit-form" loading={submitting} className="font-bold">
                                     Guardar Cambios
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />

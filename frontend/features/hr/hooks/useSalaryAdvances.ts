@@ -11,7 +11,7 @@ export function useSalaryAdvances(filters?: FilterState, initialData?: SalaryAdv
         queryKey: [...SALARY_ADVANCES_QUERY_KEY, filters],
         queryFn: (): Promise<SalaryAdvance[]> => {
             const params: Record<string, string> = {}
-            if (filters?.is_discounted !== undefined) params.is_discounted = filters.is_discounted
+            if (filters?.status) params.status = filters.status
             if (filters?.date_from) params.date_from = filters.date_from
             if (filters?.date_to) params.date_to = filters.date_to
             return getAdvances(Object.keys(params).length ? params : undefined)
@@ -29,6 +29,8 @@ export function useSalaryAdvances(filters?: FilterState, initialData?: SalaryAdv
     return {
         advances,
         isLoading: showSkeleton,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError: query.isError,
         refetch,
         isRefetching,
     }

@@ -14,13 +14,14 @@ interface UsePosTerminalsReturn {
     toggleActive: (terminal: Terminal) => Promise<void>
     deleteTerminal: (terminal: Terminal) => Promise<void>
     isLoading: boolean
+    isError: boolean
 }
 
 export function usePosTerminals(): UsePosTerminalsReturn {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: terminals, isLoading, refetch } = useQuery({
+    const { data: terminals, isLoading, isError, refetch } = useQuery({
         queryKey: TERMINALS_KEYS.lists(),
         queryFn: treasuryApi.getTerminals,
         staleTime: staleTime.stable,
@@ -66,5 +67,7 @@ export function usePosTerminals(): UsePosTerminalsReturn {
     toggleActive: async (terminal: Terminal) => { await toggleActiveMutation.mutateAsync(terminal); },
     deleteTerminal: async (terminal: Terminal) => { await deleteMutation.mutateAsync(terminal); },
         isLoading,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError,
     }
 }

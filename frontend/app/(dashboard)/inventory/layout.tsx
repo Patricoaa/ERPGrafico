@@ -1,11 +1,8 @@
-import { type Metadata } from "next"
 import { PageContainer } from "@/components/shared"
 import { InventoryHeader } from "./InventoryHeader"
+import { createAutoMetadata } from "@/lib/auto-metadata"
 
-export const metadata: Metadata = {
-    title: "Módulo de Inventario | ERPGrafico",
-    description: "Gestión centralizada de productos, existencias, almacenes y configuración.",
-}
+export const generateMetadata = createAutoMetadata("inventory")
 
 export default function InventoryLayout({ children }: { children: React.ReactNode }) {
     return (

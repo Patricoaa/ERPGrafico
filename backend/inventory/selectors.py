@@ -17,7 +17,25 @@ from django.db.models import (
 )
 from django.db.models.functions import Coalesce
 
-from .models import Product, ProductFavorite
+from .models import Product, ProductFavorite, Stock
+
+
+def _current_stock():
+    """
+    Total stock as a subquery. A `Sum("stocks__quantity")` next to `Count("variants")` in the same
+    annotate joins both relations at once and multiplies the stock by the number of variants
+    (ADR-0087 lote 2a, found when the column became sortable).
+    """
+    total = (
+        Stock.objects.filter(product=OuterRef("pk"))
+        .values("product")
+        .annotate(total=Sum("quantity"))
+        .values("total")[:1]
+    )
+    return Coalesce(
+        Subquery(total, output_field=DecimalField(max_digits=12, decimal_places=4)),
+        Value(0, output_field=DecimalField(max_digits=12, decimal_places=4)),
+    )
 
 
 def list_products(*, user, params: dict) -> QuerySet:
@@ -56,8 +74,8 @@ def list_products(*, user, params: dict) -> QuerySet:
             ),
         )
         .annotate(
-            annotated_current_stock=Coalesce(Sum("stocks__quantity"), Value(0, output_field=DecimalField())),
-            variants_count=Count("variants"),
+            annotated_current_stock=_current_stock(),
+            variants_count=Count("variants", distinct=True),
         )
     )
 
@@ -168,8 +186,8 @@ def get_product_base_queryset(*, user) -> QuerySet:
             ),
         )
         .annotate(
-            annotated_current_stock=Coalesce(Sum("stocks__quantity"), Value(0, output_field=DecimalField())),
-            variants_count=Count("variants"),
+            annotated_current_stock=_current_stock(),
+            variants_count=Count("variants", distinct=True),
         )
     )
 

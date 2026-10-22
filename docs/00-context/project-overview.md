@@ -64,7 +64,7 @@ User → Nginx :80 → Next.js :3000 (SSR/App Router)
 | Env | Host | Data |
 |-----|------|------|
 | Local (edición) | `localhost` (IDE + git) | No corre el stack |
-| Remote dev server | `pato@192.168.1.93` → `~/ERPGrafico` (docker compose) | Sembrada vía `setup_demo_data` |
+| Remote dev server | `pato@192.168.1.86` → `~/ERPGrafico` (docker compose) | Sembrada vía `setup_demo_data` |
 
 **No existe entorno de producción.** El proyecto está en fase de desarrollo y solo hay un entorno de
 desarrollo remoto, accesible por SSH y sincronizado con Mutagen. Ver

@@ -2,9 +2,11 @@ from decimal import Decimal
 
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import Exists, OuterRef
 from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
+from core.edit_policy import EditPolicy
 from core.models import TimeStampedModel
 
 
@@ -83,7 +85,12 @@ class AFP(models.Model):
         verbose_name=_("Cuenta Contable Pasivo"),
     )
 
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(
+        _("Activa"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar la AFP; los empleados históricos la siguen referenciando."),
+    )
 
     class Meta:
         verbose_name = _("AFP")
@@ -97,6 +104,17 @@ class PayrollConcept(models.Model):
     """
     Definición dinámica de Haberes o Descuentos.
     """
+
+    # ADR-0091 (clase C): posted payrolls classify their lines by the current category.
+    edit_policy = EditPolicy(
+        frozen_when_used=frozenset({"category"}),
+        is_used=lambda c: c.items.filter(payroll__status="POSTED").exists(),
+        used_annotation=lambda: Exists(
+            PayrollItem.objects.filter(concept=OuterRef("pk"), payroll__status="POSTED")
+        ),
+        deletable=True,
+        used_message="El concepto ya figura en liquidaciones contabilizadas; su categoría no se puede cambiar.",
+    )
 
     class Category(models.TextChoices):
         HABER_IMPONIBLE = "HABER_IMPONIBLE", _("Haber Imponible")
@@ -136,6 +154,12 @@ class PayrollConcept(models.Model):
 
     is_system = models.BooleanField(
         default=False, help_text=_("Conceptos generados por el sistema para cálculos legales.")
+    )
+    is_active = models.BooleanField(
+        _("Activo"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar el concepto de nómina; las nóminas históricas lo siguen referenciando."),
     )
 
     class Meta:
@@ -368,6 +392,12 @@ class Payroll(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    edit_policy = EditPolicy(
+        editable_statuses=frozenset({"DRAFT"}),
+        deletable=True,
+        locked_message="La liquidación está contabilizada y no se puede modificar.",
+    )
+
     class Meta:
         ordering = ["-period_year", "-period_month", "-id"]
         unique_together = ["employee", "period_year", "period_month"]
@@ -417,6 +447,13 @@ class Payroll(models.Model):
 
 class PayrollItem(models.Model):
     """Línea de la liquidación vinculada a un concepto dinámico."""
+
+    edit_policy = EditPolicy(
+        is_locked=lambda item: item.payroll.status != "DRAFT",
+        mutable_when_locked=frozenset(),
+        deletable=True,
+        locked_message="La liquidación está contabilizada; sus líneas no se pueden modificar.",
+    )
 
     payroll = models.ForeignKey(Payroll, on_delete=models.CASCADE, related_name="items")
     concept = models.ForeignKey(
@@ -499,14 +536,32 @@ class SalaryAdvance(models.Model):
         blank=True,
         related_name="advances",
         verbose_name=_("Liquidación Asociada"),
-        help_text=_("Si ya fue descontado de una liquidación, se vincula aquí."),
+        help_text=_("Liquidación (en borrador o contabilizada) que descuenta el anticipo."),
     )
     amount = models.DecimalField(
         _("Monto"), max_digits=14, decimal_places=0, validators=[MinValueValidator(Decimal("0.01"))]
     )
     date = models.DateField(_("Fecha del Anticipo"))
     notes = models.TextField(_("Notas"), blank=True)
-    is_discounted = models.BooleanField(_("Descontado en Liquidación"), default=False)
+
+    class Status(models.TextChoices):
+        DRAFT = "DRAFT", _("Borrador")
+        PAID = "PAID", _("Pagado")
+        DISCOUNTED = "DISCOUNTED", _("Descontado")
+        CANCELLED = "CANCELLED", _("Anulado")
+
+    status = models.CharField(
+        _("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT
+    )
+
+    # ADR-0091: once paid, only notes and the payroll link (validated in the
+    # serializer) change; corrections go through annul_advance.
+    edit_policy = EditPolicy(
+        editable_statuses=frozenset({"DRAFT"}),
+        mutable_when_locked=frozenset({"notes", "payroll"}),
+        deletable=True,
+    )
+
     journal_entry = models.ForeignKey(
         "accounting.JournalEntry",
         on_delete=models.SET_NULL,
@@ -560,8 +615,22 @@ class PayrollPayment(models.Model):
         verbose_name=_("Asiento Contable"),
     )
 
+    class Status(models.TextChoices):
+        POSTED = "POSTED", _("Contabilizado")
+        CANCELLED = "CANCELLED", _("Anulado")
+
+    status = models.CharField(
+        _("Estado"), max_length=20, choices=Status.choices, default=Status.POSTED
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    edit_policy = EditPolicy(
+        is_locked=lambda p: p.journal_entry_id is not None,
+        deletable=True,
+        locked_message="El pago ya está contabilizado en tesorería y no se puede modificar.",
+    )
 
     class Meta:
         ordering = ["-date"]

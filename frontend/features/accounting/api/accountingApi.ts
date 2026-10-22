@@ -70,6 +70,12 @@ export const accountingApi = {
         await api.delete(`/accounting/accounts/${id}/`)
     },
 
+    /** Archivo pattern: soft-delete via `is_active=false` (hard DELETE is blocked server-side with 405). */
+    archiveAccount: async (id: number, is_active: boolean): Promise<Account> => {
+        const { data } = await api.patch<Account>(`/accounting/accounts/${id}/`, { is_active })
+        return data
+    },
+
     getSettings: async () => {
         const response = await api.get<Record<string, unknown>>('/accounting/settings/current/')
         return response.data

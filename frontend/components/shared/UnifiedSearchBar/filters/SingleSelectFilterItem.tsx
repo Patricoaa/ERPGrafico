@@ -47,11 +47,14 @@ export function SingleSelectFilterItem({
         size="sm"
         onClick={() => setExpanded(!expanded)}
         className={cn(
-          "w-full justify-start gap-2 px-2 py-1.5 text-xs font-medium rounded-sm",
-          isActive && "text-primary",
+          "w-full justify-start gap-2 px-2 py-1.5 text-xs font-medium rounded-sm transition-colors",
+          isActive && "bg-primary/5 text-primary",
         )}
       >
-        <ChevronRight className={cn("h-3 w-3 transition-transform shrink-0", expanded && "rotate-90")} />
+        <ChevronRight
+          className={cn("size-3 shrink-0 transition-transform motion-reduce:transition-none", expanded && "rotate-90")}
+          aria-hidden
+        />
         <span>{def.label}</span>
         {selectedValue && (
           <span className="ml-auto text-3xs text-muted-foreground truncate max-w-[100px]">
@@ -61,10 +64,10 @@ export function SingleSelectFilterItem({
       </Button>
 
       {expanded && (
-        <div className="ml-4 border-l border-border/40 pl-2 py-1 grid grid-cols-3 gap-1">
+        <div className="ml-4 border-l border-border/50 pl-2 py-1 grid grid-cols-3 gap-1">
           {options.length === 0 && def.dynamic && (
             <div className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground col-span-3">
-              <Loader2 className="h-3 w-3 animate-spin" />
+              <Loader2 className="size-3 animate-spin" aria-hidden />
               Cargando...
             </div>
           )}
@@ -75,10 +78,10 @@ export function SingleSelectFilterItem({
               size="sm"
               onClick={() => handleSelect(opt.value)}
               className={cn(
-                "w-full justify-start px-2 py-1 text-xs rounded-sm truncate min-w-0",
+                "w-full justify-start px-2 py-1 text-xs rounded-sm truncate min-w-0 transition-colors",
                 selectedValue === opt.value
-                  ? "text-primary font-semibold"
-                  : "text-muted-foreground",
+                  ? "bg-primary/5 text-primary font-semibold"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               {opt.label}

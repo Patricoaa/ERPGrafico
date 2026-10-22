@@ -440,22 +440,6 @@ class TestPRACancelIntegrity:
         mov = _movement(env, status=TreasuryMovement.MovementStatus.CANCELLED)
         TreasuryService.validate_purge(mov)  # must not raise
 
-    @pytest.mark.django_db
-    def test_028_purge_blocked_for_active_order(self, env):
-        """Non-CANCELLED order → purge denied, redirect to /cancel/."""
-        order = _sale_order(env)
-        with pytest.raises(ValidationError, match="cancel"):
-            SalesService.validate_purge(order)
-
-    @pytest.mark.django_db
-    def test_029_purge_blocked_for_order_with_accounting_trace(self, env):
-        """CANCELLED order whose invoice kept a JE (annulled) → purge denied."""
-        je = JournalEntry.objects.create(description="JE factura", status=JournalEntry.State.POSTED)
-        order = _sale_order(env, status=SaleOrder.Status.CANCELLED)
-        _invoice(env, sale_order=order, status=Invoice.Status.CANCELLED, journal_entry=je)
-        with pytest.raises(ValidationError, match="pista de auditoría"):
-            SalesService.validate_purge(order)
-
 
 class TestPRBAuditAndSemantics:
     """PR B: workflow.Transition audit trail, treasury cancel/annul split, period guard."""

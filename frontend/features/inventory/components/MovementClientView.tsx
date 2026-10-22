@@ -1,50 +1,41 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { DataTableView } from '@/components/shared'
-import { AutoEntityCard } from '@/components/shared'
 import { stockMoveActions, type StockMoveActionsCtx } from "@/features/inventory/stockMoveActions"
-import { type ColumnDef } from "@tanstack/react-table"
-
 import { LazyDrawer, type TransactionType } from "@/features/_shared"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-import { stockMoveFields, type StockMove } from "@/features/inventory/stockMoveFields"
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { stockMoveEntity, stockMoveViews, type StockMove } from "@/features/inventory/entity-view/stockMove.entity"
+import { useStockMoves } from "@/features/inventory/hooks/useStockMoves"
+import { useStockMoveAnalytics } from "@/features/inventory/hooks/useStockMoveAnalytics"
+import { UnifiedSearchBar, useUnifiedSearch, StatCard, KPIWrapper, KPIValue, AnalyticsPanelContent } from "@/components/shared"
+import type { AnalyticsPanelContentProps, Granularity } from "@/components/shared"
+import { TrendingUp, Package, Warehouse, ArrowDownLeft, ArrowUpRight } from "lucide-react"
+import { chartColor } from "@/lib/chart-colors"
+import { stockMoveUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
+import { toast } from "sonner"
+import React from "react"
+
 interface MovementClientViewProps {
     createAction?: React.ReactNode
 }
 
-import { useStockMoves } from "@/features/inventory/hooks/useStockMoves"
-import { useStockMoveAnalytics } from "@/features/inventory/hooks/useStockMoveAnalytics"
-import { UnifiedSearchBar, useUnifiedSearch, StatCard, KPIWrapper, KPIValue } from "@/components/shared"
-import type { AnalyticsPanelConfig, Granularity } from "@/components/shared"
-import { TrendingUp, Package, Warehouse, ArrowDownLeft, ArrowUpRight } from "lucide-react"
-import { chartColor } from "@/lib/chart-colors"
-import { stockMoveUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
-import { resolveStockMoveIcon } from "@/lib/movement-icons"
-import { toast } from "sonner"
-import React from "react"
-
-
-
 export function MovementClientView({ createAction }: MovementClientViewProps) {
     const search = useUnifiedSearch(stockMoveUnifiedSearchDef)
-    const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, moves, totalCount, isLoading } = useStockMoves({
         ...search.filters,
-        page: isGrouping ? 1 : pageState.pageIndex + 1,
-        page_size: isGrouping ? 200 : pageState.pageSize,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
     })
 
-    const isOverLimit = isGrouping && totalCount > 200
-    const effectiveGrouping = isGrouping && !isOverLimit
-
     useEffect(() => {
-        if (isOverLimit) {
+        if (search.groupBy !== null && totalCount > 200) {
             toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
         }
-    }, [isOverLimit, totalCount])
+    }, [search.groupBy, totalCount])
+
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<StockMove>({
         endpoint: '/inventory/moves'
     })
@@ -55,11 +46,6 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
     const actionsCtx: StockMoveActionsCtx = {
         onViewDetails: (id) => openView(id),
     }
-
-    const columns = useMemo<ColumnDef<StockMove>[]>(() => [
-        ...stockMoveFields.toColumns(),
-        stockMoveActions.auto(actionsCtx),
-    ], [actionsCtx])
 
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState("flujo")
     const [granularity, setGranularity] = useState<Granularity>("month")
@@ -72,7 +58,7 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
         date_to: search.filters.date_to ?? null,
     })
 
-    const analyticsPanel = useMemo<AnalyticsPanelConfig>(() => {
+    const analyticsScreen = useMemo<AnalyticsPanelContentProps>(() => {
         const hasFlowData = analyticsData.flowLineChart.some(series => series.data.some(d => d.y > 0))
         const directions = analyticsData.analytics?.direction_distribution ?? []
         const inRow = directions.find(d => d.id === "IN")
@@ -87,13 +73,12 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
         const hasLocations = analyticsData.locationBar.length > 0
 
         return {
-            screen: {
-                entityName: "Kardex",
-                activeTab: analyticsActiveTab,
-                onTabChange: setAnalyticsActiveTab,
-                granularity,
-                onGranularityChange: setGranularity,
-                tabs: [
+            entityName: "Kardex",
+            activeTab: analyticsActiveTab,
+            onTabChange: setAnalyticsActiveTab,
+            granularity,
+            onGranularityChange: setGranularity,
+            tabs: [
                     {
                         value: "flujo",
                         label: "Flujo",
@@ -111,10 +96,7 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                                             render: (
                                                 <div className="grid gap-3 grid-cols-2 xl:grid-cols-4">
                                                     <KPIWrapper tooltip="Número de movimientos que ingresaron al inventario en el período: compras, devoluciones de clientes, transferencias entrantes y ajustes positivos.">
-                                                        <StatCard
-                                                            label="Cantidad de Entradas"
-                                                            className="h-full rounded-sm"
-                                                        >
+                                                        <StatCard label="Cantidad de Entradas" className="h-full rounded-sm">
                                                             <div className="flex items-center gap-2" style={{ color: entradaColor }}>
                                                                 <ArrowDownLeft className="h-5 w-5" />
                                                                 <span className="text-3xl font-black tracking-tighter">
@@ -124,10 +106,7 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                                                         </StatCard>
                                                     </KPIWrapper>
                                                     <KPIWrapper tooltip="Valor total de las unidades que ingresaron al inventario en el período (cantidad × costo unitario).">
-                                                        <StatCard
-                                                            label="Valor Total de Entradas"
-                                                            className="h-full rounded-sm"
-                                                        >
+                                                        <StatCard label="Valor Total de Entradas" className="h-full rounded-sm">
                                                             <div className="flex items-center gap-2" style={{ color: entradaColor }}>
                                                                 <ArrowDownLeft className="h-5 w-5" />
                                                                 <span className="text-3xl font-black tracking-tighter">
@@ -137,10 +116,7 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                                                         </StatCard>
                                                     </KPIWrapper>
                                                     <KPIWrapper tooltip="Número de movimientos que salieron del inventario en el período: ventas, consumos de producción, transferencias salientes y ajustes negativos.">
-                                                        <StatCard
-                                                            label="Cantidad de Salidas"
-                                                            className="h-full rounded-sm"
-                                                        >
+                                                        <StatCard label="Cantidad de Salidas" className="h-full rounded-sm">
                                                             <div className="flex items-center gap-2" style={{ color: salidaColor }}>
                                                                 <ArrowUpRight className="h-5 w-5" />
                                                                 <span className="text-3xl font-black tracking-tighter">
@@ -150,10 +126,7 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                                                         </StatCard>
                                                     </KPIWrapper>
                                                     <KPIWrapper tooltip="Valor total de las unidades que salieron del inventario en el período (cantidad × costo unitario).">
-                                                        <StatCard
-                                                            label="Valor Total de Salidas"
-                                                            className="h-full rounded-sm"
-                                                        >
+                                                        <StatCard label="Valor Total de Salidas" className="h-full rounded-sm">
                                                             <div className="flex items-center gap-2" style={{ color: salidaColor }}>
                                                                 <ArrowUpRight className="h-5 w-5" />
                                                                 <span className="text-3xl font-black tracking-tighter">
@@ -295,67 +268,56 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                         ],
                     },
                 ],
-            },
         }
     }, [analyticsActiveTab, granularity, analyticsData])
 
+    const collection = useEntityCollection(
+        stockMoveEntity,
+        { rows: isLoading ? [] : moves as StockMove[], rowCount: totalCount },
+        {
+            pagination: {
+                mode: "server",
+                state: pageState,
+                onChange: setPageState,
+            },
+        },
+    )
+
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    entityLabel="inventory.stockmove"
-                    columns={columns}
-                    data={moves}
-                    isLoading={isLoading}
-                    variant="embedded"
-                    manualPagination={!effectiveGrouping}
-                    pageCount={effectiveGrouping ? 1 : page ? Math.ceil(page.count / page.pageSize) : 0}
-                    rowCount={totalCount}
-                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 200 } : pageState}
-                    onPaginationChange={effectiveGrouping ? undefined : setPageState}
-                    unifiedSearch={<UnifiedSearchBar
-                        config={stockMoveUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar movimientos..."
-                    />}
-                    unifiedSearchConfig={stockMoveUnifiedSearchDef}
-                    currentGroupBy={effectiveGrouping ? search.groupBy : null}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    createAction={createAction}
-                    isFiltered={search.isFiltered}
-                    analyticsPanel={analyticsPanel}
-                    emptyState={{
-                        context: "inventory",
-                        title: "Aún no hay movimientos de stock",
-                        description: "Los movimientos se registran al recibir, despachar o ajustar inventario.",
-                    }}
-                    renderCard={(move: StockMove) => {
-                        const { icon, iconClassName } = resolveStockMoveIcon(move)
-                        return (
-                            <AutoEntityCard
-                                key={move.id}
-                                data={move}
-                                fields={stockMoveFields}
-                                entityLabel="inventory.stockmove"
-                                icon={icon}
-                                iconClassName={iconClassName}
-                                actions={stockMoveActions.render(move, actionsCtx)}
-                                defaultAction={stockMoveActions.defaultAction(actionsCtx)?.(move) ?? (() => openView(move.id))}
-
-                            />
-                        )
-                    }}
-                />
+            <div className="flex-1 flex flex-col min-h-0">
+                <Collection.Root
+                    collection={collection}
+                    onOpen={(move: StockMove) => openView(move.id)}
+                    actions={stockMoveActions.forCollection(actionsCtx)}
+                >
+                    <Collection.Toolbar action={createAction}>
+                        <UnifiedSearchBar
+                            config={stockMoveUnifiedSearchDef}
+                            chips={search.chips}
+                            isFiltered={search.isFiltered}
+                            inputValue={search.inputValue}
+                            onInputChange={search.setInputValue}
+                            onApply={search.applyFilter}
+                            onRemove={search.removeFilter}
+                            onClearAll={search.clearAll}
+                            groupBy={search.groupBy}
+                            onGroupBySelect={search.setGroupBy}
+                            paramValues={search.paramValues}
+                            placeholder="Buscar movimientos..."
+                        />
+                    </Collection.Toolbar>
+                    <Collection.View
+                        table={stockMoveViews.table}
+                        card={stockMoveViews.card}
+                        emptyTitle="Aún no hay movimientos de stock"
+                        emptyDescription="Los movimientos se registran al recibir, despachar o ajustar inventario."
+                        onResetFilters={search.isFiltered ? search.clearAll : undefined}
+                    />
+                    <Collection.Analytics>
+                        <AnalyticsPanelContent {...analyticsScreen} />
+                    </Collection.Analytics>
+                </Collection.Root>
             </div>
 
             {viewingTransaction && (
@@ -363,11 +325,7 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                     type={viewingTransaction.type}
                     id={Number(viewingTransaction.id)}
                     open={!!viewingTransaction}
-                    onOpenChange={(open) => {
-                        if (!open) {
-                            clearSelection()
-                        }
-                    }}
+                    onOpenChange={(open) => { if (!open) clearSelection() }}
                 />
             )}
         </div>

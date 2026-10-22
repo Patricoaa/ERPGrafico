@@ -165,6 +165,7 @@ class F29DeclarationWriteSerializer(serializers.ModelSerializer):
 class F29PaymentSerializer(serializers.ModelSerializer):
     declaration_display = serializers.CharField(source="declaration.__str__", read_only=True)
     treasury_account_name = serializers.CharField(source="treasury_account.name", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
     payment_method_display = serializers.CharField(
         source="get_payment_method_display", read_only=True
     )
@@ -183,11 +184,13 @@ class F29PaymentSerializer(serializers.ModelSerializer):
             "treasury_account",
             "treasury_account_name",
             "journal_entry",
+            "status",
+            "status_display",
             "notes",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["journal_entry", "created_at", "updated_at"]
+        read_only_fields = ["journal_entry", "status", "created_at", "updated_at"]
 
 
 class F29CalculationRequestSerializer(serializers.Serializer):

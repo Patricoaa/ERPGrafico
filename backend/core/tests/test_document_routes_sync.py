@@ -67,5 +67,5 @@ def test_search_detail_url_uses_canonical_url():
     from core.registry import UniversalRegistry
 
     assert UniversalRegistry._canonical_url("sales.saledelivery", 800) == "/d/sales.saledelivery/800"
-    assert UniversalRegistry._canonical_url("sales.saleorder", 5) == "/sales/orders?selected=5"
+    assert UniversalRegistry._canonical_url("sales.saleorder", 5) == "/sales/dtes/orders?selected=5"
     assert UniversalRegistry._canonical_url("billing.invoice", 7) == "/d/billing.invoice/7"

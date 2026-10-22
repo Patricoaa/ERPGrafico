@@ -2,13 +2,7 @@
 
 import { type ReactNode } from "react"
 import { cn } from "@/lib/utils"
-import { Info } from "lucide-react"
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip"
+import { FieldLegend, fieldLegendClasses } from "./FieldLegend"
 
 interface LabeledContainerProps {
     /** Label text rendered inside the fieldset legend (notched border). */
@@ -27,7 +21,7 @@ interface LabeledContainerProps {
     icon?: ReactNode
     /** Text or element shown as a suffix (inside the fieldset). */
     suffix?: ReactNode
-    /** Additional classes for the label `<legend>`. */
+    /** @deprecated Use FieldLegend (N2) instead. Legend typography is now centralized. */
     labelClassName?: string
     /** Whether the container is disabled. */
     disabled?: boolean
@@ -72,26 +66,14 @@ export function LabeledContainer({
                 )}
             >
                 {label && (
-                    <legend className={cn(
-                        "px-1.5 text-3xs font-bold uppercase tracking-widest transition-colors duration-200 flex items-center gap-1",
-                        hasError ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary",
-                        labelClassName
-                    )}>
-                        {label}
-                        {required && <span className="text-destructive ml-0.5">*</span>}
-                        {tooltip && (
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Info className="h-2.5 w-2.5 opacity-50 hover:opacity-100 cursor-default transition-opacity" />
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top" className="max-w-[220px] text-xs">
-                                        {tooltip}
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        )}
-                    </legend>
+                    <FieldLegend
+                        label={label}
+                        required={required}
+                        hasError={hasError}
+                        disabled={disabled}
+                        className={cn("flex items-center gap-1", labelClassName)}
+                        tooltip={tooltip}
+                    />
                 )}
 
                 <div className="flex items-center w-full min-h-[1.5rem]">

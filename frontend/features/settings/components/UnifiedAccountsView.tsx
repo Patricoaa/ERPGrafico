@@ -811,19 +811,14 @@ function EstructuraForm() {
                                     <CardDescription>Establezca los niveles de jerarquía y el formato del código para su Plan de Cuentas</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
-                                    <fieldset className="notched-field border-primary/20 pointer-events-none select-none">
-                                        <legend className="px-1.5 text-3xs font-bold uppercase tracking-loose text-primary/80">
-                                            Vista Previa del Formato
-                                        </legend>
-                                        <div className="flex items-center justify-between w-full min-h-[2.5rem] py-1">
-                                            <p className="text-3xs text-muted-foreground uppercase opacity-75 font-bold pl-2.5">
-                                                Ejemplo nivel {formValues.hierarchy_levels}
-                                            </p>
-                                            <span className="text-lg font-mono font-bold tracking-tighter text-primary mr-1">
-                                                {generatePreview(formValues)}
-                                            </span>
-                                        </div>
-                                    </fieldset>
+                                    <LabeledInput
+                                        label="Vista Previa del Formato"
+                                        value={generatePreview(formValues)}
+                                        disabled
+                                        readOnly
+                                        className="bg-background/50 font-mono font-bold tracking-tighter text-primary text-sm"
+                                        containerClassName="border-primary/20"
+                                    />
                                     <div className="space-y-4">
                                         <FormField
                                             control={form.control}

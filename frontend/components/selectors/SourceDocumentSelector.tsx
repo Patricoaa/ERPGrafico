@@ -1,11 +1,11 @@
 "use client"
 import { useState } from "react"
-import { Check, ChevronDown, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Check, X } from "lucide-react"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useUniversalSearch } from "@/features/search"
 
 import { DynamicIcon, LabeledContainer, SearchablePopover } from '@/components/shared'
+import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
 import { hasEntityDrawer } from "@/lib/entity-drawers"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import type { SearchResult } from "@/features/search/api/searchApi"
@@ -26,6 +26,8 @@ interface SourceDocumentSelectorProps {
     error?: string
     className?: string
     allowedLabels?: string[]
+    /** Placeholder when no value is selected. Default: "Seleccionar..." */
+    placeholder?: string
 }
 
 export function SourceDocumentSelector({
@@ -36,6 +38,7 @@ export function SourceDocumentSelector({
     error,
     className,
     allowedLabels,
+    placeholder = "Seleccionar..."
 }: SourceDocumentSelectorProps) {
     const [open, setOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
@@ -106,45 +109,35 @@ export function SourceDocumentSelector({
                     </div>
                 )}
                 trigger={
-                    <Button
-                        variant="ghost"
-                        role="combobox"
-                        aria-expanded={open}
+                    <SelectorTrigger
+                        hasValue={!!value}
+                        placeholder={placeholder}
+                        open={open}
                         disabled={disabled}
-                        className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                        trailing={value ? (
+                            <X
+                                className="h-3.5 w-3.5 shrink-0 text-muted-foreground hover:text-destructive"
+                                onClick={handleClear}
+                            />
+                        ) : undefined}
                     >
-                        {value ? (
-                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                {value.icon && (
-                                    <DynamicIcon name={value.icon} className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                )}
-                                {hasEntityDrawer(value.label) ? (
-                                    <span
-                                        role="button"
-                                        tabIndex={0}
-                                        onClick={(e) => { e.stopPropagation(); openEntity(value.label, value.object_id, value) }}
-                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); openEntity(value.label, value.object_id, value) } }}
-                                        className="text-sm text-primary underline truncate hover:text-primary/80 cursor-pointer"
-                                    >
-                                        {value.display || `Documento #${value.object_id}`}
-                                    </span>
-                                ) : (
-                                    <span className="text-sm text-foreground truncate">{value.display || `Documento #${value.object_id}`}</span>
-                                )}
-                            </div>
-                        ) : (
-                            <span className="text-muted-foreground truncate">Buscar documento origen...</span>
+                        {value?.icon && (
+                            <DynamicIcon name={value.icon} className="h-3.5 w-3.5 shrink-0 text-primary" />
                         )}
-                        <div className="flex items-center gap-1">
-                            {value && (
-                                <X
-                                    className="h-3.5 w-3.5 shrink-0 text-muted-foreground hover:text-destructive"
-                                    onClick={handleClear}
-                                />
-                            )}
-                            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-                        </div>
-                    </Button>
+                        {value && hasEntityDrawer(value.label) ? (
+                            <span
+                                role="button"
+                                tabIndex={0}
+                                onClick={(e) => { e.stopPropagation(); openEntity(value.label, value.object_id, value) }}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); openEntity(value.label, value.object_id, value) } }}
+                                className="text-sm text-primary underline truncate hover:text-primary/80 cursor-pointer"
+                            >
+                                {value.display || `Documento #${value.object_id}`}
+                            </span>
+                        ) : (
+                            <span className="text-sm text-foreground truncate">{value?.display || (value ? `Documento #${value.object_id}` : "")}</span>
+                        )}
+                    </SelectorTrigger>
                 }
             />
         </LabeledContainer>

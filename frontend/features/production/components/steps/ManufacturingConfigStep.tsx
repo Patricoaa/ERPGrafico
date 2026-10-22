@@ -506,28 +506,29 @@ export function ManufacturingConfigStep({
               {/* Contacto Relacionado */}
               <LabeledContainer label="Contacto Relacionado">
                 {selectedContact ? (
-                  <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center justify-between w-full h-6">
                     <div className="flex items-center gap-1.5 min-w-0 flex-1">
                       <User className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span className="font-semibold text-sm truncate">{selectedContact.name}</span>
+                      <span className="text-sm text-foreground truncate">{selectedContact.name}</span>
                       {selectedContact.tax_id && (
                         <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">
                           [{selectedContact.tax_id}]
                         </span>
                       )}
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-5 w-5 text-muted-foreground hover:text-destructive shrink-0"
-                      onClick={() => {
-                        setSelectedContact(null);
-                        form.setValue('contact_id' as never, "" as never);
-                      }}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
+                    // typography-allow: meta - clear button
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 text-muted-foreground hover:text-destructive shrink-0"
+                        onClick={() => {
+                          setSelectedContact(null);
+                          form.setValue('contact_id' as never, "" as never);
+                        }}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
                   </div>
                 ) : (
                   <AdvancedContactSelector
@@ -535,8 +536,8 @@ export function ManufacturingConfigStep({
                     onSelectContact={handleContactSelect as unknown as (contact: EntityContact) => void}
                     onChange={() => { }}
                     placeholder="Buscar contacto..."
-                    variant="inline"
-                    className="h-[1.5rem] px-0 border-none bg-transparent hover:bg-transparent shadow-none text-sm text-muted-foreground font-normal"
+                    variant="standalone"
+                    className="h-6 px-0 border-none bg-transparent hover:bg-transparent shadow-none text-sm text-muted-foreground font-normal"
                   />
                 )}
               </LabeledContainer>

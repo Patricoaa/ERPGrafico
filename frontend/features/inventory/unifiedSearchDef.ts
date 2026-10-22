@@ -9,6 +9,18 @@ export const uomUnifiedSearchDef: UnifiedSearchConfig = {
       serverParam: 'search',
     },
   ],
+  filters: [
+    {
+      type: 'single',
+      key: 'is_active',
+      label: 'Estado',
+      serverParam: 'is_active',
+      options: [
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
+      ],
+    },
+  ],
 }
 
 export const categoryUnifiedSearchDef: UnifiedSearchConfig = {
@@ -18,6 +30,18 @@ export const categoryUnifiedSearchDef: UnifiedSearchConfig = {
       label: 'Nombre',
       serverParam: 'name',
       clientKey: ['name', 'parent_name'],
+    },
+  ],
+  filters: [
+    {
+      type: 'single',
+      key: 'is_active',
+      label: 'Estado',
+      serverParam: 'is_active',
+      options: [
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
+      ],
     },
   ],
 }
@@ -30,6 +54,18 @@ export const uomCategoryUnifiedSearchDef: UnifiedSearchConfig = {
       serverParam: 'search',
     },
   ],
+  filters: [
+    {
+      type: 'single',
+      key: 'is_active',
+      label: 'Estado',
+      serverParam: 'is_active',
+      options: [
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
+      ],
+    },
+  ],
 }
 
 export const attributeUnifiedSearchDef: UnifiedSearchConfig = {
@@ -38,6 +74,18 @@ export const attributeUnifiedSearchDef: UnifiedSearchConfig = {
       key: 'search',
       label: 'Nombre',
       serverParam: 'search',
+    },
+  ],
+  filters: [
+    {
+      type: 'single',
+      key: 'is_active',
+      label: 'Estado',
+      serverParam: 'is_active',
+      options: [
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
+      ],
     },
   ],
 }
@@ -49,6 +97,18 @@ export const warehouseUnifiedSearchDef: UnifiedSearchConfig = {
       label: 'Nombre / Código',
       serverParam: 'name',
       clientKey: ['name', 'code', 'address'],
+    },
+  ],
+  filters: [
+    {
+      type: 'single',
+      key: 'is_active',
+      label: 'Estado',
+      serverParam: 'is_active',
+      options: [
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
+      ],
     },
   ],
 }
@@ -100,46 +160,6 @@ export const stockMoveUnifiedSearchDef: UnifiedSearchConfig = {
   ],
   groupBy: [
     { key: 'date', label: 'Fecha', field: 'date' },
-  ],
-  dateFilters: [{
-    type: 'date',
-    key: 'date',
-    label: 'Fecha',
-    options: [
-      { label: 'Hoy', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: today },
-      { label: 'Esta semana', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisWeek },
-      { label: 'Este mes', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisMonth },
-      { label: 'Este trimestre', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisQuarter },
-      { label: 'Este año', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisYear },
-    ],
-  }],
-  basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
-}
-
-export const subscriptionUnifiedSearchDef: UnifiedSearchConfig = {
-  searchFields: [
-    {
-      key: 'search',
-      label: 'Producto',
-      serverParam: 'search',
-    },
-  ],
-  filters: [
-    {
-      type: 'single',
-      key: 'status',
-      label: 'Estado',
-      serverParam: 'status',
-      options: [
-        { label: 'Activo', value: 'ACTIVE' },
-        { label: 'Pausado', value: 'PAUSED' },
-        { label: 'Cancelado', value: 'CANCELLED' },
-      ],
-    },
-  ],
-  groupBy: [
-    { key: 'status', label: 'Estado', field: 'status' },
-    { key: 'recurrence_period', label: 'Período', field: 'recurrence_period' },
   ],
   dateFilters: [{
     type: 'date',
@@ -303,11 +323,13 @@ export const documentUnifiedSearchDef: UnifiedSearchConfig = {
       serverParam: 'document_type',
       options: [
         { label: 'Todos', value: '' },
-        { label: 'Recepción', value: 'RECEIPT' },
-        { label: 'Entrega', value: 'DELIVERY' },
+        { label: 'Recepción Manual', value: 'RECEIPT' },
+        { label: 'Entrega Manual', value: 'DELIVERY' },
         { label: 'Transferencia', value: 'TRANSFER' },
         { label: 'Ajuste', value: 'ADJUSTMENT' },
-        { label: 'Producción', value: 'PRODUCTION' },
+        { label: 'Producción Manual', value: 'PRODUCTION' },
+        { label: 'Aporte de Socio', value: 'PARTNER_CONTRIBUTION' },
+        { label: 'Retiro de Socio', value: 'PARTNER_WITHDRAWAL' },
       ],
     },
   ],

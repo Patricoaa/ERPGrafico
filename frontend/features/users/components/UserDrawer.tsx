@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Form, FormField } from "@/components/ui/form"
 import { Plus, User, ShieldCheck } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit"
-import { Drawer, CancelButton, ActionSlideButton, LabeledInput, LabeledCheckboxGroup, FormSection, TabBar, TabBarContent, type TabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
+import { Drawer, CancelButton, SubmitButton, LabeledInput, LabeledCheckboxGroup, FormSection, TabBar, TabBarContent, type TabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { type AppGroup } from "@/types/entities"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
@@ -255,9 +255,9 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
                         actions={
                             <>
                                 <CancelButton onClick={() => setOpen(false)} disabled={loading} />
-                                <ActionSlideButton type="submit" onClick={form.handleSubmit(onSubmit)} loading={loading}>
+                                <SubmitButton type="submit" onClick={form.handleSubmit(onSubmit)} loading={loading}>
                                     {initialData ? "Guardar Cambios" : "Crear Usuario"}
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />

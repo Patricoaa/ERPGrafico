@@ -1,30 +1,20 @@
 "use client"
 
 import React, { useState } from "react"
-import {
-    type ColumnDef
-} from "@tanstack/react-table"
-import { ActionConfirmModal, DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import { DataTableExpandHeader } from '@/components/shared'
-import { IconButton } from "@/components/shared"
-
-import { AccountDrawer } from "@/features/finance"
-import { LedgerDrawer } from "@/features/accounting/components/LedgerDrawer"
-import { useAccounts } from "@/features/accounting/hooks/useAccounts"
-import { type Account } from "@/features/accounting/types"
-import { DataCell } from '@/components/shared'
-import { accountActions, type AccountActionsCtx } from './accountActions'
-import { accountFields } from "../accountFields"
-
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { ChevronRight, ChevronDown } from "lucide-react"
-import { buildAccountTree } from "../utils/accountTree"
-
+import { toast } from "sonner"
+import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { AccountDrawer } from "@/features/finance"
+import { useAccounts } from "@/features/accounting/hooks/useAccounts"
+import { showApiError } from "@/lib/errors"
+import { type Account } from "@/features/accounting/types"
 import { ActivitySidebar } from "@/features/audit"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { accountActions, type AccountActionsCtx } from "./accountActions"
+import { buildAccountTree } from "../utils/accountTree"
 import { accountUnifiedSearchDef } from "../unifiedSearchDef"
+import { accountEntity, accountViews } from "../entity-view/account.entity"
 
 interface AccountsClientViewProps {
     externalOpen?: boolean
@@ -34,10 +24,9 @@ interface AccountsClientViewProps {
 
 export function AccountsClientView({ externalOpen, onExternalOpenChange, createAction }: AccountsClientViewProps) {
     const search = useUnifiedSearch(accountUnifiedSearchDef)
-    const { accounts: flatAccounts, isLoading, refetch, deleteAccount } = useAccounts({ filters: search.filters as unknown as Record<string, unknown> })
-    const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
+    const { accounts: flatAccounts, isLoading, isError, refetch, archiveAccount } = useAccounts({ filters: search.filters as unknown as Record<string, unknown> })
+    const [archiveTarget, setArchiveTarget] = useState<Account | null>(null)
     const [formParentId, setFormParentId] = useState<string | null>(null)
-    const [ledgerTarget, setLedgerTarget] = useState<{ id: number; name: string; code: string } | null>(null)
 
     const accounts = React.useMemo(() => {
         if (flatAccounts.length > 0) {
@@ -69,117 +58,55 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
         }
     }
 
-    const confirmDelete = async () => {
-        if (!deleteTarget) return
+    const confirmArchive = async () => {
+        if (!archiveTarget) return
+        const isArchiving = archiveTarget.is_active
         try {
-            await deleteAccount(deleteTarget)
+            await archiveAccount({ id: archiveTarget.id, is_active: !archiveTarget.is_active })
+            toast.success(`Cuenta ${isArchiving ? "archivada" : "restaurada"} correctamente`)
         } catch (error) {
-            console.error("Failed to delete account", error)
+            showApiError(error, `Error al ${isArchiving ? "archivar" : "restaurar"} la cuenta`)
         } finally {
-            setDeleteTarget(null)
+            setArchiveTarget(null)
         }
     }
 
-    const columns: ColumnDef<Account>[] = React.useMemo(() => {
-        const actionCtx: AccountActionsCtx = {
-            onViewLedger: (account) => {
-                const params = new URLSearchParams(searchParams.toString())
-                params.set('ledger_account', String(account.id))
-                router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                setLedgerTarget({ id: account.id, name: account.name, code: account.code })
-            },
-            onEdit: (account) => {
-                const params = new URLSearchParams(searchParams.toString())
-                params.set('selected', String(account.id))
-                router.push(`${pathname}?${params.toString()}`, { scroll: false })
-            },
-            onDelete: (id) => setDeleteTarget(id),
-        }
-        return [
-        {
-            accessorKey: "code",
-            header: ({ column, table }) => (
-                <div className="flex items-center gap-1.5">
-                    <DataTableExpandHeader table={table} />
-                    <DataTableColumnHeader column={column} title="Código" />
-                </div>
-            ),
-            cell: ({ row }) => {
-                const canExpand = row.getCanExpand()
-                const isExpanded = row.getIsExpanded()
-
-                return (
-                    <div
-                        className="flex items-center w-full"
-                        style={{ paddingLeft: `${row.depth * 1.5}rem` }}
-                    >
-                        <div className="flex items-center gap-2 flex-1 justify-center relative translate-x-[0.75rem]">
-                            {canExpand ? (
-                                <IconButton
-                                    circular
-                                    className="h-4 w-4 p-0 hover:bg-transparent absolute -left-6"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        row.toggleExpanded()
-                                    }}
-                                >
-                                    {isExpanded ? (
-                                        <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                                    ) : (
-                                        <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                                    )}
-                                </IconButton>
-                            ) : (
-                                <div className="w-4 h-4 absolute -left-6" />
-                            )}
-                            <DataCell.Code>{row.original.code}</DataCell.Code>
-                        </div>
-                    </div>
-                )
-            },
-            meta: { title: "Código" },
+    const actionCtx = React.useMemo<AccountActionsCtx>(() => ({
+        onEdit: (account) => {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('selected', String(account.id))
+            router.push(`${pathname}?${params.toString()}`, { scroll: false })
         },
-        ...accountFields.toColumns({ exclude: ["code"] }),
-        accountActions.auto(actionCtx),
-        ]
-    }, [pathname, router, searchParams])
+        onArchive: (account) => setArchiveTarget(account),
+    }), [router, pathname, searchParams])
+    // Stable row callbacks: the fully expanded chart re-renders every row when they change.
+    const rowActions = React.useMemo(() => accountActions.forCollection(actionCtx), [actionCtx])
+
+    // The whole chart in one page (it is a tree: pages would split branches by top-level count).
+    const collection = useEntityCollection(
+        accountEntity,
+        { rows: accounts, isLoading, error: isError, refetch, isFiltered: search.isFiltered },
+        { pagination: { mode: "none" } },
+    )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTable
-                    columns={columns}
-                    data={accounts}
-                    isLoading={isLoading}
-                    variant="embedded"
-                    defaultPageSize={500}
-                    getSubRows={(row: Account & { children?: unknown[] }) => row.children as (Account & { children?: unknown[] })[] | undefined}
-                    autoExpand={true}
-                    createAction={createAction}
-                    unifiedSearch={<UnifiedSearchBar
-                        config={accountUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar por cuenta o código..."
-                    />}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "finance",
-                        title: "Aún no hay cuentas contables",
-                        description: "El plan de cuentas se crea en la configuración inicial; también puedes agregar cuentas manualmente.",
-                    }}
+            <Collection.Root
+                collection={collection}
+                onOpen={actionCtx.onEdit}
+                actions={rowActions}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar config={accountUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar por cuenta o código..." />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={accountViews.table}
+                    emptyTitle="Aún no hay cuentas contables"
+                    emptyDescription="El plan de cuentas se crea en la configuración inicial; también puedes agregar cuentas manualmente."
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+            </Collection.Root>
 
             <AccountDrawer
                 accounts={flatAccounts as unknown as Record<string, unknown>[]}
@@ -190,7 +117,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                         <ActivitySidebar entityId={editingAccount.id} entityType="account" />
                     ) : undefined
                 }
-                mode="create"
+                mode={editingAccount ? 'edit' : 'create'}
                 onSuccess={() => {
                     refetch()
                 }}
@@ -202,23 +129,16 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 }}
             />
 
-            {ledgerTarget && (
-                <LedgerDrawer
-                    accountId={ledgerTarget.id}
-                    accountName={ledgerTarget.name}
-                    accountCode={ledgerTarget.code}
-                    noTrigger
-                />
-            )}
-
             <ActionConfirmModal
-                open={deleteTarget !== null}
-                onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}
-                title="Eliminar Cuenta"
-                variant="destructive"
-                onConfirm={confirmDelete}
-                confirmText="Eliminar"
-                description="¿Está seguro de eliminar esta cuenta? Esta acción no se puede deshacer."
+                open={archiveTarget !== null}
+                onOpenChange={(open) => { if (!open) setArchiveTarget(null) }}
+                title={archiveTarget?.is_active ? "Archivar Cuenta" : "Restaurar Cuenta"}
+                variant={archiveTarget?.is_active ? "warning" : "default"}
+                onConfirm={confirmArchive}
+                confirmText={archiveTarget?.is_active ? "Archivar" : "Restaurar"}
+                description={archiveTarget?.is_active
+                    ? "¿Está seguro de archivar esta cuenta? Dejará de estar disponible para nuevas operaciones contables."
+                    : "¿Está seguro de restaurar esta cuenta?"}
             />
         </div>
     )

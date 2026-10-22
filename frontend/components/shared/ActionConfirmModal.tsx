@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { AlertTriangle, AlertCircle, Info, type LucideIcon, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { ActionSlideButton } from "./ActionSlideButton"
+import { DangerButton, SubmitButton } from "./ActionButtons"
 
 export type ActionVariant = "default" | "destructive" | "warning" | "info" | "success"
 
@@ -54,6 +54,10 @@ export function ActionConfirmModal({
     }
 
     const reasonMissing = requireReason && reason.trim().length === 0
+
+    // Destructive confirms use DangerButton; the rest are affirmative submits.
+    // (ADR-0088: ActionSlideButton removed; success/warning map via className.)
+    const ConfirmButton = variant === "destructive" ? DangerButton : SubmitButton
 
     const handleConfirm = async () => {
         if (reasonMissing) return
@@ -137,8 +141,7 @@ export function ActionConfirmModal({
                     >
                         {cancelText}
                     </Button>
-                    <ActionSlideButton
-                        variant={variant === "destructive" ? "destructive" : variant === "success" ? "success" : "primary"}
+                    <ConfirmButton
                         onClick={handleConfirm}
                         disabled={disabled || reasonMissing}
                         loading={isLoading}
@@ -149,7 +152,7 @@ export function ActionConfirmModal({
                         )}
                     >
                         {isLoading ? "Procesando..." : confirmText}
-                    </ActionSlideButton>
+                    </ConfirmButton>
                 </div>
             }
         >

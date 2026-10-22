@@ -52,6 +52,12 @@ export const contactsApi = {
         await api.delete(`/contacts/${id}/`)
     },
 
+    /** Archivo pattern: soft-delete via `is_active=false` (hard DELETE is blocked server-side with 405). */
+    archiveContact: async (id: number, is_active: boolean): Promise<Contact> => {
+        const { data } = await api.patch<Contact>(`/contacts/${id}/`, { is_active })
+        return data
+    },
+
     /**
      * Credit ledger del contacto — lista de deudas pendientes (saldo > 0
      * tras filtro client-side opcional). Consumido por el wizard de checkout

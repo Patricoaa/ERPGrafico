@@ -7,7 +7,7 @@ import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Drawer, CancelButton, LabeledInput, FormFooter, ActionSlideButton } from "@/components/shared"
+import { Drawer, CancelButton, LabeledInput, FormFooter, SubmitButton } from "@/components/shared"
 import {
     Form,
     FormField,
@@ -17,11 +17,9 @@ import { useUoMMutations } from "../hooks/useUoMMutations"
 import { FormSplitLayout } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import type { UoMCategory } from "../hooks/useUoMs"
 
-export interface UoMCategory {
-    id: number
-    name: string
-}
+export type { UoMCategory }
 
 const categorySchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -154,9 +152,9 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
                         actions={
                             <>
                                 <CancelButton onClick={() => setOpen(false)} disabled={isSaving} />
-                                <ActionSlideButton type="submit" form="uom-category-form" loading={isSaving}>
+                                <SubmitButton type="submit" form="uom-category-form" loading={isSaving}>
                                     {mode === 'create' ? "Crear Categoría" : "Guardar Cambios"}
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />

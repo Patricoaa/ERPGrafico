@@ -49,7 +49,7 @@ export interface EntityMetadata {
   iconName: string;        // Nombre PascalCase del ícono (consumido por DynamicIcon)
   shortTemplate?: string;  // Opcional — fallback si el API config no está poblado aún
   listUrl: string;         // URL de la vista de lista
-  detailUrlPattern: string; // Patrón de URL de detalle (e.g. '/sales/orders/{id}')
+  detailUrlPattern: string; // Patrón de URL de detalle (e.g. '/sales/dtes/orders/{id}')
   // Campos extendidos (todos opcionales salvo label/title/titlePlural/icon/iconName):
   feminine?: boolean;                    // "Nueva"/"Nuevo" en títulos accionados
   description?: string;                  // Subtítulo/descripción por defecto del drawer
@@ -231,8 +231,8 @@ Retorna un array con los `SearchableEntity` registrados, incluyendo templates y 
     "displayTemplate": "OV-{number} · {customer.name}",
     "subtitleTemplate": "{customer.name} · {customer.tax_id}",
     "icon": "receipt-text",
-    "listUrl": "/sales/orders",
-    "detailUrlPattern": "/sales/orders/{id}"
+    "listUrl": "/sales/dtes/orders",
+    "detailUrlPattern": "/sales/dtes/orders/{id}"
   }
 ]
 ```

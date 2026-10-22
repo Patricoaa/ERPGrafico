@@ -48,6 +48,7 @@ Task routing — common intents:
 | TypeScript error / `any` escape hatch | [resolve-type-errors.md](docs/30-playbooks/resolve-type-errors.md) |
 | Loading state / skeleton / refetch CLS / loading.tsx | [component-skeleton.md](docs/20-contracts/component-skeleton.md) |
 | Deletion / annul / archive / soft-delete / hard delete | [deletion-policy.md](docs/20-contracts/deletion-policy.md) |
+| Edit lock / posted document editability / `EditPolicy` / frozen master fields | [ADR-0091](docs/10-architecture/adr/0091-economic-immutability-edit-policy.md) + [state-map.md](docs/20-contracts/state-map.md) |
 | Realtime (WebSocket / SSE / Django Channels / push) | [realtime-channels.md](docs/20-contracts/realtime-channels.md) |
 | Idempotency-Key for write endpoints / double-click safety | [idempotency.md](docs/20-contracts/idempotency.md) |
 | Export PDF / Excel / CSV (WeasyPrint / openpyxl) | [export-formats.md](docs/20-contracts/export-formats.md) |
@@ -130,8 +131,8 @@ Detail: [docs/00-context/stack-decisions.md](docs/00-context/stack-decisions.md)
 There is one shared **remote dev server**; **no production environment exists yet**. Agents may run
 commands there, but MUST first confirm the Mutagen sync is active.
 
-- Host: `ssh pato@192.168.1.93` → `cd ERPGrafico` (`/home/pato/ERPGrafico`; Mutagen mirror, **no git**).
-- App: `http://192.168.1.93` (nginx) / `http://192.168.1.93:3000` (frontend).
+- Host: `ssh pato@192.168.1.86` → `cd ERPGrafico` (`/home/pato/ERPGrafico`; Mutagen mirror, **no git**).
+- App: `http://192.168.1.86` (nginx) / `http://192.168.1.86:3000` (frontend).
 - Before any server command, `mutagen sync list` must show `erpgrafico-sync … Connected: Yes`.
 - If down → `mutagen project start`; if it still cannot connect → **warn the user and stop**.
 - Run app commands via `docker compose exec` from `~/ERPGrafico`.

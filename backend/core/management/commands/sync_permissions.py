@@ -55,7 +55,6 @@ class Command(BaseCommand):
             "view_dashboard_production",
             "view_dashboard_inventory",
             "view_dashboard_sales",
-            "view_dashboard_billing",
             "view_dashboard_purchasing",
             "view_dashboard_contacts",
             "view_dashboard_treasury",

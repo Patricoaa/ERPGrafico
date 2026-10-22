@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronDown, User, Building2, Plus } from "lucide-react"
+import { Check, User, Building2, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,6 +17,7 @@ import { useContactSearch, useSingleContact } from "@/features/contacts/hooks/us
 import { type Contact } from "@/types/entities"
 import { type Contact as ContactInitialData } from "@/features/contacts/types"
 import { CardSkeleton, EmptyState, LabeledContainer } from '@/components/shared'
+import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
 import { SearchBar } from '@/components/selectors/ProductGridPicker'
 import React, { Suspense } from "react"
 
@@ -41,7 +42,7 @@ interface AdvancedContactSelectorProps {
 export function AdvancedContactSelector({
     value,
     onChange,
-    placeholder = "Seleccionar contacto...",
+    placeholder = "Seleccionar...",
     contactType,
     onSelectContact,
     disabled,
@@ -107,48 +108,31 @@ export function AdvancedContactSelector({
     const selectTrigger = (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-                <Button
-                    variant="ghost"
-                    role="combobox"
-                    aria-expanded={open}
-                    className={cn(
-                        "w-full justify-between overflow-hidden py-0 shadow-none focus-visible:ring-0 transition-all",
-                        variant === 'standalone'
-                            ? "h-[1.5rem] px-3 border-none bg-transparent hover:bg-primary/[0.03]"
-                            : cn("h-9 text-xs px-2 bg-background hover:bg-primary/[0.02]", className),
-                        icon && "pl-1"
-                    )}
+                <SelectorTrigger
+                    hasValue={!!selectedContact}
+                    placeholder={placeholder}
+                    icon={icon}
+                    variant={variant}
+                    open={open}
                     disabled={disabled}
+                    showChevron={!disabled}
+                    chevronClassName={cn(variant === 'inline' && "h-3 w-3")}
+                    className={cn(variant === 'inline' && className, variant === 'inline' && "px-2")}
                 >
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                        {icon && (
-                            <div className="flex items-center justify-center text-muted-foreground/60 group-focus-within:text-primary transition-colors shrink-0">
-                                {icon}
-                            </div>
-                        )}
-                        {selectedContact ? (
-                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                {selectedContact.contact_type === 'COMPANY'
-                                    ? <Building2 className={cn("h-3.5 w-3.5 shrink-0", disabled ? "text-muted-foreground" : "text-primary")} />
-                                    : <User className={cn("h-3.5 w-3.5 shrink-0", disabled ? "text-muted-foreground" : "text-primary")} />
-                                }
-                                <span className={cn("font-medium text-sm truncate", variant === 'inline' && "text-2xs")}>{selectedContact.name}</span>
-                                <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">
-                                    {selectedContact.tax_id ? formatRUT(selectedContact.tax_id) : 'S/Rut'}
-                                </span>
-                            </div>
-                        ) : (
-                            <span className={cn("text-muted-foreground", variant === 'inline' && "text-2xs")}>{placeholder}</span>
-                        )}
-                    </div>
-                    {!disabled && <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 opacity-50", variant === 'inline' && "h-3 w-3")} />}
-                </Button>
+                    {selectedContact?.contact_type === 'COMPANY'
+                        ? <Building2 className={cn("h-3.5 w-3.5 shrink-0", disabled ? "text-muted-foreground" : "text-primary")} />
+                        : <User className={cn("h-3.5 w-3.5 shrink-0", disabled ? "text-muted-foreground" : "text-primary")} />
+                    }
+                    <span className="text-sm text-foreground truncate">{selectedContact?.name}</span>
+                    <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">
+                        {selectedContact?.tax_id ? formatRUT(selectedContact.tax_id) : 'S/Rut'}
+                    </span>
+                </SelectorTrigger>
             </PopoverTrigger>
             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                 <div className="p-2">
                     <div className="flex items-center gap-2 mb-2">
                         <SearchBar
-                            placeholder="Buscar por nombre, rut, código..."
                             value={searchTerm}
                             onChange={setSearchTerm}
                             autoFocus

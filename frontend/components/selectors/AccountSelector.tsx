@@ -1,16 +1,18 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Check, ChevronDown } from "lucide-react"
+import { Check } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 
-import { BaseModal, DataTable, LabeledContainer, SearchablePopover, DataCell } from '@/components/shared'
+import { BaseModal, LabeledContainer, SearchablePopover } from '@/components/shared'
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { selectorAccountEntity, selectorAccountViews } from "./entity-view/selectorAccount.entity"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { useAccountSearch, useSingleAccount } from "@/features/accounting/hooks/useAccountSearch"
 import { type Account } from "@/types/entities"
-import type { ColumnDef } from "@tanstack/react-table"
+import { SelectorTrigger, SELECTOR_VALUE_CLASS } from "@/components/shared/SelectorTrigger"
 
 const AccountIcon = getEntityIcon('accounting.account')
 
@@ -28,31 +30,7 @@ interface AccountSelectorProps {
     className?: string
 }
 
-const accountColumns: ColumnDef<Account, unknown>[] = [
-    {
-        id: 'code',
-        header: 'Código',
-        cell: ({ row }) => (
-            <span className="font-mono text-xs font-semibold text-primary">{row.original.code}</span>
-        ),
-    },
-    {
-        id: 'name',
-        header: 'Nombre',
-        cell: ({ row }) => (
-            <span className="text-sm truncate">{row.original.name}</span>
-        ),
-    },
-    {
-        id: 'type',
-        header: 'Tipo',
-        cell: ({ row }) => (
-            <DataCell.Status status={row.original.account_type} size="xs" />
-        ),
-    },
-]
-
-export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false, isReconcilable, disabled = false, required, label, error, className }: AccountSelectorProps) {
+export function AccountSelector({ value, onChange, placeholder = "Seleccionar...", accountType, showAll = false, isReconcilable, disabled = false, required, label, error, className }: AccountSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
@@ -115,6 +93,12 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
         setModalOpen(false)
     }
 
+    const accountCollection = useEntityCollection(
+        selectorAccountEntity,
+        { rows: filteredAccounts, isLoading: accountsLoading },
+        { pagination: { mode: "none" } },
+    )
+
     const searchAccounts = (val: string) => {
         setSearchTerm(val)
     }
@@ -152,24 +136,16 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                     </>
                 )}
                 trigger={
-                    <Button
-                        variant="ghost"
-                        role="combobox"
-                        aria-expanded={open}
+                    <SelectorTrigger
+                        hasValue={!!selectedAccount}
+                        placeholder={placeholder}
+                        icon={<AccountIcon className="h-3.5 w-3.5 shrink-0 text-primary" />}
+                        open={open}
                         disabled={disabled}
-                        className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
                     >
-                        {selectedAccount ? (
-                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                <AccountIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                <span className="font-mono text-xs font-semibold shrink-0 text-primary">{selectedAccount.code}</span>
-                                <span className="text-sm truncate text-foreground">{selectedAccount.name}</span>
-                            </div>
-                        ) : (
-                            <span className="text-muted-foreground truncate">{placeholder}</span>
-                        )}
-                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
+                        <span className="font-mono text-xs font-semibold text-primary shrink-0">{selectedAccount?.code}</span>
+                        <span className={cn(SELECTOR_VALUE_CLASS, "truncate")}>{selectedAccount?.name}</span>
+                    </SelectorTrigger>
                 }
             >
                 <Button
@@ -194,19 +170,19 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
             >
                 <div className="space-y-4 pt-4">
                     <Input
-                        placeholder="Buscar por código o nombre..."
                         value={searchTerm}
                         onChange={(e) => searchAccounts(e.target.value)}
                     />
-                    <DataTable
-                        variant="compact"
-                        gridTemplate="grid-cols-[1fr_2fr_1fr]"
-                        columns={accountColumns}
-                        data={filteredAccounts}
-                        isLoading={accountsLoading}
-                        onRowClick={handleSelect}
-                        emptyState={{ context: "search", title: "No se encontraron resultados" }}
-                    />
+                    <Collection.Root
+                        collection={accountCollection}
+                        label="Búsqueda de cuentas"
+                        onOpen={handleSelect}
+                    >
+                        <Collection.View
+                            table={selectorAccountViews.table}
+                            emptyTitle="No se encontraron resultados"
+                        />
+                    </Collection.Root>
                 </div>
             </BaseModal>
         </LabeledContainer>

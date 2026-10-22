@@ -8,7 +8,7 @@ import * as z from "zod"
 import { useAbsenceMutations } from '../hooks/useAbsenceMutations'
 import { useEmployees } from '@/features/hr/hooks/useEmployees'
 import type { Absence, Employee } from "@/types/hr"
-import { CancelButton, ActionSlideButton } from "@/components/shared"
+import { CancelButton, SubmitButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
@@ -17,7 +17,7 @@ import { formDrawerWidth } from "@/lib/form-widths"
 
 export const absenceSchema = z.object({
     employee: z.string().min(1, "Empleado requerido"),
-    absence_type: z.enum(["AUSENTISMO", "LICENCIA", "PERMISO_SIN_GOCE", "AUSENCIA_HORAS"]),
+    absence_type: z.enum(["AUSENTISMO", "LICENCIA", "PERMISO_SIN_GOCE", "AUSENCIA_HORAS"]).or(z.literal("")).refine((v): boolean => v !== "", "Selecciona un tipo de ausencia"),
     start_date: z.string().min(1, "Fecha de inicio requerida"),
     end_date: z.string().min(1, "Fecha de fin requerida"),
     days: z.number().min(0.5, "Los días deben ser mayores a 0"),
@@ -50,7 +50,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
         resolver: zodResolver(absenceSchema),
         defaultValues: {
             employee: "",
-            absence_type: "AUSENTISMO",
+            absence_type: "",
             start_date: "",
             end_date: "",
             days: 1,
@@ -72,7 +72,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
         }),
         defaultValues: () => ({
             employee: "",
-            absence_type: "AUSENTISMO" as const,
+            absence_type: "" as const,
             start_date: "",
             end_date: "",
             days: 1,
@@ -108,9 +108,9 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
             actions={
                 <>
                     <CancelButton onClick={() => onOpenChange(false)} />
-                    <ActionSlideButton type="submit" disabled={saving} onClick={form.handleSubmit(onSubmit)} loading={saving}>
+                    <SubmitButton type="submit" disabled={saving} onClick={form.handleSubmit(onSubmit)} loading={saving}>
                         {mode === 'create' ? "Registrar" : "Actualizar"}
-                    </ActionSlideButton>
+                    </SubmitButton>
                 </>
             }
         />
@@ -159,7 +159,6 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
-                                                    placeholder="Seleccione empleado"
                                                     options={employees.map(e => ({
                                                         value: e.id.toString(),
                                                         label: e.contact_detail?.name || ""
@@ -229,7 +228,6 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                             <FormField control={form.control} name="notes" render={({ field, fieldState }) => (
                                                 <LabeledInput
                                                     label="Notas Adicionales"
-                                                    placeholder="Opcional..."
                                                     error={fieldState.error?.message}
                                                     {...field}
                                                 />
@@ -255,7 +253,6 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
-                                                    placeholder="Seleccione empleado"
                                                     options={employees.map(e => ({
                                                         value: e.id.toString(),
                                                         label: e.contact_detail?.name || ""
@@ -325,7 +322,6 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                             <FormField control={form.control} name="notes" render={({ field, fieldState }) => (
                                                 <LabeledInput
                                                     label="Notas Adicionales"
-                                                    placeholder="Opcional..."
                                                     error={fieldState.error?.message}
                                                     {...field}
                                                 />

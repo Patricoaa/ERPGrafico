@@ -3,7 +3,7 @@ import { formatCurrency } from "@/lib/money"
 
 import { AlertTriangle, CreditCard, Banknote, FileWarning, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ActionSlideButton } from '@/components/shared'
+import { SubmitButton } from "@/components/shared"
 
 export type ManualTerminalReason = "FACTURA_CARD" | "BOLETA_MANUAL" | "TERMINAL_BYPASS"
 
@@ -206,15 +206,14 @@ export function ManualTerminalNotice({
                     >
                         Cancelar
                     </Button>
-                    <ActionSlideButton
-                        variant="primary"
+                    <SubmitButton
                         className="flex-[1.5] h-12 shadow-floating shadow-primary/10 active:translate-y-1 transition-all"
                         onClick={onConfirm}
                         disabled={isLoading}
                     >
                         <AlertTriangle className="mr-2 h-4 w-4" />
                         {config.confirmLabel}
-                    </ActionSlideButton>
+                    </SubmitButton>
                 </div>
                 {canSwitchMethod && (
                     <Button

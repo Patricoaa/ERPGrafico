@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 import { Wallet } from "lucide-react"
@@ -8,13 +8,11 @@ import { Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BaseModal, CancelButton, FormFooter, LabeledInput } from '@/components/shared'
 import { toast } from "sonner"
-import { DataTableView } from '@/components/shared'
-import { type ColumnDef } from "@tanstack/react-table"
+import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { BudgetEditor } from "@/features/finance/components/BudgetEditor"
 
-import { AutoEntityCard } from '@/components/shared'
 import { budgetActions, type BudgetActionsCtx } from "@/features/finance/budgetActions"
-import { budgetFields } from "@/features/finance/budgetFields"
+import { budgetEntity, budgetViews } from "@/features/finance/entity-view/budget.entity"
 
 import { useSearchParams, usePathname } from "next/navigation"
 
@@ -33,8 +31,9 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const { budgets, isLoading, refetch, createBudget } = useBudgets()
+    const { budgets, isLoading, isError, refetch, createBudget } = useBudgets()
     const { serverDate } = useServerDate()
+    const { view, onViewChange } = useCollectionViewMode("accounting.budget")
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Budget>({
         endpoint: '/accounting/budgets'
@@ -110,34 +109,30 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
         onViewExecution: (id) => router.push(`/finances/budgets/${id}`),
     }
 
-    const columns: ColumnDef<Budget>[] = useMemo(() => [
-        ...budgetFields.toColumns(),
-        budgetActions.auto(actionsCtx),
-    ], [])
+    const collection = useEntityCollection(
+        budgetEntity,
+        { rows: budgets, isLoading, error: isError, refetch },
+        { pagination: { mode: "client", pageSize: 20 } },
+    )
 
     return (
 
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    columns={columns}
-                    data={budgets}
-                    variant="embedded"
-                    isLoading={isLoading}
-                    entityLabel="accounting.budget"
-                    createAction={createAction}
-                    renderCard={(budget) => (
-                        <AutoEntityCard 
-                            key={budget.id}
-                            data={budget}
-                            fields={budgetFields}
-                            entityLabel="accounting.budget"
-                            actions={budgetActions.render(budget, actionsCtx)}
-
-                        />
-                    )}
+            <Collection.Root
+                collection={collection}
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(budget) => actionsCtx.onViewExecution(budget.id)}
+                actions={budgetActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar action={createAction} />
+                <Collection.View
+                    table={budgetViews.table}
+                    card={budgetViews.card}
+                    emptyTitle="Aún no hay presupuestos"
+                    emptyAction={createAction}
                 />
-            </div>
+            </Collection.Root>
 
             {/* Create Modal */}
             <BaseModal

@@ -8,8 +8,8 @@ import {
     Layers,
     Package,
 } from "lucide-react"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
+import { WizardSummarySidebar } from "@/components/shared"
 import { formatPlainDate, cn } from "@/lib/utils"
 import type { WorkOrder } from "../types"
 
@@ -75,9 +75,13 @@ export function WizardRightSidebar({
         stageData?.contact_name || order?.sale_customer_name
 
     return (
-        <div className="w-64 border-l h-full flex flex-col min-h-0 overflow-hidden hidden lg:flex shrink-0">
-            <ScrollArea className="flex-1 w-full min-h-0">
-                <div className="px-4">
+        <WizardSummarySidebar
+            side="right"
+            width="w-64"
+            className="hidden lg:flex"
+            scrollAreaClassName="min-h-0"
+            body={
+                <>
                     {/* General Info */}
                     {hasInfo && (
                         <SidebarSection icon={Layers} title="Información">
@@ -161,9 +165,8 @@ export function WizardRightSidebar({
                             )}
                         </div>
                     </SidebarSection>
-
-                </div>
-            </ScrollArea>
-        </div>
+                </>
+            }
+        />
     )
 }

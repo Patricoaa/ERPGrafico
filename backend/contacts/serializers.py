@@ -87,6 +87,7 @@ class ContactSerializer(serializers.ModelSerializer):
             "partner_net_equity",
             "created_at",
             "updated_at",
+            "is_active",
         ]
         read_only_fields = ["created_at", "updated_at"]
 
@@ -116,6 +117,7 @@ class ContactWriteSerializer(serializers.ModelSerializer):
             "is_partner",
             "partner_equity_percentage",
             "partner_since",
+            "is_active",
         ]
 
 
@@ -180,6 +182,7 @@ class ContactListSerializer(serializers.ModelSerializer):
             "partner_dividends_payable_balance",
             "partner_net_equity",
             "last_sale_date",
+            "is_active",
         ]
 
     def _bool(self, obj, attr):
@@ -450,4 +453,12 @@ class ProfitDistributionResolutionSerializer(serializers.ModelSerializer):
             "lines",
             "created_at",
             "updated_at",
+        ]
+        read_only_fields = [
+            "status",
+            "approved_by",
+            "approved_at",
+            "executed_by",
+            "executed_at",
+            "journal_entry",
         ]

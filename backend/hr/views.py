@@ -8,8 +8,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
+from core.edit_policy import annotate_edit_usage, assert_editable
 from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin as AuditHistory
+from core.mixins import EditPolicyMixin
 
 from . import services
 from .models import (
@@ -85,6 +87,22 @@ class AFPViewSet(viewsets.ModelViewSet):
     pagination_class = None  # Master data
     lookup_field = "id"
 
+    def get_queryset(self):
+        if self.action == "list":
+            is_active = self.request.query_params.get("is_active")
+            if is_active == "all":
+                return AFP.objects.all()
+            elif is_active == "false":
+                return AFP.objects.filter(is_active=False)
+            return AFP.objects.filter(is_active=True)
+        return super().get_queryset()
+
+    def destroy(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Hard delete not allowed for AFPs. Use PATCH is_active=false to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
 
 # --- Payroll Concept ---
 
@@ -98,12 +116,29 @@ class PayrollConceptFilter(django_filters.FilterSet):
         fields = ["category", "is_system"]
 
 
-class PayrollConceptViewSet(viewsets.ModelViewSet):
+class PayrollConceptViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     queryset = PayrollConcept.objects.select_related("account").all()
     serializer_class = PayrollConceptSerializer
     pagination_class = None  # Master data
     filter_backends = [DjangoFilterBackend]
     filterset_class = PayrollConceptFilter
+
+    def get_queryset(self):
+        if self.action == "list":
+            is_active = self.request.query_params.get("is_active")
+            qs = PayrollConcept.objects.select_related("account")
+            if is_active == "false":
+                qs = qs.filter(is_active=False)
+            elif is_active != "all":
+                qs = qs.filter(is_active=True)
+            return annotate_edit_usage(qs)
+        return annotate_edit_usage(super().get_queryset())
+
+    def destroy(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Hard delete not allowed for PayrollConcepts. Use PATCH is_active=false to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
 
 # --- Employee ---
@@ -171,7 +206,7 @@ class PayrollFilter(django_filters.FilterSet):
         fields = ["employee", "period_year", "period_month", "status", "date_from", "date_to"]
 
 
-class PayrollViewSet(viewsets.ModelViewSet):
+class PayrollViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     def get_queryset(self):
         return (
@@ -211,6 +246,7 @@ class PayrollViewSet(viewsets.ModelViewSet):
     def recalculate(self, request, pk=None):
         """Recalcula los totales."""
         payroll = self.get_object()
+        assert_editable(payroll)
         payroll.recalculate_totals()
         return Response(PayrollDetailSerializer(payroll).data)
 
@@ -285,27 +321,28 @@ class PayrollViewSet(viewsets.ModelViewSet):
 # --- PayrollItems ---
 
 
-class PayrollItemViewSet(viewsets.ModelViewSet):
+class PayrollItemViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     serializer_class = PayrollItemSerializer
 
     def get_queryset(self):
         return PayrollItem.objects.filter(payroll_id=self.kwargs.get("payroll_pk")).select_related(
-            "concept"
+            "concept", "payroll"
         )
 
     def perform_create(self, serializer):
         payroll = Payroll.objects.get(pk=self.kwargs["payroll_pk"])
+        assert_editable(payroll, {"items"})
         serializer.save(payroll=payroll)
         payroll.recalculate_totals()
 
     def perform_update(self, serializer):
-        item = serializer.save()
-        item.payroll.recalculate_totals()
+        super().perform_update(serializer)
+        serializer.instance.payroll.recalculate_totals()
 
     def perform_destroy(self, instance):
         payroll = instance.payroll
-        instance.delete()
+        super().perform_destroy(instance)
         payroll.recalculate_totals()
 
 
@@ -323,16 +360,17 @@ class EmployeeConceptAmountViewSet(viewsets.ModelViewSet):
 class SalaryAdvanceFilter(django_filters.FilterSet):
     employee = django_filters.NumberFilter(field_name="employee__id")
     payroll = django_filters.NumberFilter(field_name="payroll__id")
-    is_discounted = django_filters.BooleanFilter()
+    payroll_isnull = django_filters.BooleanFilter(field_name="payroll", lookup_expr="isnull")
     date_from = django_filters.DateFilter(field_name="date", lookup_expr="gte")
     date_to = django_filters.DateFilter(field_name="date", lookup_expr="lte")
+    employee_name = django_filters.CharFilter(field_name="employee__contact__name", lookup_expr="icontains")
 
     class Meta:
         model = SalaryAdvance
-        fields = ["employee", "payroll", "is_discounted", "date_from", "date_to"]
+        fields = ["employee", "payroll", "payroll_isnull", "status", "date_from", "date_to", "employee_name"]
 
 
-class SalaryAdvanceViewSet(viewsets.ModelViewSet):
+class SalaryAdvanceViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     queryset = SalaryAdvance.objects.select_related(
         "employee", "employee__contact", "payroll",
@@ -349,6 +387,19 @@ class SalaryAdvanceViewSet(viewsets.ModelViewSet):
             serializer, self.request.data, self.request.user
         )
 
+    @action(detail=True, methods=["post"])
+    def annul(self, request, pk=None):
+        from .services import SalaryAdvanceService
+
+        try:
+            advance = SalaryAdvanceService.annul_advance(
+                self.get_object(), reason=request.data.get("reason", ""), user=request.user
+            )
+        except ValidationError as e:
+            msg = e.messages[0] if getattr(e, "messages", None) else str(e)
+            return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(advance).data)
+
 
 # --- Payroll Payments ---
 
@@ -362,7 +413,9 @@ class PayrollPaymentFilter(django_filters.FilterSet):
         fields = ["payroll", "payment_type"]
 
 
-class PayrollPaymentViewSet(viewsets.ModelViewSet):
+class PayrollPaymentViewSet(viewsets.ReadOnlyModelViewSet):
+    """Payments are created only by PayrollViewSet.pay_salary / pay_previred (ADR-0091)."""
+
     pagination_class = StandardResultsSetPagination
     queryset = PayrollPayment.objects.select_related(
         "payroll", "payroll__employee", "payroll__employee__contact"
@@ -370,3 +423,14 @@ class PayrollPaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PayrollPaymentSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = PayrollPaymentFilter
+
+    @action(detail=True, methods=["post"])
+    def annul(self, request, pk=None):
+        try:
+            payment = PayrollPaymentService.annul_payment(
+                self.get_object(), reason=request.data.get("reason", ""), user=request.user
+            )
+        except ValidationError as e:
+            msg = e.messages[0] if getattr(e, "messages", None) else str(e)
+            return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(payment).data)

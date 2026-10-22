@@ -1,19 +1,16 @@
 "use client"
 
-import React, { useEffect, useState, useMemo } from "react"
+import React, { useEffect } from "react"
 
 import { JournalEntryDrawer, usePostJournalEntry, useReverseJournalEntry, useDeleteJournalEntry } from "@/features/accounting"
-
-import { DataTableView, AutoEntityCard } from '@/components/shared'
-import { FileEdit, RotateCcw, FileText } from "lucide-react"
+import { Collection, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT, type FieldId } from "@/components/entity-view"
 import { journalEntryActions, type JournalEntryActionsCtx } from './journalEntryActions'
-import { journalEntryFields } from './journalEntryFields'
 
-import { useJournalEntries, type JournalEntry } from "@/features/accounting"
+import { useJournalEntries, type JournalEntry, journalEntryEntity, journalEntryViews } from "@/features/accounting"
 import { useAccountingAccounts } from "@/features/accounting"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { journalEntryUnifiedSearchDef } from "@/features/accounting"
 import { toast } from "sonner"
 import type { JournalEntryInitialData } from '@/types/forms'
@@ -24,26 +21,31 @@ interface EntriesPageProps {
     createAction?: React.ReactNode
 }
 
+/** Search group keys → entity field ids (grouping uses the formatted cell text). */
+const ENTRY_GROUPS: Record<string, FieldId<typeof journalEntryEntity.fields>> = { status: "status", is_manual: "origin" }
+const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
+
 export default function EntriesPage({ externalOpen, onExternalOpenChange, createAction }: EntriesPageProps) {
     const search = useUnifiedSearch(journalEntryUnifiedSearchDef)
-    const allFilters = { ...search.filters }
-    const isGrouping = search.groupBy !== null
-    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
-    const { page, entries, isLoading, refetch } = useJournalEntries({
-        ...allFilters,
-        page: isGrouping ? 1 : pageState.pageIndex + 1,
-        page_size: isGrouping ? 5000 : pageState.pageSize,
+    const groupBy = search.groupBy ? ENTRY_GROUPS[search.groupBy] ?? null : null
+    const [pageState, setPageState] = useServerPage([search.filters, groupBy], DEFAULT_PAGE)
+    const { view, onViewChange } = useCollectionViewMode("accounting.journalentry")
+
+    const { page, entries, isLoading, isRefetching, isError, refetch } = useJournalEntries({
+        ...search.filters,
+        page: groupBy ? 1 : pageState.pageIndex + 1,
+        page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
     } as unknown as Parameters<typeof useJournalEntries>[0])
 
     const totalCount = page?.count ?? 0
-    const isOverLimit = isGrouping && totalCount > 5000
-    const effectiveGrouping = isGrouping && !isOverLimit
+    const isTruncated = !!groupBy && totalCount > GROUP_ROW_LIMIT
 
     useEffect(() => {
-        if (isOverLimit) {
+        if (isTruncated) {
             toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
         }
-    }, [isOverLimit, totalCount])
+    }, [isTruncated, totalCount])
+
     const { accounts } = useAccountingAccounts({ filters: { is_leaf: true } })
     const { entity: selectedFromUrl } = useSelectedEntity<JournalEntry>({
         endpoint: '/accounting/entries'
@@ -99,76 +101,34 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         onReverse: (id) => handleReverse(id),
     }
 
-    const columns = useMemo(() => [
-        ...journalEntryFields.toColumns(),
-        journalEntryActions.auto(journalEntryActionsCtx),
-    ], [journalEntryActionsCtx])
-
+    const collection = useEntityCollection(
+        journalEntryEntity,
+        { rows: entries, rowCount: totalCount, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
+        { pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState }, groupBy },
+    )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="pt-2 flex-1 min-h-0">
-                <DataTableView
-                    columns={columns}
-                    data={entries}
-                    isLoading={isLoading}
-                    entityLabel="accounting.journalentry"
-                    variant="embedded"
-                    className="table-header-compact"
-                    unifiedSearch={<UnifiedSearchBar
-                        config={journalEntryUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar asientos..."
-                    />}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    defaultPageSize={20}
-                    manualPagination={!effectiveGrouping}
-                    pageCount={effectiveGrouping ? 1 : page ? Math.ceil(page.count / page.pageSize) : 0}
-                    rowCount={page?.count ?? 0}
-                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : pageState}
-                    onPaginationChange={effectiveGrouping ? undefined : setPageState}
-                    createAction={createAction}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "finance",
-                        title: "Aún no hay asientos contables",
-                        description: "Los asientos se registran al confirmar operaciones o puedes crear uno manualmente.",
-                    }}
-                    currentGroupBy={effectiveGrouping ? search.groupBy : null}
-                    onRowClick={(m) => openView(m.id)}
-                    renderCard={(m) => {
-                        const Icon = m.is_manual ? FileEdit : m.reversal_of ? RotateCcw : FileText
-                        const iconStyle = m.is_manual
-                            ? "text-info bg-info/10"
-                            : m.reversal_of
-                                ? "text-warning bg-warning/10"
-                                : "text-success bg-success/10"
-                        const totalDebit = m.items?.reduce((sum, item) => sum + (Number(item.debit) || 0), 0) || 0
-                        return (
-                            <AutoEntityCard
-                                key={m.id}
-                                data={{ ...m, total_debit: totalDebit }}
-                                fields={journalEntryFields}
-                                entityLabel="accounting.journalentry"
-                                icon={Icon}
-                                iconClassName={iconStyle}
-                                actions={journalEntryActions.render(m, journalEntryActionsCtx)}
-                                defaultAction={(e) => { e.stopPropagation(); openView(m.id) }}
-                            />
-                        )
-                    }}
-                    cardSkeleton={{ showBody: false }}
-                />
+            <div className="pt-2 flex-1 min-h-0 flex flex-col">
+                <Collection.Root
+                    collection={collection}
+                    view={view}
+                    onViewChange={onViewChange}
+                    onOpen={(entry) => openView(entry.id)}
+                    actions={journalEntryActions.forCollection(journalEntryActionsCtx)}
+                >
+                    <Collection.Toolbar action={createAction}>
+                        <UnifiedSearchBar config={journalEntryUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar asientos..." />
+                    </Collection.Toolbar>
+                    <Collection.View
+                        table={journalEntryViews.table}
+                        card={journalEntryViews.card}
+                        emptyTitle="Aún no hay asientos contables"
+                        emptyDescription="Los asientos se registran al confirmar operaciones o puedes crear uno manualmente."
+                        emptyAction={createAction}
+                        onResetFilters={search.clearAll}
+                    />
+                </Collection.Root>
 
                 <JournalEntryDrawer
                     accounts={accounts as unknown as Record<string, unknown>[]}

@@ -1,23 +1,20 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import {useState, useMemo, useCallback} from "react"
+import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { ActionConfirmModal, DataTableView, AutoEntityCard } from '@/components/shared'
-import { UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
-import { type ColumnDef } from "@tanstack/react-table"
-import { CategoryDrawer } from "./CategoryDrawer"
-import { categoryActions, type CategoryActionsCtx } from "@/features/inventory/categoryActions"
-import { categoryFields } from "../categoryFields"
-
+import { Archive, ArchiveRestore } from "lucide-react"
 import { toast } from "sonner"
-
-import React from "react"
-
+import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
+import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { categoryActions, type CategoryActionsCtx } from "@/features/inventory/categoryActions"
 import { useCategories, type Category } from "@/features/inventory/hooks/useCategories"
 import { categoryUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { categoryEntity, categoryViews } from "../entity-view/category.entity"
+import { CategoryDrawer } from "./CategoryDrawer"
 
 interface CategoryClientViewProps {
     externalOpen?: boolean
@@ -26,11 +23,17 @@ interface CategoryClientViewProps {
 }
 
 export function CategoryClientView({ externalOpen, onExternalOpenChange, createAction }: CategoryClientViewProps) {
-    const { categories, isLoading, refetch, deleteCategory } = useCategories()
+    const { categories, isLoading, isRefetching, isError, refetch, archiveCategory } = useCategories()
     const search = useUnifiedSearch(categoryUnifiedSearchDef)
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-    const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null)
-
+    const { filterFn } = search
+    const { view, onViewChange } = useCollectionViewMode("inventory.category")
+    const rows = useMemo(() => filterFn(categories), [filterFn, categories])
+    // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
+    const collection = useEntityCollection(
+        categoryEntity,
+        { rows, isLoading, isRefetching, error: isError && categories.length === 0, refetch, isFiltered: search.isFiltered },
+        { defaultSort: categoryViews.table.defaultSort },
+    )
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
@@ -56,84 +59,78 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
         }
     }
 
-    const handleDelete = useCallback(async (category: Category | null, isConfirmed = false) => {
-        if (!category) return
-
-        if (!isConfirmed) {
-            setCategoryToDelete(category)
-            setIsDeleteModalOpen(true)
-            return
-        }
-
+    const archiveConfirm = useConfirmAction<Category>(async (category) => {
+        const isArchiving = category.is_active
         try {
-            await deleteCategory(category.id)
-            toast.success("Categoría eliminada correctamente.")
-            setIsDeleteModalOpen(false)
+            await archiveCategory({ id: category.id, is_active: !category.is_active })
+            toast.success(`Categoría ${isArchiving ? "archivada" : "restaurada"} correctamente`)
         } catch (error) {
-            console.error("Error deleting category:", error)
-            showApiError(error, "Error al eliminar la categoría.")
+            showApiError(error, `No se puede ${isArchiving ? "archivar" : "restaurar"} la categoría`)
         }
-    }, [deleteCategory])
+    })
+
+    const bulkArchiveConfirm = useConfirmAction<Category[]>(async (items) => {
+        const isArchiving = items.every(c => c.is_active)
+        try {
+            await Promise.all(items.map(c => archiveCategory({ id: c.id, is_active: !isArchiving })))
+            toast.success(`${items.length} categorías ${isArchiving ? "archivadas" : "restauradas"}`)
+        } catch (error) {
+            showApiError(error, `Error al ${isArchiving ? "archivar" : "restaurar"} las categorías`)
+            throw error
+        }
+    })
 
     const actionsCtx: CategoryActionsCtx = {
         onEdit: (id) => openSelected(id),
-        onDelete: (category) => handleDelete(category),
+        onArchive: (category) => archiveConfirm.requestConfirm(category),
     }
 
-    const columns = useMemo<ColumnDef<Category>[]>(() => {
-        return [
-            ...categoryFields.toColumns(),
-            categoryActions.auto(actionsCtx),
-        ]
-    }, [actionsCtx])
+    const bulkActions = useMemo<BulkAction<Category>[]>(() => [
+        {
+            key: "restore",
+            label: "Restaurar",
+            icon: ArchiveRestore,
+            intent: "success",
+            hidden: (items) => items.length === 0 || !items.every(c => !c.is_active),
+            onClick: async (items) => bulkArchiveConfirm.requestConfirm(items),
+        },
+        {
+            key: "archive",
+            label: "Archivar",
+            icon: Archive,
+            intent: "destructive",
+            hidden: (items) => items.length === 0 || !items.every(c => c.is_active),
+            onClick: async (items) => bulkArchiveConfirm.requestConfirm(items),
+        },
+    ], [bulkArchiveConfirm])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    columns={columns}
-                    data={search.filterFn(categories)}
-                    isLoading={isLoading}
-                    entityLabel="inventory.category"
-                    variant="embedded"
-                    unifiedSearch={<UnifiedSearchBar
+            <Collection.Root
+                collection={collection}
+                selection="bulk"
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(category) => openSelected(category.id)}
+                actions={categoryActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar
                         config={categoryUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
+                        {...bindUnifiedSearch(search)}
                         placeholder="Buscar categoría..."
-                    />}
-                    unifiedSearchConfig={categoryUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    createAction={createAction}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "inventory",
-                        title: "Aún no hay categorías",
-                        description: "Crea categorías para organizar y clasificar tu catálogo de productos.",
-                    }}
-                    renderCard={(category: Category) => (
-                        <AutoEntityCard
-                            key={category.id}
-                            data={category}
-                            fields={categoryFields}
-                            entityLabel="inventory.category"
-                            actions={categoryActions.render(category, actionsCtx)}
-                            defaultAction={categoryActions.defaultAction(actionsCtx)?.(category) ?? (() => openSelected(category.id))}
-
-                        />
-                    )}
+                    />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={categoryViews.table}
+                    card={categoryViews.card}
+                    emptyTitle="Aún no hay categorías"
+                    emptyDescription="Crea categorías para organizar y clasificar tu catálogo de productos."
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+                <Collection.BulkBar actions={bulkActions} />
+            </Collection.Root>
 
             {/* Unified Modal — CategoryDrawer keeps rich selectors + audit for both create and edit */}
             <CategoryDrawer
@@ -145,18 +142,34 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
             />
 
             <ActionConfirmModal
-                open={isDeleteModalOpen}
-                onOpenChange={setIsDeleteModalOpen}
-                title="Eliminar Categoría"
-                variant="destructive"
-                onConfirm={() => { if (categoryToDelete) return handleDelete(categoryToDelete, true) }}
-                confirmText="Eliminar"
+                open={archiveConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) archiveConfirm.cancel() }}
+                onConfirm={archiveConfirm.confirm}
+                title={archiveConfirm.payload?.is_active ? "Archivar Categoría" : "Restaurar Categoría"}
+                variant={archiveConfirm.payload?.is_active ? "warning" : "default"}
+                confirmText={archiveConfirm.payload?.is_active ? "Archivar" : "Restaurar"}
                 description={
-                    <p>
-                        ¿Está seguro de que desea eliminar la categoría <strong>{categoryToDelete?.name}</strong>?
-                        Esta acción no se puede deshacer y puede afectar a los productos asociados.
-                    </p>
+                    archiveConfirm.payload?.is_active ? (
+                        <p>
+                            ¿Está seguro de que desea archivar la categoría <strong>{archiveConfirm.payload?.name}</strong>?
+                            Dejará de estar disponible para nuevos productos. Puede restaurarla más adelante.
+                        </p>
+                    ) : (
+                        <p>
+                            ¿Está seguro de que desea restaurar la categoría <strong>{archiveConfirm.payload?.name}</strong>?
+                        </p>
+                    )
                 }
+            />
+
+            <ActionConfirmModal
+                open={bulkArchiveConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) bulkArchiveConfirm.cancel() }}
+                onConfirm={bulkArchiveConfirm.confirm}
+                title={bulkArchiveConfirm.payload?.every(c => c.is_active) ? "Archivar Categorías" : "Restaurar Categorías"}
+                variant={bulkArchiveConfirm.payload?.every(c => c.is_active) ? "warning" : "default"}
+                confirmText={bulkArchiveConfirm.payload?.every(c => c.is_active) ? "Archivar" : "Restaurar"}
+                description={`¿Está seguro de que desea ${bulkArchiveConfirm.payload?.every(c => c.is_active) ? "archivar" : "restaurar"} ${bulkArchiveConfirm.payload?.length ?? 0} categorías?`}
             />
         </div>
     )

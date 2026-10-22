@@ -3,7 +3,7 @@ import type { TreasuryAccount } from '@/features/treasury'
 
 export interface TreasuryAccountActionsCtx {
     onEdit: (item: TreasuryAccount) => void
-    onDelete: (id: number) => void
+    onArchive: (item: TreasuryAccount) => void
 }
 
 export const treasuryAccountActions = createEntityActions<
@@ -22,6 +22,6 @@ export const treasuryAccountActions = createEntityActions<
     }
     return [
         { action: "edit", onClick: () => ctx.onEdit(item) },
-        { action: "delete", onClick: () => ctx.onDelete(item.id) },
+        { action: item.is_active ? "archive" : "restore", onClick: () => ctx.onArchive(item) },
     ]
 })

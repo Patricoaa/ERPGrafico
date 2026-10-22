@@ -21,29 +21,27 @@ def setup_test_data():
     """Setup basic test data"""
     print("🔧 Setting up test data...")
 
-    # Get or create accounting
+    # Get or create accounting with UNIQUE codes to avoid conflicts with IFRS COA
     acc_receivable, _ = Account.objects.get_or_create(
-        code="1.1.01", defaults={"name": "Cuentas por Cobrar", "account_type": "ASSET"}
+        code="1.99.01", defaults={"name": "Cuentas por Cobrar NC", "account_type": "ASSET"}
     )
     acc_revenue, _ = Account.objects.get_or_create(
-        code="4.1.01", defaults={"name": "Ingresos", "account_type": "INCOME"}
+        code="4.99.01", defaults={"name": "Ingresos NC", "account_type": "INCOME"}
     )
     acc_tax_payable, _ = Account.objects.get_or_create(
-        code="2.1.02", defaults={"name": "IVA por Pagar", "account_type": "LIABILITY"}
+        code="2.99.02", defaults={"name": "IVA por Pagar NC", "account_type": "LIABILITY"}
     )
     acc_inventory, _ = Account.objects.get_or_create(
-        code="1.2.01", defaults={"name": "Inventario", "account_type": "ASSET"}
+        code="1.99.01", defaults={"name": "Inventario NC", "account_type": "ASSET"}
     )
 
-    settings, _ = AccountingSettings.objects.get_or_create(
-        id=1,
-        defaults={
-            "default_receivable_account": acc_receivable,
-            "default_revenue_account": acc_revenue,
-            "default_tax_payable_account": acc_tax_payable,
-            "storable_inventory_account": acc_inventory,
-        },
-    )
+    # Use singleton pattern for AccountingSettings
+    settings = AccountingSettings.get_solo()
+    settings.default_receivable_account = acc_receivable
+    settings.default_revenue_account = acc_revenue
+    settings.default_tax_payable_account = acc_tax_payable
+    settings.storable_inventory_account = acc_inventory
+    settings.save()
 
     # UoM
     uom_cat, _ = UoMCategory.objects.get_or_create(name="Unit Category")

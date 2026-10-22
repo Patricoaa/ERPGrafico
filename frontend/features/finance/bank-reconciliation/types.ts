@@ -15,6 +15,7 @@ export interface BankStatement {
     state_display: string
     imported_by_name: string
     imported_at: string
+    lines?: BankStatementLine[]
 }
 
 export interface ReconciliationMovement {
@@ -45,6 +46,7 @@ export interface BankStatementLine {
     reconciliation_state: string
     reconciliation_state_display: string
     reconciliation_status: string // Legacy or alias for state
+    matched_payment_info: { id: number; display_id: string; amount: string; date: string } | null
     reconciliation_group_data?: {
         id: number
         movements: ReconciliationMovement[]

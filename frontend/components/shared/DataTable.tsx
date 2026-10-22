@@ -25,11 +25,10 @@ import { cn } from "@/lib/utils"
 
 
 import { Skeleton } from "@/components/ui/skeleton"
-import { Button } from "@/components/ui/button"
-import { X, type LucideIcon } from "lucide-react"
+import { type LucideIcon } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-import { BulkActionButtons, ActionDock, CmykRing, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, StatCard, type BulkAction, type AnalyticsPanelConfig, type ToolbarActionItem } from '@/components/shared'
+import { BulkActionButtons, SelectionDock, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, StatCard, type BulkAction, type AnalyticsPanelConfig, type ToolbarActionItem } from '@/components/shared'
 import { resolveEmptyState, type DataTableEmptyState } from './emptyStateResolver'
 
 const NON_MODAL_TABLE_MAX_HEIGHT = "max-h-[calc(100vh-260px)]"
@@ -355,52 +354,11 @@ export function DataTable<TData, TValue>({
 
     const hasRowAction = !!defaultAction || !!onRowClick
 
-    const dockNode = (() => {
-        if (selectedRows.length === 0) return null
-        if (bulkDock) return (
-            <ActionDock isVisible>
-                <div className="flex items-center gap-2">
-                    <CmykRing className="h-2.5 w-2.5 animate-pulse" />
-                    <span className="text-xs font-bold uppercase tracking-widest text-foreground whitespace-nowrap">
-                        {`${selectedRows.length} ${selectedRows.length === 1 ? "seleccionado" : "seleccionados"}`}
-                    </span>
-                </div>
-                {bulkDock(selectedItems, clearSelection)}
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearSelection}
-                    className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted"
-                >
-                    <X className="h-3 w-3 mr-1.5" />
-                    Limpiar
-                </Button>
-            </ActionDock>
-        )
-        if (bulkActions && bulkActions.length > 0) {
-            return (
-                <ActionDock isVisible>
-                    <div className="flex items-center gap-2">
-                        <CmykRing className="h-2.5 w-2.5 animate-pulse" />
-                        <span className="text-xs font-bold uppercase tracking-widest text-foreground whitespace-nowrap">
-                            {`${selectedRows.length} ${selectedRows.length === 1 ? "seleccionado" : "seleccionados"}`}
-                        </span>
-                    </div>
-                    <BulkActionButtons actions={bulkActions} items={selectedItems} />
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={clearSelection}
-                        className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted"
-                    >
-                        <X className="h-3 w-3 mr-1.5" />
-                        Limpiar
-                    </Button>
-                </ActionDock>
-            )
-        }
-        return null
-    })()
+    const dockNode = bulkDock
+        ? <SelectionDock count={selectedRows.length} onClear={clearSelection}>{bulkDock(selectedItems, clearSelection)}</SelectionDock>
+        : bulkActions && bulkActions.length > 0
+            ? <SelectionDock count={selectedRows.length} onClear={clearSelection}><BulkActionButtons actions={bulkActions} items={selectedItems} /></SelectionDock>
+            : null
 
     const kpiCardsNode = kpiCards && (
         <div className="grid gap-4 md:grid-cols-4">
@@ -414,7 +372,7 @@ export function DataTable<TData, TValue>({
     if (isLoading) {
         return (
             <div ref={containerRef} className={cn(
-                isEmbedded && "relative flex flex-col h-full w-full space-y-1 min-h-0",
+                isEmbedded && "relative flex flex-col h-full w-full gap-2 min-h-0",
                 !isEmbedded && !isMinimal && "w-full space-y-4",
                 isMinimal && "space-y-0",
                 className
@@ -503,9 +461,9 @@ export function DataTable<TData, TValue>({
                 !noBorder && "rounded-md border"
             )}>
                 <Table>
-                    <TableHeader className="bg-muted/30">
+                    <TableHeader className="bg-background">
                         {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id} className="border-none hover:bg-transparent">
+                            <TableRow key={headerGroup.id} className="hover:bg-transparent">
                                 {headerGroup.headers.map((header) => (
                                     <TableHead key={header.id} className="text-muted-foreground">
                                         {header.isPlaceholder
@@ -658,14 +616,16 @@ export function DataTable<TData, TValue>({
 
     if (isEmbedded) {
         const embeddedHeaderGroups = table.getHeaderGroups()
+        const isTableEmpty = !renderCustomView && table.getRowModel().rows.length === 0
+
         const tableBody = renderCustomView ? null : (
             table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
                     <React.Fragment key={row.id}>
                         {renderRow ? (
                             renderRow(row, (
-                                <TableRow
-                                    data-state={row.getIsSelected() && "selected"}
+                                <tr
+                                    data-state={row.getIsSelected() ? "selected" : undefined}
                                     className={cn(
                                         "group border-b border-border/40 table-row-hover transition-colors",
                                         hasRowAction && "cursor-pointer",
@@ -675,17 +635,15 @@ export function DataTable<TData, TValue>({
                                     onClick={() => handleRowClick(row.original)}
                                 >
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell
-                                            key={cell.id}
-                                        >
+                                        <TableCell key={cell.id}>
                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                         </TableCell>
                                     ))}
-                                </TableRow>
+                                </tr>
                             ))
                         ) : (
-                            <TableRow
-                                data-state={row.getIsSelected() && "selected"}
+                            <tr
+                                data-state={row.getIsSelected() ? "selected" : undefined}
                                 className={cn(
                                     "group border-b border-border/40 table-row-hover transition-colors",
                                     hasRowAction && "cursor-pointer",
@@ -695,13 +653,11 @@ export function DataTable<TData, TValue>({
                                 onClick={() => handleRowClick(row.original)}
                             >
                                 {row.getVisibleCells().map((cell) => (
-                                    <TableCell
-                                        key={cell.id}
-                                    >
+                                    <TableCell key={cell.id}>
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                     </TableCell>
                                 ))}
-                            </TableRow>
+                            </tr>
                         )}
                         {row.getIsExpanded() && renderSubComponent && (
                             <tr key={`exp-${row.id}`}>
@@ -713,7 +669,7 @@ export function DataTable<TData, TValue>({
                     </React.Fragment>
                 ))
             ) : (
-                <TableRow className="hover:bg-transparent">
+                <tr className="hover:bg-transparent">
                     <TableCell
                         colSpan={columns.length}
                         className="h-full p-0 align-middle"
@@ -728,18 +684,12 @@ export function DataTable<TData, TValue>({
                             className="h-full w-full"
                         />
                     </TableCell>
-                </TableRow>
+                </tr>
             )
         )
 
-        // When empty, stretch the table to fill the scroll container so the
-        // single empty-state row expands to the full available height/width
-        // of the canvas instead of collapsing to its content.
-        const isTableEmpty = !renderCustomView && table.getRowModel().rows.length === 0
-
         return (
-            <div ref={containerRef} className={cn("relative flex flex-col h-full w-full space-y-1 min-h-0", className)}>
-                {/* Toolbar Section (Outside) */}
+            <div ref={containerRef} className={cn("relative flex flex-col h-full w-full gap-2 min-h-0", className)}>
                 {kpiCardsNode}
 
                 {showToolbar && (
@@ -764,53 +714,53 @@ export function DataTable<TData, TValue>({
                     </div>
                 )}
 
-                <div className={cn("flex-1 flex flex-col min-h-0 h-full", !noBorder && !renderCustomView && "rounded-md border border-border/25")}>
+                <div className={cn("relative flex-1 flex flex-col min-h-0 h-full", !noBorder && !renderCustomView && "overflow-hidden rounded-md border")}>
+                    <div className="absolute top-0 left-0 right-0 h-0.5 overflow-hidden pointer-events-none z-30">
+                        <div
+                            className={cn(
+                                "h-full bg-primary origin-left transition-transform duration-300 ease-in-out",
+                                isRefetching ? "scale-x-100" : "scale-x-0"
+                            )}
+                        />
+                    </div>
+
                     {renderCustomView ? (
-                        <div className="flex-1 min-h-0 h-full overflow-y-auto custom-scrollbar overflow-x-auto flex flex-col py-0">
+                        <div className="flex-1 min-h-0 h-full overflow-y-auto overflow-x-auto flex flex-col py-0">
                             {renderCustomView(table)}
                         </div>
                     ) : (
-                        <div className="flex-1 flex flex-col min-h-0">
-                            <div className="flex-shrink-0 bg-background rounded-t-sm overflow-hidden mb-1" style={{ scrollbarGutter: 'stable' }}>
-                                <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
-                                    <colgroup>
-                                        {embeddedHeaderGroups[0]?.headers.map(header => (
-                                            <col key={header.id} style={{ width: header.getSize() }} />
+                        <div className="relative flex-1 min-h-0 overflow-auto">
+                            <table
+                                aria-label={ariaLabel}
+                                data-density="compact"
+                                className={cn("w-full text-sm", isTableEmpty && "h-full")}
+                                style={{ tableLayout: 'fixed' }}
+                            >
+                                <colgroup>
+                                    {embeddedHeaderGroups[0]?.headers.map(header => (
+                                        <col key={header.id} style={{ width: header.getSize() }} />
+                                    ))}
+                                </colgroup>
+                                <thead className="sticky top-0 z-10 bg-background">
+                                    <tr className="border-b">
+                                        {embeddedHeaderGroups[0]?.headers.map((header) => (
+                                            <TableHead key={header.id} className="text-muted-foreground">
+                                                {header.isPlaceholder
+                                                    ? null
+                                                    : flexRender(header.column.columnDef.header, header.getContext())}
+                                            </TableHead>
                                         ))}
-                                    </colgroup>
-                                    <TableHeader className="bg-background">
-                                        {embeddedHeaderGroups.map((headerGroup) => (
-                                            <TableRow
-                                                key={headerGroup.id}
-                                                className="border-none hover:bg-transparent"
-                                            >
-                                                {headerGroup.headers.map((header) => (
-                                                    <TableHead key={header.id} className="text-muted-foreground" style={{ width: header.getSize() }}>
-                                                        {header.isPlaceholder
-                                                            ? null
-                                                            : flexRender(
-                                                                header.column.columnDef.header,
-                                                                header.getContext()
-                                                            )}
-                                                    </TableHead>
-                                                ))}
-                                            </TableRow>
-                                        ))}
-                                    </TableHeader>
-                                </table>
-                            </div>
-                            <div className={cn("flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-background", isTableEmpty && "flex flex-col")} style={{ scrollbarGutter: 'stable' }}>
-                                <table aria-label={ariaLabel} className={cn("w-full text-sm", isTableEmpty && "h-full")} style={{ tableLayout: 'fixed' }}>
-                                    <colgroup>
-                                        {embeddedHeaderGroups[0]?.headers.map(header => (
-                                            <col key={header.id} style={{ width: header.getSize() }} />
-                                        ))}
-                                    </colgroup>
-                                    <TableBody>
-                                        {tableBody}
-                                    </TableBody>
-                                </table>
-                            </div>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {tableBody}
+                                </tbody>
+                                {renderFooter && (
+                                    <TableFooter className="table-footer">
+                                        {renderFooter(table)}
+                                    </TableFooter>
+                                )}
+                            </table>
                         </div>
                     )}
 
@@ -828,6 +778,8 @@ export function DataTable<TData, TValue>({
 
     // ─── Classic Mode ──────────────────────────────────────────────────
     const classicHeaderGroups = table.getHeaderGroups()
+    const isClassicTableEmpty = table.getRowModel().rows.length === 0
+
     return (
         <div ref={containerRef} className={cn("w-full space-y-4", density === 'comfortable' && 'table-comfortable', className)}>
             {kpiCardsNode}
@@ -855,7 +807,7 @@ export function DataTable<TData, TValue>({
             {renderCustomView ? (
                 renderCustomView(table)
             ) : (
-                <div className={cn("relative flex-1 flex flex-col min-h-0", !noBorder && "rounded-md border")}>
+                <div className={cn("relative flex-1 flex flex-col min-h-0", !noBorder && "overflow-hidden rounded-md border")}>
                     <div className="absolute top-0 left-0 right-0 h-0.5 overflow-hidden pointer-events-none">
                         <div
                             className={cn(
@@ -864,129 +816,102 @@ export function DataTable<TData, TValue>({
                             )}
                         />
                     </div>
-                    <div className={cn("flex flex-col min-h-0", !isInModal && NON_MODAL_TABLE_MAX_HEIGHT, tableContainerClassName)}>
-                        <div className="flex-shrink-0 bg-background rounded-t-sm overflow-hidden mb-1" style={{ scrollbarGutter: 'stable' }}>
-                            <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
-                                <colgroup>
-                                    {classicHeaderGroups[0]?.headers.map(header => (
-                                        <col key={header.id} style={{ width: header.getSize() }} />
+                    <div className={cn(
+                        "relative flex-1 min-h-0 overflow-auto",
+                        !isInModal && NON_MODAL_TABLE_MAX_HEIGHT,
+                        tableContainerClassName
+                    )}>
+                        <table
+                            aria-label={ariaLabel}
+                            data-density="compact"
+                            className={cn("w-full text-sm", isClassicTableEmpty && "h-full")}
+                            style={{ tableLayout: 'fixed' }}
+                        >
+                            <colgroup>
+                                {classicHeaderGroups[0]?.headers.map(header => (
+                                    <col key={header.id} style={{ width: header.getSize() }} />
+                                ))}
+                            </colgroup>
+                            <thead className="sticky top-0 z-10 bg-background">
+                                <tr className="border-b">
+                                    {classicHeaderGroups[0]?.headers.map((header) => (
+                                        <TableHead key={header.id} className="text-muted-foreground">
+                                            {header.isPlaceholder
+                                                ? null
+                                                : flexRender(header.column.columnDef.header, header.getContext())}
+                                        </TableHead>
                                     ))}
-                                </colgroup>
-                                <TableHeader className="bg-background">
-                                    {classicHeaderGroups.map((headerGroup) => (
-                                        <TableRow key={headerGroup.id} className="border-none hover:bg-transparent">
-                                            {headerGroup.headers.map((header) => {
-                                                return (
-                                                    <TableHead key={header.id} className="text-muted-foreground">
-                                                        {header.isPlaceholder
-                                                            ? null
-                                                            : flexRender(
-                                                                header.column.columnDef.header,
-                                                                header.getContext()
-                                                            )}
-                                                    </TableHead>
-                                                )
-                                            })}
-                                        </TableRow>
-                                    ))}
-                                </TableHeader>
-                            </table>
-                        </div>
-                        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-background" style={{ scrollbarGutter: 'stable' }}>
-                            <table aria-label={ariaLabel} className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
-                                <colgroup>
-                                    {classicHeaderGroups[0]?.headers.map(header => (
-                                        <col key={header.id} style={{ width: header.getSize() }} />
-                                    ))}
-                                </colgroup>
-                                <TableBody>
-                                    {table.getRowModel().rows?.length ? (
-                                        table.getRowModel().rows.map((row) => (
-                                            <React.Fragment key={row.id}>
-                                                {renderRow ? (
-                                                    renderRow(row, (
-                                                        <TableRow
-                                                            data-state={row.getIsSelected() && "selected"}
-                                                            className={cn(
-                                                                "group table-row-hover",
-                                                                hasRowAction && "cursor-pointer",
-                                                                getRowClassName?.(row)
-                                                            )}
-                                                            onClick={() => handleRowClick(row.original)}
-                                                        >
-                                                            {row.getVisibleCells().map((cell) => (
-                                                                <TableCell key={cell.id} style={{ width: cell.column.getSize() }}>
-                                                                    {flexRender(
-                                                                        cell.column.columnDef.cell,
-                                                                        cell.getContext()
-                                                                    )}
-                                                                </TableCell>
-                                                            ))}
-                                                        </TableRow>
-                                                    ))
-                                                ) : (
-                                                    <TableRow
-                                                        data-state={row.getIsSelected() && "selected"}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {table.getRowModel().rows?.length ? (
+                                    table.getRowModel().rows.map((row) => (
+                                        <React.Fragment key={row.id}>
+                                            {renderRow ? (
+                                                renderRow(row, (
+                                                    <tr
+                                                        data-state={row.getIsSelected() ? "selected" : undefined}
                                                         className={cn(
-                                                            "group table-row-hover",
+                                                            "group border-b border-border/40 table-row-hover transition-colors",
                                                             hasRowAction && "cursor-pointer",
                                                             getRowClassName?.(row)
                                                         )}
                                                         onClick={() => handleRowClick(row.original)}
                                                     >
                                                         {row.getVisibleCells().map((cell) => (
-                                                            <TableCell key={cell.id} style={{ width: cell.column.getSize() }}>
-                                                                {flexRender(
-                                                                    cell.column.columnDef.cell,
-                                                                    cell.getContext()
-                                                                )}
+                                                            <TableCell key={cell.id}>
+                                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                             </TableCell>
                                                         ))}
-                                                    </TableRow>
-                                                )}
-                                                {row.getIsExpanded() && renderSubComponent && (
-                                                    <tr key={`exp-${row.id}`}>
-                                                        <TableCell colSpan={row.getVisibleCells().length} className="p-0 border-b border-border/50">
-                                                            {renderSubComponent(row)}
-                                                        </TableCell>
                                                     </tr>
-                                                )}
-                                            </React.Fragment>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell
-                                                colSpan={columns.length}
-                                                className="h-24 p-0"
-                                            >
-                                                <EmptyState
-                                                    context={emptyProps.context}
-                                                    icon={emptyProps.icon}
-                                                    title={emptyProps.title}
-                                                    description={emptyProps.description}
-                                                    action={emptyProps.action}
-                                                    entityLabel={emptyProps.entityLabel}
-                                                />
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </table>
-                        </div>
-                        {renderFooter && (
-                            <div className="flex-shrink-0 overflow-hidden border-t-2" style={{ scrollbarGutter: 'stable' }}>
-                                <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
-                                    <colgroup>
-                                        {classicHeaderGroups[0]?.headers.map(header => (
-                                            <col key={header.id} style={{ width: header.getSize() }} />
-                                        ))}
-                                    </colgroup>
-                                    <TableFooter className="table-footer">
-                                        {renderFooter(table)}
-                                    </TableFooter>
-                                </table>
-                            </div>
-                        )}
+                                                ))
+                                            ) : (
+                                                <tr
+                                                    data-state={row.getIsSelected() ? "selected" : undefined}
+                                                    className={cn(
+                                                        "group border-b border-border/40 table-row-hover transition-colors",
+                                                        hasRowAction && "cursor-pointer",
+                                                        getRowClassName?.(row)
+                                                    )}
+                                                    onClick={() => handleRowClick(row.original)}
+                                                >
+                                                    {row.getVisibleCells().map((cell) => (
+                                                        <TableCell key={cell.id}>
+                                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                        </TableCell>
+                                                    ))}
+                                                </tr>
+                                            )}
+                                            {row.getIsExpanded() && renderSubComponent && (
+                                                <tr key={`exp-${row.id}`}>
+                                                    <TableCell colSpan={row.getVisibleCells().length} className="p-0 border-b border-border/50">
+                                                        {renderSubComponent(row)}
+                                                    </TableCell>
+                                                </tr>
+                                            )}
+                                        </React.Fragment>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={columns.length} className="h-24 p-0">
+                                            <EmptyState
+                                                context={emptyProps.context}
+                                                icon={emptyProps.icon}
+                                                title={emptyProps.title}
+                                                description={emptyProps.description}
+                                                action={emptyProps.action}
+                                                entityLabel={emptyProps.entityLabel}
+                                            />
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                            {renderFooter && (
+                                <TableFooter className="table-footer">
+                                    {renderFooter(table)}
+                                </TableFooter>
+                            )}
+                        </table>
                     </div>
                 </div>
             )}

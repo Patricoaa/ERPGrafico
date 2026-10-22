@@ -17,7 +17,7 @@ def test_workorder_serializer_exposes_sale_order_document_ref(work_order_factory
     ref = data["sale_order_document"]
     assert ref["label"] == "sales.saleorder"
     assert ref["id"] == order.id
-    assert ref["url"] == f"/sales/orders?selected={order.id}"
+    assert ref["url"] == f"/sales/dtes/orders?selected={order.id}"
 
 
 def test_workorder_list_serializer_exposes_sale_order_document_ref(work_order_factory, sale_order_factory):
@@ -29,7 +29,7 @@ def test_workorder_list_serializer_exposes_sale_order_document_ref(work_order_fa
     ref = data["sale_order_document"]
     assert ref["label"] == "sales.saleorder"
     assert ref["id"] == order.id
-    assert ref["url"] == f"/sales/orders?selected={order.id}"
+    assert ref["url"] == f"/sales/dtes/orders?selected={order.id}"
 
 
 @pytest.mark.django_db

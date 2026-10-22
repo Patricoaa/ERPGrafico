@@ -9,9 +9,8 @@ import {
     CornerDownLeft,
     Loader2,
     Search,
-    X,
 } from "lucide-react"
-import { DynamicIcon, Badge } from "@/components/shared"
+import { DynamicIcon, Badge, SheetCloseButton } from "@/components/shared"
 import { Dialog, DialogContent, DialogTitle, DialogPortal, DialogOverlay } from "@/components/ui/dialog"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useUniversalSearch } from "@/features/search"
@@ -174,9 +173,11 @@ export function UniversalSearch({ renderTrigger }: UniversalSearchProps = {}) {
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-1">
-                                    <Button variant="ghost" onClick={() => setOpen(false)} className="rounded-md p-1.5 hover:bg-accent transition-colors">
-                                        <X className="size-4 text-muted-foreground/60" />
-                                    </Button>
+                                    <SheetCloseButton
+                                        onClick={() => setOpen(false)}
+                                        label="Cerrar búsqueda"
+                                        className="hover:bg-accent"
+                                    />
                                 </div>
                             )}
                         </div>

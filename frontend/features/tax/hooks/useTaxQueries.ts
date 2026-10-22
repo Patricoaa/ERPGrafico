@@ -14,13 +14,13 @@ export function useTaxPeriods() {
 }
 
 export function useTaxPeriod(id: number | string | undefined) {
-  const { data: taxPeriod, isLoading, isError } = useQuery({
+  const { data: taxPeriod, isLoading, isError, refetch } = useQuery({
     queryKey: TAX_KEYS.periods.detail(Number(id)),
     queryFn: () => taxApi.getPeriod(id as number | string),
     staleTime: staleTime.standard,
     enabled: !!id,
   })
-  return { taxPeriod: taxPeriod ?? null, isLoading, isError }
+  return { taxPeriod: taxPeriod ?? null, isLoading, isError, refetch }
 }
 
 export function useTaxDeclarations(params: Record<string, unknown>) {
@@ -34,13 +34,13 @@ export function useTaxDeclarations(params: Record<string, unknown>) {
 }
 
 export function useF29Detail(id: number | string | undefined) {
-  const { data: f29Detail, isLoading, isError } = useQuery({
+  const { data: f29Detail, isLoading, isError, refetch } = useQuery({
     queryKey: TAX_KEYS.f29.detail(Number(id)),
     queryFn: () => taxApi.getF29Detail(id as number | string),
     staleTime: staleTime.standard,
     enabled: !!id,
   })
-  return { f29Detail: f29Detail ?? null, isLoading, isError }
+  return { f29Detail: f29Detail ?? null, isLoading, isError, refetch }
 }
 
 export function useLazyTaxDeclarations() {

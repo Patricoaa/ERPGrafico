@@ -1,29 +1,93 @@
-import { defineEditable, defineEntity, toNumber } from "@/components/entity-view"
+import { defineEntity, formatNumber, toNumber, type StatusValue } from "@/components/entity-view"
 import { docRef } from "@/features/documents"
 import type { OrderLine } from "../types"
 
-const qty = (v: number | string | null | undefined): number => toNumber(v) ?? 0
+export const lineQty = (v: number | string | null | undefined): number => toNumber(v) ?? 0
+
+/** Lines keep the document's own order on every surface: no sortable headers (lote 3a). */
+const fixed = { sortable: false } as const
+
+export const uomOf = (l: OrderLine) => l.uom_name ?? l.unit_name ?? null
+/** Stock and capacities: whole numbers plain, fractional ones with 2 decimals ("6.671,97"). */
+export const amount = (n: number) => formatNumber(n, n % 1 === 0 ? 0 : 2)
+
+export const nameOf = (l: OrderLine) => l.product_name || l.description || `Línea ${l.id}`
+
+/** Which lines a logistics form shows: products, services or both (`filterType` of the dispatch/receipt forms). */
+export type LineTypeFilter = "PRODUCT" | "SERVICE" | "ALL"
+
+export function matchesLineType(l: OrderLine, filter: LineTypeFilter): boolean {
+    if (filter === "SERVICE") return l.product_type === "SERVICE"
+    if (filter === "PRODUCT") return l.product_type !== "SERVICE"
+    return true
+}
+
+/** Pending to deliver/receive: the backend value when present, otherwise ordered − done. */
+export function linePending(l: OrderLine): number {
+    if (l.quantity_pending !== undefined && l.quantity_pending !== null) return lineQty(l.quantity_pending)
+    return lineQty(l.quantity) - lineQty(l.quantity_delivered ?? l.quantity_received)
+}
 
 /**
- * Order lines in the document sheet. `OrderLine` has an index signature, so every
- * field uses a typed accessor function (keys of an indexed type are not narrowed).
- * References use the documents extension builder `docRef(f, …)`, which registers its kind.
+ * What can leave the warehouse for this line (dispatch context). `available_stock` is added by the
+ * dispatch screen for the chosen warehouse; the rest comes from the order line.
+ */
+function availability(l: OrderLine): StatusValue | null {
+    const pending = linePending(l)
+    if (l.product_type === "MANUFACTURABLE" && l.requires_advanced_manufacturing) {
+        const wo = l.work_order_summary
+        if (!wo) return { status: "no-work-order", label: "Sin OT registrada", intent: "destructive" }
+        const display = String(wo.display_id ?? wo.number ?? `OT-${wo.id}`)
+        return { status: wo.status.toLowerCase(), label: `${display}${l.is_production_finished ? " · terminada" : ""}`, intent: l.is_production_finished ? "success" : "warning" }
+    }
+    if (l.product_type === "MANUFACTURABLE" && !l.track_inventory) {
+        const can = l.manufacturable_quantity ?? 0
+        return { status: "manufacturable", label: `Fabricable · ${amount(can)}`, intent: can >= pending ? "success" : "destructive" }
+    }
+    if (l.track_inventory) {
+        if (l.available_stock === undefined) return null
+        return { status: "stock", label: amount(l.available_stock), intent: l.available_stock >= pending ? "success" : "destructive" }
+    }
+    return { status: "available", label: "Disponible", intent: "success" }
+}
+
+/**
+ * Lines of OV, OC and invoices (ADR-0087 lote 3a): one entity for every document line. `OrderLine` has
+ * an index signature, so every field uses a typed accessor function. References use the documents
+ * extension builder `docRef(f, …)`; a line without a product shows its name as plain text.
  */
 export const orderLineEntity = defineEntity<OrderLine>()((f) => ({
-    label: "sales.saleline",
+    // Lines have no sheet of their own (not in ENTITY_REGISTRY): embedded collection, no default open.
+    title: "Líneas",
     fields: {
-        product: docRef(f, (l) => (l.product ? { label: "inventory.product", id: l.product, display: l.product_name ?? `#${l.product}` } : null), { label: "Producto" }),
-        description: f.text((l) => l.product_name ?? l.description ?? null, { label: "Descripción" }),
-        quantity: f.quantity((l) => l.quantity, { label: "Cantidad", uom: (l) => l.uom_name ?? l.unit_name ?? null }),
-        unitPrice: f.money((l) => l.unit_price_net ?? l.price_unit, { label: "Precio unit. (neto)" }),
+        product: docRef(
+            f,
+            (l) => {
+                const id = Number(l.product ?? l.product_id)
+                return id ? { label: "inventory.product", id, display: nameOf(l) } : null
+            },
+            { ...fixed, label: "Producto", fallback: (l) => l.product_name || l.description || undefined },
+        ),
+        description: f.text((l) => nameOf(l), { ...fixed, label: "Producto" }),
+        quantity: f.quantity((l) => l.quantity, { ...fixed, label: "Cantidad", uom: uomOf }),
+        // OV: net computed from gross (ADR-0083); OC: unit_cost is already net.
+        unitPrice: f.money((l) => l.unit_price_net ?? l.unit_cost ?? l.unit_price ?? l.price_unit, { ...fixed, label: "Precio unitario (neto)", header: "P. unit. neto" }),
+        unitCost: f.money((l) => l.unit_cost, { ...fixed, label: "Costo original" }),
         delivered: f.progress(
-            (l) => ({ done: qty(l.quantity_delivered ?? l.quantity_received ?? l.delivered_quantity ?? l.received_quantity), total: qty(l.quantity) }),
-            { label: "Entregado", format: "ratio" },
+            (l) => ({ done: lineQty(l.quantity_delivered ?? l.delivered_quantity), total: lineQty(l.quantity) }),
+            { ...fixed, label: "Entregado", format: "ratio" },
         ),
-        pending: f.quantity(
-            (l) => qty(l.quantity) - qty(l.quantity_delivered ?? l.quantity_received),
-            { label: "Pendiente", uom: (l) => l.uom_name ?? l.unit_name ?? null },
+        received: f.progress(
+            (l) => ({ done: lineQty(l.quantity_received ?? l.received_quantity), total: lineQty(l.quantity) }),
+            { ...fixed, label: "Recibido", format: "ratio" },
         ),
+        receivedQty: f.quantity((l) => l.quantity_received ?? l.received_quantity ?? 0, { ...fixed, label: "Recibido", uom: uomOf }),
+        invoiced: f.progress(
+            (l) => ({ done: lineQty(l.quantity_invoiced), total: lineQty(l.quantity) }),
+            { ...fixed, label: "Facturado", format: "ratio" },
+        ),
+        pending: f.quantity((l) => linePending(l), { ...fixed, label: "Pendiente", uom: uomOf }),
+        availability: f.status((l) => availability(l), { ...fixed, label: "Stock" }),
         workOrder: docRef(
             f,
             (l) => {
@@ -31,39 +95,22 @@ export const orderLineEntity = defineEntity<OrderLine>()((f) => ({
                 if (!wo?.id) return null
                 return { label: "production.workorder", id: Number(wo.id), display: String(wo.display_id ?? wo.number ?? `OT-${wo.id}`) }
             },
-            { label: "OT" },
+            { ...fixed, label: "OT" },
         ),
-        subtotal: f.money((l) => l.subtotal_net ?? l.subtotal, { label: "Subtotal (neto)" }),
+        subtotal: f.money((l) => l.subtotal_net ?? l.subtotal, { ...fixed, label: "Subtotal (neto)", header: "Subtotal neto" }),
     },
 }))
 
-const lineTable = orderLineEntity.views({
-    table: { columns: ["product", "quantity", "unitPrice", "delivered", "workOrder", "subtotal"], footer: { sum: ["subtotal"] } },
+const saleTable = orderLineEntity.views({
+    table: { columns: ["product", "quantity", "unitPrice", "delivered", "invoiced", "workOrder", "subtotal"] },
 }).table
 
+/** Read-only line tables of the document sheets. The totals live in `DocumentTotalsBox`, so no footer. */
 export const orderLineViews = {
-    sale: lineTable,
-    // OC has no OT column. `without("work_order_summary")` would not compile (TC-012).
-    purchase: lineTable.without("workOrder"),
+    sale: saleTable,
+    // OC: "Recibido" and no OT column. `without("work_order_summary")` would not compile (TC-012).
+    purchase: orderLineEntity.views({
+        table: { columns: ["product", "quantity", "unitPrice", "received", "invoiced", "subtotal"] },
+    }).table,
+    invoice: saleTable.without("delivered", "invoiced", "workOrder"),
 }
-
-/** P1 "quantity to process per line" (DeliveryDrawer, Step3_Delivery…) as a declared editable surface. */
-export const deliveryLinesEditable = defineEditable(orderLineEntity, {
-    rowKey: (l) => l.id,
-    context: ["description", "quantity", "pending"],
-    inputs: {
-        toDeliver: {
-            kind: "quantity",
-            header: "A despachar",
-            label: (l) => `Cantidad a despachar — ${l.product_name ?? l.description ?? `línea ${l.id}`}`,
-            max: (l) => Math.max(0, qty(l.quantity) - qty(l.quantity_delivered)),
-            step: (l) => (l.uom_name === "Unidad" ? 1 : 0.01),
-            initial: (l) => Math.max(0, qty(l.quantity) - qty(l.quantity_delivered)),
-            unit: (l) => l.uom_name ?? l.unit_name,
-        },
-    },
-    eligible: (l) => (l.requires_advanced_manufacturing && !l.work_order_summary ? { ok: false, reason: "Requiere producción" } : { ok: true }),
-    footer: { sum: ["toDeliver"] },
-    bulk: ["fillToMax", "clear"],
-    bulkLabels: { fillToMax: "Despachar todo lo pendiente" },
-})

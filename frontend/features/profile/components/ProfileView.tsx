@@ -10,27 +10,25 @@ import { changePassword, changePin, downloadPayrollPdf, downloadMultiplePayrollP
 import type { MyProfile } from "@/types/profile"
 import type { Payroll } from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { ActionSlideButton, FadeIn, MoneyDisplay } from '@/components/shared'
+import { SubmitButton, FadeIn, MoneyDisplay, type BulkAction } from "@/components/shared"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import { Checkbox } from "@/components/ui/checkbox"
-import { type ColumnDef } from "@tanstack/react-table"
-
 import { Form, FormField } from "@/components/ui/form"
 import { cn } from "@/lib/utils"
 import {
     User, ShieldCheck, KeyRound, Mail,
     Building2, Briefcase, Calendar, CreditCard, Wallet,
-    Download, Clock, FileText,
+    Download, FileText,
     Sun, Moon, Monitor
 } from "lucide-react"
-import { EmptyState, LabeledInput, UnifiedSearchBar, useUnifiedSearch, createExpanderColumn, StatusBadge } from "@/components/shared"
-import type { UnifiedSearchConfig } from "@/components/shared"
+import { EmptyState, LabeledInput, StatusBadge } from "@/components/shared"
 import { EmployeePayrollPreview } from "./EmployeePayrollPreview"
 import { PartnerProfileTab } from "./PartnerProfileTab"
-import { DataCell } from '@/components/shared'
 import { profilePayrollActions, type ProfilePayrollActionsCtx } from './profilePayrollActions'
+import { PayrollPaymentsDrawer } from './PayrollPaymentsDrawer'
+
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { payrollEntity, payrollViews } from "../entity-view/payroll.entity"
+import { unifiedPaymentEntity, unifiedPaymentViews, type UnifiedPayment } from "../entity-view/unifiedPayment.entity"
 
 import { useTheme } from "next-themes"
 import { useThemeSync } from "../hooks/useThemeSync"
@@ -45,30 +43,10 @@ interface ProfileViewProps {
 
 export function ProfileView({ activeTab, activeSubTab = "employee", initialProfile }: ProfileViewProps) {
     const profile = initialProfile
-    const [selectedPayrolls, setSelectedPayrolls] = useState<number[]>([])
-    const [downloadingAll, setDownloadingAll] = useState(false)
-
     const contactDetail = profile?.contact_detail || profile?.employee?.contact_detail
     const isPartner = contactDetail?.is_partner
 
     if (!profile) return null
-
-    const handleBulkDownload = async () => {
-        if (selectedPayrolls.length === 0) {
-            toast.info("Seleccione las liquidaciones que desea descargar")
-            return
-        }
-        setDownloadingAll(true)
-        try {
-            await downloadMultiplePayrollPdfs(selectedPayrolls)
-            toast.success(`${selectedPayrolls.length} liquidación(es) descargada(s)`)
-            setSelectedPayrolls([])
-        } catch {
-            toast.error("Error al descargar liquidaciones")
-        } finally {
-            setDownloadingAll(false)
-        }
-    }
 
     return (
         <Tabs value={activeTab} className="w-full flex-1 min-h-0 flex flex-col">
@@ -80,10 +58,6 @@ export function ProfileView({ activeTab, activeSubTab = "employee", initialProfi
                 <TabsContent value="personal" className="mt-0 outline-none flex-1 min-h-0 flex flex-col">
                     <PersonalTab
                         profile={profile}
-                        selectedPayrolls={selectedPayrolls}
-                        onSelectedPayrollsChange={setSelectedPayrolls}
-                        onBulkDownload={handleBulkDownload}
-                        downloadingAll={downloadingAll}
                         activeSubTab={activeSubTab}
                     />
                 </TabsContent>
@@ -113,12 +87,10 @@ function AccountTab({ activeSubTab }: { activeSubTab?: string }) {
 
             {activeSubTab === "security" && (
                 <>
-                    {/* Password Change Card */}
                     <FadeIn delay={0.1} yOffset={10}>
                         <PasswordChangeCard />
                     </FadeIn>
 
-                    {/* POS PIN Change Card */}
                     <FadeIn delay={0.2} yOffset={10}>
                         <PinChangeCard />
                     </FadeIn>
@@ -154,7 +126,6 @@ function ThemeSelectionCard() {
             </CardHeader>
             <CardContent className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Opción Claro */}
                     <div
                         role="button"
                         tabIndex={0}
@@ -174,7 +145,6 @@ function ThemeSelectionCard() {
                         </div>
                     </div>
 
-                    {/* Opción Oscuro */}
                     <div
                         role="button"
                         tabIndex={0}
@@ -194,7 +164,6 @@ function ThemeSelectionCard() {
                         </div>
                     </div>
 
-                    {/* Opción Sistema */}
                     <div
                         role="button"
                         tabIndex={0}
@@ -221,15 +190,15 @@ function ThemeSelectionCard() {
 
 function InfoField({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
     return (
-        <fieldset className="notched-field pointer-events-none" aria-disabled="true">
-            <legend className="px-1.5 text-3xs font-bold uppercase tracking-widest text-muted-foreground">
-                {label}
-            </legend>
-            <div className="flex items-center gap-2 h-5 px-2 text-sm font-medium text-foreground">
-                <span className="text-muted-foreground/60">{icon}</span>
-                {value}
-            </div>
-        </fieldset>
+        <LabeledInput
+            label={label}
+            value={value}
+            disabled
+            readOnly
+            icon={icon}
+            className="bg-background/50 text-foreground"
+            containerClassName="pointer-events-none"
+        />
     )
 }
 
@@ -299,10 +268,10 @@ function PasswordChangeCard() {
                         </div>
 
                         <div className="flex justify-end pt-2">
-                            <ActionSlideButton type="submit" loading={saving} disabled={saving} className="rounded-sm text-xs font-bold gap-2">
+                            <SubmitButton type="submit" loading={saving} disabled={saving} className="rounded-sm text-xs font-bold gap-2">
                                 <KeyRound className="h-4 w-4" />
                                 Cambiar Contraseña
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </div>
                     </form>
                 </Form>
@@ -316,26 +285,45 @@ function PasswordChangeCard() {
 // ============================================
 function PersonalTab({
     profile,
-    selectedPayrolls,
-    onSelectedPayrollsChange,
-    onBulkDownload,
-    downloadingAll,
     activeSubTab = "employee"
 }: {
     profile: MyProfile
-    selectedPayrolls: number[]
-    onSelectedPayrollsChange: (ids: number[]) => void
-    onBulkDownload: () => void
-    downloadingAll: boolean
     activeSubTab?: string
 }) {
     const { employee, payrolls, advances, payments } = profile
 
     const [previewPayrollId, setPreviewPayrollId] = useState<number | null>(null)
     const [previewOpen, setPreviewOpen] = useState(false)
+    const [paymentsPayroll, setPaymentsPayroll] = useState<Payroll | null>(null)
+    const [paymentsOpen, setPaymentsOpen] = useState(false)
+
+    const unifiedPayments: UnifiedPayment[] = useMemo(() => [
+        ...advances.map(a => ({
+            id: `adv-${a.id}`,
+            date: a.date,
+            type: 'ANTICIPO' as const,
+            typeLabel: 'Anticipo',
+            amount: a.amount,
+            payroll_display_id: a.payroll_display_id || null,
+            statusKey: a.status
+        })),
+        ...payments.map(p => ({
+            id: `pay-${p.id}`,
+            date: p.date,
+            type: p.payment_type as 'SALARIO' | 'PREVIRED',
+            typeLabel: p.payment_type_display || p.payment_type,
+            amount: p.amount,
+            payroll_display_id: p.payroll_display_id || null,
+            statusKey: p.status === 'CANCELLED' ? 'CANCELLED' : 'PAID'
+        }))
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()), [advances, payments])
+
+    const payrollCollection = useEntityCollection(payrollEntity, { rows: payrolls }, { pagination: { mode: "client", pageSize: 10 } })
+    const paymentCollection = useEntityCollection(unifiedPaymentEntity, { rows: unifiedPayments }, { pagination: { mode: "client", pageSize: 10 } })
 
     const profilePayrollActionsCtx: ProfilePayrollActionsCtx = {
         onViewDetail: (id) => { setPreviewPayrollId(id); setPreviewOpen(true) },
+        onViewPayments: (payroll) => { setPaymentsPayroll(payroll); setPaymentsOpen(true) },
         onDownloadPdf: async (id) => {
             try {
                 const p = payrolls.find(p => p.id === id)
@@ -347,44 +335,23 @@ function PersonalTab({
         },
     }
 
-    type UnifiedPayment = {
-        id: string;
-        date: string;
-        type: 'ANTICIPO' | 'SALARIO' | 'PREVIRED';
-        typeLabel: string;
-        amount: string;
-        payroll_display_id: string | null;
-        statusKey: string;
-    }
+    const bulkDownloadAction = useMemo<BulkAction<Payroll>[]>(() => [
+        {
+            key: "download",
+            label: "Descargar seleccionadas",
+            icon: Download,
+            onClick: async (items) => {
+                try {
+                    await downloadMultiplePayrollPdfs(items.map(p => p.id))
+                    toast.success(`${items.length} liquidación(es) descargada(s)`)
+                } catch {
+                    toast.error("Error al descargar liquidaciones")
+                }
+            },
+        },
+    ], [])
 
-    const unifiedPayments: UnifiedPayment[] = [
-        ...advances.map(a => ({
-            id: `adv-${a.id}`,
-            date: a.date,
-            type: 'ANTICIPO' as const,
-            typeLabel: 'Anticipo',
-            amount: a.amount,
-            payroll_display_id: a.payroll_display_id || null,
-            statusKey: a.is_discounted ? 'DESCONTADO' : 'PENDING'
-        })),
-        ...payments.map(p => ({
-            id: `pay-${p.id}`,
-            date: p.date,
-            type: p.payment_type as 'SALARIO' | 'PREVIRED',
-            typeLabel: p.payment_type_display || p.payment_type,
-            amount: p.amount,
-            payroll_display_id: p.payroll_display_id || null,
-            statusKey: 'PAID'
-        }))
-    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-
-    const payrollSearchConfig: UnifiedSearchConfig = useMemo(() => ({
-        filters: [
-            { key: 'period_label', label: 'Período', type: 'multi', serverParam: 'period_label', columnId: 'period_label', dynamic: true, options: [] },
-        ],
-        searchFields: [],
-    }), [])
-    const payrollSearch = useUnifiedSearch(payrollSearchConfig)
+    const contact = employee?.contact_detail
 
     if (!employee) {
         return (
@@ -397,125 +364,6 @@ function PersonalTab({
             </div>
         )
     }
-
-    // Payroll columns
-    const payrollColumns: ColumnDef<Payroll>[] = [
-        createExpanderColumn<Payroll>({
-            canExpand: (row) => unifiedPayments.some(p => p.payroll_display_id === row.display_id)
-        }),
-        {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={
-                        table.getIsAllPageRowsSelected()
-                            ? true
-                            : table.getIsSomePageRowsSelected()
-                            ? "indeterminate"
-                            : false
-                    }
-                    onCheckedChange={(value) => {
-                        table.toggleAllPageRowsSelected(!!value)
-                        if (value) {
-                            onSelectedPayrollsChange(payrolls.map(p => p.id))
-                        } else {
-                            onSelectedPayrollsChange([])
-                        }
-                    }}
-                    aria-label="Seleccionar todo"
-                    className="translate-y-[2px]"
-                    variant="circle"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={selectedPayrolls.includes(row.original.id)}
-                    onCheckedChange={(value) => {
-                        if (value) {
-                            onSelectedPayrollsChange([...selectedPayrolls, row.original.id])
-                        } else {
-                            onSelectedPayrollsChange(selectedPayrolls.filter(id => id !== row.original.id))
-                        }
-                    }}
-                    aria-label="Seleccionar fila"
-                    className="translate-y-[2px]"
-                    variant="circle"
-                />
-            ),
-            enableSorting: false,
-            enableHiding: false,
-        },
-        {
-            accessorKey: "display_id",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Folio" />,
-            cell: ({ row }) => <DataCell.Code>{row.getValue("display_id")}</DataCell.Code>,
-            meta: { title: "Folio" },
-        },
-        {
-            accessorKey: "period_label",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Período" />,
-            cell: ({ row }) => <DataCell.Text>{row.getValue("period_label")}</DataCell.Text>,
-        },
-        {
-            accessorKey: "total_haberes",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Haberes" />,
-            cell: ({ row }) => <DataCell.CurrencyFlow value={row.getValue("total_haberes")} direction="inflow" showIcon={false} />,
-        },
-        {
-            accessorKey: "total_descuentos",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Descuentos" />,
-            cell: ({ row }) => <DataCell.CurrencyFlow value={row.getValue("total_descuentos") || "0"} direction="outflow" showIcon={false} />,
-        },
-        {
-            accessorKey: "net_salary",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Líquido" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("net_salary")} />,
-            meta: { title: "Líquido" },
-        },
-        {
-            accessorKey: "remuneration_paid_status",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Pago" />,
-            cell: ({ row }) => {
-                const s = row.original.remuneration_paid_status
-                return (
-                    <DataCell.Status status={s || "PENDING"} />
-                )
-            },
-            meta: { title: "Pago" },
-        },
-        profilePayrollActions.auto(profilePayrollActionsCtx) as ColumnDef<Payroll>,
-    ]
-
-    // Unified Payment columns
-    const unifiedPaymentColumns: ColumnDef<UnifiedPayment>[] = [
-        {
-            accessorKey: "date",
-            header: "Fecha",
-            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
-        },
-        {
-            accessorKey: "typeLabel",
-            header: "Tipo",
-            cell: ({ row }) => <DataCell.Text>{row.getValue("typeLabel")}</DataCell.Text>,
-        },
-        {
-            accessorKey: "amount",
-            header: "Monto",
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("amount")} />,
-        },
-        {
-            accessorKey: "statusKey",
-            header: "Estado",
-            cell: ({ row }) => {
-                const s = row.original.statusKey
-                return (
-                    <DataCell.Status status={s} size="xs" />
-                )
-            }
-        }
-    ]
-
-    const contact = employee.contact_detail
 
     return (
         <div className="flex flex-col w-full flex-1 min-h-0 space-y-6">
@@ -530,19 +378,15 @@ function PersonalTab({
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="p-6">
-                            {/* Contact Info */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <InfoField icon={<User className="h-3.5 w-3.5" />} label="Nombre" value={contact?.name || "—"} />
                                 <InfoField icon={<FileText className="h-3.5 w-3.5" />} label="RUT" value={contact?.tax_id || "—"} />
                                 <InfoField icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={contact?.email || "—"} />
                             </div>
 
-                            {/* Section: Employment Data */}
                             <div className="flex items-center gap-2 pt-6 pb-2">
                                 <div className="flex-1 h-px bg-border" />
-                                <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/60">
-                                    Información Laboral
-                                </span>
+                                <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/60">Información Laboral</span>
                                 <div className="flex-1 h-px bg-border" />
                             </div>
 
@@ -553,12 +397,9 @@ function PersonalTab({
                                 <InfoField icon={<FileText className="h-3.5 w-3.5" />} label="Contrato" value={employee.contract_type_display || "—"} />
                             </div>
 
-                            {/* Previsional */}
                             <div className="flex items-center gap-2 pt-6 pb-2">
                                 <div className="flex-1 h-px bg-border" />
-                                <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/60">
-                                    Información Previsional
-                                </span>
+                                <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/60">Información Previsional</span>
                                 <div className="flex-1 h-px bg-border" />
                             </div>
 
@@ -574,7 +415,7 @@ function PersonalTab({
                                         <MoneyDisplay amount={parseFloat(employee.base_salary || "0")} />
                                     </div>
                                 </fieldset>
-                                <InfoField icon={<Clock className="h-3.5 w-3.5" />} label="Jornada" value={employee.jornada_type_display || "—"} />
+                                <InfoField icon={<FileText className="h-3.5 w-3.5" />} label="Jornada" value={employee.jornada_type_display || "—"} />
                             </div>
                         </CardContent>
                     </Card>
@@ -585,47 +426,19 @@ function PersonalTab({
             {activeSubTab === "payrolls" && (
                 <FadeIn delay={0.1} yOffset={10}>
                     <div className="flex-1 min-h-0 flex flex-col">
-                        {selectedPayrolls.length > 0 && (
-                            <div className="px-6 py-2 border-b bg-muted/10 flex justify-end">
-                                <ActionSlideButton
-                                    size="sm"
-                                    className="gap-2 rounded-sm text-xs font-bold border-primary/30 text-primary hover:bg-primary/5"
-                                    onClick={onBulkDownload}
-                                    disabled={downloadingAll}
-                                    loading={downloadingAll}
-                                >
-                                    {!downloadingAll && <Download className="h-3.5 w-3.5" />}
-                                    Descargar {selectedPayrolls.length} seleccionada(s)
-                                </ActionSlideButton>
-                            </div>
-                        )}
-                        <div className="flex-1 min-h-0 flex flex-col">
-                            <DataTable
-                                columns={payrollColumns}
-                                data={payrolls}
-                                defaultPageSize={10}
-                                variant="embedded"
-                                emptyState={{
-                                    context: "generic",
-                                    icon: FileText,
-                                    title: "No tiene liquidaciones",
-                                    description: "Las liquidaciones contabilizadas aparecerán aquí una vez que sean emitidas.",
-                                }}
-                                unifiedSearch={<UnifiedSearchBar config={payrollSearchConfig} chips={payrollSearch.chips} isFiltered={payrollSearch.isFiltered} inputValue={payrollSearch.inputValue} onInputChange={payrollSearch.setInputValue} onApply={payrollSearch.applyFilter} onRemove={payrollSearch.removeFilter} onClearAll={payrollSearch.clearAll} groupBy={payrollSearch.groupBy} onGroupBySelect={payrollSearch.setGroupBy} paramValues={payrollSearch.paramValues} />}
-                                renderSubComponent={(row) => {
-                                    const relatedPayments = unifiedPayments.filter(p => p.payroll_display_id === row.original.display_id)
-                                    return (
-                                        <DataTable
-                                            columns={unifiedPaymentColumns}
-                                            data={relatedPayments}
-                                            variant="minimal"
-                                            noBorder={true}
-                                            hidePagination={true}
-                                        />
-                                    )
-                                }}
+                        <Collection.Root
+                            collection={payrollCollection}
+                            selection="bulk"
+                            actions={profilePayrollActions.forCollection(profilePayrollActionsCtx)}
+                            onOpen={(payroll) => { setPreviewPayrollId(payroll.id); setPreviewOpen(true) }}
+                        >
+                            <Collection.View
+                                table={payrollViews.table}
+                                emptyTitle="No tiene liquidaciones"
+                                emptyDescription="Las liquidaciones contabilizadas aparecerán aquí una vez que sean emitidas."
                             />
-                        </div>
+                            <Collection.BulkBar actions={bulkDownloadAction} />
+                        </Collection.Root>
                     </div>
                 </FadeIn>
             )}
@@ -642,25 +455,13 @@ function PersonalTab({
                         </CardHeader>
                         <CardContent className="p-0 flex-1 flex flex-col">
                             <div className="px-0 flex-1 flex flex-col">
-                                {unifiedPayments.length > 0 ? (
-                                    <DataTable
-                                        columns={unifiedPaymentColumns}
-                                        data={unifiedPayments}
-                                        defaultPageSize={10}
-                                        variant="standalone"
-                                        noBorder={true}
-                                        toolbarClassName="px-6 pt-6 pb-2"
+                                <Collection.Root collection={paymentCollection}>
+                                    <Collection.View
+                                        table={unifiedPaymentViews.table}
+                                        emptyTitle="No tiene transacciones"
+                                        emptyDescription="Los anticipos y pagos de remuneraciones aparecerán aquí una vez que sean procesados."
                                     />
-                                ) : (
-                                    <div className="flex-1 flex items-center justify-center h-full">
-                                        <EmptyState
-                                            context="generic"
-                                            icon={CreditCard}
-                                            title="No tiene transacciones"
-                                            description="Los anticipos y pagos de remuneraciones aparecerán aquí una vez que sean procesados."
-                                        />
-                                    </div>
-                                )}
+                                </Collection.Root>
                             </div>
                         </CardContent>
                     </Card>
@@ -672,6 +473,13 @@ function PersonalTab({
                 open={previewOpen}
                 onOpenChange={setPreviewOpen}
                 employee={employee}
+            />
+
+            <PayrollPaymentsDrawer
+                open={paymentsOpen}
+                onOpenChange={setPaymentsOpen}
+                payroll={paymentsPayroll}
+                allPayments={unifiedPayments}
             />
         </div>
     )
@@ -749,10 +557,10 @@ function PinChangeCard() {
                         </div>
 
                         <div className="flex justify-end pt-2">
-                            <ActionSlideButton type="submit" loading={saving} disabled={saving} className="rounded-sm text-xs font-bold gap-2">
+                            <SubmitButton type="submit" loading={saving} disabled={saving} className="rounded-sm text-xs font-bold gap-2">
                                 <Wallet className="h-4 w-4" />
                                 Guardar PIN
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </div>
                     </form>
                 </Form>

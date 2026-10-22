@@ -161,21 +161,39 @@ class UserPreferenceView(APIView):
 
 class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
-    queryset = User.objects.all()
+    queryset = User.objects.all()  # Base queryset includes archived for detail/update
     serializer_class = UserSerializer
 
-    def destroy(self, request, *args, **kwargs):
-        """
-        Prevent hard deletion of users to maintain traceability.
-        Instead, the user is deactivated.
-        """
+    def get_queryset(self):
+        # List view filters active by default; allow ?is_active=all/false
+        if self.action == "list":
+            is_active = self.request.query_params.get("is_active")
+            if is_active == "all":
+                return User.objects.all()
+            elif is_active == "false":
+                return User.objects.filter(is_active=False)
+            return User.objects.filter(is_active=True)
+        return super().get_queryset()
+
+    def perform_update(self, serializer):
         instance = self.get_object()
-        UserService.deactivate(user=instance, deactivated_by=request.user, request=request)
+        is_active_before = instance.is_active
+        is_active_after = serializer.validated_data.get("is_active", instance.is_active)
+        
+        # If archiving (True -> False), use deactivate service
+        if is_active_before and not is_active_after:
+            from .services import UserService
+            UserService.deactivate(user=instance, deactivated_by=self.request.user, request=self.request)
+            # The service handles setting is_active=False and logging
+            return
+            
+        super().perform_update(serializer)
+
+    def destroy(self, request, *args, **kwargs):
+        # Archivo pattern: hard DELETE not allowed, use PATCH is_active=false to archive
         return Response(
-            {
-                "detail": "Los usuarios no pueden ser eliminados físicamente para mantener la trazabilidad. El usuario ha sido desactivado."
-            },
-            status=status.HTTP_200_OK,
+            {"detail": "Hard delete not allowed for Users. Use PATCH is_active=false to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
     @action(detail=False, methods=["get"])

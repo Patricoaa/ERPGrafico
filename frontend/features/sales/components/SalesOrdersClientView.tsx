@@ -17,6 +17,21 @@ const SalesCheckoutWizard = lazy(() => import("./SalesCheckoutWizard"))
 const DeliveryDrawer = lazy(() => import("./DeliveryDrawer"))
 const DocumentCompletionModal = lazy(() => import("@/components/shared/DocumentCompletionModal"))
 const UnifiedNoteWizard = lazy(() => import("@/features/notes").then(m => ({ default: m.UnifiedNoteWizard })))
+const Step2_ManufacturingDetails = lazy(() =>
+    import("./checkout/Step2_ManufacturingDetails").then(m => ({ default: m.Step2_ManufacturingDetails }))
+)
+
+/** Sales-owned manufacturing step injected into the notes wizard (notes must not import sales). */
+function SalesManufacturingStep({ lines, setLines }: { lines: unknown[]; setLines: (lines: unknown[]) => void }) {
+    return (
+        <Suspense fallback={<div />}>
+            <Step2_ManufacturingDetails
+                orderLines={lines as SaleOrderLine[]}
+                setOrderLines={setLines as (lines: SaleOrderLine[]) => void}
+            />
+        </Suspense>
+    )
+}
 
 interface SalesOrdersClientViewProps {
     viewMode: 'orders' | 'notes'
@@ -113,6 +128,9 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
                              mode="sales"
                              initialType="NOTA_CREDITO"
                              features={{ logistics: true, manufacturing: true }}
+                             renderManufacturingStep={({ lines, setLines }) => (
+                                 <SalesManufacturingStep lines={lines as unknown[]} setLines={setLines as (l: unknown[]) => void} />
+                             )}
                              referenceLabel={addingNote?.invoices?.[0]?.number as string | undefined}
                              fetchSource={async () => {
                                  const invoiceId = addingNote?.invoices?.[0]?.id ?? 0;

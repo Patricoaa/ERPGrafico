@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Check, Users } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { ChevronDown } from "lucide-react"
 
 import { useDebounce } from "@/hooks/useDebounce"
 import { LabeledContainer, SearchablePopover } from '@/components/shared'
 import { useGroupSearch } from "@/features/users/hooks/useGroupSearch"
 import { type AppGroup as Group } from "@/types/entities"
+import { SelectorTrigger, SELECTOR_VALUE_CLASS } from "@/components/shared/SelectorTrigger"
 
 interface GroupSelectorProps {
     value?: string | null // Group name
@@ -19,7 +18,7 @@ interface GroupSelectorProps {
     error?: string
 }
 
-export function GroupSelector({ value, onChange, placeholder = "Seleccionar grupo...", disabled = false, label, error }: GroupSelectorProps) {
+export function GroupSelector({ value, onChange, placeholder = "Seleccionar...", disabled = false, label, error }: GroupSelectorProps) {
     const [open, setOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 500)
@@ -75,23 +74,15 @@ export function GroupSelector({ value, onChange, placeholder = "Seleccionar grup
                     </>
                 )}
                 trigger={
-                    <Button
-                        variant="ghost"
-                        role="combobox"
-                        aria-expanded={open}
-                        className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                    <SelectorTrigger
+                        hasValue={!!selectedGroup}
+                        placeholder={placeholder}
+                        icon={<Users className="h-3.5 w-3.5 shrink-0 text-primary" />}
+                        open={open}
                         disabled={disabled}
                     >
-                        {(selectedGroup || value) ? (
-                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                <Users className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                <span className="font-medium text-sm truncate">{selectedGroup?.name || value}</span>
-                            </div>
-                        ) : (
-                            <span className="text-muted-foreground truncate">{placeholder}</span>
-                        )}
-                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
+                        <span className={`${SELECTOR_VALUE_CLASS} truncate`}>{selectedGroup?.name || value}</span>
+                    </SelectorTrigger>
                 }
             />
         </LabeledContainer>

@@ -173,11 +173,13 @@ def test_adjustment_entry_is_draft(setup_data):
     user = setup_data["user"]
     statement = setup_data["statement"]
 
-    # Setup Accounting Settings with dummy accounts
+    # Setup Accounting Settings with dummy accounts - use singleton
+    settings = AccountingSettings.get_solo()
     acc_diff = Account.objects.create(
         name="Commision Account", code="5.1.01.001", account_type=AccountType.EXPENSE
     )
-    AccountingSettings.objects.create(bank_commission_account=acc_diff)
+    settings.bank_commission_account = acc_diff
+    settings.save()
 
     l1 = BankStatementLine.objects.create(
         statement=statement,

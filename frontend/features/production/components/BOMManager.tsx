@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import {
     Plus, Workflow, Box, Layers, History
@@ -8,14 +8,12 @@ import {
 
 import { BOMDrawer } from "./BOMDrawer"
 
-import { ActionConfirmModal, Chip, LabeledSelect, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, LabeledSelect } from '@/components/shared'
 import { cn } from "@/lib/utils"
-import { getDomainConceptTitle, getDomainConceptCode, getDomainConceptMessage } from "@/lib/entity-registry"
-import { DataTable } from '@/components/shared'
-import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell } from '@/components/shared'
+import { getDomainConceptCode, getDomainConceptMessage } from "@/lib/entity-registry"
 import { bomManagerActions, type BOMManagerActionsCtx } from './bomManagerActions'
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { bomManagerEntity, bomManagerViews, type BOMManagerRow } from "../entity-view/bomManager.entity"
 
 import { type BOM, type ProductMinimal } from "../types"
 
@@ -85,14 +83,27 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
         }
     }
 
-    const handleToggleActive = async (bom: BOM) => {
+    const handleToggleActive = useCallback(async (bom: BOM) => {
         if (bom.active) return
         try {
             await toggleActive(bom.id as number)
         } catch {
             // Error handled by hook toast
         }
-    }
+    }, [toggleActive])
+
+    const augmentedBoms = useMemo<BOMManagerRow[]>(() => boms.map(b => ({
+        ...b,
+        _fallbackUom: product?.uom_name,
+        _isBase: Number(b.product) === Number(product?.id),
+        _onToggle: b.active ? null : () => { void handleToggleActive(b) },
+    })), [boms, product, handleToggleActive])
+
+    const bomCollection = useEntityCollection(
+        bomManagerEntity,
+        { rows: augmentedBoms, isLoading: isBOMsLoading },
+        { pagination: { mode: "none" } }
+    )
 
     if (!product?.id) {
         return (
@@ -109,92 +120,6 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
         onEdit: (bom) => handleEdit(bom as BOM),
         onDelete: (bom) => handleDelete(bom as BOM, false),
     }
-
-    const columns: ColumnDef<BOM>[] = [
-        {
-            accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title={`${getDomainConceptTitle('ldm')} (Receta)`} className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center py-1 text-center w-full">
-                    <DataCell.Text className="font-black text-xs tracking-tight uppercase leading-none">{row.original.name}</DataCell.Text>
-                    {row.original.notes && (
-                        <DataCell.Secondary className="text-3xs italic truncate max-w-[200px] mt-1">{row.original.notes}</DataCell.Secondary>
-                    )}
-                </div>
-            )
-        },
-        {
-            accessorKey: "product_id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Variante / Contexto" className="justify-center" />,
-            cell: ({ row }) => {
-                const isBase = Number(row.original.product) === Number(product?.id)
-                return (
-                    <div className="flex items-center justify-center gap-2 w-full">
-                        {isBase ? (
-                            <Chip size="xs" intent="primary">BASE</Chip>
-                        ) : (
-                            <div className="flex flex-col items-center gap-0.5">
-                                <DataCell.Code>{row.original.product_internal_code || 'VAR'}</DataCell.Code>
-                                <DataCell.Text className="text-3xs truncate max-w-[120px]">{row.original.product_name}</DataCell.Text>
-                            </div>
-                        )}
-                    </div>
-                )
-            }
-        },
-        {
-            accessorKey: "yield_quantity",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Rendimiento (Output)" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.NumericFlow
-                        value={row.original.yield_quantity}
-                        unit={row.original.yield_uom_name || product?.uom_name}
-                    />
-                </div>
-            )
-        },
-        {
-            accessorKey: "active",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <Button
-                        variant="ghost"
-                        type="button"
-                        onClick={() => !row.original.active && handleToggleActive(row.original)}
-                        className={cn("h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none", !row.original.active && "hover:scale-105 transition-transform")}
-                    >
-                        <StatusBadge
-                            status={row.original.active ? "active" : "inactive"}
-                            className="cursor-pointer"
-                        />
-                    </Button>
-                </div>
-            )
-        },
-        {
-            accessorKey: "lines_count",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Comp." className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <DataCell.Text className="font-black opacity-60">
-                        {`${row.original.lines?.length || 0} ITEMS`}
-                    </DataCell.Text>
-                </div>
-            )
-        },
-        {
-            accessorKey: "updated_at",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Actualizado" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Date value={row.original.updated_at} showTime className="text-3xs font-medium opacity-50" />
-                </div>
-            )
-        },
-        bomManagerActions.auto(bomManagerActionsCtx) as ColumnDef<BOM>
-    ]
 
     return (
         <>
@@ -236,7 +161,6 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                         containerClassName="flex-1"
                                         value={selectedVariantId}
                                         onChange={setSelectedVariantId}
-                                        placeholder="Seleccione variante..."
                                         className="font-mono h-10"
                                         options={[
                                             { value: "all", label: "-- Ver Todas las Recetas --" },
@@ -299,7 +223,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                             <div className="space-y-1.5 max-w-sm">
                                 <p className="text-base font-black uppercase tracking-widest text-primary">Sin recetas de producción</p>
                                 <p className="text-sm font-medium text-muted-foreground/80">
-                                    Defina la {getDomainConceptTitle('ldm').toLowerCase()} ({getDomainConceptCode('ldm')}) y el ruteo de etapas para fabricar este producto.
+                                    Defina la {getDomainConceptCode('ldm')} y el ruteo de etapas para fabricar este producto.
                                 </p>
                             </div>
                             <div className="flex items-center gap-3 mt-2">
@@ -327,12 +251,17 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                             </div>
                         </div>
                     ) : (
-                        <DataTable
-                            columns={columns}
-                            data={boms}
-                            variant="embedded"
-                            isLoading={isBOMsLoading}
-                        />
+                        <Collection.Root
+                            collection={bomCollection}
+                            label="Estructuras técnicas"
+                            actions={bomManagerActions.forCollection(bomManagerActionsCtx)}
+                        >
+                            <Collection.View
+                                table={bomManagerViews.table}
+                                emptyTitle="Sin recetas"
+                                emptyDescription="No se encontraron estructuras técnicas."
+                            />
+                        </Collection.Root>
                     )}
                 </div>
             </div>

@@ -1,28 +1,29 @@
 import { defineEntity } from "@/components/entity-view"
+import { getDtePrefix } from "@/lib/entity-registry"
 import type { Invoice } from "../types"
 
-/** Credit notes reduce the balance: shown with sign (gap found in 02 §3 #3: NC displayed positive). */
-const signed = (i: Invoice): number => (i.dte_type === "NOTA_CREDITO" ? -Math.abs(Number(i.total)) : Number(i.total))
-
-/** Purchase notes/invoices — used by the "notes" mode of the purchasing screen. */
+/** Purchase invoices/notes list (ADR-0087 oleada B1). Same hub and `total` convention as `salesInvoiceEntity`. */
 export const purchaseInvoiceEntity = defineEntity<Invoice>()((f) => ({
     label: "billing.invoice",
     fields: {
-        dteType: f.text("dte_type_display", { label: "Documento" }),
-        folio: f.code((i) => i.display_id ?? i.number ?? null, { label: "Folio" }),
-        date: f.date("date", { label: "Fecha" }),
-        partner: f.text((i) => i.supplier_name || i.partner_name, { label: "Proveedor" }),
-        hub: f.hubStatus((i) => i, { label: "Estado", entity: "billing.invoice", caption: (i) => ({ status: i.status, label: i.status_display }) }),
-        total: f.money(signed, { label: "Total" }),
+        folio: f.code((inv) => {
+            const id = inv.display_id ?? inv.number
+            return id ? `${getDtePrefix(inv.dte_type)}-${id}` : null
+        }, { label: "Folio" }),
+        date: f.date("date", { label: "Fecha Emisión" }),
+        supplier: f.contact((inv) => (inv.partner_name ? { id: inv.partner_id ?? inv.supplier ?? 0, name: inv.partner_name } : null), { label: "Proveedor" }),
+        dteType: f.text("dte_type_display", { label: "Tipo DTE" }),
+        hub: f.hubStatus((inv) => inv, { label: "Estado", entity: "billing.invoice", caption: (inv) => ({ status: inv.status, label: inv.status_display }) }),
+        total: f.money("total", { label: "Total" }),
     },
 }))
 
 export const purchaseInvoiceViews = purchaseInvoiceEntity.views({
-    table: { columns: ["dteType", "folio", "date", "partner", "hub", "total"], primary: "folio", defaultSort: "-date" },
+    table: { columns: ["folio", "date", "supplier", "dteType", "hub", "total"], primary: "folio" },
     card: {
         title: "folio",
-        subtitle: ["dteType", "partner", "date"],
+        subtitle: ["dteType", "supplier", "date"],
         trailing: ["total"],
-        media: { tone: (i) => (i.dte_type === "NOTA_CREDITO" ? "destructive" : i.dte_type === "NOTA_DEBITO" ? "warning" : "default") },
+        media: { tone: (inv) => (inv.dte_type === "NOTA_CREDITO" ? "destructive" : inv.dte_type === "NOTA_DEBITO" ? "warning" : "default") },
     },
 })

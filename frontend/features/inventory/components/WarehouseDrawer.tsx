@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { useWarehouseMutations } from "../hooks/useWarehouseMutations"
-import { ActionSlideButton } from "@/components/shared"
+import { SubmitButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
@@ -207,9 +207,9 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
                         actions={
                             <>
                                 <CancelButton onClick={() => setOpen(false)} />
-                                <ActionSlideButton type="submit" form="warehouse-form" loading={loading}>
+                                <SubmitButton type="submit" form="warehouse-form" loading={loading}>
                                     {mode === 'create' ? "Crear Almacén" : "Guardar Cambios"}
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />

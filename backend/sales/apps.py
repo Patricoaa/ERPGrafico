@@ -39,8 +39,8 @@ class SalesConfig(AppConfig):
                     display_template=f"{EntityPrefix.SALE_ORDER}-{{number}}",
                     subtitle_template="{customer_name}",
                     extra_info_template="{total}",
-                    list_url="/sales/orders",
-                    detail_url_pattern="/sales/orders/{id}",
+                    list_url="/sales/dtes/orders",
+                    detail_url_pattern="/sales/dtes/orders/{id}",
                     permission="sales.view_saleorder",
                 )
             )
@@ -56,8 +56,8 @@ class SalesConfig(AppConfig):
                     display_template=f"{EntityPrefix.SALE_DELIVERY}-{{number}}",
                     subtitle_template="{customer_name}",
                     extra_info_template="{status}",
-                    list_url="/sales/orders/deliveries",
-                    detail_url_pattern="/sales/orders/deliveries/{id}",
+                    list_url="/sales/dtes/deliveries",
+                    detail_url_pattern="/d/sales.saledelivery/{id}",
                     permission="sales.view_saledelivery",
                 )
             )
@@ -73,8 +73,8 @@ class SalesConfig(AppConfig):
                     display_template=f"{EntityPrefix.SALE_RETURN}-{{number}}",
                     subtitle_template="{sale_order.customer.name} · {sale_order.customer.tax_id}",
                     extra_info_template="{status}",
-                    list_url="/sales/returns",
-                    detail_url_pattern="/sales/returns/{id}",
+                    list_url="/sales/dtes/returns",
+                    detail_url_pattern="/d/sales.salereturn/{id}",
                     permission="sales.view_salereturn",
                 )
             )

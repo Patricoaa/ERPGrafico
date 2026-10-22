@@ -14,6 +14,7 @@ export interface Contact {
     payment_terms: string | null
     is_default_customer: boolean
     is_default_vendor: boolean
+    is_active: boolean
 
     credit_enabled?: boolean
     credit_limit?: number | null
@@ -22,6 +23,8 @@ export interface Contact {
     credit_available?: number | null
     credit_blocked?: boolean
     credit_auto_blocked?: boolean
+    /** Credit risk band (`contacts.models.RiskLevel`); sent by the API, used to group the list. */
+    credit_risk_level?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
 }
 
 export interface ContactFilters {
@@ -31,6 +34,7 @@ export interface ContactFilters {
     code?: string
     is_default_customer?: boolean
     is_default_vendor?: boolean
+    is_active?: string
 }
 
 export interface ContactPayload {
@@ -43,6 +47,7 @@ export interface ContactPayload {
     payment_terms?: string
     is_default_customer: boolean
     is_default_vendor: boolean
+    is_active?: boolean
 
     credit_enabled?: boolean
     credit_limit?: number | null

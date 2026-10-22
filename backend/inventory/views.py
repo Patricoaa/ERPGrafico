@@ -6,8 +6,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
+from core.edit_policy import annotate_edit_usage
 from core.mixins import AuditHistoryMixin as AuditHistory
-from core.mixins import BulkImportMixin, NoDestroyModelMixin
+from core.mixins import BulkImportMixin, EditPolicyMixin, NoDestroyModelMixin
 
 from .filters import ProductFilter, StockMoveFilter, UoMFilter
 from .models import (
@@ -57,7 +58,7 @@ from .services import (
 )
 
 
-class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
+class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
@@ -67,12 +68,18 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
         if self.action in ["create", "update", "partial_update"]:
             return ProductWriteSerializer
         return ProductSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = ProductFilter
     pagination_class = StandardResultsSetPagination
     search_fields = ["name", "internal_code", "code"]
+    # Server ordering of the product list (ADR-0087 lote 2): the client sends `?ordering=<key>,id`.
+    # No default `ordering`: without the param the selector's order is kept.
+    ordering_fields = ["id", "name", "internal_code", "code", "category__name", "product_type", "annotated_current_stock", "sale_price"]
 
     def get_queryset(self):
+        # Archivo: en el listado, `list_products` (inventory/selectors.py) filtra
+        # is_active=True por defecto y respeta ?is_active=all/false. El detalle usa
+        # la base sin filtrar para permitir operar sobre productos archivados.
         user = self.request.user
         if self.kwargs.get("pk") or self.action in [
             "retrieve",
@@ -80,8 +87,8 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
             "partial_update",
             "destroy",
         ]:
-            return get_product_base_queryset(user=user)
-        return list_products(user=user, params=self.request.query_params)
+            return annotate_edit_usage(get_product_base_queryset(user=user))
+        return annotate_edit_usage(list_products(user=user, params=self.request.query_params))
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -114,14 +121,8 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
             )
         return Response({"is_favorite": ProductService.toggle_favorite(product, request.user)})
 
-    def perform_update(self, serializer):
-        serializer.save()
-
-    def partial_update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        active_val = request.data.get("is_active")
-
-        # If we are archiving (is_active: True -> False)
+    def _check_archiving(self, instance, active_val):
+        """Check archiving restrictions when is_active goes from True to False."""
         if active_val is False and instance.is_active is True:
             restrictions = ProductService.check_archiving_restrictions(instance)
             if restrictions:
@@ -132,7 +133,22 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+        return None
 
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        active_val = request.data.get("is_active")
+        error_response = self._check_archiving(instance, active_val)
+        if error_response:
+            return error_response
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        active_val = request.data.get("is_active")
+        error_response = self._check_archiving(instance, active_val)
+        if error_response:
+            return error_response
         return super().partial_update(request, *args, **kwargs)
 
     @action(detail=False, methods=["get"])
@@ -284,6 +300,16 @@ class ProductAttributeViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditH
     filter_backends = [filters.SearchFilter]
     search_fields = ["name"]
 
+    def get_queryset(self):
+        if self.action == "list":
+            is_active = self.request.query_params.get("is_active")
+            if is_active == "all":
+                return ProductAttribute.objects.all()
+            elif is_active == "false":
+                return ProductAttribute.objects.filter(is_active=False)
+            return ProductAttribute.objects.filter(is_active=True)
+        return super().get_queryset()
+
 
 class ProductAttributeValueViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = ProductAttributeValue.objects.all()
@@ -304,20 +330,52 @@ class CategoryViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     serializer_class = ProductCategorySerializer
     pagination_class = None  # Master data
 
+    def get_queryset(self):
+        if self.action == "list":
+            is_active = self.request.query_params.get("is_active")
+            if is_active == "all":
+                return ProductCategory.objects.all()
+            elif is_active == "false":
+                return ProductCategory.objects.filter(is_active=False)
+            return ProductCategory.objects.filter(is_active=True)
+        return super().get_queryset()
+
 
 class WarehouseViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = Warehouse.objects.all()
     serializer_class = WarehouseSerializer
     pagination_class = None  # Master data
 
+    def get_queryset(self):
+        if self.action == "list":
+            is_active = self.request.query_params.get("is_active")
+            if is_active == "all":
+                return Warehouse.objects.all()
+            elif is_active == "false":
+                return Warehouse.objects.filter(is_active=False)
+            return Warehouse.objects.filter(is_active=True)
+        return super().get_queryset()
 
-class UoMViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
+
+class UoMViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = UoM.objects.all()
     serializer_class = UoMSerializer
     pagination_class = None  # Master data
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = UoMFilter
     search_fields = ["name", "abbreviation"]
+
+    def get_queryset(self):
+        queryset = annotate_edit_usage(super().get_queryset())
+        if self.action == "list":
+            # Default to active only; allow ?is_active=all or ?is_active=false
+            is_active = self.request.query_params.get("is_active")
+            if is_active == "all":
+                return queryset
+            elif is_active == "false":
+                return queryset.filter(is_active=False)
+            return queryset.filter(is_active=True)
+        return queryset
 
     @action(detail=False, methods=["get"])
     def allowed(self, request):
@@ -345,6 +403,16 @@ class UoMCategoryViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistor
     queryset = UoMCategory.objects.all()
     serializer_class = UoMCategorySerializer
     pagination_class = None  # Master data
+
+    def get_queryset(self):
+        if self.action == "list":
+            is_active = self.request.query_params.get("is_active")
+            if is_active == "all":
+                return UoMCategory.objects.all()
+            elif is_active == "false":
+                return UoMCategory.objects.filter(is_active=False)
+            return UoMCategory.objects.filter(is_active=True)
+        return super().get_queryset()
 
 
 class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):

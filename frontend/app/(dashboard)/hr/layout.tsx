@@ -1,11 +1,8 @@
-import { type Metadata } from "next"
 import { PageContainer } from "@/components/shared"
 import { HRHeader } from "./HRHeader"
+import { createAutoMetadata } from "@/lib/auto-metadata"
 
-export const metadata: Metadata = {
-    title: "Módulo de Recursos Humanos (RRHH) | ERPGrafico",
-    description: "Gestión centralizada de personal, inasistencias, anticipos y liquidaciones.",
-}
+export const generateMetadata = createAutoMetadata("hr")
 
 export default function HRLayout({ children }: { children: React.ReactNode }) {
     return (

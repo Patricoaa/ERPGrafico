@@ -43,21 +43,25 @@ export function DocumentAttachmentDropzone({
             disabled={disabled}
         >
             {!file ? (
-                <div className="relative group w-full min-h-[72px]">
-                    <Input
-                        type="file"
-                        accept={accept}
-                        className="h-full w-full cursor-pointer opacity-0 absolute inset-0 z-10"
-                        onChange={(e) => onFileChange(e.target.files?.[0] || null)}
-                        disabled={disabled}
-                    />
-                    <div className="min-h-[72px] w-full flex flex-col items-center justify-center gap-1 group-hover:text-primary transition-colors">
-                        <Upload className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                        <p className="text-3xs font-bold text-muted-foreground uppercase text-center px-4 group-hover:text-primary transition-colors">
-                            Seleccionar o arrastrar archivo
-                        </p>
+                <>
+                    {/* typography-allow: meta - dropzone min-height */}
+                    <div className="relative group w-full min-h-[72px]">
+                        <Input
+                            type="file"
+                            accept={accept}
+                            className="h-full w-full cursor-pointer opacity-0 absolute inset-0 z-10"
+                            onChange={(e) => onFileChange(e.target.files?.[0] || null)}
+                            disabled={disabled}
+                        />
+                        {/* typography-allow: meta - dropzone min-height */}
+                        <div className="min-h-[72px] w-full flex flex-col items-center justify-center gap-1 group-hover:text-primary transition-colors">
+                            <Upload className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            <p className="text-3xs font-bold text-muted-foreground uppercase text-center px-4 group-hover:text-primary transition-colors">
+                                Seleccionar o arrastrar archivo
+                            </p>
+                        </div>
                     </div>
-                </div>
+                </>
             ) : (
                 <div className="flex items-center justify-between w-full px-2 py-1.5 animate-in zoom-in duration-200">
                     <div className="flex items-center gap-2 min-w-0">
@@ -67,10 +71,11 @@ export function DocumentAttachmentDropzone({
                         <div className="flex flex-col min-w-0">
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <span className="text-xs font-bold truncate max-w-[220px] text-success">{file.name}</span>
+                                    <span className="text-sm text-foreground truncate max-w-[220px]">{file.name}</span>
                                 </TooltipTrigger>
                                 <TooltipContent side="top">{file.name}</TooltipContent>
                             </Tooltip>
+                            {/* typography-allow: meta - N5 */}
                             <span className="text-3xs uppercase font-bold text-muted-foreground">
                                 {(file.size / 1024).toFixed(1)} KB
                             </span>

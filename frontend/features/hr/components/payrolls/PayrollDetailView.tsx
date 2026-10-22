@@ -11,6 +11,7 @@ import * as z from "zod"
 import {
     postPayroll, generateProformaPayroll, deletePayroll,
     createPayrollItem, updatePayrollItem, deletePayrollItem, payPrevired, paySalary,
+    updateAdvance, getPendingAdvancesForEmployee, annulPayrollPayment,
 } from '@/features/hr/api/hrApi'
 import { PaymentModal } from "@/features/treasury"
 import type { PayrollItem, PayrollConcept, PayrollPayment, SalaryAdvance } from "@/types/hr"
@@ -19,12 +20,12 @@ import { Button } from "@/components/ui/button"
 import {
     Form, FormField
 } from "@/components/ui/form"
-import { ActionConfirmModal, ActionSlideButton, BaseModal, CancelButton, FormFooter, LabeledInput, LabeledSelect, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, SubmitButton, BaseModal, CancelButton, FormFooter, LabeledInput, LabeledSelect, StatusBadge, MoneyDisplay } from "@/components/shared"
 
 import {
     BookOpen,
     DollarSign, ShieldCheck, Sparkles,
-    CheckCircle2, FileText, ArrowLeft
+    CheckCircle2, FileText, ArrowLeft, Link2, X, Loader2,
 } from "lucide-react"
 import { DataCell } from "@/components/shared"
 import { SkeletonShell } from "@/components/shared"
@@ -140,15 +141,16 @@ export function PayrollDetailView({
     }
 
     const isPosted = payroll?.status === 'POSTED'
-    const salaroPaid = payments.some((p: PayrollPayment) => p.payment_type === 'SALARIO')
-    const previredPaid = payments.some((p: PayrollPayment) => p.payment_type === 'PREVIRED')
+    const activePayments = payments.filter((p: PayrollPayment) => p.status === 'POSTED')
+    const salaroPaid = activePayments.some((p: PayrollPayment) => p.payment_type === 'SALARIO')
+    const previredPaid = activePayments.some((p: PayrollPayment) => p.payment_type === 'PREVIRED')
 
     const netSalary = parseFloat(payroll?.net_salary || "0")
     const totalAdvances = payroll?.advances?.reduce((s: number, a: SalaryAdvance) => s + parseFloat(a.amount), 0) || 0
-    const totalSalaryPaid = payments.filter((p: PayrollPayment) => p.payment_type === 'SALARIO').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0)
+    const totalSalaryPaid = activePayments.filter((p: PayrollPayment) => p.payment_type === 'SALARIO').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0)
     const pendingSalary = Math.max(0, netSalary - totalAdvances - totalSalaryPaid)
     const totalPrevired = payroll?.items?.filter((i: PayrollItem) => i.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR').reduce((s: number, i: PayrollItem) => s + parseFloat(i.amount || "0"), 0) || 0
-    const pendingPrevired = Math.max(0, totalPrevired - payments.filter((p: PayrollPayment) => p.payment_type === 'PREVIRED').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0))
+    const pendingPrevired = Math.max(0, totalPrevired - activePayments.filter((p: PayrollPayment) => p.payment_type === 'PREVIRED').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0))
 
     useEffect(() => {
         if (isSheet && onHeaderDataChange && payroll) {
@@ -179,9 +181,7 @@ export function PayrollDetailView({
                         {viewMode === 'admin' && <DocumentRelationsButton label="hr.payroll" id={payroll.id} />}
                         {viewMode === 'admin' && !isPosted && (
                             <>
-                                <ActionSlideButton
-                                    variant="primary"
-                                    size="sm"
+                                <SubmitButton
                                     className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
                                     onClick={handleGenerateProforma}
                                     loading={generating}
@@ -189,17 +189,16 @@ export function PayrollDetailView({
                                 >
                                     <span className="hidden sm:inline">Propuesta Inicial</span>
                                     <span className="sm:hidden">Propuesta</span>
-                                </ActionSlideButton>
+                                </SubmitButton>
 
-                                <ActionSlideButton
-                                    size="sm"
+                                <SubmitButton
                                     className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
                                     loading={posting}
                                     onClick={() => setPostConfirmOpen(true)}
                                     icon={BookOpen}
                                 >
                                     Contabilizar
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         )}
                         {viewMode === 'admin' && isPosted && (
@@ -295,9 +294,7 @@ export function PayrollDetailView({
                     <div className="flex items-center gap-2 sm:gap-3">
                         {viewMode === 'admin' && !isPosted && (
                             <>
-                                <ActionSlideButton
-                                    variant="primary"
-                                    size="sm"
+                                <SubmitButton
                                     className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
                                     onClick={handleGenerateProforma}
                                     loading={generating}
@@ -305,17 +302,16 @@ export function PayrollDetailView({
                                 >
                                     <span className="hidden sm:inline">Propuesta Inicial</span>
                                     <span className="sm:hidden">Propuesta</span>
-                                </ActionSlideButton>
+                                </SubmitButton>
 
-                                <ActionSlideButton
-                                    size="sm"
+                                <SubmitButton
                                     className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
                                     loading={posting}
                                     onClick={() => setPostConfirmOpen(true)}
                                     icon={BookOpen}
                                 >
                                     Contabilizar
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         )}
                         {viewMode === 'admin' && isPosted && (
@@ -379,6 +375,20 @@ export function PayrollDetailView({
                         showEmployerContributions={viewMode === 'admin'}
                         className={isSheet ? "" : ""}
                     />
+
+                    {viewMode === 'admin' && payments.length > 0 && (
+                        <PaymentsSection payments={payments} onChanged={() => { fetchPayroll(); onUpdate?.() }} />
+                    )}
+
+                    {viewMode === 'admin' && (
+                        <AdvancesSection
+                            payrollId={payrollId}
+                            employeeId={payroll.employee}
+                            advances={payroll.advances ?? []}
+                            isPosted={isPosted}
+                            onChanged={fetchPayroll}
+                        />
+                    )}
                 </div>
             </div>
 
@@ -450,6 +460,189 @@ export function PayrollDetailView({
     )
 }
 
+function PaymentsSection({ payments, onChanged }: { payments: PayrollPayment[], onChanged: () => void }) {
+    const [toAnnul, setToAnnul] = useState<PayrollPayment | null>(null)
+
+    return (
+        <div className="mt-6 border rounded-md p-4 space-y-3">
+            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Pagos registrados</span>
+            <div className="space-y-1.5">
+                {payments.map(p => (
+                    <div key={p.id} className="flex items-center justify-between text-xs py-1 border-b last:border-0">
+                        <span className="text-muted-foreground">{p.date}</span>
+                        <span>{p.payment_type_display}</span>
+                        <MoneyDisplay amount={p.amount} className="font-medium text-xs" />
+                        <StatusBadge status={p.status} size="sm" variant="badge" />
+                        {p.status === 'POSTED' && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-xs text-muted-foreground hover:text-destructive"
+                                onClick={() => setToAnnul(p)}
+                            >
+                                Anular
+                            </Button>
+                        )}
+                    </div>
+                ))}
+            </div>
+
+            <ActionConfirmModal
+                open={toAnnul !== null}
+                onOpenChange={(o) => { if (!o) setToAnnul(null) }}
+                title="Anular pago"
+                description="Se anulará el egreso en tesorería con su asiento de reversa y el monto volverá a quedar pendiente en la liquidación."
+                variant="destructive"
+                confirmText="Anular"
+                requireReason
+                onConfirm={async (reason) => {
+                    if (!toAnnul || !reason) return
+                    try {
+                        await annulPayrollPayment(toAnnul.id, reason)
+                        toast.success("Pago anulado")
+                        setToAnnul(null)
+                        onChanged()
+                    } catch (e) {
+                        showApiError(e, "Error al anular el pago")
+                    }
+                }}
+            />
+        </div>
+    )
+}
+
+function AdvancesSection({ payrollId, employeeId, advances, isPosted, onChanged }: {
+    payrollId: number
+    employeeId: number
+    advances: SalaryAdvance[]
+    isPosted: boolean
+    onChanged: () => void
+}) {
+    const [linkOpen, setLinkOpen] = useState(false)
+    const [pending, setPending] = useState<SalaryAdvance[]>([])
+    const [loadingPending, setLoadingPending] = useState(false)
+    const [linking, setLinking] = useState<number | null>(null)
+    const [unlinking, setUnlinking] = useState<number | null>(null)
+
+    const openLinkModal = async () => {
+        setLinkOpen(true)
+        setLoadingPending(true)
+        try {
+            const results = await getPendingAdvancesForEmployee(employeeId)
+            setPending(results)
+        } catch (e) {
+            showApiError(e, "Error al cargar anticipos pendientes")
+        } finally {
+            setLoadingPending(false)
+        }
+    }
+
+    const handleLink = async (advanceId: number) => {
+        setLinking(advanceId)
+        try {
+            await updateAdvance(advanceId, { payroll: payrollId } as Partial<SalaryAdvance>)
+            onChanged()
+            setLinkOpen(false)
+        } catch (e) {
+            showApiError(e, "Error al vincular anticipo")
+        } finally {
+            setLinking(null)
+        }
+    }
+
+    const handleUnlink = async (advanceId: number) => {
+        setUnlinking(advanceId)
+        try {
+            await updateAdvance(advanceId, { payroll: null } as Partial<SalaryAdvance>)
+            onChanged()
+        } catch (e) {
+            showApiError(e, "Error al desvincular anticipo")
+        } finally {
+            setUnlinking(null)
+        }
+    }
+
+    return (
+        <div className="mt-6 border rounded-md p-4 space-y-3">
+            <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Anticipos vinculados</span>
+                {!isPosted && (
+                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 rounded-sm" onClick={openLinkModal}>
+                        <Link2 className="h-3.5 w-3.5" />
+                        Vincular anticipo
+                    </Button>
+                )}
+            </div>
+
+            {advances.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Sin anticipos vinculados.</p>
+            ) : (
+                <div className="space-y-1.5">
+                    {advances.map(adv => (
+                        <div key={adv.id} className="flex items-center justify-between text-xs py-1 border-b last:border-0">
+                            <span className="text-muted-foreground">{adv.date}</span>
+                            <MoneyDisplay amount={adv.amount} className="font-medium text-xs" />
+                            <StatusBadge status={adv.status} size="sm" variant="badge" />
+                            {!isPosted && adv.status === "PAID" && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-5 w-5 text-muted-foreground hover:text-destructive"
+                                    onClick={() => handleUnlink(adv.id)}
+                                    disabled={unlinking === adv.id}
+                                    aria-label="Desvincular"
+                                >
+                                    <X className="h-3.5 w-3.5" />
+                                </Button>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <BaseModal
+                open={linkOpen}
+                onOpenChange={setLinkOpen}
+                icon={Link2}
+                title="Vincular anticipo"
+                description="Anticipos pendientes del empleado sin liquidación asignada"
+                footer={
+                    <FormFooter actions={<CancelButton onClick={() => setLinkOpen(false)} />} />
+                }
+            >
+                <div className="px-6 pb-4 pt-2 min-h-[80px]">
+                    {loadingPending ? (
+                        <div className="flex items-center justify-center py-8">
+                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                        </div>
+                    ) : pending.length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-4">No hay anticipos pendientes para este empleado.</p>
+                    ) : (
+                        <div className="space-y-2">
+                            {pending.map(adv => (
+                                <div key={adv.id} className="flex items-center justify-between border rounded-sm px-3 py-2 text-sm">
+                                    <div className="flex flex-col">
+                                        <MoneyDisplay amount={adv.amount} className="font-medium text-sm" />
+                                        <span className="text-xs text-muted-foreground">{adv.date}</span>
+                                    </div>
+                                    <SubmitButton
+                                        size="sm"
+                                        className="h-7 text-xs rounded-sm"
+                                        onClick={() => handleLink(adv.id)}
+                                        loading={linking === adv.id}
+                                    >
+                                        Vincular
+                                    </SubmitButton>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </BaseModal>
+        </div>
+    )
+}
+
 function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared }: {
     payrollId: number, item: PayrollItem | null, concepts: PayrollConcept[], onSaved: () => void, onEditCleared: () => void
 }) {
@@ -510,13 +703,13 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared }
                     actions={
                         <>
                             <CancelButton onClick={() => { setOpen(false); onEditCleared(); }} />
-                            <ActionSlideButton
+                            <SubmitButton
                                 form="payroll-item-form"
                                 type="submit"
                                 loading={saving}
                             >
                                 {item && item.id ? "Actualizar Item" : "Añadir a Liquidación"}
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />
@@ -534,7 +727,6 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared }
                             value={field.value}
                             onChange={field.onChange}
                             error={fieldState.error?.message}
-                            placeholder="Seleccionar..."
                             options={concepts.map(c => ({
                                 value: c.id.toString(),
                                 label: c.name
@@ -556,7 +748,6 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared }
                         <LabeledInput
                             {...field}
                             label="Observaciones (Opcional)"
-                            placeholder="Detalle adicional..."
                             error={fieldState.error?.message}
                         />
                     )} />

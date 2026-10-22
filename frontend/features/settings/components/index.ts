@@ -1,4 +1,5 @@
 export * from './BillingSettingsView';
+export * from './DteSettingsView';
 export * from './CompanySettingsView';
 export * from './GroupsClientView';
 export * from './HRSettingsView';

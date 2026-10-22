@@ -17,7 +17,7 @@ const pct = (part: number, total: number) => (total > 0 ? Math.min(100, Math.rou
  * de la lista: tarjeta y ficha no pueden discrepar. Facturación exige facturado completo y folio.
  */
 export function getOrderLifecycle(order: Order, kind: "sale" | "purchase"): LifecycleStep[] {
-    const hub = getHubStatuses(order as unknown as Parameters<typeof getHubStatuses>[0])
+    const hub = getHubStatuses(order)
     const lines: OrderLine[] = order.lines ?? order.items ?? []
 
     const ordered = lines.reduce((sum, l) => sum + toNumber(l.quantity), 0)

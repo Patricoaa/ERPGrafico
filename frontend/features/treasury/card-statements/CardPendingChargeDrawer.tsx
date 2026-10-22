@@ -10,10 +10,7 @@ import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 import { useServerDate } from "@/hooks/useServerDate"
 import { toDateOnlyISO } from "@/lib/utils"
 import { Form, FormField } from "@/components/ui/form"
-import {
-    CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter,
-    FormSplitLayout, ActionSlideButton, Drawer, SkeletonShell,
-} from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, SubmitButton, Drawer, SkeletonShell } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { Button } from '@/components/ui/button'
 import { showApiError } from "@/lib/errors"
@@ -72,7 +69,7 @@ export function CardPendingChargeDrawer({
         resolver: zodResolver(chargeSchema),
         defaultValues: {
             amount: "",
-            charge_type: "OTHER",
+            charge_type: "",
             date: "",
             description: "",
         },
@@ -84,13 +81,13 @@ export function CardPendingChargeDrawer({
         initialData: charge,
         defaultValues: () => ({
             amount: "",
-            charge_type: "OTHER",
+            charge_type: "",
             date: serverDate ? toDateOnlyISO(serverDate) : new Date().toISOString().split('T')[0],
             description: "",
         }),
         mapData: (data) => ({
             amount: String(Number(data.amount)),
-            charge_type: data.charge_type || 'OTHER',
+            charge_type: data.charge_type || '',
             date: data.date?.split('T')[0] ?? '',
             description: data.description ?? '',
         }),
@@ -175,13 +172,13 @@ export function CardPendingChargeDrawer({
                                 </Button>
                             )}
                             <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
-                            <ActionSlideButton
+                            <SubmitButton
                                 loading={loading}
                                 onClick={form.handleSubmit(onSubmit)}
                                 disabled={loading}
                             >
                                 {charge ? "Guardar Cambios" : "Agregar Cargo"}
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />

@@ -5,6 +5,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from core.edit_policy import DRAFT_ONLY_DOCUMENT
 from core.mixins import TotalsCalculationMixin
 from core.models import TimeStampedModel, TransactionalDocument, User
 from core.services import SequenceService
@@ -13,6 +14,8 @@ from core.utils import get_current_date
 
 
 class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
+    edit_policy = DRAFT_ONLY_DOCUMENT  # ADR-0091
+
     class Status(models.TextChoices):
         DRAFT = "DRAFT", _("Borrador")
         CONFIRMED = "CONFIRMED", _("Confirmado")
@@ -559,6 +562,8 @@ class SaleDelivery(TransactionalDocument, TotalsCalculationMixin):
     Can be partial or complete.
     """
 
+    edit_policy = DRAFT_ONLY_DOCUMENT  # ADR-0091
+
     class Status(models.TextChoices):
         DRAFT = "DRAFT", _("Borrador")
         CONFIRMED = "CONFIRMED", _("Confirmado")
@@ -718,6 +723,8 @@ class SaleReturn(TransactionalDocument, TotalsCalculationMixin):
     Represents a return of goods from a customer (linked to a Sale Order).
     Used to process logistics before or after a Credit Note.
     """
+
+    edit_policy = DRAFT_ONLY_DOCUMENT  # ADR-0091
 
     class Status(models.TextChoices):
         DRAFT = "DRAFT", _("Borrador")

@@ -35,6 +35,8 @@ export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'LOAN' | 'CASH' |
 
 // Treasury Account types
 export interface TreasuryAccount {
+    /** Campos congelados por historia contable (ADR-0091) */
+    frozen_fields?: string[]
     id: number
     name: string
     code: string | null
@@ -50,6 +52,7 @@ export interface TreasuryAccount {
     allows_check: boolean
     /** true for BRIDGE — managed by provider, no manual edit/delete */
     is_system_managed: boolean
+    is_active: boolean
     current_balance?: number
     available_liquidity?: number
     credit_limit?: number | null
@@ -85,6 +88,7 @@ export interface TreasuryAccountCreatePayload {
     bank?: number | null
     account_number?: string | null
     credit_limit?: number | null
+    is_active?: boolean
 }
 
 export type TreasuryAccountUpdatePayload = Partial<TreasuryAccountCreatePayload>
@@ -157,6 +161,8 @@ export interface PaymentTerminalDevice {
     status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE'
     is_active: boolean
     supported_payment_methods?: number[]
+    /** TC-067: stable method_type strings derived server-side from supported_payment_methods codes. */
+    supported_payment_method_types?: string[]
 }
 
 // Terminal Batch Types
@@ -233,6 +239,8 @@ export interface UnbilledItemRow {
     reference: string | null
     notes: string | null
     amount: number
+    /** ISO 4217 currency code de la tarjeta; opcional, inyectado por el componente padre. */
+    currency?: string
     installmentNumber: number | null
     totalInstallments: number | null
     purchaseGroupDetail: CardPurchaseGroup | null
@@ -314,6 +322,8 @@ export interface TreasuryMovement {
 
 export interface TreasuryMovementFilters {
     bank?: string | number
+    /** Solo movimientos de cuentas bancarias (agregado de todos los bancos). */
+    bank_only?: boolean
     treasury_account?: string | number
     movement_type?: 'INBOUND' | 'OUTBOUND' | 'TRANSFER' | 'ADJUSTMENT'
     date?: string
@@ -412,6 +422,7 @@ export interface PaymentMethodCreatePayload {
     requires_reference?: boolean
     allow_for_sales?: boolean
     allow_for_purchases?: boolean
+    is_active?: boolean
 }
 
 export type PaymentMethodUpdatePayload = Partial<PaymentMethodCreatePayload>

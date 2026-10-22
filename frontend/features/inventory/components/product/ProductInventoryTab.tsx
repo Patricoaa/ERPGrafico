@@ -7,6 +7,7 @@ import { type ProductFormValues } from "./schema"
 import {FormSection, LabeledSwitch, MultiSelectTagInput} from "@/components/shared"
 import { UoMSelector, WarehouseSelector, AdvancedContactSelector } from "@/components/selectors"
 import { cn } from "@/lib/utils"
+import { frozenFieldsOf } from "@/lib/edit-policy"
 import { type Product, type UoM } from "@/types/entities"
 import { type ProductInitialData } from "@/types/forms"
 
@@ -36,7 +37,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
     const isAdvancedMfg = productType === 'MANUFACTURABLE' && requiresAdvancedmfg
 
     // Determine if switch is disabled based on requirements
-    const isSwitchDisabled = productType === 'STORABLE' || productType === 'CONSUMABLE' || productType === 'SERVICE' || mfgAutoFinalize || isSimpleMfg || isAdvancedMfg
+    const isSwitchDisabled = productType === 'STORABLE' || productType === 'CONSUMABLE' || productType === 'SERVICE' || mfgAutoFinalize || isSimpleMfg || isAdvancedMfg || frozenFieldsOf(initialData).has('track_inventory')
 
     return (
         <div className="space-y-10 animate-in fade-in duration-500">

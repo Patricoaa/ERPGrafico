@@ -10,6 +10,8 @@ export interface Invoice {
     dte_type: 'FACTURA' | 'BOLETA' | 'NOTA_CREDITO' | 'NOTA_DEBITO' | 'GUIA_DESPACHO' | 'FACTURA_EXENTA' | 'BOLETA_EXENTA'
     dte_type_display: string
     partner_name: string
+    /** RUT de la contraparte al emitir (copia fiscal); en borradores, el actual */
+    partner_tax_id?: string
     sale_order: number | null
     sale_order_number: string | null
     total: string
@@ -45,7 +47,8 @@ export interface Invoice {
         description?: string
     }[]
     items?: Record<string, unknown>[]
-    partner?: number
+    /** Contact of the document: sale order customer, purchase order supplier or `contact` (billing/serializers.py). */
+    partner_id?: number | null
     supplier?: number
 }
 

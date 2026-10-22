@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { translateColumnId } from '../DataTableColumnToggle'
 import type { Column } from '@tanstack/react-table'
 import type { LucideIcon } from 'lucide-react'
+import { SectionHeader } from './SectionHeader'
 
 const VIEW_ICON_MAP: Record<string, LucideIcon> = {
   list: List,
@@ -24,15 +25,6 @@ interface DisplaySectionProps {
   sortableColumns: Column<unknown>[]
   hideableColumns: Column<unknown>[]
   showColumnToggle?: boolean
-}
-
-function SectionHeader({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
-  return (
-    <div className="flex items-center gap-1.5 px-3 py-2 text-2xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/60">
-      <Icon className="h-3 w-3" />
-      {label}
-    </div>
-  )
 }
 
 function ViewModeSection({
@@ -59,11 +51,13 @@ function ViewModeSection({
                 size="sm"
                 onClick={() => onViewChange?.(option.value)}
                 className={cn(
-                  "w-full justify-start gap-1.5 px-2 py-1.5 text-xs rounded-sm min-w-0",
-                  isActive ? "text-primary font-semibold" : "text-muted-foreground",
+                  "w-full justify-start gap-1.5 px-2 py-1.5 text-xs rounded-sm min-w-0 transition-colors",
+                  isActive
+                    ? "bg-primary/5 text-primary font-semibold"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                <Icon className="h-3.5 w-3.5 shrink-0" />
+                <Icon className="size-3.5 shrink-0" />
                 <span className="truncate">{option.label}</span>
               </Button>
             )
@@ -92,17 +86,19 @@ function SortSection({ columns }: { columns: Column<unknown>[] }) {
                 size="sm"
                 onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
                 className={cn(
-                  "w-full justify-start gap-1.5 px-2 py-1.5 text-xs rounded-sm min-w-0",
-                  isSorted ? "text-primary font-semibold" : "text-muted-foreground",
+                  "w-full justify-start gap-1.5 px-2 py-1.5 text-xs rounded-sm min-w-0 transition-colors",
+                  isSorted
+                    ? "bg-primary/5 text-primary font-semibold"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                <div className="w-3.5 h-3.5 flex items-center justify-center shrink-0">
+                <div className="size-3.5 flex items-center justify-center shrink-0">
                   {isSorted === 'desc' ? (
-                    <ArrowDown className="h-3.5 w-3.5 text-primary" />
+                    <ArrowDown className="size-3.5 text-primary" />
                   ) : isSorted === 'asc' ? (
-                    <ArrowUp className="h-3.5 w-3.5 text-primary" />
+                    <ArrowUp className="size-3.5 text-primary" />
                   ) : (
-                    <ArrowUpDown className="h-3.5 w-3.5 opacity-30" />
+                    <ArrowUpDown className="size-3.5 opacity-30" />
                   )}
                 </div>
                 <span className="truncate">{title}</span>
@@ -179,7 +175,7 @@ export function DisplaySection({
       )}
 
       {hasViewOptions && (hasSortOptions || hasColumnToggle) && (
-        <div className="border-t border-border/60" />
+        <div className="border-t border-border/50" />
       )}
 
       {hasSortOptions && (
@@ -189,7 +185,7 @@ export function DisplaySection({
       )}
 
       {hasSortOptions && hasColumnToggle && (
-        <div className="border-t border-border/60" />
+        <div className="border-t border-border/50" />
       )}
 
       {hasColumnToggle && (

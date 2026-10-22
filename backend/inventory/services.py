@@ -54,6 +54,7 @@ class SubscriptionService:
 
 class InventoryService:
     @staticmethod
+    @transaction.atomic
     def recalcular_stock(product_id: int, warehouse_id: int):
         """
         Recalcula el stock total a partir del histórico de StockMove y actualiza la entidad Stock.
@@ -92,6 +93,7 @@ class InventoryService:
         return stock
 
     @staticmethod
+    @transaction.atomic
     def actualizar_stock(product_id: int, warehouse_id: int, quantity_change: Decimal):
         """
         Actualiza el stock sumando (o restando) la cantidad indicada de manera atómica.
@@ -1800,7 +1802,7 @@ class ProductService:
                     "description": f"Hay {pending_sales.count()} Nota(s) de Venta con despachos pendientes.",
                     "action_hint": "Complete los despachos o anule las Ordenes de Venta para proceder.",
                     "count": pending_sales.count(),
-                    "link": "/billing/sales",
+                    "link": "/sales/dtes/orders",
                 }
             )
 
@@ -1823,7 +1825,7 @@ class ProductService:
                     "description": f"Hay {pending_purchases.count()} Orden(es) de Compra pendientes de recepción.",
                     "action_hint": "Finalice las recepciones o anule las órdenes para proceder.",
                     "count": pending_purchases.count(),
-                    "link": "/billing/purchases",
+                    "link": "/purchasing/dtes/orders",
                 }
             )
 

@@ -149,10 +149,18 @@ export interface Payroll {
   advances?: SalaryAdvance[]
   payments?: PayrollPayment[]
   remuneration_paid_status?: 'PENDING' | 'PARTIAL' | 'PAID'
+  legal_deductions_worker?: string
+  employer_contribution?: string
+  other_deductions?: string
+  advances_total?: string
+  previred_paid_status?: 'PENDING' | 'PARTIAL' | 'PAID'
+  total_previred?: string
   notes: string
   created_at: string
   updated_at: string
 }
+
+export type SalaryAdvanceStatus = 'DRAFT' | 'PAID' | 'DISCOUNTED' | 'CANCELLED'
 
 export interface SalaryAdvance {
   id: number
@@ -164,7 +172,9 @@ export interface SalaryAdvance {
   amount: string
   date: string
   notes: string
-  is_discounted: boolean
+  status: SalaryAdvanceStatus
+  status_display?: string
+  is_editable?: boolean
   journal_entry: number | null
   payment_method_name?: string | null
   created_at: string
@@ -183,6 +193,8 @@ export interface PayrollPayment {
   amount: string
   date: string
   notes: string
+  status: 'POSTED' | 'CANCELLED'
+  status_display?: string
   journal_entry: number | null
   created_at: string
   updated_at: string

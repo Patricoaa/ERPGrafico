@@ -16,6 +16,7 @@ import componentNamingSuffix from "./eslint-rules/component-naming-suffix.mjs";
 import statusMustUseStatusbadge from "./eslint-rules/status-must-use-statusbadge.mjs";
 import mutationMustMarkLocal from "./eslint-rules/mutation-must-mark-local.mjs";
 import drawerNoRounded from "./eslint-rules/drawer-no-rounded.mjs";
+import noDirectDialogUsage from "./eslint-rules/no-direct-dialog-usage.mjs";
 import entityViewGuards from "./eslint-rules/entity-view-guards.mjs";
 import { NO_UNSAFE_ALLOWLIST_FILES } from "./eslint-rules/no-unsafe-allowlist.mjs";
 
@@ -256,6 +257,28 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       ],
     }],
   },
+}, // Layering: `features/notes` is a reusable wizard layer consumed by
+// sales / purchasing / billing / orders. It must never import back into those
+// features — callers inject the domain-specific pieces (steps, sidebars) via
+// props / render props. Enforced with no-restricted-imports (boundaries cannot
+// express per-feature rules with the shared element vocabulary used here).
+{
+  files: ["features/notes/**/*.ts", "features/notes/**/*.tsx"],
+  rules: {
+    "no-restricted-imports": ["error", {
+      patterns: [
+        {
+          group: [
+            "@/features/sales", "@/features/sales/*", "@/features/sales/**",
+            "@/features/purchasing", "@/features/purchasing/*", "@/features/purchasing/**",
+            "@/features/billing", "@/features/billing/*", "@/features/billing/**",
+            "@/features/orders", "@/features/orders/*", "@/features/orders/**",
+          ],
+          message: "features/notes must not import sales/purchasing/billing/orders — inject that piece from the caller instead (render prop).",
+        },
+      ],
+    }],
+  },
 }, // FSD invariant #5 — components must not import @/lib/api directly.
 // Lives in a custom rule (not no-restricted-imports) because flat-config does
 // not merge no-restricted-imports across blocks: layering a second block here
@@ -326,7 +349,7 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       },
       {
         selector: "JSXElement[openingElement.name.name='Button'] JSXElement[openingElement.name.name='Loader2']",
-        message: "Violación de Diseño Industrial: No inyecte Loader2 manualmente en Button. Utilice <SubmitButton loading={...}> o <ActionSlideButton loading={...}>."
+        message: "Violación de Diseño Industrial: No inyecte Loader2 manualmente en Button. Utilice <SubmitButton loading={...}> (o <DangerButton loading={...}> para acciones destructivas)."
       },
       {
         // Row/card action anti-pattern: <Button>...<RegistryIcon/>...</Button>.
@@ -407,7 +430,7 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   rules: {
     "mutation/must-mark-local": "warn",
   },
-}, // Edge panels are always square — ADR-0073 (Drawer/CollapsibleSheet, rounded-none)
+}, // }, // Edge panels are always square — ADR-0073 (Drawer/CollapsibleSheet, rounded-none)
 {
   files: ["**/*.tsx"],
   plugins: {
@@ -416,7 +439,18 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   rules: {
     "drawer/no-rounded": "error",
   },
-}, // Entity view system guards — ADR-0087 §9, component-entity-view.md §9
+},
+// No direct DialogContent/SheetContent — ADR-0091 (use BaseModal/Drawer with SheetCloseButton)
+{
+  files: ["**/*.ts", "**/*.tsx"],
+  plugins: {
+    dialog: { rules: { "no-direct-usage": noDirectDialogUsage } },
+  },
+  rules: {
+    "dialog/no-direct-usage": "error",
+  },
+},
+// Entity view system guards — ADR-0087 §9, component-entity-view.md §9 — ADR-0087 §9, component-entity-view.md §9
 {
   files: ["**/*.ts", "**/*.tsx"],
   plugins: {

@@ -3,14 +3,14 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
-from core.mixins import AuditHistoryMixin
+from core.mixins import AuditHistoryMixin, EditPolicyMixin
 
 from .partner_models import ProfitDistributionResolution
 from .profit_distribution_service import ProfitDistributionService
 from .serializers import ProfitDistributionResolutionSerializer
 
 
-class ProfitDistributionResolutionViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class ProfitDistributionResolutionViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     queryset = ProfitDistributionResolution.objects.all().order_by("-fiscal_year", "-created_at")
     serializer_class = ProfitDistributionResolutionSerializer

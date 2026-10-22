@@ -85,7 +85,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
 
     return (
         <SegmentationTableContext.Provider value={table as Table<unknown>}>
-            <div className="w-full space-y-4">
+            <div className="flex w-full flex-col gap-2">
                 {unifiedSearch ? (
                     <div className="flex items-center gap-2 w-full">
                         <div className="flex-1 min-w-0">
@@ -103,8 +103,8 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                 <TooltipTrigger asChild>
                                     <Button
                                         variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 shrink-0"
+                                        size="icon-sm"
+                                        className="shrink-0"
                                         onClick={() => {
                                             table.resetColumnFilters()
                                             table.setGlobalFilter("")
@@ -112,7 +112,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                             onReset?.()
                                         }}
                                     >
-                                        <X className="h-3.5 w-3.5" />
+                                        <X className="size-3.5" aria-hidden />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent side="bottom">Limpiar filtros</TooltipContent>
@@ -126,10 +126,10 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                         <DropdownMenuTrigger asChild>
                                             <Button
                                                 variant="ghost"
-                                                size="icon"
-                                                className="h-9 w-9 shrink-0 bg-background hover:bg-muted rounded-sm"
+                                                size="icon-sm"
+                                                className="shrink-0"
                                             >
-                                                <MoreVertical className="h-4 w-4" />
+                                                <MoreVertical className="size-4" aria-hidden />
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent
@@ -166,8 +166,8 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                 <TooltipTrigger asChild>
                                     <Button
                                         variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 shrink-0"
+                                        size="icon-sm"
+                                        className="shrink-0"
                                         onClick={() => {
                                             table.resetColumnFilters()
                                             table.setGlobalFilter("")
@@ -175,7 +175,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                             onReset?.()
                                         }}
                                     >
-                                        <X className="h-3.5 w-3.5" />
+                                        <X className="size-3.5" aria-hidden />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent side="bottom">Limpiar filtros</TooltipContent>
@@ -198,7 +198,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                                         size="icon"
                                                         className={TOOLBAR_ICON_BTN}
                                                     >
-                                                        <ArrowUpDown className="h-4 w-4" />
+                                                        <ArrowUpDown className="size-4" aria-hidden />
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                             </TooltipTrigger>
@@ -223,13 +223,13 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                                             column.toggleSorting(column.getIsSorted() === "asc")
                                                         }
                                                     >
-                                                        <div className="mr-3 flex h-3.5 w-3.5 items-center justify-center transition-all">
+                                                        <div className="mr-3 flex size-3.5 items-center justify-center transition-all">
                                                             {isSorted === "desc" ? (
-                                                                <ArrowDown className="h-3.5 w-3.5 text-primary" />
+                                                                <ArrowDown className="size-3.5 text-primary" />
                                                             ) : isSorted === "asc" ? (
-                                                                <ArrowUp className="h-3.5 w-3.5 text-primary" />
+                                                                <ArrowUp className="size-3.5 text-primary" />
                                                             ) : (
-                                                                <ArrowUpDown className="h-3.5 w-3.5 opacity-30" />
+                                                                <ArrowUpDown className="size-3.5 opacity-30" />
                                                             )}
                                                         </div>
                                                         <span>
@@ -259,10 +259,10 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                         <DropdownMenuTrigger asChild>
                                             <Button
                                                 variant="ghost"
-                                                size="icon"
-                                                className="h-9 w-9 shrink-0 bg-background hover:bg-muted rounded-sm"
+                                                size="icon-sm"
+                                                className="shrink-0"
                                             >
-                                                <MoreVertical className="h-4 w-4" />
+                                                <MoreVertical className="size-4" aria-hidden />
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent

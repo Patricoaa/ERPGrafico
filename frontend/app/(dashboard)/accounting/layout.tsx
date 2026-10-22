@@ -1,11 +1,8 @@
-import { type Metadata } from "next"
 import { PageContainer } from "@/components/shared"
 import { AccountingHeader } from "./AccountingHeader"
+import { createAutoMetadata } from "@/lib/auto-metadata"
 
-export const metadata: Metadata = {
-    title: "Contabilidad | ERPGrafico",
-    description: "Gestión centralizada del plan de cuentas, asientos, periodos y cumplimiento tributario.",
-}
+export const generateMetadata = createAutoMetadata("accounting")
 
 export default function AccountingLayout({ children }: { children: React.ReactNode }) {
     return (

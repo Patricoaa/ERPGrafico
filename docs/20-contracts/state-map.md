@@ -46,6 +46,8 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 **Edit restrictions:** Solo editable en `DRAFT`. Campos inmutables: `number`, `status`, `total_net`, `total_tax`, `total`, `journal_entry`.
 
+**Edit policy (ADR-0091, `DRAFT_ONLY_DOCUMENT`):** editable solo en `DRAFT` sin asiento; bloqueado solo admite `notes` (API 422 `DOCUMENT_LOCKED`; antes 400 y bloqueaba también `notes`).
+
 ## PurchaseOrder
 
 | Status | ReceivingStatus | Intent | Transitions allowed to |
@@ -65,6 +67,8 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 | `RECEIVED` | `success` | Todas las líneas recibidas |
 
 **Edit restrictions:** Solo editable en `DRAFT`. Campos inmutables: `id`, `number`, `status`, `receiving_status`, `total_net`, `total_tax`, `total`.
+
+**Edit policy (ADR-0091, `DRAFT_ONLY_DOCUMENT`):** editable solo en `DRAFT` sin asiento; bloqueado solo admite `notes` (API 422 `DOCUMENT_LOCKED`; antes 400 y bloqueaba también `notes`).
 
 ## WorkOrder
 
@@ -116,7 +120,11 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 **Edit restrictions:** Solo editable en `DRAFT`. Campos inmutables: `id`, `number`, `status`, `total_net`, `total_tax`, `total`, `journal_entry`, `tax_period_closed`.
 
+**Fiscal snapshot:** al pasar a `POSTED` la factura copia nombre, RUT y dirección de la contraparte (`partner_*_snapshot`); los documentos emitidos no cambian si se edita el contacto.
+
 **Annul rules:** If folio assigned → requires Nota de Crédito. If confirmed deliveries/receipts exist → blocks. If posted payments exist → blocks (unless `force=True` cascades).
+
+**Edit policy (ADR-0091, `DRAFT_ONLY_DOCUMENT`):** editable solo en `DRAFT` sin asiento; bloqueado solo admite `notes` (API 422 `DOCUMENT_LOCKED`; antes 400 y bloqueaba también `notes`).
 
 ## JournalEntry
 
@@ -144,6 +152,8 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 **Edit restrictions:** Campos inmutables: `id`, `number`, `status`.
 
+**Edit policy (ADR-0091, `DRAFT_ONLY_DOCUMENT`):** editable solo en `DRAFT` sin asiento; bloqueado solo admite `notes`; nunca hard delete (API 405): `DRAFT` se cancela, `CONFIRMED` se anula.
+
 ## SaleReturn
 
 | Status | Intent | Transitions allowed to |
@@ -153,6 +163,8 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 | `CANCELLED` | `destructive` | — |
 
 **Edit restrictions:** Campos inmutables: `id`, `number`, `status`.
+
+**Edit policy (ADR-0091, `DRAFT_ONLY_DOCUMENT`):** editable solo en `DRAFT` sin asiento; bloqueado solo admite `notes`; nunca hard delete (API 405): `DRAFT` se cancela, `CONFIRMED` se anula.
 
 ## PurchaseReceipt
 
@@ -164,6 +176,8 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 **Edit restrictions:** Campos inmutables: `id`, `number`, `status`.
 
+**Edit policy (ADR-0091, `DRAFT_ONLY_DOCUMENT`):** editable solo en `DRAFT` sin asiento; bloqueado solo admite `notes`; nunca hard delete (API 405): `DRAFT` se cancela, `CONFIRMED` se anula.
+
 ## PurchaseReturn
 
 | Status | Intent | Transitions allowed to |
@@ -174,6 +188,8 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 **Edit restrictions:** Campos inmutables: `id`, `number`, `status`.
 
+**Edit policy (ADR-0091, `DRAFT_ONLY_DOCUMENT`):** editable solo en `DRAFT` sin asiento; bloqueado solo admite `notes`; nunca hard delete (API 405): `DRAFT` se cancela, `CONFIRMED` se anula.
+
 ## Payroll
 
 | Status | Intent | Transitions allowed to |
@@ -182,6 +198,23 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 | `POSTED` | `success` | — |
 
 **Edit restrictions:** Campos inmutables: `id`, `number`, `display_id`, `status`, `total_haberes`, `total_descuentos`, `net_salary`, `journal_entry`.
+
+**Edit policy (ADR-0091):** `Payroll` editable/eliminable solo en `DRAFT` (`POSTED`: solo `notes`; `recalculate` rechazado). `PayrollItem` bloqueado si la liquidación no está en `DRAFT` (crear/editar/borrar). `PayrollPayment` (`POSTED` → `CANCELLED`): API de solo lectura; se crea solo vía `pay_salary`/`pay_previred` y queda bloqueado al tener asiento. Se corrige con `POST /hr/payroll-payments/{id}/annul/` (motivo obligatorio): reversa su movimiento y libera el saldo pendiente.
+
+## SalaryAdvance (Anticipo de Sueldo)
+
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `DRAFT` | `info` | `PAID` (pago registrado en tesorería) |
+| `PAID` | `success` | `DISCOUNTED` (al contabilizar la liquidación vinculada), `CANCELLED` (vía `annul`) |
+| `DISCOUNTED` | `success` | — (terminal) |
+| `CANCELLED` | `destructive` | — (terminal) |
+
+**Edit policy (ADR-0091, `SalaryAdvance.edit_policy`):** editable y eliminable solo en `DRAFT`. Desde `PAID` solo `notes` y el vínculo `payroll`. `status` y `journal_entry` read-only.
+
+**Payroll link:** solo un anticipo `PAID`; la liquidación de origen y la de destino deben estar en `DRAFT` y ser del mismo empleado; no se vincula al crear. `post_payroll` rechaza anticipos vinculados que no estén `PAID`.
+
+**Annul (`POST /hr/advances/{id}/annul/`, motivo obligatorio):** solo `PAID` sin liquidación; anula el `TreasuryMovement` (asiento `REVERSAL`) y deja `CANCELLED`. Corregir un monto = anular + registrar uno nuevo.
 
 ## BankStatement
 
@@ -213,6 +246,10 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 **Edit restrictions:** If `is_reconciled == True` → bloquea cancelación. Si tiene `journal_entry.status == POSTED` → solo annul vía reverso. Movimientos en período contable cerrado se bloquean.
 
+**Edit policy (ADR-0091, `TreasuryMovement.edit_policy`):** editable solo en `DRAFT` **y sin asiento** (cualquier asiento, aun borrador, deriva de sus campos). Bloqueado: solo `notes` y `justify_reason` editables; la API responde 422 `DOCUMENT_LOCKED`. Hard delete solo de `CANCELLED` sin asiento (purga admin). `is_editable` expuesto en el detalle. **Movimientos con documento dueño** (anticipo, pago de liquidación, pago F29): `cancel`/`annul` directos se rechazan; se anulan desde el documento (`TreasuryService.assert_not_owned`).
+
+**Edit policy (ADR-0091):** bloqueada si está `MATCHED`/`RECONCILED` o tiene `difference_journal_entry` (solo `notes`); no se elimina. Campos del sistema (`reconciliation_match`, `reconciled_*`, `difference_*`, `statement`, `line_number`, `has_warning`) read-only. `PATCH` solo cambia el estado a `EXCLUDED`/`UNRECONCILED`; conciliar va por acciones.
+
 ## POSSession
 
 | Status | Intent | Transitions allowed to |
@@ -224,6 +261,8 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 `treasury_account` es un snapshot inmutable de `terminal.default_treasury_account` capturado
 al abrir. La API expone `treasury_account_name` con fallback al default del terminal.
 Campos no editables: `treasury_account` (snapshot).
+
+**Edit policy (ADR-0091):** `POSSessionAudit` (arqueo) es inmutable una vez contabilizado; sin escritura por API.
 
 ## TerminalBatch
 
@@ -283,6 +322,8 @@ Backend: `treasury.Check`. Lifecycle gobernado por `treasury.check_service.Check
   `next_folio`, `status` (ACTIVE/CLOSED/EXHAUSTED).
 - `issue()` toma siguiente folio automáticamente si check_number es None.
 - Validación: unicidad check_number por banco.
+
+**Edit policy (ADR-0091):** aplicada por `Check.edit_policy` — PATCH de otros campos → 422, DELETE → 422.
 
 **Edit restrictions:** Cheque inmutable salvo `notes` y campos de auditoría
 (`deposited_at`/`cleared_at`/`bounced_at`); cambios de estado pasan exclusivamente
@@ -355,6 +396,8 @@ Una fila por mes del calendario de amortización. Backend: `treasury.LoanInstall
 `Notification` tipo `LOAN_INSTALLMENT_UPCOMING` a superusuarios activos.
 Dedup por día vía `Notification.data.target_date` (ISO).
 
+**Edit policy (ADR-0091):** `TerminalBatch` editable solo en `PENDING` sin asiento de liquidación; `status`, `settlement_*` y `reconciliation_match` read-only; no se elimina.
+
 ## CreditCardStatement (Estado de Cuenta Tarjeta de Crédito)
 
 Estado de cuenta mensual de la tarjeta de crédito propia.
@@ -388,6 +431,8 @@ de la compra (F2.7), no del statement.
 cargos (`interest_charged`/`fees_charged`) solo editables mientras el
 statement esté en `OPEN` (no pagado, no anulado).
 
+
+**Edit policy (ADR-0091):** `CardPendingCharge` facturado (`is_billed`) no se edita ni elimina.
 ## Subscription
 
 | Status | Intent | Transitions allowed to |
@@ -406,6 +451,10 @@ statement esté en `OPEN` (no pagado, no anulado).
 | `COMPLETED` | `success` | — |
 | `REJECTED` | `destructive` | `PENDING` (reassign) |
 | `CANCELLED` | `destructive` | — |
+
+## F29Declaration / F29Payment
+
+**Edit policy (ADR-0091):** `F29Declaration` registrada (con `journal_entry`) solo admite `notes` y `document`; no se elimina; `create_or_update_declaration` rechaza recalcular un período ya registrado. `F29Payment` (`POSTED` → `CANCELLED`) con asiento es inmutable y no se elimina; se corrige con `POST /tax/payments/{id}/annul/`. Los pagos anulados no cuentan como pagados.
 
 ## TaxPeriod / AccountingPeriod
 
@@ -427,6 +476,8 @@ statement esté en `OPEN` (no pagado, no anulado).
 
 **Edit restrictions:** Campos inmutables: `status`, `closing_entry`, `opening_entry`, `net_result`, `closed_at`, `closed_by`.
 
+
+**Edit policy (ADR-0091):** editable solo en `OPEN` sin asiento de cierre; en `CLOSING`/`CLOSED` solo `notes`. Cierre y reapertura van por sus acciones.
 ## Employee
 
 | Status | Intent |

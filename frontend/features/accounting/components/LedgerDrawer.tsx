@@ -5,7 +5,8 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Book } from "lucide-react"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout } from "@/features/_shared"
-import { DataTable, DateRangeFilter, Drawer, IconButton, SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { DateRangeFilter, Drawer, IconButton, SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { Collection, useEntityCollection } from "@/components/entity-view"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { formatCurrency } from "@/lib/money"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
@@ -18,7 +19,7 @@ import { LedgerSummaryPanel } from "@/features/accounting/components/LedgerSumma
 
 import type { LedgerData, LedgerMovement } from "@/features/accounting/types"
 import { ledgerMovementActions, type LedgerMovementActionsCtx } from './ledgerMovementActions'
-import { ledgerMovementFields } from "@/features/accounting/ledgerMovementFields"
+import { ledgerMovementEntity, ledgerMovementDrawerViews } from "@/features/accounting"
 
 /**
  * Libro Mayor. The Debe/Haber/Saldo summary keeps the CMYK ink metaphor
@@ -168,17 +169,19 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
                 headerActions={identity.headerActions}
             >
                  {open && dateRange && (
-                     <SkeletonShell isLoading={isLoading} ariaLabel="Cargando libro mayor" className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
-                         <LedgerContent
-                             accountId={accountId}
-                             startDate={startStr}
-                             endDate={endStr}
-                             dateRange={dateRange}
-                             setDateRange={setDateRange}
-                             data={data}
-                             isLoading={isLoading}
-                         />
-                     </SkeletonShell>
+                     <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
+                         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando libro mayor">
+                             <LedgerContent
+                                 accountId={accountId}
+                                 startDate={startStr}
+                                 endDate={endStr}
+                                 dateRange={dateRange}
+                                 setDateRange={setDateRange}
+                                 data={data}
+                                 isLoading={isLoading}
+                             />
+                         </SkeletonShell>
+                     </div>
                  )}
              </Drawer>
         </>
@@ -228,14 +231,15 @@ function LedgerContent({
         onViewEntry: (entryId) => openEntry(entryId),
     }
 
-    const columns = [
-        ...ledgerMovementFields.toColumns(),
-        ledgerMovementActions.auto(ledgerMovementActionsCtx),
-    ]
-
     const filteredMovements = useMemo(
         () => search.filterFn(data?.movements ?? []),
         [search.filterFn, data?.movements],
+    )
+
+    const collection = useEntityCollection(
+        ledgerMovementEntity,
+        { rows: filteredMovements },
+        { pagination: { mode: "none" } },
     )
 
     return (
@@ -250,53 +254,46 @@ function LedgerContent({
             />
 
             {/* Table — fills remaining height */}
-            <div className="flex-1 min-h-0 overflow-hidden">
-                <DataTable
-                    columns={columns}
-                    data={filteredMovements}
-                    isLoading={isLoading}
-                    variant="embedded"
-                    defaultPageSize={100}
-                    defaultAction={(mov: LedgerMovement) => openEntry(mov.entry_id)}
-                    unifiedSearch={<UnifiedSearchBar
-                        config={ledgerSearchConfig}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar por descripción..."
-                        toolbarActions={
-                            <DateRangeFilter
-                                defaultRange={dateRange || undefined}
-                                onDateChange={(range) => {
-                                    if (range?.from && range?.to) {
-                                        setDateRange({ from: range.from, to: range.to })
-                                    }
-                                }}
-                                className="bg-background border-none shadow-none rounded-sm"
-                                variant="outline"
-                            />
-                        }
-                    />}
-                    showReset={search.isFiltered}
-                    onReset={() => {
-                        search.clearAll()
-                        if (serverDate) {
-                            setDateRange({
-                                from: new Date(serverDate.getFullYear(), serverDate.getMonth(), 1),
-                                to: serverDate
-                            })
-                        } else {
-                            setDateRange(undefined)
-                        }
-                    }}
-                />
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                <Collection.Root
+                    collection={collection}
+                    actions={ledgerMovementActions.forCollection(ledgerMovementActionsCtx)}
+                    onOpen={(mov) => openEntry(mov.entry_id)}
+                >
+                    <Collection.Toolbar>
+                        <UnifiedSearchBar
+                            config={ledgerSearchConfig}
+                            chips={search.chips}
+                            isFiltered={search.isFiltered}
+                            inputValue={search.inputValue}
+                            onInputChange={search.setInputValue}
+                            onApply={search.applyFilter}
+                            onRemove={search.removeFilter}
+                            onClearAll={search.clearAll}
+                            groupBy={search.groupBy}
+                            onGroupBySelect={search.setGroupBy}
+                            paramValues={search.paramValues}
+                            placeholder="Buscar por descripción..."
+                            toolbarActions={
+                                <DateRangeFilter
+                                    defaultRange={dateRange || undefined}
+                                    onDateChange={(range) => {
+                                        if (range?.from && range?.to) {
+                                            setDateRange({ from: range.from, to: range.to })
+                                        }
+                                    }}
+                                    className="bg-background border-none shadow-none rounded-sm"
+                                    variant="outline"
+                                />
+                            }
+                        />
+                    </Collection.Toolbar>
+                    <Collection.View
+                        table={ledgerMovementDrawerViews.table}
+                        emptyTitle="Sin movimientos"
+                        emptyDescription="No hay movimientos para el período seleccionado."
+                    />
+                </Collection.Root>
             </div>
 
             {viewingEntry && (
@@ -305,6 +302,7 @@ function LedgerContent({
                     mode="view"
                     open={!!viewingEntry}
                     onOpenChange={(open) => !open && closeEntry()}
+                    side="left"
                 />
             )}
         </div>

@@ -29,7 +29,7 @@ supersedes:
       actions={
         <>
           <CancelButton onClick={() => onOpenChange(false)} />
-          <ActionSlideButton form="my-form">Guardar</ActionSlideButton>
+          <SubmitButton form="my-form">Guardar</SubmitButton>
         </>
       }
     />
@@ -74,6 +74,8 @@ supersedes:
 | `titleClassName` | `string` | ❌ | — | |
 | `centered` | `boolean` | ❌ | — | Centra el contenido del header (compartido con `BaseModal` via `PanelHeader`) |
 
+> **Botón de cierre:** `Drawer` renderiza internamente `PanelHeader` con `onClose={() => onOpenChange(false)}`, lo que muestra el `SheetCloseButton` canónico (circular ghost 32px) en la esquina superior derecha del header. No pasar `hideCloseButton` ni `showCloseButton` — se controla automáticamente. Ver [component-contracts.md #SheetCloseButton](./component-contracts.md#SheetCloseButton-🟢) y [ADR-0091](../10-architecture/adr/0091-single-close-button.md).
+
 > **Nota:** `description` NO es prop de `Drawer` — solo existe en `BaseModal` (`components/shared/BaseModal.tsx`, `description?: ReactNode`). Para texto bajo el título en un Drawer usar `subtitle`. `descriptionClassName` no existe en ningún componente; eliminar cualquier uso.
 
 ## Tamaños dinámicos
@@ -81,6 +83,11 @@ supersedes:
 Usar el helper `formDrawerWidth(complexity, hasSidebar)` de `@/lib/form-widths`. Nunca hardcodear porcentajes.
 
 **Excepción:** `defaultSize="100%"` está autorizado para wizards `side="bottom"` con `boundary="embedded"` que ocupan el viewport completo (ej: `WorkOrderWizard`, `UnifiedNoteWizard`, `PurchaseCheckoutWizard`).
+
+> Los wizards de notas y compras construyen este drawer a través de
+> `GenericWizard` con `surface="drawer"` (`drawerSide="bottom"`,
+> `drawerBoundary="embedded"`); ver **[component-modal.md](./component-modal.md)**
+> para la API completa de `GenericWizard` y los slots de sidebar.
 
 | `FormComplexity` | Campos | Creación | Edición (con sidebar) |
 |:----------------:|:------:|:--------:|:---------------------:|
@@ -185,9 +192,9 @@ footer={
     actions={
       <>
         <CancelButton onClick={() => onOpenChange(false)} />
-        <ActionSlideButton form="my-form" loading={isPending}>
+        <SubmitButton form="my-form" loading={isPending}>
           Guardar
-        </ActionSlideButton>
+        </SubmitButton>
       </>
     }
   />
@@ -196,7 +203,7 @@ footer={
 
 Drawers de solo lectura (sin formulario) pueden omitir el footer o pasar un `<Button>Cerrar</Button>` directo.
 
-> Ver [component-button.md](./component-button.md) para API completa de `CancelButton`, `ActionSlideButton`.  
+> Ver [component-button.md](./component-button.md) para API completa de `CancelButton`, `SubmitButton`.  
 > Ver [form-layout-architecture.md §FormFooter](./form-layout-architecture.md) para props completas de `FormFooter`.
 
 ## Drawers de solo lectura (bottom drawer)

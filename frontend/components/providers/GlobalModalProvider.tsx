@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, type ReactNode, useCallback
 import { ENTITY_DRAWERS, hasEntityDrawer } from "@/lib/entity-drawers"
 import { formatEntityDisplay, getEntityMetadata } from "@/lib/entity-registry"
 import { ErrorBoundary, EntityNavigationContext } from "@/components/shared"
+import { EntityViewBridge } from "./EntityViewBridge"
 
 interface OpenEntityState {
     label: string
@@ -220,10 +221,12 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     return (
         <GlobalModalActionsContext.Provider value={actionsValue}>
         <GlobalModalStateContext.Provider value={stateValue}>
+        <EntityViewBridge openEntity={openEntity}>
             {children}
             <ErrorBoundary variant="inline">
                 {renderEntityDrawer()}
             </ErrorBoundary>
+        </EntityViewBridge>
         </GlobalModalStateContext.Provider>
         </GlobalModalActionsContext.Provider>
     )

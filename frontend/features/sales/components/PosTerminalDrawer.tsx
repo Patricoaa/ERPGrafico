@@ -13,7 +13,7 @@ import { treasuryApi } from "@/features/treasury"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Form, FormField } from "@/components/ui/form"
-import { Drawer, CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton } from "@/components/shared"
+import { Drawer, CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, SubmitButton } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { ActivitySidebar } from "@/features/audit"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
@@ -230,9 +230,9 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                         actions={
                             <>
                                 <CancelButton onClick={() => onOpenChange(false)} />
-                                <ActionSlideButton type="submit" form="terminal-form" loading={isSubmitting} disabled={isSubmitting}>
+                                <SubmitButton type="submit" form="terminal-form" loading={isSubmitting} disabled={isSubmitting}>
                                     {mode === 'create' ? "Crear Punto de Venta" : "Guardar Cambios"}
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />

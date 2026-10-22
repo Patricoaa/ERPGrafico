@@ -105,10 +105,6 @@ export const billingApi = {
         return data
     },
 
-    deleteInvoice: async (id: number): Promise<void> => {
-        await api.delete(`/billing/invoices/${id}/`)
-    },
-
     cancelInvoice: async (id: number, reason: string = ''): Promise<void> => {
         await api.post(`/billing/invoices/${id}/cancel/`, { reason })
     },

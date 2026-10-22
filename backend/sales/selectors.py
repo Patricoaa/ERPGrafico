@@ -25,6 +25,22 @@ class SaleOrderSelector:
         ).order_by("-date", "-id")
 
     @staticmethod
+    def get_analytics_queryset():
+        """
+        Orders for `SaleOrderAnalyticsService`: only what its loop reads (customer, lines → product,
+        and what `effective_total` / `total_paid` use: invoices, payments, allocations). No ordering,
+        since the figures are re-bucketed anyway.
+        """
+        from .models import SaleOrder
+
+        return SaleOrder.objects.select_related("customer").prefetch_related(
+            "lines__product",
+            "invoices",
+            "payments",
+            "payment_allocations__treasury_movement",
+        ).order_by()
+
+    @staticmethod
     def get_customer_name_suggestions(q):
         from .models import SaleOrder
 

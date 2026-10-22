@@ -1,26 +1,20 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import {useState, useMemo} from "react"
+import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { Archive, ArchiveRestore } from "lucide-react"
+import { toast } from "sonner"
+import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
+import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-import {ActionConfirmModal, DataTableView, AutoEntityCard} from '@/components/shared'
-import { warehouseActions, type WarehouseActionsCtx } from "@/features/inventory/warehouseActions"
-import { type ColumnDef } from "@tanstack/react-table"
-import { Checkbox } from "@/components/ui/checkbox"
-import { WarehouseDrawer } from "./WarehouseDrawer"
-import { Trash2 } from "lucide-react"
-import { toast } from "sonner"
-import { warehouseFields } from "../warehouseFields"
-
-import type { BulkAction } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import React from "react"
-
+import { warehouseActions, type WarehouseActionsCtx } from "@/features/inventory/warehouseActions"
 import { useWarehouses, type Warehouse } from "@/features/inventory/hooks/useWarehouses"
-import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { warehouseUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
+import { warehouseEntity, warehouseViews } from "../entity-view/warehouse.entity"
+import { WarehouseDrawer } from "./WarehouseDrawer"
 
 interface WarehouseClientViewProps {
     externalOpen?: boolean
@@ -29,22 +23,39 @@ interface WarehouseClientViewProps {
 }
 
 export function WarehouseClientView({ externalOpen, onExternalOpenChange, createAction }: WarehouseClientViewProps) {
-    const { warehouses, isLoading, refetch, deleteWarehouse } = useWarehouses()
+    const { warehouses, isLoading, isError, refetch, archiveWarehouse } = useWarehouses()
     const search = useUnifiedSearch(warehouseUnifiedSearchDef)
-
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-    const [warehouseToDelete, setWarehouseToDelete] = useState<Warehouse | null>(null)
+    const { filterFn } = search
+    const { view, onViewChange } = useCollectionViewMode("inventory.warehouse")
+    const rows = useMemo(() => filterFn(warehouses), [filterFn, warehouses])
+    // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
+    const collection = useEntityCollection(
+        warehouseEntity,
+        { rows, isLoading, error: isError && warehouses.length === 0, refetch, isFiltered: search.isFiltered },
+        { defaultSort: warehouseViews.table.defaultSort },
+    )
 
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
 
-    const bulkDeleteConfirm = useConfirmAction<Warehouse[]>(async (items) => {
+    const archiveConfirm = useConfirmAction<Warehouse>(async (warehouse) => {
+        const isArchiving = warehouse.is_active
         try {
-            await Promise.all(items.map(w => deleteWarehouse(w.id)))
-            toast.success(`${items.length} almacenes eliminados`)
+            await archiveWarehouse({ id: warehouse.id, is_active: !warehouse.is_active })
+            toast.success(`Almacén ${isArchiving ? "archivado" : "restaurado"} correctamente`)
         } catch (error) {
-            showApiError(error, "Error al eliminar los almacenes (algunos podrían estar en uso)")
+            showApiError(error, `No se puede ${isArchiving ? "archivar" : "restaurar"} el almacén`)
+        }
+    })
+
+    const bulkArchiveConfirm = useConfirmAction<Warehouse[]>(async (items) => {
+        const isArchiving = items.every(w => w.is_active)
+        try {
+            await Promise.all(items.map(w => archiveWarehouse({ id: w.id, is_active: !isArchiving })))
+            toast.success(`${items.length} almacenes ${isArchiving ? "archivados" : "restaurados"}`)
+        } catch (error) {
+            showApiError(error, `Error al ${isArchiving ? "archivar" : "restaurar"} los almacenes`)
             throw error
         }
     })
@@ -71,125 +82,57 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
         }
     }
 
-    const handleDelete = async (warehouse: Warehouse | null, isConfirmed = false) => {
-        if (!warehouse) return
-
-        if (!isConfirmed) {
-            setWarehouseToDelete(warehouse)
-            setIsDeleteModalOpen(true)
-            return
-        }
-
-        try {
-            await deleteWarehouse(warehouse.id)
-            toast.success("Almacén eliminado correctamente.")
-            setIsDeleteModalOpen(false)
-        } catch (error) {
-            console.error("Error deleting warehouse:", error)
-            showApiError(error, "Error al eliminar el almacén.")
-        }
-    }
-
     const actionsCtx: WarehouseActionsCtx = {
         onEdit: (id) => openSelected(id),
-        onDelete: (warehouse) => handleDelete(warehouse),
+        onArchive: (warehouse) => archiveConfirm.requestConfirm(warehouse),
     }
-
-    const columns = useMemo<ColumnDef<Warehouse>[]>(() => {
-        return [
-            {
-                id: "select",
-                header: ({ table }) => (
-                    <Checkbox
-                        checked={
-                        table.getIsAllPageRowsSelected()
-                            ? true
-                            : table.getIsSomePageRowsSelected()
-                            ? "indeterminate"
-                            : false
-                    }
-                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                        aria-label="Select all"
-                        variant="circle"
-                    />
-                ),
-                cell: ({ row }) => (
-                    <Checkbox
-                        checked={row.getIsSelected()}
-                        onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label="Select row"
-                        variant="circle"
-                    />
-                ),
-                enableSorting: false,
-                enableHiding: false,
-                size: 40,
-            },
-            warehouseFields.column("name"),
-            warehouseFields.column("code"),
-            warehouseFields.column("address"),
-            warehouseActions.auto(actionsCtx),
-        ]
-    }, [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<Warehouse>[]>(() => [
         {
-            key: "delete",
-            label: "Eliminar",
-            icon: Trash2,
-            intent: "destructive",
-            onClick: async (items) => bulkDeleteConfirm.requestConfirm(items),
+            key: "restore",
+            label: "Restaurar",
+            icon: ArchiveRestore,
+            intent: "success",
+            hidden: (items) => items.length === 0 || !items.every(w => !w.is_active),
+            onClick: async (items) => bulkArchiveConfirm.requestConfirm(items),
         },
-    ], [bulkDeleteConfirm])
+        {
+            key: "archive",
+            label: "Archivar",
+            icon: Archive,
+            intent: "destructive",
+            hidden: (items) => items.length === 0 || !items.every(w => w.is_active),
+            onClick: async (items) => bulkArchiveConfirm.requestConfirm(items),
+        },
+    ], [bulkArchiveConfirm])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    entityLabel="inventory.warehouse"
-                    columns={columns}
-                    data={search.filterFn(warehouses)}
-                    isLoading={isLoading}
-                    variant="embedded"
-                    unifiedSearch={<UnifiedSearchBar
+            <Collection.Root
+                collection={collection}
+                selection="bulk"
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(warehouse) => openSelected(warehouse.id)}
+                actions={warehouseActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar
                         config={warehouseUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
+                        {...bindUnifiedSearch(search)}
                         placeholder="Buscar almacén..."
-                    />}
-                    unifiedSearchConfig={warehouseUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    bulkActions={bulkActions}
-                    createAction={createAction}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "inventory",
-                        title: "Aún no hay almacenes",
-                        description: "Crea un almacén para gestionar ubicaciones y existencias de inventario.",
-                    }}
-                    renderCard={(warehouse: Warehouse) => (
-                        <AutoEntityCard
-                            key={warehouse.id}
-                            data={warehouse}
-                            fields={warehouseFields}
-                            entityLabel="inventory.warehouse"
-                            actions={warehouseActions.render(warehouse, actionsCtx)}
-                            defaultAction={warehouseActions.defaultAction(actionsCtx)?.(warehouse) ?? (() => openSelected(warehouse.id))}
-
-                        />
-                    )}
+                    />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={warehouseViews.table}
+                    card={warehouseViews.card}
+                    emptyTitle="Aún no hay almacenes"
+                    emptyDescription="Crea un almacén para gestionar ubicaciones y existencias de inventario."
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+                <Collection.BulkBar actions={bulkActions} />
+            </Collection.Root>
 
             <WarehouseDrawer
                 onSuccess={refetch}
@@ -199,32 +142,39 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
             />
 
             <ActionConfirmModal
-                open={isDeleteModalOpen}
-                onOpenChange={setIsDeleteModalOpen}
-                title="Eliminar Almacén"
-                variant="destructive"
-                onConfirm={() => { if (warehouseToDelete) return handleDelete(warehouseToDelete, true) }}
-                confirmText="Eliminar permanentemente"
+                open={archiveConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) archiveConfirm.cancel() }}
+                onConfirm={archiveConfirm.confirm}
+                title={archiveConfirm.payload?.is_active ? "Archivar Almacén" : "Restaurar Almacén"}
+                variant={archiveConfirm.payload?.is_active ? "warning" : "default"}
+                confirmText={archiveConfirm.payload?.is_active ? "Archivar" : "Restaurar"}
                 description={
-                    <div className="space-y-3">
+                    archiveConfirm.payload?.is_active ? (
+                        <div className="space-y-3">
+                            <p className="text-sm font-medium">
+                                ¿Confirma archivar el almacén <span className="font-black text-foreground underline">{archiveConfirm.payload?.name}</span>?
+                            </p>
+                            <p className="text-2xs text-muted-foreground bg-warning/5 border border-warning/10 p-3 rounded-md">
+                                Dejará de estar disponible para nuevas operaciones. Puede restaurarlo más adelante.
+                            </p>
+                        </div>
+                    ) : (
                         <p className="text-sm font-medium">
-                            ¿Confirma la eliminación del almacén <span className="font-black text-foreground underline">{warehouseToDelete?.name}</span>?
+                            ¿Confirma restaurar el almacén <span className="font-black text-foreground underline">{archiveConfirm.payload?.name}</span>?
                         </p>
-                        <p className="text-2xs text-muted-foreground bg-destructive/5 border border-destructive/10 p-3 rounded-md">
-                            <strong className="text-destructive uppercase">Advertencia:</strong> Esta acción es irreversible y podría afectar la integridad de los stocks registrados en esta ubicación.
-                        </p>
-                    </div>
+                    )
                 }
             />
 
             <ActionConfirmModal
-                open={bulkDeleteConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) bulkDeleteConfirm.cancel() }}
-                onConfirm={bulkDeleteConfirm.confirm}
-                title="Eliminar Almacenes"
-                description={`¿Está seguro de que desea eliminar ${bulkDeleteConfirm.payload?.length ?? 0} almacenes? Esta acción es irreversible.`}
-                variant="destructive"
+                open={bulkArchiveConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) bulkArchiveConfirm.cancel() }}
+                onConfirm={bulkArchiveConfirm.confirm}
+                title={bulkArchiveConfirm.payload?.every(w => w.is_active) ? "Archivar Almacenes" : "Restaurar Almacenes"}
+                description={`¿Está seguro de que desea ${bulkArchiveConfirm.payload?.every(w => w.is_active) ? "archivar" : "restaurar"} ${bulkArchiveConfirm.payload?.length ?? 0} almacenes?`}
+                variant={bulkArchiveConfirm.payload?.every(w => w.is_active) ? "warning" : "default"}
+                confirmText={bulkArchiveConfirm.payload?.every(w => w.is_active) ? "Archivar" : "Restaurar"}
             />
-        </div >
+        </div>
     )
 }

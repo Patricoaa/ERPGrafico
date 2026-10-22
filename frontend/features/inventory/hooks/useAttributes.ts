@@ -11,7 +11,7 @@ export interface Attribute {
     code: string
     value_type: 'text' | 'number' | 'date' | 'boolean'
     is_required: boolean
-    active: boolean
+    is_active: boolean
     values?: AttributeValue[]
 }
 
@@ -25,6 +25,7 @@ export interface AttributeValue {
 
 export interface AttributeFilters {
     search?: string
+    is_active?: string
 }
 
 export const ATTRIBUTES_QUERY_KEY = ['inventoryAttributes']
@@ -33,7 +34,7 @@ export function useAttributes({ filters }: { filters?: AttributeFilters } = {}) 
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: attributes, isLoading, refetch } = useQuery({
+    const { data: attributes, isLoading, isError, refetch } = useQuery({
         queryKey: [...ATTRIBUTES_QUERY_KEY, filters],
         queryFn: async (): Promise<Attribute[]> => {
             const [attrRes, valRes] = await Promise.all([
@@ -76,6 +77,18 @@ export function useAttributes({ filters }: { filters?: AttributeFilters } = {}) 
         },
     })
 
+    /** Archivo pattern: PATCH is_active (hard delete blocked server-side with 405). */
+    const archiveMutation = useMutation({
+        mutationFn: async ({ id, is_active }: { id: number; is_active: boolean }) => {
+            const res = await api.patch(`/inventory/attributes/${id}/`, { is_active })
+            return res.data as Attribute
+        },
+        onSuccess: () => {
+            markLocalMutation()
+            invalidate()
+        },
+    })
+
     const createValueMutation = useMutation({
         mutationFn: async ({ attribute, value }: { attribute: number, value: string }) => {
             const res = await api.post('/inventory/attribute-values/', { attribute, value })
@@ -100,11 +113,14 @@ export function useAttributes({ filters }: { filters?: AttributeFilters } = {}) 
     return {
         attributes: attributes ?? [],
         isLoading,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError,
         refetch,
         saveAttribute: saveAttributeMutation.mutateAsync,
         isSaving: saveAttributeMutation.isPending,
         deleteAttribute: deleteMutation.mutateAsync,
         isDeleting: deleteMutation.isPending,
+        archiveAttribute: archiveMutation.mutateAsync,
         createAttributeValue: createValueMutation.mutateAsync,
         isCreatingValue: createValueMutation.isPending,
         deleteAttributeValue: deleteValueMutation.mutateAsync,

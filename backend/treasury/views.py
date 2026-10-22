@@ -17,7 +17,8 @@ from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
 from core.idempotency import idempotent_endpoint
-from core.mixins import AuditHistoryMixin
+from core.edit_policy import annotate_edit_usage
+from core.mixins import AuditHistoryMixin, EditPolicyMixin
 
 from .deletion_service import BankDeletionService
 from .difference_service import DifferenceService
@@ -70,10 +71,31 @@ from .serializers import (
 from .services import TerminalBatchService, TreasuryService
 
 
+def apply_archivo_is_active_filter(qs, request, action):
+    """Patrón Archivo: en el listado filtra ``is_active=True`` por defecto.
+
+    Acepta ``?is_active=all`` (sin filtro) y ``?is_active=false`` (archivados).
+    Fuera del listado (detail/update) no aplica el filtro para permitir
+    acceder a registros archivados.
+    """
+    if action == "list":
+        is_active = request.query_params.get("is_active")
+        if is_active == "all":
+            return qs
+        elif is_active == "false":
+            return qs.filter(is_active=False)
+        return qs.filter(is_active=True)
+    return qs
+
+
 class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Bank.objects.prefetch_related("account_executives").order_by("name")
     serializer_class = BankSerializer
     pagination_class = None  # Master data
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return apply_archivo_is_active_filter(qs, self.request, self.action)
 
     @action(detail=True, methods=["get"])
     def overview(self, request, pk=None):
@@ -100,33 +122,43 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         return Response(BankSerializer(bank).data)
 
     def destroy(self, request, *args, **kwargs):
-        """Hard delete deshabilitado para usuarios finales.
+        # Archivo pattern: hard DELETE not allowed, use POST /archive/ instead
+        return Response(
+            {"detail": "Hard delete not allowed for Banks. Use POST /archive/ to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
-        Por política (cf. [deletion-policy.md](../../../docs/20-contracts/deletion-policy.md))
-        los bancos se archivan, no se borran. Este endpoint existe solo como
-        fallback administrativo: captura ``ProtectedError`` y devuelve un
-        mensaje legible en ``409 Conflict`` cuando hay dependencias.
-        """
-        bank = self.get_object()
-        ok, reason = BankDeletionService.can_destroy(bank)
-        if not ok:
-            return Response({"detail": reason}, status=status.HTTP_409_CONFLICT)
-        try:
-            return super().destroy(request, *args, **kwargs)
-        except Exception as exc:  # ProtectedError u otros
-            return Response(
-                {"detail": str(exc) or "No se puede eliminar el banco."},
-                status=status.HTTP_409_CONFLICT,
-            )
+    def _check_archive_guard(self, instance):
+        # D4: un PATCH/PUT directo a is_active=false debe pasar el mismo
+        # guard que el endpoint dedicado /archive/.
+        val = self.request.data.get("is_active", None)
+        going_inactive = val == 0 or (isinstance(val, str) and val.lower() in ("false", "0"))
+        if instance.is_active and going_inactive:
+            ok, reason = BankDeletionService.can_archive(instance)
+            if not ok:
+                return Response({"detail": reason}, status=status.HTTP_409_CONFLICT)
+        return None
+
+    def update(self, request, *args, **kwargs):
+        guard = self._check_archive_guard(self.get_object())
+        if guard:
+            return guard
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        guard = self._check_archive_guard(self.get_object())
+        if guard:
+            return guard
+        return super().partial_update(request, *args, **kwargs)
 
 
-class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class PaymentMethodViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = PaymentMethod.objects.all().order_by("name")
     serializer_class = PaymentMethodSerializer
     pagination_class = None  # Master data
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = annotate_edit_usage(super().get_queryset())
         treasury_account = self.request.query_params.get("treasury_account")
         if treasury_account:
             qs = qs.filter(treasury_account_id=treasury_account)
@@ -143,20 +175,13 @@ class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if method_type:
             qs = qs.filter(method_type=method_type)
 
-        return qs
+        return apply_archivo_is_active_filter(qs, self.request, self.action)
 
     def _check_integrated(self, instance):
         if instance.is_integrated:
             return Response(
                 {
                     "detail": "Los métodos de pago integrados (CARD_TERMINAL con dispositivo) son gestionados por el sistema. Modifique el dispositivo o proveedor en su lugar."
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        if instance.bank_provisioned:
-            return Response(
-                {
-                    "detail": "Este método de pago fue creado automáticamente al provisionar el banco. Gestiónelo desde el Centro de Bancos."
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -174,16 +199,11 @@ class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         return super().partial_update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        err = self._check_integrated(self.get_object())
-        if err:
-            return err
-        return super().destroy(request, *args, **kwargs)
-
-    def perform_create(self, serializer):
-        serializer.save()
-
-    def perform_update(self, serializer):
-        serializer.save()
+        # Archivo pattern: hard DELETE not allowed, use PATCH is_active=false to archive
+        return Response(
+            {"detail": "Hard delete not allowed for PaymentMethods. Use PATCH is_active=false to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
 
 class TreasuryAccountFilterSet(FilterSet):
@@ -196,7 +216,7 @@ class TreasuryAccountFilterSet(FilterSet):
         fields = ["name", "account_type", "bank_id"]
 
 
-class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class TreasuryAccountViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = TreasuryAccount.objects.all().order_by("account_type", "name")
     serializer_class = TreasuryAccountSerializer
     pagination_class = None  # Master data
@@ -205,7 +225,7 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     search_fields = ["name"]
 
     def get_queryset(self):
-        qs = (
+        qs = annotate_edit_usage(
             super()
             .get_queryset()
             .select_related("bank", "account")
@@ -214,20 +234,23 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         exclude_id = self.request.query_params.get("exclude_id")
         if exclude_id:
             qs = qs.exclude(id=exclude_id)
-        return qs
+        return apply_archivo_is_active_filter(qs, self.request, self.action)
+
+    def destroy(self, request, *args, **kwargs):
+        # Archivo pattern: hard DELETE not allowed, use PATCH is_active=false to archive
+        err = self._check_system_managed(self.get_object())
+        if err:
+            return err
+        return Response(
+            {"detail": "Hard delete not allowed for TreasuryAccounts. Use PATCH is_active=false to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
     def _check_system_managed(self, instance):
         if instance.account_type in TreasuryAccount._NON_CASH_EQUIVALENT_TYPES:
             return Response(
                 {
                     "detail": f"Las cuentas de tipo {instance.get_account_type_display()} son gestionadas por el sistema (vinculadas a un proveedor de terminal). Modifique el proveedor en su lugar."
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        if instance.bank_provisioned:
-            return Response(
-                {
-                    "detail": "Esta cuenta fue creada automáticamente al provisionar el banco. Gestiónela desde el Centro de Bancos."
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -243,12 +266,6 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if err:
             return err
         return super().partial_update(request, *args, **kwargs)
-
-    def destroy(self, request, *args, **kwargs):
-        err = self._check_system_managed(self.get_object())
-        if err:
-            return err
-        return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=["post"])
     def provision(self, request):
@@ -269,6 +286,16 @@ class PaymentTerminalProviderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     serializer_class = PaymentTerminalProviderSerializer
     pagination_class = None  # Master data
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return apply_archivo_is_active_filter(qs, self.request, self.action)
+
+    def destroy(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Hard delete not allowed for PaymentTerminalProviders. Use PATCH is_active=false to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
 
 class PaymentTerminalDeviceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = PaymentTerminalDevice.objects.all().order_by("name")
@@ -280,7 +307,7 @@ class PaymentTerminalDeviceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     """
     ViewSet for managing POS Terminals.
-    Supports filtering by active status via `?active_only=true` query param.
+    Supports filtering by active status via `?is_active=true/false/all` query param.
     """
 
     queryset = (
@@ -294,28 +321,25 @@ class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def get_queryset(self):
         qs = super().get_queryset()
 
-        # Filter by active status if requested
-        if self.request.query_params.get("active_only") == "true":
+        # Filter by is_active (default: true; allow ?is_active=all/false)
+        is_active = self.request.query_params.get("is_active")
+        if is_active == "all":
+            pass  # no filter
+        elif is_active == "false":
+            qs = qs.filter(is_active=False)
+        else:
             qs = qs.filter(is_active=True)
 
         return qs.order_by("code")
 
     def destroy(self, request, *args, **kwargs):
         """
-        Custom destroy to handle protected terminals (with sessions).
+        Archivo pattern: hard DELETE not allowed, use PATCH is_active=false to archive.
         """
-        from django.db.models.deletion import ProtectedError
-
-        try:
-            return super().destroy(request, *args, **kwargs)
-        except ProtectedError:
-            return Response(
-                {
-                    "error": "No se puede eliminar el terminal porque tiene sesiones asociadas.",
-                    "detail": "Para deshabilitar el terminal, use la opción 'Desactivar' en su lugar.",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        return Response(
+            {"detail": "Hard delete not allowed for POSTerminals. Use PATCH is_active=false to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
     @action(detail=True, methods=['get'])
     def available_accounts(self, request, pk=None):
@@ -375,9 +399,8 @@ class TreasuryMovementViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHisto
         return super().destroy(request, *args, **kwargs)
 
     def perform_update(self, serializer):
-        instance = serializer.save()
-        # Trigger status update on related documents
-        TreasuryService.update_related_document_status(instance)
+        super().perform_update(serializer)
+        TreasuryService.update_related_document_status(serializer.instance)
 
     @idempotent_endpoint(scope='treasury.movement.create')
     def create(self, request, *args, **kwargs):
@@ -415,7 +438,7 @@ class TreasuryMovementViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHisto
     def card_purchase(self, request):
         """
         Crea una compra con tarjeta en N cuotas con interés
-        explícito opcional (Onda 2, ADR-0043).
+        explícito opcional (Onda dos, ADR-43).
         """
         try:
             result = TreasuryService.process_card_purchase_request(request.data, request.user)
@@ -634,7 +657,7 @@ class BankStatementViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=500)
 
 
-class BankStatementLineViewSet(viewsets.ModelViewSet):
+class BankStatementLineViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     """ViewSet for bank statement lines"""
 
     queryset = BankStatementLine.objects.all().select_related(
@@ -899,7 +922,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             return Response({'session': POSSessionSerializer(session).data, 'message': 'Movimiento registrado correctamente'})
         except Exception as e:
             return Response({'error': str(e)}, status=500)
-class CheckViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class CheckViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     """CRUD + transiciones de estado para cheques recibidos."""
 
@@ -1060,7 +1083,7 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
             return Response({'error': str(e)}, status=400)
 
 
-class TerminalBatchViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class TerminalBatchViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     """
     ViewSet for managing Terminal Batches (Settlements).
@@ -1128,12 +1151,12 @@ class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     """CRUD + acciones de lifecycle para créditos bancarios (Fase 2).
 
     Acciones custom:
-      - POST /loans/{id}/disburse/  → desembolsar (idempotente si ya ACTIVE).
-      - POST /loans/{id}/prepay/    → pago total anticipado.
-      - POST /loans/{id}/refinance/ → marca REFINANCED (no paga, sólo cierra).
-      - GET  /loans/{id}/schedule/  → preview de tabla de amortización sin
+      - POST /loans/{id}/disburse/  -> desembolsar (idempotente si ya ACTIVE).
+      - POST /loans/{id}/prepay/    -> pago total anticipado.
+      - POST /loans/{id}/refinance/ -> marca REFINANCED (no paga, sólo cierra).
+      - GET  /loans/{id}/schedule/  -> preview de tabla de amortización sin
         persistir (útil al registrar el crédito).
-      - GET  /loans/{id}/amortization_table/ → tabla persistida con cuotas.
+      - GET  /loans/{id}/amortization_table/ -> tabla persistida con cuotas.
     """
 
     from .models import BankLoan
@@ -1246,6 +1269,7 @@ class CreditLineViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        qs = apply_archivo_is_active_filter(qs, self.request, self.action)
         treasury_account_id = self.request.query_params.get("treasury_account_id")
         if treasury_account_id:
             qs = qs.filter(treasury_account_id=treasury_account_id)
@@ -1253,6 +1277,13 @@ class CreditLineViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if bank_id:
             qs = qs.filter(treasury_account__bank_id=bank_id)
         return qs
+
+    def destroy(self, request, *args, **kwargs):
+        # Archivo pattern: hard DELETE not allowed, use PATCH is_active=false to archive
+        return Response(
+            {"detail": "Hard delete not allowed for CreditLines. Use PATCH is_active=false to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):
@@ -1280,7 +1311,7 @@ class CreditLineViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         )
 
 
-class LoanInstallmentViewSet(viewsets.ModelViewSet):
+class LoanInstallmentViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     """Listado y pago de cuotas. Creación/edición no expuestas (se generan
     vía `BankLoan.generate_schedule` y se cierran vía acciones de pago)."""
@@ -1311,14 +1342,14 @@ class LoanInstallmentViewSet(viewsets.ModelViewSet):
 # ── F3.5: Tarjeta de crédito propia — estados de cuenta ─────────────────────
 
 
-class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class CreditCardStatementViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     """CRUD + acciones de lifecycle para estados de cuenta de tarjeta de crédito propia.
 
     Acciones custom:
-      - POST /card-statements/{id}/pay/          → pagar desde una cuenta bancaria.
-      - POST /card-statements/{id}/apply-charges/ → imputar interés/comisiones.
-      - POST /card-statements/{id}/cancel/       → anular un statement OPEN.
+      - POST /card-statements/{id}/pay/          -> pagar desde una cuenta bancaria.
+      - POST /card-statements/{id}/apply-charges/ -> imputar interés/comisiones.
+      - POST /card-statements/{id}/cancel/       -> anular un statement OPEN.
     """
 
     from .models import CreditCardStatement
@@ -1366,7 +1397,7 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         from django.core.exceptions import ValidationError as DjangoValidationError
 
         try:
-            serializer.save()
+            super().perform_update(serializer)
         except DjangoValidationError as e:
             raise drf_serializers.ValidationError(
                 e.message_dict if hasattr(e, "message_dict") else e.messages
@@ -1431,10 +1462,16 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
         from .selectors import CardSelector
         acc_id = request.query_params.get('card_account')
-        if not acc_id: return Response({'detail': 'card_account req.'}, status=400)
+        bank_id = request.query_params.get('bank')
         c_date_str = request.query_params.get('cut_off_date')
         c_date = _date.fromisoformat(c_date_str) if c_date_str else None
-        return Response(CardSelector.get_unbilled_charges_data(int(acc_id), c_date))
+        return Response(
+            CardSelector.get_unbilled_charges_data(
+                int(acc_id) if acc_id else None,
+                c_date,
+                bank_id=int(bank_id) if bank_id else None,
+            )
+        )
 
     @action(detail=False, methods=["post"], url_path="add-charge")
     def add_charge(self, request):
@@ -1489,9 +1526,7 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=["post"], url_path="reverse")
     def reverse(self, request, pk=None):
-        """Reversa contablemente cargos + pago y anula el statement
-        (Gap 1.6, ADR-0037). Equivalente a `cancel` con limpieza
-        contable transaccional. Refresca saldos de la tarjeta y banco."""
+        # Reversa contablemente cargos + pago y anula el statement (Gap 1.6, ADR-37). Equivalente a cancel con limpieza contable transaccional. Refresca saldos de la tarjeta y banco.
         from .card_service import CardService
 
         stmt = self.get_object()

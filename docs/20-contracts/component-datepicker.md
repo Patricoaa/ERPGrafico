@@ -71,7 +71,7 @@ Todos los selectores de fecha deben seguir uno de los **dos patrones estándar**
 ### Características técnicas
 
 - **Wrapper**: `LabeledContainer` (fieldset notched-field)
-- **Trigger height**: alineado con estándar `min-h-[1.5rem]` — igual que `LabeledInput`
+- **Trigger height**: `h-6` (token estándar) — igual que `LabeledInput`
 - **Ícono**: `CalendarIcon` **dentro del Button**, no en prop `icon=` del LabeledContainer
 - **Locale**: `es` siempre (declarado explícitamente)
 - **Formato display**: `"PPP"` → "1 de enero de 2025"
@@ -80,10 +80,10 @@ Todos los selectores de fecha deben seguir uno de los **dos patrones estándar**
 
 ### Invariante de altura
 
-El trigger Button debe usar `h-[1.5rem] p-0` (igual que todos los triggers en notched-field). `DatePicker.tsx` interno pasa `className` al Button — `PeriodValidationDateInput` debe forzar estas clases vía el prop `className` del `DatePicker`.
+El trigger Button debe usar `h-6 p-0` (token estándar). `DatePicker.tsx` interno ya incluye `h-6` — los consumidores **no** deben pasar override de altura.
 
-> [!WARNING]
-> `DatePicker.tsx` standalone usa `h-10` por defecto. Al usarlo dentro de `PeriodValidationDateInput` o cualquier `LabeledContainer`, siempre pasar `className` que incluya `h-[1.5rem] p-0`.
+> [!NOTE]
+> Versiones anteriores usaban `h-[1.5rem]`. El primitivo ahora declara `h-6` internamente (R2). `PeriodValidationDateInput` ya no requiere override de altura.
 
 ---
 
@@ -197,7 +197,7 @@ import { DateRangeFilter } from '@/components/shared'  // ✅
 
 | Invariante | Valor correcto |
 |-----------|----------------|
-| Trigger height en formulario | `h-[1.5rem] p-0` |
+| Trigger height en formulario | `h-6 p-0` |
 | Locale Calendar | `locale={es}` siempre |
 | Formato display single date | `"PPP"` con `{ locale: es }` |
 | Formato display range | `"LLL dd, y"` con `{ locale: es }` |

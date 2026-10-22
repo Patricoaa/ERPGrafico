@@ -3,6 +3,11 @@ import { execSync } from "child_process";
 import packageJson from "./package.json";
 
 function getVersion(): string {
+  // En dev (Docker, sin .git) evitamos el spawn de `git describe` en cada carga
+  // de next.config — se lanza un shell que falla y sólo aporta latencia.
+  if (process.env.NODE_ENV === "development") {
+    return packageJson.version;
+  }
   try {
     const tag = execSync("git describe --tags --abbrev=0", {
       encoding: "utf-8",
@@ -30,7 +35,7 @@ const r2Hostname = process.env.AWS_S3_CUSTOM_DOMAIN ?? "pub-a723d7beee0f4252b270
 const nextConfig: NextConfig = {
   // standalone solo para Docker/self-hosted — Vercel gestiona el output por su cuenta
   output: process.env.VERCEL ? undefined : "standalone",
-  allowedDevOrigins: ["192.168.1.93", "192.168.1.195", "localhost", "127.0.0.1"],
+  allowedDevOrigins: ["192.168.1.86", "192.168.1.195", "localhost", "127.0.0.1"],
   env: {
     NEXT_PUBLIC_APP_VERSION: getVersion(),
     NEXT_PUBLIC_GIT_HASH: gitHash,
@@ -61,7 +66,6 @@ const nextConfig: NextConfig = {
   },
   experimental: {
   },
-  transpilePackages: ["react-day-picker", "@nivo/core", "@nivo/bar", "@nivo/funnel", "@nivo/pie", "@nivo/line"],
   devIndicators: {
   },
 };

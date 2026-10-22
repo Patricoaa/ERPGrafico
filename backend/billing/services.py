@@ -1493,11 +1493,6 @@ class BillingService:
 
     @staticmethod
     @staticmethod
-    def validate_editable(instance):
-        if instance.status != "DRAFT":
-            raise ValidationError("Solo se pueden editar facturas en estado Borrador.")
-
-    @staticmethod
     def check_folio_from_request(request):
         from .selectors import InvoiceSelectorExt
 
@@ -1512,24 +1507,6 @@ class BillingService:
             contact_id=request.query_params.get('contact_id'),
             is_purchase=request.query_params.get('is_purchase', 'false').lower() == 'true',
         )
-
-    @staticmethod
-    def validate_purge(invoice: Invoice):
-        """
-        Una factura solo puede purgarse (hard delete) si está CANCELLED y no dejó
-        huella contable: facturas anuladas con reversos se conservan por auditoría.
-        """
-        if invoice.status != Invoice.Status.CANCELLED:
-            raise ValidationError("Use el endpoint de cancelación para facturas activas.")
-        has_accounting_trace = (
-            invoice.journal_entry_id is not None
-            or invoice.payments.filter(journal_entry__isnull=False).exists()
-        )
-        if has_accounting_trace:
-            raise ValidationError(
-                "No se puede eliminar: la factura tiene asientos contables asociados. "
-                "Los documentos anulados se conservan como pista de auditoría."
-            )
 
     @staticmethod
     @transaction.atomic

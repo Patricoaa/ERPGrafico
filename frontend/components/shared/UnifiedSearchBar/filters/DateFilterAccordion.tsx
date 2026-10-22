@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronRight, CalendarIcon } from 'lucide-react'
+import { ChevronRight, CalendarIcon, Check } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { type DateRange } from 'react-day-picker'
@@ -85,17 +85,20 @@ export function DateFilterAccordion({ def, activeParams, onApply, onRemove }: Da
           if (expanded) setMode('presets')
         }}
         className={cn(
-          "w-full justify-start gap-2 font-medium",
-          hasActiveOption && "text-primary",
+          "w-full justify-start gap-2 px-2 py-1.5 text-xs font-medium rounded-sm transition-colors",
+          hasActiveOption && "bg-primary/5 text-primary",
         )}
       >
-        <ChevronRight className={cn("h-3 w-3 transition-transform", expanded && "rotate-90")} />
+        <ChevronRight
+          className={cn("size-3 shrink-0 transition-transform motion-reduce:transition-none", expanded && "rotate-90")}
+          aria-hidden
+        />
         <span>{def.label}</span>
-        {hasActiveOption && <span className="ml-auto text-3xs text-muted-foreground">✓</span>}
+        {hasActiveOption && <Check className="ml-auto size-3 shrink-0 text-primary" aria-hidden />}
       </Button>
 
       {expanded && (
-        <div className="ml-4 border-l border-border/40 pl-2 space-y-0.5">
+        <div className="ml-4 border-l border-border/50 pl-2 space-y-0.5">
           {mode === 'presets' ? (
             <>
               {def.options.map((option) => (
@@ -105,21 +108,23 @@ export function DateFilterAccordion({ def, activeParams, onApply, onRemove }: Da
                   size="sm"
                   onClick={() => handleSelect(option)}
                   className={cn(
-                    "w-full justify-start font-normal",
-                    isSelected(option) ? "text-primary font-semibold" : "text-muted-foreground",
+                    "w-full justify-start px-2 py-1.5 text-xs rounded-sm transition-colors",
+                    isSelected(option)
+                      ? "bg-primary/5 text-primary font-semibold"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {option.label}
                 </Button>
               ))}
-              <div className="border-t border-border/40 my-1" />
+              <div className="border-t border-border/50 my-1" />
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => { setMode('custom'); setTempRange(undefined) }}
-                className="w-full justify-start gap-1.5 text-muted-foreground"
+                className="w-full justify-start gap-1.5 px-2 py-1.5 text-xs rounded-sm text-muted-foreground hover:text-foreground"
               >
-                <CalendarIcon className="h-3 w-3" />
+                <CalendarIcon className="size-3.5" aria-hidden />
                 Rango personalizado
               </Button>
             </>

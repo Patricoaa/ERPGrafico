@@ -37,7 +37,7 @@ export function usePricingRules(filters?: FilterState) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: rules, isLoading, refetch } = useQuery({
+    const { data: rules, isLoading, isError, refetch } = useQuery({
         queryKey: [...PRICING_RULES_QUERY_KEY, filters],
         queryFn: async (): Promise<PricingRule[]> => {
             const params = new URLSearchParams()
@@ -78,6 +78,8 @@ export function usePricingRules(filters?: FilterState) {
     return {
         rules: rules ?? [],
         isLoading,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError,
         refetch,
         deletePricingRule: deleteMutation.mutateAsync,
         isDeleting: deleteMutation.isPending,

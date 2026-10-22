@@ -14,7 +14,7 @@ import {
     FormField,
     FormItem,
 } from "@/components/ui/form"
-import { ActionSlideButton, BaseModal, CancelButton, FormFooter, LabeledInput, MoneyDisplay } from '@/components/shared'
+import { SubmitButton, BaseModal, CancelButton, FormFooter, LabeledInput, MoneyDisplay } from "@/components/shared"
 
 import { useContactMutations } from "@/features/contacts"
 import { type CreditContact } from '@/features/credits/api/creditsApi'
@@ -98,14 +98,14 @@ export default function CreditAssignmentModal({
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton
+                            <SubmitButton
                                 type="submit"
                                 form="credit-assignment-form"
                                 loading={isUpdating}
                                 disabled={!activeContact}
                             >
                                 {isUpdating ? "Guardando..." : "Confirmar Asignación"}
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />

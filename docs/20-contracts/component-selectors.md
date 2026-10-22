@@ -48,10 +48,12 @@ Esto garantiza que todos los campos del formulario tengan la misma altura (`min-
 ```tsx
 <div className="flex items-center gap-1.5 min-w-0 flex-1">
   <SomeIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
-  <span className="font-medium text-sm truncate">{entity.name}</span>
-  <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">{entity.secondary}</span>
+  <span className="text-sm text-foreground truncate">{entity.name}</span>
+  <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">{entity.secondary}</span>
 </div>
 ```
+
+> **Nota de contrato (N3):** El valor seleccionado usa `text-sm text-foreground` (peso normal), no `font-medium`. El texto secundario usa `text-3xs` (token) en vez de `text-[10px]`.
 
 ---
 
@@ -83,7 +85,7 @@ Combobox for accounting accounts (Chart of Accounts). Popover + advanced modal s
 |------|------|----------|---------|-------|
 | `value` | `string \| number \| null` | ❌ | — | Controlled; account `id` |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | Returns `id.toString()` or `null` |
-| `placeholder` | `string` | ❌ | `'Seleccionar cuenta...'` | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `accountType` | `string \| string[]` | ❌ | — | Filter by `account_type` field (`'asset' \| 'liability' \| 'equity' \| 'income' \| 'expense'`) |
 | `showAll` | `boolean` | ❌ | `false` | `true`: include parent accounts. `false`: leaf accounts only |
 | `isReconcilable` | `boolean` | ❌ | — | Filter reconcilable accounts (journal entry use) |
@@ -113,7 +115,7 @@ Combobox for inventory products. Popover + advanced modal. Shows price and stock
 |------|------|----------|---------|-------|
 | `value` | `string \| number \| null` | ❌ | — | Product `id` |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | |
-| `placeholder` | `string` | ❌ | — | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `productType` | `string` | ❌ | — | Filter by `product_type` |
 | `allowedTypes` | `string[]` | ❌ | — | Multiple type filter |
 | `disabled` | `boolean` | ❌ | `false` | |
@@ -148,7 +150,7 @@ Combobox for customers/suppliers. Debounced search, RUT display. Lazy-loads `Con
 |------|------|----------|---------|-------|
 | `value` | `string \| number \| null` | ❌ | — | Contact `id` |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | |
-| `placeholder` | `string` | ❌ | `'Seleccionar contacto...'` | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `contactType` | `'CUSTOMER' \| 'SUPPLIER' \| 'BOTH' \| 'NONE'` | ❌ | — | Filter by contact type |
 | `onSelectContact` | `(contact: Contact) => void` | ❌ | — | Full Contact object (for auto-fill) |
 | `disabled` | `boolean` | ❌ | `false` | |
@@ -177,7 +179,7 @@ Combobox for sale orders. Debounced search, inline preview via the entity drawer
 |------|------|----------|---------|-------|
 | `value` | `string \| number \| null` | ❌ | — | SaleOrder `id` |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | |
-| `placeholder` | `string` | ❌ | — | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `disabled` | `boolean` | ❌ | `false` | |
 | `customFilter` | `(order: SaleOrder) => boolean` | ❌ | — | Client-side filter |
 | `label` | `string` | ❌ | — | |
@@ -204,7 +206,7 @@ Combobox for work orders. Debounced search, inline preview. Clear button built-i
 |------|------|----------|---------|-------|
 | `value` | `string \| number \| null` | ❌ | — | WorkOrder `id` |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | Pass `null` to clear |
-| `placeholder` | `string` | ❌ | `'Vincular a Orden de Trabajo (Opcional)...'` | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `disabled` | `boolean` | ❌ | `false` | |
 | `label` | `string` | ❌ | — | |
 | `error` | `string` | ❌ | — | |
@@ -231,7 +233,7 @@ Combobox for treasury accounts (bank/cash). Filters by payment context.
 |------|------|----------|---------|-------|
 | `value` | `string \| number \| null` | ❌ | — | Account `id` |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | |
-| `placeholder` | `string` | ❌ | — | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `disabled` | `boolean` | ❌ | `false` | |
 | `context` | `PaymentContext` | ❌ | — | `'POS' \| 'STANDARD' \| ...` — see `useTreasuryAccounts` |
 | `terminalId` | `number` | ❌ | — | Filter accounts linked to specific terminal |
@@ -260,7 +262,7 @@ Combobox for system users. Debounced search by name.
 |------|------|----------|---------|-------|
 | `value` | `number \| null` | ❌ | — | User `id` (integer, not UUID) |
 | `onChange` | `(value: number \| null) => void` | ✅ | — | |
-| `placeholder` | `string` | ❌ | `'Seleccionar usuario...'` | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `disabled` | `boolean` | ❌ | `false` | |
 | `label` | `string` | ❌ | — | |
 | `error` | `string` | ❌ | — | |
@@ -285,7 +287,7 @@ Combobox for user groups/roles. Value is group **name** (string), not id.
 |------|------|----------|---------|-------|
 | `value` | `string \| null` | ❌ | — | Group **name** string |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | |
-| `placeholder` | `string` | ❌ | `'Seleccionar grupo...'` | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `disabled` | `boolean` | ❌ | `false` | |
 | `label` | `string` | ❌ | — | |
 | `error` | `string` | ❌ | — | |
@@ -331,12 +333,12 @@ No feature hook — caller provides `uoms` list.
 
 ---
 
-## ProductSelector 🟢
+## ProductGridPicker 🟢
 
-Rich catalog selector with image grid, category filter, and search. Lives in `@/components/shared`. Use for full-catalog browsing; **not** for simple form fields or narrow popovers (requires ≥40vh height).
+Rich catalog picker with card grid, category filter, and search. Lives in `@/components/selectors/ProductGridPicker` (relocated and renamed by [ADR-0076](../10-architecture/adr/0076-productselector-grid-picker-relocation.md); the single-value dropdown is `ProductSelector` above). Use for full-catalog browsing; **not** for simple form fields or narrow popovers (requires ≥40vh height).
 
 ```tsx
-<ProductSelector
+<ProductGridPicker
   products={products}
   categories={categories}
   searchTerm={search}
@@ -361,10 +363,37 @@ Rich catalog selector with image grid, category filter, and search. Lives in `@/
 | `onProductClick` | `(product: BaseProduct) => void` | ✅ | |
 | `onToggleFavorite` | `(productId: number) => void` | ❌ | |
 | `isProductDisabled` | `(product: BaseProduct) => boolean` | ❌ | inject business rules |
-| `limits` | `Record<number, number>` | ❌ | |
-| `priceRenderer` | `(product: BaseProduct) => ReactNode` | ❌ | override default price display |
+| `limits` | `Record<string, number \| undefined>` | ❌ | branch stock override keyed `prod_<id>`; replaces `qty_available`, never adds to it |
+| `priceRenderer` | `(product: BaseProduct) => ReactNode` | ❌ | replaces the price amount; returning `null` hides the whole price block |
+| `priceLabel` | `string` | ❌ | caption above the price; default `"Venta c/IVA"` (calculator passes `"Costo"`) |
+| `selectedProductIds` | `Set<number>` | ❌ | CMYK ribbon + check + `aria-pressed` on those cards |
 
-**Related subcomponents:** `VariantSelectorModal` (variant selection via `useVariants` hook), `ProductGrid` (pure virtualized grid — use standalone if you need a custom layout).
+**Related subcomponents:** `VariantSelectorModal` (variant selection via `useVariants` hook), `ProductGrid` (pure virtualized grid — use standalone if you need a custom layout), `ProductCard` (the card itself, see below).
+
+### Card anatomy ([ADR-0092](../10-architecture/adr/0092-productgrid-card-anatomy.md))
+
+One anatomy for every context (POS, calculator, production); only the price and availability sources change.
+
+```
+┌─────────────────────────┐ ← ribbon-cmyk: always when selected, on hover/focus otherwise
+│ [Categoría]        (♡)  │   icon strip (photo when `image_thumbnail`/`image` exist), 88 px
+│        ⬚                │
+│ [⧉ 4 gramajes]      (✓) │   variant chip (templates) · selected check
+├─────────────────────────┤
+│ PAP-001              🔒 │   mono code · lock when unavailable
+│ Papel couché mate 150 g │   name, 2 lines max
+│ ▢ 1.240 pliegos disp.   │   availability line (icon + text, never colour alone)
+│ Venta c/IVA · desde     │
+│ $571 / pliego         › │   price c/IVA + unit · action glyph  + › –
+                               (dynamic pricing: "Precio dinámico" replaces the amount)
+└─────────────────────────┘
+```
+
+- What the card says lives in `product-card-model.ts` (`getProductCardModel`, pure, unit-tested): availability by product type, action glyph (`+` add, `›` configure for variants / dynamic price, `–` unavailable) and price kind (`fixed` / `from` / `pending`). `ProductCard.tsx` only draws it.
+- Price is **c/IVA** (`PricingUtils.netToGross`). Templates show `min_variant_price` as "desde"; dynamic-pricing products show "Precio dinámico" **in place of** the amount.
+- Variant hints (`variants_count`, `variant_axis_label`, `min_variant_price`) come from `ProductListSerializer`, read from the `variants` prefetch of `list_products` (no N+1; pinned by `inventory/tests/test_product_list_card_fields.py`).
+- Unavailable (disabled by the caller, or a template with no active variants): whole card at 50 % opacity on a washed `bg-muted/40`, grey name/price/availability (never red), lock, `–`, `cursor-not-allowed`, no ribbon, no hover; the reason is the availability text ("Sin existencias", "Sin variantes"). The favourite stays clickable.
+- Loading: `CardSkeleton variant="product"` mirrors the same strip + rows to avoid CLS.
 
 **⚠️ VirtuosoGrid constraint:** The parent container **must** have a defined height (`flex-1 min-h-0` or fixed px). A zero-height container renders nothing.
 
@@ -385,7 +414,7 @@ Combobox para categorías de producto. Usa `SearchablePopover` con soporte para 
 |------|------|----------|---------|-------|
 | `value` | `string \| number \| null` | ❌ | — | Category `id` |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | Returns `id.toString()` or `null` |
-| `placeholder` | `string` | ❌ | `''` | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `disabled` | `boolean` | ❌ | — | |
 | `label` | `string` | ❌ | — | |
 | `error` | `string` | ❌ | — | |
@@ -417,7 +446,7 @@ Combobox para bodegas. Muestra nombre y código.
 |------|------|----------|---------|-------|
 | `value` | `string \| number \| null` | ❌ | — | Warehouse `id` |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | |
-| `placeholder` | `string` | ❌ | `'Seleccionar bodega...'` | |
+| `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
 | `disabled` | `boolean` | ❌ | — | |
 | `label` | `string` | ❌ | — | |
 | `error` | `string` | ❌ | — | |

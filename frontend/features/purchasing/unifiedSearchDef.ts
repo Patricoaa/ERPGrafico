@@ -1,5 +1,5 @@
 import type { UnifiedSearchConfig } from '@/types/unified-search'
-import { today, thisWeek, thisMonth, thisQuarter, thisYear } from '@/lib/date-presets'
+import { periodPresets } from '@/lib/date-presets'
 
 export const purchaseOrderUnifiedSearchDef: UnifiedSearchConfig = {
   searchFields: [
@@ -66,31 +66,160 @@ export const purchaseOrderUnifiedSearchDef: UnifiedSearchConfig = {
       type: 'date',
       key: 'created_at',
       label: 'Fecha de creación',
-      options: [
-        { label: 'Hoy', serverParamFrom: 'created_at_after', serverParamTo: 'created_at_before', getValue: today },
-        { label: 'Esta semana', serverParamFrom: 'created_at_after', serverParamTo: 'created_at_before', getValue: thisWeek },
-        { label: 'Este mes', serverParamFrom: 'created_at_after', serverParamTo: 'created_at_before', getValue: thisMonth },
-        { label: 'Este trimestre', serverParamFrom: 'created_at_after', serverParamTo: 'created_at_before', getValue: thisQuarter },
-        { label: 'Este año', serverParamFrom: 'created_at_after', serverParamTo: 'created_at_before', getValue: thisYear },
-      ],
+      options: periodPresets('created_at_after', 'created_at_before'),
     },
     {
       type: 'date',
       key: 'receipt_date',
       label: 'Fecha Entrega',
-      options: [
-        { label: 'Hoy', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: today },
-        { label: 'Esta semana', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: thisWeek },
-        { label: 'Este mes', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: thisMonth },
-        { label: 'Este trimestre', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: thisQuarter },
-        { label: 'Este año', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: thisYear },
-      ],
+      options: periodPresets('receipt_date_after', 'receipt_date_before'),
     },
   ],
   groupBy: [
     { key: 'date', label: 'Fecha', field: 'date' },
     { key: 'status', label: 'Estado', field: 'status' },
     { key: 'receiving_status', label: 'Estado recepción', field: 'receiving_status' },
+  ],
+  basePeriod: { serverParamFrom: 'date_after', serverParamTo: 'date_before' },
+}
+
+export const subscriptionUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    {
+      key: 'search',
+      label: 'Producto',
+      serverParam: 'search',
+    },
+  ],
+  filters: [
+    {
+      type: 'single',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'Activo', value: 'ACTIVE' },
+        { label: 'Pausado', value: 'PAUSED' },
+        { label: 'Cancelado', value: 'CANCELLED' },
+      ],
+    },
+  ],
+  groupBy: [
+    { key: 'status', label: 'Estado', field: 'status' },
+    { key: 'recurrence_period', label: 'Período', field: 'recurrence_period' },
+  ],
+  dateFilters: [{
+    type: 'date',
+    key: 'date',
+    label: 'Fecha',
+    options: periodPresets('date_from', 'date_to'),
+  }],
+  basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
+}
+
+
+/**
+ * ADR-0090: las listas de recepciones y devoluciones de compra son vistas documentales propias.
+ * Los `serverParam` coinciden con `PurchaseReceiptFilter` / `PurchaseReturnFilter` del backend.
+ */
+export const purchaseReceiptUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    { key: 'purchase_order_number', label: 'Orden de Compra', serverParam: 'purchase_order_number' },
+    { key: 'supplier_name', label: 'Proveedor', serverParam: 'supplier_name' },
+  ],
+  filters: [
+    {
+      type: 'multi',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'Borrador', value: 'DRAFT' },
+        { label: 'Confirmado', value: 'CONFIRMED' },
+        { label: 'Anulado', value: 'CANCELLED' },
+      ],
+    },
+  ],
+  dateFilters: [
+    { type: 'date', key: 'receipt_date', label: 'Fecha de recepción', options: periodPresets('date_after', 'date_before') },
+  ],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'receipt_date' },
+    { key: 'supplier', label: 'Proveedor', field: 'supplier_name' },
+    { key: 'status', label: 'Estado', field: 'status' },
+  ],
+  basePeriod: { serverParamFrom: 'date_after', serverParamTo: 'date_before' },
+}
+
+export const purchaseReturnUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    { key: 'purchase_order_number', label: 'Orden de Compra', serverParam: 'purchase_order_number' },
+    { key: 'supplier_name', label: 'Proveedor', serverParam: 'supplier_name' },
+  ],
+  filters: [
+    {
+      type: 'multi',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'Borrador', value: 'DRAFT' },
+        { label: 'Confirmado', value: 'CONFIRMED' },
+        { label: 'Anulado', value: 'CANCELLED' },
+      ],
+    },
+  ],
+  dateFilters: [
+    { type: 'date', key: 'date', label: 'Fecha de devolución', options: periodPresets('date_after', 'date_before') },
+  ],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'date' },
+    { key: 'supplier', label: 'Proveedor', field: 'supplier_name' },
+    { key: 'status', label: 'Estado', field: 'status' },
+  ],
+  basePeriod: { serverParamFrom: 'date_after', serverParamTo: 'date_before' },
+}
+
+/**
+ * ADR-0090: Unified search for "Recepciones y Devoluciones" (fulfillment).
+ * Merges PurchaseReceipt and PurchaseReturn with a `fulfillment_type` filter.
+ */
+export const purchaseFulfillmentUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    { key: 'purchase_order_number', label: 'Orden de Compra', serverParam: 'purchase_order_number' },
+    { key: 'supplier_name', label: 'Proveedor', serverParam: 'supplier_name' },
+  ],
+  filters: [
+    {
+      type: 'multi',
+      key: 'fulfillment_type',
+      label: 'Tipo',
+      serverParam: 'fulfillment_type',
+      options: [
+        { label: 'Recepción', value: 'RECEIPT' },
+        { label: 'Devolución', value: 'RETURN' },
+      ],
+    },
+    {
+      type: 'multi',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'Borrador', value: 'DRAFT' },
+        { label: 'Confirmado', value: 'CONFIRMED' },
+        { label: 'Anulado', value: 'CANCELLED' },
+      ],
+    },
+  ],
+  dateFilters: [
+    { type: 'date', key: 'date', label: 'Fecha', options: periodPresets('date_after', 'date_before') },
+  ],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'date' },
+    { key: 'supplier', label: 'Proveedor', field: 'supplier_name' },
+    { key: 'status', label: 'Estado', field: 'status' },
+    { key: 'type', label: 'Tipo', field: 'fulfillment_type' },
   ],
   basePeriod: { serverParamFrom: 'date_after', serverParamTo: 'date_before' },
 }

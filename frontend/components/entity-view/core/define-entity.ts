@@ -1,5 +1,6 @@
 import type { ComponentType } from "react"
 import type { LucideIcon } from "lucide-react"
+import type { EntityLabel } from "@/lib/entity-registry"
 import { getValueKind, type Align, type KindOptions, type KindValue, type ValueKind } from "./value-kinds"
 
 // ─── Accessors & row-aware options ───────────────────────────────────────────
@@ -21,6 +22,11 @@ export interface FieldMeta {
     sortable?: boolean
     /** Overrides the kind's default table alignment. */
     align?: Align
+    /**
+     * Server ordering key (DRF `?ordering=`, must be in the viewset's `ordering_fields`). With server
+     * sorting only fields that declare it are sortable: the page alone is never reordered.
+     */
+    orderBy?: string
 }
 
 export type FieldDef<T, K extends ValueKind = ValueKind> = FieldMeta & {
@@ -32,9 +38,9 @@ export type FieldDef<T, K extends ValueKind = ValueKind> = FieldMeta & {
 type FieldInput<T, K extends ValueKind> = FieldMeta & RowAware<KindOptions<K>, T>
 
 function splitMeta<T, K extends ValueKind>(input: FieldInput<T, K>): { meta: FieldMeta; options: RowAware<KindOptions<K>, T> } {
-    const { label, header, sortable, align, ...options } = input
+    const { label, header, sortable, align, orderBy, ...options } = input
     // `options` is exactly the RowAware part of the input; TS cannot narrow a generic Omit back to it.
-    return { meta: { label, header, sortable, align }, options: options as unknown as RowAware<KindOptions<K>, T> }
+    return { meta: { label, header, sortable, align, orderBy }, options: options as unknown as RowAware<KindOptions<K>, T> }
 }
 
 /** Builders bound to the row type `T`. `value()` reaches any registered kind, including feature extensions. */
@@ -141,6 +147,13 @@ export interface CardMedia<T> {
     tone?: CardTone | ((row: T) => CardTone)
     image?: (row: T) => string | null | undefined
     avatar?: ComponentType<{ row: T }>
+    /**
+     * `inline` (default): small icon/image beside the title. `top`: a media strip above the title, the
+     * ProductCard anatomy (ADR-0093). Opt-in; collections that do not set it are unchanged.
+     */
+    placement?: "inline" | "top"
+    /** Chip over the strip's top-left corner. Only with `placement: "top"`. */
+    badge?: (row: T) => string | null | undefined
 }
 
 /** Registrable body sections. `custom` is the typed per-feature escape (receives the row, lives in the feature). */
@@ -187,18 +200,44 @@ export interface ExportSpec<Filters> {
 }
 export type ExportFormat = "xlsx" | "csv" | "pdf"
 
-export interface EntitySpec<T, F extends FieldMap<T>> {
-    /** Registry label (identity stays in entity-registry: icon, URL, drawer). */
-    label: string
+/**
+ * Identity of an entity, one of two:
+ * - `label`: registry label (icon, URL, drawer stay in entity-registry). An unregistered label does not compile (R8).
+ * - `title`: embedded rows without a sheet of their own (document lines). No default open action and no
+ *   registry icon; the title is the collection's accessible name.
+ */
+export type EntityIdentity =
+    | { label: EntityLabel; title?: undefined }
+    | { title: string; label?: undefined }
+
+/** Display name of an entity: its registry label or its title. */
+export function entityName(identity: EntityIdentity): string {
+    return identity.label !== undefined ? identity.label : identity.title
+}
+
+export type EntitySpec<T, F extends FieldMap<T>> = EntityIdentity & {
     fields: F
     /** Facet dimensions for filters, independent from visible columns. */
     facets?: Record<string, (row: T) => string | null | undefined>
     export?: ExportSpec<Record<string, unknown>>
     /** Stable row id. Defaults to `row.id`. */
     rowId?: (row: T) => string | number
+    /**
+     * Hierarchical rows (chart of accounts, fiscal year → periods, financial statements). The table
+     * indents children under their parent with a fold toggle in its first column; pages hold whole
+     * branches. Grouping does not apply to a tree.
+     */
+    tree?: TreeSpec<T>
 }
 
-export interface Entity<T, F extends FieldMap<T>> extends EntitySpec<T, F> {
+export interface TreeSpec<T> {
+    /** Child rows (same row type), or nothing for a leaf. */
+    children: (row: T) => readonly T[] | null | undefined
+    /** Starts with every branch open. Defaults to `true`. */
+    defaultExpanded?: boolean
+}
+
+export type Entity<T, F extends FieldMap<T>> = EntitySpec<T, F> & {
     readonly ids: readonly FieldId<F>[]
     field: <Id extends FieldId<F>>(id: Id) => F[Id]
     views: <V extends ViewsInput<T, FieldId<F>>>(views: V) => {
@@ -236,10 +275,24 @@ export function defineEntity<T>() {
 }
 
 /** Untyped-id lookup used by the surfaces (ids were already checked when the layout was declared). */
-export function fieldById<T>(entity: { label: string; fields: FieldMap<T> }, id: string): FieldDef<T, ValueKind> {
+export function fieldById<T>(entity: EntityIdentity & { fields: FieldMap<T> }, id: string): FieldDef<T, ValueKind> {
     const def = entity.fields[id]
-    if (!def) throw new Error(`entity-view: el campo "${id}" no existe en ${entity.label}`)
+    if (!def) throw new Error(`entity-view: el campo "${id}" no existe en ${entityName(entity)}`)
     return def
+}
+
+/**
+ * DRF `ordering` param for a sort spec: `"-date"` → `"-date_field,-id"`. The `id` tie-break keeps
+ * pages stable. Returns `undefined` when the field has no server key (`orderBy`).
+ */
+export function orderingParam<T, F extends FieldMap<T>>(entity: Entity<T, F>, spec: SortSpec<FieldId<F>> | null | undefined): string | undefined {
+    if (!spec) return undefined
+    const desc = spec.startsWith("-")
+    const id: string = desc ? spec.slice(1) : spec
+    const key = fieldById(entity, id).orderBy
+    if (!key) return undefined
+    const sign = desc ? "-" : ""
+    return key === "id" ? `${sign}id` : `${sign}${key},${sign}id`
 }
 
 export function rowIdOf<T, F extends FieldMap<T>>(entity: Entity<T, F>, row: T): string {

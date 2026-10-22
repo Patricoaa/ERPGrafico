@@ -89,7 +89,6 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
                                 <SalesOrdersView
                                     posSessionId={posSessionId}
                                     viewMode={viewMode}
-                                    onActionSuccess={handleActionSuccess}
                                     onSelectOrder={handleOrderSelect}
                                     selectedId={selectedId}
                                 />

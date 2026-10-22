@@ -5,20 +5,21 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { toast } from "sonner"
 import { CreatePayrollDrawer, PayrollDetailDrawer, deletePayroll, paySalary, payPrevired, createAdvance, triggerDraftPayrolls, usePayrollAnalyticsData } from '@/features/hr'
 import type { Payroll } from "@/types/hr"
-import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableView, AutoEntityCard, type ToolbarActionItem } from '@/components/shared'
-import type { AnalyticsPanelConfig, Granularity } from '@/components/shared'
-import { BarChart3, Users, Scissors, CalendarDays } from "lucide-react"
+import { AnalyticsPanelContent, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type Granularity } from '@/components/shared'
+import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
+import { Button } from "@/components/ui/button"
 import { FileText } from "lucide-react"
-import { formatCurrency } from "@/lib/money"
 import { payrollActions, type PayrollActionsCtx } from '@/features/hr/payrollActions'
 import { PaymentModal } from "@/features/treasury"
-import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { usePayrolls } from "@/features/hr"
 import { useServerDate } from "@/hooks/useServerDate"
 import { payrollUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
-import { payrollFields } from '../payrollFields'
+import { payrollEntity, payrollViews } from "../entity-view/payroll.entity"
+import { buildPayrollAnalyticsScreen } from "./payrollAnalyticsScreen"
+
+/** Search group keys → entity field ids (grouping uses the formatted cell text). */
+const PAYROLL_GROUPS: Record<string, FieldId<typeof payrollEntity.fields>> = { status: "status" }
 
 interface PayrollClientViewProps {
     initialPayrolls?: Payroll[]
@@ -33,11 +34,17 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
     const pathname = usePathname()
     const searchParams = useSearchParams()
     const search = useUnifiedSearch(payrollUnifiedSearchDef)
-    const { payrolls, isLoading: loading, isRefetching, refetch: fetchPayrolls } = usePayrolls(search.filters, initialPayrolls)
+    const groupBy = search.groupBy ? PAYROLL_GROUPS[search.groupBy] ?? null : null
+    const { payrolls, isLoading: loading, isRefetching, isError, refetch: fetchPayrolls } = usePayrolls(search.filters, initialPayrolls)
+    const { view, onViewChange } = useCollectionViewMode("hr.payroll")
 
     const [granularity, setGranularity] = useState<Granularity>("month")
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState("resumen")
     const analyticsData = usePayrollAnalyticsData(payrolls, granularity)
+    const analyticsScreen = useMemo(
+        () => buildPayrollAnalyticsScreen(analyticsData, { activeTab: analyticsActiveTab, onTabChange: setAnalyticsActiveTab, granularity, onGranularityChange: setGranularity }),
+        [analyticsData, analyticsActiveTab, granularity],
+    )
 
     const handleGenerateDrafts = useCallback(async () => {
         if (!confirm("¿Generar automáticamente liquidaciones borrador para todos los empleados activos este mes?")) return
@@ -52,385 +59,15 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
         }
     }, [fetchPayrolls])
 
-    const toolbarActions: ToolbarActionItem[] = useMemo(() => [
-        { key: 'generate_drafts', label: 'Generar borradores', icon: FileText, onClick: handleGenerateDrafts },
-    ], [handleGenerateDrafts])
-
-    const analyticsPanel: AnalyticsPanelConfig = useMemo(() => ({
-        screen: {
-            entityName: "Remuneraciones",
-            activeTab: analyticsActiveTab,
-            onTabChange: setAnalyticsActiveTab,
-            granularity,
-            onGranularityChange: setGranularity,
-            tabs: [
-                // ── Tab 1: Resumen ─────────────────────────────────────────
-                {
-                    value: "resumen",
-                    label: "Resumen",
-                    icon: BarChart3,
-                    gridRows: "max-content 1fr",
-                    columns: [
-                        {
-                            id: "kpi-masa",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "kpi-masa-total",
-                                    fillRemaining: false,
-                                    colSpan: 1,
-                                    content: { type: "stat-card", config: { label: "Masa Salarial", value: formatCurrency(analyticsData.totalMasa), variant: "hero", accent: "primary" } },
-                                },
-                            ],
-                        },
-                        {
-                            id: "kpi-liquido",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "kpi-liquido-total",
-                                    fillRemaining: false,
-                                    colSpan: 1,
-                                    content: { type: "stat-card", config: { label: "Total Líquido", value: formatCurrency(analyticsData.totalLiquido), variant: "hero", accent: "success" } },
-                                },
-                            ],
-                        },
-                        {
-                            id: "kpi-descuentos",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "kpi-descuentos-total",
-                                    fillRemaining: false,
-                                    colSpan: 1,
-                                    content: { type: "stat-card", config: { label: "Total Descuentos", value: formatCurrency(analyticsData.totalDescuentos), variant: "hero", accent: "warning" } },
-                                },
-                            ],
-                        },
-                        {
-                            id: "kpi-count",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "kpi-nominas",
-                                    fillRemaining: false,
-                                    colSpan: 1,
-                                    content: { type: "stat-card", config: { label: "Liquidaciones", value: String(analyticsData.count), variant: "tile" } },
-                                },
-                            ],
-                        },
-                        {
-                            id: "kpi-empresa",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "kpi-costo-empresa",
-                                    fillRemaining: false,
-                                    colSpan: 1,
-                                    content: { type: "stat-card", config: { label: "Costo Empresa", value: formatCurrency(analyticsData.costoEmpresa), variant: "tile", accent: "info" } },
-                                },
-                            ],
-                        },
-                        {
-                            id: "charts-row",
-                            weight: 3,
-                            sections: [
-                                {
-                                    id: "masa-trend-chart",
-                                    colSpan: 2,
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Evolución de Masa Salarial",
-                                            variant: "chart",
-                                            subtext: "Haberes brutos vs líquido a percibir por período",
-                                            chart: {
-                                                type: "line-chart",
-                                                preset: "card",
-                                                data: [
-                                                    { id: "Masa Salarial", data: analyticsData.masaTrend.map((m) => ({ x: m.period, y: m.masa })) },
-                                                    { id: "Líquido",       data: analyticsData.masaTrend.map((m) => ({ x: m.period, y: m.liquido })) },
-                                                ],
-                                                showLegend: true,
-                                                valueFormat: "$,.0f",
-                                            },
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "payment-status-chart",
-                                    colSpan: 1,
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Estado de Pago",
-                                            variant: "chart",
-                                            subtext: "Remuneraciones pagadas, parciales y pendientes",
-                                            chart: {
-                                                type: "pie-chart",
-                                                preset: "card",
-                                                data: analyticsData.paymentStatusDist,
-                                                valueFormat: "number",
-                                                compact: true,
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                    ],
-                },
-
-                // ── Tab 2: Masa Salarial ────────────────────────────────────
-                {
-                    value: "masa",
-                    label: "Masa Salarial",
-                    icon: Users,
-                    columns: [
-                        {
-                            id: "col-charts",
-                            weight: 2,
-                            sections: [
-                                {
-                                    id: "top-empleados-bar",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Top Empleados por Líquido",
-                                            variant: "chart",
-                                            subtext: "Empleados con mayor sueldo líquido en el período",
-                                            chart: {
-                                                type: "bar-chart",
-                                                preset: "card",
-                                                data: analyticsData.topEmpleados.map((e) => ({ employee: e.employee.split(" ")[0], liquido: e.liquido })),
-                                                keys: ["liquido"],
-                                                indexBy: "employee",
-                                                valueFormat: "$,.0f",
-                                            },
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "haberes-vs-liquido",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Haberes vs Líquido por Empleado",
-                                            variant: "chart",
-                                            subtext: "Diferencia entre bruto y líquido a percibir",
-                                            chart: {
-                                                type: "bar-chart",
-                                                preset: "card",
-                                                data: analyticsData.haberesVsLiquido.map((e) => ({ employee: e.employee.split(" ")[0], haberes: e.haberes, liquido: e.liquido })),
-                                                keys: ["haberes", "liquido"],
-                                                indexBy: "employee",
-                                                valueFormat: "$,.0f",
-                                                showLegend: true,
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                        {
-                            id: "col-side",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "kpi-avg-liquido",
-                                    content: { type: "stat-card", config: { label: "Líquido Promedio", value: formatCurrency(analyticsData.avgLiquido), accent: "primary" } },
-                                },
-                                {
-                                    id: "kpi-avg-base",
-                                    content: { type: "stat-card", config: { label: "Sueldo Base Promedio", value: formatCurrency(analyticsData.avgBase), accent: "info" } },
-                                },
-                                {
-                                    id: "salary-ranges-pie",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Distribución por Rango Salarial",
-                                            variant: "chart",
-                                            subtext: "Concentración de sueldos líquidos por tramo",
-                                            chart: {
-                                                type: "pie-chart",
-                                                preset: "card",
-                                                data: analyticsData.salaryRanges,
-                                                valueFormat: "number",
-                                                compact: true,
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                    ],
-                },
-
-                // ── Tab 3: Descuentos & Previred ────────────────────────────
-                {
-                    value: "descuentos",
-                    label: "Descuentos & Previred",
-                    icon: Scissors,
-                    columns: [
-                        {
-                            id: "col-kpis",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "kpi-desc-legales",
-                                    content: { type: "stat-card", config: { label: "Desc. Legales Trabajador", value: formatCurrency(analyticsData.totalDescLegales), accent: "warning" } },
-                                },
-                                {
-                                    id: "kpi-aporte-patr",
-                                    content: { type: "stat-card", config: { label: "Aporte Patronal (Previred)", value: formatCurrency(analyticsData.totalAportePatr), accent: "destructive" } },
-                                },
-                                {
-                                    id: "kpi-otros-desc",
-                                    content: { type: "stat-card", config: { label: "Otros Descuentos", value: formatCurrency(analyticsData.totalOtrosDesc), accent: "muted" } },
-                                },
-                                {
-                                    id: "kpi-anticipos",
-                                    content: { type: "stat-card", config: { label: "Anticipos Descontados", value: formatCurrency(analyticsData.totalAnticipos), accent: "warning" } },
-                                },
-                                {
-                                    id: "previred-status-pie",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Estado Pago Previred",
-                                            variant: "chart",
-                                            subtext: "Previred pagado, parcial y pendiente",
-                                            chart: {
-                                                type: "pie-chart",
-                                                preset: "card",
-                                                data: analyticsData.previredStatusDist,
-                                                valueFormat: "number",
-                                                compact: true,
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                        {
-                            id: "col-costo-bar",
-                            weight: 2,
-                            sections: [
-                                {
-                                    id: "costo-total-emp",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Composición del Costo por Empleado",
-                                            variant: "chart",
-                                            subtext: "Líquido + aportes patronales + descuentos",
-                                            chart: {
-                                                type: "bar-chart",
-                                                preset: "card",
-                                                data: analyticsData.costoTotalByEmp,
-                                                keys: ["liquido", "patronal", "descuentos"],
-                                                indexBy: "employee",
-                                                valueFormat: "$,.0f",
-                                                showLegend: true,
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                    ],
-                },
-
-                // ── Tab 4: Dotación ─────────────────────────────────────────
-                {
-                    value: "dotacion",
-                    label: "Dotación",
-                    icon: CalendarDays,
-                    columns: [
-                        {
-                            id: "col-dias",
-                            weight: 2,
-                            sections: [
-                                {
-                                    id: "dias-by-emp",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Días Trabajados vs Ausentes",
-                                            variant: "chart",
-                                            subtext: "Comparativo por empleado en el período",
-                                            chart: {
-                                                type: "bar-chart",
-                                                preset: "card",
-                                                data: analyticsData.diasByEmp,
-                                                keys: ["worked", "absent"],
-                                                indexBy: "employee",
-                                                showLegend: true,
-                                            },
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "ausencia-trend",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Evolución de Ausencias",
-                                            variant: "chart",
-                                            subtext: "Total de días ausentes acumulados por período",
-                                            chart: {
-                                                type: "line-chart",
-                                                preset: "card",
-                                                data: [{ id: "Ausencias", data: analyticsData.absenciaTrend.map((m) => ({ x: m.period, y: m.ausencias })) }],
-                                                enableArea: true,
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                        {
-                            id: "col-kpis-dotacion",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "kpi-avg-absent",
-                                    content: { type: "stat-card", config: { label: "Prom. Días Ausentes", value: analyticsData.avgAbsent.toFixed(1), accent: "destructive" } },
-                                },
-                                {
-                                    id: "kpi-avg-worked",
-                                    content: { type: "stat-card", config: { label: "Prom. Días Trabajados", value: analyticsData.avgWorked.toFixed(1), accent: "success" } },
-                                },
-                                {
-                                    id: "status-liquidaciones-pie",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Estado Liquidaciones",
-                                            variant: "chart",
-                                            subtext: "Borradores vs contabilizadas",
-                                            chart: {
-                                                type: "pie-chart",
-                                                preset: "card",
-                                                data: analyticsData.statusDist,
-                                                valueFormat: "number",
-                                                compact: true,
-                                            },
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "kpi-draft-count",
-                                    content: { type: "stat-card", config: { label: "Borradores Pendientes", value: String(analyticsData.draftCount), accent: analyticsData.draftCount > 0 ? "warning" : "muted" } },
-                                },
-                            ],
-                        },
-                    ],
-                },
-            ],
-        },
-    }), [analyticsData, analyticsActiveTab, granularity])
+    const toolbarActions = (
+        <>
+            <Button variant="outline" size="sm" onClick={handleGenerateDrafts}>
+                <FileText className="h-4 w-4 mr-1.5" />
+                Generar borradores
+            </Button>
+            {createAction}
+        </>
+    )
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Payroll>({
         endpoint: '/hr/payrolls'
@@ -507,10 +144,11 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
         },
     }
 
-    const columns: ColumnDef<Payroll>[] = [
-        ...payrollFields.toColumns(),
-        payrollActions.auto(actionsCtx, "Acciones"),
-    ]
+    const collection = useEntityCollection(
+        payrollEntity,
+        { rows: payrolls, isLoading: loading, isRefetching, error: isError, refetch: fetchPayrolls, isFiltered: search.isFiltered },
+        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
+    )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -520,57 +158,28 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                 onSaved={(id) => { handleOpenChange(false); openDetail(id) }}
             />
 
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    columns={columns}
-                    data={payrolls}
-                    isLoading={loading}
-                    isRefetching={isRefetching}
-                    entityLabel="hr.payroll"
-                    variant="embedded"
-                    analyticsPanel={analyticsPanel}
-                    unifiedSearch={<UnifiedSearchBar
-                        config={payrollUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar por empleado o período..."
-                    />}
-                    unifiedSearchConfig={payrollUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    defaultPageSize={20}
-                    onRowClick={(row: Payroll) => openDetail(row.id)}
-                    createAction={createAction}
-                    toolbarActions={toolbarActions}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "finance",
-                        title: "Aún no hay nóminas",
-                        description: "Genera una nómina para liquidar los sueldos del período.",
-                    }}
-                    renderCard={(payroll: Payroll) => (
-                        <AutoEntityCard
-                            key={payroll.id}
-                            data={payroll}
-                            fields={payrollFields}
-
-                            entityLabel="hr.payroll"
-
-                            actions={payrollActions.render(payroll, actionsCtx)}
-                            defaultAction={() => openDetail(payroll.id)}
-                        />
-                    )}
+            <Collection.Root
+                collection={collection}
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(payroll) => openDetail(payroll.id)}
+                actions={payrollActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar action={toolbarActions}>
+                    <UnifiedSearchBar config={payrollUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar por empleado o período..." />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={payrollViews.table}
+                    card={payrollViews.card}
+                    emptyTitle="Aún no hay nóminas"
+                    emptyDescription="Genera una nómina para liquidar los sueldos del período."
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+                <Collection.Analytics>
+                    <AnalyticsPanelContent {...analyticsScreen} />
+                </Collection.Analytics>
+            </Collection.Root>
 
             <PayrollDetailDrawer
                 payrollId={activePayrollId}
@@ -591,14 +200,14 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                             `Registrar Anticipo: ${selectedPayroll?.employee_name}`
                 }
                 total={
-                    paymentMode === 'SALARY' ? (selectedPayroll ? (Number((selectedPayroll as Payroll & Record<string, string>).net_salary) - Number((selectedPayroll as Payroll & Record<string, string>).advances_total || 0)) : 0) :
-                        paymentMode === 'PREVIRED' ? Number((selectedPayroll as Payroll & Record<string, string>)?.total_previred || 0) :
-                            Number((selectedPayroll as Payroll & Record<string, string>)?.net_salary || 0)
+                    paymentMode === 'SALARY' ? (selectedPayroll ? (Number(selectedPayroll.net_salary) - Number(selectedPayroll.advances_total || 0)) : 0) :
+                        paymentMode === 'PREVIRED' ? Number(selectedPayroll?.total_previred || 0) :
+                            Number(selectedPayroll?.net_salary || 0)
                 }
                 pendingAmount={
-                    paymentMode === 'SALARY' ? (selectedPayroll ? (Number((selectedPayroll as Payroll & Record<string, string>).net_salary) - Number((selectedPayroll as Payroll & Record<string, string>).advances_total || 0)) : 0) :
-                        paymentMode === 'PREVIRED' ? Number((selectedPayroll as Payroll & Record<string, string>)?.total_previred || 0) :
-                            Number((selectedPayroll as Payroll & Record<string, string>)?.net_salary || 0)
+                    paymentMode === 'SALARY' ? (selectedPayroll ? (Number(selectedPayroll.net_salary) - Number(selectedPayroll.advances_total || 0)) : 0) :
+                        paymentMode === 'PREVIRED' ? Number(selectedPayroll?.total_previred || 0) :
+                            Number(selectedPayroll?.net_salary || 0)
                 }
                 onConfirm={handleConfirmPayment}
             />

@@ -9,6 +9,7 @@ from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
 from core.idempotency import idempotent_endpoint
+from core.mixins import EditPolicyMixin
 
 from .models import AccountingPeriod, F29Declaration, F29Payment, TaxPeriod
 from .serializers import (
@@ -80,7 +81,7 @@ class TaxPeriodViewSet(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=400)
 
 
-class F29DeclarationViewSet(viewsets.ModelViewSet):
+class F29DeclarationViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     queryset = F29Declaration.objects.select_related("tax_period").all()
     serializer_class = F29DeclarationSerializer
@@ -163,9 +164,9 @@ class F29DeclarationViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(instance).data)
 
 
-class F29PaymentViewSet(viewsets.ModelViewSet):
+class F29PaymentViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
-    queryset = F29Payment.objects.select_related("declaration", "treasury_account", "payment_method", "journal_entry").all()
+    queryset = F29Payment.objects.select_related("declaration", "treasury_account", "journal_entry").all()
     serializer_class = F29PaymentSerializer
     permission_classes = [IsAuthenticated]
     filterset_fields = ["declaration", "payment_date", "payment_method"]
@@ -190,9 +191,20 @@ class F29PaymentViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": f"Error inesperado: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=["post"])
+    def annul(self, request, pk=None):
+        try:
+            payment = F29PaymentService.annul_payment(
+                self.get_object(), reason=request.data.get("reason", ""), user=request.user
+            )
+        except DjangoValidationError as e:
+            msg = e.messages[0] if getattr(e, "messages", None) else str(e)
+            return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(payment).data)
+
 
 class AccountingPeriodViewSet(viewsets.ModelViewSet):
-    queryset = AccountingPeriod.objects.select_related("journal_entry").all()
+    queryset = AccountingPeriod.objects.select_related("closed_by", "tax_period").all()
     serializer_class = AccountingPeriodSerializer
     pagination_class = None  # Master data
     permission_classes = [IsAuthenticated]

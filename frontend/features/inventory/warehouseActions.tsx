@@ -3,7 +3,7 @@ import type { Warehouse } from './hooks/useWarehouses'
 
 export interface WarehouseActionsCtx {
     onEdit: (id: number) => void
-    onDelete: (warehouse: Warehouse) => void
+    onArchive: (warehouse: Warehouse) => void
 }
 
 export const warehouseActions = createEntityActions<
@@ -11,5 +11,5 @@ export const warehouseActions = createEntityActions<
     WarehouseActionsCtx
 >((item, ctx) => [
     { action: "edit", onClick: () => ctx.onEdit(item.id) },
-    { action: "delete", onClick: () => ctx.onDelete(item) },
+    { action: item.is_active ? "archive" : "restore", onClick: () => ctx.onArchive(item) },
 ])

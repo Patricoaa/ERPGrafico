@@ -640,16 +640,50 @@ class POSSelector:
 
 class CardSelector:
     @staticmethod
-    def get_unbilled_charges_data(card_account_id: int, cut_off_date=None) -> dict:
+    def get_unbilled_charges_data(
+        card_account_id: int | None = None,
+        cut_off_date=None,
+        bank_id: int | None = None,
+    ) -> dict:
+        """
+        Cargos no facturados de tarjetas de crédito.
+
+        - Con `card_account_id`: una tarjeta concreta.
+        - Sin `card_account_id`: agrega todas las tarjetas (opcionalmente
+          las de un `bank_id`).
+        """
+        accounts_qs = TreasuryAccount.objects.filter(
+            account_type=TreasuryAccount.Type.CREDIT_CARD
+        )
+        if card_account_id:
+            accounts_qs = accounts_qs.filter(pk=card_account_id)
+        elif bank_id:
+            accounts_qs = accounts_qs.filter(bank_id=bank_id)
+        accounts = list(accounts_qs)
+
+        if card_account_id and not accounts:
+            raise TreasuryAccount.DoesNotExist(
+                f"Cuenta de tarjeta {card_account_id} no existe."
+            )
+
+        chunks = [
+            CardSelector._get_unbilled_for_account(acc, cut_off_date=cut_off_date)
+            for acc in accounts
+        ]
+        if len(chunks) == 1:
+            return chunks[0]
+        if not chunks:
+            return CardSelector._empty_unbilled()
+        return CardSelector._merge_unbilled_chunks(chunks)
+
+    @staticmethod
+    def _get_unbilled_for_account(card_account: TreasuryAccount, cut_off_date=None) -> dict:
         from django.db.models import CharField, IntegerField, OuterRef, Subquery
 
         from .card_service import CardService
         from .models import TreasuryMovement
         from .serializers import CardPendingChargeSerializer
 
-        card_account = TreasuryAccount.objects.get(
-            pk=card_account_id, account_type=TreasuryAccount.Type.CREDIT_CARD
-        )
         pending = CardService.get_pending_charges(card_account, cut_off_date=cut_off_date)
         summary = CardService.get_unbilled_summary(card_account, cut_off_date=cut_off_date)
         installments = CardService.get_unbilled_installments(
@@ -718,6 +752,89 @@ class CardSelector:
         return {
             "charges": charges_data,
             "upcoming_installments": installments_data,
+            "summary": summary,
+            "forecast": forecast,
+        }
+
+    @staticmethod
+    def _empty_unbilled() -> dict:
+        return {
+            "charges": [],
+            "upcoming_installments": [],
+            "summary": {"total": 0, "count": 0, "charges": 0, "installments": 0},
+            "forecast": {
+                "next_statement_date": None,
+                "days_to_next_statement": None,
+                "next_statement_total": "0",
+                "pending_until_next_statement": "0",
+                "installments_until_next_statement": "0",
+                "by_month": {},
+                "credit_limit": None,
+                "total_used": "0",
+                "current_debt": "0",
+                "total_unbilled": "0",
+                "available_credit": None,
+            },
+        }
+
+    @staticmethod
+    def _merge_unbilled_chunks(chunks: list[dict]) -> dict:
+        """Agrega los cargos no facturados de varias tarjetas de crédito."""
+        def _sum(values) -> Decimal:
+            return sum((Decimal(str(v)) for v in values if v not in (None, "")), Decimal("0"))
+
+        summary = {
+            "total": _sum(c["summary"]["total"] for c in chunks),
+            "count": sum(c["summary"]["count"] for c in chunks),
+            "charges": _sum(c["summary"]["charges"] for c in chunks),
+            "installments": _sum(c["summary"]["installments"] for c in chunks),
+        }
+
+        charges = [p for c in chunks for p in c["charges"]]
+        installments = [i for c in chunks for i in c["upcoming_installments"]]
+
+        by_month: dict[str, dict] = {}
+        for c in chunks:
+            for month, item in (c["forecast"].get("by_month") or {}).items():
+                bucket = by_month.setdefault(month, {"total": Decimal("0"), "count": 0})
+                bucket["total"] += Decimal(str(item["total"]))
+                bucket["count"] += item["count"]
+
+        dates = [c["forecast"].get("next_statement_date") for c in chunks]
+        dates = [d for d in dates if d]
+        days = [c["forecast"].get("days_to_next_statement") for c in chunks]
+        days = [d for d in days if d is not None]
+        limits = [c["forecast"].get("credit_limit") for c in chunks]
+        has_limit = any(limit not in (None, "") for limit in limits)
+
+        forecast = {
+            "next_statement_date": min(dates) if dates else None,
+            "days_to_next_statement": min(days) if days else None,
+            "next_statement_total": str(
+                _sum(c["forecast"].get("next_statement_total") for c in chunks)
+            ),
+            "pending_until_next_statement": str(
+                _sum(c["forecast"].get("pending_until_next_statement") for c in chunks)
+            ),
+            "installments_until_next_statement": str(
+                _sum(c["forecast"].get("installments_until_next_statement") for c in chunks)
+            ),
+            "by_month": {
+                m: {"total": str(v["total"]), "count": v["count"]}
+                for m, v in by_month.items()
+            },
+            "credit_limit": str(_sum(limits)) if has_limit else None,
+            "total_used": str(_sum(c["forecast"].get("total_used") for c in chunks)),
+            "current_debt": str(_sum(c["forecast"].get("current_debt") for c in chunks)),
+            "total_unbilled": str(_sum(c["forecast"].get("total_unbilled") for c in chunks)),
+            "available_credit": str(_sum(c["forecast"].get("available_credit") for c in chunks))
+            if has_limit
+            else None,
+        }
+
+        return {
+            "charges": charges,
+            "upcoming_installments": installments,
             "summary": summary,
             "forecast": forecast,
         }
@@ -893,6 +1010,11 @@ class TreasuryMovementSelector:
         if bank_id:
             bank_accounts = TreasuryAccount.objects.filter(bank_id=bank_id).values_list("id", flat=True)
             qs = qs.filter(Q(from_account_id__in=bank_accounts) | Q(to_account_id__in=bank_accounts))
+        elif str(params.get("bank_only", "")).lower() == "true":
+            # Agregado de todos los bancos: solo movimientos de cuentas bancarias.
+            qs = qs.filter(
+                Q(from_account__bank__isnull=False) | Q(to_account__bank__isnull=False)
+            )
 
         treasury_account = params.get("treasury_account")
         if treasury_account:

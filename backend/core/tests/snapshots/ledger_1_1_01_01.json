@@ -3,6 +3,7 @@
   "movements": [
     {
       "balance": 177000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-01-06",
       "debit": 177000.0,
@@ -12,10 +13,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000037",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 344000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-01-08",
       "debit": 167000.0,
@@ -25,10 +27,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000031",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 152000.0,
+      "created_at": "<id>",
       "credit": 192000.0,
       "date": "2026-01-10",
       "debit": 0.0,
@@ -38,10 +41,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000020",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 84000.0,
+      "created_at": "<id>",
       "credit": 68000.0,
       "date": "2026-01-11",
       "debit": 0.0,
@@ -51,10 +55,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000043",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -164000.0,
+      "created_at": "<id>",
       "credit": 248000.0,
       "date": "2026-01-18",
       "debit": 0.0,
@@ -64,10 +69,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000011",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -239000.0,
+      "created_at": "<id>",
       "credit": 75000.0,
       "date": "2026-01-20",
       "debit": 0.0,
@@ -77,10 +83,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000038",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -590000.0,
+      "created_at": "<id>",
       "credit": 351000.0,
       "date": "2026-01-21",
       "debit": 0.0,
@@ -90,10 +97,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000009",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -907000.0,
+      "created_at": "<id>",
       "credit": 317000.0,
       "date": "2026-01-22",
       "debit": 0.0,
@@ -103,10 +111,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000003",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -614000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-01-23",
       "debit": 293000.0,
@@ -116,10 +125,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000013",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -593000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-02-06",
       "debit": 21000.0,
@@ -129,10 +139,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000029",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -563000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-02-08",
       "debit": 30000.0,
@@ -142,10 +153,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000043",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -732000.0,
+      "created_at": "<id>",
       "credit": 169000.0,
       "date": "2026-02-11",
       "debit": 0.0,
@@ -155,10 +167,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000001",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -557000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-02-15",
       "debit": 175000.0,
@@ -168,10 +181,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000039",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -359000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-02-16",
       "debit": 198000.0,
@@ -181,10 +195,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000047",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -632000.0,
+      "created_at": "<id>",
       "credit": 273000.0,
       "date": "2026-02-17",
       "debit": 0.0,
@@ -194,10 +209,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000031",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -497000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-02-18",
       "debit": 135000.0,
@@ -207,10 +223,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000035",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -615000.0,
+      "created_at": "<id>",
       "credit": 118000.0,
       "date": "2026-02-21",
       "debit": 0.0,
@@ -220,10 +237,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000013",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -861000.0,
+      "created_at": "<id>",
       "credit": 246000.0,
       "date": "2026-02-25",
       "debit": 0.0,
@@ -233,10 +251,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000002",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -835000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-02-28",
       "debit": 26000.0,
@@ -246,10 +265,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000016",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1115000.0,
+      "created_at": "<id>",
       "credit": 280000.0,
       "date": "2026-03-03",
       "debit": 0.0,
@@ -259,10 +279,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000033",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1467000.0,
+      "created_at": "<id>",
       "credit": 352000.0,
       "date": "2026-03-03",
       "debit": 0.0,
@@ -272,10 +293,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000047",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1359000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-03-08",
       "debit": 108000.0,
@@ -285,10 +307,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000028",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1116000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-03-19",
       "debit": 243000.0,
@@ -298,10 +321,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000046",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1309000.0,
+      "created_at": "<id>",
       "credit": 193000.0,
       "date": "2026-03-23",
       "debit": 0.0,
@@ -311,10 +335,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000042",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1134000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-03-26",
       "debit": 175000.0,
@@ -324,10 +349,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000021",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -901000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-04-04",
       "debit": 233000.0,
@@ -337,10 +363,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000022",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -634000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-04-07",
       "debit": 267000.0,
@@ -350,10 +377,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000009",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -523000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-04-12",
       "debit": 111000.0,
@@ -363,10 +391,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000012",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -845000.0,
+      "created_at": "<id>",
       "credit": 322000.0,
       "date": "2026-04-15",
       "debit": 0.0,
@@ -376,10 +405,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000016",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1095000.0,
+      "created_at": "<id>",
       "credit": 250000.0,
       "date": "2026-04-17",
       "debit": 0.0,
@@ -389,10 +419,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000045",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1331000.0,
+      "created_at": "<id>",
       "credit": 236000.0,
       "date": "2026-04-19",
       "debit": 0.0,
@@ -402,10 +433,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000025",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1429000.0,
+      "created_at": "<id>",
       "credit": 98000.0,
       "date": "2026-04-27",
       "debit": 0.0,
@@ -415,10 +447,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000012",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1382000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-05-02",
       "debit": 47000.0,
@@ -428,10 +461,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000014",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1263000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-05-04",
       "debit": 119000.0,
@@ -441,10 +475,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000011",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1036000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-05-08",
       "debit": 227000.0,
@@ -454,10 +489,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000002",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -955000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-05-08",
       "debit": 81000.0,
@@ -467,10 +503,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000007",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1242000.0,
+      "created_at": "<id>",
       "credit": 287000.0,
       "date": "2026-05-14",
       "debit": 0.0,
@@ -480,10 +517,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000015",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -977000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-05-16",
       "debit": 265000.0,
@@ -493,10 +531,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000017",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -681000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-05-17",
       "debit": 296000.0,
@@ -506,10 +545,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000040",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -788000.0,
+      "created_at": "<id>",
       "credit": 107000.0,
       "date": "2026-05-18",
       "debit": 0.0,
@@ -519,10 +559,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000007",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -580000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-05-22",
       "debit": 208000.0,
@@ -532,10 +573,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000003",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -496000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-05-23",
       "debit": 84000.0,
@@ -545,10 +587,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000015",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -404000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-05-27",
       "debit": 92000.0,
@@ -558,10 +601,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000036",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -110000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-06-04",
       "debit": 294000.0,
@@ -571,10 +615,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000008",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -64000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-06-06",
       "debit": 46000.0,
@@ -584,10 +629,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000018",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 9000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-06-11",
       "debit": 73000.0,
@@ -597,10 +643,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000048",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -251000.0,
+      "created_at": "<id>",
       "credit": 260000.0,
       "date": "2026-06-12",
       "debit": 0.0,
@@ -610,10 +657,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000044",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 22000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-06-14",
       "debit": 273000.0,
@@ -623,10 +671,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000049",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -296000.0,
+      "created_at": "<id>",
       "credit": 318000.0,
       "date": "2026-06-18",
       "debit": 0.0,
@@ -636,10 +685,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000023",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -591000.0,
+      "created_at": "<id>",
       "credit": 295000.0,
       "date": "2026-06-20",
       "debit": 0.0,
@@ -649,10 +699,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000005",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -985000.0,
+      "created_at": "<id>",
       "credit": 394000.0,
       "date": "2026-06-20",
       "debit": 0.0,
@@ -662,10 +713,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000034",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1121000.0,
+      "created_at": "<id>",
       "credit": 136000.0,
       "date": "2026-07-02",
       "debit": 0.0,
@@ -675,10 +727,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000004",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1323000.0,
+      "created_at": "<id>",
       "credit": 202000.0,
       "date": "2026-07-02",
       "debit": 0.0,
@@ -688,10 +741,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000026",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1669000.0,
+      "created_at": "<id>",
       "credit": 346000.0,
       "date": "2026-07-07",
       "debit": 0.0,
@@ -701,10 +755,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000017",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1968000.0,
+      "created_at": "<id>",
       "credit": 299000.0,
       "date": "2026-07-11",
       "debit": 0.0,
@@ -714,10 +769,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000019",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1722000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-07-15",
       "debit": 246000.0,
@@ -727,10 +783,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000024",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1826000.0,
+      "created_at": "<id>",
       "credit": 104000.0,
       "date": "2026-08-02",
       "debit": 0.0,
@@ -740,10 +797,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000029",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1779000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-08-03",
       "debit": 47000.0,
@@ -753,10 +811,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000020",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1739000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-08-03",
       "debit": 40000.0,
@@ -766,10 +825,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000041",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1686000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-08-04",
       "debit": 53000.0,
@@ -779,10 +839,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000019",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1822000.0,
+      "created_at": "<id>",
       "credit": 136000.0,
       "date": "2026-08-11",
       "debit": 0.0,
@@ -792,10 +853,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000024",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2109000.0,
+      "created_at": "<id>",
       "credit": 287000.0,
       "date": "2026-08-18",
       "debit": 0.0,
@@ -805,10 +867,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000022",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1849000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-08-23",
       "debit": 260000.0,
@@ -818,10 +881,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000030",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2137000.0,
+      "created_at": "<id>",
       "credit": 288000.0,
       "date": "2026-08-23",
       "debit": 0.0,
@@ -831,10 +895,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000008",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2372000.0,
+      "created_at": "<id>",
       "credit": 235000.0,
       "date": "2026-08-23",
       "debit": 0.0,
@@ -844,10 +909,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000027",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2438000.0,
+      "created_at": "<id>",
       "credit": 66000.0,
       "date": "2026-08-25",
       "debit": 0.0,
@@ -857,10 +923,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000006",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2410000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-08-26",
       "debit": 28000.0,
@@ -870,10 +937,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000001",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2612000.0,
+      "created_at": "<id>",
       "credit": 202000.0,
       "date": "2026-09-13",
       "debit": 0.0,
@@ -883,10 +951,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000036",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2416000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-09-17",
       "debit": 196000.0,
@@ -896,10 +965,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000004",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2170000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-09-21",
       "debit": 246000.0,
@@ -909,10 +979,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000045",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2100000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-10-02",
       "debit": 70000.0,
@@ -922,10 +993,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000026",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -1991000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-10-02",
       "debit": 109000.0,
@@ -935,10 +1007,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000044",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2149000.0,
+      "created_at": "<id>",
       "credit": 158000.0,
       "date": "2026-10-05",
       "debit": 0.0,
@@ -948,10 +1021,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000049",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2240000.0,
+      "created_at": "<id>",
       "credit": 91000.0,
       "date": "2026-10-11",
       "debit": 0.0,
@@ -961,10 +1035,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000030",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2064000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-10-14",
       "debit": 176000.0,
@@ -974,10 +1049,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000025",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2354000.0,
+      "created_at": "<id>",
       "credit": 290000.0,
       "date": "2026-10-22",
       "debit": 0.0,
@@ -987,10 +1063,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000021",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2517000.0,
+      "created_at": "<id>",
       "credit": 163000.0,
       "date": "2026-10-22",
       "debit": 0.0,
@@ -1000,10 +1077,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000048",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2382000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-10-26",
       "debit": 135000.0,
@@ -1013,10 +1091,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000023",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2590000.0,
+      "created_at": "<id>",
       "credit": 208000.0,
       "date": "2026-11-03",
       "debit": 0.0,
@@ -1026,10 +1105,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000035",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2435000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-11-07",
       "debit": 155000.0,
@@ -1039,10 +1119,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000027",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2280000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-11-08",
       "debit": 155000.0,
@@ -1052,10 +1133,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000033",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2555000.0,
+      "created_at": "<id>",
       "credit": 275000.0,
       "date": "2026-11-09",
       "debit": 0.0,
@@ -1065,10 +1147,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000050",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2517000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-11-13",
       "debit": 38000.0,
@@ -1078,10 +1161,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000050",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2704000.0,
+      "created_at": "<id>",
       "credit": 187000.0,
       "date": "2026-11-22",
       "debit": 0.0,
@@ -1091,10 +1175,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000039",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2795000.0,
+      "created_at": "<id>",
       "credit": 91000.0,
       "date": "2026-11-23",
       "debit": 0.0,
@@ -1104,10 +1189,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000041",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -2674000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-11-26",
       "debit": 121000.0,
@@ -1117,10 +1203,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000034",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -3047000.0,
+      "created_at": "<id>",
       "credit": 373000.0,
       "date": "2026-11-26",
       "debit": 0.0,
@@ -1130,10 +1217,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000028",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -3179000.0,
+      "created_at": "<id>",
       "credit": 132000.0,
       "date": "2026-11-26",
       "debit": 0.0,
@@ -1143,10 +1231,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000046",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -3441000.0,
+      "created_at": "<id>",
       "credit": 262000.0,
       "date": "2026-12-03",
       "debit": 0.0,
@@ -1156,10 +1245,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000040",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -3516000.0,
+      "created_at": "<id>",
       "credit": 75000.0,
       "date": "2026-12-05",
       "debit": 0.0,
@@ -1169,10 +1259,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000018",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -3765000.0,
+      "created_at": "<id>",
       "credit": 249000.0,
       "date": "2026-12-05",
       "debit": 0.0,
@@ -1182,10 +1273,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000032",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -3964000.0,
+      "created_at": "<id>",
       "credit": 199000.0,
       "date": "2026-12-06",
       "debit": 0.0,
@@ -1195,10 +1287,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000010",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -4264000.0,
+      "created_at": "<id>",
       "credit": 300000.0,
       "date": "2026-12-10",
       "debit": 0.0,
@@ -1208,10 +1301,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000014",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -4116000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-12-11",
       "debit": 148000.0,
@@ -1221,10 +1315,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000042",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -3958000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-12-15",
       "debit": 158000.0,
@@ -1234,10 +1329,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000006",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -3769000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-12-18",
       "debit": 189000.0,
@@ -1247,10 +1343,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000005",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -3481000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-12-19",
       "debit": 288000.0,
@@ -1260,10 +1357,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000010",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -3770000.0,
+      "created_at": "<id>",
       "credit": 289000.0,
       "date": "2026-12-25",
       "debit": 0.0,
@@ -1273,10 +1371,11 @@
       "label": "",
       "partner": "",
       "reference": "PAG-000037",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -3603000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-12-27",
       "debit": 167000.0,
@@ -1286,10 +1385,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000038",
-      "source_document": null
+      "source": null
     },
     {
       "balance": -3351000.0,
+      "created_at": "<id>",
       "credit": 0.0,
       "date": "2026-12-28",
       "debit": 252000.0,
@@ -1299,10 +1399,11 @@
       "label": "",
       "partner": "",
       "reference": "COB-000032",
-      "source_document": null
+      "source": null
     }
   ],
   "opening_balance": 0.0,
   "period_credit": 11092000.0,
-  "period_debit": 7741000.0
+  "period_debit": 7741000.0,
+  "truncated": false
 }

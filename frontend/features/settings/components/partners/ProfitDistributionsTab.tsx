@@ -1,23 +1,19 @@
 "use client"
-import { formatCurrency } from "@/lib/money"
 
-import React, { useEffect, useState, useMemo, useRef, useCallback } from "react"
+import React, { useEffect, useState, useRef, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
-import { type ColumnDef } from "@tanstack/react-table"
-import {ActionConfirmModal, Chip, DataTable, StatusBadge} from '@/components/shared'
+import { ActionConfirmModal } from '@/components/shared'
 import { profitDistributionActions, type ProfitDistributionActionsCtx } from './profitDistributionActions'
 
 import { partnersApi } from "@/features/contacts"
-import {type ProfitDistribution} from "@/features/contacts"
-import { formatPlainDate, cn } from "@/lib/utils"
-import {
-    Calendar,
-} from "lucide-react"
+import { type ProfitDistribution } from "@/features/contacts"
 import { toast } from "sonner"
 import { CreateDistributionFlow } from "./CreateDistributionFlow"
 import { MassPaymentModal } from "./MassPaymentWizard"
 import { ProfitDistributionDrawer } from "@/features/settings/components/ProfitDistributionDrawer"
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { profitDistributionEntity, profitDistributionViews } from "../../entity-view/profitDistribution.entity"
 
 interface ProfitDistributionsTabProps {
     /** Whether the new-distribution flow should open on mount (driven by URL ?modal=new-distribution) */
@@ -127,130 +123,29 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
         }
     }
 
-    const getStatusText = (status: string) => {
-        switch (status) {
-            case 'DRAFT': return 'Borrador'
-            case 'APPROVED': return 'Aprobado'
-            case 'EXECUTED': return 'Ejecutado'
-            case 'CANCELLED': return 'Cancelado'
-            default: return status
-        }
-    }
-
-    const columns = useMemo<ColumnDef<ProfitDistribution>[]>(() => [
-        {
-            accessorKey: "fiscal_year",
-            header: () => <div className="text-center">Año Fiscal</div>,
-            cell: ({ row }) => {
-                const dist = row.original
-                return (
-                    <div className="flex flex-col items-center">
-                        <span className="font-bold text-sm tracking-tight">{dist.fiscal_year}</span>
-                        <span className="text-4xs text-muted-foreground font-mono uppercase">ID: {dist.display_id}</span>
-                    </div>
-                )
-            }
-        },
-        {
-            accessorKey: "status",
-            header: () => <div className="text-center">Estado</div>,
-            cell: ({ row }) => {
-                const status = row.getValue("status") as string
-                return (
-                    <div className="flex justify-center">
-                        <StatusBadge
-                            status={status === 'PAID' ? 'SUCCESS' : status === 'CANCELLED' ? 'DESTRUCTIVE' : 'NEUTRAL'}
-                            label={getStatusText(status)}
-                        />
-                    </div>
-                )
-            }
-        },
-        {
-            id: "breakdown",
-            header: () => <div className="text-center">Distribución por Destino</div>,
-            cell: ({ row }) => {
-                const dist = row.original
-                const totals = (dist.lines || []).reduce((acc, line) => {
-                    const amount = parseFloat(line.net_amount) || 0;
-                    const dest = line.destination;
-                    if (dest === 'DIVIDEND') acc.dividends += amount;
-                    else if (dest === 'REINVEST') acc.reinvest += amount;
-                    else if (dest === 'RETAINED') acc.retained += amount;
-                    return acc;
-                }, { dividends: 0, reinvest: 0, retained: 0 });
-
-                return (
-                    <div className="flex flex-wrap justify-center gap-1.5">
-                        {totals.dividends > 0 && (
-                            <Chip intent="success" size="xs">
-                                DIV: {formatCurrency(totals.dividends)}
-                            </Chip>
-                        )}
-                        {totals.reinvest > 0 && (
-                            <Chip intent="info" size="xs">
-                                REINV: {formatCurrency(totals.reinvest)}
-                            </Chip>
-                        )}
-                        {totals.retained > 0 && (
-                            <Chip intent="warning" size="xs">
-                                RET: {formatCurrency(totals.retained)}
-                            </Chip>
-                        )}
-                    </div>
-                )
-            }
-        },
-        {
-            accessorKey: "resolution_date",
-            header: () => <div className="text-center">Acta / Fecha</div>,
-            cell: ({ row }) => {
-                const dist = row.original
-                return (
-                    <div className="flex flex-col items-center gap-1">
-                        <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider">{dist.acta_number || 'Sin Acta'}</span>
-                        <div className="flex items-center gap-1 text-3xs text-muted-foreground font-medium">
-                            <Calendar className="h-3 w-3" />
-                            {formatPlainDate(dist.resolution_date)}
-                        </div>
-                    </div>
-                )
-            }
-        },
-        {
-            accessorKey: "net_result",
-            header: () => <div className="text-center">Resultado Neto</div>,
-            cell: ({ row }) => {
-                const amount = parseFloat(row.getValue("net_result"))
-                const status = row.original.status
-                return (
-                    <div className="flex flex-col items-center gap-0.5">
-                        <span className={cn(
-                            "font-mono font-black text-sm tracking-tighter",
-                            amount < 0 ? "text-destructive" : "text-success"
-                        )}>
-                            {formatCurrency(Math.abs(amount))}
-                        </span>
-                        {status === 'EXECUTED' && (
-                            <span className="text-4xs text-muted-foreground uppercase font-bold italic tracking-widest leading-none">Asentado</span>
-                        )}
-                    </div>
-                )
-            }
-        },
-        profitDistributionActions.auto(actionsCtx)
-    ], [])
+    const collection = useEntityCollection(
+        profitDistributionEntity,
+        { rows: state.distributions, isLoading: state.loading },
+        { pagination: { mode: "none" } }
+    )
 
     return (
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
-                    columns={columns}
-                    data={state.distributions}
-                    isLoading={state.loading}
-                    variant="embedded"
-                    createAction={createAction}
-                />
+                <Collection.Root
+                    collection={collection}
+                    label="Distribuciones de utilidades"
+                    actions={profitDistributionActions.forCollection(actionsCtx)}
+                >
+                    {createAction && (
+                        <Collection.Toolbar action={createAction} />
+                    )}
+                    <Collection.View
+                        table={profitDistributionViews.table}
+                        emptyTitle="Sin distribuciones"
+                        emptyDescription="No se han registrado distribuciones de utilidades."
+                    />
+                </Collection.Root>
             </div>
 
             {/* Modal Flows */}

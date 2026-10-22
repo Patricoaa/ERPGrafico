@@ -50,7 +50,11 @@ export function AttributeValuesSummary({ attribute }: { attribute: Attribute }) 
             ))}
             <IconButton
                 className="!p-0 h-[22px] w-[22px] min-h-[22px] min-w-[22px] rounded-full bg-primary/5 hover:bg-primary/20 text-primary transition-all duration-300"
-                onClick={() => onAddValue(attribute.id)}
+                onClick={(e) => {
+                    // The row/card opens the attribute too: one click must not do both.
+                    e.stopPropagation()
+                    onAddValue(attribute.id)
+                }}
                 title="Añadir valor"
             >
                 <Plus className="h-3.5 w-3.5" />

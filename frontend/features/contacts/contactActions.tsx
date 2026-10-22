@@ -3,7 +3,7 @@ import type { Contact } from '@/features/contacts/types'
 
 export interface ContactActionsCtx {
     onEdit: (id: number) => void
-    onDelete: (contact: Contact) => void
+    onArchive: (contact: Contact) => void
 }
 
 export const contactActions = createEntityActions<
@@ -12,8 +12,8 @@ export const contactActions = createEntityActions<
 >((item, ctx) => [
     { action: "edit", onClick: () => ctx.onEdit(item.id) },
     {
-        action: "delete",
-        onClick: () => ctx.onDelete(item),
+        action: item.is_active ? "archive" : "restore",
+        onClick: () => ctx.onArchive(item),
         visible: !item.is_default_customer && !item.is_default_vendor,
     },
 ])

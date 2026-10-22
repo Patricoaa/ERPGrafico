@@ -199,15 +199,16 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                 const uomLabel = primaryUom?.abbreviation || p.uom_name || "UN"
                                 return (
                                     <>
-                                        <span className="text-base font-black text-primary">
+                                        <span className="text-lg font-semibold tabular-nums">
                                             {formatCurrency(p.cost_price || 0)}
                                         </span>
-                                        <span className="text-3xs text-muted-foreground ml-1 uppercase">
-                                            /{uomLabel}
+                                        <span className="text-2xs text-muted-foreground ml-1">
+                                            / {uomLabel.toLowerCase()}
                                         </span>
                                     </>
                                 )
                             }}
+                            priceLabel="Costo"
                         />
                     )}
                 </div>
@@ -267,7 +268,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                                     <div className="flex justify-center mt-0.5">
                                                         <Select value={String(item.uom_id ?? '')} onValueChange={val => updateUom(item.id, parseInt(val))}>
                                                             <SelectTrigger className="h-5 text-4xs border-muted-foreground/20 px-1.5 py-0 bg-background min-w-0">
-                                                                <SelectValue />
+                                                                <SelectValue placeholder="Seleccionar..." />
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 {(item.product.available_uoms || []).map(uom => (

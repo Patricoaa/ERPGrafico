@@ -75,7 +75,7 @@ describe("DocumentRelationsTab", () => {
 
     it("navigates to the canonical list URL when the target declares one (ADR-0086)", async () => {
         const delivery = link("sales.saledelivery", 4, "logistics")
-        delivery.target.url = "/sales/orders/deliveries?selected=4"
+        delivery.target.url = "/sales/dtes/deliveries?selected=4"
         getMock.mockResolvedValue({ data: { document: link("sales.saleorder", 9, "origin").target, relations: [delivery], unresolved: [] } })
 
         wrap(<DocumentRelationsTab label="sales.saleorder" id={9} />)
@@ -83,7 +83,7 @@ describe("DocumentRelationsTab", () => {
         await waitFor(() => expect(screen.getByText("sales.saledelivery-4")).toBeInTheDocument())
         fireEvent.click(screen.getByText("sales.saledelivery-4"))
 
-        expect(pushMock).toHaveBeenCalledWith("/sales/orders/deliveries?selected=4", { scroll: false })
+        expect(pushMock).toHaveBeenCalledWith("/sales/dtes/deliveries?selected=4", { scroll: false })
         expect(openEntityMock).not.toHaveBeenCalled()
     })
 

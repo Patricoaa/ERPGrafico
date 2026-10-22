@@ -3,13 +3,13 @@
 import { useState, useEffect, useCallback } from "react"
 import { Check } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
-import { Button } from "@/components/ui/button"
 import { ChevronDown } from "lucide-react"
 
 import { useDebounce } from "@/hooks/useDebounce"
 import { useUserSearch, useSingleUser } from "@/features/users/hooks/useUserSearch"
 import { LabeledContainer, SearchablePopover } from '@/components/shared'
 import type { AppUser } from "@/types/entities"
+import { SelectorTrigger, SELECTOR_VALUE_CLASS } from "@/components/shared/SelectorTrigger"
 
 const UserIcon = getEntityIcon('core.user')
 
@@ -22,7 +22,7 @@ interface UserSelectorProps {
     error?: string
 }
 
-export function UserSelector({ value, onChange, placeholder = "Seleccionar usuario...", disabled = false, label, error }: UserSelectorProps) {
+export function UserSelector({ value, onChange, placeholder = "Seleccionar...", disabled = false, label, error }: UserSelectorProps) {
     const [open, setOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 500)
@@ -72,24 +72,17 @@ export function UserSelector({ value, onChange, placeholder = "Seleccionar usuar
                     </>
                 )}
                 trigger={
-                    <Button
-                        variant="ghost"
-                        role="combobox"
-                        aria-expanded={open}
-                        className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                    <SelectorTrigger
+                        hasValue={!!selectedUser}
+                        placeholder={placeholder}
+                        icon={<UserIcon className="h-3.5 w-3.5 shrink-0 text-primary" />}
+                        open={open}
                         disabled={disabled}
+                        chevronClassName="ml-2 h-4 w-4 shrink-0 opacity-50"
                     >
-                        {selectedUser ? (
-                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                <UserIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                <span className="font-medium text-sm truncate">{selectedUser.username}</span>
-                                <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">{selectedUser.email}</span>
-                            </div>
-                        ) : (
-                            <span className="text-muted-foreground truncate">{placeholder}</span>
-                        )}
-                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
+                        <span className={`${SELECTOR_VALUE_CLASS} truncate`}>{selectedUser?.username}</span>
+                        <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">{selectedUser?.email}</span>
+                    </SelectorTrigger>
                 }
             />
         </LabeledContainer>

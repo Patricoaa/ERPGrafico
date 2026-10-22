@@ -5,6 +5,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from core.edit_policy import DRAFT_ONLY_DOCUMENT
 from core.mixins import TotalsCalculationMixin
 from core.models import TransactionalDocument
 from core.services import SequenceService
@@ -14,6 +15,8 @@ from inventory.models import Product, Warehouse
 
 
 class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
+    edit_policy = DRAFT_ONLY_DOCUMENT  # ADR-0091
+
     class Status(models.TextChoices):
         DRAFT = "DRAFT", _("Borrador")
         CONFIRMED = "CONFIRMED", _("Confirmado")
@@ -368,6 +371,8 @@ class PurchaseReceipt(TransactionalDocument, TotalsCalculationMixin):
     Can be partial or complete.
     """
 
+    edit_policy = DRAFT_ONLY_DOCUMENT  # ADR-0091
+
     class Status(models.TextChoices):
         DRAFT = "DRAFT", _("Borrador")
         CONFIRMED = "CONFIRMED", _("Confirmado")
@@ -499,6 +504,8 @@ class PurchaseReturn(TransactionalDocument, TotalsCalculationMixin):
     Represents a return of goods to a supplier (linked to a Purchase Order).
     Used to process logistics before or after a Credit Note.
     """
+
+    edit_policy = DRAFT_ONLY_DOCUMENT  # ADR-0091
 
     class Status(models.TextChoices):
         DRAFT = "DRAFT", _("Borrador")

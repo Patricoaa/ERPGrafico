@@ -2,17 +2,17 @@
 layer: 30-playbooks
 doc: remote-dev-server
 task: "Usar el servidor de desarrollo remoto (SSH + Mutagen)"
-triggers: ["dev server", "servidor remoto", "servidor de desarrollo", "ssh", "mutagen", "correr tests", "qa local", "levantar entorno", "192.168.1.93", "logs del servidor"]
+triggers: ["dev server", "servidor remoto", "servidor de desarrollo", "ssh", "mutagen", "correr tests", "qa local", "levantar entorno", "192.168.1.86", "logs del servidor"]
 status: active
 owner: core-team
-last_review: 2026-10-09
+last_review: 2026-10-18
 kind: environment-contract
 preconditions:
-  - Acceso SSH con llave a pato@192.168.1.93
+  - Acceso SSH con llave a pato@192.168.1.86
   - Mutagen instalado en la máquina local
 validation:
   - "mutagen sync list muestra erpgrafico-sync Connected: Yes"
-  - "ssh pato@192.168.1.93 'docker compose -f ~/ERPGrafico/docker-compose.yml ps' lista los contenedores Up"
+  - "ssh pato@192.168.1.86 'docker compose -f ~/ERPGrafico/docker-compose.yml ps' lista los contenedores Up"
 forbidden:
   - Ejecutar git en el servidor (el espejo remoto no tiene .git)
   - Usar el servidor si la sincronización Mutagen no está activa
@@ -30,19 +30,19 @@ forbidden:
 ## 1. Acceso
 
 ```bash
-ssh pato@192.168.1.93          # acceso con llave (sin password)
+ssh pato@192.168.1.86          # acceso con llave (sin password)
 cd ERPGrafico                  # equivale a /home/pato/ERPGrafico
 ```
 
 | Dato | Valor |
 |------|-------|
-| Host | `192.168.1.93` |
+| Host | `192.168.1.86` |
 | Usuario | `pato` |
 | Home | `/home/pato` |
 | Proyecto | `/home/pato/ERPGrafico` (`cd ERPGrafico`) |
 | Compose project | `erpgrafico` |
-| URL app (nginx) | `http://192.168.1.93` |
-| URL frontend directo | `http://192.168.1.93:3000` |
+| URL app (nginx) | `http://192.168.1.86` |
+| URL frontend directo | `http://192.168.1.86:3000` |
 
 > ⚠️ **El directorio `/home/pato/ERPGrafico` es un espejo de Mutagen, no un clon Git.**
 > No tiene `.git` (`mutagen.yml` ignora `vcs`). El repositorio git vive **solo en la máquina local**
@@ -67,7 +67,7 @@ cd ERPGrafico                  # equivale a /home/pato/ERPGrafico
 
 ```bash
 # Estado de los servicios
-ssh pato@192.168.1.93 'cd ~/ERPGrafico && docker compose ps'
+ssh pato@192.168.1.86 'cd ~/ERPGrafico && docker compose ps'
 ```
 
 ---
@@ -87,7 +87,7 @@ mutagen sync monitor     # vista en vivo (Ctrl+C para salir)
 
 La sesión se llama **`erpgrafico-sync`**:
 - Alpha (local): `/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico`
-- Beta (remoto): `pato@192.168.1.93:/home/pato/ERPGrafico`
+- Beta (remoto): `pato@192.168.1.86:/home/pato/ERPGrafico`
 
 ### 2. Si está caído → intentar activarlo
 
@@ -103,7 +103,7 @@ mutagen sync resume erpgrafico-sync
 
 Si tras intentarlo el sync sigue sin conectar, **detente y avisa al usuario** explicando que el
 servidor de desarrollo no está sincronizado. **No operes contra el servidor con código desactualizado.**
-Puedes pedirle que ejecute `mutagen project start` y que revise conectividad/VPN con `192.168.1.93`.
+Puedes pedirle que ejecute `mutagen project start` y que revise conectividad/VPN con `192.168.1.86`.
 
 ---
 
@@ -123,8 +123,8 @@ Y la llave SSH sin password:
 
 ```bash
 ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
-ssh-copy-id pato@192.168.1.93
-ssh pato@192.168.1.93 'pwd'    # debe imprimir /home/pato
+ssh-copy-id pato@192.168.1.86
+ssh pato@192.168.1.86 'pwd'    # debe imprimir /home/pato
 ```
 
 > ⚠️ Si omites mover `mutagen-agents.tar.gz`, Mutagen falla con `unable to locate agent bundle`.
@@ -139,7 +139,7 @@ La configuración vive en `mutagen.yml` (raíz del repo). Ignora `vcs`, `node_mo
 
 1. Editas código **en local**. Mutagen lo empuja al servidor en milisegundos.
 2. Los contenedores detectan el cambio → Next.js Fast Refresh / Django auto-reload.
-3. Navegas `http://192.168.1.93` (o `http://192.168.1.93:3000`).
+3. Navegas `http://192.168.1.86` (o `http://192.168.1.86:3000`).
 
 No hay que reiniciar nada para el 95% de los cambios.
 
@@ -150,7 +150,7 @@ No hay que reiniciar nada para el 95% de los cambios.
 Todos los comandos de aplicación se ejecutan **dentro de los contenedores**, no en el host.
 
 ```bash
-ssh pato@192.168.1.93
+ssh pato@192.168.1.86
 cd ~/ERPGrafico
 
 # Migraciones
@@ -183,8 +183,8 @@ docker stats
 htop
 ```
 
-Nota de red: `.env.dev` del servidor usa `ALLOWED_HOSTS=...,192.168.1.93` y
-`NEXT_PUBLIC_API_URL=http://192.168.1.93/api`.
+Nota de red: `.env.dev` del servidor usa `ALLOWED_HOSTS=...,192.168.1.86` y
+`NEXT_PUBLIC_API_URL=http://192.168.1.86/api`.
 
 ---
 
@@ -194,5 +194,5 @@ Nota de red: `.env.dev` del servidor usa `ALLOWED_HOSTS=...,192.168.1.93` y
 |---------|-------|----------|
 | `project already running` pero `no matching sessions exist` | sesión Mutagen sucia | `mutagen project terminate && mutagen daemon stop && mutagen daemon start && mutagen project start` |
 | La interfaz no refleja cambios | el sync está caído (ver §3) | verificar/reactivar Mutagen; si no, avisar al usuario |
-| La UI local no carga | acceso por ruta equivocada | usar `http://192.168.1.93` (o port-forward SSH) |
+| La UI local no carga | acceso por ruta equivocada | usar `http://192.168.1.86` (o port-forward SSH) |
 | `git: not a repository` en el servidor | el espejo no tiene `.git` (por diseño) | usar git solo en local |

@@ -52,11 +52,13 @@ export interface DocumentDrawerShellProps {
     sidebar?: ReactNode
     /** Sin Drawer: solo el cuerpo (vista incrustada). */
     embedded?: boolean
+    /** Lado del drawer: "left" | "right". Default: "left". */
+    side?: "left" | "right"
     className?: string
 }
 
 export function DocumentDrawerShell(props: DocumentDrawerShellProps) {
-    const { open, onOpenChange, title, subtitle, icon, headerActions, embedded, tabs } = props
+    const { open, onOpenChange, title, subtitle, icon, headerActions, embedded, tabs, side } = props
 
     if (embedded) {
         return (
@@ -78,7 +80,7 @@ export function DocumentDrawerShell(props: DocumentDrawerShellProps) {
         <Drawer
             open={open}
             onOpenChange={onOpenChange}
-            side="left"
+            side={side ?? "left"}
             boundary="embedded"
             defaultSize={formDrawerWidth("master", true)}
             title={title}

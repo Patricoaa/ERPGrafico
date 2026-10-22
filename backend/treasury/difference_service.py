@@ -108,17 +108,16 @@ class DifferenceService:
             raise ValueError("La cuenta de tesorería no tiene cuenta contable asociada")
 
         difference_label = dict(DifferenceService.DIFFERENCE_CHOICES)[difference_type]
+        abs_diff = abs(difference)
 
         entry = JournalEntry.objects.create(
             date=accounting_date or line.transaction_date,
             reference=f"AJ-{line.statement.display_id}-{line.line_number}",
             description=GlosaBuilder.build(GlosaBuilder.AJUSTE_BANCARIO, line.statement.display_id, "", abs_diff, extra=[difference_label, notes] if notes else [difference_label]),
-            status=JournalEntry.State.POSTED,
+            status=JournalEntry.State.DRAFT,
             source_content_type=ContentType.objects.get_for_model(BankStatement),
             source_object_id=line.statement_id,
         )
-
-        abs_diff = abs(difference)
 
         if difference > 0:
             if difference_type in [DifferenceService.INTEREST]:

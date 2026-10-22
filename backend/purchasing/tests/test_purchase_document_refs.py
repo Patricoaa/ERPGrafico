@@ -115,7 +115,7 @@ def test_receipt_serializer_exposes_order_document_ref(purchasing_setup):
     ref = PurchaseReceiptSerializer(receipt).data["purchase_order_document"]
     assert ref["label"] == "purchasing.purchaseorder"
     assert ref["id"] == purchasing_setup["order"].id
-    assert ref["url"] == f"/purchasing/orders?selected={purchasing_setup['order'].id}"
+    assert ref["url"] == f"/purchasing/dtes/orders?selected={purchasing_setup['order'].id}"
 
 
 def test_receipt_line_serializer_exposes_stock_move_document_ref(purchasing_setup):
@@ -132,7 +132,7 @@ def test_receipt_serializer_document_ref_without_request_context(purchasing_setu
     receipt, _, _ = _make_receipt_with_move(purchasing_setup)
 
     ref = PurchaseReceiptSerializer(receipt).data["purchase_order_document"]
-    assert ref["url"] == f"/purchasing/orders?selected={purchasing_setup['order'].id}"
+    assert ref["url"] == f"/purchasing/dtes/orders?selected={purchasing_setup['order'].id}"
 
 
 def test_return_serializer_exposes_order_document_ref(purchasing_setup):
@@ -145,7 +145,7 @@ def test_return_serializer_exposes_order_document_ref(purchasing_setup):
     ref = PurchaseReturnSerializer(ret).data["purchase_order_document"]
     assert ref["label"] == "purchasing.purchaseorder"
     assert ref["id"] == purchasing_setup["order"].id
-    assert ref["url"] == f"/purchasing/orders?selected={purchasing_setup['order'].id}"
+    assert ref["url"] == f"/purchasing/dtes/orders?selected={purchasing_setup['order'].id}"
 
 
 def test_return_line_serializer_exposes_stock_move_document_ref(purchasing_setup):

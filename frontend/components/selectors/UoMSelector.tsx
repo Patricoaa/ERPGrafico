@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react'
-import { Info, Check, ChevronDown, Search } from 'lucide-react'
+import { Info, Check, Search } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { LabeledContainer } from "@/components/shared"
+import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
 
 interface UoM {
     id: number
@@ -37,6 +37,8 @@ interface UoMSelectorProps {
     variant?: 'inline' | 'standalone'
     className?: string
     required?: boolean
+    /** Placeholder when no value is selected. Default: "Seleccionar..." */
+    placeholder?: string
 }
 
 export function UoMSelector({
@@ -53,7 +55,8 @@ export function UoMSelector({
     quantity = 1,
     variant = 'standalone',
     className,
-    required
+    required,
+    placeholder = 'Seleccionar...'
 }: UoMSelectorProps) {
     // Get filtered UoMs based on context
     const filteredUoMs = useMemo(() => {
@@ -120,24 +123,18 @@ export function UoMSelector({
     const selectComponent = (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-                <Button
-                    type="button"
-                    variant="outline"
-                    role="combobox"
+                <SelectorTrigger
+                    hasValue={!!selectedUoM}
+                    placeholder={placeholder}
+                    variant={variant}
+                    buttonVariant="outline"
+                    open={open}
                     disabled={disabled || (context !== 'stock' && !product && !categoryId)}
-                    className={cn(
-                        "w-full justify-between shadow-none focus-visible:ring-0 font-normal transition-all",
-                        variant === 'standalone' 
-                            ? "h-[1.5rem] py-0 px-3 border-none bg-transparent hover:bg-transparent" 
-                            : cn(className),
-                        !value && "text-muted-foreground"
-                    )}
+                    className={cn("h-full!", variant !== 'standalone' && className)}
+                    chevronClassName="ml-1 h-3 w-3"
                 >
-                    <span className="truncate">
-                        {selectedUoM ? selectedUoM.name : "Und"}
-                    </span>
-                    <ChevronDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
-                </Button>
+                    <span className="text-sm truncate">{selectedUoM?.name}</span>
+                </SelectorTrigger>
             </PopoverTrigger>
             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                 <div className="p-2">

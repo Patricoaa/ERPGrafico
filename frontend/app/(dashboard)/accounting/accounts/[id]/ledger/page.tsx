@@ -2,12 +2,13 @@
 
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { DataTable, DataCell, SkeletonShell } from '@/components/shared'
-import { type ColumnDef } from "@tanstack/react-table"
+import { SkeletonShell } from '@/components/shared'
+import { Collection, useEntityCollection } from "@/components/entity-view"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
-import { JournalEntryDrawer, useLedger, useJournalEntry } from "@/features/accounting"
+import { JournalEntryDrawer, useLedger, useJournalEntry, ledgerMovementEntity, ledgerMovementPageViews } from "@/features/accounting"
 import type { JournalEntryInitialData } from "@/types/forms"
+import type { LedgerMovement } from "@/features/accounting/types"
 
 export default function AccountLedgerPage() {
     const params = useParams()
@@ -19,65 +20,13 @@ export default function AccountLedgerPage() {
     const { data: selectedEntryData } = useJournalEntry(selectedEntryId ?? undefined)
 
     const account = ledger?.account ?? null
-    const movements = (ledger?.movements ?? []) as unknown as Record<string, unknown>[]
+    const movements = (ledger?.movements ?? []) as LedgerMovement[]
 
-    const columns: ColumnDef<Record<string, unknown>>[] = [
-        {
-            accessorKey: "date",
-            header: "Fecha",
-            cell: ({ row }) => <DataCell.Date value={row.getValue("date") as string} />,
-        },
-        {
-            id: "reference",
-            header: "Referencia",
-            cell: ({ row }) => {
-                const mov = row.original as { reference?: string, entry_id?: number, source_document?: { url: string, type: string, name: string } }
-                return (
-                    <div className="flex flex-col">
-                        <DataCell.Link onClick={() => setSelectedEntryId(mov.entry_id as number)}>
-                            {mov.reference || `Asiento ${mov.entry_id}`}
-                        </DataCell.Link>
-                        {mov.source_document && (
-                            <DataCell.Link href={mov.source_document.url} external>
-                                {mov.source_document.type}: {mov.source_document.name}
-                            </DataCell.Link>
-                        )}
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "description",
-            header: "Descripción",
-            cell: ({ row }) => <DataCell.Text className="max-w-md truncate">{row.getValue("description") as string}</DataCell.Text>,
-        },
-        {
-            accessorKey: "partner",
-            header: "Tercero",
-            cell: ({ row }) => <DataCell.Secondary>{row.getValue("partner") as string}</DataCell.Secondary>,
-        },
-        {
-            accessorKey: "debit",
-            header: "Debe",
-            cell: ({ row }) => {
-                const debit = parseFloat(row.getValue("debit") as string);
-                return debit > 0 ? <DataCell.Currency value={debit} /> : <DataCell.Currency value={null} />;
-            },
-        },
-        {
-            accessorKey: "credit",
-            header: "Haber",
-            cell: ({ row }) => {
-                const credit = parseFloat(row.getValue("credit") as string);
-                return credit > 0 ? <DataCell.Currency value={credit} /> : <DataCell.Currency value={null} />;
-            },
-        },
-        {
-            accessorKey: "balance",
-            header: "Saldo",
-            cell: ({ row }) => <DataCell.Currency value={parseFloat(row.getValue("balance") as string)} />,
-        },
-    ]
+    const collection = useEntityCollection(
+        ledgerMovementEntity,
+        { rows: isLoading ? [] : movements },
+        { pagination: { mode: "none" } },
+    )
 
     if (isLoading) {
         return <div><SkeletonShell isLoading ariaLabel="Cargando..." /></div>
@@ -102,12 +51,16 @@ export default function AccountLedgerPage() {
             </div>
 
             <div className="flex-1 min-h-0">
-                <DataTable
-                    columns={columns}
-                    data={movements}
-                    variant="embedded"
-                defaultPageSize={50}
-            />
+                <Collection.Root
+                    collection={collection}
+                    onOpen={(mov: LedgerMovement) => setSelectedEntryId(mov.entry_id)}
+                >
+                    <Collection.View
+                        table={ledgerMovementPageViews.table}
+                        emptyTitle="Sin movimientos"
+                        emptyDescription="Esta cuenta no tiene movimientos contables."
+                    />
+                </Collection.Root>
             </div>
 
             <JournalEntryDrawer

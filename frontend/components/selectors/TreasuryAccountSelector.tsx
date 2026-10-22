@@ -5,10 +5,9 @@ import { formatCurrency } from "@/lib/money"
 import { useState } from "react"
 import { Check, Loader2, Banknote, CreditCard, Wallet, Landmark } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { ChevronDown } from "lucide-react"
 import { useTreasuryAccounts, type PaymentContext, type TreasuryAccount } from "@/hooks/useTreasuryAccounts"
 import { LabeledContainer, SearchablePopover, MoneyDisplay } from '@/components/shared'
+import { SelectorTrigger, SELECTOR_VALUE_CLASS } from "@/components/shared/SelectorTrigger"
 import type { TreasuryAccountType } from "@/features/treasury/types"
 
 interface TreasuryAccountSelectorProps {
@@ -158,25 +157,18 @@ export function TreasuryAccountSelector({
                     </>
                 )}
                 trigger={
-                    <Button
-                        variant="ghost"
-                        role="combobox"
-                        className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                    <SelectorTrigger
+                        hasValue={!!selectedAccount}
+                        placeholder={placeholder}
+                        icon={selectedAccount ? <span className="text-primary shrink-0">{getIcon(selectedAccount.account_type)}</span> : undefined}
+                        open={open}
                         disabled={disabled}
                     >
-                        {selectedAccount ? (
-                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                <span className="text-primary shrink-0">{getIcon(selectedAccount.account_type)}</span>
-                                <span className="font-medium text-sm truncate">{selectedAccount.name}</span>
-                                <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">
-                                    • {formatCurrency(selectedAccount.current_balance || 0)}
-                                </span>
-                            </div>
-                        ) : (
-                            <span className="text-muted-foreground truncate">{placeholder}</span>
-                        )}
-                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
+                        <span className={`${SELECTOR_VALUE_CLASS} truncate`}>{selectedAccount?.name}</span>
+                        <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">
+                            • {formatCurrency(selectedAccount?.current_balance || 0)}
+                        </span>
+                    </SelectorTrigger>
                 }
             />
         </LabeledContainer>

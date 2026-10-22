@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { purchasingApi } from '../api/purchasingApi'
 import { PURCHASING_KEYS } from './queryKeys'
 import { staleTime } from '@/lib/query-config'
+import { useWarehouses } from '@/features/inventory'
 
 export function useReceiptData(orderId: number | null, enabled: boolean) {
     const orderQuery = useQuery({
@@ -11,18 +12,13 @@ export function useReceiptData(orderId: number | null, enabled: boolean) {
         enabled: enabled && !!orderId,
     })
 
-    const warehousesQuery = useQuery({
-        queryKey: PURCHASING_KEYS.orders(),
-        queryFn: () => purchasingApi.getWarehouses(),
-        staleTime: staleTime.slow,
-        enabled,
-    })
-
-    const isLoading = orderQuery.isLoading || warehousesQuery.isLoading
+    // Shared master-data query (one cache for every warehouse selector).
+    const { warehouses, isLoading: warehousesLoading } = useWarehouses()
+    const isLoading = orderQuery.isLoading || warehousesLoading
 
     return {
         order: orderQuery.data ?? null,
-        warehouses: warehousesQuery.data ?? [],
+        warehouses,
         isLoading,
     }
 }

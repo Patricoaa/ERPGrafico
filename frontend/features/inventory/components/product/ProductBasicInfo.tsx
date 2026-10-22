@@ -42,7 +42,6 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                     required
                                     placeholder="Ej: Camiseta de Algodón Premium"
                                     error={fieldState.error?.message}
-                                    className="font-bold text-xs h-[1.5rem]"
                                     {...field}
                                 />
                             )}
@@ -65,11 +64,11 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                             <div className="flex items-center gap-2 h-full px-3">
                                 <span className="text-muted-foreground text-3xs font-mono">#</span>
                                 {isEditing ? (
-                                    <span className="font-mono font-black text-primary text-xs">
+                                    <span className="font-mono font-medium text-primary text-xs">
                                         {form.getValues("internal_code")}
                                     </span>
                                 ) : (
-                                    <span className="text-3xs font-bold text-primary/40 uppercase tracking-tighter italic">Auto</span>
+                                    <span className="text-3xs font-medium text-primary/40 uppercase tracking-tighter italic">Auto</span>
                                 )}
                             </div>
                         </LabeledContainer>
@@ -213,7 +212,6 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                         label="Código SKU / EAN / Barras"
                                         placeholder="Código"
                                         error={fieldState.error?.message}
-                                        className="font-mono font-bold text-xs h-[1.5rem]"
                                         containerClassName="flex-1 min-w-0"
                                         {...field}
                                         value={field.value || ""}

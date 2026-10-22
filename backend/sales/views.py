@@ -9,9 +9,9 @@ from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
 from core.api.search import DistinctSearchFilter
-from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
+from core.mixins import AuditHistoryMixin, EditPolicyMixin, NoDestroyModelMixin
 
-from .filters import SaleDeliveryFilter
+from .filters import SaleDeliveryFilter, SaleReturnFilter
 from .models import SaleOrder, SaleReturn, SalesSettings
 from .selectors import SaleDeliverySelector, SaleOrderSelector
 from .serializers import (
@@ -126,15 +126,27 @@ class SaleOrderFilterSet(django_filters.FilterSet):
         return queryset
 
 
-class SaleOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class SaleOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         return SaleOrderSelector.get_base_queryset()
     permission_classes = [StandardizedModelPermissions]
-    filter_backends = [DjangoFilterBackend, DistinctSearchFilter]
+    filter_backends = [DjangoFilterBackend, DistinctSearchFilter, filters.OrderingFilter]
     filterset_class = SaleOrderFilterSet
     search_fields = ["customer__name", "customer__tax_id", "number", "lines__product__name"]
+    # Server ordering of the list (ADR-0087 lote 2b): `?ordering=<key>,id`. Without it, the
+    # selector's "-date,-id" order is kept.
+    ordering_fields = ["id", "number", "date", "customer__name", "total"]
+
+    @action(detail=False, methods=["get"], url_path="analytics")
+    def analytics(self, request):
+        """Figures over the whole filtered list (same filters and search as the list endpoint)."""
+        from .analytics import SaleOrderAnalyticsService
+
+        queryset = self.filter_queryset(SaleOrderSelector.get_analytics_queryset()).order_by()
+        granularity = request.query_params.get("granularity", "month")
+        return Response(SaleOrderAnalyticsService.compute(queryset, granularity=granularity))
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -158,36 +170,6 @@ class SaleOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryM
         except ValidationError as e:
             msg = e.messages[0] if hasattr(e, "messages") and e.messages else str(e)
             return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
-
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        try:
-            SalesService.validate_editable(instance)
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return super().update(request, *args, **kwargs)
-
-    def partial_update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        try:
-            SalesService.validate_editable(instance)
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return super().partial_update(request, *args, **kwargs)
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if not request.user.is_staff:
-            return Response(
-                {"error": "Solo administradores pueden purgar documentos cancelados."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        try:
-            SalesService.validate_purge(instance)
-        except ValidationError as e:
-            msg = e.messages[0] if getattr(e, "messages", None) else str(e)
-            return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
-        return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=["get"])
     def cancel_impact(self, request, pk=None):
@@ -365,16 +347,25 @@ class SaleOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryM
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class SaleDeliveryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class SaleDeliveryViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     serializer_class = SaleDeliverySerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    # ADR-0090: la lista de entregas es una vista documental propia (orden por columna).
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = SaleDeliveryFilter
     search_fields = [
         "number",
         "sale_order__customer__name",
         "sale_order__number",
     ]
+    ordering_fields = [
+        "number",
+        "delivery_date",
+        "total_cost",
+        "status",
+        "sale_order__customer__name",
+    ]
+    ordering = ["-delivery_date", "-id"]
 
     def get_queryset(self):
         return SaleDeliverySelector.get_base_queryset()
@@ -392,7 +383,7 @@ class SaleDeliveryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class SaleReturnViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class SaleReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     queryset = (
         SaleReturn.objects.select_related("sale_order__customer", "warehouse")
@@ -400,6 +391,12 @@ class SaleReturnViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         .all()
     )
     serializer_class = SaleReturnSerializer
+    # ADR-0090: la lista de devoluciones es una vista documental propia (filtros + orden).
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = SaleReturnFilter
+    search_fields = ["number", "sale_order__customer__name", "sale_order__number"]
+    ordering_fields = ["number", "date", "total_cost", "status", "sale_order__customer__name"]
+    ordering = ["-date", "-id"]
 
     @action(detail=True, methods=["post"])
     def annul(self, request, pk=None):

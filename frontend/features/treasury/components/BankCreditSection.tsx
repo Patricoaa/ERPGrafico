@@ -1,30 +1,22 @@
 "use client"
 
+import { useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { CreditCard } from "lucide-react"
-import { AutoEntityCard, DataCell, SectionHeader, createEntityFields } from "@/components/shared"
-import { useBranding } from "@/contexts/BrandingProvider"
+import { SectionHeader } from "@/components/shared"
+import { Collection, useEntityCollection } from "@/components/entity-view"
 import type { BankOverviewData } from "../hooks/useBankOverview"
+import { bankCreditCardEntity, bankCreditCardViews } from "../entity-view/bankCreditCard.entity"
 
 interface Props {
     data: BankOverviewData
     bankId: number
 }
 
-function formatCardNumber(value: string | null | undefined): string {
-    if (!value) return "\u2014"
-    const clean = value.replace(/\D/g, "")
-    const groups = clean.match(/.{1,4}/g)
-    return groups ? groups.join(" ") : value
-}
-
-const creditFields = createEntityFields<BankOverviewData["accounts"][number]>()({})
-
 export function BankCreditSection({ data, bankId }: Props) {
     const router = useRouter()
-    const { company } = useBranding()
-    const companyName = company?.trade_name || company?.name || ""
-    const cards = data.accounts.filter(a => a.account_type === "CREDIT_CARD")
+    const cards = useMemo(() => data.accounts.filter(a => a.account_type === "CREDIT_CARD"), [data.accounts])
+    const collection = useEntityCollection(bankCreditCardEntity, { rows: cards }, { pagination: { mode: "none" } })
 
     if (cards.length === 0) return null
 
@@ -37,31 +29,13 @@ export function BankCreditSection({ data, bankId }: Props) {
                 href={`/treasury/bank-center/${bankId}/cards/unbilled`}
                 variant="list"
             />
-
-            <div className="space-y-3">
-                {cards.map(card => {
-                    const available = card.credit_limit != null
-                        ? card.credit_limit - Math.abs(card.current_balance)
-                        : 0
-                    return (
-                        <AutoEntityCard
-                            key={card.id}
-                            data={card}
-                            fields={creditFields}
-                            variant="overview"
-                            icon={CreditCard}
-                            title={formatCardNumber(card.card_number || card.account_number || card.code)}
-                            subtitle={companyName || undefined}
-                            overviewMetrics={[
-                                { label: "Cupo", value: <DataCell.Currency value={card.credit_limit || 0} showColor={false} /> },
-                                { label: "Utilizado", value: <DataCell.Currency value={Math.abs(card.current_balance)} showColor={false} /> },
-                                { label: "Disponible", value: <DataCell.Currency value={available} showColor={false} /> },
-                            ]}
-                            onClick={() => router.push(`/treasury/bank-center/${bankId}/cards/unbilled?card=${card.id}`)}
-                        />
-                    )
-                })}
-            </div>
+            <Collection.Root
+                collection={collection}
+                defaultView="card"
+                onOpen={(card) => router.push(`/treasury/bank-center/${bankId}/cards/unbilled?card=${card.id}`)}
+            >
+                <Collection.View card={bankCreditCardViews.card} />
+            </Collection.Root>
         </section>
     )
 }

@@ -5,6 +5,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
+from core.edit_policy import EditPolicy
+
 
 class PartnerTransaction(models.Model):
     """
@@ -13,6 +15,12 @@ class PartnerTransaction(models.Model):
     partner Contact and optionally to its accounting journal entry and
     originating treasury movement or stock move.
     """
+
+    edit_policy = EditPolicy(
+        is_locked=lambda t: t.journal_entry_id is not None,
+        mutable_when_locked=frozenset({"description"}),
+        locked_message="La transacción de socio ya está contabilizada y no se puede modificar.",
+    )
 
     class Type(models.TextChoices):
         # Capital Operations
@@ -262,6 +270,16 @@ class ProfitDistributionResolution(models.Model):
     Individual partner allocations are in ProfitDistributionLine.
     """
 
+    # ADR-0091: approved/executed resolutions change only through their actions;
+    # anything not executed can still be deleted (validate_can_delete).
+    edit_policy = EditPolicy(
+        editable_statuses=frozenset({"DRAFT"}),
+        is_locked=lambda r: r.journal_entry_id is not None,
+        mutable_when_locked=frozenset({"notes", "acta_number"}),
+        is_purgeable=lambda r: r.status != "EXECUTED" and r.journal_entry_id is None,
+        locked_message="La resolución ya no está en borrador y no se puede modificar.",
+    )
+
     class Status(models.TextChoices):
         DRAFT = "DRAFT", _("Borrador")
         APPROVED = "APPROVED", _("Aprobada")
@@ -485,6 +503,12 @@ class ProfitDistributionPayment(models.Model):
     """
     Registra pagos parciales o totales de dividendos aprobados en una resolución.
     """
+
+    edit_policy = EditPolicy(
+        is_locked=lambda p: p.treasury_movement_id is not None,
+        mutable_when_locked=frozenset(),
+        locked_message="El pago de utilidades ya está registrado en tesorería y no se puede modificar.",
+    )
 
     resolution = models.ForeignKey(
         ProfitDistributionResolution,

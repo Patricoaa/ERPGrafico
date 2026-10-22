@@ -120,22 +120,18 @@ export const salaryAdvanceUnifiedSearchDef: UnifiedSearchConfig = {
       serverParam: 'employee_name',
       clientKey: ['employee_name'],
     },
-    {
-      key: 'display_id',
-      label: 'N° Anticipo',
-      serverParam: 'display_id',
-      clientKey: ['display_id'],
-    },
   ],
   filters: [
     {
       type: 'single',
-      key: 'is_discounted',
+      key: 'status',
       label: 'Estado',
-      serverParam: 'is_discounted',
+      serverParam: 'status',
       options: [
-        { label: 'Descontado', value: 'true' },
-        { label: 'Pendiente', value: 'false' },
+        { label: 'Borrador', value: 'DRAFT' },
+        { label: 'Pagado', value: 'PAID' },
+        { label: 'Descontado', value: 'DISCOUNTED' },
+        { label: 'Anulado', value: 'CANCELLED' },
       ],
     },
   ],

@@ -29,7 +29,9 @@ export interface ProductGridPickerProps {
     isProductDisabled?: (product: BaseProduct) => boolean
     limits?: SharedStockLimits
     priceRenderer?: (product: BaseProduct) => React.ReactNode
-    /** IDs of selected products (in cart, calculator, etc). Shows CMY ribbon on each. */
+    /** Caption above the price ("Venta c/IVA" by default). */
+    priceLabel?: string
+    /** IDs of selected products (in cart, calculator, etc). Shows the CMYK ribbon + check on each. */
     selectedProductIds?: Set<number>
 }
 
@@ -46,6 +48,7 @@ export function ProductGridPicker({
     isProductDisabled,
     limits,
     priceRenderer,
+    priceLabel,
     selectedProductIds
 }: ProductGridPickerProps) {
     const { isDesktop } = useDeviceContext()
@@ -82,6 +85,7 @@ export function ProductGridPicker({
                     onProductClick={onProductClick}
                     onToggleFavorite={onToggleFavorite}
                     priceRenderer={priceRenderer}
+                    priceLabel={priceLabel}
                     selectedProductIds={selectedProductIds}
                 />
             </div>

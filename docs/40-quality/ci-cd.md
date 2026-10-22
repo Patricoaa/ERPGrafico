@@ -9,7 +9,7 @@ last_review: 2026-10-14
 # CI / CD
 
 > **Estado actual:** el pipeline corre lint / type-check / test / build / security scan en GitHub Actions.
-> **No existe entorno de producción ni staging.** El único entorno activo es el dev server (`pato@192.168.1.93`).
+> **No existe entorno de producción ni staging.** El único entorno activo es el dev server (`pato@192.168.1.86`).
 
 ## Pipeline actual (`.github/workflows/pipeline.yml`)
 

@@ -64,7 +64,7 @@ Each app declares its types and providers in **`<app>/relations.py`** (autodisco
 ```python
 from core.documents import DocumentType, DocumentTypeRegistry, Link, relation_provider
 
-DocumentTypeRegistry.register(DocumentType(label="sales.saleorder", canonical_url="/sales/orders?selected={id}"))
+DocumentTypeRegistry.register(DocumentType(label="sales.saleorder", canonical_url="/sales/dtes/orders?selected={id}"))
 
 @relation_provider("sales.saleorder")
 def sale_order_relations(order):
@@ -92,9 +92,9 @@ Universal search returns `detail_url = DocumentTypeRegistry.url_for(label, id)` 
 
 | label | canonical URL |
 |---|---|
-| `sales.saleorder` | `/sales/orders?selected={id}` (document sheet, ADR-0083) |
-| `purchasing.purchaseorder` | `/purchasing/orders?selected={id}` (document sheet, ADR-0083) |
-| `billing.invoice` | sale: `/billing/sales?selected={id}` (document sheet) · purchase: resolver |
+| `sales.saleorder` | `/sales/dtes/orders?selected={id}` (document sheet, ADR-0083) |
+| `purchasing.purchaseorder` | `/purchasing/dtes/orders?selected={id}` (document sheet, ADR-0083) |
+| `billing.invoice` | sale: `/sales/dtes?selected={id}` (document sheet) · purchase: resolver (ADR-0089) |
 | `treasury.treasurymovement` | `/treasury/operaciones/movements?selected={id}` |
 | `accounting.journalentry` | `/accounting/entries?selected={id}` |
 | `inventory.stockmove` | `/inventory/reports/movements?selected={id}` |
@@ -139,7 +139,7 @@ The three legacy formats were retired once the Order Hub was removed. Do not rei
 |---|---|
 | New ad-hoc `related_*` field in a serializer | A provider in `<app>/relations.py` |
 | Linking documents through text (`description`, `reference`) | Typed FK, then a provider |
-| Building document URLs in components (`/sales/orders/${id}`) | `DocumentRef.url` |
+| Building document URLs in components (`/sales/dtes/orders/${id}`) | `DocumentRef.url` |
 | A generic "relations" table | Typed FKs (ADR-0080 §Alternatives) |
 | Ad-hoc "related documents" list inside a drawer | `DocumentRelationsSection` |
 | Stacking an in-memory drawer for a document whose canonical URL opens a list | Navigate to `DocumentRef.url` when it has `?selected=` (URL + module follow the relationship, ADR-0086); `openEntity` only for resolver/master targets |

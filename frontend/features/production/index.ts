@@ -4,7 +4,6 @@ export { WorkOrderTimeline } from './components/WorkOrderTimeline'
 export { ProductionMetricsCard } from './components/ProductionMetricsCard'
 export { BOMDrawer } from './components/BOMDrawer'
 export { BOMClientView } from './components/BOMClientView'
-export type { BOMListItem } from './components/BOMClientView'
 export {
   useWorkOrderProducts,
   useBOMs,
@@ -54,6 +53,8 @@ export type {
 export type { WorkOrder, BOM, ProductMinimal } from './types'
 
 export { bomUnifiedSearchDef, workOrderUnifiedSearchDef } from './unifiedSearchDef'
-export { workOrderFields } from './workOrderFields'
 export { workOrderActions } from './workOrderActions'
 export type { WorkOrderActionsCtx } from './workOrderActions'
+export { workOrderEntity, workOrderViews } from './entity-view/workOrder.entity'
+export { bomManagerEntity, bomManagerViews, type BOMManagerRow } from './entity-view/bomManager.entity'
+export { workOrderMaterialEntity, workOrderMaterialViews, stockMatEditable, outsourcedMatEditable } from './entity-view/workOrderMaterial.entity'

@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from core.serializers.mixins import FrozenFieldsField, IsEditableField
+
 from .models import (
     Bank,
     BankStatement,
@@ -43,6 +45,7 @@ class BankSerializer(serializers.ModelSerializer):
 
 
 class PaymentMethodSerializer(serializers.ModelSerializer):
+    frozen_fields = FrozenFieldsField()
     method_type_display = serializers.CharField(source="get_method_type_display", read_only=True)
     treasury_account_name = serializers.CharField(source="treasury_account.name", read_only=True)
 
@@ -66,6 +69,7 @@ class PaymentMethodSerializer(serializers.ModelSerializer):
 
 
 class TreasuryAccountSerializer(serializers.ModelSerializer):
+    frozen_fields = FrozenFieldsField()
     account_name = serializers.CharField(source="account.name", read_only=True)
     account_code = serializers.CharField(source="account.code", read_only=True)
     bank_name = serializers.CharField(source="bank.name", read_only=True, allow_null=True)
@@ -120,6 +124,7 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = TreasuryAccount
         fields = [
+            "frozen_fields",
             "id",
             "name",
             "code",
@@ -146,6 +151,7 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
             "default_bank_format",
             "reconciliation_settings",
             "terminal_providers",
+            "is_active",
         ]
 
 
@@ -332,6 +338,7 @@ class TreasuryMovementWriteSerializer(serializers.ModelSerializer):
         read_only_fields = ["is_reconciled", "is_pending_registration"]
 
 class TreasuryMovementSerializer(serializers.ModelSerializer):
+    is_editable = IsEditableField()
     partner_name = serializers.SerializerMethodField()
     partner_id = serializers.SerializerMethodField()
     account_name = serializers.CharField(source="account.name", read_only=True)
@@ -639,6 +646,29 @@ class BankStatementLineSerializer(serializers.ModelSerializer):
     class Meta:
         model = BankStatementLine
         fields = "__all__"
+        read_only_fields = [
+            "statement",
+            "line_number",
+            "reconciliation_match",
+            "reconciled_at",
+            "reconciled_by",
+            "difference_amount",
+            "difference_reason",
+            "difference_journal_entry",
+            "has_warning",
+            "warning_message",
+        ]
+
+    # Matching/reconciling go through their actions; PATCH only excludes or restores.
+    PATCHABLE_STATUSES = ("UNRECONCILED", "EXCLUDED")
+
+    def validate_reconciliation_status(self, value):
+        current = getattr(self.instance, "reconciliation_status", None)
+        if value != current and value not in self.PATCHABLE_STATUSES:
+            raise serializers.ValidationError(
+                "Use las acciones de conciliación para cambiar a este estado."
+            )
+        return value
 
 
 class BankStatementSerializer(serializers.ModelSerializer):
@@ -725,9 +755,19 @@ class PaymentTerminalProviderSerializer(serializers.ModelSerializer):
         return value
 
 
+_TERMINAL_CODE_TO_TYPE = {1: "CREDIT_CARD", 2: "DEBIT_CARD"}
+
+
 class PaymentTerminalDeviceSerializer(serializers.ModelSerializer):
     provider_name = serializers.CharField(source="provider.name", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
+    # TC-067: translate integer codes to stable method_type strings so the frontend
+    # never needs a pk-based magic mapping.
+    supported_payment_method_types = serializers.SerializerMethodField()
+
+    def get_supported_payment_method_types(self, obj) -> list[str]:
+        codes = obj.supported_payment_methods or []
+        return [_TERMINAL_CODE_TO_TYPE[c] for c in codes if c in _TERMINAL_CODE_TO_TYPE]
 
     class Meta:
         model = PaymentTerminalDevice
@@ -786,7 +826,10 @@ class TerminalBatchSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "created_at",
             "created_by",
+            "status",
             "settlement_journal_entry",
+            "settlement_movement",
+            "reconciliation_match",
             "bank_statement_line",
             "supplier_invoice",
         ]
@@ -1224,6 +1267,7 @@ class CreditLineSerializer(serializers.ModelSerializer):
             "notes",
             "status",
             "status_display",
+            "is_active",
             "created_at",
             "updated_at",
             "created_by",
@@ -1263,6 +1307,7 @@ class CreditLineWriteSerializer(serializers.ModelSerializer):
             "collateral_notes",
             "notes",
             "status",
+            "is_active",
         ]
 
 

@@ -30,9 +30,9 @@ export function SearchSuggestions({
         variant="ghost"
         size="sm"
         onClick={() => handleSelect('search', inputValue.trim())}
-        className="w-full justify-start gap-2 px-3 py-2 text-xs"
+        className="w-full justify-start gap-2 px-3 py-2 text-xs rounded-sm"
       >
-        <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        <Search className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
         <span className="text-foreground">
           Buscar <span className="font-semibold text-primary">&ldquo;{inputValue.trim()}&rdquo;</span> en{' '}
           <span className="font-medium">General</span>
@@ -45,9 +45,9 @@ export function SearchSuggestions({
           variant="ghost"
           size="sm"
           onClick={() => handleSelect(field.serverParam, inputValue.trim())}
-          className="w-full justify-start gap-2 px-3 py-2 text-xs"
+          className="w-full justify-start gap-2 px-3 py-2 text-xs rounded-sm"
         >
-          <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <Search className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
           <span className="text-foreground">
             Buscar <span className="font-semibold text-primary">&ldquo;{inputValue.trim()}&rdquo;</span> en{' '}
             <span className="font-medium">{field.label}</span>

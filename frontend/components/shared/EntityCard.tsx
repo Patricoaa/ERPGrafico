@@ -10,7 +10,7 @@ import type { LucideIcon } from "lucide-react"
 import { ArrowRight, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Checkbox } from "@/components/ui/checkbox"
+import { SelectionRing } from "@/components/shared/SelectionRing"
 
 // ─── Base props ───────────────────────────────────────────────────────────────
 
@@ -19,6 +19,7 @@ interface EntityCardSelectionContextValue {
     checked?: boolean
     onCheckedChange?: (checked: boolean) => void
     isAnySelected?: boolean
+    selectionLabel?: string
 }
 
 const EntityCardSelectionContext = React.createContext<EntityCardSelectionContextValue>({
@@ -44,6 +45,8 @@ interface EntityCardRootProps {
     checked?: boolean
     onCheckedChange?: (checked: boolean) => void
     isAnySelected?: boolean
+    /** Accessible name of the selection checkbox, e.g. "Seleccionar OV-0012" (ADR-0087 R4). */
+    selectionLabel?: string
 }
 
 function EntityCardRoot({
@@ -57,9 +60,10 @@ function EntityCardRoot({
     checked = false,
     onCheckedChange,
     isAnySelected = false,
+    selectionLabel,
 }: EntityCardRootProps) {
     return (
-        <EntityCardSelectionContext.Provider value={{ selectable, checked, onCheckedChange, isAnySelected }}>
+        <EntityCardSelectionContext.Provider value={{ selectable, checked, onCheckedChange, isAnySelected, selectionLabel }}>
             <div
                 role={onClick || defaultAction ? "button" : undefined}
                 tabIndex={onClick || defaultAction ? 0 : undefined}
@@ -95,6 +99,39 @@ function EntityCardRoot({
     )
 }
 
+// ─── Media (top strip) ────────────────────────────────────────────────────────
+
+interface EntityCardMediaProps {
+    icon?: LucideIcon
+    /** Image URL — takes precedence over `icon`. */
+    imageSrc?: string
+    /** Custom node (e.g. avatar) — takes precedence over everything. */
+    avatar?: React.ReactNode
+    /** Tone of the strip and its icon (e.g. "text-success bg-success/10"). */
+    iconClassName?: string
+    /** Chip over the top-left corner. */
+    badge?: string
+    className?: string
+}
+
+/** Full-bleed strip above the header (ProductCard anatomy). Bleeds over the card's padding. */
+function EntityCardMedia({ icon: Icon, imageSrc, avatar, iconClassName, badge, className }: EntityCardMediaProps) {
+    return (
+        <div className={cn("relative -mx-3 -mt-3 mb-1 flex h-16 items-center justify-center overflow-hidden rounded-t-md", iconClassName ?? "bg-muted text-muted-foreground", className)}>
+            {avatar ?? (imageSrc ? (
+                <Image src={imageSrc} alt="" fill unoptimized={imageSrc.startsWith("data:")} className="object-cover" />
+            ) : Icon ? (
+                <Icon className="size-6" aria-hidden />
+            ) : null)}
+            {badge && (
+                <Badge intent="neutral" size="xs" className="absolute left-2 top-2 border border-border bg-background text-3xs font-normal">
+                    {badge}
+                </Badge>
+            )}
+        </div>
+    )
+}
+
 // ─── Header ───────────────────────────────────────────────────────────────────
 
 interface EntityCardHeaderProps {
@@ -120,24 +157,21 @@ interface EntityCardHeaderProps {
 }
 
 function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Icon, imageSrc, avatar, iconClassName, className }: EntityCardHeaderProps) {
-    const { selectable, checked, onCheckedChange, isAnySelected } = React.useContext(EntityCardSelectionContext)
+    const { selectable, checked, onCheckedChange, isAnySelected, selectionLabel } = React.useContext(EntityCardSelectionContext)
 
     const checkboxNode = selectable && (
-        <div
+        <SelectionRing
+            aria-label={selectionLabel ?? "Seleccionar"}
+            checked={checked}
+            onCheckedChange={onCheckedChange}
+            size="sm"
             className={cn(
                 "shrink-0 z-10 self-center flex items-center justify-center transition-all duration-300",
                 isAnySelected
                     ? "opacity-100 w-5 mr-1"
                     : "opacity-0 w-0 pointer-events-none group-hover:opacity-100 group-hover:w-5 group-hover:pointer-events-auto group-hover:mr-1 group-focus-within:opacity-100 group-focus-within:w-5 group-focus-within:pointer-events-auto group-focus-within:mr-1 overflow-hidden"
             )}
-            onClick={(e) => e.stopPropagation()}
-        >
-            <Checkbox
-                variant="circle"
-                checked={checked}
-                onCheckedChange={onCheckedChange}
-            />
-        </div>
+        />
     )
 
     if (center) {
@@ -660,10 +694,40 @@ function EntityCardHubTrigger({ isSelected, onToggle, className }: EntityCardHub
     )
 }
 
+// ─── Meta ─────────────────────────────────────────────────────────────────────
+
+interface EntityCardMetaItem {
+    key: string
+    label: React.ReactNode
+    value: React.ReactNode
+}
+
+interface EntityCardMetaProps {
+    items: readonly EntityCardMetaItem[]
+    className?: string
+}
+
+/** Label/value pairs below the header (ADR-0087 R4). In the header center they squeezed the title. */
+function EntityCardMeta({ items, className }: EntityCardMetaProps) {
+    if (items.length === 0) return null
+    return (
+        <dl className={cn("flex flex-wrap items-start gap-x-6 gap-y-1 min-w-0 px-1", className)}>
+            {items.map((item) => (
+                <div key={item.key} className="flex flex-col items-start min-w-0">
+                    <dt className="text-4xs uppercase tracking-widest text-muted-foreground font-bold whitespace-nowrap">{item.label}</dt>
+                    <dd className="min-w-0">{item.value}</dd>
+                </div>
+            ))}
+        </dl>
+    )
+}
+
 // ─── Composite export ─────────────────────────────────────────────────────────
 
 export const EntityCard = Object.assign(EntityCardRoot, {
+    Media: EntityCardMedia,
     Header: EntityCardHeader,
+    Meta: EntityCardMeta,
     Body: EntityCardBody,
     Field: EntityCardField,
     Footer: EntityCardFooter,
@@ -679,7 +743,10 @@ export const EntityCard = Object.assign(EntityCardRoot, {
 
 export type {
     EntityCardRootProps,
+    EntityCardMediaProps,
     EntityCardHeaderProps,
+    EntityCardMetaProps,
+    EntityCardMetaItem,
     EntityCardSkeletonProps,
     EntityCardBodyProps,
     EntityCardFieldProps,

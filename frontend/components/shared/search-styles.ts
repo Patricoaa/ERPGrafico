@@ -5,7 +5,7 @@
 export const SEG_TEXT = 'text-xs font-medium'
 
 export const SEG_WRAPPER =
-  'flex items-center shrink-0 bg-background rounded-sm px-1 h-9'
+  'flex items-center shrink-0 rounded-md border border-border/50 bg-background px-1 h-9'
 
 export const SEG_TRIGGER =
   'h-7 px-2 text-xs font-medium gap-1 rounded-sm shrink-0'
@@ -22,9 +22,9 @@ export const SEG_CHECKBOX =
   'mr-2 flex h-3.5 w-3.5 items-center justify-center rounded-sm border transition-all'
 
 export const SEG_INPUT =
-  'h-7 text-xs font-semibold rounded-sm border-border/60 px-2'
+  'h-8 text-xs font-semibold rounded-sm border-border/40 px-2'
 
-export const TOOLBAR_ICON_BTN = 'h-9 w-9 shrink-0'
+export const TOOLBAR_ICON_BTN = 'size-9 shrink-0'
 
 export const TOOLBAR_MENU_ITEM =
   'relative flex cursor-pointer select-none items-center rounded-sm px-3 py-1.5 text-xs font-semibold outline-none transition-colors'

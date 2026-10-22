@@ -65,7 +65,7 @@ Comandos: `grep -cvE '^\s*$|^\s*//|^\s*\*'` por archivo; bloques `renderCard` me
 
 ### 3.3 Comparación con las pantallas actuales (app de desarrollo, usuario de demo)
 
-Capturas en `evidence/legacy/` (UoM, Productos, OV y Compras; vistas lista y card; 1440 y 390 px). Medido con `playwright-cli` sobre `http://192.168.1.93:3000` (2026-10-17).
+Capturas en `evidence/legacy/` (UoM, Productos, OV y Compras; vistas lista y card; 1440 y 390 px). Medido con `playwright-cli` sobre `http://192.168.1.86:3000` (2026-10-17).
 
 | Métrica | UoM | Productos | OV | Compras | Prototipo |
 |---|---|---|---|---|---|

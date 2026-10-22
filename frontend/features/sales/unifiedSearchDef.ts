@@ -1,4 +1,5 @@
 import type { UnifiedSearchConfig, DateFilterDef } from '@/types/unified-search'
+import { periodPresets } from '@/lib/date-presets'
 
 const createdDateFilter: DateFilterDef = {
   type: 'date',
@@ -203,4 +204,110 @@ export const salesNoteUnifiedSearchDef: UnifiedSearchConfig = {
     { key: 'customer', label: 'Cliente', field: 'customer_name' },
     { key: 'status', label: 'Estado', field: 'status' },
   ],
+}
+
+/**
+ * ADR-0090: las listas de entregas y devoluciones son vistas documentales propias.
+ * Los `serverParam` coinciden con `SaleDeliveryFilter` / `SaleReturnFilter` del backend.
+ */
+export const saleDeliveryUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    { key: 'sale_order_number', label: 'Orden de Venta', serverParam: 'sale_order_number' },
+    { key: 'customer_name', label: 'Cliente', serverParam: 'customer_name' },
+  ],
+  filters: [
+    {
+      type: 'multi',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'Borrador', value: 'DRAFT' },
+        { label: 'Confirmado', value: 'CONFIRMED' },
+        { label: 'Anulado', value: 'CANCELLED' },
+      ],
+    },
+  ],
+  dateFilters: [
+    { type: 'date', key: 'delivery_date', label: 'Fecha de despacho', options: periodPresets('date_after', 'date_before') },
+  ],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'delivery_date' },
+    { key: 'customer', label: 'Cliente', field: 'customer_name' },
+    { key: 'status', label: 'Estado', field: 'status' },
+  ],
+  basePeriod: { serverParamFrom: 'date_after', serverParamTo: 'date_before' },
+}
+
+export const saleReturnUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    { key: 'sale_order_number', label: 'Orden de Venta', serverParam: 'sale_order_number' },
+    { key: 'customer_name', label: 'Cliente', serverParam: 'customer_name' },
+  ],
+  filters: [
+    {
+      type: 'multi',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'Borrador', value: 'DRAFT' },
+        { label: 'Confirmado', value: 'CONFIRMED' },
+        { label: 'Anulado', value: 'CANCELLED' },
+      ],
+    },
+  ],
+  dateFilters: [
+    { type: 'date', key: 'date', label: 'Fecha de devolución', options: periodPresets('date_after', 'date_before') },
+  ],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'date' },
+    { key: 'customer', label: 'Cliente', field: 'customer_name' },
+    { key: 'status', label: 'Estado', field: 'status' },
+  ],
+  basePeriod: { serverParamFrom: 'date_after', serverParamTo: 'date_before' },
+}
+
+/**
+ * ADR-0090: Unified search for "Despachos y Devoluciones" (fulfillment).
+ * Merges SaleDelivery and SaleReturn with a `fulfillment_type` filter.
+ */
+export const saleFulfillmentUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    { key: 'sale_order_number', label: 'Orden de Venta', serverParam: 'sale_order_number' },
+    { key: 'customer_name', label: 'Cliente', serverParam: 'customer_name' },
+  ],
+  filters: [
+    {
+      type: 'multi',
+      key: 'fulfillment_type',
+      label: 'Tipo',
+      serverParam: 'fulfillment_type',
+      options: [
+        { label: 'Despacho', value: 'DELIVERY' },
+        { label: 'Devolución', value: 'RETURN' },
+      ],
+    },
+    {
+      type: 'multi',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'Borrador', value: 'DRAFT' },
+        { label: 'Confirmado', value: 'CONFIRMED' },
+        { label: 'Anulado', value: 'CANCELLED' },
+      ],
+    },
+  ],
+  dateFilters: [
+    { type: 'date', key: 'date', label: 'Fecha', options: periodPresets('date_after', 'date_before') },
+  ],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'date' },
+    { key: 'customer', label: 'Cliente', field: 'customer_name' },
+    { key: 'status', label: 'Estado', field: 'status' },
+    { key: 'type', label: 'Tipo', field: 'fulfillment_type' },
+  ],
+  basePeriod: { serverParamFrom: 'date_after', serverParamTo: 'date_before' },
 }

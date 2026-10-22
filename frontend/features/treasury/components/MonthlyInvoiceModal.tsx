@@ -106,7 +106,6 @@ export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalP
                     <div className="col-span-12 lg:col-span-6">
                         <LabeledSelect
                             label="Proveedor (Terminal de Cobro)"
-                            placeholder="Seleccione proveedor..."
                             value={supplierId}
                             onChange={setSupplierId}
                             options={suppliers.map(s => ({

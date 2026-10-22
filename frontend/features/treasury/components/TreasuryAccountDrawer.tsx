@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import { frozenFieldsOf } from "@/lib/edit-policy"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -16,7 +17,7 @@ import { useTreasuryAccounts, treasuryApi, useCreditLineMutations, CreditLineDra
 import type { Bank, TreasuryAccount, TreasuryAccountCreatePayload, TreasuryAccountUpdatePayload } from "../types"
 import type { CreditLine } from "../credit-lines/types"
 
-import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, Drawer, Chip, SkeletonShell, StatusBadge, MoneyDisplay } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, SubmitButton, Drawer, Chip, SkeletonShell, StatusBadge, MoneyDisplay } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { Form, FormField } from "@/components/ui/form"
 
@@ -69,6 +70,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
     const type = useWatch({ control: form.control, name: "account_type" })
     const isSubmitting = isCreating || isUpdating
     const isSystemManaged = SYSTEM_MANAGED_TYPES.has(type)
+    const frozen = frozenFieldsOf(entityData)
     const mode: DrawerMode = modeProp ?? (accountId ? 'edit' : 'create')
     const isView = mode === 'view' || isSystemManaged
     const { printRef, handlePrint } = usePrintableDrawer()
@@ -230,13 +232,13 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                     {isSystemManaged ? "Cerrar" : "Cancelar"}
                                 </CancelButton>
                                 {!isSystemManaged && (
-                                    <ActionSlideButton
+                                    <SubmitButton
                                         loading={isSubmitting || loading}
                                         disabled={isSubmitting || loading}
                                         onClick={form.handleSubmit(onSubmit)}
                                     >
                                         {accountId ? "Guardar Cambios" : "Crear Cuenta"}
-                                    </ActionSlideButton>
+                                    </SubmitButton>
                                 )}
                             </>
                         }
@@ -313,7 +315,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                                     required
                                                     value={field.value}
                                                     onChange={field.onChange}
-                                                    disabled={isSystemManaged}
+                                                    disabled={isSystemManaged || frozen.has("currency")}
                                                     error={fieldState.error?.message}
                                                     options={[
                                                         { value: "CLP", label: "Pesos (CLP)" },
@@ -367,7 +369,6 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                                 render={({ field, fieldState }) => (
                                                     <LabeledSelect
                                                         label="Entidad Bancaria"
-                                                        placeholder="Seleccione banco..."
                                                         value={field.value || ""}
                                                         onChange={field.onChange}
                                                         disabled={isSystemManaged}
@@ -477,7 +478,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                                     accountType={isLiabilityType(type) ? "LIABILITY" : "ASSET"}
                                                     isReconcilable={isLiabilityType(type) ? undefined : true}
                                                     placeholder="Seleccione cuenta..."
-                                                    disabled={isSystemManaged}
+                                                    disabled={isSystemManaged || frozen.has("account")}
                                                     error={fieldState.error?.message}
                                                 />
                                             )}

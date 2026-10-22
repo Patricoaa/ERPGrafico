@@ -9,6 +9,7 @@ import { staleTime } from '@/lib/query-config'
 export interface UoMCategory {
     id: number
     name: string
+    is_active: boolean
 }
 
 export interface UoM {
@@ -25,7 +26,7 @@ export interface UoM {
     is_active: boolean
 }
 
-export type UoMCategoryPayload = Omit<UoMCategory, 'id'>
+export type UoMCategoryPayload = Omit<UoMCategory, 'id' | 'is_active'>
 
 // ─── Hierarchical query keys ──────────────────────────────────────────────────
 
@@ -74,7 +75,7 @@ export function useUoMs(filters?: FilterState) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: uoms, isLoading: isUoMsLoading, refetch } = useQuery({
+    const { data: uoms, isLoading: isUoMsLoading, isError: isUoMsError, refetch } = useQuery({
         queryKey: [...UOMS_KEYS.all, filters],
         queryFn: async (): Promise<UoM[]> => {
             const params = new URLSearchParams()
@@ -92,7 +93,7 @@ export function useUoMs(filters?: FilterState) {
         staleTime: staleTime.session, // 1 hora — datos estáticos
     })
 
-    const { data: categories, isLoading: isCategoriesLoading } = useQuery({
+    const { data: categories, isLoading: isCategoriesLoading, isError: isCategoriesError, refetch: refetchCategories } = useQuery({
         queryKey: UOM_CATEGORIES_KEYS.all,
         queryFn: async (): Promise<UoMCategory[]> => {
             const response = await api.get<UoMCategory[]>('/inventory/uom-categories/')
@@ -104,6 +105,18 @@ export function useUoMs(filters?: FilterState) {
 
     const deleteMutation = useMutation({
         mutationFn: async (id: number) => api.delete(`/inventory/uoms/${id}/`),
+        onSuccess: () => {
+            markLocalMutation()
+            invalidateCrossFeature(queryClient, [UOMS_KEYS.all])
+        },
+    })
+
+    /** Archivo pattern: PATCH is_active (hard delete is blocked server-side with 405). */
+    const archiveMutation = useMutation({
+        mutationFn: async ({ id, is_active }: { id: number; is_active: boolean }) => {
+            const res = await api.patch<UoM>(`/inventory/uoms/${id}/`, { is_active })
+            return res.data
+        },
         onSuccess: () => {
             markLocalMutation()
             invalidateCrossFeature(queryClient, [UOMS_KEYS.all])
@@ -150,18 +163,36 @@ export function useUoMs(filters?: FilterState) {
             toast.error(`Error al eliminar la categoría: ${e.message}`)
         },
     })
-
+    /** Archivo pattern: PATCH is_active para categorías de UoM. */
+    const archiveCategoryMutation = useMutation({
+        mutationFn: async ({ id, is_active }: { id: number; is_active: boolean }) => {
+            const res = await api.patch<UoMCategory>(`/inventory/uom-categories/${id}/`, { is_active })
+            return res.data
+        },
+        onSuccess: () => {
+            markLocalMutation()
+            invalidateCrossFeature(queryClient, [UOM_CATEGORIES_KEYS.all, UOMS_KEYS.all])
+        },
+    })
     return {
         uoms: uoms ?? [],
         categories: categories ?? [],
         isLoading: isUoMsLoading || isCategoriesLoading,
         isUoMsLoading,
+        isCategoriesLoading,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError: isUoMsError,
+        /** The category list failed to load. */
+        isCategoriesError,
         refetch,
+        refetchCategories,
         deleteUoM: deleteMutation.mutateAsync,
         saveUoM: saveMutation.mutateAsync,
         isSaving: saveMutation.isPending,
+        archiveUoM: archiveMutation.mutateAsync,
         saveUoMCategory: saveCategoryMutation.mutateAsync,
         isSavingCategory: saveCategoryMutation.isPending,
         deleteUoMCategory: deleteCategoryMutation.mutateAsync,
+        archiveUoMCategory: archiveCategoryMutation.mutateAsync,
     }
 }

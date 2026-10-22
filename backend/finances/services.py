@@ -95,7 +95,8 @@ def _make_category_resolver(by_id, report_type, fiscal_year_id=None):
         value = None
         acc = by_id.get(account_id)
         while acc:
-            own = getattr(acc, field, None)
+            # Use effective_* property which inherits from parent (unlike raw field)
+            own = getattr(acc, f"effective_{field}", None)
             if own:
                 value = own
                 break
@@ -186,14 +187,23 @@ class FinanceService:
 
     @staticmethod
     def _get_accounts_by_cf_category(category_value, fiscal_year_id=None):
-        """Retorna cuentas con la cf_category indicada, viva o histórica."""
+        """Retorna cuentas con la cf_category indicada, viva o histórica.
+
+        En modo vivo (fiscal_year_id=None), incluye cuentas que heredan la categoría
+        del ancestro más cercano (usando effective_cf_category).
+        En modo histórico, usa solo el mapeo explícito del FiscalYearAccountMapping.
+        """
         if fiscal_year_id is not None:
             from accounting.models import FiscalYearAccountMapping
             account_ids = FiscalYearAccountMapping.objects.filter(
                 fiscal_year_id=fiscal_year_id, cf_category=category_value
             ).values_list("account_id", flat=True)
             return Account.objects.filter(id__in=account_ids)
-        return Account.objects.filter(cf_category=category_value)
+        # Modo vivo: usar IDs de cuentas con effective_cf_category == category_value
+        # (no se puede hacer en SQL porque effective_cf_category es property que hereda)
+        all_accounts = Account.objects.all()
+        matching_ids = [acc.id for acc in all_accounts if acc.effective_cf_category == category_value]
+        return Account.objects.filter(id__in=matching_ids)
 
     @staticmethod
     def _get_aggregated_balance(
@@ -810,16 +820,20 @@ class FinanceService:
         culprit_accounts = []
         if abs(discrepancy) > 0.01:
             # Find accounts with movements that are NOT mapped and NOT in cash pool
+            # Includes accounts with cf_category=NULL or cf_category=UNMAPPED
+            from accounting.models import CFCategory
             if fiscal_year_id is not None:
                 from accounting.models import FiscalYearAccountMapping
                 mapped_ids = FiscalYearAccountMapping.objects.filter(
-                    fiscal_year_id=fiscal_year_id, cf_category__isnull=True
+                    fiscal_year_id=fiscal_year_id, cf_category__in=[None, CFCategory.UNMAPPED]
                 ).values_list("account_id", flat=True)
                 unmapped_accs = Account.objects.filter(id__in=mapped_ids).exclude(
                     pk__in=cash_pool_ids
                 ).exclude(account_type__in=[AccountType.INCOME, AccountType.EXPENSE])
             else:
-                unmapped_accs = Account.objects.filter(cf_category__isnull=True).exclude(
+                unmapped_accs = Account.objects.filter(
+                    Q(cf_category__isnull=True) | Q(cf_category=CFCategory.UNMAPPED)
+                ).exclude(
                     pk__in=cash_pool_ids
                 ).exclude(account_type__in=[AccountType.INCOME, AccountType.EXPENSE])
             for acc in unmapped_accs:

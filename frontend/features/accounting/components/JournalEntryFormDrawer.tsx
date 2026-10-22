@@ -1,0 +1,457 @@
+"use client"
+
+import { showApiError } from "@/lib/errors"
+import { useState, useEffect, useRef } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
+import { useForm, type Control, type FieldValues } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import type { JournalEntryInitialData } from "@/types/forms"
+import * as z from "zod"
+import { Plus, Pencil, ExternalLink } from "lucide-react"
+import { format } from "date-fns"
+import Link from "next/link"
+import { toDate } from "@/lib/utils"
+import {
+    Form,
+    FormField,
+    FormMessage,
+} from "@/components/ui/form"
+
+import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
+import { accountingApi } from "@/features/accounting/api/accountingApi"
+import { useAccounts } from "@/features/accounting/hooks/useAccounts"
+import { useServerDate } from "@/hooks/useServerDate"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { formatCurrency } from "@/lib/money"
+import { Chip, Drawer, LabeledInput, LabeledContainer, CancelButton, IconButton, PeriodValidationDateInput, SubmitButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell, StatusBadge } from "@/components/shared"
+import { SourceDocumentSelector, type SourceDocument } from "@/components/selectors/SourceDocumentSelector";
+import { formDrawerWidth } from "@/lib/form-widths";
+import { ActivitySidebar } from "@/features/audit";
+import { DocumentRefLink, DocumentRelationsButton, type DocumentRef } from "@/features/documents"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
+
+// JournalItem and JournalEntry schemas
+const journalItemSchema = z.object({
+    id: z.number().optional(),
+    account: z.string().min(1, "Cuenta requerida"),
+    partner: z.string().optional(),
+    label: z.string().optional(),
+    debit: z.number().min(0),
+    credit: z.number().min(0),
+})
+
+const journalEntrySchema = z.object({
+    date: z.date(),
+    description: z.string().min(3, "La descripción debe tener al menos 3 caracteres"),
+    items: z.array(journalItemSchema).min(2, "El asiento debe tener al menos 2 líneas"),
+}).refine((data) => {
+    const totalDebit = data.items.reduce((sum, item) => sum + (item.debit || 0), 0)
+    const totalCredit = data.items.reduce((sum, item) => sum + (item.credit || 0), 0)
+    return Math.abs(totalDebit - totalCredit) < 0.01 // Floating point tolerance
+}, {
+    message: "El asiento no está cuadrado (Debe != Haber)",
+    path: ["items"],
+})
+
+type JournalEntryFormValues = z.infer<typeof journalEntrySchema>
+
+interface JournalEntryFormDrawerProps {
+    onSuccess?: () => void
+    initialData?: JournalEntryInitialData
+    triggerText?: string
+    triggerVariant?: "default" | "circular"
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
+    inline?: boolean
+    onLoadingChange?: (loading: boolean) => void
+    mode?: DrawerMode
+    journalEntryId?: number
+}
+
+export function JournalEntryFormDrawer({
+    onSuccess,
+    initialData,
+    triggerText = "Nuevo Asiento",
+    triggerVariant = "default",
+    open: openProp,
+    onOpenChange,
+    inline = false,
+    onLoadingChange,
+    mode: modeProp,
+    journalEntryId,
+}: JournalEntryFormDrawerProps) {
+    const [openState, setOpenState] = useState(false)
+    const open = openProp !== undefined ? openProp : openState
+    const setOpen = onOpenChange || setOpenState
+
+    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
+    const isViewMode = mode === 'view'
+    const entityId = journalEntryId ?? initialData?.id
+    const { printRef, handlePrint } = usePrintableDrawer()
+    const { setEntityDisplay } = useGlobalModalActions()
+
+    useEffect(() => {
+        if (entityId) {
+            setEntityDisplay('accounting.journalentry', Number(entityId), `#${entityId}`)
+        }
+    }, [entityId, setEntityDisplay])
+
+    const [loading, setLoading] = useState(false)
+    const [isPeriodValid, setIsPeriodValid] = useState(true)
+    const [sourceDocument, setSourceDocument] = useState<SourceDocument | null>(null)
+
+    useEffect(() => {
+        if (onLoadingChange) {
+            onLoadingChange(loading)
+        }
+    }, [loading, onLoadingChange])
+
+    // Guard for async operations
+    const isMounted = useRef(true)
+
+    // Cleanup mount guard
+    useEffect(() => {
+        isMounted.current = true
+        return () => { isMounted.current = false }
+    }, [])
+
+    const { isLoading: isAccountsLoading } = useAccounts({ filters: { is_leaf: true } })
+
+    const { serverDate, isLoading: isServerDateLoading } = useServerDate()
+
+    const isFetchingInitialData = open && (isAccountsLoading || isServerDateLoading)
+
+    // Convert string date to Date object if editing
+    const getDefaultValues = () => {
+        if (initialData) {
+            return {
+                ...initialData,
+                date: toDate(initialData.date),
+                items: initialData.items.map((item) => ({
+                    ...item,
+                    account: item.account.toString(),
+                    debit: parseFloat(item.debit as unknown as string),
+                    credit: parseFloat(item.credit as unknown as string),
+                }))
+            }
+        } else {
+            return {
+                date: serverDate || new Date(),
+                description: "",
+                items: [
+                    { account: "", label: "", debit: 0, credit: 0 },
+                    { account: "", label: "", debit: 0, credit: 0 },
+                ],
+            }
+        }
+    }
+
+    const defaultValues: Partial<JournalEntryFormValues> = getDefaultValues()
+
+    const form = useForm<JournalEntryFormValues>({
+        resolver: zodResolver(journalEntrySchema),
+        defaultValues,
+    })
+
+    const width = formDrawerWidth("master", !!initialData?.id)
+
+
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData,
+        defaultValues: () => ({
+            date: serverDate || new Date(),
+            description: "",
+            items: [
+                { account: "", label: "", debit: 0, credit: 0 },
+                { account: "", label: "", debit: 0, credit: 0 },
+            ],
+        }),
+        mapData: (data) => ({
+            date: toDate(data.date),
+            description: data.description,
+            items: data.items.map((item) => ({
+                account: item.account?.toString() ?? '',
+                partner: item.partner?.toString() ?? '',
+                label: item.label ?? '',
+                debit: Number(item.debit ?? 0),
+                credit: Number(item.credit ?? 0),
+            })),
+        }),
+    })
+
+    // Sync sourceDocument from initialData (outside lastResetKey guard)
+    useEffect(() => {
+        if (!initialData || !open) {
+            setSourceDocument(null)
+            return
+        }
+        // ADR-0083 U6: origen como DocumentRef + ids del GFK para editar
+        const data = initialData as unknown as { source_document?: DocumentRef | null; source_content_type_id?: number | null; source_object_id?: number | null }
+        if (data.source_document && data.source_content_type_id && data.source_object_id) {
+            setSourceDocument({
+                content_type_id: data.source_content_type_id,
+                object_id: data.source_object_id,
+                display: data.source_document.display_id,
+                label: data.source_document.title,
+                icon: '',
+            })
+        }
+    }, [initialData, open])
+
+    async function onSubmit(data: JournalEntryFormValues) {
+        setLoading(true)
+        try {
+            if (!isPeriodValid) {
+                toast.error("No se puede registrar el asiento: El periodo contable está cerrado.")
+                setLoading(false)
+                return
+            }
+
+            const payload: Record<string, unknown> = {
+                ...data,
+                items: data.items.map(i => ({
+                    ...i,
+                    partner: i.partner || null,
+                })),
+                date: format(data.date, "yyyy-MM-dd"),
+                is_manual: true,
+            }
+
+            if (sourceDocument) {
+                payload.source_content_type_id = sourceDocument.content_type_id
+                payload.source_object_id = sourceDocument.object_id
+            }
+
+            if (initialData?.id) {
+                await accountingApi.updateEntry(initialData.id, payload)
+                toast.success("Asiento actualizado correctamente")
+            } else {
+                await accountingApi.createEntry(payload as Record<string, unknown>)
+                toast.success("Asiento creado correctamente")
+            }
+
+            setOpen(false)
+            if (onSuccess) onSuccess()
+        } catch (error: unknown) {
+            showApiError(error, "Error al guardar el asiento")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const getStatus = (): string | undefined => {
+        if (initialData) return (initialData as unknown as { status?: string }).status
+        return 'DRAFT'
+    }
+    const entryStatus = getStatus() || 'DRAFT'
+
+    const Trigger = () => {
+        if (isViewMode) return null;
+        if (openProp !== undefined) return null;
+        if (initialData && triggerVariant !== "circular") return null;
+
+        return (
+            <div onClick={() => setOpen(true)}>
+                {triggerVariant === "circular" ? (
+                    <IconButton circular title="Nuevo Asiento" className="h-8 w-8 bg-primary text-primary-foreground hover:bg-primary/90">
+                        <Plus className="h-4 w-4" />
+                    </IconButton>
+                ) : (
+                    <Button variant={initialData ? "ghost" : "default"} size={initialData ? "icon" : "default"}>
+                        {initialData ? <Pencil className="h-4 w-4" /> : triggerText}
+                    </Button>
+                )}
+            </div>
+        )
+    }
+
+    const journalFormFields = (
+        <Form {...form}>
+            <form id="journal-entry-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                <fieldset disabled={isViewMode} className="contents">
+                    <div className="grid grid-cols-12 gap-4 ">
+                        <div className="col-span-3">
+                            <LabeledContainer label="Estado" disabled containerClassName="pointer-events-none">
+                                <StatusBadge status={entryStatus} size="sm" variant="badge" />
+                            </LabeledContainer>
+                        </div>
+                        <div className="col-span-3">
+                            <LabeledContainer label="Origen" disabled containerClassName="pointer-events-none">
+                                <Chip size="xs" intent="neutral">Manual</Chip>
+                            </LabeledContainer>
+                        </div>
+                        <div className="col-span-6">
+                            <FormField
+                                control={form.control}
+                                name="date"
+                                render={({ field }) => (
+                                    <PeriodValidationDateInput
+                                        date={field.value}
+                                        onDateChange={field.onChange}
+                                        validationType="accounting"
+                                        onValidityChange={setIsPeriodValid}
+                                        label="Fecha"
+                                        required
+                                        disabled={isViewMode}
+                                    />
+                                )}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-12 gap-4 mt-4">
+                        <div className="col-span-6">
+                            <FormField
+                                control={form.control}
+                                name="description"
+                                render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        label="Descripción"
+                                        required
+                                        placeholder="Venta de mercadería..."
+                                        error={fieldState.error?.message}
+                                        {...field}
+                                    />
+                                )}
+                            />
+                        </div>
+                        <div className="col-span-6">
+                            <SourceDocumentSelector
+                                value={sourceDocument}
+                                onChange={setSourceDocument}
+                                allowedLabels={[
+                                    "sales.saleorder",
+                                    "sales.saledelivery",
+                                    "sales.salereturn",
+                                    "purchasing.purchaseorder",
+                                    "purchasing.purchasereturn",
+                                    "billing.invoice",
+                                    "inventory.stockmove",
+                                    "treasury.treasurymovement",
+                                    "treasury.bankstatement",
+                                    "production.workorder",
+                                    "hr.payroll",
+                                    "contacts.contact",
+                                    "contacts.partnertransaction",
+                                    "contacts.profitdistributionresolution",
+                                ]}
+                            />
+                        </div>
+                    </div>
+
+                    <FormSection title="Líneas del Asiento" className="space-y-2" />
+
+                    <AccountingLinesTable control={form.control as unknown as Control<FieldValues>} name="items" disabled={isViewMode} />
+
+                    <FormMessage className="text-right" />
+                    {form.formState.errors.items?.root && (
+                        <div className="text-destructive text-sm text-right font-medium">
+                            {form.formState.errors.items.root.message}
+                        </div>
+                    )}
+                </fieldset>
+            </form>
+        </Form>
+    )
+
+    const formContent = (
+        <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando asiento contable" className="flex-1 flex flex-col">
+            <FormSplitLayout
+                sidebar={entityId ? (
+                    <ActivitySidebar entityType="journal_entry" entityId={entityId} />
+                ) : undefined}
+                showSidebar={!!entityId}
+            >
+                {journalFormFields}
+            </FormSplitLayout>
+        </SkeletonShell>
+    )
+
+    const identity = useDrawerIdentity('accounting.journalentry', mode, initialData as Record<string, unknown> | undefined, {
+        overrideTitle: mode === 'edit'
+            ? "Editar Asiento"
+            : undefined,
+        overrideSubtitle: form.watch("description") || "Registro manual de movimiento",
+        onPrint: handlePrint,
+        printable: !!entityId && (mode === 'view' || mode === 'edit'),
+    })
+
+    const showPrintable = entityId && (mode === 'view' || mode === 'edit')
+
+    const formValues = form.watch()
+
+    if (inline) {
+        return <>{formContent}</>
+    }
+
+    return (
+        <>
+            {showPrintable && (
+                <PrintableLayout
+                    ref={printRef}
+                    title="Asiento Contable"
+                    displayId={`#${entityId}`}
+                >
+                    <div className="text-4xs space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Descripción:</span>
+                            <span>{formValues.description || '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Tipo:</span>
+                            <span>Manual</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Fecha:</span>
+                            <span>{formValues.date ? format(formValues.date, 'dd/MM/yyyy') : '-'}</span>
+                        </div>
+                    </div>
+                    <div className="text-4xs">
+                        <div className="grid grid-cols-[1fr,50px,50px] gap-1 font-bold border-b mb-1 pb-1">
+                            <span>Cuenta</span>
+                            <span className="text-right">Debe</span>
+                            <span className="text-right">Haber</span>
+                        </div>
+                        {(formValues.items ?? []).map((item, idx: number) => (
+                            <div key={idx} className="grid grid-cols-[1fr,50px,50px] gap-1 border-b border-dashed py-0.5">
+                                <span>{item.account ? item.account.toString() : '-'}</span>
+                                <span className="text-right">{Number(item.debit) > 0 ? formatCurrency(Number(item.debit)) : '-'}</span>
+                                <span className="text-right">{Number(item.credit) > 0 ? formatCurrency(Number(item.credit)) : '-'}</span>
+                            </div>
+                        ))}
+                    </div>
+                </PrintableLayout>
+            )}
+            <Trigger />
+            <Drawer
+                fillContent
+                open={open}
+                onOpenChange={setOpen}
+                side="left"
+                defaultSize={width}
+                mode={mode}
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={identity.headerActions}
+                subtitle={identity.subtitle}
+                footer={isViewMode ? undefined : (
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => setOpen(false)} />
+                                <SubmitButton type="submit" form="journal-entry-form" loading={loading}>
+                                    {mode === 'create' ? "Crear Asiento" : "Actualizar Asiento"}
+                                </SubmitButton>
+                            </>
+                        }
+                    />
+                )}
+            >
+                {formContent}
+            </Drawer>
+        </>
+    )
+}

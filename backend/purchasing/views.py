@@ -6,10 +6,11 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
+from core.api.search import DistinctSearchFilter
 from core.idempotency import idempotent_endpoint
-from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
+from core.mixins import AuditHistoryMixin, EditPolicyMixin, NoDestroyModelMixin
 
-from .filters import PurchaseReceiptFilter
+from .filters import PurchaseReceiptFilter, PurchaseReturnFilter
 from .models import PurchaseOrder, PurchaseReturn
 from .return_services import PurchaseReturnService
 from .selectors import PurchaseOrderSelector, PurchaseReceiptSelector
@@ -100,39 +101,32 @@ class PurchaseOrderFilterSet(FilterSet):
         return filter_by_payment_status(queryset.exclude(status="CANCELLED"), value)
 
 
-class PurchaseOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class PurchaseOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     def get_queryset(self):
         return PurchaseOrderSelector.get_base_queryset()
     pagination_class = StandardResultsSetPagination
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    # DistinctSearchFilter: searching by product name joins the lines (one row per matching line).
+    filter_backends = [DjangoFilterBackend, DistinctSearchFilter, filters.OrderingFilter]
     filterset_class = PurchaseOrderFilterSet
     search_fields = ["supplier__name", "supplier__tax_id", "number", "lines__product__name"]
+    # Server ordering (ADR-0087 lote 2c): `?ordering=<key>,id`; without it, newest first (the model
+    # has no Meta.ordering and an unordered queryset pages unstably).
+    ordering_fields = ["id", "number", "date", "supplier__name", "receipt_date", "total"]
+    ordering = ["-date", "-id"]
+
+    @action(detail=False, methods=["get"], url_path="analytics")
+    def analytics(self, request):
+        """Figures over the whole filtered list (same filters and search as the list endpoint)."""
+        from .analytics import PurchaseOrderAnalyticsService
+
+        queryset = self.filter_queryset(PurchaseOrderSelector.get_analytics_queryset()).order_by()
+        granularity = request.query_params.get("granularity", "month")
+        return Response(PurchaseOrderAnalyticsService.compute(queryset, granularity=granularity))
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
             return WritePurchaseOrderSerializer
         return PurchaseOrderSerializer
-
-    def update(self, request, *args, **kwargs):
-        try:
-            PurchasingService.validate_editable(self.get_object())
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return super().update(request, *args, **kwargs)
-
-    def partial_update(self, request, *args, **kwargs):
-        try:
-            PurchasingService.validate_editable(self.get_object())
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return super().partial_update(request, *args, **kwargs)
-
-    def destroy(self, request, *args, **kwargs):
-        try:
-            PurchasingService.validate_can_purge(self.get_object(), request.user)
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=["get"])
     def cancel_impact(self, request, pk=None):
@@ -242,16 +236,25 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHist
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class PurchaseReceiptViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class PurchaseReceiptViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     serializer_class = PurchaseReceiptSerializer
     pagination_class = StandardResultsSetPagination
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    # ADR-0090: la lista de recepciones es una vista documental propia (orden por columna).
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = PurchaseReceiptFilter
     search_fields = [
         "number",
         "purchase_order__supplier__name",
         "purchase_order__number",
     ]
+    ordering_fields = [
+        "number",
+        "receipt_date",
+        "total_cost",
+        "status",
+        "purchase_order__supplier__name",
+    ]
+    ordering = ["-receipt_date", "-id"]
 
     def get_queryset(self):
         return PurchaseReceiptSelector.get_base_queryset()
@@ -269,7 +272,7 @@ class PurchaseReceiptViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHi
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class PurchaseReturnViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class PurchaseReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     def get_queryset(self):
         return PurchaseReturn.objects.select_related(
             "purchase_order__supplier", "warehouse"
@@ -278,6 +281,12 @@ class PurchaseReturnViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHis
         ).all()
     serializer_class = PurchaseReturnSerializer
     pagination_class = StandardResultsSetPagination
+    # ADR-0090: la lista de devoluciones de compra es una vista documental propia (filtros + orden).
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = PurchaseReturnFilter
+    search_fields = ["number", "purchase_order__supplier__name", "purchase_order__number"]
+    ordering_fields = ["number", "date", "total_cost", "status", "purchase_order__supplier__name"]
+    ordering = ["-date", "-id"]
 
     @action(detail=True, methods=["post"])
     def annul(self, request, pk=None):

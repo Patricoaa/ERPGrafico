@@ -2,15 +2,15 @@
 import { formatEntityDisplay, getEntityIcon, getDomainConceptTitle } from "@/lib/entity-registry"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronDown, X } from "lucide-react"
+import { Check, X } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { DataCell } from "@/components/shared"
 import { useDebounce } from "@/hooks/useDebounce"
 import { format } from "date-fns"
 import { WorkOrderWizard } from "@/features/production"
 import { useWorkOrderSearch } from "@/features/production/hooks/useWorkOrderSearch"
 import { LabeledContainer, SearchablePopover } from '@/components/shared'
+import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
 import { type WorkOrder } from "@/types/entities"
 
 const WorkOrderIcon = getEntityIcon('production.workorder')
@@ -30,7 +30,7 @@ interface AdvancedWorkOrderSelectorProps {
 export function AdvancedWorkOrderSelector({
     value,
     onChange,
-    placeholder = `Vincular a ${getDomainConceptTitle('ot')} (Opcional)...`,
+    placeholder = "Seleccionar...",
     disabled = false,
     label,
     error,
@@ -146,37 +146,26 @@ export function AdvancedWorkOrderSelector({
                         </div>
                     )}
                     trigger={
-                        <Button
-                            variant="ghost"
-                            role="combobox"
-                            aria-expanded={open}
+                        <SelectorTrigger
+                            hasValue={!!selectedOrder}
+                            placeholder={placeholder}
+                            open={open}
                             disabled={disabled}
-                            className={cn(
-                                "w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
-                                disabled && "opacity-50 cursor-not-allowed"
-                            )}
-                        >
-                            {selectedOrder ? (
-                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                    <WorkOrderIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                    <span className="font-semibold text-sm text-primary shrink-0">{formatEntityDisplay('production.workorder', selectedOrder as unknown as Record<string, unknown>)}</span>
-                                    <span className="text-sm text-muted-foreground truncate">{selectedOrder.product_name}</span>
+                            className={cn(disabled && "opacity-50 cursor-not-allowed")}
+                            chevronClassName="h-4 w-4 opacity-40"
+                            trailing={selectedOrder ? (
+                                <div
+                                    className="h-5 w-5 rounded-full bg-muted flex items-center justify-center hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                    onClick={clearSelection}
+                                >
+                                    <X className="h-3 w-3" />
                                 </div>
-                            ) : (
-                                <span className="text-muted-foreground italic text-sm truncate">{placeholder}</span>
-                            )}
-                            <div className="flex items-center gap-2">
-                                {selectedOrder && (
-                                    <div
-                                        className="h-5 w-5 rounded-full bg-muted flex items-center justify-center hover:bg-destructive/10 hover:text-destructive transition-colors"
-                                        onClick={clearSelection}
-                                    >
-                                        <X className="h-3 w-3" />
-                                    </div>
-                                )}
-                                <ChevronDown className="h-4 w-4 shrink-0 opacity-40" />
-                            </div>
-                        </Button>
+                            ) : undefined}
+                        >
+                            <WorkOrderIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
+                            <span className="text-sm text-primary shrink-0">{formatEntityDisplay('production.workorder', selectedOrder as unknown as Record<string, unknown>)}</span>
+                            <span className="text-sm text-muted-foreground truncate">{selectedOrder?.product_name}</span>
+                        </SelectorTrigger>
                     }
                 />
             </div>

@@ -47,6 +47,16 @@ export const paymentMethodUnifiedSearchDef: UnifiedSearchConfig = {
         { label: 'Cheque', value: 'CHECK' },
       ],
     },
+    {
+      type: 'single',
+      key: 'is_active',
+      label: 'Estado',
+      serverParam: 'is_active',
+      options: [
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
+      ],
+    },
   ],
 }
 
@@ -71,6 +81,16 @@ export const treasuryAccountUnifiedSearchDef: UnifiedSearchConfig = {
         { label: 'Préstamo Bancario', value: 'LOAN' },
         { label: 'Puente', value: 'BRIDGE' },
         { label: 'Cheques en Cartera', value: 'CHECK_PORTFOLIO' },
+      ],
+    },
+    {
+      type: 'single',
+      key: 'is_active',
+      label: 'Estado',
+      serverParam: 'is_active',
+      options: [
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
       ],
     },
   ],

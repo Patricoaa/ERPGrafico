@@ -1,28 +1,23 @@
 "use client"
 
-import {useState, useMemo} from "react"
-
-import { DataTableView, ToolbarCreateButton, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
-import type { UnifiedSearchConfig } from '@/types/unified-search'
-import { type ColumnDef } from "@tanstack/react-table"
-import { DataCell } from '@/components/shared'
-import { FadeIn } from "@/components/shared"
-import { userActions, type UserActionsCtx } from './userActions'
-import { userFields } from '../userFields'
-
-import { UserDrawer } from "@/features/users"
+import { useMemo, useState } from "react"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
+import { FadeIn, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { Collection, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { UserDrawer, useUsers } from "@/features/users"
 import { GroupsClientView } from "@/features/settings/components/GroupsClientView"
-
-import { type AppUser } from "@/types/entities"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import type { UnifiedSearchConfig } from "@/types/unified-search"
+import type { AppUser } from "@/types/entities"
+import { userEntity, userViews } from "../entity-view/user.entity"
+import { userActions, type UserActionsCtx } from "./userActions"
 
 interface UsersSettingsClientViewProps {
     activeTab: string
 }
 
-import { useUsers } from "@/features/users"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { useSearchParams, useRouter, usePathname } from "next/navigation"
+const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 
 export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewProps) {
     const config: UnifiedSearchConfig = useMemo(() => ({
@@ -40,8 +35,9 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
     }), [])
     const search = useUnifiedSearch(config)
     const isFiltered = search.isFiltered
-    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
-    const { page, users, isLoading, refetch } = useUsers({
+    // A new filter starts again at the first page.
+    const [pageState, setPageState] = useServerPage([search.filters], DEFAULT_PAGE)
+    const { page, users, isLoading, isRefetching, isError, refetch } = useUsers({
         ...search.filters,
         page: pageState.pageIndex + 1,
         page_size: pageState.pageSize,
@@ -66,23 +62,13 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
         },
     }
 
-    const columns: ColumnDef<AppUser>[] = useMemo(() => [
-        ...userFields.toColumns(),
-        {
-            id: "contact",
-            header: "Contacto",
-            cell: ({ row }) => {
-                const contactId = row.original.contact
-                const fullName = `${row.original.first_name || ''} ${row.original.last_name || ''}`.trim()
-                const displayName = fullName || row.original.username
-
-                if (!contactId) return <div className="text-muted-foreground text-sm font-bold text-center">{displayName}</div>
-
-                return <DataCell.ContactLink contactId={contactId}>{displayName}</DataCell.ContactLink>
-            },
-        },
-        userActions.auto(actionsCtx)
-    ], [refetch])
+    const { view, onViewChange } = useCollectionViewMode("core.user")
+    const collection = useEntityCollection(
+        userEntity,
+        { rows: users, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch, isFiltered },
+        // No `sorting`: with server pagination the core disables sorting (the users endpoint has no ordering yet).
+        { pagination: { mode: "server", state: pageState, onChange: setPageState } },
+    )
 
     const usersCreateAction = useMemo(() => (
         <UserDrawer
@@ -103,49 +89,27 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
             <Tabs value={activeTab} className="h-full flex flex-col">
                 <FadeIn key={activeTab} className="flex-1 min-h-0">
                     <TabsContent value="users" className="mt-0 outline-none space-y-4 h-full flex flex-col">
-                        <div className="flex-1 min-h-0">
-                            <DataTableView
-                                entityLabel="core.user"
-                                columns={columns}
-                                data={users}
-                                variant="embedded"
-                                isLoading={isLoading}
-                                unifiedSearch={<UnifiedSearchBar
+                        <Collection.Root
+                            collection={collection}
+                            view={view}
+                            onViewChange={onViewChange}
+                            onOpen={(user) => actionsCtx.onEdit(user.id)}
+                            actions={userActions.forCollection(actionsCtx)}
+                        >
+                            <Collection.Toolbar action={usersCreateAction}>
+                                <UnifiedSearchBar
                                     config={config}
-                                    chips={search.chips}
-                                    isFiltered={search.isFiltered}
-                                    inputValue={search.inputValue}
-                                    onInputChange={search.setInputValue}
-                                    onApply={search.applyFilter}
-                                    onRemove={search.removeFilter}
-                                    onClearAll={search.clearAll}
-                                    groupBy={search.groupBy}
-                                    onGroupBySelect={search.setGroupBy}
-                                    paramValues={search.paramValues}
+                                    {...bindUnifiedSearch(search)}
                                     placeholder="Buscar usuario por nombre, email o username..."
-                                />}
-                                showReset={isFiltered}
-                                onReset={search.clearAll}
-                                isFiltered={isFiltered}
-                                createAction={usersCreateAction}
-                                manualPagination
-                                pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
-                                rowCount={page?.count ?? 0}
-                                pagination={pageState}
-                                onPaginationChange={setPageState as unknown as (updater: ((prev: typeof pageState) => typeof pageState) | typeof pageState) => void}
-                                renderCard={(user: AppUser) => (
-                                        <AutoEntityCard 
-                                            key={user.id} 
-                                            data={user}
-                                            fields={userFields}
-
-                                            entityLabel="settings.user"
-                                            onClick={() => actionsCtx.onEdit(user.id)}
-                                            actions={userActions.render(user, actionsCtx)}
-                                        />
-                                )}
+                                />
+                            </Collection.Toolbar>
+                            <Collection.View
+                                table={userViews.table}
+                                card={userViews.card}
+                                emptyAction={usersCreateAction}
+                                onResetFilters={search.clearAll}
                             />
-                        </div>
+                        </Collection.Root>
                             <UserDrawer
                                 open={isUserModalOpen}
                                 onOpenChange={(open) => {

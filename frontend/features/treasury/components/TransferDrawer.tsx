@@ -14,7 +14,7 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { useTreasuryAccounts } from "@/features/treasury/hooks/useTreasuryAccounts"
 import { useTransfer } from "@/features/treasury/hooks/useTransfer"
 import { Form, FormField } from "@/components/ui/form"
-import { CancelButton, LabeledInput, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, Drawer, MoneyDisplay, SkeletonShell } from "@/components/shared"
+import { CancelButton, LabeledInput, FormSection, FormFooter, FormSplitLayout, SubmitButton, Drawer, MoneyDisplay, SkeletonShell } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 const transferSchema = z.object({
@@ -127,14 +127,14 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                         actions={
                             <>
                                 <CancelButton onClick={() => onOpenChange(false)} disabled={isCreating} />
-                                <ActionSlideButton
+                                <SubmitButton
                                     loading={isCreating}
                                     onClick={form.handleSubmit(onSubmit)}
                                     disabled={isCreating || !isDateValid}
-                                    className="bg-warning hover:bg-warning/90 shadow-warning/10"
+                                    className="bg-warning hover:bg-warning/90 text-warning-foreground shadow-warning/10"
                                 >
                                     Confirmar Traspaso
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />

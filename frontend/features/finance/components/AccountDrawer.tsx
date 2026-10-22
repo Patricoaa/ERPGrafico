@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
+import { frozenFieldsOf } from "@/lib/edit-policy"
 import { showApiError } from "@/lib/errors"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Plus } from "lucide-react"
+import { Plus, Book, Search } from "lucide-react"
 import {
     Form,
     FormField,
@@ -15,10 +16,18 @@ import { Button } from "@/components/ui/button"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccountMutations } from "@/features/accounting"
 import { type AccountPayload } from "@/features/accounting"
-import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, FormSplitLayout, ActionSlideButton } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, FormSplitLayout, SubmitButton, TabBar, TabBarContent, UnifiedSearchBar, DateRangeFilter, SkeletonShell, useUnifiedSearch, type UnifiedSearchConfig } from "@/components/shared"
+import { Collection, useEntityCollection } from "@/components/entity-view"
 import { ActivitySidebar } from "@/features/audit"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useLedger } from "@/features/accounting/hooks/useLedger"
+import { LedgerSummaryPanel } from "@/features/accounting/components/LedgerSummaryPanel"
+import { ledgerMovementEntity, ledgerMovementDrawerViews } from "@/features/accounting"
+import { ledgerMovementActions, type LedgerMovementActionsCtx } from "@/features/accounting/components/ledgerMovementActions"
+import { JournalEntryDrawer } from "@/features/accounting/components/JournalEntryDrawer"
+import { format } from "date-fns"
+import { useServerDate } from "@/hooks/useServerDate"
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),
@@ -96,7 +105,7 @@ export function AccountDrawer({
     const isEditMode = !!initialData?.id
     const init = initialData as Record<string, unknown> | undefined
     const hasParent = isEditMode && !!init?.parent
-    const hasPostedItems = isEditMode && !!init?.has_posted_items
+    const frozen = frozenFieldsOf(initialData)
     const hasChildren = isEditMode && !init?.is_selectable
 
     useInitializeDrawerForm({
@@ -174,7 +183,6 @@ export function AccountDrawer({
                     render={({ field }) => (
                         <LabeledInput
                             label="Código"
-                            placeholder="Auto"
                             disabled={true}
                             hint="Jerárquico"
                             {...field}
@@ -205,7 +213,7 @@ export function AccountDrawer({
                             value={field.value}
                             onChange={field.onChange}
                             error={fieldState.error?.message}
-                            disabled={isViewMode || hasParent || hasPostedItems || hasChildren || (!!parentId && parentId !== "__none__" && parentId !== "none")}
+                            disabled={isViewMode || hasParent || frozen.has("account_type") || hasChildren || (!!parentId && parentId !== "__none__" && parentId !== "none")}
                             options={[
                                 { value: "ASSET", label: "Activo" },
                                 { value: "LIABILITY", label: "Pasivo" },
@@ -225,15 +233,57 @@ export function AccountDrawer({
                             value={field.value}
                             onChange={field.onChange}
                             showAll={true}
-                            placeholder="Sin padre (Raíz)"
                             error={fieldState.error?.message}
-                            disabled={isViewMode || hasPostedItems || hasChildren}
+                            disabled={isViewMode || frozen.has("parent") || hasChildren}
                         />
                     )}
                 />
             </form>
         </Form>
     )
+
+    // Ledger tab state
+    const [activeTab, setActiveTab] = useState<"form" | "ledger">("form")
+    const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | undefined>(undefined)
+    const { serverDate } = useServerDate()
+
+    useEffect(() => {
+        if (serverDate && !dateRange && activeTab === "ledger") {
+            requestAnimationFrame(() => {
+                setDateRange({
+                    from: new Date(serverDate.getFullYear(), serverDate.getMonth(), 1),
+                    to: serverDate
+                })
+            })
+        }
+    }, [serverDate, dateRange, activeTab])
+
+    // Fetch ledger data only when on ledger tab and have account ID
+    const accountId = initialData?.id as number | undefined
+    const startStr = dateRange ? format(dateRange.from, 'yyyy-MM-dd') : ''
+    const endStr = dateRange ? format(dateRange.to, 'yyyy-MM-dd') : ''
+    const { data: ledgerData, isLoading: ledgerLoading } = useLedger(accountId ?? 0, startStr, endStr)
+
+    // UnifiedSearch for ledger movements
+    const ledgerSearchConfig = useMemo<UnifiedSearchConfig>(() => ({
+        searchFields: [
+            { key: 'description', label: 'Descripción', serverParam: 'search', clientKey: ['description', 'label'] },
+        ],
+    }), [])
+    const ledgerSearch = useUnifiedSearch(ledgerSearchConfig)
+
+    const handleTabChange = useCallback((value: string) => {
+        setActiveTab(value as "form" | "ledger")
+    }, [])
+
+    const identity = useDrawerIdentity('accounting.account', mode, initialData as Record<string, unknown> | undefined, {
+        overrideTitle: isViewMode ? `Ficha de Cuenta #${initialData?.id}` : undefined,
+        overrideSubtitle: isViewMode
+            ? `${(initialData?.code as string) || ""} • ${form.watch("name") || "Vista de detalle"}`
+            : `${(initialData?.code as string) || ""} • ${form.watch("name") || "Plan de Cuentas • Contabilidad General"}`,
+        printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
+        onPrint: handlePrint,
+    })
 
     const formContent = (
         <FormSplitLayout
@@ -246,14 +296,114 @@ export function AccountDrawer({
         </FormSplitLayout>
     )
 
-    const identity = useDrawerIdentity('accounting.account', mode, initialData as Record<string, unknown> | undefined, {
-        overrideTitle: isViewMode ? `Ficha de Cuenta #${initialData?.id}` : undefined,
-        overrideSubtitle: isViewMode
-            ? `${(initialData?.code as string) || ""} • ${form.watch("name") || "Vista de detalle"}`
-            : `${(initialData?.code as string) || ""} • ${form.watch("name") || "Plan de Cuentas • Contabilidad General"}`,
-        printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
-        onPrint: handlePrint,
-    })
+    const filteredMovements = useMemo(() => ledgerSearch.filterFn(ledgerData?.movements ?? []), [ledgerSearch.filterFn, ledgerData?.movements])
+
+    const [viewingEntry, setViewingEntry] = useState<{ id: number | string } | null>(null)
+
+    const openEntry = (id: number | string) => {
+        setViewingEntry({ id })
+    }
+
+    const closeEntry = () => {
+        setViewingEntry(null)
+    }
+
+    const collection = useEntityCollection(
+        ledgerMovementEntity,
+        { rows: filteredMovements },
+        { pagination: { mode: "none" } },
+    )
+
+    const ledgerMovementActionsCtx: LedgerMovementActionsCtx = {
+        onViewEntry: (entryId: number) => openEntry(entryId),
+    }
+
+    const ledgerContent = accountId ? (
+        <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
+            <SkeletonShell isLoading={ledgerLoading} ariaLabel="Cargando libro mayor">
+                <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden gap-4 p-6">
+                    {dateRange && (
+                        <LedgerSummaryPanel
+                            openingBalance={ledgerData?.opening_balance}
+                            periodDebit={ledgerData?.period_debit}
+                            periodCredit={ledgerData?.period_credit}
+                            closingBalance={ledgerData?.closing_balance}
+                            fromDate={dateRange?.from}
+                            toDate={dateRange?.to}
+                        />
+                    )}
+
+                    {/* Table — fills remaining height */}
+                    <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                        {dateRange ? (
+                            <Collection.Root
+                                collection={collection}
+                                actions={ledgerMovementActions.forCollection(ledgerMovementActionsCtx)}
+                                onOpen={(mov) => openEntry(mov.entry_id)}
+                            >
+                                <Collection.Toolbar>
+                                    <UnifiedSearchBar
+                                        config={ledgerSearchConfig}
+                                        chips={ledgerSearch.chips}
+                                        isFiltered={ledgerSearch.isFiltered}
+                                        inputValue={ledgerSearch.inputValue}
+                                        onInputChange={ledgerSearch.setInputValue}
+                                        onApply={ledgerSearch.applyFilter}
+                                        onRemove={ledgerSearch.removeFilter}
+                                        onClearAll={ledgerSearch.clearAll}
+                                        groupBy={ledgerSearch.groupBy}
+                                        onGroupBySelect={ledgerSearch.setGroupBy}
+                                        paramValues={ledgerSearch.paramValues}
+                                        placeholder="Buscar por descripción..."
+                                        toolbarActions={
+                                            <DateRangeFilter
+                                                defaultRange={dateRange || undefined}
+                                                onDateChange={(range) => {
+                                                    if (range?.from && range?.to) {
+                                                        setDateRange({ from: range.from, to: range.to })
+                                                    }
+                                                }}
+                                                className="bg-background border-none shadow-none rounded-sm"
+                                                variant="outline"
+                                            />
+                                        }
+                                    />
+                                </Collection.Toolbar>
+                                <Collection.View
+                                    table={ledgerMovementDrawerViews.table}
+                                    emptyTitle="Sin movimientos"
+                                    emptyDescription="No hay movimientos para el período seleccionado."
+                                />
+                            </Collection.Root>
+                        ) : (
+                            <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                                Seleccione un rango de fechas para ver los movimientos.
+                            </div>
+                        )}
+                    </div>
+
+                    {viewingEntry && (
+                        <JournalEntryDrawer
+                            journalEntryId={Number(viewingEntry.id)}
+                            mode="view"
+                            open={!!viewingEntry}
+                            onOpenChange={(open) => !open && closeEntry()}
+                            side="left"
+                        />
+                    )}
+                </div>
+            </SkeletonShell>
+        </div>
+    ) : (
+        <div className="flex-1 flex items-center justify-center text-muted-foreground p-6">
+            Seleccione una cuenta para ver su Libro Mayor.
+        </div>
+    )
+
+    const tabs = [
+        { value: "form", label: "Ficha", icon: Book },
+        { value: "ledger", label: "Libro Mayor", icon: Book },
+    ] as const
 
     if (inline) {
         return <>{formContent}</>
@@ -300,15 +450,29 @@ export function AccountDrawer({
                         actions={
                             <>
                                 <CancelButton onClick={() => setOpen(false)} />
-                                <ActionSlideButton type="submit" form="account-form" loading={loading}>
+                                <SubmitButton type="submit" form="account-form" loading={loading}>
                                     {mode === 'create' ? "Crear Cuenta" : "Guardar Cambios"}
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />
                 )}
             >
-                {formContent}
+                <TabBar
+                    items={tabs.map((t, i) => ({ ...t, badge: i === 1 && filteredMovements.length ? filteredMovements.length : undefined }))}
+                    value={activeTab}
+                    onValueChange={handleTabChange}
+                    variant="underline"
+                    className="flex-1 flex flex-col overflow-hidden"
+                    contentClassName="bg-transparent"
+                >
+                    <TabBarContent value="form" className="mt-0 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                        {formContent}
+                    </TabBarContent>
+                    <TabBarContent value="ledger" className="mt-0 flex flex-1 flex-col min-h-0 overflow-hidden">
+                        {ledgerContent}
+                    </TabBarContent>
+                </TabBar>
             </Drawer>
         </>
     )

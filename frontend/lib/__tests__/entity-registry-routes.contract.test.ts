@@ -39,3 +39,54 @@ describe("ENTITY_REGISTRY detail routes", () => {
         expect(broken).toEqual([])
     })
 })
+
+/**
+ * ADR-0087 lote 2 (TC-041): `listUrl` is a static list page. A literal segment must match a literal
+ * route segment: `/inventory/products/units` used to "resolve" through `/inventory/products/[id]`.
+ */
+function hasStaticRoute(url: string, routes: string[]): boolean {
+    const path = url.split("?")[0].replace(/\/+$/, "") || "/"
+    return routes.includes(path)
+}
+
+/**
+ * Ratchet: entries whose `listUrl` points to a page that does not exist (measured 2026-10-17, see the
+ * issue linked in docs/50-audit/Tablascards/ledger.md TC-042). Fixing one = removing it from this list.
+ */
+const KNOWN_BROKEN_LIST_URLS = [
+    "accounting.budget",
+    "inventory.attribute",
+    "inventory.inventorycount",
+    "inventory.stockmove",
+    "inventory.stockreport",
+    "inventory.warehouse",
+    "pos.session",
+    "pos.terminal",
+    "sales.posterminal",
+    "settings.partner",
+    "tax.accountingperiod",
+    "tax.f29declaration",
+    "tax.taxperiod",
+    "treasury.bankloan",
+    "treasury.cardpendingcharge",
+    "treasury.cardstatement",
+    "treasury.loaninstallment",
+    "treasury.transfer",
+    "treasury.unbilledcharge",
+    "workflow.task",
+]
+
+describe("ENTITY_REGISTRY list routes", () => {
+    const routes = collectRoutes(APP_DIR)
+    const broken = Object.values(ENTITY_REGISTRY)
+        .filter((meta) => meta.listUrl && !hasStaticRoute(meta.listUrl, routes))
+        .map((meta) => meta.label)
+
+    it("no new listUrl points to a missing page", () => {
+        expect(broken.filter((label) => !KNOWN_BROKEN_LIST_URLS.includes(label))).toEqual([])
+    })
+
+    it("every known-broken entry is still broken (remove fixed ones from the list)", () => {
+        expect(KNOWN_BROKEN_LIST_URLS.filter((label) => !broken.includes(label))).toEqual([])
+    })
+})

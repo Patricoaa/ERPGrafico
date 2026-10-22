@@ -2,40 +2,31 @@
 
 import { showApiError } from "@/lib/errors"
 
-import React, { useEffect, useState, useMemo } from "react"
+import React, { useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { ActionConfirmModal, DataTableView } from '@/components/shared'
-
-import { type ColumnDef } from "@tanstack/react-table"
-
-import type { BulkAction } from "@/components/shared"
-import type { Page } from '@/lib/pagination'
+import { ActionConfirmModal, AnalyticsPanelContent, type BulkAction } from '@/components/shared'
+import { Collection, GROUP_ROW_LIMIT, orderingParam, useCollectionViewMode, useEntityCollection, useServerPage, type FieldId, type SortSpec } from "@/components/entity-view"
+import { toPage } from '@/lib/pagination'
 import { ProductDrawer } from "./ProductDrawer"
 import type { ProductInitialData } from "@/types/forms"
-import { Plus, AlertTriangle, BarChart3, Boxes, Package, Store, ShoppingCart, ShoppingBag, Warehouse } from "lucide-react"
-import type { LucideIcon } from "lucide-react"
-import * as LucideIcons from "lucide-react"
+import { Plus, AlertTriangle } from "lucide-react"
 import { toast } from "sonner"
-import { resolveMediaUrl } from "@/features/inventory/api/inventoryApi"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"
+import { ProductInsightsDrawer } from "./ProductInsightsDrawer"
 import { StockReport } from "./StockReport"
-import { ProductInsightsPanel } from "./ProductInsightsPanel"
-import type { StockReportItem } from "@/features/inventory/stockReportFields"
+import { buildProductAnalyticsScreen } from "./productAnalyticsScreen"
+import type { StockReportItem } from "@/features/inventory/entity-view/stockReport.entity"
 
-import { AutoEntityCard } from "@/components/shared"
-import { productFields } from "@/features/inventory/productFields"
-import { useProducts } from "@/features/inventory/hooks/useProducts"
+import { productEntity, productViews } from "../entity-view/product.entity"
+import { DEFAULT_PRODUCT_LIST_QUERY, useProducts } from "@/features/inventory/hooks/useProducts"
 import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { useProductAnalytics } from "@/features/inventory/hooks/useProductAnalytics"
-import type { AnalyticsPanelConfig } from "@/components/shared"
-import { formatQuantity } from "@/lib/money"
 import { type Product, type Restriction, type ProductFilters } from "@/features/inventory/types"
 import { productActions, type ProductActionsCtx } from "@/features/inventory/productActions"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { productUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 
@@ -43,16 +34,25 @@ interface ProductClientViewProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
     createAction?: React.ReactNode
-    initialProducts?: Product[]
+    /** Server-rendered first page of the default query (page 1, no filters, server order). */
+    initialPage?: InitialProductPage
 }
 
-export function ProductClientView({ externalOpen, onExternalOpenChange, createAction, initialProducts }: ProductClientViewProps) {
+/** DRF envelope of the server-rendered first page (pagination-contract §1.1). */
+export interface InitialProductPage {
+    results: Product[]
+    count: number
+    next: string | null
+    previous: string | null
+}
+
+const DEFAULT_PAGE: { pageIndex: number; pageSize: number } = { pageIndex: 0, pageSize: DEFAULT_PRODUCT_LIST_QUERY.page_size }
+
+/** Search group keys → entity field ids (grouping uses the same formatted text as the cell). */
+const PRODUCT_GROUPS: Record<string, FieldId<typeof productEntity.fields>> = { product_type: "type", category_name: "category" }
+
+export function ProductClientView({ externalOpen, onExternalOpenChange, createAction, initialPage }: ProductClientViewProps) {
     const { categories: categoryOptions } = useCategories()
-    const categoryIconMap = useMemo(() => {
-        const map = new Map<number, string | undefined>()
-        for (const cat of (categoryOptions ?? [])) map.set(cat.id, cat.icon)
-        return map
-    }, [categoryOptions])
     const config: UnifiedSearchConfig = useMemo(() => ({
         ...productUnifiedSearchDef,
         filters: [
@@ -93,10 +93,18 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         }
     }, [search.filters])
 
-    const isGrouping = search.groupBy !== null
-    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
+    const groupBy = search.groupBy ? PRODUCT_GROUPS[search.groupBy] ?? null : null
+    const isGrouping = groupBy !== null
+    const [sort, setSort] = useState<SortSpec<FieldId<typeof productEntity.fields>> | null>(null)
+    // A new filter, sort or grouping starts again at the first page.
+    const [pageState, setPageState] = useServerPage([filters, sort, groupBy], DEFAULT_PAGE)
+    // Server order by default (no sort): the header only claims an order the server applied.
+    const { view, onViewChange } = useCollectionViewMode("inventory.product")
     const viewParam = searchParams.get('view')
-    const initialAnalyticsTab = viewParam && ['resumen', 'ventas', 'compras', 'existencias'].includes(viewParam) ? viewParam : 'resumen'
+    const isTabParam = !!viewParam && ['resumen', 'ventas', 'compras', 'existencias'].includes(viewParam)
+    const initialAnalyticsTab = isTabParam && viewParam ? viewParam : 'resumen'
+    // ?view=resumen|ventas|… (analytics tab links) opens the analytics view on that tab.
+    const activeView = isTabParam ? "analytics" : view
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState(initialAnalyticsTab)
     const [selectedStockProduct, setSelectedStockProduct] = useState<StockReportItem | null>(null)
 
@@ -108,26 +116,22 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         can_be_purchased: filters.can_be_purchased,
         is_active: filters.is_active,
     }
-    const resumenData = useProductAnalytics(analyticsFilters)
-    const ventasData = useProductAnalytics({ ...analyticsFilters, can_be_sold: true, price_field: "sale" })
-    const comprasData = useProductAnalytics({ ...analyticsFilters, can_be_purchased: true, price_field: "cost" })
+    // Figures over the whole filtered catalog, fetched only while the analytics view is open.
+    const analyticsEnabled = activeView === "analytics"
+    const resumenData = useProductAnalytics(analyticsFilters, analyticsEnabled)
+    const ventasData = useProductAnalytics({ ...analyticsFilters, can_be_sold: true, price_field: "sale" }, analyticsEnabled)
+    const comprasData = useProductAnalytics({ ...analyticsFilters, can_be_purchased: true, price_field: "cost" }, analyticsEnabled)
 
-    const { page, products, isLoading, refetch, updateProduct } = useProducts({
-        filters,
+    // Grouping loads one bounded page (GROUP_ROW_LIMIT); the collection warns when it is truncated.
+    const { page, products, isLoading, isRefetching, isError, refetch, updateProduct } = useProducts({
+        filters: { ...filters, ordering: orderingParam(productEntity, sort) },
         page: isGrouping ? 1 : pageState.pageIndex + 1,
-        page_size: isGrouping ? 200 : pageState.pageSize,
-        initialData: initialProducts ? { results: initialProducts, count: initialProducts.length } as Page<Product> : undefined,
+        page_size: isGrouping ? GROUP_ROW_LIMIT : pageState.pageSize,
+        // Only reused by the hook while the query is still the default one it was rendered for.
+        initial: initialPage
+            ? { page: toPage<Product>(initialPage, 1, DEFAULT_PRODUCT_LIST_QUERY.page_size), params: DEFAULT_PRODUCT_LIST_QUERY }
+            : undefined,
     })
-
-    const totalCount = page?.count ?? 0
-    const isOverLimit = isGrouping && totalCount > 200
-    const effectiveGrouping = isGrouping && !isOverLimit
-
-    useEffect(() => {
-        if (isOverLimit) {
-            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
-        }
-    }, [isOverLimit, totalCount])
 
 
     // Restrictions state
@@ -137,7 +141,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     const [isRetrying, setIsRetrying] = useState(false)
     const [currentArchivingProduct, setCurrentArchivingProduct] = useState<Product | null>(null)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
-    const displayProducts = React.useMemo(() => products, [products])
 
     const { entity: selectedFromUrl, clearSelection: clearUrlSelection } = useSelectedEntity<Product>({
         endpoint: '/inventory/products'
@@ -212,53 +215,13 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         onArchive: (product) => handleArchive(product),
     }
 
-    const columns = useMemo<ColumnDef<Product>[]>(() => [
-        {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={
-                        table.getIsAllPageRowsSelected()
-                            ? true
-                            : table.getIsSomePageRowsSelected()
-                            ? "indeterminate"
-                            : false
-                    }
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                    className="translate-y-[2px]"
-                    variant="circle"
-                />
-            ),
-            cell: ({ row }) => {
-                const isChild = row.original.is_child_variant;
-                if (isChild) return null;
-                return (
-                    <Checkbox
-                        checked={row.getIsSelected()}
-                        onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label="Select row"
-                        className="translate-y-[2px]"
-                        variant="circle"
-                    />
-                )
-            },
-            enableSorting: false,
-            enableHiding: false,
-            size: 40,
-            minSize: 40,
-        },
-        ...productFields.toColumns(),
-        productActions.auto(actionsCtx),
-    ], [actionsCtx])
-
     const bulkActions = useMemo<BulkAction<Product>[]>(() => [
         {
             key: "restore",
             label: "Restaurar",
             icon: Plus,
             intent: "success",
-            disabled: (items) => items.length === 0 || !items.every(p => !p.is_active),
+            hidden: (items) => items.length === 0 || !items.every(p => !p.is_active),
             onClick: async (items) => {
                 try {
                     await Promise.all(items.map(p => updateProduct({ id: p.id, payload: { is_active: true } })))
@@ -274,7 +237,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             label: "Archivar",
             icon: ArchiveIcon,
             intent: "destructive",
-            disabled: (items) => items.length === 0 || !items.every(p => p.is_active),
+            hidden: (items) => items.length === 0 || !items.every(p => p.is_active),
             onClick: async (items) => {
                 try {
                     await Promise.all(items.map(p => updateProduct({ id: p.id, payload: { is_active: false } })))
@@ -287,376 +250,83 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         },
     ], [updateProduct, refetch])
 
-    const analyticsPanel: AnalyticsPanelConfig = useMemo(() => ({
-        screen: {
-            entityName: "Inventario de Productos",
-            activeTab: analyticsActiveTab,
-            onTabChange: setAnalyticsActiveTab,
-            tabs: [
-                {
-                    value: "resumen",
-                    label: "Resumen",
-                    icon: BarChart3,
-                    gridRows: "max-content 1fr",
-                    columns: [
-                        {
-                            id: "col-resumen-1",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "kpi-total-products",
-                                    colSpan: 1,
-                                    fillRemaining: false,
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Total Productos",
-                                            value: formatQuantity(resumenData.summary.totalProducts),
-                                            icon: Package,
-                                            accent: "primary",
-                                            valueSize: "xl",
-                                            loading: resumenData.analyticsLoading,
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "type-distribution",
-                                    colSpan: 1,
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Distribución por Tipo",
-                                            variant: "chart",
-                                            loading: resumenData.analyticsLoading,
-                                            subtext: "Proporción del catálogo por tipo de producto",
-                                            chart: { type: "pie-chart", preset: "card", data: resumenData.typePie, valueFormat: "number", compact: true },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                        {
-                            id: "col-resumen-2",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "kpi-with-stock",
-                                    colSpan: 1,
-                                    fillRemaining: false,
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Con Stock",
-                                            value: formatQuantity(resumenData.summary.withStock),
-                                            icon: Boxes,
-                                            accent: "success",
-                                            valueSize: "xl",
-                                            loading: resumenData.analyticsLoading,
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "availability-distribution",
-                                    colSpan: 1,
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Disponibilidad",
-                                            variant: "chart",
-                                            loading: resumenData.analyticsLoading,
-                                            subtext: "Productos para ventas vs compras",
-                                            chart: { type: "pie-chart", preset: "card", data: resumenData.availabilityPie, valueFormat: "number", compact: true },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                        {
-                            id: "col-resumen-3",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "kpi-out-of-stock",
-                                    colSpan: 1,
-                                    fillRemaining: false,
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Agotados",
-                                            value: formatQuantity(resumenData.summary.outOfStock),
-                                            icon: Store,
-                                            accent: "warning",
-                                            valueSize: "xl",
-                                            loading: resumenData.analyticsLoading,
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "category-distribution",
-                                    colSpan: 1,
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Distribución por Categoría",
-                                            variant: "chart",
-                                            loading: resumenData.analyticsLoading,
-                                            subtext: "Productos por categoría",
-                                            chart: { type: "pie-chart", preset: "card", data: resumenData.categoryPie, valueFormat: "number", compact: true },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                    ],
-                },
-                {
-                    value: "ventas",
-                    label: "Ventas",
-                    icon: ShoppingCart,
-                    gridRows: "max-content 1fr",
-                    columns: [
-                        {
-                            id: "col-ventas-1",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "kpi-sellable",
-                                    colSpan: 2,
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Disponibles para Venta",
-                                            value: formatQuantity(ventasData.summary.totalProducts),
-                                            icon: ShoppingCart,
-                                            accent: "primary",
-                                            valueSize: "xl",
-                                            loading: ventasData.analyticsLoading,
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "ventas-type-distribution",
-                                    colSpan: 1,
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Distribución por Tipo",
-                                            variant: "chart",
-                                            loading: ventasData.analyticsLoading,
-                                            subtext: "Tipos de producto vendibles",
-                                            chart: { type: "pie-chart", preset: "card", data: ventasData.typePie, valueFormat: "number", compact: true },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                        {
-                            id: "col-ventas-2",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "ventas-price-range",
-                                    colSpan: 1,
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Rango de Precio de Venta",
-                                            variant: "chart",
-                                            loading: ventasData.analyticsLoading,
-                                            subtext: "Productos vendibles por rango de precio de lista",
-                                            chart: { type: "bar-chart", preset: "card", data: ventasData.priceRangeBar, keys: ["productos"], indexBy: "rango", axisBottomLegend: "Rango", axisLeftLegend: "Productos" },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                    ],
-                },
-                {
-                    value: "compras",
-                    label: "Compras",
-                    icon: ShoppingBag,
-                    gridRows: "max-content 1fr",
-                    columns: [
-                        {
-                            id: "col-compras-1",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "kpi-purchasable",
-                                    colSpan: 2,
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Disponibles para Compra",
-                                            value: formatQuantity(comprasData.summary.totalProducts),
-                                            icon: ShoppingBag,
-                                            accent: "primary",
-                                            valueSize: "xl",
-                                            loading: comprasData.analyticsLoading,
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "compras-type-distribution",
-                                    colSpan: 1,
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Distribución por Tipo",
-                                            variant: "chart",
-                                            loading: comprasData.analyticsLoading,
-                                            subtext: "Tipos de producto comprables",
-                                            chart: { type: "pie-chart", preset: "card", data: comprasData.typePie, valueFormat: "number", compact: true },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                        {
-                            id: "col-compras-2",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "compras-price-range",
-                                    colSpan: 1,
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Rango de Precio de Compra",
-                                            variant: "chart",
-                                            loading: comprasData.analyticsLoading,
-                                            subtext: "Productos comprables por rango de costo ponderado",
-                                            chart: { type: "bar-chart", preset: "card", data: comprasData.priceRangeBar, keys: ["productos"], indexBy: "rango", axisBottomLegend: "Rango", axisLeftLegend: "Productos" },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                    ],
-                },
-                {
-                    value: "existencias",
-                    label: "Existencias",
-                    icon: Warehouse,
-                    gridRows: "1fr",
-                    columns: [
-                        {
-                            id: "col-existencias-1",
-                            weight: 1,
-                            sections: [
-                                {
-                                    id: "stock-report-embedded",
-                                    colSpan: 1,
-                                    fillRemaining: true,
-                                    content: {
-                                        type: "custom",
-                                        render: (
-                                            <StockReport
-                                                externalFilters={{
-                                                    search: filters.search,
-                                                    category: filters.category !== undefined ? String(filters.category) : undefined,
-                                                    product_type: filters.product_type,
-                                                    is_active: filters.is_active !== undefined ? String(filters.is_active) : undefined,
-                                                }}
-                                                onSelectProduct={setSelectedStockProduct}
-                                                selectedProduct={selectedStockProduct}
-                                            />
-                                        ),
-                                    },
-                                },
-                            ],
-                        },
-                    ],
-                },
-            ],
+    const analyticsScreen = useMemo(
+        () => buildProductAnalyticsScreen(
+            { resumen: resumenData, ventas: ventasData, compras: comprasData },
+            {
+                activeTab: analyticsActiveTab,
+                onTabChange: setAnalyticsActiveTab,
+                stockReport: (
+                    <StockReport
+                        externalFilters={{
+                            search: filters.search,
+                            category: filters.category !== undefined ? String(filters.category) : undefined,
+                            product_type: filters.product_type,
+                            is_active: filters.is_active !== undefined ? String(filters.is_active) : undefined,
+                        }}
+                        onSelectProduct={setSelectedStockProduct}
+                        selectedProduct={selectedStockProduct}
+                    />
+                ),
+            },
+        ),
+        [analyticsActiveTab, resumenData, ventasData, comprasData, filters],
+    )
+
+    const collection = useEntityCollection(
+        productEntity,
+        { rows: products, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
+        {
+            pagination: isGrouping ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState },
+            sorting: { mode: "server", state: sort, onChange: setSort },
+            groupBy,
         },
-    }), [analyticsActiveTab, resumenData, ventasData, comprasData, filters, selectedStockProduct])
+    )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    entityLabel="inventory.product"
-                    columns={columns}
-                    data={displayProducts}
-                    isLoading={isLoading}
-                    variant="embedded"
-                    manualPagination={!effectiveGrouping}
-                    pageCount={effectiveGrouping ? 1 : page ? Math.ceil(page.count / page.pageSize) : 0}
-                    rowCount={page?.count ?? 0}
-                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 200 } : pageState}
-                    onPaginationChange={effectiveGrouping ? undefined : setPageState}
-                    unifiedSearch={<UnifiedSearchBar
+            <Collection.Root
+                collection={collection}
+                selection="bulk"
+                view={activeView}
+                onViewChange={onViewChange}
+                onOpen={(product) => openSelected(product.id)}
+                actions={productActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar
                         config={config}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
+                        {...bindUnifiedSearch(search)}
                         placeholder="Buscar producto..."
-                    />}
-                    unifiedSearchConfig={config}
-                    currentGroupBy={effectiveGrouping ? search.groupBy : null}
-                    showReset={search.isFiltered}
-                    isFiltered={search.isFiltered}
-                    onReset={search.clearAll}
-                    renderCard={(product: Product) => {
-                        const iconName = categoryIconMap.get(product.category_id)
-                        const fallbackIcon = iconName
-                            ? (LucideIcons as unknown as Record<string, LucideIcon | undefined>)[iconName]
-                            : undefined
-                        const imageUrl = (product.image ?? product.image_thumbnail) ? resolveMediaUrl(product.image ?? product.image_thumbnail) ?? undefined : undefined
-
-                        return (
-                            <AutoEntityCard 
-                                key={product.id}
-                                data={product}
-                                fields={productFields}
-                                entityLabel="inventory.product"
-                                imageSrc={imageUrl}
-                                icon={imageUrl ? undefined : (fallbackIcon ?? LucideIcons.Package)}
-                                iconClassName="bg-muted"
-                                actions={productActions.render(product, actionsCtx)}
-                                defaultAction={productActions.defaultAction(actionsCtx)?.(product) ?? null} 
-                                onClick={() => openSelected(product.id)}
-
-                            />
-                        )
-                    }}
-                    bulkActions={bulkActions}
-                    defaultPageSize={500}
-                    cardSkeleton={{ showBody: false, showFooter: false }}
-                    createAction={createAction}
-                    analyticsPanel={analyticsPanel}
-                    renderCustomView={selectedStockProduct ? () => (
-                        <div className="flex-1 flex flex-col min-h-0 h-full">
-                            <ProductInsightsPanel
-                                productId={selectedStockProduct.id as number}
-                                productName={selectedStockProduct.name ?? null}
-                                onBack={() => setSelectedStockProduct(null)}
-                                onProductChange={(id, name) => setSelectedStockProduct({ ...selectedStockProduct, id, name })}
-                            />
-                        </div>
-                    ) : undefined}
-                    emptyState={{
-                        context: "inventory",
-                        title: "Aún no hay productos",
-                        description: "Crea tu primer producto para empezar a construir el catálogo.",
-                    }}
+                    />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={productViews.table}
+                    card={productViews.card}
+                    emptyTitle="Aún no hay productos"
+                    emptyDescription="Crea tu primer producto para empezar a construir el catálogo."
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+                <Collection.Analytics>
+                    <AnalyticsPanelContent {...analyticsScreen} />
+                </Collection.Analytics>
+                <Collection.BulkBar actions={bulkActions} />
+            </Collection.Root>
 
             <ProductDrawer
                 open={drawerOpen}
                 onOpenChange={handleCloseModal}
                 initialData={(selectedFromUrl || undefined) as ProductInitialData | undefined}
                 onSuccess={refetch}
+            />
+
+            <ProductInsightsDrawer
+                productId={selectedStockProduct ? (selectedStockProduct.id as number) : null}
+                productName={selectedStockProduct?.name ?? null}
+                open={!!selectedStockProduct}
+                onOpenChange={(open) => { if (!open) setSelectedStockProduct(null) }}
+                onProductChange={(id, name) => setSelectedStockProduct(selectedStockProduct ? { ...selectedStockProduct, id, name } : null)}
             />
 
             <ArchivingRestrictionsModal

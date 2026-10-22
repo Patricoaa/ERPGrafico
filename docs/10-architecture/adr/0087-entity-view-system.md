@@ -65,8 +65,18 @@ Gate A (2026-10-17) approved these causes, the common/frequent/specific requirem
 10. **Adoption by strangler.**
     - The spike lives in `components/entity-view/` with its own barrel, on branch `spike/entity-view-system`.
     - The legacy system is frozen (props-compat test) and coexists with the new one.
-    - `fromLegacyFields()` adapts schemas that have no `computed`.
-    - Migration runs in batches of ≤5 entities. The legacy system is removed when it has zero consumers (ADR-0072 precedent).
+    - ~~`fromLegacyFields()` adapts schemas that have no `computed`.~~ **Amended 2026-10-18:** dropped. A runtime adapter turns typed field ids back into `string` (the TC-012 defect class) and saves little: the definition is ~10 % of a migration, the screen is the rest. Migration follows the recipe in `component-entity-view.md` §10.2.
+    - Migration runs in waves (Phase 7 replan, `docs/50-audit/Tablascards/07-migration-matrix.md` §6); a ratchet test (`LEGACY_CONSUMERS`) lets the legacy consumer list only shrink. The legacy system is removed when it has zero consumers (ADR-0072 precedent).
+
+### Amendment 2026-10-18 · hierarchical rows (tree)
+
+- `EntitySpec.tree = { children(row), defaultExpanded? }` declares a hierarchy on the entity (same row type). The table indents children under their parent, with a fold toggle in its first column and an expand/collapse-all control in that column's header; client pages hold whole branches (`paginateExpandedRows: false`); grouping does not apply to a tree; cards show the visible rows flat.
+- **Exception to the ≥3 entities / ≥2 features rule, approved by the user (Gate D, oleada A3):** today one consumer (chart of accounts), with fiscal closures, financial statements and other folding views announced as the next ones.
+
+### Amendment 2026-10-18 · collection states and client paging (oleada A1 code review)
+
+- State precedence becomes `loading` → `ready` → `error` → `empty`: a failed background refetch with cached rows keeps the rows visible (legacy `DataTableView` parity). Before, every migrated list passing `error: isError` hid its data behind the error panel on a network blip.
+- Client pagination sets `autoResetPageIndex: false` (as the legacy `DataTable` did) and clamps the page to the last existing one. With TanStack's default, a view that filters in render (`search.filterFn(rows)`) reset the page on every render and looped.
 
 ### Adjustments from the spike (part of this decision)
 
@@ -103,6 +113,30 @@ Gate A (2026-10-17) approved these causes, the common/frequent/specific requirem
   - `lib/__tests__/entity-view.contract.test.ts`: ≤12-prop ceiling, frozen core kind set, entity file location and no casts, legacy props-compat ceilings (`DataTableProps` 57, `DataTableViewProps` 12, `AutoEntityCardProps` 22, `FieldType` 15), and an ad hoc table ratchet (23 files).
 - **A1 applied:** `docRef` is exported from the `@/features/documents` barrel.
 - **Specified, not yet built (Phase 7 batch 1):** URL state (`useCollectionUrlState`), typed label (R8), cast-free context (R7), mounting `EntityViewProvider` in the app shell, and the `fromLegacyFields()` adapter.
+
+### Phase 7 amendments to the contract (2026-10-17/18, batches 1–3a)
+
+All recorded in `component-entity-view.md`; each approved at its Gate D (`docs/50-audit/Tablascards/07-migration-matrix.md`):
+
+- **Batch 1:** typed `EntityLabel` and `label | title` identity; inline kind renderers; controlled view + `useCollectionViewMode`.
+- **Batch 2a:**
+  - server sorting (`orderBy`, `orderingParam`);
+  - `groupBy` + `GROUP_ROW_LIMIT`;
+  - `Collection.BulkBar` and `Collection.Analytics`;
+  - `emptyAction` / `onResetFilters`;
+  - `actions(row, surface)` + `createEntityActions().forCollection`.
+- **Batch 2b:**
+  - hub focus for cards in `panel` selection;
+  - `useServerPage`;
+  - **default sorting change:** with server pagination and no `sorting` option no header sorts (a single page is never reordered);
+  - `Collection.Analytics` detected as a direct child of `Root`, and an `analytics` view without it falls back to the table.
+- **Batch 2c:** `Collection.Toolbar` `action` slot (primary/create action). It wraps below the search on narrow screens instead of covering it (found at 390 px in Compras, Productos and UoM).
+- **Batch 3a (Gate D lote 3, 2026-10-18):**
+  - editable definitions gain `processed` (inputs that count as processing), `check(row, value)` (domain rule inside the schema) and `rowStatus(row, values)` (rendered by `StatusBadge`);
+  - the pure half of the editable surface moves to `core/define-editable.ts` (no `@/components/shared` dependency), so definitions evaluated inside an import cycle find it initialized;
+  - `focusFirstEditableError()` for the invalid submit handler, and a sticky first column;
+  - **exception to the ≥3/≥2 rule, approved by the user:** text input and row-enabling selection (E2/E3) enter the core with 2 consumers (implemented in 3c);
+  - the `docRef` builder has no runtime imports and is the first export of `@/features/documents`; the kind registers itself when the barrel is evaluated.
 
 ## Consequences
 

@@ -2,48 +2,95 @@
 
 import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
-import { getEntityIconName } from "@/lib/entity-registry"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
+import {
+  PURCHASING_TABS,
+  getPurchasingTab,
+  getPurchasingDtesSubTab,
+  getPurchasingConfigSubTab,
+} from "@/features/purchasing/navigation"
+import { buildHeaderConfigFromTab } from "@/lib/navigation-helpers"
+import { getModuleHeaderConfig } from "@/lib/module-registry"
 
 export function PurchasingHeader() {
-    const pathname = usePathname()
-    const { getViewModeUrl } = useViewModePreference()
-    
-    const segments = pathname.split('/').filter(Boolean)
-    const currentSegment = segments[1] || 'orders'
-    
-    const activeValue = currentSegment === 'settings' ? 'orders' : currentSegment
-    const subActiveValue = undefined
+  const pathname = usePathname()
+  const { getViewModeUrl } = useViewModePreference()
 
-    const tabs = [
-        { value: "orders", label: "Órdenes", iconName: getEntityIconName('purchasing.purchaseorder'), href: getViewModeUrl('purchasing.purchaseorder', "/purchasing/orders") },
-        { value: "notes", label: "Notas Crédito/Débito", iconName: "file-text", href: getViewModeUrl('billing.invoice', "/purchasing/notes") },
-    ]
+  const segments = pathname.split("/").filter(Boolean)
+  const currentSegment = segments[1] || "dtes"
 
+  // ADR-0090: `dtes` es el tab Documentos (sub-segmentos orders/receipts/returns),
+  // `settings` es el tab Configuración de Compras.
+  const segmentToTab: Record<string, string> = {
+    dtes: "dtes",
+    settings: "config",
+  }
 
-    const navigation = {
-        moduleName: "Compras",
-        moduleHref: getViewModeUrl('purchasing.purchaseorder', "/purchasing/orders"),
-        tabs,
-        activeValue,
-        subActiveValue,
+  const activeValue = segmentToTab[currentSegment] || "dtes"
+
+  // Determine subActiveValue from path segments
+  const subActiveValue = (() => {
+    if (activeValue === "dtes") return segments[2] || "dtes"
+    if (activeValue === "config") return segments[2] || "dtes"
+    return undefined
+  })()
+
+  // Module config from centralized registry
+  const moduleConfig = getModuleHeaderConfig("purchasing")
+
+  // Build navigation from canonical config
+  const tabs = PURCHASING_TABS.map((tab) => ({
+    value: tab.value,
+    label: tab.label,
+    iconName: tab.iconName,
+    href: tab.href,
+    subTabs: tab.subTabs?.map((st) => ({
+      value: st.value,
+      label: st.label,
+      iconName: st.iconName,
+      href: st.href,
+    })),
+  }))
+
+  const navigation = {
+    moduleName: moduleConfig?.moduleName ?? "Compras",
+    moduleHref: moduleConfig?.moduleHref ?? getViewModeUrl("purchasing.purchaseorder", "/purchasing/dtes"),
+    tabs,
+    activeValue,
+    subActiveValue,
+  }
+
+  // Get header config from canonical navigation
+  const getHeaderConfig = () => {
+    const mainTab = getPurchasingTab(activeValue)
+    if (!mainTab) {
+      return { title: moduleConfig?.headerTitle ?? "Compras", description: moduleConfig?.headerDescription ?? "", iconName: moduleConfig?.iconName ?? "shopping-bag" as const }
     }
 
-    const getHeaderConfig = () => {
-        if (activeValue === 'notes') return { title: "Notas de Crédito y Débito", description: "Gestión de notas de crédito y débito de proveedores", iconName: "file-text" as const }
-        if (activeValue === 'receipts') return { title: "Recepciones de Compra", description: "Historial de ingresos de mercadería por compras y notas de débito", iconName: getEntityIconName('purchasing.purchasereceipt') ?? "package-check" as const }
-        return { title: "Órdenes de Compra", description: "Gestión integral de órdenes de compra y recepciones", iconName: getEntityIconName('purchasing.purchaseorder') ?? "shopping-bag" }
+    // Sub-tabs handling (tab Documentos)
+    if (activeValue === "dtes" && subActiveValue) {
+      const subTab = getPurchasingDtesSubTab(subActiveValue)
+      if (subTab) return buildHeaderConfigFromTab(subTab)
     }
 
-    const config = getHeaderConfig()
+    // Sub-tabs handling (tab Configuración de Compras)
+    if (activeValue === "config" && subActiveValue) {
+      const subTab = getPurchasingConfigSubTab(subActiveValue)
+      if (subTab) return buildHeaderConfigFromTab(subTab)
+    }
 
-    return (
-        <PageHeader 
-            title={config.title} 
-            description={config.description} 
-            iconName={config.iconName} 
-            variant="minimal" 
-            navigation={navigation} 
-        />
-    )
+    return buildHeaderConfigFromTab(mainTab)
+  }
+
+  const config = getHeaderConfig()
+
+  return (
+    <PageHeader
+      title={config.title}
+      description={config.description}
+      iconName={config.iconName}
+      variant="minimal"
+      navigation={navigation}
+    />
+  )
 }

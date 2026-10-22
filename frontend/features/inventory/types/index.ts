@@ -34,13 +34,19 @@ export interface BaseProduct {
     sale_price_gross?: string | number
     product_type?: 'STORABLE' | 'CONSUMABLE' | 'SERVICE' | 'MANUFACTURABLE' | 'SUBSCRIPTION' | string
     image?: string | null
+    image_thumbnail?: string | null
     /** Category as object OR as numeric FK */
     category?: { id: number; name: string; icon?: string | null } | number
+    category_name?: string
     uom?: number
     uom_name?: string
     is_favorite?: boolean
     has_variants?: boolean
     variants_count?: number
+    /** Attribute shared by every variant ("Gramaje"); null when mixed or absent */
+    variant_axis_label?: string | null
+    /** Lowest net sale price among active variants (templates only) */
+    min_variant_price?: string | number | null
     // Display fields used by ProductGrid and VariantSelectorModal visual badges
     qty_available?: number
     manufacturable_quantity?: number | null
@@ -65,6 +71,8 @@ export interface Restriction {
 }
 
 export interface Product {
+    /** Campos congelados por historia contable (ADR-0091) */
+    frozen_fields?: string[]
     id: number
     code: string
     internal_code: string
@@ -135,6 +143,8 @@ export interface ProductFilters {
     page_size?: number
     fields?: string
     track_inventory?: boolean
+    /** DRF ordering (`orderingParam` of the product entity, ADR-0087 lote 2). */
+    ordering?: string
 }
 
 export interface ProductUpdatePayload {
@@ -166,7 +176,7 @@ export interface InventoryDocumentDetail {
 export interface InventoryDocument {
     id: number
     display_id: string
-    document_type: 'RECEIPT' | 'DELIVERY' | 'TRANSFER' | 'ADJUSTMENT' | 'PRODUCTION' | 'PARTNER_CONTRIBUTION' | 'PARTNER_WITHDRAWAL'
+    document_type: 'RECEIPT' | 'DELIVERY' | 'TRANSFER' | 'ADJUSTMENT' | 'PRODUCTION' | 'PARTNER_CONTRIBUTION' | 'PARTNER_WITHDRAWAL' | 'MANUAL_RECEIPT' | 'MANUAL_DELIVERY' | 'MANUAL_PRODUCTION'
     document_type_display: string
     status: 'DRAFT' | 'APPROVED' | 'CONFIRMED' | 'CANCELLED'
     status_display: string

@@ -4,10 +4,8 @@ import { useCallback, useMemo, useState } from "react"
 
 import { type CreditContact, type CreditHistoryEntry, writeOffDebt } from '@/features/credits/api/creditsApi'
 import CreditAssignmentModal from "./CreditAssignmentModal"
-import { DataTable, ActionConfirmModal, MoneyDisplay } from '@/components/shared'
-import { PortfolioTable } from "./PortfolioTable"
-import { creditContactFields } from "../creditContactFields"
-import { creditHistoryEntryFields } from "../creditHistoryEntryFields"
+import { ActionConfirmModal, MoneyDisplay } from '@/components/shared'
+import { Collection, useEntityCollection } from "@/components/entity-view"
 import { portfolioActions, type PortfolioActionsCtx } from "../portfolioActions"
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
@@ -17,7 +15,13 @@ import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { ShieldAlert } from "lucide-react"
 import { toast } from "sonner"
 import { formatMoney } from "@/lib/money"
-import { type ColumnDef } from "@tanstack/react-table"
+import {
+    creditContactEntity,
+    portfolioViews,
+    creditHistoryEntryEntity,
+    creditHistoryEntryViews,
+} from "@/features/credits"
+import { CreditContactLedgerDrawer } from "./CreditContactLedgerDrawer"
 
 const EMPTY_HISTORY: CreditHistoryEntry[] = []
 
@@ -33,12 +37,12 @@ export function CreditPortfolioClientView({
     const { contacts: rawContacts, isLoading, refetch } = useCreditPortfolio()
     const { data: rawHistory, isLoading: loadingHistory } = useCreditHistory()
 
-    // ADR-0020: edit modal opens via ?selected={contactId}
     const { entity: selectedContact, isLoading: isLoadingSelected, clearSelection } =
         useSelectedEntity<CreditContact>({ endpoint: '/contacts' })
     const { openSelected } = useEntityRouteActions()
 
     const [writeOffContact, setWriteOffContact] = useState<CreditContact | null>(null)
+    const [ledgerContact, setLedgerContact] = useState<CreditContact | null>(null)
 
     const portfolioCtx = useMemo<PortfolioActionsCtx>(() => ({
         onEdit: (id) => openSelected(id),
@@ -59,14 +63,6 @@ export function CreditPortfolioClientView({
             setWriteOffContact(null)
         }
     }, [writeOffContact, refetch])
-
-    const portfolioCols = useMemo<ColumnDef<CreditContact>[]>(
-        () => [
-            ...creditContactFields.toColumns({ exclude: ['creditLastEvaluated'] }),
-            portfolioActions.auto(portfolioCtx),
-        ],
-        [portfolioCtx],
-    )
 
     const contactConfig: UnifiedSearchConfig = useMemo(() => ({
         searchFields: [
@@ -121,6 +117,18 @@ export function CreditPortfolioClientView({
         [rawHistory, historySearch.filterFn, historySearch.filters.origin],
     )
 
+    const portfolioCollection = useEntityCollection(
+        creditContactEntity,
+        { rows: isLoading ? [] : contacts },
+        { pagination: { mode: "none" } },
+    )
+
+    const historyCollection = useEntityCollection(
+        creditHistoryEntryEntity,
+        { rows: loadingHistory ? [] : history },
+        { pagination: { mode: "none" } },
+    )
+
     const handleModalSuccess = useCallback(async () => {
         await refetch()
         clearSelection()
@@ -156,52 +164,69 @@ export function CreditPortfolioClientView({
                 confirmText="Confirmar Castigo"
             />
 
+            <CreditContactLedgerDrawer
+                contact={ledgerContact}
+                open={!!ledgerContact}
+                onOpenChange={(open) => { if (!open) setLedgerContact(null) }}
+                mode="portfolio"
+                onRefresh={refetch}
+            />
+
             {activeTab === 'portfolio' ? (
-                <div className="flex-1 min-h-0">
-                    <PortfolioTable
-                        columns={portfolioCols}
-                        data={contacts}
-                        isLoading={isLoading}
-                        onRefresh={refetch}
-                        createAction={createAction}
-                        unifiedSearch={<UnifiedSearchBar
-                            config={contactConfig}
-                            chips={contactSearch.chips}
-                            isFiltered={contactSearch.isFiltered}
-                            inputValue={contactSearch.inputValue}
-                            onInputChange={contactSearch.setInputValue}
-                            onApply={contactSearch.applyFilter}
-                            onRemove={contactSearch.removeFilter}
-                            onClearAll={contactSearch.clearAll}
-                            groupBy={contactSearch.groupBy}
-                            onGroupBySelect={contactSearch.setGroupBy}
-                            paramValues={contactSearch.paramValues}
-                            placeholder="Cliente o RUT..."
-                        />}
-                    />
+                <div className="flex-1 flex flex-col min-h-0">
+                    <Collection.Root
+                        collection={portfolioCollection}
+                        actions={portfolioActions.forCollection(portfolioCtx)}
+                        onOpen={(contact) => setLedgerContact(contact)}
+                    >
+                        <Collection.Toolbar action={createAction}>
+                            <UnifiedSearchBar
+                                config={contactConfig}
+                                chips={contactSearch.chips}
+                                isFiltered={contactSearch.isFiltered}
+                                inputValue={contactSearch.inputValue}
+                                onInputChange={contactSearch.setInputValue}
+                                onApply={contactSearch.applyFilter}
+                                onRemove={contactSearch.removeFilter}
+                                onClearAll={contactSearch.clearAll}
+                                groupBy={contactSearch.groupBy}
+                                onGroupBySelect={contactSearch.setGroupBy}
+                                paramValues={contactSearch.paramValues}
+                                placeholder="Cliente o RUT..."
+                            />
+                        </Collection.Toolbar>
+                        <Collection.View
+                            table={portfolioViews.table}
+                            emptyTitle="Sin clientes con crédito"
+                            emptyDescription="Habilite cupos de crédito para sus clientes para comenzar el seguimiento."
+                        />
+                    </Collection.Root>
                 </div>
             ) : (
-                <div className="mt-2 flex-1 min-h-0">
-                    <DataTable
-                        columns={creditHistoryEntryFields.toColumns()}
-                        data={history ?? EMPTY_HISTORY}
-                        variant="embedded"
-                        isLoading={loadingHistory}
-                        unifiedSearch={<UnifiedSearchBar
-                            config={historyConfig}
-                            chips={historySearch.chips}
-                            isFiltered={historySearch.isFiltered}
-                            inputValue={historySearch.inputValue}
-                            onInputChange={historySearch.setInputValue}
-                            onApply={historySearch.applyFilter}
-                            onRemove={historySearch.removeFilter}
-                            onClearAll={historySearch.clearAll}
-                            groupBy={historySearch.groupBy}
-                            onGroupBySelect={historySearch.setGroupBy}
-                            paramValues={historySearch.paramValues}
-                            placeholder="Cliente o folio..."
-                        />}
-                    />
+                <div className="mt-2 flex-1 flex flex-col min-h-0">
+                    <Collection.Root collection={historyCollection}>
+                        <Collection.Toolbar>
+                            <UnifiedSearchBar
+                                config={historyConfig}
+                                chips={historySearch.chips}
+                                isFiltered={historySearch.isFiltered}
+                                inputValue={historySearch.inputValue}
+                                onInputChange={historySearch.setInputValue}
+                                onApply={historySearch.applyFilter}
+                                onRemove={historySearch.removeFilter}
+                                onClearAll={historySearch.clearAll}
+                                groupBy={historySearch.groupBy}
+                                onGroupBySelect={historySearch.setGroupBy}
+                                paramValues={historySearch.paramValues}
+                                placeholder="Cliente o folio..."
+                            />
+                        </Collection.Toolbar>
+                        <Collection.View
+                            table={creditHistoryEntryViews.table}
+                            emptyTitle="Sin historial"
+                            emptyDescription="No hay asignaciones de crédito registradas."
+                        />
+                    </Collection.Root>
                 </div>
             )}
         </div>

@@ -45,18 +45,22 @@ interface UseTreasuryAccountsReturn {
     createAccount: (payload: TreasuryAccountCreatePayload) => Promise<TreasuryAccount>
     updateAccount: (params: { id: number, payload: TreasuryAccountUpdatePayload }) => Promise<TreasuryAccount>
     deleteAccount: (id: number) => Promise<void>
+    archiveAccount: (params: { id: number, is_active: boolean }) => Promise<TreasuryAccount>
     isCreating: boolean
     isUpdating: boolean
     isLoading: boolean
+    isRefetching: boolean
+    isError: boolean
 }
 
-export function useTreasuryAccounts({ filters }: { filters?: TreasuryAccountFilters } = {}): UseTreasuryAccountsReturn {
+export function useTreasuryAccounts({ filters, enabled = true }: { filters?: TreasuryAccountFilters; enabled?: boolean } = {}): UseTreasuryAccountsReturn {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: accounts, isLoading, refetch } = useQuery({
+    const { data: accounts, isLoading, isFetching, isError, refetch } = useQuery({
         queryKey: [...TREASURY_ACCOUNTS_KEYS.lists(), filters],
         queryFn: () => treasuryApi.getAccounts(filters),
+        enabled,
         staleTime: staleTime.stable,
     })
 
@@ -102,14 +106,30 @@ export function useTreasuryAccounts({ filters }: { filters?: TreasuryAccountFilt
         }
     })
 
+    /** Archivo pattern: soft-delete via `is_active=false` (hard DELETE is blocked server-side with 405). */
+    const archiveMutation = useMutation({
+        mutationFn: ({ id, is_active }: { id: number, is_active: boolean }) =>
+            treasuryApi.updateAccount(id, { is_active }),
+        onSuccess: () => {
+            markLocalMutation()
+            invalidate()
+        },
+        onError: (error: Error) => {
+            showApiError(error, 'Error al archivar la cuenta')
+        }
+    })
+
     return {
         accounts: (accounts as TreasuryAccount[]) ?? [],
         refetch,
         createAccount: createMutation.mutateAsync,
         updateAccount: updateMutation.mutateAsync,
         deleteAccount: deleteMutation.mutateAsync,
+        archiveAccount: archiveMutation.mutateAsync,
         isCreating: createMutation.isPending,
         isUpdating: updateMutation.isPending,
-        isLoading
+        isLoading,
+        isRefetching: isFetching && !isLoading,
+        isError,
     }
 }

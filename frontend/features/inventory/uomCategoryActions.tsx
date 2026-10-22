@@ -3,7 +3,7 @@ import type { UoMCategory } from './hooks/useUoMs'
 
 export interface UoMCategoryActionsCtx {
     onEdit: (item: UoMCategory) => void
-    onDelete: (id: number) => void
+    onArchive: (item: UoMCategory) => void
 }
 
 export const uomCategoryActions = createEntityActions<
@@ -11,5 +11,5 @@ export const uomCategoryActions = createEntityActions<
     UoMCategoryActionsCtx
 >((item, ctx) => [
     { action: "edit", onClick: () => ctx.onEdit(item) },
-    { action: "delete", onClick: () => ctx.onDelete(item.id) },
+    { action: item.is_active ? "archive" : "restore", onClick: () => ctx.onArchive(item) },
 ])

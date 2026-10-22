@@ -29,7 +29,6 @@ export * from './GenericWizard';
 
 // Buttons & Actions
 export * from './ActionFoldButton';
-export * from './ActionSlideButton';
 export * from './ToolbarCreateButton';
 export * from './ActionButtons'
 export * from './StepHeader';
@@ -92,6 +91,7 @@ export * from './FormSection';
 // Loading States
 export * from './LoadingFallback';
 export * from './StaleDataBanner';
+export * from './SkeletonPresets';
 
 // Animations
 export * from './FadeIn';
@@ -110,7 +110,7 @@ export { SEG_TEXT, SEG_WRAPPER, SEG_TRIGGER, SEG_ACTIVE, SEG_INACTIVE, SEG_DROPD
 export { useSegmentationTable } from './SegmentationTableContext';
 
 // Unified Search (reemplaza SmartSearch + Segmentation + GroupBy)
-export { UnifiedSearchBar, useUnifiedSearch } from './UnifiedSearchBar';
+export { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from './UnifiedSearchBar';
 export type {
   UnifiedSearchConfig,
   UnifiedChip,
@@ -131,6 +131,8 @@ export * from './DateRangeFilter';
 export * from './ReportToolbar';
 export * from './FacetedFilter'
 export * from './RadioCard';
+export * from './SelectableCard';
+export * from './ChoiceCard';
 export * from './FolioValidationInput';
 export * from './LabeledInput';
 export * from './LabeledSelect';
@@ -145,9 +147,10 @@ export * from './PeriodValidationDateInput';
 export * from './AccountField';
 export * from './AccountingLinesTable';
 export * from './FormLineItemsTable';
-
 export * from './EntityCard'
 export * from './AutoEntityCard'
+export * from './SelectorTrigger'
+export type { SelectorTriggerProps } from './SelectorTrigger'
 // ─── Migrated from components/ui — GOVERNANCE rule 21 compliance ─────────────
 // Table system
 export * from './emptyStateResolver';
@@ -156,7 +159,6 @@ export * from './DataTableView';
 export * from './DataTableToolbar';
 export * from './DataTablePagination';
 export * from './DataTableColumnHeader';
-export * from './DataTableExpandHeader';
 export * from './DataTableFacetedFilter';
 export * from './DataTableColumnToggle';
 export * from './DataTableCells';
@@ -165,6 +167,7 @@ export * from './DataTableCells';
 export * from './DynamicIcon'
 export * from './ErrorBoundary'
 export * from './CmykRing'
+export * from './SelectionRing'
 export * from './PrepressPanel'
 export * from './Numpad'
 export * from './NumpadModal'

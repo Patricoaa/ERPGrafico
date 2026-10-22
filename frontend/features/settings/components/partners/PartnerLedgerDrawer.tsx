@@ -6,7 +6,9 @@ import {
     Wallet,
     LogOut
 } from "lucide-react"
-import { Drawer, DataTable, SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { Button } from "@/components/ui/button"
+import { Drawer, SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { Collection, useEntityCollection } from "@/components/entity-view"
 import { partnersApi } from "@/features/contacts"
 import { type PartnerStatement } from "@/features/contacts"
 import { toast } from "sonner"
@@ -14,12 +16,13 @@ import { parseDateOnly } from "@/lib/utils"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 
 import {
-    partnerLedgerFields,
+    partnerLedgerEntity,
+    partnerLedgerViews,
     isInflowType,
     isOutflowType,
     PARTNER_TRANSACTION_TYPE_OPTIONS,
     type PartnerLedgerRow,
-} from "@/features/settings/partnerLedgerFields"
+} from "@/features/settings"
 import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
 import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
 
@@ -80,9 +83,6 @@ export function PartnerLedgerDrawer({
         }
     }, [open, partnerId])
 
-    const columns = partnerLedgerFields.toColumns()
-
-    // We need to calculate balance_after specifically for this partner's chronological list
     const transactionsWithBalance = React.useMemo<PartnerLedgerRow[]>(() => {
         if (!data?.transactions) return []
         const sorted = [...data.transactions].sort((a, b) => {
@@ -105,6 +105,25 @@ export function PartnerLedgerDrawer({
         return transactionsWithBalance.filter(tx => tx.transaction_type === search.filters.transaction_type)
     }, [transactionsWithBalance, search.filters])
 
+    const collection = useEntityCollection(
+        partnerLedgerEntity,
+        { rows: filteredTransactions },
+        { pagination: { mode: "none" } },
+    )
+
+    const toolbarAction = (
+        <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="h-8 gap-2 border-success/20 text-success hover:bg-success/5" onClick={() => setIsContributionOpen(true)}>
+                <Wallet className="h-3.5 w-3.5" />
+                Registrar Aporte
+            </Button>
+            <Button variant="outline" size="sm" className="h-8 gap-2 border-destructive/20 text-destructive hover:bg-destructive/5" onClick={() => setIsWithdrawalOpen(true)}>
+                <LogOut className="h-3.5 w-3.5" />
+                Registrar Retiro
+            </Button>
+        </div>
+    )
+
     return (
         <Drawer
             open={open}
@@ -125,33 +144,28 @@ export function PartnerLedgerDrawer({
                 </div>
             ) : (
                 <div className="p-4 animate-in fade-in duration-500 h-full min-h-0 flex flex-col">
-                    <DataTable
-                        columns={columns}
-                        data={filteredTransactions}
-                        isLoading={loading}
-                        variant="embedded"
-                        hiddenColumns={[]}
-                        unifiedSearch={<UnifiedSearchBar
-                            config={partnerSearchConfig}
-                            chips={search.chips}
-                            isFiltered={search.isFiltered}
-                            inputValue={search.inputValue}
-                            onInputChange={search.setInputValue}
-                            onApply={search.applyFilter}
-                            onRemove={search.removeFilter}
-                            onClearAll={search.clearAll}
-                            groupBy={search.groupBy}
-                            onGroupBySelect={search.setGroupBy}
-                            paramValues={search.paramValues}
-                        />}
-                        showReset={search.isFiltered}
-                        onReset={search.clearAll}
-                        columnToggle
-                        toolbarActions={[
-                            { key: 'contribution', label: 'Registrar Aporte', icon: Wallet, onClick: () => setIsContributionOpen(true), intent: 'success' },
-                            { key: 'withdrawal', label: 'Registrar Retiro', icon: LogOut, onClick: () => setIsWithdrawalOpen(true), intent: 'destructive' },
-                        ]}
-                    />
+                    <Collection.Root collection={collection}>
+                        <Collection.Toolbar action={toolbarAction}>
+                            <UnifiedSearchBar
+                                config={partnerSearchConfig}
+                                chips={search.chips}
+                                isFiltered={search.isFiltered}
+                                inputValue={search.inputValue}
+                                onInputChange={search.setInputValue}
+                                onApply={search.applyFilter}
+                                onRemove={search.removeFilter}
+                                onClearAll={search.clearAll}
+                                groupBy={search.groupBy}
+                                onGroupBySelect={search.setGroupBy}
+                                paramValues={search.paramValues}
+                            />
+                        </Collection.Toolbar>
+                        <Collection.View
+                            table={partnerLedgerViews.table}
+                            emptyTitle="Sin movimientos"
+                            emptyDescription="Este socio no tiene transacciones registradas."
+                        />
+                    </Collection.Root>
                 </div>
             )}
 

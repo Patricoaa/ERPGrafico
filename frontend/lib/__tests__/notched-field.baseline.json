@@ -1,0 +1,57 @@
+[
+  {
+    "file": "components/shared/DocumentAttachmentDropzone.tsx",
+    "line": 48,
+    "rule": "R2"
+  },
+  {
+    "file": "components/shared/DocumentAttachmentDropzone.tsx",
+    "line": 57,
+    "rule": "R2"
+  },
+  {
+    "file": "components/shared/LabeledCheckbox.tsx",
+    "line": 45,
+    "rule": "R2"
+  },
+  {
+    "file": "components/shared/LabeledSwitch.tsx",
+    "line": 98,
+    "rule": "R2"
+  },
+  {
+    "file": "features/inventory/components/CategoryDrawer.tsx",
+    "line": 119,
+    "rule": "R2"
+  },
+  {
+    "file": "features/inventory/components/UoMDrawer.tsx",
+    "line": 321,
+    "rule": "R2"
+  },
+  {
+    "file": "features/inventory/components/UoMDrawer.tsx",
+    "line": 376,
+    "rule": "R2"
+  },
+  {
+    "file": "features/production/components/forms/WorkOrderBasicStep/WorkOrderBasicInfo.tsx",
+    "line": 319,
+    "rule": "R4"
+  },
+  {
+    "file": "features/production/components/steps/ManufacturingConfigStep.tsx",
+    "line": 524,
+    "rule": "R4"
+  },
+  {
+    "file": "features/production/components/steps/ManufacturingConfigSummary.tsx",
+    "line": 477,
+    "rule": "R4"
+  },
+  {
+    "file": "features/treasury/components/TerminalBatchSelectionModal.tsx",
+    "line": 188,
+    "rule": "R2"
+  }
+]

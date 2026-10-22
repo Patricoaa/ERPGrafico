@@ -6,13 +6,8 @@ import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { Resolver } from 'react-hook-form'
 import * as z from 'zod'
-import type { ColumnDef } from '@tanstack/react-table'
 import { Form, FormField } from '@/components/ui/form'
-import {
-    Drawer, LabeledInput, LabeledSelect, FormSection, FormFooter,
-    CancelButton, ActionSlideButton,
-    DataTable,
-} from '@/components/shared'
+import { Drawer, LabeledInput, LabeledSelect, FormSection, FormFooter, CancelButton, SubmitButton } from "@/components/shared"
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Banknote, Calculator } from 'lucide-react'
@@ -23,7 +18,8 @@ import { useLoanMutations } from '../hooks/useLoans'
 import { showApiError } from '@/lib/errors'
 import { AccountSelector } from '@/components/selectors/AccountSelector'
 import { formDrawerWidth } from '@/lib/form-widths'
-import { loanRegisterFields } from './loanRegisterFields'
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { loanScheduleRowEntity, loanScheduleRowViews } from '../entity-view/loanScheduleRow.entity'
 
 const schema = z.object({
     lender: z.string().min(1, 'Banco es requerido'),
@@ -197,7 +193,7 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
         return rows
     }, [formValues])
 
-    const scheduleColumns: ColumnDef<typeof scheduleData[number]>[] = loanRegisterFields.toColumns() as ColumnDef<typeof scheduleData[number]>[]
+    const scheduleCollection = useEntityCollection(loanScheduleRowEntity, { rows: scheduleData }, { pagination: { mode: "none" } })
 
     const onSubmit = async (values: FormValues) => {
         try {
@@ -246,13 +242,13 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton
+                            <SubmitButton
                                 loading={isCreating}
                                 disabled={isCreating}
                                 onClick={form.handleSubmit(onSubmit)}
                             >
                                 Registrar Crédito
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />
@@ -536,13 +532,13 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                         <Calculator className="h-4 w-4 text-muted-foreground" />
                         <h3 className="text-sm font-semibold">Tabla de Amortización Proyectada</h3>
                     </div>
-                    <DataTable
-                        columns={scheduleColumns}
-                        data={scheduleData}
-                        variant="minimal"
-                        noBorder
-                        hidePagination
-                    />
+                    <Collection.Root collection={scheduleCollection} label="Tabla de Amortización">
+                        <Collection.View
+                            table={loanScheduleRowViews.table}
+                            emptyTitle=""
+                            emptyDescription=""
+                        />
+                    </Collection.Root>
                 </div>
             )}
         </Drawer>

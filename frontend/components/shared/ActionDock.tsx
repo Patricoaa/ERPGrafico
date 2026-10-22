@@ -1,8 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { type LucideIcon } from "lucide-react"
+import { X, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { CmykRing } from "./CmykRing"
 
 import { cn } from "@/lib/utils"
 
@@ -97,6 +98,35 @@ ActionDock.Stat = function ActionDockStat({
  */
 ActionDock.Actions = function ActionDockActions({ children, className }: { children: React.ReactNode, className?: string }) {
     return <div className={cn("flex items-center gap-2 border-l pl-6 py-1", className)}>{children}</div>
+}
+
+// ─── Selection dock (count + actions + clear) ──────────────────────────────────
+
+interface SelectionDockProps {
+    count: number
+    onClear: () => void
+    /** The actions for the selected rows (e.g. `<BulkActionButtons>` or a custom dock). */
+    children: React.ReactNode
+}
+
+/** Floating dock shown while rows are selected: "N seleccionados", the actions and "Limpiar". */
+export function SelectionDock({ count, onClear, children }: SelectionDockProps) {
+    if (count === 0) return null
+    return (
+        <ActionDock isVisible>
+            <div className="flex items-center gap-2" aria-live="polite">
+                <CmykRing className="h-2.5 w-2.5 animate-pulse" />
+                <span className="text-xs font-bold uppercase tracking-widest text-foreground whitespace-nowrap">
+                    {`${count} ${count === 1 ? "seleccionado" : "seleccionados"}`}
+                </span>
+            </div>
+            {children}
+            <Button variant="ghost" size="sm" onClick={onClear} className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted">
+                <X className="mr-1.5 h-3 w-3" aria-hidden />
+                Limpiar
+            </Button>
+        </ActionDock>
+    )
 }
 
 // ─── Bulk-action types & helpers (historically in BulkActionDock) ──────────────

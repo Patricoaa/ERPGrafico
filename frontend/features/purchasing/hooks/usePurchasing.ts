@@ -1,22 +1,16 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { invalidateCrossFeature } from '@/lib/invalidation'
-import { toast } from 'sonner'
-import type { FilterState } from '@/components/shared'
-import type { Invoice } from '@/features/billing'
-import { useRealtime } from '@/features/realtime'
 import { useAuth } from '@/contexts/AuthContext'
 
-import { purchasingApi } from '../api/purchasingApi'
-import type { PurchaseOrderAPI } from '../types'
+import { purchasingApi, type OrderFilters } from '../api/purchasingApi'
+import type { PurchaseReceipt } from '../entity-view/purchaseReceipt.entity'
+import type { PurchaseReturn } from '../entity-view/purchaseReturn.entity'
 import { PURCHASING_KEYS } from './queryKeys'
-import type { Page } from '@/lib/pagination'
 import { staleTime } from '@/lib/query-config'
 
 export { PURCHASING_KEYS }
 
-export function usePurchasingOrders(filters?: FilterState & { page?: number, page_size?: number }, initialData?: Page<PurchaseOrderAPI>) {
-    const queryClient = useQueryClient()
-    const { markLocalMutation } = useRealtime()
+export function usePurchasingOrders({ filters }: { filters?: OrderFilters } = {}) {
     const { isAuthenticated } = useAuth()
 
     const { page = 1, page_size = 50, ...restFilters } = filters || {}
@@ -27,67 +21,51 @@ export function usePurchasingOrders(filters?: FilterState & { page?: number, pag
         queryFn: () => purchasingApi.getOrders(activeFilters),
         staleTime: staleTime.standard,
         enabled: isAuthenticated,
-        initialData,
         placeholderData: (prev) => prev,
     })
 
     const orders = query.data?.results ?? []
     const showSkeleton = query.isLoading && !orders.length
-    const isRefetching = query.isFetching && !showSkeleton
-    const refetch = query.refetch
-
-    const deleteMutation = useMutation({
-        mutationFn: (id: number) => purchasingApi.deleteOrder(id),
-        onSuccess: () => {
-            markLocalMutation()
-            invalidateCrossFeature(queryClient, [PURCHASING_KEYS.lists()])
-            toast.success('Orden de Compra eliminada')
-        },
-    })
-
-    const annulMutation = useMutation({
-        mutationFn: ({ id, force, reason }: { id: number, force: boolean, reason?: string }) =>
-            purchasingApi.annulOrder(id, { force, reason }),
-        onSuccess: () => {
-            markLocalMutation()
-            invalidateCrossFeature(queryClient, [PURCHASING_KEYS.all])
-            toast.success('Orden de Compra anulada correctamente.')
-        },
-        onError: (error: Error) => {
-            console.error("Error annulling order", error)
-        }
-    })
 
     return {
         page: query.data,
         orders,
         isLoading: showSkeleton,
-        isRefetching,
-        refetch,
-        deleteOrder: deleteMutation.mutateAsync,
-        annulOrder: annulMutation.mutateAsync,
-        isAnnulling: annulMutation.isPending,
+        isRefetching: query.isFetching && !showSkeleton,
+        isError: query.isError,
+        refetch: query.refetch,
     }
 }
 
-export function usePurchasingNotes(initialData?: Invoice[]) {
+/** Refreshes the order lists and their analytics (both live under `PURCHASING_KEYS.orders()`). */
+export function useRefreshPurchaseOrders() {
+    const queryClient = useQueryClient()
+    return () => invalidateCrossFeature(queryClient, [PURCHASING_KEYS.orders()])
+}
+
+export function usePurchasingNotes({ filters, page = 1, page_size = 50 }: { filters?: Record<string, string>; page?: number; page_size?: number } = {}) {
     const { isAuthenticated } = useAuth()
+    const activeFilters = { filters, page, page_size }
 
     const query = useQuery({
-        queryKey: PURCHASING_KEYS.notes(),
-        queryFn: () => purchasingApi.getNotes(),
+        queryKey: PURCHASING_KEYS.notes(activeFilters),
+        queryFn: () => purchasingApi.getNotes(activeFilters),
         staleTime: staleTime.standard,
         enabled: isAuthenticated,
-        initialData,
         placeholderData: (prev) => prev,
     })
 
-    const notes = query.data ?? []
+    const notes = query.data?.results ?? []
     const showSkeleton = query.isLoading && !notes.length
-    const isRefetching = query.isFetching && !showSkeleton
-    const refetch = query.refetch
 
-    return { notes, isLoading: showSkeleton, isRefetching, refetch }
+    return {
+        page: query.data,
+        notes,
+        isLoading: showSkeleton,
+        isRefetching: query.isFetching && !showSkeleton,
+        isError: query.isError,
+        refetch: query.refetch,
+    }
 }
 
 export function usePurchasingOrder(id: number) {
@@ -111,10 +89,11 @@ export function usePurchaseReceipts(filters?: Record<string, unknown>) {
 
     return {
         page: query.data,
-        receipts: query.data?.results ?? [],
+        receipts: (query.data?.results ?? []) as unknown as PurchaseReceipt[],
         totalCount: query.data?.count ?? 0,
         isLoading: query.isLoading,
         isFetching: query.isFetching,
+        isError: query.isError,
         refetch: query.refetch,
     }
 }
@@ -140,3 +119,79 @@ export function usePurchaseReturn(id: number | null, enabled = true) {
 
     return { returnData, isLoading }
 }
+
+/** Paginated list of purchase returns (ADR-0090: "Devoluciones" is its own document list). */
+export function usePurchaseReturns(filters?: Record<string, unknown>) {
+    const page = Number(filters?.page ?? 1)
+    const pageSize = Number(filters?.page_size ?? 50)
+    const query = useQuery({
+        queryKey: [...PURCHASING_KEYS.all, 'returns', { page, page_size: pageSize, ...filters }],
+        queryFn: () => purchasingApi.getReturnsPaginated({ page, page_size: pageSize, ...filters }),
+        staleTime: staleTime.standard,
+    })
+
+    return {
+        page: query.data,
+        returns: (query.data?.results ?? []) as unknown as PurchaseReturn[],
+        totalCount: query.data?.count ?? 0,
+        isLoading: query.isLoading,
+        isFetching: query.isFetching,
+        isError: query.isError,
+        refetch: query.refetch,
+    }
+}
+
+/** Unified list of receipts + returns (fulfillment documents). */
+export function usePurchaseFulfillment(filters?: Record<string, unknown>) {
+    const page = Number(filters?.page ?? 1)
+    const pageSize = Number(filters?.page_size ?? 50)
+    const typeFilter = filters?.fulfillment_type as string | undefined
+
+    const receiptsQuery = useQuery({
+        queryKey: PURCHASING_KEYS.receipts({ page, page_size: pageSize, ...filters }),
+        queryFn: () => purchasingApi.getReceiptsPaginated({ page, page_size: pageSize, ...filters }),
+        staleTime: staleTime.standard,
+        enabled: !typeFilter || typeFilter === 'RECEIPT',
+    })
+
+    const returnsQuery = useQuery({
+        queryKey: [...PURCHASING_KEYS.all, 'returns', { page, page_size: pageSize, ...filters }],
+        queryFn: () => purchasingApi.getReturnsPaginated({ page, page_size: pageSize, ...filters }),
+        staleTime: staleTime.standard,
+        enabled: !typeFilter || typeFilter === 'RETURN',
+    })
+
+    const isLoading = receiptsQuery.isLoading || returnsQuery.isLoading
+    const isFetching = receiptsQuery.isFetching || returnsQuery.isFetching
+    const isError = receiptsQuery.isError || returnsQuery.isError
+
+    const receiptResults = (receiptsQuery.data?.results ?? []) as unknown as PurchaseReceipt[]
+    const returnResults = (returnsQuery.data?.results ?? []) as unknown as PurchaseReturn[]
+
+    // Merge and add fulfillment_type discriminator
+    // Map receipt_date to date for RECEIPT type
+    const merged: PurchaseFulfillment[] = [
+        ...receiptResults.map(r => ({ ...r, fulfillment_type: 'RECEIPT' as const, date: r.receipt_date })),
+        ...returnResults.map(r => ({ ...r, fulfillment_type: 'RETURN' as const })),
+    ]
+
+    // Sort by date desc (newest first)
+    merged.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+    // Apply pagination manually on merged results
+    const start = (page - 1) * pageSize
+    const paginated = merged.slice(start, start + pageSize)
+    const totalCount = merged.length
+
+    return {
+        page: { count: totalCount, results: paginated, next: null, previous: null },
+        fulfillments: paginated,
+        totalCount,
+        isLoading,
+        isFetching,
+        isError,
+        refetch: () => { receiptsQuery.refetch(); returnsQuery.refetch(); },
+    }
+}
+
+import type { PurchaseFulfillment } from '../entity-view/purchaseFulfillment.entity'

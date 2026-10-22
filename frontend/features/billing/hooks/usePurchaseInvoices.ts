@@ -80,25 +80,16 @@ export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) 
         },
     })
 
-    const deleteMutation = useMutation({
-        mutationFn: async (id: number) => billingApi.deleteInvoice(id),
-        onSuccess: () => {
-            markLocalMutation()
-            toast.success('Documento eliminado correctamente')
-            invalidate()
-        },
-    })
-
     return {
         invoices,
         isLoading: showSkeleton,
         isRefetching,
+        isError: query.isError,
         refetch,
         annulInvoice: annulMutation.mutateAsync,
         isAnnulling: annulMutation.isPending,
         cancelInvoice: cancelMutation.mutateAsync,
         confirmInvoice: confirmMutation.mutateAsync,
         makePayment: payMutation.mutateAsync,
-        deleteInvoice: deleteMutation.mutateAsync,
     }
 }

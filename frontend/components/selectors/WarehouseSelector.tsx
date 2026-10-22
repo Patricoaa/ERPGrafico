@@ -2,12 +2,10 @@
 
 import { useState, useMemo, useCallback } from "react"
 import { Check, Home } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { ChevronDown } from "lucide-react"
 
 import { useWarehouses } from "@/features/inventory/hooks/useWarehouses"
 import { LabeledContainer, SearchablePopover } from '@/components/shared'
+import { SelectorTrigger, SELECTOR_VALUE_CLASS } from "@/components/shared/SelectorTrigger"
 import { type Warehouse } from "@/types/entities"
 
 interface WarehouseSelectorProps {
@@ -25,7 +23,7 @@ interface WarehouseSelectorProps {
 export function WarehouseSelector({
     value,
     onChange,
-    placeholder = "Seleccionar bodega...",
+    placeholder = "Seleccionar...",
     disabled,
     label,
     error,
@@ -93,30 +91,19 @@ export function WarehouseSelector({
                     </>
                 )}
                 trigger={
-                    <Button
-                        className={cn(
-                            "w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent font-medium",
-                            icon && "pl-1"
-                        )}
+                    <SelectorTrigger
+                        hasValue={!!selectedWarehouse}
+                        placeholder={placeholder}
+                        icon={icon}
+                        open={open}
                         disabled={disabled}
+                        showChevron={!disabled}
+                        chevronClassName="h-3 w-3 opacity-30"
+                        className="h-full!"
                     >
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                            {icon && (
-                                <div className="flex items-center justify-center text-muted-foreground/60 transition-colors shrink-0">
-                                    {icon}
-                                </div>
-                            )}
-                            {selectedWarehouse ? (
-                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                    {!icon && <Home className="h-3.5 w-3.5 shrink-0 text-primary" />}
-                                    <span className="font-medium text-sm truncate">{selectedWarehouse.name}</span>
-                                </div>
-                            ) : (
-                                <span className="text-muted-foreground truncate">{placeholder}</span>
-                            )}
-                        </div>
-                        {!disabled && <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
-                    </Button>
+                        {!icon && <Home className="h-3.5 w-3.5 shrink-0 text-primary" />}
+                        <span className={`${SELECTOR_VALUE_CLASS} truncate leading-none`}>{selectedWarehouse?.name}</span>
+                    </SelectorTrigger>
                 }
             />
         </LabeledContainer>

@@ -34,7 +34,7 @@ export interface StatementsAnalyticsData {
 }
 
 export function useStatementsAnalyticsData(
-    cardAccountId: number | null,
+    cardAccountId: number | null | undefined,
     months: number = 12,
     granularity: string = 'month',
 ): StatementsAnalyticsData {
@@ -42,14 +42,15 @@ export function useStatementsAnalyticsData(
         data: analytics,
         isLoading: analyticsLoading,
     } = useQuery({
-        queryKey: ['card-analytics', cardAccountId, months, granularity],
+        queryKey: ['card-analytics', cardAccountId ?? 'all', months, granularity],
         queryFn: () => treasuryApi.getCardAnalytics({
             card_account: cardAccountId ?? undefined,
             months,
             granularity,
         }),
         staleTime: staleTime.stable,
-        enabled: cardAccountId != null,
+        // undefined = deshabilitado; null = agregado de todas las tarjetas.
+        enabled: cardAccountId !== undefined,
     })
 
     return useMemo(() => {

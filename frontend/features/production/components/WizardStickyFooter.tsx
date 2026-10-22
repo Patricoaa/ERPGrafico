@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, Check, ArrowRight, Eye, X } from "lucide-react"
-import { ActionConfirmModal, ActionSlideButton, FormFooter, SubmitButton } from "@/components/shared"
+import { ActionConfirmModal, SubmitButton, FormFooter } from "@/components/shared"
 
 import type { WorkOrder, WorkOrderTask, WorkOrderStage, WizardStepMode } from "../types"
 import { getDomainConceptTitle } from "@/lib/entity-registry"
@@ -240,7 +240,7 @@ export function WizardStickyFooter({
         if (order?.status !== 'FINISHED' && stages[viewingStepIndex]?.id !== 'FINISHED') {
             if (isRectificationStep && onRectifyAndFinish) {
                 return (
-                    <ActionSlideButton
+                    <SubmitButton
                         disabled={isNextDisabled}
                         onClick={() => {
                             setAlertConfig({
@@ -254,12 +254,12 @@ export function WizardStickyFooter({
                             setShowAlert(true)
                         }}
                         loading={transitioning}
-                        variant="success"
                         aria-label="Rectificar y Finalizar Producción"
                         icon={Check}
+                        className="bg-success hover:bg-success/90 text-success-foreground"
                     >
                         {transitioning ? 'Procesando...' : 'Rectificar y Finalizar'}
-                    </ActionSlideButton>
+                    </SubmitButton>
                 )
             }
 
@@ -271,18 +271,17 @@ export function WizardStickyFooter({
                             Tareas pendientes de otros
                         </span>
                     )}
-                    <ActionSlideButton
+                    <SubmitButton
                         disabled={isNextDisabled}
                         onClick={handleNextClick}
                         loading={transitioning}
-                        variant="primary"
                         aria-label={viewingStepIndex === stages.length - 2 ? "Finalizar Producción" : "Siguiente Etapa"}
                         icon={viewingStepIndex === stages.length - 2 ? Check : ArrowRight}
                     >
                         {viewingStepIndex === stages.length - 2 ? 'Finalizar Producción'
                             : isImplicitlyApproving ? 'Aprobar y Siguiente'
                             : 'Siguiente Etapa'}
-                    </ActionSlideButton>
+                    </SubmitButton>
                 </div>
             )
         }

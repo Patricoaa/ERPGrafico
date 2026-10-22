@@ -34,6 +34,7 @@ export function usePayrolls(filters?: FilterState, initialData?: Payroll[]) {
         isLoading: showSkeleton,
         refetch,
         isRefetching,
+        isError: query.isError,
     }
 }
 

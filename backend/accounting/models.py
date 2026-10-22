@@ -5,9 +5,11 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import Exists, OuterRef
 from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
+from core.edit_policy import EditPolicy
 from core.models import AuditedModel, TimeStampedModel
 from core.utils import get_current_date
 
@@ -34,6 +36,7 @@ class CFCategory(models.TextChoices):
     INVESTING = "INVESTING", _("Actividades de Inversión")
     FINANCING = "FINANCING", _("Actividades de Financiación")
     DEP_AMORT = "DEP_AMORT", _("Depreciación y Amortización (No Efectivo)")
+    UNMAPPED = "UNMAPPED", _("Sin Categoría (Cuenta Puente)")
 
 
 class BSCategory(models.TextChoices):
@@ -46,6 +49,15 @@ class BSCategory(models.TextChoices):
 
 
 class Account(TimeStampedModel):
+
+    # ADR-0091 (clase C): type and posting role are frozen once the account has entries.
+    edit_policy = EditPolicy(
+        frozen_when_used=frozenset({"account_type", "is_category", "parent"}),
+        is_used=lambda acc: acc.journal_items.exists(),
+        used_annotation=lambda: Exists(JournalItem.objects.filter(account=OuterRef("pk"))),
+        deletable=True,
+        used_message="La cuenta ya tiene asientos; su tipo, cuenta padre y si es de agrupación no se pueden cambiar.",
+    )
     code = models.CharField(
         _("Código"), max_length=20, unique=True, blank=True, help_text="Ej: 1.1.01.001"
     )
@@ -158,25 +170,23 @@ class Account(TimeStampedModel):
 
     @property
     def debit_total(self):
-        if hasattr(self, "annotated_debit_total") and self.annotated_debit_total is not None:
-            return self.annotated_debit_total
-        return sum(
-            item.debit
-            for item in self.journal_items.filter(
-                entry__status__in=JournalEntry.balance_affecting_statuses()
-            )
-        )
+        # The list annotates this; Sum() over no rows is None, which means zero.
+        if hasattr(self, "annotated_debit_total"):
+            return self.annotated_debit_total or Decimal("0")
+        total = self.journal_items.filter(
+            entry__status__in=JournalEntry.balance_affecting_statuses()
+        ).aggregate(total=models.Sum("debit"))["total"]
+        return total or Decimal("0")
 
     @property
     def credit_total(self):
-        if hasattr(self, "annotated_credit_total") and self.annotated_credit_total is not None:
-            return self.annotated_credit_total
-        return sum(
-            item.credit
-            for item in self.journal_items.filter(
-                entry__status__in=JournalEntry.balance_affecting_statuses()
-            )
-        )
+        # The list annotates this; Sum() over no rows is None, which means zero.
+        if hasattr(self, "annotated_credit_total"):
+            return self.annotated_credit_total or Decimal("0")
+        total = self.journal_items.filter(
+            entry__status__in=JournalEntry.balance_affecting_statuses()
+        ).aggregate(total=models.Sum("credit"))["total"]
+        return total or Decimal("0")
 
     @property
     def balance(self):
@@ -1490,6 +1500,14 @@ class FiscalYear(models.Model):
     transferring the result to equity.
     """
 
+    # ADR-0091: dates are frozen once closing starts; close/reopen go through actions.
+    edit_policy = EditPolicy(
+        editable_statuses=frozenset({"OPEN"}),
+        is_locked=lambda fy: fy.closing_entry_id is not None,
+        deletable=True,
+        locked_message="El ejercicio está en cierre o cerrado; reábralo para modificarlo.",
+    )
+
     class Status(models.TextChoices):
         OPEN = "OPEN", _("Abierto")
         CLOSING = "CLOSING", _("En Proceso de Cierre")
@@ -1674,7 +1692,12 @@ class ClosingChecklistTemplate(models.Model):
     category = models.CharField(max_length=30, choices=Category.choices)
     is_required = models.BooleanField(default=True)
     order = models.PositiveSmallIntegerField(default=0)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(
+        _("Activa"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar la plantilla de cierre; los cierres históricos la siguen referenciando."),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

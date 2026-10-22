@@ -14,7 +14,7 @@ import { showApiError } from "@/lib/errors"
 import { financeApi } from "../api/financeApi"
 import { toast } from "sonner"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
-import { Drawer, LabeledInput, FormFooter, FormSplitLayout, CancelButton, ActionSlideButton } from "@/components/shared"
+import { Drawer, LabeledInput, FormFooter, FormSplitLayout, CancelButton, SubmitButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -121,9 +121,9 @@ export function TransactionNumberDrawer({
                         actions={
                             <>
                                 <CancelButton onClick={() => onOpenChange(false)} />
-                                <ActionSlideButton type="submit" form="transaction-number-form" loading={loading}>
+                                <SubmitButton type="submit" form="transaction-number-form" loading={loading}>
                                     Guardar
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />

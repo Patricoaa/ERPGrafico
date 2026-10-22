@@ -4,6 +4,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from accounting.models import JournalEntry
+from core.edit_policy import DRAFT_ONLY_DOCUMENT
 from core.models import TransactionalDocument
 from core.storages import PrivateMediaStorage
 from core.utils import generic_upload_path, get_current_date
@@ -13,6 +14,8 @@ from sales.models import SaleOrder
 
 
 class Invoice(TransactionalDocument):
+    edit_policy = DRAFT_ONLY_DOCUMENT  # ADR-0091
+
     class DTEType(models.TextChoices):
         FACTURA = "FACTURA", _("Factura Electrónica")
         FACTURA_EXENTA = "FACTURA_EXENTA", _("Factura No Afecta o Exenta")
@@ -104,12 +107,18 @@ class Invoice(TransactionalDocument):
     )
     contact = models.ForeignKey(
         "contacts.Contact",
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="invoices",
         verbose_name=_("Contacto"),
     )
+
+    # Fiscal snapshot of the counterparty taken when the document is issued, so
+    # later edits to the contact do not rewrite issued documents (ADR-0091 §10).
+    partner_name_snapshot = models.CharField(_("Razón social (al emitir)"), max_length=255, blank=True)
+    partner_tax_id_snapshot = models.CharField(_("RUT (al emitir)"), max_length=20, blank=True)
+    partner_address_snapshot = models.TextField(_("Dirección (al emitir)"), blank=True)
 
     payment_method = models.CharField(
         _("Método de Pago"),
@@ -137,6 +146,50 @@ class Invoice(TransactionalDocument):
 
     def __str__(self):
         return self.display_id
+
+    SNAPSHOT_FIELDS = ("partner_name_snapshot", "partner_tax_id_snapshot", "partner_address_snapshot")
+
+    @property
+    def partner(self):
+        if self.sale_order_id and self.sale_order.customer_id:
+            return self.sale_order.customer
+        if self.purchase_order_id and self.purchase_order.supplier_id:
+            return self.purchase_order.supplier
+        return self.contact
+
+    @property
+    def has_fiscal_snapshot(self) -> bool:
+        return bool(self.partner_tax_id_snapshot or self.partner_name_snapshot)
+
+    def capture_fiscal_snapshot(self) -> None:
+        partner = self.partner
+        if partner is None:
+            return
+        self.partner_name_snapshot = partner.name or ""
+        self.partner_tax_id_snapshot = partner.tax_id or ""
+        self.partner_address_snapshot = partner.address or ""
+
+    @property
+    def partner_display_name(self) -> str:
+        if self.has_fiscal_snapshot:
+            return self.partner_name_snapshot
+        partner = self.partner
+        return partner.name if partner else ""
+
+    @property
+    def partner_display_tax_id(self) -> str:
+        if self.has_fiscal_snapshot:
+            return self.partner_tax_id_snapshot
+        partner = self.partner
+        return (partner.tax_id or "") if partner else ""
+
+    def save(self, *args, **kwargs):
+        if self.status == self.Status.POSTED and not self.has_fiscal_snapshot:
+            self.capture_fiscal_snapshot()
+            update_fields = kwargs.get("update_fields")
+            if update_fields is not None:
+                kwargs["update_fields"] = set(update_fields) | set(self.SNAPSHOT_FIELDS)
+        super().save(*args, **kwargs)
 
     def dte_strategy(self):
         """Devuelve la estrategia DTE correspondiente a este documento."""

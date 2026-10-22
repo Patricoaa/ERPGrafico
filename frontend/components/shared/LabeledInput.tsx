@@ -1,7 +1,9 @@
 "use client"
 
-import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes } from "react"
+import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes, useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
+import { FieldLegend, fieldLegendClasses } from "./FieldLegend"
+import { Eye, EyeOff } from "lucide-react"
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -16,9 +18,9 @@ interface LabeledInputBaseProps {
     error?: string
     /** Helper hint shown below when there is no error. */
     hint?: React.ReactNode
-    /** Additional classes for the label `<legend>` or header. */
+    /** @deprecated Use FieldLegend (N2) instead. Legend typography is now centralized. */
     labelClassName?: string
-    /** Additional classes for the hint text. */
+    /** @deprecated Use FieldLegend (N2) instead. Legend typography is now centralized. */
     hintClassName?: string
     /** Additional classes for the outer wrapper `<div>`. */
     containerClassName?: string
@@ -26,6 +28,8 @@ interface LabeledInputBaseProps {
     icon?: React.ReactNode
     /** Text or element shown as a suffix (inside the fieldset). */
     suffix?: React.ReactNode
+    /** Tooltip text shown on hover of a small ℹ icon inline in the legend. */
+    tooltip?: string
 }
 
 /** Props for a single-line input (`as` omitted or `as="input"`). */
@@ -103,16 +107,56 @@ export const LabeledInput = forwardRef<
         disabled,
         icon,
         suffix,
+        tooltip,
         ...rest
     } = props
 
     const hasError = !!error
     const isTextarea = "as" in props && props.as === "textarea"
+    const isPassword = !isTextarea && (rest as InputHTMLAttributes<HTMLInputElement>).type === "password"
+
+    // Caps Lock detection for password fields
+    const [isCapsLockOn, setIsCapsLockOn] = useState(false)
+
+    useEffect(() => {
+        if (!isPassword) return
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            setIsCapsLockOn(event.getModifierState("CapsLock"))
+        }
+
+        const handleKeyUp = (event: KeyboardEvent) => {
+            setIsCapsLockOn(event.getModifierState("CapsLock"))
+        }
+
+        window.addEventListener("keydown", handleKeyDown)
+        window.addEventListener("keyup", handleKeyUp)
+
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown)
+            window.removeEventListener("keyup", handleKeyUp)
+        }
+    }, [isPassword])
 
     const sharedInputClass = cn(
         "text-sm text-foreground placeholder:text-muted-foreground/60",
         className
     )
+
+    // Password visibility toggle state
+    const [showPassword, setShowPassword] = useState(false)
+    const [inputValue, setInputValue] = useState("")
+    const inputType = isPassword && !showPassword ? "password" : "text"
+
+    // Get current value (handles both controlled and uncontrolled)
+    const currentValue = String((rest as InputHTMLAttributes<HTMLInputElement>).value ?? inputValue)
+    const hasContent = currentValue.length > 0
+
+    // Track input value for eye icon visibility
+    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setInputValue(event.target.value)
+        ;(rest as InputHTMLAttributes<HTMLInputElement>).onChange?.(event as React.ChangeEvent<HTMLInputElement>)
+    }
 
     return (
         <div className={cn("space-y-1 relative w-full group", containerClassName)}>
@@ -126,21 +170,17 @@ export const LabeledInput = forwardRef<
                 data-disabled={disabled || undefined}
             >
                 {label && (
-                    <legend className={cn(
-                        "px-1.5 text-2xs font-bold uppercase tracking-widest transition-colors duration-200",
-                        hasError ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary",
-                        labelClassName
-                    )}>
-                        {label}
-                        {required && (
-                            <span className="text-destructive ml-0.5" aria-hidden="true">
-                                *
-                            </span>
-                        )}
-                    </legend>
+                    <FieldLegend
+                        label={label}
+                        required={required}
+                        hasError={hasError}
+                        disabled={disabled}
+                        className={labelClassName}
+                        tooltip={tooltip}
+                    />
                 )}
 
-                <div className="flex items-center w-full h-full px-1">
+                <div className="flex items-center w-full h-full px-1 relative">
                     {icon && (
                         <div className="flex items-center justify-center pl-2 pr-0 text-muted-foreground/60 group-focus-within:text-primary transition-colors shrink-0 select-none leading-none">
                             {icon}
@@ -159,8 +199,11 @@ export const LabeledInput = forwardRef<
                         <input
                             ref={ref as React.ForwardedRef<HTMLInputElement>}
                             disabled={disabled}
-                            className={cn(sharedInputClass, "px-2 h-full")}
-                            {...(rest as InputHTMLAttributes<HTMLInputElement>)}
+                            type={inputType}
+                            className={cn(sharedInputClass, "flex-1 min-w-0 px-2 h-full pr-10")} /* Space for eye icon */
+                            onChange={handleChange}
+                            value={currentValue}
+                            {...((({ type, ...rest }) => rest)(rest as InputHTMLAttributes<HTMLInputElement>))}
                         />
                     )}
 
@@ -168,6 +211,20 @@ export const LabeledInput = forwardRef<
                         <div className="flex items-center justify-center pr-2 pl-1 text-muted-foreground/60 group-focus-within:text-primary transition-colors shrink-0 select-none">
                             {suffix}
                         </div>
+                    )}
+
+                    {/* Eye icon toggle for password fields - right side, only when has content */}
+                    {isPassword && !disabled && hasContent && (
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            onMouseDown={(e) => e.preventDefault()}
+                            className="flex items-center justify-center w-10 pr-2 text-muted-foreground/60 hover:text-primary transition-colors shrink-0 select-none absolute right-0 inset-y-0"
+                            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                            aria-pressed={showPassword}
+                        >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
                     )}
                 </div>
             </fieldset>
@@ -178,6 +235,13 @@ export const LabeledInput = forwardRef<
                     className="text-2xs font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200 pl-1"
                 >
                     {error}
+                </div>
+            )}
+
+            {/* Caps Lock hint for password fields - outside fieldset */}
+            {isPassword && isCapsLockOn && !hasError && (
+                <div className="text-2xs text-primary pl-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                    Mayúsculas activadas
                 </div>
             )}
 

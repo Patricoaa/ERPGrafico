@@ -1,129 +1,27 @@
 "use client"
 
 import * as React from "react"
-import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { SelectionRing } from "@/components/shared/SelectionRing"
+import { StatusBadge } from "@/components/shared"
 import { cn } from "@/lib/utils"
-import { alignOf, fieldById, type Entity, type FieldId, type FieldMap } from "../core/define-entity"
+import { alignOf, fieldById, type FieldMap } from "../core/define-entity"
 import { formatNumber, formatMoneyValue } from "../core/formatters"
+import { decimalsFor, eligibilityOf, processedInputs, type EditableDefinition, type EditableErrors, type EditableInput, type EditableRowValue } from "../core/define-editable"
 import { ALIGN_TEXT } from "../core/align"
 import { CELL, FieldValue, HEADER_TEXT } from "./Collection"
 
-// ─── Definition ──────────────────────────────────────────────────────────────
-
-export interface EditableInput<T> {
-    kind: "quantity" | "money"
-    header: string
-    /** Accessible name derived from the row (AX-6, ED-1), e.g. "Cantidad a despachar — Papel couché". */
-    label: (row: T) => string
-    min?: number
-    max?: (row: T) => number
-    step?: (row: T) => number
-    initial?: (row: T) => number
-    /** Unit of the quantity (e.g. the line UoM). Footer totals are grouped by unit. */
-    unit?: (row: T) => string | null | undefined
-}
-
-export type Eligibility = { ok: true } | { ok: false; reason: string }
-
-export interface EditableSpec<T, Id extends string, Inputs extends Record<string, EditableInput<T>>> {
-    rowKey: (row: T) => string | number
-    /** Read-only context columns, by entity field id. */
-    context: readonly Id[]
-    inputs: Inputs
-    eligible?: (row: T) => Eligibility
-    footer?: { sum?: readonly (keyof Inputs & string)[] }
-    bulk?: readonly ("fillToMax" | "clear")[]
-    /** Domain wording for the bulk helpers, e.g. "Despachar todo lo pendiente". */
-    bulkLabels?: { fillToMax?: string; clear?: string }
-}
-
-export interface EditableDefinition<T, F extends FieldMap<T>, Inputs extends Record<string, EditableInput<T>>>
-    extends EditableSpec<T, FieldId<F>, Inputs> {
-    entity: Entity<T, F>
-}
-
-export function defineEditable<T, F extends FieldMap<T>, Inputs extends Record<string, EditableInput<T>>>(
-    entity: Entity<T, F>,
-    spec: EditableSpec<T, FieldId<F>, Inputs>,
-): EditableDefinition<T, F, Inputs> {
-    return { entity, ...spec }
-}
-
-// ─── Values & schema (react-hook-form + zodResolver, invariant #9) ───────────
-
-/** Decimals shown for an input: integer steps (units, packs) show none. */
-function decimalsFor<T>(input: EditableInput<T>, row: T): number {
-    const step = input.step?.(row)
-    return step !== undefined && step >= 1 ? 0 : 2
-}
-
 /**
- * Eligibility including the cap: a row with nothing left to process (max 0) is not editable,
- * instead of offering an input that can only hold 0.
+ * Moves focus to the first invalid cell (AX-6). Pass it as the invalid handler of
+ * `form.handleSubmit(onValid, () => focusFirstEditableError())`; it waits one frame for the
+ * error state to render.
  */
-export function eligibilityOf<T, F extends FieldMap<T>, I extends Record<string, EditableInput<T>>>(def: EditableDefinition<T, F, I>, row: T): Eligibility {
-    const declared = def.eligible?.(row) ?? { ok: true }
-    if (!declared.ok) return declared
-    const caps = Object.values(def.inputs).map((input) => input.max?.(row))
-    if (caps.length > 0 && caps.every((max) => max !== undefined && max <= 0)) return { ok: false, reason: "Sin pendiente" }
-    return declared
-}
-
-export interface EditableRowValue {
-    key: string
-    values: Record<string, number>
-}
-
-export function initialEditableValues<T, F extends FieldMap<T>, I extends Record<string, EditableInput<T>>>(
-    def: EditableDefinition<T, F, I>,
-    rows: readonly T[],
-): EditableRowValue[] {
-    return rows.map((row) => {
-        const eligible = eligibilityOf(def, row)
-        const values: Record<string, number> = {}
-        for (const [name, input] of Object.entries(def.inputs)) {
-            values[name] = eligible.ok ? input.initial?.(row) ?? 0 : 0
-        }
-        return { key: String(def.rowKey(row)), values }
+export function focusFirstEditableError(root: ParentNode = document): void {
+    requestAnimationFrame(() => {
+        root.querySelector<HTMLInputElement>('[data-editable-collection] input[aria-invalid="true"]')?.focus()
     })
 }
-
-/** Zod schema with per-row caps and eligibility; error paths point at `[index, "values", input]`. */
-export function editableSchema<T, F extends FieldMap<T>, I extends Record<string, EditableInput<T>>>(
-    def: EditableDefinition<T, F, I>,
-    rows: readonly T[],
-) {
-    const byKey = new Map(rows.map((row) => [String(def.rowKey(row)), row]))
-    return z
-        .array(z.object({ key: z.string(), values: z.record(z.string(), z.number()) }))
-        .superRefine((lines, ctx) => {
-            let processed = 0
-            lines.forEach((line, index) => {
-                const row = byKey.get(line.key)
-                if (!row) return
-                const eligible = eligibilityOf<T, F, I>(def, row)
-                for (const [name, input] of Object.entries(def.inputs)) {
-                    const value = line.values[name] ?? 0
-                    if (value > 0) processed++
-                    const min = input.min ?? 0
-                    const max = input.max?.(row)
-                    if (!eligible.ok && value > 0) {
-                        ctx.addIssue({ code: "custom", path: [index, "values", name], message: eligible.reason })
-                    } else if (value < min) {
-                        ctx.addIssue({ code: "custom", path: [index, "values", name], message: `Mínimo ${min}` })
-                    } else if (max !== undefined && value > max) {
-                        ctx.addIssue({ code: "custom", path: [index, "values", name], message: `Máx. ${formatNumber(max, decimalsFor(input, row))}` })
-                    }
-                }
-            })
-            if (processed === 0) ctx.addIssue({ code: "custom", path: [], message: "Ingresa al menos una cantidad" })
-        })
-}
-
-/** Error map `{ [rowKey]: { [input]: message } }` from a zod error (or RHF field errors flattened to it). */
-export type EditableErrors = Record<string, Record<string, string>>
 
 // ─── Surface ─────────────────────────────────────────────────────────────────
 
@@ -148,22 +46,48 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
     disabled,
 }: EditableCollectionProps<T, F, I>) {
     const inputNames = Object.keys(def.inputs) as (keyof I & string)[]
+    const processed = processedInputs(def)
     const byKey = React.useMemo(() => new Map(value.map((v) => [v.key, v])), [value])
     // One lookup map for bulk helpers and footer totals (avoids rows.find inside loops).
     const rowByKey = React.useMemo(() => new Map(rows.map((r) => [String(def.rowKey(r)), r])), [rows, def])
+    // Resolved once per rows/definition, not per keystroke: eligibility evaluates every cap of the row.
+    const eligibility = React.useMemo(() => new Map(rows.map((r) => [String(def.rowKey(r)), eligibilityOf<T, F, I>(def, r)])), [rows, def])
+    const contextFields = React.useMemo(
+        () => def.context.map((id) => {
+            const field = fieldById(def.entity, id)
+            return { id, field, align: alignOf(field) }
+        }),
+        [def],
+    )
     const idBase = React.useId()
+    const hasSelect = def.select !== undefined
 
     const setValue = (key: string, name: string, next: number) =>
         onChange(value.map((v) => (v.key === key ? { ...v, values: { ...v.values, [name]: next } } : v)))
 
+    const setTextValue = (key: string, name: string, next: string) =>
+        onChange(value.map((v) => (v.key === key ? { ...v, textValues: { ...v.textValues, [name]: next } } : v)))
+
+    const setSelected = (key: string, next: boolean) =>
+        onChange(value.map((v) => (v.key === key ? { ...v, selected: next } : v)))
+
+    // E3: row is "active" (inputs enabled) when no select spec, or when selected.
+    const isRowActive = (key: string): boolean => {
+        if (!hasSelect) return true
+        return byKey.get(key)?.selected ?? false
+    }
+
     const bulk = (mode: "fillToMax" | "clear") =>
         onChange(
             value.map((v) => {
+                // E3: bulk only affects selected rows (or all when no select spec).
+                if (hasSelect && !v.selected) return v
                 const row = rowByKey.get(v.key)
                 if (!row) return v
-                const eligible = eligibilityOf<T, F, I>(def, row)
-                const values: Record<string, number> = {}
-                for (const name of inputNames) {
+                const eligible = eligibility.get(v.key) ?? { ok: true }
+                // Only the processed inputs: "Limpiar" must not wipe the unit cost of the row.
+                const values: Record<string, number> = { ...v.values }
+                for (const name of processed) {
                     values[name] = mode === "clear" || !eligible.ok ? 0 : def.inputs[name].max?.(row) ?? v.values[name] ?? 0
                 }
                 return { ...v, values }
@@ -171,9 +95,12 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
         )
 
     const sums = def.footer?.sum ?? []
+    const hasStatus = !!def.rowStatus
+    // The first column (the product) stays visible while the inputs scroll horizontally on phones (ED-5).
+    const STICKY = "sticky left-0 z-[1] bg-card"
 
     return (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2" data-editable-collection="">
             {def.bulk && def.bulk.length > 0 && (
                 <div className="flex justify-end gap-2" role="group" aria-label="Acciones masivas">
                     {def.bulk.includes("fillToMax") && (
@@ -184,36 +111,52 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                     )}
                 </div>
             )}
-            <div className="overflow-auto rounded-md border">
+            <div className="overflow-auto rounded-md border bg-card">
                 <table className="w-full text-sm" aria-label={label}>
-                    <thead className="bg-background">
+                    <thead className="bg-card">
                         <tr className="border-b">
-                            {def.context.map((id, i) => {
-                                const field = fieldById(def.entity, id)
+                            {/* E3: selection checkbox column header */}
+                            {hasSelect && <th scope="col" className={cn("px-(--table-header-px) py-(--table-header-py) w-10", HEADER_TEXT)} aria-label="Selección" />}
+                            {contextFields.map(({ id, field, align }, i) => (
+                                // The first column absorbs the free width so the inputs sit next to their reference columns.
+                                <th key={id} scope="col" className={cn("px-(--table-header-px) py-(--table-header-py) whitespace-nowrap", HEADER_TEXT, i === 0 && cn("w-full", !hasSelect && STICKY), ALIGN_TEXT[align])}>
+                                    {field.header ?? field.label}
+                                </th>
+                            ))}
+                            {inputNames.map((name) => {
+                                const input = def.inputs[name]
                                 return (
-                                    // The first column absorbs the free width so the inputs sit next to their reference columns.
-                                    <th key={id} scope="col" className={cn("px-(--table-header-px) py-(--table-header-py) whitespace-nowrap", HEADER_TEXT, i === 0 && "w-full", ALIGN_TEXT[alignOf(field)])}>
-                                        {field.header ?? field.label}
+                                    <th key={name} scope="col" className={cn("px-(--table-header-px) py-(--table-header-py)", input.kind === "text" ? "text-left" : "text-right", HEADER_TEXT)}>
+                                        {input.header}
                                     </th>
                                 )
                             })}
-                            {inputNames.map((name) => (
-                                <th key={name} scope="col" className={cn("px-(--table-header-px) py-(--table-header-py) text-right", HEADER_TEXT)}>
-                                    {def.inputs[name].header}
-                                </th>
-                            ))}
+                            {hasStatus && <th scope="col" className={cn("px-(--table-header-px) py-(--table-header-py)", HEADER_TEXT)}>Estado</th>}
                         </tr>
                     </thead>
                     <tbody>
                         {rows.map((row) => {
                             const key = String(def.rowKey(row))
-                            const eligible = eligibilityOf(def, row)
+                            const eligible = eligibility.get(key) ?? { ok: true }
+                            const rowActive = isRowActive(key)
                             const reasonId = `${idBase}-${key}-reason`
                             return (
-                                <tr key={key} className={cn("border-b border-border/40", !eligible.ok && "opacity-60")}>
-                                    {def.context.map((id, i) => (
-                                        <td key={id} className={cn(CELL, "align-middle")}>
-                                            <FieldValue def={fieldById(def.entity, id)} row={row} surface="table" />
+                                <tr key={key} className={cn("border-b border-border/40", (!eligible.ok || (hasSelect && !rowActive)) && "opacity-60")}>
+                                    {/* E3: per-row selection checkbox */}
+                                    {hasSelect && (
+                                        <td className={cn(CELL, "text-center align-middle")}>
+                                            <SelectionRing
+                                                checked={byKey.get(key)?.selected ?? false}
+                                                onCheckedChange={(v) => setSelected(key, !!v)}
+                                                disabled={disabled || !eligible.ok}
+                                                aria-label={def.select?.label(row) ?? ""}
+                                                size="sm"
+                                            />
+                                        </td>
+                                    )}
+                                    {contextFields.map(({ id, field, align }, i) => (
+                                        <td key={id} className={cn(CELL, "align-middle", i === 0 && !hasSelect ? STICKY : "whitespace-nowrap", ALIGN_TEXT[align])}>
+                                            <FieldValue def={field} row={row} surface="table" align={align} />
                                             {i === 0 && !eligible.ok && (
                                                 <span id={reasonId} className="block text-2xs text-muted-foreground">{eligible.reason}</span>
                                             )}
@@ -223,6 +166,41 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                                         const input = def.inputs[name]
                                         const error = errors[key]?.[name]
                                         const errorId = `${idBase}-${key}-${name}-error`
+                                        const isDisabled = disabled || !eligible.ok || (hasSelect && !rowActive)
+                                        const isReadOnly = typeof input.readOnly === "function" ? input.readOnly(row) : (input.readOnly ?? false)
+                                        // E2: text inputs use textValues, align left
+                                        if (input.kind === "text") {
+                                            return (
+                                                <td key={name} className={cn(CELL, "align-top text-left")}>
+                                                    <Input
+                                                        type="text"
+                                                        placeholder={input.placeholder}
+                                                        aria-label={input.label(row)}
+                                                        aria-invalid={!!error}
+                                                        aria-describedby={error ? errorId : undefined}
+                                                        disabled={isDisabled}
+                                                        value={byKey.get(key)?.textValues?.[name] ?? ""}
+                                                        onChange={(e) => setTextValue(key, name, e.target.value)}
+                                                        className={cn("h-8 w-40", error && "border-destructive")}
+                                                    />
+                                                    {error && (
+                                                        <span id={errorId} role="alert" className="mt-0.5 block text-2xs text-destructive">{error}</span>
+                                                    )}
+                                                </td>
+                                            )
+                                        }
+                                        // readOnly: show formatted value as text (E2.5)
+                                        if (isReadOnly) {
+                                            const currentVal = byKey.get(key)?.values[name] ?? 0
+                                            const formatted = input.kind === "money"
+                                                ? formatMoneyValue(currentVal)
+                                                : formatNumber(currentVal, decimalsFor(input, row))
+                                            return (
+                                                <td key={name} className={cn(CELL, "align-middle text-right text-sm tabular-nums text-muted-foreground")}>
+                                                    {formatted}
+                                                </td>
+                                            )
+                                        }
                                         const max = input.max?.(row)
                                         const hintId = `${idBase}-${key}-${name}-hint`
                                         return (
@@ -236,7 +214,7 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                                                     aria-invalid={!!error}
                                                     aria-describedby={cn(error && errorId, max !== undefined && eligible.ok && hintId, !eligible.ok && reasonId) || undefined}
                                                     step={input.step?.(row) ?? "any"}
-                                                    disabled={disabled || !eligible.ok}
+                                                    disabled={isDisabled}
                                                     value={byKey.get(key)?.values[name] ?? 0}
                                                     onChange={(e) => setValue(key, name, e.target.value === "" ? 0 : Number(e.target.value))}
                                                     className={cn("ml-auto h-8 w-28 text-right tabular-nums", error && "border-destructive")}
@@ -249,6 +227,7 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                                             </td>
                                         )
                                     })}
+                                    {hasStatus && <RowStatusCell def={def} row={row} values={byKey.get(key)?.values ?? {}} isActive={rowActive} />}
                                 </tr>
                             )
                         })}
@@ -256,12 +235,15 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                     {sums.length > 0 && (
                         <tfoot className="border-t bg-muted/30">
                             <tr>
-                                <td colSpan={def.context.length} className={cn(CELL, HEADER_TEXT)}>Total</td>
+                                <td colSpan={def.context.length + (hasSelect ? 1 : 0)} className={cn(CELL, HEADER_TEXT)}>Total</td>
                                 {inputNames.map((name) => {
                                     if (!sums.includes(name)) return <td key={name} />
                                     const input = def.inputs[name]
+                                    if (input.kind === "text") return <td key={name} />
                                     const totals = new Map<string, number>()
                                     for (const v of value) {
+                                        // E3: skip unselected rows in footer sums
+                                        if (hasSelect && !v.selected) continue
                                         if (errors[v.key]?.[name]) continue // invalid cells do not count toward the total
                                         const row = rowByKey.get(v.key)
                                         const unit = (row && input.unit?.(row)) ?? ""
@@ -273,6 +255,7 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                                         .join(" · ")
                                     return <td key={name} className={cn(CELL, "text-right text-xs font-semibold tabular-nums")} aria-live="polite">{text}</td>
                                 })}
+                                {hasStatus && <td />}
                             </tr>
                         </tfoot>
                     )}
@@ -282,35 +265,17 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
     )
 }
 
-/**
- * Maps react-hook-form field errors (from `zodResolver(editableSchema)`) to `EditableErrors`.
- * Pass `form.formState.errors.<name>`: the resolver is the single validation (invariant #9).
- */
-export function editableErrorsFromForm(errors: unknown, value: EditableRowValue[]): EditableErrors {
-    const out: EditableErrors = {}
-    if (!errors || typeof errors !== "object") return out
-    value.forEach((row, index) => {
-        const rowError = (errors as Record<number, unknown>)[index]
-        if (!rowError || typeof rowError !== "object") return
-        const values = (rowError as { values?: unknown }).values
-        if (!values || typeof values !== "object") return
-        for (const [name, fieldError] of Object.entries(values as Record<string, unknown>)) {
-            const message = fieldError && typeof fieldError === "object" ? (fieldError as { message?: unknown }).message : undefined
-            if (typeof message === "string") out[row.key] = { ...out[row.key], [name]: message }
-        }
-    })
-    return out
-}
-
-/** Flattens a zod error from `editableSchema` into `EditableErrors`. */
-export function toEditableErrors(error: z.ZodError, value: EditableRowValue[]): EditableErrors {
-    const out: EditableErrors = {}
-    for (const issue of error.issues) {
-        const [index, , name] = issue.path
-        if (typeof index !== "number" || typeof name !== "string") continue
-        const key = value[index]?.key
-        if (!key) continue
-        out[key] = { ...out[key], [name]: issue.message }
-    }
-    return out
+function RowStatusCell<T, F extends FieldMap<T>, I extends Record<string, EditableInput<T>>>({ def, row, values, isActive }: { def: EditableDefinition<T, F, I>; row: T; values: Record<string, number>; isActive: boolean }) {
+    // E3: empty cell for unselected rows
+    if (def.select && !isActive) return <td className={cn(CELL, "align-middle")} />
+    // Missing inputs read as 0, so the callback always receives every declared input.
+    const full = Object.fromEntries(
+        Object.keys(def.inputs).filter((n) => def.inputs[n].kind !== "text").map((name) => [name, values[name] ?? 0])
+    ) as Record<keyof I & string, number>
+    const status = def.rowStatus?.(row, full)
+    return (
+        <td className={cn(CELL, "align-middle whitespace-nowrap")} aria-live="polite">
+            {status && <StatusBadge status={status.status} label={status.label} intent={status.intent} size="sm" />}
+        </td>
+    )
 }

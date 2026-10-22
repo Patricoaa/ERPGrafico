@@ -4,9 +4,9 @@ import { useState } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
-import {DataTableView, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch} from '@/components/shared'
-import { type ColumnDef } from "@tanstack/react-table"
-import { posSessionFields } from "../posSessionFields"
+import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
+import { posSessionEntity, posSessionViews } from "../entity-view/posSession.entity"
 import { posSessionActions, type POSSessionActionsCtx } from "@/features/sales/posSessionActions"
 import { POSReport, type POSReportData } from "@/features/pos"
 import { SessionCloseModal } from "@/features/pos"
@@ -43,12 +43,23 @@ interface POSSessionsClientViewProps {
 import { usePOSSessions, usePOSSessionSummary } from "@/features/pos"
 import { posSessionUnifiedSearchDef } from "@/features/pos/unifiedSearchDef"
 
+/** Search group keys → entity field ids (grouping uses the formatted cell text). */
+const SESSION_GROUPS: Record<string, FieldId<typeof posSessionEntity.fields>> = { status: "status" }
+
 export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
     const search = useUnifiedSearch(posSessionUnifiedSearchDef)
-    const { sessions, isLoading, refetch } = usePOSSessions(search.filters)
+    const { sessions, isLoading, isError, refetch } = usePOSSessions(search.filters)
+    const groupBy = search.groupBy ? SESSION_GROUPS[search.groupBy] ?? null : null
+    const { view, onViewChange } = useCollectionViewMode("pos.session")
+    const collection = useEntityCollection(
+        posSessionEntity,
+        { rows: sessions, isLoading, error: isError, refetch, isFiltered: search.isFiltered },
+        // Groups span the whole list, not one page.
+        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 10 }, groupBy, defaultSort: posSessionViews.table.defaultSort },
+    )
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<POSSession>({
         endpoint: '/treasury/pos-sessions'
@@ -90,63 +101,26 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
         },
     }
 
-    const columns: ColumnDef<POSSession>[] = [
-        ...posSessionFields.toColumns(),
-        posSessionActions.auto(actionsCtx),
-    ]
-
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    columns={columns}
-                    data={sessions}
-                    variant="embedded"
-                    isLoading={isLoading}
-                    entityLabel="pos.session"
-                    cardSkeleton={{ showBody: false, showFooter: false }}
-                    unifiedSearch={<UnifiedSearchBar
-                        config={posSessionUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                    />}
-                    unifiedSearchConfig={posSessionUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    defaultPageSize={10}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "pos",
-                        title: "Aún no hay sesiones POS",
-                        description: "Las sesiones del punto de venta aparecerán aquí al iniciar sesión.",
-                    }}
-                    renderCard={(session: POSSession) => (
-                        <AutoEntityCard
-                            data={session}
-                            fields={posSessionFields}
-
-                            entityLabel="pos.session"
-
-                            actions={posSessionActions.render(session, actionsCtx)}
-                            defaultAction={posSessionActions.defaultAction(actionsCtx)?.(session) ?? null} 
-                            onClick={() => {
-                                const params = new URLSearchParams(searchParams.toString())
-                                params.set('selected', String(session.id))
-                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                            }}
-                        />
-                    )}
+            <Collection.Root
+                collection={collection}
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(session) => actionsCtx.onReport(session, session.status === "CLOSED" ? "Z" : "X")}
+                actions={posSessionActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar>
+                    <UnifiedSearchBar config={posSessionUnifiedSearchDef} {...bindUnifiedSearch(search)} />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={posSessionViews.table}
+                    card={posSessionViews.card}
+                    emptyTitle="Aún no hay sesiones POS"
+                    emptyDescription="Las sesiones del punto de venta aparecerán aquí al iniciar sesión."
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+            </Collection.Root>
 
             {/* Custom Overlay for POS Reports (X and Z) - Consistency with POS */}
             {isReportDialogOpen && (

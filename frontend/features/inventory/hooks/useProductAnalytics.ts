@@ -20,7 +20,8 @@ export interface ProductAnalyticsData {
     }
 }
 
-export function useProductAnalytics(params: ProductAnalyticsParams = {}): ProductAnalyticsData {
+/** `enabled: false` skips the request (e.g. while the analytics view is closed). */
+export function useProductAnalytics(params: ProductAnalyticsParams = {}, enabled: boolean = true): ProductAnalyticsData {
     const queryKey = useMemo(() => [
         "inventory",
         "products",
@@ -41,6 +42,7 @@ export function useProductAnalytics(params: ProductAnalyticsParams = {}): Produc
         queryKey: queryKey,
         queryFn: () => inventoryApi.getProductAnalytics(params),
         staleTime: staleTime.stable,
+        enabled,
     })
 
     return useMemo(() => {

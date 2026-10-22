@@ -5,12 +5,14 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import Exists, ExpressionWrapper, OuterRef
 from django.utils.translation import gettext_lazy as _
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFill
 from simple_history.models import HistoricalRecords
 
 from accounting.models import Account, AccountType
+from core.edit_policy import EditPolicy
 from core.models import TimeStampedModel
 from core.storages import PublicMediaStorage
 from core.utils import generic_upload_path, get_current_date
@@ -154,7 +156,12 @@ class ProductCategory(TimeStampedModel):
 class UoMCategory(TimeStampedModel):
     # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     name = models.CharField(_("Nombre"), max_length=100)
-    is_active = models.BooleanField(_("Activo"), default=True, db_index=True)
+    is_active = models.BooleanField(
+        _("Activo"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar la categoría de medida; las unidades históricas la siguen referenciando."),
+    )
     history = HistoricalRecords()
 
     class Meta:
@@ -166,7 +173,49 @@ class UoMCategory(TimeStampedModel):
         return self.name
 
 
+_UOM_HISTORY_MODELS = frozenset({
+    "inventory.StockMove",
+    "sales.SaleLine", "sales.SaleDeliveryLine", "sales.SaleReturnLine",
+    "purchasing.PurchaseLine", "purchasing.PurchaseReceiptLine", "purchasing.PurchaseReturnLine",
+    "billing.InvoiceLine", "production.WorkOrderMaterial",
+})
+
+
+def _uom_history_relations(uom_model):
+    return [
+        rel for rel in uom_model._meta.related_objects
+        if rel.related_model._meta.label in _UOM_HISTORY_MODELS and not rel.many_to_many
+    ]
+
+
+def _uom_history_annotation():
+    exists = [
+        Exists(rel.related_model.objects.filter(**{rel.field.name: OuterRef("pk")}))
+        for rel in _uom_history_relations(UoM)
+    ]
+    condition = exists[0]
+    for expr in exists[1:]:
+        condition = condition | expr
+    return ExpressionWrapper(condition, output_field=models.BooleanField())
+
+
+def _uom_has_history(uom) -> bool:
+    return any(
+        getattr(uom, rel.get_accessor_name()).exists()
+        for rel in uom._meta.related_objects
+        if rel.related_model._meta.label in _UOM_HISTORY_MODELS and not rel.many_to_many
+    )
+
 class UoM(TimeStampedModel):
+
+    # ADR-0091 (clase C): conversions of recorded quantities depend on these fields.
+    edit_policy = EditPolicy(
+        frozen_when_used=frozenset({"ratio", "category", "uom_type"}),
+        is_used=lambda uom: _uom_has_history(uom),
+        used_annotation=lambda: _uom_history_annotation(),
+        deletable=True,
+        used_message="La unidad ya se usó en movimientos o documentos; su factor, categoría y tipo no se pueden cambiar.",
+    )
     # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     class Type(models.TextChoices):
         REFERENCE = "REFERENCE", _("Referencia para esta categoría")
@@ -183,7 +232,12 @@ class UoM(TimeStampedModel):
     )
     ratio = models.DecimalField(_("Ratio"), max_digits=12, decimal_places=5, default=1.0)
     rounding = models.DecimalField(_("Redondeo"), max_digits=12, decimal_places=5, default=0.01000)
-    is_active = models.BooleanField(default=True, db_index=True)
+    is_active = models.BooleanField(
+        _("Activo"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar la unidad de medida; los productos históricos la siguen referenciando."),
+    )
     history = HistoricalRecords()
 
     class FormMeta:
@@ -227,6 +281,12 @@ class ProductAttribute(TimeStampedModel):
     # NOTE: created_at heredado de TimeStampedModel (T-14); updated_at es nuevo.
     # created_at ya existía como campo manual en el modelo — ahora heredado.
     name = models.CharField(_("Nombre"), max_length=100)
+    is_active = models.BooleanField(
+        _("Activo"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar el atributo; los productos históricos lo siguen referenciando."),
+    )
     history = HistoricalRecords()
 
     class Meta:
@@ -256,6 +316,15 @@ class ProductAttributeValue(TimeStampedModel):
 
 
 class Product(models.Model):
+
+    # ADR-0091 (clase C): stock quantities are expressed in these settings.
+    edit_policy = EditPolicy(
+        frozen_when_used=frozenset({"uom", "product_type", "track_inventory"}),
+        is_used=lambda p: p.stock_moves.exists(),
+        used_annotation=lambda: Exists(StockMove.objects.filter(product=OuterRef("pk"))),
+        deletable=True,
+        used_message="El producto ya tiene movimientos de stock; su unidad base, tipo y control de inventario no se pueden cambiar.",
+    )
     class Type(models.TextChoices):
         CONSUMABLE = "CONSUMABLE", _("Consumible")
         STORABLE = "STORABLE", _("Almacenable")
@@ -1221,6 +1290,19 @@ class Warehouse(models.Model):
 
 
 class Location(models.Model):
+
+    # ADR-0091 (clase C): stock balances are computed by location type.
+    edit_policy = EditPolicy(
+        frozen_when_used=frozenset({"location_type", "warehouse"}),
+        is_used=lambda loc: loc.moves_in.exists() or loc.moves_out.exists(),
+        used_annotation=lambda: ExpressionWrapper(
+            Exists(StockMove.objects.filter(source_location=OuterRef("pk")))
+            | Exists(StockMove.objects.filter(destination_location=OuterRef("pk"))),
+            output_field=models.BooleanField(),
+        ),
+        deletable=True,
+        used_message="La ubicación ya tiene movimientos de stock; su tipo y bodega no se pueden cambiar.",
+    )
     class Type(models.TextChoices):
         VENDOR = "VENDOR", "Proveedor"
         CUSTOMER = "CUSTOMER", "Cliente"
@@ -1237,7 +1319,12 @@ class Location(models.Model):
         null=True, blank=True,
         help_text="Cuenta contable de contrapartida para ubicaciones virtuales."
     )
-    is_active = models.BooleanField(_("Activa"), default=True)
+    is_active = models.BooleanField(
+        _("Activa"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar la ubicación; los movimientos de stock históricos la siguen referenciando."),
+    )
 
     class Meta:
         verbose_name = _("Ubicación")
@@ -1279,6 +1366,13 @@ ADJUSTMENT_VIRTUAL_NAMES = (
 
 
 class StockMove(models.Model):
+    # ADR-0085/0091: stock moves are append-only; corrections are counter-moves.
+    edit_policy = EditPolicy(
+        is_locked=lambda move: True,
+        mutable_when_locked=frozenset(),
+        locked_message="Los movimientos de stock no se modifican; registre un contramovimiento.",
+    )
+
     class Type(models.TextChoices):
         IN = "IN", _("Entrada")
         OUT = "OUT", _("Salida")

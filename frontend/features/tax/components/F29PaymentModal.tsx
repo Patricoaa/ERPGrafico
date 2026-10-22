@@ -4,7 +4,7 @@ import { formatCurrency } from "@/lib/money"
 import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
-import { BaseModal, Chip } from '@/components/shared'
+import { ActionConfirmModal, BaseModal, Chip } from '@/components/shared'
 import {
     DollarSign,
     Calendar,
@@ -18,6 +18,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { PaymentModal } from "@/features/treasury"
 import { type TaxDeclaration, type TaxPaymentData } from "../types"
+import { useAnnulTaxPayment } from "../hooks/useTaxMutations"
 
 interface F29PaymentModalProps {
     isOpen: boolean
@@ -33,6 +34,8 @@ export function F29PaymentModal({
     onConfirmPayment
 }: F29PaymentModalProps) {
     const [isRegisteringPayment, setIsRegisteringPayment] = useState(false)
+    const [paymentToAnnul, setPaymentToAnnul] = useState<number | null>(null)
+    const { annulTaxPayment } = useAnnulTaxPayment()
 
     const pendingAmount = Number(declaration.vat_to_pay) - Number(declaration.total_paid)
     const isFullyPaid = declaration.is_fully_paid || pendingAmount <= 0
@@ -127,9 +130,19 @@ export function F29PaymentModal({
                                                     </div>
                                                 </div>
                                             </div>
-                                            <Chip size="xs" intent="neutral">
-                                                {payment.payment_method_display}
-                                            </Chip>
+                                            <div className="flex items-center gap-2">
+                                                <Chip size="xs" intent="neutral">
+                                                    {payment.payment_method_display}
+                                                </Chip>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                                                    onClick={() => setPaymentToAnnul(payment.id)}
+                                                >
+                                                    Anular
+                                                </Button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -142,6 +155,22 @@ export function F29PaymentModal({
                     </div>
                 </div>
             </BaseModal>
+
+            <ActionConfirmModal
+                open={paymentToAnnul !== null}
+                onOpenChange={(o) => { if (!o) setPaymentToAnnul(null) }}
+                title="Anular pago F29"
+                description="Se anulará el egreso en tesorería con su asiento de reversa y el monto volverá a quedar pendiente."
+                variant="destructive"
+                confirmText="Anular"
+                requireReason
+                onConfirm={async (reason) => {
+                    if (paymentToAnnul === null || !reason) return
+                    await annulTaxPayment({ id: paymentToAnnul, reason })
+                    setPaymentToAnnul(null)
+                    onOpenChange(false)
+                }}
+            />
 
             {/* New Payment Dialog */}
             <PaymentModal

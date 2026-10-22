@@ -31,8 +31,9 @@ from django.core.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 
 from core.idempotency import idempotent_endpoint
+from core.edit_policy import annotate_edit_usage
 from core.mixins import AuditHistoryMixin as AuditHistory
-from core.mixins import BulkImportMixin
+from core.mixins import BulkImportMixin, EditPolicyMixin
 
 from .fiscal_year_service import FiscalYearClosingService
 from .selectors import (
@@ -87,13 +88,17 @@ class AccountingSettingsViewSet(viewsets.ModelViewSet):
         return Response({"rate": rate_float, "multiplier": round(1 + rate_float / 100, 10)})
 
 
-class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
-    queryset = Account.objects.all()
+class AccountViewSet(EditPolicyMixin, BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
+    queryset = Account.objects.all()  # Base queryset includes archived for detail/update
     serializer_class = AccountSerializer
     pagination_class = None  # Master data
 
     def get_queryset(self):
-        return list_accounts(params=self.request.query_params)
+        # List view uses selector with is_active filter
+        if self.action == "list":
+            return annotate_edit_usage(list_accounts(params=self.request.query_params))
+        # Detail/update/retrieve use full queryset (allows accessing archived)
+        return annotate_edit_usage(super().get_queryset())
 
     def create(self, request, *args, **kwargs):
         print("DEBUG: ACCOUNT CREATE CALLED")
@@ -108,12 +113,11 @@ class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
             raise e
 
     def destroy(self, request, *args, **kwargs):
-        account = self.get_object()
-        try:
-            AccountingService.validate_account_deletion(account)
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return super().destroy(request, *args, **kwargs)
+        # Archivo pattern: hard DELETE not allowed, use archive/restore instead
+        return Response(
+            {"detail": "Hard delete not allowed for Accounts. Use archive (is_active=false) instead."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
     @action(detail=True, methods=["get"])
     def ledger(self, request, pk=None):
@@ -301,7 +305,7 @@ class BudgetItemViewSet(viewsets.ModelViewSet):
     serializer_class = BudgetItemSerializer
 
 
-class FiscalYearViewSet(viewsets.ModelViewSet):
+class FiscalYearViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     """
     CRUD + custom actions for Fiscal Year management and annual closing.
     """

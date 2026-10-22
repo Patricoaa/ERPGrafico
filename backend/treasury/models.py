@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import Exists, ExpressionWrapper, OuterRef
 from django.utils.translation import gettext_lazy as _
 
 # from sales.models import SaleOrder
@@ -12,6 +13,7 @@ from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
 from accounting.models import Account, AccountType
+from core.edit_policy import EditPolicy
 from core.models import TimeStampedModel
 from core.storages import PrivateMediaStorage
 from core.utils import get_current_date
@@ -190,7 +192,7 @@ class TreasuryMovement(models.Model):
     # Unified contact field
     contact = models.ForeignKey(
         "contacts.Contact",
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="treasury_movements",
@@ -405,6 +407,14 @@ class TreasuryMovement(models.Model):
         choices=MovementStatus.choices,
         default=MovementStatus.DRAFT,
         help_text=_("Estado del movimiento: Borrador, Contabilizado o Anulado."),
+    )
+
+    # ADR-0091: any journal entry (even draft) is derived from these fields.
+    edit_policy = EditPolicy(
+        editable_statuses=frozenset({"DRAFT"}),
+        is_locked=lambda m: m.journal_entry_id is not None,
+        mutable_when_locked=frozenset({"notes", "justify_reason"}),
+        is_purgeable=lambda m: m.status == "CANCELLED" and m.journal_entry_id is None,
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -744,6 +754,14 @@ class CardPendingCharge(models.Model):
     facturados (ADR-0046 D-3 bis).
     """
 
+    # ADR-0091: once billed in a statement the charge belongs to it.
+    edit_policy = EditPolicy(
+        is_locked=lambda c: c.is_billed or c.journal_entry_id is not None,
+        mutable_when_locked=frozenset(),
+        deletable=True,
+        locked_message="El cargo ya fue facturado en un estado de cuenta y no se puede modificar.",
+    )
+
     class ChargeType(models.TextChoices):
         COMMISSION = "COMMISSION", _("Comisión")
         TAX = "TAX", _("Impuesto")
@@ -853,6 +871,19 @@ class TreasuryAccountManager(models.Manager):
 
 
 class TreasuryAccount(models.Model):
+
+    # ADR-0091 (clase C): balances and ledger depend on these fields.
+    edit_policy = EditPolicy(
+        frozen_when_used=frozenset({"account", "account_type", "currency"}),
+        is_used=lambda ta: ta.movements_from.exists() or ta.movements_to.exists(),
+        used_annotation=lambda: ExpressionWrapper(
+            Exists(TreasuryMovement.objects.filter(from_account=OuterRef("pk")))
+            | Exists(TreasuryMovement.objects.filter(to_account=OuterRef("pk"))),
+            output_field=models.BooleanField(),
+        ),
+        deletable=True,
+        used_message="La cuenta de tesorería ya tiene movimientos; su cuenta contable, tipo y moneda no se pueden cambiar.",
+    )
     class Type(models.TextChoices):
         CHECKING = "CHECKING", _("Cuenta Bancaria (Corriente/Vista)")
         CREDIT_CARD = "CREDIT_CARD", _("Tarjeta de Crédito (Cta. Propia)")
@@ -1138,7 +1169,12 @@ class POSTerminal(models.Model):
     location = models.CharField(
         _("Ubicación"), max_length=200, blank=True, help_text=_("Ubicación física del terminal")
     )
-    is_active = models.BooleanField(_("Activo"), default=True)
+    is_active = models.BooleanField(
+        _("Activo"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar el terminal POS; las sesiones históricas lo siguen referenciando."),
+    )
 
     # ManyToMany: Cuentas de tesorería permitidas para este terminal
     allowed_payment_methods = models.ManyToManyField(
@@ -1345,6 +1381,15 @@ class BankStatement(models.Model):
 
 class BankStatementLine(models.Model):
     """Línea individual de la cartola bancaria"""
+
+    # ADR-0091: matched/reconciled lines change only through match/unmatch actions.
+    edit_policy = EditPolicy(
+        is_locked=lambda line: (
+            line.reconciliation_status in ("MATCHED", "RECONCILED")
+            or line.difference_journal_entry_id is not None
+        ),
+        locked_message="La línea está conciliada; deshaga la conciliación antes de modificarla.",
+    )
 
     class ReconciliationStatus(models.TextChoices):
         UNRECONCILED = "UNRECONCILED", _("No Reconciliado")
@@ -1567,7 +1612,12 @@ class Bank(models.Model):
         null=True,
         help_text=_("Código internacional para transferencias"),
     )
-    is_active = models.BooleanField(_("Activo"), default=True)
+    is_active = models.BooleanField(
+        _("Activo"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar el banco; los movimientos históricos lo siguen referenciando."),
+    )
 
     # Ejecutivos de cuenta
     account_executives = models.ManyToManyField(
@@ -1619,7 +1669,12 @@ class PaymentTerminalProvider(models.Model):
         related_name="terminal_providers",
         verbose_name=_("Proveedor (Contacto)"),
     )
-    is_active = models.BooleanField(_("Activo"), default=True)
+    is_active = models.BooleanField(
+        _("Activo"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar el proveedor de terminal; los terminales históricos lo siguen referenciando."),
+    )
     notes = models.TextField(_("Notas"), blank=True)
 
     # Configuración Contable
@@ -1773,6 +1828,15 @@ class PaymentTerminalDevice(models.Model):
 class PaymentMethod(models.Model):
     """Métodos de pago específicos asociados a una cuenta de tesorería"""
 
+    # ADR-0091 (clase C): reports map past movements through method → account.
+    edit_policy = EditPolicy(
+        frozen_when_used=frozenset({"method_type", "treasury_account"}),
+        is_used=lambda pm: pm.movements.exists(),
+        used_annotation=lambda: Exists(TreasuryMovement.objects.filter(payment_method_new=OuterRef("pk"))),
+        deletable=True,
+        used_message="El método ya tiene movimientos; su tipo y cuenta de tesorería no se pueden cambiar. Cree un método nuevo.",
+    )
+
     class Type(models.TextChoices):
         CASH = "CASH", _("Efectivo Directo")
         CARD = "CARD", _("Tarjeta (Manual)")
@@ -1804,7 +1868,12 @@ class PaymentMethod(models.Model):
             "Cuenta destino contable real. Para CARD_TERMINAL: cuenta puente del proveedor."
         ),
     )
-    is_active = models.BooleanField(_("Activo"), default=True)
+    is_active = models.BooleanField(
+        _("Activo"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar el método de pago; los movimientos históricos lo siguen referenciando."),
+    )
     linked_terminal_device = models.ForeignKey(
         "PaymentTerminalDevice",
         on_delete=models.SET_NULL,
@@ -1963,6 +2032,12 @@ class TerminalBatch(models.Model):
     Lote diario de ventas con terminal que se liquida en conjunto.
     Representa la información que el terminal entrega 1-2 días después.
     """
+
+    edit_policy = EditPolicy(
+        editable_statuses=frozenset({"PENDING"}),
+        is_locked=lambda b: b.settlement_journal_entry_id is not None,
+        locked_message="El lote ya está liquidado y no se puede modificar.",
+    )
 
     class Status(models.TextChoices):
         PENDING = "PENDING", _("Pendiente Liquidación")
@@ -2282,6 +2357,12 @@ class POSSessionAudit(models.Model):
     Records the cash counting (arqueo) when closing a POS session.
     """
 
+    edit_policy = EditPolicy(
+        is_locked=lambda a: a.journal_entry_id is not None,
+        mutable_when_locked=frozenset(),
+        locked_message="El arqueo de caja ya está contabilizado y no se puede modificar.",
+    )
+
     session = models.OneToOneField(
         POSSession, on_delete=models.CASCADE, related_name="audit", verbose_name=_("Sesión")
     )
@@ -2343,6 +2424,12 @@ class PaymentAllocation(models.Model):
 
     Exactamente 1 FK destino debe estar definida por registro (validado en clean()).
     """
+
+    edit_policy = EditPolicy(
+        is_locked=lambda a: True,
+        mutable_when_locked=frozenset(),
+        locked_message="Las asignaciones se cambian con la acción allocate del pago.",
+    )
 
     from decimal import Decimal as _Decimal
 
@@ -2464,6 +2551,12 @@ class Check(models.Model):
     un cheque de tercero a un proveedor. Ver `CheckService` y
     `docs/20-contracts/state-map.md` para el state machine vigente.
     """
+
+    # state-map: inmutable salvo notes; lifecycle via deposit/clear/bounce/void.
+    edit_policy = EditPolicy(
+        is_locked=lambda c: True,
+        locked_message="El cheque no se modifica; use sus acciones (depositar, cobrar, protestar, anular).",
+    )
 
     class Direction(models.TextChoices):
         RECEIVED = "RECEIVED", _("Recibido")
@@ -2758,6 +2851,12 @@ class CreditLine(models.Model):
         choices=Status.choices,
         default=Status.ACTIVE,
     )
+    is_active = models.BooleanField(
+        _("Activa"),
+        default=True,
+        db_index=True,
+        help_text=_("Desactivar para archivar la línea de crédito; los movimientos históricos la siguen referenciando."),
+    )
 
     # ── Auditoría ────────────────────────────────────────────────────────────
     created_at = models.DateTimeField(auto_now_add=True)
@@ -2851,6 +2950,7 @@ class BankLoan(models.Model):
         PAID = "PAID", _("Pagado")
         REFINANCED = "REFINANCED", _("Refinanciado")
         DEFAULTED = "DEFAULTED", _("En Mora / Incobrable")
+        CANCELLED = "CANCELLED", _("Cancelado")
 
     class Currency(models.TextChoices):
         CLP = "CLP", _("Pesos Chilenos (CLP)")
@@ -3076,6 +3176,12 @@ class LoanInstallment(models.Model):
       morosidad sin tener que recorrer el historial.
     """
 
+    edit_policy = EditPolicy(
+        is_locked=lambda i: i.payment_movement_id is not None,
+        mutable_when_locked=frozenset(),
+        locked_message="La cuota ya está pagada y no se puede modificar.",
+    )
+
     class Status(models.TextChoices):
         PENDING = "PENDING", _("Pendiente")
         PAID = "PAID", _("Pagada")
@@ -3213,6 +3319,13 @@ class CreditCardStatement(models.Model):
 
     Ver `docs/50-audit/bancos/fase-3-tarjeta-credito.md` (F3.2–F3.4).
     """
+
+    # ADR-0091 exception: while OPEN, amounts stay editable because
+    # CardService.reapply_charges reverses and re-imputes charges_movement.
+    edit_policy = EditPolicy(
+        editable_statuses=frozenset({"OPEN"}),
+        locked_message="El estado de cuenta ya no está abierto y no se puede modificar.",
+    )
 
     class Status(models.TextChoices):
         OPEN = "OPEN", _("Abierto")

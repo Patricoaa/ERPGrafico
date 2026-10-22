@@ -8,7 +8,7 @@ import { type PurchaseOrderInitialData, type PurchaseOrderLine } from "@/types/f
 import { type ProductMinimal, type UoM } from "@/types/entities"
 import * as z from "zod"
 import { Plus, DollarSign, ShoppingCart } from "lucide-react"
-import { BaseModal, ActionSlideButton, DataCell, MoneyDisplay, LabeledInput, FormSection, FormFooter, CancelButton, SkeletonShell, FormSplitLayout } from "@/components/shared"
+import { BaseModal, SubmitButton, DataCell, MoneyDisplay, LabeledInput, FormSection, FormFooter, CancelButton, SkeletonShell, FormSplitLayout } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit"
 import { Button } from "@/components/ui/button"
 import {
@@ -218,9 +218,9 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                     actions={
                         <>
                             <CancelButton onClick={() => setOpen(false)} />
-                            <ActionSlideButton type="submit" form="purchase-order-form" loading={loading}>
+                            <SubmitButton type="submit" form="purchase-order-form" loading={loading}>
                                 Guardar Cambios
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />

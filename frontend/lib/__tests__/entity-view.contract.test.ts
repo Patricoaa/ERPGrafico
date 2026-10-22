@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs"
 import { join } from "node:path"
 import { describe, it, expect } from "vitest"
+import { LEGACY_CONSUMERS, EXEMPT_CONSUMERS } from "./entity-view.legacy-consumers"
 
 /**
  * Entity view system contract (ADR-0087 §9, docs/20-contracts/component-entity-view.md §9).
@@ -87,13 +88,52 @@ describe("entity-view core stays small", () => {
     })
 })
 
+// ─── Barrel evaluation order (import cycle guard) ────────────────────────────
+
+/**
+ * `@/components/shared` → GlobalModalProvider → drawer registry → feature views → this barrel is a
+ * cycle at import time. Feature modules define entities and register kinds at module level, so the
+ * dependency-free core must be evaluated before anything that imports shared (lote 2a: an import
+ * re-sort here broke every entity-view test with "registerValueKind is not a function").
+ */
+describe("entity-view barrel evaluation order", () => {
+    const firstIndex = (lines: string[], re: RegExp) => lines.findIndex((l) => re.test(l))
+
+    it("index.ts exports the core before importing kinds or surfaces", () => {
+        const lines = read("components/entity-view/index.ts").split("\n")
+        const lastCore = Math.max(...lines.map((l, i) => (/from "\.\/core\//.test(l) ? i : -1)))
+        expect(lastCore).toBeGreaterThan(-1)
+        // Kinds may be a bare side-effect import (`import "./kinds/x"`, no `from` — the
+        // self-registration pattern), not just a re-export, so the pattern omits `from `.
+        expect(firstIndex(lines, /"\.\/kinds\//)).toBeGreaterThan(lastCore)
+        expect(firstIndex(lines, /from "\.\/surfaces\//)).toBeGreaterThan(lastCore)
+    })
+
+    it("core-kinds imports the core before @/components/shared", () => {
+        const lines = read("components/entity-view/kinds/core-kinds.tsx").split("\n")
+        const lastCore = Math.max(...lines.map((l, i) => (/from "\.\.\/core\//.test(l) ? i : -1)))
+        expect(firstIndex(lines, /from "@\/components\/shared"/)).toBeGreaterThan(lastCore)
+    })
+})
+
 // ─── Entity definitions: no opaque escapes ───────────────────────────────────
 
 const FEATURE_FILES = collect("features")
 const ENTITY_FILES = FEATURE_FILES.filter((rel) => /\/entity-view\/[^/]+\.entity\.tsx?$/.test(rel))
 
-/** Cast debt inside entity definitions. Removing an entry is the fix (R5: typed getHubStatuses). */
-const ENTITY_CAST_ALLOWLIST = ["features/purchasing/entity-view/purchaseOrder.entity.ts"]
+/** Cast debt inside entity definitions. Emptied by R5 (typed getHubStatuses); must stay empty. */
+const ENTITY_CAST_ALLOWLIST: string[] = [
+    "features/inventory/entity-view/stockMove.entity.tsx", // formatEntityDisplay requires cast
+]
+
+describe("extension builders used across features (lote 3a)", () => {
+    it("docRef is the first export of @/features/documents and has no runtime imports", () => {
+        const barrel = read("features/documents/index.ts").split("\n").filter((l) => /^(export|import)\b/.test(l))
+        expect(barrel[0]).toMatch(/^export \{ docRef\b.*from '\.\/entity-view\/docRef'/)
+        const runtimeImports = read("features/documents/entity-view/docRef.ts").split("\n").filter((l) => /^import\b/.test(l) && !/^import type\b/.test(l))
+        expect(runtimeImports).toEqual([])
+    })
+})
 
 describe("entity definitions", () => {
     it("live in features/<feature>/entity-view/<entity>.entity.ts(x)", () => {
@@ -138,9 +178,8 @@ const LEGACY_FIELD_TYPES = 15
  * reports and trees are specific cases (feature-owned surfaces). The list only shrinks.
  */
 const ADHOC_TABLE_ALLOWLIST = [
-    "features/billing/components/checkout/Step1_Items.tsx",
-    "features/billing/components/checkout/Step2_Logistics.tsx",
-    "features/credits/components/BlacklistClientView.tsx",
+    "features/accounting/components/JournalEntrySheet.tsx",
+    "features/notes/components/steps/NoteStep_Logistics.tsx",
     "features/finance/bank-reconciliation/components/SplitAllocationDialog.tsx",
     "features/finance/components/BudgetVarianceTable.tsx",
     "features/finance/components/CashFlowTable.tsx",
@@ -154,15 +193,20 @@ const ADHOC_TABLE_ALLOWLIST = [
     "features/purchasing/components/checkout/Step1_ProductSelection.tsx",
     "features/purchasing/components/checkout/Step4_Receipt.tsx",
     "features/purchasing/components/PurchaseOrderModal.tsx",
-    "features/purchasing/components/ReceiptModal.tsx",
     "features/sales/components/checkout/Step3_Delivery.tsx",
-    "features/sales/components/DeliveryDrawer.tsx",
     "features/settings/components/partners/CreateDistributionFlow.tsx",
     "features/settings/components/partners/MassPaymentWizard.tsx",
     "features/settings/components/partners/MobilizeEarningsWizard.tsx",
     "features/treasury/card-statements/BillChargesModal.tsx",
 ]
 const ADHOC_TABLE = /<table[\s>/]|from ["']@\/components\/ui\/table["']/
+
+/** Legacy authoring API in use (M8). The legacy system itself and its replacement are out of scope. */
+const LEGACY_USE = /toColumns\(|AutoEntityCard|<DataTable\b|DataTableView|createEntityFields/
+const legacyScope = () =>
+    [...FEATURE_FILES, ...collect("app"), ...collect("components")].filter(
+        (rel) => !/^components\/(shared|entity-view|ui)\//.test(rel) && !/\.stories\.tsx$/.test(rel),
+    )
 
 describe("legacy presentation system is frozen", () => {
     it.each(LEGACY_CEILINGS)("$name has at most $max props", ({ file, name, max }) => {
@@ -187,6 +231,26 @@ describe("legacy presentation system is frozen", () => {
         for (const rel of ADHOC_TABLE_ALLOWLIST) {
             expect(existsSync(join(ROOT, rel)), `${rel} is missing — remove it from the allowlist`).toBe(true)
             expect(ADHOC_TABLE.test(read(rel)), `${rel} no longer holds a table — remove it from the allowlist`).toBe(true)
+        }
+    })
+
+    it("no new file consumes the legacy system", () => {
+        const allow = new Set([...LEGACY_CONSUMERS, ...EXEMPT_CONSUMERS])
+        const offenders = legacyScope().filter((rel) => !allow.has(rel) && LEGACY_USE.test(read(rel)))
+        expect(offenders).toEqual([])
+    })
+
+    it("legacy consumer entries still exist and still use the legacy system", () => {
+        for (const rel of LEGACY_CONSUMERS) {
+            expect(existsSync(join(ROOT, rel)), `${rel} is missing — remove it from LEGACY_CONSUMERS`).toBe(true)
+            expect(LEGACY_USE.test(read(rel)), `${rel} migrated — remove it from LEGACY_CONSUMERS`).toBe(true)
+        }
+    })
+
+    it("exempt consumer entries still exist and still use the legacy system", () => {
+        for (const rel of EXEMPT_CONSUMERS) {
+            expect(existsSync(join(ROOT, rel)), `${rel} is missing — remove it from EXEMPT_CONSUMERS`).toBe(true)
+            expect(LEGACY_USE.test(read(rel)), `${rel} migrated — remove it from EXEMPT_CONSUMERS`).toBe(true)
         }
     })
 })

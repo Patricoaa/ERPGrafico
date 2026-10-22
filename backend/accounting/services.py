@@ -283,14 +283,14 @@ class AccountingService:
                 None,
                 None,
             ),
-            ("1.1.06", "Cuentas Puente Activo", AccountType.ASSET, "1.1", None, CFCategory.OPERATING, None),
+            ("1.1.06", "Cuentas Puente Activo", AccountType.ASSET, "1.1", None, CFCategory.UNMAPPED, None),
             (
                 "1.1.06.01",
                 "Salida de Stock (Pendiente de Facturar)",
                 AccountType.ASSET,
                 "1.1.06",
                 None,
-                None,
+                CFCategory.UNMAPPED,
                 None,
             ),
             (
@@ -299,7 +299,7 @@ class AccountingService:
                 AccountType.ASSET,
                 "1.1.06",
                 None,
-                None,
+                CFCategory.UNMAPPED,
                 None,
             ),
             (
@@ -308,7 +308,7 @@ class AccountingService:
                 AccountType.ASSET,
                 "1.1.06",
                 None,
-                None,
+                CFCategory.UNMAPPED,
                 None,
             ),
             # 1.2 Non-Current Assets

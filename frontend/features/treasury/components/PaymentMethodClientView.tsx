@@ -1,25 +1,20 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
-import {
-    CreditCard, Lock, ChevronDown, Wallet, ArrowRightLeft, HandCoins, Monitor, FileText, CircleSlash, type LucideIcon
-} from "lucide-react"
+import React, { useState, useEffect } from "react"
+import { frozenFieldsOf } from "@/lib/edit-policy"
+import { CreditCard, Lock, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { DataTableView, AutoEntityCard } from '@/components/shared'
+import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { paymentMethodActions, type PaymentMethodActionsCtx } from './paymentMethodActions'
-import { paymentMethodFields } from '@/features/treasury/paymentMethodFields'
+import { paymentMethodEntity, paymentMethodViews } from "../entity-view/paymentMethod.entity"
 import { ActivitySidebar } from "@/features/audit"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Form, FormField } from "@/components/ui/form"
-import {
-    CancelButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput,
-    BaseModal, FormFooter, FormSplitLayout, ActionSlideButton, ActionConfirmModal,
-    UnifiedSearchBar, useUnifiedSearch
-} from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput, BaseModal, FormFooter, FormSplitLayout, SubmitButton, ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { paymentMethodUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { usePaymentMethods } from "@/features/treasury/hooks/useMasterData"
@@ -54,23 +49,19 @@ interface PaymentMethodClientViewProps {
 }
 
 export function PaymentMethodClientView({ externalOpen, onOpenChange, createAction }: PaymentMethodClientViewProps) {
-    const { methods, refetch, deleteMethod } = usePaymentMethods()
+    const { methods, isLoading, isError, refetch, archiveMethod } = usePaymentMethods()
     const search = useUnifiedSearch(paymentMethodUnifiedSearchDef)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null)
     const [usageFilter, setUsageFilter] = useState<string[]>([])
 
-    const deleteConfirm = useConfirmAction<number>(async (id) => {
+    const archiveConfirm = useConfirmAction<PaymentMethod>(async (method) => {
         try {
-            await deleteMethod(id)
+            await archiveMethod({ id: method.id, is_active: !method.is_active })
         } catch {
             // Error handled by hook
         }
     })
-
-    const handleDelete = (id: number) => {
-        deleteConfirm.requestConfirm(id)
-    }
 
     const openEdit = (method: PaymentMethod) => {
         setSelectedMethod(method)
@@ -79,135 +70,88 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
 
     const paymentMethodActionsCtx: PaymentMethodActionsCtx = {
         onEdit: openEdit,
-        onDelete: (id) => handleDelete(id),
+        onArchive: (method) => archiveConfirm.requestConfirm(method),
     }
-
-    const methodTypeIcons: Record<string, LucideIcon> = {
-        CASH: Wallet,
-        CARD_TERMINAL: Monitor,
-        TRANSFER: ArrowRightLeft,
-        DEBIT_CARD: CreditCard,
-        CREDIT_CARD: CreditCard,
-        CHECK: FileText,
-        CARD: CreditCard,
-        CREDIT: HandCoins,
-        OTHER: CircleSlash,
-    }
-
-    const methodTypeIconStyles: Record<string, string> = {
-        CASH: "text-success bg-success/10",
-        CARD_TERMINAL: "text-info bg-info/10",
-        TRANSFER: "text-primary bg-primary/10",
-        DEBIT_CARD: "text-warning bg-warning/10",
-        CREDIT_CARD: "text-warning bg-warning/10",
-        CHECK: "text-muted-foreground bg-muted/50",
-        CARD: "text-warning bg-warning/10",
-        CREDIT: "text-info bg-info/10",
-        OTHER: "text-muted-foreground bg-muted/50",
-    }
-
-    const renderMethodCard = (method: PaymentMethod) => {
-        const Icon = methodTypeIcons[method.method_type] || CreditCard
-        const iconStyle = methodTypeIconStyles[method.method_type] || "text-muted-foreground bg-muted/50"
-        return (
-            <AutoEntityCard 
-                key={method.id} 
-                data={method}
-                fields={paymentMethodFields}
-
-                entityLabel="treasury.paymentmethod"
-                onClick={() => openEdit(method)} 
-                defaultAction={paymentMethodActions.defaultAction(paymentMethodActionsCtx)?.(method) ?? null}
-                icon={Icon}
-                iconClassName={iconStyle}
-                actions={paymentMethodActions.render(method, paymentMethodActionsCtx)}
-            />
-        )
-    }
-
-    const columns = useMemo(() => [
-        ...paymentMethodFields.toColumns(),
-        paymentMethodActions.auto(paymentMethodActionsCtx),
-    ], [])
 
     const isFiltered = search.isFiltered || usageFilter.length > 0
     const filteredMethods = React.useMemo(() => {
         let result = methods
         if (search.filters.method_type) result = result.filter(m => m.method_type === search.filters.method_type)
+        if (search.filters.is_active) result = result.filter(m => String(m.is_active) === search.filters.is_active)
         if (usageFilter.includes('sales')) result = result.filter(m => m.allow_for_sales)
         if (usageFilter.includes('purchases')) result = result.filter(m => m.allow_for_purchases)
         return search.filterFn(result)
-    }, [methods, search.filters.method_type, usageFilter, search.filterFn, search])
+    }, [methods, search.filters.method_type, search.filters.is_active, usageFilter, search.filterFn, search])
+    const { view, onViewChange } = useCollectionViewMode("treasury.paymentmethod")
+    // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
+    const collection = useEntityCollection(
+        paymentMethodEntity,
+        { rows: filteredMethods, isLoading, error: isError && methods.length === 0, refetch, isFiltered },
+        { defaultSort: paymentMethodViews.table.defaultSort },
+    )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    entityLabel="treasury.paymentmethod"
-                    columns={columns}
-                    data={filteredMethods}
-                    variant="embedded"
-                    unifiedSearch={
-                        <UnifiedSearchBar
-                            config={paymentMethodUnifiedSearchDef}
-                            chips={search.chips}
-                            isFiltered={search.isFiltered}
-                            inputValue={search.inputValue}
-                            onInputChange={search.setInputValue}
-                            onApply={search.applyFilter}
-                            onRemove={search.removeFilter}
-                            onClearAll={search.clearAll}
-                            groupBy={search.groupBy}
-                            onGroupBySelect={search.setGroupBy}
-                            paramValues={search.paramValues}
-                            placeholder="Buscar método de pago..."
-                            toolbarActions={
-                                <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className={cn(
-                                                    'h-7 px-2 text-3xs uppercase font-medium tracking-widest gap-1 rounded-sm shrink-0',
-                                                    usageFilter.length > 0
-                                                        ? 'bg-accent/50 text-foreground'
-                                                        : 'text-muted-foreground hover:text-foreground',
-                                                )}
-                                            >
-                                                <span>{usageFilter.length > 0 ? `Disponible (${usageFilter.length})` : 'Disponible'}</span>
-                                                <ChevronDown className="h-3 w-3" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="start" className="w-44">
-                                            <DropdownMenuCheckboxItem
-                                                checked={usageFilter.includes('sales')}
-                                                onCheckedChange={(checked) => {
-                                                    setUsageFilter(prev => checked ? [...prev, 'sales'] : prev.filter(v => v !== 'sales'))
-                                                }}
-                                            >
-                                                Ventas
-                                            </DropdownMenuCheckboxItem>
-                                            <DropdownMenuCheckboxItem
-                                                checked={usageFilter.includes('purchases')}
-                                                onCheckedChange={(checked) => {
-                                                    setUsageFilter(prev => checked ? [...prev, 'purchases'] : prev.filter(v => v !== 'purchases'))
-                                                }}
-                                            >
-                                                Compras
-                                            </DropdownMenuCheckboxItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                            }
-                        />
-                    }
-                    showReset={isFiltered}
-                    onReset={() => { search.clearAll(); setUsageFilter([]) }}
-                    createAction={createAction}
-                    renderCard={renderMethodCard}
+            <Collection.Root
+                collection={collection}
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(method) => openEdit(method)}
+                actions={paymentMethodActions.forCollection(paymentMethodActionsCtx)}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar
+                        config={paymentMethodUnifiedSearchDef}
+                        {...bindUnifiedSearch(search)}
+                        placeholder="Buscar método de pago..."
+                        toolbarActions={
+                            <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className={cn(
+                                                'h-7 px-2 text-3xs uppercase font-medium tracking-widest gap-1 rounded-sm shrink-0',
+                                                usageFilter.length > 0
+                                                    ? 'bg-accent/50 text-foreground'
+                                                    : 'text-muted-foreground hover:text-foreground',
+                                            )}
+                                        >
+                                            <span>{usageFilter.length > 0 ? `Disponible (${usageFilter.length})` : 'Disponible'}</span>
+                                            <ChevronDown className="h-3 w-3" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="start" className="w-44">
+                                        <DropdownMenuCheckboxItem
+                                            checked={usageFilter.includes('sales')}
+                                            onCheckedChange={(checked) => {
+                                                setUsageFilter(prev => checked ? [...prev, 'sales'] : prev.filter(v => v !== 'sales'))
+                                            }}
+                                        >
+                                            Ventas
+                                        </DropdownMenuCheckboxItem>
+                                        <DropdownMenuCheckboxItem
+                                            checked={usageFilter.includes('purchases')}
+                                            onCheckedChange={(checked) => {
+                                                setUsageFilter(prev => checked ? [...prev, 'purchases'] : prev.filter(v => v !== 'purchases'))
+                                            }}
+                                        >
+                                            Compras
+                                        </DropdownMenuCheckboxItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        }
+                    />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={paymentMethodViews.table}
+                    card={paymentMethodViews.card}
+                    emptyAction={createAction}
+                    onResetFilters={() => { search.clearAll(); setUsageFilter([]) }}
                 />
-            </div>
+            </Collection.Root>
 
             <PaymentMethodModal
                 open={dialogOpen || !!externalOpen}
@@ -229,12 +173,15 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
             />
 
             <ActionConfirmModal
-                open={deleteConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
-                onConfirm={deleteConfirm.confirm}
-                title="Eliminar Método de Pago"
-                description="¿Está seguro de eliminar este método de pago? Esta acción no se puede deshacer."
-                variant="destructive"
+                open={archiveConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) archiveConfirm.cancel() }}
+                onConfirm={archiveConfirm.confirm}
+                title={archiveConfirm.payload?.is_active ? "Archivar Método de Pago" : "Restaurar Método de Pago"}
+                description={archiveConfirm.payload?.is_active
+                    ? "¿Está seguro de archivar este método de pago? Dejará de estar disponible para nuevas operaciones. Puede restaurarlo más adelante."
+                    : "¿Está seguro de restaurar este método de pago?"}
+                variant={archiveConfirm.payload?.is_active ? "warning" : "default"}
+                confirmText={archiveConfirm.payload?.is_active ? "Archivar" : "Restaurar"}
             />
         </div>
     )
@@ -248,6 +195,7 @@ interface PaymentMethodModalProps {
 }
 
 function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMethodModalProps) {
+    const frozen = frozenFieldsOf(method)
     const { createMethod, updateMethod, isCreating, isUpdating } = usePaymentMethods()
     const isSaving = isCreating || isUpdating
 
@@ -257,7 +205,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
         resolver: zodResolver(paymentMethodSchema) as unknown as Resolver<PaymentMethodFormValues>,
         defaultValues: {
             name: "",
-            method_type: "DEBIT_CARD",
+            method_type: "",
             treasury_account: "",
             settlement_account: null,
             requires_reference: false,
@@ -276,7 +224,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
 
             form.reset({
                 name: method?.name || "",
-                method_type: method?.method_type || "DEBIT_CARD",
+                method_type: method?.method_type || "",
                 treasury_account: accountId,
                 settlement_account: settlementId,
                 requires_reference: method?.requires_reference || false,
@@ -336,7 +284,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton
+                            <SubmitButton
                                 type="submit"
                                 form="method-form"
                                 loading={isSaving}
@@ -344,7 +292,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                                 onClick={form.handleSubmit(onSubmit)}
                             >
                                 {method ? "Guardar Cambios" : "Crear Método"}
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />
@@ -387,6 +335,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                                     render={({ field, fieldState }) => (
                                         <LabeledSelect
                                             label="Tipo"
+                                            disabled={frozen.has("method_type")}
                                             value={field.value}
                                             onChange={field.onChange}
                                             error={fieldState.error?.message}
@@ -409,6 +358,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                                     render={({ field, fieldState }) => (
                                         <TreasuryAccountSelector
                                             label="Cuenta de tesorería"
+                                            disabled={frozen.has("treasury_account")}
                                             value={field.value}
                                             onChange={field.onChange}
                                             error={fieldState.error?.message}

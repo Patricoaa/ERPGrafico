@@ -4,7 +4,7 @@ doc: unified-searchbar
 status: active
 owner: frontend-team
 created: 2026-07-09
-updated: 2026-07-09
+updated: 2026-10-19
 last_review: 2026-07-09
 stability: stable
 scope: Contrato único para UnifiedSearchBar — reemplaza SmartSearchBar + SegmentationBar + GroupBy. Búsqueda por texto, filtros dropdown, filtros de fecha, group-by y chips en un solo componente.
@@ -228,6 +228,64 @@ El prop `prefix` permite insertar controles dentro del input del searchbar, ante
 | Backspace (input vacío) | Remueve el último chip |
 | Escape | Cierra el popover de filtros |
 | Flecha abajo (input) | Abre el menú de filtros |
+
+---
+
+## Superficie y estados (skin canónico)
+
+El skin del buscador sigue el lenguaje de `entity-view` / `Collection` (ADR-0087). Es solo presentación: no cambia props, API ni comportamiento.
+
+### Campo (trigger)
+
+| Elemento | Token |
+|----------|-------|
+| Contenedor | `h-9 rounded-sm border border-border/40 bg-background px-2.5 gap-1.5` |
+| Hover | `hover:border-border/60` |
+| Foco | `focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/15` |
+| Icono | `Search` `size-4 text-muted-foreground` |
+| Input | `text-xs placeholder:text-muted-foreground` |
+| Chevron | `size-8` (mismo grupo que el `size-10` de `Button`, así `tailwind-merge` lo reemplaza), divisor inset `before:inset-y-1.5 before:left-0 before:w-px before:bg-border/40`, hover `bg-muted/50`, rota 180° al abrir |
+
+### Chips (badges de filtro activo)
+
+Los chips del buscador son **badges de filtro**, no el componente `Chip` (que mantiene `rounded-sm` por `component-chip.md`). Forma pill:
+
+| Variante | Token |
+|----------|-------|
+| Base | `inline-flex h-5 items-center gap-1 px-2 rounded-full text-2xs font-medium` |
+| `search` | `bg-muted text-muted-foreground` |
+| `filter` | `bg-primary/10 text-primary` |
+| `date` | `bg-info/10 text-info` |
+| `range` | `bg-warning/10 text-warning` |
+| `group` | `bg-pantone-violet/10 text-pantone-violet` |
+| Botón quitar | `size-4 rounded-full p-0 hover:bg-foreground/10`, `aria-label="Quitar {chip}"` |
+
+### Menú (popover)
+
+| Elemento | Token |
+|----------|-------|
+| Panel | hereda `rounded-lg` de `PopoverContent` + `border-border/80 shadow-floating` |
+| Divisores internos | `border-border/50` (columnas, secciones, ramas de acordeón) |
+| Encabezado de sección | `text-3xs font-bold uppercase tracking-widest text-muted-foreground`, icono `size-3` |
+| Fila activa | `bg-primary/5 text-primary font-semibold` |
+| Fila inactiva | `text-muted-foreground hover:text-foreground` |
+
+El encabezado de sección (`text-3xs font-bold uppercase tracking-widest`) es el mismo token que el header de tabla de `Collection`, para que el menú se lea como parte de la superficie de datos.
+
+### Ritmo del toolbar
+
+Todos los controles del toolbar miden 36px (`h-9` / `size="icon-sm"`). El selector de vista de `Collection.Toolbar` usa `size="icon-sm"` para alinear con el buscador y el botón de crear.
+
+### Familia toolbar
+
+El mismo barrido alinea la infraestructura compartida (`components/shared/search-styles.ts` + `DataTableToolbar`), que sirve tanto a las vistas `Collection` como a las que siguen en `DataTable`:
+
+| Token | Valor |
+|-------|-------|
+| `SEG_WRAPPER` (grupo de paginación) | `rounded-md border border-border/50 bg-background h-9` |
+| `SEG_INPUT` | `h-8 rounded-sm border-border/40` |
+| `TOOLBAR_ICON_BTN` | `size-9 shrink-0` (36px; `size-*` reconcilia con el `size` del `Button`) |
+| `DataTableToolbar` | `flex-col gap-2`; botones limpiar/acciones `size="icon-sm"` ghost, sin `bg-background` propio |
 
 ---
 

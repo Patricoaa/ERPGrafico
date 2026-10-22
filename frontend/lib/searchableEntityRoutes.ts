@@ -16,7 +16,8 @@
  *   - /treasury/reconciliation/[id]/workbench → Mesa de Conciliación (UI compleja)
  *   - /finances/budgets/[id]            → BudgetDetailView (UI propia preexistente)
  *   - /hr/payrolls/[id]                 → PayrollDetailView (UI propia preexistente)
- *   - /billing/invoices/[id]            → Router client-side que split por is_sale_document
+ *   - /d/billing.invoice/[id]       → Resolvedor ADR-0080 (redirige a la lista según lado:
+ *                                    venta → /sales/dtes?selected · compra → drawer)
  *
  * ─── ENTIDADES ELIMINADAS DEL REGISTRY (F9) ──────────────────────────────
  *   - core.attachment  (T-101): sin viewset ni /files/page.tsx
@@ -27,17 +28,18 @@
 
 export const searchableEntityRoutes: Record<string, string> = {
     // Sales
-    'sales.saleorder':     '/sales/orders',
-    'sales.saledelivery':  '/sales/orders/deliveries',
-    'sales.salereturn':    '/sales/returns',
+    'sales.saleorder':     '/sales/dtes/orders',
+    'sales.saledelivery':  '/sales/dtes/deliveries',
+    'sales.salereturn':    '/sales/dtes/returns',
 
     // Purchasing
-    'purchasing.purchaseorder': '/purchasing/orders',
-    // purchased return/receipt: drawers desde /purchasing/orders (ADR-0022 DRAWER_ENTITIES)
+    'purchasing.purchaseorder': '/purchasing/dtes/orders',
+    'purchasing.purchasereceipt': '/purchasing/dtes/receipts',
+    'purchasing.purchasereturn': '/purchasing/dtes/returns',
 
-    // Billing (split entries — each resolves to its own list)
-    'billing.invoice_sales':     '/billing/sales',
-    'billing.invoice_purchases': '/billing/purchases',
+    // Billing (split entries — each resolves to its own list, ADR-0089)
+    'billing.invoice_sales':     '/sales/dtes',
+    'billing.invoice_purchases': '/purchasing/dtes',
 
     // Contacts
     'contacts.contact': '/contacts',
@@ -56,11 +58,12 @@ export const searchableEntityRoutes: Record<string, string> = {
     // Inventory
     // categories/warehouses/stock-moves viven en tabs dentro de otras páginas — T-99
     'inventory.product':             '/inventory/products',
-    'inventory.productcategory':     '/inventory/products/categories',
+    'inventory.productcategory':     '/inventory/settings/categories',
     'inventory.warehouse':           '/inventory/operations/warehouses',
-    'inventory.stockmove':           '/inventory/reports/movements',
-    'inventory.inventorydocument':   '/inventory/operations/documents',
-    'inventory.subscription':        '/inventory/products/subscriptions',
+    'inventory.stockmove':           '/inventory/operations/manual-operations',
+    'inventory.inventorydocument':   '/inventory/operations/manual-operations',
+    // subscription: vive en /purchasing/subscriptions (módulo Compras) — T-99
+    'inventory.subscription':        '/purchasing/subscriptions',
 
     // Treasury
     'treasury.treasurymovement': '/treasury/operaciones/movements',

@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-button
 status: active
 owner: frontend-team
-last_review: 2026-10-14
+last_review: 2026-10-19
 stability: contract-changes-require-ADR
 ---
 
@@ -17,8 +17,8 @@ El sistema de botones de ERPGrafico es una **jerarquía de 3 capas**. Pertenecen
 
 ```
 Capa 1 — Primitiva base:   components/ui/button.tsx          (shadcn/ui)
-Capa 2 — Acciones de ERP:  components/shared/ActionButtons.tsx (Submit/Cancel/Danger)
-                           components/shared/ActionSlideButton.tsx (Premium Kinetic)
+Capa 2 — Acciones de ERP:  components/shared/ActionButtons.tsx (Submit/Cancel/Danger/IconButton)
+                           construidos directamente sobre la Capa 1 (ADR-0088)
 Capa 3 — Acciones de toolbar: components/shared/ToolbarCreateButton.tsx
 ```
 
@@ -58,15 +58,15 @@ Tamaños disponibles:
 
 **Importación única:** `import { SubmitButton, CancelButton, DangerButton, IconButton } from "@/components/shared"`
 
-Estos wrappers son la **forma correcta** de manejar acciones semánticas de ERP. Adoptan automáticamente: altura `h-9`, tipografía `text-3xs`, peso `font-black`, `uppercase` y `tracking-widest`. Incluyen spinner automático, íconos de precisión y `type` correcto.
+Estos wrappers son la **forma correcta** de manejar acciones semánticas de ERP. Se construyen directamente sobre `ui/button.tsx` (Capa 1, ver ADR-0088) y adoptan automáticamente: altura `h-9`, tipografía `text-3xs`, peso `font-black`, `uppercase` y `tracking-widest`. Incluyen spinner automático, íconos de precisión y `type` correcto.
 
 ### `SubmitButton` — Guardar / Procesar / Confirmar
 
 ```tsx
-// Caso más simple
+// Caso más simple — sin ícono por defecto
 <SubmitButton loading={isPending}>Guardar</SubmitButton>
 
-// Con texto personalizado y sin ícono de disco
+// Con texto personalizado e ícono explícito
 <SubmitButton loading={isCreating} icon={<PlusCircle className="w-4 h-4" />}>
   Crear Orden
 </SubmitButton>
@@ -75,14 +75,19 @@ Estos wrappers son la **forma correcta** de manejar acciones semánticas de ERP.
 <SubmitButton loading={isProcessing} icon={<Zap className="w-4 h-4" />}>
   Procesar Producción
 </SubmitButton>
+
+// Submit de formulario asociado (patrón de Drawer/Modal)
+<SubmitButton type="submit" form="product-form" loading={isSaving}>
+  Guardar Cambios
+</SubmitButton>
 ```
 
-| prop      | tipo           | default      | notas |
-|-----------|----------------|--------------|-------|
-| `loading` | `boolean`      | `false`      | Muestra spinner, deshabilita el botón |
-| `icon`    | `ReactNode`    | `<Save />`   | Se oculta mientras `loading=true` |
-| `children`| `ReactNode`    | `'Guardar'`  | Texto del botón |
-| `type`    | `string`       | `'submit'`   | Atributo nativo |
+| prop      | tipo           | default | notas |
+|-----------|----------------|---------|-------|
+| `loading` | `boolean`      | `false` | Muestra spinner, deshabilita el botón |
+| `icon`    | `ReactNode`    | —       | Sin icono por defecto; se oculta mientras `loading=true` |
+| `children`| `ReactNode`    | `'Guardar'` | Texto del botón |
+| `type`    | `string`       | `'submit'`  | Atributo nativo |
 
 ### `DangerButton` — Eliminar / Anular
 
@@ -122,25 +127,18 @@ Estos wrappers son la **forma correcta** de manejar acciones semánticas de ERP.
 </IconButton>
 ```
 
-### `ActionSlideButton` — Premium Kinetic Button
+### ~~`ActionSlideButton`~~ — eliminado (ADR-0088)
 
-Botón con animación de deslizamiento para revelar acciones adicionales. Ideal para procesos primarios con alta carga kinética.
+El botón cinético con animación slide-in fue **retirado por completo** (archivo, export y variante muerta `ghost-cmyk`). Destinos de migración:
 
-```tsx
-import { ActionSlideButton } from "@/components/shared"
-
-<ActionSlideButton variant="success" loading={isCompleting}>
-  Completar
-</ActionSlideButton>
-```
-
-| prop | tipo | requerido | default | notas |
-|------|------|-----------|---------|-------|
-| `children` | `ReactNode` | ✅ | — | Texto del botón |
-| `icon` | `LucideIcon` | ❌ | — | Icono opcional a la izquierda |
-| `variant` | `'primary' \| 'destructive' \| 'success'` | ❌ | `'primary'` | Define la combinación cromática del borde y hover |
-| `loading` | `boolean` | ❌ | `false` | Muestra spinner y deshabilita el botón |
-| `size` | `'default' \| 'lg'` | ❌ | `'default'` | `lg` = `h-12 px-6 text-xs`, iconos/spinner `h-5 w-5` — targets táctiles POS (`touchMode`) |
+| Uso anterior | Destino |
+|---|---|
+| Submit de formulario (default `cmyk` / `primary`) | `SubmitButton` |
+| `variant="destructive"` | `DangerButton` |
+| `variant="success"` / `warning` puntual | `SubmitButton`/`DangerButton` + `className="bg-success…"` / `"bg-warning…"` |
+| `variant="muted"` | `Button variant="outline"` (o `SubmitButton variant="outline"` si hay `loading`) |
+| `size="icon"` | `IconButton` |
+| Target táctil POS (`touchMode`, antes `size="lg"`) | `SubmitButton className="h-12 px-6 text-xs"` |
 
 ---
 
@@ -165,7 +163,7 @@ Para el botón **"+ Nueva entidad"** en toolbars de listas.
 | Acción ERP                | Componente correcto              | Variante/Config               |
 |---------------------------|----------------------------------|-------------------------------|
 | Crear entidad (toolbar)   | `ToolbarCreateButton`            | default                       |
-| Crear entidad (modal)     | `ActionSlideButton`              | `variant="primary"`           |
+| Crear entidad (modal)     | `SubmitButton`                   | default (relleno)             |
 | Guardar formulario        | `SubmitButton`                   | `icon=<Save/>` (default)      |
 | Procesar / Confirmar      | `SubmitButton`                   | `icon=<Zap/>` o `<Check/>`   |
 | Eliminar entidad          | `DangerButton`                   | default                       |

@@ -1,5 +1,5 @@
 import { createEntityActions } from '@/components/shared'
-import type { BOMListItem } from './BOMClientView'
+import type { BOM } from '../types'
 
 export interface BOMActionsCtx {
     onEdit: (id: number) => void
@@ -7,7 +7,7 @@ export interface BOMActionsCtx {
 }
 
 export const bomActions = createEntityActions<
-    BOMListItem,
+    BOM,
     BOMActionsCtx
 >((item, ctx) => [
     { action: "edit", onClick: () => item.id != null && ctx.onEdit(item.id) },

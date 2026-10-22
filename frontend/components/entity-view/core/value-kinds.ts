@@ -1,5 +1,6 @@
 import type { ComponentType } from "react"
 import type { BadgeIntent, CategoryDomain } from "@/lib/badge-resolvers"
+import type { EntityLabel } from "@/lib/entity-registry"
 
 // ─── Primitive value shapes ──────────────────────────────────────────────────
 
@@ -48,7 +49,7 @@ export interface ValueKinds {
     dateRange: { value: { from: ISODate; to: ISODate | null } | null; options: Record<never, never> }
     status: { value: StatusValue | null; options: Record<never, never> }
     /** Multi-axis document hub with its readable label (Gate C: same vocabulary in table and card). */
-    hubStatus: { value: object | null; options: { entity: string; caption: StatusValue } }
+    hubStatus: { value: object | null; options: { entity: EntityLabel; caption: StatusValue } }
     contact: { value: { id: number; name: string } | null; options: Record<never, never> }
     tags: { value: readonly string[] | null; options: { domain?: CategoryDomain } }
     progress: { value: { done: number; total: number } | null; options: { format?: "percent" | "ratio" } }
@@ -74,24 +75,33 @@ export interface ValueKindSpec<K extends ValueKind> {
     sortValue?: (value: KindValue<K>, options: KindOptions<K>) => string | number | null
     /** Default alignment in tables (numbers right-aligned). */
     align?: Align
+    /**
+     * The value can shrink with an ellipsis when the table is narrower than its content (free text,
+     * names). Numbers, money, dates and statuses keep their width. The renderer must truncate.
+     */
+    shrink?: boolean
     render: ComponentType<ValueRenderProps<K>>
+    /**
+     * Phrasing-content renderer (spans only), used where the value sits inside a link or button
+     * such as the row's primary cell. Kinds without it fall back to their formatted text there.
+     */
+    inline?: ComponentType<ValueRenderProps<K>>
 }
 
 type Registry = { [K in ValueKind]?: ValueKindSpec<K> }
 const registry: Registry = {}
 
 export function registerValueKind<K extends ValueKind>(kind: K, spec: ValueKindSpec<K>): void {
+    // Single bridge of the registry (TS#30581): writing through a generic key widens the slot to the
+    // intersection of every kind's spec. Reads (`getValueKind`) keep the correlation without a cast.
     registry[kind] = spec as Registry[K]
 }
 
-/**
- * Resolves a registered kind. The cast is the single correlated-union bridge of the
- * registry (TS#30581): `registerValueKind` guarantees `registry[K]` holds a `ValueKindSpec<K>`.
- */
+/** Resolves a registered kind. Indexing the homomorphic mapped `Registry` with `K` keeps the correlation (no cast). */
 export function getValueKind<K extends ValueKind>(kind: K): ValueKindSpec<K> {
     const spec = registry[kind]
     if (!spec) {
         throw new Error(`entity-view: el tipo de valor "${String(kind)}" no está registrado`)
     }
-    return spec as unknown as ValueKindSpec<K>
+    return spec
 }

@@ -4,7 +4,7 @@ doc: module-layout-navigation
 status: active
 owner: frontend-team
 stability: stable
-last_review: 2026-10-13
+last_review: 2026-10-19
 ---
 
 # Contrato: Layout y Navegación Dinámica por Módulo
@@ -69,6 +69,17 @@ La **topbar** (ancho completo, no se desplaza al abrir sheets) muestra el títul
 
 Una vista puede montar su propio `<PageHeader>` (p. ej. para `titleActions`) **sin** `navigation`: el sidebar conserva la navegación del módulo (`HeaderProvider.moduleNavigation`).
 
+### 2.2 Sub-vistas de módulo en el riel (caso Tesorería / Centro de Bancos)
+
+Todo acceso a una sub-vista DEBE quedar declarado en el árbol de navegación del módulo (`navigation.ts`), que es la **fuente única** de la que dependen tanto `[Module]Header` como cualquier header de sección (`BankPageHeader`). Reglas:
+
+- **Sin nav aplanada por headers de página**: ningún header de página puede publicar `navigation` recortando o reescribiendo `subTabs`; si lo hace, deja sub-vistas fuera del riel. La construcción del árbol vive en un helper compartido (`buildTreasuryTabs`).
+- **Rutas físicas = ítems del riel**: cada sub-vista es una ruta real. Las rutas **agregadas** ("todos los bancos") son segmentos estáticos que preceden al dinámico (`bank-center/<subView>` antes de `bank-center/[bankId]`); no colisionan porque `[bankId]` es numérico.
+- **Páginas agregadas sin header propio**: reutilizan el título/navegación que ya publica el `[Module]Header` del layout; no montan `BankPageHeader`.
+- **`TabBar` de página solo para sub-tabs intra-vista** (p. ej. Tarjeta: Cargos No Facturados / Cargos Facturados). El resto de la navegación es exclusivamente del riel.
+
+Caso de referencia: `/treasury/bank-center` expone `overview`, `movements`, `checks`, `loans`, `cards/*` y `reconciliation`, tanto agregados como por banco (`/treasury/bank-center/<bankId>/...`).
+
 ## 3. El Layout del Módulo (`layout.tsx`)
 
 Debe ser un **Server Component** para asegurar la eficiencia del renderizado y el SEO.
@@ -102,7 +113,7 @@ Las páginas dentro de los directorios de vista (sub-carpetas) tienen un contrat
 ---
 
 ## 6. Beneficios del Patrón
-- **URLs Semánticas**: `/sales/orders` en lugar de `/sales?view=orders`.
+- **URLs Semánticas**: `/sales/dtes/orders` en lugar de `/sales?view=orders`.
 - **Persistencia Visual**: El Header no se re-renderiza al navegar entre sub-vistas del mismo módulo.
 - **Desacople**: Las vistas se enfocan en los datos y el contenido, no en la navegación global.
 
@@ -138,10 +149,10 @@ La página `[id]/page.tsx` es un **Server Component** que:
 |------------|------------------|-------|
 | `sales` | `/sales` | |
 | `purchasing` | `/purchasing` | |
-| `billing` | `/billing` | Split: `/billing/sales` (ventas) + `/billing/purchases` (compras) |
+| `billing` | — | **Sin módulo propio (ADR-0089):** sus vistas DTE viven en `/sales/dtes` (emisión) y `/purchasing/dtes` (recepción) |
 | `contacts` | `/contacts` | |
 | `accounting` | `/accounting` | Excepción: `Budget` vive en `/finances` (decisión UX preexistente) |
-| `inventory` | `/inventory` | |
+| `inventory` | `/inventory` | Excepción: `Subscription` vive en `/purchasing/subscriptions` (módulo Compras) |
 | `treasury` | `/treasury` | |
 | `hr` | `/hr` | |
 | `production` | `/production` | |
@@ -156,18 +167,20 @@ La página `[id]/page.tsx` es un **Server Component** que:
 
 | app.model | `list_url` | `detail_url_pattern` | `[id]` existe | read-only |
 |-----------|------------|----------------------|---------------|-----------|
-| `sales.saleorder` | `/sales/orders` | `/sales/orders/{id}` | ✅ | No |
-| `sales.saledelivery` | `/sales/orders/deliveries` | `/sales/orders/deliveries/{id}` | ❌ (vía `?selected` sobre la lista) | No |
-| `sales.salereturn` | `/sales/returns` | `/sales/returns/{id}` | ✅ | No |
-| `purchasing.purchaseorder` | `/purchasing/orders` | `/purchasing/orders/{id}` | ✅ | No |
-| `billing.invoice` | `/billing/sales` | `/billing/sales/{id}` o `/billing/purchases/{id}` | ✅ | No |
+| `sales.saleorder` | `/sales/dtes/orders` | `/sales/dtes/orders/{id}` | ✅ | No |
+| `sales.saledelivery` | `/sales/dtes/deliveries` | `/d/sales.saledelivery/{id}` (resolvedor; ADR-0090) | ❌ (vía `?selected` sobre la lista) | No |
+| `sales.salereturn` | `/sales/dtes/returns` | `/d/sales.salereturn/{id}` (resolvedor; ADR-0090) | ✅ | No |
+| `purchasing.purchaseorder` | `/purchasing/dtes/orders` | `/purchasing/dtes/orders/{id}` | ✅ | No |
+| `purchasing.purchasereceipt` | `/purchasing/dtes/receipts` | `/d/purchasing.purchasereceipt/{id}` (resolvedor; ADR-0090) | ✅ | No |
+| `purchasing.purchasereturn` | `/purchasing/dtes/returns` | `/d/purchasing.purchasereturn/{id}` (resolvedor; ADR-0090) | ✅ | No |
+| `billing.invoice` | `/sales/dtes` | `/d/billing.invoice/{id}` (resolvedor; ADR-0089) | ✅ | No |
 | `contacts.contact` | `/contacts` | `/contacts/{id}` | ✅ | No |
 | `accounting.account` | `/accounting/accounts` | `/accounting/accounts/{id}` | ✅ | Parcial |
 | `accounting.journalentry` | `/accounting/entries` | `/accounting/entries/{id}` | ✅ | No |
 | `accounting.fiscalyear` | `/accounting/closures` | `/accounting/closures/{id}` | ✅ | No |
 | `accounting.budget` | `/finances/budgets` | `/finances/budgets/{id}` | ✅ | No |
 | `inventory.product` | `/inventory/products` | `/inventory/products/{id}` | ✅ | No |
-| `inventory.productcategory` | `/inventory/products/categories` | `/inventory/products/categories/{id}` | ❌ (vía `?selected`) | No |
+| `inventory.productcategory` | `/inventory/settings/categories` | `/inventory/settings/categories/{id}` | ❌ (vía `?selected`) | No |
 | `inventory.warehouse` | `/inventory/warehouses` | `/inventory/warehouses/{id}` | ✅ | No |
 | `inventory.stockmove` | `/inventory/stock-moves` | `/inventory/stock-moves/{id}` | ✅ | **Sí** |
 | `treasury.treasurymovement` | `/treasury/operaciones/movements` | `/treasury/operaciones/movements/{id}` | ❌ (vía `?selected`) | No |

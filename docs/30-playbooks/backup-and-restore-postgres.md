@@ -16,7 +16,7 @@ last_review: 2026-05-21
 Estrategia mínima y barata para no perder los libros fiscales. Asume topología single-node ([system-diagram.md](../10-architecture/system-diagram.md)) y presupuesto ~$0. Cloudflare R2 ya está en uso para media — lo reusamos para backups.
 
 > **Estado:** el proyecto está en fase de desarrollo (**no existe producción**). Hoy solo hay que
-> proteger la base del **dev server** (`pato@192.168.1.93`, ver
+> proteger la base del **dev server** (`pato@192.168.1.86`, ver
 > [remote-dev-server.md](remote-dev-server.md)); los pasos marcados *“cuando exista producción”* se
 > activan entonces.
 

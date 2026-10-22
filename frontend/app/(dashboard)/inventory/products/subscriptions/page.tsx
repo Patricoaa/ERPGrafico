@@ -1,20 +1,7 @@
-import { SubscriptionsClientView } from "@/features/inventory"
-import { ToolbarCreateButton } from "@/components/shared"
+import { redirect } from "next/navigation"
 
-interface PageProps {
-    searchParams: Promise<{ modal?: string }>
-}
-
-export default async function ProductsSubscriptionsPage({ searchParams }: PageProps) {
-    const { modal } = await searchParams
-    const createAction = <ToolbarCreateButton label="Nueva Suscripción" href="/inventory/products/subscriptions?modal=new" />
-
-    return (
-        <>
-            <SubscriptionsClientView
-                hideHeader
-                externalOpen={modal === 'new'}
-                createAction={createAction}
-            />
-        </>)
+// Las suscripciones viven ahora en el módulo de Compras (/purchasing/subscriptions).
+// Se conserva esta ruta como redirector de compatibilidad.
+export default function ProductsSubscriptionsPage() {
+    redirect("/purchasing/subscriptions")
 }

@@ -1,12 +1,11 @@
 "use client"
 
-import { useMemo } from "react"
 import { Package } from "lucide-react"
-import { DataCell, DataTable, DocumentFieldGrid, FormSection } from "@/components/shared"
+import { DataCell, DocumentFieldGrid, FormSection } from "@/components/shared"
 import { DocumentRefLink } from "@/features/documents"
-import { invoiceLineFields } from "../../invoiceLineFields"
 import type { Order, OrderLine } from "../../types"
 import { DocumentTotalsBox, toNumber } from "./DocumentTotalsBox"
+import { DocumentLinesTable } from "./DocumentLinesTable"
 
 /** Las celdas DataCell se centran por defecto; en la ficha van a la izquierda. */
 const LEFT = "w-auto justify-start text-left"
@@ -43,7 +42,6 @@ export function InvoiceSummaryTab({ invoice }: { invoice: Order }) {
     const hasFolio = !!invoice.number && invoice.number !== "Draft"
 
     const lines: OrderLine[] = invoice.lines ?? invoice.items ?? []
-    const columns = useMemo(() => invoiceLineFields.toColumns(), [])
     const subtotal = lines.reduce((sum, line) => sum + toNumber(line.subtotal_net ?? line.subtotal), 0)
     const total = toNumber(invoice.total)
     const pending = toNumber(invoice.pending_amount)
@@ -85,7 +83,7 @@ export function InvoiceSummaryTab({ invoice }: { invoice: Order }) {
 
             <section className="space-y-4">
                 <FormSection title="Productos" icon={Package} />
-                <DataTable columns={columns} data={lines} variant="minimal" />
+                <DocumentLinesTable lines={lines} kind="invoice" />
                 <DocumentTotalsBox
                     subtotal={subtotal}
                     tax={toNumber(invoice.total_tax)}

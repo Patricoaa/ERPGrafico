@@ -60,6 +60,8 @@ services:
     volumes:
       # Bind-mount del código fuente → auto-reload de Django al editar
       - ./backend:/app
+      # Bind-mount docs for state-map tests (expected at /docs by test)
+      - ./docs:/docs:ro
       # Excluir venv del bind mount para evitar conflictos con el SO
       - backend_venv:/app/venv
     ports:
@@ -114,6 +116,7 @@ services:
       PYTHONUNBUFFERED: "1"
     volumes:
       - ./backend:/app
+      - ./docs:/docs:ro
       - backend_venv:/app/venv
     networks:
       - backend_net
@@ -146,6 +149,7 @@ services:
       PYTHONUNBUFFERED: "1"
     volumes:
       - ./backend:/app
+      - ./docs:/docs:ro
       - backend_venv:/app/venv
     networks:
       - backend_net
@@ -200,7 +204,7 @@ services:
       resources:
         limits:
           cpus: '2.0'
-          memory: 4G
+          memory: 5G
 
   # ── Nginx Reverse Proxy ─────────────────────────────────
   nginx:

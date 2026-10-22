@@ -448,6 +448,7 @@ class SaleDeliverySerializer(serializers.ModelSerializer):
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
     customer_name = serializers.CharField(source="sale_order.customer.name", read_only=True)
     customer_id = serializers.IntegerField(source="sale_order.customer_id", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
     delivery_type = serializers.SerializerMethodField()
     related_note_display = serializers.SerializerMethodField()
     # Orden de venta como DocumentRef (ADR-0086): el frontend navega a su URL canónica.

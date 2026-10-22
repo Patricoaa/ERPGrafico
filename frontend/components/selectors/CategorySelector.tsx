@@ -2,12 +2,11 @@
 
 import { useState, useMemo, useCallback } from "react"
 import { Check, Tag, Plus } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { ChevronDown } from "lucide-react"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 
 import { LabeledContainer, SearchablePopover } from "@/components/shared"
+import { SelectorTrigger, SELECTOR_VALUE_CLASS } from "@/components/shared/SelectorTrigger"
 import { type ProductCategory } from "@/types/entities"
 import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { CategoryDrawer } from "@/features/inventory/components/CategoryDrawer"
@@ -31,7 +30,7 @@ interface CategorySelectorProps {
 export function CategorySelector({
     value,
     onChange,
-    placeholder = "",
+    placeholder = "Seleccionar...",
     disabled,
     label,
     error,
@@ -104,31 +103,19 @@ export function CategorySelector({
                     </>
                 )}
                 trigger={
-                    <Button
-                        role="combobox"
-                        className={cn(
-                            "w-full justify-between overflow-hidden h-[1.5rem]! min-h-0! py-0 px-2 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
-                            icon && "pl-1"
-                        )}
+                    <SelectorTrigger
+                        hasValue={!!selectedCategory}
+                        placeholder={placeholder}
+                        icon={icon}
+                        open={open}
                         disabled={disabled}
+                        showChevron={!disabled}
+                        chevronClassName="h-3 w-3 opacity-30"
+                        className="h-full! min-h-0! px-2"
                     >
-                        <div className="flex items-center gap-2 flex-1 min-w-0 h-full">
-                            {icon && (
-                                <div className="flex items-center justify-center text-muted-foreground/60 transition-colors shrink-0">
-                                    {icon}
-                                </div>
-                            )}
-                            {selectedCategory ? (
-                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                    {!icon && <Tag className="h-3 w-3 shrink-0 text-primary" />}
-                                    <span className="font-medium text-2xs truncate uppercase tracking-tight text-foreground leading-none">{selectedCategory.name}</span>
-                                </div>
-                            ) : (
-                                <span className="text-2xs text-muted-foreground opacity-50 truncate leading-none">{placeholder}</span>
-                            )}
-                        </div>
-                        {!disabled && <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-30" />}
-                    </Button>
+                        {!icon && <Tag className="h-3 w-3 shrink-0 text-primary" />}
+                        <span className={`${SELECTOR_VALUE_CLASS} truncate leading-none`}>{selectedCategory?.name}</span>
+                    </SelectorTrigger>
                 }
                 beforeItems={allowNone ? (
                     <Button

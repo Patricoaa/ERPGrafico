@@ -21,11 +21,10 @@
  */
 
 import { showApiError } from '@/lib/errors'
-import { ChevronLeft, ChevronRight, CheckCircle2, FileText } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 
-import { Drawer, ActionSlideButton, Chip, SkeletonShell } from '@/components/shared'
+import { Chip, GenericWizard, SkeletonShell, type WizardStep } from "@/components/shared"
+import { Button } from "@/components/ui/button"
 
 // Shared steps
 import {
@@ -34,26 +33,29 @@ import {
     NoteRegistrationStep,
     NoteReviewStep,
     NotePaymentStep,
+    NoteStep_Logistics,
 } from './steps'
 
-// Sales-only steps (stay in their feature, imported directly)
-import { Step2_Logistics, NoteProcessSidebar, NoteItemsSummary } from '@/features/billing'
-import { Step2_ManufacturingDetails } from '@/features/sales'
+// Note-owned sidebars (moved here from billing / purchasing so notes has no
+// cross-feature imports).
+import { NoteProcessSidebar } from './sidebars/NoteProcessSidebar'
+import { NoteItemsSummary } from './sidebars/NoteItemsSummary'
+import { PurchaseNoteSummarySidebar } from './sidebars/PurchaseNoteSummarySidebar'
 
-// Sidebars (each feature keeps its own)
-import { PurchaseNoteSummarySidebar } from '@/features/purchasing'
+// Shared shell
+import { FileText } from 'lucide-react'
 
 // Hook + types
 import { useNoteWizardState } from '../hooks/useNoteWizardState'
 import { useServerDate } from '@/hooks/useServerDate'
 import type {
+    NoteLineItem,
     NoteType,
     NoteWizardFeatures,
     NoteWizardMode,
     NoteWizardPayload,
     NoteWizardSourceDocument,
 } from '../types'
-import type { SaleOrderLine } from '@/features/sales'
 
 // ---------------------------------------------------------------------------
 // Props
@@ -96,11 +98,36 @@ export interface UnifiedNoteWizardProps {
     supplierName?: string
     warehouseName?: string
     orderReference?: string
+
+    /**
+     * Manufacturing step slot. Sales-owned callers inject
+     * `Step2_ManufacturingDetails` here so `notes` never imports `sales`.
+     * Only required when `features.manufacturing` is enabled and the flow
+     * reaches the manufacturing step.
+     */
+    renderManufacturingStep?: (ctx: {
+        lines: NoteLineItem[]
+        setLines: (lines: NoteLineItem[]) => void
+    }) => React.ReactNode
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
+
+/**
+ * Human labels for the dynamic step sequence, used by the wizard counter and
+ * the render context. Kept in sync with `buildStepsSequence`.
+ */
+const STEP_LABELS: Record<string, string> = {
+    'type-selector': 'Tipo de Nota',
+    items: 'Productos',
+    manufacturing: 'Fabricación',
+    logistics: 'Logística',
+    registration: 'Registro',
+    review: 'Revisión',
+    payment: 'Pago',
+}
 
 export function UnifiedNoteWizard({
     open,
@@ -116,6 +143,7 @@ export function UnifiedNoteWizard({
     supplierName,
     warehouseName,
     orderReference,
+    renderManufacturingStep,
 }: UnifiedNoteWizardProps) {
     const { dateString } = useServerDate()
 
@@ -153,11 +181,10 @@ export function UnifiedNoteWizard({
         setLogisticsData,
         setIsPeriodValid,
         currentStepId,
+        stepsSequence,
         currentStepIndex,
         totalStepsCount,
-        isLastStep,
         canGoBack,
-        handleNext,
         handleBack,
         buildPayload,
         submitting,
@@ -241,17 +268,13 @@ export function UnifiedNoteWizard({
                 )
 
             case 'manufacturing':
-                return (
-                    <Step2_ManufacturingDetails
-                        // Step2_ManufacturingDetails expects SaleOrderLine[] shape
-                        orderLines={lines as unknown as SaleOrderLine[]}
-                        setOrderLines={setLines as unknown as (lines: SaleOrderLine[]) => void}
-                    />
-                )
+                return renderManufacturingStep
+                    ? renderManufacturingStep({ lines, setLines })
+                    : <div className="text-sm text-muted-foreground">Etapa de fabricación no configurada.</div>
 
             case 'logistics':
                 return (
-                    <Step2_Logistics
+                    <NoteStep_Logistics
                         isCreditNote={isCreditNote}
                         data={logisticsData as Record<string, unknown>}
                         setData={setLogisticsData}
@@ -300,15 +323,66 @@ export function UnifiedNoteWizard({
 
     // ---- Next button disabled logic ----
 
+    // The hook owns the step machine (dynamic sequence + per-step validation).
+    // GenericWizard mirrors the hook index through `initialStep`; its own
+    // navigation is replaced by a footer that delegates back to the hook, so
+    // there is exactly one source of truth.
+    const wizardSteps: WizardStep[] = stepsSequence.map((id, index) => ({
+        id,
+        title: STEP_LABELS[id] ?? id,
+        component: index === currentStepIndex - 1 ? renderStep() : null,
+        isValid: !(submitting || initializing),
+    }))
+
+    const leftSidebar = !initializing && (
+        mode === 'sales' ? (
+            <NoteProcessSidebar
+                currentStep={currentStepIndex}
+                totalSteps={totalStepsCount}
+                noteType={noteType}
+                requiresLogistics={requiresLogistics}
+                hasManufacturing={hasManufacturing}
+                itemsCount={lines.length}
+                dteNumber={registration.documentNumber || undefined}
+                paymentData={{
+                    method: String(payment.method ?? ''),
+                    amount: payment.amount,
+                }}
+            />
+        ) : (
+            <PurchaseNoteSummarySidebar
+                currentStep={currentStepIndex}
+                totalSteps={totalStepsCount}
+                orderNumber={orderReference}
+                referenceText={referenceLabel}
+                supplierName={supplierName}
+                warehouseName={warehouseName}
+                noteType={noteType}
+                totals={{ net: totalNet, tax: totalTax, total }}
+                isProcessing={submitting}
+            />
+        )
+    )
+
+    const rightSidebar = mode === 'sales' && !initializing ? (
+        <NoteItemsSummary
+            items={lines}
+            totalNet={totalNet}
+            totalTax={totalTax}
+            total={total}
+            isExempt={isExempt}
+        />
+    ) : undefined
+
     return (
-        <Drawer
+        <GenericWizard
             open={open}
             onOpenChange={(val) => !(submitting || initializing) && onOpenChange(val)}
-            side="bottom"
-            defaultSize="100%"
-            boundary="embedded"
-            contentClassName="p-0 flex flex-col"
-            headerClassName="border-b pb-2 px-6 py-3"
+            onClose={() => onOpenChange(false)}
+            surface="drawer"
+            drawerSide="bottom"
+            drawerBoundary="embedded"
+            hideScrollArea
             icon={FileText}
             title={
                 <div className="flex items-center gap-3">
@@ -322,98 +396,31 @@ export function UnifiedNoteWizard({
                 </div>
             }
             subtitle={
-                noteType === 'NOTA_CREDITO' 
+                noteType === 'NOTA_CREDITO'
                     ? 'Asistente de emisión de Notas de Crédito, devoluciones y logística inversa.'
                     : 'Asistente de emisión de Notas de Débito y cargos adicionales.'
             }
-            footer={
-                <div className="w-full flex justify-between items-center">
+            steps={wizardSteps}
+            initialStep={Math.max(currentStepIndex - 1, 0)}
+            onComplete={handleFinish}
+            isCompleting={submitting}
+            isLoading={initializing}
+            completeButtonLabel="Finalizar Proceso"
+            footerLeft={
+                canGoBack ? (
                     <Button
-                        variant="outline"
+                        variant="ghost"
                         onClick={handleBack}
-                        disabled={!canGoBack || submitting || initializing}
+                        disabled={submitting || initializing}
                         className="h-12 px-6 font-medium"
                     >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
                         Atrás
                     </Button>
-
-                    {!isLastStep ? (
-                        <ActionSlideButton
-                            onClick={handleNext}
-                            loading={submitting || initializing}
-                            className="w-40 h-12 font-bold shadow-elevated transition-all"
-                        >
-                            Siguiente
-                            <ChevronRight className="ml-2 h-4 w-4" />
-                        </ActionSlideButton>
-                    ) : (
-                        <ActionSlideButton
-                            onClick={handleFinish}
-                            className="w-48 h-12 bg-success hover:bg-success font-bold shadow-elevated transition-all"
-                            loading={submitting}
-                        >
-                            <CheckCircle2 className="mr-2 h-4 w-4" />
-                            Finalizar Proceso
-                        </ActionSlideButton>
-                    )}
-                </div>
+                ) : undefined
             }
-        >
-            <div className="flex flex-1 overflow-hidden relative h-full">
-                {/* ---- Left Sidebar ---- */}
-                {!initializing && (
-                    mode === 'sales' ? (
-                        <NoteProcessSidebar
-                            currentStep={currentStepIndex}
-                            totalSteps={totalStepsCount}
-                            noteType={noteType}
-                            requiresLogistics={requiresLogistics}
-                            hasManufacturing={hasManufacturing}
-                            itemsCount={lines.length}
-                            dteNumber={registration.documentNumber || undefined}
-                            paymentData={{
-                                method: String(payment.method ?? ''),
-                                amount: payment.amount,
-                            }}
-                        />
-                    ) : (
-                        <PurchaseNoteSummarySidebar
-                            currentStep={currentStepIndex}
-                            totalSteps={totalStepsCount}
-                            orderNumber={orderReference}
-                            referenceText={referenceLabel}
-                            supplierName={supplierName}
-                            warehouseName={warehouseName}
-                            noteType={noteType}
-                            totals={{ net: totalNet, tax: totalTax, total }}
-                            isProcessing={submitting}
-                        />
-                    )
-                )}
-
-                {/* ---- Center Content ---- */}
-                <div className="flex-1 flex flex-col min-w-0 h-full relative border-r">
-                    <div className="flex-1 p-10 overflow-y-auto custom-scrollbar flex flex-col">
-                        <div className="w-full flex-1 flex flex-col">
-                            {renderStep()}
-                        </div>
-                    </div>
-                </div>
-
-                {/* ---- Right Sidebar (sales only) ---- */}
-                {mode === 'sales' && !initializing && (
-                    <div className="w-80 hidden lg:block overflow-hidden relative">
-                        <NoteItemsSummary
-                            items={lines}
-                            totalNet={totalNet}
-                            totalTax={totalTax}
-                            total={total}
-                            isExempt={isExempt}
-                        />
-                    </div>
-                )}
-            </div>
-        </Drawer>
+            leftSidebar={leftSidebar}
+            rightSidebar={rightSidebar}
+            contentClassName="p-10 custom-scrollbar"
+        />
     )
 }

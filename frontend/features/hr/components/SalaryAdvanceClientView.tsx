@@ -1,22 +1,19 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useMemo, useState } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-import { AdvanceDrawer } from "@/features/hr"
-import { createAdvance, deleteAdvance } from "@/features/hr"
+import { showApiError } from "@/lib/errors"
+import { ActionConfirmModal, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { AdvanceDrawer, createAdvance, useSalaryAdvances, salaryAdvanceActions, type SalaryAdvanceActionsCtx, useEmployees } from "@/features/hr"
+import { useAdvanceMutations } from "../hooks/useAdvanceMutations"
 import { PaymentModal } from "@/features/treasury"
-import type { SalaryAdvance } from "@/types/hr"
-import { DataTableView } from '@/components/shared'
-import { AutoEntityCard } from '@/components/shared'
-import { type ColumnDef } from "@tanstack/react-table"
-
-import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
-import { useSalaryAdvances, salaryAdvanceActions, type SalaryAdvanceActionsCtx, useEmployees, usePayrolls } from "@/features/hr"
 import { salaryAdvanceUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
+import type { SalaryAdvance } from "@/types/hr"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-import { salaryAdvanceFields } from '../salaryAdvanceFields'
+import { salaryAdvanceEntity, salaryAdvanceViews } from "../entity-view/salaryAdvance.entity"
 
 interface SalaryAdvanceClientViewProps {
     initialAdvances?: SalaryAdvance[]
@@ -28,10 +25,17 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
     const pathname = usePathname()
     const searchParams = useSearchParams()
     const search = useUnifiedSearch(salaryAdvanceUnifiedSearchDef)
-    const { advances, isLoading: loading, isRefetching, refetch: refetchAdvances } = useSalaryAdvances(search.filters, initialAdvances)
-    const filteredAdvances = search.filterFn(advances)
+    const { advances, isLoading: loading, isRefetching, isError, refetch: refetchAdvances } = useSalaryAdvances(search.filters, initialAdvances)
+    const { filterFn } = search
+    const rows = useMemo(() => filterFn(advances), [filterFn, advances])
+    const { view, onViewChange } = useCollectionViewMode("hr.salaryadvance")
+    // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
+    const collection = useEntityCollection(
+        salaryAdvanceEntity,
+        { rows, isLoading: loading, isRefetching, error: isError && advances.length === 0, refetch: refetchAdvances, isFiltered: search.isFiltered },
+        { pagination: { mode: "client", pageSize: 20 }, defaultSort: salaryAdvanceViews.table.defaultSort },
+    )
     const { employees } = useEmployees()
-    const { payrolls } = usePayrolls()
 
     const isNewModalOpen = searchParams.get("modal") === "new"
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<SalaryAdvance>({ endpoint: '/hr/advances' })
@@ -40,6 +44,9 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
 
     const [paymentModalOpen, setPaymentModalOpen] = useState(false)
     const [tempAdvanceData, setTempAdvanceData] = useState<Record<string, unknown> | null>(null)
+    const [toDelete, setToDelete] = useState<SalaryAdvance | null>(null)
+    const [toAnnul, setToAnnul] = useState<SalaryAdvance | null>(null)
+    const { deleteAdvance, annulAdvance } = useAdvanceMutations()
 
     const handleClose = () => {
         clearSelection()
@@ -52,79 +59,41 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
 
     const salaryAdvanceActionsCtx: SalaryAdvanceActionsCtx = {
         onEdit: (advance) => openSelected(advance.id),
-        onDelete: async (id) => {
-            try {
-                await deleteAdvance(id)
-                toast.success("Anticipo eliminado")
-                refetchAdvances()
-            } catch {
-                toast.error("Error al eliminar anticipo")
-            }
-        },
+        onDelete: setToDelete,
+        onAnnul: setToAnnul,
     }
-
-    const columns: ColumnDef<SalaryAdvance>[] = [
-        ...salaryAdvanceFields.toColumns(),
-        salaryAdvanceActions.auto(salaryAdvanceActionsCtx)
-    ]
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    columns={columns}
-                    data={filteredAdvances}
-                    isLoading={loading}
-                    isRefetching={isRefetching}
-                    entityLabel="hr.salaryadvance"
-                    variant="embedded"
-                    unifiedSearch={<UnifiedSearchBar
+            <Collection.Root
+                collection={collection}
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(advance) => openSelected(advance.id)}
+                actions={salaryAdvanceActions.forCollection(salaryAdvanceActionsCtx)}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar
                         config={salaryAdvanceUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
+                        {...bindUnifiedSearch(search)}
                         placeholder="Buscar anticipo..."
-                    />}
-                    unifiedSearchConfig={salaryAdvanceUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    defaultPageSize={20}
-                    createAction={createAction}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "finance",
-                        title: "Aún no hay anticipos",
-                        description: "Registra anticipos de sueldo para descontarlos en la nómina.",
-                    }}
-                    cardGroupBy={{ field: 'date', sort: 'desc' }}
-                    renderCard={(advance) => (
-                        <AutoEntityCard
-                            key={advance.id}
-                            data={advance}
-                            fields={salaryAdvanceFields}
-                            entityLabel="hr.salaryadvance"
-                            actions={salaryAdvanceActions.render(advance, salaryAdvanceActionsCtx)}
-                            defaultAction={salaryAdvanceActions.defaultAction(salaryAdvanceActionsCtx)?.(advance) ?? (() => openSelected(advance.id))}
-
-                        />
-                    )}
+                    />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={salaryAdvanceViews.table}
+                    card={salaryAdvanceViews.card}
+                    emptyTitle="Aún no hay anticipos"
+                    emptyDescription="Registra anticipos de sueldo para descontarlos en la nómina."
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+            </Collection.Root>
 
             <AdvanceDrawer
                 open={dialogOpen}
                 onOpenChange={(o) => { if (!o) handleClose() }}
                 advance={selectedFromUrl}
                 employees={employees}
-                payrolls={payrolls}
                 onSaved={(data) => {
                     if (selectedFromUrl) {
                         refetchAdvances()
@@ -159,6 +128,43 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                         setTempAdvanceData(null)
                     } catch (e: unknown) {
                         toast.error((e as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Error al registrar anticipo")
+                    }
+                }}
+            />
+
+            <ActionConfirmModal
+                open={!!toDelete}
+                onOpenChange={(o) => { if (!o) setToDelete(null) }}
+                title="Eliminar anticipo"
+                description="El anticipo no tiene pago registrado. ¿Eliminarlo? Esta acción no se puede deshacer."
+                variant="destructive"
+                confirmText="Eliminar"
+                onConfirm={async () => {
+                    if (!toDelete) return
+                    try {
+                        await deleteAdvance(toDelete.id)
+                        setToDelete(null)
+                    } catch (e: unknown) {
+                        showApiError(e, "Error al eliminar anticipo")
+                    }
+                }}
+            />
+
+            <ActionConfirmModal
+                open={!!toAnnul}
+                onOpenChange={(o) => { if (!o) setToAnnul(null) }}
+                title="Anular anticipo"
+                description="Se anulará el pago del anticipo en tesorería con su asiento de reversa. Para corregir un monto, anule y registre un anticipo nuevo."
+                variant="destructive"
+                confirmText="Anular"
+                requireReason
+                onConfirm={async (reason) => {
+                    if (!toAnnul || !reason) return
+                    try {
+                        await annulAdvance({ id: toAnnul.id, reason })
+                        setToAnnul(null)
+                    } catch (e: unknown) {
+                        showApiError(e, "Error al anular anticipo")
                     }
                 }}
             />

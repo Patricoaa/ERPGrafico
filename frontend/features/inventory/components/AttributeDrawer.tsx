@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Drawer, CancelButton, FormFooter, FormSplitLayout } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
-import { ActionSlideButton } from "@/components/shared"
+import { SubmitButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit"
 import { useAttributes, type Attribute } from "@/features/inventory/hooks/useAttributes"
 import { useSuggestions } from "@/hooks/useSuggestions"
@@ -132,9 +132,9 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
                     actions={
                         <>
                             <CancelButton onClick={() => setOpen(false)} disabled={isSaving} />
-                            <ActionSlideButton type="submit" form="attribute-form" loading={isSaving}>
+                            <SubmitButton type="submit" form="attribute-form" loading={isSaving}>
                                 {mode === 'create' ? "Crear Atributo" : "Guardar Cambios"}
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />

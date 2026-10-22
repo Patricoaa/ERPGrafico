@@ -2,25 +2,20 @@
 
 import { showApiError } from "@/lib/errors"
 
-import React, { useMemo, useCallback } from "react"
-import { Trash2, Tag } from "lucide-react"
+import React, { useCallback, useMemo } from "react"
+import { Archive, ArchiveRestore } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-
-import { DataTableView, AutoEntityCard } from '@/components/shared'
-import { attributeActions, type AttributeActionsCtx } from './attributeActions'
-import { type ColumnDef } from "@tanstack/react-table"
-import { Checkbox } from "@/components/ui/checkbox"
-import type { BulkAction } from "@/components/shared"
+import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
+import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared"
-import { attributeFields } from "../attributeFields"
-import { AttributeValuesProvider } from "./AttributeValuesSummary"
-import { useAttributes, type Attribute } from "@/features/inventory/hooks/useAttributes"
-import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
-import { attributeUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { useAttributes, type Attribute } from "@/features/inventory/hooks/useAttributes"
+import { attributeUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
+import { attributeEntity, attributeViews } from "../entity-view/attribute.entity"
+import { attributeActions, type AttributeActionsCtx } from "./attributeActions"
+import { AttributeValuesProvider } from "./AttributeValuesSummary"
 import { AttributeDrawer } from "./AttributeDrawer"
 
 interface AttributesClientViewProps {
@@ -34,10 +29,17 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
     const {
         attributes,
         isLoading,
+        isError,
         refetch,
-        deleteAttribute,
+        archiveAttribute,
         deleteAttributeValue,
     } = useAttributes({ filters: search.filters })
+    const { view, onViewChange } = useCollectionViewMode("inventory.attribute")
+    const collection = useEntityCollection(
+        attributeEntity,
+        { rows: attributes, isLoading, error: isError, refetch, isFiltered: search.isFiltered },
+        { defaultSort: attributeViews.table.defaultSort },
+    )
 
     const searchParams = useSearchParams()
     const router = useRouter()
@@ -64,16 +66,15 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
         }
     }
 
-    const deleteAttrConfirm = useConfirmAction<number>(async (id) => {
+    const archiveConfirm = useConfirmAction<Attribute>(async (attribute) => {
+        const isArchiving = attribute.is_active
         try {
-            await deleteAttribute(id)
-            toast.success("Atributo eliminado")
+            await archiveAttribute({ id: attribute.id, is_active: !attribute.is_active })
+            toast.success(`Atributo ${isArchiving ? "archivado" : "restaurado"}`)
         } catch (error) {
-            showApiError(error, "Error al eliminar")
+            showApiError(error, `Error al ${isArchiving ? "archivar" : "restaurar"}`)
         }
     })
-
-    const handleDeleteAttribute = useCallback((id: number) => deleteAttrConfirm.requestConfirm(id), [deleteAttrConfirm])
 
     const deleteValueConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -88,116 +89,73 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
 
     const attributeActionsCtx: AttributeActionsCtx = {
         onEdit: (id) => openSelected(id),
-        onDelete: (id) => handleDeleteAttribute(id),
+        onArchive: (attribute) => archiveConfirm.requestConfirm(attribute),
     }
 
-    const bulkDeleteConfirm = useConfirmAction<Attribute[]>(async (items) => {
+    const bulkArchiveConfirm = useConfirmAction<Attribute[]>(async (items) => {
+        const isArchiving = items.every(a => a.is_active)
         try {
-            await Promise.all(items.map(a => deleteAttribute(a.id)))
-            toast.success(`${items.length} atributos eliminados`)
+            await Promise.all(items.map(a => archiveAttribute({ id: a.id, is_active: !isArchiving })))
+            toast.success(`${items.length} atributos ${isArchiving ? "archivados" : "restaurados"}`)
         } catch (error) {
-            showApiError(error, "Error al eliminar los atributos")
+            showApiError(error, `Error al ${isArchiving ? "archivar" : "restaurar"} los atributos`)
             throw error
         }
     })
 
-    const columns = useMemo<ColumnDef<Attribute>[]>(() => [
-        {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={
-                        table.getIsAllPageRowsSelected()
-                            ? true
-                            : table.getIsSomePageRowsSelected()
-                            ? "indeterminate"
-                            : false
-                    }
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                    variant="circle"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                    variant="circle"
-                />
-            ),
-            enableSorting: false,
-            enableHiding: false,
-            size: 40,
-        },
-        ...attributeFields.toColumns(),
-        attributeActions.auto(attributeActionsCtx),
-    ], [attributeActionsCtx])
-
     const bulkActions = useMemo<BulkAction<Attribute>[]>(() => [
         {
-            key: "delete",
-            label: "Eliminar",
-            icon: Trash2,
-            intent: "destructive",
-            onClick: async (items) => bulkDeleteConfirm.requestConfirm(items),
+            key: "restore",
+            label: "Restaurar",
+            icon: ArchiveRestore,
+            intent: "success",
+            hidden: (items) => items.length === 0 || !items.every(a => !a.is_active),
+            onClick: async (items) => bulkArchiveConfirm.requestConfirm(items),
         },
-    ], [bulkDeleteConfirm])
+        {
+            key: "archive",
+            label: "Archivar",
+            icon: Archive,
+            intent: "destructive",
+            hidden: (items) => items.length === 0 || !items.every(a => a.is_active),
+            onClick: async (items) => bulkArchiveConfirm.requestConfirm(items),
+        },
+    ], [bulkArchiveConfirm])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <AttributeValuesProvider
-                    value={{
-                        onDeleteValue: (valueId) => handleDeleteValue(valueId),
-                        onAddValue: (attributeId) => openSelected(attributeId),
-                    }}
+            <AttributeValuesProvider
+                value={{
+                    onDeleteValue: (valueId) => handleDeleteValue(valueId),
+                    onAddValue: (attributeId) => openSelected(attributeId),
+                }}
+            >
+                <Collection.Root
+                    collection={collection}
+                    selection="bulk"
+                    view={view}
+                    onViewChange={onViewChange}
+                    onOpen={(attr) => openSelected(attr.id)}
+                    actions={attributeActions.forCollection(attributeActionsCtx)}
                 >
-                <DataTableView
-                    entityLabel="inventory.attribute"
-                    columns={columns}
-                    data={attributes}
-                    isLoading={isLoading}
-                    variant="embedded"
-                    bulkActions={bulkActions}
-                    createAction={createAction}
-                    unifiedSearch={<UnifiedSearchBar
-                        config={attributeUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar atributo..."
-                    />}
-                    unifiedSearchConfig={attributeUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "inventory",
-                        title: "Aún no hay atributos",
-                        description: "Crea atributos (color, talla…) para generar variantes de producto.",
-                    }}
-                    renderCard={(attr: Attribute) => (
-                        <AutoEntityCard
-                            key={attr.id}
-                            data={attr}
-                            fields={attributeFields}
-                            entityLabel="inventory.attribute"
-                            icon={Tag}
-                            actions={attributeActions.render(attr, attributeActionsCtx)}
+                    <Collection.Toolbar action={createAction}>
+                        <UnifiedSearchBar
+                            config={attributeUnifiedSearchDef}
+                            {...bindUnifiedSearch(search)}
+                            placeholder="Buscar atributo..."
                         />
-                    )}
-                />
-                </AttributeValuesProvider>
-            </div>
+                    </Collection.Toolbar>
+                    <Collection.View
+                        table={attributeViews.table}
+                        card={attributeViews.card}
+                        emptyTitle="Aún no hay atributos"
+                        emptyDescription="Crea atributos (color, talla…) para generar variantes de producto."
+                        emptyAction={createAction}
+                        onResetFilters={search.clearAll}
+                    />
+                    <Collection.BulkBar actions={bulkActions} />
+                </Collection.Root>
+            </AttributeValuesProvider>
 
             <AttributeDrawer
                 onSuccess={() => { void refetch() }}
@@ -207,12 +165,15 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
             />
 
             <ActionConfirmModal
-                open={deleteAttrConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) deleteAttrConfirm.cancel() }}
-                onConfirm={deleteAttrConfirm.confirm}
-                title="Eliminar Atributo"
-                description="¿Seguro que deseas eliminar este atributo y todos sus valores?"
-                variant="destructive"
+                open={archiveConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) archiveConfirm.cancel() }}
+                onConfirm={archiveConfirm.confirm}
+                title={archiveConfirm.payload?.is_active ? "Archivar Atributo" : "Restaurar Atributo"}
+                description={archiveConfirm.payload?.is_active
+                    ? "¿Seguro que deseas archivar este atributo? Dejará de estar disponible para nuevas variantes."
+                    : "¿Seguro que deseas restaurar este atributo?"}
+                variant={archiveConfirm.payload?.is_active ? "warning" : "default"}
+                confirmText={archiveConfirm.payload?.is_active ? "Archivar" : "Restaurar"}
             />
 
             <ActionConfirmModal
@@ -225,12 +186,13 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
             />
 
             <ActionConfirmModal
-                open={bulkDeleteConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) bulkDeleteConfirm.cancel() }}
-                onConfirm={bulkDeleteConfirm.confirm}
-                title="Eliminar Atributos"
-                description={`¿Está seguro de que desea eliminar ${bulkDeleteConfirm.payload?.length ?? 0} atributos y todos sus valores?`}
-                variant="destructive"
+                open={bulkArchiveConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) bulkArchiveConfirm.cancel() }}
+                onConfirm={bulkArchiveConfirm.confirm}
+                title={bulkArchiveConfirm.payload?.every(a => a.is_active) ? "Archivar Atributos" : "Restaurar Atributos"}
+                description={`¿Está seguro de que desea ${bulkArchiveConfirm.payload?.every(a => a.is_active) ? "archivar" : "restaurar"} ${bulkArchiveConfirm.payload?.length ?? 0} atributos?`}
+                variant={bulkArchiveConfirm.payload?.every(a => a.is_active) ? "warning" : "default"}
+                confirmText={bulkArchiveConfirm.payload?.every(a => a.is_active) ? "Archivar" : "Restaurar"}
             />
         </div>
     )

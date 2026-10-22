@@ -2,7 +2,7 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, viewsets
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -26,7 +26,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     Supports filtering by type (customer/supplier/both/none).
     """
 
-    queryset = Contact.objects.all()
+    queryset = Contact.objects.all()  # Base queryset includes archived for detail/update
     serializer_class = ContactSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ["is_default_customer", "is_default_vendor"]
@@ -34,18 +34,19 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     ordering_fields = ["name", "created_at"]
     ordering = ["name"]
 
+    def get_queryset(self):
+        # List view uses selector with is_active filter
+        if self.action == "list":
+            return list_contacts(params=self.request.query_params)
+        # Detail/update/retrieve use full queryset (allows accessing archived)
+        return super().get_queryset()
+
     def destroy(self, request, *args, **kwargs):
-        from rest_framework import status
-        from rest_framework.exceptions import ValidationError
-
-        from .services import ContactService
-
-        contact = self.get_object()
-        try:
-            ContactService.validate_deletion(contact)
-        except ValidationError as e:
-            return Response({"error": str(e.detail)}, status=status.HTTP_400_BAD_REQUEST)
-        return super().destroy(request, *args, **kwargs)
+        # Archivo pattern: hard DELETE not allowed, use archive (is_active=false) instead
+        return Response(
+            {"detail": "Hard delete not allowed for Contacts. Use archive (is_active=false) instead."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
     def get_serializer_class(self):
         """Use lightweight serializer for list and partners actions"""
@@ -56,9 +57,6 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if self.action == "partners":
             return PartnerListSerializer
         return ContactSerializer
-
-    def get_queryset(self):
-        return list_contacts(params=self.request.query_params)
 
     @action(detail=False, methods=["get"], url_path="filter-suggestions")
     def filter_suggestions(self, request):

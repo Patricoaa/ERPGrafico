@@ -2,12 +2,14 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
+import { FROZEN_FIELD_HINT, frozenFieldsOf } from "@/lib/edit-policy"
 import { useState } from "react"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Drawer, CancelButton, LabeledInput, FormFooter, FormSplitLayout, LabeledContainer, SkeletonShell } from "@/components/shared"
+import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
 import {
     Form,
     FormField,
@@ -16,7 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 import { ChevronDown, Search, Check, Plus } from "lucide-react"
-import { ActionSlideButton } from "@/components/shared"
+import { SubmitButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit"
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
 import { UoMCategoryDrawer, type UoMCategory } from "./UoMCategoryDrawer"
@@ -51,6 +53,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
     const setOpen = onOpenChange || setOpenState
 
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
+    const frozen = frozenFieldsOf(initialData)
     const isView = mode === 'view'
     const { printRef, handlePrint } = usePrintableDrawer()
 
@@ -168,9 +171,9 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                         actions={
                             <>
                                 <CancelButton onClick={() => setOpen(false)} disabled={isSaving} />
-                                <ActionSlideButton type="submit" form="uom-form" loading={isSaving}>
+                                <SubmitButton type="submit" form="uom-form" loading={isSaving}>
                                     {mode === 'create' ? "Crear Unidad" : "Guardar Cambios"}
-                                </ActionSlideButton>
+                                </SubmitButton>
                             </>
                         }
                     />
@@ -262,15 +265,17 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                 >
                                                     <Popover>
                                                         <PopoverTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                role="combobox"
-                                                                className={cn("w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
+                                                            <SelectorTrigger
+                                                                hasValue={!!field.value}
+                                                                disabled={frozen.has("category")}
+                                                                placeholder="Seleccionar..."
+                                                                showChevron={false}
+                                                                className="h-6! py-0 px-3"
                                                             >
-                                                                {field.value
-                                                                    ? categories?.find(cat => cat.id === field.value)?.name
-                                                                    : "Seleccionar categoría..."}
-                                                            </Button>
+                                                                <span className="text-sm">
+                                                                    {categories?.find(cat => cat.id === field.value)?.name}
+                                                                </span>
+                                                            </SelectorTrigger>
                                                         </PopoverTrigger>
                                                         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                                                             <div className="p-2">
@@ -315,6 +320,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                                         </Tooltip>
                                                                     </TooltipProvider>
                                                                 </div>
+                                                                {/* typography-allow: meta - popover content max-height */}
                                                                 <div className="max-h-[200px] overflow-y-auto space-y-1">
                                                                     {categories?.map((cat) => (
                                                                         <div
@@ -354,19 +360,23 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                 >
                                                     <Popover>
                                                         <PopoverTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                role="combobox"
-                                                                className={cn("w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
+                                                            <SelectorTrigger
+                                                                hasValue={!!field.value}
+                                                                disabled={frozen.has("uom_type")}
+                                                                placeholder="Seleccionar..."
+                                                                showChevron={false}
+                                                                className="h-6! py-0 px-3"
                                                             >
-                                                                {field.value === 'REFERENCE' ? 'Referencia (Base)' :
-                                                                    field.value === 'BIGGER' ? 'Más Grande que base' :
-                                                                        field.value === 'SMALLER' ? 'Más Pequeña que base' :
-                                                                            "Seleccionar tipo..."}
-                                                            </Button>
+                                                                <span className="text-sm">
+                                                                    {field.value === 'REFERENCE' ? 'Referencia (Base)' :
+                                                                        field.value === 'BIGGER' ? 'Más Grande que base' :
+                                                                            field.value === 'SMALLER' ? 'Más Pequeña que base' : null}
+                                                                </span>
+                                                            </SelectorTrigger>
                                                         </PopoverTrigger>
                                                         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                                                             <div className="p-2">
+                                                                {/* typography-allow: meta - popover content max-height */}
                                                                 <div className="max-h-[200px] overflow-y-auto space-y-1">
                                                                     {[
                                                                         { value: 'REFERENCE', label: 'Referencia (Base de la categoría)' },
@@ -411,11 +421,12 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                             step="0.00001"
                                                             error={fieldState.error?.message}
                                                             className="font-mono text-sm"
-                                                            hint={watchType === 'BIGGER'
+                                                            hint={frozen.has("ratio") ? FROZEN_FIELD_HINT : watchType === 'BIGGER'
                                                                 ? 'Cuántas unidades base equivalen a esta unidad'
                                                                 : 'Cuántas unidades de estas equivalen a la unidad base'}
                                                             {...field}
                                                             value={field.value ?? ""}
+                                                            disabled={frozen.has("ratio")}
                                                         />
                                                     )}
                                                 />

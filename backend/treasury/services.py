@@ -102,9 +102,12 @@ class TreasuryService:
         is_pending_registration=False,
         payment_method_new=None,
         is_reconciled=False,
+        counterpart_account=None,
     ):
         """
         Unified method to create a TreasuryMovement.
+        ``counterpart_account`` fixes the non-treasury side of the journal entry
+        (e.g. VAT payable for an F29 payment) when the owner document knows it.
         Handles:
         1. Validation (Funds, Accounts)
         2. Creation of TreasuryMovement record
@@ -231,7 +234,9 @@ class TreasuryService:
 
         # 5. Generate Accounting Entry
         if not is_pending_registration:
-            TreasuryService._create_accounting_entry(movement)
+            TreasuryService._create_accounting_entry(
+                movement, counterpart_account=counterpart_account
+            )
 
         # 6. Create PartnerTransaction if applicable
         if (
@@ -401,7 +406,7 @@ class TreasuryService:
         pos_session.save()
 
     @staticmethod
-    def _create_accounting_entry(movement):
+    def _create_accounting_entry(movement, counterpart_account=None):
         settings = AccountingSettings.get_solo()
         if not settings:
             return
@@ -483,7 +488,7 @@ class TreasuryService:
                 )
 
             # Credit Source (Revenue / Debtor)
-            source_acc = None
+            source_acc = counterpart_account
             inbound_role = Roles.INGRESO
             if (
                 movement.justify_reason == TreasuryMovement.JustifyReason.CAPITAL_CONTRIBUTION
@@ -527,10 +532,11 @@ class TreasuryService:
                     label=GlosaBuilder.item(Roles.BANCO, partner_name, doc_ref),
                 )
 
-            target_acc = None
+            target_acc = counterpart_account
             outbound_role = Roles.GASTO
             if (
-                movement.justify_reason == TreasuryMovement.JustifyReason.PARTNER_WITHDRAWAL
+                not target_acc
+                and movement.justify_reason == TreasuryMovement.JustifyReason.PARTNER_WITHDRAWAL
                 and movement.contact
                 and movement.contact.is_partner
             ):
@@ -545,6 +551,20 @@ class TreasuryService:
                         or settings.pos_partner_withdrawal_account
                     )
                     outbound_role = Roles.RETIRO_PROVISORIO
+
+            payroll_target = {
+                TreasuryMovement.PayrollPaymentType.SALARY: (
+                    settings.account_remuneraciones_por_pagar, Roles.REMUNERACION_PAGAR
+                ),
+                TreasuryMovement.PayrollPaymentType.PREVIRED: (
+                    settings.account_previred_por_pagar, Roles.OBLIGACIONES_PREVIRED
+                ),
+                TreasuryMovement.PayrollPaymentType.ADVANCE: (
+                    settings.account_anticipos, Roles.ANTICIPO
+                ),
+            }.get(movement.payroll_payment_type)
+            if not target_acc and payroll_target and payroll_target[0]:
+                target_acc, outbound_role = payroll_target
 
             if not target_acc:
                 if allocated is not None:
@@ -562,19 +582,6 @@ class TreasuryService:
             if not target_acc:
                 target_acc = settings.default_payable_account
                 outbound_role = Roles.CXP
-
-            if not target_acc and movement.payroll:
-                acct_settings = AccountingSettings.get_solo()
-                if acct_settings:
-                    if movement.payroll_payment_type == "SALARY":
-                        target_acc = acct_settings.account_remuneraciones_por_pagar
-                        outbound_role = Roles.REMUNERACION_PAGAR
-                    elif movement.payroll_payment_type == "PREVIRED":
-                        target_acc = acct_settings.account_previred_por_pagar
-                        outbound_role = Roles.OBLIGACIONES_PREVIRED
-                    elif movement.payroll_payment_type == "ADVANCE":
-                        target_acc = acct_settings.account_anticipos
-                        outbound_role = Roles.ANTICIPO
 
             if target_acc:
                 JournalItem.objects.create(
@@ -888,6 +895,30 @@ class TreasuryService:
             return settings.pos_cashback_error_account
         return None
 
+    # Documents whose payment movement must be annulled through the document
+    # itself (ADR-0091): (reverse accessor on JournalEntry, is_many, label).
+    _OWNER_ACCESSORS = (
+        ("salary_advances", True, "el anticipo de sueldo"),
+        ("payroll_payments", True, "el pago de la liquidación"),
+        ("f29_payment", False, "el pago F29"),
+    )
+
+    @staticmethod
+    def assert_not_owned(movement: TreasuryMovement):
+        entry = movement.journal_entry
+        if entry is None:
+            return
+        for accessor, is_many, label in TreasuryService._OWNER_ACCESSORS:
+            owned = (
+                getattr(entry, accessor).exists()
+                if is_many
+                else getattr(entry, accessor, None) is not None
+            )
+            if owned:
+                raise ValidationError(
+                    f"Este movimiento pertenece a {label}; anúlelo desde ese documento."
+                )
+
     @staticmethod
     def validate_purge(movement: TreasuryMovement):
         """
@@ -904,7 +935,9 @@ class TreasuryService:
 
     @staticmethod
     @transaction.atomic
-    def cancel_movement(movement: TreasuryMovement, user=None, reason: str = ""):
+    def cancel_movement(
+        movement: TreasuryMovement, user=None, reason: str = "", from_owner: bool = False
+    ):
         """
         Cancels a DRAFT movement: deletes the unposted journal entry and marks
         the movement as CANCELLED. No reversals — a movement with a POSTED
@@ -917,6 +950,9 @@ class TreasuryService:
 
         if movement.status == TreasuryMovement.MovementStatus.CANCELLED:
             return movement
+
+        if not from_owner:
+            TreasuryService.assert_not_owned(movement)
 
         if movement.is_reconciled:
             raise ValidationError("No se puede cancelar un movimiento conciliado.")
@@ -955,6 +991,7 @@ class TreasuryService:
         reason: str = "",
         treasury_account_id: int = None,
         amount: Decimal = None,
+        from_owner: bool = False,
     ):
         """
         Annuls a movement: reverses its POSTED journal entry (reversal dated
@@ -969,6 +1006,9 @@ class TreasuryService:
 
         if movement.status == TreasuryMovement.MovementStatus.CANCELLED:
             return movement
+
+        if not from_owner:
+            TreasuryService.assert_not_owned(movement)
 
         if not reason:
             raise ValidationError("Debe indicar el motivo de la anulación.")

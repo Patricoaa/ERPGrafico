@@ -11,7 +11,7 @@ import { EmptyState, LabeledSelect } from '@/components/shared'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { Calculator, Search, ChevronDown, Check, MousePointerClick, Landmark } from "lucide-react"
+import { Calculator, Search, Check, MousePointerClick, Landmark } from "lucide-react"
 import { DateRangeFilter } from "@/components/shared"
 import { toast } from "sonner"
 import { type DateRange } from "react-day-picker"
@@ -20,7 +20,8 @@ import { useVatRate } from '@/hooks/useVatRate'
 import { useTerminalProviders, usePaymentMethods, useTerminalMovements, useTerminalBatchMutations } from "@/features/treasury"
 import type { TreasuryMovement } from "@/features/treasury/types"
 
-import { BaseModal, ActionSlideButton, CancelButton, SubmitButton, LabeledContainer, LabeledInput, LabeledCheckboxGroup, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
+import { BaseModal, SubmitButton, CancelButton, LabeledContainer, LabeledInput, LabeledCheckboxGroup, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
+import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
 
 const terminalBatchSchema = z.object({
     providerId: z.string().min(1, "Seleccione un proveedor"),
@@ -153,16 +154,15 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
                             <LabeledContainer label="Proveedor de Pago">
                                 <Popover>
                                     <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            role="combobox"
-                                            className="w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                                        <SelectorTrigger
+                                            hasValue={!!providerId}
+                                            placeholder="Seleccionar..."
+                                            className="h-6! py-0 px-3"
                                         >
-                                            {providerId
-                                                ? providers.find(p => p.id.toString() === providerId)?.name
-                                                : "Seleccione proveedor..."}
-                                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
+                                            <span className="text-sm">
+                                                {providers.find(p => p.id.toString() === providerId)?.name}
+                                            </span>
+                                        </SelectorTrigger>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                                         <div className="p-2">
@@ -184,6 +184,7 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
                                                     }}
                                                 />
                                             </div>
+                                            // typography-allow: meta - popover content max-height
                                             <div className="max-h-[200px] overflow-y-auto space-y-1">
                                                 {providers.map((p) => (
                                                     <div
@@ -262,7 +263,7 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
                                             : "Vincule las ventas del terminal para calcular el lote automáticamente."
                                         }
                                         action={
-                                            <ActionSlideButton
+                                            <SubmitButton
                                                 type="button"
                                                 onClick={handleAutoCalculate}
                                                 disabled={!providerId || !dateRange?.from}
@@ -270,7 +271,7 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
                                                 className="min-w-[200px]"
                                             >
                                                 Vincular Ventas
-                                            </ActionSlideButton>
+                                            </SubmitButton>
                                         }
                                     />
                                 </div>
@@ -325,7 +326,6 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
 
                                     <LabeledInput
                                         label="Monto Neto a Depositar"
-                                        labelClassName="text-income font-bold"
                                         type="number"
                                         step="1"
                                         value={netDeposit}

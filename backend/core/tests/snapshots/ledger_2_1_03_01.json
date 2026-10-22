@@ -3,6 +3,7 @@
   "movements": [
     {
       "balance": 1500000.0,
+      "created_at": "<id>",
       "credit": 1500000.0,
       "date": "2026-01-28",
       "debit": 0.0,
@@ -12,10 +13,11 @@
       "label": "",
       "partner": "",
       "reference": "PAYROLL-01",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 3000000.0,
+      "created_at": "<id>",
       "credit": 1500000.0,
       "date": "2026-02-28",
       "debit": 0.0,
@@ -25,10 +27,11 @@
       "label": "",
       "partner": "",
       "reference": "PAYROLL-02",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 4500000.0,
+      "created_at": "<id>",
       "credit": 1500000.0,
       "date": "2026-03-28",
       "debit": 0.0,
@@ -38,10 +41,11 @@
       "label": "",
       "partner": "",
       "reference": "PAYROLL-03",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 6000000.0,
+      "created_at": "<id>",
       "credit": 1500000.0,
       "date": "2026-04-28",
       "debit": 0.0,
@@ -51,10 +55,11 @@
       "label": "",
       "partner": "",
       "reference": "PAYROLL-04",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 7500000.0,
+      "created_at": "<id>",
       "credit": 1500000.0,
       "date": "2026-05-28",
       "debit": 0.0,
@@ -64,10 +69,11 @@
       "label": "",
       "partner": "",
       "reference": "PAYROLL-05",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 9000000.0,
+      "created_at": "<id>",
       "credit": 1500000.0,
       "date": "2026-06-28",
       "debit": 0.0,
@@ -77,10 +83,11 @@
       "label": "",
       "partner": "",
       "reference": "PAYROLL-06",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 10500000.0,
+      "created_at": "<id>",
       "credit": 1500000.0,
       "date": "2026-07-28",
       "debit": 0.0,
@@ -90,10 +97,11 @@
       "label": "",
       "partner": "",
       "reference": "PAYROLL-07",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 12000000.0,
+      "created_at": "<id>",
       "credit": 1500000.0,
       "date": "2026-08-28",
       "debit": 0.0,
@@ -103,10 +111,11 @@
       "label": "",
       "partner": "",
       "reference": "PAYROLL-08",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 13500000.0,
+      "created_at": "<id>",
       "credit": 1500000.0,
       "date": "2026-09-28",
       "debit": 0.0,
@@ -116,10 +125,11 @@
       "label": "",
       "partner": "",
       "reference": "PAYROLL-09",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 15000000.0,
+      "created_at": "<id>",
       "credit": 1500000.0,
       "date": "2026-10-28",
       "debit": 0.0,
@@ -129,10 +139,11 @@
       "label": "",
       "partner": "",
       "reference": "PAYROLL-10",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 16500000.0,
+      "created_at": "<id>",
       "credit": 1500000.0,
       "date": "2026-11-28",
       "debit": 0.0,
@@ -142,10 +153,11 @@
       "label": "",
       "partner": "",
       "reference": "PAYROLL-11",
-      "source_document": null
+      "source": null
     },
     {
       "balance": 18000000.0,
+      "created_at": "<id>",
       "credit": 1500000.0,
       "date": "2026-12-28",
       "debit": 0.0,
@@ -155,10 +167,11 @@
       "label": "",
       "partner": "",
       "reference": "PAYROLL-12",
-      "source_document": null
+      "source": null
     }
   ],
   "opening_balance": 0.0,
   "period_credit": 18000000.0,
-  "period_debit": 0.0
+  "period_debit": 0.0,
+  "truncated": false
 }

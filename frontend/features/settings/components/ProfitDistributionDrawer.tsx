@@ -1,20 +1,18 @@
 'use client'
 
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect } from 'react'
 import { Users } from 'lucide-react'
-import { DataTable } from '@/components/shared'
+import { Collection, useEntityCollection } from '@/components/entity-view'
 import { formatCurrency } from '@/lib/money'
 import { PrintableLayout, usePrintableDrawer, type TransactionDrawerProps } from '@/features/_shared'
 import { useProfitDistribution } from '@/features/contacts'
 import { DocumentSheet } from '@/features/documents'
 import { useGlobalModalActions } from '@/components/providers/GlobalModalProvider'
-import { profitDistributionLineFields } from '../profitDistributionLineFields'
+import { profitDistributionLineEntity, profitDistributionLineViews, type ProfitDistributionLine } from '../entity-view/profitDistributionLine.entity'
 
 interface ProfitDistributionDrawerProps extends TransactionDrawerProps {
   distributionId?: number
 }
-
-type Row = Record<string, unknown>
 
 /**
  * Ficha documental de la distribución de resultados (ADR-0083): contexto (resultado, año
@@ -25,7 +23,6 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
   const { profitDistribution: distribution, isLoading } = useProfitDistribution(entityId)
   const { printRef, handlePrint } = usePrintableDrawer()
   const { setEntityDisplay } = useGlobalModalActions()
-  const columns = useMemo(() => profitDistributionLineFields.toColumns(), [])
   const displayId = distribution?.display_id ?? `#${entityId}`
 
   useEffect(() => {
@@ -34,7 +31,8 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
     }
   }, [distribution?.id, distribution?.display_id, setEntityDisplay])
   const isProfit = distribution?.is_profit !== false
-  const lines = (distribution?.lines as Row[] | undefined) ?? []
+  const lines = (distribution?.lines as ProfitDistributionLine[] | undefined) ?? []
+  const collection = useEntityCollection(profitDistributionLineEntity, { rows: lines }, { pagination: { mode: "none" } })
 
   return (
     <>
@@ -45,7 +43,7 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
         {lines.map((line, idx) => (
           <div key={(line.id as number) ?? idx} className="flex justify-between text-3xs">
             <span className="flex-1">{line.partner_name as string}</span>
-            <span className="w-16 text-right">{formatCurrency(Number(line.net_amount as string))}</span>
+            <span className="w-16 text-right">{formatCurrency(Number(line.net_amount))}</span>
           </div>
         ))}
         <div className="flex justify-between font-bold border-t mt-2 pt-1 text-xs">
@@ -79,13 +77,9 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
           title: "Socios",
           icon: Users,
           content: (
-            <DataTable
-              columns={columns}
-              data={lines}
-              variant="minimal"
-              hidePagination
-              emptyState={{ title: "Sin socios", description: "La distribución no tiene líneas." }}
-            />
+            <Collection.Root collection={collection} label="Socios">
+              <Collection.View table={profitDistributionLineViews.table} emptyTitle="Sin socios" emptyDescription="La distribución no tiene líneas." />
+            </Collection.Root>
           ),
         }]}
       />

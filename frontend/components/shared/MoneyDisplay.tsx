@@ -1,5 +1,5 @@
 import React from "react"
-import { cn } from "@/lib/utils"
+import { cn, EMPTY_VALUE, isMissing } from "@/lib/utils"
 
 export type DataCellWeight = 'light' | 'normal' | 'medium' | 'semibold' | 'bold' | 'black'
 
@@ -33,17 +33,17 @@ export const MoneyDisplay: React.FC<MoneyDisplayProps> = ({
     inline = false,
     weight = "medium",
 }) => {
-    if (amount === null || amount === undefined || amount === "") {
-        return <span className={cn("text-muted-foreground", className)}>-</span>
+    if (isMissing(amount)) {
+        return <span className={cn("text-muted-foreground", className)}>{EMPTY_VALUE}</span>
     }
 
     const numericAmount = typeof amount === "string" ? parseFloat(amount) : amount
     if (isNaN(numericAmount)) {
-        return <span className={cn("text-muted-foreground", className)}>-</span>
+        return <span className={cn("text-muted-foreground", className)}>{EMPTY_VALUE}</span>
     }
 
     if (showZeroAsDash && numericAmount === 0) {
-        return <span className={cn("text-muted-foreground", className)}>-</span>
+        return <span className={cn("text-muted-foreground", className)}>{EMPTY_VALUE}</span>
     }
 
     const isNegative = numericAmount < 0

@@ -36,7 +36,7 @@ def test_inventory_document_exposes_source_document_ref(inventory_doc_with_sale_
     assert ref is not None
     assert ref["label"] == "sales.saleorder"
     assert ref["id"] == order.id
-    assert ref["url"] == f"/sales/orders?selected={order.id}"
+    assert ref["url"] == f"/sales/dtes/orders?selected={order.id}"
 
 
 def test_inventory_document_source_document_null_without_source(db):

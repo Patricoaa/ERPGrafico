@@ -80,7 +80,8 @@ GET    /api/auth/user/         (JWT)                          → CurrentUserSer
 ## Example — SaleOrder resource
 
 ```
-GET    /api/sales/orders/                list, paginated
+GET    /api/sales/orders/                list, paginated (ordering: id, number, date, customer__name, total — enviar con desempate `,id`, ADR-0087)
+GET    /api/sales/orders/analytics/      cifras sobre TODA la lista filtrada (mismos filtros y búsqueda que la lista; `granularity`=day|month|year); claves crudas + buckets de período (fecha ISO del primer día), etiquetas y colores en el cliente (ADR-0087 lote 2b)
 POST   /api/sales/orders/                create
 GET    /api/sales/orders/{id}/           detail
 PATCH  /api/sales/orders/{id}/           partial update
@@ -391,7 +392,7 @@ Base: `/api/inventory/`
 ### products/
 
 ```
-GET    /api/inventory/products/          list, paginated (filtros: active, category, product, supplier, uom)
+GET    /api/inventory/products/          list, paginated (filtros: active, category, product, supplier, uom; ordering: id, name, internal_code, code, category__name, product_type, annotated_current_stock, sale_price — enviar con desempate `,id`, ADR-0087)
 POST   /api/inventory/products/          create (multipart/form-data for image)
 GET    /api/inventory/products/{id}/     detail
 PATCH  /api/inventory/products/{id}/     update
@@ -547,7 +548,8 @@ Base: `/api/purchasing/`
 ### orders/ (PurchaseOrder)
 
 ```
-GET    /api/purchasing/orders/                list, paginated (filtros vía PurchaseOrderFilterSet)
+GET    /api/purchasing/orders/                list, paginated (filtros vía PurchaseOrderFilterSet; `search` sin duplicados; `ordering`=number|date|supplier__name|receipt_date|total con desempate `,id`)
+GET    /api/purchasing/orders/analytics/      cifras del panel sobre TODA la lista filtrada (mismos filtros y búsqueda que la lista; `granularity`=day|month|year); formas de pago con etiqueta del modelo, buckets ISO del primer día del período (ADR-0087 lote 2c)
 POST   /api/purchasing/orders/                create
 GET    /api/purchasing/orders/{id}/           detail
 PATCH  /api/purchasing/orders/{id}/           update

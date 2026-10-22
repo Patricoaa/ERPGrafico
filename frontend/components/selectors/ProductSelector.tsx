@@ -1,11 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronDown, Search, Loader2 } from "lucide-react"
+import { Check, Search, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { PricingUtils } from '@/lib/pricing-utils'
-import { Button } from "@/components/ui/button"
 import {
     Tooltip,
     TooltipContent,
@@ -23,6 +22,7 @@ import { useProductSearch, useSingleProduct } from "@/features/inventory/hooks/u
 
 import { type Product, type ProductType, type ProductVariant, type ProductAttributeValue } from "@/types/entities"
 import { BaseModal, CardSkeleton, EmptyState, LabeledContainer, MoneyDisplay, Badge } from '@/components/shared'
+import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
 
 const ProductIcon = getEntityIcon('inventory.product')
 
@@ -51,7 +51,7 @@ interface ProductSelectorProps {
 export function ProductSelector({
     value,
     onChange,
-    placeholder = "Seleccionar producto...",
+    placeholder = "Seleccionar...",
     productTypes,
     disabled = false,
     restrictStock = false,
@@ -189,34 +189,25 @@ export function ProductSelector({
     const selectButton = (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-                <Button
-                    type="button"
-                    variant="ghost"
-                    role="combobox"
-                    aria-expanded={open}
+                <SelectorTrigger
+                    hasValue={!!selectedProduct}
+                    placeholder={placeholder}
+                    variant={variant}
+                    open={open}
                     disabled={disabled}
-                    className={cn(
-                        "w-full justify-between overflow-hidden shadow-none focus-visible:ring-0 transition-all",
-                        variant === 'standalone'
-                            ? "h-[1.5rem] px-0 border-none bg-transparent hover:bg-transparent"
-                            : cn("h-9 text-xs px-2 bg-background hover:bg-primary/[0.02]", className)
-                    )}
+                    className={cn(variant === 'inline' ? className : "px-0")}
+                    chevronClassName={cn(variant === 'inline' && "h-3 w-3")}
                 >
-                    {selectedProduct ? (
-                        <div className="flex items-center justify-between gap-1.5 min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                                <ProductIcon className={cn("h-3.5 w-3.5 shrink-0 text-primary", variant === 'inline' && "h-3 w-3")} />
-                                <span className={cn("font-medium text-sm truncate", variant === 'inline' && "text-xs")}>{selectedProduct.name}</span>
-                            </div>
-                            <span className={cn("text-muted-foreground shrink-0 pr-1 text-right", variant === 'inline' ? "text-3xs" : "text-xs")}>
-                                {PricingUtils.formatCurrency(Number(selectedProduct.sale_price_gross ?? selectedProduct.sale_price))}
-                            </span>
+                    <div className="flex items-center justify-between gap-1.5 min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                            <ProductIcon className={cn("h-3.5 w-3.5 shrink-0 text-primary", variant === 'inline' && "h-3 w-3")} />
+                            <span className={cn("text-sm text-foreground truncate", variant === 'inline' && "text-xs")}>{selectedProduct?.name}</span>
                         </div>
-                    ) : (
-                        <span className={cn("text-muted-foreground truncate", variant === 'inline' && "text-xs")}>{placeholder}</span>
-                    )}
-                    <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 opacity-50", variant === 'inline' && "h-3 w-3")} />
-                </Button>
+                        <span className={cn("text-muted-foreground shrink-0 pr-1 text-right", variant === 'inline' ? "text-3xs" : "text-xs")}>
+                            {PricingUtils.formatCurrency(Number(selectedProduct?.sale_price_gross ?? selectedProduct?.sale_price))}
+                        </span>
+                    </div>
+                </SelectorTrigger>
             </PopoverTrigger>
             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                 <div className="p-2">
@@ -227,7 +218,6 @@ export function ProductSelector({
                                 "flex h-10 w-full rounded-md bg-transparent py-3 outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
                                 variant === 'inline' ? "text-xs" : "text-sm"
                             )}
-                            placeholder="Buscar código o nombre..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />

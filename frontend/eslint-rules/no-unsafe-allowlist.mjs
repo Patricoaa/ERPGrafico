@@ -20,7 +20,6 @@
 /** @type {Record<string, number>} */
 export const NO_UNSAFE_BASELINE = {
     "app/(dashboard)/production/orders/WorkOrdersPageClient.tsx": 3,
-    "app/(dashboard)/purchasing/orders/components/PurchasingOrdersClientView.tsx": 9,
     "components/layout/QuickActionsMenu.tsx": 8,
     "components/shared/AutoEntityCard.tsx": 1,
     "components/shared/DataTableToolbar.tsx": 1,
@@ -75,9 +74,7 @@ export const NO_UNSAFE_BASELINE = {
     "features/production/hooks/useWorkOrders.ts": 1,
     "features/purchasing/api/purchasingApi.ts": 7,
     "features/sales/api/salesApi.ts": 4,
-    "features/sales/components/DeliveryDrawer.tsx": 4,
     "features/sales/components/checkout/SalesCheckoutWizardView.tsx": 11,
-    "features/sales/hooks/useDeliveryData.ts": 5,
     "features/sales/hooks/useSaleOrderComments.ts": 1,
     "features/settings/api/settingsApi.ts": 6,
     "features/settings/components/ProfitDistributionDrawer.tsx": 22,

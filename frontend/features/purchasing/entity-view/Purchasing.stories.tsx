@@ -2,8 +2,8 @@ import * as React from "react"
 import type { Meta, StoryObj } from "@storybook/nextjs-vite"
 import { Collection, CollectionModes, useEntityCollection } from "@/components/entity-view"
 import { withEntityView } from "@/components/entity-view/stories/withEntityView"
-import { purchaseInvoiceEntity, purchaseInvoiceViews } from "@/features/billing/entity-view/purchaseInvoice.entity"
-import type { Invoice } from "@/features/billing/types"
+import { purchaseNoteEntity, purchaseNoteViews } from "./purchaseNote.entity"
+import type { Invoice } from "@/features/billing"
 import type { PurchaseOrderAPI } from "../types"
 import { purchaseOrderEntity, purchaseOrderViews } from "./purchaseOrder.entity"
 
@@ -18,7 +18,7 @@ const NOTES = [
 ] as unknown as Invoice[]
 
 function Orders({ defaultView }: { defaultView?: "table" | "card" }) {
-    const collection = useEntityCollection(purchaseOrderEntity, { rows: ORDERS }, { defaultSort: purchaseOrderViews.table.defaultSort })
+    const collection = useEntityCollection(purchaseOrderEntity, { rows: ORDERS })
     return (
         <Collection.Root collection={collection} selection="panel" defaultView={defaultView}>
             <Collection.Toolbar />
@@ -28,11 +28,11 @@ function Orders({ defaultView }: { defaultView?: "table" | "card" }) {
 }
 
 function Notes({ defaultView }: { defaultView?: "table" | "card" }) {
-    const collection = useEntityCollection(purchaseInvoiceEntity, { rows: NOTES }, { defaultSort: purchaseInvoiceViews.table.defaultSort })
+    const collection = useEntityCollection(purchaseNoteEntity, { rows: NOTES })
     return (
         <Collection.Root collection={collection} selection="panel" defaultView={defaultView}>
             <Collection.Toolbar />
-            <Collection.View table={purchaseInvoiceViews.table} card={purchaseInvoiceViews.card} />
+            <Collection.View table={purchaseNoteViews.table} card={purchaseNoteViews.card} />
         </Collection.Root>
     )
 }

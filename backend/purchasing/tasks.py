@@ -119,7 +119,7 @@ def generate_subscription_orders(self):
                                 title=f"Nueva Orden de Suscripción: {order.display_id}",
                                 message=f"Proveedor: {order.supplier.name if order.supplier else 'N/A'}",
                                 level=Notification.Type.INFO,
-                                link=f"/purchasing/orders?openHub={order.id}",
+                                link=f"/purchasing/dtes/orders?selected={order.id}",
                                 content_object=order,
                             )
                         except Exception as e:

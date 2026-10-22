@@ -116,12 +116,14 @@ graph TD
     A -->|Rango de fechas - Filtro| G(DateRangeFilter)
     A -->|"Input en celda de tabla editable"| H(["Table Cell Input \n raw shadcn — ver contrato"])
     A -->|"Búsqueda/filtro en toolbar"| I(["Toolbar Filter Input \n raw shadcn — ver contrato"])
+    A -->|"Elegir 1 opción visual (documento, entrega, pago, contacto)"| J(ChoiceCard + ChoiceGroup)
 ```
 
 - **`LabeledInput`**: Primitivo estándar. Renderiza `fieldset + legend` (patrón Notched). Soporta `as="textarea"`. Compatible con `react-hook-form` via `{...field}`. Ver [component-input.md](./component-input.md).
 - **`PeriodValidationDateInput`**: Obligatorio en documentos donde la fecha impacte contabilidad o impuestos para validar si el periodo está cerrado.
 - **`FolioValidationInput`**: Úsalo para prevenir folios duplicados por proveedor asíncronamente mientras el usuario tipea.
 - **Table Cell Input**: `<Input>` de shadcn sin notched, dentro de `<TableCell>` en una tabla editable (spreadsheet). Ver [component-table-cell-input.md](./component-table-cell-input.md). Usar el shell `FormLineItemsTable` o `AccountingLinesTable`.
+- **`ChoiceCard` + `ChoiceGroup`**: "Elige una de estas cartas" en pasos de checkout (documento tributario, entrega, método de pago, contacto). Ver [component-choice-card.md](./component-choice-card.md). `RadioCard` queda para formularios densos fuera de los pasos del POS.
 - **Toolbar Filter Input**: `<Input>` de shadcn para filtros/búsqueda en toolbars compactos. Ver sección de excepciones en [component-input.md](./component-input.md#toolbar-filter-input).
 
 ## 4. Layout de Página
@@ -157,3 +159,17 @@ graph TD
 - **`FormSection`**: Separador visual dentro de un tab o formulario sin tabs.
 - **`FormFooter`**: **Obligatorio** en todo formulario modal. Layout de botones: danger (izquierda) + cancel/submit (derecha). Nunca `<div>` raw.
 - **`Drawer`**: Para subvistas que se superponen sobre la página sin perder su contexto. Compatible con formularios CRUD y subvistas de solo lectura (tablas, históricos). Ancho recomendado: `40%–75%` según categoría del formulario (ver [component-drawer.md](./component-drawer.md)).
+
+---
+
+## 6. Botón de cierre (Cross) — Regla canónica
+
+**`SheetCloseButton` (`@/components/shared/SheetCloseButton`) es la única cruz permitida** en toda la aplicación: modales, drawers, sheets y panels.
+
+- ✅ `BaseModal` y `Drawer` ya renderizan `SheetCloseButton` vía `PanelHeader` (prop `showCloseButton` / `onClose`).
+- ✅ `UniversalSearch` usa `SheetCloseButton` inline (excepción autorizada).
+- ❌ **Prohibido**: usar el X nativo de Radix (`DialogPrimitive.Close` / `SheetPrimitive.Close` desde `@/components/ui/`).
+- ❌ **Prohibido**: `<X />` o `<Button><X /></Button>` inline como botón de cerrar.
+- ❌ **Prohibido**: modificar `components/ui/dialog.tsx` o `components/ui/sheet.tsx` para cambiar el estilo del X.
+
+El ESLint rule `dialog/no-direct-usage` (error) bloquea imports directos de `DialogContent`/`SheetContent` fuera de la allowlist. Ver [ADR-0091](../10-architecture/adr/0091-single-close-button.md) y [component-contracts.md](./component-contracts.md#SheetCloseButton-🟢).

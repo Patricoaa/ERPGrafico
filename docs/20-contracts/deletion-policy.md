@@ -46,33 +46,40 @@ Cómo se "elimina" una entidad en ERPGrafico depende de qué tipo de entidad sea
 |-----|--------|--------|-------|
 | `accounting` | `Account` (plan de cuentas) | Archivo | `is_active` filtra selectores; cuentas históricas siguen visibles en mayores |
 | `accounting` | `JournalEntry` | Anulación | Reverso vía contramovimiento; status = `cancelled` |
+| `accounting` | `ClosingChecklistTemplate` | Archivo | `is_active` filtra selectores; plantillas inactivas no se usan en cierres |
 | `billing` | `Invoice` | Cancelación / Anulación | Cancel si DRAFT (sin JE o JE DRAFT). Annul si emitida a SII (requiere Nota de Crédito). |
-| `billing` | `CreditNote` / `DebitNote` | Anulación | Idem invoice — solo anulación (nunca DRAFT) |
 | `contacts` | `Contact` | Archivo | `is_active=False` saca del selector pero preserva FKs en docs históricos |
 | `core` | `User` | Archivo | `is_active=False`. Nunca borrar — preserva audit trail |
 | `hr` | `Employee` | Archivo | Excepción: usa `status` `ACTIVE`/`INACTIVE` para ex-empleados (ver `ARCHIVO_EXEMPT`) |
+| `hr` | `AFP` | Archivo | `is_active` filtra selectores |
+| `hr` | `PayrollConcept` | Archivo | `is_active` filtra selectores; conceptos de sistema protegidos |
 | `inventory` | `Product` | Archivo | `is_active=False`; las líneas históricas siguen referenciándolo |
 | `inventory` | `ProductCategory` | Archivo | |
+| `inventory` | `ProductAttribute` | Archivo | `is_active` filtra selectores |
 | `inventory` | `UoM` / `UoMCategory` | Archivo | |
 | `inventory` | `Warehouse` | Archivo | |
+| `inventory` | `Location` | Archivo | `is_active` filtra selectores; referenciada por StockMoves históricos |
+| `inventory` | `PricingRule` | — (exento) | `active` BooleanField propio; no es dato maestro del patrón Archivo |
 | `inventory` | `StockMove` | Anulación | Reverso vía contramovimiento |
 | `production` | `WorkOrder` | Anulación | status = `cancelled`; preserva históricos de producción |
 | `purchasing` | `PurchaseOrder` | Cancelación / Anulación | Cancel si DRAFT (tree DRAFT). Annul si CONFIRMED (con reversos). |
 | `purchasing` | `PurchaseReceipt` | Cancelación / Anulación | Cancel si DRAFT. Annul si CONFIRMED (reverso de stock). |
 | `sales` | `SaleOrder` | Cancelación / Anulación | Cancel si DRAFT (tree DRAFT). Annul si CONFIRMED (reversos). |
 | `sales` | `SaleDelivery` | Anulación | Annul directo con reverso de stock. Además admite cancelación **en cascada**: la rama DRAFT de `cancel_sale_order` cancela deliveries DRAFT (no existe `cancel` directo sobre el delivery). |
-| `sales` | `POSDraft` / `DraftCart` | Hard delete | Drafts sin valor fiscal — `.delete()` libre |
+| `sales` | `DraftCart` | Hard delete | Drafts sin valor fiscal — `.delete()` libre |
 | `tax` | `TaxPeriod` | Archivo | Excepción: ciclo de vida vía `status` `OPEN`/`UNDER_REVIEW`/`CLOSED`; nunca se borra — afecta cálculos históricos |
-| `treasury` | `Bank` | Archivo | |
-| `treasury` | `TreasuryAccount` | Archivo | |
-| `treasury` | `PaymentMethod` / `PaymentProvider` | Archivo | |
+| `treasury` | `Bank` | Archivo | `is_active` filtra selectores; `db_index=True` |
+| `treasury` | `TreasuryAccount` | Archivo | `is_active` filtra selectores |
+| `treasury` | `PaymentMethod` | Archivo | `is_active` filtra selectores; `db_index=True` |
+| `treasury` | `PaymentTerminalProvider` | Archivo | `is_active` filtra selectores; `db_index=True` |
+| `treasury` | `POSTerminal` | Archivo | `is_active` filtra selectores; `db_index=True` |
 | `treasury` | `TreasuryMovement` | Cancelación / Anulación | Cancel si DRAFT (sin JE o JE DRAFT). Annul si JE POSTED (reverso). |
 | `treasury` | `BankStatementLine` | Anulación | No se borra; se marca `unmatched` o `discarded` |
 | `treasury` | `BankLoan` | Cancelación / Anulación | Cancel si DRAFT (sin desembolso). Annul si ACTIVE (reversas contables del pasivo + cuotas CANCELED). Ver ADR-0033. |
 | `treasury` | `LoanInstallment` | append-only (sistema) | Solo `LoanService` modifica el estado; nunca se borra manualmente. `CANCELED` es el estado terminal por `prepay` / `refinance`. |
 | `treasury` | `CreditCardStatement` | Cancelación | Cancel si OPEN (sin pago). `CardService.cancel_statement()` es la única vía. Ver ADR-0034. |
-| `treasury` | `CreditLine` | Archivo | `status=CANCELED` es terminal; no se borra. Ciclo de vida vía `CreditLineService`. Ver ADR-0049/0050. |
-| `treasury` | `Checkbook` | Archivo | `status=CLOSED` / `EXHAUSTED` — nunca se borra; preserva trazabilidad de folios usados. |
+| `treasury` | `CreditLine` | Archivo | **Gap:** falta `is_active` (ver `ARCHIVO_KNOWN_GAPS`); ciclo de vida vía `status` ACTIVE/EXPIRED/CANCELED/SUSPENDED; `status=CANCELED` es terminal; no se borra. |
+| `treasury` | `Checkbook` | Archivo | Excepción: usa `status` ACTIVE/CLOSED/EXHAUSTED; `is_active` paralelo crearía dos fuentes de verdad (ver `ARCHIVO_EXEMPT`). Nunca se borra; preserva trazabilidad de folios. |
 | `workflow` | `Transition` | — (eliminado) | Sustituido por `django-simple-history` en todo el sistema. |
 
 ## Reglas operativas

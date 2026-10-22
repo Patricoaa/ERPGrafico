@@ -17,7 +17,7 @@ export function useBanks() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: banks, isLoading, refetch } = useQuery<Bank[]>({
+    const { data: banks, isLoading, isError, refetch } = useQuery<Bank[]>({
         queryKey: BANKS_KEYS.list(),
         queryFn: treasuryApi.getBanks,
         staleTime: staleTime.reference,
@@ -81,6 +81,8 @@ export function useBanks() {
     return {
         banks: banks ?? [],
         isLoading,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError,
         refetch,
         createBank: createMutation.mutateAsync,
         updateBank: updateMutation.mutateAsync,
@@ -98,7 +100,7 @@ export function usePaymentMethods() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: methods, isLoading, refetch } = useQuery<PaymentMethod[]>({
+    const { data: methods, isLoading, isError, refetch } = useQuery<PaymentMethod[]>({
         queryKey: PAYMENT_METHODS_KEYS.list(),
         queryFn: treasuryApi.getPaymentMethods,
         staleTime: staleTime.reference,
@@ -139,13 +141,27 @@ export function usePaymentMethods() {
         onError: () => toast.error('Error al eliminar'),
     })
 
+    /** Archivo pattern: soft-delete via `is_active=false` (hard DELETE is blocked server-side with 405). */
+    const archiveMutation = useMutation({
+        mutationFn: ({ id, is_active }: { id: number, is_active: boolean }) =>
+            treasuryApi.updatePaymentMethod(id, { is_active }),
+        onSuccess: () => {
+            markLocalMutation()
+            invalidate()
+        },
+        onError: () => toast.error('Error al archivar el método'),
+    })
+
     return {
         methods: methods ?? [],
         isLoading,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError,
         refetch,
         createMethod: createMutation.mutateAsync,
         updateMethod: updateMutation.mutateAsync,
         deleteMethod: deleteMutation.mutateAsync,
+        archiveMethod: archiveMutation.mutateAsync,
         isCreating: createMutation.isPending,
         isUpdating: updateMutation.isPending,
     }

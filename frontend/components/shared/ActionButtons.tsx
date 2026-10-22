@@ -1,45 +1,90 @@
 import * as React from "react"
-import { Save } from "lucide-react"
+import { Loader2, type LucideIcon } from "lucide-react"
 import { Button, type buttonVariants } from "@/components/ui/button"
 import { type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
-import { ActionSlideButton } from "./ActionSlideButton"
-
 type ButtonBaseProps = React.ComponentProps<"button"> & VariantProps<typeof buttonVariants> & { asChild?: boolean }
 
-export type SubmitButtonProps = React.ComponentProps<typeof ActionSlideButton>
+type ActionIcon = React.ReactNode | LucideIcon
+
+/**
+ * Canonical Capa 2 typography (ADR-0088). The two quoted fragments are
+ * asserted by lib/__tests__/typography.contract.test.ts — do not merge them.
+ */
+const ACTION_BUTTON_CLASSES = cn(
+  "h-9 px-4 text-3xs",
+  "font-black tracking-widest uppercase rounded-sm shadow-card cursor-pointer"
+)
+
+/** Renders a LucideIcon component (sized) or a plain ReactNode as-is. */
+function renderActionIcon(icon: ActionIcon, sizeClassName: string) {
+  if (!icon) return null
+  if (typeof icon === 'function' || (typeof icon === 'object' && 'render' in icon)) {
+    const Icon = icon as React.ComponentType<{ className?: string }>
+    return <Icon className={sizeClassName} />
+  }
+  return icon
+}
+
+export type SubmitButtonProps = React.ComponentProps<typeof Button> & {
+  /** Show loading spinner and disable interaction */
+  loading?: boolean
+  /** Leading icon (Lucide component or instance). Hidden while `loading`. */
+  icon?: ActionIcon
+}
 
 export const SubmitButton = React.forwardRef<HTMLButtonElement, SubmitButtonProps>(
-  ({ loading = false, children = "Guardar", icon = <Save className="h-3.5 w-3.5" />, ...props }, ref) => {
+  ({ loading = false, children = "Guardar", icon, disabled, className, variant = "default", ...props }, ref) => {
+    const isDisabled = disabled || loading
     return (
-      <ActionSlideButton
+      <Button
         ref={ref}
-        variant="primary"
-        loading={loading}
-        icon={icon}
+        variant={variant}
+        disabled={isDisabled}
+        className={cn(ACTION_BUTTON_CLASSES, className)}
         {...props}
       >
+        {loading ? (
+          // eslint-disable-next-line no-restricted-syntax -- This IS the canonical loading implementation for action buttons
+          <Loader2 className="size-3.5 animate-spin" />
+        ) : (
+          renderActionIcon(icon, "size-3.5")
+        )}
         {children}
-      </ActionSlideButton>
+      </Button>
     )
   }
 )
 SubmitButton.displayName = "SubmitButton"
 
-export type DangerButtonProps = React.ComponentProps<typeof ActionSlideButton>
+export type DangerButtonProps = React.ComponentProps<typeof Button> & {
+  /** Show loading spinner and disable interaction */
+  loading?: boolean
+  /** Leading icon (Lucide component or instance). Hidden while `loading`. */
+  icon?: ActionIcon
+}
 
 export const DangerButton = React.forwardRef<HTMLButtonElement, DangerButtonProps>(
-  ({ loading = false, children = "Eliminar", ...props }, ref) => {
+  ({ loading = false, children = "Eliminar", icon, disabled, className, variant = "destructive", type = "button", ...props }, ref) => {
+    const isDisabled = disabled || loading
     return (
-      <ActionSlideButton
+      <Button
         ref={ref}
-        variant="destructive"
-        loading={loading}
+        variant={variant}
+        type={type}
+        disabled={isDisabled}
+        className={cn(ACTION_BUTTON_CLASSES, className)}
         {...props}
       >
+        {loading ? (
+          // eslint-disable-next-line no-restricted-syntax -- This IS the canonical loading implementation for action buttons
+          <Loader2 className="size-3.5 animate-spin" />
+        ) : (
+          renderActionIcon(icon, "size-3.5")
+        )}
         {children}
-      </ActionSlideButton>
+      </Button>
     )
   }
 )

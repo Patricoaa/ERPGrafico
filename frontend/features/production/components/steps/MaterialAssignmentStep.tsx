@@ -1,23 +1,21 @@
 "use client"
 
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Plus, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import {ActionConfirmModal, Chip, DataCell, DataTable} from '@/components/shared'
+import { ActionConfirmModal, Chip, DataCell, LabeledInput, Skeleton } from '@/components/shared'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { Skeleton } from '@/components/shared'
 import { ProductSelector } from '@/components/selectors/ProductSelector'
 import { UoMSelector } from '@/components/selectors/UoMSelector'
 import { useProductionVariants, productionApi } from '../../hooks'
 import { MaterialAssignmentTabs } from '../MaterialAssignmentTabs'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useWorkOrderMutations } from '../../hooks'
-import type { ColumnDef } from '@tanstack/react-table'
+import { Collection, useEntityCollection } from '@/components/entity-view'
+import { workOrderMaterialEntity, workOrderMaterialViews } from '../../entity-view/workOrderMaterial.entity'
 
-import { cn } from '@/lib/utils'
 import { showApiError } from '@/lib/errors'
 import type { Product } from "@/types/entities"
 import type { WorkOrder, WorkOrderMaterial, ProductMinimal } from '../../types'
@@ -39,7 +37,6 @@ export function MaterialAssignmentStep({
     { onSuccess: onMaterialSaved }
   )
 
-  // ── form state (local — not shared) ─────────────────────────────────────
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [editingMaterialId, setEditingMaterialId] = useState<number | null>(null)
   const [materialToDelete, setMaterialToDelete] = useState<WorkOrderMaterial | null>(null)
@@ -64,7 +61,6 @@ export function MaterialAssignmentStep({
   const handleSave = async () => {
     if (!productId) return
     if (parseFloat(qty) <= 0) return
-
     try {
       if (editingMaterialId) {
         await updateMaterial({ materialId: editingMaterialId, quantity: qty, uomId })
@@ -82,7 +78,6 @@ export function MaterialAssignmentStep({
     setProductId(m.component.toString())
     setQty(m.quantity_planned.toString())
     setUomId(m.uom.toString())
-    // Fetch product to populate selector
     productionApi.getProduct(m.component).then((data) => {
       setProductObj(data as unknown as ProductMinimal)
       setIsAddOpen(true)
@@ -101,68 +96,11 @@ export function MaterialAssignmentStep({
   const stockMaterials = order.materials?.filter((m: WorkOrderMaterial) => !m.is_outsourced) ?? []
   const outsourcedMaterials = order.materials?.filter((m: WorkOrderMaterial) => m.is_outsourced) ?? []
 
-  const stockColumns = useMemo<ColumnDef<WorkOrderMaterial>[]>(() => [
-    {
-      id: 'componente',
-      header: 'Componente',
-      cell: ({ row }) => (
-        <div>
-          <p className="font-medium">{row.original.component_name}</p>
-          <p className="text-3xs text-muted-foreground uppercase">{row.original.component_code}</p>
-        </div>
-      ),
-    },
-    {
-      id: 'cantidad_planificada',
-      header: () => <div className="text-right">Cantidad Planificada</div>,
-      cell: ({ row }) => (
-        <div className="text-right font-medium">{row.original.quantity_planned}</div>
-      ),
-    },
-    {
-      id: 'disponible',
-      header: 'UoM',
-      cell: ({ row }) => {
-        const m = row.original
-        return (
-          <div className="text-right">
-            <p className={cn('text-sm font-bold',
-              (m.stock_available ?? 0) >= m.quantity_planned ? 'text-success' : 'text-destructive',
-            )}>
-              {m.stock_available ?? 0} {m.uom_name}
-            </p>
-            <p className="text-3xs text-muted-foreground">Disponible</p>
-          </div>
-        )
-      },
-    },
-    {
-      id: 'costo_total',
-      header: () => <div className="text-right">Costo Total</div>,
-      cell: ({ row }) => (
-        <DataCell.Currency value={row.original.total_cost} weight="bold" className="justify-end text-xs" />
-      ),
-    },
-    {
-      id: 'origen',
-      header: 'Origen',
-      cell: ({ row }) => <Chip size="xs">{row.original.source}</Chip>,
-    },
-    {
-      id: 'acciones',
-      header: '',
-      cell: ({ row }) => {
-        const m = row.original
-        if (m.source !== 'MANUAL' || !isViewingCurrentStage) return null
-        return (
-          <DataCell.ActionGroup>
-            <DataCell.Action action="edit" onClick={() => handleEdit(m)} />
-            <DataCell.Action action="delete" onClick={() => setMaterialToDelete(m)} />
-          </DataCell.ActionGroup>
-        )
-      },
-    },
-  ], [isViewingCurrentStage, handleEdit, setMaterialToDelete])
+  const stockCollection = useEntityCollection(
+    workOrderMaterialEntity,
+    { rows: stockMaterials },
+    { pagination: { mode: "none" } }
+  )
 
   return (
     <div className="space-y-6">
@@ -173,23 +111,28 @@ export function MaterialAssignmentStep({
           showOutsourcedTab={false}
           stockContent={
             <div className="space-y-6">
-              {/* Stock materials table */}
               <div className="border rounded-md overflow-x-auto">
-                <DataTable
-                  columns={stockColumns}
-                  data={stockMaterials}
-                  variant="minimal"
-                  hidePagination
-                  noBorder
-                  emptyState={{
-                    context: 'inventory',
-                    title: 'No hay materiales asignados',
-                    description: 'No hay materiales de stock asignados',
+                <Collection.Root
+                  collection={stockCollection}
+                  label="Materiales de stock"
+                  actions={(row) => {
+                    if (row.source !== 'MANUAL' || !isViewingCurrentStage) return null
+                    return (
+                      <DataCell.ActionGroup>
+                        <DataCell.Action action="edit" onClick={() => handleEdit(row)} />
+                        <DataCell.Action action="delete" onClick={() => setMaterialToDelete(row)} />
+                      </DataCell.ActionGroup>
+                    )
                   }}
-                />
+                >
+                  <Collection.View
+                    table={workOrderMaterialViews.table}
+                    emptyTitle="No hay materiales asignados"
+                    emptyDescription="No hay materiales de stock asignados."
+                  />
+                </Collection.Root>
               </div>
 
-              {/* Add stock material form */}
               {isViewingCurrentStage && (
                 <>
                   {isAddOpen ? (
@@ -247,8 +190,13 @@ export function MaterialAssignmentStep({
                           )}
                         </div>
                         <div className="w-full md:w-32 space-y-2">
-                          <label className="text-xs font-bold uppercase">Cantidad</label>
-                          <Input type="number" value={qty} onChange={(e) => setQty(e.target.value)} />
+                          <LabeledInput
+                            label="Cantidad"
+                            type="number"
+                            value={qty}
+                            onChange={(e) => setQty(e.target.value)}
+                            className="h-8"
+                          />
                         </div>
                         <div className="w-full md:w-40 space-y-2">
                           <label className="text-xs font-bold uppercase">UoM</label>
@@ -279,7 +227,6 @@ export function MaterialAssignmentStep({
           }
           outsourcedContent={
             <div className="space-y-6">
-              {/* Outsourced services list */}
               <div className="grid gap-3">
                 {outsourcedMaterials.map((m: WorkOrderMaterial) => (
                   <div key={m.id} className="flex items-center justify-between p-3 border rounded-md bg-background group">
@@ -329,8 +276,6 @@ export function MaterialAssignmentStep({
                   </div>
                 )}
               </div>
-
-              {/* Outsourced services are managed in OutsourcingAssignmentStep */}
             </div>
           }
         />

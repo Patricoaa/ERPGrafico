@@ -75,6 +75,8 @@ Equivalencias canónicas (el rango micro es **fijo**, no fluido, y exclusivo par
 | **N2 — Wizard step** | GenericWizard step indicator | `text-3xs font-black` | `tracking-wider` | `uppercase` | "PASO 1 DE 3" |
 | **N2 — Paginación** | DataTablePagination | `text-xs font-medium` | normal | normal | "Registros por página" |
 | **N3 — Valor de input** | LabeledInput input | `text-sm` | normal | normal | "Juan Pérez" |
+| **N3 — Valor de selector** | SelectTrigger, SearchablePopover trigger | `text-sm text-foreground` | normal | normal | "Almacenable" |
+| **N3 — Placeholder** | LabeledInput, SelectTrigger placeholder | `text-sm text-muted-foreground/60` | normal | normal | "Seleccionar tipo…" |
 | **N3 — Dato primario** | DataCell.Text, DataCell.Date | `text-xs font-medium` | normal | normal | "15/03/2026" |
 | **N3 — Dato secundario** | DataCell.Secondary, helper hints | `text-xs text-muted-foreground` | normal | normal | "3 documentos" |
 | **N3 — Código/ID** | DataCell.Code, DataCell.Entity | `text-xs font-mono font-medium` | normal | `uppercase` | "OV-000123" |
@@ -124,10 +126,9 @@ h-9  text-3xs  font-black  uppercase  tracking-widest
 
 | Componente | Variante | Nota |
 |------------|----------|------|
-| `<SubmitButton>` | Primary (slide) | `px-4 h-9 text-3xs font-black` |
+| `<SubmitButton>` | Primary (relleno) | `px-4 h-9 text-3xs font-black`; touch mode vía `className="h-12 px-6 text-xs"` |
 | `<CancelButton>` | Outline | `px-5 h-9 text-3xs font-black shadow-card` |
-| `<DangerButton>` | Destructive | Extremo izquierdo del footer |
-| `<ActionSlideButton>` | Custom | Base de Submit y Cancel; variante `size="lg"` → `h-12 text-xs` |
+| `<DangerButton>` | Destructive | Extremo izquierdo del footer; icono opcional |
 | `<ToolbarCreateButton>` | Primary (toolbar) | Excepción: `h-9 text-xs font-semibold tracking-widest` (superficie toolbar, no footer de formulario) |
 
 **Fuente del contrato:** [component-button.md](component-button.md) + [form-layout-architecture.md](form-layout-architecture.md)
@@ -292,8 +293,8 @@ Para evitar fatiga visual, los iconos dentro de componentes (selectores, seccion
 <span className="text-red-400">
 
 // ❌ Reemplazar el sistema de capas con px crudos o clases semánticas
-<legend className="text-[10px]">  // Usar text-3xs (N2)
-<legend className="text-xs">       // Usar text-3xs (N2)
+<legend className="text-[10px]">  // Usar text-2xs (N2)
+<legend className="text-xs">       // Usar text-2xs (N2)
 
 // ❌ Tamaños px crudos en el chrome del shell
 <nav className="text-[13px]">  // Usar text-xs
@@ -304,3 +305,31 @@ Para evitar fatiga visual, los iconos dentro de componentes (selectores, seccion
 // ❌ Mezcla de pesos en el mismo patrón semántico
 // (Label+Value con semibold/bold/medium mezclados)
 ```
+
+---
+
+## Reglas de contrato para notched-field (LabeledContainer / LabeledInput / LabeledSelect)
+
+| Regla | Descripción | Fix |
+|---|---|---|
+| **R1** | `labelClassName` / `hintClassName` no admiten overrides tipográficos | Eliminar → delega en `FieldLegend` (N2) |
+| **R2** | Alturas arbitrarias `h-[…]` prohibidas en primitivas e hijos | Usar `h-6` / `h-6!` (1.5rem = 24px) |
+| **R3** | Valor primario: `text-sm text-foreground` (sin `font-medium/semibold/bold/black`) | Peso normal |
+| **R4** | Placeholder: `text-sm text-muted-foreground/60` explícito (span dedicado) | No conditional class |
+| **R5** | `variant="inline"` dentro de `LabeledContainer` = doble chrome prohibido | Usar `variant="standalone"` o quitar wrapper |
+| **R6** | `LabeledSelect` no debe tener `placeholder=""` (vacío) | Default canónico: `"Seleccionar..."` |
+| **R7** | Triggers de `DatePicker` y `components/selectors/*` no pueden declarar `font-medium/semibold/bold/black`; `DatePicker` debe declarar `font-normal` | `font-normal` explícito |
+| **R8** | Empty states de triggers custom (`Button role="combobox"`) deben usar `text-sm text-muted-foreground/60` | Span explícito con `/60` |
+
+### Opt-out para meta-información legítima (N5)
+
+```tsx
+// typography-allow: meta - N5
+<span className="text-3xs text-muted-foreground">{contact.tax_id}</span>
+```
+
+Se permite `text-3xs` / `text-2xs` / `font-bold` solo para metadatos secundarios (email, RUT, saldo, código) que no son el valor principal del campo.
+
+### Deprecación
+
+`labelClassName` y `hintClassName` en `LabeledContainer`, `LabeledInput`, `LabeledSelect` → **deprecated**. No usar. Toda la tipografía de legend se gestiona vía `FieldLegend` (N2: `text-2xs font-bold uppercase tracking-widest`).

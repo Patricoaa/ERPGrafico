@@ -3,9 +3,8 @@ import {showApiError} from "@/lib/errors"
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { salesApi } from '../api/salesApi'
 import { toast } from 'sonner'
-import { type SaleOrderFilters, type SaleOrderPayload, type SaleOrder } from '../types'
+import { type SaleOrderFilters, type SaleOrderPayload } from '../types'
 import { useRealtime } from '@/features/realtime'
-import type { Page } from '@/lib/pagination'
 
 import { SALES_KEYS } from './queryKeys'
 import { staleTime } from '@/lib/query-config'
@@ -13,7 +12,7 @@ import { getDomainConceptTitle } from '@/lib/entity-registry'
 
 export { SALES_KEYS }
 
-export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFilters, initialData?: Page<SaleOrder> } = {}) {
+export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {}) {
     const queryClient = useQueryClient()
     const invalidateSales = () => invalidateCrossFeature(queryClient, [SALES_KEYS.all])
     const { markLocalMutation } = useRealtime()
@@ -25,7 +24,6 @@ export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFi
         queryKey: SALES_KEYS.orders(activeFilters),
         queryFn: () => salesApi.getOrders(activeFilters),
         staleTime: staleTime.standard, // 2 min
-        initialData,
         placeholderData: (prev) => prev,
     })
 
@@ -59,17 +57,6 @@ export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFi
         }
     })
 
-    const deleteMutation = useMutation({
-        mutationFn: salesApi.deleteOrder,
-        onSuccess: () => {
-            markLocalMutation()
-            toast.success(`${getDomainConceptTitle('ov')} eliminada`)
-            invalidateSales()
-        },
-        onError: () => {
-            toast.error('Error al eliminar')
-        }
-    })
 
     const registerNoteMutation = useMutation({
         mutationFn: ({ orderId, payload }: { orderId: number, payload: FormData }) =>
@@ -112,16 +99,16 @@ export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFi
         orders,
         isLoading: showSkeleton,
         isRefetching,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError: query.isError,
         refetch,
         createOrder: createMutation.mutateAsync,
         updateOrder: updateMutation.mutateAsync,
-        deleteOrder: deleteMutation.mutateAsync,
         registerNoteOnOrder: registerNoteMutation.mutateAsync,
         dispatchOrder: dispatchMutation.mutateAsync,
         dispatchOrderPartial: partialDispatchMutation.mutateAsync,
         isCreating: createMutation.isPending,
         isUpdating: updateMutation.isPending,
-        isDeleting: deleteMutation.isPending,
         isRegisteringNote: registerNoteMutation.isPending,
         isDispatching: dispatchMutation.isPending || partialDispatchMutation.isPending,
     }
@@ -159,6 +146,7 @@ export function useSalesNotes({ filters }: { filters?: SaleNoteFilters } = {}) {
         notes,
         isLoading: showSkeleton,
         isRefetching,
+        isError: query.isError,
         refetch: query.refetch,
     }
 }

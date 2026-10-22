@@ -616,7 +616,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                     const idx = STAGES.findIndex((s) => s.id === val)
                     if (idx !== -1) setViewingStepIndex(idx)
                   }}
-                  placeholder="Seleccionar etapa"
                   options={STAGES.map((s, i) => {
                     const isPast = actualStepIndex > i
                     const isCurrent = actualStepIndex === i

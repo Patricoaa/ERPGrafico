@@ -14,6 +14,8 @@
  *    nav item, breadcrumb, status pill, rail initials + tooltip, panel title,
  *  - micro-label weight is `font-bold` (N1/N2/N4) while `font-black` is
  *    reserved for action buttons (Submit/Danger/Cancel).
+ *  - field legends (N2) share a single source: FieldLegend → text-2xs font-bold
+ *  - input/select values (N3) use text-sm, no uppercase, no custom weight
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -34,8 +36,34 @@ const shell = {
   panelHeader: read('../../components/shared/PanelHeader.tsx'),
   sectionHeader: read('../../components/shared/SectionHeader.tsx'),
   formSection: read('../../components/shared/FormSection.tsx'),
-  actionSlideButton: read('../../components/shared/ActionSlideButton.tsx'),
   actionButtons: read('../../components/shared/ActionButtons.tsx'),
+};
+
+const formPrimitives = {
+  fieldLegend: read('../../components/shared/FieldLegend.tsx'),
+  labeledInput: read('../../components/shared/LabeledInput.tsx'),
+  labeledContainer: read('../../components/shared/LabeledContainer.tsx'),
+  labeledSelect: read('../../components/shared/LabeledSelect.tsx'),
+};
+
+const productDrawer = {
+  productBasicInfo: read('../../features/inventory/components/product/ProductBasicInfo.tsx'),
+  productTypeSelector: read('../../components/selectors/ProductTypeSelector.tsx'),
+  categorySelector: read('../../components/selectors/CategorySelector.tsx'),
+  uomSelector: read('../../components/selectors/UoMSelector.tsx'),
+  warehouseSelector: read('../../components/selectors/WarehouseSelector.tsx'),
+};
+
+const selectors: Record<string, string> = {
+  userSelector: read('../../components/selectors/UserSelector.tsx'),
+  groupSelector: read('../../components/selectors/GroupSelector.tsx'),
+  accountSelector: read('../../components/selectors/AccountSelector.tsx'),
+  treasuryAccountSelector: read('../../components/selectors/TreasuryAccountSelector.tsx'),
+  sourceDocumentSelector: read('../../components/selectors/SourceDocumentSelector.tsx'),
+  advancedWorkOrderSelector: read('../../components/selectors/AdvancedWorkOrderSelector.tsx'),
+  advancedSaleOrderSelector: read('../../components/selectors/AdvancedSaleOrderSelector.tsx'),
+  advancedContactSelector: read('../../components/selectors/AdvancedContactSelector.tsx'),
+  productSelector: read('../../components/selectors/ProductSelector.tsx'),
 };
 
 describe('typography contract', () => {
@@ -98,7 +126,172 @@ describe('typography contract', () => {
   });
 
   it('action buttons use font-black (Submit/Danger/Cancel share the scale)', () => {
-    expect(/text-3xs"?,\s*"font-black tracking-widest uppercase/.test(shell.actionSlideButton)).toBe(true);
+    expect(/text-3xs"?,\s*"font-black tracking-widest uppercase/.test(shell.actionButtons)).toBe(true);
     expect(/h-9 px-5 text-3xs font-black tracking-widest uppercase/.test(shell.actionButtons)).toBe(true);
+  });
+
+  describe('N2 field legends — single source via FieldLegend', () => {
+    it('FieldLegend exports text-2xs font-bold uppercase tracking-widest', () => {
+      const src = formPrimitives.fieldLegend;
+      expect(/text-2xs font-bold uppercase tracking-widest/.test(src)).toBe(true);
+      expect(/text-3xs/.test(src)).toBe(false);
+    });
+
+    it('LabeledInput delegates to FieldLegend component (no inline legend styles)', () => {
+      const src = formPrimitives.labeledInput;
+      expect(/<FieldLegend/.test(src)).toBe(true);
+      // No inline legend class with text-2xs/text-3xs duplication
+      expect(/legend className=\{cn\([^}]*"px-1\.5 text-2xs font-bold"/.test(src)).toBe(false);
+    });
+
+    it('LabeledContainer delegates to FieldLegend component (no inline legend styles)', () => {
+      const src = formPrimitives.labeledContainer;
+      expect(/<FieldLegend/.test(src)).toBe(true);
+      // No inline legend class with text-2xs/text-3xs duplication
+      expect(/legend className=\{cn\([^}]*"px-1\.5 text-(2xs|3xs) font-bold"/.test(src)).toBe(false);
+    });
+
+    it('Neither primitive uses text-3xs in legend', () => {
+      for (const [name, src] of Object.entries(formPrimitives)) {
+        if (name === 'fieldLegend') continue;
+        // Look for legend className with text-3xs
+        expect(
+          /legend[^>]*className[^>]*text-3xs/.test(src),
+          `${name} must not use text-3xs in legend`
+        ).toBe(false);
+      }
+    });
+  });
+
+  describe('LabeledSelect — legend N2, trigger N3, placeholder N3', () => {
+    it('LabeledSelect delegates to FieldLegend component', () => {
+      const src = formPrimitives.labeledSelect;
+      expect(/<FieldLegend/.test(src)).toBe(true);
+      // No inline legend class with text-2xs/text-3xs duplication
+      expect(/legend className=\{cn\([^}]*"px-1\.5 text-(2xs|3xs) font-bold"/.test(src)).toBe(false);
+    });
+
+    it('LabeledSelect standalone trigger uses h-6! token height (not h-[1.5rem])', () => {
+      const src = formPrimitives.labeledSelect;
+      expect(/h-6!/.test(src)).toBe(true);
+      expect(/!h-\[1\.5rem\]/.test(src)).toBe(false);
+    });
+
+    it('LabeledSelect value uses text-sm, placeholder uses text-sm text-muted-foreground/60', () => {
+      const src = formPrimitives.labeledSelect;
+      // Value (SelectValue) gets text-sm text-foreground via the trigger class override
+      expect(/\[&_\*\[data-slot=select-value\]\]:text-sm/.test(src)).toBe(true);
+      expect(/\[&_\*\[data-slot=select-value\]\]:text-foreground/.test(src)).toBe(true);
+      // Placeholder gets text-sm text-muted-foreground/60
+      expect(/\[&_\*\[data-placeholder\]\]:text-sm/.test(src)).toBe(true);
+      expect(/\[&_\*\[data-placeholder\]\]:text-muted-foreground\/60/.test(src)).toBe(true);
+      // No font-medium on value/placeholder
+      expect(/font-medium text-sm/.test(src)).toBe(false);
+    });
+
+    it('LabeledSelect inline variant stays compact for tables', () => {
+      const src = formPrimitives.labeledSelect;
+      expect(/h-9/.test(src)).toBe(true);
+    });
+  });
+
+  describe('Product drawer — no local overrides, selectors follow N3', () => {
+    it('ProductBasicInfo has no font-bold/text-xs overrides on inputs', () => {
+      const src = productDrawer.productBasicInfo;
+      // No className="font-bold text-xs" on LabeledInput
+      expect(/LabeledInput[^>]*className="font-bold text-xs"/.test(src)).toBe(false);
+      // No className="font-mono font-bold text-xs" on LabeledInput
+      expect(/LabeledInput[^>]*className="font-mono font-bold text-xs"/.test(src)).toBe(false);
+      // ID display uses font-medium, not font-black
+      expect(/font-mono font-black text-primary text-xs/.test(src)).toBe(false);
+    });
+
+    it('ProductTypeSelector value uses text-sm, no uppercase/font-bold', () => {
+      const src = productDrawer.productTypeSelector;
+      // Selected value
+      expect(/text-sm text-foreground truncate leading-none.*\{selectedType\.label\}/.test(src)).toBe(true);
+      // Placeholder uses shared constant
+      expect(/SELECTOR_PLACEHOLDER_CLASS/.test(src)).toBe(true);
+      // No uppercase, no font-bold, no text-2xs on value
+      expect(/font-bold text-2xs.*\{selectedType\.label\}/.test(src)).toBe(false);
+      expect(/uppercase.*\{selectedType\.label\}/.test(src)).toBe(false);
+      // No arbitrary height h-[1.5rem]
+      expect(/h-\[1\.5rem\]/.test(src)).toBe(false);
+    });
+
+    it('CategorySelector value uses text-sm, no uppercase/font-bold', () => {
+      const src = productDrawer.categorySelector;
+      // Uses shared SelectorTrigger primitive
+      expect(/SelectorTrigger/.test(src)).toBe(true);
+      expect(/SELECTOR_VALUE_CLASS/.test(src)).toBe(true);
+      // No font-medium text-2xs uppercase on value
+      expect(/font-medium text-2xs truncate uppercase.*selectedCategory/.test(src)).toBe(false);
+      // No text-2xs opacity-50 on placeholder
+      expect(/text-2xs text-muted-foreground opacity-50.*placeholder/.test(src)).toBe(false);
+      // No arbitrary height h-[1.5rem]
+      expect(/h-\[1\.5rem\]/.test(src)).toBe(false);
+    });
+
+    it('UoMSelector value uses text-sm, no arbitrary height', () => {
+      const src = productDrawer.uomSelector;
+      expect(/SelectorTrigger/.test(src)).toBe(true);
+      // No arbitrary height h-[1.5rem] in standalone variant
+      expect(/variant === 'standalone'[^}]*h-\[1\.5rem\]/.test(src)).toBe(false);
+    });
+
+    it('WarehouseSelector value uses text-sm, no arbitrary height', () => {
+      const src = productDrawer.warehouseSelector;
+      // Uses shared SelectorTrigger primitive
+      expect(/SelectorTrigger/.test(src)).toBe(true);
+      expect(/SELECTOR_VALUE_CLASS/.test(src)).toBe(true);
+      // No font-medium on value
+      expect(/font-medium text-sm truncate.*selectedWarehouse/.test(src)).toBe(false);
+      // No arbitrary height h-[1.5rem]
+      expect(/h-\[1\.5rem\]/.test(src)).toBe(false);
+    });
+  });
+
+  describe('Selectors — use shared SelectorTrigger primitive (single source of truth)', () => {
+    const selectorTests = [
+      { key: 'userSelector', placeholder: 'Seleccionar' },
+      { key: 'groupSelector', placeholder: 'Seleccionar' },
+      { key: 'accountSelector', placeholder: 'Seleccionar' },
+      { key: 'treasuryAccountSelector', placeholder: 'Seleccionar' },
+      { key: 'sourceDocumentSelector', placeholder: 'Seleccionar' },
+      { key: 'advancedWorkOrderSelector', placeholder: 'Seleccionar' },
+      { key: 'advancedSaleOrderSelector', placeholder: 'Seleccionar' },
+      { key: 'advancedContactSelector', placeholder: 'Seleccionar' },
+      { key: 'productSelector', placeholder: 'Seleccionar' },
+    ];
+
+    selectorTests.forEach(({ key, placeholder }) => {
+      it(`${key} uses SelectorTrigger with canonical placeholder policy`, () => {
+        const src = selectors[key];
+        // Uses shared primitive
+        expect(/SelectorTrigger/.test(src)).toBe(true);
+        // Defaults placeholder to Seleccionar...
+        expect(new RegExp(placeholder).test(src)).toBe(true);
+        // No arbitrary h-[1.5rem]
+        expect(/h-\[1\.5rem\]/.test(src)).toBe(false);
+        // No font-medium on trigger value (font-normal enforced by SelectorTrigger)
+        expect(/font-medium text-sm/.test(src)).toBe(false);
+      });
+    });
+
+    it('AccountSelector trigger code uses font-mono text-xs font-semibold (N3 Código role)', () => {
+      const src = selectors.accountSelector;
+      expect(/font-mono text-xs font-semibold/.test(src)).toBe(true);
+    });
+
+    it('AdvancedContactSelector inline variant uses text-sm placeholders', () => {
+      const src = selectors.advancedContactSelector;
+      expect(/variant === 'inline'/.test(src)).toBe(true);
+      expect(/SelectorTrigger/.test(src)).toBe(true);
+    });
+
+    it('ProductSelector inline variant uses text-xs', () => {
+      const src = selectors.productSelector;
+      expect(/variant === 'inline'.*text-xs/.test(src)).toBe(true);
+    });
   });
 });

@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useEmployeeMutations } from '../hooks/useEmployeeMutations'
 import type { Employee, EmployeeConceptAmount } from "@/types/hr"
-import { ActionSlideButton, CancelButton } from "@/components/shared"
+import { SubmitButton, CancelButton } from "@/components/shared"
 import { UserCog, CalendarCheck2, Plus, ShieldCheck } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit"
 import { FormSplitLayout } from "@/components/shared"
@@ -32,23 +32,34 @@ export const employeeSchema = z.object({
     department: z.string().optional(),
     start_date: z.string().optional(),
     base_salary: z.string().min(1, "Sueldo base requerido"),
-    status: z.enum(["ACTIVE", "INACTIVE"]),
-    contract_type: z.enum(["INDEFINIDO", "PLAZO_FIJO"]),
+    status: z.enum(["ACTIVE", "INACTIVE"]).or(z.literal("")).refine((v): boolean => v !== "", "Selecciona un estado de ficha"),
+    contract_type: z.enum(["INDEFINIDO", "PLAZO_FIJO"]).or(z.literal("")).refine((v): boolean => v !== "", "Selecciona un tipo de contrato"),
     afp: z.string().min(1, "Institución Previsional requerida"),
-    salud_type: z.enum(["FONASA", "ISAPRE"]),
+    salud_type: z.enum(["FONASA", "ISAPRE"]).or(z.literal("")).refine((v): boolean => v !== "", "Selecciona un sistema de salud"),
     isapre_amount_uf: z.string(),
-    jornada_type: z.enum(["ORDINARIA_22", "PARCIAL_40BIS", "EXENTA_22", "EXTRAORDINARIA_30"]),
+    jornada_type: z.enum(["ORDINARIA_22", "PARCIAL_40BIS", "EXENTA_22", "EXTRAORDINARIA_30"]).or(z.literal("")).refine((v): boolean => v !== "", "Selecciona un régimen de trabajo"),
     jornada_hours: z.string(),
     trabajo_pesado: z.boolean(),
     trabajo_agricola: z.boolean(),
     gratificacion: z.boolean(),
     dias_pactados: z.number().min(1).max(31),
-    asignacion_familiar: z.enum(["A", "B", "C", "D"]),
+    asignacion_familiar: z.enum(["A", "B", "C", "D"]).or(z.literal("")).refine((v): boolean => v !== "", "Selecciona un tramo de asignación familiar"),
     cargas_familiares: z.number().min(0),
     concept_amounts: z.record(z.string(), z.string()).optional(),
 })
 
 export type EmployeeFormValues = z.infer<typeof employeeSchema>
+
+const JORNADA_TYPES = ["ORDINARIA_22", "PARCIAL_40BIS", "EXENTA_22", "EXTRAORDINARIA_30"] as const
+const ASIGNACION_FAMILIAR_TRAMOS = ["A", "B", "C", "D"] as const
+
+/**
+ * Narrow a raw API value to one of the allowed options.
+ * Returns "" when the value is absent or unknown, so the field shows the
+ * "Seleccionar..." placeholder instead of a pre-selected/invalid option.
+ */
+const narrowChoice = <T extends string>(value: string | null | undefined, allowed: readonly T[]): T | "" =>
+    (allowed as readonly string[]).includes(value ?? "") ? (value as T) : ""
 
 export interface EmployeeDrawerProps {
     open: boolean
@@ -85,18 +96,18 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
             department: "",
             start_date: "",
             base_salary: "0",
-            status: "ACTIVE",
-            contract_type: "INDEFINIDO",
+            status: "",
+            contract_type: "",
             afp: "",
-            salud_type: "FONASA",
+            salud_type: "",
             isapre_amount_uf: "0",
-            jornada_type: "ORDINARIA_22",
+            jornada_type: "",
             jornada_hours: "44.0",
             trabajo_pesado: false,
             trabajo_agricola: false,
             gratificacion: true,
             dias_pactados: 30,
-            asignacion_familiar: "D",
+            asignacion_familiar: "",
             cargas_familiares: 0,
             concept_amounts: {},
         }
@@ -119,18 +130,18 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
             department: "",
             start_date: dateString,
             base_salary: "0",
-            status: "ACTIVE" as const,
-            contract_type: "INDEFINIDO" as const,
+            status: "" as const,
+            contract_type: "" as const,
             afp: "",
-            salud_type: "FONASA" as const,
+            salud_type: "" as const,
             isapre_amount_uf: "0",
-            jornada_type: "ORDINARIA_22" as const,
+            jornada_type: "" as const,
             jornada_hours: "44.0",
             trabajo_pesado: false,
             trabajo_agricola: false,
             gratificacion: true,
             dias_pactados: 30,
-            asignacion_familiar: "D" as const,
+            asignacion_familiar: "" as const,
             cargas_familiares: 0,
             concept_amounts: {},
         }),
@@ -145,13 +156,13 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
             afp: emp.afp ? String(emp.afp) : "",
             salud_type: emp.salud_type,
             isapre_amount_uf: String(emp.isapre_amount_uf || "0"),
-            jornada_type: (emp.jornada_type as EmployeeFormValues["jornada_type"]) || "ORDINARIA_22",
+            jornada_type: narrowChoice(emp.jornada_type, JORNADA_TYPES),
             jornada_hours: String(emp.jornada_hours || "44.0"),
             trabajo_pesado: !!emp.trabajo_pesado,
             trabajo_agricola: !!emp.trabajo_agricola,
             gratificacion: !!emp.gratificacion,
             dias_pactados: emp.dias_pactados || 30,
-            asignacion_familiar: (emp.asignacion_familiar as EmployeeFormValues["asignacion_familiar"]) || "D",
+            asignacion_familiar: narrowChoice(emp.asignacion_familiar, ASIGNACION_FAMILIAR_TRAMOS),
             cargas_familiares: emp.cargas_familiares || 0,
             concept_amounts: (emp.concept_amounts || []).reduce((acc: Record<string, string>, curr: EmployeeConceptAmount) => {
                 acc[String(curr.concept)] = String(curr.amount)
@@ -250,13 +261,13 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
             actions={
                 <>
                     <CancelButton onClick={() => onOpenChange(false)} disabled={saving} />
-                    <ActionSlideButton
+                    <SubmitButton
                         type="submit"
                         loading={saving}
                         onClick={form.handleSubmit(onSubmit, onSubmitError)}
                     >
                         {employee ? "Actualizar Registro" : "Confirmar Contratación"}
-                    </ActionSlideButton>
+                    </SubmitButton>
                 </>
             }
         />
@@ -337,7 +348,6 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                             <FormField control={form.control} name="position" render={({ field, fieldState }) => (
                                                                 <LabeledInput
                                                                     label="Cargo (opcional)"
-                                                                    placeholder="Ej: Vendedor"
                                                                     error={fieldState.error?.message}
                                                                     {...field}
                                                                 />
@@ -347,7 +357,6 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                             <FormField control={form.control} name="department" render={({ field, fieldState }) => (
                                                                 <LabeledInput
                                                                     label="Departamento (opcional)"
-                                                                    placeholder="Ventas"
                                                                     error={fieldState.error?.message}
                                                                     {...field}
                                                                 />
@@ -395,7 +404,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                             }
                                                                             field.onChange(toDateOnlyISO(d))
                                                                         }}
-                                                                        className="h-[1.5rem] p-0 w-full border-none bg-transparent hover:bg-transparent shadow-none"
+                                                                        className="w-full border-none bg-transparent hover:bg-transparent shadow-none"
                                                                     />
                                                                 </LabeledContainer>
                                                             )} />
@@ -450,7 +459,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                     error={fieldState.error?.message}
                                                                     {...field}
                                                                     onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                                                                    className="font-black h-[1.5rem]"
+                                                                    className="h-6"
                                                                 />
                                                             )} />
                                                         </div>
@@ -463,7 +472,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                     step="0.5"
                                                                     error={fieldState.error?.message}
                                                                     {...field}
-                                                                    className="font-black h-[1.5rem]"
+                                                                    className="h-6"
                                                                 />
                                                             )} />
                                                         </div>
@@ -499,7 +508,6 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                     value={field.value || ""}
                                                                     onChange={field.onChange}
                                                                     error={fieldState.error?.message}
-                                                                    placeholder="Seleccionar..."
                                                                     options={afps.map(afp => ({
                                                                         value: afp.id.toString(),
                                                                         label: `${afp.name} (${afp.percentage}%)`
@@ -534,7 +542,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                         hint="Se descontará el mayor entre el 7% y este monto."
                                                                         error={fieldState.error?.message}
                                                                         {...field}
-                                                                        className="font-mono font-black h-[1.5rem]"
+                                                                        className="font-mono h-6"
                                                                     />
                                                                 )} />
                                                             </div>
@@ -567,7 +575,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                     error={fieldState.error?.message}
                                                                     {...field}
                                                                     onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                                                                    className="font-black h-[1.5rem]"
+                                                                    className="h-6"
                                                                 />
                                                             )} />
                                                         </div>
@@ -590,7 +598,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                             const current = form.getValues("concept_amounts") || {}
                                                                             form.setValue("concept_amounts", { ...current, [concept.id]: e.target.value }, { shouldDirty: true })
                                                                         }}
-                                                                        className="font-mono font-black h-[1.5rem]"
+                                                                        className="font-mono h-6"
                                                                     />
                                                                 </div>
                                                             ))}

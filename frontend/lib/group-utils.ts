@@ -71,6 +71,8 @@ export function groupItems<T>(
     labelFn?: (key: string, rawKey: unknown, items: T[]) => { label: string; sublabel?: string }
     defaultLabel?: string
     parseValue?: (value: unknown) => string | null
+    /** Reads the grouping value from the item instead of `item[field]` (e.g. a formatted value). */
+    getValue?: (item: T) => unknown
   },
 ): Group<T>[] {
   const { sort = 'desc', defaultLabel = 'Sin categoría' } = options ?? {}
@@ -79,7 +81,7 @@ export function groupItems<T>(
   const noKeyItems: T[] = []
 
   for (const item of items) {
-    const raw = getFieldValue(item, field)
+    const raw = options?.getValue ? options.getValue(item) : getFieldValue(item, field)
     let key: string | null
 
     if (options?.parseValue) {

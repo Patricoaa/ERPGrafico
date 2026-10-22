@@ -68,7 +68,7 @@
 - Evidencia: `features/orders/components/sheet/OrderSummaryTab.tsx:51` → `exclude: ["work_order_summary"]`; `toColumns` filtra por la clave de la definición (`components/shared/entity-fields.tsx:905`), que es `work_order` (`features/orders/orderLineFields.tsx:55`)
 - Efecto: la columna "OT" no se excluye en las líneas de OC
 - Restricción raíz: RC8 (`column()` usa la clave del dato y `exclude`, la de la definición; ambas son `string`)
-- Estado: pendiente. **Decisión del usuario (2026-10-17): se corrige en la migración** (lote de `orders`/líneas de documento, Fase 7).
+- Estado: **corregido en el lote 3a** (2026-10-18). `orderLineViews.purchase` declara sus columnas y `without()` solo acepta ids de campo. Verificado en la app: la OC 10 no muestra OT.
 
 ### TC-013 · Rigidez · Verificado
 - Evidencia: 43 `placement: 'detail'` en 9 `*Fields` de líneas; comentario explícito en `features/orders/orderLineFields.tsx:9`
@@ -91,7 +91,8 @@
 ### TC-016 · Decisión propuesta · `journalEntryFields` canónico
 - Evidencia: `diff` → solo difieren en la línea 49 (la copia de `app/` tiene `meta.title`); la copia de `features/accounting/` no tiene importadores ni export de barrel; el único consumidor es `app/(dashboard)/accounting/entries/EntriesClientView.tsx:10`
 - Determinación: el contenido canónico es el de `app/`; la ubicación canónica es `features/accounting/`; la copia de `features/` está muerta. Ambas se sustituyen al migrar la entidad (Fase 7).
-- Estado: pendiente de la Puerta A
+- 2026-10-18 (oleada 0): borrada la copia muerta de `features/accounting/`. La de `app/` se sustituye en la oleada B2.
+- Estado: implementado (parcial)
 
 ### TC-017 · Pendiente-backend
 - Evidencia: cadenas de fallback en `get` (`features/orders/orderLineFields.tsx:36,:44`) y en columnas de notas (`PurchasingOrdersClientView.tsx:751`)
@@ -200,3 +201,227 @@
 - Evidencia: `06-spec.md`; contrato `docs/20-contracts/component-entity-view.md`; `frontend/eslint-rules/entity-view-guards.mjs` (4 reglas; una sonda las dispara todas); `frontend/lib/__tests__/entity-view.contract.test.ts` (12/12 en verde; la mutación hace fallar 6 aserciones); `docRef` exportado por `@/features/documents`; tsc 0 errores; vitest del sistema 44/44
 - Decisiones: D-1 (segundo barrel autorizado, invariante #6), D-2 (convención de archivo verificada por test), sin overrides por superficie (§7), lote 1 ampliado con R7, R8, el provider en el shell y el estado en la URL (propuesta)
 - Estado: aprobado (2026-10-17): lote 1 = R1–R5 + R7 + R8 + provider + estado en la URL
+
+### TC-038 · Corrección · Verificado
+- Evidencia: `docs/10-architecture/adr/0022-list-url-source-of-truth.md` trata del `list_url` de las entidades buscables. Hoy en la URL viven los filtros (`components/shared/UnifiedSearchBar/useUnifiedSearch.ts`, nuqs), la vista (`hooks/useViewMode.ts`, `?view=`) y la selección (`?selected=`, ADR-0020). El orden y la página son `useState` local (`app/(dashboard)/production/orders/WorkOrdersPageClient.tsx:44`, `app/(dashboard)/accounting/entries/EntriesClientView.tsx:31`)
+- Error corregido: el §2.2 del prompt y `06` §5.3 atribuían a ADR-0022 "filtros, orden y página en la URL". La pregunta 2 de `06` §15 se apoyaba en esa premisa falsa
+- Decisión: el lote 1 implementa **paridad** (vista controlada + `useViewMode`, filtros en `Toolbar children`, `selectedId`). El orden y la página en la URL pasan a mejora opcional (pendiente de decisión 3, Puerta D)
+- Estado: corregido en `06` §5.3 y en el contrato §10.1
+
+### TC-039 · Deuda del sistema actual · Verificado
+- Evidencia: `frontend/lib/__tests__/no-unsafe.contract.test.ts` falla en `master` sin los cambios del lote 1 (comprobado con `git stash -u`). Hay 4 archivos por encima de su línea base (`features/sales/api/salesApi.ts` 6>4, `ProfitDistributionDrawer.tsx` 26>22, `CashMovementDrawer.tsx` 33>26, `TerminalBatchDrawer.tsx` 30>20) y 8 entradas obsoletas (archivos sin advertencias, como `OrderHubPanel.tsx` y `useOrderHubData.ts`)
+- Decisión: fuera del alcance de entity-view; tarea aparte aprobada por el usuario (2026-10-17)
+- Estado: https://github.com/Patricoaa/ERPGrafico/issues/177
+
+### TC-040 · Defecto encontrado por R8 · Verificado
+- Evidencia: `features/orders/entity-view/orderLine.entity.ts` declaraba `label: "sales.saleline"`, que no existe en `ENTITY_REGISTRY`. Con `EntityLabel`, ya no compila
+- Necesidad: las líneas no tienen ficha propia. Con el provider montado, la celda principal habría llamado a `openEntity("sales.saleline", …)`
+- Decisión: la identidad pasa a ser una unión discriminada `label` (abrible, del registro) \| `title` (embebida, sin acción por defecto ni icono)
+- Estado: implementado (lote 1)
+
+### TC-041 · Defecto del registro · Verificado
+- Evidencia: `frontend/lib/entity-registry.ts`, en la entrada `inventory.uom`, tiene `listUrl: '/inventory/products/units'`. Esa ruta no existe: el navegador termina en `/inventory/products`. La pantalla real es `/inventory/products/uoms/units` (`app/(dashboard)/inventory/products/uoms/units/page.tsx`)
+- Efecto: los enlaces de lista a UoM que usan el registro (búsqueda, redirecciones `?selected=`) llevan a Productos
+- Decisión: se corrige al migrar UoM (lote 2); `entity-registry-routes.contract.test.ts` debería haberlo detectado (revisar su alcance)
+- Estado: pendiente
+
+### TC-042 · Defecto del registro · Corregido (2026-10-20)
+- Evidencia: el test de rutas solo comprobaba `detailUrlPattern` y aceptaba que un segmento literal coincidiera con `[param]`. Al extenderlo a `listUrl` (exigiendo una página estática) aparecen **23 entidades** cuyo `listUrl` no existe (p. ej. `sales.saledelivery → /sales/deliveries`, `pos.session → /pos/sessions`). No hay redirecciones en `next.config` ni rutas catch-all que las resuelvan
+- Decisión: corregidas `inventory.uom` e `inventory.uomcategory` (lote 2a); el resto queda como ratchet `KNOWN_BROKEN_LIST_URLS` en `lib/__tests__/entity-registry-routes.contract.test.ts` (verificado por mutación); tarea aparte aprobada por el usuario
+- Fix (2026-10-20): corregidas las 20 `listUrl` restantes del ratchet — ver #178. Todas apuntan ahora a páginas existentes: ADR-0090 renames (fulfillment/manual-operations), rutas de inventario, treasury, POS y workflow actualizadas.
+- Estado: corregido (issue #178)
+
+### TC-043 · Defecto del sistema actual · Verificado
+- Evidencia: `features/inventory/components/ProductClientView.tsx` pasaba `initialData` (datos renderizados en servidor) a `useProducts`, y TanStack Query lo usa para *cualquier* `queryKey` nueva mientras la caché esté vacía, además de tratarlo como fresco (`staleTime.stable`). En la app real, al ordenar no se hacía ninguna petición (captura de red de Playwright, 2026-10-17). `page.tsx` además pedía otra consulta (200 filas, con variantes) y fabricaba `count = results.length`
+- Decisión: `useProducts({ initial: { page, params } })` aplica los datos solo si `hashKey` coincide; `page.tsx` pide la consulta por defecto del cliente y pasa el sobre DRF completo
+- Pendiente: el mismo patrón puede existir en otros hooks con `initialData` (revisar al migrar OV y Compras en el 2b, que también reciben datos del servidor)
+- Estado: corregido en Productos (lote 2a)
+
+### TC-044 · Ciclo de imports · Verificado
+- Evidencia: `@/components/shared` (DataCell → GlobalModalProvider) → registro de drawers → vistas de features → `@/components/entity-view`. Con `ProductClientView` sobre entity-view, todos los tests de entity-view fallaban con `registerValueKind is not a function`
+- Decisión: el barrel evalúa primero `core/*`, que no tiene dependencias; guarda en `lib/__tests__/entity-view.contract.test.ts` (verificada por mutación)
+- Deuda: el registro de drawers importa las vistas de forma ansiosa (alternativa de fondo: `import()` diferido por entrada)
+- Estado: mitigado (lote 2a)
+
+### TC-045 · Defecto del sistema actual · Verificado
+- Evidencia: `backend/inventory/selectors.py:59-60` y `:171-172` anotaban `Sum("stocks__quantity")` junto a `Count("variants")` en el mismo `annotate`. Los dos JOIN multiplicaban el stock por el número de variantes y el conteo de variantes por el número de filas de stock. Test `inventory/tests/test_product_ordering.py::test_stock_and_variant_count_are_not_multiplied_by_the_joins`: stock real 15, se mostraba 30
+- Efecto: el stock que se ve en la lista de productos (y el orden por stock) salía inflado en plantillas con variantes
+- Decisión: subconsulta `_current_stock()` + `Count("variants", distinct=True)`
+- Estado: corregido (lote 2a, encontrado por `/code-review`)
+
+### TC-046 · Defecto latente del backend · Verificado
+- Evidencia: `ruff check backend/inventory/selectors.py` → 8 × F821. `timezone` y `Subscription` no están importados en `selectors.py:730-736`; ya estaba así en `HEAD`, antes del lote. Esa función lanza `NameError` si se ejecuta
+- Decisión: fuera del alcance de entity-view; tarea aparte aprobada por el usuario. `get_stats()` lo llama `subscription_views.py:67`, así que ese endpoint probablemente responde 500
+- Estado: https://github.com/Patricoaa/ERPGrafico/issues/179
+
+### TC-047 · Defecto del sistema actual · Verificado
+- Evidencia: `features/sales/components/SalesOrdersView.tsx` (antes) calculaba la analítica con `useSalesAnalyticsData(orders, …)` sobre las órdenes de la **página visible** (20). Las cifras cambiaban al paginar (volumen $1.419.350 en la captura previa frente a $12.522.850 reales sobre 178 órdenes)
+- Decisión (Puerta D 2b): endpoint `GET /api/sales/orders/analytics/` sobre la lista filtrada completa, reutilizando `filter_queryset` (`sales/analytics.py`)
+- Estado: corregido (lote 2b)
+
+### TC-048 · Tipo erróneo · Verificado
+- Evidencia: `features/billing/types/index.ts` declaraba `partner?: number`, pero `billing/serializers.py` envía `partner_id` y `partner_name`. En la lista de notas de venta el enlace al cliente se construía sin id. `PurchaseInvoicesClientView.tsx:286` también lee `.partner`
+- Decisión: se añade `partner_id`; la entidad de notas lo usa. En el 2c, `PurchaseInvoicesClientView` usa `partner_id ?? supplier` y se quita `partner` del tipo
+- Estado: corregido (lotes 2b + 2c)
+
+### TC-049 · Documentación del servidor de desarrollo · Verificado
+- Evidencia: `docs/30-playbooks/remote-dev-server.md:141` dice "Django auto-reload", pero el backend corre con `daphne -b 0.0.0.0 -p 8100 config.asgi:application`, sin autorrecarga. Una vista nueva devolvía 404 hasta `docker compose restart backend`
+- Decisión: registrar; corregir el playbook o el comando de arranque (tarea aparte)
+- Estado: pendiente
+
+### TC-050 · Defecto de la presentación nueva · Verificado
+- Evidencia: capturas a 390 px de `evidence/lote2c/compras--card.390.png` y `productos--card.390.png` (antes de la corrección). El botón "Nueva Orden" / "Nuevo Producto" tapaba la búsqueda. Las vistas metían búsqueda y botón en una sola celda `flex-1 min-w-0` de `Collection.Toolbar`, que no podía partirse
+- Decisión: ranura `action` en `Collection.Toolbar`. La búsqueda tiene un mínimo de `min-w-56` y la acción baja a la línea siguiente. Se usa en Compras, Productos y UoM (enmienda del contrato, ADR-0087 lote 2c)
+- Estado: corregido (lote 2c; regresión del lote 2a en Productos/UoM)
+
+### TC-051 · Defecto del sistema actual · Verificado
+- Evidencia: el modo "notas" de `PurchasingOrdersClientView` (ruta `/purchasing/notes`) llamaba a `purchasingApi.getNotes()` sin parámetros. Leía solo `response.results` (primera página del backend), ignoraba los filtros del buscador (usaba el de órdenes) y `page.tsx` precargaba las notas con el tipo `Invoice[]` en vez de la página DRF
+- Decisión: `usePurchasingNotes({ filters, page, page_size })` paginado en servidor con `purchaseInvoiceUnifiedSearchDef` (mismo endpoint `/billing/invoices/`). La Puerta D 2c había dado el modo por muerto; se corrige en §3.10
+- Estado: corregido (lote 2c)
+
+### TC-052 · Entorno · Verificado
+- Evidencia: tras reiniciar el backend, el frontend del servidor de desarrollo se reinició solo, quedó sin responder (curl sin respuesta en 300 s, 4,0 GB de 5 GB, CPU 0 %) y, tras `docker compose restart frontend`, el host 192.168.1.86 dejó de responder a ping/ssh ("No route to host"). Memoria del host: 6,9 GB en total, 1,5 GB disponibles antes de la caída
+- Decisión: avisar al usuario; repetir la verificación del 2c cuando el host vuelva. El host volvió reiniciado (`up 0 min`) y la verificación se completó
+- Estado: resuelto (causa probable: memoria del host; el frontend `next dev --turbo` llega a 4 GB)
+
+### TC-053 · Defecto ajeno al lote · Verificado
+- Evidencia: `app/(dashboard)/inventory/products/uoms/units/page.tsx` y `app/(dashboard)/inventory/settings/measure-categories/page.tsx` (commit `25e43a64f`, navegación) tienen `"use client"` y además `export const metadata = …`. Next.js no compila ninguna de las dos ("Ecmascript file had an error", línea 9)
+- Decisión: el usuario pide corregirlo (2026-10-18). Se quita `"use client"`: ninguna de las dos usa hooks, y quedan como Server Components igual que la página de productos
+- Estado: corregido
+
+### TC-054 · Proceso · Verificado
+- Evidencia: el commit `25e43a64f feat(navigation)` (2026-10-18 01:34) incluye todo el lote 2c sin commitear: backend, frontend, evidencias y documentos de contrato. También incluye `docker-compose.yml`. Los archivos nuevos del lote estaban marcados con `git add -N` (intent-to-add), lo que facilita que un `git add -A`/`commit -a` los arrastre
+- Decisión: no reescribir la historia. El usuario elige (2026-10-18) un commit de seguimiento en la rama con las correcciones del `/code-review`, los documentos y TC-053. En adelante, no usar `git add -N`
+- Estado: resuelto
+
+### TC-055 · Defecto del sistema actual · Corregido (2026-10-20)
+- Evidencia: `features/sales/components/checkout/Step3_Delivery.tsx:243` buscaba la UoM actual con `pq.productId === line.id` (compara el producto con el id de la línea), mientras que la escritura (`:247`) buscaba correctamente por `pq.lineId === line.id` o `pq.productId === line.product`
+- Corrección: la expresión de lectura (`:243`) ahora usa el mismo predicado que la escritura — `(line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product)`. Sin cambios de tipo (`tsc` limpio en el archivo).
+- Estado: **corregido** (sin commitear; pendiente junto con oleada G y ADR-0090)
+
+### TC-056 · Paridad de las líneas · Verificado
+- Evidencia: `orderLineFields.tsx` muestra "Facturado" (`quantity_invoiced`, :48) y rotula la columna de avance "Entregado" en OV y "Recibido" en OC (:75, :77). `orderLine.entity.ts` del spike no tiene "Facturado" y usa "Entregado" en ambas
+- Decisión del usuario (Puerta D lote 3): se restauran. `received` ("Recibido") en OC e `invoiced` ("Facturado") en ambas, como progreso `n/total`
+- Estado: corregido (lote 3a)
+
+### TC-057 · Defecto del sistema actual · Verificado (app real, antes y después)
+- Evidencia: en la ficha de OV/OC, "Acciones → Registrar Despacho/Recepción" cierra la ficha y no abre nada. `useOrderActionEngine` monta el drawer o modal de la acción como hermano de `DocumentDrawerShell` (`OrderSheet.tsx`, `{engine.host}`). Al abrirse, la ficha recibe `onOpenChange(false)`, la página borra `?selected` y se desmonta la ficha junto con el drawer. Reproducido igual con la versión anterior al lote (`git stash`)
+- Decisión (lote 3a): `OrderSheet` e `InvoiceSheet` ignoran el cierre mientras `engine.isModalOpen`. Los modales de `related.host` no están cubiertos
+- Estado: mitigado; pendiente la corrección de fondo (ver `/simplify` del 3a)
+
+### TC-058 · Defecto del sistema actual · Verificado (app real)
+- Evidencia: `GET /api/inventory/warehouses/` devuelve un array sin paginar. `useDeliveryData` leía `response.data.results` (undefined → "Query data cannot be undefined"), así que el selector de bodega del despacho quedaba vacío y el stock no se consultaba
+- Decisión: el hook acepta las dos formas (lote 3a)
+- Estado: corregido
+
+### TC-059 · Defecto del sistema actual · Verificado (app real, 390 px)
+- Evidencia: `BaseModal` envuelve el cuerpo en el `ScrollArea` de Radix, cuyo contenedor interno usa `display: table; min-width: 100%` y crece hasta el ancho del contenido. A 390 px el modal de recepción mide 749 px por dentro y recorta por la derecha la fecha, las notas y la tabla. Afecta a todos los modales con contenido ancho
+- Propuesta: en `BaseModal` (o en `ui/scroll-area`), forzar `display: block` en el hijo del viewport (`[&>[data-radix-scroll-area-viewport]>div]:!block`). Es un cambio compartido, fuera del lote
+- Decisión del usuario (2026-10-18): se corrige después, fuera de la migración
+- Estado: pendiente (aplazado)
+
+### TC-060 · Proceso · Verificado
+- Evidencia: tras los lotes 1–3a, 7 entidades con `defineEntity` y unos 10 de 82 contextos migrados (~12 %); 84 pantallas siguen en el sistema antiguo (`toColumns` 57 → 55, `renderCard` 43 → 40, `AutoEntityCard` 47 → 43). `fromLegacyFields()` especificado (`06` §13.1) pero no implementado. Comandos en `07` §6.1
+- Causa: el lote 3 derivó a asistentes y formularios (fuera de alcance en `AUDIT-PROMPT.md` §3), los lotes 2b/2c incluyeron trabajo de backend, el proceso por lote no escala a los maestros simples y el "lote 4+" nunca se planificó
+- Decisión propuesta: congelar 3b/3c; oleadas 0 (habilitadores) y A–E por causa de rigidez; reglas M1–M8 con ratchet de consumidores antiguos (`07` §6)
+- Decisión del usuario (2026-10-18): aprobada la replanificación (oleadas, reglas M1–M8); TC-055 espera a la oleada E
+- Estado: aprobado
+
+### TC-061 · Defecto del sistema actual · Verificado (código)
+- Evidencia: `features/inventory/hooks/useCategories.ts` no declaraba `prefix`; `backend/inventory/serializers.py:58` lo envía. `categoryFields.tsx` lo leía con `key: "prefix"` (clave sin comprobar, RC8)
+- Decisión: añadido al tipo al migrar (A1)
+- Estado: corregido
+
+### TC-062 · Defecto del sistema actual · Verificado (código)
+- Evidencia: `UsersSettingsClientView` guardaba la página en `useState` (no se reiniciaba al filtrar → página inexistente posible) y casteaba `setPageState as unknown as …`
+- Decisión: `useServerPage` (A1)
+- Estado: corregido
+
+### TC-063 · Defecto del sistema actual · Verificado (código)
+- Evidencia: `UoMCategoryClientView.handleSave` llamaba a `refetch` de `useUoMs`, que refresca las UdM y no las categorías
+- Decisión: `refetchCategories` (A1)
+- Estado: corregido
+
+### TC-064 · Entorno · Verificado
+- Evidencia: 9 archivos borrados en `7eb097068` y `beb445b00` reaparecen sin rastrear a las 18:59:50 del 2026-10-18, con permisos `-rw-------`, idénticos a `git show <commit>^:<ruta>`. `mutagen sync list`: la sesión sigue apuntando a 192.168.1.93 ("Connecting to beta") mientras `mutagen.yml` ya dice 192.168.1.86
+- Efecto: el ratchet `LEGACY_CONSUMERS` falla; sin él, los archivos se habrían colado en un commit
+- Decisión: borrados (recuperables desde git). Reconectar mutagen solo tras decidir cómo evitar que una sesión nueva sin ancestro común resucite borrados (two-way-resolved)
+- Causa (2026-10-18, verificada): había **dos** sesiones `erpgrafico-sync`: la vieja hacia .93 (desconectada) y una de proyecto hacia .86 creada al reconfigurar `mutagen.yml`. La nueva, sin ancestro común, unió los dos lados al arrancar y trajo los 9 archivos que el servidor aún tenía
+- Resolución: el usuario elige que la copia local mande. Un `rsync -anc` (simulación por checksum) mostró **0 diferencias de contenido** entre local y .86 (solo permisos y fechas) y 13 cartolas de prueba que existen solo en el servidor (`backend/media/bank_statements/`, ignoradas por git; mutagen no puede bajarlas porque `backend/media` local es de root). No hizo falta reemplazar nada; se terminó la sesión vieja (`sync_Lj184…`). Queda una sola, .86, "Watching for changes"
+- Estado: resuelto
+
+### TC-065 · Defecto del sistema actual · Verificado (código)
+- Evidencia: `posSessionFields.ts` sumaba `total_cash_sales + total_card_sales`; el backend no define `COERCE_DECIMAL_TO_STRING`, así que DRF envía strings y la suma concatena (`"1000.00500.00"` → `parseFloat` = 1000,005: solo el efectivo)
+- Decisión: `toNumber` en la entidad (A2), test `features/sales/entity-view/__tests__/posSession.entity.test.ts`
+- Estado: corregido
+
+### TC-066 · Defecto del sistema actual · Corregido (2026-10-20)
+- Evidencia: `salaryAdvanceUnifiedSearchDef` declaraba `clientKey: ['display_id']` para "N° Anticipo", pero `SalaryAdvance` no tiene `display_id` en modelo ni serializer — el campo no existe
+- Causa raíz: `SalaryAdvance` no tiene número secuencial; la búsqueda "N° Anticipo" era semánticamente incorrecta
+- Fix: (1) eliminado el campo `display_id` de `salaryAdvanceUnifiedSearchDef`; (2) agregado `employee_name = CharFilter(field_name="employee__contact__name", lookup_expr="icontains")` a `SalaryAdvanceFilter` para que la búsqueda por empleado funcione en servidor
+- Estado: corregido
+
+### TC-067 · Defecto del sistema actual · Corregido (2026-10-20)
+- Evidencia: `terminalDevice.entity.ts` traducía `supported_payment_methods` con `{1: "CREDIT_CARD", 2: "DEBIT_CARD"}` — mapeo por entero mágico, frágil ante reseed
+- Fix: `PaymentTerminalDeviceSerializer` expone `supported_payment_method_types: list[str]` via `SerializerMethodField`; la entidad usa directamente `d.supported_payment_method_types ?? []`; el mapeo mágico desapareció del frontend
+- Estado: corregido
+
+### TC-068 · Tests rotos previos · Verificado
+- Evidencia: `features/production/components/__tests__/WorkOrderWizard.test.tsx`: 3 tests no encuentran los títulos "Crear Orden de Trabajo" / "Gestión de Orden de Trabajo". Reproducido en un worktree en `b04d3927e` (antes de los cambios de esta sesión)
+- Probable: el commit `25e43a64f feat(navigation): centralizar títulos` cambió los títulos
+- Estado: pendiente (fuera de la migración)
+
+### TC-069 · Defecto del sistema actual · Verificado (código)
+- Evidencia: `features/contacts/types/index.ts` no declaraba `credit_risk_level`; `backend/contacts/serializers.py` lo envía (campo de `ContactSerializer`, `__all__`/explícito). `contactFields.tsx` lo ignoraba: la búsqueda ofrecía agrupar por "Riesgo" sin que ninguna columna lo mostrara
+- Decisión: añadido al tipo al migrar (A4), con los 4 valores de `RiskLevel`
+- Estado: corregido
+
+### TC-070 · Defecto del sistema actual · Verificado (código)
+- Evidencia: `BOMListItem` (alias local en `BOMClientView.tsx`) repetía `lines_count`, `total_cost` y `product_code`, que `BillOfMaterialsSerializer` ya envía; el tipo `BOM` no los tenía
+- Decisión: añadidos a `BOM` (A4); `bomActions` pasa a tiparse sobre `BOM`
+- Estado: corregido
+
+### TC-071 · Entorno · Verificado
+- Evidencia: `features/treasury/credit-lines/CreditLineDrawer.tsx` falla `tsc` (6 errores: `FormField` sin importar, `field`/`v` implícitos `any`, opciones `readonly` no asignables, `LabeledCheckboxProps` incompleto). El archivo **no está en el diff de esta sesión** (`git diff HEAD` vacío); viene commiteado en `d919808b4 fix(form): migrate antipatterns to canonical notched-field components`, el commit en la punta de la rama, posterior a los de esta sesión y hecho directamente por el usuario
+- Efecto: `npx tsc --noEmit` falla en la rama *antes* de cualquier cambio de esta sesión; aislado a ese único archivo (verificado por archivo)
+- Causa raíz adicional (hallada al corregir): los dos `LabeledSelect` restantes (`currency`, `rate_basis`) y el `LabeledCheckbox` (`auto_renewal`) recibían `{...form.register(...)}` — válido para `LabeledInput` (input nativo) pero no para `LabeledSelect`/`LabeledCheckbox` (envuelven Radix `Select`/`Checkbox`, que esperan `onChange(value)`/`onCheckedChange(checked)`, no un `ChangeEvent`). `tsc` no lo marcaba porque el tipo de `register()` (`ChangeHandler = (event: any) => ...`) es estructuralmente compatible por el `any`, pero en runtime habría roto la selección/el checkbox
+- Corrección: los tres campos ahora usan `Controller` (de `react-hook-form`, mismo patrón que `DeviceDrawer.tsx`) con `value`/`onChange` (`LabeledSelect`) o `checked`/`onCheckedChange` (`LabeledCheckbox`); se quitó el `as const` de `currencyOptions`/`rateBasisOptions` (tipo `readonly [...]` no asignable a `LabeledSelectOption[]`); se quitó el import sin uso de `LabeledContainer`
+- Estado: corregido (`tsc --noEmit` y `eslint` limpios en el archivo; sin test dedicado — el drawer no tenía tests antes de este cambio)
+
+### TC-072 · Entorno · Verificado
+- Evidencia: `features/accounting/components/JournalEntryDrawer.tsx` fallaba `tsc` (4 errores, TS2322) en los campos de solo lectura "Estado", "Origen" y "Documento Origen" (×2): `3e1114377 fix(form): replace ad-hoc notched-field with LabeledInput for read-only display fields` (commit directo del usuario, misma punta de rama que TC-071) les pasó un `<StatusBadge>`/`<Chip>`/`<DocumentRefLink>`/`<span>` (JSX) como `value`, pero `LabeledInput.value` es el `value` nativo de `<input>` (`string | number | readonly string[] | undefined`), no `ReactNode`
+- Corrección: los 4 campos pasan de `LabeledInput value={<JSX/>} readOnly` a `LabeledContainer` (el primitivo del contrato — `component-input.md` — para contenido no-input dentro del notched field) con el `JSX` como `children`; se agregó `LabeledContainer` al import de `@/components/shared`; se quitó `readOnly` (no existe en `LabeledContainerProps`, no aplica a children arbitrarios)
+- Estado: corregido (`tsc --noEmit` y `eslint` limpios; sin test dedicado — el drawer no tenía tests antes de este cambio)
+
+### TC-073 · Defecto del sistema actual · Verificado (ratchet)
+- Evidencia: `features/accounting/components/JournalEntrySheet.tsx` (commit directo del usuario `27d4527b2 refactor(accounting): canonize JournalEntryDrawer into Sheet + FormDrawer`, ajeno a esta migración) renderiza las líneas del asiento con un `<table>`/`<thead>`/`<tbody>` escritos a mano (línea 244), sin pasar por `entity-view` ni por el sistema legacy. El test `entity-view.contract.test.ts > no new hand-written table appears in features or app` lo detecta como una tabla nueva — viola la invariante #13 / regla M7 del ratchet (el conteo de tablas a medida no debe subir)
+- Efecto: 1 test en rojo (`lib/__tests__/entity-view.contract.test.ts`), aislado a este archivo; no bloquea la oleada B (la pantalla de lista, `EntriesClientView.tsx`, abre la ficha vía `useDocumentSheetRoute` y no depende de los internos de `JournalEntrySheet.tsx`)
+- Estado: pendiente del usuario; es su propio código (ficha documental de asientos, fuera de la migración de entity-view). No se corrige aquí: migrar esa tabla de líneas a `entity-view`/`EditableCollection` es trabajo de la ficha documental, no de B2
+
+### TC-074 · Defecto del sistema actual · Verificado (`/code-review` del B5)
+- Evidencia: el estado de error de `Collection` (`components/entity-view/surfaces/Collection.tsx:260`) muestra un mensaje genérico ("No pudimos cargar…") y nunca lee `error.message`. `PartnersClientView.tsx` legacy mostraba el mensaje real del backend (`Error al cargar socios: {error.message}`); al migrar se pierde ese detalle
+- Efecto: ninguno nuevo de este sub-lote — es el comportamiento ya establecido de `Collection` que usa **toda** pantalla migrada hasta ahora (A1-B5); perder el `error.message` específico es una compensación sistémica ya aceptada, no algo que B5 introduce
+- Estado: registrado para el núcleo (`Collection`), no para esta pantalla. Si se decide mostrar el mensaje real, es una mejora de `component-entity-view.md`/`Collection.tsx` que toca todas las pantallas migradas, no un arreglo puntual de B5
+
+### TC-075 · Falso positivo · Descartado (`/code-review` del B5, verificado y rechazado)
+- Hallazgo reportado: el kind local `partnerBalance` (dinero con tono condicional por signo) "reinventa" un patrón que ya existiría como una opción `tone` en otros kinds de dinero (citando `salesInvoice.entity.ts`, `journalEntry.entity.ts`, `saleOrder.entity.ts`, `posTerminal.entity.ts`, `paymentMethod.entity.ts`)
+- Verificación: los 5 archivos citados usan `tone` exclusivamente en `media: { tone: (fila) => ... }` — el color de fondo del ícono de la **card**, una opción de `CardMedia<T>` (nivel de la ficha completa, un valor por fila), no una opción del kind `money` ni de ningún otro kind de **valor de celda**. Ningún archivo del proyecto aplica un tono condicional al texto de un monto por signo; `grep` confirmado
+- Estado: descartado — no hay patrón existente que reusar; `partnerBalance` llena un hueco real (igual que concluyó el revisor de "altitude" del `/simplify` del mismo sub-lote)
+
+### TC-076 · Defecto del sistema actual · Verificado y corregido (`/simplify` del C1, hallado al verificar)
+- Evidencia: `lib/__tests__/entity-view.contract.test.ts > entity-view barrel evaluation order > index.ts exports the core before importing kinds or surfaces` estaba en rojo (ajeno al diff de C1): el commit directo del usuario `3e7e9eb57 fix(shared): entity-view — registrar los core kinds al evaluar el módulo, no llamando al barrel` cambió `components/entity-view/index.ts` de `export * from "./kinds/core-kinds"` a un `import "./kinds/core-kinds"` de solo efecto (sin `from` en el patrón que el test busca, mismo mecanismo de auto-registro que ya usa `docRef.kind.tsx`) — correcto para el bug que arregla (server/client boundary de Next 16), pero el test seguía con una regex literal `/from "\.\/kinds\//` que nunca matchea un `import` sin re-export
+- Efecto: la invariante que el test protege (el núcleo se evalúa antes de los kinds/surfaces) sigue siendo cierta en el código; solo el patrón de texto del test quedó desactualizado
+- Corrección: se quita el requisito `from ` de esa única aserción (pasa a `/"\.\/kinds\//`, que matchea tanto `import "./kinds/x"` como `export * from "./kinds/x"`); la aserción de `surfaces` no se tocó (ese import sigue siendo `export * from`)
+- Estado: corregido (`lib/__tests__/entity-view.contract.test.ts`, 1 línea de regex + comentario). No es parte del diff de C1 (tesorería) ni toca el barrel ni `kinds/core-kinds.tsx`, que son del commit del usuario
+
+### TC-077 · Defecto del sistema actual · Verificado (`/code-review` del C1)
+- Evidencia: `TerminalBatchesClientView.tsx` usa `terminalBatchUnifiedSearchDef`, que declara un selector "Agrupar por" (Fecha → `sales_date`, Estado → `status`, `unifiedSearchDef.ts:121-124`), pero el componente migrado nunca leía `search.groupBy` ni lo pasaba a `useEntityCollection` — a diferencia de las otras 4 pantallas del mismo sub-lote (`TreasuryMovementsClientView`, `BankMovementsClientView`, `TreasuryAccountsClientView`, `ChecksClientView`), que sí definen su mapa `*_GROUPS` y lo conectan
+- Efecto: el control "Agrupar por" quedaba visible pero muerto — el usuario elegía "Estado" o "Fecha" y la lista seguía plana, sin agrupar ni mostrar error (regresión real frente al comportamiento previo a la migración, que sí pasaba `currentGroupBy` a `DataTableView`)
+- Corrección: se agrega `TERMINAL_BATCH_GROUPS` (`{ date: "salesDate", status: "status" }`, mismo patrón que `MOVEMENT_GROUPS`/`CHECK_GROUPS`) y se conecta `search.groupBy` → `groupBy` en `useEntityCollection`, con `pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }` (mismo patrón que `ChecksClientView`)
+- Estado: corregido (`TerminalBatchesClientView.tsx`); `tsc`/`eslint` limpios; vitest sin regresión (contrato 17/17 salvo TC-073, ajeno)
+
+### TC-078 · Error propio evitado antes de commitear · Verificado (preparación de C3)
+- Evidencia: al preparar el kind compartido `ledgerDate` se escribió un `redirect()` para `app/.../accounts/[id]/ledger/page.tsx` (mismo patrón que otros `[id]/page.tsx` de esta migración, ej. `accounting/accounts/[id]/page.tsx`), asumiendo que era una página-duplicado de `LedgerDrawer`. Antes de dar por cerrado el cambio, `lib/searchableEntityRoutes.ts` resultó documentar esa ruta exacta como excepción deliberada ("vista standalone", decisión T-99/F9, anterior a esta migración)
+- Efecto: ninguno — el `redirect()` nunca se commiteó; se revirtió (`git checkout --`) en cuanto se encontró el comentario de excepción, antes de pedir aprobación al usuario
+- Estado: revertido; la página se migra aparte en C3 como vista standalone (mismo tipo `LedgerMovement`/`ledgerDate` que `LedgerDrawer`, pero sin colapsar a un redirect)
+

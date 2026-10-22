@@ -4,23 +4,16 @@ import React, { useMemo } from "react"
 import { financeApi } from "../api/financeApi"
 import { Download, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { DataTable, PageHeader, MoneyDisplay, SkeletonShell, DataCell, StaleDataBanner } from "@/components/shared"
+import { PageHeader, MoneyDisplay, SkeletonShell, StatCard, StaleDataBanner } from "@/components/shared"
 import type { KpiCardDef } from "@/components/shared"
+import { Collection, useEntityCollection } from "@/components/entity-view"
 import { useBudgetDetailData } from "../hooks/useBudgets"
+import { budgetExecutionEntity, budgetExecutionViews, type BudgetExecutionItem } from "../entity-view/budgetExecution.entity"
 import { toast } from "sonner"
 import Link from "next/link"
-import type { ColumnDef } from "@tanstack/react-table"
 
 interface BudgetDetailViewProps {
     budgetId: string
-}
-
-interface BudgetExecutionItem {
-    account_name: string;
-    account_code: string;
-    budgeted: number;
-    actual: number;
-    percentage: number;
 }
 
 interface BudgetExecutionData {
@@ -57,41 +50,6 @@ const SKELETON_EXECUTION: BudgetExecutionData = {
     })),
 }
 
-const columns: ColumnDef<BudgetExecutionItem>[] = [
-    {
-        header: "Cuenta",
-        accessorKey: "account_name",
-        cell: ({ row }) => (
-            <div>
-                <div className="font-medium">{row.original.account_name}</div>
-                <div className="text-xs text-muted-foreground">{row.original.account_code}</div>
-            </div>
-        ),
-    },
-    {
-        header: "Presupuesto",
-        accessorKey: "budgeted",
-        cell: ({ row }) => (
-            <DataCell.Currency value={row.original.budgeted} digits={0} />
-        ),
-    },
-    {
-        header: "Real",
-        accessorKey: "actual",
-        cell: ({ row }) => (
-            <DataCell.Currency value={row.original.actual} digits={0} />
-        ),
-        meta: { align: "right" as const },
-    },
-    {
-        header: "Ejecución",
-        id: "percentage",
-        cell: ({ row }) => (
-            <DataCell.Progress value={row.original.percentage} subLabel={`${row.original.percentage.toFixed(0)}%`} />
-        ),
-    },
-]
-
 export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
     const { data, isLoading, isError } = useBudgetDetailData(budgetId ? Number(budgetId) : null)
 
@@ -118,6 +76,7 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
 
     const resolvedBudget = budget ?? SKELETON_BUDGET
     const resolvedExecution = executionData ?? SKELETON_EXECUTION
+    const collection = useEntityCollection(budgetExecutionEntity, { rows: resolvedExecution.items }, { pagination: { mode: "none" } })
 
     const kpiCards = useMemo<KpiCardDef[]>(() => [
         {
@@ -161,14 +120,14 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
                     }
                 />
 
-                <DataTable
-                    columns={columns}
-                    data={resolvedExecution.items}
-                    variant="embedded"
-                    hidePagination
-                    kpiCards={kpiCards}
-                    emptyState={{ title: "Sin datos", description: "No se encontraron cuentas presupuestarias" }}
-                />
+                <div className="grid gap-4 md:grid-cols-4">
+                    {kpiCards.map((card, i) => (
+                        <StatCard key={i} {...card} loading={isLoading} />
+                    ))}
+                </div>
+                <Collection.Root collection={collection} label="Ejecución presupuestaria">
+                    <Collection.View table={budgetExecutionViews.table} emptyTitle="Sin datos" emptyDescription="No se encontraron cuentas presupuestarias" />
+                </Collection.Root>
             </div>
         </SkeletonShell>
     )

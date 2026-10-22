@@ -1,19 +1,16 @@
 "use client"
 
-import React, { useState } from 'react'
-import type { ColumnDef } from '@tanstack/react-table'
-import { Banknote, AlertCircle, Calendar, TrendingDown, DollarSign, Eye, FileQuestion } from 'lucide-react'
-import {
-    BaseModal, FormFooter, ActionSlideButton, StatCard,
-    Skeleton, EmptyState, DataTable, DataTableColumnHeader, DataCell, StaleDataBanner, Chip,
-} from '@/components/shared'
+import React, { useState, useMemo } from 'react'
+import { Banknote, AlertCircle, Calendar, TrendingDown, DollarSign, Eye } from 'lucide-react'
+import { BaseModal, FormFooter, DangerButton, StatCard, Skeleton, EmptyState, StaleDataBanner, Chip } from "@/components/shared"
 import { Button } from '@/components/ui/button'
 import { useLoan } from '../hooks/useLoans'
 import { LoanPayInstallmentModal } from './LoanPayInstallmentModal'
 import { PrepayLoanModal } from './PrepayLoanModal'
 import { LoanInstallmentReadonlyModal } from './LoanInstallmentReadonlyModal'
 import type { LoanInstallment } from './types'
-import { parseDateOnly } from '@/lib/utils'
+import { Collection, useEntityCollection, formatMoneyValue, formatDate } from '@/components/entity-view'
+import { loanInstallmentEntity, loanInstallmentViews, type LoanInstallmentRow } from '../entity-view/loanInstallment.entity'
 
 interface Props {
     loanId: number | null
@@ -28,6 +25,29 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
     const [viewingInst, setViewingInst] = useState<LoanInstallment | null>(null)
     const [showPrepayModal, setShowPrepayModal] = useState(false)
     const [showFeeDetail, setShowFeeDetail] = useState(false)
+
+    const tableData = useMemo<LoanInstallmentRow[]>(() => {
+        if (!loan) return []
+        const openingFee = parseFloat(loan.opening_fee)
+        const stampTax = parseFloat(loan.stamp_tax)
+        const feeTotal = openingFee + stampTax
+        const syntheticFeeRow: LoanInstallmentRow | null = feeTotal > 0 ? {
+            id: -1, display_id: '', loan: loan.id, loan_display_id: loan.display_id,
+            number: 0, due_date: loan.start_date, principal_amount: '0', interest_amount: '0',
+            insurance_amount: '0', total_amount: feeTotal.toFixed(2),
+            outstanding_balance: loan.principal, status: 'PAID', status_display: 'Pagado',
+            is_overdue: false, paid_at: null, payment_movement: null,
+            uf_value_used: null, clp_amount_paid: null, penalty_paid: '0', notes: '',
+            _feeTotal: feeTotal,
+        } : null
+        return syntheticFeeRow ? [syntheticFeeRow, ...loan.installments] : loan.installments
+    }, [loan])
+
+    const amortizationCollection = useEntityCollection(
+        loanInstallmentEntity,
+        { rows: tableData },
+        { pagination: { mode: "none" } }
+    )
 
     if (!open) return null
     if (isLoading) return (
@@ -51,12 +71,10 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
     const fmt = (val: string) => {
         const n = parseFloat(val)
         if (loan.currency === 'UF') {
+            // eslint-disable-next-line entity-view/no-adhoc-format -- UF is not ISO 4217; formatMoneyValue can't handle it
             return `${new Intl.NumberFormat('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(n))} UF`
         }
-        return new Intl.NumberFormat('es-CL', {
-            style: 'currency', currency: 'CLP',
-            minimumFractionDigits: 0, maximumFractionDigits: 0,
-        }).format(n)
+        return formatMoneyValue(n, 'CLP')
     }
 
     const isActive = loan.status === 'ACTIVE'
@@ -90,12 +108,12 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                     isActive ? (
                         <FormFooter
                             actions={
-                                <ActionSlideButton
+                                <DangerButton
                                     variant="destructive"
                                     onClick={() => setShowPrepayModal(true)}
                                 >
                                     Prepago Total
-                                </ActionSlideButton>
+                                </DangerButton>
                             }
                         />
                     ) : undefined
@@ -110,9 +128,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                         <StatCard label="Cuotas Pagadas" value={`${loan.paid_installments_count} / ${loan.installments_count}`} icon={Calendar} accent="success" />
                         <StatCard
                             label="Próx. Vencimiento"
-                            value={loan.next_due_date
-                                ? parseDateOnly(loan.next_due_date).toLocaleDateString('es-CL')
-                                : '—'}
+                            value={formatDate(loan.next_due_date) || '—'}
                             icon={Calendar}
                             accent="info"
                         />
@@ -127,134 +143,40 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                                 Tabla de Amortización
                             </h3>
                         </div>
-                        {(() => {
-                            const openingFee = parseFloat(loan.opening_fee)
-                            const stampTax = parseFloat(loan.stamp_tax)
-                            const feeTotal = openingFee + stampTax
-
-                            const syntheticFeeRow: LoanInstallment | null = feeTotal > 0 ? {
-                                id: -1,
-                                display_id: '',
-                                loan: loan.id,
-                                loan_display_id: loan.display_id,
-                                number: 0,
-                                due_date: loan.start_date,
-                                principal_amount: '0',
-                                interest_amount: '0',
-                                insurance_amount: '0',
-                                total_amount: feeTotal.toFixed(2),
-                                outstanding_balance: loan.principal,
-                                status: 'PAID',
-                                status_display: 'Pagado',
-                                is_overdue: false,
-                                paid_at: null,
-                                payment_movement: null,
-                                uf_value_used: null,
-                                clp_amount_paid: null,
-                                penalty_paid: '0',
-                                notes: '',
-                            } : null
-
-                            const tableData = syntheticFeeRow
-                                ? [syntheticFeeRow, ...loan.installments]
-                                : loan.installments
-
-                            const columns: ColumnDef<LoanInstallment>[] = [
-                                {
-                                    accessorKey: 'number',
-                                    header: '#',
-                                    cell: ({ row }) => <DataCell.Text>{row.original.number}</DataCell.Text>,
-                                },
-                                {
-                                    accessorKey: 'due_date',
-                                    header: 'Vencimiento',
-                                    cell: ({ row }) => <DataCell.Date value={row.original.due_date} />,
-                                },
-                                {
-                                    accessorKey: 'principal_amount',
-                                    header: ({ column }) => <DataTableColumnHeader column={column} title="Capital" />,
-                                    cell: ({ row }) => <DataCell.Currency value={row.original.principal_amount} digits={0} />,
-                                },
-                                {
-                                    accessorKey: 'interest_amount',
-                                    header: ({ column }) => <DataTableColumnHeader column={column} title="Interés" />,
-                                    cell: ({ row }) => <DataCell.Currency value={row.original.interest_amount} digits={0} />,
-                                },
-                                {
-                                    id: 'others',
-                                    header: ({ column }) => <DataTableColumnHeader column={column} title="Otros" />,
-                                    cell: ({ row }) => {
-                                        if (row.original.number === 0) {
-                                            return <DataCell.Currency value={feeTotal.toFixed(2)} digits={0} />
-                                        }
-                                        const insurance = parseFloat(row.original.insurance_amount)
-                                        const penalty = parseFloat(row.original.penalty_paid)
-                                        return <DataCell.Currency value={(insurance + penalty).toFixed(2)} digits={0} />
-                                    },
-                                },
-                                {
-                                    accessorKey: 'total_amount',
-                                    header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />,
-                                    cell: ({ row }) => <DataCell.Currency value={row.original.total_amount} digits={0} />,
-                                },
-                                {
-                                    accessorKey: 'outstanding_balance',
-                                    header: ({ column }) => <DataTableColumnHeader column={column} title="Saldo" />,
-                                    cell: ({ row }) => (
-                                        <DataCell.Currency value={row.original.outstanding_balance} digits={0} />
-                                    ),
-                                },
-                                {
-                                    accessorKey: 'status',
-                                    header: 'Estado',
-                                    // eslint-disable-next-line status/must-use-statusbadge -- DataCell.Status wraps StatusBadge
-                                    cell: ({ row }) => <DataCell.Status status={row.original.status} />,
-                                },
-                                {
-                                    id: 'actions',
-                                    header: '',
-                                    cell: ({ row }) => {
-                                        const inst = row.original
-                                        if (inst.number === 0) {
-                                            return (
-                                                <Button size="sm" variant="outline" onClick={() => setShowFeeDetail(true)} title="Ver detalle">
-                                                    <Eye className="h-3.5 w-3.5" />
-                                                </Button>
-                                            )
-                                        }
-                                        if (inst.status === 'PENDING' || inst.status === 'OVERDUE') {
-                                            return (
-                                                <Button size="sm" variant="outline" onClick={() => setPayingInst(inst)} title="Pagar">
-                                                    <DollarSign className="h-3.5 w-3.5" />
-                                                </Button>
-                                            )
-                                        }
-                                        if (inst.status === 'PAID') {
-                                            return (
-                                                <Button size="sm" variant="outline" onClick={() => setViewingInst(inst)} title="Ver detalle">
-                                                    <Eye className="h-3.5 w-3.5" />
-                                                </Button>
-                                            )
-                                        }
-                                        return null
-                                    },
-                                },
-                            ]
-                            return (
-                                <DataTable
-                                    columns={columns}
-                                    data={tableData}
-                                    variant="minimal"
-                                    noBorder
-                                    hidePagination
-                                    emptyState={{
-                                        title: 'Tabla aún no generada',
-                                        description: 'Desembolsa el crédito para crearla.',
-                                        icon: FileQuestion,
-                                    }}
-                                />
-                            )
-                        })()}
+                        <Collection.Root
+                            collection={amortizationCollection}
+                            label="Tabla de amortización"
+                            actions={(row) => {
+                                if (row.number === 0) {
+                                    return (
+                                        <Button size="sm" variant="outline" onClick={() => setShowFeeDetail(true)} title="Ver detalle">
+                                            <Eye className="h-3.5 w-3.5" />
+                                        </Button>
+                                    )
+                                }
+                                if (row.status === 'PENDING' || row.status === 'OVERDUE') {
+                                    return (
+                                        <Button size="sm" variant="outline" onClick={() => setPayingInst(row)} title="Pagar">
+                                            <DollarSign className="h-3.5 w-3.5" />
+                                        </Button>
+                                    )
+                                }
+                                if (row.status === 'PAID') {
+                                    return (
+                                        <Button size="sm" variant="outline" onClick={() => setViewingInst(row)} title="Ver detalle">
+                                            <Eye className="h-3.5 w-3.5" />
+                                        </Button>
+                                    )
+                                }
+                                return null
+                            }}
+                        >
+                            <Collection.View
+                                table={loanInstallmentViews.table}
+                                emptyTitle="Tabla aún no generada"
+                                emptyDescription="Desembolsa el crédito para crearla."
+                            />
+                        </Collection.Root>
                     </div>
 
                     {loan.notes && (

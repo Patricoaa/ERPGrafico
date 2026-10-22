@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { hashKey, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { inventoryApi } from '../api/inventoryApi'
 import { useRealtime } from '@/features/realtime'
@@ -12,18 +12,35 @@ import { staleTime } from '@/lib/query-config'
 // import the flat constant directly (production/useBOMs, usePricingRules).
 export { PRODUCTS_QUERY_KEY, PRODUCTS_KEYS }
 
+/**
+ * Default product list query (first page, templates only, server order). The server-rendered page
+ * (`app/(dashboard)/inventory/products/page.tsx`) fetches exactly this, and the list reuses it only for it.
+ */
+export const DEFAULT_PRODUCT_LIST_QUERY = { parent_template__isnull: true, page: 1, page_size: 50 } as const
+
+/** A server-rendered page plus the exact query it was rendered for. */
+export interface InitialProductsQuery {
+    page: Page<Product>
+    params: ProductFilters & { page: number; page_size: number }
+}
+
 interface UseProductsProps {
     filters?: ProductFilters
-    initialData?: Page<Product>
+    /**
+     * Server-rendered data, used only while the query matches `initial.params`. TanStack Query
+     * would otherwise seed every new key (sort, page, filter) with it and, being fresh, never fetch.
+     */
+    initial?: InitialProductsQuery
     page?: number
     page_size?: number
 }
 
-export function useProducts({ filters, initialData, page = 1, page_size = 50 }: UseProductsProps = {}) {
+export function useProducts({ filters, initial, page = 1, page_size = 50 }: UseProductsProps = {}) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
     const activeFilters = { ...filters, page, page_size }
+    const initialData = initial && hashKey([activeFilters]) === hashKey([initial.params]) ? initial.page : undefined
 
     const query = useQuery({
         queryKey: PRODUCTS_KEYS.list(activeFilters),
@@ -105,6 +122,8 @@ export function useProducts({ filters, initialData, page = 1, page_size = 50 }: 
         products,
         isLoading: showSkeleton,
         isRefetching,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError: query.isError,
         refetch,
         fetchProductById,
         updateProduct: updateProductMutation.mutateAsync,

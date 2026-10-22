@@ -179,7 +179,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                         error={fieldState.error?.message}
                                         {...field}
                                         value={field.value ?? ""}
-                                        className="h-[34px] font-mono font-black"
+                                        className="font-mono h-6"
                                         icon={<DollarSign className="h-3 w-3 opacity-40" />}
                                     />
                                 )}

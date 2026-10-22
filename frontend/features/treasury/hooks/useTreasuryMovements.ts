@@ -19,6 +19,7 @@ export function useTreasuryMovements(filters: TreasuryMovementFilters = {}) {
 
     const params: Record<string, string | number | boolean> = { page, page_size }
     if (rest.bank)             params.bank             = rest.bank
+    if (rest.bank_only !== undefined) params.bank_only    = rest.bank_only
     if (rest.treasury_account) params.treasury_account = rest.treasury_account
     if (rest.movement_type)    params.movement_type    = rest.movement_type
     if (rest.date)             params.date             = rest.date
@@ -34,7 +35,7 @@ export function useTreasuryMovements(filters: TreasuryMovementFilters = {}) {
     if (rest.display_id)          params.display_id          = rest.display_id
     if (rest.partner_name)        params.partner_name        = rest.partner_name
 
-    const { data: page_, isLoading, isFetching, refetch } = useQuery({
+    const { data: page_, isLoading, isFetching, isError, refetch } = useQuery({
         queryKey: [...MOVEMENTS_KEYS.lists(), { page, page_size, ...rest }],
         queryFn: ({ signal }) => treasuryApi.getMovements(params, signal),
         staleTime: staleTime.standard,
@@ -57,7 +58,8 @@ export function useTreasuryMovements(filters: TreasuryMovementFilters = {}) {
         movements: page_?.results ?? [],
         totalCount: page_?.count ?? 0,
         isLoading,
-        isFetching,
+        isRefetching: isFetching && !isLoading,
+        isError,
         refetch,
         createMovement: createMovement.mutateAsync,
         isCreating: createMovement.isPending,

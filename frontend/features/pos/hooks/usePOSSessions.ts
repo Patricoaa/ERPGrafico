@@ -29,7 +29,7 @@ export interface POSSession {
 export const POS_SESSIONS_QUERY_KEY = ['posSessions']
 
 export function usePOSSessions(filters?: FilterState) {
-    const { data: sessions, isLoading, refetch } = useQuery({
+    const { data: sessions, isLoading, isError, refetch } = useQuery({
         queryKey: [...POS_SESSIONS_QUERY_KEY, filters],
         queryFn: async (): Promise<POSSession[]> => {
             const params: Record<string, unknown> = {}
@@ -46,6 +46,8 @@ export function usePOSSessions(filters?: FilterState) {
     return {
         sessions: sessions ?? [],
         isLoading,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError,
         refetch,
     }
 }

@@ -2,18 +2,16 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { Upload, Activity, ChevronDown, CheckCircle2 } from "lucide-react"
+import { Upload, Activity, CheckCircle2 } from "lucide-react"
 import { useStatementsQuery } from "../hooks/useReconciliationQueries"
 import { useStatementQuery } from "../hooks/useReconciliationQueries"
 import type { BankStatement } from "../types"
 import { StatementImportModal, StatementDetailPanel, ReconciliationPanel } from "@/features/finance"
 import { useConfirmStatement } from "@/features/treasury"
-import {DataTableView, UnifiedSearchBar, useUnifiedSearch, AutoEntityCard, EntityCard, ToolbarCreateButton, Drawer, EmptyState, ActionConfirmModal, ActionSlideButton} from '@/components/shared'
-import type { ColumnDef } from "@tanstack/react-table"
-import { statementFields } from "../statementFields"
-import { statementActions, type StatementActionsCtx } from './statementActions'
-import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
-import { cn } from "@/lib/utils"
+import { UnifiedSearchBar, useUnifiedSearch, Drawer, EmptyState, ActionConfirmModal, SubmitButton } from "@/components/shared"
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { statementEntity, statementViews } from "@/features/finance"
+import type { UnifiedSearchConfig, MultiSelectOption } from "@/types/unified-search"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
@@ -34,7 +32,7 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
     const pathname = usePathname()
     const [importModalOpen, setImportModalOpen] = useState(false)
     const [modalKey, setModalKey] = useState(0)
-    const [expandedStmtId, setExpandedStmtId] = useState<number | null>(null)
+    const [detailStatementId, setDetailStatementId] = useState<number | null>(null)
     const [workbenchStatementId, setWorkbenchStatementId] = useState<number | null>(null)
 
     const filterOptions: Record<string, MultiSelectOption[]> = useMemo(() => ({
@@ -44,43 +42,39 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
     const statementsUnifiedConfig = useMemo<UnifiedSearchConfig>(() => ({
         searchFields: [
             {
-                key: 'display_id',
-                label: 'Cartola',
-                serverParam: 'search',
-                clientKey: ['display_id', 'treasury_account_name'],
+                key: "display_id",
+                label: "Cartola",
+                serverParam: "search",
+                clientKey: ["display_id", "treasury_account_name"],
             },
         ],
         filters: [
             {
-                type: 'single',
-                key: 'bank_account',
-                label: 'Cuenta Bancaria',
-                serverParam: 'bank_account_id',
+                type: "single",
+                key: "bank_account",
+                label: "Cuenta Bancaria",
+                serverParam: "bank_account_id",
                 dynamic: true,
             },
             {
-                type: 'single',
-                key: 'state',
-                label: 'Estado',
-                serverParam: 'state',
+                type: "single",
+                key: "state",
+                label: "Estado",
+                serverParam: "state",
                 options: [
-                    { label: 'Borrador', value: 'DRAFT' },
-                    { label: 'Confirmado', value: 'CONFIRMED' },
-                    { label: 'Anulado', value: 'CANCELLED' },
+                    { label: "Borrador", value: "DRAFT" },
+                    { label: "Confirmado", value: "CONFIRMED" },
+                    { label: "Anulado", value: "CANCELLED" },
                 ],
             },
         ],
     }), [])
 
     const search = useUnifiedSearch(statementsUnifiedConfig, filterOptions)
-
-    const isFiltered = search.isFiltered
-    const handleReset = useCallback(() => {
-        search.clearAll()
-    }, [search])
+    const handleReset = useCallback(() => { search.clearAll() }, [search])
 
     const { data: statements = [], isLoading, refetch } = useStatementsQuery(
-        search.filters.bank_account_id && search.filters.bank_account_id !== 'all'
+        search.filters.bank_account_id && search.filters.bank_account_id !== "all"
             ? { treasury_account: search.filters.bank_account_id }
             : bankId
             ? { bank: String(bankId) }
@@ -95,7 +89,6 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
         return result
     }, [statements, search.filterFn, search.filters])
 
-    // Open import dialog when triggered via URL (?modal=import)
     useEffect(() => {
         if (externalOpen) {
             const handle = requestAnimationFrame(() => setImportModalOpen(true))
@@ -103,21 +96,19 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
         }
     }, [externalOpen])
 
-    // Auto-expand ?selected= deep-link (Phase 4)
     useEffect(() => {
-        const selectedId = searchParams.get('selected')
+        const selectedId = searchParams.get("selected")
         if (selectedId) {
             const numId = Number(selectedId)
             if (!isNaN(numId)) {
-                const handle = requestAnimationFrame(() => setExpandedStmtId(numId))
+                const handle = requestAnimationFrame(() => setDetailStatementId(numId))
                 return () => cancelAnimationFrame(handle)
             }
         }
     }, [searchParams])
 
-    // Auto-open ?workbench= deep-link (Phase 4)
     useEffect(() => {
-        const wbId = searchParams.get('workbench')
+        const wbId = searchParams.get("workbench")
         if (wbId) {
             const numId = Number(wbId)
             if (!isNaN(numId)) {
@@ -130,28 +121,28 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
     const handleImportSuccess = () => {
         refetch()
         setImportModalOpen(false)
-        setModalKey(k => k + 1)
+        setModalKey((k) => k + 1)
         if (accounts) {
             const params = new URLSearchParams(searchParams.toString())
-            params.delete('modal')
+            params.delete("modal")
             const query = params.toString()
             router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
         } else {
-            router.replace('/treasury/reconciliation')
+            router.replace("/treasury/reconciliation")
         }
     }
 
     const handleModalChange = (open: boolean) => {
         setImportModalOpen(open)
         if (!open) {
-            setModalKey(k => k + 1)
+            setModalKey((k) => k + 1)
             const params = new URLSearchParams(searchParams.toString())
-            params.delete('modal')
+            params.delete("modal")
             const query = params.toString()
             if (accounts) {
                 router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
             } else {
-                router.replace('/treasury/reconciliation')
+                router.replace("/treasury/reconciliation")
             }
         }
     }
@@ -159,174 +150,125 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
     const openWorkbench = (stmtId: number) => {
         setWorkbenchStatementId(stmtId)
         const params = new URLSearchParams(searchParams.toString())
-        params.set('workbench', String(stmtId))
+        params.set("workbench", String(stmtId))
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     const closeWorkbench = () => {
         setWorkbenchStatementId(null)
         const params = new URLSearchParams(searchParams.toString())
-        params.delete('workbench')
+        params.delete("workbench")
         const query = params.toString()
         router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
 
-    const actionsCtx: StatementActionsCtx = {
-        onView: (id) => router.push(statementDetailUrl(id)),
-    }
+    const collection = useEntityCollection(
+        statementEntity,
+        { rows: isLoading ? [] : filteredStatements },
+        { pagination: { mode: "client", pageSize: 10 } },
+    )
 
-    const columns = useMemo<ColumnDef<BankStatement>[]>(() => {
-        return [
-            ...statementFields.toColumns(),
-            statementActions.auto(actionsCtx)
-        ]
-    }, [])
-
-    const internalImportButton = accounts !== undefined ? (
-        <ToolbarCreateButton
-            label="Importar Cartola"
-            icon={Upload}
+    const importButton = accounts !== undefined ? (
+        <Button
+            size="sm"
             onClick={() => {
                 const params = new URLSearchParams(searchParams.toString())
-                params.set('modal', 'import')
+                params.set("modal", "import")
                 router.push(`${pathname}?${params.toString()}`, { scroll: false })
                 setImportModalOpen(true)
             }}
-        />
+        >
+            <Upload className="h-3.5 w-3.5 mr-1" />
+            Importar Cartola
+        </Button>
     ) : undefined
 
-    const renderLoadingView = () => (
-        <div className="space-y-4 pt-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-                <EntityCard.Skeleton key={i} variant="full" showFooter />
-            ))}
-        </div>
-    )
+    const statementActions = useCallback((stmt: BankStatement) =>
+        stmt.state !== "CONFIRMED" && stmt.reconciliation_progress < 100 ? (
+            <Button size="sm" onClick={(e) => { e.stopPropagation(); openWorkbench(stmt.id) }}>
+                <Activity className="h-3.5 w-3.5 mr-1" />
+                Reconciliar
+            </Button>
+        ) : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [])
 
-    const renderCustomView = (table: { getRowModel: () => { rows: Array<{ original: BankStatement }> } }) => {
-        const rows = table.getRowModel().rows
-        if (rows.length === 0) {
-            return (
-                <div className="pt-4">
-                    <EmptyState
-                        context="finance"
-                        title="No hay cartolas importadas"
-                        description="Importa una cartola bancaria para comenzar la conciliación."
-                    />
-                </div>
-            )
-        }
-        return (
-            <div className="space-y-3 pt-2">
-                {rows.map((row) => {
-                    const stmt = row.original
-                    const isExpanded = expandedStmtId === stmt.id
-                    return (
-                        <AutoEntityCard 
-                            key={stmt.id} 
-                            data={stmt} 
-                            fields={statementFields}
-
-                            className="overflow-hidden"
-                            entityLabel="treasury.bankstatement"
-                        >
-                            {/* Escape hatch: action buttons (Reconciliar, Ver Detalle) — not expressible as fields */}
-                            <EntityCard.Footer>
-                                <div className="flex items-center gap-2">
-                                    {stmt.state !== 'CONFIRMED' && stmt.reconciliation_progress < 100 && (
-                                        <Button size="sm" onClick={(e) => { e.stopPropagation(); openWorkbench(stmt.id) }}>
-                                            <Activity className="h-3.5 w-3.5 mr-1" />
-                                            Reconciliar
-                                        </Button>
-                                    )}
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={(e) => { e.stopPropagation(); setExpandedStmtId(isExpanded ? null : stmt.id) }}
-                                    >
-                                        <ChevronDown className={cn("h-3 w-3 mr-1 transition-transform duration-200", isExpanded && "rotate-180")} />
-                                        {isExpanded ? 'Ocultar Detalle' : 'Ver Detalle'}
-                                    </Button>
-                                </div>
-                            </EntityCard.Footer>
-                            {isExpanded && (
-                                <div className="border-t border-border mt-2 pt-4">
-                                    <StatementDetailPanel
-                                        statementId={stmt.id}
-                                        bankId={bankId}
-                                        hideCreateAction
-                                        detailOnly
-                                    />
-                                </div>
-                            )}
-                        </AutoEntityCard>
-                    )
-                })}
-            </div>
-        )
-    }
-
-    // Workbench drawer state: fetch statement for confirm button
+    // Workbench drawer state
     const { data: workbenchStatement } = useStatementQuery(workbenchStatementId ?? 0, !!workbenchStatementId)
     const confirmMutation = useConfirmStatement()
     const confirmAction = useConfirmAction(async () => {
         if (!workbenchStatementId) return
         try {
             await confirmMutation.mutateAsync(workbenchStatementId)
-            toast.success('Cartola confirmada exitosamente')
+            toast.success("Cartola confirmada exitosamente")
             closeWorkbench()
             refetch()
         } catch (error: unknown) {
-            showApiError(error, 'Error al confirmar cartola')
+            showApiError(error, "Error al confirmar cartola")
         }
     })
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    entityLabel="treasury.bankstatement"
-                    columns={columns}
-                    data={filteredStatements}
-                    variant="embedded"
-                    isLoading={isLoading}
-                    isFiltered={isFiltered}
-                    showReset={isFiltered}
-                    emptyState={{
-                        context: 'finance',
-                        title: 'No hay cartolas importadas',
-                        description: 'Importa una cartola bancaria para comenzar la conciliación.',
-                    }}
-                    onReset={handleReset}
-                    unifiedSearch={<UnifiedSearchBar
-                        config={statementsUnifiedConfig}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        filterOptions={search.filterOptions}
-                        placeholder="Buscar cartola..."
-                    />}
-                    createAction={internalImportButton ?? createAction}
-                    defaultPageSize={10}
-                    renderLoadingView={renderLoadingView}
-                    renderCustomView={renderCustomView}
-                />
+            <div className="flex-1 flex flex-col min-h-0">
+                <Collection.Root
+                    collection={collection}
+                    onOpen={(stmt: BankStatement) => setDetailStatementId(stmt.id)}
+                    actions={statementActions}
+                >
+                    <Collection.Toolbar action={importButton ?? createAction}>
+                        <UnifiedSearchBar
+                            config={statementsUnifiedConfig}
+                            chips={search.chips}
+                            isFiltered={search.isFiltered}
+                            inputValue={search.inputValue}
+                            onInputChange={search.setInputValue}
+                            onApply={search.applyFilter}
+                            onRemove={search.removeFilter}
+                            onClearAll={search.clearAll}
+                            groupBy={search.groupBy}
+                            onGroupBySelect={search.setGroupBy}
+                            paramValues={search.paramValues}
+                            filterOptions={search.filterOptions}
+                            placeholder="Buscar cartola..."
+                        />
+                    </Collection.Toolbar>
+                    <Collection.View
+                        table={statementViews.table}
+                        card={statementViews.card}
+                        emptyTitle="No hay cartolas importadas"
+                        emptyDescription="Importa una cartola bancaria para comenzar la conciliación."
+                        onResetFilters={search.isFiltered ? handleReset : undefined}
+                    />
+                </Collection.Root>
             </div>
+
+            {/* Statement detail drawer (replaces inline expansion) */}
+            <Drawer
+                open={!!detailStatementId}
+                onOpenChange={(open) => { if (!open) setDetailStatementId(null) }}
+                title="Detalle de Cartola"
+                side="right"
+                defaultSize={720}
+            >
+                {detailStatementId && (
+                    <div className="p-4 overflow-y-auto h-full">
+                        <StatementDetailPanel
+                            statementId={detailStatementId}
+                            bankId={bankId}
+                            detailBasePath={detailBasePath}
+                        />
+                    </div>
+                )}
+            </Drawer>
 
             <StatementImportModal
                 key={modalKey}
                 open={importModalOpen}
                 onOpenChange={handleModalChange}
                 onSuccess={handleImportSuccess}
-                defaultAccountId={search.filters.bank_account_id && search.filters.bank_account_id !== 'all' ? Number(search.filters.bank_account_id) : undefined}
-                allowedAccountIds={accounts?.map(a => a.id)}
+                defaultAccountId={search.filters.bank_account_id && search.filters.bank_account_id !== "all" ? Number(search.filters.bank_account_id) : undefined}
+                allowedAccountIds={accounts?.map((a) => a.id)}
             />
 
             <Drawer
@@ -340,16 +282,15 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                 defaultSize="100%"
                 contentClassName="p-0 flex flex-col overflow-hidden"
                 headerActions={
-                    workbenchStatement && workbenchStatement.reconciliation_progress === 100 && workbenchStatement.state !== 'CONFIRMED' ? (
-                        <ActionSlideButton
+                    workbenchStatement && workbenchStatement.reconciliation_progress === 100 && workbenchStatement.state !== "CONFIRMED" ? (
+                        <SubmitButton
                             onClick={() => confirmAction.requestConfirm()}
                             loading={confirmAction.isConfirming}
                             icon={CheckCircle2}
-                            variant="success"
                             className="bg-success hover:bg-success/90 shadow-card px-5 font-bold text-sm"
                         >
-                            {confirmAction.isConfirming ? 'Finalizando...' : 'Confirmar Cartola'}
-                        </ActionSlideButton>
+                            {confirmAction.isConfirming ? "Finalizando..." : "Confirmar Cartola"}
+                        </SubmitButton>
                     ) : undefined
                 }
             >
@@ -358,9 +299,7 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                         <ReconciliationPanel
                             statementId={workbenchStatementId}
                             treasuryAccountId={workbenchStatement?.treasury_account ?? 0}
-                            onComplete={() => {
-                                refetch()
-                            }}
+                            onComplete={() => { refetch() }}
                         />
                     </div>
                 )}

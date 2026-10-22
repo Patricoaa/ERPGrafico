@@ -298,7 +298,7 @@ Layout estandarizado para el footer de formularios y modales.
 | `className` | `string` | ❌ | — | Clases adicionales |
 
 **Reglas de footer:**
-- **Primary Action**: `SubmitButton` o `ActionSlideButton` con ``.
+- **Primary Action**: `SubmitButton`.
 - **Secondary**: `CancelButton` (Outline/Ghost) a la izquierda del primary.
 - **Contextual**: Danger actions (`DangerButton`) al extremo izquierdo.
 - **Typography**: Todos los botones deben ser `font-black text-[10px] uppercase tracking-widest`.
@@ -346,7 +346,7 @@ Cuando un formulario incluye un sidebar de auditoría o actividad (típicamente 
 Todo formulario en drawer o modal **debe** usar `FormFooter` en la prop `footer` del surface (`Drawer` o `BaseModal`). Nunca usar `<div>` raw.
 
 **Reglas:**
-- **Primary Action**: `SubmitButton` o `ActionSlideButton` — obligatorio a la derecha.
+- **Primary Action**: `SubmitButton` — obligatorio a la derecha.
 - **Secondary**: `CancelButton` (Outline/Ghost) — obligatorio a la izquierda del primary.
 - **Contextual**: `DangerButton` (Delete, Void) — al extremo izquierdo via `leftActions`.
 - **Typography**: Todos los botones deben ser `font-black text-[10px] uppercase tracking-widest`.
@@ -396,7 +396,7 @@ Todo formulario en drawer o modal **debe** usar `FormFooter` en la prop `footer`
 
 > ❌ **Forbidden**: `<div className="flex justify-end gap-3">` directo como footer. Siempre `FormFooter`.
 
-> Ver [component-button.md](./component-button.md) para la API completa de `CancelButton`, `SubmitButton` y `ActionSlideButton`.
+> Ver [component-button.md](./component-button.md) para la API completa de `CancelButton`, `SubmitButton` y `DangerButton`.
 
 ---
 
@@ -442,7 +442,7 @@ export function AccountForm({ open, onOpenChange, initialData }: Props) {
       side="left"
       defaultSize={width}
       contentClassName={initialData?.id ? "p-0" : undefined}
-      footer={<FormFooter actions={<><CancelButton/><ActionSlideButton>Guardar</ActionSlideButton></>} />}
+      footer={<FormFooter actions={<><CancelButton/><SubmitButton>Guardar</SubmitButton></>} />}
     >
       <FormSplitLayout
         showSidebar={!!initialData?.id}

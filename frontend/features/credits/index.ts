@@ -1,2 +1,5 @@
 export { CreditPortfolioClientView } from "./components/CreditPortfolioClientView"
 export { BlacklistClientView } from "./components/BlacklistClientView"
+export { creditContactEntity, portfolioViews, blacklistContactViews } from "./entity-view/creditContact.entity"
+export { creditHistoryEntryEntity, creditHistoryEntryViews } from "./entity-view/creditHistoryEntry.entity"
+export { creditLedgerEntryEntity, creditLedgerEntryViews, agingLabel } from "./entity-view/creditLedgerEntry.entity"

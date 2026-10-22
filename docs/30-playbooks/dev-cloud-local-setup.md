@@ -22,7 +22,7 @@ forbidden:
 # Dev con Cloud + Local Nativo
 
 > **Fallback:** Este setup es para máquinas con RAM limitada que no pueden levantar el stack completo.
-> El entorno canónico del proyecto es el **remote dev server** (`pato@192.168.1.93` vía Mutagen).
+> El entorno canónico del proyecto es el **remote dev server** (`pato@192.168.1.86` vía Mutagen).
 > Ver [remote-dev-server.md](remote-dev-server.md) primero.
 
 Stack de desarrollo optimizado para máquinas con recursos limitados.

@@ -648,7 +648,7 @@ class MatchingService:
 
                 transfer_entry = JournalEntry.objects.create(
                     date=line.transaction_date,
-                    reference=f"RECON-TRF-{line.statement.id}",
+                    reference=f"Transferencia Conciliación {line.statement.display_id}",
                     description=GlosaBuilder.build(GlosaBuilder.TRASPASO_CONCILIACION, line.statement.display_id, p.contact.name if p.contact else "", p.amount),
                     status=JournalEntry.State.DRAFT,
                     source_content_type=ContentType.objects.get_for_model(

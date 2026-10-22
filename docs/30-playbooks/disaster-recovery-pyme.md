@@ -16,7 +16,7 @@ last_review: 2026-05-21
 Qué hacer cuando "el ERP no anda". No es un manual exhaustivo: es la secuencia que cualquier persona con SSH y este doc puede ejecutar en <4 horas.
 
 > **Estado:** el proyecto está en fase de desarrollo (**no existe producción**). Hoy aplica al único
-> entorno, el dev server (`pato@192.168.1.93`, ver [remote-dev-server.md](remote-dev-server.md)).
+> entorno, el dev server (`pato@192.168.1.86`, ver [remote-dev-server.md](remote-dev-server.md)).
 > Los RTO/RPO y pasos que asumen servicio productivo se activan cuando exista producción.
 
 **RTO objetivo (no SLA contractual):** restaurar servicio en <4h.

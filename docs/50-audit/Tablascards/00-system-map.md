@@ -113,7 +113,7 @@ El inventario completo por archivo (≈110 filas) está en [`00-consumer-invento
 |---|---|---|
 | Node local | v18.19.1 (vitest no corre en local) | `node -v` |
 | Mutagen `erpgrafico-sync` | ✅ Connected: Yes / Watching | `mutagen sync list` |
-| Contenedores remotos | ✅ backend, celery-beat, celery-worker, db, frontend, nginx, redis en `running` | `ssh pato@192.168.1.93 'cd ERPGrafico && docker compose ps'` |
+| Contenedores remotos | ✅ backend, celery-beat, celery-worker, db, frontend, nginx, redis en `running` | `ssh pato@192.168.1.86 'cd ERPGrafico && docker compose ps'` |
 | Vitest remoto | ✅ Node v20.20.2 en el contenedor; `components/shared/DataTableExpandHeader.test.tsx` → 1 archivo, 4 tests en verde (12,1 s) | `docker compose exec -T frontend npx vitest run components/shared/DataTableExpandHeader.test.tsx` |
 | Storybook | Instalado, sin stories (banco de trabajo vacío para la Fase 5) | §1 |
 | Guardas existentes relevantes | ESLint: `pagination-datatable-needs-rowcount`, `status-must-use-statusbadge`, `no-raw-tailwind-colors`, `typography-token-first`. Tests de contrato: `lib/__tests__/semantic-ink.test.ts`, `animate-in.contract.test.ts` | `ls eslint-rules/`; `grep -l … lib/__tests__/*` |

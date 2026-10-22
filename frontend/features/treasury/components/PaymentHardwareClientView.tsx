@@ -2,25 +2,19 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
-import { ActionConfirmModal, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
-import type { UnifiedSearchConfig } from '@/types/unified-search'
-import {
-    Building2,
-} from "lucide-react"
-
+import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import type { UnifiedSearchConfig } from "@/types/unified-search"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { DataTableView } from '@/components/shared'
-import { type ColumnDef } from "@tanstack/react-table"
-import { providerActions, type ProviderActionsCtx } from './providerActions'
-import { deviceActions, type DeviceActionsCtx } from './deviceActions'
-
+import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
+import { terminalProviderEntity, terminalProviderViews } from "../entity-view/terminalProvider.entity"
+import { terminalDeviceEntity, terminalDeviceViews } from "../entity-view/terminalDevice.entity"
+import { providerActions, type ProviderActionsCtx } from "./providerActions"
+import { deviceActions, type DeviceActionsCtx } from "./deviceActions"
 import { ProviderDrawer } from "./ProviderDrawer"
 import { DeviceDrawer } from "./DeviceDrawer"
-import { terminalProviderFields } from "@/features/treasury/terminalProviderFields"
-import { terminalDeviceFields } from "@/features/treasury/terminalDeviceFields"
 
 interface PaymentHardwareClientViewProps {
     externalDeviceOpen?: boolean
@@ -60,8 +54,23 @@ export function PaymentHardwareClientView({
         ],
     }), [])
     const providerSearch = useUnifiedSearch(providerConfig)
-    const { providers, isLoading: isLoadingProviders, refetch: refetchProviders, deleteProvider } = useTerminalProviders()
-    const { devices, isLoading: isLoadingDevices, refetch: refetchDevices, deleteDevice } = useTerminalDevices(deviceFilters)
+    const { providers, isLoading: isLoadingProviders, error: providersError, refetch: refetchProviders, deleteProvider } = useTerminalProviders()
+    const { devices, isLoading: isLoadingDevices, error: devicesError, refetch: refetchDevices, deleteDevice } = useTerminalDevices(deviceFilters)
+    const { filterFn: providerFilterFn } = providerSearch
+    const providerRows = useMemo(() => providerFilterFn(providers), [providerFilterFn, providers])
+    const providerView = useCollectionViewMode("treasury.terminalprovider")
+    const deviceView = useCollectionViewMode("treasury.terminaldevice")
+    // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
+    const providerCollection = useEntityCollection(
+        terminalProviderEntity,
+        { rows: providerRows, isLoading: isLoadingProviders, error: providersError && providers.length === 0, refetch: refetchProviders, isFiltered: providerSearch.isFiltered },
+        { pagination: { mode: "client", pageSize: 20 }, defaultSort: terminalProviderViews.table.defaultSort },
+    )
+    const deviceCollection = useEntityCollection(
+        terminalDeviceEntity,
+        { rows: devices, isLoading: isLoadingDevices, error: devicesError, refetch: refetchDevices, isFiltered: deviceSearch.isFiltered },
+        { pagination: { mode: "client", pageSize: 20 }, defaultSort: terminalDeviceViews.table.defaultSort },
+    )
 
     const isCreateProvider = searchParams.get("modal") === "new-provider"
     const isCreateDevice = searchParams.get("modal") === "new-device"
@@ -136,127 +145,61 @@ export function PaymentHardwareClientView({
         onDelete: (provider) => deleteProviderConfirm.requestConfirm(provider),
     }
 
-    const providerColumns: ColumnDef<PaymentTerminalProvider>[] = [
-        ...terminalProviderFields.toColumns(),
-        providerActions.auto(providerActionsCtx)
-    ]
-
     const deviceActionsCtx: DeviceActionsCtx = {
         onEdit: (device) => openDeviceSelected(device.id),
         onDelete: (device) => deleteDeviceConfirm.requestConfirm(device),
     }
 
-    const deviceColumns: ColumnDef<PaymentTerminalDevice>[] = [
-        ...terminalDeviceFields.toColumns(),
-        deviceActions.auto(deviceActionsCtx)
-    ]
+    const openCreate = (modal: "new-provider" | "new-device") => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set("modal", modal)
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+    const providerCreateAction = createAction || <Button onClick={() => openCreate("new-provider")} className="h-9">Configurar proveedor</Button>
+    const deviceCreateAction = createAction || <Button onClick={() => openCreate("new-device")} className="h-9">Registrar dispositivo</Button>
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
             {activeTab === "providers" ? (
-                <div className="flex-1 min-h-0">
-                    <DataTableView
-                        entityLabel="treasury.terminalprovider"
-                        columns={providerColumns}
-                        data={providerSearch.filterFn(providers)}
-                        isLoading={isLoadingProviders}
-                        variant="embedded"
-                        unifiedSearch={<UnifiedSearchBar
-                            config={providerConfig}
-                            chips={providerSearch.chips}
-                            isFiltered={providerSearch.isFiltered}
-                            inputValue={providerSearch.inputValue}
-                            onInputChange={providerSearch.setInputValue}
-                            onApply={providerSearch.applyFilter}
-                            onRemove={providerSearch.removeFilter}
-                            onClearAll={providerSearch.clearAll}
-                            groupBy={providerSearch.groupBy}
-                            onGroupBySelect={providerSearch.setGroupBy}
-                            paramValues={providerSearch.paramValues}
-                            placeholder="Buscar proveedor..."
-                        />}
-                        defaultPageSize={20}
-                        isFiltered={providerSearch.isFiltered}
-                        emptyState={{
-                            context: "treasury",
-                            title: "Aún no hay proveedores de terminal",
-                            description: "Configura un proveedor (Transbank, etc.) para registrar sus dispositivos.",
-                        }}
-                        createAction={createAction || (
-                            <Button onClick={() => {
-                                const params = new URLSearchParams(searchParams.toString())
-                                params.set("modal", "new-provider")
-                                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-                            }} className="h-9">
-                                Configurar proveedor
-                            </Button>
-                        )}
-                        renderCard={(provider: PaymentTerminalProvider) => (
-                            <AutoEntityCard
-                                key={provider.id}
-                                data={provider}
-                                fields={terminalProviderFields}
-                                entityLabel="treasury.paymentterminalprovider"
-                                icon={Building2}
-
-                                actions={providerActions.render(provider, providerActionsCtx)}
-                                onClick={() => openProviderSelected(provider.id)}
-                                defaultAction={providerActions.defaultAction(providerActionsCtx)?.(provider) ?? null}
-                            />
-                        )}
+                <Collection.Root
+                    collection={providerCollection}
+                    view={providerView.view}
+                    onViewChange={providerView.onViewChange}
+                    onOpen={(provider) => openProviderSelected(provider.id)}
+                    actions={providerActions.forCollection(providerActionsCtx)}
+                >
+                    <Collection.Toolbar action={providerCreateAction}>
+                        <UnifiedSearchBar config={providerConfig} {...bindUnifiedSearch(providerSearch)} placeholder="Buscar proveedor..." />
+                    </Collection.Toolbar>
+                    <Collection.View
+                        table={terminalProviderViews.table}
+                        card={terminalProviderViews.card}
+                        emptyTitle="Aún no hay proveedores de terminal"
+                        emptyDescription="Configura un proveedor (Transbank, etc.) para registrar sus dispositivos."
+                        emptyAction={providerCreateAction}
+                        onResetFilters={providerSearch.clearAll}
                     />
-                </div>
+                </Collection.Root>
             ) : (
-                <div className="flex-1 min-h-0">
-                    <DataTableView
-                        entityLabel="treasury.terminaldevice"
-                        columns={deviceColumns}
-                        data={devices}
-                        isLoading={isLoadingDevices}
-                        variant="embedded"
-                        unifiedSearch={<UnifiedSearchBar
-                            config={deviceConfig}
-                            chips={deviceSearch.chips}
-                            isFiltered={deviceSearch.isFiltered}
-                            inputValue={deviceSearch.inputValue}
-                            onInputChange={deviceSearch.setInputValue}
-                            onApply={deviceSearch.applyFilter}
-                            onRemove={deviceSearch.removeFilter}
-                            onClearAll={deviceSearch.clearAll}
-                            groupBy={deviceSearch.groupBy}
-                            onGroupBySelect={deviceSearch.setGroupBy}
-                            paramValues={deviceSearch.paramValues}
-                            placeholder="Buscar dispositivo..."
-                        />}
-                        defaultPageSize={20}
-                        isFiltered={deviceSearch.isFiltered}
-                        emptyState={{
-                            context: "treasury",
-                            title: "Aún no hay dispositivos",
-                            description: "Registra terminales de pago (POS) para conciliar sus transacciones.",
-                        }}
-                        createAction={createAction || (
-                            <Button onClick={() => {
-                                const params = new URLSearchParams(searchParams.toString())
-                                params.set("modal", "new-device")
-                                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-                            }} className="h-9">
-                                Registrar dispositivo
-                            </Button>
-                        )}
-                        renderCard={(device: PaymentTerminalDevice) => (
-                            <AutoEntityCard
-                                key={device.id}
-                                data={device}
-                                fields={terminalDeviceFields}
-                                entityLabel="treasury.paymentterminaldevice"
-                                actions={deviceActions.render(device, deviceActionsCtx)}
-                                onClick={() => openDeviceSelected(device.id)}
-                                defaultAction={deviceActions.defaultAction(deviceActionsCtx)?.(device) ?? null}
-                            />
-                        )}
+                <Collection.Root
+                    collection={deviceCollection}
+                    view={deviceView.view}
+                    onViewChange={deviceView.onViewChange}
+                    onOpen={(device) => openDeviceSelected(device.id)}
+                    actions={deviceActions.forCollection(deviceActionsCtx)}
+                >
+                    <Collection.Toolbar action={deviceCreateAction}>
+                        <UnifiedSearchBar config={deviceConfig} {...bindUnifiedSearch(deviceSearch)} placeholder="Buscar dispositivo..." />
+                    </Collection.Toolbar>
+                    <Collection.View
+                        table={terminalDeviceViews.table}
+                        card={terminalDeviceViews.card}
+                        emptyTitle="Aún no hay dispositivos"
+                        emptyDescription="Registra terminales de pago (POS) para conciliar sus transacciones."
+                        emptyAction={deviceCreateAction}
+                        onResetFilters={deviceSearch.clearAll}
                     />
-                </div>
+                </Collection.Root>
             )}
 
             {/* Dialogs */}

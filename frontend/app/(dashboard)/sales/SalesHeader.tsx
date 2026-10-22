@@ -2,119 +2,115 @@
 
 import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
-import { getEntityIconName, getDomainConceptTitle } from "@/lib/entity-registry"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
+import {
+  SALES_TABS,
+  getSalesTab,
+  getSalesPosSubTab,
+  getSalesCreditsSubTab,
+  getSalesConfigSubTab,
+  getSalesDtesSubTab,
+} from "@/features/sales/navigation"
+import { buildHeaderConfigFromTab } from "@/lib/navigation-helpers"
+import { getModuleHeaderConfig } from "@/lib/module-registry"
 
 export function SalesHeader() {
-    const pathname = usePathname()
-    const { getViewModeUrl } = useViewModePreference()
+  const pathname = usePathname()
+  const { getViewModeUrl } = useViewModePreference()
 
-    const segments = pathname.split('/').filter(Boolean)
-    const currentSegment = segments[1] || 'orders'
+  const segments = pathname.split("/").filter(Boolean)
+  const currentSegment = segments[1] || "dtes"
 
-    // Map physical routes to tab values
-    const segmentToTab: Record<string, string> = {
-        orders: 'orders',
-        pos: 'pos',
-        credits: 'credits',
-        sessions: 'pos',
-        settings: 'config',
+  // Map physical routes to tab values (ADR-0090: `dtes` es el tab Documentos y
+  // contiene orders/deliveries/returns como sub-segmentos; `settings` es tab propio).
+  const segmentToTab: Record<string, string> = {
+    dtes: "dtes",
+    pos: "pos",
+    credits: "credits",
+    sessions: "pos",
+    settings: "config",
+  }
+
+  const activeValue = segmentToTab[currentSegment] || "dtes"
+
+  // Determine subActiveValue from path segments
+  const subActiveValue = (() => {
+    if (activeValue === "config") return segments[2] || "credit"
+    if (activeValue === "dtes") return segments[2] || "dtes"
+    if (activeValue === "pos") {
+      if (currentSegment === "sessions") return "sessions"
+      return segments[2] || "cajas"
+    }
+    if (activeValue === "credits") return segments[2] || "portfolio"
+    return undefined
+  })()
+
+  // Module config from centralized registry
+  const moduleConfig = getModuleHeaderConfig("sales")
+
+  // Build navigation from canonical config
+  const tabs = SALES_TABS.map((tab) => ({
+    value: tab.value,
+    label: tab.label,
+    iconName: tab.iconName,
+    href: tab.href,
+    subTabs: tab.subTabs?.map((st) => ({
+      value: st.value,
+      label: st.label,
+      iconName: st.iconName,
+      href: st.href,
+    })),
+  }))
+
+  const navigation = {
+    moduleName: moduleConfig?.moduleName ?? "Ventas",
+    moduleHref: moduleConfig?.moduleHref ?? getViewModeUrl("sales.saleorder", "/sales/dtes"),
+    tabs,
+    activeValue,
+    subActiveValue,
+  }
+
+  // Get header config from canonical navigation
+  const getHeaderConfig = () => {
+    const mainTab = getSalesTab(activeValue)
+    if (!mainTab) {
+      return { title: moduleConfig?.headerTitle ?? "Ventas", description: moduleConfig?.headerDescription ?? "", iconName: moduleConfig?.iconName ?? "shopping-cart" as const }
     }
 
-    const activeValue = segmentToTab[currentSegment] || 'orders'
-
-    // Determine subActiveValue from path segments
-    const subActiveValue = (() => {
-        if (activeValue === 'config') return segments[2] || 'credit'
-        if (activeValue === 'orders') return segments[2] || 'orders'
-        if (activeValue === 'pos') {
-            if (currentSegment === 'sessions') return 'sessions'
-            return segments[2] || 'cajas'
-        }
-        if (activeValue === 'credits') return segments[2] || 'portfolio'
-        return undefined
-    })()
-
-    const tabs = [
-        {
-            value: "orders",
-            label: "Órdenes",
-            iconName: getEntityIconName('sales.saleorder'),
-            href: getViewModeUrl('sales.saleorder', "/sales/orders"),
-            subTabs: [
-                { value: "orders", label: getDomainConceptTitle('ov', true), href: getViewModeUrl('sales.saleorder', "/sales/orders") },
-                { value: "notes", label: "Ajustes (N/C N/D)", href: "/sales/orders/notes" },
-            ]
-        },
-        {
-            value: "pos",
-            label: "POS",
-            iconName: "banknote",
-            href: "/sales/pos/cajas",
-            subTabs: [
-                { value: "cajas", label: "Puntos de Venta", href: "/sales/pos/cajas" },
-                { value: "sessions", label: "Sesiones", href: "/sales/sessions" },
-            ]
-        },
-        {
-            value: "credits",
-            label: "Cartera",
-            iconName: "pie-chart",
-            href: "/sales/credits",
-            subTabs: [
-                { value: "portfolio", label: "Cartera", href: "/sales/credits/portfolio" },
-                { value: "history", label: "Historial", href: "/sales/credits/history" },
-                { value: "blacklist", label: "Lista Negra", href: "/sales/credits/blacklist" },
-            ]
-        },
-        {
-            value: "config",
-            label: "Configuración",
-            iconName: "settings",
-            href: "/sales/settings",
-            subTabs: [
-                { value: "credit", label: "Crédito", href: "/sales/settings/credit", iconName: "credit-card" },
-                { value: "config-pos", label: "POS", href: "/sales/settings/config-pos", iconName: "settings" },
-            ]
-        },
-    ]
-
-    const navigation = {
-        moduleName: "Ventas",
-        moduleHref: getViewModeUrl('sales.saleorder', "/sales/orders"),
-        tabs,
-        activeValue,
-        subActiveValue,
+    // Sub-tabs handling
+    if (activeValue === "dtes" && subActiveValue) {
+      const subTab = getSalesDtesSubTab(subActiveValue)
+      if (subTab) return buildHeaderConfigFromTab(subTab)
     }
 
-    const getHeaderConfig = () => {
-        if (activeValue === 'config') return { title: "Configuración de Ventas", description: "Gestione las políticas de crédito y parámetros del POS.", iconName: "settings" as const }
-        if (activeValue === 'credits') {
-            if (subActiveValue === 'history') return { title: "Historial de Asignaciones", description: "Registro global de créditos asignados a clientes.", iconName: "history" as const }
-            if (subActiveValue === 'blacklist') return { title: "Lista Negra", description: "Clientes con historial de impago o riesgo crediticio.", iconName: "user-x" as const }
-            return { title: "Cartera de Créditos", description: "Saldo por cliente, clasificación por antigüedad y estado de cobro.", iconName: "pie-chart" as const }
-        }
-        if (activeValue === 'pos') {
-            if (subActiveValue === 'sessions') return { title: "Sesiones POS", description: "Historial de aperturas y cierres de sesión.", iconName: "list" as const }
-            return { title: "Puntos de Venta", description: "Administre los puntos de venta y sus métodos de pago autorizados.", iconName: "banknote" as const }
-        }
-        if (activeValue === 'orders') {
-            if (subActiveValue === 'notes') return { title: "Notas de Crédito y Débito", description: "Gestión de devoluciones, correcciones de facturación y ajustes de cuenta.", iconName: "file-text" as const }
-            if (subActiveValue === 'deliveries') return { title: "Guías de Despacho", description: "Historial de envíos y entregas a clientes, incluyendo notas de débito.", iconName: "truck" as const }
-            return { title: getDomainConceptTitle('ov', true), description: "Seguimiento de pedidos, estados de fabricación y logística de entregas.", iconName: getEntityIconName('sales.saleorder') }
-        }
-        return { title: "Ventas", description: "", iconName: getEntityIconName('sales.saleorder') ?? "shopping-cart" }
+    if (activeValue === "pos" && subActiveValue) {
+      const subTab = getSalesPosSubTab(subActiveValue)
+      if (subTab) return buildHeaderConfigFromTab(subTab)
     }
 
-    const config = getHeaderConfig()
+    if (activeValue === "credits" && subActiveValue) {
+      const subTab = getSalesCreditsSubTab(subActiveValue)
+      if (subTab) return buildHeaderConfigFromTab(subTab)
+    }
 
-    return (
-        <PageHeader
-            title={config.title}
-            description={config.description}
-            iconName={config.iconName}
-            variant="minimal"
-            navigation={navigation}
-        />
-    )
+    if (activeValue === "config" && subActiveValue) {
+      const subTab = getSalesConfigSubTab(subActiveValue)
+      if (subTab) return buildHeaderConfigFromTab(subTab)
+    }
+
+    // Default: main tab header
+    return buildHeaderConfigFromTab(mainTab)
+  }
+
+  const config = getHeaderConfig()
+
+  return (
+    <PageHeader
+      title={config.title}
+      description={config.description}
+      iconName={config.iconName}
+      variant="minimal"
+      navigation={navigation}
+    />
+  )
 }

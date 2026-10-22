@@ -1,28 +1,18 @@
 "use client";
 
 import { useMemo } from "react";
-import { DataTable, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared';
+import { UnifiedSearchBar, useUnifiedSearch } from '@/components/shared';
 import type { UnifiedSearchConfig } from '@/components/shared';
 import { Card, CardContent } from "@/components/ui/card";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import {
     LogIn,
-    LogOut,
     Settings,
     ShieldAlert,
-    FileDown,
-    Printer,
     Activity,
-    Plus,
-    Minus,
-    RefreshCw
 } from "lucide-react";
-import { Skeleton, Chip } from "@/components/shared";
-import { useAuditLogs, type GlobalAuditLog } from "@/features/settings";
-import { DataCell } from '@/components/shared';
-import { DataTableColumnHeader } from '@/components/shared';
-import { type ColumnDef } from "@tanstack/react-table";
+import { Skeleton } from "@/components/shared";
+import { useAuditLogs, type GlobalAuditLog, auditLogEntity, auditLogViews, type AuditLog } from "@/features/settings";
+import { Collection, useEntityCollection } from "@/components/entity-view";;
 
 interface AuditPageClientProps {
     initialLogs?: GlobalAuditLog[]
@@ -31,154 +21,35 @@ interface AuditPageClientProps {
 export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
     const { logs, loading } = useAuditLogs(initialLogs);
 
-    const getActionIcon = (type: string, source: string) => {
-        if (source === 'action_log') {
-            switch (type) {
-                case "LOGIN": return LogIn;
-                case "LOGOUT": return LogOut;
-                case "SETTINGS_CHANGE": return Settings;
-                case "SECURITY": return ShieldAlert;
-                case "EXPORT": return FileDown;
-                case "PRINT": return Printer;
-                default: return Activity;
-            }
-        } else {
-            switch (type) {
-                case '+': return Plus;
-                case '~': return RefreshCw;
-                case '-': return Minus;
-                default: return Activity;
-            }
-        }
-    };
+    const entityLabelOptions = useMemo(() =>
+        Array.from(new Set(logs.map(l => l.entity_label).filter(Boolean)))
+            .map(val => ({ label: val as string, value: val as string })),
+        [logs]
+    )
 
-    const columns: ColumnDef<GlobalAuditLog>[] = [
-        {
-            accessorKey: "date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha y Hora" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const date = new Date(row.original.date);
-                return (
-                    <div className="flex flex-col">
-                        <DataCell.Text>
-                            {format(date, "dd/MM/yyyy", { locale: es })}
-                        </DataCell.Text>
-                        <DataCell.Secondary>
-                            {format(date, "HH:mm:ss")}
-                        </DataCell.Secondary>
-                    </div>
-                );
-            },
-            meta: { title: "Fecha y Hora" },
-        },
-        {
-            accessorKey: "user_name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Usuario" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <Chip size="xs">{row.original.user_name || "Sistema"}</Chip>
-                </div>
-            )
-        },
-        {
-            accessorKey: "entity_label",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Entidad" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <Chip size="xs">{row.original.entity_label || "Sistema"}</Chip>
-                </div>
-            )
-        },
-        {
-            id: "action_type_label",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Acción" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const hType = row.original.history_type;
-                const source = row.original.source;
-                const icon = getActionIcon((row.original.action_type || hType || 'default'), source);
-                const label = row.original.type_label || (
-                    hType === '+' ? 'Creación' :
-                        hType === '~' ? 'Edición' :
-                            hType === '-' ? 'Eliminación' : 'Cambio'
-                );
-
-                let intent: "neutral" | "success" | "destructive" | "info" | "warning" = "neutral";
-                if (source === 'action_log') {
-                    if (row.original.action_type === 'LOGIN') intent = "success";
-                    if (row.original.action_type === 'SECURITY') intent = "destructive";
-                } else {
-                    if (hType === '+') intent = "info";
-                    if (hType === '~') intent = "warning";
-                    if (hType === '-') intent = "destructive";
-                }
-
-                return (
-                    <div className="flex items-center gap-2">
-                        <DataCell.Icon icon={icon} />
-                        <Chip size="xs" intent={intent}>{label}</Chip>
-                    </div>
-                );
-            }
-        },
-        {
-            accessorKey: "description",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Descripción" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    {row.original.description}
-                </DataCell.Text>
-            )
-        },
-        {
-            accessorKey: "source",
-            header: "Origen",
-            id: "source",
-            cell: ({ row }) => {
-                const source = row.original.source;
-                const label = source === 'action_log' ? 'Sistema' : 'Datos';
-
-                return (
-                    <div className="flex justify-center w-full">
-                        <Chip size="xs">{label}</Chip>
-                    </div>
-                );
-            }
-        }
-    ];
-
-    const actionTypeOptions = Array.from(new Set(logs.map(l => {
-        const hType = l.history_type;
-        if (l.source === 'action_log') return l.action_type || 'Unknown';
-        if (l.source === 'history') {
-            if (hType === '+') return 'Creación';
-            if (hType === '~') return 'Edición';
-            if (hType === '-') return 'Eliminación';
-        }
-        return 'Cambio';
-    }))).filter(Boolean).map(val => ({
-        label: (val === 'LOGIN' ? 'Inicio de Sesión' :
-            val === 'LOGOUT' ? 'Cierre de Sesión' :
+    const actionTypeOptions = useMemo(() =>
+        Array.from(new Set(logs.map(l => {
+            if (l.source === 'action_log') return l.action_type || 'Unknown';
+            if (l.history_type === '+') return 'Creación';
+            if (l.history_type === '~') return 'Edición';
+            if (l.history_type === '-') return 'Eliminación';
+            return 'Cambio';
+        }))).filter(Boolean).map(val => ({
+            label: (val === 'LOGIN' ? 'Inicio de Sesión' :
+                val === 'LOGOUT' ? 'Cierre de Sesión' :
                 val === 'SETTINGS_CHANGE' ? 'Configuración' :
-                    val === 'SECURITY' ? 'Seguridad' :
-                        val === 'EXPORT' ? 'Exportación' :
-                            val === 'PRINT' ? 'Impresión' : val) as string,
-        value: val as string
-    }));
+                val === 'SECURITY' ? 'Seguridad' :
+                val === 'EXPORT' ? 'Exportación' :
+                val === 'PRINT' ? 'Impresión' : val) as string,
+            value: val as string
+        })),
+        [logs]
+    )
 
     const auditSearchConfig: UnifiedSearchConfig = useMemo(() => ({
         filters: [
             { key: 'source', label: 'Origen', type: 'multi', serverParam: 'source', options: [{ label: "Sistema", value: "action_log" }, { label: "Datos", value: "history" }] },
-            { key: 'entity_label', label: 'Entidad', type: 'multi', serverParam: 'entity_label', columnId: 'entity_label', dynamic: true, options: [] },
+            { key: 'entity_label', label: 'Entidad', type: 'multi', serverParam: 'entity_label', options: entityLabelOptions },
             { key: 'action_type_label', label: 'Acción', type: 'multi', serverParam: 'action_type_label', options: actionTypeOptions },
         ],
         searchFields: [],
@@ -186,21 +57,61 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
             { key: 'source', label: 'Origen', field: 'source' },
             { key: 'entity_label', label: 'Entidad', field: 'entity_label' },
         ],
-    }), [actionTypeOptions])
+    }), [actionTypeOptions, entityLabelOptions])
+
     const auditSearch = useUnifiedSearch(auditSearchConfig)
+
+    const filteredLogs = useMemo(() => {
+        let result = logs as GlobalAuditLog[]
+        const { source, entity_label, action_type_label } = auditSearch.paramValues
+        if (source) result = result.filter(l => l.source === source)
+        if (entity_label) result = result.filter(l => (l.entity_label ?? '') === entity_label)
+        if (action_type_label) {
+            result = result.filter(l => {
+                const computed = l.source === 'action_log'
+                    ? (l.action_type || 'Unknown')
+                    : l.history_type === '+' ? 'Creación'
+                    : l.history_type === '~' ? 'Edición'
+                    : l.history_type === '-' ? 'Eliminación'
+                    : 'Cambio'
+                return computed === action_type_label
+            })
+        }
+        return result
+    }, [logs, auditSearch.paramValues])
+
+    const collection = useEntityCollection(
+        auditLogEntity,
+        { rows: filteredLogs as AuditLog[], isLoading: loading },
+        { pagination: { mode: "none" } }
+    )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTable
-                    columns={columns}
-                    data={logs}
-                    isLoading={loading}
-                    variant="embedded"
-                    unifiedSearch={<UnifiedSearchBar config={auditSearchConfig} chips={auditSearch.chips} isFiltered={auditSearch.isFiltered} inputValue={auditSearch.inputValue} onInputChange={auditSearch.setInputValue} onApply={auditSearch.applyFilter} onRemove={auditSearch.removeFilter} onClearAll={auditSearch.clearAll} groupBy={auditSearch.groupBy} onGroupBySelect={auditSearch.setGroupBy} paramValues={auditSearch.paramValues} />}
-                    hiddenColumns={["source"]}
-                    defaultPageSize={50}
-                />
+            <div className="flex-1 flex flex-col min-h-0">
+                <Collection.Root collection={collection} label="Registro de auditoría">
+                    <Collection.Toolbar views={["table"]}>
+                        <UnifiedSearchBar
+                            config={auditSearchConfig}
+                            chips={auditSearch.chips}
+                            isFiltered={auditSearch.isFiltered}
+                            inputValue={auditSearch.inputValue}
+                            onInputChange={auditSearch.setInputValue}
+                            onApply={auditSearch.applyFilter}
+                            onRemove={auditSearch.removeFilter}
+                            onClearAll={auditSearch.clearAll}
+                            groupBy={auditSearch.groupBy}
+                            onGroupBySelect={auditSearch.setGroupBy}
+                            paramValues={auditSearch.paramValues}
+                        />
+                    </Collection.Toolbar>
+                    <Collection.View
+                        table={auditLogViews.table}
+                        emptyTitle="Sin registros de auditoría"
+                        emptyDescription="No hay eventos que coincidan con los filtros seleccionados."
+                        onResetFilters={auditSearch.isFiltered ? auditSearch.clearAll : undefined}
+                    />
+                </Collection.Root>
             </div>
 
             <div

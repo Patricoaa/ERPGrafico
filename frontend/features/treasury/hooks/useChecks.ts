@@ -17,12 +17,12 @@ const CHECKS_KEYS = {
 }
 
 export function useChecks(params?: Record<string, string>) {
-    const { data: checks, isLoading, isError } = useQuery({
+    const { data: checks, isLoading, isFetching, isError, refetch } = useQuery({
         queryKey: CHECKS_KEYS.list(params),
         queryFn: () => checksApi.list(params),
         staleTime: staleTime.standard,
     })
-    return { checks: checks ?? [], isLoading, isError }
+    return { checks: checks ?? [], isLoading, isRefetching: isFetching && !isLoading, isError, refetch }
 }
 
 export function useCheck(id: number | null, enabled = true) {

@@ -1,47 +1,50 @@
 "use client"
 
-import { useState, useMemo, useEffect, useCallback } from "react"
-import { DataTableView, AutoEntityCard } from '@/components/shared'
-import { type ColumnDef } from "@tanstack/react-table"
-import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import React, { useEffect, useCallback } from "react"
+import { Collection, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT, type FieldId } from "@/components/entity-view"
+import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared'
 import { documentUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { useInventoryDocuments, useInventoryDocumentMutations } from "../hooks/useInventoryDocuments"
 import { documentActions, type InventoryDocumentActionsCtx } from "../documentActions"
 import type { InventoryDocument } from "../types"
-import { inventoryDocumentFields } from "../inventoryDocumentFields"
+import { inventoryDocumentEntity, inventoryDocumentViews } from "../entity-view/inventoryDocument.entity"
 import { toast } from "sonner"
-import React from "react"
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { showApiError } from "@/lib/errors"
 
 interface DocumentsClientViewProps {
-    documentTypeFilter?: 'RECEIPT' | 'DELIVERY' | 'TRANSFER' | 'ADJUSTMENT' | 'PRODUCTION'
+    documentTypeFilter?: 'RECEIPT' | 'DELIVERY' | 'TRANSFER' | 'ADJUSTMENT' | 'PRODUCTION' | 'PARTNER_CONTRIBUTION' | 'PARTNER_WITHDRAWAL'
     createAction?: React.ReactNode
 }
 
+/** Search group keys → entity field ids (grouping uses the formatted cell text). */
+const DOCUMENT_GROUPS: Record<string, FieldId<typeof inventoryDocumentEntity.fields>> = { date: "date", document_type: "documentType", status: "status" }
+const DEFAULT_PAGE = { pageIndex: 0, pageSize: 50 }
+
 export function DocumentsClientView({ documentTypeFilter, createAction }: DocumentsClientViewProps) {
     const search = useUnifiedSearch(documentUnifiedSearchDef)
-    const allFilters = useMemo(() => ({
+    const allFilters = React.useMemo(() => ({
         ...search.filters,
         ...(documentTypeFilter ? { document_type: documentTypeFilter } : {})
     }), [search.filters, documentTypeFilter])
 
-    const isGrouping = search.groupBy !== null
-    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
-    const { page, documents, totalCount, isLoading, refetch } = useInventoryDocuments({
+    const groupBy = search.groupBy ? DOCUMENT_GROUPS[search.groupBy] ?? null : null
+    const [pageState, setPageState] = useServerPage([allFilters, groupBy], DEFAULT_PAGE)
+    const { view, onViewChange } = useCollectionViewMode("inventory.inventorydocument")
+
+    const { documents, totalCount, isLoading, isRefetching, isError, refetch } = useInventoryDocuments({
         ...allFilters,
-        page: isGrouping ? 1 : pageState.pageIndex + 1,
-        page_size: isGrouping ? 200 : pageState.pageSize,
+        page: groupBy ? 1 : pageState.pageIndex + 1,
+        page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
     })
 
-    const isOverLimit = isGrouping && totalCount > 200
-    const effectiveGrouping = isGrouping && !isOverLimit
+    const isTruncated = !!groupBy && totalCount > GROUP_ROW_LIMIT
 
     useEffect(() => {
-        if (isOverLimit) {
+        if (isTruncated) {
             toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
         }
-    }, [isOverLimit, totalCount])
+    }, [isTruncated, totalCount])
 
     const sheet = useDocumentSheetRoute("inventory.inventorydocument")
 
@@ -57,73 +60,43 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
         }
     }, [annulDocument, refetch])
 
-    const actionsCtx: InventoryDocumentActionsCtx = useMemo(() => ({
+    const actionsCtx: InventoryDocumentActionsCtx = React.useMemo(() => ({
         onViewDetail: sheet.toggle,
         onPrint: (doc) => sheet.toggle(doc.id),
         onAnnul: handleAnnul,
     }), [sheet, handleAnnul])
 
-    const columns = useMemo<ColumnDef<InventoryDocument>[]>(() => {
-        return [
-            ...inventoryDocumentFields.toColumns({ exclude: documentTypeFilter ? ['documentType'] : [] }),
-            documentActions.auto(actionsCtx),
-        ]
-    }, [documentTypeFilter, actionsCtx])
+    const collection = useEntityCollection(
+        inventoryDocumentEntity,
+        { rows: documents, rowCount: totalCount, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
+        { pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState }, groupBy },
+    )
+
+    const table = documentTypeFilter ? inventoryDocumentViews.table.without("documentType") : inventoryDocumentViews.table
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    entityLabel="inventory.inventorydocument"
-                    columns={columns}
-                    data={documents}
-                    isLoading={isLoading}
-                    variant="embedded"
-                    manualPagination={!effectiveGrouping}
-                    pageCount={effectiveGrouping ? 1 : page ? Math.ceil(page.count / page.pageSize) : 0}
-                    rowCount={totalCount}
-                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 200 } : pageState}
-                    onPaginationChange={effectiveGrouping ? undefined : setPageState}
-                    unifiedSearch={<UnifiedSearchBar
-                        config={documentUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar documentos..."
-                    />}
-                    unifiedSearchConfig={documentUnifiedSearchDef}
-                    currentGroupBy={effectiveGrouping ? search.groupBy : null}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    createAction={createAction}
-                    isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "inventory",
-                        title: "No se encontraron documentos",
-                        description: "Los documentos de inventario registran y respaldan todas las transacciones físicas.",
-                    }}
-                    cardSkeleton={{ showFooter: false }}
-                    renderCard={(doc: InventoryDocument) => (
-                            <AutoEntityCard
-                                key={doc.id}
-                                data={doc}
-                                fields={inventoryDocumentFields}
-
-                                entityLabel="inventory.inventorydocument"
-
-                                actions={documentActions.render(doc, actionsCtx)}
-                                defaultAction={() => sheet.toggle(doc.id)}
-                            />
-                    )}
+            <Collection.Root
+                collection={collection}
+                selection="panel"
+                selectedId={sheet.selectedId ?? null}
+                onOpen={(doc) => sheet.toggle(doc.id)}
+                view={view}
+                onViewChange={onViewChange}
+                actions={documentActions.forCollection(actionsCtx)}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar config={documentUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar documentos..." />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={table}
+                    card={inventoryDocumentViews.card}
+                    emptyTitle="No se encontraron documentos"
+                    emptyDescription="Los documentos de inventario registran y respaldan todas las transacciones físicas."
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
                 />
-            </div>
+            </Collection.Root>
         </div>
     )
 }

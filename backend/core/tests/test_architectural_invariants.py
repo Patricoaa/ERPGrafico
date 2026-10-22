@@ -26,8 +26,6 @@ from django.conf import settings
 DRAWER_ENTITIES: set[str] = {
     "contacts.partnertransaction",  # tab en el perfil de socio
     "contacts.profitdistributionresolution",  # tab en /finances/partners/distributions
-    "purchasing.purchasereturn",  # drawer lanzado desde /purchasing/orders
-    "purchasing.purchasereceipt",  # drawer lanzado desde /purchasing/orders
     "treasury.bankloan",  # tab dentro del hub /treasury/bank-center/[bankId]
     "treasury.creditcardstatement",  # tab del hub /treasury/bank-center/[bankId]
     "treasury.cardpurchasegroup",  # tab del hub /treasury/bank-center/[bankId]
@@ -45,7 +43,10 @@ DRAWER_DETAIL_ENTITIES: set[str] = {
     "treasury.treasuryaccount",  # lista /treasury/operaciones/accounts; detalle en drawer
     "hr.absence",  # lista /hr/absences; detalle en drawer
     "hr.salaryadvance",  # lista /hr/advances; detalle en drawer
-    "sales.saledelivery",  # lista /sales/orders/deliveries; detalle en drawer
+    "sales.saledelivery",  # lista /sales/dtes/deliveries; detalle en drawer
+    "sales.salereturn",  # lista /sales/dtes/returns; detalle en drawer
+    "purchasing.purchasereceipt",  # lista /purchasing/dtes/receipts; detalle en drawer (ADR-0090)
+    "purchasing.purchasereturn",  # lista /purchasing/dtes/returns; detalle en drawer (ADR-0090)
     "inventory.inventorydocument",  # lista /inventory/operations/documents; detalle en drawer
 }
 

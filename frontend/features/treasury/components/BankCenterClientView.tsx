@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Landmark } from "lucide-react"
-import { DataCell, DataTableView, AutoEntityCard, EntityCard } from '@/components/shared'
+import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { bankActions, type BankActionsCtx } from './bankActions'
 import { ActivitySidebar } from "@/features/audit"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -11,17 +11,13 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Form, FormField } from "@/components/ui/form"
-import {
-    CancelButton, LabeledInput,
-    BaseModal, FormFooter, FormSplitLayout, ActionSlideButton, ActionConfirmModal,
-    UnifiedSearchBar, useUnifiedSearch
-} from "@/components/shared"
+import { CancelButton, LabeledInput, BaseModal, FormFooter, FormSplitLayout, SubmitButton, ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { bankUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { useBanks } from "@/features/treasury/hooks/useMasterData"
 import { useAllBanksOverview } from "@/features/treasury/hooks/useAllBanksOverview"
 import type { Bank } from "@/features/treasury/types"
 import { BankCreationWizard } from "./BankCreationWizard"
-import { bankCenterFields } from "@/features/treasury/bankCenterFields"
+import { bankEntity, bankViews, type BankRow } from "../entity-view/bank.entity"
 
 // --- Schemas ---
 
@@ -42,7 +38,7 @@ interface BankCenterClientViewProps {
 }
 
 export function BankCenterClientView({ externalOpen, onOpenChange, createAction }: BankCenterClientViewProps) {
-    const { banks, refetch, archiveBank, restoreBank } = useBanks()
+    const { banks, isLoading, isError, refetch, archiveBank, restoreBank } = useBanks()
     const { overviews } = useAllBanksOverview()
     const search = useUnifiedSearch(bankUnifiedSearchDef)
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -78,71 +74,49 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
         onRestore: (id) => restoreConfirm.requestConfirm(id),
     }
 
-    const columns = [...bankCenterFields.toColumns()]
-
     const filteredBanks = React.useMemo(() => {
         let result = banks
         if (search.filters.is_active === 'true') result = result.filter(b => b.is_active)
         else if (search.filters.is_active === 'false') result = result.filter(b => !b.is_active)
         return search.filterFn(result)
     }, [banks, search.filters.is_active, search.filterFn, search])
+    // Bank + its overview figures, so the card metrics are typed fields (no children escape).
+    const rows = React.useMemo<BankRow[]>(
+        () => {
+            const summaries = new Map(overviews.map((o) => [o.bank.id, o.summary]))
+            return filteredBanks.map((bank) => ({ ...bank, summary: summaries.get(bank.id) ?? null }))
+        },
+        [filteredBanks, overviews],
+    )
+    const { view, onViewChange } = useCollectionViewMode("treasury.bank")
+    // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
+    const collection = useEntityCollection(
+        bankEntity,
+        { rows, isLoading, error: isError && banks.length === 0, refetch, isFiltered: search.isFiltered },
+        { defaultSort: bankViews.table.defaultSort },
+    )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <DataTableView
-                entityLabel="treasury.bank"
-                columns={columns}
-                data={filteredBanks}
-                variant="embedded"
-                unifiedSearch={<UnifiedSearchBar
-                    config={bankUnifiedSearchDef}
-                    chips={search.chips}
-                    isFiltered={search.isFiltered}
-                    inputValue={search.inputValue}
-                    onInputChange={search.setInputValue}
-                    onApply={search.applyFilter}
-                    onRemove={search.removeFilter}
-                    onClearAll={search.clearAll}
-                    groupBy={search.groupBy}
-                    onGroupBySelect={search.setGroupBy}
-                    paramValues={search.paramValues}
-                    placeholder="Buscar banco..."
-                />}
-                unifiedSearchConfig={bankUnifiedSearchDef}
-                currentGroupBy={search.groupBy}
-                showReset={search.isFiltered}
-                onReset={search.clearAll}
-                createAction={createAction}
-                emptyState={{
-                    context: "treasury",
-                    title: banks.length === 0 ? "Aún no hay bancos" : "Sin resultados",
-                    description: banks.length === 0 ? "Crea una entidad bancaria para registrar sus cuentas, cheques y préstamos." : "Ningún banco coincide con los filtros aplicados.",
-                }}
-                renderCard={(bank: Bank) => {
-                    const overview = overviews.find(o => o.bank.id === bank.id)
-                    return (
-                        <AutoEntityCard
-                            key={bank.id}
-                            data={bank}
-                            fields={bankCenterFields}
-
-                            entityLabel="treasury.bank"
-                            onClick={() => router.push(`/treasury/bank-center/${bank.id}/overview`)}
-                            icon={Landmark}
-                            actions={bankActions.render(bank, bankActionsCtx)}
-                        >
-                            {/* Escape hatch: metrics from external DTO (overview.summary), not Bank entity fields */}
-                            <EntityCard.Metrics metrics={[
-                                { label: 'Cuentas', value: <DataCell.Number value={overview?.summary.total_accounts ?? 0} /> },
-                                { label: 'Tarjetas', value: <DataCell.Number value={overview?.summary.card_count ?? 0} /> },
-                                { label: 'Cheques', value: <DataCell.Number value={overview?.summary.issued_checks ?? 0} /> },
-                                { label: 'Préstamos', value: <DataCell.Number value={overview?.summary.active_loan_count ?? 0} /> },
-                            ]} />
-                        </AutoEntityCard>
-                    )
-                    }}
-                    cardSkeleton={{ showBody: true }}
+            <Collection.Root
+                collection={collection}
+                view={view}
+                onViewChange={onViewChange}
+                onOpen={(bank) => router.push(`/treasury/bank-center/${bank.id}/overview`)}
+                actions={bankActions.forCollection(bankActionsCtx)}
+            >
+                <Collection.Toolbar action={createAction}>
+                    <UnifiedSearchBar config={bankUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar banco..." />
+                </Collection.Toolbar>
+                <Collection.View
+                    table={bankViews.table}
+                    card={bankViews.card}
+                    emptyTitle="Aún no hay bancos"
+                    emptyDescription="Crea una entidad bancaria para registrar sus cuentas, cheques y préstamos."
+                    emptyAction={createAction}
+                    onResetFilters={search.clearAll}
                 />
+            </Collection.Root>
 
             <BankCreationWizard
                 open={wizardOpen || (!!externalOpen && !selectedBank)}
@@ -258,7 +232,7 @@ function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton
+                            <SubmitButton
                                 type="submit"
                                 form="bank-form"
                                 loading={isSaving}
@@ -266,7 +240,7 @@ function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
                                 onClick={form.handleSubmit(onSubmit)}
                             >
                                 {bank ? "Guardar Cambios" : "Crear Banco"}
-                            </ActionSlideButton>
+                            </SubmitButton>
                         </>
                     }
                 />

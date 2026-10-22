@@ -9,6 +9,7 @@ from django.utils.dateparse import parse_date
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, JournalEntry, JournalItem
 from billing.models import Invoice
+from core.edit_policy import assert_editable, changed_fields
 from workflow.services import WorkflowService
 
 from .models import F29Declaration, F29Payment, TaxPeriod
@@ -184,7 +185,7 @@ class F29CalculationService:
                     {
                         "id": inv.id,
                         "display_id": inv.display_id,
-                        "total": float(inv.total_amount),
+                        "total": float(inv.total),
                         "date": inv.date.isoformat(),
                         "type": "sale" if inv.sale_order_id else "purchase",
                     }
@@ -267,7 +268,10 @@ class F29CalculationService:
             except F29Declaration.DoesNotExist:
                 pass
 
-        # Get or create declaration
+        existing = F29Declaration.objects.filter(tax_period=tax_period).first()
+        if existing is not None:
+            assert_editable(existing, changed_fields(existing, declaration_data))
+
         declaration, _ = F29Declaration.objects.update_or_create(
             tax_period=tax_period, defaults=declaration_data
         )
@@ -639,7 +643,7 @@ class TaxPeriodService:
 
         # Validate payment if amount due
         if declaration.total_amount_due > 0:
-            total_paid = sum(p.amount for p in declaration.payments.all())
+            total_paid = sum(p.amount for p in declaration.payments.all() if p.status == F29Payment.Status.POSTED)
             if total_paid < declaration.total_amount_due:
                 pending = declaration.total_amount_due - total_paid
                 raise ValidationError(
@@ -760,7 +764,7 @@ class TaxPeriodService:
 
         # Check if taxes are paid (if owed)
         if declaration and declaration.vat_to_pay > 0:
-            total_paid = sum(p.amount for p in declaration.payments.all())
+            total_paid = sum(p.amount for p in declaration.payments.all() if p.status == F29Payment.Status.POSTED)
             checklist["has_payment"] = total_paid >= declaration.vat_to_pay
         else:
             checklist["has_payment"] = True  # No payment needed
@@ -772,6 +776,27 @@ class F29PaymentService:
     """
     Service for managing F29 tax payments.
     """
+
+    @staticmethod
+    @transaction.atomic
+    def annul_payment(payment, *, reason: str, user=None):
+        """Anula un pago F29: reversa su movimiento de tesorería y lo deja CANCELLED."""
+        from core.services.document import lock_document
+        from treasury.services import TreasuryService
+
+        lock_document(payment)
+        if payment.status == F29Payment.Status.CANCELLED:
+            return payment
+        movement = getattr(payment.journal_entry, "treasury_movement", None)
+        if movement is None:
+            raise ValidationError(
+                "El pago no tiene un movimiento de tesorería asociado "
+                "(registrado antes de la corrección de asientos F29); anúlelo manualmente."
+            )
+        TreasuryService.annul_movement(movement, user=user, reason=reason, from_owner=True)
+        payment.status = F29Payment.Status.CANCELLED
+        payment.save(update_fields=["status"])
+        return payment
 
     @staticmethod
     @transaction.atomic
@@ -832,53 +857,19 @@ class F29PaymentService:
             notes=payment_data.get("notes", ""),
         )
 
-        # Create treasury movement (outflow)
-        TreasuryService.create_movement(
+        period_label = f"{declaration.tax_period.get_month_display()} {declaration.tax_period.year}"
+        movement = TreasuryService.create_movement(
             from_account=treasury_account,
             movement_type=TreasuryMovement.Type.OUTBOUND,
-            amount=payment_data["amount"],
+            amount=payment.amount,
             date=payment.payment_date,
-            notes=f"Pago F29 {declaration.tax_period}",
-            reference=payment_data.get("reference", ""),
+            notes=f"Pago F29 {period_label}",
+            reference=payment.reference or f"F29 {period_label}",
+            counterpart_account=settings.vat_payable_account,
             created_by=user,
         )
-
-        period_label = f"{declaration.tax_period.get_month_display()} {declaration.tax_period.year}"
-        doc_ref = payment.reference or "F29"
-
-        journal_entry = JournalEntry.objects.create(
-            date=payment.payment_date,
-            description=GlosaBuilder.build(
-                GlosaBuilder.PAGO_F29, doc_ref, amount=payment.amount, extra=[period_label],
-            ),
-            reference=f"Pago-{payment.reference}",
-        )
-
-        # Debit: IVA por Pagar (reduce liability)
-        JournalItem.objects.create(
-            entry=journal_entry,
-            account=settings.vat_payable_account,
-            debit=payment.amount,
-            credit=Decimal("0"),
-            label=GlosaBuilder.item(Roles.IVA_PAGAR, period_label, doc_ref),
-        )
-
-        # Credit: Treasury Account (cash out)
-        treasury_account_obj = payment.treasury_account.account
-        JournalItem.objects.create(
-            entry=journal_entry,
-            account=treasury_account_obj,
-            debit=Decimal("0"),
-            credit=payment.amount,
-            label=GlosaBuilder.item(Roles.EFECTIVO, payment.treasury_account.name, doc_ref),
-        )
-
-        # Post the entry
-        journal_entry.status = JournalEntry.State.POSTED
-        journal_entry.save()
-
-        payment.journal_entry = journal_entry
-        payment.save()
+        payment.journal_entry = movement.journal_entry
+        payment.save(update_fields=["journal_entry"])
 
         # Auto-complete recurrent task if exists
         # Note: We use the period of the declaration

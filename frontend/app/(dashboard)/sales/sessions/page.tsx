@@ -1,15 +1,15 @@
-import { type Metadata } from "next"
+import type { Metadata } from "next"
 import { POSSessionsClientView } from "@/features/sales"
+import { getSalesPosSubTab } from "@/features/sales/navigation"
+import { buildMetadataFromTab } from "@/lib/navigation-helpers"
 
-export const metadata: Metadata = {
-    title: "Historial de Sesiones | ERPGrafico",
-    description: "Registro cronológico de aperturas y cierres de terminales POS.",
-}
+const tabConfig = getSalesPosSubTab("sessions")
+export const metadata: Metadata = tabConfig ? buildMetadataFromTab(tabConfig) : { title: "Sesiones POS | ERPGrafico" }
 
 export default function POSSessionsPage() {
-    return (
-        <div className="h-full flex flex-col">
-            <POSSessionsClientView hideHeader />
-        </div>
-    )
+  return (
+    <div className="h-full flex flex-col">
+      <POSSessionsClientView hideHeader />
+    </div>
+  )
 }

@@ -8,7 +8,7 @@ export function useUsers(filters?: FilterState & { page?: number; page_size?: nu
     const { page = 1, page_size = 50, ...restFilters } = filters || {}
     const activeFilters = { page, page_size, ...restFilters }
 
-    const { data: pageData, isLoading, refetch } = useQuery({
+    const { data: pageData, isLoading, isFetching, isError, refetch } = useQuery({
         queryKey: [...USER_KEYS.lists(), activeFilters],
         queryFn: async () => {
             return await usersApi.getUsers(activeFilters)
@@ -20,6 +20,9 @@ export function useUsers(filters?: FilterState & { page?: number; page_size?: nu
         page: pageData,
         users: pageData?.results ?? [],
         isLoading,
+        isRefetching: isFetching && !isLoading,
+        /** The list failed to load (the error itself is reported by the API layer). */
+        isError,
         refetch,
     }
 }

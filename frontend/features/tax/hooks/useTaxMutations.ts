@@ -99,6 +99,24 @@ export function useCreateTaxPayment() {
   return { createTaxPayment: createTaxPaymentMutation.mutateAsync, isCreatingTaxPayment: createTaxPaymentMutation.isPending }
 }
 
+export function useAnnulTaxPayment() {
+  const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
+
+  const annulMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: number, reason: string }) => taxApi.annulPayment(id, reason),
+    onSuccess: () => {
+      markLocalMutation()
+      invalidateCrossFeature(queryClient, [TAX_KEYS.periods.all(), TAX_KEYS.declarations.all()])
+    },
+    onError: (error: Error) => {
+      showApiError(error, 'Error al anular pago')
+    }
+  })
+
+  return { annulTaxPayment: annulMutation.mutateAsync, isAnnullingTaxPayment: annulMutation.isPending }
+}
+
 export function useCheckPeriodClosed() {
   const checkPeriodClosedMutation = useMutation({
     mutationFn: (date: string) => taxApi.checkPeriodClosed(date),

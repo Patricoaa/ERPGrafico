@@ -75,7 +75,7 @@ interface Line {
 }
 
 const lineEntity = defineEntity<Line>()((f) => ({
-    label: "test.line",
+    title: "Prueba",
     fields: {
         product: f.text("product_name", { label: "Producto" }),
         net: f.money("unit_price_net", { label: "Neto" }),
@@ -104,7 +104,7 @@ describe("field resolution", () => {
 
     it("groups footer totals by unit instead of adding mixed units", () => {
         const mixed = defineEntity<{ id: number; qty: number; uom: string }>()((f) => ({
-            label: "test.mixed",
+            title: "Prueba",
             fields: { qty: f.quantity("qty", { label: "Cantidad", uom: (r) => r.uom }) },
         }))
         const total = formatSum(mixed.field("qty"), [

@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
 from accounting.models import JournalEntry
+from core.edit_policy import EditPolicy
 from core.models import User
 from core.storages import PrivateMediaStorage
 from core.utils import generic_upload_path
@@ -333,6 +334,14 @@ class F29Declaration(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     history = HistoricalRecords()
 
+    # ADR-0091: registered (has journal entry) → only notes/document.
+    edit_policy = EditPolicy(
+        is_locked=lambda d: d.journal_entry_id is not None,
+        mutable_when_locked=frozenset({"notes", "document"}),
+        deletable=True,
+        locked_message="La declaración F29 ya está registrada y no se puede modificar.",
+    )
+
     class Meta:
         verbose_name = _("Declaración F29")
         verbose_name_plural = _("Declaraciones F29")
@@ -456,10 +465,24 @@ class F29Payment(models.Model):
         related_name="f29_payment",
         verbose_name=_("Asiento Contable"),
     )
+
+    class Status(models.TextChoices):
+        POSTED = "POSTED", _("Contabilizado")
+        CANCELLED = "CANCELLED", _("Anulado")
+
+    status = models.CharField(
+        _("Estado"), max_length=20, choices=Status.choices, default=Status.POSTED
+    )
     notes = models.TextField(_("Observaciones"), blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    edit_policy = EditPolicy(
+        is_locked=lambda p: p.journal_entry_id is not None,
+        deletable=True,
+        locked_message="El pago F29 ya está contabilizado y no se puede modificar.",
+    )
 
     class Meta:
         verbose_name = _("Pago F29")
