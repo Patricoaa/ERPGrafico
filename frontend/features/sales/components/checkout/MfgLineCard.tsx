@@ -1,11 +1,10 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { Settings2, Factory, AlertCircle, CheckCircle2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Chip } from "@/components/shared"
+import { Settings2 } from "lucide-react"
+import { Card } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/money"
-import { resolveMediaUrl } from "@/lib/media-url"
+import { selectableCardClass } from "@/components/shared"
 import type { ManufacturableLine } from "../../utils/mfgLine"
 
 interface MfgLineCardProps {
@@ -15,61 +14,54 @@ interface MfgLineCardProps {
 
 export function MfgLineCard({ line, onConfigure }: MfgLineCardProps) {
     const hasConfig = !!line.manufacturing_data
-    const productObj = typeof line.product === 'object' && line.product !== null ? line.product : undefined
-    resolveMediaUrl(productObj?.image_thumbnail)
+    const code = line.internal_code ?? line.code ?? ""
+    const name = line.product_name ?? line.description
+    const qty = line.qty ?? line.quantity ?? 0
+    const total = line.total_gross ?? 0
+
+    const ariaLabel = hasConfig
+        ? `Editar fabricación de ${name}. Configurado.`
+        : `Configurar fabricación de ${name}. Pendiente de configuración.`
+    const title = hasConfig ? "Editar configuración" : "Configurar fabricación"
 
     return (
-        <div className={cn(
-            "flex items-stretch rounded-lg border border-border bg-card transition-all",
-            "hover:border-primary/40 hover:shadow-md"
-        )}>
-            <div className="flex-1 p-3 min-w-0">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="truncate font-mono text-3xs text-muted-foreground">
-                        {line.internal_code ?? line.code ?? ""}
-                    </span>
-                    <Chip
-                        size="xs"
-                        intent={hasConfig ? "success" : "warning"}
-                        icon={hasConfig ? CheckCircle2 : AlertCircle}
-                        className="shrink-0"
-                    >
-                        {hasConfig ? "Configurado" : "Pendiente"}
-                    </Chip>
-                </div>
+        <Card
+            role="button"
+            tabIndex={0}
+            aria-label={ariaLabel}
+            title={title}
+            className={cn(
+                selectableCardClass({ selected: hasConfig }),
+                "flex-row items-stretch rounded-sm gap-0 p-0"
+            )}
+            onClick={onConfigure}
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault()
+                    onConfigure()
+                }
+            }}
+        >
+            <div className="flex min-w-0 flex-1 flex-col gap-1 px-3 pb-3 pt-2.5">
+                <span className="truncate font-mono text-3xs text-muted-foreground">{code}</span>
+                <h3 className="line-clamp-2 text-left text-sm font-semibold leading-snug">{name}</h3>
 
-                <h3 className="text-sm font-semibold leading-snug truncate mb-1">
-                    {line.product_name ?? line.description}
-                </h3>
-
-                <div className="flex items-center gap-1.5 text-2xs text-muted-foreground mb-2">
-                    <Factory className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                    <span className="truncate">
-                        Fabricación avanzada · {line.qty ?? line.quantity ?? 0} und
-                    </span>
-                </div>
-
-                <div className="flex items-end justify-between gap-2 pt-2">
-                    <span className="text-sm font-semibold tabular-nums">
-                        {formatCurrency(line.total_gross ?? 0)}
-                    </span>
+                <div className="mt-auto pt-2 flex flex-col gap-0.5">
+                    <p className="text-3xs text-muted-foreground">{qty} und</p>
+                    <p className="font-semibold tabular-nums text-lg">{formatCurrency(total)}</p>
                 </div>
             </div>
 
-            <div className="relative w-16 shrink-0 border-l border-border flex items-center justify-center bg-muted/30">
-                <Button
-                    variant={hasConfig ? "ghost" : "outline"}
-                    size="icon"
-                    className={cn(
-                        "h-10 w-10 rounded-md",
-                        hasConfig ? "text-muted-foreground hover:text-foreground" : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-card"
-                    )}
-                    onClick={onConfigure}
-                    aria-label={`Configurar fabricación de ${line.product_name ?? line.description}`}
-                >
-                    <Settings2 className="h-4 w-4" aria-hidden />
-                </Button>
+            <div
+                className={cn(
+                    "flex w-14 shrink-0 items-center justify-center border-l transition-colors",
+                    hasConfig
+                        ? "border-success/20 bg-success/10 text-success"
+                        : "border-warning/20 bg-warning/10 text-warning"
+                )}
+            >
+                <Settings2 className="h-5 w-5" aria-hidden />
             </div>
-        </div>
+        </Card>
     )
 }
