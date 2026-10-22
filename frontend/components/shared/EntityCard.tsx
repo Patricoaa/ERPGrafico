@@ -99,6 +99,39 @@ function EntityCardRoot({
     )
 }
 
+// ─── Media (top strip) ────────────────────────────────────────────────────────
+
+interface EntityCardMediaProps {
+    icon?: LucideIcon
+    /** Image URL — takes precedence over `icon`. */
+    imageSrc?: string
+    /** Custom node (e.g. avatar) — takes precedence over everything. */
+    avatar?: React.ReactNode
+    /** Tone of the strip and its icon (e.g. "text-success bg-success/10"). */
+    iconClassName?: string
+    /** Chip over the top-left corner. */
+    badge?: string
+    className?: string
+}
+
+/** Full-bleed strip above the header (ProductCard anatomy). Bleeds over the card's padding. */
+function EntityCardMedia({ icon: Icon, imageSrc, avatar, iconClassName, badge, className }: EntityCardMediaProps) {
+    return (
+        <div className={cn("relative -mx-3 -mt-3 mb-1 flex h-16 items-center justify-center overflow-hidden rounded-t-md", iconClassName ?? "bg-muted text-muted-foreground", className)}>
+            {avatar ?? (imageSrc ? (
+                <Image src={imageSrc} alt="" fill unoptimized={imageSrc.startsWith("data:")} className="object-cover" />
+            ) : Icon ? (
+                <Icon className="size-6" aria-hidden />
+            ) : null)}
+            {badge && (
+                <Badge intent="neutral" size="xs" className="absolute left-2 top-2 border border-border bg-background text-3xs font-normal">
+                    {badge}
+                </Badge>
+            )}
+        </div>
+    )
+}
+
 // ─── Header ───────────────────────────────────────────────────────────────────
 
 interface EntityCardHeaderProps {
@@ -692,6 +725,7 @@ function EntityCardMeta({ items, className }: EntityCardMetaProps) {
 // ─── Composite export ─────────────────────────────────────────────────────────
 
 export const EntityCard = Object.assign(EntityCardRoot, {
+    Media: EntityCardMedia,
     Header: EntityCardHeader,
     Meta: EntityCardMeta,
     Body: EntityCardBody,
@@ -709,6 +743,7 @@ export const EntityCard = Object.assign(EntityCardRoot, {
 
 export type {
     EntityCardRootProps,
+    EntityCardMediaProps,
     EntityCardHeaderProps,
     EntityCardMetaProps,
     EntityCardMetaItem,
