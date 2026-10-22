@@ -10,7 +10,7 @@ import type { LucideIcon } from "lucide-react"
 import { ArrowRight, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { SelectionRing } from "@/components/shared/SelectionRing"
+import { SelectionRing } from "@/components/shared"
 
 // ─── Base props ───────────────────────────────────────────────────────────────
 
@@ -117,7 +117,7 @@ interface EntityCardMediaProps {
 /** Full-bleed strip above the header (ProductCard anatomy). Bleeds over the card's padding. */
 function EntityCardMedia({ icon: Icon, imageSrc, avatar, iconClassName, badge, className }: EntityCardMediaProps) {
     return (
-        <div className={cn("relative -mx-3 -mt-3 mb-1 flex h-16 items-center justify-center overflow-hidden rounded-t-md", iconClassName ?? "bg-muted text-muted-foreground", className)}>
+        <div className={cn("relative -mx-3 -mt-3 mb-1 flex h-16 items-center justify-center overflow-hidden rounded-t-sm", iconClassName ?? "bg-muted text-muted-foreground", className)}>
             {avatar ?? (imageSrc ? (
                 <Image src={imageSrc} alt="" fill unoptimized={imageSrc.startsWith("data:")} className="object-cover" />
             ) : Icon ? (
