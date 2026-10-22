@@ -11,6 +11,7 @@ import { ArrowRight, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SelectionRing } from "@/components/shared"
+import { CardSurface } from "@/components/shared"
 
 // ─── Base props ───────────────────────────────────────────────────────────────
 
@@ -64,37 +65,22 @@ function EntityCardRoot({
 }: EntityCardRootProps) {
     return (
         <EntityCardSelectionContext.Provider value={{ selectable, checked, onCheckedChange, isAnySelected, selectionLabel }}>
-            <div
+            <CardSurface
+                layout="stacked"
+                selected={isSelected}
+                unavailable={false}
                 role={onClick || defaultAction ? "button" : undefined}
-                tabIndex={onClick || defaultAction ? 0 : undefined}
-                onClick={(e) => {
-                    if (defaultAction) {
-                        defaultAction(e)
-                    } else {
-                        onClick?.()
-                    }
-                }}
-                onKeyDown={(e) => {
-                    if ((onClick || defaultAction) && (e.key === "Enter" || e.key === " ")) {
-                        e.preventDefault()
-                        if (defaultAction) {
-                            defaultAction(e as unknown as React.MouseEvent)
-                        } else {
-                            onClick?.()
-                        }
-                    }
-                }}
+                onClick={onClick}
                 className={cn(
-                    "card-flat border-border group flex flex-col relative transition-all duration-300",
+                    "group flex flex-col relative transition-all duration-300",
                     variant === "compact" ? "gap-1.5 p-3" : "gap-3 p-4",
-                    isSelected && "accent-visible",
                     checked && "border-primary/40 bg-primary/5 shadow-sm",
                     (onClick || defaultAction) && "cursor-pointer select-none",
                     className
                 )}
             >
                 {children}
-            </div>
+            </CardSurface>
         </EntityCardSelectionContext.Provider>
     )
 }
@@ -282,7 +268,7 @@ function EntityCardBody({ children, className, actions }: EntityCardBodyProps) {
     )
 }
 
-// ─── Field ────────────────────────────────────────────────────────────────────
+// ─── Field ─────────────────────────────────────────────────────────────────────
 
 interface EntityCardFieldProps {
     label: string
@@ -307,7 +293,7 @@ function EntityCardField({ label, value, full, className, icon: Icon }: EntityCa
     )
 }
 
-// ─── Footer ───────────────────────────────────────────────────────────────────
+// ─── Footer ────────────────────────────────────────────────────────────────────
 
 interface EntityCardFooterProps {
     children: React.ReactNode
@@ -327,7 +313,7 @@ function EntityCardFooter({ children, className }: EntityCardFooterProps) {
     )
 }
 
-// ─── Status Badge ─────────────────────────────────────────────────────────────
+// ─── Status Badge ──────────────────────────────────────────────────────────────
 
 interface EntityCardBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
     label: string
@@ -349,7 +335,7 @@ function EntityCardBadge({ label, dot = false, intent = "neutral", className, ..
     )
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
+// ─── Skeleton ──────────────────────────────────────────────────────────────────
 
 interface EntityCardSkeletonProps {
     className?: string
@@ -420,7 +406,7 @@ function EntityCardSkeleton({
                         <Skeleton className="h-3 w-32" />
                         <Skeleton className="h-3 w-40" />
                     </div>
-                    <div className="flex flex-col items-end gap-1">
+                    <div className="flex items-end gap-1">
                         <Skeleton className="h-2 w-10" />
                         <Skeleton className="h-4 w-16" />
                     </div>
@@ -436,7 +422,7 @@ function EntityCardSkeleton({
     )
 }
 
-// ─── Workflow Body ────────────────────────────────────────────────────────────
+// ─── Workflow Body ─────────────────────────────────────────────────────────────
 
 interface EntityCardWorkflowLine {
     quantity: number | string
@@ -495,7 +481,7 @@ function EntityCardWorkflowBody({ lines, total, pending, deliveryDate, dateLabel
     )
 }
 
-// ─── List Item ────────────────────────────────────────────────────────────────
+// ─── List Item ──────────────────────────────────────────────────────────────────
 
 interface EntityCardListItemProps {
     /** Icon rendered without background (left side) */
@@ -547,7 +533,7 @@ function EntityCardListItem({ icon: Icon, iconClassName, label, sublabel, value,
     )
 }
 
-// ─── List Item Skeleton ───────────────────────────────────────────────────────
+// ─── List Item Skeleton ────────────────────────────────────────────────────────
 
 interface EntityCardListItemSkeletonProps {
     count?: number
@@ -571,7 +557,7 @@ function EntityCardListItemSkeleton({ count = 3, className }: EntityCardListItem
     )
 }
 
-// ─── Metrics ────────────────────────────────────────────────────────────────
+// ─── Metrics ───────────────────────────────────────────────────────────────────
 
 type MetricVariant = 'default' | 'primary' | 'success' | 'warning'
 
@@ -614,7 +600,7 @@ function EntityCardMetrics({ metrics, defaultVariant = 'default', className }: E
                         {item.icon && (
                             <item.icon className={cn("h-3 w-3 mb-0.5", METRIC_VARIANT_CLASSES[variant])} />
                         )}
-            <span className="text-4xs font-bold uppercase tracking-looser text-muted-foreground/60">
+                        <span className="text-4xs font-bold uppercase tracking-looser text-muted-foreground/60">
                             {item.label}
                         </span>
                         <span className={cn("text-xs font-sans font-medium tabular-nums tracking-tight", METRIC_VARIANT_CLASSES[variant])}>
@@ -627,7 +613,7 @@ function EntityCardMetrics({ metrics, defaultVariant = 'default', className }: E
     )
 }
 
-// ─── Dashboard ──────────────────────────────────────────────────────────────
+// ─── Dashboard ────────────────────────────────────────────────────────────────
 
 interface EntityCardDashboardProps {
     /** Rich custom content — typically a grid of sub-cards or complex widgets */
@@ -652,7 +638,7 @@ function EntityCardDashboard({ children, title, className }: EntityCardDashboard
     )
 }
 
-// ─── Hub Trigger ──────────────────────────────────────────────────────────────
+// ─── Hub Trigger ───────────────────────────────────────────────────────────────
 
 interface EntityCardHubTriggerProps {
     /** Whether the hub is currently open for this card */
@@ -694,7 +680,7 @@ function EntityCardHubTrigger({ isSelected, onToggle, className }: EntityCardHub
     )
 }
 
-// ─── Meta ─────────────────────────────────────────────────────────────────────
+// ─── Meta ──────────────────────────────────────────────────────────────────────
 
 interface EntityCardMetaItem {
     key: string
@@ -722,7 +708,7 @@ function EntityCardMeta({ items, className }: EntityCardMetaProps) {
     )
 }
 
-// ─── Composite export ─────────────────────────────────────────────────────────
+// ─── Composite export ──────────────────────────────────────────────────────────
 
 export const EntityCard = Object.assign(EntityCardRoot, {
     Media: EntityCardMedia,
