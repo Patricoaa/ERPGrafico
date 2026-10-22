@@ -10,7 +10,8 @@ export type AvailabilityTone = 'ok' | 'warning' | 'none' | 'neutral'
 export type AvailabilityIcon = 'stock' | 'service' | 'manufacture' | 'blocked'
 /** add = `+`, configure = `›` (opens variants / options), unavailable = `–` */
 export type CardAction = 'add' | 'configure' | 'unavailable'
-export type CardPriceKind = 'fixed' | 'from' | 'pending'
+/** dynamic = the amount is resolved when the product is added, so the card shows "Precio dinámico" instead of a number */
+export type CardPriceKind = 'fixed' | 'from' | 'dynamic'
 
 export interface CardAvailability {
     text: string
@@ -20,7 +21,7 @@ export interface CardAvailability {
 
 export interface CardPrice {
     kind: CardPriceKind
-    /** Gross (c/IVA) amount; null while the price is only known once the product is added. */
+    /** Gross (c/IVA) amount; null for dynamic pricing. */
     gross: number | null
     /** Lowercase unit shown after the amount ("pliego"). */
     unit: string | null
@@ -31,7 +32,8 @@ export interface ProductCardModel {
     availability: CardAvailability | null
     action: CardAction
     price: CardPrice
-    isDynamicPricing: boolean
+    /** The card cannot be picked: disabled by the caller, or a template with no active variants. */
+    isUnavailable: boolean
     /** Bottom-left image chip for templates: "4 gramajes" */
     variantChip: string | null
 }
@@ -41,6 +43,9 @@ export interface ProductCardContext {
     limit?: number
     isDisabled: boolean
 }
+
+/** Up to two decimals, no trailing zeros: 12,5 · 3.600. */
+const QUANTITY_FORMAT = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 2 })
 
 const VOWEL_END = /[aeiouáéíóú]$/i
 
@@ -63,11 +68,23 @@ function unitOf(product: BaseProduct): string | null {
     return product.uom_name ? product.uom_name.toLowerCase() : null
 }
 
+/**
+ * "pliego" → "pliegos" for quantities ≠ 1. Only the leading word of a UoM name is pluralised and a
+ * parenthetical suffix is kept as is ("resma (500 pl)" → "resmas (500 pl)"); abbreviations ("kg", "m2") stay.
+ */
+function unitForQuantity(unit: string, qty: number): string {
+    if (qty === 1) return unit
+    const [head, ...rest] = unit.split(' (')
+    if (head.length <= 3 || /\d/.test(head)) return unit
+    return [pluralizeEs(head), ...rest].join(' (')
+}
+
 function stockAvailability(product: BaseProduct, ctx: ProductCardContext): CardAvailability {
     const qty = ctx.limit ?? product.qty_available ?? 0
     if (qty <= 0) return { text: 'Sin existencias', tone: 'none', icon: 'blocked' }
     const unit = unitOf(product)
-    return { text: `${formatQuantity(qty, 2).replace(/,00$/, '')}${unit ? ` ${unit}` : ''} disponibles`, tone: 'ok', icon: 'stock' }
+    const amount = QUANTITY_FORMAT.format(qty)
+    return { text: `${amount}${unit ? ` ${unitForQuantity(unit, qty)}` : ''} disponibles`, tone: 'ok', icon: 'stock' }
 }
 
 function manufacturableAvailability(product: BaseProduct, ctx: ProductCardContext): CardAvailability {
@@ -88,6 +105,7 @@ function manufacturableAvailability(product: BaseProduct, ctx: ProductCardContex
 export function getAvailability(product: BaseProduct, ctx: ProductCardContext): CardAvailability | null {
     // Templates: availability lives in the variants, not in the template itself.
     if (product.has_variants) {
+        if (product.variants_count === 0) return { text: 'Sin variantes', tone: 'none', icon: 'blocked' }
         if (product.product_type === 'SERVICE') return { text: 'Servicio · bajo demanda', tone: 'neutral', icon: 'service' }
         return { text: 'Disponibilidad por variante', tone: 'neutral', icon: 'stock' }
     }
@@ -114,20 +132,21 @@ function positiveNumber(value: string | number | null | undefined): number | nul
 
 export function getPrice(product: BaseProduct): CardPrice {
     const unit = unitOf(product)
+    if (product.is_dynamic_pricing) return { kind: 'dynamic', gross: null, unit }
+
     const fromNet = product.has_variants ? positiveNumber(product.min_variant_price) : null
     if (fromNet !== null) return { kind: 'from', gross: PricingUtils.netToGross(fromNet), unit }
 
-    const net = positiveNumber(product.sale_price)
-    if (product.is_dynamic_pricing) {
-        return net === null
-            ? { kind: 'pending', gross: null, unit }
-            : { kind: 'from', gross: PricingUtils.netToGross(net), unit }
-    }
     return { kind: 'fixed', gross: PricingUtils.netToGross(Number(product.sale_price || 0)), unit }
 }
 
+/** Templates without active variants have nothing to configure, so they behave as disabled. */
+function hasNoVariants(product: BaseProduct): boolean {
+    return Boolean(product.has_variants) && product.variants_count === 0
+}
+
 export function getAction(product: BaseProduct, ctx: ProductCardContext): CardAction {
-    if (ctx.isDisabled) return 'unavailable'
+    if (ctx.isDisabled || hasNoVariants(product)) return 'unavailable'
     return product.has_variants || product.is_dynamic_pricing ? 'configure' : 'add'
 }
 
@@ -137,7 +156,9 @@ export function getProductCardModel(product: BaseProduct, ctx: ProductCardContex
         availability: getAvailability(product, ctx),
         action: getAction(product, ctx),
         price: getPrice(product),
-        isDynamicPricing: Boolean(product.is_dynamic_pricing),
-        variantChip: product.has_variants ? variantChipLabel(product.variants_count ?? 0, product.variant_axis_label) : null,
+        isUnavailable: ctx.isDisabled || hasNoVariants(product),
+        variantChip: product.has_variants && (product.variants_count ?? 0) > 0
+            ? variantChipLabel(product.variants_count ?? 0, product.variant_axis_label)
+            : null,
     }
 }

@@ -37,7 +37,7 @@ describe('variantChipLabel', () => {
 describe('getProductCardModel · availability', () => {
     it('storable with stock', () => {
         const model = getProductCardModel(product({ product_type: 'STORABLE', qty_available: 3600 }), ctx)
-        expect(model.availability).toEqual({ text: '3.600 pliego disponibles', tone: 'ok', icon: 'stock' })
+        expect(model.availability).toEqual({ text: '3.600 pliegos disponibles', tone: 'ok', icon: 'stock' })
     })
 
     it('storable without stock', () => {
@@ -47,7 +47,18 @@ describe('getProductCardModel · availability', () => {
 
     it('POS branch limit replaces qty_available instead of adding to it', () => {
         const model = getProductCardModel(product({ product_type: 'STORABLE', qty_available: 3600 }), { ...ctx, limit: 250 })
-        expect(model.availability?.text).toBe('250 pliego disponibles')
+        expect(model.availability?.text).toBe('250 pliegos disponibles')
+    })
+
+    it('pluralises long units, keeps abbreviations and singular quantities', () => {
+        const text = (uom_name: string, qty_available: number) =>
+            getProductCardModel(product({ product_type: 'STORABLE', uom_name, qty_available }), ctx).availability?.text
+        expect(text('Millar', 2)).toBe('2 millares disponibles')
+        expect(text('Kg', 12.5)).toBe('12,5 kg disponibles')
+        expect(text('Pliego', 1)).toBe('1 pliego disponibles')
+        expect(text('Resma (500 pl)', 3)).toBe('3 resmas (500 pl) disponibles')
+        expect(text('Kilogramo (kg)', 7271)).toBe('7.271 kilogramos (kg) disponibles')
+        expect(text('Paquete (100u)', 2)).toBe('2 paquetes (100u) disponibles')
     })
 
     it('limit of zero reads as out of stock even when qty_available is positive', () => {
@@ -116,15 +127,30 @@ describe('getProductCardModel · price', () => {
         expect(price).toMatchObject({ kind: 'fixed', gross: 1190 })
     })
 
-    it('dynamic pricing with a base price reads "desde"', () => {
-        const { price, isDynamicPricing } = getProductCardModel(product({ is_dynamic_pricing: true, sale_price: '850' }), ctx)
-        expect(isDynamicPricing).toBe(true)
-        expect(price).toMatchObject({ kind: 'from', gross: 1012 })
+    it('dynamic pricing replaces the amount, even with a base price or variants', () => {
+        const { price } = getProductCardModel(product({ is_dynamic_pricing: true, sale_price: '850' }), ctx)
+        expect(price).toEqual({ kind: 'dynamic', gross: null, unit: 'pliego' })
+        const template = getProductCardModel(product({ is_dynamic_pricing: true, has_variants: true, min_variant_price: 480 }), ctx)
+        expect(template.price.kind).toBe('dynamic')
+    })
+})
+
+describe('getProductCardModel · unavailable', () => {
+    it('is unavailable when the caller disables it', () => {
+        expect(getProductCardModel(product({}), { isDisabled: true }).isUnavailable).toBe(true)
+        expect(getProductCardModel(product({}), ctx).isUnavailable).toBe(false)
     })
 
-    it('dynamic pricing without a base price is pending', () => {
-        const { price } = getProductCardModel(product({ is_dynamic_pricing: true, sale_price: '0' }), ctx)
-        expect(price).toEqual({ kind: 'pending', gross: null, unit: 'pliego' })
+    it('a template with no active variants is unavailable and says so', () => {
+        const model = getProductCardModel(product({ has_variants: true, variants_count: 0 }), ctx)
+        expect(model.isUnavailable).toBe(true)
+        expect(model.action).toBe('unavailable')
+        expect(model.availability).toMatchObject({ text: 'Sin variantes', tone: 'none' })
+        expect(model.variantChip).toBeNull()
+    })
+
+    it('an unknown variants_count is not treated as zero', () => {
+        expect(getProductCardModel(product({ has_variants: true }), ctx).isUnavailable).toBe(false)
     })
 })
 
