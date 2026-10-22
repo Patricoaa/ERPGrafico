@@ -38,8 +38,11 @@ export default function RootLayout({
               <HeaderProvider>
                 <GlobalModalProvider>
                     {children}
-                    {/* Target portal container for module sheets to avoid containing blocks inside the transitioning container */}
-                    <div id="module-sheets-portal-container" className="relative" />
+                    {/* Target portal container for module sheets to avoid containing blocks inside the transitioning container.
+                        Fixed full-viewport so embedded drawers (boundary="embedded") anchor to the viewport
+                        in layouts without #main-content (e.g., /pos). pointer-events-none lets clicks pass through
+                        to the app; SheetContent/SheetOverlay re-enable with pointer-events-auto. */}
+                    <div id="module-sheets-portal-container" className="fixed inset-0 pointer-events-none" />
                   </GlobalModalProvider>
               </HeaderProvider>
             </RealtimeProvider>

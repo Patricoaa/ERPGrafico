@@ -54,7 +54,7 @@ function SheetOverlay({
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Overlay> & { isPlain?: boolean; style?: React.CSSProperties }) {
   const classes = cn(
-    "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed top-[var(--header-height)] inset-x-0 bottom-0 z-50 bg-overlay/50 backdrop-blur-sm ease-[cubic-bezier(0.16,1,0.3,1)] duration-500",
+    "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed top-[var(--header-height)] inset-x-0 bottom-0 z-50 bg-overlay/50 backdrop-blur-sm ease-[cubic-bezier(0.16,1,0.3,1)] duration-500 pointer-events-auto",
     className
   )
 
@@ -112,7 +112,7 @@ function SheetContent({
         data-slot="sheet-content"
         data-side={side}
         className={cn(
-          "bg-background text-foreground data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col ease-[cubic-bezier(0.16,1,0.3,1)] duration-500",
+          "bg-background text-foreground data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col ease-[cubic-bezier(0.16,1,0.3,1)] duration-500 pointer-events-auto",
           side === "right" &&
             "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right",
           side === "left" &&

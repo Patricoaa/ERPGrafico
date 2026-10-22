@@ -25,5 +25,21 @@ export { SalesCheckoutWizardView, type CheckoutWizardState } from './components/
 export type { SalesCheckoutWizardViewHandle } from './components/checkout/SalesCheckoutWizardView'
 export { Step2_ManufacturingDetails } from './components/checkout/Step2_ManufacturingDetails'
 export { saleOrderEntity, saleOrderViews } from './entity-view/saleOrder.entity'
-export { mfgDetailLineEntity, mfgDetailLineViews, getMfgLineSubType, type ManufacturableLine } from './entity-view/mfgDetailLine.entity'
+export { getMfgLineSubType, type ManufacturableLine } from './utils/mfgLine'
+export type {
+    SaleOrderLine,
+    SaleNoteLine,
+    SaleOrder,
+    SaleOrderFilters,
+    SaleOrderPayload,
+    PendingDebt,
+    CheckoutDTEData,
+    CheckoutPaymentData,
+    CheckoutDeliveryData,
+    CheckoutResponse,
+    CreditApprovalTask,
+    AccountingSettings,
+    SaleOrderStatus,
+    DeliveryStatus,
+} from './types'
 
