@@ -130,7 +130,6 @@ export * from './DatePicker';
 export * from './DateRangeFilter';
 export * from './ReportToolbar';
 export * from './FacetedFilter'
-export * from './RadioCard';
 export * from './SelectableCard';
 export * from './ChoiceCard';
 export * from './CardSurface';
