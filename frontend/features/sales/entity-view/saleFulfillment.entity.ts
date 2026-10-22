@@ -44,6 +44,7 @@ export const saleFulfillmentEntity = defineEntity<SaleFulfillment>()((f) => ({
 export const saleFulfillmentViews = saleFulfillmentEntity.views({
     table: { columns: ["folio", "type", "customer", "order", "date", "warehouse", "status", "cost"], primary: "folio" },
     card: {
+        rail: { status: (r) => r.status },
         title: "folio",
         subtitle: ["customer", "date"],
         trailing: ["type", "status"],

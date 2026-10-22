@@ -124,15 +124,20 @@ export function registerCoreValueKinds(): void {
     })
 
     registerValueKind("hubStatus", {
-        // Readable label first (StatusBadge, also used for text, sort and export), axes rings after it:
-        // table and card share one status vocabulary (Gate C decision).
+        // Readable label first (StatusBadge, also used for text, sort and export), axes rings after it.
+        // Table: label + rings (Gate C). Card (ADR-0097): rings only, the label goes to the rail and screen readers.
         format: (v, o) => (v ? formatStatus(o.caption) : EMPTY),
         sortValue: (v, o) => (v ? formatStatus(o.caption) : null),
         align: "start",
-        render: ({ value, options, align }) =>
+        render: ({ value, options, align, surface }) =>
             value ? (
                 <div className={cn("flex w-full items-center gap-2", ALIGN_FLEX[align])}>
-                    <StatusBadge status={options.caption.status} label={options.caption.label} intent={options.caption.intent} size="sm" />
+                    {surface === "card" ? (
+                        // Cards show the hub axes only: the state also reads in the rail, and the label stays for screen readers.
+                        <span className="sr-only">{options.caption.label ?? options.caption.status}</span>
+                    ) : (
+                        <StatusBadge status={options.caption.status} label={options.caption.label} intent={options.caption.intent} size="sm" />
+                    )}
                     <DomainHubStatus label={options.entity} data={value} />
                 </div>
             ) : (

@@ -1,5 +1,6 @@
 "use client"
 
+import { Wrench } from "lucide-react"
 import { defineEntity, registerValueKind } from "@/components/entity-view"
 import { DataCell, Chip } from "@/components/shared"
 import { DocumentRefLink } from "@/features/documents"
@@ -83,6 +84,7 @@ export const workOrderViews = workOrderEntity.views({
         primary: "productDescription",
     },
     card: {
+        rail: { status: (r) => r.status, icon: Wrench },
         title: "productDescription",
         subtitle: ["number"],
         meta: ["saleOrderNumber", "currentStage", "startDate", "dueDate"],

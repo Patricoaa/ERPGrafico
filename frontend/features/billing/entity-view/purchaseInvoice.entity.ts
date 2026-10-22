@@ -21,9 +21,10 @@ export const purchaseInvoiceEntity = defineEntity<Invoice>()((f) => ({
 export const purchaseInvoiceViews = purchaseInvoiceEntity.views({
     table: { columns: ["folio", "date", "supplier", "dteType", "hub", "total"], primary: "folio" },
     card: {
+        rail: { status: (r) => r.status },
         title: "folio",
         subtitle: ["dteType", "supplier", "date"],
-        trailing: ["total"],
+        trailing: ["hub", "total"],
         media: { tone: (inv) => (inv.dte_type === "NOTA_CREDITO" ? "destructive" : inv.dte_type === "NOTA_DEBITO" ? "warning" : "default") },
     },
 })

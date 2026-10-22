@@ -164,13 +164,13 @@ export type CardSection<T, Id extends string> =
     | { readonly kind: "custom"; readonly component: ComponentType<{ row: T }> }
 
 /**
- * Side rail that encodes the document state (ADR-0097). `status` returns the business status string;
+ * Left rail that holds the entity icon and encodes the document state in its tint (ADR-0097). `status` returns the business status string;
  * the surface resolves it to a tone with the same table as StatusBadge. The rail is decorative: the
  * status text stays in the card (StatusBadge / hub), so colour is never the only carrier.
  */
 export interface CardRailSpec<T> {
     readonly status: (row: T) => string | null | undefined
-    /** Default: an icon by tone (check, clock, cross…), so the state also reads in shape. */
+    /** Default: the entity icon (media icon or registry icon). The rail tint is the state. */
     readonly icon?: LucideIcon
 }
 

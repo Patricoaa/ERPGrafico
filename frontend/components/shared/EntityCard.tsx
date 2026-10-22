@@ -48,7 +48,7 @@ interface EntityCardRootProps {
      * stay above it. Siblings, never nested interactive containers (AX-4).
      */
     openable?: boolean
-    /** Trailing state rail (`CardRail`). The padding moves to an inner column so the rail is full height. */
+    /** Leading state rail (`CardRail side="left"`) holding the entity icon. The padding moves to an inner column so the rail is full height. */
     rail?: React.ReactNode
     selectable?: boolean
     checked?: boolean
@@ -93,8 +93,8 @@ function EntityCardRoot({
                     className
                 )}
             >
-                {rail ? <div className={cn("flex min-w-0 flex-1 flex-col", padding)}>{children}</div> : children}
                 {rail}
+                {rail ? <div className={cn("flex min-w-0 flex-1 flex-col", padding)}>{children}</div> : children}
             </CardSurface>
         </EntityCardSelectionContext.Provider>
     )
@@ -117,6 +117,7 @@ interface EntityCardMediaProps {
 
 /** Full-bleed strip above the header (ProductCard anatomy). Bleeds over the card's padding. */
 function EntityCardMedia({ icon: Icon, imageSrc, avatar, iconClassName, badge, className }: EntityCardMediaProps) {
+    const { selectable, checked, onCheckedChange, isAnySelected, selectionLabel } = React.useContext(EntityCardSelectionContext)
     return (
         <div className={cn("relative -mx-3 -mt-3 mb-1 flex h-20 items-center justify-center overflow-hidden rounded-t-sm", iconClassName ?? "bg-muted text-muted-foreground", className)}>
             {avatar ?? (imageSrc ? (
@@ -129,6 +130,22 @@ function EntityCardMedia({ icon: Icon, imageSrc, avatar, iconClassName, badge, c
                     {badge}
                 </Badge>
             )}
+            {/* Bulk checkbox in the corner of the strip (catalog cards): above the stretched link. */}
+            {selectable && (
+                <span
+                    className={cn(
+                        "absolute right-2 top-2 z-10 flex rounded-full bg-background/90 p-1 shadow-xs transition-opacity",
+                        !isAnySelected && "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+                    )}
+                >
+                    <SelectionRing
+                        aria-label={selectionLabel ?? "Seleccionar"}
+                        checked={checked}
+                        onCheckedChange={onCheckedChange}
+                        size="sm"
+                    />
+                </span>
+            )}
         </div>
     )
 }
@@ -136,6 +153,8 @@ function EntityCardMedia({ icon: Icon, imageSrc, avatar, iconClassName, badge, c
 // ─── Header ───────────────────────────────────────────────────────────────────
 
 interface EntityCardHeaderProps {
+    /** `corner`: the bulk checkbox lives on the media strip (`EntityCard.Media`), not beside the title. */
+    selection?: "inline" | "corner"
     /** Monospace identifier above the title (folio, SKU) — the kit's `code` line. */
     code?: React.ReactNode
     /** Primary identifier (e.g. document number, name) */
@@ -159,10 +178,10 @@ interface EntityCardHeaderProps {
     className?: string
 }
 
-function EntityCardHeader({ code, title, subtitle, trailing, actions, center, icon: Icon, imageSrc, avatar, iconClassName, className }: EntityCardHeaderProps) {
+function EntityCardHeader({ selection = "inline", code, title, subtitle, trailing, actions, center, icon: Icon, imageSrc, avatar, iconClassName, className }: EntityCardHeaderProps) {
     const { selectable, checked, onCheckedChange, isAnySelected, selectionLabel } = React.useContext(EntityCardSelectionContext)
 
-    const checkboxNode = selectable && (
+    const checkboxNode = selectable && selection === "inline" && (
         <SelectionRing
             aria-label={selectionLabel ?? "Seleccionar"}
             checked={checked}
@@ -684,22 +703,28 @@ function EntityCardHubTrigger({ isSelected, onToggle, className }: EntityCardHub
 interface EntityCardFootProps {
     /** Small caption above the amount (the field label). */
     caption?: React.ReactNode
-    /** The amount: any value cell; the slot scales it to the kit's amount size. */
-    children: React.ReactNode
-    /** Open glyph at the bottom-right (default on). */
+    /** The amount: any value cell; the slot scales it to the kit's amount size. Optional (catalog cards without a price). */
+    children?: React.ReactNode
+    /** Entity actions (the kebab) at the bottom-right, replacing the open glyph. */
+    actions?: React.ReactNode
+    /** Open glyph at the bottom-right when there are no actions (default on). */
     glyph?: boolean
     className?: string
 }
 
 /** Bottom-pinned amount like the POS ProductCard: caption, amount and a chevron. Needs a card that fills its grid cell (`h-full`). */
-function EntityCardFoot({ caption, children, glyph = true, className }: EntityCardFootProps) {
+function EntityCardFoot({ caption, children, actions, glyph = true, className }: EntityCardFootProps) {
     return (
         <div className={cn(cardAnatomy.footer, "flex items-end justify-between gap-2", className)}>
             <div className="min-w-0">
-                {caption && <p className={cardAnatomy.caption}>{caption}</p>}
-                <div className={cardAnatomy.amountSlot}>{children}</div>
+                {caption && children && <p className={cardAnatomy.caption}>{caption}</p>}
+                {children && <div className={cardAnatomy.amountSlot}>{children}</div>}
             </div>
-            {glyph && <ChevronRight className={cardAnatomy.glyph} aria-hidden />}
+            {actions ? (
+                <div className="relative z-10 -mb-1 -mr-1 shrink-0" onClick={(e) => e.stopPropagation()}>{actions}</div>
+            ) : (
+                glyph && <ChevronRight className={cardAnatomy.glyph} aria-hidden />
+            )}
         </div>
     )
 }

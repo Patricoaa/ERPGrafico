@@ -23,6 +23,7 @@ export const inventoryCountEntity = defineEntity<InventoryCount>()((f) => ({
 export const inventoryCountViews = inventoryCountEntity.views({
     table: { columns: ["folio", "warehouse", "status", "createdBy", "progress", "differences"], primary: "folio" },
     card: {
+        rail: { status: (r) => r.status },
         title: "folio",
         subtitle: ["warehouse", "createdBy"],
         trailing: ["status"],

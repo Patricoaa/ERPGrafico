@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, CheckCircle2, ChevronDown, ChevronRight, CircleDot, Clock, FileText, Info, LayoutGrid, Rows3, XCircle, type LucideIcon } from "lucide-react"
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, ChevronDown, ChevronRight, FileText, LayoutGrid, Rows3 } from "lucide-react"
 import { BulkActionButtons, CardRail, DataTablePagination, EmptyState, EntityCard, SelectionDock, SelectionRing, type BulkAction, type CardRailTone } from "@/components/shared"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -628,27 +628,21 @@ const RAIL_TONE: Partial<Record<BadgeIntent, CardRailTone>> = {
     primary: "primary",
 }
 
-/** The rail icon repeats the state in shape, not only in colour (unless the entity picks its own). */
-const RAIL_ICON: Record<CardRailTone, LucideIcon> = {
-    success: CheckCircle2,
-    warning: Clock,
-    destructive: XCircle,
-    info: Info,
-    primary: CircleDot,
-    neutral: FileText,
-}
-
 function pick<T, V>(value: V | ((row: T) => V) | undefined, row: T): V | undefined {
     return typeof value === "function" ? (value as (r: T) => V)(row) : value
 }
 
 const GRID_CLASS = "grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-[repeat(2,minmax(0,1fr))] xl:grid-cols-[repeat(3,minmax(0,1fr))]"
+/** Catalog grids (media on top) are denser: 4 or 5 columns by the width of the grid itself (container queries). */
+const CATALOG_GRID_CLASS = "grid grid-cols-[minmax(0,1fr)] gap-3 @md:grid-cols-[repeat(2,minmax(0,1fr))] @2xl:grid-cols-[repeat(3,minmax(0,1fr))] @4xl:grid-cols-[repeat(4,minmax(0,1fr))] @7xl:grid-cols-[repeat(5,minmax(0,1fr))]"
 
 function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
     const ctx = useCollectionContext<T>()
     const { table, status, groups } = ctx.collection
     const entity = ctx.collection.entity
     const isBulk = ctx.selection === "bulk"
+    const isCatalog = layout.media?.placement === "top"
+    const gridClass = isCatalog ? CATALOG_GRID_CLASS : GRID_CLASS
     // Meta field definitions are resolved once per layout, not per card.
     const metaDefs = React.useMemo(() => (layout.meta ?? []).map((id) => ({ id, def: fieldById(entity, id) })), [layout.meta, entity])
     const footerDef = React.useMemo(() => (layout.footer ? fieldById(entity, layout.footer.value) : null), [layout.footer, entity])
@@ -668,9 +662,10 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
         const title = resolveField(fieldById(entity, layout.title), data).text
         const code = layout.code ? resolveField(fieldById(entity, layout.code), data).text : ""
         const railTone = layout.rail ? (RAIL_TONE[resolveStatus(layout.rail.status(data)).intent] ?? "neutral") : "neutral"
-        const RailIcon = layout.rail?.icon ?? RAIL_ICON[railTone]
+        const RailIcon = layout.rail?.icon ?? icon ?? FileText
+        // The rail carries the entity icon (its tint is the state); the title row then has no icon tile of its own.
         const rail = layout.rail ? (
-            <CardRail tone={railTone}>
+            <CardRail tone={railTone} side="left">
                 <RailIcon className="size-5" aria-hidden />
             </CardRail>
         ) : undefined
@@ -708,11 +703,12 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                         />
                     )}
                     <EntityCard.Header
+                        selection={mediaOnTop ? "corner" : "inline"}
                         code={code && code !== "—" ? code : undefined}
-                        icon={mediaOnTop ? undefined : icon}
+                        icon={mediaOnTop || rail ? undefined : icon}
                         iconClassName={TONE_CLASS[tone]}
                         imageSrc={mediaOnTop ? undefined : media?.image?.(data) ?? undefined}
-                        avatar={!mediaOnTop && Avatar ? <Avatar row={data} /> : undefined}
+                        avatar={!mediaOnTop && !rail && Avatar ? <Avatar row={data} /> : undefined}
                         title={
                             ctx.canOpen ? (
                                 <Button data-card-open variant="link" className="h-7 min-w-0 max-w-full justify-start p-0 text-sm font-semibold text-foreground underline-offset-2 after:absolute after:inset-0 after:content-[''] focus-visible:underline focus-visible:ring-0" onClick={() => ctx.open(data)}>
@@ -727,14 +723,15 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                         // Wide trailing values (hub with label) only fit in the header on wide cards;
                         // narrow cards (container < 28rem) show them below the title instead.
                         trailing={trailing ? <div className="hidden @md:flex items-center gap-3">{trailing}</div> : undefined}
-                        actions={ctx.actions?.(data, "card")}
+                        // Catalog cards keep the kebab in the footer (bottom-right), documents/people in the header.
+                        actions={mediaOnTop ? undefined : ctx.actions?.(data, "card")}
                     />
                     {/* Meta lives below the header: in the header center it squeezed the title (EntityCard 1fr column). */}
                     <EntityCard.Meta items={metaItems} />
                     {layout.body && <CardBody section={layout.body} entity={entity} row={data} />}
-                    {footerDef && (
-                        <EntityCard.Foot caption={footerDef.label}>
-                            <FieldValue def={footerDef} row={data} surface="card" align="start" />
+                    {(footerDef || mediaOnTop) && (
+                        <EntityCard.Foot caption={footerDef?.label} actions={mediaOnTop ? ctx.actions?.(data, "card") : undefined}>
+                            {footerDef && <FieldValue def={footerDef} row={data} surface="card" align="start" />}
                         </EntityCard.Foot>
                     )}
                 </EntityCard>
@@ -744,11 +741,13 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
 
     if (status === "loading") {
         return (
-            <ul className={cn(GRID_CLASS, "flex-1 min-h-0 overflow-auto content-start")} aria-busy>
-                {Array.from({ length: 6 }, (_, i) => (
-                    <li key={i}><EntityCard.Skeleton /></li>
-                ))}
-            </ul>
+            <div className="@container flex flex-1 min-h-0 flex-col overflow-auto">
+                <ul className={cn(gridClass, "content-start")} aria-busy>
+                    {Array.from({ length: isCatalog ? 8 : 6 }, (_, i) => (
+                        <li key={i}><EntityCard.Skeleton /></li>
+                    ))}
+                </ul>
+            </div>
         )
     }
 
@@ -756,18 +755,18 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
         // Same frame as the table: the cards scroll inside the available height, pagination stays below.
         <div className="flex flex-1 flex-col gap-2 min-h-0">
             {/* p-0.5 keeps focus rings and the selected-card accent visible at the scroll edges. */}
-            <div className="flex flex-1 min-h-0 flex-col gap-4 overflow-auto p-0.5">
+            <div className="@container flex flex-1 min-h-0 flex-col gap-4 overflow-auto p-0.5">
                 {groups ? (
                     groups.map((group) => (
                         <section key={group.key} aria-label={group.label} className="flex flex-col gap-2">
                             <h3 className={cn("px-1", HEADER_TEXT)}>
                                 {group.label} <span className="font-normal tabular-nums">({group.rows.length})</span>
                             </h3>
-                            <ul className={GRID_CLASS}>{group.rows.map(renderCard)}</ul>
+                            <ul className={gridClass}>{group.rows.map(renderCard)}</ul>
                         </section>
                     ))
                 ) : (
-                    <ul className={GRID_CLASS} aria-label={ctx.label}>{table.getRowModel().rows.map(renderCard)}</ul>
+                    <ul className={gridClass} aria-label={ctx.label}>{table.getRowModel().rows.map(renderCard)}</ul>
                 )}
             </div>
             {ctx.collection.paginated && <DataTablePagination table={table} />}

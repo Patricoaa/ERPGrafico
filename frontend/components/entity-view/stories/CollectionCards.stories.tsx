@@ -1,12 +1,18 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite"
-import { FileText, Package, Wrench } from "lucide-react"
+import { MoreVertical, Package, Wrench } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Collection, defineEntity, useEntityCollection } from "@/components/entity-view"
 import { withEntityView } from "./withEntityView"
 
 /**
  * Card grids of the family (ADR-0097): `item` role with a stretched-link title, the code line,
- * the pinned amount footer and the state rail.
+ * the pinned footer (amount, kebab) and the left state rail with the entity icon.
  */
+const kebab = () => (
+    <Button type="button" variant="ghost" size="icon-sm" aria-label="Acciones">
+        <MoreVertical className="size-4" />
+    </Button>
+)
 const meta = {
     title: "Entity View/Collection cards",
     decorators: [withEntityView],
@@ -53,19 +59,25 @@ const ITEMS: Item[] = [
     { id: 3, sku: "MNT-0001", name: "Mantención Preventiva Offset Heidelberg", category: "Servicios de Mantención", kind: "service", sale: ["Compra"], stock: "0", price: 0 },
 ]
 
+const MORE_ITEMS: Item[] = Array.from({ length: 7 }, (_, i) => ({
+    ...ITEMS[i % ITEMS.length],
+    id: 10 + i,
+    sku: `INS-01${i}`,
+}))
+
 function ItemsGrid() {
-    const collection = useEntityCollection(itemEntity, { rows: ITEMS })
+    const collection = useEntityCollection(itemEntity, { rows: [...ITEMS, ...MORE_ITEMS] })
     return (
-        <Collection.Root collection={collection} defaultView="card" label="Productos">
+        <Collection.Root collection={collection} defaultView="card" label="Productos" selection="bulk" actions={kebab}>
             <Collection.View card={itemViews.card} />
         </Collection.Root>
     )
 }
 
-/** Catalog items: media strip on top, mono code, pinned price and open chevron, like the POS ProductCard. */
+/** Catalog items: media on top, bulk checkbox in the top-right corner, price and kebab in the footer; 4-5 columns by width. */
 export const Catalog: Story = {
     render: () => (
-        <div className="w-[60rem]">
+        <div className="w-[68rem]">
             <ItemsGrid />
         </div>
     ),
@@ -99,7 +111,6 @@ const docViews = docEntity.views({
         title: "folio",
         subtitle: ["customer", "date"],
         trailing: ["status"],
-        media: { icon: FileText, tone: "primary" },
         rail: { status: (d) => d.status },
         body: { kind: "workflow", lines: "lines", total: "total", pending: "pending" },
     },
@@ -113,13 +124,13 @@ const DOCS: Doc[] = [
 function DocsGrid() {
     const collection = useEntityCollection(docEntity, { rows: DOCS })
     return (
-        <Collection.Root collection={collection} defaultView="card" label="Documentos">
+        <Collection.Root collection={collection} defaultView="card" label="Documentos" actions={kebab}>
             <Collection.View card={docViews.card} />
         </Collection.Root>
     )
 }
 
-/** Documents: the rail encodes the state next to the StatusBadge (never alone). */
+/** Documents: the rail on the left holds the entity icon and encodes the state; the kebab stays in the header. */
 export const DocumentsWithRail: Story = {
     render: () => (
         <div className="w-[60rem]">

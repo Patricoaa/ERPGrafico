@@ -12,6 +12,8 @@ export interface CardRailProps {
     tone: CardRailTone
     /** `md` (w-14) for state rails with an icon, `sm` (w-9) for selection markers. */
     size?: CardRailSize
+    /** Edge the rail sits on: `right` (default, selection markers) or `left` (document state, entity cards). */
+    side?: "left" | "right"
     /**
      * `true` (default): purely visual, hidden from assistive tech — the state must also be
      * announced elsewhere (StatusBadge, label). `false`: the content is meaningful (e.g. the
@@ -37,10 +39,10 @@ const TONE_CLASS: Record<CardRailTone, string> = {
  * state through colour (MfgLineCard) or hosts the selection marker (ChoiceCard light).
  * Colour is never the only carrier — pair it with an icon and with the card's own text/StatusBadge.
  */
-export function CardRail({ tone, size = "md", decorative = true, children, className }: CardRailProps) {
+export function CardRail({ tone, size = "md", side = "right", decorative = true, children, className }: CardRailProps) {
     return (
         <div
-            className={cn(cardAnatomy.rail, cardAnatomy.railSize[size], TONE_CLASS[tone], className)}
+            className={cn(cardAnatomy.rail, cardAnatomy.railSize[size], TONE_CLASS[tone], side === "left" && "border-l-0 border-r", className)}
             aria-hidden={decorative ? true : undefined}
         >
             {children}

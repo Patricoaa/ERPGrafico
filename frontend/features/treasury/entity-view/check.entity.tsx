@@ -55,6 +55,7 @@ export const checkEntity = defineEntity<Check>()((f) => ({
 export const checkViews = checkEntity.views({
     table: { columns: ["folio", "checkNumber", "dueDate", "amount", "saleOrder", "status"], primary: "folio" },
     card: {
+        rail: { status: (r) => r.status },
         title: "checkNumber",
         subtitle: ["folio", "dueDate"],
         trailing: ["amount"],

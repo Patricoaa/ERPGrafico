@@ -58,5 +58,5 @@ export const categoryEntity = defineEntity<Category>()((f) => ({
 
 export const categoryViews = categoryEntity.views({
     table: { columns: ["icon", "prefix", "name", "parentName", "isActive"], primary: "name", defaultSort: "name" },
-    card: { title: "name", subtitle: ["prefix"], meta: ["parentName"], trailing: ["isActive"], media: { avatar: CategoryAvatar } },
+    card: { title: "name", subtitle: ["prefix"], meta: ["parentName"], trailing: ["isActive"], media: { placement: "top", avatar: CategoryAvatar } },
 })

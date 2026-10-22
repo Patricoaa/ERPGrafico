@@ -39,7 +39,7 @@ export const cardAnatomy = {
     /** Title of an entity item header — one line, semibold like every other card title. */
     entityTitle: "truncate text-sm font-semibold leading-tight tracking-tight",
     /** Secondary line under an entity title. */
-    entitySubtitle: "mt-0.5 truncate text-xs text-muted-foreground",
+    entitySubtitle: "mt-0.5 line-clamp-2 break-words text-xs text-muted-foreground",
     /** Label of a label/value pair (EntityCard.Field / Meta / Metrics). Full muted contrast, no /60 wash. */
     eyebrow: "text-3xs font-semibold uppercase tracking-wider text-muted-foreground",
     /** Footer value slot: the amount of an entity card, same scale as `amount` (whatever the cell renders). */

@@ -27,7 +27,7 @@ export const bankViews = bankEntity.views({
         title: "name",
         subtitle: ["code"],
         trailing: ["isActive"],
-        media: { icon: Landmark },
+        media: { placement: "top", icon: Landmark },
         body: { kind: "metrics", fields: ["accounts", "cards", "checks", "loans"] },
     },
 })

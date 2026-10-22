@@ -28,5 +28,5 @@ export const subscriptionEntity = defineEntity<Subscription>()((f) => ({
 
 export const subscriptionViews = subscriptionEntity.views({
     table: { columns: ["productName", "status", "amount", "supplier", "nextPaymentDate", "frequency"] },
-    card: { title: "productName", subtitle: ["supplier", "frequency"], meta: ["nextPaymentDate"], trailing: ["status", "amount"] },
+    card: { rail: { status: (r) => r.status }, title: "productName", subtitle: ["supplier", "frequency"], meta: ["nextPaymentDate"], trailing: ["status", "amount"] },
 })

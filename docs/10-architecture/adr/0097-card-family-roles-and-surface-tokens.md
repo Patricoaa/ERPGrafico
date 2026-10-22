@@ -125,9 +125,17 @@ Los ~60 bloques `border rounded` sueltos no son cards (avisos y grupos de campos
 - Aplicado: productos (media arriba, código, pie con precio), órdenes de venta y de compra (riel de estado). `ProductPriceCell` respeta `align`.
 - Decisión: las personas (contactos) mantienen el avatar en línea; la franja de media solo para catálogo.
 
+## Implemented in the eighth step (catalog and document templates)
+
+- **Plantilla catálogo** (`media.placement: "top"`): checkbox de lote en la esquina superior derecha de la franja, kebab de la entidad en el pie (reemplaza el chevron) y grilla de 4–5 columnas por container queries (1/2/3/4/5 según el ancho de la grilla). El pie se dibuja siempre en catálogo, con o sin monto.
+- **Plantilla documento** (`rail`): el riel pasa a la izquierda y aloja el icono de la entidad; la fila del título pierde su icono con fondo. `hubStatus` en cards muestra solo los anillos (sin chip; etiqueta `sr-only`).
+- Extendido a 22 entidades documentales (órdenes, entregas, devoluciones, facturas y notas, asientos, OT, remuneraciones, movimientos de tesorería, cheques, lotes, períodos de impuestos…) y a 11 catálogos (productos, categorías, almacenes, BOM, medios de pago, bancos, cuentas, terminales, atributos). Facturas y notas añaden `hub` a su `trailing`.
+- Corregida la card de estados de cuenta (formato antiguo `sections`). Subtítulos a 2 líneas en lugar de truncar.
+- Personas y listas de configuración (contactos, usuarios, empleados, UoM, reglas de precio, grupos, socios) mantienen su layout.
+
 ## Plan (pendiente)
 
-1. Extender `rail`/`footer` a las demás entidades documentales (devoluciones, entregas, facturas) y `media: top` a otros catálogos.
+1. Verificar en la app real (Productos, Órdenes de venta, Facturas, Almacenes, Bancos) y decidir si `footer` con monto se extiende a documentos.
 2. Verificación visual de `EntityCard` en una entidad con media, otra documental y una de contactos.
 3. Aplicar `InfoBlock` a avisos que hoy son `div` con otra forma (el ratchet solo ve literales `border rounded bg-card`).
 

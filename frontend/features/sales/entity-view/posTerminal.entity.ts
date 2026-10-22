@@ -38,6 +38,6 @@ export const posTerminalViews = posTerminalEntity.views({
         meta: ["device", "paymentMethods"],
         trailing: ["isActive"],
         // Inactive terminals read as muted (the legacy card was greyed out).
-        media: { tone: (t) => (t.is_active ? "primary" : "muted") },
+        media: { placement: "top", tone: (t) => (t.is_active ? "primary" : "muted") },
     },
 })

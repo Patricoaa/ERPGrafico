@@ -57,5 +57,5 @@ export const bomEntity = defineEntity<BOM>()((f) => ({
 
 export const bomViews = bomEntity.views({
     table: { columns: ["product", "name", "linesCount", "totalCost", "active"] },
-    card: { title: "name", subtitle: ["product"], meta: ["linesCount", "totalCost"], trailing: ["active"], media: { icon: Layers } },
+    card: { title: "name", subtitle: ["product"], meta: ["linesCount", "totalCost"], trailing: ["active"], media: { placement: "top", icon: Layers } },
 })

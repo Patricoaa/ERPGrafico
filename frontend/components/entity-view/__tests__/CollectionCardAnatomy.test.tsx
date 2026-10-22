@@ -34,7 +34,7 @@ const rows: Doc[] = [
     { id: 2, folio: "OV-0002", name: "Editorial Andes", status: "CANCELLED", total: 5000, email: "andes@editorial.cl" },
 ]
 
-function Harness({ source, onOpen, withRail = true }: { source: CollectionSource<Doc>; onOpen?: (row: Doc) => void; withRail?: boolean }) {
+function Harness({ source, onOpen, withRail = true, catalog = false, bulk = false }: { source: CollectionSource<Doc>; onOpen?: (row: Doc) => void; withRail?: boolean; catalog?: boolean; bulk?: boolean }) {
     const collection = useEntityCollection(entity, source)
     const views = entity.views({
         card: {
@@ -43,11 +43,12 @@ function Harness({ source, onOpen, withRail = true }: { source: CollectionSource
             meta: ["email"],
             footer: { value: "total" },
             ...(withRail ? { rail: { status: (d: Doc) => d.status, icon: FileText } } : {}),
+            ...(catalog ? { media: { placement: "top" as const, icon: FileText } } : {}),
         },
     })
     return (
         <EntityViewProvider opener={{ open: vi.fn(), labelOf: () => undefined }}>
-            <Collection.Root collection={collection} onOpen={onOpen} label="Documentos" defaultView="card" actions={() => <button type="button">Acciones</button>}>
+            <Collection.Root collection={collection} onOpen={onOpen} label="Documentos" defaultView="card" selection={bulk ? "bulk" : "none"} actions={() => <button type="button">Acciones</button>}>
                 <Collection.View card={views.card} />
             </Collection.Root>
         </EntityViewProvider>
@@ -82,17 +83,39 @@ describe("Collection card anatomy (ADR-0097)", () => {
         expect(actions.parentElement?.className).toContain("z-10")
     })
 
-    it("renders a decorative state rail whose tone follows the status", () => {
+    it("renders a decorative left rail with the entity icon whose tint follows the status", () => {
         render(<Harness source={{ rows }} onOpen={vi.fn()} />)
         const items = within(screen.getByRole("list", { name: "Documentos" })).getAllByRole("listitem")
         const rails = items.map((li) => li.querySelector('[aria-hidden="true"].w-14'))
         expect(rails[0]).not.toBeNull()
+        expect(rails[0]?.className).toContain("border-r")
         expect(rails[0]?.className).toContain("text-success")
+        expect(rails[0]?.querySelector("svg")).not.toBeNull()
         expect(rails[1]?.className).not.toContain("text-success")
+        // The rail replaces the icon tile of the title row.
+        expect(items[0].querySelector(".self-stretch.w-10")).toBeNull()
     })
 
     it("has no rail when the layout does not declare one", () => {
         render(<Harness source={{ rows }} onOpen={vi.fn()} withRail={false} />)
         expect(screen.getByRole("list", { name: "Documentos" }).querySelector(".w-14")).toBeNull()
+    })
+
+    it("catalog cards put the bulk checkbox on the media corner and the kebab in the footer", () => {
+        render(<Harness source={{ rows }} onOpen={vi.fn()} withRail={false} catalog bulk />)
+        const first = within(screen.getByRole("list", { name: "Documentos" })).getAllByRole("listitem")[0]
+        const corner = first.querySelector(".absolute.right-2.top-2")
+        expect(corner).not.toBeNull()
+        expect(within(corner as HTMLElement).getByRole("checkbox")).toBeInTheDocument()
+        const kebab = within(first).getByRole("button", { name: "Acciones" })
+        // Footer, not header: the kebab lives next to the amount and replaces the open chevron.
+        expect(kebab.parentElement?.previousElementSibling?.textContent).toContain("125.000")
+    })
+
+    it("catalog grids use container-query columns (4-5 on wide grids)", () => {
+        render(<Harness source={{ rows }} onOpen={vi.fn()} withRail={false} catalog />)
+        const list = screen.getByRole("list", { name: "Documentos" })
+        expect(list.className).toContain("@4xl:grid-cols-[repeat(4,minmax(0,1fr))]")
+        expect(list.className).toContain("@7xl:grid-cols-[repeat(5,minmax(0,1fr))]")
     })
 })

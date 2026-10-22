@@ -88,7 +88,7 @@ export const treasuryAccountViews = treasuryAccountEntity.views({
         subtitle: ["accountType", "linkedAccount"],
         trailing: ["balance"],
         meta: ["links"],
-        media: {
+        media: { placement: "top",
             iconFor: (a) => ACCOUNT_TYPE_ICON[accountTypeKey(a)] ?? Wallet,
             tone: (a) => ACCOUNT_TYPE_TONE[accountTypeKey(a)] ?? "default",
         },

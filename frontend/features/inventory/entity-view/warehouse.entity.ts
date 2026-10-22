@@ -14,5 +14,5 @@ export const warehouseEntity = defineEntity<Warehouse>()((f) => ({
 
 export const warehouseViews = warehouseEntity.views({
     table: { columns: ["name", "code", "address", "isActive"], defaultSort: "name" },
-    card: { title: "name", subtitle: ["code"], meta: ["address"], trailing: ["isActive"] },
+    card: { code: "code", title: "name", meta: ["address"], trailing: ["isActive"], media: { placement: "top" } },
 })

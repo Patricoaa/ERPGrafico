@@ -45,5 +45,5 @@ export const attributeEntity = defineEntity<Attribute>()((f) => ({
 
 export const attributeViews = attributeEntity.views({
     table: { columns: ["name", "values", "isActive"], defaultSort: "name" },
-    card: { title: "name", trailing: ["values", "isActive"], media: { icon: Tag } },
+    card: { title: "name", trailing: ["values", "isActive"], media: { placement: "top", icon: Tag } },
 })

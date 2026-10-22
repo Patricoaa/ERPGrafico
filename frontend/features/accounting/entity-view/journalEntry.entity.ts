@@ -22,6 +22,7 @@ export const journalEntryEntity = defineEntity<JournalEntry>()((f) => ({
 export const journalEntryViews = journalEntryEntity.views({
     table: { columns: ["folio", "status", "origin", "date", "description", "totalDebit"], primary: "folio" },
     card: {
+        rail: { status: (r) => r.status },
         title: "folio",
         subtitle: ["origin", "date"],
         trailing: ["totalDebit"],

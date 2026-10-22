@@ -38,6 +38,7 @@ export const saleDeliveryEntity = defineEntity<SaleDelivery>()((f) => ({
 export const saleDeliveryViews = saleDeliveryEntity.views({
     table: { columns: ["folio", "customer", "order", "date", "warehouse", "status", "cost"], primary: "folio" },
     card: {
+        rail: { status: (r) => r.status },
         title: "folio",
         subtitle: ["customer", "date"],
         trailing: ["status"],

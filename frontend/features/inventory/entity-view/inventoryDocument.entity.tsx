@@ -70,6 +70,7 @@ export const inventoryDocumentEntity = defineEntity<InventoryDocument>()((f) => 
 export const inventoryDocumentViews = inventoryDocumentEntity.views({
     table: { columns: ["folio", "date", "documentType", "reference", "status"], primary: "folio" },
     card: {
+        rail: { status: (r) => r.status },
         title: "folio",
         subtitle: ["documentType", "date"],
         trailing: ["status"],

@@ -29,9 +29,10 @@ export const saleNoteEntity = defineEntity<SaleNote>()((f) => ({
 export const saleNoteViews = saleNoteEntity.views({
     table: { columns: ["dteType", "folio", "date", "customer", "hub", "total"], primary: "folio" },
     card: {
+        rail: { status: (r) => r.status },
         title: "folio",
         subtitle: ["dteType", "customer", "date"],
-        trailing: ["total"],
+        trailing: ["hub", "total"],
         media: { tone: (n) => (n.dte_type === "NOTA_CREDITO" ? "destructive" : n.dte_type === "NOTA_DEBITO" ? "warning" : "default") },
     },
 })

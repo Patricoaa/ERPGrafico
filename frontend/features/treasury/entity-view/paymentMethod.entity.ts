@@ -54,6 +54,6 @@ export const paymentMethodViews = paymentMethodEntity.views({
         subtitle: ["category", "treasuryAccount"],
         meta: ["usage"],
         trailing: ["isActive"],
-        media: { iconFor: (m) => METHOD_ICON[m.method_type] ?? CreditCard, tone: (m) => METHOD_TONE[m.method_type] ?? "muted" },
+        media: { placement: "top", iconFor: (m) => METHOD_ICON[m.method_type] ?? CreditCard, tone: (m) => METHOD_TONE[m.method_type] ?? "muted" },
     },
 })

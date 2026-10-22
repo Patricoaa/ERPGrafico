@@ -39,6 +39,7 @@ export const purchaseReturnEntity = defineEntity<PurchaseReturn>()((f) => ({
 export const purchaseReturnViews = purchaseReturnEntity.views({
     table: { columns: ["folio", "supplier", "order", "date", "warehouse", "status", "cost"], primary: "folio" },
     card: {
+        rail: { status: (r) => r.status },
         title: "folio",
         subtitle: ["supplier", "date"],
         trailing: ["status"],

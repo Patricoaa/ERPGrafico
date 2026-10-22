@@ -23,5 +23,5 @@ export const bankCheckingAccountEntity = defineEntity<BankAccount>()((f) => ({
 }))
 
 export const bankCheckingAccountViews = bankCheckingAccountEntity.views({
-    card: { title: "name", subtitle: ["number"], media: { icon: Landmark }, body: { kind: "metrics", fields: ["balance", "creditLine", "available"] } },
+    card: { title: "name", subtitle: ["number"], media: { placement: "top", icon: Landmark }, body: { kind: "metrics", fields: ["balance", "creditLine", "available"] } },
 })

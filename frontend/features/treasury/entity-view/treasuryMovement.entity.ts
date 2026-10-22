@@ -35,6 +35,7 @@ export const treasuryMovementEntity = defineEntity<TreasuryMovement>()((f) => ({
 export const treasuryMovementViews = treasuryMovementEntity.views({
     table: { columns: ["folio", "movementType", "date", "paymentMethod", "accounts", "amount"], primary: "folio" },
     card: {
+        rail: { status: (r) => r.status },
         title: "folio",
         subtitle: ["paymentMethod", "date"],
         trailing: ["amount"],
