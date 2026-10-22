@@ -1,5 +1,4 @@
 "use client"
-import { RadioGroup } from "@/components/ui/radio-group"
 import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useEffect, useMemo } from "react"
@@ -11,7 +10,7 @@ import {
     Banknote,
     Lock
 } from "lucide-react"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, RadioCard, GenericWizard, FadeIn, type WizardStep } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, ChoiceCard, ChoiceGroup, GenericWizard, FadeIn, type WizardStep } from "@/components/shared"
 import { partnersApi, netEquityPercentages } from "@/features/contacts"
 import { type Partner } from "@/features/contacts"
 import { type TreasuryAccount } from "@/features/treasury"
@@ -258,26 +257,26 @@ export function PartnerContributionWizard({
             description: "¿Qué se está aportando?",
             isValid: !!method,
             component: (
-                <RadioGroup
-                    value={method}
-                    onValueChange={(v) => setMethod(v as ContributionMethod)}
-                    className="grid grid-cols-2 gap-4 py-8"
+                <ChoiceGroup
+                    label="Tipo de Recurso"
+                    columns="grid-cols-2"
+                    activation="select"
                 >
-                    <RadioCard
-                        id="method-cash"
-                        value="CASH"
-                        label="Efectivo"
+                    <ChoiceCard
+                        selected={method === "CASH"}
+                        onSelect={() => setMethod("CASH")}
+                        title="Efectivo"
                         description="Caja, banco o transferencia bancaria electrónica."
-                        icon={<Wallet className="h-6 w-6" />}
+                        icon={Wallet}
                     />
-                    <RadioCard
-                        id="method-assets"
-                        value="ASSETS"
-                        label="Bienes / Stock"
+                    <ChoiceCard
+                        selected={method === "ASSETS"}
+                        onSelect={() => setMethod("ASSETS")}
+                        title="Bienes / Stock"
                         description="Materias primas, insumos o productos para la venta."
-                        icon={<Package className="h-6 w-6" />}
+                        icon={Package}
                     />
-                </RadioGroup>
+                </ChoiceGroup>
             )
         },
         {
