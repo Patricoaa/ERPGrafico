@@ -155,9 +155,9 @@ Todo componente del núcleo tiene **≤ 12 props** (test de contrato). Lo que no
 
 ### 6.3 `CardLayout` (slots, sin inferencia)
 
-> `media.placement: "top"` (opt-in, [ADR-0093](../10-architecture/adr/0093-choice-card-and-media-top-cards.md)) dibuja una franja de media sobre el título —anatomía de `ProductCard`— con `badge(row)` como chip en la esquina. Por defecto (`inline`) la tarjeta no cambia.
+> `media.placement: "top"` (opt-in, [ADR-0093](../10-architecture/adr/0093-choice-card-and-media-top-cards.md)) dibuja una franja de media sobre el título —anatomía de `ProductCard`— con `badge(row)` como chip en la esquina. Por defecto (`inline`) la tarjeta no cambia. Úsalo en catálogo con foto o icono de identidad (productos); las personas conservan el avatar en línea (una franja de 80px resta densidad en un directorio).
 
-`title` (1 campo; enlace a la ficha) · `subtitle?` (unidos con " · ") · `meta?` (pares etiqueta/valor bajo la cabecera) · `trailing?` (estado o KPI a la derecha) · `media?` (`icon`, `iconFor(row)`, `tone` (`CardTone` o función por fila), `image(row)`, `avatar`, `placement?: "inline" | "top"`, `badge?(row)`) · `body?`:
+`title` (1 campo; enlace a la ficha **extendido sobre toda la card**: el botón del título lleva `data-card-open` y cubre la tarjeta con `after:absolute after:inset-0`; acciones, checkbox y enlaces de `meta` quedan por encima como hermanos, sin contenedores interactivos anidados, AX-4) · `code?` (identificador en mono sobre el título: folio, SKU) · `subtitle?` (unidos con " · ") · `meta?` (pares etiqueta/valor bajo la cabecera) · `trailing?` (estado o KPI a la derecha; en cards de menos de 28rem se pliega a los pares de `meta`) · `footer?: { value }` (monto anclado abajo con caption = etiqueta del campo y chevron, como `ProductCard`; no repetir ese campo en `trailing`) · `rail?: { status(row), icon? }` (riel lateral de estado: el tono sale de la tabla de `StatusBadge`, el icono por defecto refleja el tono; decorativo, el estado sigue en el badge) · `media?` (`icon`, `iconFor(row)`, `tone` (`CardTone` o función por fila), `image(row)`, `avatar`, `placement?: "inline" | "top"`, `badge?(row)`) · `body?`:
 
 | Sección | Para |
 |---|---|

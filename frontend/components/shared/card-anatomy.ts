@@ -42,6 +42,8 @@ export const cardAnatomy = {
     entitySubtitle: "mt-0.5 truncate text-xs text-muted-foreground",
     /** Label of a label/value pair (EntityCard.Field / Meta / Metrics). Full muted contrast, no /60 wash. */
     eyebrow: "text-3xs font-semibold uppercase tracking-wider text-muted-foreground",
+    /** Footer value slot: the amount of an entity card, same scale as `amount` (whatever the cell renders). */
+    amountSlot: "tabular-nums [&_*]:text-lg! [&_*]:font-semibold! [&_*]:justify-start!",
     /** Value of a label/value pair. */
     fieldValue: "text-xs font-medium tabular-nums tracking-tight text-foreground",
 

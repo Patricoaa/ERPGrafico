@@ -27,6 +27,7 @@ export const saleOrderViews = saleOrderEntity.views({
         subtitle: ["customer", "date"],
         trailing: ["hub"],
         media: { tone: (o) => (o.status === "CANCELLED" ? "muted" : "primary") },
+        rail: { status: (o) => o.status },
         body: { kind: "workflow", lines: "lines", total: "total", pending: "pending" },
     },
 })

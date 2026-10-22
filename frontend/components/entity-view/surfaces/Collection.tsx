@@ -1,11 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, ChevronDown, ChevronRight, LayoutGrid, Rows3 } from "lucide-react"
-import { BulkActionButtons, DataTablePagination, EmptyState, EntityCard, SelectionDock, SelectionRing, type BulkAction } from "@/components/shared"
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, CheckCircle2, ChevronDown, ChevronRight, CircleDot, Clock, FileText, Info, LayoutGrid, Rows3, XCircle, type LucideIcon } from "lucide-react"
+import { BulkActionButtons, CardRail, DataTablePagination, EmptyState, EntityCard, SelectionDock, SelectionRing, type BulkAction, type CardRailTone } from "@/components/shared"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { resolveStatus, type BadgeIntent } from "@/lib/badge-resolvers"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
 import {
@@ -618,6 +619,25 @@ const TONE_CLASS: Record<CardTone, string> = {
     muted: "text-muted-foreground/60 bg-muted/30",
 }
 
+const RAIL_TONE: Partial<Record<BadgeIntent, CardRailTone>> = {
+    success: "success",
+    warning: "warning",
+    destructive: "destructive",
+    info: "info",
+    cyan: "info",
+    primary: "primary",
+}
+
+/** The rail icon repeats the state in shape, not only in colour (unless the entity picks its own). */
+const RAIL_ICON: Record<CardRailTone, LucideIcon> = {
+    success: CheckCircle2,
+    warning: Clock,
+    destructive: XCircle,
+    info: Info,
+    primary: CircleDot,
+    neutral: FileText,
+}
+
 function pick<T, V>(value: V | ((row: T) => V) | undefined, row: T): V | undefined {
     return typeof value === "function" ? (value as (r: T) => V)(row) : value
 }
@@ -631,6 +651,7 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
     const isBulk = ctx.selection === "bulk"
     // Meta field definitions are resolved once per layout, not per card.
     const metaDefs = React.useMemo(() => (layout.meta ?? []).map((id) => ({ id, def: fieldById(entity, id) })), [layout.meta, entity])
+    const footerDef = React.useMemo(() => (layout.footer ? fieldById(entity, layout.footer.value) : null), [layout.footer, entity])
     const trailingDefs = React.useMemo(() => (layout.trailing ?? []).map((id) => ({ id, def: fieldById(entity, id) })), [layout.trailing, entity])
 
     const renderCard = (row: Row<T>) => {
@@ -645,6 +666,14 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
             .filter((t) => t && t !== "—")
             .join(" · ")
         const title = resolveField(fieldById(entity, layout.title), data).text
+        const code = layout.code ? resolveField(fieldById(entity, layout.code), data).text : ""
+        const railTone = layout.rail ? (RAIL_TONE[resolveStatus(layout.rail.status(data)).intent] ?? "neutral") : "neutral"
+        const RailIcon = layout.rail?.icon ?? RAIL_ICON[railTone]
+        const rail = layout.rail ? (
+            <CardRail tone={railTone}>
+                <RailIcon className="size-5" aria-hidden />
+            </CardRail>
+        ) : undefined
         const trailing = layout.trailing && layout.trailing.length > 0
             ? layout.trailing.map((id) => <FieldValue key={id} def={fieldById(entity, id)} row={data} surface="card" align="start" />)
             : null
@@ -658,8 +687,10 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                 <EntityCard
                     variant="compact"
                     isSelected={ctx.selectedId === row.id}
+                    openable={ctx.canOpen}
+                    rail={rail}
                     // Hub focus (Gate D 2b): while a sheet is open, the other cards step back (dimmed, no blur).
-                    className={cn("transition-opacity", ctx.selection === "panel" && !!ctx.selectedId && ctx.selectedId !== row.id && "opacity-40")}
+                    className={cn("h-full transition-opacity", ctx.selection === "panel" && !!ctx.selectedId && ctx.selectedId !== row.id && "opacity-40")}
                     selectable={isBulk}
                     checked={row.getIsSelected()}
                     onCheckedChange={(v) => row.toggleSelected(v)}
@@ -677,13 +708,14 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                         />
                     )}
                     <EntityCard.Header
+                        code={code && code !== "—" ? code : undefined}
                         icon={mediaOnTop ? undefined : icon}
                         iconClassName={TONE_CLASS[tone]}
                         imageSrc={mediaOnTop ? undefined : media?.image?.(data) ?? undefined}
                         avatar={!mediaOnTop && Avatar ? <Avatar row={data} /> : undefined}
                         title={
                             ctx.canOpen ? (
-                                <Button variant="link" className="h-7 min-w-0 max-w-full justify-start p-0 text-sm font-semibold text-foreground underline-offset-2 hover:underline focus-visible:underline" onClick={() => ctx.open(data)}>
+                                <Button data-card-open variant="link" className="h-7 min-w-0 max-w-full justify-start p-0 text-sm font-semibold text-foreground underline-offset-2 after:absolute after:inset-0 after:content-[''] focus-visible:underline focus-visible:ring-0" onClick={() => ctx.open(data)}>
                                     {/* A flex button cannot ellipsize its own text: the span does. */}
                                     <span className="truncate">{title}</span>
                                 </Button>
@@ -700,6 +732,11 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                     {/* Meta lives below the header: in the header center it squeezed the title (EntityCard 1fr column). */}
                     <EntityCard.Meta items={metaItems} />
                     {layout.body && <CardBody section={layout.body} entity={entity} row={data} />}
+                    {footerDef && (
+                        <EntityCard.Foot caption={footerDef.label}>
+                            <FieldValue def={footerDef} row={data} surface="card" align="start" />
+                        </EntityCard.Foot>
+                    )}
                 </EntityCard>
             </li>
         )

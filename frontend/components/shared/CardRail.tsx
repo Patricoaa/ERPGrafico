@@ -4,7 +4,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { cardAnatomy } from "./card-anatomy"
 
-export type CardRailTone = "warning" | "success" | "neutral" | "primary"
+export type CardRailTone = "warning" | "success" | "info" | "destructive" | "neutral" | "primary"
 export type CardRailSize = "sm" | "md"
 
 export interface CardRailProps {
@@ -26,6 +26,8 @@ export interface CardRailProps {
 const TONE_CLASS: Record<CardRailTone, string> = {
     warning: "border-warning/20 bg-warning/10 text-warning",
     success: "border-success/20 bg-success/10 text-success",
+    info: "border-info/20 bg-info/10 text-info",
+    destructive: "border-destructive/20 bg-destructive/10 text-destructive",
     neutral: "border-border/60 bg-muted/20 text-muted-foreground",
     primary: "border-primary/30 bg-primary/5 text-primary",
 }

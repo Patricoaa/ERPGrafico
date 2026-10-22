@@ -117,9 +117,17 @@ Los ~60 bloques `border rounded` sueltos no son cards (avisos y grupos de campos
 - `PaymentMethodSelector`: la superficie "ya elegida" usa `selectableCardClass`. `Step3_Delivery`: el aviso de servicios usa `InfoBlock`.
 - Cambios visibles conocidos: radios de 16/20px bajan a 12px (paneles del POS, login, KPIs).
 
+## Implemented in the seventh step (EntityCard on the ProductCard anatomy)
+
+- **Card pulsable por enlace extendido:** el título (`data-card-open`) cubre toda la card; acciones, checkbox y enlaces de `meta` quedan encima como hermanos (AX-4 intacto). Hover con borde y anillo de foco desde el título.
+- `CardLayout.code` (mono sobre el título), `CardLayout.footer` (`EntityCard.Foot`: caption + monto + chevron, `h-full` para anclar abajo) y `CardLayout.rail` (`CardRail` con tono desde `resolveStatus` e icono por tono).
+- `CardRail` gana los tonos `info` y `destructive`. `Meta` sin sangrado lateral (alineado con código y título). `Media` de 80px.
+- Aplicado: productos (media arriba, código, pie con precio), órdenes de venta y de compra (riel de estado). `ProductPriceCell` respeta `align`.
+- Decisión: las personas (contactos) mantienen el avatar en línea; la franja de media solo para catálogo.
+
 ## Plan (pendiente)
 
-1. Variante `doc` si hay caso real.
+1. Extender `rail`/`footer` a las demás entidades documentales (devoluciones, entregas, facturas) y `media: top` a otros catálogos.
 2. Verificación visual de `EntityCard` en una entidad con media, otra documental y una de contactos.
 3. Aplicar `InfoBlock` a avisos que hoy son `div` con otra forma (el ratchet solo ve literales `border rounded bg-card`).
 

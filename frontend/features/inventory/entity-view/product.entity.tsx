@@ -3,6 +3,7 @@
 import { Boxes, Package, Repeat, Wrench, type LucideIcon } from "lucide-react"
 import { Chip, DataCell } from "@/components/shared"
 import { defineEntity, registerValueKind, toNumber, formatMoneyValue, type ValueRenderProps } from "@/components/entity-view"
+import { cn } from "@/lib/utils"
 import { resolveMediaUrl } from "../api/inventoryApi"
 import type { Product } from "../types"
 
@@ -16,15 +17,16 @@ declare module "@/components/entity-view/core/value-kinds" {
     }
 }
 
-function ProductPriceCell({ value }: ValueRenderProps<"productPrice">) {
+function ProductPriceCell({ value, align }: ValueRenderProps<"productPrice">) {
+    const end = align === "end"
     if (value.dynamic) {
         return (
-            <div className="flex w-full justify-end">
+            <div className={cn("flex w-full", end ? "justify-end" : "justify-start")}>
                 <Chip size="xs" intent="warning">Dinámico</Chip>
             </div>
         )
     }
-    return <DataCell.Currency value={value.gross} className="justify-end text-right" />
+    return <DataCell.Currency value={value.gross} align={align} className={end ? "justify-end text-right" : "justify-start text-left"} />
 }
 
 let registered = false
@@ -73,10 +75,11 @@ export const productEntity = defineEntity<Product>()((f) => ({
 export const productViews = productEntity.views({
     table: { columns: ["internalCode", "name", "sku", "category", "type", "stock", "price"], primary: "name", defaultSort: "name" },
     card: {
+        code: "internalCode",
         title: "name",
-        subtitle: ["internalCode", "category"],
+        subtitle: ["category"],
         meta: ["availability", "stock"],
-        trailing: ["price"],
-        media: { iconFor: (p) => TYPE_ICON[p.product_type] ?? Package, image: (p) => resolveMediaUrl(p.image_thumbnail ?? p.image ?? null) },
+        footer: { value: "price" },
+        media: { placement: "top", iconFor: (p) => TYPE_ICON[p.product_type] ?? Package, image: (p) => resolveMediaUrl(p.image_thumbnail ?? p.image ?? null) },
     },
 })

@@ -163,13 +163,29 @@ export type CardSection<T, Id extends string> =
     | { readonly kind: "metrics"; readonly fields: readonly Id[] }
     | { readonly kind: "custom"; readonly component: ComponentType<{ row: T }> }
 
+/**
+ * Side rail that encodes the document state (ADR-0097). `status` returns the business status string;
+ * the surface resolves it to a tone with the same table as StatusBadge. The rail is decorative: the
+ * status text stays in the card (StatusBadge / hub), so colour is never the only carrier.
+ */
+export interface CardRailSpec<T> {
+    readonly status: (row: T) => string | null | undefined
+    /** Default: an icon by tone (check, clock, cross…), so the state also reads in shape. */
+    readonly icon?: LucideIcon
+}
+
 export interface CardLayout<T, Id extends string> {
     readonly title: Id
+    /** Monospace identifier above the title (folio, SKU, internal code). */
+    readonly code?: Id
     readonly subtitle?: readonly Id[]
     readonly meta?: readonly Id[]
     readonly trailing?: readonly Id[]
     readonly media?: CardMedia<T>
     readonly body?: CardSection<T, Id>
+    /** Bottom-pinned amount (caption = the field label) with the open glyph, like the POS ProductCard. */
+    readonly footer?: { readonly value: Id }
+    readonly rail?: CardRailSpec<T>
 }
 
 export interface ViewsInput<T, Id extends string> {

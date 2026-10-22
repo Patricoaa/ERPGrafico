@@ -36,6 +36,7 @@ export const purchaseOrderViews = purchaseOrderEntity.views({
         meta: ["warehouse"],
         trailing: ["hub"],
         media: { tone: "info" },
+        rail: { status: (o) => o.status },
         body: { kind: "workflow", lines: "lines", total: "total", pending: "pending", date: "expected" },
     },
 })

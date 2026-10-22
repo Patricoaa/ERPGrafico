@@ -7,7 +7,7 @@ import { MoneyDisplay } from "./MoneyDisplay"
 import { Badge } from "@/components/shared"
 import type { BadgeIntent } from "@/lib/badge-resolvers"
 import type { LucideIcon } from "lucide-react"
-import { ArrowRight, ArrowLeft } from "lucide-react"
+import { ArrowRight, ArrowLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SelectionRing } from "@/components/shared"
@@ -42,6 +42,14 @@ interface EntityCardRootProps {
     defaultAction?: ((e: React.MouseEvent) => void) | null
     className?: string
     children: React.ReactNode
+    /**
+     * The whole card opens the record through a stretched link: the title button (marked
+     * `data-card-open`) covers the card, while actions, the checkbox and links in the meta pairs
+     * stay above it. Siblings, never nested interactive containers (AX-4).
+     */
+    openable?: boolean
+    /** Trailing state rail (`CardRail`). The padding moves to an inner column so the rail is full height. */
+    rail?: React.ReactNode
     selectable?: boolean
     checked?: boolean
     onCheckedChange?: (checked: boolean) => void
@@ -57,16 +65,19 @@ function EntityCardRoot({
     defaultAction,
     className,
     children,
+    openable = false,
+    rail,
     selectable = false,
     checked = false,
     onCheckedChange,
     isAnySelected = false,
     selectionLabel,
 }: EntityCardRootProps) {
+    const padding = variant === "compact" ? "gap-1.5 p-3" : "gap-3 p-4"
     return (
         <EntityCardSelectionContext.Provider value={{ selectable, checked, onCheckedChange, isAnySelected, selectionLabel }}>
             <CardSurface
-                layout="stacked"
+                layout={rail ? "inline" : "stacked"}
                 kind="item"
                 // Only a selected card is a pressed toggle; undefined keeps navigable cards out of aria-pressed.
                 selected={isSelected ? true : undefined}
@@ -74,14 +85,16 @@ function EntityCardRoot({
                 role={onClick || defaultAction ? "button" : undefined}
                 onClick={onClick}
                 className={cn(
-                    "group flex flex-col relative transition-all duration-300",
-                    variant === "compact" ? "gap-1.5 p-3" : "gap-3 p-4",
+                    "group relative transition-all duration-300",
+                    rail ? "flex-row" : cn("flex flex-col", padding),
                     checked && "border-primary/40 bg-primary/5 shadow-sm",
                     (onClick || defaultAction) && "cursor-pointer select-none",
+                    openable && "cursor-pointer hover:border-foreground/30 has-[[data-card-open]:focus-visible]:ring-2 has-[[data-card-open]:focus-visible]:ring-ring",
                     className
                 )}
             >
-                {children}
+                {rail ? <div className={cn("flex min-w-0 flex-1 flex-col", padding)}>{children}</div> : children}
+                {rail}
             </CardSurface>
         </EntityCardSelectionContext.Provider>
     )
@@ -105,7 +118,7 @@ interface EntityCardMediaProps {
 /** Full-bleed strip above the header (ProductCard anatomy). Bleeds over the card's padding. */
 function EntityCardMedia({ icon: Icon, imageSrc, avatar, iconClassName, badge, className }: EntityCardMediaProps) {
     return (
-        <div className={cn("relative -mx-3 -mt-3 mb-1 flex h-16 items-center justify-center overflow-hidden rounded-t-sm", iconClassName ?? "bg-muted text-muted-foreground", className)}>
+        <div className={cn("relative -mx-3 -mt-3 mb-1 flex h-20 items-center justify-center overflow-hidden rounded-t-sm", iconClassName ?? "bg-muted text-muted-foreground", className)}>
             {avatar ?? (imageSrc ? (
                 <Image src={imageSrc} alt="" fill unoptimized={imageSrc.startsWith("data:")} className="object-cover" />
             ) : Icon ? (
@@ -123,6 +136,8 @@ function EntityCardMedia({ icon: Icon, imageSrc, avatar, iconClassName, badge, c
 // ─── Header ───────────────────────────────────────────────────────────────────
 
 interface EntityCardHeaderProps {
+    /** Monospace identifier above the title (folio, SKU) — the kit's `code` line. */
+    code?: React.ReactNode
     /** Primary identifier (e.g. document number, name) */
     title: React.ReactNode
     /** Optional subtitle below the title */
@@ -144,7 +159,7 @@ interface EntityCardHeaderProps {
     className?: string
 }
 
-function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Icon, imageSrc, avatar, iconClassName, className }: EntityCardHeaderProps) {
+function EntityCardHeader({ code, title, subtitle, trailing, actions, center, icon: Icon, imageSrc, avatar, iconClassName, className }: EntityCardHeaderProps) {
     const { selectable, checked, onCheckedChange, isAnySelected, selectionLabel } = React.useContext(EntityCardSelectionContext)
 
     const checkboxNode = selectable && (
@@ -154,7 +169,7 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
             onCheckedChange={onCheckedChange}
             size="sm"
             className={cn(
-                "shrink-0 z-10 self-center flex items-center justify-center transition-all duration-300",
+                "relative z-10 shrink-0 self-center flex items-center justify-center transition-all duration-300",
                 isAnySelected
                     ? "opacity-100 w-5 mr-1"
                     : "opacity-0 w-0 pointer-events-none group-hover:opacity-100 group-hover:w-5 group-hover:pointer-events-auto group-hover:mr-1 group-focus-within:opacity-100 group-focus-within:w-5 group-focus-within:pointer-events-auto group-focus-within:mr-1 overflow-hidden"
@@ -178,6 +193,7 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
             {checkboxNode}
             {leadNode}
             <div className="min-w-0 flex-1">
+                {code && <div className={cardAnatomy.code}>{code}</div>}
                 <div className={cn(cardAnatomy.entityTitle, "[&>div]:w-auto [&>div]:justify-start [&>div]:text-left")}>
                     {title}
                 </div>
@@ -189,7 +205,7 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
     const trailingNode = (trailing || actions) && (
         <div className="flex items-center gap-2 shrink-0">
             {trailing}
-            {actions && <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>{actions}</div>}
+            {actions && <div className="relative z-10 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>{actions}</div>}
         </div>
     )
 
@@ -663,6 +679,31 @@ function EntityCardHubTrigger({ isSelected, onToggle, className }: EntityCardHub
     )
 }
 
+// ─── Foot (pinned amount + open glyph) ──────────────────────────────────────────
+
+interface EntityCardFootProps {
+    /** Small caption above the amount (the field label). */
+    caption?: React.ReactNode
+    /** The amount: any value cell; the slot scales it to the kit's amount size. */
+    children: React.ReactNode
+    /** Open glyph at the bottom-right (default on). */
+    glyph?: boolean
+    className?: string
+}
+
+/** Bottom-pinned amount like the POS ProductCard: caption, amount and a chevron. Needs a card that fills its grid cell (`h-full`). */
+function EntityCardFoot({ caption, children, glyph = true, className }: EntityCardFootProps) {
+    return (
+        <div className={cn(cardAnatomy.footer, "flex items-end justify-between gap-2", className)}>
+            <div className="min-w-0">
+                {caption && <p className={cardAnatomy.caption}>{caption}</p>}
+                <div className={cardAnatomy.amountSlot}>{children}</div>
+            </div>
+            {glyph && <ChevronRight className={cardAnatomy.glyph} aria-hidden />}
+        </div>
+    )
+}
+
 // ─── Meta ──────────────────────────────────────────────────────────────────────
 
 interface EntityCardMetaItem {
@@ -686,7 +727,7 @@ interface EntityCardMetaProps {
 function EntityCardMeta({ items, className }: EntityCardMetaProps) {
     if (items.length === 0) return null
     return (
-        <dl className={cn("grid min-w-0 grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-start gap-x-4 gap-y-1.5 px-1", className)}>
+        <dl className={cn("grid min-w-0 grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-start gap-x-4 gap-y-1.5 [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10", className)}>
             {items.map((item) => (
                 <div key={item.key} className={cn("flex min-w-0 flex-col items-start", item.className)}>
                     <dt className={cn(cardAnatomy.eyebrow, "max-w-full truncate")}>{item.label}</dt>
@@ -706,6 +747,7 @@ export const EntityCard = Object.assign(EntityCardRoot, {
     Body: EntityCardBody,
     Field: EntityCardField,
     Footer: EntityCardFooter,
+    Foot: EntityCardFoot,
     Badge: EntityCardBadge,
     Skeleton: EntityCardSkeleton,
     ListItem: EntityCardListItem,
@@ -726,6 +768,7 @@ export type {
     EntityCardBodyProps,
     EntityCardFieldProps,
     EntityCardFooterProps,
+    EntityCardFootProps,
     EntityCardBadgeProps,
     EntityCardListItemProps,
     EntityCardListItemSkeletonProps,
