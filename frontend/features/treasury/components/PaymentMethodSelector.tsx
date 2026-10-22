@@ -6,7 +6,7 @@ import { useAllowedPaymentMethods, type PaymentMethod } from "@/hooks/useAllowed
 import { useBanks } from '../hooks/useMasterData'
 import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { BaseModal, Numpad } from '@/components/shared'
+import { BaseModal, Numpad, ChoiceCard, ChoiceGroup, SelectionCheck } from '@/components/shared'
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { FormSection, LabeledInput, LabeledSelect, MoneyDisplay } from "@/components/shared"
@@ -64,7 +64,7 @@ const METHOD_META: Record<string, { label: string; description: string; icon: Re
     DEBIT_CARD: { label: 'T. Débito', description: 'Tarjeta de débito', icon: CreditCard, color: 'text-primary' },
     CARD_TERMINAL: { label: 'Tarjeta TUU', description: 'Con datáfono TUU', icon: CreditCard, color: 'text-primary' },
     TRANSFER: { label: 'Transferencia', description: 'Transferencia bancaria', icon: Building2, color: 'text-primary' },
-    CHECK: { label: 'Cheque', description: 'Cheque bancario', icon: ClipboardList, color: 'text-warning' },
+    CHECK: { label: 'Cheque', description: 'Cheque bancario', icon: ClipboardList, color: 'text-warning-foreground' },
     CREDIT_BALANCE: { label: 'Saldo a Favor', description: 'Crédito disponible', icon: Wallet, color: 'text-primary' },
 }
 
@@ -385,7 +385,28 @@ export function PaymentMethodSelector({
         )
     }
 
-    const methodCardClass = "card-base bg-card text-card-foreground p-8 shadow-card shadow-black/5 h-full text-left flex flex-col items-start"
+    /** A card that is "already chosen" and holds its own controls (allocations, assigned credit): selected surface, not pressable. */
+    const chosenCardClass = "relative flex flex-col self-start overflow-hidden rounded-md border border-primary bg-card ring-1 ring-primary ribbon-cmyk"
+
+    const renderAssignedCredit = (amount: number) => (
+        <div className={cn(chosenCardClass, "w-full")}>
+            <div className="relative flex h-14 items-center justify-center bg-muted">
+                <Wallet className="size-6 text-muted-foreground/70" aria-hidden />
+                <SelectionCheck />
+            </div>
+            <div className="flex items-end justify-between gap-3 px-3 pb-3 pt-2">
+                <span className="text-sm font-semibold">Crédito Asignado</span>
+                <span className="flex flex-col items-end">
+                    <span className="text-3xs text-muted-foreground">Monto</span>
+                    <span className="text-lg font-semibold tabular-nums"><MoneyDisplay amount={amount} showColor={false} /></span>
+                </span>
+            </div>
+        </div>
+    )
+
+    /** Compact one-line card for the "Múltiple" mode switch (not an option of the radiogroup). */
+    const modeCardClass = "col-span-full h-auto w-full justify-start gap-3 rounded-md border border-dashed border-primary/40 bg-primary/[0.03] p-4 text-left hover:border-primary/60 hover:bg-primary/[0.06]"
+
 
     const renderMethodGrid = () => {
         if (!isMultiPayment) {
@@ -412,113 +433,66 @@ export function PaymentMethodSelector({
                 isMultiple: true,
             })
 
+            const [multiMode, ...methods] = allMethods
+
             return (
                 <>
-                    <div className="grid gap-3 grid-cols-2 xl:grid-cols-3">
-                    {allMethods.map((m) => {
-                        const Icon = m.icon
-                        const isSingleSelected = !m.isMultiple && paymentData.method === m.id
-                        const isMultiCard = m.isMultiple
+                    <ChoiceGroup label="Método de pago" columns="grid-cols-2 xl:grid-cols-3" activation="focus">
+                        <Button type="button" variant="ghost" onClick={enterMultiMode} className={modeCardClass}>
+                            <multiMode.icon className="size-6 shrink-0 text-primary" />
+                            <span className="flex flex-col items-start">
+                                <span className="text-sm font-semibold">{multiMode.label}</span>
+                                <span className="text-2xs font-normal text-muted-foreground">{multiMode.description}</span>
+                            </span>
+                        </Button>
 
-                        return (
-                            <Button
-                                key={m.id}
-                                type="button"
-                                variant="ghost"
-                                onClick={() => {
-                                    if (isMultiCard) {
-                                        enterMultiMode()
-                                    } else {
+                        {methods.map((m) => {
+                            const isSelected = paymentData.method === m.id
+                            const showAmount = isSelected && paymentData.amount > 0
+
+                            return (
+                                <ChoiceCard
+                                    key={m.id}
+                                    size="compact"
+                                    selected={isSelected}
+                                    disabled={!m.isAllowed}
+                                    icon={m.icon}
+                                    iconClassName={m.color}
+                                    title={m.label}
+                                    description={m.isAllowed ? m.description : "No disponible"}
+                                    onSelect={() => {
                                         const isReClick = paymentData.method === m.id
-                                        const isTerminalIntegration = m.id === 'CARD_TERMINAL'
                                         onPaymentDataChange({
                                             ...paymentData,
                                             method: m.id as PaymentData['method'],
-                                            isTerminalIntegration,
+                                            isTerminalIntegration: m.id === 'CARD_TERMINAL',
                                         })
-                                        if (!isReClick) {
-                                            setTempAmount((total || 0).toString())
-                                            setIsAmountModalOpen(true)
-                                        } else if (m.id !== 'TRANSFER' && m.id !== 'CREDIT_BALANCE') {
+                                        if (!isReClick || (m.id !== 'TRANSFER' && m.id !== 'CREDIT_BALANCE')) {
                                             setTempAmount((total || 0).toString())
                                             setIsAmountModalOpen(true)
                                         }
-                                    }
-                                }}
-                                disabled={!m.isAllowed}
-                                className={cn(
-                                    isMultiCard ? "col-span-full self-start h-auto p-8 border-2 border-dashed border-primary/40 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/60" : "card-base bg-card text-card-foreground p-8 shadow-card shadow-black/5 h-full text-left flex flex-col items-start",
-                                    isSingleSelected ? "border-2 border-primary accent-visible" : undefined,
-                                    !m.isAllowed && "opacity-40 grayscale cursor-not-allowed"
-                                )}
-                            >
-                                <div className="flex items-center justify-between w-full gap-3">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <Icon className={cn("h-10 w-10 shrink-0", m.color)} />
-                                        {isMultiCard ? (
-                                            <div className="min-w-0">
-                                                <div className="text-base font-semibold leading-tight">{m.label}</div>
-                                                <div className="text-xs text-muted-foreground leading-tight">{m.description}</div>
-                                            </div>
-                                        ) : (
-                                            <span className="text-base font-semibold">{m.label}</span>
-                                        )}
-                                    </div>
-
-                                    {isSingleSelected && paymentData.amount > 0 && m.id !== 'CREDIT_BALANCE' && (
-                                        <div className="text-right shrink-0">
-                                            <div className="text-3xs font-medium uppercase tracking-widest text-muted-foreground">MONTO</div>
-                                            <div className="text-base font-semibold tabular-nums">
-                                                <MoneyDisplay amount={paymentData.amount} showColor={false} />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {m.id === 'CREDIT_BALANCE' && isSingleSelected && (
-                                        <div className="flex items-center gap-4 shrink-0">
-                                            {paymentData.amount > 0 && (
-                                                <div className="text-right">
-                                                    <div className="text-3xs font-medium uppercase tracking-widest text-muted-foreground">MONTO</div>
-                                                    <div className="text-base font-semibold tabular-nums">
-                                                        <MoneyDisplay amount={paymentData.amount} showColor={false} />
-                                                    </div>
-                                                </div>
+                                    }}
+                                    footer={showAmount && (
+                                        <span className="flex items-end justify-between gap-2">
+                                            <span className="flex flex-col">
+                                                <span className="text-3xs text-muted-foreground">Monto</span>
+                                                <span className="text-sm font-semibold tabular-nums"><MoneyDisplay amount={paymentData.amount} showColor={false} /></span>
+                                            </span>
+                                            {m.id === 'CREDIT_BALANCE' && (
+                                                <span className="flex flex-col items-end">
+                                                    <span className="text-3xs text-muted-foreground">Disponible</span>
+                                                    <span className="text-sm font-semibold tabular-nums"><MoneyDisplay amount={customerCreditBalance} showColor={false} /></span>
+                                                </span>
                                             )}
-                                            <div className="text-right">
-                                                <div className="text-3xs font-medium uppercase tracking-widest text-muted-foreground">DISP.</div>
-                                                <div className="text-base font-semibold tabular-nums">
-                                                    <MoneyDisplay amount={customerCreditBalance} showColor={false} />
-                                                </div>
-                                            </div>
-                                        </div>
+                                        </span>
                                     )}
-                                </div>
+                                />
+                            )
+                        })}
+                    </ChoiceGroup>
 
-                            </Button>
-                        )
-                    })}
-                </div>
-
-                {/* Crédito Asignado — delta no cubierto en single mode — solo ventas */}
-                {operation !== 'purchases' && paymentData.amount > 0 && paymentData.amount < total && (
-                    <div className={cn(
-                        methodCardClass,
-                        "self-start h-auto border-2 border-primary accent-visible rounded-sm"
-                    )}>
-                        <div className="flex items-center justify-between w-full gap-3">
-                            <div className="flex items-center gap-3 min-w-0">
-                                <Wallet className="h-9 w-9 shrink-0 text-primary" />
-                                <span className="text-base font-semibold text-foreground">Crédito Asignado</span>
-                            </div>
-                            <div className="text-right shrink-0">
-                                <div className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">MONTO</div>
-                                <div className="text-base font-semibold tabular-nums">
-                                    <MoneyDisplay amount={total - paymentData.amount} showColor={false} />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                    {/* Crédito Asignado — delta no cubierto en single mode — solo ventas */}
+                    {operation !== 'purchases' && paymentData.amount > 0 && paymentData.amount < total && renderAssignedCredit(total - paymentData.amount)}
                 </>
             )
         }
@@ -530,13 +504,13 @@ export function PaymentMethodSelector({
                 <div className="grid gap-3 items-start grid-cols-2 xl:grid-cols-3">
                     {/* Card "Múltiple" para salir */}
                     <div
-                        className="col-span-full self-start p-8 flex flex-row items-center justify-between gap-3 border-2 border-primary bg-primary text-primary-foreground rounded-[calc(var(--radius))]"
+                        className="col-span-full self-start p-4 flex flex-row items-center justify-between gap-3 border border-primary bg-primary text-primary-foreground rounded-md"
                     >
                         <div className="flex items-center gap-3 min-w-0">
-                            <Layers className="h-9 w-9 shrink-0 text-primary-foreground" />
+                            <Layers className="size-6 shrink-0 text-primary-foreground" />
                             <div className="min-w-0">
                                 <div className="flex items-center gap-2">
-                                    <div className="text-base font-semibold leading-tight">Múltiple</div>
+                                    <div className="text-sm font-semibold leading-tight">Múltiple</div>
                                     <span className="text-3xs font-bold uppercase bg-primary-foreground text-primary px-1.5 py-0.5 rounded-sm leading-none">Activo</span>
                                 </div>
                             </div>
@@ -562,9 +536,9 @@ export function PaymentMethodSelector({
                                 variant="ghost"
                                 size="icon-sm"
                                 onClick={exitMultiMode}
-                                className="size-7 rounded-[calc(var(--radius))] text-primary-foreground hover:bg-primary-foreground/20"
+                                className="size-7 rounded-md text-primary-foreground hover:bg-primary-foreground/20"
                             >
-                                <X className="h-5 w-5" />
+                                <X className="size-4" />
                             </Button>
                         </div>
                     </div>
@@ -577,99 +551,89 @@ export function PaymentMethodSelector({
                         if (isAllocated) {
                             const alloc = paymentsList[allocIndex]
                             return (
-                                <div
-                                    key={m.id}
-                                    className={cn(methodCardClass, "self-start h-auto border-2 border-primary accent-visible")}
-                                >
-                                    <div className="flex items-center justify-between w-full gap-3">
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <Icon className={cn("h-9 w-9 shrink-0", m.color)} />
+                                <div key={m.id} className={chosenCardClass}>
+                                    <div className="relative flex h-14 items-center justify-center bg-muted">
+                                        <Icon className={cn("size-6", m.color)} aria-hidden />
+                                        <SelectionCheck />
+                                    </div>
+                                    <div className="flex flex-col gap-2 px-3 pb-3 pt-2">
+                                        <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
-                                                <div className="text-base font-semibold leading-tight">{m.label}</div>
-                                                <div className="text-sm text-muted-foreground leading-tight tabular-nums">
+                                                <div className="text-sm font-semibold leading-tight">{m.label}</div>
+                                                <div className="text-lg font-semibold leading-tight tabular-nums">
                                                     <MoneyDisplay amount={alloc.amount} showColor={false} />
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div className="flex items-center gap-2 shrink-0 ml-auto">
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                         onClick={() => handleEditAmount(allocIndex)}
-                                                        className="p-1.5 rounded-sm hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                                                        aria-label="Editar monto"
-                                                    >
-                                                        <Pencil className="h-5 w-5" />
-                                                    </Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent side="top">Editar monto</TooltipContent>
-                                            </Tooltip>
-                                            {hasAdditionalFieldsForMethod(m.id) && (
+                                            <div className="flex items-center gap-0.5 shrink-0">
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            onClick={() => handleEditAmount(allocIndex)}
+                                                            className="size-7 rounded-sm p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                                            aria-label="Editar monto"
+                                                        >
+                                                            <Pencil className="size-4" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent side="top">Editar monto</TooltipContent>
+                                                </Tooltip>
+                                                {hasAdditionalFieldsForMethod(m.id) && (
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                type="button"
+                                                                onClick={() => setShowFieldsForIndex(showFieldsForIndex === allocIndex ? null : allocIndex)}
+                                                                className="size-7 rounded-sm p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                                                aria-label="Campos adicionales"
+                                                            >
+                                                                <Layers className="size-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="top">Campos adicionales</TooltipContent>
+                                                    </Tooltip>
+                                                )}
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <Button
                                                             variant="ghost"
                                                             type="button"
-                                                            onClick={() => setShowFieldsForIndex(showFieldsForIndex === allocIndex ? null : allocIndex)}
-                                                            className="p-1.5 rounded-sm hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                                                            aria-label="Campos adicionales"
+                                                            onClick={() => removePayment(allocIndex)}
+                                                            className="size-7 rounded-sm p-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                                            aria-label="Eliminar pago"
                                                         >
-                                                            <Layers className="h-5 w-5" />
+                                                            <Trash2 className="size-4" />
                                                         </Button>
                                                     </TooltipTrigger>
-                                                    <TooltipContent side="top">Campos adicionales</TooltipContent>
+                                                    <TooltipContent side="top">Eliminar pago</TooltipContent>
                                                 </Tooltip>
-                                            )}
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        type="button"
-                                                        onClick={() => removePayment(allocIndex)}
-                                                        className="p-1.5 rounded-sm hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                                                        aria-label="Eliminar pago"
-                                                    >
-                                                        <Trash2 className="h-5 w-5" />
-                                                    </Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent side="top">Eliminar pago</TooltipContent>
-                                            </Tooltip>
+                                            </div>
                                         </div>
+                                        {showFieldsForIndex === allocIndex && hasAdditionalFieldsForMethod(m.id) && (
+                                            <div className="w-full">
+                                                {renderAdditionalFields(m.id, alloc, (updates) => updatePaymentAtIndex(allocIndex, updates))}
+                                            </div>
+                                        )}
                                     </div>
-                                    {showFieldsForIndex === allocIndex && hasAdditionalFieldsForMethod(m.id) && (
-                                        <div className="w-full">
-                                            {renderAdditionalFields(m.id, alloc, (updates) => updatePaymentAtIndex(allocIndex, updates))}
-                                        </div>
-                                    )}
                                 </div>
                             )
                         }
 
                         return (
-                            <Button
+                            <ChoiceCard
                                 key={m.id}
-                                type="button"
-                                variant="ghost"
-                                onClick={() => handlePaymentMethodSelect(m.id)}
+                                size="compact"
+                                selected={false}
                                 disabled={!m.isAllowed}
-                                className={cn(
-                                    methodCardClass,
-                                    "self-start h-auto",
-                                    !m.isAllowed && "opacity-40 grayscale cursor-not-allowed"
-                                )}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <Icon className={cn("h-10 w-10 shrink-0", m.color)} />
-                                    <span className="text-base font-semibold">{m.label}</span>
-                                </div>
-                                {!m.isAllowed && (
-                                    <div className="text-3xs font-medium text-destructive uppercase tracking-widest mt-2">
-                                        NO DISPONIBLE
-                                    </div>
-                                )}
-                            </Button>
+                                icon={Icon}
+                                iconClassName={m.color}
+                                title={m.label}
+                                description={m.isAllowed ? m.description : "No disponible"}
+                                onSelect={() => handlePaymentMethodSelect(m.id)}
+                                className="self-start"
+                            />
                         )
                     })}
                 </div>
@@ -680,25 +644,7 @@ export function PaymentMethodSelector({
                     </div>
                 )}
 
-                {operation !== 'purchases' && !isFullyPaid && remaining > 0 && (
-                    <div className={cn(
-                        methodCardClass,
-                        "self-start h-auto border-2 border-primary accent-visible rounded-sm"
-                    )}>
-                        <div className="flex items-center justify-between w-full gap-3">
-                            <div className="flex items-center gap-3 min-w-0">
-                                <Wallet className="h-9 w-9 shrink-0 text-primary" />
-                                <span className="text-base font-semibold text-foreground">Crédito Asignado</span>
-                            </div>
-                            <div className="text-right shrink-0">
-                                <div className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">MONTO</div>
-                                <div className="text-base font-semibold tabular-nums">
-                                    <MoneyDisplay amount={remaining} showColor={false} />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                {operation !== 'purchases' && !isFullyPaid && remaining > 0 && renderAssignedCredit(remaining)}
             </div>
         )
     }
