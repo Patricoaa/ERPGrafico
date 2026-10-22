@@ -6,7 +6,7 @@ import { useAllowedPaymentMethods, type PaymentMethod } from "@/hooks/useAllowed
 import { useBanks } from '../hooks/useMasterData'
 import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { BaseModal, Numpad, ChoiceCard, ChoiceGroup, SelectionCheck, cardAnatomy } from '@/components/shared'
+import { BaseModal, Numpad, ChoiceCard, ChoiceGroup, SelectionCheck, cardAnatomy, selectableCardClass } from '@/components/shared'
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { FormSection, LabeledInput, LabeledSelect, MoneyDisplay } from "@/components/shared"
@@ -386,9 +386,7 @@ export function PaymentMethodSelector({
     }
 
     /** A card that is "already chosen" and holds its own controls (allocations, assigned credit): selected surface, not pressable. */
-    const chosenCardClass = cn(
-        "relative flex flex-col self-start overflow-hidden border border-primary bg-card ring-1 ring-primary ribbon-cmyk rounded-sm"
-    )
+    const chosenCardClass = cn(selectableCardClass({ selected: true, interactive: false }), "self-start ribbon-cmyk")
 
     const renderAssignedCredit = (amount: number) => (
         <div className={cn(chosenCardClass, "w-full")}>

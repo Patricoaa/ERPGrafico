@@ -133,6 +133,7 @@ export * from './FacetedFilter'
 export * from './SelectableCard';
 export * from './ChoiceCard';
 export * from './CardSurface';
+export * from './InfoBlock';
 export * from './CardRow';
 export * from './card-anatomy';
 export * from './FolioValidationInput';

@@ -167,7 +167,7 @@ export function FormLineItemsTable({
             )}
 
             {/* ── Table shell — always rendered ── */}
-            <div className="border rounded-md overflow-hidden bg-card/30">
+            <div className="surface-panel overflow-hidden bg-card/30">
                 <SkeletonShell isLoading={isLoading} ariaLabel="Cargando tabla de líneas" className="w-full">
                     <Table>
                         <TableHeader>

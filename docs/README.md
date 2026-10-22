@@ -74,6 +74,7 @@ last_review: 2026-06-19
 | “searchable entity”, “global search”, “index”, “rebuild search” | [add-searchable-entity.md](30-playbooks/add-searchable-entity.md) | 30 |
 | “generic form”, “universal registry”, “metadata schema”, “data-driven UI”, “Django architecture refactor” | [50-audit/Arquitectura Django/README.md](50-audit/Arquitectura%20Django/README.md) | 50 |
 | "UI audit", "sobreingeniería", "ad-hoc que compartido ya resuelve", "centralizar componente", "simplificar shared", "deuda design system", "DataTable bloated", "refactor componentes shared", "barrel compartido" | [design-system-ui-audit.md](50-audit/design-system-ui-audit.md) | 50 |
+| “card”, “tarjeta”, “ChoiceCard”, “CardSurface”, “CardRail”, “CardLead”, “cardAnatomy”, “surface-item”, “card-flat”, “card-base”, “qué card uso”, “rol de card” | [component-card-family.md](20-contracts/component-card-family.md) | 20 |
 | “DataTable”, “view mode”, “card view”, “kanban view”, “view switching”, “cardMode”, “isLoading skeleton”, “EntityCard”, “variant embedded” | [component-datatable-views.md](20-contracts/component-datatable-views.md) | 20 |
 | “analytics”, “chart”, “analytics panel”, “DataTable analytics” | [add-analytics-panel.md](30-playbooks/add-analytics-panel.md) | 30 |
 | “search bar”, “filter”, “búsqueda”, “filtro”, “useUnifiedSearch”, “UnifiedSearchBar”, “unifiedSearchDef”, “searchDef”, “segmentation”, “SegmentationBar”, “SmartSearchBar”, “date filter in toolbar” | [unified-searchbar.md](20-contracts/unified-searchbar.md) | 20 |

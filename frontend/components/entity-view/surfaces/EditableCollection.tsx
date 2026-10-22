@@ -111,7 +111,7 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                     )}
                 </div>
             )}
-            <div className="overflow-auto rounded-md border bg-card">
+            <div className="surface-panel overflow-auto">
                 <table className="w-full text-sm" aria-label={label}>
                     <thead className="bg-card">
                         <tr className="border-b">

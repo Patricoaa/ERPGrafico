@@ -190,7 +190,7 @@ export function StatementDetailPanel({
                         </div>
 
                         {/* Progress */}
-                        <div className="bg-card p-4 rounded-md border shadow-card">
+                        <div className="surface-panel p-4 shadow-card">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Estado de la Conciliación</span>

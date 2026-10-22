@@ -234,7 +234,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                             ) : (
                                 <div className="flex flex-col gap-2 p-3">
                                     {selectedItems.map((item) => (
-                                        <div key={item.id} className="flex flex-col gap-1 p-3 rounded-md border border-border/40 bg-card/5 group">
+                                        <div key={item.id} className="surface-item flex flex-col gap-1 p-3 border-border/40 bg-card/5 group">
                                             <div className="grid grid-cols-[1fr_auto_1fr_auto_auto_auto] gap-x-1 items-start">
                                                 <div className="flex flex-col">
                                                     <span className="text-xs font-bold truncate">{item.product.name}</span>

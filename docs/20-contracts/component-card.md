@@ -12,6 +12,8 @@ stability: stable
 El componente `Card` es el contenedor lógico principal utilizado para agrupar información relacionada en vistas de detalle, formularios y dashboards del ERP. Es parte del sistema de diseño (shadcn/ui) y garantiza la uniformidad estructural de las tarjetas.
 **Status**: active  
 
+> Este contrato cubre el `Card` de **panel**. Para cards interactivas (elegir, abrir, navegar) ver [component-card-family.md](./component-card-family.md).
+
 ---
 
 ## 1. Composición Estricta
@@ -48,8 +50,8 @@ import {
 
 `ModuleGrid` es el contenedor autorizado para **grids de navegación entre módulos/secciones** (Dashboard y Settings). Propiedad de ADR-0074.
 
-- Usa el token `card-base` internamente, altura única documentada `h-28`.
-- Cada item es un `<Link>`; icono en caja `w-8 h-8 bg-muted/50`, label `font-bold text-sm`, descripción opcional `text-2xs line-clamp-1`.
+- Rol `nav` de la [familia de cards](./component-card-family.md) (ADR-0097): item `card-flat` (8px) en fila, sin altura fija. `CardLead` (40px) con el icono, título `cardAnatomy.title`, descripción opcional de una línea y chevron como glifo.
+- Cada item es un `<Link>`.
 - **v1 sin pill de estado**: nunca inventar un estado por módulo a partir de literales. El tipo `RuntimeStatus` existe en el API del componente para feeds reales futuros (WS/eventos de conexión), no para mapeos estáticos.
 - Sin animación local: la entrada de un grid estático la decide un único `<FadeIn>` del consumidor (ADR-0075). Prohibido `animationDelay`/`animate-in` inline por item.
 

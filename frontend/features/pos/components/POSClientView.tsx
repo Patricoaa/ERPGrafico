@@ -601,7 +601,7 @@ export function POSClientView() {
                 <div className="md:col-span-12 lg:col-span-7 flex flex-col min-h-0">
                     {posMode === 'SHOPPING' ? (
                         <div key="shop" className="flex-1 flex flex-col min-h-0 animate-in fade-in slide-in-from-left-2 ease-premium duration-300 fill-mode-both motion-reduce:animate-none">
-                            <Card className="flex-1 flex flex-col overflow-hidden bg-card border border-border/60 shadow-lg shadow-black/10 rounded-lg p-2">
+                            <Card className="surface-panel flex-1 flex flex-col overflow-hidden border-border/60 shadow-lg shadow-black/10 p-2">
                                 <div className={cn("px-2 border-b border-border/40 space-y-2", isTouchMode ? "pb-2 mb-2" : "pb-1.5 mb-1.5")}>
                                     <SearchBar
                                         className="bg-muted/50 hover:bg-muted/70 focus-within:bg-muted/70"
@@ -628,7 +628,7 @@ export function POSClientView() {
                             </Card>
                         </div>
                     ) : (
-                        <div key={currentDraftId || 'checkout-new'} className="flex-1 flex flex-col min-h-0 bg-card border border-border/50 rounded-md shadow-card shadow-black/5 overflow-hidden relative animate-in fade-in slide-in-from-right-2 ease-premium duration-300 fill-mode-both motion-reduce:animate-none">
+                        <div key={currentDraftId || 'checkout-new'} className="surface-panel flex-1 flex flex-col min-h-0 border-border/50 shadow-card shadow-black/5 overflow-hidden relative animate-in fade-in slide-in-from-right-2 ease-premium duration-300 fill-mode-both motion-reduce:animate-none">
                             <SalesCheckoutWizardView
                                 ref={checkoutWizardRef}
                                 key={currentDraftId || 'checkout-new'}

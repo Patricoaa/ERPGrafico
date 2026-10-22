@@ -160,5 +160,7 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0094](0094-card-anatomy-kit-and-radius.md) | Card anatomy kit + radius system — CardSurface, CardRail, tokens, stacked/inline layouts | Accepted |
 | [0095](0095-row-variant-radio-card-entity-view.md) | CardRow variant + RadioCard removal + entity-view migration to CardSurface | Accepted |
 | [0096](0096-wizard-step-rail.md) | Wizard step rail redesign — numbered nodes, connector, a11y, detail on active | Accepted |
+| [0096](0096-light-choice-card-and-inline-layout.md) | ChoiceCard light variant + CardSurface inline layout fix | Accepted |
+| [0097](0097-card-family-roles-and-surface-tokens.md) | Familia de cards — roles de superficie, layouts, rail único y tokens de superficie | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

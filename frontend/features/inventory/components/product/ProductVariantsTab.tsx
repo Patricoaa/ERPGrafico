@@ -202,7 +202,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
     return (
         <div className="mt-0 space-y-2 flex flex-col h-[650px] animate-in fade-in duration-500">
             {/* Header / Actions */}
-            <div className="flex items-center justify-between bg-card p-4 rounded-md border border-primary/20">
+            <div className="surface-panel flex items-center justify-between border-primary/20 p-4">
                 <div className="flex items-center gap-4">
                     <div className="p-2.5 bg-primary/10 rounded-md border border-primary/20">
                         <Layers className="h-5 w-5 text-primary" />
@@ -278,7 +278,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
             <div className="flex-1 flex gap-4 overflow-hidden relative animate-in fade-in slide-in-from-left-8 duration-300">
                 {/* Left: Master Table */}
                 <div className={cn(
-                    "flex-1 rounded-md border bg-card overflow-hidden flex flex-col transition-all duration-300",
+                    "surface-panel flex flex-1 flex-col overflow-hidden transition-all duration-300",
                     "md:w-1/2 lg:w-7/12"
                 )}>
                     <div className="overflow-y-auto scrollbar-thin flex-1">
@@ -437,7 +437,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                             onTabChange={(tab: string) => onTabChange?.(tab)}
                         />
                     ) : (
-                        <div className="w-full h-full flex-1 flex flex-col min-h-0 bg-card rounded-md border p-5 animate-in fade-in slide-in-from-right-4 duration-300">
+                        <div className="surface-panel flex h-full min-h-0 w-full flex-1 flex-col p-5 animate-in fade-in slide-in-from-right-4 duration-300">
                             <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin pb-4">
                                 <div className="flex flex-col gap-y-6">
                                     {availableAttributes.map(attr => {

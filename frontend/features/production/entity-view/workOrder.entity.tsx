@@ -62,7 +62,8 @@ export const workOrderEntity = defineEntity<WorkOrder>()((f) => ({
             { label: "OV Asociada" },
         ),
         startDate: f.date("start_date", { label: "Fecha Inicio" }),
-        productDescription: f.text("product_description", { label: "Descripción del Trabajo" }),
+        // stage_data.product_description is only set by the manufacturing dialog; `description` is the work order's own title.
+        productDescription: f.text((w) => w.product_description || w.description || "", { label: "Descripción del Trabajo" }),
         status: f.value(
             "workOrderStatus",
             (w) => ({ status: w.status, label: null, isOverdue: isWorkOrderOverdue(w) }),
@@ -83,9 +84,8 @@ export const workOrderViews = workOrderEntity.views({
     },
     card: {
         title: "productDescription",
-        sections: [
-            { fields: ["number", "saleOrderNumber", "status"] },
-            { fields: ["startDate", "dueDate", "currentStage"] },
-        ],
+        subtitle: ["number"],
+        meta: ["saleOrderNumber", "currentStage", "startDate", "dueDate"],
+        trailing: ["status"],
     },
 })

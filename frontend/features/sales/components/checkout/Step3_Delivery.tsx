@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import {LabeledInput, PeriodValidationDateInput, QuantityDisplay, ChoiceCard, ChoiceGroup} from "@/components/shared"
+import {LabeledInput, PeriodValidationDateInput, QuantityDisplay, ChoiceCard, ChoiceGroup, InfoBlock} from "@/components/shared"
 import {Truck, Package, Calendar, Info, AlertTriangle} from "lucide-react"
 import { useAllowedUoMs } from "@/features/inventory"
 import {
@@ -73,15 +73,9 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
     if (isServiceMode) {
         return (
             <div className="space-y-6">
-                <div className="flex items-start gap-3 p-4 bg-card border border-primary/20 rounded-md shadow-card shadow-black/5">
-                    <Calendar className="h-5 w-5 shrink-0 mt-0.5 text-primary" />
-                    <div className="space-y-1">
-                        <p className="text-xs font-bold uppercase tracking-wider">Cumplimiento de Servicios</p>
-                        <p className="text-xs text-muted-foreground">
-                            Esta orden contiene solo servicios. Seleccione la fecha compromiso de cumplimiento.
-                        </p>
-                    </div>
-                </div>
+                <InfoBlock tone="info" icon={Calendar} title="Cumplimiento de Servicios" live="none">
+                    Esta orden contiene solo servicios. Seleccione la fecha compromiso de cumplimiento.
+                </InfoBlock>
 
                 <PeriodValidationDateInput
                     date={deliveryData.date ? new Date(deliveryData.date + 'T12:00:00') : undefined}

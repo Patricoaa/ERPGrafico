@@ -181,7 +181,7 @@ export function NoteLineItemsStep({
 
     if (lines.length === 0) {
         return (
-            <div className="rounded-md border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
+            <div className="surface-panel px-6 py-10 text-center text-sm text-muted-foreground">
                 No se encontraron líneas disponibles en el documento original.
             </div>
         )

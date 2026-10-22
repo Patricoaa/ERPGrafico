@@ -416,7 +416,7 @@ export function SessionOpenModal({
                 <p className="text-muted-foreground">{selectedTerminal?.name}</p>
             </div>
 
-            <div className="bg-card border rounded-md p-4 space-y-3 shadow-card">
+            <div className="surface-panel p-4 space-y-3 shadow-card">
                 <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Fondo en Sistema:</span>
                     <span className="font-medium">{formatCurrency(expectedBalance)}</span>

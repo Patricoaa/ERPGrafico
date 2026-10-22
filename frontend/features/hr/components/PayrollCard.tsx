@@ -230,7 +230,7 @@ export function PayrollCard({
                 {/* 2. CONSOLIDATED DETAIL TABLE */}
                 <FormSection title="Detalle de Conceptos" icon={Clock} className="pb-6" />
 
-                <div className="border border/60 rounded-md overflow-hidden shadow-card bg-card transition-all">
+                <div className="surface-panel overflow-hidden shadow-card transition-all">
                     <Table>
                         <TableHeader className="bg-muted/80 border-b border/60 transition-colors">
                             <TableRow className="hover:bg-transparent border-none py-1">

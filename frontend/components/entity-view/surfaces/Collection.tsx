@@ -631,6 +631,7 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
     const isBulk = ctx.selection === "bulk"
     // Meta field definitions are resolved once per layout, not per card.
     const metaDefs = React.useMemo(() => (layout.meta ?? []).map((id) => ({ id, def: fieldById(entity, id) })), [layout.meta, entity])
+    const trailingDefs = React.useMemo(() => (layout.trailing ?? []).map((id) => ({ id, def: fieldById(entity, id) })), [layout.trailing, entity])
 
     const renderCard = (row: Row<T>) => {
         const data = row.original
@@ -647,6 +648,11 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
         const trailing = layout.trailing && layout.trailing.length > 0
             ? layout.trailing.map((id) => <FieldValue key={id} def={fieldById(entity, id)} row={data} surface="card" align="start" />)
             : null
+        // Narrow cards (container < 28rem) fold the trailing values into the label/value pairs instead of an orphan row.
+        const metaItems = [
+            ...metaDefs.map(({ id, def }) => ({ key: id, label: def.label, value: <FieldValue def={def} row={data} surface="card" align="start" /> })),
+            ...trailingDefs.map(({ id, def }) => ({ key: `trailing-${id}`, label: def.label, value: <FieldValue def={def} row={data} surface="card" align="start" />, className: "@md:hidden" })),
+        ]
         return (
             <li key={row.id} className="@container min-w-0">
                 <EntityCard
@@ -677,8 +683,9 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                         avatar={!mediaOnTop && Avatar ? <Avatar row={data} /> : undefined}
                         title={
                             ctx.canOpen ? (
-                                <Button variant="link" className="h-7 p-0 text-sm font-semibold text-foreground underline-offset-2 hover:underline focus-visible:underline" onClick={() => ctx.open(data)}>
-                                    {title}
+                                <Button variant="link" className="h-7 min-w-0 max-w-full justify-start p-0 text-sm font-semibold text-foreground underline-offset-2 hover:underline focus-visible:underline" onClick={() => ctx.open(data)}>
+                                    {/* A flex button cannot ellipsize its own text: the span does. */}
+                                    <span className="truncate">{title}</span>
                                 </Button>
                             ) : (
                                 title
@@ -690,11 +697,8 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                         trailing={trailing ? <div className="hidden @md:flex items-center gap-3">{trailing}</div> : undefined}
                         actions={ctx.actions?.(data, "card")}
                     />
-                    {trailing && <div className="flex @md:hidden flex-wrap items-center gap-3 px-1">{trailing}</div>}
                     {/* Meta lives below the header: in the header center it squeezed the title (EntityCard 1fr column). */}
-                    <EntityCard.Meta
-                        items={metaDefs.map(({ id, def }) => ({ key: id, label: def.label, value: <FieldValue def={def} row={data} surface="card" align="start" /> }))}
-                    />
+                    <EntityCard.Meta items={metaItems} />
                     {layout.body && <CardBody section={layout.body} entity={entity} row={data} />}
                 </EntityCard>
             </li>

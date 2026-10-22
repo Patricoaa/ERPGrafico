@@ -194,7 +194,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                     )}
 
                     {!initialData?.id ? (
-                        <div className="p-12 flex flex-col items-center justify-center text-center border-2 border-dashed border-border/50 rounded-md bg-card">
+                        <div className="surface-panel p-12 flex flex-col items-center justify-center text-center border-2 border-dashed border-border/50">
                             <Package className="h-10 w-10 text-muted-foreground/30 mb-3" />
                             <h3 className="text-sm font-semibold mb-1">Producto no guardado</h3>
                             <p className="text-xs text-muted-foreground max-w-sm">

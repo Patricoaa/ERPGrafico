@@ -31,7 +31,7 @@ export function CardSkeleton({
                 {Array.from({ length: count }).map((_, i) => (
                     <div
                         key={`compact-item-${i}`}
-                        className="flex items-center p-3 rounded-md border border-border/40 bg-card/5 gap-3"
+                        className="surface-item flex items-center p-3 border-border/40 bg-card/5 gap-3"
                     >
                         <Skeleton className="h-10 w-10 rounded-md shrink-0" />
                         <div className="flex-1 space-y-1.5">
@@ -60,7 +60,7 @@ export function CardSkeleton({
                 {Array.from({ length: count }).map((_, i) => (
                     <div
                         key={`contact-card-${i}`}
-                        className="flex flex-col overflow-hidden rounded-md border border-border bg-card"
+                        className="surface-item flex flex-col overflow-hidden"
                     >
                         <div className="flex h-20 items-center justify-center bg-muted">
                             <Skeleton className="size-14 rounded-md" />
@@ -93,7 +93,7 @@ export function CardSkeleton({
                 {Array.from({ length: count }).map((_, i) => (
                     <div
                         key={`list-item-${i}`}
-                        className="flex items-center justify-between p-4 rounded-md border border-border/40 bg-card/10 gap-6"
+                        className="surface-panel flex items-center justify-between p-4 border-border/40 bg-card/10 gap-6"
                     >
                         <div className="flex items-center gap-4 min-w-[30%]">
                             <Skeleton className="h-12 w-12 rounded-md shrink-0" />
@@ -139,7 +139,7 @@ export function CardSkeleton({
                 )}
             >
                 {Array.from({ length: count }).map((_, i) => (
-                    <div key={`product-${i}`} className="flex flex-col overflow-hidden rounded-md border border-border bg-card">
+                    <div key={`product-${i}`} className="surface-item flex flex-col overflow-hidden">
                         <Skeleton className="h-22 w-full rounded-none" />
                         <div className="flex flex-1 flex-col gap-1 px-3 pb-3 pt-2.5">
                             <Skeleton className="h-3 w-14" />
@@ -173,7 +173,7 @@ export function CardSkeleton({
             {Array.from({ length: count }).map((_, i) => (
                 <div
                     key={`card-${i}`}
-                    className="p-6 rounded-md border border-border/40 bg-card/50 space-y-4"
+                    className="surface-panel p-6 border-border/40 bg-card/50 space-y-4"
                 >
                     <div className="flex items-center gap-3">
                         <Skeleton className="h-10 w-10 rounded-md" />

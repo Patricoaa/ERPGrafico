@@ -141,7 +141,7 @@ export function SectionCard({
     headerRight,
 }: SectionCardProps) {
     return (
-        <div className={cn('flex flex-col rounded-xl border bg-card p-5 shadow-sm', className)}>
+        <div className={cn('surface-panel flex flex-col p-5 shadow-sm', className)}>
             <div className="flex items-start justify-between gap-4">
                 <div className="flex flex-col">
                     <h3 className="text-base font-bold text-foreground">{title}</h3>

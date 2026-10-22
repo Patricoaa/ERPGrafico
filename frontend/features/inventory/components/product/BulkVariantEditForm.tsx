@@ -205,7 +205,7 @@ export function BulkVariantEditForm({
       document.body
     )}
     <SkeletonShell isLoading={isUoMsLoading} ariaLabel="Cargando edición masiva">
-    <div className="flex flex-col h-full bg-card rounded-md border shadow-card overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+    <div className="surface-panel flex flex-col h-full shadow-card overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
       <div className="px-5 pt-4 pb-1 bg-muted/5">
           <div className="flex items-center gap-2 mb-3">
             <Users className="h-3.5 w-3.5 text-primary" />

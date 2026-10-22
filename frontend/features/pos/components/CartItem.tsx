@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { memo, useState, useRef, useEffect, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { BaseModal } from "@/components/shared"
+import { BaseModal, CardSurface } from "@/components/shared"
 import { cn } from '@/lib/utils'
 import { formatCurrency } from "@/lib/money"
 import { useTouchMode } from '@/hooks/useTouchMode'
@@ -118,11 +118,10 @@ function CartItemComponent({
     const isOverLimit = maxQty !== undefined && maxQty !== Infinity && item.qty > maxQty
 
     return (
-        <div
-            className={cn(
-                "flex flex-col gap-2 rounded-lg border border-border bg-card group transition-colors hover:border-border/80",
-                isTouchMode ? "p-3" : "p-2.5"
-            )}
+        <CardSurface
+            kind="item"
+            interactive={false}
+            className={cn("gap-2", isTouchMode ? "p-3" : "p-2.5")}
             style={isTouchMode ? { touchAction: 'manipulation' } : undefined}
         >
             {/* Top Row: Name and Total/Delete */}
@@ -371,7 +370,7 @@ function CartItemComponent({
                     ))}
                 </div>
             </BaseModal>
-        </div>
+        </CardSurface>
     )
 }
 

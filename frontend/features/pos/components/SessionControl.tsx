@@ -274,7 +274,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                             />
                         )}
                         {lastAudit && reportType === 'Z' && (
-                            <div className="bg-card border rounded-md p-4 space-y-2 shadow-card text-sm">
+                            <div className="surface-panel p-4 space-y-2 shadow-card text-sm">
                                 <div className="font-bold text-xs uppercase text-muted-foreground">Resultado del Conteo</div>
                                 <div className="flex justify-between">
                                     <span>Esperado:</span>

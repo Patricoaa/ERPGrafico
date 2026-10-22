@@ -11,7 +11,7 @@ import { ArrowRight, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SelectionRing } from "@/components/shared"
-import { CardSurface } from "@/components/shared"
+import { CardSurface, CardLead, cardAnatomy } from "@/components/shared"
 
 // ─── Base props ───────────────────────────────────────────────────────────────
 
@@ -67,7 +67,9 @@ function EntityCardRoot({
         <EntityCardSelectionContext.Provider value={{ selectable, checked, onCheckedChange, isAnySelected, selectionLabel }}>
             <CardSurface
                 layout="stacked"
-                selected={isSelected}
+                kind="item"
+                // Only a selected card is a pressed toggle; undefined keeps navigable cards out of aria-pressed.
+                selected={isSelected ? true : undefined}
                 unavailable={false}
                 role={onClick || defaultAction ? "button" : undefined}
                 onClick={onClick}
@@ -160,72 +162,53 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
         />
     )
 
+    // Avatar (custom node) > image > icon. The same lead for the plain and the centered header.
+    const leadNode = avatar ?? (imageSrc ? (
+        <CardLead stretch className={imageSrc.startsWith("data:") ? "bg-transparent" : iconClassName}>
+            <Image src={imageSrc} alt="" fill unoptimized={imageSrc.startsWith("data:")} className="object-cover" />
+        </CardLead>
+    ) : Icon ? (
+        <CardLead stretch className={iconClassName}>
+            <Icon className="h-5 w-5" />
+        </CardLead>
+    ) : null)
+
+    const identity = (
+        <div className="flex items-stretch gap-3 min-w-0 flex-1">
+            {checkboxNode}
+            {leadNode}
+            <div className="min-w-0 flex-1">
+                <div className={cn(cardAnatomy.entityTitle, "[&>div]:w-auto [&>div]:justify-start [&>div]:text-left")}>
+                    {title}
+                </div>
+                {subtitle && <div className={cardAnatomy.entitySubtitle}>{subtitle}</div>}
+            </div>
+        </div>
+    )
+
+    const trailingNode = (trailing || actions) && (
+        <div className="flex items-center gap-2 shrink-0">
+            {trailing}
+            {actions && <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>{actions}</div>}
+        </div>
+    )
+
     if (center) {
         return (
             <div className={cn("grid grid-cols-[1fr_minmax(auto,3fr)_auto] items-start gap-2", className)}>
-                <div className="flex items-stretch gap-3 min-w-0">
-                    {checkboxNode}
-                    {avatar ?? (imageSrc ? (
-                        <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md overflow-hidden", imageSrc.startsWith("data:") ? "bg-transparent" : (iconClassName ?? "bg-accent text-muted-foreground"))}>
-                            <Image src={imageSrc} alt="" fill unoptimized={imageSrc.startsWith("data:")} className="object-cover" />
-                        </div>
-                    ) : Icon ? (
-                        <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-accent text-muted-foreground")}>
-                            <Icon className="h-5 w-5" />
-                        </div>
-                    ) : null)}
-                    <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
-                            {title}
-                        </div>
-                        {subtitle && (
-                            <div className="mt-0.5 truncate text-xs font-medium text-muted-foreground">
-                                {subtitle}
-                            </div>
-                        )}
-                    </div>
-                </div>
+                {identity}
                 <div className="flex items-center justify-center self-center min-w-0">
                     {center}
                 </div>
-                <div className="flex items-center gap-2 justify-self-end">
-                    {trailing}
-                    {actions && <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>{actions}</div>}
-                </div>
+                <div className="justify-self-end">{trailingNode}</div>
             </div>
         )
     }
 
     return (
         <div className={cn("flex items-start justify-between gap-2", className)}>
-            <div className="flex items-stretch gap-3 min-w-0 flex-1">
-                {checkboxNode}
-                {avatar ?? (imageSrc ? (
-                    <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md overflow-hidden", imageSrc.startsWith("data:") ? "bg-transparent" : (iconClassName ?? "bg-accent text-muted-foreground"))}>
-                        <Image src={imageSrc} alt="" fill unoptimized={imageSrc.startsWith("data:")} className="object-cover" />
-                    </div>
-                ) : Icon ? (
-                    <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-accent text-muted-foreground")}>
-                        <Icon className="h-5 w-5" />
-                    </div>
-                ) : null)}
-                <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
-                        {title}
-                    </div>
-                    {subtitle && (
-                        <div className="mt-0.5 truncate text-xs font-medium text-muted-foreground">
-                            {subtitle}
-                        </div>
-                    )}
-                </div>
-            </div>
-            {(trailing || actions) && (
-                <div className="flex items-center gap-2 shrink-0">
-                    {trailing}
-                    {actions && <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>{actions}</div>}
-                </div>
-            )}
+            {identity}
+            {trailingNode}
         </div>
     )
 }
@@ -282,10 +265,10 @@ interface EntityCardFieldProps {
 function EntityCardField({ label, value, full, className, icon: Icon }: EntityCardFieldProps) {
     return (
         <div className={cn("flex flex-col gap-0.5 min-w-0", full && "col-span-2", className)}>
-            <span className="text-3xs font-medium uppercase tracking-widest text-muted-foreground/60">
+            <span className={cardAnatomy.eyebrow}>
                 {label}
             </span>
-            <span className="flex items-center gap-1 text-xs font-medium text-foreground">
+            <span className={cn("flex items-center gap-1", cardAnatomy.fieldValue)}>
                 {Icon && <Icon className="h-3 w-3 shrink-0 text-muted-foreground/50" />}
                 {value ?? <span className="text-muted-foreground/40">—</span>}
             </span>
@@ -462,18 +445,18 @@ function EntityCardWorkflowBody({ lines, total, pending, deliveryDate, dateLabel
             <div className="flex items-start gap-4 shrink-0 pr-9">
                 {deliveryDate ? (
                     <div className="flex flex-col items-end min-w-[80px]">
-                        <span className="text-4xs text-muted-foreground uppercase tracking-widest font-bold mb-0.5">{dateLabel}</span>
+                        <span className={cn(cardAnatomy.eyebrow, "mb-0.5")}>{dateLabel}</span>
                         <span className="text-xs font-medium tracking-tight whitespace-nowrap">{formatPlainDate(deliveryDate)}</span>
                     </div>
                 ) : null}
                 {pending != null && pending > 0 && (
                     <div className="flex flex-col items-end min-w-[80px]">
-                        <span className="text-4xs text-warning/80 uppercase tracking-widest font-bold mb-0.5">Pendiente</span>
+                        <span className={cn(cardAnatomy.eyebrow, "mb-0.5 text-warning")}>Pendiente</span>
                         <MoneyDisplay amount={pending} showColor={false} className="text-xs font-medium tracking-tight text-warning" />
                     </div>
                 )}
                 <div className="flex flex-col items-end min-w-[80px]">
-                    <span className="text-4xs text-muted-foreground uppercase tracking-widest font-bold mb-0.5">Total</span>
+                    <span className={cn(cardAnatomy.eyebrow, "mb-0.5")}>Total</span>
                     <MoneyDisplay amount={total} showColor={false} className="text-xs font-medium tracking-tight" />
                 </div>
             </div>
@@ -508,7 +491,7 @@ function EntityCardListItem({ icon: Icon, iconClassName, label, sublabel, value,
             onClick={onClick}
             className={cn(
                 "w-full flex items-center gap-3 py-2 px-2 text-left justify-start",
-                "card-base border border-border",
+                "card-flat",
                 "transition-all group",
                 onClick && "cursor-pointer",
                 className
@@ -595,12 +578,12 @@ function EntityCardMetrics({ metrics, defaultVariant = 'default', className }: E
                 return (
                     <div
                         key={idx}
-                        className={cn("shrink-0 flex flex-col gap-0.5 px-4 py-2")}
+                        className="flex shrink-0 flex-col gap-0.5 py-2 pl-1 pr-6"
                     >
                         {item.icon && (
                             <item.icon className={cn("h-3 w-3 mb-0.5", METRIC_VARIANT_CLASSES[variant])} />
                         )}
-                        <span className="text-4xs font-bold uppercase tracking-looser text-muted-foreground/60">
+                        <span className={cardAnatomy.eyebrow}>
                             {item.label}
                         </span>
                         <span className={cn("text-xs font-sans font-medium tabular-nums tracking-tight", METRIC_VARIANT_CLASSES[variant])}>
@@ -686,6 +669,8 @@ interface EntityCardMetaItem {
     key: string
     label: React.ReactNode
     value: React.ReactNode
+    /** Per-item classes, e.g. `@md:hidden` for a value that also lives in the header on wide cards. */
+    className?: string
 }
 
 interface EntityCardMetaProps {
@@ -693,15 +678,19 @@ interface EntityCardMetaProps {
     className?: string
 }
 
-/** Label/value pairs below the header (ADR-0087 R4). In the header center they squeezed the title. */
+/**
+ * Label/value pairs below the header (ADR-0087 R4). In the header center they squeezed the title.
+ * Two fixed columns (not flex-wrap) so the same field starts at the same x on every card of a grid.
+ * The first column is wider (1.4fr): put the long value (email, tags) first, the short one (phone, state) second.
+ */
 function EntityCardMeta({ items, className }: EntityCardMetaProps) {
     if (items.length === 0) return null
     return (
-        <dl className={cn("flex flex-wrap items-start gap-x-6 gap-y-1 min-w-0 px-1", className)}>
+        <dl className={cn("grid min-w-0 grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-start gap-x-4 gap-y-1.5 px-1", className)}>
             {items.map((item) => (
-                <div key={item.key} className="flex flex-col items-start min-w-0">
-                    <dt className="text-4xs uppercase tracking-widest text-muted-foreground font-bold whitespace-nowrap">{item.label}</dt>
-                    <dd className="min-w-0">{item.value}</dd>
+                <div key={item.key} className={cn("flex min-w-0 flex-col items-start", item.className)}>
+                    <dt className={cn(cardAnatomy.eyebrow, "max-w-full truncate")}>{item.label}</dt>
+                    <dd className="min-w-0 max-w-full [overflow-wrap:anywhere]">{item.value}</dd>
                 </div>
             ))}
         </dl>

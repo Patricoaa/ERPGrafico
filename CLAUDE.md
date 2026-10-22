@@ -43,6 +43,7 @@ Task routing — common intents:
 | Which component to use / component decision | [component-decision-tree.md](docs/20-contracts/component-decision-tree.md) |
 | Entity collection / table / card / list columns / value kind / `defineEntity` / entity-view | [component-entity-view.md](docs/20-contracts/component-entity-view.md) |
 | Legacy field type / DataCell assignment / createEntityFields / \*Fields.ts (frozen) | [component-fields.md](docs/20-contracts/component-fields.md) |
+| Card (choice / item / nav / metric / panel) / card surface / `CardLead` / `CardRail` / `cardAnatomy` | [component-card-family.md](docs/20-contracts/component-card-family.md) |
 | Badge / chip / pill for a label or tag | [component-chip.md](docs/20-contracts/component-chip.md) |
 | Module layout / navigation tabs / dynamic header | [module-layout-navigation.md](docs/20-contracts/module-layout-navigation.md) |
 | TypeScript error / `any` escape hatch | [resolve-type-errors.md](docs/30-playbooks/resolve-type-errors.md) |

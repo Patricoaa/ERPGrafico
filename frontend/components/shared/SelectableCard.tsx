@@ -11,6 +11,7 @@
 
 import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { CardRail } from "./CardRail"
 
 export interface SelectableCardState {
     selected?: boolean
@@ -23,19 +24,27 @@ export interface SelectableCardState {
      * Default true for backward compat with ProductCard/ChoiceCard/ContactCard/MfgLineCard.
      */
     interactive?: boolean
+    /**
+     * Role of the surface (ADR-0097). `choice` (default): pick-one, the CMYK ribbon previews on hover.
+     * `item`: opens/navigates (entity cards, inbox) — the ribbon only appears once selected.
+     */
+    kind?: "choice" | "item"
 }
 
 /** Surface classes for a pressable card. Compose with layout classes (`h-full`, `p-0`…) at the call site. */
-export function selectableCardClass({ selected = false, unavailable = false, interactive = true }: SelectableCardState = {}): string {
+export function selectableCardClass({ selected = false, unavailable = false, interactive = true, kind = "choice" }: SelectableCardState = {}): string {
+    const ribbon = !unavailable && interactive && (selected || kind === "choice")
     return cn(
+        // card-family-allow: this is the item surface itself (surface-item + selection language)
         "group relative flex flex-col overflow-hidden rounded-sm border border-border bg-card text-left shadow-none transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         unavailable
             ? "cursor-not-allowed border-border/60 bg-muted/40 opacity-50"
             : interactive
-                ? "cursor-pointer hover:border-foreground/30 ribbon-cmyk"
+                ? "cursor-pointer hover:border-foreground/30"
                 : "cursor-default",
-        !unavailable && !selected && interactive && "ribbon-cmyk-hover",
+        ribbon && "ribbon-cmyk",
+        ribbon && !selected && "ribbon-cmyk-hover",
         selected && "border-primary ring-1 ring-primary"
     )
 }
@@ -72,20 +81,13 @@ export function SelectionCheck({
 }
 
 /**
- * Right rail that hosts the selection marker for the light variant.
- * Unlike CardRail (decorative, aria-hidden), this rail is NOT aria-hidden so the
- * SelectionCheck's sr-only "Seleccionado" is announced.
+ * Right rail that hosts the selection marker for the light variant. A `CardRail` that is not
+ * decorative, so the SelectionCheck's sr-only "Seleccionado" is announced.
  * When not selected, shows an empty circle (affordance) that fills on selection.
  */
 export function SelectionRail({ selected, children }: { selected: boolean; children?: React.ReactNode }) {
     return (
-        <div
-            className={cn(
-                "flex w-9 shrink-0 items-center justify-center border-l border-border/60 bg-muted/20 transition-colors",
-                selected && "border-primary/30 bg-primary/5"
-            )}
-            aria-hidden={false}
-        >
+        <CardRail size="sm" tone={selected ? "primary" : "neutral"} decorative={false}>
             {children}
             {!selected && (
                 <span
@@ -93,6 +95,6 @@ export function SelectionRail({ selected, children }: { selected: boolean; child
                     aria-hidden="true"
                 />
             )}
-        </div>
+        </CardRail>
     )
 }

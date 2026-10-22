@@ -10,7 +10,11 @@ export type CardLayout = "stacked" | "inline"
 
 export interface CardSurfaceProps
     extends Omit<React.ComponentProps<"div">, "onClick" | "onKeyDown"> {
-    /** Selection state for the visual language (ribbon + ring + check). */
+    /**
+     * Selection state for the visual language (ribbon + ring + check). Pass it only when the card
+     * can be selected: leaving it `undefined` keeps the card a plain action/link target with no
+     * `aria-pressed`/`aria-checked`, so it is not announced as a toggle.
+     */
     selected?: boolean
     /** Cannot be interacted with (disabled by caller or ruled out by data). */
     unavailable?: boolean
@@ -39,6 +43,8 @@ export interface CardSurfaceProps
      * When false: no cursor-pointer, no hover border, no ribbon preview.
      */
     interactive?: boolean
+    /** Surface role (ADR-0097): `choice` previews the ribbon on hover, `item` only when selected. */
+    kind?: "choice" | "item"
 }
 
 /**
@@ -47,7 +53,7 @@ export interface CardSurfaceProps
  * so callers compose *only* anatomy tokens, never raw utility overrides.
  */
 export function CardSurface({
-    selected = false,
+    selected,
     unavailable = false,
     role = "button",
     onClick,
@@ -56,6 +62,7 @@ export function CardSurface({
     className,
     layout = "stacked",
     interactive,
+    kind,
     ...props
 }: CardSurfaceProps) {
     const isInteractive = interactive ?? (onClick !== undefined)
@@ -63,7 +70,9 @@ export function CardSurface({
 
     const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
         if (onKeyDown) onKeyDown(e)
-        if (!e.defaultPrevented && isInteractive && (e.key === "Enter" || e.key === " ")) {
+        // Only the card itself activates: Enter/Space on a nested button (row actions, approve/reject)
+        // must keep doing its own thing instead of opening the card.
+        if (!e.defaultPrevented && isInteractive && e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
             e.preventDefault()
             onClick?.()
         }
@@ -79,7 +88,7 @@ export function CardSurface({
             aria-pressed={hasExplicitSelected && role === "button" ? selected : undefined}
             aria-checked={hasExplicitSelected && role === "radio" ? selected : undefined}
             className={cn(
-                selectableCardClass({ selected, unavailable, interactive: isInteractive }),
+                selectableCardClass({ selected: selected === true, unavailable, interactive: isInteractive, kind }),
                 "shadow-none",
                 layoutPadding,
                 className
@@ -93,39 +102,8 @@ export function CardSurface({
     )
 }
 
-export interface CardRailProps {
-    /** Semantic tone of the rail — drives border/background/text colour. */
-    tone: "warning" | "success" | "neutral"
-    /** Icon or content centred in the rail (e.g. Settings2, Check). Optional for empty decorative rails. */
-    children?: React.ReactNode
-    /** Additional className. */
-    className?: string
-}
-
-/**
- * Side rail (w-14) that encodes state through colour. Used by MfgLineCard and any future
- * card that needs a persistent status strip instead of (or in addition to) the selection ribbon.
- */
-export function CardRail({ tone, children, className }: CardRailProps) {
-    const tones = {
-        warning: "border-warning/20 bg-warning/10 text-warning",
-        success: "border-success/20 bg-success/10 text-success",
-        neutral: "border-border/20 bg-muted/30 text-muted-foreground",
-    } as const
-
-    return (
-        <div
-            className={cn(
-                "flex w-14 shrink-0 items-center justify-center border-l transition-colors",
-                tones[tone],
-                className
-            )}
-            aria-hidden="true"
-        >
-            {children}
-        </div>
-    )
-}
+export { CardLead, type CardLeadProps } from "./CardLead"
+export { CardRail, type CardRailProps, type CardRailTone, type CardRailSize } from "./CardRail"
 
 /** Re-export anatomy tokens for consumers that build custom layouts. */
 export { cardAnatomy }

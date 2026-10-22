@@ -7,7 +7,7 @@
 //
 // Use inside <ChoiceGroup> so the options form a radiogroup with arrow-key navigation.
 //
-// Variant "light" — compact row for settings/wizards: icon lead (32×32) | title+description | right rail with check.
+// Variant "light" — compact row for settings/wizards: icon lead | title+description | right rail with check.
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
@@ -53,7 +53,7 @@ type LightProps = {
     disabled?: boolean
     title: string
     description?: string
-    /** Icon rendered in the leading slot (32×32). Required for light variant. */
+    /** Icon rendered in the leading slot. Required for light variant. */
     icon: React.ComponentType<{ className?: string }>
     /** Overrides the icon colour (semantic text token, e.g. `text-success`). Muted when disabled. */
     iconClassName?: string

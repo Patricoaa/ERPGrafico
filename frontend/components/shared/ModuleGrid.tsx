@@ -1,11 +1,13 @@
 import Link from "next/link"
-import type { LucideIcon } from "lucide-react"
+import { ChevronRight, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { CardLead } from "./CardLead"
+import { cardAnatomy } from "./card-anatomy"
 
 /**
  * ModuleGrid — shared container for module/card navigation grids (dashboard, settings).
- * Owned by ADR-0074: single card-base token, single documented height, v1 ships pill-free
- * (per-card status is not guessed from literals).
+ * Owned by ADR-0074 (pill-free v1: per-card status is not guessed from literals) and ADR-0097:
+ * role `nav` of the card family — `card-flat` row, CardLead + title/description + chevron glyph.
  */
 
 export type RuntimeStatus =
@@ -57,27 +59,23 @@ export function ModuleGrid({ items, className }: ModuleGridProps) {
                     <li key={mod.id} className="min-w-0">
                         <Link
                             href={mod.url}
-                            className="card-base group relative flex flex-col justify-between p-5 h-28 bg-background">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-md bg-muted/50 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors shrink-0">
-                                    <Icon className="w-4 h-4" />
-                                </div>
-                                <div className="flex flex-col min-w-0">
-                                    <span className="font-bold tracking-tight text-sm text-foreground">{mod.label}</span>
-                                    {mod.description && (
-                                        <span className="text-2xs text-muted-foreground line-clamp-1">{mod.description}</span>
-                                    )}
-                                </div>
-                            </div>
-
-                            {meta && (
-                                <div className="flex items-center gap-2 mt-auto">
-                                    <div className={`px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${meta.className}`}>
-                                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+                            className="card-flat group flex h-full items-center gap-3 p-3">
+                            <CardLead className="bg-muted/50 transition-colors group-hover:text-primary">
+                                <Icon className="size-4" aria-hidden />
+                            </CardLead>
+                            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                <span className={cardAnatomy.title}>{mod.label}</span>
+                                {mod.description && (
+                                    <span className={cn(cardAnatomy.description, "line-clamp-1")}>{mod.description}</span>
+                                )}
+                                {meta && (
+                                    <div className={`mt-1 flex w-fit items-center gap-1.5 rounded-full px-2 py-0.5 text-2xs font-bold uppercase tracking-wider ${meta.className}`}>
+                                        <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
                                         {meta.label}
                                     </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
+                            <ChevronRight className={cardAnatomy.glyph} aria-hidden />
                         </Link>
                     </li>
                 )

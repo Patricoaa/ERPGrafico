@@ -74,7 +74,7 @@ export function FormFieldsSkeleton({ fields = 4, columns = 2, gap = 6, className
 export function StatCardSkeleton({ variant = "default", className }: { variant?: "default" | "compact"; className?: string }) {
     const isCompact = variant === "compact"
     return (
-        <div className={cn("animate-pulse rounded-md border p-4 space-y-3 bg-card", className)}>
+        <div className={cn("surface-panel animate-pulse p-4 space-y-3", className)}>
             <Skeleton className="h-4 w-2/3" />
             <Skeleton className={cn("h-8 w-1/2", isCompact && "h-6")} />
             <Skeleton className="h-3 w-3/4" />
@@ -202,7 +202,7 @@ export function ListItemSkeleton({ hasIcon = true, lines = 2, className }: { has
 // ─── Chart ───────────────────────────────────────────────────────────────────
 export function ChartSkeleton({ height = 200, className }: { height?: number; className?: string }) {
     return (
-        <div className={cn("animate-pulse rounded-md border bg-card p-4", className)} style={{ height }}>
+        <div className={cn("surface-panel animate-pulse p-4", className)} style={{ height }}>
             <div className="flex items-center justify-between mb-4">
                 <Skeleton className="h-5 w-32" />
                 <Skeleton className="h-8 w-20" />

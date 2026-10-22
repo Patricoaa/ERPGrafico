@@ -24,7 +24,7 @@ export default function NotFound() {
                 />
             </div>
             <div className="w-full max-w-sm relative z-10 mx-6 animate-in fade-in slide-in-from-bottom-3 ease-premium fill-mode-both duration-[600ms]">
-                <PrepressPanel className="rounded-xl border bg-card shadow-card p-8">
+                <PrepressPanel className="surface-panel shadow-card p-8">
                     <div className="mb-8 flex flex-col items-center">
                         {logo ? (
                             <div className="relative h-14 w-40 mb-3">

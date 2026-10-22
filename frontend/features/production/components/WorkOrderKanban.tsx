@@ -1,7 +1,6 @@
 "use client"
 
 
-import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import {
     Clock,
@@ -9,7 +8,7 @@ import {
     AlertCircle,
     CheckCircle2,
 } from "lucide-react"
-import { CardSkeleton, Chip, Skeleton, StatusBadge } from "@/components/shared"
+import { CardSkeleton, CardSurface, cardAnatomy, Chip, Skeleton, StatusBadge } from "@/components/shared"
 import { workOrderActions, type WorkOrderActionsCtx } from "@/features/production"
 import { type WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
@@ -39,15 +38,9 @@ function KanbanCard({ order, onManage, onDuplicate, onAnnul, onDelete }: { order
     }
 
     return (
-        <Card
-            onClick={() => onManage(order.id)}
-            className={cn(
-                "card-base group cursor-pointer",
-                "active:scale-95"
-            )}
-        >
-            <CardContent className="p-3 space-y-3">
-                <div className="flex items-center justify-between mb-3">
+        <CardSurface kind="item" onClick={() => onManage(order.id)} className="active:scale-95">
+            <div className="flex flex-col gap-3 p-3">
+                <div className="flex items-center justify-between">
                     <Chip size="xs">{formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)}</Chip>
                     <StatusBadge status={order.status} size="sm" />
                 </div>
@@ -75,7 +68,7 @@ function KanbanCard({ order, onManage, onDuplicate, onAnnul, onDelete }: { order
                     </div>
                 )}
                 <div>
-                    <p className="text-sm font-semibold line-clamp-2 leading-snug">{order.description}</p>
+                    <p className={cardAnatomy.title}>{order.description}</p>
                 </div>
                 <div className="space-y-1.5 pt-1">
                     <div className="flex items-center text-2xs text-muted-foreground">
@@ -95,8 +88,8 @@ function KanbanCard({ order, onManage, onDuplicate, onAnnul, onDelete }: { order
                 <div className="pt-2 flex justify-end border-t border-dashed">
                     {workOrderActions.render(order, actionsCtx)}
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </CardSurface>
     )
 }
 

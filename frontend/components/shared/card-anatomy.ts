@@ -31,6 +31,20 @@ export const cardAnatomy = {
     /** Decorative action glyph (add / configure / chevron) at bottom-right. */
     glyph: "h-4 w-4 shrink-0 transition-colors text-muted-foreground group-hover:text-foreground",
 
+    // ── Entity item (EntityCard header + data pairs) ──────────────────────────────
+    /** Lead container shared by every card (CardLead): rounded-sm, clipped, positioned for fill images. */
+    leadBase: "relative flex shrink-0 items-center justify-center overflow-hidden rounded-sm",
+    /** CardLead sizes. `md` matches `lead` (40px), `sm` is for dense items (32px). */
+    leadSize: { sm: "w-8", md: "w-10" },
+    /** Title of an entity item header — one line, semibold like every other card title. */
+    entityTitle: "truncate text-sm font-semibold leading-tight tracking-tight",
+    /** Secondary line under an entity title. */
+    entitySubtitle: "mt-0.5 truncate text-xs text-muted-foreground",
+    /** Label of a label/value pair (EntityCard.Field / Meta / Metrics). Full muted contrast, no /60 wash. */
+    eyebrow: "text-3xs font-semibold uppercase tracking-wider text-muted-foreground",
+    /** Value of a label/value pair. */
+    fieldValue: "text-xs font-medium tabular-nums tracking-tight text-foreground",
+
     // ── Inline / row variant (no media strip) ──────────────────────────────────
     /** Leading slot for photo / icon / avatar — 40×40, shrinks to fit. */
     lead: "flex-shrink-0 w-10 h-10 rounded-sm overflow-hidden bg-muted",
@@ -51,7 +65,7 @@ export const cardAnatomy = {
     inlineAmount: "flex items-baseline gap-1 font-semibold tabular-nums text-sm",
 
     // ── Light variant (no media strip, icon lead + text + right rail) ──────────────
-    /** Leading slot for icon — full-height transparent column, icon centered. */
+    /** Leading slot for icon — full-height transparent column (w-10), icon centered. */
     lightLead: "flex w-10 shrink-0 items-center justify-center self-stretch",
     /** Light body: title + description in a compact column. */
     lightBody: "flex min-w-0 flex-1 flex-col gap-0.5 py-2.5 pl-3 pr-2",
@@ -59,10 +73,11 @@ export const cardAnatomy = {
     lightTitle: "line-clamp-1 text-left text-sm font-semibold leading-snug",
     /** Description in light variant — up to 2 lines, muted. */
     lightDescription: "line-clamp-2 text-2xs leading-snug text-muted-foreground",
-    /** Right rail for the selection marker — w-9, subtle border/bg. */
-    lightRail: "flex w-9 shrink-0 items-center justify-center border-l border-border/60 bg-muted/20 transition-colors",
-    /** Rail when selected — primary-tinted. */
-    lightRailSelected: "border-primary/30 bg-primary/5",
+    // ── Rail (trailing full-height column, see CardRail) ───────────────────────────
+    /** Base of every rail: hairline divider on its leading edge, centered content. */
+    rail: "flex shrink-0 items-center justify-center self-stretch border-l transition-colors",
+    /** Rail widths: `sm` hosts a selection marker, `md` a state icon. */
+    railSize: { sm: "w-9", md: "w-14" },
     /** Surface for light variant — visible border + subtle shadow (control-level, not card-level). */
     lightSurface: "border-foreground/20 shadow-xs",
 

@@ -75,7 +75,7 @@ export const productViews = productEntity.views({
     card: {
         title: "name",
         subtitle: ["internalCode", "category"],
-        meta: ["stock", "availability"],
+        meta: ["availability", "stock"],
         trailing: ["price"],
         media: { iconFor: (p) => TYPE_ICON[p.product_type] ?? Package, image: (p) => resolveMediaUrl(p.image_thumbnail ?? p.image ?? null) },
     },

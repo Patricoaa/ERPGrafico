@@ -53,7 +53,7 @@ export function CardRow({
     amount,
     glyph,
     rail,
-    selected = false,
+    selected,
     unavailable = false,
     role = "button",
     onClick,

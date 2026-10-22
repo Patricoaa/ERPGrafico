@@ -113,7 +113,7 @@ export function F29PaymentModal({
                             <span>Historial de Pagos</span>
                         </div>
 
-                        <div className="border rounded-md overflow-hidden bg-card">
+                        <div className="surface-panel overflow-hidden">
                             {declaration.payments.length > 0 ? (
                                 <div className="divide-y">
                                     {declaration.payments.map((payment) => (
