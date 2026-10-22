@@ -61,7 +61,7 @@ export function ContactCard({ contact, selected, onSelect, contactType, classNam
         <ChoiceCard
             selected={selected}
             onSelect={() => onSelect(contact)}
-            media={<Blobatar name={contact.name} className="size-14 rounded-md" />}
+            media={<Blobatar name={contact.name} className="size-14 rounded-sm" />}
             badge={contact.contact_type === 'COMPANY' ? 'Empresa' : 'Persona'}
             meta={contact.tax_id ? formatRUT(contact.tax_id) : 'S/Rut'}
             title={contact.name}

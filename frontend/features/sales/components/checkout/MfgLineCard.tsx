@@ -2,9 +2,8 @@
 
 import { cn } from "@/lib/utils"
 import { Settings2 } from "lucide-react"
-import { Card } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/money"
-import { selectableCardClass } from "@/components/shared"
+import { CardSurface, CardRail, cardAnatomy } from "@/components/shared"
 import type { ManufacturableLine } from "../../utils/mfgLine"
 
 interface MfgLineCardProps {
@@ -25,43 +24,26 @@ export function MfgLineCard({ line, onConfigure }: MfgLineCardProps) {
     const title = hasConfig ? "Editar configuración" : "Configurar fabricación"
 
     return (
-        <Card
+        <CardSurface
             role="button"
-            tabIndex={0}
             aria-label={ariaLabel}
             title={title}
-            className={cn(
-                selectableCardClass({ selected: hasConfig }),
-                "flex-row items-stretch rounded-sm gap-0 p-0"
-            )}
             onClick={onConfigure}
-            onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault()
-                    onConfigure()
-                }
-            }}
+            className="flex-row items-stretch"
         >
-            <div className="flex min-w-0 flex-1 flex-col gap-1 px-3 pb-3 pt-2.5">
-                <span className="truncate font-mono text-3xs text-muted-foreground">{code}</span>
-                <h3 className="line-clamp-2 text-left text-sm font-semibold leading-snug">{name}</h3>
+            <div className={cardAnatomy.body}>
+                <span className={cardAnatomy.code}>{code}</span>
+                <h3 className={cardAnatomy.title}>{name}</h3>
 
-                <div className="mt-auto pt-2 flex flex-col gap-0.5">
-                    <p className="text-3xs text-muted-foreground">{qty} und</p>
-                    <p className="font-semibold tabular-nums text-lg">{formatCurrency(total)}</p>
+                <div className={cn(cardAnatomy.footer, "flex flex-col gap-0.5")}>
+                    <p className={cardAnatomy.caption}>{qty} und</p>
+                    <p className={cardAnatomy.amount}>{formatCurrency(total)}</p>
                 </div>
             </div>
 
-            <div
-                className={cn(
-                    "flex w-14 shrink-0 items-center justify-center border-l transition-colors",
-                    hasConfig
-                        ? "border-success/20 bg-success/10 text-success"
-                        : "border-warning/20 bg-warning/10 text-warning"
-                )}
-            >
+            <CardRail tone={hasConfig ? "success" : "warning"}>
                 <Settings2 className="h-5 w-5" aria-hidden />
-            </div>
-        </Card>
+            </CardRail>
+        </CardSurface>
     )
 }

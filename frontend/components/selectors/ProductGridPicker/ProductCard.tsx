@@ -12,8 +12,8 @@ import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/money'
 import { resolveMediaUrl } from '@/lib/media-url'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Chip, DynamicIcon, SelectionCheck, selectableCardClass } from '@/components/shared'
+import { Chip, DynamicIcon, SelectionCheck } from '@/components/shared'
+import { CardSurface, cardAnatomy } from '@/components/shared'
 import type { BaseProduct } from '@/features/inventory'
 import {
     getProductCardModel,
@@ -82,25 +82,15 @@ function ProductCardComponent({
     const caption = model.price.kind === 'from' ? `${priceLabel} · desde` : priceLabel
 
     return (
-        <Card
+        <CardSurface
             role="button"
-            tabIndex={unavailable ? -1 : 0}
-            aria-disabled={unavailable || undefined}
-            aria-pressed={isSelected || undefined}
-            aria-label={product.name}
+            selected={isSelected}
+            unavailable={unavailable}
+            onClick={() => !unavailable && onProductClick(product)}
             className={cn(
-                selectableCardClass({ selected: isSelected, unavailable }),
-                "h-full gap-0 p-0",
+                "h-full",
                 isTouch && !unavailable && "active:scale-[0.98]"
             )}
-            onClick={() => !unavailable && onProductClick(product)}
-            onKeyDown={(e) => {
-                if (unavailable) return
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    onProductClick(product)
-                }
-            }}
         >
             <div className={cn("relative h-22 w-full shrink-0 overflow-hidden bg-muted", isTouch && "h-28", unavailable && "bg-muted/60")}>
                 {photo ? (
@@ -147,27 +137,27 @@ function ProductCardComponent({
                 {isSelected && <SelectionCheck />}
             </div>
 
-            <div className={cn("flex flex-1 flex-col gap-1 px-3 pb-3 pt-2.5", isTouch && "pt-3")}>
+            <div className={cn(cardAnatomy.body, isTouch && "pt-3")}>
                 <div className="flex min-h-4 items-center justify-between gap-2">
-                    <span className="truncate font-mono text-3xs text-muted-foreground">{model.code}</span>
+                    <span className={cardAnatomy.code}>{model.code}</span>
                     {unavailable && <Lock className="h-3 w-3 shrink-0 text-muted-foreground" aria-label="No disponible" />}
                 </div>
 
-                <h3 className={cn("line-clamp-2 text-left font-semibold leading-snug", isTouch ? "text-base" : "text-sm", unavailable && "text-muted-foreground")}>
+                <h3 className={cn(cardAnatomy.title, isTouch ? "text-base" : "text-sm", unavailable && "text-muted-foreground")}>
                     {product.name}
                 </h3>
 
                 {model.availability && AvailabilityIconComponent && (
-                    <p className={cn("flex items-center gap-1.5 text-2xs", unavailable ? "text-muted-foreground" : TONE_TEXT[model.availability.tone])}>
+                    <p className={cn("flex items-center gap-1.5", cardAnatomy.description, unavailable ? "text-muted-foreground" : TONE_TEXT[model.availability.tone])}>
                         <AvailabilityIconComponent className="h-3.5 w-3.5 shrink-0" aria-hidden />
                         <span className="truncate">{model.availability.text}</span>
                     </p>
                 )}
 
-                <div className="mt-auto flex items-end justify-between gap-2 pt-2">
+                <div className={cn(cardAnatomy.footer, "flex items-end justify-between gap-2")}>
                     {showPrice ? (
                         <div className="min-w-0">
-                            <p className="text-3xs text-muted-foreground">{caption}</p>
+                            <p className={cardAnatomy.caption}>{caption}</p>
                             {priceRenderer ? (
                                 <div className="flex items-baseline">{customPrice}</div>
                             ) : model.price.kind === 'dynamic' ? (
@@ -176,7 +166,7 @@ function ProductCardComponent({
                                 </p>
                             ) : (
                                 <p className="flex items-baseline gap-1">
-                                    <span className={cn("font-semibold tabular-nums", isTouch ? "text-xl" : "text-lg", unavailable && "text-muted-foreground")}>
+                                    <span className={cn(cardAnatomy.amount, isTouch ? "text-xl" : "", unavailable && "text-muted-foreground")}>
                                         {formatCurrency(model.price.gross ?? 0)}
                                     </span>
                                     {model.price.unit && (
@@ -188,14 +178,14 @@ function ProductCardComponent({
                     ) : <span />}
                     <ActionIcon
                         className={cn(
-                            "h-4 w-4 shrink-0 transition-colors",
-                            unavailable ? "text-muted-foreground" : "text-muted-foreground group-hover:text-foreground"
+                            cardAnatomy.glyph,
+                            unavailable ? "text-muted-foreground" : ""
                         )}
                         aria-hidden
                     />
                 </div>
             </div>
-        </Card>
+        </CardSurface>
     )
 }
 

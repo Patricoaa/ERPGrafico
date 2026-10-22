@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Chip } from "./Chip"
 import { SelectionCheck, selectableCardClass } from "./SelectableCard"
+import { cardAnatomy } from "./card-anatomy"
 
 export interface ChoiceCardProps {
     selected: boolean
@@ -104,12 +105,15 @@ export function ChoiceCard({
                 {selected && <SelectionCheck />}
             </span>
 
-            <span className={cn("flex w-full flex-1 flex-col gap-1 px-3 pb-3 text-left", compact ? "pt-2" : "pt-2.5")}>
-                {meta && <span className="truncate font-mono text-3xs text-muted-foreground">{meta}</span>}
-                <span className={cn("text-sm font-semibold leading-snug", disabled && "text-muted-foreground")}>{title}</span>
-                {description && <span className="text-2xs leading-snug text-muted-foreground">{description}</span>}
+            <span className={cn(
+                "flex w-full flex-1 flex-col gap-1 px-3 pb-3 text-left",
+                compact ? "pt-2" : cardAnatomy.body.includes("pt-2.5") ? "pt-2.5" : "pt-2"
+            )}>
+                {meta && <span className={cardAnatomy.code}>{meta}</span>}
+                <span className={cn(cardAnatomy.title, disabled && "text-muted-foreground")}>{title}</span>
+                {description && <span className={cardAnatomy.description}>{description}</span>}
                 {children}
-                {footer && <span className="mt-auto block pt-2">{footer}</span>}
+                {footer && <span className={cardAnatomy.footer}>{footer}</span>}
             </span>
         </Button>
     )

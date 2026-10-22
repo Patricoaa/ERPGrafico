@@ -6,7 +6,7 @@ import { useAllowedPaymentMethods, type PaymentMethod } from "@/hooks/useAllowed
 import { useBanks } from '../hooks/useMasterData'
 import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { BaseModal, Numpad, ChoiceCard, ChoiceGroup, SelectionCheck } from '@/components/shared'
+import { BaseModal, Numpad, ChoiceCard, ChoiceGroup, SelectionCheck, cardAnatomy } from '@/components/shared'
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { FormSection, LabeledInput, LabeledSelect, MoneyDisplay } from "@/components/shared"
@@ -386,7 +386,9 @@ export function PaymentMethodSelector({
     }
 
     /** A card that is "already chosen" and holds its own controls (allocations, assigned credit): selected surface, not pressable. */
-    const chosenCardClass = "relative flex flex-col self-start overflow-hidden rounded-md border border-primary bg-card ring-1 ring-primary ribbon-cmyk"
+    const chosenCardClass = cn(
+        "relative flex flex-col self-start overflow-hidden border border-primary bg-card ring-1 ring-primary ribbon-cmyk rounded-sm"
+    )
 
     const renderAssignedCredit = (amount: number) => (
         <div className={cn(chosenCardClass, "w-full")}>
@@ -394,11 +396,11 @@ export function PaymentMethodSelector({
                 <Wallet className="size-6 text-muted-foreground/70" aria-hidden />
                 <SelectionCheck />
             </div>
-            <div className="flex items-end justify-between gap-3 px-3 pb-3 pt-2">
-                <span className="text-sm font-semibold">Crédito Asignado</span>
+            <div className={cn(cardAnatomy.body, "pt-2")}>
+                <span className={cn(cardAnatomy.title, "text-sm")}>Crédito Asignado</span>
                 <span className="flex flex-col items-end">
-                    <span className="text-3xs text-muted-foreground">Monto</span>
-                    <span className="text-lg font-semibold tabular-nums"><MoneyDisplay amount={amount} showColor={false} /></span>
+                    <span className={cardAnatomy.caption}>Monto</span>
+                    <span className={cardAnatomy.amount}><MoneyDisplay amount={amount} showColor={false} /></span>
                 </span>
             </div>
         </div>
