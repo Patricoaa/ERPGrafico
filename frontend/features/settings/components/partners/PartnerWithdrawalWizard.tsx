@@ -237,6 +237,7 @@ export function PartnerWithdrawalWizard({
                     activation="select"
                 >
                     <ChoiceCard
+                        variant="light"
                         selected={method === "CASH"}
                         onSelect={() => setMethod("CASH")}
                         title="Efectivo"
@@ -244,6 +245,7 @@ export function PartnerWithdrawalWizard({
                         icon={Wallet}
                     />
                     <ChoiceCard
+                        variant="light"
                         selected={method === "ASSETS"}
                         onSelect={() => setMethod("ASSETS")}
                         title="Bienes / Stock"

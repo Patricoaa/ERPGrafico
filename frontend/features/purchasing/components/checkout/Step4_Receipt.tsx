@@ -211,6 +211,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                 >
                     {receiptTypes.map((type) => (
                         <ChoiceCard
+                            variant="light"
                             key={type.id}
                             selected={receiptData.type === type.id}
                             onSelect={() => setReceiptData({ ...receiptData, type: type.id as ReceiptData['type'] })}

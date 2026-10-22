@@ -140,6 +140,7 @@ export function NoteStep_Logistics({
                     activation="select"
                 >
                     <ChoiceCard
+                        variant="light"
                         selected={formData.delivery_type === 'IMMEDIATE'}
                         onSelect={() => {
                             setData({ ...formData, delivery_type: 'IMMEDIATE' });
@@ -152,6 +153,7 @@ export function NoteStep_Logistics({
                     />
 
                     <ChoiceCard
+                        variant="light"
                         selected={formData.delivery_type === 'SCHEDULED'}
                         onSelect={() => {
                             setData({ ...formData, delivery_type: 'SCHEDULED' });
@@ -163,6 +165,7 @@ export function NoteStep_Logistics({
                     />
 
                     <ChoiceCard
+                        variant="light"
                         selected={formData.delivery_type === 'PARTIAL'}
                         onSelect={() => {
                             const initialLineData = selectedItems

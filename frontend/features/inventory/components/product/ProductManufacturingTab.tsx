@@ -56,6 +56,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                             activation="select"
                         >
                             <ChoiceCard
+                                variant="light"
                                 selected={productionMode === "simple"}
                                 onSelect={() => {
                                     const patch = {
@@ -75,6 +76,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                                 icon={Package}
                             />
                             <ChoiceCard
+                                variant="light"
                                 selected={productionMode === "express"}
                                 onSelect={() => {
                                     const patch = {
@@ -95,6 +97,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                                 icon={Clock}
                             />
                             <ChoiceCard
+                                variant="light"
                                 selected={productionMode === "advanced"}
                                 onSelect={() => {
                                     const patch = {

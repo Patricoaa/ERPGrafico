@@ -64,6 +64,7 @@ export function Step2_PurchaseDTE({
                     >
                         {filteredOptions.map((opt) => (
                             <ChoiceCard
+                                variant="light"
                                 key={opt.id}
                                 selected={dteData.type === opt.id}
                                 onSelect={() => setDteData({ ...dteData, type: opt.id })}

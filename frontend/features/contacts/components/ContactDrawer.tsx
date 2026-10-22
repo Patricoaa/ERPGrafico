@@ -304,6 +304,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                             activation="select"
                                                         >
                                                             <ChoiceCard
+                                                                variant="light"
                                                                 selected={commercialValue === 'customer'}
                                                                 onSelect={() => {
                                                                     form.setValue('is_default_customer', true, { shouldDirty: true })
@@ -318,6 +319,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                                 icon={ShoppingCart}
                                                             />
                                                             <ChoiceCard
+                                                                variant="light"
                                                                 selected={commercialValue === 'vendor'}
                                                                 onSelect={() => {
                                                                     form.setValue('is_default_customer', false, { shouldDirty: true })
