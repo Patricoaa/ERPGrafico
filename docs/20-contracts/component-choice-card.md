@@ -92,11 +92,19 @@ Es un `Button` de shadcn con `role="radio"`. Los íconos usan clases `size-*` (e
 
 | Superficie | Componente |
 |-----------|------------|
-| Documento tributario (`Step2_DTE`) | `ChoiceCard` con `tone="warning"` para exentos |
+| Documento tributario (`Step2_DTE`, compra) | `ChoiceCard` con `tone="warning"` para exentos |
 | Entrega (`Step3_Delivery`) | `ChoiceCard`, "inmediato" deshabilitado si hay fabricación |
 | Método de pago (`PaymentMethodSelector`) | `ChoiceCard size="compact"`, monto en el `footer`; asignaciones y crédito asignado usan la superficie "elegida" con controles propios (`chosenCardClass` → `rounded-sm` + tokens) |
 | Cliente / proveedor (`ContactCardGrid` → `ContactCard`) | `ChoiceCard` con `media={<Blobatar/>}` (`rounded-sm`), RUT en `meta`, crédito en `footer` |
-| Fabricación (`Step2_ManufacturingDetails`) | **`MfgLineCard`** (`CardSurface` + `CardRail` + tokens), `role="button"`, **no** `ChoiceCard`. Riel ámbar→verde = único estado; ribbon solo en hover (preview). |
+| Fabricación (`Step2_ManufacturingDetails`) | **`MfgLineCard`** (`CardRowWithRail` + tokens), `role="button"`, **no** `ChoiceCard`. Riel ámbar→verde = único estado; ribbon solo en hover (preview). |
+| Variante (`VariantSelectorModal`) | **`CardRow`** (lead 64×64, chips, precio, badge, chevron) |
+| Producción: OV + Producto (`SaleOrderProductStep`) | Órdenes: `CardSurface` stacked; Líneas: **`CardRow`** (lead 40×40) |
+| Producción: Origen (`OriginSelectionStep`) | **`CardSurface`** stacked + tokens (2 cards) |
+| entity-view Collection | **`EntityCard`** → `CardSurface` stacked + tokens |
+
+## `RadioCard` — **Eliminado** (ADR-0095)
+
+14 instancias migradas a `ChoiceCard` (total 37 usos). Diferencia visual: `ChoiceCard` usa media strip (icono en banda) vs `RadioCard` centrado vertical. `CmykRing` restringido a `Checkbox`/`SelectionRing` (controles/tabla).
 
 ## Estados
 

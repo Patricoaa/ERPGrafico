@@ -1,14 +1,14 @@
 ---
 id: 0094
-title: Card anatomy kit + 8px radius for interactive cards — shared shell, tokens, and side rail
+title: Card anatomy kit + 8px radius for interactive cards — shared shell, tokens, side rail, and row variant
 status: Accepted
 date: 2026-10-22
 author: frontend-team
 ---
 
-# 0094 — Card anatomy kit, 8px radius, and side rail primitive
+# 0094 — Card anatomy kit, 8px radius, side rail, and row variant
 
-**Related:** ADR-0092 (ProductCard anatomy), ADR-0093 (ChoiceCard & media-top cards), ADR-0087 (entity-view), `docs/20-contracts/component-choice-card.md`, `docs/20-contracts/component-selectors.md`, `docs/10-architecture/design-system.md`
+**Related:** ADR-0092 (ProductCard anatomy), ADR-0093 (ChoiceCard & media-top cards), ADR-0087 (entity-view), ADR-0095 (Row variant + RadioCard removal + entity-view migration), `docs/20-contracts/component-choice-card.md`, `docs/20-contracts/component-selectors.md`, `docs/10-architecture/design-system.md`
 
 ---
 
@@ -40,21 +40,41 @@ Tokens exportados como `cardAnatomy.{body,code,title,description,footer,caption,
 
 - `selectableCardClass()`: `rounded-md` → `rounded-sm`.
 - `ProductCard`, `ChoiceCard`, `ContactCard` (Blobatar), `MfgLineCard`, `PaymentMethodSelector.chosenCardClass` migran simultáneamente.
-- **Excepción documentada**: `card-flat` / entity-view / `AutoEntityCard` / `RadioCard` / `KPIComponents` / `ProfileView` / `TaskActionCard` / `CartItem` / `ManufacturingSpecsEditor` / `NoteStep_TypeSelector` / `NewFiscalYearDrawer` / `SaleOrderProductStep` **no cambian**. Adopción oportunista.
+- **Excepción documentada (Fase 1)**: `TaskActionCard` / `CartItem` / `ManufacturingSpecsEditor` / `NoteStep_TypeSelector` / `NewFiscalYearDrawer` / `SaleOrderProductStep` / `KPIComponents` / `ProfileView` **no cambian**. Adopción oportunista.
+- **Excepción resuelta (Fase 2d)**: `EntityCard` / `entity-view` Collection **SÍ migran** a `CardSurface` (radio ya coincidía en 8px; se unifica shell + tokens + ribbon).
 
-### 4. Migración del piloto (familia POS)
+### 4. Variante fila — `CardRow` (`components/shared/CardRow.tsx`)
+
+- **Inline layout** sin media strip: `lead` (opcional 40×40) | `code` + `title` + `description` + `footer` | `rail` opcional.
+- Tokens inline: `lead`, `inlineBody`, `inlineCode`, `inlineTitle`, `inlineFooter`, `inlineAmount`.
+- `CardRowWithRail` + `GlyphConfigure/Add/Chevron` presets.
+- Usado por: `MfgLineCard` (piloto), `VariantSelectorModal`, `SaleOrderProductStep` (líneas), `OriginSelectionStep` (cards con media), y futuro `RadioCard` → `ChoiceCard`.
+
+### 5. Migración del piloto (familia POS + selectores transaccionales)
 
 | Componente | Antes | Después |
 |---|---|---|
 | `ChoiceCard` | clases a mano | `cardAnatomy` tokens |
 | `ProductCard` | `Card` + 4 overrides | `CardSurface` + tokens |
 | `ContactCardGrid` | `Blobatar rounded-md` | `Blobatar rounded-sm` |
-| `MfgLineCard` | `Card` + overrides + riel a mano | `CardSurface` + tokens + `CardRail`; **sin `selected`** → ribbon solo en hover, riel = único estado |
+| `MfgLineCard` | `Card` + overrides + riel a mano | `CardRowWithRail`; **sin `selected`** → ribbon solo en hover, riel = único estado |
 | `PaymentMethodSelector` | `chosenCardClass` `rounded-md` + clases a mano | `rounded-sm` + tokens |
+| `VariantSelectorModal` | `border-2` div a mano | `CardRow` (lead 64×64, chips, precio, badge) |
+| `SaleOrderProductStep` | 2 botones a mano | Órdenes: `CardSurface` stacked; Líneas: `CardRow` (lead 40×40) |
+| `OriginSelectionStep` | 2 botones `border-2` | `CardSurface` stacked + tokens |
+| `RadioCard` (14 instancias) | `RadioGroupItem` + CmykRing | **Eliminado** → migrado a `ChoiceCard` (23 usos) |
+| `EntityCard` (entity-view) | `card-flat` + `accent-visible` | `CardSurface` stacked + tokens; `isSelected`→ribbon+ring; `checked`→`SelectionRing` |
 
-### 5. MfgLineCard — la señal de estado
+### 6. MfgLineCard — la señal de estado
 
 **Bug corregido**: `selectableCardClass({ selected: hasConfig })` añadía *tres* señales simultáneas al configurar: ribbon CMYK permanente + `border-primary` + `ring-1 ring-primary`. Ahora `selected` **no se pasa**; el ribbon queda en modo preview (hover/foco) y el estado vive **solo en el riel** (ámbar = pendiente, verde = configurado).
+
+### 7. Limpieza de código muerto
+
+- `RadioCard.tsx` (86 líneas) **eliminado** — 14 instancias → `ChoiceCard` (ahora 37 usos totales).
+- `AutoEntityCard.tsx` (470 líneas) + test **eliminados** — 0 consumidores.
+- `DataTableView.tsx` **eliminado** — 0 consumidores.
+- `card-flat` deja de usarse en `EntityCard`; `Card variant="flat"` queda para `TaskInbox`.
 
 ---
 
@@ -62,14 +82,15 @@ Tokens exportados como `cardAnatomy.{body,code,title,description,footer,caption,
 
 - **Single source of truth** para anatomía y shell. El próximo card POS (o `CartItem` si se migra) no puede divergir por accidente.
 - **Radio coherente** en toda la familia interactiva: 8px = radio base R. `design-system.md` §2 se enmienda (ver abajo).
-- **Contrato público** (`CardSurface`, `CardRail`, `cardAnatomy`) listo para que otras features lo adopten sin forzar.
+- **Contrato público** (`CardSurface`, `CardRow`, `CardRail`, `cardAnatomy`) listo para que otras features lo adopten sin forzar.
 - **ADR-0093 §4 enmendado** (ya hecho en commit anterior): el paso de fabricación ya no usa `mfgDetailLineViews`.
 
 ---
 
 ## Governance (mismo commit)
 
-- **`design-system.md` §2 Radius Hierarchy**: se añade nota *"Interactive/selectable cards (ProductCard, ChoiceCard, MfgLineCard, ContactCard) use `rounded-sm` (8px) as an exception to the 'Standard Containers (12px)' rule. The base radius R=8px applies; `rounded-md` (12px) is reserved for section wrappers."*
-- **`docs/20-contracts/component-choice-card.md`**: añade `CardSurface`, `CardRail`, tokens, radio 8px, y aclara que `MfgLineCard` usa `role="button"` + `CardRail` (no `ChoiceCard`).
-- **`docs/20-contracts/component-selectors.md` §"Card anatomy"**: `ProductCard` ahora vía `CardSurface` + tokens.
-- **`docs/20-contracts/component-card.md`**: nota de que la variante `default` de `Card` no cambia (`rounded-md`); la familia interactiva usa `CardSurface` que aplica `rounded-sm`.
+- **`design-system.md` §2 Radius Hierarchy**: se añade nota *"Interactive/selectable cards (ProductCard, ChoiceCard, MfgLineCard, ContactCard, VariantSelectorModal, SaleOrderProductStep lines, OriginSelectionStep, EntityCard) use `rounded-sm` (8px) as an exception to the 'Standard Containers (12px)' rule. The base radius R=8px applies; `rounded-md` (12px) is reserved for section wrappers."*
+- **`docs/20-contracts/component-choice-card.md`**: añade `CardSurface`, `CardRow`, `CardRail`, tokens, radio 8px, y aclara que `MfgLineCard` usa `role="button"` + `CardRail` (no `ChoiceCard`); `RadioCard` eliminado → migración a `ChoiceCard`.
+- **`docs/20-contracts/component-selectors.md` §"Card anatomy"**: `ProductCard` ahora vía `CardSurface` + tokens; `VariantSelectorModal` → `CardRow`.
+- **`docs/20-contracts/component-card.md`**: nota de que la variante `default` de `Card` no cambia (`rounded-md`); la familia interactiva usa `CardSurface` que aplica `rounded-sm`; `EntityCard` usa `CardSurface` stacked.
+- **`docs/10-architecture/adr/0095-row-variant-radio-card-entity-view.md`** (nuevo): detalla `CardRow`, eliminación de `RadioCard`, migración entity-view, limpieza `AutoEntityCard`/`DataTableView`.
