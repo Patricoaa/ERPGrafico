@@ -219,3 +219,15 @@ Nota de red: `.env.dev` del servidor usa `ALLOWED_HOSTS=...,192.168.1.86` y
 1. `docker stats` en vivo mientras compilas → ver a cuánto se acerca el frontend a su techo.
 2. `docker compose restart frontend` libera toda la memoria de la sesión de inmediato.
 3. `free -h` → si swap está al límite, mira qué más consume: `ps aux --sort=-rss | head`.
+
+**Limpieza automática (crontab de `pato` en el server):**
+
+| Cuándo | Qué | Comando |
+|--------|-----|---------|
+| Lunes 04:10 | build cache con tope (5 GB) + imágenes *dangling* | `scripts/server-cleanup.sh disk` |
+| Cada 45 min | si el frontend supera **88 %** del techo → `docker compose restart frontend` controlado | `scripts/server-cleanup.sh ram` |
+
+- El script vive en [`scripts/server-cleanup.sh`](../../scripts/server-cleanup.sh) (llega al server por Mutagen) y deja trazas vía `logger -t erpgrafico-cleanup`.
+- La guardia `ram` es **mejor que el OOM-kill**: un reinicio elegido siempre gana a un kill del kernel en mitad de un compile. No entra en bucle (tras reiniciar el frontend baja a ~0,5 GiB y el pico de cold compile ronda 2,7 GiB).
+- La limpieza de `.next` **no se automatiza**: cada limpieza cuesta ~3 min de recompilación en frío — solo manual (arriba).
+- El journal del sistema (~1 GB) tampoco: requiere `sudo journalctl --rotate && sudo journalctl --vacuum-size=200M` de vez en cuando.
