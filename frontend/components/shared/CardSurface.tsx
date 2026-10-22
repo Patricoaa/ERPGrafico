@@ -69,7 +69,7 @@ export function CardSurface({
         }
     }
 
-    const layoutPadding = layout === "inline" ? "p-0" : "gap-0 p-0"
+    const layoutPadding = layout === "inline" ? "flex-row gap-0 p-0" : "gap-0 p-0"
 
     return (
         <Card

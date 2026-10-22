@@ -113,7 +113,7 @@ export function CardRow({
             role={role}
             onClick={onClick}
             onKeyDown={onKeyDown}
-            className={cn("flex items-stretch", className)}
+            className={cn("flex-row items-stretch", className)}
         >
             {children}
         </CardSurface>

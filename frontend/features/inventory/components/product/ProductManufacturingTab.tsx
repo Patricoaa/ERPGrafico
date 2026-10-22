@@ -50,9 +50,6 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                     <LabeledContainer
                         label="Modo de Producción"
                     >
-                    <LabeledContainer
-                        label="Modo de Producción"
-                    >
                         <ChoiceGroup
                             label="Modo de Producción"
                             columns="grid-cols-3"
@@ -118,7 +115,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                                 icon={Layers}
                             />
                         </ChoiceGroup>
-                    </LabeledContainer>                    </LabeledContainer>
+                    </LabeledContainer>
 
                     <div className="space-y-4">
                         <FormField
