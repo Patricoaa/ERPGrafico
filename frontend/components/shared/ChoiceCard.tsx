@@ -71,8 +71,6 @@ type LightProps = {
 export type ChoiceCardProps = StackedProps | LightProps
 
 export function ChoiceCard(props: ChoiceCardProps) {
-    const { selected, onSelect, disabled = false, title, description, className } = props
-
     if (props.variant === "light") {
         return renderLightVariant(props)
     }
