@@ -13,7 +13,6 @@ import {
     FormField,
     FormItem,
 } from "@/components/ui/form"
-import { RadioGroup } from "@/components/ui/radio-group"
 import { SubmitButton, CancelButton } from "@/components/shared"
 import { useContact, useContactCreditLedger } from "../hooks/useContacts"
 import { type Contact, type ContactPayload } from "../types"
@@ -35,7 +34,7 @@ import { contactCreditDocumentEntity, contactCreditDocumentViews, type ContactCr
 import { type LucideIcon } from "lucide-react"
 
 import { getHubStatuses } from '@/features/orders'
-import { LabeledInput, LabeledContainer, RadioCard, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
+import { LabeledInput, LabeledContainer, ChoiceCard, ChoiceGroup, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
 import { getDomainConceptTitle, getDomainConceptCode } from "@/lib/entity-registry"
 
@@ -299,37 +298,40 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                 const commercialValue = isDefaultCustomer ? "customer" : isDefaultVendor ? "vendor" : "none"
                                                 return (
                                                     <LabeledContainer label="Preferencias Comerciales">
-                                                        <RadioGroup
-                                                            value={commercialValue}
-                                                            onValueChange={(val) => {
-                                                                form.setValue('is_default_customer', val === 'customer', { shouldDirty: true })
-                                                                form.setValue('is_default_vendor', val === 'vendor', { shouldDirty: true })
-                                                            }}
-                                                            className="grid grid-cols-2 gap-3 w-full"
+                                                        <ChoiceGroup
+                                                            label="Preferencias Comerciales"
+                                                            columns="grid-cols-2"
+                                                            activation="select"
                                                         >
-                                                            <RadioCard
-                                                                id="pref-customer"
-                                                                value="customer"
-                                                                label="Cliente por defecto"
+                                                            <ChoiceCard
+                                                                selected={commercialValue === 'customer'}
+                                                                onSelect={() => {
+                                                                    form.setValue('is_default_customer', true, { shouldDirty: true })
+                                                                    form.setValue('is_default_vendor', false, { shouldDirty: true })
+                                                                }}
+                                                                title="Cliente por defecto"
                                                                 description={
                                                                     defaultCustomer && defaultCustomer.id !== c?.id
                                                                         ? `Actual: ${defaultCustomer.name}`
                                                                         : `Se selecciona automáticamente en nuevas ${getDomainConceptCode('ov')}`
                                                                 }
-                                                                icon={<ShoppingCart className="h-4 w-4" />}
+                                                                icon={ShoppingCart}
                                                             />
-                                                            <RadioCard
-                                                                id="pref-vendor"
-                                                                value="vendor"
-                                                                label="Proveedor por defecto"
+                                                            <ChoiceCard
+                                                                selected={commercialValue === 'vendor'}
+                                                                onSelect={() => {
+                                                                    form.setValue('is_default_customer', false, { shouldDirty: true })
+                                                                    form.setValue('is_default_vendor', true, { shouldDirty: true })
+                                                                }}
+                                                                title="Proveedor por defecto"
                                                                 description={
                                                                     defaultVendor && defaultVendor.id !== c?.id
                                                                         ? `Actual: ${defaultVendor.name}`
                                                                         : "Se selecciona automáticamente en nuevas OC"
                                                                 }
-                                                                icon={<Package className="h-4 w-4" />}
+                                                                icon={Package}
                                                             />
-                                                        </RadioGroup>
+                                                        </ChoiceGroup>
                                                     </LabeledContainer>
                                                 )
                                             })()}
