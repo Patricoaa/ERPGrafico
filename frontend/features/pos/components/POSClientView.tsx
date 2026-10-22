@@ -10,7 +10,7 @@ import { invalidateCrossFeature } from '@/lib/invalidation'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { ActionConfirmModal, PrintableReceipt, BaseModal } from '@/components/shared'
+import { ActionConfirmModal, PrintableReceipt, BaseModal, Chip } from '@/components/shared'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
 import { Loader2, FileText, BarChart3, Save, Lock, Unlock, ArrowRightLeft, Wallet, Check, Printer, Package, Percent, Tag } from 'lucide-react'
@@ -51,6 +51,7 @@ import { type CheckoutResponse, type SaleOrderLine, type CheckoutDTEData, type C
 import type { Product, WizardState } from '../types'
 import type { TransactionData } from '@/types/transactions'
 import { type DraftCart } from './DraftCartsClientView'
+import { formatDraftNumber, getPrimaryDraftStatus } from '../utils/draft-status'
 
 import { CategoryDropdown, CategoryFilter, ProductGrid, SearchBar } from '@/components/selectors/ProductGridPicker'
 import { Cart } from './Cart'
@@ -455,43 +456,59 @@ export function POSClientView() {
                         }
 
                         return syncDrafts.length > 0 && (
-                            <div className="hidden lg:flex items-center gap-1 mr-2 animate-in fade-in zoom-in duration-300 motion-reduce:animate-none">
+                            <div className="hidden lg:flex items-center gap-1 mr-2 animate-in fade-in zoom-in duration-300 motion-reduce:animate-none max-w-[40vw] overflow-x-auto no-scrollbar">
                                 {quickDrafts.map(d => {
                                     const lockInfo = getLockInfo(d.id)
                                     const lockedByOther = lockInfo.isLocked && !lockInfo.isOwnLock
-                                    const isWaitingPayment = !!d.wizard_state?.isWaitingPayment;
-                                    const draftLabel = d.name || `#${d.id}`
+                                    const primaryStatus = getPrimaryDraftStatus(d)
+                                    const draftNumber = formatDraftNumber(d)
+                                    const isCurrent = currentDraftId === d.id
+
+                                    // Build tooltip: name + customer + items + total
+                                    const tooltipParts: string[] = []
+                                    if (d.name) tooltipParts.push(`Borrador: ${d.name}`)
+                                    if (d.customer_name) tooltipParts.push(`Cliente: ${d.customer_name}`)
+                                    tooltipParts.push(`Items: ${d.item_count}`)
+                                    tooltipParts.push(`Total: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(d.total_gross)}`)
+                                    if (lockedByOther) tooltipParts.unshift(`En uso por ${lockInfo.lockedByName}`)
+                                    const title = tooltipParts.join('\n')
+
                                     return (
                                         <Button
                                             key={d.id}
                                             variant="outline"
                                             size="sm"
                                             className={cn(
-                                                "h-10 min-w-[40px] px-2 text-2xs font-medium transition-all duration-300 gap-1.5 relative rounded-sm",
-                                                currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-card border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
-                                                isSaving && currentDraftId === d.id && "animate-pulse opacity-70 motion-reduce:animate-none",
+                                                "h-10 min-w-[40px] px-2 text-2xs font-medium transition-all duration-300 gap-1.5 relative rounded-sm flex-nowrap",
+                                                isCurrent ? "bg-primary/5 border-primary text-primary shadow-card border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
+                                                isSaving && isCurrent && "animate-pulse opacity-70 motion-reduce:animate-none",
                                                 lockedByOther && "border-destructive/40 opacity-60",
-                                                isWaitingPayment && currentDraftId !== d.id && "border-warning text-warning bg-warning/10 shadow-card border-solid ring-1 ring-warning/30 animate-in zoom-in-95 duration-500 motion-reduce:animate-none"
+                                                primaryStatus?.intent === 'warning' && !isCurrent && !lockedByOther && "border-warning text-warning bg-warning/10 shadow-card border-solid ring-1 ring-warning/30 animate-in zoom-in-95 duration-500 motion-reduce:animate-none"
                                             )}
                                             onClick={() => handleLoadDraft(d)}
-                                            title={lockedByOther ? `En uso por ${lockInfo.lockedByName}` : isWaitingPayment ? "Registrar Pago (Pendiente)" : d.name ? `Borrador: ${d.name}` : `Borrador #${d.id}`}
+                                            title={title}
                                         >
-                                            {lockedByOther && <Lock className="mr-0.5 h-2.5 w-2.5 text-destructive" />}
-                                            {isWaitingPayment && currentDraftId !== d.id && !lockedByOther ? (
-                                                <div className="flex items-center gap-1">
-                                                    <span className="max-w-[72px] truncate">{draftLabel}</span>
-                                                    <Wallet className="h-3.5 w-3.5 text-warning animate-pulse motion-reduce:animate-none" />
-                                                </div>
-                                            ) : (
-                                                <span className="max-w-[72px] truncate">{(isWaitingPayment && currentDraftId === d.id) || !isWaitingPayment ? draftLabel : ''}</span>
+                                            <span className="font-mono tabular-nums">{draftNumber}</span>
+                                            {primaryStatus && (
+                                                <Chip
+                                                    key={primaryStatus.key}
+                                                    size="xs"
+                                                    intent={primaryStatus.intent}
+                                                    icon={primaryStatus.icon}
+                                                    className="shrink-0"
+                                                >
+                                                    {primaryStatus.label}
+                                                </Chip>
                                             )}
-                                            {/* eslint-disable-next-line no-restricted-syntax -- inline spinner in draft tab selector, not a submit/action button */}
-                                            {isSaving && currentDraftId === d.id && <Loader2 className="ml-1 h-2 w-2 animate-spin motion-reduce:animate-none" />}
+                                            {lockedByOther && !primaryStatus && (
+                                                <Lock className="mr-0.5 h-2.5 w-2.5 text-destructive" />
+                                            )}
+                                            {isSaving && isCurrent && <Loader2 className="ml-1 h-2 w-2 animate-spin motion-reduce:animate-none" />}
                                         </Button>
                                     )
                                 })}
                                 {currentDraftId === null && items.length > 0 && (
-                                    <span className="h-10 border border-dashed border-muted-foreground/30 text-4xs px-2 opacity-50 bg-muted/20 flex items-center justify-center rounded-sm text-muted-foreground uppercase font-bold tracking-widest">
+                                    <span className="h-10 border border-dashed border-muted-foreground/30 text-4xs px-2 opacity-50 bg-muted/20 flex items-center justify-center rounded-sm text-muted-foreground uppercase font-bold tracking-widest flex-shrink-0">
                                         Nuevo...
                                     </span>
                                 )}

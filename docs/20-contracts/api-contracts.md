@@ -71,6 +71,8 @@ GET    /api/auth/user/         (JWT)                          → CurrentUserSer
 | `production` | `/api/production/` | `orders/`, `boms/` |
 | `purchasing` | `/api/purchasing/` | `orders/`, `receipts/`, `returns/` |
 | `sales` | `/api/sales/` | `orders/`, `deliveries/`, `returns/`, `pos-drafts/`, `settings/`, `pricing/`, `credit_history/` |
+
+> **Nota:** `pos-drafts/` expone `session_local_id` (N° temporal secuencial 1,2,3… por sesión POS) en listado, detalle y endpoint `/sync/`. Único por sesión; se reinicia al cerrar.
 | `tax` | `/api/tax/` | `periods/`, `accounting-periods/`, `declarations/`, `payments/` |
 | `treasury` | `/api/treasury/` | `accounts/`, `movements/`, `payments/` (= movements), `statements/`, `statement-lines/`, `banks/`, `payment-methods/`, `checks/`, `loans/`, `loan-installments/`, `credit-lines/`, `card-statements/`, `pos-terminals/`, `terminal-batches/`, `terminal-providers/`, `terminal-devices/`, `pos-sessions/`, `dashboard/`, `reconciliation-settings/` |
 | `workflow` | `/api/workflow/` | `tasks/`, `notifications/`, `assignment-rules/`, `notification-rules/`, `settings/` |
