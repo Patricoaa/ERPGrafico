@@ -1089,6 +1089,7 @@ class BankStatementSelector:
         qs = qs.select_related("treasury_account", "treasury_account__bank")
 
         if acc := params.get("treasury_account"): qs = qs.filter(treasury_account_id=acc)
+        if bank := params.get("bank"): qs = qs.filter(treasury_account__bank_id=bank)
         if dt := params.get("statement_date"): qs = qs.filter(statement_date=dt)
         if df := params.get("date_from"): qs = qs.filter(statement_date__gte=df)
         if d_to := params.get("date_to"): qs = qs.filter(statement_date__lte=d_to)

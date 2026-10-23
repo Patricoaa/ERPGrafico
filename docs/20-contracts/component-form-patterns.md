@@ -209,42 +209,27 @@ Cada formulario opera en un **contexto** que determina su comportamiento, surfac
 
 ### Patrones de Inicialización
 
-> **Importante (ADR-0051):** Desde la adopción del patrón "adjust state during render", la inicialización de formularios **no debe usar `useEffect` + `form.reset()`**. En su lugar, usar `useInitializeForm` (settings panels) o el patrón de adjust-during-render (modales). Ver [component-state-sync.md](./component-state-sync.md) para detalles.
+> **Importante (ADR-0098):** la inicialización de formularios **no debe usar `useEffect` + `form.reset()` ni `form.reset()` durante el render**. Usar `useInitializeForm` (settings panels) o `useInitializeDrawerForm` (drawers). Ambos resetean en un layout effect, antes del paint: sin flash y sin el warning de React 19 por actualizar `Controller`s montados durante el render de otro componente. Ver [component-state-sync.md](./component-state-sync.md) para detalles.
 
 ```tsx
-// Creación: reset limpio — adjust-during-render
-const [prevOpen, setPrevOpen] = useState(open)
-if (open !== prevOpen) {
-    setPrevOpen(open)
-    if (!initialData) form.reset(defaultValues)
-}
+// Drawer CRUD (crear/editar): un solo hook, sincrónico o async
+useInitializeDrawerForm({
+    form,
+    open,
+    initialData,
+    defaultValues: () => defaultFormValues,
+    mapData: mapInitialDataToFormValues,
+})
 
-// Edición: pre-fill — adjust-during-render
-const [prevInitialData, setPrevInitialData] = useState(initialData)
-if (open && initialData && initialData !== prevInitialData) {
-    setPrevInitialData(initialData)
-    form.reset(mapInitialDataToFormValues(initialData))
-}
+// Settings panel
+useInitializeForm({ form, data: settings, mapData })
 
-// Ficha maestra: reset + fetch adicional
-// NOTA: el fetch adicional sigue siendo un side effect válido en useEffect
-const [prevOpen, setPrevOpen] = useState(open)
-if (open !== prevOpen) {
-    setPrevOpen(open)
-    if (initialData) {
-        form.reset(mapInitialDataToFormValues(initialData))
-    } else {
-        form.reset(defaultValues)
-    }
-}
+// Fetch adicional: sigue siendo un side effect válido en useEffect
 useEffect(() => {
     if (open && initialData) {
-        fetchRelatedData(initialData.id)  // ← side effect: useEffect OK
+        fetchRelatedData(initialData.id)
     }
 }, [open, initialData?.id, fetchRelatedData])
-
-// Settings panel: usar hook canónico
-useInitializeForm({ form, data: settings, mapData })
 
 // Creación con dependencias asíncronas: SkeletonShell overlay
 // El formulario real se renderiza completo (con placeholders) y
@@ -469,4 +454,4 @@ graph TD
 - ❌ **Modal `full` para formularios simples** — Respetar la tabla de dimensionamiento.
 - ❌ **Card envolvente en formularios** — No envolver el contenido de un formulario dentro de un `<div>` con `border`, `rounded-lg`, `bg-muted`, `shadow` etc. El `BaseModal` ya proporciona el contenedor visual. Un card extra es ruido y herencia de patrones legacy.
 - ❌ **`FormSection` redundante en formularios simples** — Si el formulario tiene ≤6 campos homogéneos (todos del mismo dominio lógico), NO añadir un `FormSection`. El título del modal/tab ya provee el contexto necesario. Ver [form-layout-architecture.md §5](./form-layout-architecture.md) para la guía completa.
-- ❌ **`useEffect { form.reset() }`** para inicialización de formularios. Usar `useInitializeForm` o el patrón "adjust state during render". Ver [component-state-sync.md](./component-state-sync.md).
+- ❌ **`useEffect { form.reset() }`** para inicialización de formularios. Usar `useInitializeForm` / `useInitializeDrawerForm` (layout effect — ADR-0098). Ver [component-state-sync.md](./component-state-sync.md).

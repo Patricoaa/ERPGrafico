@@ -381,7 +381,7 @@ Ver contrato completo: [list-modal-edit-pattern.md §2.3](./list-modal-edit-patt
 
 ### `useInitializeForm<TData, TForm>(opts)` 🟢
 
-Initializes a `react-hook-form` instance from server data using the "adjust state during render" pattern (ADR-0051). Replaces the `useEffect` + `initialized` flag boilerplate for settings panels and any form that receives async data.
+Initializes a `react-hook-form` instance from server data inside an isomorphic layout effect (ADR-0098). Replaces the `useEffect` + `initialized` flag boilerplate for settings panels and any form that receives async data. The reset runs before paint and never during render, so mounted `Controller`s are not updated while another component renders (React 19 cross-component update warning).
 
 ```ts
 import { useInitializeForm } from "@/hooks/useInitializeForm"
@@ -401,7 +401,7 @@ useInitializeForm({
 | `data` | `TData \| undefined` | Server data; falsy = skip (loading state) |
 | `mapData` | `((data: TData) => Partial<TForm>)?` | Optional mapping from API shape to form shape |
 
-**Behavior**: On first render where `data` is truthy, calls `form.reset()` with the (mapped) values. A `useRef` guard prevents re-initialization on subsequent renders. Runs during render — no `useEffect`, no cascading `setState`.
+**Behavior**: On the first layout effect where `data` is truthy, calls `form.reset()` with the (mapped) values. A `useRef` guard prevents re-initialization on subsequent renders. Runs in a layout effect — before paint, never during render.
 
 Ver contrato completo: [component-state-sync.md §Variante 2](./component-state-sync.md#4-variante-2-server-data--form-useinitializeform).
 

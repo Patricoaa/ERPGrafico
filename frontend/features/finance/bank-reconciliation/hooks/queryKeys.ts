@@ -1,6 +1,6 @@
 export const reconciliationKeys = {
     all: ['reconciliation'] as const,
-    statements: () => [...reconciliationKeys.all, 'statements'] as const,
+    statements: (params?: Record<string, string>) => [...reconciliationKeys.all, 'statements', params ?? {}] as const,
     statement: (id: number) => [...reconciliationKeys.statements(), id] as const,
     accounts: () => [...reconciliationKeys.all, 'accounts'] as const,
     settings: (accountId?: number) => [...reconciliationKeys.all, 'settings', accountId] as const,

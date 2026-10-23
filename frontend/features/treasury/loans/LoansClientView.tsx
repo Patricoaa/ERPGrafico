@@ -7,8 +7,9 @@ import {
     UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, StaleDataBanner,
 } from '@/components/shared'
 import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from '@/components/entity-view'
-import type { UnifiedSearchConfig } from '@/types/unified-search'
+import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
 import { useLoans } from '../hooks/useLoans'
+import { useBanks } from '../hooks/useMasterData'
 import { LoanRegisterDrawer } from './LoanRegisterDrawer'
 import { LoanViewDrawer } from './LoanViewDrawer'
 import { LoanDisburseDrawer } from './LoanDisburseDrawer'
@@ -25,25 +26,43 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
     const pathname = usePathname()
     const router = useRouter()
     const bankId = bankIdProp ?? (searchParams.get("bank") ? Number(searchParams.get("bank")) : undefined)
-    const { data: loans = [], isLoading, isError, refetch } = useLoans(
-        bankId ? { lender: String(bankId) } : undefined,
+    const { banks } = useBanks()
+    const filterOptions: Record<string, MultiSelectOption[]> = useMemo(
+        () => ({ bank: banks.map((bank) => ({ label: bank.name, value: String(bank.id) })) }),
+        [banks],
     )
 
-    const config: UnifiedSearchConfig = useMemo(() => ({
-        searchFields: [
-            { key: 'search', label: 'ID / N° Préstamo / Banco', serverParam: 'search', clientKey: ['display_id', 'loan_number', 'lender_name'] },
-        ],
-        filters: [
+    const config: UnifiedSearchConfig = useMemo(() => {
+        const filters: NonNullable<UnifiedSearchConfig['filters']> = [
             { key: 'loan_status', label: 'Estado', type: 'single', serverParam: 'loan_status', options: [
                 { label: 'Activos', value: 'active' },
                 { label: 'Finalizados', value: 'completed' },
             ]},
-        ],
-        groupBy: [
-            { key: 'status', label: 'Estado', field: 'status' },
-        ],
-    }), [])
-    const search = useUnifiedSearch(config)
+        ]
+        if (!bankId) {
+            filters.unshift({ key: 'bank', label: 'Banco', type: 'single', serverParam: 'lender', dynamic: true })
+        }
+        return {
+            searchFields: [
+                { key: 'search', label: 'ID / N° Préstamo / Banco', serverParam: 'search', clientKey: ['display_id', 'loan_number', 'lender_name'] },
+            ],
+            filters,
+            groupBy: [
+                { key: 'status', label: 'Estado', field: 'status' },
+            ],
+        }
+    }, [bankId])
+    const search = useUnifiedSearch(config, filterOptions)
+
+    const queryParams = useMemo(() => {
+        const params: Record<string, string> = {}
+        if (bankId) params.lender = String(bankId)
+        if (search.filters.lender) params.lender = search.filters.lender
+        return Object.keys(params).length > 0 ? params : undefined
+    }, [bankId, search.filters.lender])
+
+    const { data: loans = [], isLoading, isError, refetch } = useLoans(queryParams)
+
     const isFiltered = search.isFiltered
     const filteredLoans = useMemo(() => {
         const statusFilter = search.filters.loan_status ?? "active"
@@ -126,7 +145,12 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                 actions={loanActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={registerAction}>
-                    <UnifiedSearchBar config={config} {...bindUnifiedSearch(search)} placeholder="Buscar por ID, N° préstamo o banco..." />
+                    <UnifiedSearchBar
+                        config={config}
+                        {...bindUnifiedSearch(search)}
+                        filterOptions={search.filterOptions}
+                        placeholder="Buscar por ID, N° préstamo o banco..."
+                    />
                 </Collection.Toolbar>
                 <Collection.View
                     table={bankLoanViews.table}

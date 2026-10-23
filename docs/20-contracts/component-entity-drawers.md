@@ -199,7 +199,7 @@ Todos los drawers deben adherirse a esta estructura unificada:
 - [ ] Usa `useDrawerMode({ mode: modeProp, initialData })` (no resolución inline de modo)
 - [ ] Usa `useDrawerIdentity` para título, subtítulo e icono
 - [ ] Usa `formDrawerWidth(complexity, !!initialData?.id)` para el ancho
-- [ ] Reset de form: patrón "adjust-during-render" con `prevResetKeyRef` (sin `useEffect` + `form.reset`) — ver [component-state-sync.md](./component-state-sync.md)
+- [ ] Reset de form: `useInitializeDrawerForm` (layout effect con reset key `open` + id; sin `form.reset()` durante render ni `useEffect` después del paint) — ver [component-state-sync.md](./component-state-sync.md)
 - [ ] Mutaciones: usa hook dedicado `use*Mutations()` (ej. `useCategoryMutations`) que invoca `markLocalMutation()` e `invalidateCrossFeature()`. Cero `api.*()` directos en el componente.
 - [ ] `FormSplitLayout` + `ActivitySidebar` con `showSidebar={!!initialData?.id}` (solo para edición)
 - [ ] `FormFooter` canónico (o ausente si drawer read-only)

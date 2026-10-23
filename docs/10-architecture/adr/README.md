@@ -114,7 +114,7 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0048](0048-cancelled-terminal-no-reset-to-draft.md) | CANCELLED es terminal — no se implementa Reset-to-Draft | Accepted |
 | [0049](0049-credit-line-model.md) | Modelo CreditLine (Línea de Crédito Rotativa) | Superseded by 0050 |
 | [0050](0050-credit-line-overdraft-treasury-account.md) | Refactor CreditLine — sobregiro como overdraft de TreasuryAccount | Accepted |
-| [0051](0051-adjust-state-during-render.md) | Adjust State During Render — canonical pattern for state synchronization | Accepted |
+| [0051](0051-adjust-state-during-render.md) | Adjust State During Render — canonical pattern for state synchronization | Accepted (form initialization superseded by 0098) |
 | [0052](0052-purchase-checkout-idempotency.md) | Purchase checkout endpoint in idempotency closed list | Accepted |
 | [0053](0053-timestampedmodel-mandatory-base.md) | TimeStampedModel como base obligatoria y resolución de auditoría | Accepted |
 | [0054](0054-entity-fields-schema.md) | Entity Fields Schema — declarative field mapping for DataTable / EntityCard / Kanban | Superseded by 0066 |
@@ -162,5 +162,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0096](0096-wizard-step-rail.md) | Wizard step rail redesign — numbered nodes, connector, a11y, detail on active | Accepted |
 | [0096](0096-light-choice-card-and-inline-layout.md) | ChoiceCard light variant + CardSurface inline layout fix | Accepted |
 | [0097](0097-card-family-roles-and-surface-tokens.md) | Familia de cards — roles de superficie, layouts, rail único y tokens de superficie | Proposed |
+| [0098](0098-form-reset-layout-effect.md) | Form initialization resets in a layout effect (React 19 cross-component update rule) | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

@@ -99,7 +99,6 @@ export const NO_UNSAFE_BASELINE = {
     "features/workflow/api/workflowApi.ts": 17,
     "features/workflow/components/NotificationBell.tsx": 4,
     "hooks/useAllowedPaymentMethods.ts": 3,
-    "hooks/useInitializeDrawerForm.ts": 6,
     "hooks/useOrderHubData.ts": 41,
     "hooks/useSelectedEntity.test.tsx": 2,
     "hooks/useStockValidation.ts": 1,
