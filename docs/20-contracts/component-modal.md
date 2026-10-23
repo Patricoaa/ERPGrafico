@@ -283,17 +283,23 @@ re-exported from `@/components/shared`):
       - `status?: 'active' | 'past' | 'future' | 'current'` — explicit status override
       - `disabled?: boolean` — disables click/keyboard
       - `className?: string` — extra row classes
+      - `group?: string` — section label rendered before the first step of the group
+      - `warning?: string` — blocker shown as a warning icon + title; included in the row `aria-label`
     - `onStepClick?: (index: number) => void` (0-based)
     - `renderStepActions?: (step, index) => ReactNode` — hover-reveal actions column
     - `width?: string` (default `'w-64'`)
     - `showNumbers?: boolean` (default `true`) — mono `01..N` on nodes
     - `detailVisibility?: 'both' | 'active' | 'past' | 'none'` (default `'both'`)
     - `showCounter?: boolean` (default `true`) — header `03 / 13`
+    - `counterLabel?: string` — prefix for the header counter, e.g. `"Viendo"`
+    - `progressPercent?: number` — 0–100; renders the header progress bar and the progress-aware connector. Omit to keep the legacy gradient connector.
     - `density?: 'compact' | 'comfortable'` (default `'compact'`)
     - `className?: string`
-  - A11y: each row is a `<button>` (stretched-link pattern) with `aria-current="step"` on active, `aria-disabled` on future/disabled. Actions render in a separate `z-10` column, never nested inside the button.
-  - Auto-scroll: the rail scrolls the active step into view on change (`block: 'nearest'`).
-  - Connector: vertical gradient line (success → border) left of nodes.
+  - A11y: each row is a `<button>` (stretched-link pattern) with `aria-current="step"` on active, `aria-disabled` on future/disabled. Future steps are non-clickable by construction. Actions render in a separate `z-10` column, never nested inside the button. `detail` is linked via `aria-describedby`; warnings are part of the row label.
+  - Auto-scroll: the rail scrolls its own container (never an ancestor drawer) so the active step stays below the sticky header.
+  - Header: sticky, with `Viendo NN/NN` and an optional progress bar (`role="progressbar"`). The counter describes what is on screen; the progress bar describes where the order really is.
+  - Connector: vertical gradient line (success → border) left of nodes; when `progressPercent` is provided, a `success` fill overlays the neutral track up to the current progress.
+  - Work-order adapter: `WizardProcessSidebar` opts into `group`, `warning`, `progressPercent` and per-stage `detail` derived from `stage_history`, `workflow_tasks` and `materials` (ADR-0098).
   - Removed: `footer` prop (was unused).
 - **`WizardSummarySidebar`** — summary rail. Props: `header`, `body`, `footer`,
   `side: 'left' | 'right'` (drives the separator border), `width`,

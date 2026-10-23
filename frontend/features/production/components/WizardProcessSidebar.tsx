@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { CheckCircle2, Eye, Pencil, RotateCcw } from "lucide-react"
@@ -14,6 +15,7 @@ import { WizardStepsSidebar, type WizardSidebarStep, type WizardStepStatus } fro
 
 import type { WorkOrderStage, WorkOrder, WizardStepMode } from "../types"
 import { getStepCapabilities } from "../lib/stepGovernance"
+import { deriveStageEvidence, stageGroup, stageSummary } from "../lib/stageEvidence"
 
 interface WizardProcessSidebarProps {
     stages: WorkOrderStage[]
@@ -32,11 +34,15 @@ export function WizardProcessSidebar({
     onStepClick,
     order,
 }: WizardProcessSidebarProps) {
+    const evidence = useMemo(() => deriveStageEvidence(order), [order])
+
     const steps: WizardSidebarStep[] = stages.map((stage, index) => {
+        const stageId = stage.id as string
         const isActive = viewingStepIndex === index
         const isPast = actualStepIndex > index
         const isCurrent = actualStepIndex === index
         const isFuture = actualStepIndex < index
+        const stageEvidence = evidence[stageId]
 
         // Determine effective status
         let status: WizardStepStatus
@@ -51,24 +57,28 @@ export function WizardProcessSidebar({
             status = "future"
         }
 
-        const capabilities = isPast && order
-            ? getStepCapabilities(stage.id as string, order)
-            : null
-
         return {
             id: stage.id,
             label: stage.label,
             icon: stage.icon,
+            group: stageGroup(stageId),
+            detail: stageSummary(stageId, stageEvidence, order, isCurrent),
+            // Only warn where the operator can still act: current and future stages.
+            warning: index >= actualStepIndex ? stageEvidence?.warning : undefined,
             status,
             disabled: isFuture,
             className: cn("group"),
             badge: isCurrent && !isActive && (
-                <span className="text-3xs font-mono font-black text-primary/70 px-1.5 py-0.5 bg-primary/10 rounded border border-primary/20">
-                    actual
+                <span className="text-2xs font-semibold text-primary px-1.5 py-0.5 bg-primary/10 rounded border border-primary/30">
+                    Actual
                 </span>
             ),
         }
     })
+
+    const progressPercent = actualStepIndex >= 0 && stages.length > 0
+        ? ((actualStepIndex + 1) / stages.length) * 100
+        : undefined
 
     return (
         <TooltipProvider delayDuration={300}>
@@ -76,11 +86,13 @@ export function WizardProcessSidebar({
                 title="Etapas"
                 currentStep={viewingStepIndex + 1}
                 steps={steps}
-                width="w-60"
+                width="w-64"
                 className="p-2 space-y-0 bg-transparent"
                 onStepClick={(index) => onStepClick(index, "view")}
                 showNumbers={true}
                 detailVisibility="both"
+                progressPercent={progressPercent}
+                counterLabel="Viendo"
                 renderStepActions={(step, index) => {
                     const isActive = viewingStepIndex === index
                     const isPast = actualStepIndex > index
