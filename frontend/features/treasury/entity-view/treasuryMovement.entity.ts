@@ -9,10 +9,11 @@ export const treasuryMovementEntity = defineEntity<TreasuryMovement>()((f) => ({
     fields: {
         folio: f.code("display_id", { label: "Folio" }),
         movementType: f.status((m) => {
-            if (m.payment_method === "WRITE_OFF") return { status: "voided", label: "Castigo" }
-            if (m.movement_type === "INBOUND") return { status: "received", label: "Depósito" }
-            if (m.movement_type === "OUTBOUND") return { status: "sent", label: "Retiro" }
-            return { status: "in_progress", label: m.movement_type === "TRANSFER" ? "Traspaso" : "Ajuste" }
+            if (m.payment_method === "WRITE_OFF") return { status: "voided", label: "Castigo", intent: "neutral" }
+            if (m.movement_type === "INBOUND") return { status: "received", label: "Depósito", intent: "success" }
+            if (m.movement_type === "OUTBOUND") return { status: "sent", label: "Retiro", intent: "destructive" }
+            if (m.movement_type === "TRANSFER") return { status: "in_progress", label: "Traspaso", intent: "primary" }
+            return { status: "in_progress", label: "Ajuste", intent: "warning" }
         }, { label: "Tipo" }),
         date: f.date("date", { label: "Fecha" }),
         paymentMethod: f.text((m) => m.payment_method_display ?? m.payment_method ?? "", { label: "Método", tone: "secondary" }),
@@ -35,14 +36,22 @@ export const treasuryMovementEntity = defineEntity<TreasuryMovement>()((f) => ({
 export const treasuryMovementViews = treasuryMovementEntity.views({
     table: { columns: ["folio", "movementType", "date", "paymentMethod", "accounts", "amount"], primary: "folio" },
     card: {
-        rail: { status: (r) => r.status },
+        rail: {
+            status: (m) => {
+                if (m.payment_method === "WRITE_OFF") return "CANCELLED"
+                if (m.movement_type === "INBOUND") return "SUCCESS"
+                if (m.movement_type === "OUTBOUND") return "DESTRUCTIVE"
+                if (m.movement_type === "TRANSFER") return "PRIMARY"
+                return "WARNING"
+            },
+        },
         title: "folio",
         subtitle: ["paymentMethod", "date"],
         trailing: ["amount"],
         meta: ["accounts"],
         media: {
             iconFor: (m) => resolveTreasuryMovementIcon(m).icon,
-            tone: (m) => (m.payment_method === "WRITE_OFF" ? "muted" : m.movement_type === "INBOUND" ? "success" : m.movement_type === "OUTBOUND" ? "destructive" : "warning"),
+            tone: (m) => (m.payment_method === "WRITE_OFF" ? "muted" : m.movement_type === "INBOUND" ? "success" : m.movement_type === "OUTBOUND" ? "destructive" : m.movement_type === "TRANSFER" ? "primary" : "warning"),
         },
     },
 })

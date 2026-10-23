@@ -31,7 +31,11 @@ export const purchaseReceiptEntity = defineEntity<PurchaseReceipt>()((f) => ({
         order: docRef(f, (r) => r.purchase_order_document ? { label: r.purchase_order_document.label, id: r.purchase_order_document.id, display: r.purchase_order_document.display_id, url: r.purchase_order_document.url } : null, { label: "Orden de Compra", sortable: false }),
         date: f.date("receipt_date", { label: "Fecha", orderBy: "receipt_date" }),
         warehouse: f.text("warehouse_name", { label: "Bodega", tone: "secondary" }),
-        status: f.status((r) => ({ status: r.status, label: r.status_display }), { label: "Estado" }),
+        status: f.status((r) => ({
+            status: r.status,
+            label: r.status_display,
+            intent: r.status === "CONFIRMED" ? "success" : r.status === "CANCELLED" ? "destructive" : "info",
+        }), { label: "Estado" }),
         cost: f.money("total_cost", { label: "Costo", orderBy: "total_cost" }),
     },
 }))
@@ -39,10 +43,10 @@ export const purchaseReceiptEntity = defineEntity<PurchaseReceipt>()((f) => ({
 export const purchaseReceiptViews = purchaseReceiptEntity.views({
     table: { columns: ["folio", "supplier", "order", "date", "warehouse", "status", "cost"], primary: "folio" },
     card: {
-        rail: { status: (r) => r.status },
+        rail: { status: (r) => (r.status === "CONFIRMED" ? "SUCCESS" : r.status) },
         title: "folio",
         subtitle: ["supplier", "date"],
         trailing: ["status"],
-        media: { tone: (r) => (r.status === "CANCELLED" ? "muted" : "primary") },
+        media: { tone: (r) => (r.status === "CANCELLED" ? "muted" : "success") },
     },
 })

@@ -9,6 +9,7 @@
  * BankMovementsClientView and TreasuryMovementsClientView.
  */
 
+import * as React from "react"
 import {
     ArrowDownToLine,
     ArrowUpFromLine,
@@ -21,8 +22,11 @@ import {
     PackagePlus,
     PackageMinus,
     RefreshCw,
+    Truck,
     type LucideIcon,
+    type LucideProps,
 } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface MovementIconResult {
     icon: LucideIcon
@@ -127,4 +131,24 @@ export function resolveStockMoveIcon(m: StockMoveLike): MovementIconResult {
                         : "text-muted-foreground bg-muted/10"
 
     return { icon, iconClassName }
+}
+
+// ─── Logistics / Fulfillment movements ────────────────────────────────────────
+
+/**
+ * Truck icon flipped horizontally (facing left) to represent return / reverse logistics.
+ */
+export const TruckReturn: LucideIcon = React.forwardRef<SVGSVGElement, LucideProps>(function TruckReturn(props, ref) {
+    return React.createElement(Truck, { ...props, ref, className: cn("-scale-x-100", props.className) })
+})
+
+type FulfillmentType = "DELIVERY" | "RETURN" | "RECEIPT" | string
+
+/**
+ * Resolves icon for sales and purchasing fulfillments.
+ * - RETURN: Truck facing left (inbound return / reverse logistics)
+ * - DELIVERY / RECEIPT: Truck facing right
+ */
+export function resolveFulfillmentIcon(type: FulfillmentType): LucideIcon {
+    return type === "RETURN" ? TruckReturn : Truck
 }
