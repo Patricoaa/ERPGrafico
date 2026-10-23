@@ -105,6 +105,8 @@ interface WizardProcessSidebarProps {
     stepMode: WizardStepMode
     onStepClick: (index: number, mode: WizardStepMode) => void
     order: WorkOrder | null
+    collapsed?: boolean
+    onToggleCollapsed?: () => void
 }
 
 export function WizardProcessSidebar({
@@ -114,6 +116,8 @@ export function WizardProcessSidebar({
     stepMode,
     onStepClick,
     order,
+    collapsed,
+    onToggleCollapsed,
 }: WizardProcessSidebarProps) {
     const evidence = useMemo(() => deriveStageEvidence(order), [order])
 
@@ -172,12 +176,14 @@ export function WizardProcessSidebar({
                 currentStep={viewingStepIndex + 1}
                 steps={steps}
                 width="w-64"
-                className="p-2 space-y-0 bg-transparent"
+                className="bg-transparent"
                 onStepClick={(index) => onStepClick(index, "view")}
                 showNumbers={true}
                 detailVisibility="both"
                 progressPercent={progressPercent}
                 counterLabel="Viendo"
+                collapsed={collapsed}
+                onToggleCollapsed={onToggleCollapsed}
                 renderStepActions={(step, index) => {
                     const isActive = viewingStepIndex === index
                     const isPast = actualStepIndex > index

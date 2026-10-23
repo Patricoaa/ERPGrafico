@@ -1,7 +1,8 @@
 "use client"
 
-import { AlertTriangle, Check } from "lucide-react"
+import { AlertTriangle, Check, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { type LucideIcon } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Fragment, type ReactNode, useEffect, useId, useRef } from "react"
 
@@ -38,6 +39,12 @@ export interface WizardStepsSidebarProps {
     progressPercent?: number
     /** Prefix for the header counter, e.g. "Viendo". */
     counterLabel?: string
+    /** Icon-only rail for power users. */
+    collapsed?: boolean
+    /** Enables the collapse/expand button when provided. */
+    onToggleCollapsed?: () => void
+    /** Width used when `collapsed` is true (default `w-14`). */
+    collapsedWidth?: string
 }
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, Math.round(value)))
@@ -56,6 +63,9 @@ export function WizardStepsSidebar({
     density = "compact",
     progressPercent,
     counterLabel,
+    collapsed = false,
+    onToggleCollapsed,
+    collapsedWidth = "w-14",
 }: WizardStepsSidebarProps) {
     const railRef = useRef<HTMLDivElement>(null)
     const detailIdPrefix = useId()
@@ -86,8 +96,9 @@ export function WizardStepsSidebar({
 
     const isCompact = density === "compact"
     const py = isCompact ? "py-1.5" : "py-2.5"
-    const px = isCompact ? "px-2" : "px-3"
-    const gap = isCompact ? "gap-2" : "gap-3"
+    const px = collapsed ? "px-0" : isCompact ? "px-2" : "px-3"
+    const gap = collapsed ? "gap-0" : isCompact ? "gap-2" : "gap-3"
+    const connectorLeft = collapsed ? "left-[27px]" : "left-[17px]"
     const iconSize = isCompact ? "h-5 w-5" : "h-5 w-5"
     const labelSize = isCompact ? "text-xs" : "text-sm"
     const detailSize = isCompact ? "text-3xs" : "text-2xs"
@@ -96,9 +107,11 @@ export function WizardStepsSidebar({
     return (
         <div
             ref={railRef}
+            data-collapsed={collapsed || undefined}
             className={cn(
-                width,
+                collapsed ? collapsedWidth : width,
                 "border-r bg-transparent flex flex-col overflow-y-auto",
+                "transition-[width] duration-200 ease-premium motion-reduce:transition-none",
                 "hidden md:flex",
                 className
             )}
@@ -107,17 +120,43 @@ export function WizardStepsSidebar({
                 data-rail-header
                 className="sticky top-0 z-20 shrink-0 bg-card/95 backdrop-blur-sm"
             >
-                <div className={cn("flex items-center justify-between mb-1 px-2", isCompact ? "pt-1 pb-1" : "pt-2 pb-2")}>
-                    <h3 className="text-3xs font-bold uppercase tracking-loose text-muted-foreground/60">
-                        {title}
-                    </h3>
-                    {showCounter && (
-                        <span className="font-mono font-black text-primary tracking-wider text-3xs shrink-0 whitespace-nowrap">
-                            {`${counterLabel ? `${counterLabel} ` : ""}${String(activeStepIndex + 1).padStart(2, "0")} / ${String(steps.length).padStart(2, "0")}`}
-                        </span>
+                <div
+                    className={cn(
+                        "flex items-center gap-1 mb-1",
+                        collapsed ? "justify-center px-1 pt-1.5 pb-1" : "justify-between px-2",
+                        !collapsed && (isCompact ? "pt-1 pb-1" : "pt-2 pb-2"),
                     )}
+                >
+                    {!collapsed && (
+                        <h3 className="min-w-0 truncate text-3xs font-bold uppercase tracking-loose text-muted-foreground/60">
+                            {title}
+                        </h3>
+                    )}
+                    <div className="flex shrink-0 items-center gap-1">
+                        {!collapsed && showCounter && (
+                            <span className="font-mono font-black text-primary tracking-wider text-3xs shrink-0 whitespace-nowrap">
+                                {`${counterLabel ? `${counterLabel} ` : ""}${String(activeStepIndex + 1).padStart(2, "0")} / ${String(steps.length).padStart(2, "0")}`}
+                            </span>
+                        )}
+                        {onToggleCollapsed && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={onToggleCollapsed}
+                                aria-label={collapsed ? "Expandir etapas" : "Colapsar etapas"}
+                                aria-expanded={!collapsed}
+                                title={collapsed ? "Expandir etapas" : "Colapsar etapas"}
+                                className="h-6 w-6 shrink-0 text-muted-foreground/70 hover:text-foreground"
+                            >
+                                {collapsed
+                                    ? <PanelLeftOpen className="h-3.5 w-3.5" aria-hidden="true" />
+                                    : <PanelLeftClose className="h-3.5 w-3.5" aria-hidden="true" />}
+                            </Button>
+                        )}
+                    </div>
                 </div>
-                {hasProgress && (
+                {hasProgress && !collapsed && (
                     <div className="flex items-center gap-2 px-2 pb-2">
                         <div
                             data-testid="rail-progress"
@@ -146,12 +185,12 @@ export function WizardStepsSidebar({
                     <>
                         <div
                             data-testid="step-connector"
-                            className="absolute left-[17px] top-0 bottom-0 w-[2px] bg-border/60 pointer-events-none"
+                            className={cn("absolute top-0 bottom-0 w-[2px] bg-border/60 pointer-events-none", connectorLeft)}
                             aria-hidden="true"
                         />
                         <div
                             data-testid="step-connector-fill"
-                            className="absolute left-[17px] top-0 w-[2px] bg-success/60 pointer-events-none transition-[height] duration-300 ease-premium motion-reduce:transition-none"
+                            className={cn("absolute top-0 w-[2px] bg-success/60 pointer-events-none transition-[height] duration-300 ease-premium motion-reduce:transition-none", connectorLeft)}
                             style={{ height: `${progress}%` }}
                             aria-hidden="true"
                         />
@@ -160,7 +199,8 @@ export function WizardStepsSidebar({
                     <div
                         data-testid="step-connector"
                         className={cn(
-                            "absolute left-[17px] top-0 bottom-0 w-[2px] pointer-events-none",
+                            "absolute top-0 bottom-0 w-[2px] pointer-events-none",
+                            connectorLeft,
                             "bg-gradient-to-b from-success/50 via-success/30 to-border"
                         )}
                         aria-hidden="true"
@@ -232,7 +272,7 @@ export function WizardStepsSidebar({
 
                         return (
                             <Fragment key={step.id}>
-                                {showGroup && (
+                                {!collapsed && showGroup && (
                                     <div
                                         role="presentation"
                                         data-testid={`rail-group-${step.group}`}
@@ -257,16 +297,17 @@ export function WizardStepsSidebar({
                                         aria-current={isActive ? "step" : undefined}
                                         aria-disabled={!isClickable || undefined}
                                         aria-label={rowLabel}
-                                        aria-describedby={showDetail && step.detail ? detailId : undefined}
+                                        aria-describedby={!collapsed && showDetail && step.detail ? detailId : undefined}
+                                        title={collapsed ? `${step.label}${step.warning ? ` — ${step.warning}` : ""}` : undefined}
                                         className="absolute inset-0 z-0"
                                     />
 
                                     {/* Row content - above the stretched link */}
-                                    <div className={cn("relative z-10 flex items-start", gap)}>
+                                    <div className={cn("relative z-10 flex items-start", gap, collapsed && "justify-center")}>
                                         {/* Node column */}
                                         <div className="shrink-0 flex items-center justify-center">
                                             <span
-                                                className={cn(nodeStatus, nodeSize, "rounded-full")}
+                                                className={cn(nodeStatus, nodeSize, "rounded-full relative")}
                                                 aria-hidden="true"
                                             >
                                                 {effectiveStatus === "past" ? (
@@ -276,42 +317,46 @@ export function WizardStepsSidebar({
                                                 ) : (
                                                     <Icon className={cn(iconSize, "text-inherit")} aria-hidden="true" />
                                                 )}
+                                                {collapsed && step.warning && (
+                                                    <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-warning ring-1 ring-card" />
+                                                )}
                                             </span>
                                         </div>
 
-                                        {/* Label + detail column */}
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between gap-1.5">
-                                                <span className={cn("truncate font-medium", labelSize)}>
-                                                    {step.label}
-                                                </span>
-                                                {step.warning && (
-                                                    <span
-                                                        className="shrink-0 text-warning"
-                                                        title={step.warning}
-                                                    >
-                                                        <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+                                        {!collapsed && (
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between gap-1.5">
+                                                    <span className={cn("truncate font-medium", labelSize)}>
+                                                        {step.label}
                                                     </span>
-                                                )}
-                                                {step.badge && (
-                                                    <span className="shrink-0">{step.badge}</span>
+                                                    {step.warning && (
+                                                        <span
+                                                            className="shrink-0 text-warning"
+                                                            title={step.warning}
+                                                        >
+                                                            <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+                                                        </span>
+                                                    )}
+                                                    {step.badge && (
+                                                        <span className="shrink-0">{step.badge}</span>
+                                                    )}
+                                                </div>
+
+                                                {showDetail && step.detail && (
+                                                    <div
+                                                        id={detailId}
+                                                        className="mt-0.5 animate-in fade-in duration-200 motion-reduce:animate-none"
+                                                    >
+                                                        <div className={cn(detailSize, "text-muted-foreground/80 leading-snug truncate")}>
+                                                            {step.detail}
+                                                        </div>
+                                                    </div>
                                                 )}
                                             </div>
-
-                                            {showDetail && step.detail && (
-                                                <div
-                                                    id={detailId}
-                                                    className="mt-0.5 animate-in fade-in duration-200 motion-reduce:animate-none"
-                                                >
-                                                    <div className={cn(detailSize, "text-muted-foreground/80 leading-snug truncate")}>
-                                                        {step.detail}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
+                                        )}
 
                                         {/* Actions column (hover/focus reveal, z-10 above stretched link) */}
-                                        {renderStepActions && (
+                                        {!collapsed && renderStepActions && (
                                             <div
                                                 data-testid="step-actions"
                                                 className={cn(

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
@@ -58,6 +58,8 @@ import { ProductSelectionStep } from './steps/ProductSelectionStep'
 import { ManufacturingConfigStep } from './steps/ManufacturingConfigStep'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
+
+const RAIL_COLLAPSED_STORAGE_KEY = 'erpgrafico.production.railCollapsed'
 
 const STEP_ORIGIN: WorkOrderStage = {
   id: 'ORIGIN_SELECTION',
@@ -199,7 +201,32 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
   const [showCheatsheet, setShowCheatsheet] = useState(false)
   const [wizardTab, setWizardTab] = useState('stages')
+  const [railCollapsed, setRailCollapsed] = useState(false)
   const { data: relationsData } = useDocumentRelations('production.workorder', order?.id ?? null)
+
+  // Restore the rail preference after mount (avoids SSR/client hydration mismatch).
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(RAIL_COLLAPSED_STORAGE_KEY) === '1') {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- restore a browser preference after mount to avoid an SSR/client hydration mismatch
+        setRailCollapsed(true)
+      }
+    } catch {
+      // Storage can be unavailable (private mode); keep the expanded default.
+    }
+  }, [])
+
+  const toggleRail = useCallback(() => {
+    setRailCollapsed((previous) => {
+      const next = !previous
+      try {
+        window.localStorage.setItem(RAIL_COLLAPSED_STORAGE_KEY, next ? '1' : '0')
+      } catch {
+        // Ignore storage failures; the in-memory preference still works.
+      }
+      return next
+    })
+  }, [])
 
   // ── derived ────────────────────────────────────────────────────────────────
   const STAGES = useMemo(
@@ -382,6 +409,11 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       if (e.key === '?' && !e.ctrlKey && !e.altKey && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
         setShowCheatsheet((v) => !v); return
       }
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === 'b') {
+        e.preventDefault()
+        toggleRail()
+        return
+      }
       if (!e.ctrlKey) return
       if (e.key === 'ArrowRight' && isViewingCurrentStage && order?.status !== 'FINISHED') {
         const nextStage = STAGES[viewingStepIndex + 1]
@@ -398,7 +430,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [open, viewingStepIndex, isViewingCurrentStage, order, pendingTasks])
+  }, [open, viewingStepIndex, isViewingCurrentStage, order, pendingTasks, toggleRail])
 
   const handleRectifyAndFinish = async () => {
     if (!order) return
@@ -599,6 +631,8 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
               }
             }}
             order={order}
+            collapsed={railCollapsed}
+            onToggleCollapsed={toggleRail}
           />
 
           {/* Center content */}
@@ -974,6 +1008,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
           {[
             { keys: ['Ctrl', '→'], desc: 'Avanzar a la siguiente etapa' },
             { keys: ['Ctrl', '←'], desc: 'Ver etapa anterior (sin transicionar)' },
+            { keys: ['Alt', 'B'], desc: 'Colapsar/expandir etapas' },
             { keys: ['Esc'], desc: 'Cerrar el wizard' },
             { keys: ['?'], desc: 'Mostrar/ocultar esta ayuda' },
           ].map(({ keys, desc }) => (

@@ -54,6 +54,7 @@ function renderSidebar(
             stepMode={stepMode}
             onStepClick={vi.fn()}
             order={order}
+            onToggleCollapsed={vi.fn()}
         />,
     )
 }
@@ -155,5 +156,24 @@ describe("WizardProcessSidebar — status board", () => {
         const futureRow = screen.getByTestId("step-2")
         expect(within(futureRow).queryByRole("button", { name: /Ver etapa/ })).not.toBeInTheDocument()
         expect(within(futureRow).queryByLabelText(/Editar datos de etapa/)).not.toBeInTheDocument()
+    })
+
+    it("supports the collapsed icon-only rail", () => {
+        render(
+            <WizardProcessSidebar
+                stages={stages}
+                viewingStepIndex={1}
+                actualStepIndex={1}
+                stepMode="view"
+                onStepClick={vi.fn()}
+                order={makeOrder()}
+                collapsed
+                onToggleCollapsed={vi.fn()}
+            />,
+        )
+
+        expect(screen.queryByText("Origen")).not.toBeInTheDocument()
+        expect(screen.getByTestId("step-0")).toBeInTheDocument()
+        expect(screen.getByRole("button", { name: "Expandir etapas" })).toBeInTheDocument()
     })
 })

@@ -264,4 +264,71 @@ describe("WizardStepsSidebar — status board rail", () => {
         expect(detailId).toBeTruthy()
         expect(document.getElementById(detailId ?? "")).toHaveTextContent("Detalle accesible")
     })
+
+    it("exposes a collapse control in expanded mode", async () => {
+        render(
+            <WizardStepsSidebar
+                title="Proceso"
+                currentStep={1}
+                steps={baseSteps}
+                onToggleCollapsed={vi.fn()}
+            />,
+        )
+        const toggle = screen.getByRole("button", { name: "Colapsar etapas" })
+        expect(toggle).toHaveAttribute("aria-expanded", "true")
+    })
+
+    it("collapses to icon-only mode", async () => {
+        const groupedSteps = [
+            { ...baseSteps[0], group: "Preparación", detail: "Detalle visible" },
+            { ...baseSteps[1], group: "Preparación" },
+            { ...baseSteps[2], group: "Cierre" },
+        ]
+        render(
+            <WizardStepsSidebar
+                title="Proceso"
+                currentStep={2}
+                steps={groupedSteps}
+                collapsed
+                onToggleCollapsed={vi.fn()}
+                progressPercent={67}
+            />,
+        )
+
+        // Labels, details, groups, progress bar and counter are gone.
+        expect(screen.queryByText("Productos")).not.toBeInTheDocument()
+        expect(screen.queryByText("Detalle visible")).not.toBeInTheDocument()
+        expect(screen.queryByText("Preparación")).not.toBeInTheDocument()
+        expect(screen.queryByTestId("rail-progress")).not.toBeInTheDocument()
+        expect(screen.queryByText("67%")).not.toBeInTheDocument()
+
+        // Rows remain, and the native title carries the label.
+        expect(screen.getByTestId("step-0")).toBeInTheDocument()
+        expect(screen.getByTestId("step-0").querySelector("button")).toHaveAttribute(
+            "title",
+            expect.stringContaining("Productos"),
+        )
+
+        // The rail is narrow and the connector is centered.
+        const root = screen.getByRole("list").closest("[data-collapsed]")
+        expect(root).toHaveClass("w-14")
+        expect(screen.getByTestId("step-connector").className).toContain("left-[27px]")
+
+        const toggle = screen.getByRole("button", { name: "Expandir etapas" })
+        expect(toggle).toHaveAttribute("aria-expanded", "false")
+    })
+
+    it("hides step actions when collapsed", async () => {
+        render(
+            <WizardStepsSidebar
+                title="Proceso"
+                currentStep={1}
+                steps={baseSteps}
+                collapsed
+                onToggleCollapsed={vi.fn()}
+                renderStepActions={() => <button aria-label="action">x</button>}
+            />,
+        )
+        expect(screen.queryByRole("button", { name: "action" })).not.toBeInTheDocument()
+    })
 })
