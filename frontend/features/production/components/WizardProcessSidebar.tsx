@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, type ReactNode } from "react"
+import { useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Eye, Pencil, RotateCcw, type LucideIcon } from "lucide-react"
@@ -11,11 +11,11 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-import { WizardStepsSidebar, type WizardSidebarStep, type WizardStepStatus } from "@/components/shared"
+import { WizardStepsSidebar } from "@/components/shared"
 
 import type { WorkOrderStage, WorkOrder, WizardStepMode } from "../types"
 import { getStepCapabilities } from "../lib/stepGovernance"
-import { deriveStageEvidence, stageGroup, stageSummary } from "../lib/stageEvidence"
+import { buildWorkOrderRailSteps } from "../lib/railSteps"
 
 interface StageActionProps {
     icon: LucideIcon
@@ -83,21 +83,6 @@ function StageAction({ icon: Icon, label, reason, active, tone, onClick }: Stage
     )
 }
 
-function RailBadge({ children, tone = "primary" }: { children: ReactNode; tone?: "primary" | "info" | "warning" }) {
-    return (
-        <span
-            className={cn(
-                "text-2xs font-semibold px-1.5 py-0.5 rounded border whitespace-nowrap",
-                tone === "primary" && "text-primary bg-primary/10 border-primary/30",
-                tone === "info" && "text-info bg-info/10 border-info/30",
-                tone === "warning" && "text-warning bg-warning/10 border-warning/30",
-            )}
-        >
-            {children}
-        </span>
-    )
-}
-
 interface WizardProcessSidebarProps {
     stages: WorkOrderStage[]
     viewingStepIndex: number
@@ -119,51 +104,16 @@ export function WizardProcessSidebar({
     collapsed,
     onToggleCollapsed,
 }: WizardProcessSidebarProps) {
-    const evidence = useMemo(() => deriveStageEvidence(order), [order])
-
-    const steps: WizardSidebarStep[] = stages.map((stage, index) => {
-        const stageId = stage.id as string
-        const isActive = viewingStepIndex === index
-        const isPast = actualStepIndex > index
-        const isCurrent = actualStepIndex === index
-        const isFuture = actualStepIndex < index
-        const stageEvidence = evidence[stageId]
-
-        // Determine effective status
-        let status: WizardStepStatus
-        if (isActive) {
-            status = "active"
-        } else if (isCurrent && !isActive) {
-            // The actual current stage (where the order really is) but we're viewing a different one
-            status = "current"
-        } else if (isPast) {
-            status = "past"
-        } else {
-            status = "future"
-        }
-
-        const badge = isActive && stepMode === "edit-in-place"
-            ? <RailBadge tone="info">Editando</RailBadge>
-            : isActive && stepMode === "rewind"
-            ? <RailBadge tone="warning">Retroceso</RailBadge>
-            : isCurrent && !isActive
-            ? <RailBadge>Actual</RailBadge>
-            : undefined
-
-        return {
-            id: stage.id,
-            label: stage.label,
-            icon: stage.icon,
-            group: stageGroup(stageId),
-            detail: stageSummary(stageId, stageEvidence, order, isCurrent),
-            // Only warn where the operator can still act: current and future stages.
-            warning: index >= actualStepIndex ? stageEvidence?.warning : undefined,
-            status,
-            disabled: isFuture,
-            className: cn("group"),
-            badge,
-        }
-    })
+    const steps = useMemo(
+        () => buildWorkOrderRailSteps({
+            stages,
+            viewingStepIndex,
+            actualStepIndex,
+            stepMode,
+            order,
+        }),
+        [stages, viewingStepIndex, actualStepIndex, stepMode, order],
+    )
 
     const progressPercent = actualStepIndex >= 0 && stages.length > 0
         ? ((actualStepIndex + 1) / stages.length) * 100

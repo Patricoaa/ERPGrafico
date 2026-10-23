@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
-import { AlertTriangle, Package, FileText, Plus, CheckCircle2, Keyboard, Printer, Link2 } from 'lucide-react'
+import { AlertTriangle, Package, FileText, Plus, Keyboard, Printer, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 import {
@@ -13,7 +13,6 @@ import {
   Drawer,
   CancelButton,
   FormFooter,
-  LabeledSelect,
   StatusBadge,
   DocumentActionsMenu,
   TabBar,
@@ -34,6 +33,7 @@ import { completeTask } from '@/features/workflow'
 
 import { WizardModeBanner } from './WizardModeBanner'
 import { WizardProcessSidebar } from './WizardProcessSidebar'
+import { MobileStageDrawer } from './MobileStageDrawer'
 import { WizardStickyFooter } from './WizardStickyFooter'
 import { WizardRightSidebar } from './WizardRightSidebar'
 import {
@@ -644,31 +644,15 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             <div className="flex flex-1 flex-col min-h-0 px-6 relative">
               {/* Mobile navigation */}
               <div className="md:hidden sticky top-0 z-10 bg-background/95 backdrop-blur p-3 mb-4">
-                <LabeledSelect
-                  value={STAGES[viewingStepIndex]?.id}
-                  onChange={(val) => {
-                    const idx = STAGES.findIndex((s) => s.id === val)
-                    if (idx !== -1) setViewingStepIndex(idx)
-                  }}
-                  options={STAGES.map((s, i) => {
-                    const isPast = actualStepIndex > i
-                    const isCurrent = actualStepIndex === i
-                    let disabled = !isPast && !isCurrent
-                    if (isCreating) {
-                      disabled = s.id !== 'ORIGIN_SELECTION' && chosenOtType === null
-                    }
-                    return {
-                      value: s.id,
-                      disabled,
-                      label: (
-                        <div className="flex items-center gap-2">
-                          <s.icon className="h-4 w-4" />
-                          <span>{s.label}</span>
-                          {isPast && <CheckCircle2 className="h-3 w-3 ml-2 text-success" />}
-                        </div>
-                      ),
-                    }
-                  }) as Parameters<typeof LabeledSelect>[0]['options']}
+                <MobileStageDrawer
+                  stages={STAGES}
+                  viewingStepIndex={viewingStepIndex}
+                  actualStepIndex={actualStepIndex}
+                  stepMode={stepMode}
+                  order={order}
+                  isCreating={isCreating}
+                  chosenOtType={chosenOtType}
+                  onStepClick={(index) => navigateToStep(index, 'view')}
                 />
               </div>
 
