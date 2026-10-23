@@ -11,6 +11,10 @@ export interface Warehouse {
     code: string
     address: string
     is_active: boolean
+    /** Distinct products with a positive stock row in this warehouse (backend annotation). */
+    stocked_product_count?: number
+    /** Sum of all stock quantities in this warehouse (backend annotation). */
+    stock_units?: number | string
 }
 
 export interface WarehousePayload {

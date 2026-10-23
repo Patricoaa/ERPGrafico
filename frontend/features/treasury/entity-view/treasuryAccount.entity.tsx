@@ -29,6 +29,23 @@ function accountTypeKey(a: TreasuryAccount): string {
     return a.account_type?.toUpperCase() ?? ""
 }
 
+function accountTypeBadge(a: TreasuryAccount): string | undefined {
+    if (!a.is_active) return "Archivada"
+    return a.account_type_display || a.account_type || undefined
+}
+
+function ledgerAccountLabel(a: TreasuryAccount): string {
+    if (!a.account_name) return ""
+    return [a.account_code, a.account_name].filter(Boolean).join(" - ")
+}
+
+/** Bank or POS provider linked to the account; the card shows it only when there is one. */
+function externalEntityLabel(a: TreasuryAccount): string | undefined {
+    const names = [a.bank_name, ...(a.terminal_providers ?? []).map((p) => p.name)].filter(Boolean) as string[]
+    if (names.length === 0) return undefined
+    return names.length <= 2 ? names.join(" · ") : `${names.slice(0, 2).join(" · ")} +${names.length - 2}`
+}
+
 /** Feature extension: the bank + POS terminal providers linked to a treasury account — 0..N badges. */
 declare module "@/components/entity-view/core/value-kinds" {
     interface ValueKinds {
@@ -75,6 +92,7 @@ export const treasuryAccountEntity = defineEntity<TreasuryAccount>()((f) => ({
         name: f.text("name", { label: "Nombre de Cuenta" }),
         accountType: f.text((a) => a.account_type_display || a.account_type, { label: "Tipología", tone: "secondary" }),
         linkedAccount: f.text((a) => (a.account_name ? `${a.account_code} - ${a.account_name}` : "Sin vincular"), { label: "Cuenta Contable", tone: "secondary" }),
+        ledgerAccount: f.text(ledgerAccountLabel, { label: "Cuenta Contable", tone: "secondary" }),
         links: f.value("treasuryAccountLinks", (a) => a, { label: "Entidad Externa" }),
         balance: f.money("current_balance", { label: "Saldo", currency: (a) => a.currency }),
         isActive: f.status((a) => (a.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Archivado" }), { label: "Estado" }),
@@ -84,13 +102,15 @@ export const treasuryAccountEntity = defineEntity<TreasuryAccount>()((f) => ({
 export const treasuryAccountViews = treasuryAccountEntity.views({
     table: { columns: ["name", "accountType", "isActive", "linkedAccount", "links", "balance"], primary: "name" },
     card: {
+        code: "ledgerAccount",
         title: "name",
-        subtitle: ["accountType", "linkedAccount"],
-        trailing: ["balance"],
-        meta: ["links"],
-        media: { placement: "top",
+        footer: { value: "balance" },
+        muted: (a) => !a.is_active,
+        media: {
+            placement: "top",
             iconFor: (a) => ACCOUNT_TYPE_ICON[accountTypeKey(a)] ?? Wallet,
             tone: (a) => ACCOUNT_TYPE_TONE[accountTypeKey(a)] ?? "default",
+            badge: (a) => [accountTypeBadge(a), externalEntityLabel(a)].filter((label): label is string => Boolean(label)),
         },
     },
 })

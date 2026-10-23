@@ -87,13 +87,25 @@ describe('getProductCardModel · availability', () => {
         expect(model.availability).toMatchObject({ text: '0 fabricables', tone: 'warning' })
     })
 
+    it('advanced manufacturable without BOM is described as fabricable', () => {
+        const model = getProductCardModel(
+            product({ product_type: 'MANUFACTURABLE', requires_advanced_manufacturing: true, has_bom: false }),
+            ctx,
+        )
+        expect(model.availability).toMatchObject({ text: 'Fabricable', tone: 'ok' })
+    })
+
     it('simple manufacturable behaves like stock', () => {
         const model = getProductCardModel(product({ product_type: 'MANUFACTURABLE', qty_available: 5 }), ctx)
         expect(model.availability?.tone).toBe('ok')
     })
 
-    it('services are on demand', () => {
-        expect(getProductCardModel(product({ product_type: 'SERVICE' }), ctx).availability?.text).toBe('Servicio · bajo demanda')
+    it('services say Servicio', () => {
+        expect(getProductCardModel(product({ product_type: 'SERVICE' }), ctx).availability?.text).toBe('Servicio')
+    })
+
+    it('subscriptions keep their own label', () => {
+        expect(getProductCardModel(product({ product_type: 'SUBSCRIPTION' }), ctx).availability?.text).toBe('Suscripción')
     })
 
     it('templates defer availability to their variants', () => {

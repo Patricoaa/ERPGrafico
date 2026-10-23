@@ -11,7 +11,7 @@ import { ArrowRight, ArrowLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SelectionRing } from "@/components/shared"
-import { CardSurface, CardLead, cardAnatomy } from "@/components/shared"
+import { CardSurface, CardLead, Chip, cardAnatomy } from "@/components/shared"
 
 // ─── Base props ───────────────────────────────────────────────────────────────
 
@@ -48,7 +48,9 @@ interface EntityCardRootProps {
      * stay above it. Siblings, never nested interactive containers (AX-4).
      */
     openable?: boolean
-    /** Leading state rail (`CardRail side="left"`) holding the entity icon. The padding moves to an inner column so the rail is full height. */
+    /** Archived/inactive: the card is muted and its images desaturated. */
+    muted?: boolean
+    /** State/document rail (`CardRail`) holding the entity icon. Its side comes from the layout; the padding moves to an inner column so the rail is full height. */
     rail?: React.ReactNode
     selectable?: boolean
     checked?: boolean
@@ -66,6 +68,7 @@ function EntityCardRoot({
     className,
     children,
     openable = false,
+    muted = false,
     rail,
     selectable = false,
     checked = false,
@@ -89,7 +92,10 @@ function EntityCardRoot({
                     "group relative transition-all duration-300",
                     rail ? "flex-row" : cn("flex flex-col", padding),
                     (onClick || defaultAction) && "cursor-pointer select-none",
-                    openable && "cursor-pointer hover:border-foreground/30 has-[[data-card-open]:focus-visible]:ring-2 has-[[data-card-open]:focus-visible]:ring-ring",
+                    muted && "opacity-70 [&_img]:grayscale",
+                    // The stretched link covers the card: without its own cursor, the button's default
+                    // cursor wins over the surface's pointer (the POS grid has no overlay to fight).
+                    openable && "cursor-pointer [&_[data-card-open]]:cursor-pointer hover:border-foreground/30 has-[[data-card-open]:focus-visible]:ring-2 has-[[data-card-open]:focus-visible]:ring-ring",
                     className
                 )}
             >
@@ -110,14 +116,18 @@ interface EntityCardMediaProps {
     avatar?: React.ReactNode
     /** Tone of the strip and its icon (e.g. "text-success bg-success/10"). */
     iconClassName?: string
-    /** Chip over the top-left corner. */
-    badge?: string
+    /** Chip(s) over the top-left corner, always above the centred icon/photo. Arrays render separate stacked badges. */
+    badge?: string | readonly string[]
+    /** Secondary chip stacked below the badge at the top-left (small gap). */
+    footnote?: string
+    footnoteIcon?: LucideIcon
     className?: string
 }
 
 /** Full-bleed strip above the header (ProductCard anatomy). Bleeds over the card's padding. */
-function EntityCardMedia({ icon: Icon, imageSrc, avatar, iconClassName, badge, className }: EntityCardMediaProps) {
+function EntityCardMedia({ icon: Icon, imageSrc, avatar, iconClassName, badge, footnote, footnoteIcon, className }: EntityCardMediaProps) {
     const { selectable, checked, onCheckedChange, isAnySelected, selectionLabel } = React.useContext(EntityCardSelectionContext)
+    const badges = (typeof badge === "string" ? [badge] : badge ?? []).filter(Boolean)
     return (
         <div className={cn("relative -mx-3 -mt-3 mb-1 flex h-20 items-center justify-center overflow-hidden rounded-t-sm", iconClassName ?? "bg-muted text-muted-foreground", className)}>
             {avatar ?? (imageSrc ? (
@@ -125,10 +135,19 @@ function EntityCardMedia({ icon: Icon, imageSrc, avatar, iconClassName, badge, c
             ) : Icon ? (
                 <Icon className="size-6" aria-hidden />
             ) : null)}
-            {badge && (
-                <Badge intent="neutral" size="xs" className="absolute left-2 top-2 border border-border bg-background text-3xs font-normal">
-                    {badge}
-                </Badge>
+            {(badges.length > 0 || footnote) && (
+                <div data-media-chips className="absolute left-2 top-2 z-10 flex max-w-[calc(100%-3rem)] flex-col items-start gap-1">
+                    {badges.map((text, index) => (
+                        <Badge key={`${text}-${index}`} intent="neutral" size="xs" className="max-w-full truncate border border-border bg-background text-3xs font-normal">
+                            {text}
+                        </Badge>
+                    ))}
+                    {footnote && (
+                        <Chip size="xs" icon={footnoteIcon} className="max-w-full truncate border border-border bg-background text-3xs font-normal">
+                            {footnote}
+                        </Chip>
+                    )}
+                </div>
             )}
             {/* Bulk checkbox in the corner of the strip (catalog cards): above the stretched link. */}
             {selectable && (
@@ -153,6 +172,8 @@ function EntityCardMedia({ icon: Icon, imageSrc, avatar, iconClassName, badge, c
 // ─── Header ───────────────────────────────────────────────────────────────────
 
 interface EntityCardHeaderProps {
+    /** The title may take two lines (catalog cards) instead of one with an ellipsis. */
+    wrapTitle?: boolean
     /** `corner`: the bulk checkbox lives on the media strip (`EntityCard.Media`), not beside the title. */
     selection?: "inline" | "corner"
     /** Monospace identifier above the title (folio, SKU) — the kit's `code` line. */
@@ -178,7 +199,7 @@ interface EntityCardHeaderProps {
     className?: string
 }
 
-function EntityCardHeader({ selection = "inline", code, title, subtitle, trailing, actions, center, icon: Icon, imageSrc, avatar, iconClassName, className }: EntityCardHeaderProps) {
+function EntityCardHeader({ selection = "inline", wrapTitle = false, code, title, subtitle, trailing, actions, center, icon: Icon, imageSrc, avatar, iconClassName, className }: EntityCardHeaderProps) {
     const { selectable, checked, onCheckedChange, isAnySelected, selectionLabel } = React.useContext(EntityCardSelectionContext)
 
     const checkboxNode = selectable && selection === "inline" && (
@@ -213,7 +234,7 @@ function EntityCardHeader({ selection = "inline", code, title, subtitle, trailin
             {leadNode}
             <div className="min-w-0 flex-1">
                 {code && <div className={cardAnatomy.code}>{code}</div>}
-                <div className={cn(cardAnatomy.entityTitle, "[&>div]:w-auto [&>div]:justify-start [&>div]:text-left")}>
+                <div className={cn(cardAnatomy.entityTitle, wrapTitle && "line-clamp-2 whitespace-normal", "[&>div]:w-auto [&>div]:justify-start [&>div]:text-left")}>
                     {title}
                 </div>
                 {subtitle && <div className={cardAnatomy.entitySubtitle}>{subtitle}</div>}
@@ -370,26 +391,8 @@ function EntityCardSkeleton({
     showBody = true,
     showFooter = false,
 }: EntityCardSkeletonProps) {
-    if (variant === "compact") {
-        return (
-            <EntityCardRoot variant="compact" className={cn(className)}>
-                {showHeader && (
-                    <div className="flex flex-col gap-2 p-1">
-                        <div className="flex items-center gap-3">
-                            <Skeleton className="h-10 w-10 rounded-sm shrink-0" />
-                            <div className="flex flex-col gap-1.5 flex-1">
-                                <Skeleton className="h-4 w-3/4" />
-                                <Skeleton className="h-3 w-1/2 opacity-60" />
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </EntityCardRoot>
-        )
-    }
-
     return (
-        <EntityCardRoot className={cn(className)}>
+        <EntityCardRoot variant={variant} className={cn(className)}>
             {showHeader && (
                 <EntityCardHeader
                     title={
@@ -420,9 +423,17 @@ function EntityCardSkeleton({
             )}
             {showBody && (
                 <EntityCardBody className="flex items-start justify-between gap-4 pt-2 border-t border-border mt-1">
-                    <div className="flex flex-wrap gap-x-4 gap-y-2 flex-1">
-                        <Skeleton className="h-3 w-32" />
-                        <Skeleton className="h-3 w-40" />
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                        <Skeleton className="h-3 w-16" />
+                        <Skeleton className="h-4 w-32" />
+                    </div>
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                        <Skeleton className="h-3 w-16" />
+                        <Skeleton className="h-4 w-24" />
+                    </div>
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                        <Skeleton className="h-3 w-16" />
+                        <Skeleton className="h-4 w-28" />
                     </div>
                     <div className="flex items-end gap-1">
                         <Skeleton className="h-2 w-10" />
@@ -698,6 +709,17 @@ function EntityCardHubTrigger({ isSelected, onToggle, className }: EntityCardHub
     )
 }
 
+// ─── Highlights (unlabelled status line) ───────────────────────────────────────
+
+/** Inline row under the header for values that speak for themselves (stock health, flags). */
+function EntityCardHighlights({ children, className }: { children: React.ReactNode; className?: string }) {
+    return (
+        <div className={cn("flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10", className)}>
+            {children}
+        </div>
+    )
+}
+
 // ─── Foot (pinned amount + open glyph) ──────────────────────────────────────────
 
 interface EntityCardFootProps {
@@ -709,13 +731,15 @@ interface EntityCardFootProps {
     actions?: React.ReactNode
     /** Open glyph at the bottom-right when there are no actions (default on). */
     glyph?: boolean
+    /** Action-only footer: drop the top padding when there is no amount to show. */
+    compact?: boolean
     className?: string
 }
 
 /** Bottom-pinned amount like the POS ProductCard: caption, amount and a chevron. Needs a card that fills its grid cell (`h-full`). */
-function EntityCardFoot({ caption, children, actions, glyph = true, className }: EntityCardFootProps) {
+function EntityCardFoot({ caption, children, actions, glyph = true, compact = false, className }: EntityCardFootProps) {
     return (
-        <div className={cn(cardAnatomy.footer, "flex items-end justify-between gap-2", className)}>
+        <div className={cn(cardAnatomy.footer, compact && "pt-0", "flex items-end justify-between gap-2", className)}>
             <div className="min-w-0">
                 {caption && children && <p className={cardAnatomy.caption}>{caption}</p>}
                 {children && <div className={cardAnatomy.amountSlot}>{children}</div>}
@@ -774,6 +798,7 @@ export const EntityCard = Object.assign(EntityCardRoot, {
     Field: EntityCardField,
     Footer: EntityCardFooter,
     Foot: EntityCardFoot,
+    Highlights: EntityCardHighlights,
     Badge: EntityCardBadge,
     Skeleton: EntityCardSkeleton,
     ListItem: EntityCardListItem,

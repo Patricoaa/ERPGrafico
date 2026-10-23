@@ -1,4 +1,5 @@
-from django.db.models import Count, Q
+from django.db.models import Count, DecimalField, Q, Sum, Value
+from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
@@ -331,14 +332,17 @@ class CategoryViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     pagination_class = None  # Master data
 
     def get_queryset(self):
+        queryset = ProductCategory.objects.annotate(
+            product_count=Count("products", filter=Q(products__is_active=True), distinct=True),
+        )
         if self.action == "list":
             is_active = self.request.query_params.get("is_active")
             if is_active == "all":
-                return ProductCategory.objects.all()
+                return queryset
             elif is_active == "false":
-                return ProductCategory.objects.filter(is_active=False)
-            return ProductCategory.objects.filter(is_active=True)
-        return super().get_queryset()
+                return queryset.filter(is_active=False)
+            return queryset.filter(is_active=True)
+        return queryset
 
 
 class WarehouseViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
@@ -347,14 +351,22 @@ class WarehouseViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory)
     pagination_class = None  # Master data
 
     def get_queryset(self):
+        queryset = Warehouse.objects.annotate(
+            stocked_product_count=Count("stocks", filter=Q(stocks__quantity__gt=0), distinct=True),
+            stock_units=Coalesce(
+                Sum("stocks__quantity"),
+                Value(0),
+                output_field=DecimalField(max_digits=14, decimal_places=4),
+            ),
+        )
         if self.action == "list":
             is_active = self.request.query_params.get("is_active")
             if is_active == "all":
-                return Warehouse.objects.all()
+                return queryset
             elif is_active == "false":
-                return Warehouse.objects.filter(is_active=False)
-            return Warehouse.objects.filter(is_active=True)
-        return super().get_queryset()
+                return queryset.filter(is_active=False)
+            return queryset.filter(is_active=True)
+        return queryset
 
 
 class UoMViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistory):

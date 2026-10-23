@@ -17,6 +17,8 @@ export interface Category {
     expense_account: number | null
     icon?: string
     is_active: boolean
+    /** Active, directly assigned products (backend annotation). */
+    product_count?: number
 }
 
 export type CategoryPayload = Omit<Category, 'id' | 'parent_name'>

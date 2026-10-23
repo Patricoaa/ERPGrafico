@@ -335,7 +335,7 @@ Cada entidad define su política de vistas en `ENTITY_REGISTRY.viewPolicy`. El h
 | `sales.saleorder` | list, card, analytics | card | `entity` (`cardVariant: 'workflow'`) |
 | `purchasing.purchaseorder` | list, card | card | `entity` (`cardVariant: 'workflow'`) |
 | `billing.invoice` | list, card | card | `entity` (`cardVariant: 'full'`) |
-| `production.workorder` | list, kanban, timeline | list | `custom` |
+| `production.workorder` | list, card, kanban, timeline | card | `entity` |
 | `inventory.product` | list, card, analytics | list | `entity` |
 | `contacts.contact` | list, card | list | `entity` |
 | `hr.employee` | list, card | list | `entity` |

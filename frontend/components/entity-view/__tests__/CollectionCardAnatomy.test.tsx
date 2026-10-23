@@ -17,6 +17,8 @@ interface Doc {
     status: string
     total: number
     email: string
+    flag?: string
+    archived?: boolean
 }
 
 const entity = defineEntity<Doc>()((f) => ({
@@ -26,24 +28,26 @@ const entity = defineEntity<Doc>()((f) => ({
         name: f.text("name", { label: "Nombre" }),
         email: f.text("email", { label: "Email" }),
         total: f.money("total", { label: "Total" }),
+        flag: f.text((d) => d.flag ?? "", { label: "Aviso" }),
     },
 }))
 
 const rows: Doc[] = [
-    { id: 1, folio: "OV-0001", name: "Imprenta Sur", status: "PAID", total: 125000, email: "sur@imprenta.cl" },
-    { id: 2, folio: "OV-0002", name: "Editorial Andes", status: "CANCELLED", total: 5000, email: "andes@editorial.cl" },
+    { id: 1, folio: "OV-0001", name: "Imprenta Sur", status: "PAID", total: 125000, email: "sur@imprenta.cl", flag: "Solo compra" },
+    { id: 2, folio: "OV-0002", name: "Editorial Andes", status: "CANCELLED", total: 5000, email: "andes@editorial.cl", archived: true },
 ]
 
-function Harness({ source, onOpen, withRail = true, catalog = false, bulk = false }: { source: CollectionSource<Doc>; onOpen?: (row: Doc) => void; withRail?: boolean; catalog?: boolean; bulk?: boolean }) {
+function Harness({ source, onOpen, withRail = true, railSide = "left", withFooter = true, catalog = false, bulk = false, slots = false }: { source: CollectionSource<Doc>; onOpen?: (row: Doc) => void; withRail?: boolean; railSide?: "left" | "right"; withFooter?: boolean; catalog?: boolean; bulk?: boolean; slots?: boolean }) {
     const collection = useEntityCollection(entity, source)
     const views = entity.views({
         card: {
             code: "folio",
             title: "name",
             meta: ["email"],
-            footer: { value: "total" },
-            ...(withRail ? { rail: { status: (d: Doc) => d.status, icon: FileText } } : {}),
-            ...(catalog ? { media: { placement: "top" as const, icon: FileText } } : {}),
+            ...(withFooter ? { footer: { value: "total" as const } } : {}),
+            ...(withRail ? { rail: { status: (d: Doc) => d.status, icon: FileText, side: railSide } } : {}),
+            ...(catalog ? { media: { placement: "top" as const, icon: FileText, ...(slots ? { badge: (d: Doc) => (d.archived ? "Archivado" : "Insumos"), footnote: (d: Doc) => (d.id === 1 ? "4 gramajes" : null) } : {}) } } : {}),
+            ...(slots ? { highlights: ["flag" as const], muted: (d: Doc) => !!d.archived } : {}),
         },
     })
     return (
@@ -71,6 +75,11 @@ describe("Collection card anatomy (ADR-0097)", () => {
         const open = screen.getByRole("button", { name: "Imprenta Sur" })
         expect(open).toHaveAttribute("data-card-open")
         expect(open.className).toContain("after:absolute")
+        // The title is the card's opener, not a text link: no underline competing with the ribbon + cursor.
+        expect(open.className).toContain("hover:no-underline")
+        expect(open.className).not.toContain("focus-visible:underline")
+        // The overlay is a button: its own cursor would hide the card's pointer, so the surface sets it too.
+        expect(open.closest('[data-slot="card"]')).toHaveClass("cursor-pointer", "[&_[data-card-open]]:cursor-pointer")
         await user.click(open)
         expect(onOpen).toHaveBeenCalledWith(rows[0])
     })
@@ -101,6 +110,24 @@ describe("Collection card anatomy (ADR-0097)", () => {
         expect(screen.getByRole("list", { name: "Documentos" }).querySelector(".w-14")).toBeNull()
     })
 
+    it("can put the rail on the trailing edge for the compact document variant", () => {
+        render(<Harness source={{ rows }} onOpen={vi.fn()} railSide="right" />)
+        const first = within(screen.getByRole("list", { name: "Documentos" })).getAllByRole("listitem")[0]
+        const rail = first.querySelector('[aria-hidden="true"].w-14')
+        expect(rail).toHaveClass("border-l", "order-last")
+        expect(rail).not.toHaveClass("border-r")
+    })
+
+    it("uses an action-only footer without the amount padding when a catalog card has no value", () => {
+        render(<Harness source={{ rows }} onOpen={vi.fn()} withRail={false} withFooter={false} catalog />)
+        const first = within(screen.getByRole("list", { name: "Documentos" })).getAllByRole("listitem")[0]
+        const actions = within(first).getByRole("button", { name: "Acciones" })
+        const foot = actions.parentElement?.parentElement as HTMLElement
+        expect(foot.className).toContain("pt-0")
+        expect(foot).not.toHaveTextContent("Total")
+        expect(foot).not.toHaveTextContent("125.000")
+    })
+
     it("catalog cards put the bulk checkbox on the media corner and the kebab in the footer", () => {
         render(<Harness source={{ rows }} onOpen={vi.fn()} withRail={false} catalog bulk />)
         const first = within(screen.getByRole("list", { name: "Documentos" })).getAllByRole("listitem")[0]
@@ -118,6 +145,7 @@ describe("Collection card anatomy (ADR-0097)", () => {
         expect(list.className).toContain("@4xl:grid-cols-[repeat(4,minmax(0,1fr))]")
         expect(list.className).toContain("@7xl:grid-cols-[repeat(5,minmax(0,1fr))]")
     })
+
 
     it("cards use the product-grid selection language: ribbon on hover, ribbon when bulk-selected", async () => {
         const user = userEvent.setup()
@@ -150,4 +178,17 @@ describe("Collection card anatomy (ADR-0097)", () => {
         expect(onOpen).toHaveBeenCalledTimes(1)
     })
 
+
+    it("highlights skip empty values, the media carries the badge and footnote, and archived cards are muted", () => {
+        render(<Harness source={{ rows }} onOpen={vi.fn()} withRail={false} catalog slots />)
+        const [first, second] = within(screen.getByRole("list", { name: "Documentos" })).getAllByRole("listitem")
+        expect(first).toHaveTextContent("Solo compra")
+        expect(first).toHaveTextContent("4 gramajes")
+        expect(first).toHaveTextContent("Insumos")
+        expect(second).not.toHaveTextContent("Aviso")
+        expect(second.textContent ?? "").not.toContain("Solo compra")
+        expect(second).toHaveTextContent("Archivado")
+        expect(first.firstElementChild).not.toHaveClass("opacity-70")
+        expect(second.firstElementChild).toHaveClass("opacity-70")
+    })
 })

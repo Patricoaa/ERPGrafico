@@ -105,6 +105,9 @@ export interface Product {
     effective_price_net?: string | number
     qty_on_hand?: number
     has_variants?: boolean
+    variants_count?: number
+    variant_axis_label?: string | null
+    min_variant_price?: string | number | null
     variants?: Product[]
     is_child_variant?: boolean
     variant_display_name?: string

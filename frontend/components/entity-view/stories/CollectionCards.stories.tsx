@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite"
-import { MoreVertical, Package, Wrench } from "lucide-react"
+import { MoreVertical, Package, Users, Wrench } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Collection, defineEntity, useEntityCollection } from "@/components/entity-view"
 import { withEntityView } from "./withEntityView"
@@ -135,6 +135,33 @@ export const DocumentsWithRail: Story = {
     render: () => (
         <div className="w-[60rem]">
             <DocsGrid />
+        </div>
+    ),
+}
+
+const compactDocViews = docEntity.views({
+    card: {
+        title: "folio",
+        subtitle: ["customer", "date"],
+        meta: ["lines"],
+        rail: { status: () => null, icon: Users },
+    },
+})
+
+function CompactDocsGrid() {
+    const collection = useEntityCollection(docEntity, { rows: DOCS })
+    return (
+        <Collection.Root collection={collection} defaultView="card" label="Documentos compactos" actions={kebab}>
+            <Collection.View card={compactDocViews.card} />
+        </Collection.Root>
+    )
+}
+
+/** Compact document variant: no media band; a decorative identity icon rides the leading rail (Group). */
+export const CompactDocument: Story = {
+    render: () => (
+        <div className="w-[48rem]">
+            <CompactDocsGrid />
         </div>
     ),
 }

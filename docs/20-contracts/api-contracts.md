@@ -457,6 +457,8 @@ POST   /api/inventory/warehouses/       create
 PATCH  /api/inventory/warehouses/{id}/  update
 ```
 
+Lectura (anotaciones, no editables): `stocked_product_count` cuenta productos distintos con `stocks.quantity > 0` y `stock_units` suma las existencias de la bodega (0 si no tiene filas de stock).
+
 ### moves/ (StockMove)
 
 Ruta real del router: `/api/inventory/moves/` (`StockMoveViewSet`, basename `stockmove`).
@@ -530,6 +532,7 @@ Dirección del movimiento (clasificada en DB, prioridad TRANSFER > ADJUSTMENT > 
 
 ```
 GET/POST/PATCH/DELETE   /api/inventory/categories/        categorías de producto
+  · lectura: product_count = productos activos asignados directamente (no suma descendientes)
 GET/POST/PATCH/DELETE   /api/inventory/uoms/              unidades de medida
 GET/POST/PATCH/DELETE   /api/inventory/uom-categories/    categorías de UoM
 GET/POST/PATCH/DELETE   /api/inventory/attributes/        atributos (color, talla, …)

@@ -1,13 +1,13 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, CalendarDays, ChevronDown, ChevronRight, FileText, Kanban, LayoutGrid, Rows3 } from "lucide-react"
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, ChevronDown, ChevronRight, FileText, LayoutGrid, Rows3 } from "lucide-react"
 import { BulkActionButtons, CardRail, DataTablePagination, EmptyState, EntityCard, SelectionDock, SelectionRing, type BulkAction, type CardRailTone } from "@/components/shared"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { resolveStatus, type BadgeIntent } from "@/lib/badge-resolvers"
-import { ENTITY_REGISTRY, getEntityIcon } from "@/lib/entity-registry"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
 import {
     alignOf,
@@ -35,7 +35,7 @@ import { useEntityOpener } from "./EntityViewProvider"
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 
-export type CollectionViewMode = "table" | "card" | "kanban" | "timeline" | "analytics"
+export type CollectionViewMode = "table" | "card" | "analytics"
 export type SelectionMode = "none" | "bulk" | "panel"
 
 /** What the surfaces read from the entity: label and fields (the literal field-id map `F` is erased). */
@@ -158,39 +158,17 @@ export interface CollectionToolbarProps {
     exportFilters?: Record<string, unknown>
 }
 
-const VIEW_BUTTONS: Record<CollectionViewMode, { icon: React.ElementType; label: string }> = {
+const VIEW_BUTTONS = {
     table: { icon: Rows3, label: "Vista tabla" },
     card: { icon: LayoutGrid, label: "Vista tarjetas" },
-    kanban: { icon: Kanban, label: "Tablero kanban" },
-    timeline: { icon: CalendarDays, label: "Cronograma" },
     analytics: { icon: BarChart3, label: "Analítica" },
 } as const
 
-/**
- * Resolves the default view modes for an entity from its registry `viewPolicy.availableViews`.
- * Falls back to `["table", "card"]` when the entity is not registered or has no policy.
- * `grid` is treated as `card` (both render as cards).
- */
-function defaultViewsFor(label: string): CollectionViewMode[] {
-    const policy = ENTITY_REGISTRY[label]?.viewPolicy
-    if (!policy?.availableViews?.length) return ["table", "card"]
-    const mapped = policy.availableViews.map((v) => {
-        if (v === "list") return "table" as const
-        if (v === "grid") return "card" as const
-        return v as CollectionViewMode
-    })
-    // Dedup while preserving order; ensure at least one usable mode.
-    const uniq = [...new Set(mapped)]
-    return uniq.length ? uniq : ["table", "card"]
-}
-
-function Toolbar({ children, action, views, exportFilters = {} }: CollectionToolbarProps) {
+function Toolbar({ children, action, views = ["table", "card"], exportFilters = {} }: CollectionToolbarProps) {
     const ctx = useCollectionContext<unknown>()
     const exportSpec = ctx.collection.entity.export
-    // Derive the offered modes from the entity's view policy when not overridden explicitly.
-    const resolvedViews = views ?? defaultViewsFor(ctx.collection.entity.label ?? "")
     // The analytics view is offered only while a `Collection.Analytics` is mounted.
-    const modes = ctx.hasAnalytics && !resolvedViews.includes("analytics") ? [...resolvedViews, "analytics" as const] : resolvedViews
+    const modes = ctx.hasAnalytics && !views.includes("analytics") ? [...views, "analytics" as const] : views
     return (
         <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">

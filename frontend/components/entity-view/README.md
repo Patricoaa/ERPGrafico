@@ -78,7 +78,7 @@ Extensiones de features (se usan con su **constructor**, que además registra el
 
 ## 3. Layout de la card
 
-`title` (1 campo, enlace a la ficha) · `subtitle` (campos unidos con " · ") · `meta` (pares etiqueta/valor bajo la cabecera) · `trailing` (estado o KPI a la derecha) · `media` (`icon`, `iconFor: (row) => Icono`, `tone`: `"default" | "primary" | "info" | "success" | "warning" | "destructive" | "muted"` o función por fila, `image`, `avatar`) · `body`: `{ kind: "workflow", total, pending?, date?, lines? }`, `{ kind: "metrics", fields }`, `{ kind: "progress", field }` o `{ kind: "custom", component }`.
+`title` (1 campo, enlace a la ficha) · `subtitle` (campos unidos con " · ") · `meta` (pares etiqueta/valor bajo la cabecera) · `trailing` (estado o KPI a la derecha; bajo 28rem se pliega a `meta`) · `highlights` (estado sin etiqueta que omite valores vacíos) · `muted(row)` (archivado) · `footer` (`value`, `visible?`, `fallback?`; el pie sin valor se compacta) · `rail` (`status`, `icon?`, `side?: "left" | "right"`; por defecto izquierda, el derecho queda para variantes decorativas) · `media` (`icon`, `iconFor: (row) => Icono`, `tone` o función por fila, `image`, `avatar`, `placement?: "inline" | "top"` con `badge?` —texto o lista de badges separados— y `footnote?`) · `body`: `{ kind: "workflow", total, pending?, date?, lines? }`, `{ kind: "metrics", fields }`, `{ kind: "progress", field }` o `{ kind: "custom", component }`.
 
 ## 4. Lo específico: extensión en la feature (sin tocar `components/entity-view`)
 

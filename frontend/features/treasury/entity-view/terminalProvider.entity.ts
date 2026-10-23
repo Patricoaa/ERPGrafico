@@ -15,5 +15,15 @@ export const terminalProviderEntity = defineEntity<PaymentTerminalProvider>()((f
 
 export const terminalProviderViews = terminalProviderEntity.views({
     table: { columns: ["name", "supplierName", "receivableAccount", "isActive"], defaultSort: "name" },
-    card: { title: "name", subtitle: ["supplierName"], meta: ["receivableAccount"], trailing: ["isActive"], media: { placement: "top", icon: Building2 } },
+    card: {
+        title: "name",
+        subtitle: ["supplierName"],
+        meta: ["receivableAccount"],
+        muted: (p) => !p.is_active,
+        media: {
+            placement: "top",
+            icon: Building2,
+            badge: (p) => (p.is_active ? undefined : "Inactivo"),
+        },
+    },
 })

@@ -87,7 +87,7 @@ export const partnerViews = partnerEntity.views({
     },
     card: {
         title: "name",
-        meta: ["equityPercentage", "totalContributions", "totalPaidIn"],
+        meta: ["equityPercentage", "totalContributions"],
         footer: { value: "netEquity" },
         media: { placement: "top", icon: Handshake },
     },

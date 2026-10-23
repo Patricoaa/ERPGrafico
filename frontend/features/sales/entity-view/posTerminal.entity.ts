@@ -17,6 +17,12 @@ const paymentChips = (t: Terminal): string[] => [
     ...new Set(t.allowed_payment_methods.map((m) => PAYMENT_CHIP[m.method_type]).filter((c): c is string => !!c)),
 ]
 
+function methodsLabel(terminal: Terminal): string {
+    const count = paymentChips(terminal).length
+    if (count === 0) return "Sin métodos"
+    return count === 1 ? "1 método" : `${count} métodos`
+}
+
 /** POS terminal (ADR-0087 oleada A2). Replaces posTerminalFields.ts + renderCard. */
 export const posTerminalEntity = defineEntity<Terminal>()((f) => ({
     label: "treasury.terminal",
@@ -33,11 +39,16 @@ export const posTerminalEntity = defineEntity<Terminal>()((f) => ({
 export const posTerminalViews = posTerminalEntity.views({
     table: { columns: ["code", "name", "location", "device", "paymentMethods", "isActive"], primary: "name" },
     card: {
+        code: "code",
         title: "name",
-        subtitle: ["code", "location"],
-        meta: ["device", "paymentMethods"],
-        trailing: ["isActive"],
-        // Inactive terminals read as muted (the legacy card was greyed out).
-        media: { placement: "top", tone: (t) => (t.is_active ? "primary" : "muted") },
+        subtitle: ["location"],
+        meta: ["device"],
+        muted: (t) => !t.is_active,
+        media: {
+            placement: "top",
+            tone: (t) => (t.is_active ? "primary" : "muted"),
+            badge: (t) => (t.is_active ? undefined : "Inactivo"),
+            footnote: methodsLabel,
+        },
     },
 })

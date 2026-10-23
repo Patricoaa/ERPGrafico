@@ -42,7 +42,7 @@ const TONE_CLASS: Record<CardRailTone, string> = {
 export function CardRail({ tone, size = "md", side = "right", decorative = true, children, className }: CardRailProps) {
     return (
         <div
-            className={cn(cardAnatomy.rail, cardAnatomy.railSize[size], TONE_CLASS[tone], side === "left" && "border-l-0 border-r", className)}
+            className={cn(cardAnatomy.rail, cardAnatomy.railSize[size], TONE_CLASS[tone], side === "left" ? "border-l-0 border-r" : "order-last", className)}
             aria-hidden={decorative ? true : undefined}
         >
             {children}

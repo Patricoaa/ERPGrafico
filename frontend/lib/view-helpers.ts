@@ -258,17 +258,24 @@ export function createCardGroupView<TData>(
 /**
  * Creates a renderLoadingView for card/grid views using EntityCard.Skeleton.
  *
+ * `count` es la tarjetas de esqueleto que se pintan (aproximación de carga; el número real
+ * de filas se desconoce hasta que llegan los datos). `skeletonProps` acepta cualquier prop de
+ * `EntityCardSkeletonProps` (fields, code, lead, subtitle, trailing, meta, media, …) para que
+ * el esqueleto calque la anatomía de la card real y no haya layout shift.
+ *
  * Usage:
  *   renderLoadingView={isCustomView ? createCardLoadingView('single-column', 8) : undefined}
- *   // With section control:
- *   renderLoadingView={createCardLoadingView('single-column', 6, { showBody: false, showFooter: true })}
- *   // With cardVariant from registry:
+ *   // Con la misma anatomía que la card real (compact, con código, lead y 4 campos):
+ *   renderLoadingView={createCardLoadingView('single-column', 6, {
+ *     variant: 'compact', code: true, lead: true, fields: 4
+ *   })}
+ *   // Con cardVariant del registry:
  *   renderLoadingView={createCardLoadingView('single-column', 8, undefined, 'compact')}
  */
 export function createCardLoadingView(
   layout: 'single-column' | 'multi-column' = 'single-column',
   count: number = 8,
-  skeletonProps?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>,
+  skeletonProps?: Partial<EntityCardSkeletonProps>,
   cardVariant?: 'highlights' | 'summary' | 'full' | 'workflow',
 ) {
   const gridClass = layout === 'multi-column'
@@ -309,7 +316,7 @@ export function createCardGroupLoadingView(
     groupCount?: number
     itemsPerGroup?: number
     gridLayout?: 'single-column' | 'multi-column'
-    skeletonProps?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>
+    skeletonProps?: Partial<EntityCardSkeletonProps>,
     cardVariant?: 'highlights' | 'summary' | 'full' | 'workflow'
   }
 ) {

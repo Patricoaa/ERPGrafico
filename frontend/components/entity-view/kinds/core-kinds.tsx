@@ -77,8 +77,13 @@ export function registerCoreValueKinds(): void {
         format: (v, o) => formatMoneyValue(v, o.currency, o.sign),
         sortValue: (v) => toNumber(v),
         align: "end",
-        render: ({ value, options, align }) => (
-            <DataCell.Currency value={toNumber(value)} currency={options.currency} align={align} />
+        render: ({ value, options, align, surface }) => (
+            <DataCell.Currency
+                value={toNumber(value)}
+                currency={options.currency}
+                align={align}
+                className={surface === "cardFooter" ? "text-lg font-semibold" : undefined}
+            />
         ),
     })
 
@@ -161,14 +166,15 @@ export function registerCoreValueKinds(): void {
     registerValueKind("tags", {
         format: (v) => formatTags(v),
         // DataCell.Category needs a domain (it renders "-" without one): free tags use neutral chips.
-        render: ({ value, options, align }) => {
+        render: ({ value, options, align, surface }) => {
             if (options.domain) return <DataCell.Category value={value ? [...value] : null} domain={options.domain} align={align} />
             if (!value || value.length === 0) return <DataCell.Empty align={align} />
             // One line: the first two chips plus "+N" keep row height stable (full list in the title attribute).
             const shown = value.slice(0, 2)
             return (
                 <div className={cn("flex w-full flex-nowrap items-center gap-1 overflow-hidden", ALIGN_FLEX[align])} title={value.join(", ")}>
-                    {shown.map((tag) => <DataCell.Chip key={tag} size="sm">{tag}</DataCell.Chip>)}
+                    {/* Table cells centre each chip in its share of the row; on cards chips keep their width and follow the alignment. */}
+                    {shown.map((tag) => <DataCell.Chip key={tag} size="sm" className={surface === "table" ? undefined : cn("w-auto", ALIGN_FLEX[align])}>{tag}</DataCell.Chip>)}
                     {value.length > shown.length && <span className="text-xs text-muted-foreground">+{value.length - shown.length}</span>}
                 </div>
             )

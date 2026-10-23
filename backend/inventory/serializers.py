@@ -52,6 +52,8 @@ class ProductAttributeValueSerializer(serializers.ModelSerializer):
 
 
 class ProductCategorySerializer(serializers.ModelSerializer):
+    product_count = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = ProductCategory
         fields = [
@@ -64,6 +66,7 @@ class ProductCategorySerializer(serializers.ModelSerializer):
             "income_account",
             "expense_account",
             "is_active",
+            "product_count",
         ]
 
 
@@ -551,9 +554,20 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         return ProductService.update_product(instance, validated_data)
 
 class WarehouseSerializer(serializers.ModelSerializer):
+    stocked_product_count = serializers.IntegerField(read_only=True)
+    stock_units = serializers.DecimalField(max_digits=14, decimal_places=4, read_only=True)
+
     class Meta:
         model = Warehouse
-        fields = "__all__"
+        fields = [
+            "id",
+            "name",
+            "code",
+            "address",
+            "is_active",
+            "stocked_product_count",
+            "stock_units",
+        ]
 
 
 

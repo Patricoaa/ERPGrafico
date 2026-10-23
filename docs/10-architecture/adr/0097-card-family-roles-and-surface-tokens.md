@@ -49,7 +49,7 @@ Además:
 
 ### 2. Layouts
 
-`stacked` (media arriba), `row` (hoy `inline`) y `compact` (hoy `light`), más una variante `doc` **propuesta y diferida**: código mono, título, `StatusBadge`, pie con monto tabular y rail de estado con icono. No se implementa hasta tener un caso real con datos (hoy `EntityCard.Metrics`/`workflow` cubre el pie). `StatusBadge` sigue siendo el único renderer de estado (invariante 7); el rail es complementario y nunca el único portador del estado.
+`stacked` (media arriba), `row` (hoy `inline`) y `compact` (hoy `light`), más la variante `doc`/documento compacta: código mono, título, `StatusBadge` cuando hay estado, pie con monto tabular y rail con icono. El riel va a la izquierda, también en la variante compacta sin estado semántico donde solo lleva el icono de identidad (`rail.side: "right"` queda disponible para variantes decorativas que lo necesiten). `StatusBadge` sigue siendo el único renderer de estado (invariante 7); el rail es complementario y nunca el único portador del estado.
 
 ### 3. Tokens
 
@@ -140,7 +140,25 @@ Los ~60 bloques `border rounded` sueltos no son cards (avisos y grupos de campos
 - **Marca de selección = check:** `SelectionRing` (bulk en filas, cabeceras y cards) y el indicador de `SelectionDock` pasan de `CmykRing` a un círculo primario con check (minus en parcial), la misma marca que `SelectionCheck`.
 - `CardSurface` ya no emite `aria-pressed`/`aria-checked` si no es interactivo.
 - `EntityCard.Meta` apila los pares en una columna cuando la card mide menos de 18rem (catálogos de 4–5 columnas).
-- **Plantilla catálogo:** contactos (blobatar en la franja, código `CON-n`), grupos, socios (patrimonio en el pie) y órdenes de trabajo (fecha de entrega en el pie; ya no usan riel). **Plantilla documento:** unidades de medida y reglas de precio (riel con estado activo/inactivo).
+- **Plantilla catálogo:** contactos (blobatar en la franja, código `CON-n`), grupos, socios (patrimonio en el pie) y órdenes de trabajo (fecha de entrega en el pie; ya no usan riel). **Plantilla documento:** unidades de medida y reglas de precio (riel con estado activo/inactivo). Nota posterior (paso 11): Grupo pasa a la variante documento compacta, no a catálogo.
+
+## Implemented in the tenth step (pilot: product catalog card)
+
+- Slots nuevos de `CardLayout`: `highlights` (línea de estado sin etiqueta, omite lo vacío), `muted` (archivado), `media.footnote` (chip de variantes) y `footer.visible` + `footer.fallback` (caption + valor) para filas sin monto. `Surface` gana `cardFooter` (monto a escala de importe).
+- Producto: franja de 80px con el icono del tipo centrado; la categoría —o "Archivado"— y el conteo de variantes forman un grupo arriba a la izquierda, siempre apilados en una columna (nunca en la misma fila) con separación mínima, por encima del icono/foto. Se revierte la franja compacta de 56px. Código (o SKU si falta), nombre a 2 líneas, **salud del stock** como línea con icono y tono (`productAvailability`, reutiliza el view-model del POS).
+- El pie es el slot comercial: precio con unidad (`$595 / unidad`; plantillas con variantes: "desde $8.500"; dinámico: "Precio dinámico"). Si el producto no se vende, el pie cambia el monto por `Canal · Solo compra` y no deja un hueco. El canal solo se advierte cuando bloquea la venta: "Solo venta" no se muestra en un catálogo de ventas. Desaparecen los pares "Disponible para" y "Stock".
+- El título es un abridor de tarjeta, no un enlace de texto: sin subrayado en hover/focus (el cursor, la cinta CMYK y el borde ya comunican la acción).
+- El view-model de tarjeta de producto se movió a `features/inventory/utils/productCardModel.ts` (lo comparten POS y catálogo; el POS lo importa por el barrel). El precio fijo usa el view-model (bruto c/IVA); antes la tarjeta y la tabla mostraban el neto como si fuera bruto.
+- Lección para las demás entidades: una card dice lo que importa y calla lo habitual; los pares etiqueta/valor quedan para datos de segundo nivel.
+
+## Implemented in the eleventh step (non-product catalog pilot)
+
+- `CardLayout.rail.side` (`"left" | "right"`): el riel de estado va a la izquierda, también en la variante documento compacta (Grupo). `CardRail` usa `order-last` cuando una variante decorativa lo pide explícitamente a la derecha.
+- `EntityCard.Foot` gana `compact`: en catálogo sin valor (ni fallback) el pie conserva solo el kebab, sin relleno de importe ni un "—". El kebab sigue en el pie; las acciones no se meten en la card (AX-4).
+- Regla de catálogo no-producto: identidad + estado por excepción + una métrica de decisión; `muted` + badge de archivado en vez de "Activo"; máximo 2 pares `meta`; pie para dinero/fecha/conteo; números sensibles enmascarados en la feature.
+- Piloto aplicado: OT (folio/cliente/etapa/cantidad/entrega), cuenta de tesorería (tipo/saldo/vínculo), contacto (roles/crédito/RUT), BOM (versión/componentes/costo), categoría (productos activos), bodega (productos con stock/unidades), atributo (tipo/valores/conteo), medio de pago (categoría/cuenta/uso), banco (cuentas), cuenta corriente (saldo/disponible), tarjeta de crédito (nombre/PAN enmascarado/cupo/disponible), terminal POS (código/ubicación/dispositivo/métodos), proveedor de terminal (contacto/cuenta de recaudación) y socio (participación/capital suscrito/patrimonio). Categoría y bodega reciben conteos anotados en el backend.
+- Los valores editables de atributo se renderizan como chips de solo lectura en la card; el alta/baja sigue en la tabla. La tarjeta de crédito nunca expone el PAN completo: solo `••••` y los últimos 4 dígitos.
+- Grupo sale de la plantilla catálogo: usa la variante documento compacta, sin franja de 80px, con el icono de identidad en el riel izquierdo.
 
 ## Plan (pendiente)
 

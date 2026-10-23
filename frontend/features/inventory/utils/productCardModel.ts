@@ -1,8 +1,8 @@
-// ProductGridPicker/product-card-model
-// Pure view-model for ProductCard: what the card says about a product, with no JSX.
+// Product card view-model (moved from ProductGridPicker, ADR-0097): what a product card says about a
+// product, with no JSX. Shared by the POS ProductCard and the inventory catalog card (entity-view).
 // One place for the availability / action / price rules that used to be five copy-pasted badge blocks.
 
-import type { BaseProduct } from '@/features/inventory'
+import type { BaseProduct } from '../types'
 import { PricingUtils } from '@/lib/pricing-utils'
 import { formatQuantity } from '@/lib/money'
 
@@ -98,7 +98,7 @@ function manufacturableAvailability(product: BaseProduct, ctx: ProductCardContex
         if (!product.has_bom) return { text: 'Sin lista de materiales', tone: 'neutral', icon: 'manufacture' }
         return { text: makeableText, tone: makeable > 0 ? 'ok' : 'none', icon: 'manufacture' }
     }
-    if (!product.has_bom) return { text: 'Disponible', tone: 'ok', icon: 'manufacture' }
+    if (!product.has_bom) return { text: 'Fabricable', tone: 'ok', icon: 'manufacture' }
     return { text: makeableText, tone: makeable > 0 ? 'ok' : 'warning', icon: 'manufacture' }
 }
 
@@ -106,7 +106,7 @@ export function getAvailability(product: BaseProduct, ctx: ProductCardContext): 
     // Templates: availability lives in the variants, not in the template itself.
     if (product.has_variants) {
         if (product.variants_count === 0) return { text: 'Sin variantes', tone: 'none', icon: 'blocked' }
-        if (product.product_type === 'SERVICE') return { text: 'Servicio · bajo demanda', tone: 'neutral', icon: 'service' }
+        if (product.product_type === 'SERVICE') return { text: 'Servicio', tone: 'neutral', icon: 'service' }
         return { text: 'Disponibilidad por variante', tone: 'neutral', icon: 'stock' }
     }
     switch (product.product_type) {
@@ -115,7 +115,7 @@ export function getAvailability(product: BaseProduct, ctx: ProductCardContext): 
         case 'MANUFACTURABLE':
             return manufacturableAvailability(product, ctx)
         case 'SERVICE':
-            return { text: 'Servicio · bajo demanda', tone: 'neutral', icon: 'service' }
+            return { text: 'Servicio', tone: 'neutral', icon: 'service' }
         case 'SUBSCRIPTION':
             return { text: 'Suscripción', tone: 'neutral', icon: 'service' }
         case 'CONSUMABLE':

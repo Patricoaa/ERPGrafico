@@ -17,11 +17,16 @@ export const bankCheckingAccountEntity = defineEntity<BankAccount>()((f) => ({
         name: f.text("name", { label: "Cuenta" }),
         number: f.code((a) => a.account_number ?? a.code ?? null, { label: "Número" }),
         balance: f.money("current_balance", { label: "Saldo" }),
-        creditLine: f.money(creditLine, { label: "Línea" }),
         available: f.money(available, { label: "Disponible" }),
     },
 }))
 
 export const bankCheckingAccountViews = bankCheckingAccountEntity.views({
-    card: { title: "name", subtitle: ["number"], media: { placement: "top", icon: Landmark }, body: { kind: "metrics", fields: ["balance", "creditLine", "available"] } },
+    card: {
+        title: "name",
+        subtitle: ["number"],
+        meta: ["balance"],
+        footer: { value: "available" },
+        media: { placement: "top", icon: Landmark },
+    },
 })

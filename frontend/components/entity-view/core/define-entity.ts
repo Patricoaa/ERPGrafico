@@ -152,8 +152,14 @@ export interface CardMedia<T> {
      * ProductCard anatomy (ADR-0093). Opt-in; collections that do not set it are unchanged.
      */
     placement?: "inline" | "top"
-    /** Chip over the strip's top-left corner. Only with `placement: "top"`. */
-    badge?: (row: T) => string | null | undefined
+    /**
+     * Chip(s) over the strip's top-left corner. One string renders one badge; an array renders
+     * separate stacked badges (e.g. the roles of a contact). Only with `placement: "top"`.
+     */
+    badge?: (row: T) => string | readonly string[] | null | undefined
+    /** Secondary chip stacked below the badge at the top-left (e.g. "4 gramajes"). Only with `placement: "top"`. */
+    footnote?: (row: T) => string | null | undefined
+    footnoteIcon?: LucideIcon
 }
 
 /** Registrable body sections. `custom` is the typed per-feature escape (receives the row, lives in the feature). */
@@ -172,6 +178,11 @@ export interface CardRailSpec<T> {
     readonly status: (row: T) => string | null | undefined
     /** Default: the entity icon (media icon or registry icon). The rail tint is the state. */
     readonly icon?: LucideIcon
+    /**
+     * Edge the rail sits on. Documents put the state rail on the left; the compact document
+     * variant may put a decorative entity icon on the right. Defaults to `left`.
+     */
+    readonly side?: "left" | "right"
 }
 
 export interface CardLayout<T, Id extends string> {
@@ -183,8 +194,24 @@ export interface CardLayout<T, Id extends string> {
     readonly trailing?: readonly Id[]
     readonly media?: CardMedia<T>
     readonly body?: CardSection<T, Id>
+    /**
+     * Unlabelled status line under the title: icon + text values (stock health, flags). A field whose
+     * text is empty ("—") is skipped, so only what is worth saying takes space.
+     */
+    readonly highlights?: readonly Id[]
+    /** The card reads as inactive (archived): muted and desaturated. */
+    readonly muted?: (row: T) => boolean
     /** Bottom-pinned amount (caption = the field label) with the open glyph, like the POS ProductCard. */
-    readonly footer?: { readonly value: Id }
+    readonly footer?: {
+        readonly value: Id
+        /** Some rows have no amount worth showing (e.g. a product that is not for sale). */
+        readonly visible?: (row: T) => boolean
+        /** Shown in the amount slot when `visible` is false (e.g. a channel restriction). */
+        readonly fallback?: {
+            readonly caption: string
+            readonly value: (row: T) => string | null | undefined
+        }
+    }
     readonly rail?: CardRailSpec<T>
 }
 

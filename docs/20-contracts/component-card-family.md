@@ -45,7 +45,7 @@ Elevación: no sumar `shadow-*` a un `surface-item`. Las utilidades de Tailwind 
 | Pieza | Qué es |
 |---|---|
 | `CardLead` | Slot inicial (icono / foto / avatar). `size` `md` 40px · `sm` 32px; `stretch` para headers de entidad; tono por `className`. Siempre `rounded-sm`, recortado. |
-| `CardRail` | Columna lateral completa. `tone` `warning\|success\|neutral\|primary`, `size` `md` (w-14, estado con icono) · `sm` (w-9, marcador de selección), `decorative` (default `true`, `aria-hidden`). El color nunca es el único portador del estado: acompáñalo con icono y con `StatusBadge`/texto. |
+| `CardRail` | Columna lateral completa. `tone` `warning\|success\|neutral\|primary`, `size` `md` (w-14, estado con icono) · `sm` (w-9, marcador de selección), `side` `left` (documento, estado) · `right` (default, selección o icono de identidad compacto), `decorative` (default `true`, `aria-hidden`). El color nunca es el único portador del estado: acompáñalo con icono y con `StatusBadge`/texto. |
 | `InfoBlock` | Aviso o banner de estado con acciones ("Autorización requerida", "Crédito aprobado"). **No es una card**: nada se abre desde él ni se selecciona. `tone` `info\|success\|warning\|destructive\|neutral` tiñe solo el icono (`CardLead`); el texto va en tokens neutros. `live` `status` (default) / `alert` / `none` define cómo se anuncia. |
 | `cardAnatomy` | Tokens de clase: `body/code/title/description/footer/caption/amount/glyph`, `lead*`, `entityTitle/entitySubtitle`, `eyebrow` (etiqueta de un par etiqueta/valor), `fieldValue`, `rail/railSize`. Cambiar el diseño = editar este archivo. |
 
