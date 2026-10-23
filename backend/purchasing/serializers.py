@@ -257,6 +257,7 @@ class PurchaseReceiptLineSerializer(serializers.ModelSerializer):
 
 
 class PurchaseReceiptSerializer(serializers.ModelSerializer):
+    display_id = serializers.CharField(read_only=True)
     lines = PurchaseReceiptLineSerializer(many=True, read_only=True)
     purchase_order_number = serializers.CharField(source="purchase_order.number", read_only=True)
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
@@ -311,6 +312,7 @@ class PurchaseReturnLineSerializer(serializers.ModelSerializer):
 
 
 class PurchaseReturnSerializer(serializers.ModelSerializer):
+    display_id = serializers.CharField(read_only=True)
     lines = PurchaseReturnLineSerializer(many=True, read_only=True)
     purchase_order_number = serializers.CharField(source="purchase_order.number", read_only=True)
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)

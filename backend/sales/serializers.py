@@ -443,6 +443,7 @@ class SaleDeliveryLineSerializer(serializers.ModelSerializer):
 
 
 class SaleDeliverySerializer(serializers.ModelSerializer):
+    display_id = serializers.CharField(read_only=True)
     lines = SaleDeliveryLineSerializer(many=True, read_only=True)
     sale_order_number = serializers.CharField(source="sale_order.number", read_only=True)
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
@@ -487,6 +488,7 @@ class SaleReturnLineSerializer(serializers.ModelSerializer):
 
 
 class SaleReturnSerializer(serializers.ModelSerializer):
+    display_id = serializers.CharField(read_only=True)
     lines = SaleReturnLineSerializer(many=True, read_only=True)
     sale_order_number = serializers.CharField(source="sale_order.number", read_only=True)
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)

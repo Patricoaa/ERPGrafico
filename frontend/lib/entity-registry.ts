@@ -1282,7 +1282,17 @@ export function formatEntityDisplay(label: string, data: Record<string, unknown>
     }
   }
 
-  return templateFromData(template, cleanData);
+  // Fallback: If template expects {number} but only {id} is provided, use id as number
+  if (cleanData.number === undefined && cleanData.id !== undefined) {
+    cleanData.number = cleanData.id;
+  }
+
+  const result = templateFromData(template, cleanData);
+  // Never return an orphan prefix like "DES-" or "DEV-" if interpolation was empty
+  if (result.endsWith('-')) {
+    return cleanData.id != null ? `${result.replace(/-+$/, '')}-${cleanData.id}` : '';
+  }
+  return result;
 }
 
 export function getEntityMetadata(label: string): EntityMetadata | undefined {
