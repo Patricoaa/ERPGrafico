@@ -1,7 +1,9 @@
 "use client"
 
-import { useRef } from "react"
+import { useEffect, useLayoutEffect, useRef } from "react"
 import type { FieldValues, UseFormReturn } from "react-hook-form"
+
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect
 
 interface UseInitializeDrawerFormOptions<TData, TForm extends FieldValues> {
     form: UseFormReturn<TForm>
@@ -24,10 +26,16 @@ interface UseInitializeDrawerFormOptions<TData, TForm extends FieldValues> {
 }
 
 /**
- * Hook to initialize react-hook-form inside a Drawer (or Modal) following the
- * "Adjust state during render" pattern (ADR-0051). It avoids cascading re-renders
- * by calling form.reset() during the render phase when the drawer opens or the
- * entity ID changes.
+ * Hook to initialize react-hook-form inside a Drawer (or Modal).
+ *
+ * The reset runs in a layout effect instead of during render. `form.reset()`
+ * updates react-hook-form's store, which mounted `Controller` components
+ * subscribe to; doing that while the parent renders triggers React 19's
+ * "Cannot update a component while rendering a different component" warning.
+ *
+ * `useLayoutEffect` runs before paint, so the form still initializes without
+ * flashing stale values. The reset key (open state + entity id) is the only
+ * trigger: it changes when the drawer opens, closes, or switches entity.
  */
 export function useInitializeDrawerForm<TData, TForm extends FieldValues>({
     form,
@@ -39,24 +47,30 @@ export function useInitializeDrawerForm<TData, TForm extends FieldValues>({
 }: UseInitializeDrawerFormOptions<TData, TForm>): void {
     const prevResetKeyRef = useRef<string>("")
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const id = getEntityId
         ? getEntityId(initialData as TData)
-        : ((initialData as any)?.id)
+        : (initialData as { id?: string | number } | null | undefined)?.id
 
     const resetKey = open
         ? (id?.toString() ?? "__new__")
         : "__closed__"
 
-    if (resetKey !== prevResetKeyRef.current) {
+    useIsomorphicLayoutEffect(() => {
+        if (resetKey === prevResetKeyRef.current) {
+            return
+        }
         prevResetKeyRef.current = resetKey
 
-        if (open) {
-            const values = initialData
-                ? (mapData ? mapData(initialData) : (initialData as unknown as Partial<TForm>))
-                : (typeof defaultValues === 'function' ? defaultValues() : defaultValues)
-
-            form.reset(values as any)
+        if (!open) {
+            return
         }
-    }
+
+        const values = initialData
+            ? (mapData ? mapData(initialData) : (initialData as unknown as Partial<TForm>))
+            : (typeof defaultValues === 'function' ? defaultValues() : defaultValues)
+
+        // Only the reset key may trigger this effect. The latest render's data is
+        // intentionally used so opening or switching entities resets exactly once.
+        form.reset(values as TForm)
+    }, [resetKey])
 }

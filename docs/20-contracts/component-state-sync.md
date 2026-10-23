@@ -10,12 +10,14 @@ preconditions:
   - autosave-contract.md
 adr:
   - 0051-adjust-state-during-render
+  - 0098-form-reset-layout-effect
 ---
 
 # State Synchronization — Adjust State During Render
 
 > **Documentos relacionados:**
-> - [ADR-0051](../10-architecture/adr/0051-adjust-state-during-render.md) — decisión arquitectural
+> - [ADR-0051](../10-architecture/adr/0051-adjust-state-during-render.md) — decisión arquitectural (estado local)
+> - [ADR-0098](../10-architecture/adr/0098-form-reset-layout-effect.md) — inicialización de formularios en layout effect
 > - [component-form-patterns.md](./component-form-patterns.md) — formularios, surfaces, initialization
 > - [autosave-contract.md](./autosave-contract.md) — autosave + `form.reset()` interaction
 > - [hook-contracts.md](./hook-contracts.md) — `useInitializeForm` canonizado
@@ -69,20 +71,20 @@ if (incomingValue !== prevValue) {
 
 **Por qué funciona**: Los `setState` llamados durante la fase de render son batcheados por React dentro del mismo render. No hay ciclo render→effect→render. React simplemente continúa renderizando con el estado actualizado.
 
-**Regla de oro**: Si puedes expresar la sincronización como `if (prop !== state) setState(prop)`, hazlo durante render, no en un effect.
+**Regla de oro**: Si puedes expresar la sincronización como `if (prop !== state) setState(prop)` **sobre estado local del mismo componente**, hazlo durante render, no en un effect. No apliques esta regla a stores externos consumidos por componentes hijos (react-hook-form) — ver ADR-0098.
 
 ### Cuándo usar
 
-| Señal | Usar adjust-during-render | Usar useEffect |
-|-------|--------------------------|----------------|
+| Señal | Usar adjust-during-render | Usar effect |
+|-------|--------------------------|-------------|
 | Sincronizar props → estado local | ✅ | ❌ |
 | Sincronizar URL params → estado local | ✅ | ❌ |
-| Inicializar form desde datos del servidor | ✅ | ❌ |
-| Fetch de datos | ❌ | ✅ |
-| Subscriptions / WebSocket | ❌ | ✅ |
-| Analytics / logging | ❌ | ✅ |
-| Timers / intervals | ❌ | ✅ |
-| DOM manual (focus, scroll) | ❌ | ✅ |
+| Inicializar form desde datos del servidor | ❌ | ✅ `useInitializeForm` / `useInitializeDrawerForm` (layout effect — ADR-0098) |
+| Fetch de datos | ❌ | ✅ `useEffect` |
+| Subscriptions / WebSocket | ❌ | ✅ `useEffect` |
+| Analytics / logging | ❌ | ✅ `useEffect` |
+| Timers / intervals | ❌ | ✅ `useEffect` |
+| DOM manual (focus, scroll) | ❌ | ✅ `useEffect` / `useLayoutEffect` |
 
 ### Diagrama de decisión
 
@@ -93,7 +95,7 @@ graph TD
     Q1 -->|No| Q2{"¿La fuente y el destino<br/>son del mismo tipo<br/>(string→string, number→number)?"}
     Q2 -->|Sí| ADJUST["Adjust state during render<br/><code>if (src !== state) setState(src)</code>"]
     Q2 -->|No| Q3{"¿Es form.reset()<br/>desde datos de API?"}
-    Q3 -->|Sí| INIT_HOOK["useInitializeForm()<br/>— ver § Variante 2"]
+    Q3 -->|Sí| INIT_HOOK["useInitializeForm() /<br/>useInitializeDrawerForm()<br/>layout effect — ADR-0098"]
     Q3 -->|No| ADJUST_MAP["Adjust with mapping<br/><code>if (src !== prev) { prev = src; setState(mapper(src)) }</code>"]
 ```
 
@@ -181,6 +183,8 @@ useInitializeForm({
 })
 ```
 
+El hook aplica `form.reset()` dentro de un layout effect (`useIsomorphicLayoutEffect`), no durante el render. Esto es obligatorio desde React 19: `react-hook-form` notifica a los `Controller` montados, y hacerlo durante el render de otro componente dispara el warning de cross-component update (ADR-0098).
+
 ### ¿Qué reemplaza?
 
 ```diff
@@ -196,7 +200,7 @@ useInitializeForm({
 
 ### Interacción con `useAutoSaveForm`
 
-`useInitializeForm` llama `form.reset()` **durante render**, no en un effect. Esto es seguro porque `form.reset()` en RHF no dispara `form.watch()` síncronamente en la misma pila. El `isResettingRef` de `useAutoSaveForm` protege contra saves fantasma en el siguiente tick.
+`useInitializeForm` llama `form.reset()` dentro de un **layout effect**, no durante el render. El reset emite eventos de `form.watch()` sin `info.name`, que la suscripción de `useAutoSaveForm` ya ignora, por lo que no se programan saves fantasma. El `isResettingRef` de `useAutoSaveForm` sigue protegiendo el reset interno posterior a un save exitoso.
 
 ---
 
@@ -247,35 +251,31 @@ if (hubEverOpenedRef.current && !isHubOpen && selectedId) {
 
 ---
 
-## 6. Variante 4: Drawer Form Reset (Adjust During Render)
+## 6. Variante 4: Drawer Form Reset (Layout Effect)
 
 ### Cuándo
 
-Un Drawer CRUD recibe `initialData` (objeto) o vacío y necesita limpiar/rellenar su `react-hook-form` cada vez que se abre, evitando renders en cascada y bugs de limpieza. No usar `useEffect` con `form.reset`.
+Un Drawer CRUD recibe `initialData` (objeto) o vacío y necesita limpiar/rellenar su `react-hook-form` cada vez que se abre o cambia la entidad. No usar `useEffect` con `form.reset` (corre después del paint y produce flash) ni resetear durante el render (React 19 avisa porque los `Controller` montados se actualizan desde otro componente).
 
 ### Patrón canónico
 
-La "clave de reset" cambia cuando el drawer abre con datos nuevos O se abre en creación. 
+Usar [`useInitializeDrawerForm`](../../frontend/hooks/useInitializeDrawerForm.ts). Internamente mantiene una "clave de reset" (`open` + id) y ejecuta `form.reset()` en un `useIsomorphicLayoutEffect`, una sola vez por clave:
 
 ```tsx
-const prevResetKeyRef = useRef<string>("")
-
-const resetKey = open 
-    ? (initialData?.id?.toString() ?? "__new__") 
-    : "__closed__"
-
-if (resetKey !== prevResetKeyRef.current) {
-    prevResetKeyRef.current = resetKey
-    if (open) {
-        form.reset(initialData ? mapEntityToForm(initialData) : defaultFormValues)
-    }
-}
+useInitializeDrawerForm({
+    form,
+    open,
+    initialData: bomToEdit,
+    defaultValues: () => defaultFormValues,
+    mapData: mapEntityToForm,
+})
 ```
 
 **Beneficios:**
-- Un solo ref (frente a `wasOpen` + `lastResetId`).
-- Sincrónico, libre de flashes, sin `requestAnimationFrame`.
-- Compliant con React Compiler ([ADR-0051](../10-architecture/adr/0051-adjust-state-during-render.md)).
+- Un solo hook y una sola clave de reset (frente a `wasOpen` + `lastResetId`).
+- Inicialización antes del paint: sin flashes ni `requestAnimationFrame`.
+- Sin warnings de React 19 por cross-component update ([ADR-0098](../10-architecture/adr/0098-form-reset-layout-effect.md)).
+- Funciona tanto con `initialData` sincrónica como asincrónica (fetch posterior a la apertura).
 
 ---
 
@@ -350,6 +350,7 @@ const dialogOpen = isNewModalOpen
 ## 8. Forbidden Patterns
 
 - ❌ **`useEffect { setState(...) }`** para sincronizar props/URL → estado local. Usar adjust-during-render o derivación directa.
-- ❌ **`useEffect { form.reset(...) }`** para inicializar formularios. Usar `useInitializeForm` o adjust-during-render.
+- ❌ **`useEffect { form.reset(...) }`** para inicializar formularios (corre después del paint → flash). Usar `useInitializeForm` / `useInitializeDrawerForm` (layout effect).
+- ❌ **`form.reset(...)` durante el render** con `Controller`s montados. React 19 lo reporta como cross-component update. Usar los hooks canónicos (ADR-0098).
 - ❌ **`useState + useEffect` para derivar de `searchParams`**. Leer `searchParams` directamente.
 - ❌ **`useEffect { setFlag(true) }`** como guard de inicialización. Usar ref o eliminar el flag si es derivable.

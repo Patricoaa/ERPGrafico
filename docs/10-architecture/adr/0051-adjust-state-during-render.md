@@ -1,12 +1,14 @@
 ---
 id: 0051
 title: Adjust State During Render — canonical pattern for state synchronization
-status: Accepted
+status: Accepted (form initialization superseded by 0098)
 date: 2026-06-22
 author: frontend-team
 ---
 
 # 0051 — Adjust State During Render
+
+> **Partial supersession (2026-10-23):** form-store initialization (`form.reset()` from server data or drawer open/entity changes) now runs in a layout effect per [ADR-0098](./0098-form-reset-layout-effect.md). React 19 warns when `form.reset()` updates mounted `Controller`s during another component's render. The adjust-state-during-render pattern remains canonical for local `useState` synchronization.
 
 ## Context
 
