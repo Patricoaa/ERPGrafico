@@ -59,6 +59,18 @@ export interface WorkOrderTask {
     created_at?: string
 }
 
+/** One entry of `WorkOrder.stage_history` (WorkOrderHistorySerializer). */
+export interface WorkOrderHistoryEntry {
+    id: number
+    stage: string
+    status: string
+    notes?: string
+    user?: number | null
+    user_name?: string | null
+    created_at: string
+    work_order?: number
+}
+
 export interface WorkOrderStage {
     id: string
     label: string
@@ -100,11 +112,13 @@ export interface WorkOrder {
     quantity?: number | null
     uom_id?: number | null
     uom_name?: string | null
+    actual_quantity_produced?: number | null
     due_date?: string
     outsourcing_status?: "none" | "partial" | "full"
     warehouse_name?: string
     materials?: WorkOrderMaterial[]
     workflow_tasks?: WorkOrderTask[]
+    stage_history?: WorkOrderHistoryEntry[]
     stage_data?: WorkOrderStageData
     product?: {
         id: string | number
