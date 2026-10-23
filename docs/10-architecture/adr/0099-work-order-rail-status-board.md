@@ -1,12 +1,12 @@
 ---
-id: 0098
+id: 0099
 title: Work order rail as a status board — per-stage evidence, blockers, progress and collapse
 status: Accepted
 date: 2026-10-23
 author: frontend-team
 ---
 
-# 0098 — Work order rail as a status board
+# 0099 — Work order rail as a status board
 
 **Related:** ADR-0096 (wizard step rail), ADR-0070 (Primary = K100), `docs/20-contracts/component-modal.md` (Sidebar primitives), `docs/20-contracts/color-system.md`
 

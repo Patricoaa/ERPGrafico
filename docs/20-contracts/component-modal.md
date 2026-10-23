@@ -305,7 +305,7 @@ re-exported from `@/components/shared`):
   - Auto-scroll: the rail scrolls its own container (never an ancestor drawer) so the active step stays below the sticky header.
   - Header: sticky, with `Viendo NN/NN` and an optional progress bar (`role="progressbar"`). The counter describes what is on screen; the progress bar describes where the order really is.
   - Connector: vertical gradient line (success → border) left of nodes; when `progressPercent` is provided, a `success` fill overlays the neutral track up to the current progress.
-  - Work-order adapter: `WizardProcessSidebar` opts into `group`, `warning`, `progressPercent` and per-stage `detail` derived from `stage_history`, `workflow_tasks` and `materials` (ADR-0098).
+  - Work-order adapter: `WizardProcessSidebar` opts into `group`, `warning`, `progressPercent` and per-stage `detail` derived from `stage_history`, `workflow_tasks` and `materials` (ADR-0099).
   - Work-order mobile: `MobileStageDrawer` replaces the former native `<select>` below `md` and renders the same steps from `buildWorkOrderRailSteps()` (labels, detail, warnings, current/viewing markers) in a bottom `Drawer`. Future stages stay disabled; while creating, all stages except origin remain locked until an OT type is chosen.
   - Removed: `footer` prop (was unused).
 - **`WizardSummarySidebar`** — summary rail. Props: `header`, `body`, `footer`,
