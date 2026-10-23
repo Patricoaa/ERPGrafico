@@ -38,6 +38,7 @@ export function TreasuryHeader() {
     if (activeValue === "bank-center") {
       const bankIdSegment = segments[2]
       if (bankIdSegment && !isNaN(Number(bankIdSegment))) return `bank-${bankIdSegment}`
+      if (!bankIdSegment) return "banks"
       return "all"
     }
     return undefined
@@ -80,7 +81,18 @@ export function TreasuryHeader() {
     if (activeValue === "bank-center" && subActiveValue) {
       const bankIdSegment = segments[2]
       const isBankRoute = !!bankIdSegment && !isNaN(Number(bankIdSegment))
-      const subViewValue = segments[3] || (isBankRoute ? "overview" : "banks")
+
+      // Gestión de Bancos es un elemento directo de Centro de Bancos.
+      if (subActiveValue === "banks") {
+        const banksTab = bankSubTabs.find((tab) => tab.value === "banks")
+        if (banksTab) return buildHeaderConfigFromTab(banksTab)
+      }
+
+      // En rutas de banco la sub-vista va tras el id; en las agregadas,
+      // "cards" agrupa /cards/unbilled y /cards/statements.
+      const subViewValue = isBankRoute
+        ? (segments[3] || "overview")
+        : (segments[2] || "banks")
       const bankTab = getBankSubView(bankSubTabs, subActiveValue, subViewValue)
       if (bankTab) {
         // Para banco específico, el título puede ser dinámico (nombre del banco)

@@ -146,11 +146,26 @@ export const BANK_SUB_VIEWS: NavTabConfig[] = [
 ]
 
 // ============================================
+// BANK CENTER: GESTIÓN DE BANCOS (primer nivel)
+// ============================================
+// La gestión de entidades es el primer elemento del grupo Centro de Bancos,
+// antes del subgrupo "Todos los Bancos" con las vistas agregadas.
+
+export const BANK_CENTER_BANKS_TAB: NavTabConfig = {
+  value: "banks",
+  label: "Gestión de Bancos",
+  href: "/treasury/bank-center",
+  iconName: "landmark",
+  headerTitle: "Gestión de Bancos",
+  headerDescription: "Administre las entidades bancarias, sus cuentas y productos financieros.",
+  metadataTitle: "Gestión de Bancos | ERPGrafico",
+}
+
+// ============================================
 // SUB-VISTAS AGREGADAS: BANK CENTER (todos los bancos)
 // ============================================
 // Rutas estáticas bajo /treasury/bank-center (preceden a [bankId], que sólo
-// captura ids numéricos). "overview" es el dashboard consolidado y "banks" la
-// lista de gestión de entidades bancarias (ruta raíz).
+// captura ids numéricos). "overview" es el dashboard consolidado.
 
 export const ALL_BANKS_SUB_VIEWS: NavTabConfig[] = [
   {
@@ -161,15 +176,6 @@ export const ALL_BANKS_SUB_VIEWS: NavTabConfig[] = [
     headerTitle: "Resumen de Bancos",
     headerDescription: "Vista consolidada de todos sus bancos, productos financieros y vencimientos.",
     metadataTitle: "Resumen de Bancos | ERPGrafico",
-  },
-  {
-    value: "banks",
-    label: "Gestión de Bancos",
-    href: "/treasury/bank-center",
-    iconName: "landmark",
-    headerTitle: "Gestión de Bancos",
-    headerDescription: "Administre las entidades bancarias, sus cuentas y productos financieros.",
-    metadataTitle: "Gestión de Bancos | ERPGrafico",
   },
   {
     value: "movements",
@@ -256,8 +262,9 @@ export const TREASURY_TABS: NavTabConfig[] = [
 ]
 
 /**
- * Construye los sub-tabs del Bank Center: tab "Todos" (con las sub-vistas
- * agregadas) + un tab por cada banco activo (con sus sub-vistas navegables).
+ * Construye los sub-tabs del Bank Center: gestión de bancos como primer
+ * elemento, subgrupo "Todos los Bancos" (vistas agregadas) y un tab por cada
+ * banco activo (con sus sub-vistas navegables).
  */
 export function buildBankSubTabs(
   banks: { id: number; is_active: boolean; name: string }[]
@@ -267,9 +274,9 @@ export function buildBankSubTabs(
     label: "Todos los Bancos",
     href: "/treasury/bank-center/overview",
     iconName: "layout-grid",
-    headerTitle: "Centro de Bancos",
+    headerTitle: "Todos los Bancos",
     headerDescription: "Vista consolidada de todos sus bancos, productos financieros y vencimientos.",
-    metadataTitle: "Centro de Bancos | ERPGrafico",
+    metadataTitle: "Todos los Bancos | ERPGrafico",
     subTabs: ALL_BANKS_SUB_VIEWS,
   }
 
@@ -289,7 +296,7 @@ export function buildBankSubTabs(
       })),
     }))
 
-  return [allTab, ...bankTabs]
+  return [BANK_CENTER_BANKS_TAB, allTab, ...bankTabs]
 }
 
 // ============================================
