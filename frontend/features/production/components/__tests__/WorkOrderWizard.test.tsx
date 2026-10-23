@@ -95,7 +95,7 @@ describe("WorkOrderWizard Tests", () => {
         )
 
         // Wait for Wizard header
-        expect(await screen.findByText("Crear Orden de Trabajo")).toBeInTheDocument()
+        expect(await screen.findByText("Nueva Orden de Trabajo")).toBeInTheDocument()
 
         // Only one dialog should be open (no nested BaseModals)
         const dialogs = screen.getAllByRole("dialog")
@@ -116,7 +116,7 @@ describe("WorkOrderWizard Tests", () => {
         )
 
         // Wait for title
-        expect(await screen.findByText("Crear Orden de Trabajo")).toBeInTheDocument()
+        expect(await screen.findByText("Nueva Orden de Trabajo")).toBeInTheDocument()
 
         // Step 0: Origen de Fabricación (type chooser).
         const buttonStock = screen.getByText("Producción para Stock")
@@ -149,6 +149,6 @@ describe("WorkOrderWizard Tests", () => {
         const dialogs = screen.getAllByRole("dialog")
         expect(dialogs).toHaveLength(1)
         
-        expect(screen.getByText("Gestión de Orden de Trabajo")).toBeInTheDocument()
+        expect(screen.getByText("Orden de Trabajo · Manual · Pre-Impresión")).toBeInTheDocument()
     })
 })

@@ -163,5 +163,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0096](0096-light-choice-card-and-inline-layout.md) | ChoiceCard light variant + CardSurface inline layout fix | Accepted |
 | [0097](0097-card-family-roles-and-surface-tokens.md) | Familia de cards — roles de superficie, layouts, rail único y tokens de superficie | Proposed |
 | [0098](0098-form-reset-layout-effect.md) | Form initialization resets in a layout effect (React 19 cross-component update rule) | Accepted |
+| [0099](0099-work-order-rail-status-board.md) | Work order rail as a status board — per-stage evidence, blockers, progress and collapse | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

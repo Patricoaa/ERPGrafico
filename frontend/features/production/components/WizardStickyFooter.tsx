@@ -73,6 +73,7 @@ export function WizardStickyFooter({
     } | null>(null)
 
     const isImplicitlyApproving = pendingTasks.length > 0 && canApproveAll
+    const isTerminal = order?.status === 'FINISHED' || order?.status === 'CANCELLED'
 
     const isNextDisabled = transitioning ||
         isMaterialApprovalIncomplete ||
@@ -122,6 +123,15 @@ export function WizardStickyFooter({
 
     // ── Left actions: Cerrar, Anterior, Ir a etapa actual ──
     const leftActions = useMemo(() => {
+        if (isTerminal) {
+            return (
+                <Button variant="outline" size="sm" onClick={onClose} className="gap-1.5">
+                    <X className="h-4 w-4" />
+                    Cerrar
+                </Button>
+            )
+        }
+
         if (stepMode === 'edit-in-place') {
             return (
                 <Button variant="outline" size="sm" onClick={onCancelEdit} className="gap-1.5">
@@ -158,10 +168,15 @@ export function WizardStickyFooter({
             )
         }
         return null
-    }, [stepMode, isViewingCurrentStage, onCancelEdit, onBackToCurrent, onClose, onBack, actualStepIndex, order?.status, transitioning])
+    }, [isTerminal, stepMode, isViewingCurrentStage, onCancelEdit, onBackToCurrent, onClose, onBack, actualStepIndex, order?.status, transitioning])
 
     // ── Right actions: Siguiente / Rectificar / Guardar / Seleccionar ──
     const rightActions = useMemo(() => {
+        // Terminal orders are read-only: only the close action remains.
+        if (isTerminal) {
+            return null
+        }
+
         // Edit-in-place: Guardar cambios
         if (stepMode === 'edit-in-place') {
             return (
@@ -288,7 +303,7 @@ export function WizardStickyFooter({
 
         return null
     }, [
-        stepMode, isViewingCurrentStage, isOriginSelectionStep, isSaleOrderProductStep,
+        isTerminal, stepMode, isViewingCurrentStage, isOriginSelectionStep, isSaleOrderProductStep,
         isProductSelectionStep, isMfgConfigStep, isRectificationStep, isCreating,
         isBasicInfoEditable, chosenOtType, transitioning, order?.status, stages,
         viewingStepIndex, pendingTasks, canApproveAll, isImplicitlyApproving,

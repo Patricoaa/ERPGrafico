@@ -1,8 +1,9 @@
 "use client"
 
+import { useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { CheckCircle2, Eye, Pencil, RotateCcw } from "lucide-react"
+import { Eye, Pencil, RotateCcw, type LucideIcon } from "lucide-react"
 import {
     Tooltip,
     TooltipContent,
@@ -10,10 +11,77 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-import { WizardStepsSidebar, type WizardSidebarStep, type WizardStepStatus } from "@/components/shared"
+import { WizardStepsSidebar } from "@/components/shared"
 
 import type { WorkOrderStage, WorkOrder, WizardStepMode } from "../types"
 import { getStepCapabilities } from "../lib/stepGovernance"
+import { buildWorkOrderRailSteps } from "../lib/railSteps"
+
+interface StageActionProps {
+    icon: LucideIcon
+    label: string
+    /** When present, the action is rendered as a focusable disabled control. */
+    reason?: string
+    active?: boolean
+    tone?: "info" | "warning" | "view"
+    onClick: () => void
+}
+
+/**
+ * A governance action that stays reachable when blocked.
+ *
+ * A disabled `<button>` does not emit pointer events, so its tooltip never
+ * fires (and on touch there is no hover at all). Blocked actions therefore
+ * render as a focusable `role="button"` with `aria-disabled`, plus a native
+ * `title` as fallback. Enabled actions use the regular Button.
+ */
+function StageAction({ icon: Icon, label, reason, active, tone, onClick }: StageActionProps) {
+    const blocked = Boolean(reason)
+    const className = cn(
+        "p-1 rounded transition-colors h-auto w-auto border-none bg-transparent shadow-none",
+        blocked ? "opacity-30 cursor-not-allowed" : "hover:bg-accent",
+        active && tone === "view" && "bg-accent",
+        active && tone === "info" && "bg-info/20",
+        active && tone === "warning" && "bg-warning/20",
+    )
+
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                {blocked ? (
+                    <span
+                        role="button"
+                        tabIndex={0}
+                        aria-disabled="true"
+                        aria-label={`${label}: ${reason}`}
+                        title={`${label}: ${reason}`}
+                        className={className}
+                        onClick={(event) => event.preventDefault()}
+                        onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault()
+                            }
+                        }}
+                    >
+                        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                    </span>
+                ) : (
+                    <Button
+                        variant="ghost"
+                        className={className}
+                        onClick={onClick}
+                        aria-label={label}
+                    >
+                        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                    </Button>
+                )}
+            </TooltipTrigger>
+            <TooltipContent side="right">
+                {blocked ? reason : label}
+            </TooltipContent>
+        </Tooltip>
+    )
+}
 
 interface WizardProcessSidebarProps {
     stages: WorkOrderStage[]
@@ -22,6 +90,8 @@ interface WizardProcessSidebarProps {
     stepMode: WizardStepMode
     onStepClick: (index: number, mode: WizardStepMode) => void
     order: WorkOrder | null
+    collapsed?: boolean
+    onToggleCollapsed?: () => void
 }
 
 export function WizardProcessSidebar({
@@ -31,44 +101,37 @@ export function WizardProcessSidebar({
     stepMode,
     onStepClick,
     order,
+    collapsed,
+    onToggleCollapsed,
 }: WizardProcessSidebarProps) {
-    const steps: WizardSidebarStep[] = stages.map((stage, index) => {
-        const isActive = viewingStepIndex === index
-        const isPast = actualStepIndex > index
-        const isCurrent = actualStepIndex === index
-        const isFuture = actualStepIndex < index
+    const steps = useMemo(
+        () => buildWorkOrderRailSteps({
+            stages,
+            viewingStepIndex,
+            actualStepIndex,
+            stepMode,
+            order,
+        }),
+        [stages, viewingStepIndex, actualStepIndex, stepMode, order],
+    )
 
-        // Determine effective status
-        let status: WizardStepStatus
-        if (isActive) {
-            status = "active"
-        } else if (isCurrent && !isActive) {
-            // The actual current stage (where the order really is) but we're viewing a different one
-            status = "current"
-        } else if (isPast) {
-            status = "past"
-        } else {
-            status = "future"
-        }
+    const progressPercent = actualStepIndex >= 0 && stages.length > 0
+        ? ((actualStepIndex + 1) / stages.length) * 100
+        : undefined
 
-        const capabilities = isPast && order
-            ? getStepCapabilities(stage.id as string, order)
-            : null
+    const isCancelled = order?.status === "CANCELLED"
+    const isFinished = order?.status === "FINISHED"
+    const isTerminal = isCancelled || isFinished
 
-        return {
-            id: stage.id,
-            label: stage.label,
-            icon: stage.icon,
-            status,
-            disabled: isFuture,
-            className: cn("group"),
-            badge: isCurrent && !isActive && (
-                <span className="text-3xs font-mono font-black text-primary/70 px-1.5 py-0.5 bg-primary/10 rounded border border-primary/20">
-                    actual
-                </span>
-            ),
-        }
-    })
+    const headerNote = isCancelled ? (
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1.5 text-2xs font-medium leading-snug text-destructive">
+            Orden cancelada · solo lectura
+        </div>
+    ) : isFinished ? (
+        <div className="rounded-md border border-success/30 bg-success/5 px-2 py-1.5 text-2xs font-medium leading-snug text-success">
+            Producción finalizada
+        </div>
+    ) : undefined
 
     return (
         <TooltipProvider delayDuration={300}>
@@ -76,120 +139,58 @@ export function WizardProcessSidebar({
                 title="Etapas"
                 currentStep={viewingStepIndex + 1}
                 steps={steps}
-                width="w-60"
-                className="p-2 space-y-0 bg-transparent"
+                width="w-64"
+                className="bg-transparent"
                 onStepClick={(index) => onStepClick(index, "view")}
                 showNumbers={true}
                 detailVisibility="both"
+                progressPercent={progressPercent}
+                counterLabel="Viendo"
+                collapsed={collapsed}
+                onToggleCollapsed={onToggleCollapsed}
+                headerNote={headerNote}
                 renderStepActions={(step, index) => {
                     const isActive = viewingStepIndex === index
                     const isPast = actualStepIndex > index
-                    const isCurrent = actualStepIndex === index
 
-                    // Governance: only for past steps when an order exists.
-                    const capabilities = isPast && order
-                        ? getStepCapabilities(step.id as string, order)
-                        : null
+                    if (!isPast || !order || isTerminal) return null
 
-                    // Mode indicator on the currently viewed step.
-                    if (isActive) {
-                        if (stepMode === "edit-in-place") return <div className="h-1.5 w-1.5 rounded-full bg-info animate-pulse" />
-                        if (stepMode === "rewind") return <div className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse" />
-                    }
-
-                    if (!capabilities) {
-                        if (isPast) {
-                            return (
-                                <CheckCircle2 className={cn(
-                                    "h-3.5 w-3.5",
-                                    isActive ? "text-primary-foreground" : "text-success",
-                                )} />
-                            )
-                        }
-                        if (isCurrent && !isActive) {
-                            return <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                        }
-                        return null
-                    }
+                    const capabilities = getStepCapabilities(step.id as string, order)
 
                     return (
                         <div
                             className="flex items-center gap-0.5"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <CheckCircle2 className={cn(
-                                "h-3.5 w-3.5 transition-opacity",
-                                "group-hover:opacity-0 group-hover:w-0 group-hover:overflow-hidden",
-                                isActive ? "text-primary-foreground" : "text-success",
-                            )} />
+                            <StageAction
+                                icon={Eye}
+                                label="Ver etapa (solo lectura)"
+                                active={isActive && stepMode === "view"}
+                                tone="view"
+                                onClick={() => onStepClick(index, "view")}
+                            />
 
-                            <div className="hidden group-hover:flex items-center gap-0.5">
-                                {/* View */}
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            className={cn(
-                                                "p-1 rounded hover:bg-accent transition-colors h-auto w-auto border-none bg-transparent shadow-none",
-                                                isActive && stepMode === "view" && "bg-accent",
-                                            )}
-                                            onClick={() => onStepClick(index, "view")}
-                                            aria-label="Ver etapa"
-                                        >
-                                            <Eye className="h-3.5 w-3.5" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="right">Ver etapa (solo lectura)</TooltipContent>
-                                </Tooltip>
+                            <StageAction
+                                icon={Pencil}
+                                label="Editar datos de etapa"
+                                reason={capabilities.canEdit
+                                    ? undefined
+                                    : capabilities.editBlockedReason ?? "No se puede editar en este estado"}
+                                active={isActive && stepMode === "edit-in-place"}
+                                tone="info"
+                                onClick={() => onStepClick(index, "edit-in-place")}
+                            />
 
-                                {/* Edit-in-place */}
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            disabled={!capabilities.canEdit}
-                                            className={cn(
-                                                "p-1 rounded hover:bg-accent transition-colors h-auto w-auto border-none bg-transparent shadow-none",
-                                                !capabilities.canEdit && "opacity-30 cursor-not-allowed",
-                                                isActive && stepMode === "edit-in-place" && "bg-info/20",
-                                            )}
-                                            onClick={() => capabilities.canEdit && onStepClick(index, "edit-in-place")}
-                                            aria-label="Editar datos de etapa"
-                                        >
-                                            <Pencil className="h-3.5 w-3.5" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="right">
-                                        {capabilities.canEdit
-                                            ? "Editar datos de esta etapa"
-                                            : capabilities.editBlockedReason ?? "No se puede editar en este estado"}
-                                    </TooltipContent>
-                                </Tooltip>
-
-                                {/* Rewind */}
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            disabled={!capabilities.canRewind}
-                                            className={cn(
-                                                "p-1 rounded hover:bg-accent transition-colors h-auto w-auto border-none bg-transparent shadow-none",
-                                                !capabilities.canRewind && "opacity-30 cursor-not-allowed",
-                                                isActive && stepMode === "rewind" && "bg-warning/20",
-                                            )}
-                                            onClick={() => capabilities.canRewind && onStepClick(index, "rewind")}
-                                            aria-label="Retroceder a esta etapa"
-                                        >
-                                            <RotateCcw className="h-3.5 w-3.5" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="right">
-                                        {capabilities.canRewind
-                                            ? "Retroceder a esta etapa"
-                                            : capabilities.rewindBlockedReason ?? "No se puede retroceder en este estado"}
-                                    </TooltipContent>
-                                </Tooltip>
-                            </div>
+                            <StageAction
+                                icon={RotateCcw}
+                                label="Retroceder a esta etapa"
+                                reason={capabilities.canRewind
+                                    ? undefined
+                                    : capabilities.rewindBlockedReason ?? "No se puede retroceder en este estado"}
+                                active={isActive && stepMode === "rewind"}
+                                tone="warning"
+                                onClick={() => onStepClick(index, "rewind")}
+                            />
                         </div>
                     )
                 }}
