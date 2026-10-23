@@ -174,7 +174,6 @@ export function WizardStepsSidebar({
                         const explicitStatus = step.status
                         const isActive = explicitStatus === "active" || (!explicitStatus && currentStep === stepNumber)
                         const isPast = explicitStatus === "past" || (!explicitStatus && currentStep > stepNumber)
-                        const isCurrent = explicitStatus === "current" || (!explicitStatus && currentStep === stepNumber && !isActive)
                         const isFuture = explicitStatus === "future" || (!explicitStatus && currentStep < stepNumber)
 
                         // When both explicit status and currentStep align to "active", prefer explicit
@@ -311,12 +310,17 @@ export function WizardStepsSidebar({
                                             )}
                                         </div>
 
-                                        {/* Actions column (hover-reveal, z-10 above stretched link) */}
+                                        {/* Actions column (hover/focus reveal, z-10 above stretched link) */}
                                         {renderStepActions && (
                                             <div
+                                                data-testid="step-actions"
                                                 className={cn(
-                                                    "shrink-0 hidden group-hover:flex items-center gap-0.5",
-                                                    isClickable && "opacity-100"
+                                                    "shrink-0 flex items-center gap-0.5",
+                                                    "opacity-0 pointer-events-none",
+                                                    "transition-opacity duration-150 motion-reduce:transition-none",
+                                                    "group-hover:opacity-100 group-hover:pointer-events-auto",
+                                                    "group-focus-within:opacity-100 group-focus-within:pointer-events-auto",
+                                                    "pointer-coarse:opacity-100 pointer-coarse:pointer-events-auto"
                                                 )}
                                                 onClick={(e) => e.stopPropagation()}
                                             >

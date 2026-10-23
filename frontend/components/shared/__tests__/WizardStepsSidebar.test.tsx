@@ -140,6 +140,25 @@ describe("WizardStepsSidebar — status board rail", () => {
         expect(screen.getByTestId("action-2")).toBeInTheDocument()
     })
 
+    it("reveals actions on hover, focus-within and coarse pointers", async () => {
+        render(
+            <WizardStepsSidebar
+                title="Proceso"
+                currentStep={1}
+                steps={baseSteps}
+                renderStepActions={(step, index) => (
+                    <button aria-label={`action-${index}`}>x</button>
+                )}
+            />,
+        )
+        const actions = screen.getAllByTestId("step-actions")[0]
+        expect(actions.className).toContain("opacity-0")
+        expect(actions.className).toContain("group-hover:opacity-100")
+        expect(actions.className).toContain("group-focus-within:opacity-100")
+        expect(actions.className).toContain("pointer-coarse:opacity-100")
+        expect(actions.className).not.toContain("hidden")
+    })
+
     it("renders badge on step when provided", async () => {
         const stepsWithBadge = [
             { ...baseSteps[0], badge: <span className="bg-primary/10 text-primary text-3xs px-1 rounded">nuevo</span> },

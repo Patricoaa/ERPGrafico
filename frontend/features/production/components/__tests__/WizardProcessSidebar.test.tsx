@@ -1,9 +1,9 @@
-import { render, screen } from "@testing-library/react"
+import { render, screen, within } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { Layers, Printer, ShoppingCart } from "lucide-react"
 
 import { WizardProcessSidebar } from "../WizardProcessSidebar"
-import type { WorkOrder, WorkOrderStage } from "../../types"
+import type { WorkOrder, WorkOrderStage, WizardStepMode } from "../../types"
 
 const stages: WorkOrderStage[] = [
     { id: "ORIGIN_SELECTION", label: "Origen", icon: ShoppingCart, alwaysShow: true, isCreationStep: true },
@@ -40,13 +40,18 @@ function makeOrder(overrides: Partial<WorkOrder> = {}): WorkOrder {
     }
 }
 
-function renderSidebar(order: WorkOrder, viewingStepIndex = 1, actualStepIndex = 1) {
+function renderSidebar(
+    order: WorkOrder,
+    viewingStepIndex = 1,
+    actualStepIndex = 1,
+    stepMode: WizardStepMode = "view",
+) {
     return render(
         <WizardProcessSidebar
             stages={stages}
             viewingStepIndex={viewingStepIndex}
             actualStepIndex={actualStepIndex}
-            stepMode="view"
+            stepMode={stepMode}
             onStepClick={vi.fn()}
             order={order}
         />,
@@ -109,5 +114,46 @@ describe("WizardProcessSidebar — status board", () => {
         )
 
         expect(screen.getByText("Desde 20/10/2026 · Ana")).toBeInTheDocument()
+    })
+
+    it("exposes blocked governance actions as focusable disabled controls", () => {
+        renderSidebar(makeOrder({ status: "IN_PROGRESS" }), 0, 1)
+
+        const edit = screen.getByLabelText(/Editar datos de etapa: No se puede editar/)
+        expect(edit).toHaveAttribute("aria-disabled", "true")
+        expect(edit).toHaveAttribute("tabindex", "0")
+        expect(edit).toHaveAttribute("title", expect.stringContaining("No se puede editar"))
+
+        const rewind = screen.getByLabelText(/Retroceder a esta etapa: No se puede retroceder/)
+        expect(rewind).toHaveAttribute("aria-disabled", "true")
+        expect(rewind).toHaveAttribute("tabindex", "0")
+
+        // View stays enabled and is a real button.
+        expect(screen.getByLabelText("Ver etapa (solo lectura)").tagName).toBe("BUTTON")
+    })
+
+    it("labels the active edit and rewind modes", () => {
+        const { rerender } = renderSidebar(makeOrder(), 1, 1, "edit-in-place")
+        expect(screen.getByText("Editando")).toBeInTheDocument()
+
+        rerender(
+            <WizardProcessSidebar
+                stages={stages}
+                viewingStepIndex={1}
+                actualStepIndex={1}
+                stepMode="rewind"
+                onStepClick={vi.fn()}
+                order={makeOrder()}
+            />,
+        )
+        expect(screen.getByText("Retroceso")).toBeInTheDocument()
+    })
+
+    it("does not render governance actions on future stages", () => {
+        renderSidebar(makeOrder(), 1, 1)
+
+        const futureRow = screen.getByTestId("step-2")
+        expect(within(futureRow).queryByRole("button", { name: /Ver etapa/ })).not.toBeInTheDocument()
+        expect(within(futureRow).queryByLabelText(/Editar datos de etapa/)).not.toBeInTheDocument()
     })
 })

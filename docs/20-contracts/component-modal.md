@@ -295,7 +295,7 @@ re-exported from `@/components/shared`):
     - `progressPercent?: number` — 0–100; renders the header progress bar and the progress-aware connector. Omit to keep the legacy gradient connector.
     - `density?: 'compact' | 'comfortable'` (default `'compact'`)
     - `className?: string`
-  - A11y: each row is a `<button>` (stretched-link pattern) with `aria-current="step"` on active, `aria-disabled` on future/disabled. Future steps are non-clickable by construction. Actions render in a separate `z-10` column, never nested inside the button. `detail` is linked via `aria-describedby`; warnings are part of the row label.
+  - A11y: each row is a `<button>` (stretched-link pattern) with `aria-current="step"` on active, `aria-disabled` on future/disabled. Future steps are non-clickable by construction. Actions render in a separate `z-10` column, never nested inside the button; they are revealed on hover, `focus-within` and coarse pointers, so keyboard and touch users can reach them. Blocked governance actions are rendered as focusable `role="button"` elements with `aria-disabled` (disabled buttons do not fire tooltips reliably). `detail` is linked via `aria-describedby`; warnings are part of the row label.
   - Auto-scroll: the rail scrolls its own container (never an ancestor drawer) so the active step stays below the sticky header.
   - Header: sticky, with `Viendo NN/NN` and an optional progress bar (`role="progressbar"`). The counter describes what is on screen; the progress bar describes where the order really is.
   - Connector: vertical gradient line (success → border) left of nodes; when `progressPercent` is provided, a `success` fill overlays the neutral track up to the current progress.
