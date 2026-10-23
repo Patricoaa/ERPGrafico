@@ -20,7 +20,7 @@ interface SimulationResult {
 
 export function useStatementsQuery(params?: Record<string, string>) {
     return useQuery({
-        queryKey: reconciliationKeys.statements(),
+        queryKey: reconciliationKeys.statements(params),
         queryFn: () => financeApi.getStatements(params) as unknown as Promise<BankStatement[]>,
         staleTime: staleTime.standard,
     })

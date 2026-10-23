@@ -149,10 +149,28 @@ export const BANK_SUB_VIEWS: NavTabConfig[] = [
 // SUB-VISTAS AGREGADAS: BANK CENTER (todos los bancos)
 // ============================================
 // Rutas estáticas bajo /treasury/bank-center (preceden a [bankId], que sólo
-// captura ids numéricos). No incluyen "overview": la vista consolidada es la
-// propia lista de bancos.
+// captura ids numéricos). "overview" es el dashboard consolidado y "banks" la
+// lista de gestión de entidades bancarias (ruta raíz).
 
 export const ALL_BANKS_SUB_VIEWS: NavTabConfig[] = [
+  {
+    value: "overview",
+    label: "Resumen",
+    href: "/treasury/bank-center/overview",
+    iconName: "bar-chart-3",
+    headerTitle: "Resumen de Bancos",
+    headerDescription: "Vista consolidada de todos sus bancos, productos financieros y vencimientos.",
+    metadataTitle: "Resumen de Bancos | ERPGrafico",
+  },
+  {
+    value: "banks",
+    label: "Gestión de Bancos",
+    href: "/treasury/bank-center",
+    iconName: "landmark",
+    headerTitle: "Gestión de Bancos",
+    headerDescription: "Administre las entidades bancarias, sus cuentas y productos financieros.",
+    metadataTitle: "Gestión de Bancos | ERPGrafico",
+  },
   {
     value: "movements",
     label: "Movimientos Bancarios",
@@ -246,8 +264,8 @@ export function buildBankSubTabs(
 ): NavTabConfig[] {
   const allTab: NavTabConfig = {
     value: "all",
-    label: "Centro de Bancos",
-    href: "/treasury/bank-center",
+    label: "Todos los Bancos",
+    href: "/treasury/bank-center/overview",
     iconName: "layout-grid",
     headerTitle: "Centro de Bancos",
     headerDescription: "Vista consolidada de todos sus bancos, productos financieros y vencimientos.",

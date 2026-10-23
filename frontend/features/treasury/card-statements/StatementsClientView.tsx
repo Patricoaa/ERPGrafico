@@ -9,11 +9,12 @@ import {
     UnifiedSearchBar, useUnifiedSearch,
     MoneyDisplay, StatCard, bindUnifiedSearch,
 } from '@/components/shared'
-import type { UnifiedSearchConfig } from '@/types/unified-search'
+import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
 import { Collection, useEntityCollection, type FieldId } from '@/components/entity-view'
 import { creditCardStatementEntity, creditCardStatementViews } from '../entity-view/creditCardStatement.entity'
 import { useCardStatements } from '../hooks/useCardStatements'
 import { useCardAccounts } from '../hooks/useCardAccounts'
+import { useBanks } from '../hooks/useMasterData'
 import { StatementDetailModal } from './StatementDetailModal'
 import { PayStatementModal } from './PayStatementModal'
 import { statementActions, type StatementActionsCtx } from './statementActions'
@@ -34,7 +35,15 @@ const STATEMENT_GROUPS: Record<string, FieldId<typeof creditCardStatementEntity.
 
 export function StatementsClientView({ bankId }: StatementsClientViewProps) {
     const searchParams = useSearchParams()
-    const { cardAccounts: creditCardAccounts } = useCardAccounts(bankId)
+    const bankParam = searchParams.get("bank")
+    const selectedBankId = bankParam && !isNaN(Number(bankParam)) ? Number(bankParam) : undefined
+    const effectiveBankId = bankId ?? selectedBankId
+    const { banks } = useBanks()
+    const filterOptions: Record<string, MultiSelectOption[]> = useMemo(
+        () => ({ bank: banks.map((bank) => ({ label: bank.name, value: String(bank.id) })) }),
+        [banks],
+    )
+    const { cardAccounts: creditCardAccounts } = useCardAccounts(effectiveBankId)
     const isAggregate = !bankId
 
     const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
@@ -42,12 +51,8 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
     const isDetailOpen = !!selectedId && (action === "detail" || !action)
     const isPayOpen = !!selectedId && action === "pay"
 
-    const unifiedConfig: UnifiedSearchConfig = useMemo(() => ({
-        searchFields: [
-            { key: 'display_id', label: 'N° Estado', type: 'text', serverParam: 'search', clientKey: 'display_id' },
-            { key: 'billed_amount', label: 'Monto facturado', type: 'text', serverParam: 'search' },
-        ],
-        filters: [
+    const unifiedConfig: UnifiedSearchConfig = useMemo(() => {
+        const filters: NonNullable<UnifiedSearchConfig['filters']> = [
             {
                 type: 'single',
                 key: 'card',
@@ -59,39 +64,51 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                     ...creditCardAccounts.map(a => ({ label: a.name, value: String(a.id) })),
                 ],
             },
-        ],
-        dateFilters: [
-            {
-                type: 'date',
-                key: 'cutoff_date',
-                label: 'Fecha de corte',
-                options: [
-                    { label: 'Hoy', serverParamFrom: 'cutoff_from', serverParamTo: 'cutoff_to', getValue: today },
-                    { label: 'Esta semana', serverParamFrom: 'cutoff_from', serverParamTo: 'cutoff_to', getValue: thisWeek },
-                    { label: 'Este mes', serverParamFrom: 'cutoff_from', serverParamTo: 'cutoff_to', getValue: thisMonth },
-                    { label: 'Este trimestre', serverParamFrom: 'cutoff_from', serverParamTo: 'cutoff_to', getValue: thisQuarter },
-                    { label: 'Este año', serverParamFrom: 'cutoff_from', serverParamTo: 'cutoff_to', getValue: thisYear },
-                ],
-            },
-        ],
-        basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
-        groupBy: [
-            { key: 'status', label: 'Estado', field: 'status' },
-            { key: 'period_month', label: 'Mes', field: 'period_month' },
-        ],
-    }), [creditCardAccounts, isAggregate])
+        ]
+        if (isAggregate) {
+            filters.unshift({ type: 'single', key: 'bank', label: 'Banco', serverParam: 'bank', dynamic: true })
+        }
+        return {
+            searchFields: [
+                { key: 'display_id', label: 'N° Estado', type: 'text', serverParam: 'search', clientKey: 'display_id' },
+                { key: 'billed_amount', label: 'Monto facturado', type: 'text', serverParam: 'search' },
+            ],
+            filters,
+            dateFilters: [
+                {
+                    type: 'date',
+                    key: 'cutoff_date',
+                    label: 'Fecha de corte',
+                    options: [
+                        { label: 'Hoy', serverParamFrom: 'cutoff_from', serverParamTo: 'cutoff_to', getValue: today },
+                        { label: 'Esta semana', serverParamFrom: 'cutoff_from', serverParamTo: 'cutoff_to', getValue: thisWeek },
+                        { label: 'Este mes', serverParamFrom: 'cutoff_from', serverParamTo: 'cutoff_to', getValue: thisMonth },
+                        { label: 'Este trimestre', serverParamFrom: 'cutoff_from', serverParamTo: 'cutoff_to', getValue: thisQuarter },
+                        { label: 'Este año', serverParamFrom: 'cutoff_from', serverParamTo: 'cutoff_to', getValue: thisYear },
+                    ],
+                },
+            ],
+            basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
+            groupBy: [
+                { key: 'status', label: 'Estado', field: 'status' },
+                { key: 'period_month', label: 'Mes', field: 'period_month' },
+            ],
+        }
+    }, [creditCardAccounts, isAggregate])
 
-    const search = useUnifiedSearch(unifiedConfig)
+    const search = useUnifiedSearch(unifiedConfig, filterOptions)
 
     const cardFilter = search.filters.card
     const selectedCardId = cardFilter && cardFilter !== 'all' ? Number(cardFilter) : null
-    const cardAccountId = selectedCardId ?? (bankId ? (creditCardAccounts[0]?.id ?? null) : null)
+    const cardAccountId = selectedCardId !== null && creditCardAccounts.some((account) => account.id === selectedCardId)
+        ? selectedCardId
+        : (bankId ? (creditCardAccounts[0]?.id ?? null) : null)
 
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState("rendimiento")
     const [granularity, setGranularity] = useState<Granularity>("month")
 
     const params: Record<string, string> = {}
-    if (bankId) params.bank = String(bankId)
+    if (effectiveBankId) params.bank = String(effectiveBankId)
     if (cardAccountId) params.card_account = String(cardAccountId)
 
     const analyticsCardId: number | null | undefined = bankId
@@ -147,6 +164,7 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                     <UnifiedSearchBar
                         config={unifiedConfig}
                         {...bindUnifiedSearch(search)}
+                        filterOptions={search.filterOptions}
                         placeholder="Buscar por N° de estado o monto..."
                     />
                 </Collection.Toolbar>

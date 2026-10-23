@@ -11,7 +11,7 @@ export function AllBanksReconciliationClientView() {
     const { accounts } = useTreasuryAccounts({ filters: { account_type: "CHECKING" } })
     const checkingAccounts = accounts
         .filter((a) => a.account_type === "CHECKING")
-        .map((a) => ({ id: a.id, name: a.name }))
+        .map((a) => ({ id: a.id, name: a.name, bank: a.bank ?? null }))
 
     return (
         <div className="flex-1 min-h-0">
