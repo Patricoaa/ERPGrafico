@@ -26,6 +26,9 @@ export interface SaleFulfillment {
 
 export const saleFulfillmentEntity = defineEntity<SaleFulfillment>()((f) => ({
     label: "sales.saledelivery",
+    // IDs come from two separate DB tables (saledelivery + salereturn), so numeric
+    // IDs can collide. Compound key prevents duplicate React keys in the card grid.
+    rowId: (d) => `${d.fulfillment_type}-${d.id}`,
     fields: {
         folio: f.code((d) => d.display_id ?? d.number, { label: "Folio", orderBy: "number" }),
         type: f.status((d) => ({
