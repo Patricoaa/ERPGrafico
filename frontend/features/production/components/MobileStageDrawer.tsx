@@ -56,6 +56,8 @@ export function MobileStageDrawer({
     const currentStage = stages[viewingStepIndex] ?? stages[0]
     const CurrentIcon = currentStage?.icon
     const creationLocked = isCreating && chosenOtType === null
+    const isCancelled = order?.status === "CANCELLED"
+    const isFinished = order?.status === "FINISHED"
 
     return (
         <>
@@ -83,7 +85,13 @@ export function MobileStageDrawer({
                 open={open}
                 onOpenChange={setOpen}
                 title="Etapas"
-                subtitle={`Viendo ${pad(viewingStepIndex + 1)} / ${pad(stages.length)}`}
+                subtitle={
+                    isCancelled
+                        ? "Cancelada · solo lectura"
+                        : isFinished
+                        ? "Producción finalizada"
+                        : `Viendo ${pad(viewingStepIndex + 1)} / ${pad(stages.length)}`
+                }
                 side="bottom"
                 boundary="embedded"
                 defaultSize="70vh"
@@ -94,6 +102,18 @@ export function MobileStageDrawer({
                 contentClassName="min-h-0 flex flex-col"
             >
                 <div role="list" aria-label="Etapas de la orden de trabajo" className="min-h-0 flex-1 overflow-y-auto p-2">
+                    {(isCancelled || isFinished) && (
+                        <div
+                            className={cn(
+                                "mb-2 rounded-md border px-2 py-1.5 text-2xs font-medium",
+                                isCancelled
+                                    ? "border-destructive/30 bg-destructive/5 text-destructive"
+                                    : "border-success/30 bg-success/5 text-success",
+                            )}
+                        >
+                            {isCancelled ? "Orden cancelada · solo lectura" : "Producción finalizada"}
+                        </div>
+                    )}
                     {steps.map((step, index) => {
                         const isViewing = index === viewingStepIndex
                         const isPast = step.status === "past"

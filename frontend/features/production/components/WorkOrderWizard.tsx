@@ -415,7 +415,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         return
       }
       if (!e.ctrlKey) return
-      if (e.key === 'ArrowRight' && isViewingCurrentStage && order?.status !== 'FINISHED') {
+      if (e.key === 'ArrowRight' && isViewingCurrentStage && order?.status !== 'FINISHED' && order?.status !== 'CANCELLED') {
         const nextStage = STAGES[viewingStepIndex + 1]
         if (!nextStage) return
         const blocked = pendingTasks.some((t) => !canUserCompleteTask(t)) ||

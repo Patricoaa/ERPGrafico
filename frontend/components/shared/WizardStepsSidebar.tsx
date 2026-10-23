@@ -45,6 +45,8 @@ export interface WizardStepsSidebarProps {
     onToggleCollapsed?: () => void
     /** Width used when `collapsed` is true (default `w-14`). */
     collapsedWidth?: string
+    /** Optional banner below the header, e.g. a terminal-state notice. */
+    headerNote?: ReactNode
 }
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, Math.round(value)))
@@ -66,6 +68,7 @@ export function WizardStepsSidebar({
     collapsed = false,
     onToggleCollapsed,
     collapsedWidth = "w-14",
+    headerNote,
 }: WizardStepsSidebarProps) {
     const railRef = useRef<HTMLDivElement>(null)
     const detailIdPrefix = useId()
@@ -156,6 +159,9 @@ export function WizardStepsSidebar({
                         )}
                     </div>
                 </div>
+                {headerNote && !collapsed && (
+                    <div className="px-2 pb-1">{headerNote}</div>
+                )}
                 {hasProgress && !collapsed && (
                     <div className="flex items-center gap-2 px-2 pb-2">
                         <div

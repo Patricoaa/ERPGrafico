@@ -9,6 +9,7 @@ author: frontend-team
 # 0096 — Wizard step rail redesign
 
 **Related:** `docs/20-contracts/component-modal.md` (Sidebar primitives), ADR-0070 (Primary = K100), ADR-0075 (FadeIn-only), `docs/20-contracts/color-system.md`
+**Extended by:** ADR-0098 (work order rail as a status board)
 
 ---
 

@@ -119,6 +119,20 @@ export function WizardProcessSidebar({
         ? ((actualStepIndex + 1) / stages.length) * 100
         : undefined
 
+    const isCancelled = order?.status === "CANCELLED"
+    const isFinished = order?.status === "FINISHED"
+    const isTerminal = isCancelled || isFinished
+
+    const headerNote = isCancelled ? (
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1.5 text-2xs font-medium leading-snug text-destructive">
+            Orden cancelada · solo lectura
+        </div>
+    ) : isFinished ? (
+        <div className="rounded-md border border-success/30 bg-success/5 px-2 py-1.5 text-2xs font-medium leading-snug text-success">
+            Producción finalizada
+        </div>
+    ) : undefined
+
     return (
         <TooltipProvider delayDuration={300}>
             <WizardStepsSidebar
@@ -134,11 +148,12 @@ export function WizardProcessSidebar({
                 counterLabel="Viendo"
                 collapsed={collapsed}
                 onToggleCollapsed={onToggleCollapsed}
+                headerNote={headerNote}
                 renderStepActions={(step, index) => {
                     const isActive = viewingStepIndex === index
                     const isPast = actualStepIndex > index
 
-                    if (!isPast || !order) return null
+                    if (!isPast || !order || isTerminal) return null
 
                     const capabilities = getStepCapabilities(step.id as string, order)
 

@@ -126,4 +126,33 @@ describe("MobileStageDrawer", () => {
         expect(within(dialog).getByRole("button", { name: /Materiales/ })).toBeDisabled()
         expect(within(dialog).getByRole("button", { name: /Pre-prensa/ })).toBeDisabled()
     })
+
+    it("explains terminal states in the drawer", async () => {
+        renderPicker({
+            order: makeOrder({ status: "CANCELLED" }),
+            viewingStepIndex: 0,
+            actualStepIndex: -1,
+        })
+
+        fireEvent.click(screen.getByRole("button", { name: /Origen/ }))
+
+        const dialog = await screen.findByRole("dialog")
+        expect(within(dialog).getByText("Cancelada · solo lectura")).toBeInTheDocument()
+        expect(within(dialog).getByText("Orden cancelada · solo lectura")).toBeInTheDocument()
+        expect(within(dialog).getByRole("button", { name: /Materiales/ })).toBeDisabled()
+    })
+
+    it("marks a finished order as terminal", async () => {
+        renderPicker({
+            order: makeOrder({ status: "FINISHED", current_stage: "PREPRESS" }),
+            viewingStepIndex: 2,
+            actualStepIndex: 2,
+        })
+
+        fireEvent.click(screen.getByRole("button", { name: /Pre-prensa/ }))
+
+        const dialog = await screen.findByRole("dialog")
+        expect(within(dialog).getAllByText("Producción finalizada")).toHaveLength(2)
+        expect(within(dialog).getByRole("button", { name: /Pre-prensa/ })).not.toBeDisabled()
+    })
 })

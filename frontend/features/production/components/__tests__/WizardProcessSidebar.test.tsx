@@ -176,4 +176,25 @@ describe("WizardProcessSidebar — status board", () => {
         expect(screen.getByTestId("step-0")).toBeInTheDocument()
         expect(screen.getByRole("button", { name: "Expandir etapas" })).toBeInTheDocument()
     })
+
+    it("shows a read-only terminal note and hides progress for cancelled orders", () => {
+        renderSidebar(makeOrder({ status: "CANCELLED" }), 0, -1)
+
+        expect(screen.getByText("Orden cancelada · solo lectura")).toBeInTheDocument()
+        expect(screen.queryByTestId("rail-progress")).not.toBeInTheDocument()
+        expect(screen.queryByTitle("1 material sin stock")).not.toBeInTheDocument()
+        expect(screen.queryByLabelText(/Editar datos de etapa/)).not.toBeInTheDocument()
+    })
+
+    it("shows 100% progress and a finished note for completed orders", () => {
+        renderSidebar(
+            makeOrder({ status: "FINISHED", current_stage: "PREPRESS" }),
+            2,
+            2,
+        )
+
+        expect(screen.getByText("Producción finalizada")).toBeInTheDocument()
+        expect(screen.getByTestId("rail-progress")).toHaveAttribute("aria-valuenow", "100")
+        expect(screen.queryByTitle("1 material sin stock")).not.toBeInTheDocument()
+    })
 })

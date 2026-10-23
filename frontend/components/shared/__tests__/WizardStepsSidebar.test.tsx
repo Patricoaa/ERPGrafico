@@ -331,4 +331,16 @@ describe("WizardStepsSidebar — status board rail", () => {
         )
         expect(screen.queryByRole("button", { name: "action" })).not.toBeInTheDocument()
     })
+
+    it("renders an optional header note", async () => {
+        render(
+            <WizardStepsSidebar
+                title="Proceso"
+                currentStep={1}
+                steps={baseSteps}
+                headerNote={<span>Orden cancelada · solo lectura</span>}
+            />,
+        )
+        expect(screen.getByText("Orden cancelada · solo lectura")).toBeInTheDocument()
+    })
 })

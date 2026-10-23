@@ -296,10 +296,12 @@ re-exported from `@/components/shared`):
     - `collapsed?: boolean` (default `false`) — icon-only rail for power users.
     - `onToggleCollapsed?: () => void` — renders the collapse/expand control in the sticky header when provided.
     - `collapsedWidth?: string` (default `'w-14'`) — width used when `collapsed` is true.
+    - `headerNote?: ReactNode` — optional banner below the sticky header, e.g. a terminal-state notice.
     - `density?: 'compact' | 'comfortable'` (default `'compact'`)
     - `className?: string`
   - A11y: each row is a `<button>` (stretched-link pattern) with `aria-current="step"` on active, `aria-disabled` on future/disabled. Future steps are non-clickable by construction. Actions render in a separate `z-10` column, never nested inside the button; they are revealed on hover, `focus-within` and coarse pointers, so keyboard and touch users can reach them. Blocked governance actions are rendered as focusable `role="button"` elements with `aria-disabled` (disabled buttons do not fire tooltips reliably). `detail` is linked via `aria-describedby`; warnings are part of the row label.
   - Collapsed mode: labels, groups, detail, badges, progress bar and actions are hidden; rows keep their node, native `title` and `aria-label`, and a warning dot for blockers. The connector moves to the center and the collapse control flips to "Expandir etapas".
+  - Terminal: `headerNote` renders a banner below the header. `CANCELLED` suppresses progress and blockers, shows a read-only note and leaves only `Cerrar` in the footer. `FINISHED` shows 100% progress, a finished note and no next-stage action.
   - Auto-scroll: the rail scrolls its own container (never an ancestor drawer) so the active step stays below the sticky header.
   - Header: sticky, with `Viendo NN/NN` and an optional progress bar (`role="progressbar"`). The counter describes what is on screen; the progress bar describes where the order really is.
   - Connector: vertical gradient line (success → border) left of nodes; when `progressPercent` is provided, a `success` fill overlays the neutral track up to the current progress.

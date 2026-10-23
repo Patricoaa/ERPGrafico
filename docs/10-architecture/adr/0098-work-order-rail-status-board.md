@@ -99,8 +99,15 @@ connector when `progressPercent` is absent and the plain `NN / NN` counter when
 
 ### 4. Terminal states
 
-- `CANCELLED`: no progress bar, rail read-only, explicit terminal note.
-- `FINISHED`: progress 100 %, no "next stage" action.
+- `CANCELLED`: no progress bar, rail read-only, explicit header note
+  (`Orden cancelada · solo lectura`); blockers are suppressed because they are
+  no longer actionable; governance actions are not rendered.
+- `FINISHED`: progress 100 %, header note (`Producción finalizada`), no
+  "next stage" action; blockers are suppressed for the same reason.
+- The sticky footer collapses to a single **Cerrar** action in both terminal
+  states, and the `ArrowRight` transition shortcut is guarded for `CANCELLED`
+  as well as `FINISHED`.
+- The mobile drawer mirrors the terminal note in its subtitle and body.
 - Future steps are non-clickable by construction (`isFuture` is part of
   `isClickable`), not only when the adapter remembers to set `disabled`.
 

@@ -43,6 +43,7 @@ export function buildWorkOrderRailSteps({
     order,
 }: BuildWorkOrderRailStepsArgs): WizardSidebarStep[] {
     const evidence = deriveStageEvidence(order)
+    const isTerminal = order?.status === "CANCELLED" || order?.status === "FINISHED"
 
     return stages.map((stage, index) => {
         const stageId = stage.id as string
@@ -80,7 +81,7 @@ export function buildWorkOrderRailSteps({
             group: stageGroup(stageId),
             detail: stageSummary(stageId, stageEvidence, order, isCurrent),
             // Only warn where the operator can still act: current and future stages.
-            warning: index >= actualStepIndex ? stageEvidence?.warning : undefined,
+            warning: !isTerminal && index >= actualStepIndex ? stageEvidence?.warning : undefined,
             status,
             disabled: isFuture,
             className: cn("group"),
