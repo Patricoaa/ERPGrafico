@@ -382,65 +382,237 @@ interface EntityCardSkeletonProps {
     showHeader?: boolean
     showBody?: boolean
     showFooter?: boolean
+    /** Número de campos (label + valor) que se pintan en el body. Default 3. */
+    fields?: number
+    /** Header: línea de código (code) sobre el título */
+    code?: boolean
+    /** Header: lead (icono/avatar) junto al título */
+    lead?: boolean
+    /** Header: subtítulo bajo el título */
+    subtitle?: boolean
+    /** Header: slot trailing (chips / acciones) */
+    trailing?: boolean
+    /** Header: slot centrado entre título y trailing */
+    center?: boolean
+    /** Strip de media superior (EntityCard.Media) */
+    media?: boolean
+    /** Barra/rail lateral de estado (CardRail) */
+    rail?: boolean | { side?: "left" | "right" }
+    /** Sección Meta (pares label/valor bajo el header) */
+    meta?: boolean
+    /** Número de pares label/valor en la sección Meta. Default 2. */
+    metaCount?: number
+    /** Fila Highlights bajo el header */
+    highlights?: boolean
+    /** Número de badges en la fila Highlights. Default 2. */
+    highlightsCount?: number
+    /** Métricas horizontales inferiores (EntityCard.Metrics / workflow) */
+    metrics?: boolean | number
+    /** Foot inferior (monto + glifo / acciones) */
+    foot?: boolean
+    /** Si el foot incluye monto/caption o solo glifo/acción */
+    footAmount?: boolean
+}
+
+/** Un campo del body: etiqueta + valor, espejo de EntityCard.Field. */
+function EntityCardSkeletonField() {
+    return (
+        <div className="flex flex-col gap-0.5 min-w-0">
+            <Skeleton className="h-3 w-3/4" />
+            <Skeleton className="h-4 w-full" />
+        </div>
+    )
+}
+
+/** Media strip superior, espejo de EntityCard.Media. */
+function EntityCardSkeletonMedia() {
+    return (
+        <div className="relative -mx-3 -mt-3 mb-1 flex h-20 items-center justify-center overflow-hidden rounded-t-sm bg-muted text-muted-foreground">
+            <Skeleton className="size-10 shrink-0 rounded-sm" />
+        </div>
+    )
+}
+
+/** Meta: pares label/valor bajo el header, espejo de EntityCard.Meta. */
+function EntityCardSkeletonMeta({ count = 2 }: { count?: number }) {
+    return (
+        <dl className="grid min-w-0 grid-cols-1 @[18rem]:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-start gap-x-4 gap-y-1.5">
+            {Array.from({ length: count }).map((_, i) => (
+                <div key={i} className="flex min-w-0 flex-col items-start">
+                    <dt className={cardAnatomy.eyebrow}>
+                        <Skeleton className="h-3 w-1/3" />
+                    </dt>
+                    <dd className="min-w-0 max-w-full [overflow-wrap:anywhere]">
+                        <Skeleton className={i % 2 === 0 ? "h-4 w-full" : "h-4 w-3/4"} />
+                    </dd>
+                </div>
+            ))}
+        </dl>
+    )
+}
+
+/** Highlights: fila de etiquetas de estado bajo el header. */
+function EntityCardSkeletonHighlights({ count = 2 }: { count?: number }) {
+    return (
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+            {Array.from({ length: count }).map((_, i) => (
+                <Skeleton key={i} className={cn("h-6 rounded-md", i % 2 === 0 ? "w-24" : "w-20")} />
+            ))}
+        </div>
+    )
+}
+
+/** Métricas horizontales inferiores (EntityCard.Metrics / Workflow). */
+function EntityCardSkeletonMetrics({ count = 2 }: { count?: number }) {
+    return (
+        <div className="flex items-stretch justify-start border-t border-border mt-1">
+            {Array.from({ length: count }).map((_, idx) => (
+                <div key={idx} className="flex shrink-0 flex-col gap-0.5 py-2 pl-1 pr-6">
+                    <Skeleton className="h-2.5 w-12 mb-0.5" />
+                    <Skeleton className="h-4 w-16" />
+                </div>
+            ))}
+        </div>
+    )
+}
+
+/** Foot inferior: caption + monto + glifo, espejo de EntityCard.Foot. */
+function EntityCardSkeletonFoot({ amount = true }: { amount?: boolean }) {
+    return (
+        <div className={cn(cardAnatomy.footer, "flex items-end justify-between gap-2")}>
+            {amount ? (
+                <div className="min-w-0">
+                    <p className={cardAnatomy.caption}>
+                        <Skeleton className="h-2.5 w-14 mb-1" />
+                    </p>
+                    <div className={cardAnatomy.amountSlot}>
+                        <Skeleton className="h-5 w-20 tabular-nums" />
+                    </div>
+                </div>
+            ) : (
+                <div />
+            )}
+            <ChevronRight className={cardAnatomy.glyph} aria-hidden />
+        </div>
+    )
 }
 
 function EntityCardSkeleton({
     className,
     variant = "full",
     showHeader = true,
-    showBody = true,
+    showBody = false,
     showFooter = false,
+    fields = 3,
+    code = false,
+    lead = true,
+    subtitle = true,
+    trailing = true,
+    center = false,
+    media = false,
+    rail = false,
+    meta = false,
+    metaCount = 2,
+    highlights = false,
+    highlightsCount = 2,
+    metrics = false,
+    foot = false,
+    footAmount = true,
 }: EntityCardSkeletonProps) {
+    const fieldCount = Math.max(0, fields)
+    const metricsCount = typeof metrics === "number" ? metrics : metrics ? 2 : 0
+
+    const railSide = typeof rail === "object" ? (rail.side ?? "left") : "left"
+    const railNode = rail ? (
+        <div
+            className={cn(
+                cardAnatomy.rail,
+                cardAnatomy.railSize.md,
+                "border-border/60 bg-muted/20 text-muted-foreground",
+                railSide === "left" ? "border-l-0 border-r" : "order-last"
+            )}
+            aria-hidden
+        >
+            <Skeleton className="size-5 rounded-sm" />
+        </div>
+    ) : undefined
+
+    // ── Compact: catálogo denso, header mínimo en línea ──
+    if (variant === "compact") {
+        return (
+            <EntityCardRoot variant="compact" rail={railNode} className={cn(className)}>
+                {media && <EntityCardSkeletonMedia />}
+                {showHeader && (
+                    <EntityCardHeader
+                        avatar={lead ? <Skeleton className="h-8 w-8 rounded-sm shrink-0" /> : undefined}
+                        code={code ? <Skeleton className="h-2.5 w-16 mb-1" /> : undefined}
+                        title={<Skeleton className="h-4 w-3/4" />}
+                        subtitle={subtitle ? <Skeleton className="h-3 w-1/2 opacity-60" /> : undefined}
+                        trailing={trailing ? <Skeleton className="h-5 w-16 rounded-full shrink-0" /> : undefined}
+                        center={center ? <Skeleton className="h-5 w-24 rounded-md" /> : undefined}
+                    />
+                )}
+                {highlights && <EntityCardSkeletonHighlights count={highlightsCount} />}
+                {meta && <EntityCardSkeletonMeta count={metaCount} />}
+                {metricsCount > 0 && <EntityCardSkeletonMetrics count={metricsCount} />}
+                {showBody && (
+                    <EntityCardBody className="gap-4 pt-2 border-t border-border mt-1">
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-x-4 gap-y-2">
+                            {Array.from({ length: fieldCount }).map((_, i) => (
+                                <EntityCardSkeletonField key={i} />
+                            ))}
+                        </div>
+                    </EntityCardBody>
+                )}
+                {foot && <EntityCardSkeletonFoot amount={footAmount} />}
+                {showFooter && (
+                    <EntityCardFooter className="pt-2">
+                        <Skeleton className="h-8 w-24 rounded-md" />
+                        <Skeleton className="h-8 w-20 rounded-md" />
+                    </EntityCardFooter>
+                )}
+            </EntityCardRoot>
+        )
+    }
+
+    // ── Full: esqueleto completo con todas las secciones opcionales ──
     return (
-        <EntityCardRoot variant={variant} className={cn(className)}>
+        <EntityCardRoot rail={railNode} className={cn(className)}>
+            {media && <EntityCardSkeletonMedia />}
             {showHeader && (
                 <EntityCardHeader
-                    title={
-                        <div className="flex items-center gap-3 min-w-0">
-                            <Skeleton className="h-8 w-8 rounded-md shrink-0" />
-                            <Skeleton className="h-5 w-48 shrink-0" />
-                        </div>
-                    }
+                    avatar={lead ? <Skeleton className="h-8 w-8 rounded-md shrink-0" /> : undefined}
+                    code={code ? <Skeleton className="h-2.5 w-20 mb-1" /> : undefined}
+                    title={<Skeleton className="h-5 w-48 shrink-0" />}
                     subtitle={
-                        <div className="flex items-center gap-2.5">
-                            <Skeleton className="h-4 w-20 rounded-sm" />
-                            <Skeleton className="h-4 w-24" />
-                        </div>
+                        subtitle ? (
+                            <div className="flex items-center gap-2.5">
+                                <Skeleton className="h-4 w-20 rounded-sm" />
+                                <Skeleton className="h-4 w-24" />
+                            </div>
+                        ) : undefined
                     }
                     trailing={
-                        <div className="flex items-center gap-4">
-                            <div className="hidden sm:flex px-4">
-                                <Skeleton className="h-6 w-24 rounded-full" />
+                        trailing ? (
+                            <div className="flex items-center gap-2 shrink-0">
+                                <Skeleton className="h-6 w-20 rounded-full" />
                             </div>
-                            <div className="flex flex-col items-end gap-1">
-                                <Skeleton className="h-2 w-10" />
-                                <Skeleton className="h-5 w-20" />
-                            </div>
-                            <Skeleton className="h-5 w-5 rounded-full" />
-                        </div>
+                        ) : undefined
                     }
+                    center={center ? <Skeleton className="h-6 w-32 rounded-md" /> : undefined}
                 />
             )}
+            {highlights && <EntityCardSkeletonHighlights count={highlightsCount} />}
+            {meta && <EntityCardSkeletonMeta count={metaCount} />}
+            {metricsCount > 0 && <EntityCardSkeletonMetrics count={metricsCount} />}
             {showBody && (
-                <EntityCardBody className="flex items-start justify-between gap-4 pt-2 border-t border-border mt-1">
-                    <div className="space-y-1.5 flex-1 min-w-0">
-                        <Skeleton className="h-3 w-16" />
-                        <Skeleton className="h-4 w-32" />
-                    </div>
-                    <div className="space-y-1.5 flex-1 min-w-0">
-                        <Skeleton className="h-3 w-16" />
-                        <Skeleton className="h-4 w-24" />
-                    </div>
-                    <div className="space-y-1.5 flex-1 min-w-0">
-                        <Skeleton className="h-3 w-16" />
-                        <Skeleton className="h-4 w-28" />
-                    </div>
-                    <div className="flex items-end gap-1">
-                        <Skeleton className="h-2 w-10" />
-                        <Skeleton className="h-4 w-16" />
-                    </div>
+                <EntityCardBody className="gap-x-4 gap-y-2 pt-2 border-t border-border mt-1">
+                    {Array.from({ length: fieldCount }).map((_, i) => (
+                        <EntityCardSkeletonField key={i} />
+                    ))}
                 </EntityCardBody>
             )}
+            {foot && <EntityCardSkeletonFoot amount={footAmount} />}
             {showFooter && (
                 <EntityCardFooter className="pt-2">
                     <Skeleton className="h-8 w-24 rounded-md" />

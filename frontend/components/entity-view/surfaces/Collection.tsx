@@ -769,11 +769,63 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
     }
 
     if (status === "loading") {
+        const mediaOnTop = layout.media?.placement === "top"
+        const hasRail = Boolean(layout.rail)
+        const hasFooter = Boolean(footerDef || layout.footer)
+        const hasHighlights = highlightDefs.length > 0
+        const hasMeta = metaDefs.length > 0 || trailingDefs.length > 0
+        const hasSubtitle = Boolean(layout.subtitle?.length)
+        const hasTrailing = trailingDefs.length > 0
+        const hasCode = Boolean(layout.code)
+
+        const metricsCount = (() => {
+            if (!layout.body) return undefined
+            if (layout.body.kind === "metrics") return layout.body.fields.length
+            if (layout.body.kind === "workflow") {
+                const ids = [layout.body.lines, layout.body.total, layout.body.pending, layout.body.date].filter(Boolean)
+                return ids.length
+            }
+            return undefined
+        })()
+        const isProgressBody = layout.body?.kind === "progress"
+
+        // Lead icon is present if not mediaOnTop and not rail and there is media or entity has an icon
+        const hasLead = !mediaOnTop && !hasRail && Boolean(layout.media?.avatar || layout.media?.icon || layout.media?.iconFor || entity.label !== undefined)
+
+        // Count of cards matching page size or filling the grid neatly
+        const skeletonCount = (() => {
+            const pageSize = table.getState().pagination?.pageSize
+            if (pageSize && pageSize > 0) {
+                return Math.min(pageSize, isCatalog ? 15 : 12)
+            }
+            return isCatalog ? 8 : 6
+        })()
+
         return (
             <div className="@container flex flex-1 min-h-0 flex-col overflow-auto">
                 <ul className={cn(gridClass, "content-start")} aria-busy>
-                    {Array.from({ length: isCatalog ? 8 : 6 }, (_, i) => (
-                        <li key={i}><EntityCard.Skeleton /></li>
+                    {Array.from({ length: skeletonCount }, (_, i) => (
+                        <li key={i} className="@container min-w-0">
+                            <EntityCard.Skeleton
+                                variant="compact"
+                                className="h-full"
+                                rail={hasRail ? { side: layout.rail?.side } : false}
+                                media={mediaOnTop}
+                                code={hasCode}
+                                lead={hasLead}
+                                subtitle={hasSubtitle}
+                                trailing={hasTrailing}
+                                highlights={hasHighlights}
+                                highlightsCount={highlightDefs.length}
+                                meta={hasMeta}
+                                metaCount={metaDefs.length}
+                                metrics={metricsCount}
+                                showBody={isProgressBody}
+                                fields={isProgressBody ? 1 : 0}
+                                foot={hasFooter || mediaOnTop}
+                                footAmount={hasFooter}
+                            />
+                        </li>
                     ))}
                 </ul>
             </div>

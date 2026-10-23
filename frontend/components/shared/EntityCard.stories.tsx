@@ -84,3 +84,42 @@ export const Static: Story = {
         </div>
     ),
 }
+
+/** Skeletons matching real card anatomies and dimensions. */
+export const Skeletons: Story = {
+    render: () => (
+        <ul className="grid w-[56rem] grid-cols-3 gap-3">
+            <li className="@container min-w-0">
+                <EntityCard.Skeleton
+                    variant="compact"
+                    lead
+                    subtitle
+                    trailing
+                    metrics={1}
+                />
+            </li>
+            <li className="@container min-w-0">
+                <EntityCard.Skeleton
+                    variant="compact"
+                    media
+                    subtitle
+                    meta
+                    metaCount={2}
+                    foot
+                />
+            </li>
+            <li className="@container min-w-0">
+                <EntityCard.Skeleton
+                    variant="compact"
+                    rail
+                    subtitle
+                    trailing
+                    highlights
+                    highlightsCount={1}
+                    meta
+                    metaCount={2}
+                />
+            </li>
+        </ul>
+    ),
+}
