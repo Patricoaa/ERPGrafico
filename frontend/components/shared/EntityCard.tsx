@@ -482,9 +482,9 @@ function EntityCardSkeletonFoot({ amount = true }: { amount?: boolean }) {
         <div className={cn(cardAnatomy.footer, "flex items-end justify-between gap-2")}>
             {amount ? (
                 <div className="min-w-0">
-                    <p className={cardAnatomy.caption}>
+                    <div className={cardAnatomy.caption}>
                         <Skeleton className="h-2.5 w-14 mb-1" />
-                    </p>
+                    </div>
                     <div className={cardAnatomy.amountSlot}>
                         <Skeleton className="h-5 w-20 tabular-nums" />
                     </div>
@@ -913,7 +913,7 @@ function EntityCardFoot({ caption, children, actions, glyph = true, compact = fa
     return (
         <div className={cn(cardAnatomy.footer, compact && "pt-0", "flex items-end justify-between gap-2", className)}>
             <div className="min-w-0">
-                {caption && children && <p className={cardAnatomy.caption}>{caption}</p>}
+                {caption && children && <div className={cardAnatomy.caption}>{caption}</div>}
                 {children && <div className={cardAnatomy.amountSlot}>{children}</div>}
             </div>
             {actions ? (
