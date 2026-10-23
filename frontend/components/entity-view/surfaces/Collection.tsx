@@ -1,13 +1,13 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, ChevronDown, ChevronRight, FileText, LayoutGrid, Rows3 } from "lucide-react"
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, CalendarDays, ChevronDown, ChevronRight, FileText, Kanban, LayoutGrid, Rows3 } from "lucide-react"
 import { BulkActionButtons, CardRail, DataTablePagination, EmptyState, EntityCard, SelectionDock, SelectionRing, type BulkAction, type CardRailTone } from "@/components/shared"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { resolveStatus, type BadgeIntent } from "@/lib/badge-resolvers"
-import { getEntityIcon } from "@/lib/entity-registry"
+import { ENTITY_REGISTRY, getEntityIcon } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
 import {
     alignOf,
@@ -35,7 +35,7 @@ import { useEntityOpener } from "./EntityViewProvider"
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 
-export type CollectionViewMode = "table" | "card" | "analytics"
+export type CollectionViewMode = "table" | "card" | "kanban" | "timeline" | "analytics"
 export type SelectionMode = "none" | "bulk" | "panel"
 
 /** What the surfaces read from the entity: label and fields (the literal field-id map `F` is erased). */
@@ -158,17 +158,39 @@ export interface CollectionToolbarProps {
     exportFilters?: Record<string, unknown>
 }
 
-const VIEW_BUTTONS = {
+const VIEW_BUTTONS: Record<CollectionViewMode, { icon: React.ElementType; label: string }> = {
     table: { icon: Rows3, label: "Vista tabla" },
     card: { icon: LayoutGrid, label: "Vista tarjetas" },
+    kanban: { icon: Kanban, label: "Tablero kanban" },
+    timeline: { icon: CalendarDays, label: "Cronograma" },
     analytics: { icon: BarChart3, label: "Analítica" },
 } as const
 
-function Toolbar({ children, action, views = ["table", "card"], exportFilters = {} }: CollectionToolbarProps) {
+/**
+ * Resolves the default view modes for an entity from its registry `viewPolicy.availableViews`.
+ * Falls back to `["table", "card"]` when the entity is not registered or has no policy.
+ * `grid` is treated as `card` (both render as cards).
+ */
+function defaultViewsFor(label: string): CollectionViewMode[] {
+    const policy = ENTITY_REGISTRY[label]?.viewPolicy
+    if (!policy?.availableViews?.length) return ["table", "card"]
+    const mapped = policy.availableViews.map((v) => {
+        if (v === "list") return "table" as const
+        if (v === "grid") return "card" as const
+        return v as CollectionViewMode
+    })
+    // Dedup while preserving order; ensure at least one usable mode.
+    const uniq = [...new Set(mapped)]
+    return uniq.length ? uniq : ["table", "card"]
+}
+
+function Toolbar({ children, action, views, exportFilters = {} }: CollectionToolbarProps) {
     const ctx = useCollectionContext<unknown>()
     const exportSpec = ctx.collection.entity.export
+    // Derive the offered modes from the entity's view policy when not overridden explicitly.
+    const resolvedViews = views ?? defaultViewsFor(ctx.collection.entity.label ?? "")
     // The analytics view is offered only while a `Collection.Analytics` is mounted.
-    const modes = ctx.hasAnalytics && !views.includes("analytics") ? [...views, "analytics" as const] : views
+    const modes = ctx.hasAnalytics && !resolvedViews.includes("analytics") ? [...resolvedViews, "analytics" as const] : resolvedViews
     return (
         <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
@@ -645,6 +667,7 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
     const gridClass = isCatalog ? CATALOG_GRID_CLASS : GRID_CLASS
     // Meta field definitions are resolved once per layout, not per card.
     const metaDefs = React.useMemo(() => (layout.meta ?? []).map((id) => ({ id, def: fieldById(entity, id) })), [layout.meta, entity])
+    const highlightDefs = React.useMemo(() => (layout.highlights ?? []).map((id) => ({ id, def: fieldById(entity, id) })), [layout.highlights, entity])
     const footerDef = React.useMemo(() => (layout.footer ? fieldById(entity, layout.footer.value) : null), [layout.footer, entity])
     const trailingDefs = React.useMemo(() => (layout.trailing ?? []).map((id) => ({ id, def: fieldById(entity, id) })), [layout.trailing, entity])
 
@@ -664,14 +687,25 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
         const railTone = layout.rail ? (RAIL_TONE[resolveStatus(layout.rail.status(data)).intent] ?? "neutral") : "neutral"
         const RailIcon = layout.rail?.icon ?? icon ?? FileText
         // The rail carries the entity icon (its tint is the state); the title row then has no icon tile of its own.
+        // Highlights speak for themselves: skip the ones with nothing to say.
+        const highlights = highlightDefs.filter(({ def }) => {
+            const text = resolveField(def, data).text
+            return text !== "" && text !== "—"
+        })
         const rail = layout.rail ? (
-            <CardRail tone={railTone} side="left">
+            <CardRail tone={railTone} side={layout.rail.side ?? "left"}>
                 <RailIcon className="size-5" aria-hidden />
             </CardRail>
         ) : undefined
         const trailing = layout.trailing && layout.trailing.length > 0
             ? layout.trailing.map((id) => <FieldValue key={id} def={fieldById(entity, id)} row={data} surface="card" align="start" />)
             : null
+        // A row can say it has no amount worth showing (e.g. a product that is not for sale); the
+        // footer then states the alternative (the channel) instead of leaving an empty hole.
+        const showFooter = footerDef ? (layout.footer?.visible?.(data) ?? true) : false
+        const footerFallback = !showFooter ? layout.footer?.fallback?.value(data) : null
+        const hasFooter = showFooter || Boolean(footerFallback)
+        const footerCaption = showFooter ? footerDef?.label : footerFallback ? layout.footer?.fallback?.caption : undefined
         // Narrow cards (container < 28rem) fold the trailing values into the label/value pairs instead of an orphan row.
         const metaItems = [
             ...metaDefs.map(({ id, def }) => ({ key: id, label: def.label, value: <FieldValue def={def} row={data} surface="card" align="start" /> })),
@@ -683,6 +717,7 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                     variant="compact"
                     isSelected={ctx.selectedId === row.id}
                     openable={ctx.canOpen}
+                    muted={layout.muted?.(data) ?? false}
                     rail={rail}
                     // Hub focus (Gate D 2b): while a sheet is open, the other cards step back (dimmed, no blur).
                     className={cn("h-full transition-opacity", ctx.selection === "panel" && !!ctx.selectedId && ctx.selectedId !== row.id && "opacity-40")}
@@ -700,10 +735,13 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                             imageSrc={media?.image?.(data) ?? undefined}
                             avatar={Avatar ? <Avatar row={data} /> : undefined}
                             badge={media?.badge?.(data) ?? undefined}
+                            footnote={media?.footnote?.(data) ?? undefined}
+                            footnoteIcon={media?.footnoteIcon}
                         />
                     )}
                     <EntityCard.Header
                         selection={mediaOnTop ? "corner" : "inline"}
+                        wrapTitle={mediaOnTop}
                         code={code && code !== "—" ? code : undefined}
                         icon={mediaOnTop || rail ? undefined : icon}
                         iconClassName={TONE_CLASS[tone]}
@@ -711,9 +749,9 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                         avatar={!mediaOnTop && !rail && Avatar ? <Avatar row={data} /> : undefined}
                         title={
                             ctx.canOpen ? (
-                                <Button data-card-open variant="link" className="h-7 min-w-0 max-w-full justify-start p-0 text-sm font-semibold text-foreground underline-offset-2 after:absolute after:inset-0 after:content-[''] focus-visible:underline focus-visible:ring-0" onClick={() => ctx.open(data)}>
+                                <Button data-card-open variant="link" className={cn("min-w-0 max-w-full justify-start p-0 text-left text-sm font-semibold text-foreground after:absolute after:inset-0 after:content-[''] hover:no-underline focus-visible:no-underline focus-visible:ring-0", mediaOnTop ? "h-auto min-h-0 whitespace-normal leading-tight" : "h-7")} onClick={() => ctx.open(data)}>
                                     {/* A flex button cannot ellipsize its own text: the span does. */}
-                                    <span className="truncate">{title}</span>
+                                    <span className={mediaOnTop ? "line-clamp-2" : "truncate"}>{title}</span>
                                 </Button>
                             ) : (
                                 title
@@ -726,12 +764,25 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                         // Catalog cards keep the kebab in the footer (bottom-right), documents/people in the header.
                         actions={mediaOnTop ? undefined : ctx.actions?.(data, "card")}
                     />
+                    {highlights.length > 0 && (
+                        <EntityCard.Highlights>
+                            {highlights.map(({ id, def }) => <FieldValue key={id} def={def} row={data} surface="card" align="start" />)}
+                        </EntityCard.Highlights>
+                    )}
                     {/* Meta lives below the header: in the header center it squeezed the title (EntityCard 1fr column). */}
                     <EntityCard.Meta items={metaItems} />
                     {layout.body && <CardBody section={layout.body} entity={entity} row={data} />}
-                    {(footerDef || mediaOnTop) && (
-                        <EntityCard.Foot caption={footerDef?.label} actions={mediaOnTop ? ctx.actions?.(data, "card") : undefined}>
-                            {footerDef && <FieldValue def={footerDef} row={data} surface="card" align="start" />}
+                    {(hasFooter || mediaOnTop) && (
+                        <EntityCard.Foot
+                            caption={footerCaption}
+                            compact={mediaOnTop && !hasFooter}
+                            actions={mediaOnTop ? ctx.actions?.(data, "card") : undefined}
+                        >
+                            {showFooter && footerDef
+                                ? <FieldValue def={footerDef} row={data} surface="cardFooter" align="start" />
+                                : footerFallback
+                                    ? <span className="text-sm font-medium text-muted-foreground">{footerFallback}</span>
+                                    : null}
                         </EntityCard.Foot>
                     )}
                 </EntityCard>
