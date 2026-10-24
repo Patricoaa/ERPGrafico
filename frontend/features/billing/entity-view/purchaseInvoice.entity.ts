@@ -1,5 +1,6 @@
 import { defineEntity } from "@/components/entity-view"
 import { getDtePrefix } from "@/lib/entity-registry"
+import { isInvoiceCompleted } from "@/lib/workflow-status"
 import { FileText, Receipt, FileMinus, FilePlus } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import type { Invoice } from "../types"
@@ -70,10 +71,11 @@ export const purchaseInvoiceEntity = defineEntity<Invoice>()((f) => ({
 export const purchaseInvoiceViews = purchaseInvoiceEntity.views({
     table: { columns: ["folio", "date", "supplier", "dteType", "hub", "total"], primary: "folio" },
     card: {
-        rail: { status: (r) => r.status },
+        rail: { status: (r) => (r.status === "CANCELLED" ? "CANCELLED" : r.status === "DRAFT" ? "DRAFT" : isInvoiceCompleted(r) ? "SUCCESS" : "CONFIRMED") },
         title: "folio",
         subtitle: ["dteType", "supplier", "date"],
         trailing: ["hub", "total"],
+        body: { kind: "lines" },
         media: {
             iconFor: (inv) => DTE_ICON[inv.dte_type] ?? FileText,
             tone: (inv) => DTE_TONE[inv.dte_type] ?? "default",

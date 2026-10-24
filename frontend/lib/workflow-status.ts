@@ -74,7 +74,7 @@ interface NoteBase {
     [key: string]: unknown;
 }
 
-interface InvoiceBase {
+interface InvoiceInternal {
     sale_order?: unknown;
     status?: string;
     order_delivery_status?: string;
@@ -262,7 +262,7 @@ export const getNoteHubStatuses = (note: NoteBase) => {
     }
 }
 
-export const getInvoiceHubStatuses = (invoice: InvoiceBase) => {
+export const getInvoiceHubStatuses = (invoice: InvoiceInternal) => {
     const isSale = !!invoice.sale_order
 
     // 1. Origin
@@ -390,6 +390,72 @@ export function isOrderCompleted(order: HubOrderSource): boolean {
         (s.logistics === 'success' || s.logistics === 'not_applicable') &&
         (s.production === 'success' || s.production === 'not_applicable')
     )
+}
+
+/**
+ * Minimal shape required by isInvoiceCompleted / isNoteCompleted.
+ * All fields are optional and readonly so any invoice-like API type is assignable.
+ */
+export interface InvoiceBase {
+    readonly status?: string | null
+    readonly number?: string | null
+    readonly order_delivery_status?: string | null
+    readonly po_receiving_status?: string | null
+    readonly payment_status?: string | null
+    readonly pending_amount?: number | string | null
+    readonly total?: number | string | null
+    readonly sale_order?: unknown
+    readonly dte_type?: string | null
+    readonly lines?: ReadonlyArray<{
+        readonly quantity?: number | string | null
+        readonly quantity_delivered?: number | string | null
+        readonly quantity_received?: number | string | null
+        readonly delivered_quantity?: number | string | null
+        readonly received_quantity?: number | string | null
+    }> | null
+    readonly items?: ReadonlyArray<{
+        readonly quantity?: number | string | null
+        readonly quantity_delivered?: number | string | null
+        readonly quantity_received?: number | string | null
+    }> | null
+}
+
+/**
+ * Determines if an invoice (factura o nota) has all its operational axes completed.
+ * Returns true when the document has a folio (POSTED), logistics are done, and is fully paid.
+ */
+export function isInvoiceCompleted(invoice: InvoiceBase): boolean {
+    if (!invoice.status || invoice.status === 'CANCELLED' || invoice.status === 'DRAFT') {
+        return false
+    }
+    const hasFolio = invoice.status !== 'DRAFT' && !!invoice.number && invoice.number !== 'Draft'
+    if (!hasFolio) return false
+    // Treasury: fully paid
+    const pending = parseFloat(String(invoice.pending_amount ?? 0))
+    const isPaid = invoice.payment_status === 'PAID' || pending <= 0
+    if (!isPaid) return false
+    // Logistics: delivery/reception status flags or line-level progress
+    if (invoice.order_delivery_status === 'DELIVERED' || invoice.po_receiving_status === 'RECEIVED') {
+        return true
+    }
+    const lines = (invoice.lines ?? invoice.items ?? []) as ReadonlyArray<{
+        quantity?: number | string | null
+        quantity_delivered?: number | string | null
+        quantity_received?: number | string | null
+        delivered_quantity?: number | string | null
+        received_quantity?: number | string | null
+    }>
+    if (lines.length === 0) return true
+    const totalOrdered = lines.reduce((acc, l) => acc + (parseFloat(String(l.quantity ?? 0)) || 0), 0)
+    if (totalOrdered <= 0) return true
+    const isSale = !!invoice.sale_order
+    const totalProcessed = lines.reduce((acc, l) => {
+        const processed = isSale
+            ? (l.quantity_delivered ?? l.delivered_quantity ?? 0)
+            : (l.quantity_received ?? l.received_quantity ?? 0)
+        return acc + (parseFloat(String(processed)) || 0)
+    }, 0)
+    return totalProcessed >= totalOrdered
 }
 
 

@@ -17,11 +17,12 @@ export function PurchasingHeader() {
   const { getViewModeUrl } = useViewModePreference()
 
   const segments = pathname.split("/").filter(Boolean)
-  const currentSegment = segments[1] || "dtes"
+  const currentSegment = segments[1] || "docs"
 
-  // ADR-0090: `dtes` es el tab Documentos (sub-segmentos orders/receipts/returns),
+  // ADR-0090: `dtes` y `docs` corresponden al tab Documentos (sub-segmentos orders/fulfillment),
   // `settings` es el tab Configuración de Compras.
   const segmentToTab: Record<string, string> = {
+    docs: "dtes",
     dtes: "dtes",
     settings: "config",
   }
@@ -30,7 +31,10 @@ export function PurchasingHeader() {
 
   // Determine subActiveValue from path segments
   const subActiveValue = (() => {
-    if (activeValue === "dtes") return segments[2] || "dtes"
+    if (activeValue === "dtes") {
+      if (currentSegment === "docs") return "orders"
+      return segments[2] || "dtes"
+    }
     if (activeValue === "config") return segments[2] || "dtes"
     return undefined
   })()
@@ -54,7 +58,7 @@ export function PurchasingHeader() {
 
   const navigation = {
     moduleName: moduleConfig?.moduleName ?? "Compras",
-    moduleHref: moduleConfig?.moduleHref ?? getViewModeUrl("purchasing.purchaseorder", "/purchasing/dtes"),
+    moduleHref: moduleConfig?.moduleHref ?? getViewModeUrl("purchasing.purchaseorder", "/purchasing/docs"),
     tabs,
     activeValue,
     subActiveValue,

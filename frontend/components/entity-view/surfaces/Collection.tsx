@@ -865,6 +865,33 @@ function CardBody<T, Id extends string>({ section, entity, row }: { section: Car
             const ids = [section.lines, section.total, section.pending, section.date].filter((id): id is Id => !!id)
             return <EntityCard.Metrics metrics={ids.map(metric)} className="flex-wrap" />
         }
+        case "lines": {
+            // Render card-level line summary: "qty× product_name" rows (max 3 + overflow count).
+            // `row` is typed as T; lines live on the raw data under `lines` if present.
+            const rawLines = (row as Record<string, unknown>)["lines"]
+            if (!Array.isArray(rawLines) || rawLines.length === 0) return null
+            const MAX = 3
+            const visible = rawLines.slice(0, MAX) as Array<{ quantity?: number | string | null; product_name?: string | null }>
+            const overflow = rawLines.length - MAX
+            return (
+                <div className="border-t border-border/50 pt-1.5 mt-1 flex flex-col gap-0.5">
+                    {visible.map((line, i) => {
+                        const qty = Math.round(parseFloat(String(line.quantity ?? 0)) * 100) / 100
+                        const name = line.product_name ?? "—"
+                        return (
+                            <p key={i} className="text-[11px] text-muted-foreground leading-tight truncate">
+                                <span className="font-medium text-foreground/70">{qty}×</span> {name}
+                            </p>
+                        )
+                    })}
+                    {overflow > 0 && (
+                        <p className="text-[11px] text-muted-foreground/60 leading-tight">
+                            +{overflow} más
+                        </p>
+                    )}
+                </div>
+            )
+        }
         case "metrics":
             return <EntityCard.Metrics metrics={section.fields.map(metric)} className="flex-wrap" />
         case "progress":

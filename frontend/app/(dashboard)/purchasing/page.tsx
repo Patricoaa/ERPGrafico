@@ -17,5 +17,5 @@ export default async function PurchasingPage({ searchParams }: PageProps) {
     if (view === 'notes') redirect('/purchasing/dtes')
     if (view === 'config') redirect('/purchasing/settings/dtes')
 
-    redirect('/purchasing/dtes')
+    redirect('/purchasing/docs')
 }

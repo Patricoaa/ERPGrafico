@@ -41,10 +41,9 @@ export const purchaseOrderViews = purchaseOrderEntity.views({
     card: {
         title: "folio",
         subtitle: ["supplier", "date"],
-        meta: ["warehouse"],
-        trailing: ["hub"],
+        trailing: ["hub", "total"],
         media: { tone: (o) => (o.status === "CANCELLED" ? "muted" : isOrderCompleted(o) ? "success" : "info") },
         rail: { status: (o) => (isOrderCompleted(o) ? "SUCCESS" : o.status) },
-        body: { kind: "workflow", lines: "lines", total: "total", pending: "pending", date: "expected" },
+        body: { kind: "lines" },
     },
 })

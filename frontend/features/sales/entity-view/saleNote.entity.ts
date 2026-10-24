@@ -1,4 +1,5 @@
 import { defineEntity } from "@/components/entity-view"
+import { isInvoiceCompleted } from "@/lib/workflow-status"
 import type { SaleNote } from "../types"
 
 /** Credit notes reduce the balance: shown with sign (02 §3 #3: NC displayed positive). */
@@ -29,10 +30,11 @@ export const saleNoteEntity = defineEntity<SaleNote>()((f) => ({
 export const saleNoteViews = saleNoteEntity.views({
     table: { columns: ["dteType", "folio", "date", "customer", "hub", "total"], primary: "folio" },
     card: {
-        rail: { status: (r) => r.status },
+        rail: { status: (r) => (r.status === "CANCELLED" ? "CANCELLED" : r.status === "DRAFT" ? "DRAFT" : isInvoiceCompleted(r) ? "SUCCESS" : "CONFIRMED") },
         title: "folio",
         subtitle: ["dteType", "customer", "date"],
         trailing: ["hub", "total"],
+        body: { kind: "lines" },
         media: { tone: (n) => (n.dte_type === "NOTA_CREDITO" ? "destructive" : n.dte_type === "NOTA_DEBITO" ? "warning" : "default") },
     },
 })

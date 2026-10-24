@@ -9,8 +9,8 @@ from .models import Invoice
 
 class InvoiceListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for Invoice list views.
-    Omits heavy nested serialization (sale_order_detail, lines, work_orders, adjustments)
-    that trigger N+1 queries."""
+    Omits heavy nested serialization (sale_order_detail, work_orders, adjustments)
+    that trigger N+1 queries. Lines are prefetched in InvoiceSelectorExt."""
 
     dte_type_display = serializers.CharField(source="get_dte_type_display", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
@@ -33,6 +33,8 @@ class InvoiceListSerializer(serializers.ModelSerializer):
     is_sale_document = serializers.ReadOnlyField()
     # Canonical identifier with DTE-aware prefix (e.g. "FACV-42", "BOL-5")
     display_id = serializers.ReadOnlyField()
+    # Card detail lines — prefetched in InvoiceSelectorExt (zero N+1)
+    lines = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
@@ -64,6 +66,7 @@ class InvoiceListSerializer(serializers.ModelSerializer):
             "payment_status",
             "is_tax_exempt",
             "is_sale_document",
+            "lines",
             "created_at",
             "updated_at",
         ]
@@ -85,6 +88,18 @@ class InvoiceListSerializer(serializers.ModelSerializer):
 
     def get_pending_amount(self, obj):
         return obj.pending_amount
+
+    def get_lines(self, obj):
+        """Returns lightweight line items for card detail display (prefetched, zero N+1)."""
+        return [
+            {
+                "quantity": float(line.quantity),
+                "product_name": (
+                    line.product.name if line.product_id else line.description
+                ) or line.description,
+            }
+            for line in obj.lines.all()
+        ]
 
 class InvoiceWriteSerializer(serializers.ModelSerializer):
     """Optimized serializer for create and update views.

@@ -1,4 +1,5 @@
 import { defineEntity } from "@/components/entity-view"
+import { isInvoiceCompleted } from "@/lib/workflow-status"
 import type { Invoice } from "@/features/billing"
 
 /** Credit notes reduce the balance: shown with sign (gap found in 02 §3 #3: NC displayed positive). */
@@ -20,10 +21,11 @@ export const purchaseNoteEntity = defineEntity<Invoice>()((f) => ({
 export const purchaseNoteViews = purchaseNoteEntity.views({
     table: { columns: ["dteType", "folio", "date", "partner", "hub", "total"], primary: "folio" },
     card: {
-        rail: { status: (r) => r.status },
+        rail: { status: (r) => (r.status === "CANCELLED" ? "CANCELLED" : r.status === "DRAFT" ? "DRAFT" : isInvoiceCompleted(r) ? "SUCCESS" : "CONFIRMED") },
         title: "folio",
         subtitle: ["dteType", "partner", "date"],
         trailing: ["hub", "total"],
+        body: { kind: "lines" },
         media: { tone: (i) => (i.dte_type === "NOTA_CREDITO" ? "destructive" : i.dte_type === "NOTA_DEBITO" ? "warning" : "default") },
     },
 })

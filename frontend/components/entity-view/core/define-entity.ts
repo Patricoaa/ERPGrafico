@@ -165,6 +165,7 @@ export interface CardMedia<T> {
 /** Registrable body sections. `custom` is the typed per-feature escape (receives the row, lives in the feature). */
 export type CardSection<T, Id extends string> =
     | { readonly kind: "workflow"; readonly total: Id; readonly pending?: Id; readonly date?: Id; readonly lines?: Id }
+    | { readonly kind: "lines" }
     | { readonly kind: "progress"; readonly field: Id }
     | { readonly kind: "metrics"; readonly fields: readonly Id[] }
     | { readonly kind: "custom"; readonly component: ComponentType<{ row: T }> }
