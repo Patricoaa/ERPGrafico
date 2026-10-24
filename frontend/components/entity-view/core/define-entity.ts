@@ -209,6 +209,8 @@ export interface CardLayout<T, Id extends string> {
         readonly align?: "start" | "end"
         /** Decorative action glyph at bottom-right (defaults to true). */
         readonly glyph?: boolean
+        /** Render detail line items (qty × product_name) in the footer. */
+        readonly lines?: boolean
         /** Some rows have no amount worth showing (e.g. a product that is not for sale). */
         readonly visible?: (row: T) => boolean
         /** Shown in the amount slot when `visible` is false (e.g. a channel restriction). */

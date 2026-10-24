@@ -44,7 +44,6 @@ export const purchaseOrderViews = purchaseOrderEntity.views({
         trailing: ["hub"],
         media: { tone: (o) => (o.status === "CANCELLED" ? "muted" : isOrderCompleted(o) ? "success" : "info") },
         rail: { status: (o) => (isOrderCompleted(o) ? "SUCCESS" : o.status) },
-        body: { kind: "lines" },
-        footer: { value: "total", align: "end" },
+        footer: { value: "total", align: "end", lines: true },
     },
 })

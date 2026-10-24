@@ -75,7 +75,6 @@ export const purchaseInvoiceViews = purchaseInvoiceEntity.views({
         title: "folio",
         subtitle: ["dteType", "supplier", "date"],
         trailing: ["hub"],
-        body: { kind: "lines" },
         footer: { value: "total", align: "end" },
         media: {
             iconFor: (inv) => DTE_ICON[inv.dte_type] ?? FileText,

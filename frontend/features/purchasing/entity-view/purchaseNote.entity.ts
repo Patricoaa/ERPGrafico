@@ -25,7 +25,6 @@ export const purchaseNoteViews = purchaseNoteEntity.views({
         title: "folio",
         subtitle: ["dteType", "partner", "date"],
         trailing: ["hub"],
-        body: { kind: "lines" },
         footer: { value: "total", align: "end" },
         media: { tone: (i) => (i.dte_type === "NOTA_CREDITO" ? "destructive" : i.dte_type === "NOTA_DEBITO" ? "warning" : "default") },
     },

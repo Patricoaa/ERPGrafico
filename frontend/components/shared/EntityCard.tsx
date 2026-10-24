@@ -413,6 +413,7 @@ interface EntityCardSkeletonProps {
     /** Si el foot incluye monto/caption o solo glifo/acción */
     footAmount?: boolean
     footAlign?: "start" | "end"
+    footLines?: boolean
 }
 
 /** Un campo del body: etiqueta + valor, espejo de EntityCard.Field. */
@@ -478,12 +479,19 @@ function EntityCardSkeletonMetrics({ count = 2 }: { count?: number }) {
 }
 
 /** Foot inferior: caption + monto + glifo, espejo de EntityCard.Foot. */
-function EntityCardSkeletonFoot({ amount = true, align = "start" }: { amount?: boolean; align?: "start" | "end" }) {
+function EntityCardSkeletonFoot({ amount = true, align = "start", lines = false }: { amount?: boolean; align?: "start" | "end"; lines?: boolean }) {
     const isEnd = align === "end"
+    const justifyClass = lines ? "justify-between" : isEnd ? "justify-end" : "justify-between"
     return (
-        <div className={cn(cardAnatomy.footer, "flex items-end gap-2", isEnd ? "justify-end" : "justify-between")}>
+        <div className={cn(cardAnatomy.footer, "flex items-end gap-2 border-t border-border/40 pt-2", justifyClass)}>
+            {lines ? (
+                <div className="min-w-0 flex-1 flex flex-col gap-1">
+                    <Skeleton className="h-2.5 w-3/4" />
+                    <Skeleton className="h-2.5 w-1/2" />
+                </div>
+            ) : null}
             {amount ? (
-                <div className={cn("min-w-0", isEnd && "flex flex-col items-end")}>
+                <div className={cn("min-w-0 shrink-0", isEnd && "flex flex-col items-end")}>
                     <div className={cardAnatomy.caption}>
                         <Skeleton className="h-2.5 w-14 mb-1" />
                     </div>
@@ -521,6 +529,7 @@ function EntityCardSkeleton({
     foot = false,
     footAmount = true,
     footAlign = "start",
+    footLines = false,
 }: EntityCardSkeletonProps) {
     const fieldCount = Math.max(0, fields)
     const metricsCount = typeof metrics === "number" ? metrics : metrics ? 2 : 0
@@ -567,7 +576,7 @@ function EntityCardSkeleton({
                         </div>
                     </EntityCardBody>
                 )}
-                {foot && <EntityCardSkeletonFoot amount={footAmount} align={footAlign} />}
+                {foot && <EntityCardSkeletonFoot amount={footAmount} align={footAlign} lines={footLines} />}
                 {showFooter && (
                     <EntityCardFooter className="pt-2">
                         <Skeleton className="h-8 w-24 rounded-md" />
@@ -615,7 +624,7 @@ function EntityCardSkeleton({
                     ))}
                 </EntityCardBody>
             )}
-            {foot && <EntityCardSkeletonFoot amount={footAmount} align={footAlign} />}
+            {foot && <EntityCardSkeletonFoot amount={footAmount} align={footAlign} lines={footLines} />}
             {showFooter && (
                 <EntityCardFooter className="pt-2">
                     <Skeleton className="h-8 w-24 rounded-md" />
@@ -902,6 +911,8 @@ interface EntityCardFootProps {
     caption?: React.ReactNode
     /** The amount: any value cell; the slot scales it to the kit's amount size. Optional (catalog cards without a price). */
     children?: React.ReactNode
+    /** Leading content in the footer (e.g. detail lines summary on the left). */
+    leading?: React.ReactNode
     /** Entity actions (the kebab) at the bottom-right, replacing the open glyph. */
     actions?: React.ReactNode
     /** Open glyph at the bottom-right when there are no actions (default on). */
@@ -914,11 +925,16 @@ interface EntityCardFootProps {
 }
 
 /** Bottom-pinned amount like the POS ProductCard: caption, amount and a chevron. Needs a card that fills its grid cell (`h-full`). */
-function EntityCardFoot({ caption, children, actions, glyph = true, compact = false, align = "start", className }: EntityCardFootProps) {
+function EntityCardFoot({ caption, children, leading, actions, glyph = true, compact = false, align = "start", className }: EntityCardFootProps) {
+    const hasLeading = Boolean(leading)
     const isEnd = align === "end"
+    const justifyClass = hasLeading ? "justify-between" : isEnd ? "justify-end" : "justify-between"
     return (
-        <div className={cn(cardAnatomy.footer, compact && "pt-0", "flex items-end gap-2", isEnd ? "justify-end" : "justify-between", className)}>
-            <div className={cn("min-w-0", isEnd && "flex flex-col items-end text-right")}>
+        <div className={cn(cardAnatomy.footer, compact && "pt-0", "flex items-end gap-2 border-t border-border/40 pt-2", justifyClass, className)}>
+            {leading ? (
+                <div className="min-w-0 flex-1">{leading}</div>
+            ) : null}
+            <div className={cn("min-w-0 shrink-0", isEnd && "flex flex-col items-end text-right")}>
                 {caption && children && <div className={cardAnatomy.caption}>{caption}</div>}
                 {children && <div className={cn(cardAnatomy.amountSlot, isEnd && "text-right")}>{children}</div>}
             </div>

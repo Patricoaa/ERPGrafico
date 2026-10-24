@@ -682,8 +682,35 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
         // footer then states the alternative (the channel) instead of leaving an empty hole.
         const showFooter = footerDef ? (layout.footer?.visible?.(data) ?? true) : false
         const footerFallback = !showFooter ? layout.footer?.fallback?.value(data) : null
-        const hasFooter = showFooter || Boolean(footerFallback)
+        const hasFooter = showFooter || Boolean(footerFallback) || Boolean(layout.footer?.lines)
         const footerCaption = showFooter ? footerDef?.label : footerFallback ? layout.footer?.fallback?.caption : undefined
+
+        const footerLinesNode = (() => {
+            if (!layout.footer?.lines) return null
+            const rawLines = (data as Record<string, unknown>)["lines"]
+            if (!Array.isArray(rawLines) || rawLines.length === 0) return null
+            const MAX = 2
+            const visible = rawLines.slice(0, MAX) as Array<{ quantity?: number | string | null; product_name?: string | null }>
+            const overflow = rawLines.length - MAX
+            return (
+                <div className="flex flex-col gap-0.5 min-w-0">
+                    {visible.map((line, i) => {
+                        const qty = Math.round(parseFloat(String(line.quantity ?? 0)) * 100) / 100
+                        const name = line.product_name ?? "—"
+                        return (
+                            <p key={i} className="text-[11px] text-muted-foreground leading-tight truncate">
+                                <span className="font-medium text-foreground/70">{qty}×</span> {name}
+                            </p>
+                        )
+                    })}
+                    {overflow > 0 && (
+                        <p className="text-[11px] text-muted-foreground/60 leading-tight">
+                            +{overflow} más
+                        </p>
+                    )}
+                </div>
+            )
+        })()
         // Narrow cards (container < 28rem) fold the trailing values into the label/value pairs instead of an orphan row.
         const metaItems = [
             ...metaDefs.map(({ id, def }) => ({ key: id, label: def.label, value: <FieldValue def={def} row={data} surface="card" align="start" /> })),
@@ -756,6 +783,7 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                             compact={mediaOnTop && !hasFooter}
                             align={layout.footer?.align ?? "start"}
                             glyph={layout.footer?.glyph ?? true}
+                            leading={footerLinesNode}
                             actions={mediaOnTop ? ctx.actions?.(data, "card") : undefined}
                         >
                             {showFooter && footerDef
@@ -827,6 +855,7 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                                 foot={hasFooter || mediaOnTop}
                                 footAmount={hasFooter}
                                 footAlign={layout.footer?.align}
+                                footLines={Boolean(layout.footer?.lines)}
                             />
                         </li>
                     ))}

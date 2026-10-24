@@ -76,7 +76,6 @@ export const salesInvoiceViews = salesInvoiceEntity.views({
         title: "folio",
         subtitle: ["dteType", "customer", "date"],
         trailing: ["hub"],
-        body: { kind: "lines" },
         footer: { value: "total", align: "end" },
         media: {
             iconFor: (inv) => DTE_ICON[inv.dte_type] ?? FileText,
