@@ -31,11 +31,14 @@ class InvoiceListSerializer(serializers.ModelSerializer):
     pending_amount = serializers.SerializerMethodField()
     is_tax_exempt = serializers.ReadOnlyField()
     is_sale_document = serializers.ReadOnlyField()
+    # Canonical identifier with DTE-aware prefix (e.g. "FACV-42", "BOL-5")
+    display_id = serializers.ReadOnlyField()
 
     class Meta:
         model = Invoice
         fields = [
             "id",
+            "display_id",
             "dte_type",
             "dte_type_display",
             "sii_document_code",
@@ -157,11 +160,14 @@ class InvoiceSerializer(serializers.ModelSerializer):
     )
     sale_order_detail = serializers.SerializerMethodField()
     is_sale_document = serializers.ReadOnlyField()
+    # Canonical identifier with DTE-aware prefix (e.g. "FACV-42", "BOL-5")
+    display_id = serializers.ReadOnlyField()
 
     class Meta:
         model = Invoice
         fields = [
             "id",
+            "display_id",
             "dte_type",
             "dte_type_display",
             "sii_document_code",
