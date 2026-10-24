@@ -33,8 +33,9 @@ export const saleNoteViews = saleNoteEntity.views({
         rail: { status: (r) => (r.status === "CANCELLED" ? "CANCELLED" : r.status === "DRAFT" ? "DRAFT" : isInvoiceCompleted(r) ? "SUCCESS" : "CONFIRMED") },
         title: "folio",
         subtitle: ["dteType", "customer", "date"],
-        trailing: ["hub", "total"],
+        trailing: ["hub"],
         body: { kind: "lines" },
+        footer: { value: "total", align: "end" },
         media: { tone: (n) => (n.dte_type === "NOTA_CREDITO" ? "destructive" : n.dte_type === "NOTA_DEBITO" ? "warning" : "default") },
     },
 })

@@ -75,8 +75,9 @@ export const salesInvoiceViews = salesInvoiceEntity.views({
         rail: { status: (r) => (r.status === "CANCELLED" ? "CANCELLED" : r.status === "DRAFT" ? "DRAFT" : isInvoiceCompleted(r) ? "SUCCESS" : "CONFIRMED") },
         title: "folio",
         subtitle: ["dteType", "customer", "date"],
-        trailing: ["hub", "total"],
+        trailing: ["hub"],
         body: { kind: "lines" },
+        footer: { value: "total", align: "end" },
         media: {
             iconFor: (inv) => DTE_ICON[inv.dte_type] ?? FileText,
             tone: (inv) => DTE_TONE[inv.dte_type] ?? "default",

@@ -41,9 +41,10 @@ export const purchaseOrderViews = purchaseOrderEntity.views({
     card: {
         title: "folio",
         subtitle: ["supplier", "date"],
-        trailing: ["hub", "total"],
+        trailing: ["hub"],
         media: { tone: (o) => (o.status === "CANCELLED" ? "muted" : isOrderCompleted(o) ? "success" : "info") },
         rail: { status: (o) => (isOrderCompleted(o) ? "SUCCESS" : o.status) },
         body: { kind: "lines" },
+        footer: { value: "total", align: "end" },
     },
 })

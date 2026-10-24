@@ -205,6 +205,10 @@ export interface CardLayout<T, Id extends string> {
     /** Bottom-pinned amount (caption = the field label) with the open glyph, like the POS ProductCard. */
     readonly footer?: {
         readonly value: Id
+        /** Alignment of the footer content: "start" (default) or "end" (bottom-right). */
+        readonly align?: "start" | "end"
+        /** Decorative action glyph at bottom-right (defaults to true). */
+        readonly glyph?: boolean
         /** Some rows have no amount worth showing (e.g. a product that is not for sale). */
         readonly visible?: (row: T) => boolean
         /** Shown in the amount slot when `visible` is false (e.g. a channel restriction). */

@@ -412,6 +412,7 @@ interface EntityCardSkeletonProps {
     foot?: boolean
     /** Si el foot incluye monto/caption o solo glifo/acción */
     footAmount?: boolean
+    footAlign?: "start" | "end"
 }
 
 /** Un campo del body: etiqueta + valor, espejo de EntityCard.Field. */
@@ -477,11 +478,12 @@ function EntityCardSkeletonMetrics({ count = 2 }: { count?: number }) {
 }
 
 /** Foot inferior: caption + monto + glifo, espejo de EntityCard.Foot. */
-function EntityCardSkeletonFoot({ amount = true }: { amount?: boolean }) {
+function EntityCardSkeletonFoot({ amount = true, align = "start" }: { amount?: boolean; align?: "start" | "end" }) {
+    const isEnd = align === "end"
     return (
-        <div className={cn(cardAnatomy.footer, "flex items-end justify-between gap-2")}>
+        <div className={cn(cardAnatomy.footer, "flex items-end gap-2", isEnd ? "justify-end" : "justify-between")}>
             {amount ? (
-                <div className="min-w-0">
+                <div className={cn("min-w-0", isEnd && "flex flex-col items-end")}>
                     <div className={cardAnatomy.caption}>
                         <Skeleton className="h-2.5 w-14 mb-1" />
                     </div>
@@ -518,6 +520,7 @@ function EntityCardSkeleton({
     metrics = false,
     foot = false,
     footAmount = true,
+    footAlign = "start",
 }: EntityCardSkeletonProps) {
     const fieldCount = Math.max(0, fields)
     const metricsCount = typeof metrics === "number" ? metrics : metrics ? 2 : 0
@@ -564,7 +567,7 @@ function EntityCardSkeleton({
                         </div>
                     </EntityCardBody>
                 )}
-                {foot && <EntityCardSkeletonFoot amount={footAmount} />}
+                {foot && <EntityCardSkeletonFoot amount={footAmount} align={footAlign} />}
                 {showFooter && (
                     <EntityCardFooter className="pt-2">
                         <Skeleton className="h-8 w-24 rounded-md" />
@@ -612,7 +615,7 @@ function EntityCardSkeleton({
                     ))}
                 </EntityCardBody>
             )}
-            {foot && <EntityCardSkeletonFoot amount={footAmount} />}
+            {foot && <EntityCardSkeletonFoot amount={footAmount} align={footAlign} />}
             {showFooter && (
                 <EntityCardFooter className="pt-2">
                     <Skeleton className="h-8 w-24 rounded-md" />
@@ -905,16 +908,19 @@ interface EntityCardFootProps {
     glyph?: boolean
     /** Action-only footer: drop the top padding when there is no amount to show. */
     compact?: boolean
+    /** Alignment of the footer content: "start" (default) or "end" (bottom-right). */
+    align?: "start" | "end"
     className?: string
 }
 
 /** Bottom-pinned amount like the POS ProductCard: caption, amount and a chevron. Needs a card that fills its grid cell (`h-full`). */
-function EntityCardFoot({ caption, children, actions, glyph = true, compact = false, className }: EntityCardFootProps) {
+function EntityCardFoot({ caption, children, actions, glyph = true, compact = false, align = "start", className }: EntityCardFootProps) {
+    const isEnd = align === "end"
     return (
-        <div className={cn(cardAnatomy.footer, compact && "pt-0", "flex items-end justify-between gap-2", className)}>
-            <div className="min-w-0">
+        <div className={cn(cardAnatomy.footer, compact && "pt-0", "flex items-end gap-2", isEnd ? "justify-end" : "justify-between", className)}>
+            <div className={cn("min-w-0", isEnd && "flex flex-col items-end text-right")}>
                 {caption && children && <div className={cardAnatomy.caption}>{caption}</div>}
-                {children && <div className={cardAnatomy.amountSlot}>{children}</div>}
+                {children && <div className={cn(cardAnatomy.amountSlot, isEnd && "text-right")}>{children}</div>}
             </div>
             {actions ? (
                 <div className="relative z-10 -mb-1 -mr-1 shrink-0" onClick={(e) => e.stopPropagation()}>{actions}</div>

@@ -754,10 +754,12 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                         <EntityCard.Foot
                             caption={footerCaption}
                             compact={mediaOnTop && !hasFooter}
+                            align={layout.footer?.align ?? "start"}
+                            glyph={layout.footer?.glyph ?? true}
                             actions={mediaOnTop ? ctx.actions?.(data, "card") : undefined}
                         >
                             {showFooter && footerDef
-                                ? <FieldValue def={footerDef} row={data} surface="cardFooter" align="start" />
+                                ? <FieldValue def={footerDef} row={data} surface="cardFooter" align={layout.footer?.align ?? "start"} />
                                 : footerFallback
                                     ? <span className="text-sm font-medium text-muted-foreground">{footerFallback}</span>
                                     : null}
@@ -824,6 +826,7 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                                 fields={isProgressBody ? 1 : 0}
                                 foot={hasFooter || mediaOnTop}
                                 footAmount={hasFooter}
+                                footAlign={layout.footer?.align}
                             />
                         </li>
                     ))}
