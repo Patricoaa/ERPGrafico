@@ -373,5 +373,24 @@ export const getPurchaseHubStatuses = (order: OrderBase) => {
     }
 }
 
+/**
+ * Determina si una orden comercial (OV u OC) tiene todos sus ejes operativos completados.
+ * Devuelve true si el documento está confirmado/activo y todos sus ejes aplicables
+ * (origen, facturación, tesorería, logística y producción) están en estado 'success'.
+ */
+export function isOrderCompleted(order: HubOrderSource): boolean {
+    if (!order.status || order.status === 'CANCELLED' || order.status === 'DRAFT') {
+        return false
+    }
+    const s = getHubStatuses(order)
+    return (
+        s.origin === 'success' &&
+        s.billing === 'success' &&
+        s.treasury === 'success' &&
+        (s.logistics === 'success' || s.logistics === 'not_applicable') &&
+        (s.production === 'success' || s.production === 'not_applicable')
+    )
+}
+
 
 

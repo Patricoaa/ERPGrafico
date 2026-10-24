@@ -19,11 +19,12 @@ export function SalesHeader() {
   const { getViewModeUrl } = useViewModePreference()
 
   const segments = pathname.split("/").filter(Boolean)
-  const currentSegment = segments[1] || "dtes"
+  const currentSegment = segments[1] || "docs"
 
-  // Map physical routes to tab values (ADR-0090: `dtes` es el tab Documentos y
-  // contiene orders/deliveries/returns como sub-segmentos; `settings` es tab propio).
+  // Map physical routes to tab values (ADR-0090: `dtes` y `docs` corresponden al tab Documentos y
+  // contienen orders/fulfillment como sub-segmentos; `settings` es tab propio).
   const segmentToTab: Record<string, string> = {
+    docs: "dtes",
     dtes: "dtes",
     pos: "pos",
     credits: "credits",
@@ -36,7 +37,10 @@ export function SalesHeader() {
   // Determine subActiveValue from path segments
   const subActiveValue = (() => {
     if (activeValue === "config") return segments[2] || "credit"
-    if (activeValue === "dtes") return segments[2] || "dtes"
+    if (activeValue === "dtes") {
+      if (currentSegment === "docs") return "orders"
+      return segments[2] || "dtes"
+    }
     if (activeValue === "pos") {
       if (currentSegment === "sessions") return "sessions"
       return segments[2] || "cajas"
@@ -64,7 +68,7 @@ export function SalesHeader() {
 
   const navigation = {
     moduleName: moduleConfig?.moduleName ?? "Ventas",
-    moduleHref: moduleConfig?.moduleHref ?? getViewModeUrl("sales.saleorder", "/sales/dtes"),
+    moduleHref: moduleConfig?.moduleHref ?? getViewModeUrl("sales.saleorder", "/sales/docs"),
     tabs,
     activeValue,
     subActiveValue,

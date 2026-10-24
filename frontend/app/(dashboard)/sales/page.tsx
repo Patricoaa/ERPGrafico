@@ -5,7 +5,7 @@ interface PageProps {
 }
 
 /**
- * ADR-0090: el módulo Ventas abre en el tab Documentos. Los `?view=` heredados se
+ * ADR-0090: el módulo Ventas abre en el tab Documentos (/sales/docs). Los `?view=` heredados se
  * mantienen solo para las secciones que siguen existiendo (POS, cartera, configuración);
  * los antiguos `view=orders` apuntan a la lista de órdenes bajo Documentos.
  */
@@ -19,5 +19,5 @@ export default async function SalesPage({ searchParams }: PageProps) {
     if (view === 'credits') redirect(sub ? `/sales/credits/${sub}` : '/sales/credits/portfolio')
     if (view === 'config') redirect('/sales/settings/credit')
 
-    redirect('/sales/dtes')
+    redirect('/sales/docs')
 }

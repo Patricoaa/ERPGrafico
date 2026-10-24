@@ -1,4 +1,5 @@
 import { defineEntity } from "@/components/entity-view"
+import { isOrderCompleted } from "@/lib/workflow-status"
 import { orderStageSummary } from "../utils/orderStage"
 import type { SaleOrder } from "../types"
 
@@ -26,8 +27,8 @@ export const saleOrderViews = saleOrderEntity.views({
         title: "folio",
         subtitle: ["customer", "date"],
         trailing: ["hub"],
-        media: { tone: (o) => (o.status === "CANCELLED" ? "muted" : "primary") },
-        rail: { status: (o) => o.status },
+        media: { tone: (o) => (o.status === "CANCELLED" ? "muted" : isOrderCompleted(o) ? "success" : "primary") },
+        rail: { status: (o) => (isOrderCompleted(o) ? "SUCCESS" : o.status) },
         body: { kind: "workflow", lines: "lines", total: "total", pending: "pending" },
     },
 })
