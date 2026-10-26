@@ -79,20 +79,18 @@ describe("WorkspaceTabBar", () => {
         expect(modals.closeTab).toHaveBeenCalledWith("a.b:1")
     })
 
-    it("hosts the view's actions, breadcrumbs and the user's controls on the right", () => {
+    it("hosts the view's actions and breadcrumbs on the right and the nav button on the left", () => {
         render(
             <WorkspaceTabBar
                 page={page}
                 breadcrumbs={[{ label: "Banco", href: "/banks/1" }, { label: "Cartola" }]}
                 actions={<span>Nuevo</span>}
-                trailing={<span>Usuario</span>}
                 leading={<span>Menú</span>}
             />
         )
         expect(screen.getByRole("link", { name: "Banco" })).toHaveAttribute("href", "/banks/1")
         expect(screen.getByText("Cartola")).toBeInTheDocument()
         expect(screen.getByText("Nuevo")).toBeInTheDocument()
-        expect(screen.getByText("Usuario")).toBeInTheDocument()
         expect(screen.getByText("Menú")).toBeInTheDocument()
     })
 

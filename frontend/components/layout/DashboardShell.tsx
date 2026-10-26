@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import { UserActions } from "./UserActions"
 import { ModuleRail } from "./ModuleRail"
 import { ModuleSidebarPanel } from "./ModuleSidebarPanel"
 import { WorkspaceTabBar } from "./WorkspaceTabBar"
@@ -139,7 +138,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                             <Menu className="h-4 w-4" />
                         </Button>
                     }
-                    trailing={<UserActions />}
                 />
 
                 {/* ── CONTENT AREA (se repliega ante sheets globales) ─────── */}
