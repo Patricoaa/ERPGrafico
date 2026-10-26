@@ -168,6 +168,10 @@ export interface PaymentTerminalDevice {
 // Terminal Batch Types
 export interface TerminalBatch {
     id: number
+    display_id?: string
+    payment_method?: string
+    commission_tax?: string
+    notes?: string
     provider: number
     provider_name?: string
     batch_number: string
@@ -511,3 +515,20 @@ export interface ApiError {
     message: string
 }
 
+
+/** `GET /treasury/payments/{id}/` — the payment document with its movement and accounts. */
+export interface PaymentDetail {
+    id: number
+    display_id?: string
+    status?: string
+    movement_type?: string
+    date?: string
+    amount?: number
+    reference?: string | null
+    notes?: string | null
+    payment_method_display?: string
+    payment_method_new_name?: string | null
+    treasury_account_name?: string | null
+    partner_name?: string | null
+    [key: string]: unknown
+}

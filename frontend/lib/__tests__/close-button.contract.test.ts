@@ -14,6 +14,7 @@
  * ADR-0091 (to be created).
  */
 import { describe, it, expect } from 'vitest';
+import * as fs from 'node:fs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -181,7 +182,6 @@ describe('close-button contract', () => {
     ];
 
     function scanDir(dir: string, files: string[] = []): string[] {
-      const fs = require('fs');
       const fullDir = path.resolve(here, '..', dir);
       if (!fs.existsSync(fullDir)) return files;
       for (const entry of fs.readdirSync(fullDir)) {
@@ -227,7 +227,6 @@ describe('close-button contract', () => {
     ];
 
     function scanFeatures(dir: string, files: string[] = []): string[] {
-      const fs = require('fs');
       const fullDir = path.resolve(here, '..', dir);
       if (!fs.existsSync(fullDir)) return files;
       for (const entry of fs.readdirSync(fullDir)) {

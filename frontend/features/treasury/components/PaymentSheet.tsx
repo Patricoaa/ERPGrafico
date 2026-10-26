@@ -32,6 +32,7 @@ import { paymentActions } from "@/features/treasury/paymentActions"
 import { useCancelPayment, useCancelInvoice } from "@/features/orders"
 import { AnnulPaymentModal } from "@/features/orders"
 import { useAuth } from "@/contexts/AuthContext"
+import type { PaymentDetail } from "../types"
 import { showApiError } from "@/lib/errors"
 import { Ban, Trash2, RotateCcw } from "lucide-react"
 
@@ -107,7 +108,7 @@ export function PaymentSheet({ id, open, onOpenChange, embedded = false, onActio
 
     const resolved = resolveRegistryActions(paymentActions, payment, permissions)
 
-    const toItem = ({ action, disabled, disabledReason }: ResolvedDocumentAction<typeof payment>): DocumentActionItem => ({
+    const toItem = ({ action, disabled, disabledReason }: ResolvedDocumentAction<PaymentDetail>): DocumentActionItem => ({
         id: action.id,
         label: action.label,
         icon: action.icon,
@@ -244,11 +245,11 @@ export function PaymentSheet({ id, open, onOpenChange, embedded = false, onActio
     )
 }
 
-function PaymentSummaryTab({ payment }: { payment: any }) {
+function PaymentSummaryTab({ payment }: { payment: PaymentDetail }) {
     const contextFields: DocumentField[] = [
         {
             label: "Estado",
-            value: <StatusBadge status={payment.status} variant="badge" />,
+            value: <StatusBadge status={payment.status ?? ""} variant="badge" />,
         },
         {
             label: "Flujo",
@@ -290,7 +291,7 @@ function PaymentSummaryTab({ payment }: { payment: any }) {
     )
 }
 
-function getPaymentLifecycle(payment: any): LifecycleStep[] {
+function getPaymentLifecycle(payment: PaymentDetail): LifecycleStep[] {
     const steps: LifecycleStep[] = [
         { id: "origin", label: "Origen", icon: FileText, status: "success" },
     ]
@@ -312,7 +313,7 @@ function getPaymentLifecycle(payment: any): LifecycleStep[] {
     return steps
 }
 
-function getSectionActions(resolved: ResolvedDocumentAction<any>[]): Partial<Record<DocumentDomain, DocumentActionItem[]>> {
+function getSectionActions(resolved: ResolvedDocumentAction<PaymentDetail>[]): Partial<Record<DocumentDomain, DocumentActionItem[]>> {
     const result: Partial<Record<DocumentDomain, DocumentActionItem[]>> = {}
     for (const r of resolved) {
         const domain = r.category as DocumentDomain

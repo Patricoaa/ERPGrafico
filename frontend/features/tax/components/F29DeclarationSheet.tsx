@@ -21,6 +21,7 @@ import { useDocumentRelations } from "@/features/documents/hooks/useDocumentRela
 import type { DocumentDomain, DocumentLink } from "@/features/documents/types"
 import { DocumentRelationsTab } from "@/features/documents/components/DocumentRelationsTab"
 import { useF29Detail } from "@/features/tax/hooks/useTaxQueries"
+import type { F29Detail } from "@/features/tax/types"
 import { useInvalidateDocuments } from "@/features/documents/hooks/useInvalidateDocuments"
 import { resolveRegistryActions, type ResolvedDocumentAction } from "@/features/documents/utils/actions"
 import { useAuth } from "@/contexts/AuthContext"
@@ -69,9 +70,9 @@ export function F29DeclarationSheet({ id, open, onOpenChange, embedded = false, 
     }, [declaration?.id, displayId, setEntityDisplay])
 
     // No actions registry for F29 yet
-    const resolved: ResolvedDocumentAction<any>[] = []
+    const resolved: ResolvedDocumentAction<F29Detail>[] = []
 
-    const toItem = ({ action, disabled, disabledReason }: ResolvedDocumentAction<any>): DocumentActionItem => ({
+    const toItem = ({ action, disabled, disabledReason }: ResolvedDocumentAction<F29Detail>): DocumentActionItem => ({
         id: action.id,
         label: action.label,
         icon: action.icon,
@@ -157,7 +158,7 @@ export function F29DeclarationSheet({ id, open, onOpenChange, embedded = false, 
     )
 }
 
-function F29SummaryTab({ declaration }: { declaration: any }) {
+function F29SummaryTab({ declaration }: { declaration: F29Detail }) {
     const contextFields: DocumentField[] = [
         {
             label: "Período",
@@ -190,7 +191,7 @@ function F29SummaryTab({ declaration }: { declaration: any }) {
     )
 }
 
-function getF29Lifecycle(declaration: any): LifecycleStep[] {
+function getF29Lifecycle(declaration: F29Detail): LifecycleStep[] {
     const steps: LifecycleStep[] = [
         { id: "origin", label: "Origen", icon: FileText, status: "success" },
     ]
@@ -212,7 +213,7 @@ function getF29Lifecycle(declaration: any): LifecycleStep[] {
     return steps
 }
 
-function getSectionActions(resolved: ResolvedDocumentAction<any>[]): Partial<Record<DocumentDomain, DocumentActionItem[]>> {
+function getSectionActions(resolved: ResolvedDocumentAction<F29Detail>[]): Partial<Record<DocumentDomain, DocumentActionItem[]>> {
     return {}
 }
 

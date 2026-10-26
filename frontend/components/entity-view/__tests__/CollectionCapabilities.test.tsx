@@ -336,7 +336,7 @@ describe("hierarchical rows (tree)", () => {
     })
 
     it("bulk selection: a child reaches the bulk actions, a parent does not drag its subtree", async () => {
-        const onRun = vi.fn()
+        const onRun = vi.fn<(selected: Account[]) => void>()
         function Bulk() {
             const collection = useEntityCollection(treeEntity, { rows: accounts }, { pagination: { mode: "none" } })
             return (

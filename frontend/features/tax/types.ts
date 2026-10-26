@@ -30,6 +30,7 @@ export interface TaxDeclaration {
     vat_to_pay: number
     total_paid: number
     is_fully_paid: boolean
+    tax_period?: number
     tax_period_display: string
     ppm_amount: number
     withholding_tax: number
@@ -59,6 +60,7 @@ export interface DteBreakdownItem {
 }
 
 export interface TaxCalculationData {
+    tax_period_id?: number
     year: number
     month: number
     sales_taxed: number
@@ -110,4 +112,25 @@ export interface TaxPaymentData {
     documentReference?: string
     documentDate?: string
     documentAttachment?: File | null
+}
+
+/** `GET /tax/periods/{id}/` — the list item plus the date range of the period. */
+export interface TaxPeriodDetail extends TaxPeriod {
+    start_date?: string
+    end_date?: string
+    tax_period_display?: string
+}
+
+/** `GET /tax/f29/{id}/` — a registered F29 declaration with its accounting entry. */
+export interface F29Detail extends TaxDeclaration {
+    period_display?: string
+    declared_by?: string | null
+    is_registered?: boolean
+    journal_entry?: number | null
+    journal_entry_display?: string | null
+}
+
+export interface TaxPeriodCheck {
+    is_closed: boolean
+    date: string
 }

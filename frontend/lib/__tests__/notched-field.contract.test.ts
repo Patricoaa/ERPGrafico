@@ -85,7 +85,7 @@ interface BaselineEntry {
 function loadBaseline(): BaselineEntry[] {
   if (!existsSync(BASELINE_PATH)) return [];
   try {
-    return JSON.parse(readFileSync(BASELINE_PATH, 'utf-8'));
+    return JSON.parse(readFileSync(BASELINE_PATH, 'utf-8')) as BaselineEntry[];
   } catch {
     return [];
   }

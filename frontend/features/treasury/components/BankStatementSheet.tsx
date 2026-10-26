@@ -23,7 +23,7 @@ import { DocumentRelationsTab } from "@/features/documents/components/DocumentRe
 import { formatCurrency } from "@/lib/money"
 import { format } from "date-fns"
 import { toDate } from "@/lib/utils"
-import { useBankStatement } from "@/features/treasury/hooks/useBankStatement"
+import { useBankStatement, type BankStatementData } from "@/features/treasury/hooks/useBankStatement"
 import { useInvalidateDocuments } from "@/features/documents/hooks/useInvalidateDocuments"
 import { resolveRegistryActions, type ResolvedDocumentAction } from "@/features/documents/utils/actions"
 import { useAuth } from "@/contexts/AuthContext"
@@ -71,9 +71,9 @@ export function BankStatementSheet({ id, open, onOpenChange, embedded = false, o
     }, [statement?.id, displayId, setEntityDisplay])
 
     // No actions registry for bank statement yet
-    const resolved: ResolvedDocumentAction<any>[] = []
+    const resolved: ResolvedDocumentAction<BankStatementData>[] = []
 
-    const toItem = ({ action, disabled, disabledReason }: ResolvedDocumentAction<any>): DocumentActionItem => ({
+    const toItem = ({ action, disabled, disabledReason }: ResolvedDocumentAction<BankStatementData>): DocumentActionItem => ({
         id: action.id,
         label: action.label,
         icon: action.icon,
@@ -161,7 +161,7 @@ export function BankStatementSheet({ id, open, onOpenChange, embedded = false, o
     )
 }
 
-function BankStatementSummaryTab({ statement }: { statement: any }) {
+function BankStatementSummaryTab({ statement }: { statement: BankStatementData }) {
     const contextFields: DocumentField[] = [
         {
             label: "Cuenta Tesorería",
@@ -208,7 +208,7 @@ function BankStatementSummaryTab({ statement }: { statement: any }) {
     )
 }
 
-function getBankStatementLifecycle(statement: any): LifecycleStep[] {
+function getBankStatementLifecycle(statement: BankStatementData): LifecycleStep[] {
     const steps: LifecycleStep[] = [
         { id: "origin", label: "Origen", icon: FileText, status: "success" },
     ]
@@ -230,7 +230,7 @@ function getBankStatementLifecycle(statement: any): LifecycleStep[] {
     return steps
 }
 
-function getSectionActions(resolved: ResolvedDocumentAction<any>[]): Partial<Record<DocumentDomain, DocumentActionItem[]>> {
+function getSectionActions(resolved: ResolvedDocumentAction<BankStatementData>[]): Partial<Record<DocumentDomain, DocumentActionItem[]>> {
     const result: Partial<Record<DocumentDomain, DocumentActionItem[]>> = {}
     for (const r of resolved) {
         const domain = r.category as DocumentDomain
