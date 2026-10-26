@@ -2,6 +2,111 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.26](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.25...v0.3.26) (2026-10-26)
+
+
+### 📚 Documentation
+
+* ADR-0094 + amend ADR-0093 / design-system / contracts (governance) ([a18ecbe](https://github.com/Patricoaa/ERPGrafico/commit/a18ecbe91fe0bffc71914574b85e9e88844ad216))
+* Governance Phase 3 — ADR-0094 updated + ADR-0095 new + contracts updated ([eb2eb54](https://github.com/Patricoaa/ERPGrafico/commit/eb2eb549b6d6fb343f1d4b0171e21dcbf75bdd94))
+* Governance Phase 4 — ADR-0096 + contracts updated + ADR-0095 amended ([b8fd5d6](https://github.com/Patricoaa/ERPGrafico/commit/b8fd5d6166d39a44a706ec116b8ef00ec1a9b5f9))
+* renumber work order rail ADR to 0099 after base merge ([985c2c1](https://github.com/Patricoaa/ERPGrafico/commit/985c2c1a59c5ddb037d73a6ab32d72a6c72cf1f9))
+
+
+### 🐛 Bug Fixes
+
+* **cards:** notched-field CSS excludes role=radio (ChoiceCard in LabeledContainer) ([9346059](https://github.com/Patricoaa/ERPGrafico/commit/93460590d5c8481bf28caab51d00509bb2b6c1d8))
+* **cards:** remove unused destructuring in ChoiceCard (eslint warning) ([17a8696](https://github.com/Patricoaa/ERPGrafico/commit/17a869615a5de5f84e8e520722d717bc33837121))
+* **cards:** restore horizontal layout for CardRow + drop duplicated LabeledContainer ([a473bea](https://github.com/Patricoaa/ERPGrafico/commit/a473bea7d38f6174176de66e6070a0a3c05aae19))
+* **dev-server:** avoid next-server OOM kill — frontend 6G, celery concurrency=1, optimizePackageImports ([bb65c6e](https://github.com/Patricoaa/ERPGrafico/commit/bb65c6ed127cca61e1b2f3f9b3e955815110311f))
+* **documents:** stop DocumentRefLink click from bubbling to clickable rows ([53bf6a4](https://github.com/Patricoaa/ERPGrafico/commit/53bf6a4622fbcab5e006d27a92f5d232fa21e5b4))
+* **drilldown:** name the record in the unsaved-changes dialog and stop clipping its buttons ([19f6d57](https://github.com/Patricoaa/ERPGrafico/commit/19f6d57a5ec4760285fa74fdad93baa487b84916))
+* **entity-view:** align EntityCard.Skeleton anatomy and Collection loading layout ([8f4cc55](https://github.com/Patricoaa/ERPGrafico/commit/8f4cc55b43466e3673b7e047bd04288f8d75c3db))
+* **entity-view:** card click always opens; bulk and dock use the check mark (ADR-0097) ([03e2bd4](https://github.com/Patricoaa/ERPGrafico/commit/03e2bd427b5568bbc4822a3c2316adc81cc41e18))
+* **entity-view:** replace <p> with <div> in EntityCard caption slots to prevent hydration errors ([163c861](https://github.com/Patricoaa/ERPGrafico/commit/163c8611b187bb05b72ce9757f39e7cf3a13acb3))
+* **forms:** initialize react-hook-form in a layout effect ([ef918f3](https://github.com/Patricoaa/ERPGrafico/commit/ef918f3125a0c588fbc55eb14bfabbc5f93b1eca))
+* **production:** make work order rail actions keyboard and touch accessible (Direction C, phase 2) ([05e990e](https://github.com/Patricoaa/ERPGrafico/commit/05e990e017316f1d9ed6a1458672201c770a7e35))
+* **sales,purchasing:** expose display_id in fulfillment serializers and drawers ([fdba18d](https://github.com/Patricoaa/ERPGrafico/commit/fdba18d9a6e564aa745431b1b837b89c36067d80))
+* **sales:** use compound rowId for unified sale fulfillment entity ([df9405a](https://github.com/Patricoaa/ERPGrafico/commit/df9405acc4896f7173445e201faa461c420d04c5))
+* **ui:** EntityCard.Media rounded-t-md → rounded-t-sm (Phase 2a.3) ([469dece](https://github.com/Patricoaa/ERPGrafico/commit/469decef0088d3503ac370ce62a97007fd22c9ad))
+* **workspace:** panel drawers are not dismissed by outside clicks; page tab returns to the list ([2aa5fd1](https://github.com/Patricoaa/ERPGrafico/commit/2aa5fd1e74a843502c4be9886c261037664faabd))
+
+
+### ✨ Features
+
+* **billing:** distinguish DTE types visually, harmonize folio format ([6649a9d](https://github.com/Patricoaa/ERPGrafico/commit/6649a9dcd6c8949fe7e4b9fa5b43eeef7f4405ee))
+* **cards:** card family — roles, shared surfaces, InfoBlock and ratchet (ADR-0097) ([0abaef8](https://github.com/Patricoaa/ERPGrafico/commit/0abaef8df5144bfb1202d20e2f1c273b0f6a15f4))
+* **cards:** ChoiceCard light variant — intrinsic height, control border, empty-circle rail, full-height lead ([39ff0d2](https://github.com/Patricoaa/ERPGrafico/commit/39ff0d29cd9aa8120d1e7c7fd7c3e4462168b819))
+* **cards:** ChoiceCard variant=light + SelectionRail + light anatomy tokens ([22c4fe2](https://github.com/Patricoaa/ERPGrafico/commit/22c4fe2d9a60912cf053d8251da46efe5950e09c))
+* **cards:** migrate 7 sites to ChoiceCard variant=light (14 instances) ([89c3b7d](https://github.com/Patricoaa/ERPGrafico/commit/89c3b7d926c9f677f873754cef1d17aef8c2c48a))
+* **drilldown:** breadcrumbs and module indicator in stacked drawers (ADR-0100 phase 4) ([cb3d44e](https://github.com/Patricoaa/ERPGrafico/commit/cb3d44e1b6f6f07a5eae670eccbc2d6b478318ff))
+* **drilldown:** extend unsaved-changes guard to URL-driven drawers and ProductDrawer ([b9c120c](https://github.com/Patricoaa/ERPGrafico/commit/b9c120c51d04b904990de96f8a8e460abc9129f7))
+* **drilldown:** pin documents as chips in the trail (ADR-0100 phase 5) ([11859bd](https://github.com/Patricoaa/ERPGrafico/commit/11859bdbcbd0b0f5d9184f56a20a1e0a7557e85a))
+* **drilldown:** single openDocument entry point with stack-over-list mode behind a flag (ADR-0100) ([ee95ac6](https://github.com/Patricoaa/ERPGrafico/commit/ee95ac65dae6dbf5ed773435f43c648263693b57))
+* **drilldown:** stack travels in ?stack= (Back/Forward, reload, shared links) (ADR-0100 phase 5) ([e39cbe9](https://github.com/Patricoaa/ERPGrafico/commit/e39cbe9d0cf6bc3cfdd8f8b67620ff2ce6c7bb9a))
+* **drilldown:** unsaved-changes guard blocks opening, going back and closing ([793ecd0](https://github.com/Patricoaa/ERPGrafico/commit/793ecd07d52c7a37a684d855f3a93c01e95bfaa6))
+* **drilldown:** unsaved-changes guard for payroll, delivery and partner drawers ([cd0b818](https://github.com/Patricoaa/ERPGrafico/commit/cd0b8188a620fb930b9dc2c23d09966361ce1087))
+* **drilldown:** X/Escape pop one level of the stack instead of clearing it (ADR-0100) ([380d915](https://github.com/Patricoaa/ERPGrafico/commit/380d915bd473cc0db902cfc5e61874ca4a00eb2b))
+* **entity-view:** catalog and document card templates across entities (ADR-0097) ([7b4415d](https://github.com/Patricoaa/ERPGrafico/commit/7b4415d75164bb52a82b918367e4c316a14b9949))
+* **entity-view:** complete card family anatomy and catalog pilots (ADR-0097) ([7a1eae5](https://github.com/Patricoaa/ERPGrafico/commit/7a1eae5b4b007a68ad5346c6d36d30e0192287c5))
+* **entity-view:** embed order detail lines into card footer and omit lines in tax document cards ([33dda9a](https://github.com/Patricoaa/ERPGrafico/commit/33dda9aef57824c6ebebd68c364aab76f279675f))
+* **entity-view:** entity cards on the POS ProductCard anatomy (ADR-0097) ([ae741a9](https://github.com/Patricoaa/ERPGrafico/commit/ae741a9ee40e95791287daf6538545d06c882b41))
+* **entity-view:** migrate EntityCard to CardSurface (Phase 2d) ([0e61114](https://github.com/Patricoaa/ERPGrafico/commit/0e611145d1468ea91d71ef604cde23fc11e91225))
+* **entity-view:** move total amount to bottom-right card footer for sales, purchasing, and billing documents ([1dc4ec6](https://github.com/Patricoaa/ERPGrafico/commit/1dc4ec632ce4e688c7bcea6ba6337c8ec7a31f71))
+* **entity-view:** ribbon selection language, bulk click-to-select and last entities (ADR-0097) ([19f8176](https://github.com/Patricoaa/ERPGrafico/commit/19f81764ac29782969e34ca283e3ad6f21210270))
+* **entity-view:** toolbar view buttons derive from entity viewPolicy ([f1cc115](https://github.com/Patricoaa/ERPGrafico/commit/f1cc1155786e7f4943ed756bf841f099be79a85a))
+* **inventory:** migrate ProductManufacturingTab to ChoiceGroup + ChoiceCard (Phase 2c continued) ([d671c4f](https://github.com/Patricoaa/ERPGrafico/commit/d671c4fe91d5912796eaa5fd45862724bf003efd))
+* **inventory:** product catalog card pilot with status line, footnote and muted slots (ADR-0097) ([0d232e0](https://github.com/Patricoaa/ERPGrafico/commit/0d232e02cb2a58f9a23e0d064d2bc4a9114b984c))
+* **pos:** expose session_local_id as temporary draft number + phase icon in top strip ([ddc629b](https://github.com/Patricoaa/ERPGrafico/commit/ddc629bbdd3d11cfaec586c9c5c7d5b68dffa72f))
+* **pos:** expose session_local_id as temporary draft number in top strip and list ([e539d60](https://github.com/Patricoaa/ERPGrafico/commit/e539d60b608031f9c363f60825338be302611e90))
+* **pos:** harmonize manufacturing step aesthetics ([b22beb4](https://github.com/Patricoaa/ERPGrafico/commit/b22beb4d95e01df89c08aecd272c8599940efba9))
+* **pos:** harmonize manufacturing step aesthetics — MfgLineCard aligned to ProductGrid ([41e8fec](https://github.com/Patricoaa/ERPGrafico/commit/41e8fec6f75a9e1de87d1c05f49803b2fb7eeded))
+* **pos:** migrate VariantSelectorModal to CardRow (Phase 2a.1) ([36128ea](https://github.com/Patricoaa/ERPGrafico/commit/36128ea663fdfc3c3b2c44c4b22a003cc024ec31))
+* **production:** collapsible work order rail with persisted preference (Direction C, phase 3) ([d5945ee](https://github.com/Patricoaa/ERPGrafico/commit/d5945ee95dda3d4176f048f53919cd96e3144aa5))
+* **production:** handle terminal work order states in rail and footer (Direction C, phase 5) ([e1bb5ae](https://github.com/Patricoaa/ERPGrafico/commit/e1bb5ae19e8b402daa6d7c9569ba4c78608f4dea))
+* **production:** migrate OriginSelectionStep to CardSurface (Phase 2b) ([99a01d4](https://github.com/Patricoaa/ERPGrafico/commit/99a01d4a9e3f187bdcd76c92c770d09ef542da65))
+* **production:** migrate SaleOrderProductStep to CardSurface + CardRow (Phase 2a.2) ([4259c13](https://github.com/Patricoaa/ERPGrafico/commit/4259c13096d8e9ee96e5438b6bd7007cf95d7770))
+* **production:** replace mobile stage select with status drawer (Direction C, phase 4) ([3c6d16d](https://github.com/Patricoaa/ERPGrafico/commit/3c6d16dc7af30ac70ce1fe5209441c5d2c913b5b))
+* **production:** stage evidence model for work order rail (Direction C, phase 0) ([ac1d4d2](https://github.com/Patricoaa/ERPGrafico/commit/ac1d4d22c793293e0822e5377fea617377b0e5d0))
+* **production:** turn work order rail into a status board (Direction C, phase 1) ([5e5c622](https://github.com/Patricoaa/ERPGrafico/commit/5e5c622ae9292eeb7a555e3d2893de5b287bfae6))
+* **purchasing,billing:** add /purchasing/docs deeplink, harmonize card lines detail, and resolve invoice hubstatus rail ([5d80db0](https://github.com/Patricoaa/ERPGrafico/commit/5d80db0f567124a9c6177599062037a911e0d892))
+* **sales,purchasing:** default to sales orders, add /sales/docs deeplink, and resolve completed orders to success rail ([ff5187c](https://github.com/Patricoaa/ERPGrafico/commit/ff5187c66c80b5b7765b456f4b2c24ca2357ff26))
+* **settings:** migrate PartnerContributionWizard to ChoiceGroup + ChoiceCard (Phase 2c continued) ([80367c4](https://github.com/Patricoaa/ERPGrafico/commit/80367c40f81d87700472544b9007de25692aff80))
+* **settings:** migrate PartnerWithdrawalWizard to ChoiceGroup + ChoiceCard (Phase 2c continued) ([3c9c20f](https://github.com/Patricoaa/ERPGrafico/commit/3c9c20f8c0d0c51f4ce93aa4dcfe23cd7fc71833))
+* **treasury:** add consolidated bank overview and bank filters ([e0ef987](https://github.com/Patricoaa/ERPGrafico/commit/e0ef987f54cd369e5f118b948bedcdddf79826f1))
+* **treasury:** promote bank management in bank center rail ([ca968df](https://github.com/Patricoaa/ERPGrafico/commit/ca968dfc4febfeb8550e2fcd3ecd24622efc3242))
+* **ui:** dynamic icons and state contrast for fulfillments and treasury movements ([ef389ac](https://github.com/Patricoaa/ERPGrafico/commit/ef389ac88d7e2844f2148656f0458a40a7746d3f))
+* **ui:** extract card anatomy kit (tokens + CardSurface + CardRail) ([7eff66b](https://github.com/Patricoaa/ERPGrafico/commit/7eff66b6f0f2a566208b7c361cbae7da20886a17))
+* **ui:** extract card anatomy kit + row variant (Phase 1) ([7bfcad5](https://github.com/Patricoaa/ERPGrafico/commit/7bfcad5a977cb9c3217feb50f8afec5f2ddd6ef3))
+* **workspace:** permanent tab bar with per-page ephemeral document and tool tabs (ADR-0101) ([4d1c473](https://github.com/Patricoaa/ERPGrafico/commit/4d1c4730c10f3f0cea1c3d53a88494f837c19d25))
+* **workspace:** tab bar replaces the topbar; page is the first tab, no sibling pages or calculator button (ADR-0101) ([12eb084](https://github.com/Patricoaa/ERPGrafico/commit/12eb084736debcffc8d9c0d43d21680d73c136ea))
+* **workspace:** tab panels are always full-size and block the page underneath (ADR-0101) ([945f670](https://github.com/Patricoaa/ERPGrafico/commit/945f670bf4eb3ba7e393b3273e847d9386fa201f))
+
+
+### 🚀 Maintenance
+
+* **backend:** remove debug scripts ([ddf1f53](https://github.com/Patricoaa/ERPGrafico/commit/ddf1f53f955aa156d319394aca18f4d19e7d7c0b))
+* **dev-server:** server-cleanup.sh — weekly disk prune + 88% RAM ceiling guard ([419d074](https://github.com/Patricoaa/ERPGrafico/commit/419d0746cf13bc7fe119cd311f5c485026115fae))
+* **layout:** remove empty UserActions ([4797c6f](https://github.com/Patricoaa/ERPGrafico/commit/4797c6f276da1018fbcf000e5a0406570f2b9b4f))
+* remove CardRow.tsx from previous session (not part of this feature) ([2a442c4](https://github.com/Patricoaa/ERPGrafico/commit/2a442c4b919fb5fa27149cb2c704401f7b5f4478))
+* remove CardRow.tsx from previous session (not part of this feature) ([49cca1c](https://github.com/Patricoaa/ERPGrafico/commit/49cca1c9113b5088c295b1d87942597493b2de41))
+
+
+### 🧪 Testing
+
+* fix stale contract tests and the compact card footer padding ([6cac2c2](https://github.com/Patricoaa/ERPGrafico/commit/6cac2c2023bf3d8e74421e5925af45f13dc2dca3))
+* **production:** align stale wizard title expectations ([61273c0](https://github.com/Patricoaa/ERPGrafico/commit/61273c0734eec1e05641be42783548aa326f2b22))
+* **typography:** breadcrumb contract now reads the workspace tab bar (ADR-0101) ([05d0971](https://github.com/Patricoaa/ERPGrafico/commit/05d09716fb00b93885678bcee69d8d57df4d4def))
+
+
+### ⚙️ Refactors
+
+* **entity-view:** remove AutoEntityCard + DataTableView (Phase 2d cleanup) ([601bace](https://github.com/Patricoaa/ERPGrafico/commit/601bace5002bc8b4ca929a6300e63f71a6abdd9a))
+* **pos:** migrate card family to anatomy kit + 8px radius ([557b43d](https://github.com/Patricoaa/ERPGrafico/commit/557b43d4313065b9bd32e735bcfdc897d559b781))
+* **types:** type tax, treasury, sales and profit-distribution reads at the source ([c19aa17](https://github.com/Patricoaa/ERPGrafico/commit/c19aa17c4546066b56f71793e2603bc301d69b0b))
+* **ui:** align interactive card family to 8px radius (rounded-sm) ([a14bcca](https://github.com/Patricoaa/ERPGrafico/commit/a14bcca3560bf5d6b4c139565dbbba7040b55afa))
+* **ui:** remove RadioCard — fully migrated to ChoiceCard (Phase 2c complete) ([5cbca8f](https://github.com/Patricoaa/ERPGrafico/commit/5cbca8ffe7a7ee5d899bddfe0e4ddb551730db2d))
+
 ### [0.3.25](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.24...v0.3.25) (2026-10-22)
 
 
