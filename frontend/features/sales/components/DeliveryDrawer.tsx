@@ -3,6 +3,8 @@
 import { showApiError } from "@/lib/errors"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Controller, useForm, type Resolver } from "react-hook-form"
+import { useGuardedOpenChange } from "@/hooks/useGuardedOpenChange"
+import { useDirtyGuard } from "@/hooks/useDirtyGuard"
 import { zodResolver } from "@hookform/resolvers/zod"
 
 import { SubmitButton, CancelButton, Drawer, FormFooter, FormSection, LabeledSelect, PeriodValidationDateInput, StatusBadge } from "@/components/shared"
@@ -41,6 +43,7 @@ export function DeliveryDrawer(props: DeliveryDrawerProps) {
 
 function DeliveryDrawerInner({ open, onOpenChange, orderId, onSuccess, filterType = 'ALL' }: DeliveryDrawerProps) {
     const [loading, setLoading] = useState(false)
+    const guardedOpenChange = useGuardedOpenChange(onOpenChange)
     const formId = "modal-delivery-form"
     const { order, warehouses, isLoading } = useDeliveryData(orderId)
 
@@ -59,7 +62,7 @@ function DeliveryDrawerInner({ open, onOpenChange, orderId, onSuccess, filterTyp
     return (
         <Drawer
             open={open}
-            onOpenChange={onOpenChange}
+            onOpenChange={guardedOpenChange}
             side="left"
             defaultSize={formDrawerWidth("master", false)}
             contentClassName="p-0"
@@ -69,7 +72,7 @@ function DeliveryDrawerInner({ open, onOpenChange, orderId, onSuccess, filterTyp
                 <FormFooter
                     actions={
                         <>
-                            <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                            <CancelButton onClick={() => guardedOpenChange(false)} disabled={loading} />
                             <SubmitButton
                                 type="submit"
                                 form={`${formId}-form`}
@@ -106,6 +109,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
             lines: initialEditableValues(definition, visibleLines),
         },
     })
+    useDirtyGuard({ form, open: true, name: `Despacho de ${order.number}` })
     const warehouseId = form.watch("warehouseId")
     const deliveryDate = form.watch("deliveryDate")
     const lines = form.watch("lines")
