@@ -53,28 +53,7 @@ function hasStaticRoute(url: string, routes: string[]): boolean {
  * Ratchet: entries whose `listUrl` points to a page that does not exist (measured 2026-10-17, see the
  * issue linked in docs/50-audit/Tablascards/ledger.md TC-042). Fixing one = removing it from this list.
  */
-const KNOWN_BROKEN_LIST_URLS = [
-    "accounting.budget",
-    "inventory.attribute",
-    "inventory.inventorycount",
-    "inventory.stockmove",
-    "inventory.stockreport",
-    "inventory.warehouse",
-    "pos.session",
-    "pos.terminal",
-    "sales.posterminal",
-    "settings.partner",
-    "tax.accountingperiod",
-    "tax.f29declaration",
-    "tax.taxperiod",
-    "treasury.bankloan",
-    "treasury.cardpendingcharge",
-    "treasury.cardstatement",
-    "treasury.loaninstallment",
-    "treasury.transfer",
-    "treasury.unbilledcharge",
-    "workflow.task",
-]
+const KNOWN_BROKEN_LIST_URLS: string[] = []
 
 describe("ENTITY_REGISTRY list routes", () => {
     const routes = collectRoutes(APP_DIR)

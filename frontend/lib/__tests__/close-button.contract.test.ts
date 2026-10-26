@@ -106,7 +106,7 @@ describe('close-button contract', () => {
   describe('BaseModal — uses PanelHeader with onClose, disables Radix X', () => {
     it('imports PanelHeader from shared', () => {
       const src = shared.baseModal;
-      expect(/import \{ PanelHeader \} from ['"]\.\/PanelHeader/.test(src)).toBe(true);
+      expect(/import \{ PanelHeader\b[^}]*\} from ['"]\.\/PanelHeader/.test(src)).toBe(true);
     });
 
     it('passes onClose to PanelHeader when showCloseButton=true (default)', () => {
@@ -121,14 +121,14 @@ describe('close-button contract', () => {
 
     it('uses transaction variant close button styling when variant=transaction', () => {
       const src = shared.baseModal;
-      expect(/isTransaction.*closeButtonClassName.*text-primary-foreground/.test(src)).toBe(true);
+      expect(/closeButtonClassName=\{isTransaction.*text-primary-foreground/.test(src)).toBe(true);
     });
   });
 
   describe('Drawer — uses PanelHeader with onClose, disables Radix X', () => {
     it('imports PanelHeader from shared', () => {
       const src = shared.drawer;
-      expect(/import \{ PanelHeader \} from ['"]\.\/PanelHeader/.test(src)).toBe(true);
+      expect(/import \{ PanelHeader\b[^}]*\} from ['"]\.\/PanelHeader/.test(src)).toBe(true);
     });
 
     it('passes onClose to PanelHeader in SheetHeader', () => {

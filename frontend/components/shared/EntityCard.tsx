@@ -930,7 +930,7 @@ function EntityCardFoot({ caption, children, leading, actions, glyph = true, com
     const isEnd = align === "end"
     const justifyClass = hasLeading ? "justify-between" : isEnd ? "justify-end" : "justify-between"
     return (
-        <div className={cn(cardAnatomy.footer, compact && "pt-0", "flex items-end gap-2 border-t border-border/40 pt-2", justifyClass, className)}>
+        <div className={cn(cardAnatomy.footer, "flex items-end gap-2 border-t border-border/40 pt-2", compact && "pt-0", justifyClass, className)}>
             {leading ? (
                 <div className="min-w-0 flex-1">{leading}</div>
             ) : null}

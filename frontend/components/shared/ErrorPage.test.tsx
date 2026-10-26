@@ -75,7 +75,7 @@ describe("ErrorPage", () => {
     it("applies default variant classes", () => {
         const { container } = render(<ErrorPage title="Error" variant="default" />)
         const mainDiv = container.firstChild as HTMLElement
-        expect(mainDiv).toHaveClass("flex-1")
+        expect(mainDiv).toHaveClass("h-full", "w-full")
     })
 
     // ─── Clases personalizadas ──────────────────────────────────
@@ -93,9 +93,7 @@ describe("ErrorPage", () => {
 
     it("icon has aria-hidden", () => {
         render(<ErrorPage title="Error" />)
-        const icon = screen.getByTestId("alert-icon")
-        // El icono no tiene test-id, verificamos que existe el svg
-        const svg = screen.getByRole("img", { hidden: true })
+        const svg = document.querySelector("svg[aria-hidden='true']")
         expect(svg).toBeInTheDocument()
     })
 
