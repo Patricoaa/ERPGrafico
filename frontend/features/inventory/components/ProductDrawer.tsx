@@ -18,7 +18,8 @@ import {ShoppingCart, Package, Truck, Layers, Factory, DollarSign} from "lucide-
 import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
 
-import {ActionConfirmModal, Drawer, FormSplitLayout, TabBar, TabBarContent, SkeletonShell, type TabItem} from '@/components/shared'
+import { useOptionalGlobalModalActions } from '@/components/providers/GlobalModalProvider'
+import {Drawer, FormSplitLayout, TabBar, TabBarContent, SkeletonShell, type TabItem} from '@/components/shared'
 import { ActivitySidebar } from "@/features/audit"
 // Removed Badge import for governance compliance
 
@@ -57,6 +58,7 @@ interface ProductDrawerProps {
 }
 
 export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false, inline = false, onLoadingChange, mode: modeProp }: ProductDrawerProps) {
+    const modals = useOptionalGlobalModalActions()
     const { saveProduct, products, isLoading: isLoadingProducts } = useProducts()
     const { uoms, isUoMsLoading: isLoadingUoMs } = useUoMs()
     const { warehouses, isLoading: isLoadingWarehouses } = useWarehouses()
@@ -70,7 +72,6 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
     const [selectedPricingRule, setSelectedPricingRule] = useState<PricingRuleInitialData | null>(null)
     const [pricingRuleDialogOpen, setPricingRuleDialogOpen] = useState(false)
     const [variantsRefreshKey] = useState(0)
-    const [confirmCloseOpen, setConfirmCloseOpen] = useState(false)
 
     // Compuesto desde los hooks de reads — el padre lo expone como prop para
     // que paneles internos (tabs) reaccionen al boot.
@@ -768,24 +769,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
     )
 
     if (inline) {
-        return (
-            <>
-                {formContent}
-                <ActionConfirmModal
-                    open={confirmCloseOpen}
-                    onOpenChange={setConfirmCloseOpen}
-                    title="Descartar cambios"
-                    description="Hay cambios sin guardar. ¿Está seguro que desea cerrar y perder los cambios?"
-                    variant="destructive"
-                    confirmText="Descartar y Cerrar"
-                    onConfirm={() => {
-                        setConfirmCloseOpen(false)
-                        form.reset() // limpia el estado sucio para que la guarda global no pregunte de nuevo
-                        onOpenChange(false)
-                    }}
-                />
-            </>
-        )
+        return formContent
     }
 
     return (
@@ -812,11 +796,9 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                 fillContent
                 open={open}
                 onOpenChange={(newOpen) => {
-                    if (!newOpen && Object.keys(form.formState.dirtyFields).length > 0) {
-                        setConfirmCloseOpen(true)
-                        return
-                    }
-                    onOpenChange(newOpen)
+                    // Cambios sin guardar: diálogo compartido de GlobalModalProvider (Guardar / Descartar / Seguir editando)
+                    if (!newOpen && modals) modals.runGuarded(() => onOpenChange(false))
+                    else onOpenChange(newOpen)
                 }}
                 defaultSize={width}
                 className="h-[90vh]"
@@ -836,21 +818,6 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                 productName={initialData?.name ?? null}
                 open={insightsOpen}
                 onOpenChange={setInsightsOpen}
-            />
-
-            {/* ActionConfirmModal for closing with unsaved changes */}
-            <ActionConfirmModal
-                open={confirmCloseOpen}
-                onOpenChange={setConfirmCloseOpen}
-                title="Descartar cambios"
-                description="Hay cambios sin guardar. ¿Está seguro que desea cerrar y perder los cambios?"
-                variant="destructive"
-                confirmText="Descartar y Cerrar"
-                onConfirm={() => {
-                    setConfirmCloseOpen(false)
-                    form.reset() // limpia el estado sucio para que la guarda global no pregunte de nuevo
-                    onOpenChange(false)
-                }}
             />
         </Drawer>
         </>

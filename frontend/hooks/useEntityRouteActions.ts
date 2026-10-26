@@ -19,6 +19,7 @@
 
 import { useCallback, useMemo } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useOptionalGlobalModalActions } from '@/components/providers/GlobalModalProvider'
 
 const ROUTE_ACTION_PARAMS = ['selected'] as const
 const ACTION_PARAM = 'action' // ?action= is only valid alongside ?selected=
@@ -52,6 +53,8 @@ export function useEntityRouteActions(): UseEntityRouteActionsResult {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
+    // Guarda de cambios sin guardar: cerrar o cambiar de registro con un formulario sucio pregunta primero.
+    const runGuarded = useOptionalGlobalModalActions()?.runGuarded
 
     const selectedId = searchParams.get('selected')
     // ?action= is only meaningful when ?selected= is present
@@ -77,26 +80,31 @@ export function useEntityRouteActions(): UseEntityRouteActionsResult {
         [pathname, searchParams],
     )
 
+    const guarded = useCallback(
+        (action: () => void) => (runGuarded ? runGuarded(action) : action()),
+        [runGuarded],
+    )
+
     const openSelected = useCallback(
-        (id: number | string) => router.push(buildUrl('selected', id), { scroll: false }),
-        [router, buildUrl],
+        (id: number | string) => guarded(() => router.push(buildUrl('selected', id), { scroll: false })),
+        [router, buildUrl, guarded],
     )
 
     const openView = useCallback(
-        (id: number | string) => router.push(buildUrl('selected', id, 'view'), { scroll: false }),
-        [router, buildUrl],
+        (id: number | string) => guarded(() => router.push(buildUrl('selected', id, 'view'), { scroll: false })),
+        [router, buildUrl, guarded],
     )
 
     const openAction = useCallback(
         (id: number | string, action: string) =>
-            router.push(buildUrl('selected', id, action), { scroll: false }),
-        [router, buildUrl],
+            guarded(() => router.push(buildUrl('selected', id, action), { scroll: false })),
+        [router, buildUrl, guarded],
     )
 
     /** @deprecated Use `openView(id)` instead. */
     const openDetail = useCallback(
-        (id: number | string) => router.push(buildUrl('selected', id, 'view'), { scroll: false }),
-        [router, buildUrl],
+        (id: number | string) => guarded(() => router.push(buildUrl('selected', id, 'view'), { scroll: false })),
+        [router, buildUrl, guarded],
     )
 
     const clearActions = useCallback(() => {
@@ -114,8 +122,8 @@ export function useEntityRouteActions(): UseEntityRouteActionsResult {
         }
         if (!changed) return
         const query = params.toString()
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-    }, [router, pathname, searchParams])
+        guarded(() => router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false }))
+    }, [router, pathname, searchParams, guarded])
 
     return useMemo(
         () => ({

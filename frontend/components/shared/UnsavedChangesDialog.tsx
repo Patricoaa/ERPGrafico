@@ -28,7 +28,7 @@ export function UnsavedChangesDialog({ open, names, saving, onSave, onDiscard, o
         <BaseModal
             open={open}
             onOpenChange={(next) => { if (!next && !saving) onKeepEditing() }}
-            size="xs"
+            size="sm"
             onInteractOutside={(e) => e.preventDefault()}
             title={
                 <div className="flex items-center gap-4 py-1">
@@ -39,7 +39,7 @@ export function UnsavedChangesDialog({ open, names, saving, onSave, onDiscard, o
                 </div>
             }
             footer={
-                <div className="flex flex-wrap gap-2 w-full justify-end">
+                <div className="flex flex-col-reverse gap-2 w-full sm:flex-row sm:justify-end">
                     <CancelButton autoFocus onClick={onKeepEditing} disabled={saving}>Seguir editando</CancelButton>
                     <DangerButton variant="outline" onClick={onDiscard} disabled={saving}>Descartar y continuar</DangerButton>
                     <SubmitButton onClick={onSave} loading={saving}>Guardar y continuar</SubmitButton>

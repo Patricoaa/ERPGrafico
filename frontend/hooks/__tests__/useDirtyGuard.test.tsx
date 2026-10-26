@@ -24,6 +24,15 @@ function FormDrawer({ onSubmitSpy, onRender }: { onSubmitSpy: (v: Values) => voi
     )
 }
 
+/** Dos guardas encadenadas (drawer propio + pila) no deben preguntar dos veces tras descartar. */
+function ChainedOpener() {
+    const { runGuarded } = useGlobalModals()
+    const [log, setLog] = React.useState("")
+    return (
+        <button onClick={() => runGuarded(() => runGuarded(() => setLog("closed")))}>cadena:{log}</button>
+    )
+}
+
 function Opener() {
     const { requestLeave } = useGlobalModals()
     const [result, setResult] = React.useState("none")
@@ -34,6 +43,7 @@ const setup = (spy = vi.fn(), onRender?: () => void) => render(
     <GlobalModalProvider>
         <FormDrawer onSubmitSpy={spy} onRender={onRender} />
         <Opener />
+        <ChainedOpener />
     </GlobalModalProvider>
 )
 
@@ -69,5 +79,17 @@ describe("useDirtyGuard via useInitializeDrawerForm", () => {
         act(() => screen.getByText("salir:none").click())
         act(() => screen.getByText("Seguir editando").click())
         await waitFor(() => expect(screen.getByText("salir:cancel")).toBeInTheDocument())
+    })
+
+    it("discarding once does not trigger a second dialog in a chained guard", async () => {
+        setup()
+        fireEvent.change(screen.getByLabelText("nombre"), { target: { value: "Cambiado" } })
+        await waitFor(() => expect(screen.getByLabelText("nombre")).toHaveValue("Cambiado"))
+
+        act(() => screen.getByText("cadena:").click())
+        act(() => screen.getByText("Descartar y continuar").click())
+
+        expect(await screen.findByText("cadena:closed")).toBeInTheDocument()
+        expect(screen.queryByText("Cambios sin guardar")).toBeNull()
     })
 })

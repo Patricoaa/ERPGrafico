@@ -66,7 +66,11 @@ export function useDirtyGuard<T extends FieldValues>({ form, open, name }: UseDi
         const unregister = registerDirty({
             get name() { return nameRef.current },
             isDirty: () => dirtyRef.current,
-            discard: () => form.reset(),
+            discard: () => {
+                // Limpia ya el espejo: otra guarda en la misma cadena (drawer + pila) no debe volver a preguntar.
+                dirtyRef.current = false
+                form.reset()
+            },
             save: async () => {
                 if (!slot.onValid) return false
                 let invalid = false
