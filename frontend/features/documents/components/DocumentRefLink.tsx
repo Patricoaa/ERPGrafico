@@ -1,5 +1,6 @@
 "use client"
 
+import type React from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
@@ -36,7 +37,9 @@ export function DocumentRefLink({ documentRef, label, id, display, url, mono = t
         ?? (label && id != null && display ? { label, id, display, url: url ?? null } : null)
     if (!target) return null
 
-    const onClick = () => {
+    const onClick = (e: React.MouseEvent) => {
+        // Vive dentro de filas/tarjetas clicables: no debe disparar también su selección.
+        e.stopPropagation()
         if (isListSelectionUrl(target.url)) {
             router.push(target.url as string, { scroll: false })
             return
