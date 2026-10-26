@@ -179,7 +179,7 @@ resolviendo en 3 niveles:
 
 | Prioridad | Condición | Acción |
 |-----------|-----------|--------|
-| 1 (preferida) | `doc.url` con `?selected=` (lista canónica) | navega a `doc.url` — la URL y el módulo/sección siguen a la relación ([ADR-0086](../10-architecture/adr/0086-document-drilldown-canonical-navigation.md)) |
+| 1 (preferida) | `doc.url` con `?selected=` (lista canónica) y flag `drilldownStack` **inactivo** | navega a `doc.url` — la URL y el módulo/sección siguen a la relación ([ADR-0086](../10-architecture/adr/0086-document-drilldown-canonical-navigation.md)). Con el flag activo este nivel no existe: se apila ([ADR-0100](../10-architecture/adr/0100-document-drilldown-stack-without-navigation.md)) |
 | 2 | `hasEntityDrawer(doc.type)` | `openEntity(doc.type, doc.id, doc)` — drawer drill-down (pila + "volver") |
 | 3 | `doc.url` presente | `<Link href={doc.url}>` — navegación |
 | 4 | ninguna | texto plano, sin interacción |
@@ -224,17 +224,30 @@ Todos los drawers deben adherirse a esta estructura unificada:
 ### 5.2 Drilldown de documento: navegar vs apilar
 
 Las superficies de drilldown documental (`useOpenRelatedDocument` —filas del tab Relaciones—,
-`SourceDocumentLink`, `DocumentRefLink`) aplican **una sola** regla ([ADR-0086](../10-architecture/adr/0086-document-drilldown-canonical-navigation.md)):
+`SourceDocumentLink`, `DocumentRefLink`) delegan en **un solo punto**: `useOpenDocument()`
+(`@/hooks/useOpenDocument`). Ninguna superficie decide por su cuenta (lint `drilldown/no-bypass`).
 
-- **La URL canónica del destino abre una lista** (contiene `?selected=`, p. ej. una OV o una
-  factura): **navegar** con `router.push(url)`. Cambian la URL y el módulo/sección (el riel y
-  la barra lateral derivan de `usePathname()`), y la lista destino abre la ficha con `?selected`.
-- **No la abre** (resolvedor `/d/{label}/{id}`, o una lista sin `?selected`): **apilar** con
-  `openEntity` (pila + "volver", ADR-0028). Los maestros (contacto, producto, empleado…) caen aquí.
+**Flag `drilldownStack` activo** ([ADR-0100](../10-architecture/adr/0100-document-drilldown-stack-without-navigation.md)):
+`NEXT_PUBLIC_DRILLDOWN_STACK=true` o `localStorage["erp.drilldownStack"]="1"`.
 
-La decisión sale siempre del `DocumentRef.url` que emite el backend (`DocumentTypeRegistry`,
-[ADR-0080](../10-architecture/adr/0080-document-model-relations-and-navigation.md) §6); el
-frontend no adivina rutas. Predicado: `isListSelectionUrl(url)` en `@/lib/documentNavigation`.
+- Con ficha registrada: **apilar** con `openEntity(label, id, undefined, undefined, { display })`. La lista de
+  origen, el módulo y la URL **no cambian**; "Volver a …" regresa al documento anterior.
+- Sin ficha registrada: `router.push(DocumentRef.url)`.
+
+**Flag inactivo** (comportamiento heredado, [ADR-0086](../10-architecture/adr/0086-document-drilldown-canonical-navigation.md)):
+
+- URL canónica con `?selected=`: **navegar** con `router.push(url)`; cambian URL y módulo/sección.
+- Si no (resolvedor `/d/{label}/{id}`): **apilar** con `openEntity`. Los maestros caen aquí.
+
+La URL canónica (`DocumentRef.url`, [ADR-0080](../10-architecture/adr/0080-document-model-relations-and-navigation.md) §6)
+sigue siendo la vía de enlaces externos, búsqueda universal y `/d/…`. Predicados: `opensInApp` y
+`canOpenDocument` en `@/hooks/useOpenDocument`.
+
+**Guarda de cambios sin guardar (siempre activa).** Un formulario de drawer con cambios pendientes bloquea abrir
+otro documento, "Volver", cerrar y salir de la página hasta elegir *Guardar y continuar*, *Descartar y continuar*
+o *Seguir editando* (`UnsavedChangesDialog`). Los drawers con formulario la reciben gratis vía
+`useInitializeDrawerForm`; el resto de rutas (`useEntityRouteActions`, `useSelectedEntity`) pasan por
+`runGuarded` de `GlobalModalProvider`.
 
 ### 5.1 Detalle de entidad = overlay siempre-recargable (reglas de foco y URL)
 

@@ -1,10 +1,9 @@
 "use client"
 
 import type React from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import { documentRefTarget, isListSelectionUrl } from "@/lib/documentNavigation"
+import { useOpenDocument } from "@/hooks/useOpenDocument"
+import { documentRefTarget } from "@/lib/documentNavigation"
 import { cn } from "@/lib/utils"
 
 /**
@@ -16,8 +15,8 @@ import { cn } from "@/lib/utils"
  *   label/id/display/url. Es la forma preferida: el `url` viaja siempre.
  * - `label`/`id`/`display` (+ `url` opcional) — cuando no hay un DocumentRef a mano.
  *
- * Si la `url` canónica abre una lista (`?selected={id}`), navega allí para que la URL y el
- * módulo/sección sigan a la relación (ADR-0086); si no, apila con "volver".
+ * La regla (apilar con «volver» o navegar a la lista canónica) vive en `useOpenDocument`
+ * (ADR-0086 / ADR-0100, según el flag del drill-down).
  */
 export function DocumentRefLink({ documentRef, label, id, display, url, mono = true, className }: {
     /** DocumentRef del backend (payload `Record<string, unknown>`). ADR-0080/0086. */
@@ -30,8 +29,7 @@ export function DocumentRefLink({ documentRef, label, id, display, url, mono = t
     mono?: boolean
     className?: string
 }) {
-    const { openEntity } = useGlobalModals()
-    const router = useRouter()
+    const openDocument = useOpenDocument()
 
     const target = documentRefTarget(documentRef)
         ?? (label && id != null && display ? { label, id, display, url: url ?? null } : null)
@@ -40,11 +38,7 @@ export function DocumentRefLink({ documentRef, label, id, display, url, mono = t
     const onClick = (e: React.MouseEvent) => {
         // Vive dentro de filas/tarjetas clicables: no debe disparar también su selección.
         e.stopPropagation()
-        if (isListSelectionUrl(target.url)) {
-            router.push(target.url as string, { scroll: false })
-            return
-        }
-        openEntity(target.label, target.id, undefined, undefined, { display: target.display })
+        openDocument({ label: target.label, id: target.id, display: target.display, url: target.url })
     }
 
     return (

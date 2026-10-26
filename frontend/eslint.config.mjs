@@ -18,6 +18,7 @@ import mutationMustMarkLocal from "./eslint-rules/mutation-must-mark-local.mjs";
 import drawerNoRounded from "./eslint-rules/drawer-no-rounded.mjs";
 import noDirectDialogUsage from "./eslint-rules/no-direct-dialog-usage.mjs";
 import entityViewGuards from "./eslint-rules/entity-view-guards.mjs";
+import noDocumentDrilldownBypass from "./eslint-rules/no-document-drilldown-bypass.mjs";
 import { NO_UNSAFE_ALLOWLIST_FILES } from "./eslint-rules/no-unsafe-allowlist.mjs";
 
 const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
@@ -445,9 +446,12 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   files: ["**/*.ts", "**/*.tsx"],
   plugins: {
     dialog: { rules: { "no-direct-usage": noDirectDialogUsage } },
+    drilldown: { rules: { "no-bypass": noDocumentDrilldownBypass } },
   },
   rules: {
     "dialog/no-direct-usage": "error",
+    // ADR-0100: ratchet suave; sube a "error" cuando el flag del drill-down pase a ser el único modo.
+    "drilldown/no-bypass": "warn",
   },
 },
 // Entity view system guards — ADR-0087 §9, component-entity-view.md §9 — ADR-0087 §9, component-entity-view.md §9
