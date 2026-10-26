@@ -2,16 +2,11 @@
 
 import { Button } from "@/components/ui/button"
 import React, { useState, useEffect } from "react"
-import dynamic from "next/dynamic"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ShoppingBag, ShoppingCart, Printer, Home, Inbox, Calculator, Users } from "lucide-react"
 
-// Lazy load: solo se descarga y compila cuando el usuario abre la calculadora
-const CostCalculatorDrawer = dynamic(
-    () => import("@/components/tools/CostCalculatorDrawer").then(m => ({ default: m.CostCalculatorDrawer })),
-    { ssr: false }
-)
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { cn } from "@/lib/utils"
 import {
     Tooltip,
@@ -69,7 +64,8 @@ interface QuickActionsMenuProps {
 export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMenuProps) {
     const pathname = usePathname()
     const [pendingCount, setPendingCount] = useState(0)
-    const [isCalculatorOpen, setIsCalculatorOpen] = useState(false)
+    const { openTool, tabs } = useGlobalModals()
+    const isCalculatorOpen = tabs.some(tab => tab.key === "tool:cost-calculator" && tab.active)
 
     const fetchTaskCounts = async () => {
         try {
@@ -166,7 +162,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                         <TooltipTrigger asChild>
                             <Button
                                 variant={isCalculatorOpen ? "default" : "ghost"}
-                                onClick={() => setIsCalculatorOpen(true)}
+                                onClick={() => openTool("cost-calculator")}
                                 className={cn(
                                     "relative flex items-center justify-center h-10 w-10 rounded-md transition-all duration-300 group hover:scale-110 active:scale-95",
                                     isCalculatorOpen
@@ -185,7 +181,6 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                         </TooltipContent>
                     </Tooltip>
 
-                    <CostCalculatorDrawer open={isCalculatorOpen} onOpenChange={setIsCalculatorOpen} />
                 </TooltipProvider>
             </div>
         </div>

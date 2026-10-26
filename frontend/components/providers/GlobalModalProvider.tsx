@@ -1,24 +1,53 @@
 "use client"
 
 import React, { createContext, useContext, useState, type ReactNode, useCallback, useMemo, useEffect } from "react"
-import { ENTITY_DRAWERS, hasEntityDrawer, isRestorableById } from "@/lib/entity-drawers"
+import { Calculator, type LucideIcon } from "lucide-react"
+import dynamic from "next/dynamic"
+import { ENTITY_DRAWERS, hasEntityDrawer } from "@/lib/entity-drawers"
 import { formatEntityDisplay, getEntityMetadata } from "@/lib/entity-registry"
-import { usePathname } from "next/navigation"
-import { getEntityModule, getModuleIcon, getModuleIdFromPath } from "@/lib/module-registry"
-import { ErrorBoundary, EntityNavigationContext, UnsavedChangesDialog, type EntityNavigation } from "@/components/shared"
+import { usePathname, useRouter } from "next/navigation"
+import { getModuleIdFromPath, getEntityModule } from "@/lib/module-registry"
+import { ErrorBoundary, UnsavedChangesDialog } from "@/components/shared"
 import { EntityViewBridge } from "./EntityViewBridge"
 import { DirtyRegistry, type DirtyEntry } from "./dirtyGuardRegistry"
-import { useDrilldownStackUrl } from "./useDrilldownStackUrl"
-import { togglePinnedDocument, usePinnedDocuments } from "@/lib/pinnedDocuments"
 
 interface OpenEntityState {
     label: string
     id: number
     data?: unknown
     segmenter?: React.ReactNode
-    /** Texto para "Volver a …" cuando se abra otro documento encima (p. ej. display_id). */
+    /** Texto de la pestaña (p. ej. display_id). */
     display?: string
 }
+
+/** Herramientas que abren como pestaña propia (ADR-0101). */
+export type ToolTabId = "cost-calculator"
+
+const TOOL_TABS: Record<ToolTabId, { title: string; icon: LucideIcon }> = {
+    "cost-calculator": { title: "Calculadora de Costos", icon: Calculator },
+}
+
+/** Pestaña efímera del espacio de trabajo: un documento (`entity`) o una herramienta (`tool`). */
+type WorkspaceTab =
+    | ({ type: "entity" } & OpenEntityState)
+    | { type: "tool"; tool: ToolTabId }
+
+const entityKey = (label: string, id: number) => `${label}:${id}`
+const toolKey = (tool: ToolTabId) => `tool:${tool}`
+const tabKey = (tab: WorkspaceTab) => (tab.type === "entity" ? entityKey(tab.label, tab.id) : toolKey(tab.tool))
+
+/** Vista de una pestaña para la barra (ADR-0101). */
+export interface WorkspaceTabView {
+    key: string
+    kind: "entity" | "tool"
+    title: string
+    /** Ayuda al pasar el cursor: tipo y módulo del documento. */
+    description: string
+    icon: LucideIcon | null
+    active: boolean
+}
+
+const MAX_TABS = 8
 
 export interface OpenEntityOptions {
     display?: string
@@ -32,44 +61,71 @@ interface PendingLeave {
 
 /** Último estado renderizado, legible desde handlers sin depender del cierre. Se escribe solo en efectos. */
 class LiveMirror {
-    stack: OpenEntityState[] = []
+    tabs: WorkspaceTab[] = []
+    activeKey: string | null = null
     pending: PendingLeave | null = null
-    sync(next: { stack?: OpenEntityState[]; pending?: PendingLeave | null }) {
-        if (next.stack !== undefined) this.stack = next.stack
+    sync(next: { tabs?: WorkspaceTab[]; activeKey?: string | null; pending?: PendingLeave | null }) {
+        if (next.tabs !== undefined) this.tabs = next.tabs
+        if (next.activeKey !== undefined) this.activeKey = next.activeKey
         if (next.pending !== undefined) this.pending = next.pending
     }
 }
 
-/** Máximo de documentos encadenados con "volver" (ADR-0080, GAP-11). */
-const MAX_ENTITY_STACK = 5
+const CostCalculatorDrawer = dynamic(
+    () => import("@/components/tools/CostCalculatorDrawer").then(m => ({ default: m.CostCalculatorDrawer })),
+    { ssr: false },
+)
 
-
-function entityBackLabel(entity: OpenEntityState): string {
+function entityTabLabel(entity: OpenEntityState): string {
     if (entity.display) return entity.display
     const data = (entity.data && typeof entity.data === 'object' ? entity.data : {}) as Record<string, unknown>
     const display = formatEntityDisplay(entity.label, { id: entity.id, ...data })
     return display || `${getEntityMetadata(entity.label)?.title ?? 'documento'} #${entity.id}`
 }
 
+function tabView(tab: WorkspaceTab, active: boolean, pageModuleId: string | undefined): WorkspaceTabView {
+    if (tab.type === "tool") {
+        return { key: toolKey(tab.tool), kind: "tool", title: TOOL_TABS[tab.tool].title, description: TOOL_TABS[tab.tool].title, icon: TOOL_TABS[tab.tool].icon, active }
+    }
+    const metadata = getEntityMetadata(tab.label)
+    const documentModule = getEntityModule(tab.label)
+    const title = entityTabLabel(tab)
+    // Si el documento vive en otro módulo que la página, la pestaña lo dice (el riel no sigue al drill-down).
+    const moduleNote = documentModule && documentModule.id !== pageModuleId ? ` · ${documentModule.label}` : ""
+    return {
+        key: entityKey(tab.label, tab.id),
+        kind: "entity",
+        title,
+        description: `${metadata?.title ?? "Documento"} ${title}${moduleNote}`,
+        icon: metadata?.icon ?? null,
+        active,
+    }
+}
+
 interface GlobalModalActionsContextType {
     /**
-     * Open the drawer registered in lib/entity-drawers.tsx for the given entity.
-     * Throws if no drawer is registered for the label — check `hasEntityDrawer(label)` first
-     * or rely on EntityBadge's automatic fallback to navigation.
+     * Abre el documento registrado en lib/entity-drawers.tsx como pestaña (o activa la pestaña si ya
+     * está abierta). Avisa en consola si no hay drawer registrado.
      */
     openEntity: (label: string, id: number, data?: unknown, segmenter?: React.ReactNode, options?: OpenEntityOptions) => void
-    /** Cierra todos los documentos abiertos con openEntity. */
+    /** Cierra todas las pestañas (documentos y herramientas). */
     closeEntity: () => void
     /**
-     * Abre `label:id` como base de la pila (selección de una lista, `?selected`). Si ya es la base
-     * (p. ej. restaurada desde `?stack=`) no toca la pila.
+     * Abre `label:id` como pestaña de la selección de una lista (`?selected`) sin pasar por la guarda:
+     * quien la llama (`useDocumentSheetRoute`) ya la aplicó.
      */
     openRootEntity: (label: string, id: number) => void
-    /** Vuelve al documento anterior de la pila (no-op si no hay). */
-    goBackEntity: () => void
+    /** Cierra la pestaña de `label:id` sin guarda (la selección de la lista cambió). */
+    closeEntityByRef: (label: string, id: number) => void
+    /** Abre una herramienta (p. ej. la calculadora) como pestaña. */
+    openTool: (tool: ToolTabId) => void
+    /** Activa una pestaña (con guarda de cambios sin guardar). */
+    activateTab: (key: string) => void
+    /** Cierra una pestaña (con guarda de cambios sin guardar). */
+    closeTab: (key: string) => void
     /**
-     * Fija el texto con que se nombra un documento abierto en la pila ("Volver a OV-000183").
-     * Lo llama la ficha cuando carga su número (ADR-0083). No-op si no está en la pila.
+     * Fija el texto con que se nombra un documento en su pestaña ("OV-000183").
+     * Lo llama la ficha cuando carga su número (ADR-0083). No-op si no está abierta.
      */
     setEntityDisplay: (label: string, id: number, display: string) => void
     /** Registra un formulario en la guarda de cambios sin guardar. Devuelve la función que lo retira. */
@@ -86,7 +142,11 @@ interface GlobalModalActionsContextType {
 }
 
 interface GlobalModalStateContextType {
+    /** Hay al menos un documento abierto en pestañas. */
     isSubModalActive: boolean
+    /** Pestañas efímeras de la página, en orden de apertura (ADR-0101). */
+    tabs: WorkspaceTabView[]
+    isEntityOpen: (label: string, id: number) => boolean
     getSheetOffset: (id: string) => number
     getSheetIndex: (id: string) => number
     isSheetCollapsed: (id: string) => boolean
@@ -99,15 +159,30 @@ const GlobalModalStateContext = createContext<GlobalModalStateContextType | unde
 
 type CombinedContextType = GlobalModalActionsContextType & GlobalModalStateContextType
 
+/** Pestaña que queda activa al cerrar la `index`: la vecina de la derecha o, si no hay, la de la izquierda. */
+function neighbourKey(tabs: WorkspaceTab[], index: number): string | null {
+    const next = tabs[index + 1] ?? tabs[index - 1]
+    return next ? tabKey(next) : null
+}
+
 export function GlobalModalProvider({ children }: { children: ReactNode }) {
-    // ADR-0080 (GAP-11): pila de documentos; se muestra el superior y se puede volver.
-    const [entityStack, setEntityStack] = useState<OpenEntityState[]>([])
-    const openedEntity = entityStack.length > 0 ? entityStack[entityStack.length - 1] : null
+    // ADR-0101: pestañas efímeras por página (documentos y herramientas); solo la activa se monta.
+    const [tabs, setTabs] = useState<WorkspaceTab[]>([])
+    const [activeKey, setActiveKey] = useState<string | null>(null)
+    const activeTab = tabs.find(tab => tabKey(tab) === activeKey) ?? null
     const pathname = usePathname()
+    const router = useRouter()
     const pageModuleId = getModuleIdFromPath(pathname)
-    const pinned = usePinnedDocuments()
     const [sheetStack, setSheetStack] = useState<{id: string, width: number, priority: number, forced: boolean}[]>([])
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1600)
+
+    // Las pestañas son efímeras por página: al cambiar de ruta se cierran todas.
+    const [trackedPath, setTrackedPath] = useState(pathname)
+    if (trackedPath !== pathname) {
+        setTrackedPath(pathname)
+        setTabs([])
+        setActiveKey(null)
+    }
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -118,9 +193,9 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
 
     // Espejo mutable del último estado para los handlers (no son refs de render: se escriben solo en efectos).
     const [live] = useState(() => new LiveMirror())
-    useEffect(() => { live.sync({ stack: entityStack }) }, [live, entityStack])
+    useEffect(() => { live.sync({ tabs, activeKey }) }, [live, tabs, activeKey])
 
-    // Guarda de cambios sin guardar: un formulario sucio bloquea abrir, volver y cerrar hasta decidir.
+    // Guarda de cambios sin guardar: un formulario sucio bloquea abrir, cambiar de pestaña y cerrar hasta decidir.
     const [registry] = useState(() => new DirtyRegistry())
     const [pendingLeave, setPendingLeave] = useState<PendingLeave | null>(null)
     const [savingLeave, setSavingLeave] = useState(false)
@@ -132,8 +207,8 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         if (dirty.length === 0) { action(); return }
         // Ya hay una decisión en curso: la nueva petición se cancela, no se encola.
         if (live.pending) { onCancel?.(); return }
-        const top = live.stack[live.stack.length - 1]
-        const fallback = top ? entityBackLabel(top) : "Este formulario"
+        const current = live.tabs.find(tab => tabKey(tab) === live.activeKey)
+        const fallback = current?.type === "entity" ? entityTabLabel(current) : "Este formulario"
         setPendingLeave({ names: dirty.map(e => e.name ?? fallback), action, onCancel })
     }, [registry, live])
 
@@ -147,19 +222,23 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         setPendingLeave(null)
     }, [live])
 
-    useDrilldownStackUrl({
-        stack: entityStack,
-        live,
-        setStack: setEntityStack,
-        runGuarded,
-        pathname,
-        toEntry: (ref) => ({ label: ref.label, id: ref.id }),
-    })
+    const closeEntity = useCallback(() => { setTabs([]); setActiveKey(null) }, [])
 
-    const closeEntity = useCallback(() => setEntityStack([]), [])
+    /** Quita una pestaña y activa la vecina si era la activa. */
+    const removeTab = useCallback((key: string) => {
+        const current = live.tabs
+        const index = current.findIndex(tab => tabKey(tab) === key)
+        if (index === -1) return
+        if (live.activeKey === key) setActiveKey(neighbourKey(current, index))
+        setTabs(prev => prev.filter(tab => tabKey(tab) !== key))
+    }, [live])
 
-    const popEntity = useCallback(() => setEntityStack(prev => prev.slice(0, -1)), [])
-    const goBackEntity = useCallback(() => runGuarded(() => setEntityStack(prev => prev.slice(0, -1))), [runGuarded])
+    const closeTab = useCallback((key: string) => runGuarded(() => removeTab(key)), [runGuarded, removeTab])
+
+    const activateTab = useCallback((key: string) => {
+        if (key === live.activeKey) return
+        runGuarded(() => setActiveKey(key))
+    }, [runGuarded, live])
 
     const resolveLeave = useCallback(async (mode: "save" | "discard") => {
         const pending = pendingLeave
@@ -193,35 +272,61 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         return () => window.removeEventListener("beforeunload", onBeforeUnload)
     }, [registry])
 
+    // Salir de la página cierra las pestañas: un enlace interno con cambios sin guardar pasa por la guarda.
+    useEffect(() => {
+        const onClick = (event: MouseEvent) => {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+            if (!registry.hasDirty()) return
+            const anchor = (event.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null
+            if (!anchor || (anchor.target && anchor.target !== "_self") || anchor.hasAttribute("download")) return
+            const url = new URL(anchor.href, window.location.href)
+            if (url.origin !== window.location.origin || url.pathname === window.location.pathname) return
+            event.preventDefault()
+            event.stopPropagation()
+            runGuarded(() => router.push(url.pathname + url.search + url.hash))
+        }
+        document.addEventListener("click", onClick, true)
+        return () => document.removeEventListener("click", onClick, true)
+    }, [registry, runGuarded, router])
+
     const setEntityDisplay = useCallback((label: string, id: number, display: string) => {
-        setEntityStack(prev => prev.some(e => e.label === label && e.id === id && e.display !== display)
-            ? prev.map(e => (e.label === label && e.id === id ? { ...e, display } : e))
+        setTabs(prev => prev.some(t => t.type === "entity" && t.label === label && t.id === id && t.display !== display)
+            ? prev.map(t => (t.type === "entity" && t.label === label && t.id === id ? { ...t, display } : t))
             : prev)
     }, [])
 
+    /** Añade la pestaña (o solo la activa si ya existe). Con el tope, descarta la más antigua que no sea la nueva. */
+    const addTab = useCallback((tab: WorkspaceTab) => {
+        const key = tabKey(tab)
+        setTabs(prev => {
+            if (prev.some(t => tabKey(t) === key)) return prev
+            const next = [...prev, tab]
+            return next.length > MAX_TABS ? next.slice(next.length - MAX_TABS) : next
+        })
+        setActiveKey(key)
+    }, [])
 
     const openEntity = useCallback((label: string, id: number, data?: unknown, segmenter?: React.ReactNode, options?: OpenEntityOptions) => {
         if (!hasEntityDrawer(label)) {
             console.warn(`[GlobalModalProvider] No drawer registered for entity "${label}". Register it in lib/entity-drawers.tsx.`)
             return
         }
-        const entry: OpenEntityState = { label, id, data, segmenter, display: options?.display }
-        const top = live.stack[live.stack.length - 1]
-        if (top && top.label === label && top.id === id) return
-        runGuarded(() => setEntityStack(prev => {
-            const current = prev[prev.length - 1]
-            if (current && current.label === label && current.id === id) return prev
-            // Abrir desde un documento ya abierto apila; si no hay ninguno, empieza la pila.
-            return [...prev, entry].slice(-MAX_ENTITY_STACK)
-        }))
-    }, [runGuarded, live])
+        const key = entityKey(label, id)
+        if (live.activeKey === key) return
+        runGuarded(() => addTab({ type: "entity", label, id, data, segmenter, display: options?.display }))
+    }, [runGuarded, live, addTab])
 
     const openRootEntity = useCallback((label: string, id: number) => {
-        const base = live.stack[0]
-        if (base && base.label === label && base.id === id) return
-        setEntityStack([])
-        openEntity(label, id)
-    }, [live, openEntity])
+        if (!hasEntityDrawer(label)) return
+        addTab({ type: "entity", label, id })
+    }, [addTab])
+
+    const closeEntityByRef = useCallback((label: string, id: number) => removeTab(entityKey(label, id)), [removeTab])
+
+    const openTool = useCallback((tool: ToolTabId) => {
+        if (live.activeKey === toolKey(tool)) return
+        runGuarded(() => addTab({ type: "tool", tool }))
+    }, [runGuarded, live, addTab])
 
     const registerSheet = useCallback((id: string, fullWidth: number, priority: number, forced: boolean = false) => {
         setSheetStack(prev => {
@@ -300,89 +405,73 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         openEntity,
         closeEntity,
         openRootEntity,
-        goBackEntity,
+        closeEntityByRef,
+        openTool,
+        activateTab,
+        closeTab,
         setEntityDisplay,
         registerDirty: (entry: DirtyEntry) => registry.register(entry),
         runGuarded,
         requestLeave,
         registerSheet,
         unregisterSheet,
-    }), [openEntity, closeEntity, openRootEntity, goBackEntity, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
+    }), [openEntity, closeEntity, openRootEntity, closeEntityByRef, openTool, activateTab, closeTab, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
+
+    const tabViews = useMemo(
+        () => tabs.map(tab => tabView(tab, tabKey(tab) === activeKey, pageModuleId)),
+        [tabs, activeKey, pageModuleId],
+    )
+
+    const isEntityOpen = useCallback(
+        (label: string, id: number) => tabs.some(tab => tab.type === "entity" && tab.label === label && tab.id === id),
+        [tabs],
+    )
+
+    const hasEntityTab = tabs.some(tab => tab.type === "entity")
 
     const stateValue = useMemo(() => ({
-        isSubModalActive: openedEntity !== null,
+        isSubModalActive: hasEntityTab,
+        tabs: tabViews,
+        isEntityOpen,
         getSheetOffset,
         getSheetIndex,
         isSheetCollapsed,
         expandedSheetWidth,
         totalSheetsWidth
-    }), [openedEntity, getSheetOffset, getSheetIndex, isSheetCollapsed, expandedSheetWidth, totalSheetsWidth])
+    }), [hasEntityTab, tabViews, isEntityOpen, getSheetOffset, getSheetIndex, isSheetCollapsed, expandedSheetWidth, totalSheetsWidth])
 
-    // Migas del documento superior: tramos anteriores (cada uno desapila hasta él) y, si vive en otro
-    // módulo que la página, el módulo (el riel no sigue al drill-down, ADR-0100).
-    const buildNavigation = (previous: OpenEntityState): EntityNavigation => {
-        const top = entityStack[entityStack.length - 1]
-        const topModule = getEntityModule(top.label)
-        return {
-            backLabel: entityBackLabel(previous),
-            goBack: goBackEntity,
-            trail: entityStack.slice(0, -1).map((entry, index) => ({
-                key: `${entry.label}:${entry.id}`,
-                label: entityBackLabel(entry),
-                onSelect: () => runGuarded(() => setEntityStack(prev => prev.slice(0, index + 1))),
-            })),
-            currentLabel: entityBackLabel(top),
-            pins: {
-                items: pinned.map((doc) => ({
-                    key: `${doc.label}:${doc.id}`,
-                    label: doc.display,
-                    active: doc.label === top.label && doc.id === top.id,
-                    onOpen: () => {
-                        const index = entityStack.findIndex((e) => e.label === doc.label && e.id === doc.id)
-                        if (index === entityStack.length - 1) return
-                        if (index >= 0) runGuarded(() => setEntityStack(prev => prev.slice(0, index + 1)))
-                        else openEntity(doc.label, doc.id, undefined, undefined, { display: doc.display })
-                    },
-                })),
-                canPin: isRestorableById(top.label),
-                isPinned: pinned.some((doc) => doc.label === top.label && doc.id === top.id),
-                toggle: () => togglePinnedDocument({ label: top.label, id: top.id, display: entityBackLabel(top) }),
-            },
-            module: topModule && topModule.id !== pageModuleId
-                ? { id: topModule.id, label: topModule.label, icon: getModuleIcon(topModule.id) }
-                : null,
-        }
-    }
-
+    // X / Escape / clic fuera cierran la pestaña activa (con guarda).
     const handleDrawerOpenChange = useCallback((open: boolean) => {
-        // X / Escape / clic fuera suben un nivel; con un solo documento cierran (ADR-0100).
-        if (!open) goBackEntity()
-    }, [goBackEntity])
+        if (!open && live.activeKey) closeTab(live.activeKey)
+    }, [closeTab, live])
 
-    const renderEntityDrawer = () => {
-        if (!openedEntity) return null
-        const render = ENTITY_DRAWERS[openedEntity.label]
-        if (!render) return null
-        const previous = entityStack.length > 1 ? entityStack[entityStack.length - 2] : null
-        const navigation: EntityNavigation | null = previous ? buildNavigation(previous) : null
-        const drawer = render({
-            id: openedEntity.id,
-            data: openedEntity.data,
-            open: true,
-            onOpenChange: handleDrawerOpenChange,
-            onSuccess: popEntity,
-            segmenter: openedEntity.segmenter,
-        })
-        return (
-            // key: cada documento de la pila monta su drawer desde cero
-            <EntityNavigationContext.Provider
-                key={`${openedEntity.label}:${openedEntity.id}`}
-                value={navigation}
-            >
-                {drawer}
-            </EntityNavigationContext.Provider>
-        )
+    // Tras guardar, la pestaña ya cumplió su función: se cierra sin guarda.
+    const closeActiveTab = useCallback(() => { if (live.activeKey) removeTab(live.activeKey) }, [removeTab, live])
+
+    const renderActiveTab = () => {
+        if (!activeTab) return null
+        if (activeTab.type === "entity") {
+            const render = ENTITY_DRAWERS[activeTab.label]
+            if (!render) return null
+            return (
+                // key: cada documento monta su drawer desde cero al activarse
+                <React.Fragment key={entityKey(activeTab.label, activeTab.id)}>
+                    {render({
+                        id: activeTab.id,
+                        data: activeTab.data,
+                        open: true,
+                        onOpenChange: handleDrawerOpenChange,
+                        onSuccess: closeActiveTab,
+                        segmenter: activeTab.segmenter,
+                    })}
+                </React.Fragment>
+            )
+        }
+        return null
     }
+
+    // Las herramientas viven mientras su pestaña exista: así conservan su estado al cambiar de pestaña.
+    const hasCalculatorTab = tabs.some(tab => tab.type === "tool" && tab.tool === "cost-calculator")
 
     return (
         <GlobalModalActionsContext.Provider value={actionsValue}>
@@ -390,7 +479,13 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         <EntityViewBridge openEntity={openEntity}>
             {children}
             <ErrorBoundary variant="inline">
-                {renderEntityDrawer()}
+                {renderActiveTab()}
+                {hasCalculatorTab && (
+                    <CostCalculatorDrawer
+                        open={activeKey === toolKey("cost-calculator")}
+                        onOpenChange={handleDrawerOpenChange}
+                    />
+                )}
             </ErrorBoundary>
             <UnsavedChangesDialog
                 open={pendingLeave !== null}

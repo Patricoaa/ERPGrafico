@@ -69,6 +69,10 @@ La **topbar** (ancho completo, no se desplaza al abrir sheets) muestra el títul
 
 Una vista puede montar su propio `<PageHeader>` (p. ej. para `titleActions`) **sin** `navigation`: el sidebar conserva la navegación del módulo (`HeaderProvider.moduleNavigation`).
 
+### 2.1.1 Barra de trabajo (ADR-0101)
+
+Bajo la topbar, `DashboardShell` monta `WorkspaceTabBar` (permanente, `h-9`). Izquierda: las páginas hermanas de la vista actual (`resolvePageTabs` sobre `navigation`: las subvistas del grupo activo o, si no tiene, los grupos del módulo; mismos permisos que el sidebar; la vista actual lleva `aria-current="page"` y un subrayado `bg-primary`). Derecha: pestañas efímeras de la página — documentos abiertos con `openEntity` y herramientas (`openTool`, p. ej. la Calculadora de Costos) —, que se cierran al cambiar de ruta. El contenido de la pestaña activa se abre en el panel lateral derecho; la lista de origen sigue visible. Los accesos a la calculadora (`SidebarQuickActions`, botón de la barra) abren su pestaña; la vista no monta su propio drawer.
+
 ### 2.2 Sub-vistas de módulo en el riel (caso Tesorería / Centro de Bancos)
 
 Todo acceso a una sub-vista DEBE quedar declarado en el árbol de navegación del módulo (`navigation.ts`), que es la **fuente única** de la que dependen tanto `[Module]Header` como cualquier header de sección (`BankPageHeader`). Reglas:

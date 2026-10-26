@@ -1,22 +1,17 @@
 "use client"
 
 import { Store, Calculator } from "lucide-react"
-import { useState } from "react"
-import dynamic from "next/dynamic"
 import { PermissionGuard } from "@/components/auth/PermissionGuard"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { SidebarNavItem } from "./SidebarNavItem"
 
-const CostCalculatorDrawer = dynamic(
-    () => import("@/components/tools/CostCalculatorDrawer").then(m => ({ default: m.CostCalculatorDrawer })),
-    { ssr: false }
-)
-
 /**
- * Herramientas globales fijas en el pie del panel de módulo: POS y Calculadora de Costos.
+ * Herramientas globales fijas en el pie del panel de módulo: POS y Calculadora de Costos (esta abre como pestaña, ADR-0101).
  * Independientes del módulo activo (ADR-0079).
  */
 export function SidebarQuickActions() {
-    const [isCalculatorOpen, setIsCalculatorOpen] = useState(false)
+    const { openTool, tabs } = useGlobalModals()
+    const isCalculatorOpen = tabs.some(tab => tab.key === "tool:cost-calculator" && tab.active)
 
     return (
         <>
@@ -34,11 +29,9 @@ export function SidebarQuickActions() {
                     label="Calculadora de Costos"
                     icon={Calculator}
                     isActive={isCalculatorOpen}
-                    onClick={() => setIsCalculatorOpen(true)}
+                    onClick={() => openTool("cost-calculator")}
                 />
             </div>
-
-            <CostCalculatorDrawer open={isCalculatorOpen} onOpenChange={setIsCalculatorOpen} />
         </>
     )
 }

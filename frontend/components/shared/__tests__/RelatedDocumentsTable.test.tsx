@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react"
 import { vi, describe, it, expect } from "vitest"
 import React from "react"
 
-import { RelatedDocumentsTable, Drawer, EntityNavigationContext, type RelatedDocumentItem } from "@/components/shared"
+import { RelatedDocumentsTable, type RelatedDocumentItem } from "@/components/shared"
 
 global.ResizeObserver = class ResizeObserver {
     observe() {}
@@ -44,19 +44,5 @@ describe("RelatedDocumentsTable", () => {
         expect(screen.getByText(/No se pudieron cargar/)).toBeInTheDocument()
         rerender(<RelatedDocumentsTable items={[item("delivery", "fulfillment")]} unresolvedCount={2} onOpen={vi.fn()} />)
         expect(screen.getByText(/2 referencia\(s\)/)).toBeInTheDocument()
-    })
-})
-
-/** GAP-11: el Drawer compartido muestra "Volver a …" cuando hay documento anterior. */
-describe("Drawer back navigation", () => {
-    it("renders the back link from EntityNavigationContext", () => {
-        const goBack = vi.fn()
-        render(
-            <EntityNavigationContext.Provider value={{ backLabel: "OV-12", goBack, trail: [], currentLabel: "DES-1", module: null }}>
-                <Drawer open onOpenChange={vi.fn()} title="DES-1" side="left">contenido</Drawer>
-            </EntityNavigationContext.Provider>
-        )
-        screen.getByText("Volver a OV-12").click()
-        expect(goBack).toHaveBeenCalled()
     })
 })

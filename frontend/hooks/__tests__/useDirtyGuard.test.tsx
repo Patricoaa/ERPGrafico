@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form"
 import { GlobalModalProvider, useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useInitializeDrawerForm } from "../useInitializeDrawerForm"
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/x" }))
+vi.mock("next/navigation", () => ({ usePathname: () => "/x", useRouter: () => ({ push: vi.fn() }) }))
 vi.mock("@/lib/entity-drawers", () => ({ ENTITY_DRAWERS: {}, hasEntityDrawer: () => false }))
 
 interface Values { name: string }

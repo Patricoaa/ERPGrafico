@@ -114,17 +114,19 @@ const { openEntity, closeEntity, hasEntityDrawer } = useGlobalModals()
 openEntity('sales.saledelivery', 123)                    // abre el drawer registrado (modo derivado)
 openEntity('contacts.contact', 7, contactObj)            // con datos pre-fetcheados
 openEntity('inventory.stockmove', 9, undefined, undefined, { display: 'MOV-9' })
-closeEntity()   // cierra toda la pila
+closeEntity()   // cierra todas las pestañas
 goBackEntity()  // vuelve al documento anterior
 ```
 
 | API | Tipo | Notas |
 |-----|------|-------|
 | `openEntity` | `(label, id, data?, segmenter?, options?: { display?: string }) => void` | Advierte en consola (no rompe) si no hay drawer registrado. `options.display` es el texto que verá el "Volver a …" del documento que se abra encima |
-| `closeEntity` | `() => void` | Cierra **todos** los documentos de la pila |
-| `goBackEntity` | `() => void` | Desapila el documento superior |
+| `closeEntity` | `() => void` | Cierra **todas** las pestañas (documentos y herramientas) |
+| `openTool` | `(tool: ToolTabId) => void` | Abre una herramienta como pestaña (`"cost-calculator"`) |
+| `activateTab` / `closeTab` | `(key: string) => void` | Activan/cierran una pestaña, con guarda de cambios sin guardar |
+| `openRootEntity` / `closeEntityByRef` | `(label, id) => void` | Pestaña de la selección de una lista (`?selected`); sin guarda, la aplicó quien llama |
 
-**Pila y "volver" (ADR-0080, GAP-11).** `openEntity` con un documento ya abierto lo **apila** (máx. 5; reabrir el superior es no-op). Solo se renderiza el superior; el provider envuelve su drawer en `EntityNavigationContext` y el `Drawer` compartido muestra las migas `EntityTrail` (ruta clicable con guarda, "Volver a X" en móvil y chip del módulo cuando difiere del de la página) automáticamente — los drawers no necesitan cambios. Cerrar (X / Escape / `onSuccess`) desapila **un nivel** (con guarda); con un solo documento cierra (ADR-0100). `closeEntity` vacía toda la pila. Con el flag, la pila (2+ documentos que abren por id) viaja en `?stack=` y se pueden fijar documentos como chips (ADR-0100 §9–10; `openRootEntity` para la base `?selected`). El contexto se resetea para los hijos de cada `Drawer`, así un drawer anidado no muestra el enlace.
+**Pestañas efímeras (ADR-0101, sustituye la pila y las migas de ADR-0080/0100).** `openEntity` abre el documento como **pestaña** en la barra de trabajo permanente (`WorkspaceTabBar`, bajo la topbar) o activa la pestaña si ya está abierta (máx. 8). Solo se monta el drawer de la pestaña activa; el provider no envuelve nada: los drawers no necesitan cambios. Cerrar (X / Escape / × de la pestaña / `onSuccess`) cierra la pestaña activa y activa a su vecina, con guarda. Las pestañas se cierran al cambiar de página y no se serializan en la URL. `closeEntity` cierra todas. La Calculadora de Costos es otra pestaña (`openTool("cost-calculator")`) y conserva su estado mientras exista. `?selected` es una sola pestaña, la fila explorada: elegir otra la reemplaza y cerrarla limpia `?selected`.
 
 **Ficha documental (ADR-0083, revierte D4).** Los documentos abren su ficha documental ([component-document-sheet.md](./component-document-sheet.md)): OV y OC → `OrderSheet`, factura/nota → `InvoiceSheet` (U2–U3; `SaleOrderDrawer`, `PurchaseOrderDrawer` e `InvoiceDrawer` eliminados). Ningún label redirige al Order Hub. Las fichas documentales **no** reciben `onSuccess` en su adaptador: sus acciones no deben cerrar la pila.
 
@@ -180,7 +182,7 @@ resolviendo en 3 niveles:
 | Prioridad | Condición | Acción |
 |-----------|-----------|--------|
 | 1 (preferida) | `doc.url` con `?selected=` (lista canónica) y flag `drilldownStack` **inactivo** | navega a `doc.url` — la URL y el módulo/sección siguen a la relación ([ADR-0086](../10-architecture/adr/0086-document-drilldown-canonical-navigation.md)). Con el flag activo este nivel no existe: se apila ([ADR-0100](../10-architecture/adr/0100-document-drilldown-stack-without-navigation.md)) |
-| 2 | `hasEntityDrawer(doc.type)` | `openEntity(doc.type, doc.id, doc)` — drawer drill-down (pila + "volver") |
+| 2 | `hasEntityDrawer(doc.type)` | `openEntity(doc.type, doc.id, doc)` — drawer drill-down (pestaña) |
 | 3 | `doc.url` presente | `<Link href={doc.url}>` — navegación |
 | 4 | ninguna | texto plano, sin interacción |
 

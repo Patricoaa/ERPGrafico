@@ -164,6 +164,7 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0097](0097-card-family-roles-and-surface-tokens.md) | Familia de cards — roles de superficie, layouts, rail único y tokens de superficie | Proposed |
 | [0098](0098-form-reset-layout-effect.md) | Form initialization resets in a layout effect (React 19 cross-component update rule) | Accepted |
 | [0099](0099-work-order-rail-status-board.md) | Work order rail as a status board — per-stage evidence, blockers, progress and collapse | Accepted |
-| [0100](0100-document-drilldown-stack-without-navigation.md) | Document drilldown stacks over the origin list — origin list and module kept, behind a feature flag; unsaved-changes guard | Proposed |
+| [0100](0100-document-drilldown-stack-without-navigation.md) | Document drilldown stacks over the origin list — origin list and module kept, behind a feature flag; unsaved-changes guard | Proposed (breadcrumbs, `?stack=` and pins superseded by 0101) |
+| [0101](0101-workspace-tab-bar.md) | Workspace tab bar — page navigation plus per-page ephemeral document and tool tabs | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

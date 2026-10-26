@@ -1,55 +1,60 @@
 import { render, screen, act, waitFor } from "@testing-library/react"
-import { vi, describe, it, expect, beforeEach, afterEach } from "vitest"
+import { vi, describe, it, expect, beforeEach } from "vitest"
 import React, { useEffect } from "react"
+import Link from "next/link"
 
 import { GlobalModalProvider, useGlobalModals } from "../GlobalModalProvider"
-import { useEntityNavigation } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/sales/orders" }))
+const nav = vi.hoisted(() => ({ pathname: "/sales/orders", push: vi.fn() }))
+vi.mock("next/navigation", () => ({ usePathname: () => nav.pathname, useRouter: () => ({ push: nav.push }) }))
 
-// Drawer de prueba: muestra qué documento está abierto y el "volver" disponible.
-function FakeDrawer({ label, id, onOpenChange }: { label: string; id: number; onOpenChange?: (open: boolean) => void }) {
-    const navigation = useEntityNavigation()
+// Drawer de prueba: muestra qué documento está abierto y permite cerrarlo (X).
+function FakeDrawer({ label, id, onOpenChange, onSuccess }: { label: string; id: number; onOpenChange?: (open: boolean) => void; onSuccess?: () => void }) {
     return (
         <div>
             <span>open:{label}:{id}</span>
             <Button onClick={() => onOpenChange?.(false)}>x</Button>
-            {navigation && <Button onClick={navigation.goBack}>volver:{navigation.backLabel}</Button>}
-            {navigation?.pins?.canPin && <Button onClick={navigation.pins.toggle}>fijar</Button>}
-            {navigation?.pins?.items.map((pin) => <Button key={pin.key} onClick={pin.onOpen}>fijado:{pin.label}</Button>)}
-            {navigation && <span>modulo:{navigation.module?.label ?? "ninguno"}</span>}
-            {navigation && navigation.trail.map((item) => (
-                <Button key={item.key} onClick={item.onSelect}>miga:{item.label}</Button>
-            ))}
+            <Button onClick={() => onSuccess?.()}>guardado</Button>
         </div>
     )
 }
 
 vi.mock("@/lib/entity-drawers", () => {
-    const render = (label: string) => function EntityDrawerStub({ id, onOpenChange }: { id: number; onOpenChange?: (open: boolean) => void }) {
-        return <FakeDrawer label={label} id={id} onOpenChange={onOpenChange} />
+    const render = (label: string) => function EntityDrawerStub({ id, onOpenChange, onSuccess }: { id: number; onOpenChange?: (open: boolean) => void; onSuccess?: () => void }) {
+        return <FakeDrawer label={label} id={id} onOpenChange={onOpenChange} onSuccess={onSuccess} />
     }
     const drawers: Record<string, unknown> = {
         "sales.saledelivery": render("sales.saledelivery"),
         "inventory.stockmove": render("inventory.stockmove"),
         "sales.saleorder": render("sales.saleorder"),
-        "purchasing.purchaseorder": render("purchasing.purchaseorder"),
     }
-    return { ENTITY_DRAWERS: drawers, hasEntityDrawer: (label: string) => label in drawers, isRestorableById: (label: string) => label in drawers }
+    return { ENTITY_DRAWERS: drawers, hasEntityDrawer: (label: string) => label in drawers }
 })
 
-/** Botones que disparan las acciones del provider. */
+// La calculadora real trae medio ERP: aquí solo importa que se monte con `open` según la pestaña activa.
+vi.mock("@/components/tools/CostCalculatorDrawer", () => ({
+    CostCalculatorDrawer: ({ open }: { open: boolean }) => <span>calculadora:{open ? "abierta" : "oculta"}</span>,
+}))
+
+/** Botones que disparan las acciones del provider y lista las pestañas con su estado. */
 function Controls() {
-    const { openEntity, closeEntity, setEntityDisplay } = useGlobalModals()
+    const { openEntity, openTool, closeEntity, setEntityDisplay, tabs, activateTab, closeTab } = useGlobalModals()
     return (
         <div>
             <Button onClick={() => openEntity("sales.saledelivery", 1, undefined, undefined, { display: "DES-1" })}>abrir-despacho</Button>
-            <Button onClick={() => openEntity("inventory.stockmove", 7)}>abrir-move</Button>
-            <Button onClick={() => openEntity("sales.saleorder", 42)}>abrir-ov</Button>
-            <Button onClick={() => openEntity("purchasing.purchaseorder", 9)}>abrir-oc</Button>
+            <Button onClick={() => openEntity("inventory.stockmove", 7, undefined, undefined, { display: "MOV-7" })}>abrir-move</Button>
+            <Button onClick={() => openEntity("sales.saleorder", 42, undefined, undefined, { display: "OV-42" })}>abrir-ov</Button>
+            <Button onClick={() => openTool("cost-calculator")}>abrir-calculadora</Button>
             <Button onClick={() => setEntityDisplay("sales.saleorder", 42, "OV-000042")}>nombrar-ov</Button>
-            <Button onClick={closeEntity}>cerrar</Button>
+            <Button onClick={closeEntity}>cerrar-todo</Button>
+            {tabs.map((tab) => (
+                <div key={tab.key}>
+                    <Button onClick={() => activateTab(tab.key)}>{`tab:${tab.title}${tab.active ? "*" : ""}`}</Button>
+                    <Button onClick={() => closeTab(tab.key)}>{`cerrar:${tab.title}`}</Button>
+                    <span>{`desc:${tab.description}`}</span>
+                </div>
+            ))}
         </div>
     )
 }
@@ -61,103 +66,108 @@ const setup = () => render(
 )
 
 const click = (name: string) => act(() => screen.getByText(name).click())
+const tabTitles = () => screen.queryAllByText(/^tab:/).map((el) => el.textContent)
 
-/** ADR-0080 (GAP-11): pila de openEntity con "volver". ADR-0083: OV y OC abren su ficha documental. */
-describe("GlobalModalProvider entity stack", () => {
-    it("stacks documents opened from another one and goes back", () => {
+beforeEach(() => { nav.pathname = "/sales/orders"; nav.push.mockReset() })
+
+/** ADR-0101: pestañas efímeras por página; solo la activa se monta. */
+describe("GlobalModalProvider workspace tabs", () => {
+    it("opens each document as a tab and activates the newest", () => {
         setup()
         click("abrir-despacho")
-        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
-        expect(screen.queryByText(/volver:/)).toBeNull()
-
         click("abrir-move")
+        expect(tabTitles()).toEqual(["tab:DES-1", "tab:MOV-7*"])
         expect(screen.getByText("open:inventory.stockmove:7")).toBeInTheDocument()
-
-        click("volver:DES-1")
-        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
-        expect(screen.queryByText(/volver:/)).toBeNull()
+        expect(screen.queryByText("open:sales.saledelivery:1")).toBeNull()
     })
 
-    it("builds a trail and pops to a previous document from the breadcrumb (ADR-0100)", () => {
+    it("switches tabs without duplicating and re-opening an open document just activates it", () => {
+        setup()
+        click("abrir-despacho")
+        click("abrir-move")
+        click("abrir-despacho")
+        expect(screen.getAllByText(/^tab:/)).toHaveLength(2)
+        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
+        click("tab:DES-1*")
+        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
+    })
+
+    it("closing the active tab activates its right neighbour, or the left one at the end", () => {
         setup()
         click("abrir-despacho")
         click("abrir-ov")
         click("abrir-move")
-        expect(screen.getByText("miga:DES-1")).toBeInTheDocument()
-        click("miga:DES-1")
-        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
-        expect(screen.queryByText(/miga:/)).toBeNull()
+        click("tab:DES-1")
+        click("cerrar:DES-1")
+        expect(screen.getByText("open:sales.saleorder:42")).toBeInTheDocument()
+        click("tab:MOV-7")
+        click("cerrar:MOV-7")
+        expect(screen.getByText("open:sales.saleorder:42")).toBeInTheDocument()
+        click("x")
+        expect(screen.queryByText(/open:/)).toBeNull()
+        expect(screen.queryAllByText(/^tab:/)).toHaveLength(0)
     })
 
-    it("shows the document module only when it differs from the page module", () => {
+    it("X on the drawer closes only the active tab; saving closes it too", () => {
+        setup()
+        click("abrir-despacho")
+        click("abrir-move")
+        click("x")
+        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
+        click("abrir-move")
+        click("guardado")
+        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
+    })
+
+    it("names a tab once the sheet knows its number", () => {
+        setup()
+        click("abrir-ov")
+        click("nombrar-ov")
+        expect(screen.getByText("tab:OV-000042*")).toBeInTheDocument()
+    })
+
+    it("opens the cost calculator as a tool tab that keeps living while another tab is active", async () => {
+        setup()
+        click("abrir-despacho")
+        click("abrir-calculadora")
+        expect(await screen.findByText("calculadora:abierta")).toBeInTheDocument()
+        click("tab:DES-1")
+        expect(await screen.findByText("calculadora:oculta")).toBeInTheDocument()
+        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
+        click("cerrar:Calculadora de Costos")
+        expect(screen.queryByText(/calculadora:/)).toBeNull()
+    })
+
+    it("closes every tab when the page changes", () => {
+        const { rerender } = setup()
+        click("abrir-despacho")
+        click("abrir-calculadora")
+        nav.pathname = "/inventory/products"
+        rerender(<GlobalModalProvider><Controls /></GlobalModalProvider>)
+        expect(screen.queryAllByText(/^tab:/)).toHaveLength(0)
+        expect(screen.queryByText(/open:/)).toBeNull()
+        expect(screen.queryByText(/calculadora:/)).toBeNull()
+    })
+
+    it("closeEntity clears every tab", () => {
+        setup()
+        click("abrir-despacho")
+        click("abrir-move")
+        click("cerrar-todo")
+        expect(screen.queryByText(/open:/)).toBeNull()
+    })
+
+    it("flags the document's module in the tab description only when it differs from the page's", () => {
         setup() // la página está en /sales/...
         click("abrir-despacho")
         click("abrir-move") // inventory.stockmove vive en Inventario
-        expect(screen.getByText("modulo:Inventario")).toBeInTheDocument()
+        expect(screen.getByText(/^desc:.*MOV-7.*Inventario/)).toBeInTheDocument()
         click("abrir-ov") // sales.saleorder vive en Ventas = módulo de la página
-        expect(screen.getByText("modulo:ninguno")).toBeInTheDocument()
-    })
-
-    it("closeEntity clears the whole stack and re-opening the top is a no-op", () => {
-        setup()
-        click("abrir-despacho")
-        click("abrir-despacho")
-        expect(screen.queryByText(/volver:/)).toBeNull()
-        click("cerrar")
-        expect(screen.queryByText(/open:/)).toBeNull()
-    })
-
-    it("pins a document and reopens it from a chip: pops if it is in the stack, stacks otherwise", () => {
-        window.localStorage.clear()
-        setup()
-        click("abrir-despacho")
-        click("abrir-ov")
-        click("fijar") // fija OV-42 (tope)
-        click("abrir-move")
-        act(() => screen.getByText(/^fijado:/).click())
-        expect(screen.getByText("open:sales.saleorder:42")).toBeInTheDocument() // estaba en la pila: desapila
-
-        click("volver:DES-1")
-        click("abrir-move")
-        act(() => screen.getByText(/^fijado:/).click()) // ya no está en la pila: se apila
-        expect(screen.getByText("open:sales.saleorder:42")).toBeInTheDocument()
-        window.localStorage.clear()
-    })
-
-    it("closing with X pops one level and only closes at the last document (ADR-0100)", () => {
-        setup()
-        click("abrir-despacho")
-        click("abrir-ov")
-        click("abrir-move")
-        click("x")
-        expect(screen.getByText("open:sales.saleorder:42")).toBeInTheDocument()
-        click("x")
-        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
-        click("x")
-        expect(screen.queryByText(/open:/)).toBeNull()
-    })
-
-    it("opens sale orders in their document sheet, stacked with back (ADR-0083)", () => {
-        setup()
-        click("abrir-ov")
-        expect(screen.getByText("open:sales.saleorder:42")).toBeInTheDocument()
-        click("nombrar-ov")
-        click("abrir-despacho")
-        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
-        expect(screen.getByText("volver:OV-000042")).toBeInTheDocument()
-    })
-
-    it("opens purchase orders in their document sheet too (U3)", () => {
-        setup()
-        click("abrir-despacho")
-        click("abrir-oc")
-        expect(screen.getByText("open:purchasing.purchaseorder:9")).toBeInTheDocument()
-        expect(screen.getByText("volver:DES-1")).toBeInTheDocument()
+        expect(screen.getByText(/^desc:.*OV-42$/)).toBeInTheDocument()
     })
 })
 
-
-/** Guarda estricta: un formulario sucio bloquea abrir, volver y cerrar hasta decidir. */
+/** Guarda estricta: un formulario sucio bloquea abrir, cambiar de pestaña, cerrar y salir hasta decidir. */
 describe("GlobalModalProvider unsaved-changes guard", () => {
     function DirtyForm({ save = async () => true }: { save?: () => Promise<boolean> }) {
         const { registerDirty } = useGlobalModals()
@@ -175,6 +185,7 @@ describe("GlobalModalProvider unsaved-changes guard", () => {
         <GlobalModalProvider>
             <Controls />
             <DirtyForm save={save} />
+            <Link href="/inventory/products">ir-a-inventario</Link>
         </GlobalModalProvider>
     )
 
@@ -211,107 +222,14 @@ describe("GlobalModalProvider unsaved-changes guard", () => {
         click("Guardar y continuar")
         expect(await screen.findByText("open:sales.saledelivery:1")).toBeInTheDocument()
     })
-})
 
-/** ADR-0100 fase 5: la pila viaja en `?stack=` (History API nativa). */
-describe("GlobalModalProvider stack in the URL", () => {
-    beforeEach(() => {
-        window.localStorage.setItem("erp.drilldownStack", "1")
-        window.history.replaceState(null, "", "/sales/orders")
-    })
-    afterEach(() => {
-        window.localStorage.removeItem("erp.drilldownStack")
-        window.history.replaceState(null, "", "/")
-    })
-
-    const stackParam = () => new URLSearchParams(window.location.search).get("stack")
-    const popTo = (url: string) => act(() => {
-        window.history.replaceState(null, "", url)
-        window.dispatchEvent(new PopStateEvent("popstate"))
-    })
-
-    it("writes the stack with two or more documents and removes it when back to one", () => {
-        setup()
-        click("abrir-despacho")
-        expect(stackParam()).toBeNull()
-        click("abrir-move")
-        expect(stackParam()).toBe("sales.saledelivery:1,inventory.stockmove:7")
-        click("volver:DES-1")
-        expect(stackParam()).toBeNull()
-    })
-
-    it("pushes a history entry per level so Back pops one", () => {
-        setup()
-        const before = window.history.length
-        click("abrir-despacho")
-        click("abrir-move")
-        expect(window.history.length).toBe(before + 1)
-    })
-
-    it("pops the stack on Back (popstate without the stack)", () => {
-        setup()
-        click("abrir-despacho")
-        click("abrir-move")
-        popTo("/sales/orders")
-        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
-        expect(screen.queryByText("open:inventory.stockmove:7")).toBeNull()
-    })
-
-    it("re-stacks on Forward (popstate with the stack)", () => {
-        setup()
-        click("abrir-despacho")
-        click("abrir-move")
-        popTo("/sales/orders")
-        popTo("/sales/orders?stack=sales.saledelivery:1,inventory.stockmove:7")
-        expect(screen.getByText("open:inventory.stockmove:7")).toBeInTheDocument()
-    })
-
-    it("rebuilds the stack from a shared link on load", () => {
-        window.history.replaceState(null, "", "/sales/orders?stack=sales.saledelivery:1,inventory.stockmove:7")
-        render(<React.StrictMode><GlobalModalProvider><Controls /></GlobalModalProvider></React.StrictMode>)
-        expect(screen.getByText("open:inventory.stockmove:7")).toBeInTheDocument()
-        expect(screen.getByText("volver:DES-1")).toBeInTheDocument()
-        expect(stackParam()).toBe("sales.saledelivery:1,inventory.stockmove:7")
-    })
-
-    it("Back with unsaved changes asks first and restores the URL when the user keeps editing", async () => {
-        function Dirtier() {
-            const { registerDirty } = useGlobalModals()
-            const [dirty, setDirty] = React.useState(false)
-            useEffect(() => dirty
-                ? registerDirty({ name: "MOV-7", isDirty: () => true, discard: () => {}, save: async () => true })
-                : undefined, [dirty, registerDirty])
-            return <Button onClick={() => setDirty(true)}>ensuciar</Button>
-        }
-        render(<GlobalModalProvider><Controls /><Dirtier /></GlobalModalProvider>)
-        click("abrir-despacho")
-        click("abrir-move")
-        click("ensuciar")
-
-        popTo("/sales/orders")
+    it("asks before an internal link leaves the page and goes there only after the user decides", async () => {
+        setupDirty()
+        click("ir-a-inventario")
         expect(await screen.findByText("Cambios sin guardar")).toBeInTheDocument()
-        expect(screen.getByText("open:inventory.stockmove:7")).toBeInTheDocument()
+        expect(nav.push).not.toHaveBeenCalled()
 
-        click("Seguir editando")
-        await waitFor(() => expect(stackParam()).toBe("sales.saledelivery:1,inventory.stockmove:7"))
-        expect(screen.getByText("open:inventory.stockmove:7")).toBeInTheDocument()
-    })
-
-    it("a page that re-opens the same base does not drop the restored stack", () => {
-        window.history.replaceState(null, "", "/sales/orders?stack=sales.saledelivery:1,inventory.stockmove:7")
-        function LatePage() {
-            const { openRootEntity } = useGlobalModals()
-            return <Button onClick={() => openRootEntity("sales.saledelivery", 1)}>base-1</Button>
-        }
-        render(<GlobalModalProvider><LatePage /></GlobalModalProvider>)
-        click("base-1")
-        expect(screen.getByText("open:inventory.stockmove:7")).toBeInTheDocument()
-        expect(stackParam()).toBe("sales.saledelivery:1,inventory.stockmove:7")
-    })
-
-    it("ignores unknown or malformed entries in the URL", () => {
-        window.history.replaceState(null, "", "/sales/orders?stack=nope.thing:1,sales.saledelivery:abc,..:2")
-        setup()
-        expect(screen.queryByText(/open:/)).toBeNull()
+        click("Descartar y continuar")
+        await waitFor(() => expect(nav.push).toHaveBeenCalledWith("/inventory/products"))
     })
 })

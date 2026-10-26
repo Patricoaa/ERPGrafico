@@ -10,6 +10,7 @@ import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { UserActions } from "./UserActions"
 import { ModuleRail } from "./ModuleRail"
 import { ModuleSidebarPanel } from "./ModuleSidebarPanel"
+import { WorkspaceTabBar } from "./WorkspaceTabBar"
 import { useHeader } from "@/components/providers/HeaderProvider"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -176,6 +177,9 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                         <UserActions />
                     </div>
                 </header>
+
+                {/* ── BARRA DE TRABAJO: páginas del módulo + pestañas efímeras (ADR-0101) ── */}
+                <WorkspaceTabBar navigation={nav} />
 
                 {/* ── CONTENT AREA (se repliega ante sheets globales) ─────── */}
                 <div

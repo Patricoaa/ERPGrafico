@@ -1,7 +1,7 @@
 ---
 id: 0100
 title: Document drilldown stacks over the origin list — origin list and module are kept (behind a feature flag)
-status: Proposed
+status: Proposed (items 7–10 superseded by ADR-0101)
 date: 2026-10-26
 author: frontend-team
 ---
