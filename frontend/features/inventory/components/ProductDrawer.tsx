@@ -780,6 +780,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                     confirmText="Descartar y Cerrar"
                     onConfirm={() => {
                         setConfirmCloseOpen(false)
+                        form.reset() // limpia el estado sucio para que la guarda global no pregunte de nuevo
                         onOpenChange(false)
                     }}
                 />
@@ -847,6 +848,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                 confirmText="Descartar y Cerrar"
                 onConfirm={() => {
                     setConfirmCloseOpen(false)
+                    form.reset() // limpia el estado sucio para que la guarda global no pregunte de nuevo
                     onOpenChange(false)
                 }}
             />

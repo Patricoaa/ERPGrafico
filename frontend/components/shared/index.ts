@@ -20,6 +20,7 @@ export * from './UniversalSearch';
 // Modals & Sheets
 export * from './ActionConfirmModal';
 export * from './BaseModal';
+export * from './UnsavedChangesDialog';
 export * from './Drawer';
 export * from './PanelHeader';
 export * from './CollapsibleSheet';

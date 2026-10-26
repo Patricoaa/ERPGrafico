@@ -1,6 +1,6 @@
-import { render, screen, act } from "@testing-library/react"
+import { render, screen, act, waitFor } from "@testing-library/react"
 import { vi, describe, it, expect } from "vitest"
-import React from "react"
+import React, { useEffect } from "react"
 
 import { GlobalModalProvider, useGlobalModals } from "../GlobalModalProvider"
 import { useEntityNavigation } from "@/components/shared"
@@ -96,5 +96,62 @@ describe("GlobalModalProvider entity stack", () => {
         click("abrir-oc")
         expect(screen.getByText("open:purchasing.purchaseorder:9")).toBeInTheDocument()
         expect(screen.getByText("volver:DES-1")).toBeInTheDocument()
+    })
+})
+
+
+/** Guarda estricta: un formulario sucio bloquea abrir, volver y cerrar hasta decidir. */
+describe("GlobalModalProvider unsaved-changes guard", () => {
+    function DirtyForm({ save = async () => true }: { save?: () => Promise<boolean> }) {
+        const { registerDirty } = useGlobalModals()
+        const state = React.useRef({ dirty: true, discarded: 0 })
+        useEffect(() => registerDirty({
+            name: "OV-1",
+            isDirty: () => state.current.dirty,
+            discard: () => { state.current.dirty = false; state.current.discarded++ },
+            save: async () => { const ok = await save(); if (ok) state.current.dirty = false; return ok },
+        }), [registerDirty, save])
+        return null
+    }
+
+    const setupDirty = (save?: () => Promise<boolean>) => render(
+        <GlobalModalProvider>
+            <Controls />
+            <DirtyForm save={save} />
+        </GlobalModalProvider>
+    )
+
+    it("blocks opening another document until the user decides (keep editing cancels)", async () => {
+        setupDirty()
+        click("abrir-despacho")
+        expect(screen.queryByText(/open:/)).toBeNull()
+        expect(await screen.findByText("Cambios sin guardar")).toBeInTheDocument()
+        expect(screen.getByText("OV-1")).toBeInTheDocument()
+
+        click("Seguir editando")
+        await waitFor(() => expect(screen.queryByText("Cambios sin guardar")).toBeNull())
+        expect(screen.queryByText(/open:/)).toBeNull()
+    })
+
+    it("discard continues with the pending open", async () => {
+        setupDirty()
+        click("abrir-despacho")
+        click("Descartar y continuar")
+        expect(await screen.findByText("open:sales.saledelivery:1")).toBeInTheDocument()
+    })
+
+    it("save continues only when the form was saved", async () => {
+        const save = vi.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+        setupDirty(save)
+
+        click("abrir-despacho")
+        click("Guardar y continuar")
+        await waitFor(() => expect(save).toHaveBeenCalledTimes(1))
+        await waitFor(() => expect(screen.queryByText("Cambios sin guardar")).toBeNull())
+        expect(screen.queryByText(/open:/)).toBeNull() // validación fallida: no continúa
+
+        click("abrir-despacho")
+        click("Guardar y continuar")
+        expect(await screen.findByText("open:sales.saledelivery:1")).toBeInTheDocument()
     })
 })

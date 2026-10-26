@@ -20,7 +20,7 @@ export function useDocumentSheetRoute(label: string | null) {
     const router = useRouter()
     const pathname = usePathname()
     const selectedId = Number(searchParams.get("selected")) || null
-    const { openEntity, closeEntity, isSubModalActive } = useGlobalModals()
+    const { openEntity, closeEntity, isSubModalActive, runGuarded } = useGlobalModals()
 
     const openedIdRef = useRef<number | null>(null)
     const wasOpenRef = useRef(false)
@@ -63,9 +63,10 @@ export function useDocumentSheetRoute(label: string | null) {
         setSelected(null, true)
     }, [label, isSubModalActive, setSelected])
 
+    // La guarda de cambios sin guardar va antes de tocar la URL: el efecto de arriba ya no puede esperar un diálogo.
     const toggle = useCallback((id: number) => {
-        setSelected(selectedId === id && isSubModalActive ? null : id)
-    }, [selectedId, isSubModalActive, setSelected])
+        runGuarded(() => setSelected(selectedId === id && isSubModalActive ? null : id))
+    }, [selectedId, isSubModalActive, setSelected, runGuarded])
 
     return { selectedId, isOpen: !!selectedId && isSubModalActive, toggle }
 }

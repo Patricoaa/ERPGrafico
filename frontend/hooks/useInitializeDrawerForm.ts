@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef } from "react"
 import type { FieldValues, UseFormReturn } from "react-hook-form"
+import { useDirtyGuard } from "./useDirtyGuard"
 
 const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect
 
@@ -23,6 +24,8 @@ interface UseInitializeDrawerFormOptions<TData, TForm extends FieldValues> {
      * Alternatively, pass a static object.
      */
     defaultValues: Partial<TForm> | (() => Partial<TForm>)
+    /** Nombre del documento en el diálogo de cambios sin guardar (p. ej. "OV-000183"). */
+    guardName?: string
 }
 
 /**
@@ -36,6 +39,9 @@ interface UseInitializeDrawerFormOptions<TData, TForm extends FieldValues> {
  * `useLayoutEffect` runs before paint, so the form still initializes without
  * flashing stale values. The reset key (open state + entity id) is the only
  * trigger: it changes when the drawer opens, closes, or switches entity.
+ *
+ * Also registers the form in the unsaved-changes guard (`useDirtyGuard`): while it is dirty, the
+ * entity stack blocks opening, going back or closing until the user saves or discards.
  */
 export function useInitializeDrawerForm<TData, TForm extends FieldValues>({
     form,
@@ -44,7 +50,9 @@ export function useInitializeDrawerForm<TData, TForm extends FieldValues>({
     getEntityId,
     mapData,
     defaultValues,
+    guardName,
 }: UseInitializeDrawerFormOptions<TData, TForm>): void {
+    useDirtyGuard({ form, open, name: guardName })
     const prevResetKeyRef = useRef<string>("")
 
     const id = getEntityId

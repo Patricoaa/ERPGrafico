@@ -3,8 +3,9 @@
 import React, { createContext, useContext, useState, type ReactNode, useCallback, useMemo, useEffect } from "react"
 import { ENTITY_DRAWERS, hasEntityDrawer } from "@/lib/entity-drawers"
 import { formatEntityDisplay, getEntityMetadata } from "@/lib/entity-registry"
-import { ErrorBoundary, EntityNavigationContext } from "@/components/shared"
+import { ErrorBoundary, EntityNavigationContext, UnsavedChangesDialog } from "@/components/shared"
 import { EntityViewBridge } from "./EntityViewBridge"
+import { DirtyRegistry, type DirtyEntry } from "./dirtyGuardRegistry"
 
 interface OpenEntityState {
     label: string
@@ -17,6 +18,22 @@ interface OpenEntityState {
 
 export interface OpenEntityOptions {
     display?: string
+}
+
+interface PendingLeave {
+    names: string[]
+    action: () => void
+    onCancel?: () => void
+}
+
+/** Último estado renderizado, legible desde handlers sin depender del cierre. Se escribe solo en efectos. */
+class LiveMirror {
+    stack: OpenEntityState[] = []
+    pending: PendingLeave | null = null
+    sync(next: { stack?: OpenEntityState[]; pending?: PendingLeave | null }) {
+        if (next.stack !== undefined) this.stack = next.stack
+        if (next.pending !== undefined) this.pending = next.pending
+    }
 }
 
 /** Máximo de documentos encadenados con "volver" (ADR-0080, GAP-11). */
@@ -46,6 +63,15 @@ interface GlobalModalActionsContextType {
      * Lo llama la ficha cuando carga su número (ADR-0083). No-op si no está en la pila.
      */
     setEntityDisplay: (label: string, id: number, display: string) => void
+    /** Registra un formulario en la guarda de cambios sin guardar. Devuelve la función que lo retira. */
+    registerDirty: (entry: DirtyEntry) => () => void
+    /**
+     * Ejecuta `action` ya, o tras la decisión del usuario si hay formularios sucios
+     * (Guardar y continuar / Descartar y continuar; "Seguir editando" la cancela).
+     */
+    runGuarded: (action: () => void, onCancel?: () => void) => void
+    /** Versión con promesa de `runGuarded`: resuelve `true` si se puede continuar. */
+    requestLeave: () => Promise<boolean>
     registerSheet: (id: string, fullWidth: number, priority: number, forceCollapse?: boolean) => void
     unregisterSheet: (id: string) => void
 }
@@ -78,9 +104,72 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         return () => window.removeEventListener('resize', handleResize)
     }, [])
 
+    // Espejo mutable del último estado para los handlers (no son refs de render: se escriben solo en efectos).
+    const [live] = useState(() => new LiveMirror())
+    useEffect(() => { live.sync({ stack: entityStack }) }, [live, entityStack])
+
+    // Guarda de cambios sin guardar: un formulario sucio bloquea abrir, volver y cerrar hasta decidir.
+    const [registry] = useState(() => new DirtyRegistry())
+    const [pendingLeave, setPendingLeave] = useState<PendingLeave | null>(null)
+    const [savingLeave, setSavingLeave] = useState(false)
+
+    useEffect(() => { live.sync({ pending: pendingLeave }) }, [live, pendingLeave])
+
+    const runGuarded = useCallback((action: () => void, onCancel?: () => void) => {
+        const dirty = registry.dirtyEntries()
+        if (dirty.length === 0) { action(); return }
+        // Ya hay una decisión en curso: la nueva petición se cancela, no se encola.
+        if (live.pending) { onCancel?.(); return }
+        const top = live.stack[live.stack.length - 1]
+        const fallback = top ? entityBackLabel(top) : "Este formulario"
+        setPendingLeave({ names: dirty.map(e => e.name ?? fallback), action, onCancel })
+    }, [registry, live])
+
+    const requestLeave = useCallback(
+        () => new Promise<boolean>(resolve => runGuarded(() => resolve(true), () => resolve(false))),
+        [runGuarded],
+    )
+
+    const keepEditing = useCallback(() => {
+        live.pending?.onCancel?.()
+        setPendingLeave(null)
+    }, [live])
+
     const closeEntity = useCallback(() => setEntityStack([]), [])
 
-    const goBackEntity = useCallback(() => setEntityStack(prev => prev.slice(0, -1)), [])
+    const goBackEntity = useCallback(() => runGuarded(() => setEntityStack(prev => prev.slice(0, -1))), [runGuarded])
+
+    const resolveLeave = useCallback(async (mode: "save" | "discard") => {
+        const pending = pendingLeave
+        if (!pending) return
+        const dirty = registry.dirtyEntries()
+        if (mode === "save") {
+            setSavingLeave(true)
+            let ok = true
+            for (const entry of dirty) {
+                if (!(await entry.save())) { ok = false; break }
+            }
+            setSavingLeave(false)
+            setPendingLeave(null)
+            if (ok) pending.action()
+            else pending.onCancel?.()
+            return
+        }
+        dirty.forEach(entry => entry.discard())
+        setPendingLeave(null)
+        pending.action()
+    }, [pendingLeave, registry])
+
+    useEffect(() => {
+        if (typeof window === "undefined") return
+        const onBeforeUnload = (event: BeforeUnloadEvent) => {
+            if (!registry.hasDirty()) return
+            event.preventDefault()
+            event.returnValue = ""
+        }
+        window.addEventListener("beforeunload", onBeforeUnload)
+        return () => window.removeEventListener("beforeunload", onBeforeUnload)
+    }, [registry])
 
     const setEntityDisplay = useCallback((label: string, id: number, display: string) => {
         setEntityStack(prev => prev.some(e => e.label === label && e.id === id && e.display !== display)
@@ -95,13 +184,15 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
             return
         }
         const entry: OpenEntityState = { label, id, data, segmenter, display: options?.display }
-        setEntityStack(prev => {
-            const top = prev[prev.length - 1]
-            if (top && top.label === label && top.id === id) return prev
+        const top = live.stack[live.stack.length - 1]
+        if (top && top.label === label && top.id === id) return
+        runGuarded(() => setEntityStack(prev => {
+            const current = prev[prev.length - 1]
+            if (current && current.label === label && current.id === id) return prev
             // Abrir desde un documento ya abierto apila; si no hay ninguno, empieza la pila.
             return [...prev, entry].slice(-MAX_ENTITY_STACK)
-        })
-    }, [])
+        }))
+    }, [runGuarded, live])
 
     const registerSheet = useCallback((id: string, fullWidth: number, priority: number, forced: boolean = false) => {
         setSheetStack(prev => {
@@ -181,9 +272,12 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         closeEntity,
         goBackEntity,
         setEntityDisplay,
+        registerDirty: (entry: DirtyEntry) => registry.register(entry),
+        runGuarded,
+        requestLeave,
         registerSheet,
         unregisterSheet,
-    }), [openEntity, closeEntity, goBackEntity, setEntityDisplay, registerSheet, unregisterSheet])
+    }), [openEntity, closeEntity, goBackEntity, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
 
     const stateValue = useMemo(() => ({
         isSubModalActive: openedEntity !== null,
@@ -194,6 +288,10 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         totalSheetsWidth
     }), [openedEntity, getSheetOffset, getSheetIndex, isSheetCollapsed, expandedSheetWidth, totalSheetsWidth])
 
+    const handleDrawerOpenChange = useCallback((open: boolean) => {
+        if (!open) runGuarded(closeEntity)
+    }, [runGuarded, closeEntity])
+
     const renderEntityDrawer = () => {
         if (!openedEntity) return null
         const render = ENTITY_DRAWERS[openedEntity.label]
@@ -203,7 +301,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
             id: openedEntity.id,
             data: openedEntity.data,
             open: true,
-            onOpenChange: (open) => { if (!open) closeEntity() },
+            onOpenChange: handleDrawerOpenChange,
             onSuccess: closeEntity,
             segmenter: openedEntity.segmenter,
         })
@@ -226,6 +324,14 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
             <ErrorBoundary variant="inline">
                 {renderEntityDrawer()}
             </ErrorBoundary>
+            <UnsavedChangesDialog
+                open={pendingLeave !== null}
+                names={pendingLeave?.names ?? []}
+                saving={savingLeave}
+                onSave={() => { void resolveLeave("save") }}
+                onDiscard={() => { void resolveLeave("discard") }}
+                onKeepEditing={keepEditing}
+            />
         </EntityViewBridge>
         </GlobalModalStateContext.Provider>
         </GlobalModalActionsContext.Provider>
@@ -238,6 +344,11 @@ export function useGlobalModalActions() {
         throw new Error("useGlobalModalActions must be used within a GlobalModalProvider")
     }
     return context
+}
+
+/** Como `useGlobalModalActions` pero devuelve `undefined` fuera del provider (hooks compartidos, stories). */
+export function useOptionalGlobalModalActions() {
+    return useContext(GlobalModalActionsContext)
 }
 
 export function useGlobalModals(): CombinedContextType {
