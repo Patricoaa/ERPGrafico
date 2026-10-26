@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button"
 vi.mock("next/navigation", () => ({ usePathname: () => "/sales/orders" }))
 
 // Drawer de prueba: muestra qué documento está abierto y el "volver" disponible.
-function FakeDrawer({ label, id }: { label: string; id: number }) {
+function FakeDrawer({ label, id, onOpenChange }: { label: string; id: number; onOpenChange?: (open: boolean) => void }) {
     const navigation = useEntityNavigation()
     return (
         <div>
             <span>open:{label}:{id}</span>
+            <Button onClick={() => onOpenChange?.(false)}>x</Button>
             {navigation && <Button onClick={navigation.goBack}>volver:{navigation.backLabel}</Button>}
             {navigation && <span>modulo:{navigation.module?.label ?? "ninguno"}</span>}
             {navigation && navigation.trail.map((item) => (
@@ -24,8 +25,8 @@ function FakeDrawer({ label, id }: { label: string; id: number }) {
 }
 
 vi.mock("@/lib/entity-drawers", () => {
-    const render = (label: string) => function EntityDrawerStub({ id }: { id: number }) {
-        return <FakeDrawer label={label} id={id} />
+    const render = (label: string) => function EntityDrawerStub({ id, onOpenChange }: { id: number; onOpenChange?: (open: boolean) => void }) {
+        return <FakeDrawer label={label} id={id} onOpenChange={onOpenChange} />
     }
     const drawers: Record<string, unknown> = {
         "sales.saledelivery": render("sales.saledelivery"),
@@ -101,6 +102,19 @@ describe("GlobalModalProvider entity stack", () => {
         click("abrir-despacho")
         expect(screen.queryByText(/volver:/)).toBeNull()
         click("cerrar")
+        expect(screen.queryByText(/open:/)).toBeNull()
+    })
+
+    it("closing with X pops one level and only closes at the last document (ADR-0100)", () => {
+        setup()
+        click("abrir-despacho")
+        click("abrir-ov")
+        click("abrir-move")
+        click("x")
+        expect(screen.getByText("open:sales.saleorder:42")).toBeInTheDocument()
+        click("x")
+        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
+        click("x")
         expect(screen.queryByText(/open:/)).toBeNull()
     })
 

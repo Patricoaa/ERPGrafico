@@ -140,6 +140,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
 
     const closeEntity = useCallback(() => setEntityStack([]), [])
 
+    const popEntity = useCallback(() => setEntityStack(prev => prev.slice(0, -1)), [])
     const goBackEntity = useCallback(() => runGuarded(() => setEntityStack(prev => prev.slice(0, -1))), [runGuarded])
 
     const resolveLeave = useCallback(async (mode: "save" | "discard") => {
@@ -312,8 +313,9 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     }
 
     const handleDrawerOpenChange = useCallback((open: boolean) => {
-        if (!open) runGuarded(closeEntity)
-    }, [runGuarded, closeEntity])
+        // X / Escape / clic fuera suben un nivel; con un solo documento cierran (ADR-0100).
+        if (!open) goBackEntity()
+    }, [goBackEntity])
 
     const renderEntityDrawer = () => {
         if (!openedEntity) return null
@@ -326,7 +328,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
             data: openedEntity.data,
             open: true,
             onOpenChange: handleDrawerOpenChange,
-            onSuccess: closeEntity,
+            onSuccess: popEntity,
             segmenter: openedEntity.segmenter,
         })
         return (
