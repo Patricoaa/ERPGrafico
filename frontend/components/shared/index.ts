@@ -179,3 +179,4 @@ export * from './ContactSelector'
 // Product grid family relocated to `components/selectors/ProductGridPicker`
 // (audit T5) — no longer published from the shared barrel.
 export * from './manufacturing'
+export * from './PersistentPanelContext';

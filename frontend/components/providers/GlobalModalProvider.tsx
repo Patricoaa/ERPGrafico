@@ -7,7 +7,7 @@ import { ENTITY_DRAWERS, hasEntityDrawer } from "@/lib/entity-drawers"
 import { formatEntityDisplay, getEntityMetadata } from "@/lib/entity-registry"
 import { usePathname, useRouter } from "next/navigation"
 import { getModuleIdFromPath, getEntityModule } from "@/lib/module-registry"
-import { ErrorBoundary, UnsavedChangesDialog } from "@/components/shared"
+import { ErrorBoundary, PersistentPanelContext, UnsavedChangesDialog } from "@/components/shared"
 import { EntityViewBridge } from "./EntityViewBridge"
 import { DirtyRegistry, type DirtyEntry } from "./dirtyGuardRegistry"
 
@@ -487,13 +487,15 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         <EntityViewBridge openEntity={openEntity}>
             {children}
             <ErrorBoundary variant="inline">
-                {renderActiveTab()}
-                {hasCalculatorTab && (
-                    <CostCalculatorDrawer
-                        open={activeKey === toolKey("cost-calculator")}
-                        onOpenChange={handleDrawerOpenChange}
-                    />
-                )}
+                <PersistentPanelContext.Provider value={true}>
+                    {renderActiveTab()}
+                    {hasCalculatorTab && (
+                        <CostCalculatorDrawer
+                            open={activeKey === toolKey("cost-calculator")}
+                            onOpenChange={handleDrawerOpenChange}
+                        />
+                    )}
+                </PersistentPanelContext.Provider>
             </ErrorBoundary>
             <UnsavedChangesDialog
                 open={pendingLeave !== null}

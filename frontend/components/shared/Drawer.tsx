@@ -10,6 +10,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { PanelHeader, type PanelBaseProps } from "./PanelHeader"
+import { PersistentPanelContext, usePersistentPanel } from "./PersistentPanelContext"
 import {ScrollArea} from "@/components/ui/scroll-area"
 
 type DrawerMode = 'create' | 'edit' | 'view'
@@ -91,6 +92,8 @@ export function Drawer({
     fillContent = false
 }: DrawerProps) {
     const isHorizontal = side === "left" || side === "right"
+    // ADR-0101: el panel de una pestaña persiste hasta cerrarlo; un clic fuera (riel, lista) no lo descarta.
+    const persistent = usePersistentPanel()
     const [size, setSize] = useState<number | string>(
         defaultSize ?? (isHorizontal ? "400px" : "75vh")
     )
@@ -206,6 +209,7 @@ export function Drawer({
     // Only overlays mounted after this drawer count (portals append in opening order): clicking a drawer
     // underneath (an openEntity stack) still dismisses this one.
     const keepOpenForOverlays = (event: Event) => {
+        if (persistent) { event.preventDefault(); return }
         const target = event.target
         const overlay = target instanceof Element ? target.closest('[role="dialog"], [role="alertdialog"]') : null
         const self = document.getElementById(contentId)
@@ -319,6 +323,7 @@ export function Drawer({
                     </SheetHeader>
                 )}
 
+                <PersistentPanelContext.Provider value={false}>
                 {fillContent ? (
                     <div className={cn(
                         "flex-1 flex flex-col overflow-hidden",
@@ -336,6 +341,7 @@ export function Drawer({
                         {children}
                     </ScrollArea>
                 )}
+                </PersistentPanelContext.Provider>
 
                 {footer && (
                     <div className={cn("border-t border-border px-6 py-3 flex-shrink-0 bg-card", footerClassName)}>
