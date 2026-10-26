@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.28](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.27...v0.3.28) (2026-10-26)
+
+
+### 🐛 Bug Fixes
+
+* **drawers:** document sheet anatomy polish ([c24f52f](https://github.com/Patricoaa/ERPGrafico/commit/c24f52fe16950b36e27ea058063da845b6c4ddf7))
+
 ### [0.3.27](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.26...v0.3.27) (2026-10-26)
 
 
