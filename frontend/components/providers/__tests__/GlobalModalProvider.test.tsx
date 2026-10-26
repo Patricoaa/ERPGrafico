@@ -1,5 +1,5 @@
 import { render, screen, act, waitFor } from "@testing-library/react"
-import { vi, describe, it, expect } from "vitest"
+import { vi, describe, it, expect, beforeEach, afterEach } from "vitest"
 import React, { useEffect } from "react"
 
 import { GlobalModalProvider, useGlobalModals } from "../GlobalModalProvider"
@@ -34,7 +34,7 @@ vi.mock("@/lib/entity-drawers", () => {
         "sales.saleorder": render("sales.saleorder"),
         "purchasing.purchaseorder": render("purchasing.purchaseorder"),
     }
-    return { ENTITY_DRAWERS: drawers, hasEntityDrawer: (label: string) => label in drawers }
+    return { ENTITY_DRAWERS: drawers, hasEntityDrawer: (label: string) => label in drawers, isRestorableById: (label: string) => label in drawers }
 })
 
 /** Botones que disparan las acciones del provider. */
@@ -191,5 +191,108 @@ describe("GlobalModalProvider unsaved-changes guard", () => {
         click("abrir-despacho")
         click("Guardar y continuar")
         expect(await screen.findByText("open:sales.saledelivery:1")).toBeInTheDocument()
+    })
+})
+
+/** ADR-0100 fase 5: la pila viaja en `?stack=` (History API nativa). */
+describe("GlobalModalProvider stack in the URL", () => {
+    beforeEach(() => {
+        window.localStorage.setItem("erp.drilldownStack", "1")
+        window.history.replaceState(null, "", "/sales/orders")
+    })
+    afterEach(() => {
+        window.localStorage.removeItem("erp.drilldownStack")
+        window.history.replaceState(null, "", "/")
+    })
+
+    const stackParam = () => new URLSearchParams(window.location.search).get("stack")
+    const popTo = (url: string) => act(() => {
+        window.history.replaceState(null, "", url)
+        window.dispatchEvent(new PopStateEvent("popstate"))
+    })
+
+    it("writes the stack with two or more documents and removes it when back to one", () => {
+        setup()
+        click("abrir-despacho")
+        expect(stackParam()).toBeNull()
+        click("abrir-move")
+        expect(stackParam()).toBe("sales.saledelivery:1,inventory.stockmove:7")
+        click("volver:DES-1")
+        expect(stackParam()).toBeNull()
+    })
+
+    it("pushes a history entry per level so Back pops one", () => {
+        setup()
+        const before = window.history.length
+        click("abrir-despacho")
+        click("abrir-move")
+        expect(window.history.length).toBe(before + 1)
+    })
+
+    it("pops the stack on Back (popstate without the stack)", () => {
+        setup()
+        click("abrir-despacho")
+        click("abrir-move")
+        popTo("/sales/orders")
+        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
+        expect(screen.queryByText("open:inventory.stockmove:7")).toBeNull()
+    })
+
+    it("re-stacks on Forward (popstate with the stack)", () => {
+        setup()
+        click("abrir-despacho")
+        click("abrir-move")
+        popTo("/sales/orders")
+        popTo("/sales/orders?stack=sales.saledelivery:1,inventory.stockmove:7")
+        expect(screen.getByText("open:inventory.stockmove:7")).toBeInTheDocument()
+    })
+
+    it("rebuilds the stack from a shared link on load", () => {
+        window.history.replaceState(null, "", "/sales/orders?stack=sales.saledelivery:1,inventory.stockmove:7")
+        render(<React.StrictMode><GlobalModalProvider><Controls /></GlobalModalProvider></React.StrictMode>)
+        expect(screen.getByText("open:inventory.stockmove:7")).toBeInTheDocument()
+        expect(screen.getByText("volver:DES-1")).toBeInTheDocument()
+        expect(stackParam()).toBe("sales.saledelivery:1,inventory.stockmove:7")
+    })
+
+    it("Back with unsaved changes asks first and restores the URL when the user keeps editing", async () => {
+        function Dirtier() {
+            const { registerDirty } = useGlobalModals()
+            const [dirty, setDirty] = React.useState(false)
+            useEffect(() => dirty
+                ? registerDirty({ name: "MOV-7", isDirty: () => true, discard: () => {}, save: async () => true })
+                : undefined, [dirty, registerDirty])
+            return <Button onClick={() => setDirty(true)}>ensuciar</Button>
+        }
+        render(<GlobalModalProvider><Controls /><Dirtier /></GlobalModalProvider>)
+        click("abrir-despacho")
+        click("abrir-move")
+        click("ensuciar")
+
+        popTo("/sales/orders")
+        expect(await screen.findByText("Cambios sin guardar")).toBeInTheDocument()
+        expect(screen.getByText("open:inventory.stockmove:7")).toBeInTheDocument()
+
+        click("Seguir editando")
+        await waitFor(() => expect(stackParam()).toBe("sales.saledelivery:1,inventory.stockmove:7"))
+        expect(screen.getByText("open:inventory.stockmove:7")).toBeInTheDocument()
+    })
+
+    it("a page that re-opens the same base does not drop the restored stack", () => {
+        window.history.replaceState(null, "", "/sales/orders?stack=sales.saledelivery:1,inventory.stockmove:7")
+        function LatePage() {
+            const { openRootEntity } = useGlobalModals()
+            return <Button onClick={() => openRootEntity("sales.saledelivery", 1)}>base-1</Button>
+        }
+        render(<GlobalModalProvider><LatePage /></GlobalModalProvider>)
+        click("base-1")
+        expect(screen.getByText("open:inventory.stockmove:7")).toBeInTheDocument()
+        expect(stackParam()).toBe("sales.saledelivery:1,inventory.stockmove:7")
+    })
+
+    it("ignores unknown or malformed entries in the URL", () => {
+        window.history.replaceState(null, "", "/sales/orders?stack=nope.thing:1,sales.saledelivery:abc,..:2")
+        setup()
+        expect(screen.queryByText(/open:/)).toBeNull()
     })
 })

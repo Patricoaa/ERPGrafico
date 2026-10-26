@@ -628,6 +628,23 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
 }
 
+/**
+ * Labels cuyo drawer abre el documento cargándolo por id, sin `data`. Solo estos pueden reabrirse desde la
+ * URL (`?stack=`); el resto de maestros abre en modo creación si no recibe la fila.
+ */
+const RESTORABLE_BY_ID = new Set([
+    "treasury.treasuryaccount", "production.workorder", "accounting.journalentry", "inventory.product",
+    "hr.payroll", "pos.session", "purchasing.purchasereceipt", "purchasing.purchasereturn", "treasury.check",
+    "treasury.bankstatement", "tax.accountingperiod", "sales.saleorder", "purchasing.purchaseorder",
+    "billing.invoice", "sales.saledelivery", "sales.salereturn", "inventory.inventorydocument",
+    "treasury.treasurymovement", "treasury.terminalbatch", "contacts.profitdistributionresolution",
+    "inventory.stockmove",
+])
+
+export function isRestorableById(label: string | undefined | null): boolean {
+    return !!label && RESTORABLE_BY_ID.has(label) && label in ENTITY_DRAWERS
+}
+
 export function hasEntityDrawer(label: string | undefined | null): boolean {
     return !!label && label in ENTITY_DRAWERS
 }

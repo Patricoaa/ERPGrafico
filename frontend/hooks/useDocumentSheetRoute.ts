@@ -20,7 +20,7 @@ export function useDocumentSheetRoute(label: string | null) {
     const router = useRouter()
     const pathname = usePathname()
     const selectedId = Number(searchParams.get("selected")) || null
-    const { openEntity, closeEntity, isSubModalActive, runGuarded } = useGlobalModals()
+    const { openRootEntity, closeEntity, isSubModalActive, runGuarded } = useGlobalModals()
 
     const openedIdRef = useRef<number | null>(null)
     const wasOpenRef = useRef(false)
@@ -47,9 +47,8 @@ export function useDocumentSheetRoute(label: string | null) {
         if (openedIdRef.current === selectedId) return
         openedIdRef.current = selectedId
         wasOpenRef.current = false
-        closeEntity()
-        openEntity(label, selectedId)
-    }, [label, selectedId, openEntity, closeEntity])
+        openRootEntity(label, selectedId)
+    }, [label, selectedId, openRootEntity, closeEntity])
 
     useEffect(() => {
         if (!label) return

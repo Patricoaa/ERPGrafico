@@ -40,6 +40,7 @@ Product decision (2026-10): **keep the origin list and the origin module while n
 - Documents stacked over a list are no longer shareable by URL (`?stack=` serialization is a separate spike: it re-introduces the alternative ADR-0086 rejected and conflicts with `useDocumentSheetRoute`).
 - Destinations that used a page-own edit modal now open their registered **view** drawer; editing from the stack goes through that drawer's own flow.
 - Known gaps in the guard: browser Back/Forward, and page-mounted drawers closed through local state rather than the URL helpers.
+9. **Stack in the URL** (phase 5, same flag): with two or more documents the stack travels in `?stack=label:id,label:id` (base → top, base included; `lib/drilldownStackUrl.ts`). `useDrilldownStackUrl` (in `GlobalModalProvider`) mirrors stack → URL with the native History API: opening a document pushes a history entry (Back pops, Forward re-stacks), popping/closing replaces the entry, and reload or a shared link rebuilds the stack. Only labels that open by id (`isRestorableById` in `lib/entity-drawers.tsx`) are serialized; masters that need the row (`data`) stay memory-only. Back/Forward with unsaved changes goes through `runGuarded`; if the user keeps editing, the URL is restored. `?selected` still names the list selection; `useDocumentSheetRoute` opens it with `openRootEntity`, which keeps an already-restored base. Known limit: popping with "Volver"/X replaces the history entry (the entry created on open stays as a duplicate Back step).
 
 ## Rollout
 

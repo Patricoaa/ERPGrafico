@@ -8,6 +8,7 @@ import { getEntityModule, getModuleIcon, getModuleIdFromPath } from "@/lib/modul
 import { ErrorBoundary, EntityNavigationContext, UnsavedChangesDialog, type EntityNavigation } from "@/components/shared"
 import { EntityViewBridge } from "./EntityViewBridge"
 import { DirtyRegistry, type DirtyEntry } from "./dirtyGuardRegistry"
+import { useDrilldownStackUrl } from "./useDrilldownStackUrl"
 
 interface OpenEntityState {
     label: string
@@ -58,6 +59,11 @@ interface GlobalModalActionsContextType {
     openEntity: (label: string, id: number, data?: unknown, segmenter?: React.ReactNode, options?: OpenEntityOptions) => void
     /** Cierra todos los documentos abiertos con openEntity. */
     closeEntity: () => void
+    /**
+     * Abre `label:id` como base de la pila (selección de una lista, `?selected`). Si ya es la base
+     * (p. ej. restaurada desde `?stack=`) no toca la pila.
+     */
+    openRootEntity: (label: string, id: number) => void
     /** Vuelve al documento anterior de la pila (no-op si no hay). */
     goBackEntity: () => void
     /**
@@ -96,7 +102,8 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     // ADR-0080 (GAP-11): pila de documentos; se muestra el superior y se puede volver.
     const [entityStack, setEntityStack] = useState<OpenEntityState[]>([])
     const openedEntity = entityStack.length > 0 ? entityStack[entityStack.length - 1] : null
-    const pageModuleId = getModuleIdFromPath(usePathname())
+    const pathname = usePathname()
+    const pageModuleId = getModuleIdFromPath(pathname)
     const [sheetStack, setSheetStack] = useState<{id: string, width: number, priority: number, forced: boolean}[]>([])
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1600)
 
@@ -137,6 +144,15 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         live.pending?.onCancel?.()
         setPendingLeave(null)
     }, [live])
+
+    useDrilldownStackUrl({
+        stack: entityStack,
+        live,
+        setStack: setEntityStack,
+        runGuarded,
+        pathname,
+        toEntry: (ref) => ({ label: ref.label, id: ref.id }),
+    })
 
     const closeEntity = useCallback(() => setEntityStack([]), [])
 
@@ -197,6 +213,13 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
             return [...prev, entry].slice(-MAX_ENTITY_STACK)
         }))
     }, [runGuarded, live])
+
+    const openRootEntity = useCallback((label: string, id: number) => {
+        const base = live.stack[0]
+        if (base && base.label === label && base.id === id) return
+        setEntityStack([])
+        openEntity(label, id)
+    }, [live, openEntity])
 
     const registerSheet = useCallback((id: string, fullWidth: number, priority: number, forced: boolean = false) => {
         setSheetStack(prev => {
@@ -274,6 +297,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const actionsValue = useMemo(() => ({
         openEntity,
         closeEntity,
+        openRootEntity,
         goBackEntity,
         setEntityDisplay,
         registerDirty: (entry: DirtyEntry) => registry.register(entry),
@@ -281,7 +305,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         requestLeave,
         registerSheet,
         unregisterSheet,
-    }), [openEntity, closeEntity, goBackEntity, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
+    }), [openEntity, closeEntity, openRootEntity, goBackEntity, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
 
     const stateValue = useMemo(() => ({
         isSubModalActive: openedEntity !== null,
