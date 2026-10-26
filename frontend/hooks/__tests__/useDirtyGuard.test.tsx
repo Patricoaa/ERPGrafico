@@ -11,11 +11,11 @@ vi.mock("@/lib/entity-drawers", () => ({ ENTITY_DRAWERS: {}, hasEntityDrawer: ()
 
 interface Values { name: string }
 
-function FormDrawer({ onSubmitSpy, onRender }: { onSubmitSpy: (v: Values) => void; onRender?: () => void }) {
+function FormDrawer({ onSubmitSpy, onRender, named = true }: { onSubmitSpy: (v: Values) => void; onRender?: () => void; named?: boolean }) {
     React.useEffect(() => { onRender?.() })
     const form = useForm<Values>({ defaultValues: { name: "" } })
     useInitializeDrawerForm<{ id: number; name: string }, Values>({
-        form, open: true, initialData: { id: 1, name: "Original" }, defaultValues: { name: "" }, guardName: "Cliente 1",
+        form, open: true, initialData: { id: 1, name: "Original" }, defaultValues: { name: "" }, guardName: named ? "Cliente 1" : undefined,
     })
     return (
         <form onSubmit={form.handleSubmit((v) => { onSubmitSpy(v); form.reset(v) })}>
@@ -39,9 +39,9 @@ function Opener() {
     return <button onClick={() => { void requestLeave().then((ok) => setResult(ok ? "continue" : "cancel")) }}>salir:{result}</button>
 }
 
-const setup = (spy = vi.fn(), onRender?: () => void) => render(
+const setup = (spy = vi.fn(), onRender?: () => void, named = true) => render(
     <GlobalModalProvider>
-        <FormDrawer onSubmitSpy={spy} onRender={onRender} />
+        <FormDrawer onSubmitSpy={spy} onRender={onRender} named={named} />
         <Opener />
         <ChainedOpener />
     </GlobalModalProvider>
@@ -91,5 +91,13 @@ describe("useDirtyGuard via useInitializeDrawerForm", () => {
 
         expect(await screen.findByText("cadena:closed")).toBeInTheDocument()
         expect(screen.queryByText("Cambios sin guardar")).toBeNull()
+    })
+
+    it("falls back to the record name from initialData when no guardName is given", async () => {
+        setup(vi.fn(), undefined, false)
+        fireEvent.change(screen.getByLabelText("nombre"), { target: { value: "Cambiado" } })
+        await waitFor(() => expect(screen.getByLabelText("nombre")).toHaveValue("Cambiado"))
+        act(() => screen.getByText("salir:none").click())
+        expect(await screen.findByText("Original")).toBeInTheDocument()
     })
 })

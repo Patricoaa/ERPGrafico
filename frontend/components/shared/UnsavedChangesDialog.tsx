@@ -39,8 +39,8 @@ export function UnsavedChangesDialog({ open, names, saving, onSave, onDiscard, o
                 </div>
             }
             footer={
-                <div className="flex flex-col-reverse gap-2 w-full sm:flex-row sm:justify-end">
-                    <CancelButton autoFocus onClick={onKeepEditing} disabled={saving}>Seguir editando</CancelButton>
+                <div className="flex flex-col-reverse gap-2 w-full sm:flex-row sm:flex-wrap sm:justify-end">
+                    <CancelButton autoFocus className="shrink-0" onClick={onKeepEditing} disabled={saving}>Seguir editando</CancelButton>
                     <DangerButton variant="outline" onClick={onDiscard} disabled={saving}>Descartar y continuar</DangerButton>
                     <SubmitButton onClick={onSave} loading={saving}>Guardar y continuar</SubmitButton>
                 </div>

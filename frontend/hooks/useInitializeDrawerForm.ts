@@ -28,6 +28,17 @@ interface UseInitializeDrawerFormOptions<TData, TForm extends FieldValues> {
     guardName?: string
 }
 
+/** Nombre legible del registro para el diálogo de cambios sin guardar, sin que cada drawer lo declare. */
+function defaultGuardName(data: unknown): string | undefined {
+    if (!data || typeof data !== "object") return undefined
+    const record = data as Record<string, unknown>
+    for (const key of ["display_id", "name", "title", "code"]) {
+        const value = record[key]
+        if (typeof value === "string" && value.trim()) return value
+    }
+    return undefined
+}
+
 /**
  * Hook to initialize react-hook-form inside a Drawer (or Modal).
  *
@@ -52,7 +63,7 @@ export function useInitializeDrawerForm<TData, TForm extends FieldValues>({
     defaultValues,
     guardName,
 }: UseInitializeDrawerFormOptions<TData, TForm>): void {
-    useDirtyGuard({ form, open, name: guardName })
+    useDirtyGuard({ form, open, name: guardName ?? defaultGuardName(initialData) })
     const prevResetKeyRef = useRef<string>("")
 
     const id = getEntityId
