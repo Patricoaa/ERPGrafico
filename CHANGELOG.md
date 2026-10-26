@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.27](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.26...v0.3.27) (2026-10-26)
+
+
+### ✨ Features
+
+* **workspace:** drill-down by tabs is the only behaviour; remove NEXT_PUBLIC_DRILLDOWN_STACK ([226a055](https://github.com/Patricoaa/ERPGrafico/commit/226a05505251da27339f4dd741a5a720ca7c1c1b))
+
 ### [0.3.26](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.25...v0.3.26) (2026-10-26)
 
 
