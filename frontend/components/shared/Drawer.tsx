@@ -76,10 +76,10 @@ export function Drawer({
     footer,
     side = "bottom",
     boundary = "embedded",
-    resizable = false,
+    resizable: resizableProp = false,
     showOverlay,
     mode,
-    defaultSize,
+    defaultSize: defaultSizeProp,
     minSize,
     maxSize,
     className,
@@ -92,8 +92,11 @@ export function Drawer({
     fillContent = false
 }: DrawerProps) {
     const isHorizontal = side === "left" || side === "right"
-    // ADR-0101: el panel de una pestaña persiste hasta cerrarlo; un clic fuera (riel, lista) no lo descarta.
+    // ADR-0101: el panel de una pestaña ocupa siempre todo el área bajo la barra (la lista de origen queda
+    // inoperable) y persiste hasta cerrarlo: un clic fuera no lo descarta y no se redimensiona.
     const persistent = usePersistentPanel()
+    const defaultSize = persistent ? "100%" : defaultSizeProp
+    const resizable = persistent ? false : resizableProp
     const [size, setSize] = useState<number | string>(
         defaultSize ?? (isHorizontal ? "400px" : "75vh")
     )
