@@ -1,14 +1,14 @@
 ---
 id: 0100
-title: Document drilldown stacks over the origin list — origin list and module are kept (behind a feature flag)
-status: Proposed (items 7–10 superseded by ADR-0101)
+title: Document drilldown stacks over the origin list — origin list and module are kept
+status: Accepted (items 7–10 superseded by ADR-0101; flag removed 2026-10-26)
 date: 2026-10-26
 author: frontend-team
 ---
 
 # 0100 — Document drilldown stacks over the origin list
 
-**Related:** ADR-0086 (drilldown navigates — this ADR supersedes its decision 1 when the flag is on), ADR-0028 (entity drawer registry + in-memory stack), ADR-0083 (document sheet), ADR-0020 (`?selected`), contracts `component-entity-drawers.md` §3 and §5.2, `document-relations.md`.
+**Related:** ADR-0086 (drilldown navigates — superseded by this ADR), ADR-0028 (entity drawer registry + in-memory stack), ADR-0083 (document sheet), ADR-0020 (`?selected`), contracts `component-entity-drawers.md` §3 and §5.2, `document-relations.md`.
 
 ---
 
@@ -25,10 +25,10 @@ Product decision (2026-10): **keep the origin list and the origin module while n
 
 ## Decision
 
-1. **One entry point.** Every surface that opens "another document" calls `useOpenDocument()` (`frontend/hooks/useOpenDocument.ts`): `useOpenRelatedDocument` (Relations tab rows), `SourceDocumentLink`, `DocumentRefLink`. An ESLint rule (`drilldown/no-bypass`, `warn`) flags importing `isListSelectionUrl` outside the helper.
-2. **Feature flag.** `isDrilldownStackEnabled()` (`@/lib/documentNavigation`): `NEXT_PUBLIC_DRILLDOWN_STACK=true` at build, or `localStorage["erp.drilldownStack"] = "1"` for per-browser QA. Evaluated on each click.
-3. **Flag on:** if the label has a registered drawer, `openEntity(label, id, undefined, undefined, { display })` — stack over the origin list, module and URL unchanged, "Volver a …" available. No `data` is passed (the registry loads by id). **No drawer registered** (e.g. `inventory.subscription`, `treasury.paymentmethod`, `accounting.budget`, `tax.taxperiod`, `production.bom`): `router.push(DocumentRef.url)`.
-4. **Flag off:** ADR-0086 behaviour, unchanged.
+1. **One entry point.** Every surface that opens "another document" calls `useOpenDocument()` (`frontend/hooks/useOpenDocument.ts`): `useOpenRelatedDocument` (Relations tab rows), `SourceDocumentLink`, `DocumentRefLink`. `isListSelectionUrl` and the `drilldown/no-bypass` lint rule were removed with the flag: there is no list-navigation path left to bypass.
+2. **No flag.** `NEXT_PUBLIC_DRILLDOWN_STACK` / `localStorage["erp.drilldownStack"]` and `isDrilldownStackEnabled()` were removed; the stack is the only behaviour.
+3. If the label has a registered drawer, `openEntity(label, id, undefined, undefined, { display })` — stack over the origin list, module and URL unchanged, "Volver a …" available. No `data` is passed (the registry loads by id). **No drawer registered** (e.g. `inventory.subscription`, `treasury.paymentmethod`, `accounting.budget`, `tax.taxperiod`, `production.bom`): `router.push(DocumentRef.url)`.
+4. ~~Flag off (ADR-0086 behaviour)~~ — removed.
 5. **Canonical URLs stay** for external links, universal search, `/d/{label}/{id}` and server redirects (`[id]/page.tsx`). They are the exception to "do not navigate".
 6. **Unsaved-changes guard** (delivered with phase 2, always on): a dirty drawer form blocks opening another document, "Volver", closing (X / Escape / Cancel / row switch) and page unload until the user chooses *Guardar y continuar*, *Descartar y continuar* or *Seguir editando*. Implemented by `DirtyRegistry` in `GlobalModalProvider` (`registerDirty`, `runGuarded`, `requestLeave`), `useDirtyGuard` (wired through `useInitializeDrawerForm`), `UnsavedChangesDialog`, and the URL helpers `useEntityRouteActions` / `useSelectedEntity`. Only the top drawer is mounted, so drawers below the top are always clean.
 7. **Closing** (X / Escape / outside click / `onSuccess`) pops one level through the same guard as "Volver"; with a single document it closes. `closeEntity` (clear all) stays for programmatic use.
@@ -48,7 +48,7 @@ Product decision (2026-10): **keep the origin list and the origin module while n
 1. Merge with the flag off (no behaviour change).
 2. Enable per browser (`localStorage`) for QA; verify the chains OV → invoice → journal entry → back, and master drawers.
 3. Enable via `NEXT_PUBLIC_DRILLDOWN_STACK=true` in dev; collect feedback.
-4. When stable: make it the default, remove the flag and the legacy branch, raise `drilldown/no-bypass` to `error`, mark ADR-0086 *Superseded by 0100*.
+4. Done (2026-10-26): flag and legacy branch removed, `drilldown/no-bypass` removed with `isListSelectionUrl`, ADR-0086 marked *Superseded by 0100*.
 
 ## Alternatives considered
 

@@ -181,10 +181,9 @@ resolviendo en 3 niveles:
 
 | Prioridad | Condición | Acción |
 |-----------|-----------|--------|
-| 1 (preferida) | `doc.url` con `?selected=` (lista canónica) y flag `drilldownStack` **inactivo** | navega a `doc.url` — la URL y el módulo/sección siguen a la relación ([ADR-0086](../10-architecture/adr/0086-document-drilldown-canonical-navigation.md)). Con el flag activo este nivel no existe: se apila ([ADR-0100](../10-architecture/adr/0100-document-drilldown-stack-without-navigation.md)) |
-| 2 | `hasEntityDrawer(doc.type)` | `openEntity(doc.type, doc.id, doc)` — drawer drill-down (pestaña) |
-| 3 | `doc.url` presente | `<Link href={doc.url}>` — navegación |
-| 4 | ninguna | texto plano, sin interacción |
+| 1 | `hasEntityDrawer(doc.type)` | `openEntity(doc.type, doc.id, undefined, undefined, { display })` — ficha como pestaña del espacio de trabajo ([ADR-0100](../10-architecture/adr/0100-document-drilldown-stack-without-navigation.md), [ADR-0101](../10-architecture/adr/0101-workspace-tab-bar.md)) |
+| 2 | `doc.url` presente | `<Link href={doc.url}>` — navegación |
+| 3 | ninguna | texto plano, sin interacción |
 
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
@@ -227,19 +226,13 @@ Todos los drawers deben adherirse a esta estructura unificada:
 
 Las superficies de drilldown documental (`useOpenRelatedDocument` —filas del tab Relaciones—,
 `SourceDocumentLink`, `DocumentRefLink`) delegan en **un solo punto**: `useOpenDocument()`
-(`@/hooks/useOpenDocument`). Ninguna superficie decide por su cuenta (lint `drilldown/no-bypass`).
+(`@/hooks/useOpenDocument`). Ninguna superficie decide por su cuenta.
 
-**Flag `drilldownStack` activo** ([ADR-0100](../10-architecture/adr/0100-document-drilldown-stack-without-navigation.md)):
-`NEXT_PUBLIC_DRILLDOWN_STACK=true` o `localStorage["erp.drilldownStack"]="1"`.
+**Drill-down** ([ADR-0100](../10-architecture/adr/0100-document-drilldown-stack-without-navigation.md), sin flag):
 
 - Con ficha registrada: **apilar** con `openEntity(label, id, undefined, undefined, { display })`. La lista de
   origen, el módulo y la URL **no cambian**; "Volver a …" regresa al documento anterior.
 - Sin ficha registrada: `router.push(DocumentRef.url)`.
-
-**Flag inactivo** (comportamiento heredado, [ADR-0086](../10-architecture/adr/0086-document-drilldown-canonical-navigation.md)):
-
-- URL canónica con `?selected=`: **navegar** con `router.push(url)`; cambian URL y módulo/sección.
-- Si no (resolvedor `/d/{label}/{id}`): **apilar** con `openEntity`. Los maestros caen aquí.
 
 La URL canónica (`DocumentRef.url`, [ADR-0080](../10-architecture/adr/0080-document-model-relations-and-navigation.md) §6)
 sigue siendo la vía de enlaces externos, búsqueda universal y `/d/…`. Predicados: `opensInApp` y

@@ -30,9 +30,9 @@ export const SourceDocumentLink: React.FC<SourceDocumentLinkProps> = ({
 
     const baseStyle = `inline-flex items-center gap-1 text-primary underline font-medium hover:text-primary/80 text-sm ${className}`
 
-    // 1-2. La regla (apilar con "volver" o navegar a la lista canónica) vive en useOpenDocument (ADR-0086 / ADR-0100).
-    // Con ficha registrada o URL de lista (modo heredado) el enlace es interactivo; sin ficha y sin lista, cae al <Link>.
-    const open = () => openDocument({ label: doc.type, id: doc.id, display: label, url: doc.url, data: doc })
+    // La regla (abrir como pestaña) vive en useOpenDocument (ADR-0100). Con ficha registrada el enlace
+    // es interactivo; sin ficha, cae al <Link>.
+    const open = () => openDocument({ label: doc.type, id: doc.id, display: label, url: doc.url })
     if (opensInApp({ label: doc.type, url: doc.url })) {
         return (
             <span

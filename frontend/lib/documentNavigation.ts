@@ -1,38 +1,10 @@
 /**
- * documentNavigation — ADR-0086.
+ * documentNavigation — ADR-0080 / ADR-0100.
  *
- * Predicate for the document-drilldown rule: a canonical URL is "list selection"
- * when it opens the document from a real list (`?selected={id}`), which means the
- * drilldown should navigate there (module + URL follow the relationship) instead of
- * stacking an in-memory drawer.
- *
- * The route itself is never derived here — it comes from the backend registry
- * (`DocumentRef.url`, ADR-0080 §6). Masters and resolver types (`/d/{label}/{id}`)
- * are left to `openEntity` (ADR-0028).
+ * Helpers for document references. The drill-down itself (ADR-0100) opens the document as a
+ * workspace tab (ADR-0101); the route is never derived here — it comes from the backend registry
+ * (`DocumentRef.url`, ADR-0080 §6) and is only the fallback when no drawer is registered.
  */
-/**
- * Feature flag del drill-down por pila (ADR-0100): con el flag activo, abrir un documento relacionado
- * apila su ficha sobre la lista de origen en vez de navegar a su ruta canónica (ADR-0086).
- *
- * Se activa con `NEXT_PUBLIC_DRILLDOWN_STACK=true` (build) o, para probar en un navegador sin
- * redeploy, `localStorage["erp.drilldownStack"] = "1"`. Se evalúa en cada clic, no al cargar.
- */
-export const DRILLDOWN_STACK_STORAGE_KEY = "erp.drilldownStack"
-
-export function isDrilldownStackEnabled(): boolean {
-    if (process.env.NEXT_PUBLIC_DRILLDOWN_STACK === "true") return true
-    if (typeof window === "undefined") return false
-    try {
-        return window.localStorage.getItem(DRILLDOWN_STACK_STORAGE_KEY) === "1"
-    } catch {
-        return false
-    }
-}
-
-export function isListSelectionUrl(url: string | null | undefined): boolean {
-    return typeof url === "string" && url.includes("?selected=")
-}
-
 export interface DocumentRefTarget {
     label: string
     id: number

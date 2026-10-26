@@ -73,7 +73,7 @@ describe("DocumentRelationsTab", () => {
         expect(pay).toHaveBeenCalled()
     })
 
-    it("navigates to the canonical list URL when the target declares one (ADR-0086)", async () => {
+    it("opens a tab even when the target declares a canonical list URL (ADR-0100)", async () => {
         const delivery = link("sales.saledelivery", 4, "logistics")
         delivery.target.url = "/sales/dtes/deliveries?selected=4"
         getMock.mockResolvedValue({ data: { document: link("sales.saleorder", 9, "origin").target, relations: [delivery], unresolved: [] } })
@@ -83,8 +83,8 @@ describe("DocumentRelationsTab", () => {
         await waitFor(() => expect(screen.getByText("sales.saledelivery-4")).toBeInTheDocument())
         fireEvent.click(screen.getByText("sales.saledelivery-4"))
 
-        expect(pushMock).toHaveBeenCalledWith("/sales/dtes/deliveries?selected=4", { scroll: false })
-        expect(openEntityMock).not.toHaveBeenCalled()
+        expect(openEntityMock).toHaveBeenCalledWith("sales.saledelivery", 4, undefined, undefined, expect.anything())
+        expect(pushMock).not.toHaveBeenCalled()
     })
 
     it("filters to one area and offers to show all", async () => {

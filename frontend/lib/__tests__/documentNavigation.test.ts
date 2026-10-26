@@ -1,20 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { isListSelectionUrl, documentRefTarget } from "../documentNavigation"
-
-describe("isListSelectionUrl (ADR-0086)", () => {
-    it("is true for a canonical list URL with ?selected", () => {
-        expect(isListSelectionUrl("/sales/orders?selected=12")).toBe(true)
-        expect(isListSelectionUrl("/inventory/reports/movements?selected=7")).toBe(true)
-    })
-
-    it("is false for resolver URLs, plain lists and empty values", () => {
-        expect(isListSelectionUrl("/d/sales.saleorder/12")).toBe(false)
-        expect(isListSelectionUrl("/sales/orders")).toBe(false)
-        expect(isListSelectionUrl(null)).toBe(false)
-        expect(isListSelectionUrl(undefined)).toBe(false)
-        expect(isListSelectionUrl("")).toBe(false)
-    })
-})
+import { documentRefTarget } from "../documentNavigation"
 
 describe("documentRefTarget (ADR-0086)", () => {
     it("normalizes a DocumentRef payload, preferring display_id", () => {
