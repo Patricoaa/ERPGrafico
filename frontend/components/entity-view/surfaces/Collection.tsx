@@ -456,7 +456,8 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
         <div className="flex flex-1 flex-col min-h-0 overflow-hidden rounded-md border">
             <div className="relative flex-1 min-h-0 overflow-auto pb-2">
                 <table
-                    className="w-full text-sm"
+                    // The last row's rule would double the container border (the tfoot has its own border-t).
+                    className="w-full text-sm [&>tbody:last-of-type>tr:last-child]:border-b-0"
                     data-density="compact"
                     aria-label={ctx.label}
                     aria-busy={status === "loading" || isRefetching}
@@ -698,13 +699,13 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                         const qty = Math.round(parseFloat(String(line.quantity ?? 0)) * 100) / 100
                         const name = line.product_name ?? "—"
                         return (
-                            <p key={i} className="text-[11px] text-muted-foreground leading-tight truncate">
+                            <p key={i} className="text-2xs text-muted-foreground leading-tight truncate">
                                 <span className="font-medium text-foreground/70">{qty}×</span> {name}
                             </p>
                         )
                     })}
                     {overflow > 0 && (
-                        <p className="text-[11px] text-muted-foreground/60 leading-tight">
+                        <p className="text-2xs text-muted-foreground/60 leading-tight">
                             +{overflow} más
                         </p>
                     )}
@@ -911,13 +912,13 @@ function CardBody<T, Id extends string>({ section, entity, row }: { section: Car
                         const qty = Math.round(parseFloat(String(line.quantity ?? 0)) * 100) / 100
                         const name = line.product_name ?? "—"
                         return (
-                            <p key={i} className="text-[11px] text-muted-foreground leading-tight truncate">
+                            <p key={i} className="text-2xs text-muted-foreground leading-tight truncate">
                                 <span className="font-medium text-foreground/70">{qty}×</span> {name}
                             </p>
                         )
                     })}
                     {overflow > 0 && (
-                        <p className="text-[11px] text-muted-foreground/60 leading-tight">
+                        <p className="text-2xs text-muted-foreground/60 leading-tight">
                             +{overflow} más
                         </p>
                     )}

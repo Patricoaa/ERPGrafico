@@ -27,7 +27,6 @@ import { accountingApi } from "@/features/accounting/api/accountingApi"
 import { useJournalEntry, usePostJournalEntry, useReverseJournalEntry, useDeleteJournalEntry } from "@/features/accounting/hooks/useJournalEntries"
 import { useInvalidateDocuments } from "@/features/documents/hooks/useInvalidateDocuments"
 import type { JournalEntry } from "@/features/accounting/hooks/useJournalEntries"
-import { SourceDocumentSelector, type SourceDocument } from "@/components/selectors/SourceDocumentSelector"
 import { Chip } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { journalEntryLineEntity, journalEntryLineSheetViews } from "@/features/accounting"
@@ -120,7 +119,7 @@ export function JournalEntrySheet({ id, open, onOpenChange, embedded = false, on
                 <DocumentRelationsTab
                     label={LABEL}
                     id={journalEntry.id}
-                    sectionActions={getSectionActions(resolved, postEntry)}
+                    sectionActions={getSectionActions(resolved, journalEntry.id, postEntry)}
                     rowActions={getRowActions()}
                     domain={domain}
                     onDomainChange={setDomain}
@@ -289,6 +288,7 @@ function getJournalEntryLifecycle(entry: JournalEntry): LifecycleStep[] {
 
 function getSectionActions(
     resolved: ResolvedDocumentAction<JournalEntry>[],
+    entryId: number,
     postEntry: (id: number) => Promise<void>
 ): Partial<Record<DocumentDomain, DocumentActionItem[]>> {
     const result: Partial<Record<DocumentDomain, DocumentActionItem[]>> = {}
@@ -302,7 +302,7 @@ function getSectionActions(
                 disabled: r.disabled,
                 disabledReason: r.disabledReason,
                 onClick: () => {
-                    if (r.action.id === "post-entry") postEntry(r.action.id as any)
+                    if (r.action.id === "post-entry") postEntry(entryId)
                 },
             })
         }

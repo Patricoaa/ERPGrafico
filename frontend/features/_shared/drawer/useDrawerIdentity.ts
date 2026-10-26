@@ -67,7 +67,8 @@ function formatDefaultSubtitle(mode: DrawerMode, label: string, feminine?: boole
     case 'edit':
       return `Actualice la información ${feminineArticle(feminine ?? false)} ${entityTitle.toLowerCase()}`
     case 'view':
-      return `Detalle ${feminineArticle(feminine ?? false)} ${entityTitle.toLowerCase()}`
+      // The title is the record's number: the subtitle names the kind of record (never filler like "Detalle de…").
+      return entityTitle
   }
 }
 

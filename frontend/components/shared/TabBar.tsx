@@ -209,8 +209,9 @@ export function TabBar({
 
         if (isUnderline) {
             return (
-                <div className={cn("relative flex items-end justify-start w-full bg-transparent", dense ? "px-2 h-7" : "px-4 h-10", headerClassName)}>
-                    <div aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-border" />
+                // The rule is the container's own border-b (in flow, never covered by the content below);
+                // the active bar overlaps it with bottom-[-1px].
+                <div className={cn("relative flex shrink-0 items-end justify-start w-full bg-transparent border-b border-border", dense ? "px-2 h-7" : "px-4 h-10", headerClassName)}>
                     <div className="w-fit">
                         {list}
                     </div>
@@ -271,7 +272,7 @@ export function TabBar({
             onValueChange={onValueChange}
             className={cn("flex-1 flex flex-col overflow-hidden", className)}
         >
-            <div className={cn("relative flex justify-center", isToolbar && !isVertical ? "pt-0" : isUnderline ? "pt-0" : "pt-3")}>
+            <div className={cn("relative flex shrink-0 justify-center", isToolbar && !isVertical ? "pt-0" : isUnderline ? "pt-0" : "pt-3")}>
                 {renderTabsList()}
             </div>
 

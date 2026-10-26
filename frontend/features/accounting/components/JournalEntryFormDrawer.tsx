@@ -25,7 +25,6 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { formatCurrency } from "@/lib/money"
 import { Chip, Drawer, LabeledInput, LabeledContainer, CancelButton, IconButton, PeriodValidationDateInput, SubmitButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell, StatusBadge } from "@/components/shared"
-import { SourceDocumentSelector, type SourceDocument } from "@/components/selectors/SourceDocumentSelector";
 import { formDrawerWidth } from "@/lib/form-widths";
 import { ActivitySidebar } from "@/features/audit";
 import { DocumentRefLink, DocumentRelationsButton, type DocumentRef } from "@/features/documents"
@@ -99,7 +98,6 @@ export function JournalEntryFormDrawer({
 
     const [loading, setLoading] = useState(false)
     const [isPeriodValid, setIsPeriodValid] = useState(true)
-    const [sourceDocument, setSourceDocument] = useState<SourceDocument | null>(null)
 
     useEffect(() => {
         if (onLoadingChange) {
@@ -182,25 +180,6 @@ export function JournalEntryFormDrawer({
         }),
     })
 
-    // Sync sourceDocument from initialData (outside lastResetKey guard)
-    useEffect(() => {
-        if (!initialData || !open) {
-            setSourceDocument(null)
-            return
-        }
-        // ADR-0083 U6: origen como DocumentRef + ids del GFK para editar
-        const data = initialData as unknown as { source_document?: DocumentRef | null; source_content_type_id?: number | null; source_object_id?: number | null }
-        if (data.source_document && data.source_content_type_id && data.source_object_id) {
-            setSourceDocument({
-                content_type_id: data.source_content_type_id,
-                object_id: data.source_object_id,
-                display: data.source_document.display_id,
-                label: data.source_document.title,
-                icon: '',
-            })
-        }
-    }, [initialData, open])
-
     async function onSubmit(data: JournalEntryFormValues) {
         setLoading(true)
         try {
@@ -218,11 +197,6 @@ export function JournalEntryFormDrawer({
                 })),
                 date: format(data.date, "yyyy-MM-dd"),
                 is_manual: true,
-            }
-
-            if (sourceDocument) {
-                payload.source_content_type_id = sourceDocument.content_type_id
-                payload.source_object_id = sourceDocument.object_id
             }
 
             if (initialData?.id) {
@@ -303,7 +277,7 @@ export function JournalEntryFormDrawer({
                     </div>
 
                     <div className="grid grid-cols-12 gap-4 mt-4">
-                        <div className="col-span-6">
+                        <div className="col-span-12">
                             <FormField
                                 control={form.control}
                                 name="description"
@@ -316,28 +290,6 @@ export function JournalEntryFormDrawer({
                                         {...field}
                                     />
                                 )}
-                            />
-                        </div>
-                        <div className="col-span-6">
-                            <SourceDocumentSelector
-                                value={sourceDocument}
-                                onChange={setSourceDocument}
-                                allowedLabels={[
-                                    "sales.saleorder",
-                                    "sales.saledelivery",
-                                    "sales.salereturn",
-                                    "purchasing.purchaseorder",
-                                    "purchasing.purchasereturn",
-                                    "billing.invoice",
-                                    "inventory.stockmove",
-                                    "treasury.treasurymovement",
-                                    "treasury.bankstatement",
-                                    "production.workorder",
-                                    "hr.payroll",
-                                    "contacts.contact",
-                                    "contacts.partnertransaction",
-                                    "contacts.profitdistributionresolution",
-                                ]}
                             />
                         </div>
                     </div>
