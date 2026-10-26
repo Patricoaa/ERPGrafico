@@ -59,4 +59,35 @@ describe("EntityTrail", () => {
         expect(screen.getByText("Contabilidad")).toBeInTheDocument()
         expect(screen.getByTitle("Este documento pertenece a Contabilidad")).toBeInTheDocument()
     })
+
+    it("pins the current document and lists pinned chips that reopen on click", () => {
+        const toggle = vi.fn()
+        const onOpen = vi.fn()
+        const pins = {
+            canPin: true,
+            isPinned: false,
+            toggle,
+            items: [
+                { key: "sales.saleorder:1", label: "OV-1", active: false, onOpen },
+                { key: "billing.invoice:9", label: "FAC-9", active: true, onOpen: vi.fn() },
+            ],
+        }
+        render(<EntityTrail navigation={navigation({ pins })} />)
+
+        fireEvent.click(screen.getByRole("button", { name: "Fijar documento" }))
+        expect(toggle).toHaveBeenCalledTimes(1)
+
+        const list = screen.getByRole("list", { name: "Documentos fijados" })
+        fireEvent.click(within(list).getByRole("button", { name: /OV-1/ }))
+        expect(onOpen).toHaveBeenCalledTimes(1)
+        expect(within(list).getByRole("button", { name: /FAC-9/ })).toHaveAttribute("aria-current", "page")
+    })
+
+    it("hides the pin control for documents that cannot be reopened by id and reflects the pressed state", () => {
+        const base = { toggle: vi.fn(), items: [] }
+        const { rerender } = render(<EntityTrail navigation={navigation({ pins: { ...base, canPin: false, isPinned: false } })} />)
+        expect(screen.queryByRole("button", { name: /Fijar documento/ })).toBeNull()
+        rerender(<EntityTrail navigation={navigation({ pins: { ...base, canPin: true, isPinned: true } })} />)
+        expect(screen.getByRole("button", { name: "Quitar de fijados" })).toHaveAttribute("aria-pressed", "true")
+    })
 })

@@ -16,6 +16,8 @@ function FakeDrawer({ label, id, onOpenChange }: { label: string; id: number; on
             <span>open:{label}:{id}</span>
             <Button onClick={() => onOpenChange?.(false)}>x</Button>
             {navigation && <Button onClick={navigation.goBack}>volver:{navigation.backLabel}</Button>}
+            {navigation?.pins?.canPin && <Button onClick={navigation.pins.toggle}>fijar</Button>}
+            {navigation?.pins?.items.map((pin) => <Button key={pin.key} onClick={pin.onOpen}>fijado:{pin.label}</Button>)}
             {navigation && <span>modulo:{navigation.module?.label ?? "ninguno"}</span>}
             {navigation && navigation.trail.map((item) => (
                 <Button key={item.key} onClick={item.onSelect}>miga:{item.label}</Button>
@@ -103,6 +105,23 @@ describe("GlobalModalProvider entity stack", () => {
         expect(screen.queryByText(/volver:/)).toBeNull()
         click("cerrar")
         expect(screen.queryByText(/open:/)).toBeNull()
+    })
+
+    it("pins a document and reopens it from a chip: pops if it is in the stack, stacks otherwise", () => {
+        window.localStorage.clear()
+        setup()
+        click("abrir-despacho")
+        click("abrir-ov")
+        click("fijar") // fija OV-42 (tope)
+        click("abrir-move")
+        act(() => screen.getByText(/^fijado:/).click())
+        expect(screen.getByText("open:sales.saleorder:42")).toBeInTheDocument() // estaba en la pila: desapila
+
+        click("volver:DES-1")
+        click("abrir-move")
+        act(() => screen.getByText(/^fijado:/).click()) // ya no está en la pila: se apila
+        expect(screen.getByText("open:sales.saleorder:42")).toBeInTheDocument()
+        window.localStorage.clear()
     })
 
     it("closing with X pops one level and only closes at the last document (ADR-0100)", () => {

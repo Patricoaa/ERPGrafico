@@ -1,7 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, type ReactNode, useCallback, useMemo, useEffect } from "react"
-import { ENTITY_DRAWERS, hasEntityDrawer } from "@/lib/entity-drawers"
+import { ENTITY_DRAWERS, hasEntityDrawer, isRestorableById } from "@/lib/entity-drawers"
 import { formatEntityDisplay, getEntityMetadata } from "@/lib/entity-registry"
 import { usePathname } from "next/navigation"
 import { getEntityModule, getModuleIcon, getModuleIdFromPath } from "@/lib/module-registry"
@@ -9,6 +9,7 @@ import { ErrorBoundary, EntityNavigationContext, UnsavedChangesDialog, type Enti
 import { EntityViewBridge } from "./EntityViewBridge"
 import { DirtyRegistry, type DirtyEntry } from "./dirtyGuardRegistry"
 import { useDrilldownStackUrl } from "./useDrilldownStackUrl"
+import { togglePinnedDocument, usePinnedDocuments } from "@/lib/pinnedDocuments"
 
 interface OpenEntityState {
     label: string
@@ -104,6 +105,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const openedEntity = entityStack.length > 0 ? entityStack[entityStack.length - 1] : null
     const pathname = usePathname()
     const pageModuleId = getModuleIdFromPath(pathname)
+    const pinned = usePinnedDocuments()
     const [sheetStack, setSheetStack] = useState<{id: string, width: number, priority: number, forced: boolean}[]>([])
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1600)
 
@@ -330,6 +332,22 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
                 onSelect: () => runGuarded(() => setEntityStack(prev => prev.slice(0, index + 1))),
             })),
             currentLabel: entityBackLabel(top),
+            pins: {
+                items: pinned.map((doc) => ({
+                    key: `${doc.label}:${doc.id}`,
+                    label: doc.display,
+                    active: doc.label === top.label && doc.id === top.id,
+                    onOpen: () => {
+                        const index = entityStack.findIndex((e) => e.label === doc.label && e.id === doc.id)
+                        if (index === entityStack.length - 1) return
+                        if (index >= 0) runGuarded(() => setEntityStack(prev => prev.slice(0, index + 1)))
+                        else openEntity(doc.label, doc.id, undefined, undefined, { display: doc.display })
+                    },
+                })),
+                canPin: isRestorableById(top.label),
+                isPinned: pinned.some((doc) => doc.label === top.label && doc.id === top.id),
+                toggle: () => togglePinnedDocument({ label: top.label, id: top.id, display: entityBackLabel(top) }),
+            },
             module: topModule && topModule.id !== pageModuleId
                 ? { id: topModule.id, label: topModule.label, icon: getModuleIcon(topModule.id) }
                 : null,
