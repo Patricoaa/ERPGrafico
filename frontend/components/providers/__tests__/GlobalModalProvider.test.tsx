@@ -39,7 +39,7 @@ vi.mock("@/components/tools/CostCalculatorDrawer", () => ({
 
 /** Botones que disparan las acciones del provider y lista las pestañas con su estado. */
 function Controls() {
-    const { openEntity, openTool, closeEntity, setEntityDisplay, tabs, activateTab, closeTab } = useGlobalModals()
+    const { openEntity, openTool, closeEntity, setEntityDisplay, tabs, activateTab, closeTab, showPage } = useGlobalModals()
     return (
         <div>
             <Button onClick={() => openEntity("sales.saledelivery", 1, undefined, undefined, { display: "DES-1" })}>abrir-despacho</Button>
@@ -48,6 +48,7 @@ function Controls() {
             <Button onClick={() => openTool("cost-calculator")}>abrir-calculadora</Button>
             <Button onClick={() => setEntityDisplay("sales.saleorder", 42, "OV-000042")}>nombrar-ov</Button>
             <Button onClick={closeEntity}>cerrar-todo</Button>
+            <Button onClick={showPage}>ver-pagina</Button>
             {tabs.map((tab) => (
                 <div key={tab.key}>
                     <Button onClick={() => activateTab(tab.key)}>{`tab:${tab.title}${tab.active ? "*" : ""}`}</Button>
@@ -116,6 +117,18 @@ describe("GlobalModalProvider workspace tabs", () => {
         expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
         click("abrir-move")
         click("guardado")
+        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
+    })
+
+    it("goes back to the page (list) without closing the open tabs", () => {
+        setup()
+        click("abrir-despacho")
+        click("abrir-move")
+        click("ver-pagina")
+        expect(screen.queryByText(/open:/)).toBeNull()
+        expect(screen.getAllByText(/^tab:/)).toHaveLength(2)
+        expect(screen.queryByText(/\*$/)).toBeNull() // ninguna pestaña activa
+        click("tab:DES-1")
         expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
     })
 

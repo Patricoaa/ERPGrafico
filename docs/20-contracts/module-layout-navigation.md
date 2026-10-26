@@ -65,13 +65,13 @@ El tope del panel contiene **Buscar** (Ctrl+K) y **Bandeja de entrada** (`Sideba
 
 > Los roles tipográficos del chrome del shell (topbar, riel, panel de módulo, panel lateral) están normados en [typography-scale.md § Escala del chrome del shell](./typography-scale.md#escala-del-chrome-del-shell-adr-0079).
 
-La **topbar** (ancho completo, no se desplaza al abrir sheets) muestra el título de la vista como **único `<h1>`** de la página (la `description` es su tooltip), `breadcrumbs`, `status`, `titleActions`, `children` y los accesos POS / Calculadora a tamaño de riel. Las vistas **no** renderizan título ni descripción propios; `PageSectionHeader` solo dibuja pestañas internas.
+La **barra de trabajo** (ancho completo, no se desplaza al abrir sheets; ADR-0101 sustituye a la antigua topbar) muestra el título de la vista como **único `<h1>`** de la página (la `description` es su tooltip), `breadcrumbs`, `status`, `titleActions`, `children` y los accesos POS / Calculadora a tamaño de riel. Las vistas **no** renderizan título ni descripción propios; `PageSectionHeader` solo dibuja pestañas internas.
 
 Una vista puede montar su propio `<PageHeader>` (p. ej. para `titleActions`) **sin** `navigation`: el sidebar conserva la navegación del módulo (`HeaderProvider.moduleNavigation`).
 
 ### 2.1.1 Barra de trabajo (ADR-0101)
 
-Bajo la topbar, `DashboardShell` monta `WorkspaceTabBar` (permanente, `h-9`). Izquierda: las páginas hermanas de la vista actual (`resolvePageTabs` sobre `navigation`: las subvistas del grupo activo o, si no tiene, los grupos del módulo; mismos permisos que el sidebar; la vista actual lleva `aria-current="page"` y un subrayado `bg-primary`). Derecha: pestañas efímeras de la página — documentos abiertos con `openEntity` y herramientas (`openTool`, p. ej. la Calculadora de Costos) —, que se cierran al cambiar de ruta. El contenido de la pestaña activa se abre en el panel lateral derecho; la lista de origen sigue visible. Los accesos a la calculadora (`SidebarQuickActions`, botón de la barra) abren su pestaña; la vista no monta su propio drawer.
+`WorkspaceTabBar` sustituye a la topbar: es el primer panel del viewport (`h-12` = `--header-height`). Una sola fila de pestañas con el mismo estilo: la de la **página** elegida en el riel (título e ícono del header de la vista; no se cierra; activa cuando no hay otra pestaña activa), las de los **documentos** abiertos con `openEntity` y la de la **Calculadora de Costos** si se eligió en el riel (`openTool`). Las de documento y herramienta se cierran al cambiar de ruta. En los extremos: estado, `titleActions` y `children` de la vista, migas profundas, `UserActions` y, en móvil, el botón de navegación. El contenido de la pestaña activa se abre en el panel lateral derecho; la lista de origen sigue visible. La vista no monta su propio drawer de calculadora.
 
 ### 2.2 Sub-vistas de módulo en el riel (caso Tesorería / Centro de Bancos)
 

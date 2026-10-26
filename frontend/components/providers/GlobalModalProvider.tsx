@@ -121,6 +121,8 @@ interface GlobalModalActionsContextType {
     openTool: (tool: ToolTabId) => void
     /** Activa una pestaña (con guarda de cambios sin guardar). */
     activateTab: (key: string) => void
+    /** Vuelve a la pestaña de la página (lista) sin cerrar las demás (con guarda de cambios sin guardar). */
+    showPage: () => void
     /** Cierra una pestaña (con guarda de cambios sin guardar). */
     closeTab: (key: string) => void
     /**
@@ -238,6 +240,11 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const activateTab = useCallback((key: string) => {
         if (key === live.activeKey) return
         runGuarded(() => setActiveKey(key))
+    }, [runGuarded, live])
+
+    const showPage = useCallback(() => {
+        if (live.activeKey === null) return
+        runGuarded(() => setActiveKey(null))
     }, [runGuarded, live])
 
     const resolveLeave = useCallback(async (mode: "save" | "discard") => {
@@ -408,6 +415,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         closeEntityByRef,
         openTool,
         activateTab,
+        showPage,
         closeTab,
         setEntityDisplay,
         registerDirty: (entry: DirtyEntry) => registry.register(entry),
@@ -415,7 +423,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         requestLeave,
         registerSheet,
         unregisterSheet,
-    }), [openEntity, closeEntity, openRootEntity, closeEntityByRef, openTool, activateTab, closeTab, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
+    }), [openEntity, closeEntity, openRootEntity, closeEntityByRef, openTool, activateTab, showPage, closeTab, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
 
     const tabViews = useMemo(
         () => tabs.map(tab => tabView(tab, tabKey(tab) === activeKey, pageModuleId)),

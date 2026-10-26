@@ -1,30 +1,51 @@
 "use client"
 
-import React, { useCallback, useRef } from "react"
+import React, { useCallback, useRef, type ReactNode } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Calculator, X } from "lucide-react"
+import { X, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useAuth } from "@/contexts/AuthContext"
+import { Skeleton } from "@/components/ui/skeleton"
+import { DynamicIcon } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import type { NavigationConfig } from "@/components/providers/HeaderProvider"
 import { cn } from "@/lib/utils"
-import { resolvePageTabs } from "./workspacePageTabs"
+
+export interface WorkspacePage {
+    title: string
+    description?: string
+    icon?: LucideIcon
+    iconName?: string
+    isLoading?: boolean
+}
+
+interface WorkspaceTabBarProps {
+    /** Vista elegida en el riel; `null` mientras ninguna ha publicado su header. */
+    page: WorkspacePage | null
+    /** Migas profundas de la vista (tras el título). */
+    breadcrumbs?: { label: string; href?: string }[]
+    /** Estado, acciones y controles propios de la vista (a la derecha). */
+    actions?: ReactNode
+    /** Extremo izquierdo (botón de navegación en móvil). */
+    leading?: ReactNode
+    /** Extremo derecho (acciones del usuario). */
+    trailing?: ReactNode
+}
+
+const TAB_BASE = "group/tab relative -mb-px flex h-9 min-w-0 shrink-0 items-center rounded-t-md border border-b-0 text-xs transition-colors"
+const TAB_ACTIVE = "border-border/60 bg-background text-foreground"
+const TAB_IDLE = "border-transparent text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
+const TAB_TRIGGER = "h-full min-w-0 flex-1 justify-start gap-1.5 rounded-t-md rounded-b-none py-0 pl-2.5 pr-2 text-xs font-normal text-inherit hover:bg-transparent hover:text-inherit focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-inset focus-visible:border-transparent"
 
 /**
- * Barra de trabajo permanente bajo la topbar (ADR-0101).
- * Izquierda: las páginas hermanas de la vista actual (navegación). Derecha: las pestañas efímeras de la
- * página (documentos abiertos y herramientas); se cierran al cambiar de página. El contenido de la
- * pestaña activa se muestra en el panel lateral derecho, con la lista de origen visible al lado.
+ * Barra de trabajo: primer panel del viewport (ADR-0101, sustituye a la topbar).
+ * Una sola fila de pestañas con el mismo estilo: la de la página elegida en el riel (la lista), las de
+ * los documentos abiertos desde ella y, si se eligió en el riel, la de la Calculadora de Costos.
+ * Las pestañas de documento y herramienta se cierran al cambiar de página; la de la página no se cierra.
+ * El contenido de la pestaña activa se abre en el panel derecho, con la lista visible al lado.
  */
-export function WorkspaceTabBar({ navigation }: { navigation?: NavigationConfig }) {
-    const pathname = usePathname()
-    const { hasPermission } = useAuth()
-    const { tabs, activateTab, closeTab, openTool } = useGlobalModals()
+export function WorkspaceTabBar({ page, breadcrumbs, actions, leading, trailing }: WorkspaceTabBarProps) {
+    const { tabs, activateTab, closeTab, showPage } = useGlobalModals()
     const listRef = useRef<HTMLDivElement>(null)
-
-    const pageTabs = resolvePageTabs(navigation, pathname, hasPermission)
-    const calculatorActive = tabs.some((tab) => tab.key === "tool:cost-calculator" && tab.active)
+    const pageActive = !tabs.some((tab) => tab.active)
 
     // Flechas mueven el foco entre pestañas; Enter/Espacio activan (activar descarta el formulario actual).
     const onKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -43,49 +64,53 @@ export function WorkspaceTabBar({ navigation }: { navigation?: NavigationConfig 
         }
     }, [closeTab])
 
-    return (
-        <div className="flex-none h-9 flex items-stretch gap-2 border-b border-border/40 bg-muted/30 pl-2 pr-2 md:pl-4">
-            {pageTabs.length > 0 && (
-                <nav aria-label="Páginas del módulo" className="hidden md:flex min-w-0 shrink items-stretch gap-0.5 overflow-x-auto scrollbar-hide">
-                    {pageTabs.map((page) => (
-                        <Link
-                            key={page.key}
-                            href={page.href}
-                            aria-current={page.active ? "page" : undefined}
-                            className={cn(
-                                "relative flex shrink-0 items-center px-2.5 text-xs outline-none transition-colors",
-                                "focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-inset",
-                                page.active ? "font-medium text-foreground" : "text-foreground/70 hover:text-foreground",
-                            )}
-                        >
-                            {page.label}
-                            {page.active && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-primary" aria-hidden />}
-                        </Link>
-                    ))}
-                </nav>
-            )}
+    const PageIcon = page?.icon
 
-            {pageTabs.length > 0 && tabs.length > 0 && <div className="hidden md:block w-px my-2 shrink-0 bg-border" aria-hidden />}
+    return (
+        <div className="flex-none h-12 flex items-end gap-2 border-b border-border/40 bg-muted/30 pl-2 pr-2 md:pl-4 md:pr-3 z-30">
+            {leading}
+
+            {/* Título de la vista = único <h1> de la página (ADR-0079); la pestaña lo muestra. */}
+            <h1 className="sr-only">{page?.title}</h1>
 
             <div
                 ref={listRef}
                 role="tablist"
                 aria-label="Pestañas abiertas"
                 onKeyDown={onKeyDown}
-                className="flex min-w-0 flex-1 items-end gap-0.5 overflow-x-auto scrollbar-hide pt-1"
+                className="flex min-w-0 flex-1 items-end gap-0.5 overflow-x-auto scrollbar-hide"
             >
+                <div className={cn(TAB_BASE, "max-w-64", pageActive ? TAB_ACTIVE : TAB_IDLE)}>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        role="tab"
+                        aria-selected={pageActive}
+                        tabIndex={pageActive ? 0 : -1}
+                        title={page?.description || page?.title}
+                        onClick={showPage}
+                        className={cn(TAB_TRIGGER, "font-medium")}
+                    >
+                        {page ? (
+                            <>
+                                {!page.isLoading && (PageIcon
+                                    ? <PageIcon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                                    : page.iconName ? <DynamicIcon name={page.iconName} className="h-3.5 w-3.5 shrink-0" /> : null)}
+                                <span className="truncate">{page.title}</span>
+                            </>
+                        ) : (
+                            <Skeleton className="h-3.5 w-24" aria-hidden />
+                        )}
+                    </Button>
+                </div>
+
                 {tabs.map((tab) => {
                     const Icon = tab.icon
                     return (
                         <div
                             key={tab.key}
                             onAuxClick={(event) => { if (event.button === 1) { event.preventDefault(); closeTab(tab.key) } }}
-                            className={cn(
-                                "group/tab relative -mb-px flex h-8 min-w-0 max-w-48 shrink-0 items-center rounded-t-md border border-b-0 text-xs transition-colors",
-                                tab.active
-                                    ? "border-border/60 bg-background text-foreground"
-                                    : "border-transparent text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
-                            )}
+                            className={cn(TAB_BASE, "max-w-48", tab.active ? TAB_ACTIVE : TAB_IDLE)}
                         >
                             <Button
                                 type="button"
@@ -97,7 +122,7 @@ export function WorkspaceTabBar({ navigation }: { navigation?: NavigationConfig 
                                 tabIndex={tab.active ? 0 : -1}
                                 title={tab.description}
                                 onClick={() => activateTab(tab.key)}
-                                className="h-full min-w-0 flex-1 justify-start gap-1.5 rounded-t-md rounded-b-none py-0 pl-2 pr-1 text-xs font-normal text-inherit hover:bg-transparent hover:text-inherit focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-inset focus-visible:border-transparent"
+                                className={cn(TAB_TRIGGER, "pr-1")}
                             >
                                 {Icon && <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />}
                                 <span className="truncate">{tab.title}</span>
@@ -122,19 +147,23 @@ export function WorkspaceTabBar({ navigation }: { navigation?: NavigationConfig 
                 })}
             </div>
 
-            <div className="flex shrink-0 items-center">
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => openTool("cost-calculator")}
-                    aria-label="Abrir Calculadora de Costos"
-                    aria-pressed={calculatorActive}
-                    title="Calculadora de Costos"
-                    className={cn("h-7 w-7", calculatorActive ? "bg-card text-foreground shadow-card" : "text-muted-foreground")}
-                >
-                    <Calculator className="h-4 w-4" aria-hidden />
-                </Button>
+            <div className="flex shrink-0 items-center gap-2 self-center">
+                {breadcrumbs && breadcrumbs.length > 0 && (
+                    <nav aria-label="Ruta de la vista" className="hidden md:flex items-center gap-1.5 text-xs font-medium">
+                        {breadcrumbs.map((crumb, index) => (
+                            <span key={index} className="flex items-center gap-1.5">
+                                {index > 0 && <span className="text-border select-none" aria-hidden>/</span>}
+                                {crumb.href ? (
+                                    <Link href={crumb.href} className="text-muted-foreground transition-colors hover:text-foreground">{crumb.label}</Link>
+                                ) : (
+                                    <span className="text-foreground/90">{crumb.label}</span>
+                                )}
+                            </span>
+                        ))}
+                    </nav>
+                )}
+                {actions}
+                {trailing}
             </div>
         </div>
     )
