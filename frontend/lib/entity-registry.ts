@@ -349,7 +349,7 @@ const REGISTRY = {
     detailUrlPattern: '/production/orders/{id}',
     partnerField: 'name',
     workflowType: 'order',
-    viewPolicy: { availableViews: ['list', 'kanban', 'timeline'], defaultView: 'list', cardComponent: 'custom' },
+    viewPolicy: { availableViews: ['list', 'card', 'kanban', 'timeline'], defaultView: 'card', cardComponent: 'entity' },
   },
   'production.bom': {
     label: 'production.bom',
@@ -1280,9 +1280,27 @@ export function formatEntityDisplay(label: string, data: Record<string, unknown>
     if (matchedPrefix) {
       cleanData.number = rawNumber.slice(matchedPrefix.length).replace(/^[-]+/, '')
     }
+
+    // Strip leading zeros from purely numeric sequences (e.g. "000005" → "5", "001002" → "1002").
+    // display_id from the backend already goes through fmt_seq_num; this handles the raw number field
+    // when display_id is absent (e.g. boletas created via SequenceService with padding=6).
+    const numStr = String(cleanData.number ?? '')
+    if (/^\d+$/.test(numStr)) {
+      cleanData.number = numStr.replace(/^0+/, '') || '0'
+    }
   }
 
-  return templateFromData(template, cleanData);
+  // Fallback: If template expects {number} but only {id} is provided, use id as number
+  if (cleanData.number === undefined && cleanData.id !== undefined) {
+    cleanData.number = cleanData.id;
+  }
+
+  const result = templateFromData(template, cleanData);
+  // Never return an orphan prefix like "DES-" or "DEV-" if interpolation was empty
+  if (result.endsWith('-')) {
+    return cleanData.id != null ? `${result.replace(/-+$/, '')}-${cleanData.id}` : '';
+  }
+  return result;
 }
 
 export function getEntityMetadata(label: string): EntityMetadata | undefined {

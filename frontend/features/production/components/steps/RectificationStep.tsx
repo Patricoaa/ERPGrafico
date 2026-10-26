@@ -273,7 +273,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
 
             {/* Produced Quantity (only for manual OTs with inventory tracking) */}
             {isManualWithInventory && (
-                <div className="rounded-md border border-border p-4 bg-card space-y-3">
+                <div className="surface-panel p-4 space-y-3">
                     <div className="flex items-center gap-2">
                         <Scale className="h-4 w-4 text-primary" />
                         <span className="text-sm font-semibold text-foreground">Cantidad Real Producida</span>

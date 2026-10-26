@@ -19,5 +19,5 @@ export const posSessionEntity = defineEntity<POSSession>()((f) => ({
 
 export const posSessionViews = posSessionEntity.views({
     table: { columns: ["folio", "userName", "terminal", "openedAt", "closedAt", "totalSales", "status"], defaultSort: "-openedAt" },
-    card: { title: "folio", subtitle: ["userName", "terminal"], meta: ["openedAt", "closedAt"], trailing: ["status", "totalSales"] },
+    card: { rail: { status: (r) => r.status }, title: "folio", subtitle: ["userName", "terminal"], meta: ["openedAt", "closedAt"], trailing: ["status", "totalSales"] },
 })

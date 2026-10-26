@@ -114,7 +114,7 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0048](0048-cancelled-terminal-no-reset-to-draft.md) | CANCELLED es terminal — no se implementa Reset-to-Draft | Accepted |
 | [0049](0049-credit-line-model.md) | Modelo CreditLine (Línea de Crédito Rotativa) | Superseded by 0050 |
 | [0050](0050-credit-line-overdraft-treasury-account.md) | Refactor CreditLine — sobregiro como overdraft de TreasuryAccount | Accepted |
-| [0051](0051-adjust-state-during-render.md) | Adjust State During Render — canonical pattern for state synchronization | Accepted |
+| [0051](0051-adjust-state-during-render.md) | Adjust State During Render — canonical pattern for state synchronization | Accepted (form initialization superseded by 0098) |
 | [0052](0052-purchase-checkout-idempotency.md) | Purchase checkout endpoint in idempotency closed list | Accepted |
 | [0053](0053-timestampedmodel-mandatory-base.md) | TimeStampedModel como base obligatoria y resolución de auditoría | Accepted |
 | [0054](0054-entity-fields-schema.md) | Entity Fields Schema — declarative field mapping for DataTable / EntityCard / Kanban | Superseded by 0066 |
@@ -149,7 +149,7 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0083](0083-document-sheet-replaces-order-hub.md) | Document sheet replaces the Order Hub — relations tab, lifecycle and in-sheet actions | Accepted |
 | [0084](0084-document-status-decoupled-from-payment.md) | Document status decoupled from payment — one field per axis (lifecycle, invoicing, fulfilment, payment) | Accepted |
 | [0085](0085-stock-moves-owned-by-business-document.md) | Stock moves owned by the business document — `StockMove.source_document` GFK, `InventoryDocument` reserved for standalone operations | Accepted |
-| [0086](0086-document-drilldown-canonical-navigation.md) | Document drilldown navigates to the target's canonical route — URL and module follow the relationship | Proposed |
+| [0086](0086-document-drilldown-canonical-navigation.md) | Document drilldown navigates to the target's canonical route — URL and module follow the relationship | Proposed (superseded by 0100 when `drilldownStack` is on) |
 | [0087](0087-entity-view-system.md) | Entity view system — semantic entity definitions + per-surface composition (replaces createEntityFields / AutoEntityCard / DataTable authoring) | Accepted |
 | [0088](0088-remove-actionslidebutton.md) | Remove ActionSlideButton — button layer standardized on shadcn Button + ActionButtons (kinetic slide animation retired) | Accepted |
 | [0089](0089-fusion-billing-module-into-sales-purchasing.md) | Fin del módulo Facturación — las vistas DTE se mudan a Ventas y Compras | Accepted |
@@ -157,5 +157,14 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0091](0091-economic-immutability-edit-policy.md) | Economic immutability — documents with posted derivatives are corrected by annul + recreate, enforced by a declarative edit policy | Accepted |
 | [0092](0092-productgrid-card-anatomy.md) | ProductGrid card anatomy — one card for POS, calculator and production, driven by a pure view-model | Accepted |
 | [0093](0093-choice-card-and-media-top-cards.md) | ChoiceCard y tarjetas con media arriba — un solo lenguaje de selección para los pasos del POS | Accepted |
+| [0094](0094-card-anatomy-kit-and-radius.md) | Card anatomy kit + radius system — CardSurface, CardRail, tokens, stacked/inline layouts | Accepted |
+| [0095](0095-row-variant-radio-card-entity-view.md) | CardRow variant + RadioCard removal + entity-view migration to CardSurface | Accepted |
+| [0096](0096-wizard-step-rail.md) | Wizard step rail redesign — numbered nodes, connector, a11y, detail on active | Accepted |
+| [0096](0096-light-choice-card-and-inline-layout.md) | ChoiceCard light variant + CardSurface inline layout fix | Accepted |
+| [0097](0097-card-family-roles-and-surface-tokens.md) | Familia de cards — roles de superficie, layouts, rail único y tokens de superficie | Proposed |
+| [0098](0098-form-reset-layout-effect.md) | Form initialization resets in a layout effect (React 19 cross-component update rule) | Accepted |
+| [0099](0099-work-order-rail-status-board.md) | Work order rail as a status board — per-stage evidence, blockers, progress and collapse | Accepted |
+| [0100](0100-document-drilldown-stack-without-navigation.md) | Document drilldown stacks over the origin list — origin list and module kept, behind a feature flag; unsaved-changes guard | Proposed (breadcrumbs, `?stack=` and pins superseded by 0101) |
+| [0101](0101-workspace-tab-bar.md) | Workspace tab bar — page navigation plus per-page ephemeral document and tool tabs | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

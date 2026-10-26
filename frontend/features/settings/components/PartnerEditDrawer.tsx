@@ -3,6 +3,8 @@
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
+import { useGuardedOpenChange } from "@/hooks/useGuardedOpenChange"
+import { useDirtyGuard } from "@/hooks/useDirtyGuard"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
@@ -38,6 +40,7 @@ export function PartnerEditDrawer({ open, onOpenChange, contact, onSuccess, mode
         is_partner: contact.is_partner ?? true,
     } : { is_partner: true }
 
+    const guardedOpenChange = useGuardedOpenChange(onOpenChange)
     const form = useForm<SetupValues>({
         resolver: zodResolver(partnerSetupSchema),
         defaultValues: {
@@ -45,6 +48,7 @@ export function PartnerEditDrawer({ open, onOpenChange, contact, onSuccess, mode
         },
         values: formValues,
     })
+    useDirtyGuard({ form, open, name: contact?.name })
 
     const lastResetId = useRef<number | undefined>(undefined)
 
@@ -93,7 +97,7 @@ export function PartnerEditDrawer({ open, onOpenChange, contact, onSuccess, mode
             )}
             <Drawer
                 open={open}
-                onOpenChange={onOpenChange}
+                onOpenChange={guardedOpenChange}
                 side="left"
                 defaultSize={formDrawerWidth("simple", true)}
                 mode={mode}
@@ -105,7 +109,7 @@ export function PartnerEditDrawer({ open, onOpenChange, contact, onSuccess, mode
                     <FormFooter
                         actions={
                             <>
-                                <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
+                                <CancelButton onClick={() => guardedOpenChange(false)} disabled={submitting} />
                                 <SubmitButton type="submit" form="partner-edit-form" loading={submitting} className="font-bold">
                                     Guardar Cambios
                                 </SubmitButton>

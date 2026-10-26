@@ -14,7 +14,8 @@ last_review: 2026-05-28
 1.  **Data Density over Whitespace:** ERP users need to see information at a glance. Primary interactive elements default to `h-10` (40px). `h-8` and `h-9` are permitted only in compact contexts (toolbars, secondary tabs, icon buttons) — not as a general replacement for standard inputs.
 2.  **Radius Hierarchy (The Rule of Nested Corners):** Standardize on a base radius `R = 0.5rem` (8px). To ensure visual harmony in nested layouts, containers use a larger radius than their content:
     -   **Atomic Elements (8px):** Buttons, inputs, checkboxes, and small interactive elements.
-    -   **Standard Containers (12px):** Cards and main section wrappers. Use `rounded-md`.
+    -   **Standard Containers (12px):** Panels and main section wrappers (`surface-panel`, `card-base`). Use `rounded-md`.
+    -   **Interactive/selectable cards (8px):** `ProductCard`, `ChoiceCard` (stacked + light), `ContactCard`, `MfgLineCard`, `VariantSelectorModal`, `SaleOrderProductStep` (líneas), `OriginSelectionStep`, `EntityCard` (entity-view Collection) and the `PaymentMethodSelector` chosen surface use `rounded-sm` (8px) as an exception to the rule above. They share the base radius `R` with atomic elements because their visual density and selection language (ribbon CMYK, hover preview) align with the atomic tier, not the container tier. These are the `item`/`choice` roles of the card family (`surface-item`, `card-flat`); see [component-card-family.md](../20-contracts/component-card-family.md) and ADR-0094, ADR-0095, ADR-0096, ADR-0097.
     -   **Overlays (16px):** Modals, standard Sheets, and floating popovers. Use `rounded-lg`.
     -   **Main Stage / Shell (20px):** The primary floating container of the application, as well as **Global Side Panels (Hub, Inbox)** that push the main content, and Bottom Drawers. Use `rounded-xl` to ensure parallel framing when they sit side-by-side. For the full surface treatment (radius + border + shadow + background), apply the shared `@utility panel-surface` (defined in `app/globals.css`) to all three surfaces — the main `<main>` in `DashboardShell`, `CollapsibleSheet` instances, and embedded `Drawer` instances. Do not override `border`, `shadow`, `rounded-*` or `bg-*` individually on these surfaces. **Exception:** `Drawer` side-specific radius (e.g., `rounded-t-xl` / `rounded-b-xl`) must use the Tailwind v4 `!` suffix (`rounded-t-xl!`) to win over `panel-surface`'s `rounded-xl!important`.
     -   Rounding (`rounded-full`) is reserved for icon-only buttons, status pills, and specific kinetic elements.
@@ -26,7 +27,11 @@ last_review: 2026-05-28
 4.  **Accent Utilities:** Decorative flourishes for cards and surfaces:
     -   **`ribbon-cmyk`** — 2px cyan→magenta→yellow gradient top border. Use on cards that need a print-shop accent (selected product cards, active panels). See `app/globals.css:465`.
     -   **`card-focus-spin-cmyk`** — 2px cyan→magenta→yellow gradient border that rotates on hover and speeds up on focus/selected (`accent-visible`). Included in `card-base` for entity cards. See `app/globals.css`.
-3.  **Semantic Styling:** Never use hardcoded colors or spacing if a semantic token exists.
+5.  **Selection Language (cards vs controls):**
+    -   **Interactive/selectable cards** (ProductCard, ChoiceCard stacked/light, ContactCard, MfgLineCard, EntityCard, PaymentMethodSelector chosen surface): **cinta CMYK (`ribbon-cmyk`) + `SelectionCheck` + anillo K100 (`border-primary ring-1`)**. La cinta previsualiza en hover/foco; `SelectionCheck` aparece al elegir. `CmykRing` **no** se usa en cards.
+    -   **Selección múltiple (bulk)**: `SelectionRing` (filas, cabeceras, cards) y el indicador de `SelectionDock` usan el **check** (círculo primario con check; minus en parcial), no `CmykRing`. `Checkbox variant="circle"` conserva `CmykRing`.
+    -   Ver ADR-0094, ADR-0095, ADR-0096.
+6.  **Semantic Styling:** Never use hardcoded colors or spacing if a semantic token exists.
 
 ## Color Palette
 

@@ -1,9 +1,8 @@
 "use client"
 import { useState, useEffect } from "react"
 import { type Task } from '@/features/workflow/api/workflowApi'
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { DataCell, TabBar, TabBarContent, type TabItem, SkeletonShell, EmptyState } from "@/components/shared"
+import { CardSurface, DataCell, TabBar, TabBarContent, type TabItem, SkeletonShell, EmptyState } from "@/components/shared"
 import { CheckCircle2, ListTodo, ChevronDown, ChevronRight, Package, FileText, Wallet, TrendingUp, CreditCard, Wrench, ShoppingCart, Receipt, CalendarX2, ClipboardList } from "lucide-react"
 import { toast } from "sonner"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
@@ -174,18 +173,18 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
         const isRejected = task.status === 'REJECTED'
 
         return (
-            <Card
+            <CardSurface
                 key={task.id}
-                variant="flat"
+                kind="item"
                 className={cn(
-                    "px-3 py-2.5 cursor-pointer group flex flex-col gap-2 w-full",
+                    "w-full gap-2 px-3 py-2.5",
                     isRejected && "opacity-40 grayscale-[0.5]"
                 )}
                 onClick={() => navigateToTask(task)}
             >
                 {/* Title + arrow */}
                 <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-sm font-medium tracking-tight text-foreground line-clamp-2 flex-1 group-hover:text-primary transition-colors flex items-center gap-1.5">
+                    <h3 className="text-sm font-semibold tracking-tight text-foreground line-clamp-2 flex-1 group-hover:text-primary transition-colors flex items-center gap-1.5">
                         {(() => { const Icon = getTaskIcon(task); return <Icon className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" /> })()}
                         {task.task_type === 'CREDIT_POS_REQUEST' ? (
                             `Aprobación Crédito: ${task.data?.customer_name || task.title.replace('Aprobación Crédito: ', '') || 'Cliente'}`
@@ -226,7 +225,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                         </Button>
                     </div>
                 )}
-            </Card>
+            </CardSurface>
         )
     }
 

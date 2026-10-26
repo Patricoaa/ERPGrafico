@@ -10,7 +10,8 @@ export type DecimalString = string
 export type ISODate = string
 export type CurrencyCode = string
 export type FlowDirection = "inflow" | "outflow" | "neutral"
-export type Surface = "table" | "card" | "kanban" | "export"
+/** `cardFooter`: the pinned amount of an entity card (same as `card`, at the kit's amount size). */
+export type Surface = "table" | "card" | "cardFooter" | "kanban" | "export"
 export type Align = "start" | "center" | "end"
 
 /** Status rendered by StatusBadge (invariant #7). */

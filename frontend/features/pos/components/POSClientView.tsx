@@ -10,7 +10,7 @@ import { invalidateCrossFeature } from '@/lib/invalidation'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { ActionConfirmModal, PrintableReceipt, BaseModal } from '@/components/shared'
+import { ActionConfirmModal, PrintableReceipt, BaseModal, Chip } from '@/components/shared'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
 import { Loader2, FileText, BarChart3, Save, Lock, Unlock, ArrowRightLeft, Wallet, Check, Printer, Package, Percent, Tag } from 'lucide-react'
@@ -51,6 +51,7 @@ import { type CheckoutResponse, type SaleOrderLine, type CheckoutDTEData, type C
 import type { Product, WizardState } from '../types'
 import type { TransactionData } from '@/types/transactions'
 import { type DraftCart } from './DraftCartsClientView'
+import { formatDraftNumber, resolveDraftStatus, resolveDraftPhase, statusToneBg, statusToneText } from '../utils/draft-status'
 
 import { CategoryDropdown, CategoryFilter, ProductGrid, SearchBar } from '@/components/selectors/ProductGridPicker'
 import { Cart } from './Cart'
@@ -455,43 +456,71 @@ export function POSClientView() {
                         }
 
                         return syncDrafts.length > 0 && (
-                            <div className="hidden lg:flex items-center gap-1 mr-2 animate-in fade-in zoom-in duration-300 motion-reduce:animate-none">
+                            <div className="hidden lg:flex items-center gap-1 mr-2 animate-in fade-in zoom-in duration-300 motion-reduce:animate-none max-w-[40vw] overflow-x-auto no-scrollbar">
                                 {quickDrafts.map(d => {
                                     const lockInfo = getLockInfo(d.id)
                                     const lockedByOther = lockInfo.isLocked && !lockInfo.isOwnLock
-                                    const isWaitingPayment = !!d.wizard_state?.isWaitingPayment;
-                                    const draftLabel = d.name || `#${d.id}`
+                                    const isOwnLock = lockInfo.isOwnLock
+                                    const isCurrent = currentDraftId === d.id
+                                    const draftNumber = formatDraftNumber(d)
+
+                                    // Resolve status for this draft
+                                    const status = resolveDraftStatus(d, { isOwnLock })
+
+                                    // Build tooltip with all relevant info
+                                    const tooltipParts: string[] = []
+                                    if (d.name) tooltipParts.push(`Borrador: ${d.name}`)
+                                    if (d.customer_name) tooltipParts.push(`Cliente: ${d.customer_name}`)
+                                    const phase = resolveDraftPhase(d)
+                                    if (phase) tooltipParts.push(`Fase: ${phase.label}`)
+                                    tooltipParts.push(`Items: ${d.item_count}`)
+                                    tooltipParts.push(`Total: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(d.total_gross)}`)
+                                    if (status) tooltipParts.unshift(status.label)
+                                    const tooltip = tooltipParts.join('\n')
+
+                                    // Background color based on status tone
+                                    const bgClass = status ? statusToneBg(status.tone) : "bg-muted/20"
+                                    const textClass = status ? statusToneText(status.tone) : "text-muted-foreground"
+
                                     return (
-                                        <Button
-                                            key={d.id}
-                                            variant="outline"
-                                            size="sm"
-                                            className={cn(
-                                                "h-10 min-w-[40px] px-2 text-2xs font-medium transition-all duration-300 gap-1.5 relative rounded-sm",
-                                                currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-card border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
-                                                isSaving && currentDraftId === d.id && "animate-pulse opacity-70 motion-reduce:animate-none",
-                                                lockedByOther && "border-destructive/40 opacity-60",
-                                                isWaitingPayment && currentDraftId !== d.id && "border-warning text-warning bg-warning/10 shadow-card border-solid ring-1 ring-warning/30 animate-in zoom-in-95 duration-500 motion-reduce:animate-none"
-                                            )}
-                                            onClick={() => handleLoadDraft(d)}
-                                            title={lockedByOther ? `En uso por ${lockInfo.lockedByName}` : isWaitingPayment ? "Registrar Pago (Pendiente)" : d.name ? `Borrador: ${d.name}` : `Borrador #${d.id}`}
-                                        >
-                                            {lockedByOther && <Lock className="mr-0.5 h-2.5 w-2.5 text-destructive" />}
-                                            {isWaitingPayment && currentDraftId !== d.id && !lockedByOther ? (
-                                                <div className="flex items-center gap-1">
-                                                    <span className="max-w-[72px] truncate">{draftLabel}</span>
-                                                    <Wallet className="h-3.5 w-3.5 text-warning animate-pulse motion-reduce:animate-none" />
-                                                </div>
-                                            ) : (
-                                                <span className="max-w-[72px] truncate">{(isWaitingPayment && currentDraftId === d.id) || !isWaitingPayment ? draftLabel : ''}</span>
-                                            )}
-                                            {/* eslint-disable-next-line no-restricted-syntax -- inline spinner in draft tab selector, not a submit/action button */}
-                                            {isSaving && currentDraftId === d.id && <Loader2 className="ml-1 h-2 w-2 animate-spin motion-reduce:animate-none" />}
-                                        </Button>
+                                        <TooltipProvider key={d.id} delayDuration={200}>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className={cn(
+                                                            "h-10 min-w-[40px] px-2 text-2xs font-medium transition-all duration-300 gap-1.5 relative rounded-sm flex-nowrap",
+                                                            isCurrent
+                                                                ? "bg-primary/5 border-primary shadow-card border-solid ring-1 ring-primary/20"
+                                                                : "border-dashed",
+                                                            bgClass,
+                                                            textClass,
+                                                            isSaving && isCurrent && "animate-pulse opacity-70 motion-reduce:animate-none",
+                                                            lockedByOther && "border-destructive/40 opacity-60"
+                                                        )}
+                                                        onClick={() => handleLoadDraft(d)}
+                                                        aria-label={tooltip}
+                                                    >
+                                                        <span className="font-mono tabular-nums">{draftNumber}</span>
+                                                        {status && (
+                                                            <status.icon
+                                                                className={`h-3.5 w-3.5 shrink-0 ${statusToneText(status.tone)}`}
+                                                                aria-hidden="true"
+                                                            />
+                                                        )}
+                                                        {isSaving && isCurrent && <Loader2 className="ml-1 h-2 w-2 animate-spin motion-reduce:animate-none" />}
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top" className="max-w-[300px] text-xs">
+                                                    {tooltip}
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
                                     )
                                 })}
                                 {currentDraftId === null && items.length > 0 && (
-                                    <span className="h-10 border border-dashed border-muted-foreground/30 text-4xs px-2 opacity-50 bg-muted/20 flex items-center justify-center rounded-sm text-muted-foreground uppercase font-bold tracking-widest">
+                                    <span className="h-10 border border-dashed border-muted-foreground/30 text-4xs px-2 opacity-50 bg-muted/20 flex items-center justify-center rounded-sm text-muted-foreground uppercase font-bold tracking-widest flex-shrink-0">
                                         Nuevo...
                                     </span>
                                 )}
@@ -572,7 +601,7 @@ export function POSClientView() {
                 <div className="md:col-span-12 lg:col-span-7 flex flex-col min-h-0">
                     {posMode === 'SHOPPING' ? (
                         <div key="shop" className="flex-1 flex flex-col min-h-0 animate-in fade-in slide-in-from-left-2 ease-premium duration-300 fill-mode-both motion-reduce:animate-none">
-                            <Card className="flex-1 flex flex-col overflow-hidden bg-card border border-border/60 shadow-lg shadow-black/10 rounded-lg p-2">
+                            <Card className="surface-panel flex-1 flex flex-col overflow-hidden border-border/60 shadow-lg shadow-black/10 p-2">
                                 <div className={cn("px-2 border-b border-border/40 space-y-2", isTouchMode ? "pb-2 mb-2" : "pb-1.5 mb-1.5")}>
                                     <SearchBar
                                         className="bg-muted/50 hover:bg-muted/70 focus-within:bg-muted/70"
@@ -599,7 +628,7 @@ export function POSClientView() {
                             </Card>
                         </div>
                     ) : (
-                        <div key={currentDraftId || 'checkout-new'} className="flex-1 flex flex-col min-h-0 bg-card border border-border/50 rounded-md shadow-card shadow-black/5 overflow-hidden relative animate-in fade-in slide-in-from-right-2 ease-premium duration-300 fill-mode-both motion-reduce:animate-none">
+                        <div key={currentDraftId || 'checkout-new'} className="surface-panel flex-1 flex flex-col min-h-0 border-border/50 shadow-card shadow-black/5 overflow-hidden relative animate-in fade-in slide-in-from-right-2 ease-premium duration-300 fill-mode-both motion-reduce:animate-none">
                             <SalesCheckoutWizardView
                                 ref={checkoutWizardRef}
                                 key={currentDraftId || 'checkout-new'}

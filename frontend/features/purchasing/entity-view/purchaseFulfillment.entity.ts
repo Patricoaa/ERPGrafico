@@ -1,5 +1,6 @@
 import { defineEntity } from "@/components/entity-view"
 import { docRef } from "@/features/documents"
+import { resolveFulfillmentIcon } from "@/lib/movement-icons"
 
 /**
  * Unified fulfillment document (PurchaseReceipt + PurchaseReturn).
@@ -31,12 +32,21 @@ export const purchaseFulfillmentEntity = defineEntity<PurchaseFulfillment>()((f)
         type: f.status((d) => ({
             status: d.fulfillment_type,
             label: d.fulfillment_type === "RECEIPT" ? "Recepción" : "Devolución",
+            intent: d.fulfillment_type === "RECEIPT" ? "success" : "destructive",
         }), { label: "Tipo" }),
         supplier: f.contact((d) => (d.supplier_name ? { id: d.supplier_id ?? 0, name: d.supplier_name } : null), { label: "Proveedor", orderBy: "purchase_order__supplier__name" }),
         order: docRef(f, (d) => d.purchase_order_document ? { label: d.purchase_order_document.label, id: d.purchase_order_document.id, display: d.purchase_order_document.display_id, url: d.purchase_order_document.url } : null, { label: "Orden de Compra", sortable: false }),
         date: f.date((d) => d.date ?? d.receipt_date ?? "", { label: "Fecha", orderBy: "date" }),
         warehouse: f.text("warehouse_name", { label: "Bodega", tone: "secondary" }),
-        status: f.status((d) => ({ status: d.status, label: d.status_display }), { label: "Estado" }),
+        status: f.status((d) => ({
+            status: d.status,
+            label: d.status_display,
+            intent: d.status === "CONFIRMED"
+                ? "success"
+                : d.status === "CANCELLED"
+                    ? "destructive"
+                    : "info",
+        }), { label: "Estado" }),
         cost: f.money("total_cost", { label: "Costo", orderBy: "total_cost" }),
     },
 }))
@@ -44,12 +54,22 @@ export const purchaseFulfillmentEntity = defineEntity<PurchaseFulfillment>()((f)
 export const purchaseFulfillmentViews = purchaseFulfillmentEntity.views({
     table: { columns: ["folio", "type", "supplier", "order", "date", "warehouse", "status", "cost"], primary: "folio" },
     card: {
+        rail: {
+            status: (d) => {
+                if (d.status === "CANCELLED") return "CANCELLED"
+                if (d.status === "DRAFT") return "DRAFT"
+                return d.fulfillment_type === "RECEIPT" ? "SUCCESS" : "DESTRUCTIVE"
+            },
+        },
         title: "folio",
         subtitle: ["supplier", "date"],
         trailing: ["type", "status"],
-        media: { tone: (d) => {
-            if (d.status === "CANCELLED") return "muted"
-            return d.fulfillment_type === "RECEIPT" ? "primary" : "warning"
-        }},
+        media: {
+            iconFor: (d) => resolveFulfillmentIcon(d.fulfillment_type),
+            tone: (d) => {
+                if (d.status === "CANCELLED") return "muted"
+                return d.fulfillment_type === "RECEIPT" ? "success" : "destructive"
+            },
+        },
     },
 })

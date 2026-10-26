@@ -31,6 +31,7 @@ Cada decisión de diseño se evalúa contra este criterio: ¿este píxel ayuda a
 5. **Movimiento con propósito.** Transiciones locales vía `<FadeIn>`, sin framer-motion directo en páginas, sin animaciones que frenen al operador. → [component-animation.md](docs/20-contracts/component-animation.md)
 6. **Esquinas e industriales.** Jerarquía de radio 8/12/16/20 con anidamiento de esquinas. → [design-system.md](docs/10-architecture/design-system.md)
 7. **Semántico sobre estético.** Nunca tokens raw de Tailwind (`bg-red-500`); siempre tokens semánticos (`bg-destructive`). → [GOVERNANCE.md](docs/90-governance/GOVERNANCE.md)
+8. **Las cards se eligen por rol, no por aspecto.** `choice` (elegir uno), `item` (abrir un registro), `nav` (ir a un módulo), `metric` (un dato) y `panel` (agrupar contenido) comparten una sola anatomía (lead, código, título, descripción, pie, riel) y dos superficies: 8px para lo interactivo, 12px para contenedores. La cinta CMYK marca "elegido": se previsualiza al hover y queda fija al elegir (en `choice` y en las cards de entity-view; en bandeja y kanban solo seleccionada); el estado nunca lo lleva solo el color. Ninguna card se arma a mano con `border rounded bg-card`. → [component-card-family.md](docs/20-contracts/component-card-family.md) · [ADR-0097](docs/10-architecture/adr/0097-card-family-roles-and-surface-tokens.md)
 
 ---
 
@@ -44,6 +45,7 @@ Cada decisión de diseño se evalúa contra este criterio: ¿este píxel ayuda a
 | Animación y transiciones | [component-animation.md](docs/20-contracts/component-animation.md) |
 | Componentes compartidos (qué usar en cada caso) | [component-decision-tree.md](docs/20-contracts/component-decision-tree.md) |
 | Shell, sidebar de módulos y navegación (patrón ERPNext v16) | [module-layout-navigation.md](docs/20-contracts/module-layout-navigation.md) · [ADR-0079](docs/10-architecture/adr/0079-module-navigation-sidebar-erpnext-v16.md) |
+| Cards: roles, superficies, `CardLead`/`CardRail`/`cardAnatomy`, ratchet | [component-card-family.md](docs/20-contracts/component-card-family.md) · [ADR-0097](docs/10-architecture/adr/0097-card-family-roles-and-surface-tokens.md) |
 | Arquitectura del design system, radios | [design-system.md](docs/10-architecture/design-system.md) |
 | Primary = K100 (ADR) | [ADR-0070](docs/10-architecture/adr/0070-primary-process-black.md) |
 | DataTable compact variant (ADR) | [ADR-0030](docs/10-architecture/adr/0030-datatable-compact-variant.md) |
@@ -54,7 +56,7 @@ Cada decisión de diseño se evalúa contra este criterio: ¿este píxel ayuda a
 
 ## 4. Fuente de verdad técnica
 
-Los tokens viven en **`frontend/app/globals.css`** (bloque `@theme inline` + `:root`/`.dark`). Los tests de contrato **`frontend/lib/__tests__/color-system.contract.test.ts`** y **`frontend/lib/__tests__/typography.contract.test.ts`** verifican invariantes (color, y escala/tokens tipográficos + roles del chrome del shell). Si algo cambia en globals.css o en la escala tipográfica, el test y este documento deben quedar en sync.
+Los tokens viven en **`frontend/app/globals.css`** (bloque `@theme inline` + `:root`/`.dark`). Los tests de contrato **`frontend/lib/__tests__/color-system.contract.test.ts`** y **`frontend/lib/__tests__/typography.contract.test.ts`** verifican invariantes (color, y escala/tokens tipográficos + roles del chrome del shell). **`frontend/lib/__tests__/card-family.contract.test.ts`** impide nuevas cards armadas a mano (baseline que solo puede encoger). Si algo cambia en globals.css o en la escala tipográfica, el test y este documento deben quedar en sync.
 
 ---
 

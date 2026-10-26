@@ -114,17 +114,19 @@ const { openEntity, closeEntity, hasEntityDrawer } = useGlobalModals()
 openEntity('sales.saledelivery', 123)                    // abre el drawer registrado (modo derivado)
 openEntity('contacts.contact', 7, contactObj)            // con datos pre-fetcheados
 openEntity('inventory.stockmove', 9, undefined, undefined, { display: 'MOV-9' })
-closeEntity()   // cierra toda la pila
+closeEntity()   // cierra todas las pestañas
 goBackEntity()  // vuelve al documento anterior
 ```
 
 | API | Tipo | Notas |
 |-----|------|-------|
 | `openEntity` | `(label, id, data?, segmenter?, options?: { display?: string }) => void` | Advierte en consola (no rompe) si no hay drawer registrado. `options.display` es el texto que verá el "Volver a …" del documento que se abra encima |
-| `closeEntity` | `() => void` | Cierra **todos** los documentos de la pila |
-| `goBackEntity` | `() => void` | Desapila el documento superior |
+| `closeEntity` | `() => void` | Cierra **todas** las pestañas (documentos y herramientas) |
+| `openTool` | `(tool: ToolTabId) => void` | Abre una herramienta como pestaña (`"cost-calculator"`) |
+| `activateTab` / `closeTab` | `(key: string) => void` | Activan/cierran una pestaña, con guarda de cambios sin guardar |
+| `openRootEntity` / `closeEntityByRef` | `(label, id) => void` | Pestaña de la selección de una lista (`?selected`); sin guarda, la aplicó quien llama |
 
-**Pila y "volver" (ADR-0080, GAP-11).** `openEntity` con un documento ya abierto lo **apila** (máx. 5; reabrir el superior es no-op). Solo se renderiza el superior; el provider envuelve su drawer en `EntityNavigationContext` y el `Drawer` compartido muestra "← Volver a {display}" automáticamente — los drawers no necesitan cambios. Cerrar (X / Escape / `onSuccess`) vacía la pila. El contexto se resetea para los hijos de cada `Drawer`, así un drawer anidado no muestra el enlace.
+**Pestañas efímeras (ADR-0101, sustituye la pila y las migas de ADR-0080/0100).** `openEntity` abre el documento como **pestaña** en la barra de trabajo permanente (`WorkspaceTabBar`, bajo la topbar) o activa la pestaña si ya está abierta (máx. 8). Solo se monta el drawer de la pestaña activa; el provider no envuelve nada: los drawers no necesitan cambios. Cerrar (X / Escape / × de la pestaña / `onSuccess`) cierra la pestaña activa y activa a su vecina, con guarda. Las pestañas se cierran al cambiar de página y no se serializan en la URL. `closeEntity` cierra todas. La Calculadora de Costos es otra pestaña (`openTool("cost-calculator")`) y conserva su estado mientras exista. `?selected` es una sola pestaña, la fila explorada: elegir otra la reemplaza y cerrarla limpia `?selected`.
 
 **Ficha documental (ADR-0083, revierte D4).** Los documentos abren su ficha documental ([component-document-sheet.md](./component-document-sheet.md)): OV y OC → `OrderSheet`, factura/nota → `InvoiceSheet` (U2–U3; `SaleOrderDrawer`, `PurchaseOrderDrawer` e `InvoiceDrawer` eliminados). Ningún label redirige al Order Hub. Las fichas documentales **no** reciben `onSuccess` en su adaptador: sus acciones no deben cerrar la pila.
 
@@ -179,8 +181,8 @@ resolviendo en 3 niveles:
 
 | Prioridad | Condición | Acción |
 |-----------|-----------|--------|
-| 1 (preferida) | `doc.url` con `?selected=` (lista canónica) | navega a `doc.url` — la URL y el módulo/sección siguen a la relación ([ADR-0086](../10-architecture/adr/0086-document-drilldown-canonical-navigation.md)) |
-| 2 | `hasEntityDrawer(doc.type)` | `openEntity(doc.type, doc.id, doc)` — drawer drill-down (pila + "volver") |
+| 1 (preferida) | `doc.url` con `?selected=` (lista canónica) y flag `drilldownStack` **inactivo** | navega a `doc.url` — la URL y el módulo/sección siguen a la relación ([ADR-0086](../10-architecture/adr/0086-document-drilldown-canonical-navigation.md)). Con el flag activo este nivel no existe: se apila ([ADR-0100](../10-architecture/adr/0100-document-drilldown-stack-without-navigation.md)) |
+| 2 | `hasEntityDrawer(doc.type)` | `openEntity(doc.type, doc.id, doc)` — drawer drill-down (pestaña) |
 | 3 | `doc.url` presente | `<Link href={doc.url}>` — navegación |
 | 4 | ninguna | texto plano, sin interacción |
 
@@ -199,7 +201,7 @@ Todos los drawers deben adherirse a esta estructura unificada:
 - [ ] Usa `useDrawerMode({ mode: modeProp, initialData })` (no resolución inline de modo)
 - [ ] Usa `useDrawerIdentity` para título, subtítulo e icono
 - [ ] Usa `formDrawerWidth(complexity, !!initialData?.id)` para el ancho
-- [ ] Reset de form: patrón "adjust-during-render" con `prevResetKeyRef` (sin `useEffect` + `form.reset`) — ver [component-state-sync.md](./component-state-sync.md)
+- [ ] Reset de form: `useInitializeDrawerForm` (layout effect con reset key `open` + id; sin `form.reset()` durante render ni `useEffect` después del paint) — ver [component-state-sync.md](./component-state-sync.md)
 - [ ] Mutaciones: usa hook dedicado `use*Mutations()` (ej. `useCategoryMutations`) que invoca `markLocalMutation()` e `invalidateCrossFeature()`. Cero `api.*()` directos en el componente.
 - [ ] `FormSplitLayout` + `ActivitySidebar` con `showSidebar={!!initialData?.id}` (solo para edición)
 - [ ] `FormFooter` canónico (o ausente si drawer read-only)
@@ -224,17 +226,30 @@ Todos los drawers deben adherirse a esta estructura unificada:
 ### 5.2 Drilldown de documento: navegar vs apilar
 
 Las superficies de drilldown documental (`useOpenRelatedDocument` —filas del tab Relaciones—,
-`SourceDocumentLink`, `DocumentRefLink`) aplican **una sola** regla ([ADR-0086](../10-architecture/adr/0086-document-drilldown-canonical-navigation.md)):
+`SourceDocumentLink`, `DocumentRefLink`) delegan en **un solo punto**: `useOpenDocument()`
+(`@/hooks/useOpenDocument`). Ninguna superficie decide por su cuenta (lint `drilldown/no-bypass`).
 
-- **La URL canónica del destino abre una lista** (contiene `?selected=`, p. ej. una OV o una
-  factura): **navegar** con `router.push(url)`. Cambian la URL y el módulo/sección (el riel y
-  la barra lateral derivan de `usePathname()`), y la lista destino abre la ficha con `?selected`.
-- **No la abre** (resolvedor `/d/{label}/{id}`, o una lista sin `?selected`): **apilar** con
-  `openEntity` (pila + "volver", ADR-0028). Los maestros (contacto, producto, empleado…) caen aquí.
+**Flag `drilldownStack` activo** ([ADR-0100](../10-architecture/adr/0100-document-drilldown-stack-without-navigation.md)):
+`NEXT_PUBLIC_DRILLDOWN_STACK=true` o `localStorage["erp.drilldownStack"]="1"`.
 
-La decisión sale siempre del `DocumentRef.url` que emite el backend (`DocumentTypeRegistry`,
-[ADR-0080](../10-architecture/adr/0080-document-model-relations-and-navigation.md) §6); el
-frontend no adivina rutas. Predicado: `isListSelectionUrl(url)` en `@/lib/documentNavigation`.
+- Con ficha registrada: **apilar** con `openEntity(label, id, undefined, undefined, { display })`. La lista de
+  origen, el módulo y la URL **no cambian**; "Volver a …" regresa al documento anterior.
+- Sin ficha registrada: `router.push(DocumentRef.url)`.
+
+**Flag inactivo** (comportamiento heredado, [ADR-0086](../10-architecture/adr/0086-document-drilldown-canonical-navigation.md)):
+
+- URL canónica con `?selected=`: **navegar** con `router.push(url)`; cambian URL y módulo/sección.
+- Si no (resolvedor `/d/{label}/{id}`): **apilar** con `openEntity`. Los maestros caen aquí.
+
+La URL canónica (`DocumentRef.url`, [ADR-0080](../10-architecture/adr/0080-document-model-relations-and-navigation.md) §6)
+sigue siendo la vía de enlaces externos, búsqueda universal y `/d/…`. Predicados: `opensInApp` y
+`canOpenDocument` en `@/hooks/useOpenDocument`.
+
+**Guarda de cambios sin guardar (siempre activa).** Un formulario de drawer con cambios pendientes bloquea abrir
+otro documento, "Volver", cerrar y salir de la página hasta elegir *Guardar y continuar*, *Descartar y continuar*
+o *Seguir editando* (`UnsavedChangesDialog`). Los drawers con formulario la reciben gratis vía
+`useInitializeDrawerForm`; el resto de rutas (`useEntityRouteActions`, `useSelectedEntity`) pasan por
+`runGuarded` de `GlobalModalProvider`.
 
 ### 5.1 Detalle de entidad = overlay siempre-recargable (reglas de foco y URL)
 

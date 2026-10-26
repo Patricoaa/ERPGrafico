@@ -5,7 +5,7 @@ task: "Usar el servidor de desarrollo remoto (SSH + Mutagen)"
 triggers: ["dev server", "servidor remoto", "servidor de desarrollo", "ssh", "mutagen", "correr tests", "qa local", "levantar entorno", "192.168.1.86", "logs del servidor"]
 status: active
 owner: core-team
-last_review: 2026-10-18
+last_review: 2026-10-22
 kind: environment-contract
 preconditions:
   - Acceso SSH con llave a pato@192.168.1.86
@@ -196,3 +196,38 @@ Nota de red: `.env.dev` del servidor usa `ALLOWED_HOSTS=...,192.168.1.86` y
 | La interfaz no refleja cambios | el sync está caído (ver §3) | verificar/reactivar Mutagen; si no, avisar al usuario |
 | La UI local no carga | acceso por ruta equivocada | usar `http://192.168.1.86` (o port-forward SSH) |
 | `git: not a repository` en el servidor | el espejo no tiene `.git` (por diseño) | usar git solo en local |
+| `Memory cgroup out of memory: Killed process ... (next-server)` | Turbopack supera el techo de memoria del contenedor en sesiones largas (ver §8) | `docker compose restart frontend`; revisar §8 |
+
+---
+
+## 8. OOM del next-server (`memory cgroup out of memory`)
+
+**Síntoma:** el kernel (vía `dmesg` o avisos del host) muestra `Memory cgroup out of memory: Killed process ... (next-server)` y el contenedor `erpgrafico-frontend-1` aparece reiniciado (`.State.RestartCount` > 0 en `docker inspect`).
+
+**Causa:** `next dev --turbo` (Turbopack) acumula memoria a lo largo de la sesión —grafo de módulos + caché persistente en RAM— al compilar las ~170 rutas on-demand en un host de 2 vCPU. `--max-old-space-size` solo limita el heap JS del proceso Node, **no** la memoria nativa de Turbopack, así que la RSS crece libre hasta tocar el techo del cgroup y entonces **mata el kernel el proceso** (no hay stack trace de Node).
+
+**Mitigaciones aplicadas (2026-10-22):**
+
+| Dónde | Cambio |
+|-------|--------|
+| `docker-compose.yml` (frontend) | `memory: 5G → 6G` (memswap 10G; host 6.8G + 4G swap absorben el pico puntual de compile) |
+| `docker-compose.yml` (celery-worker) | `--concurrency=2 → 1` (~150 MB más de colchón para el frontend) |
+| `frontend/next.config.ts` | `experimental.optimizePackageImports`: radix-ui, @tanstack/react-table, react-day-picker, framer-motion, @dnd-kit, @nivo/* — reduce el grafo por ruta (lucide-react y date-fns ya vienen en los defaults de Next) |
+| caché `next_cache` | limpieza manual (`rm -rf .next/*` + restart) si las compactaciones de Turbopack se vuelven costosas en los logs |
+
+**Si vuelve a pasar:**
+1. `docker stats` en vivo mientras compilas → ver a cuánto se acerca el frontend a su techo.
+2. `docker compose restart frontend` libera toda la memoria de la sesión de inmediato.
+3. `free -h` → si swap está al límite, mira qué más consume: `ps aux --sort=-rss | head`.
+
+**Limpieza automática (crontab de `pato` en el server):**
+
+| Cuándo | Qué | Comando |
+|--------|-----|---------|
+| Lunes 04:10 | build cache con tope (5 GB) + imágenes *dangling* | `scripts/server-cleanup.sh disk` |
+| Cada 45 min | si el frontend supera **88 %** del techo → `docker compose restart frontend` controlado | `scripts/server-cleanup.sh ram` |
+
+- El script vive en [`scripts/server-cleanup.sh`](../../scripts/server-cleanup.sh) (llega al server por Mutagen) y deja trazas vía `logger -t erpgrafico-cleanup`.
+- La guardia `ram` es **mejor que el OOM-kill**: un reinicio elegido siempre gana a un kill del kernel en mitad de un compile. No entra en bucle (tras reiniciar el frontend baja a ~0,5 GiB y el pico de cold compile ronda 2,7 GiB).
+- La limpieza de `.next` **no se automatiza**: cada limpieza cuesta ~3 min de recompilación en frío — solo manual (arriba).
+- El journal del sistema (~1 GB) tampoco: requiere `sudo journalctl --rotate && sudo journalctl --vacuum-size=200M` de vez en cuando.

@@ -38,6 +38,7 @@ export function TreasuryHeader() {
     if (activeValue === "bank-center") {
       const bankIdSegment = segments[2]
       if (bankIdSegment && !isNaN(Number(bankIdSegment))) return `bank-${bankIdSegment}`
+      if (!bankIdSegment) return "banks"
       return "all"
     }
     return undefined
@@ -78,11 +79,24 @@ export function TreasuryHeader() {
     }
 
     if (activeValue === "bank-center" && subActiveValue) {
-      const bankTab = getBankSubView(bankSubTabs, subActiveValue, segments[3] || "overview")
+      const bankIdSegment = segments[2]
+      const isBankRoute = !!bankIdSegment && !isNaN(Number(bankIdSegment))
+
+      // Gestión de Bancos es un elemento directo de Centro de Bancos.
+      if (subActiveValue === "banks") {
+        const banksTab = bankSubTabs.find((tab) => tab.value === "banks")
+        if (banksTab) return buildHeaderConfigFromTab(banksTab)
+      }
+
+      // En rutas de banco la sub-vista va tras el id; en las agregadas,
+      // "cards" agrupa /cards/unbilled y /cards/statements.
+      const subViewValue = isBankRoute
+        ? (segments[3] || "overview")
+        : (segments[2] || "banks")
+      const bankTab = getBankSubView(bankSubTabs, subActiveValue, subViewValue)
       if (bankTab) {
         // Para banco específico, el título puede ser dinámico (nombre del banco)
-        const bankIdSegment = segments[2]
-        if (bankIdSegment && !isNaN(Number(bankIdSegment))) {
+        if (isBankRoute) {
           const selectedBank = banks.find((b) => b.id === Number(bankIdSegment))
           const base = buildHeaderConfigFromTab(bankTab)
           return overrideHeaderConfig(base, {
@@ -93,7 +107,7 @@ export function TreasuryHeader() {
       }
       // Fallback: tab "all" o banco no encontrado
       const allTab = bankSubTabs.find((t) => t.value === "all")
-      const subTab = allTab?.subTabs?.find((st) => st.value === (segments[3] || "overview"))
+      const subTab = allTab?.subTabs?.find((st) => st.value === subViewValue)
       if (subTab) return buildHeaderConfigFromTab(subTab)
       return buildHeaderConfigFromTab(allTab!)
     }

@@ -1,14 +1,11 @@
 "use client"
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { Edit, Settings2 } from "lucide-react"
+import { useState, useMemo } from "react"
 import { AdvancedManufacturingDrawer } from "../forms/AdvancedManufacturingDrawer"
-import { Collection, useEntityCollection } from "@/components/entity-view"
-import { mfgDetailLineEntity, mfgDetailLineViews, getMfgLineSubType, type ManufacturableLine } from "../../entity-view/mfgDetailLine.entity"
-
+import { EmptyState } from "@/components/shared"
 import { type SaleOrderLine } from "../../types"
+import { getMfgLineSubType, type ManufacturableLine } from "../../utils/mfgLine"
+import { MfgLineCard } from "./MfgLineCard"
 
 interface Step2_ManufacturingDetailsProps {
     orderLines: SaleOrderLine[]
@@ -18,9 +15,13 @@ interface Step2_ManufacturingDetailsProps {
 export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_ManufacturingDetailsProps) {
     const [editingLineIndex, setEditingLineIndex] = useState<number | null>(null)
 
-    const manufacturableItems: ManufacturableLine[] = orderLines
-        .map((line, index) => ({ ...line, originalIndex: index }))
-        .filter(line => line.product_type === 'MANUFACTURABLE') as ManufacturableLine[]
+    const advancedLines: ManufacturableLine[] = useMemo(() =>
+        orderLines
+            .map((line, index) => ({ ...line, originalIndex: index }))
+            .filter(line => line.product_type === 'MANUFACTURABLE')
+            .filter(line => getMfgLineSubType(line) === 'ADVANCED') as ManufacturableLine[],
+        [orderLines]
+    )
 
     const handleConfirmManufacturing = (data: Record<string, unknown>) => {
         if (editingLineIndex === null) return
@@ -31,58 +32,29 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
         setEditingLineIndex(null)
     }
 
-    const mfgCollection = useEntityCollection(
-        mfgDetailLineEntity,
-        { rows: manufacturableItems },
-        { pagination: { mode: "none" } }
-    )
-
     const editingLineRaw = editingLineIndex !== null ? orderLines[editingLineIndex] : null
     const editingLine = editingLineRaw && getMfgLineSubType(editingLineRaw) === 'ADVANCED' ? editingLineRaw : null
 
     return (
         <div className="space-y-6">
-            <div className="space-y-4">
-                <p className="text-sm text-muted-foreground mb-2">
-                    Revise y confirme los detalles técnicos de los productos a fabricar.
-                </p>
-
-                <Collection.Root
-                    collection={mfgCollection}
-                    defaultView="card"
-                    label="Líneas fabricables"
-                    actions={(row) => {
-                        const subtype = getMfgLineSubType(row)
-                        if (subtype !== 'ADVANCED') return null
-                        const hasConfig = !!row.manufacturing_data
-                        return (
-                            <Button
-                                variant={hasConfig ? "outline" : "default"}
-                                size="sm"
-                                onClick={() => setEditingLineIndex(row.originalIndex)}
-                                className={cn(
-                                    "h-7 text-3xs font-medium uppercase tracking-tight",
-                                    !hasConfig && "bg-primary hover:bg-primary/90 text-primary-foreground shadow-card"
-                                )}
-                            >
-                                {hasConfig ? (
-                                    <Edit className="mr-1.5 h-3 w-3" />
-                                ) : (
-                                    <Settings2 className="mr-1.5 h-3 w-3" />
-                                )}
-                                {hasConfig ? "Editar" : "Configurar"}
-                            </Button>
-                        )
-                    }}
-                >
-                    <Collection.View
-                        table={mfgDetailLineViews.table}
-                        card={mfgDetailLineViews.card}
-                        emptyTitle="Sin productos fabricables"
-                        emptyDescription="No hay productos fabricables en esta orden."
-                    />
-                </Collection.Root>
-            </div>
+            {advancedLines.length === 0 ? (
+                <EmptyState
+                    context="production"
+                    variant="compact"
+                    title="Sin configuración de fabricación"
+                    description="Esta orden no tiene productos con fabricación avanzada."
+                />
+            ) : (
+                <div className="flex flex-col gap-3">
+                    {advancedLines.map((line) => (
+                        <MfgLineCard
+                            key={line.originalIndex}
+                            line={line}
+                            onConfigure={() => setEditingLineIndex(line.originalIndex)}
+                        />
+                    ))}
+                </div>
+            )}
 
             {editingLine && (
                 <AdvancedManufacturingDrawer

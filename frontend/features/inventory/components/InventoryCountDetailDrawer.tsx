@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useCallback } from "react"
-import { StatusBadge, UnifiedSearchBar, useUnifiedSearch, Drawer, SkeletonShell, SubmitButton } from "@/components/shared"
+import { StatusBadge, UnifiedSearchBar, useUnifiedSearch, Drawer, FadeIn, SkeletonShell, SubmitButton } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { inventoryCountLineEntity, inventoryCountLineViews, type AugmentedCountLine } from "../entity-view/inventoryCountLine.entity"
 import { ClipboardCheck, Check, Equal } from "lucide-react"
@@ -209,7 +209,7 @@ export function InventoryCountDetailDrawer({ countId, open, onOpenChange, onAppl
                     <SkeletonShell isLoading ariaLabel="Cargando conteo" />
                 </div>
             ) : count ? (
-                <div className="p-4 animate-in fade-in duration-500 space-y-3">
+                <FadeIn className="p-4 space-y-3" duration={0.5}>
                     <UnifiedSearchBar
                         config={inventoryCountLineSearchDef}
                         chips={lineSearch.chips}
@@ -235,7 +235,7 @@ export function InventoryCountDetailDrawer({ countId, open, onOpenChange, onAppl
                             onResetFilters={lineSearch.isFiltered ? lineSearch.clearAll : undefined}
                         />
                     </Collection.Root>
-                </div>
+                </FadeIn>
             ) : null}
         </Drawer>
     )

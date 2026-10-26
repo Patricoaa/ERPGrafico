@@ -1,5 +1,6 @@
 "use client"
 
+import { Percent } from "lucide-react"
 import { Chip, DataCell } from "@/components/shared"
 import { defineEntity, formatDate, formatMoneyValue, registerValueKind, type ValueRenderProps } from "@/components/entity-view"
 import type { PricingRule } from "../hooks/usePricingRules"
@@ -86,5 +87,5 @@ export const pricingRuleViews = pricingRuleEntity.views({
         // No default sort: the server order (newest first) is kept.
         primary: "name",
     },
-    card: { title: "name", subtitle: ["appliesTo", "type"], meta: ["condition", "value", "validity"], trailing: ["active"] },
+    card: { rail: { status: (r) => (r.active ? "active" : "inactive"), icon: Percent }, title: "name", subtitle: ["appliesTo", "type"], meta: ["condition", "value", "validity"], trailing: ["active"] },
 })

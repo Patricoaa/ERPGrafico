@@ -21,6 +21,7 @@ import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { Collection, useEntityCollection } from '@/components/entity-view'
 import { unbilledChargeEntity, unbilledChargeViews } from '../entity-view/unbilledCharge.entity'
 import { useCardAccounts } from '../hooks/useCardAccounts'
+import { useBanks } from '../hooks/useMasterData'
 import type { PendingChargeRow, UpcomingInstallment, UnbilledItemRow } from '../types'
 import { mapToUnbilledItemRows } from './utils'
 import { CardPendingChargeDrawer } from './CardPendingChargeDrawer'
@@ -59,15 +60,20 @@ export function UnbilledChargesClientView({
     const { selectedId, openSelected, clearActions } = useEntityRouteActions()
     const isNewModal = searchParams.get('modal') === 'new'
 
-    const { cardAccounts: creditCardAccounts, isLoading: overviewLoading } = useCardAccounts(bankId)
+    const bankParam = searchParams.get('bank')
+    const selectedBankId = bankParam && !isNaN(Number(bankParam)) ? Number(bankParam) : undefined
+    const effectiveBankId = bankId ?? selectedBankId
+    const { banks } = useBanks()
+    const filterOptions = useMemo(
+        () => ({ bank: banks.map((bank) => ({ label: bank.name, value: String(bank.id) })) }),
+        [banks],
+    )
+
+    const { cardAccounts: creditCardAccounts, isLoading: overviewLoading } = useCardAccounts(effectiveBankId)
     const isAggregate = !bankId
 
-    const unifiedConfig: UnifiedSearchConfig = useMemo(() => ({
-        searchFields: [
-            { key: 'contact', label: 'Contacto / OC', type: 'text', serverParam: 'search', clientKey: ['partnerName', 'purchaseOrderDisplayId', 'reference'] },
-            { key: 'amount', label: 'Monto', type: 'text', serverParam: 'search' },
-        ],
-        filters: [
+    const unifiedConfig: UnifiedSearchConfig = useMemo(() => {
+        const filters: NonNullable<UnifiedSearchConfig['filters']> = [
             {
                 type: 'single',
                 key: 'scope',
@@ -90,30 +96,42 @@ export function UnbilledChargesClientView({
                     ...creditCardAccounts.map(a => ({ label: a.name, value: String(a.id) })),
                 ],
             },
-        ],
-        dateFilters: [
-            {
-                type: 'date',
-                key: 'charge_date',
-                label: 'Fecha del cargo',
-                options: [
-                    { label: 'Hoy', serverParamFrom: 'charge_date_from', serverParamTo: 'charge_date_to', getValue: today },
-                    { label: 'Esta semana', serverParamFrom: 'charge_date_from', serverParamTo: 'charge_date_to', getValue: thisWeek },
-                    { label: 'Este mes', serverParamFrom: 'charge_date_from', serverParamTo: 'charge_date_to', getValue: thisMonth },
-                    { label: 'Este trimestre', serverParamFrom: 'charge_date_from', serverParamTo: 'charge_date_to', getValue: thisQuarter },
-                    { label: 'Este año', serverParamFrom: 'charge_date_from', serverParamTo: 'charge_date_to', getValue: thisYear },
-                ],
-            },
-        ],
-        basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
-    }), [creditCardAccounts, isAggregate])
+        ]
+        if (isAggregate) {
+            filters.unshift({ type: 'single', key: 'bank', label: 'Banco', serverParam: 'bank', dynamic: true })
+        }
+        return {
+            searchFields: [
+                { key: 'contact', label: 'Contacto / OC', type: 'text', serverParam: 'search', clientKey: ['partnerName', 'purchaseOrderDisplayId', 'reference'] },
+                { key: 'amount', label: 'Monto', type: 'text', serverParam: 'search' },
+            ],
+            filters,
+            dateFilters: [
+                {
+                    type: 'date',
+                    key: 'charge_date',
+                    label: 'Fecha del cargo',
+                    options: [
+                        { label: 'Hoy', serverParamFrom: 'charge_date_from', serverParamTo: 'charge_date_to', getValue: today },
+                        { label: 'Esta semana', serverParamFrom: 'charge_date_from', serverParamTo: 'charge_date_to', getValue: thisWeek },
+                        { label: 'Este mes', serverParamFrom: 'charge_date_from', serverParamTo: 'charge_date_to', getValue: thisMonth },
+                        { label: 'Este trimestre', serverParamFrom: 'charge_date_from', serverParamTo: 'charge_date_to', getValue: thisQuarter },
+                        { label: 'Este año', serverParamFrom: 'charge_date_from', serverParamTo: 'charge_date_to', getValue: thisYear },
+                    ],
+                },
+            ],
+            basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
+        }
+    }, [creditCardAccounts, isAggregate])
 
-    const search = useUnifiedSearch(unifiedConfig)
+    const search = useUnifiedSearch(unifiedConfig, filterOptions)
 
     const cardFilter = search.filters.card
     const selectedCardId = cardFilter && cardFilter !== 'all' ? Number(cardFilter) : null
-    const isAllCards = isAggregate && selectedCardId === null
-    const selectedCardAccount = selectedCardId ?? (bankId ? (creditCardAccounts[0]?.id ?? null) : null)
+    const selectedCardAccount = selectedCardId !== null && creditCardAccounts.some((account) => account.id === selectedCardId)
+        ? selectedCardId
+        : (bankId ? (creditCardAccounts[0]?.id ?? null) : null)
+    const isAllCards = isAggregate && selectedCardAccount === null
     const currentAccount = creditCardAccounts.find(a => a.id === selectedCardAccount)
     const cardAccountName = currentAccount?.name ?? ''
     const currency = currentAccount?.currency ?? 'CLP'
@@ -122,7 +140,7 @@ export function UnbilledChargesClientView({
 
     const { data: result, isLoading } = useUnbilledCharges({
         cardAccountId: selectedCardAccount ?? undefined,
-        bankId: isAllCards ? undefined : bankId,
+        bankId: selectedCardAccount ? undefined : effectiveBankId,
         cutOffDate,
         enabled: creditCardAccounts.length > 0,
     })
@@ -282,6 +300,7 @@ export function UnbilledChargesClientView({
                     <UnifiedSearchBar
                         config={unifiedConfig}
                         {...bindUnifiedSearch(search)}
+                        filterOptions={search.filterOptions}
                         placeholder="Buscar por contacto, OC o monto..."
                     />
                 </Collection.Toolbar>

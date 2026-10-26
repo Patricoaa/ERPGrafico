@@ -15,6 +15,7 @@ import {
     getValueKind,
     initialEditableValues,
     resolveField,
+    rowIdOf,
     sortValueOf,
     toEditableErrors,
 } from "@/components/entity-view"
@@ -117,6 +118,21 @@ describe("field resolution", () => {
 
     it("throws on unregistered kinds at runtime too", () => {
         expect(() => getValueKind("nope" as "text")).toThrow(/no está registrado/)
+    })
+
+    it("extracts rowId from entity.rowId or falls back to row.id", () => {
+        const defaultEntity = defineEntity<{ id: number; name: string }>()((f) => ({
+            title: "Default",
+            fields: { name: f.text("name", { label: "Nombre" }) },
+        }))
+        expect(rowIdOf(defaultEntity, { id: 42, name: "Test" })).toBe("42")
+
+        const compoundEntity = defineEntity<{ id: number; type: string }>()((f) => ({
+            title: "Compound",
+            rowId: (r) => `${r.type}-${r.id}`,
+            fields: { type: f.text("type", { label: "Tipo" }) },
+        }))
+        expect(rowIdOf(compoundEntity, { id: 42, type: "DELIVERY" })).toBe("DELIVERY-42")
     })
 })
 

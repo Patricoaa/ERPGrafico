@@ -3,6 +3,7 @@
 import { Layers } from "lucide-react"
 import { Chip, DataCell } from "@/components/shared"
 import { defineEntity, registerValueKind, type ValueRenderProps } from "@/components/entity-view"
+import { formatQuantity } from "@/lib/money"
 import type { BOM } from "../types"
 
 /**
@@ -42,6 +43,11 @@ function registerBomValueKinds(): void {
 // The entity owns its extension: loading this module registers it (no app bootstrap needed).
 registerBomValueKinds()
 
+function componentsLabel(bom: BOM): string | undefined {
+    if (bom.lines_count == null) return undefined
+    return bom.lines_count === 1 ? "1 componente" : `${formatQuantity(bom.lines_count)} componentes`
+}
+
 /** Bill of materials (ADR-0087 oleada A4). Replaces bomFields.tsx (1 computed) + renderCard. */
 export const bomEntity = defineEntity<BOM>()((f) => ({
     label: "production.bom",
@@ -57,5 +63,15 @@ export const bomEntity = defineEntity<BOM>()((f) => ({
 
 export const bomViews = bomEntity.views({
     table: { columns: ["product", "name", "linesCount", "totalCost", "active"] },
-    card: { title: "name", subtitle: ["product"], meta: ["linesCount", "totalCost"], trailing: ["active"], media: { icon: Layers } },
+    card: {
+        title: "name",
+        footer: { value: "totalCost" },
+        muted: (b) => !b.active,
+        media: {
+            placement: "top",
+            icon: Layers,
+            badge: (b) => (b.active ? undefined : "Inactiva"),
+            footnote: componentsLabel,
+        },
+    },
 })

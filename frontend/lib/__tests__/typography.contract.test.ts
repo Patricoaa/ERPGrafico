@@ -31,6 +31,7 @@ const rule = read('../../eslint-rules/typography-token-first.mjs');
 const shell = {
   navItem: read('../../components/layout/SidebarNavItem.tsx'),
   dashboardShell: read('../../components/layout/DashboardShell.tsx'),
+  workspaceTabBar: read('../../components/layout/WorkspaceTabBar.tsx'),
   moduleRail: read('../../components/layout/ModuleRail.tsx'),
   modulePanel: read('../../components/layout/ModuleSidebarPanel.tsx'),
   panelHeader: read('../../components/shared/PanelHeader.tsx'),
@@ -96,8 +97,8 @@ describe('typography contract', () => {
     expect(/\btext-sm\b/.test(shell.navItem)).toBe(false);
   });
 
-  it('topbar breadcrumb uses text-xs font-medium — ADR 0079/0082', () => {
-    expect(/text-xs font-medium tracking-normal/.test(shell.dashboardShell)).toBe(true);
+  it('breadcrumb (now in the workspace tab bar) uses text-xs font-medium — ADR 0079/0082/0101', () => {
+    expect(/text-xs font-medium/.test(shell.workspaceTabBar)).toBe(true);
   });
 
   it('topbar status pill is uppercase tracking-wider (not tracking-tighter)', () => {

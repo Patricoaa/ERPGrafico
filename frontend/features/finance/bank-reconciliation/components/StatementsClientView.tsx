@@ -7,7 +7,7 @@ import { useStatementsQuery } from "../hooks/useReconciliationQueries"
 import { useStatementQuery } from "../hooks/useReconciliationQueries"
 import type { BankStatement } from "../types"
 import { StatementImportModal, StatementDetailPanel, ReconciliationPanel } from "@/features/finance"
-import { useConfirmStatement } from "@/features/treasury"
+import { useConfirmStatement, useBanks } from "@/features/treasury"
 import { UnifiedSearchBar, useUnifiedSearch, Drawer, EmptyState, ActionConfirmModal, SubmitButton } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { statementEntity, statementViews } from "@/features/finance"
@@ -21,7 +21,7 @@ interface StatementsClientViewProps {
     externalOpen?: boolean
     createAction?: React.ReactNode
     bankId?: number
-    accounts?: Array<{ id: number; name: string }>
+    accounts?: Array<{ id: number; name: string; bank?: number | null }>
     detailBasePath?: string
 }
 
@@ -35,20 +35,25 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
     const [detailStatementId, setDetailStatementId] = useState<number | null>(null)
     const [workbenchStatementId, setWorkbenchStatementId] = useState<number | null>(null)
 
-    const filterOptions: Record<string, MultiSelectOption[]> = useMemo(() => ({
-        bank_account: (accounts ?? []).map((a) => ({ label: a.name, value: String(a.id) })),
-    }), [accounts])
+    const bankParam = searchParams.get("bank")
+    const showBankFilter = accounts !== undefined && !bankId
+    const selectedBankId = showBankFilter && bankParam && !isNaN(Number(bankParam)) ? Number(bankParam) : undefined
+    const { banks } = useBanks()
 
-    const statementsUnifiedConfig = useMemo<UnifiedSearchConfig>(() => ({
-        searchFields: [
-            {
-                key: "display_id",
-                label: "Cartola",
-                serverParam: "search",
-                clientKey: ["display_id", "treasury_account_name"],
-            },
-        ],
-        filters: [
+    const visibleAccounts = useMemo(
+        () => selectedBankId && accounts
+            ? accounts.filter((account) => account.bank === selectedBankId)
+            : (accounts ?? []),
+        [accounts, selectedBankId],
+    )
+
+    const filterOptions: Record<string, MultiSelectOption[]> = useMemo(() => ({
+        bank: banks.map((bank) => ({ label: bank.name, value: String(bank.id) })),
+        bank_account: visibleAccounts.map((a) => ({ label: a.name, value: String(a.id) })),
+    }), [banks, visibleAccounts])
+
+    const statementsUnifiedConfig = useMemo<UnifiedSearchConfig>(() => {
+        const filters: NonNullable<UnifiedSearchConfig['filters']> = [
             {
                 type: "single",
                 key: "bank_account",
@@ -67,19 +72,44 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                     { label: "Anulado", value: "CANCELLED" },
                 ],
             },
-        ],
-    }), [])
+        ]
+        if (showBankFilter) {
+            filters.unshift({
+                type: "single",
+                key: "bank",
+                label: "Banco",
+                serverParam: "bank",
+                dynamic: true,
+            })
+        }
+        return {
+            searchFields: [
+                {
+                    key: "display_id",
+                    label: "Cartola",
+                    serverParam: "search",
+                    clientKey: ["display_id", "treasury_account_name"],
+                },
+            ],
+            filters,
+        }
+    }, [showBankFilter])
 
     const search = useUnifiedSearch(statementsUnifiedConfig, filterOptions)
     const handleReset = useCallback(() => { search.clearAll() }, [search])
 
-    const { data: statements = [], isLoading, refetch } = useStatementsQuery(
-        search.filters.bank_account_id && search.filters.bank_account_id !== "all"
-            ? { treasury_account: search.filters.bank_account_id }
-            : bankId
-            ? { bank: String(bankId) }
-            : undefined,
-    )
+    const statementParams = useMemo<Record<string, string> | undefined>(() => {
+        const params: Record<string, string> = {}
+        if (search.filters.bank_account_id && search.filters.bank_account_id !== "all") {
+            params.treasury_account = search.filters.bank_account_id
+        } else {
+            const bankFilter = bankId ? String(bankId) : search.filters.bank
+            if (bankFilter) params.bank = bankFilter
+        }
+        return Object.keys(params).length > 0 ? params : undefined
+    }, [search.filters.bank_account_id, search.filters.bank, bankId])
+
+    const { data: statements = [], isLoading, refetch } = useStatementsQuery(statementParams)
 
     const filteredStatements = useMemo(() => {
         let result = search.filterFn(statements)

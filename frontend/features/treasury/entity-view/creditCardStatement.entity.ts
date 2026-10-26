@@ -34,10 +34,10 @@ export const creditCardStatementViews = creditCardStatementEntity.views({
         primary: "cardAccountName",
     },
     card: {
+        rail: { status: (s) => s.status },
         title: "cardAccountName",
-        sections: [
-            { fields: ["displayId", "period", "billedAmount"] },
-            { fields: ["cutOffDate", "dueDate", "status"] },
-        ],
+        subtitle: ["displayId", "period"],
+        meta: ["cutOffDate", "dueDate"],
+        trailing: ["status", "billedAmount"],
     },
 })

@@ -1,9 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { X, type LucideIcon } from "lucide-react"
+import { Check, X, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { CmykRing } from "./CmykRing"
 
 import { cn } from "@/lib/utils"
 
@@ -46,7 +45,7 @@ export function ActionDock({ isVisible, children, className }: ActionDockProps) 
     return isVisible && (
         <div
             className={cn(
-                "fixed bottom-6 z-[100] bg-card border shadow-elevated rounded-lg px-6 py-2 flex items-center gap-8 transition-all duration-500 ease-[var(--ease-premium)]",
+                "surface-panel fixed bottom-6 z-[100] shadow-elevated px-6 py-2 flex items-center gap-8 transition-all duration-500 ease-[var(--ease-premium)]",
                 "animate-in fade-in slide-in-from-bottom-4 ease-[cubic-bezier(0.34,1.56,0.64,1)] duration-500 fill-mode-both",
                 getPositionClass(),
                 className
@@ -115,7 +114,9 @@ export function SelectionDock({ count, onClear, children }: SelectionDockProps) 
     return (
         <ActionDock isVisible>
             <div className="flex items-center gap-2" aria-live="polite">
-                <CmykRing className="h-2.5 w-2.5 animate-pulse" />
+                <span className="flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground" aria-hidden="true">
+                    <Check className="size-2.5" strokeWidth={3} />
+                </span>
                 <span className="text-xs font-bold uppercase tracking-widest text-foreground whitespace-nowrap">
                     {`${count} ${count === 1 ? "seleccionado" : "seleccionados"}`}
                 </span>

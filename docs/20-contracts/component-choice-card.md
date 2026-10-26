@@ -3,17 +3,17 @@ layer: 20-contracts
 doc: component-choice-card
 status: active
 owner: frontend-team
-last_review: 2026-10-21
+last_review: 2026-10-22
 stability: beta
 ---
 
-# ChoiceCard · ChoiceGroup · SelectableCard
+# ChoiceCard · ChoiceGroup · SelectableCard · CardSurface · CardRail · cardAnatomy
 
 Cartas para **elegir una opción** en los pasos del checkout (POS y compras): documento tributario, tipo de entrega, método de pago, contacto. Misma anatomía y mismo lenguaje de selección que `ProductCard` ([component-selectors.md](./component-selectors.md#productgridpicker-)).
 
-Import: `import { ChoiceCard, ChoiceGroup, SelectableCard… } from '@/components/shared'`
+Import: `import { ChoiceCard, ChoiceGroup, SelectableCard, CardSurface, CardRail, cardAnatomy } from '@/components/shared'`
 
-## Anatomía
+## Anatomía (tokens `cardAnatomy`)
 
 ```
 ┌─────────────────────────┐ ← cinta CMYK: fija si está elegida, en hover/foco si no
@@ -21,12 +21,14 @@ Import: `import { ChoiceCard, ChoiceGroup, SelectableCard… } from '@/component
 │          ⬚              │
 │                     (✓) │   check al elegir
 ├─────────────────────────┤
-│ meta (mono)             │   código / RUT / número
-│ Título                  │   font-semibold
-│ descripción             │   text-2xs muted
-│ footer                  │   anclado abajo: montos, hechos secundarios
-└─────────────────────────┘
+│ meta (mono)             │   código / RUT / número          → cardAnatomy.code
+│ Título                  │   font-semibold                  → cardAnatomy.title
+│ descripción             │   text-2xs muted                 → cardAnatomy.description
+│ footer                  │   anclado abajo: montos, hechos  → cardAnatomy.footer + cardAnatomy.caption + cardAnatomy.amount
+└─────────────────────────┘   radio: rounded-sm (8px)
 ```
+
+**Radio**: la familia interactiva/seleccionable (ProductCard, ChoiceCard, ContactCard, MfgLineCard, PaymentMethodSelector) usa `rounded-sm` (8px) — excepción documentada en ADR-0094 y `design-system.md` §2. `selectableCardClass()` ya emite `rounded-sm`.
 
 ## Lenguaje de selección (`SelectableCard`)
 
@@ -39,6 +41,27 @@ Import: `import { ChoiceCard, ChoiceGroup, SelectableCard… } from '@/component
 La cinta (`ribbon-cmyk`, `ribbon-cmyk-hover` en `globals.css`) **reemplaza a `CmykRing` como marca de selección en tarjetas**. `CmykRing` sigue en `Checkbox`/`RadioGroup`/`SelectionRing` (selección múltiple en tablas).
 
 `selectableCardClass({ selected, unavailable })` y `<SelectionCheck />` son el único origen de esta apariencia: `ProductCard`, `ChoiceCard` y cualquier tarjeta pulsable futura los usan.
+
+## `CardSurface` (nuevo)
+
+Shell contratado para toda la familia: `CardSurface` = `Card` + `selectableCardClass()` + neutralización determinista de `gap-6/py-6/shadow-card/rounded-md` (vía `gap-0 p-0 shadow-none`). Props: `selected`, `unavailable`, `role="radio"|"button"`, `onClick`, `onKeyDown`, `children`, `className`. Elimina los overrides manuales que antes hacían `ProductCard`/`MfgLineCard`.
+
+## `CardRail` (nuevo)
+
+Riel lateral `w-14` que codifica estado mediante color (único indicador, sin chip). Props: `tone="warning"|"success"|"neutral"`, `children` (icono centrado, `aria-hidden`). Clases: `border-l border-{tone}/20 bg-{tone}/10 text-{tone}`. Usado por `MfgLineCard` (ámbar=pendiente, verde=configurado).
+
+## `cardAnatomy` tokens
+
+```
+cardAnatomy.body        "flex min-w-0 flex-1 flex-col gap-1 px-3 pb-3 pt-2.5"
+cardAnatomy.code        "truncate font-mono text-3xs text-muted-foreground"
+cardAnatomy.title       "line-clamp-2 text-left text-sm font-semibold leading-snug"
+cardAnatomy.description "text-2xs leading-snug text-muted-foreground"
+cardAnatomy.footer      "mt-auto pt-2"
+cardAnatomy.caption     "text-3xs text-muted-foreground"
+cardAnatomy.amount      "font-semibold tabular-nums text-lg"
+cardAnatomy.glyph       "h-4 w-4 shrink-0 transition-colors text-muted-foreground group-hover:text-foreground"
+```
 
 ## `ChoiceCard`
 
@@ -69,11 +92,69 @@ Es un `Button` de shadcn con `role="radio"`. Los íconos usan clases `size-*` (e
 
 | Superficie | Componente |
 |-----------|------------|
-| Documento tributario (`Step2_DTE`) | `ChoiceCard` con `tone="warning"` para exentos |
+| Documento tributario (`Step2_DTE`, compra) | `ChoiceCard` con `tone="warning"` para exentos |
 | Entrega (`Step3_Delivery`) | `ChoiceCard`, "inmediato" deshabilitado si hay fabricación |
-| Método de pago (`PaymentMethodSelector`) | `ChoiceCard size="compact"`, monto en el `footer`; asignaciones y crédito asignado usan la superficie "elegida" con controles propios |
-| Cliente / proveedor (`ContactCardGrid` → `ContactCard`) | `ChoiceCard` con `media={<Blobatar/>}`, RUT en `meta`, crédito en `footer` |
-| Fabricación (`Step2_ManufacturingDetails`) | tarjetas de `entity-view` con `media.placement: "top"` |
+| Método de pago (`PaymentMethodSelector`) | `ChoiceCard size="compact"`, monto en el `footer`; asignaciones y crédito asignado usan la superficie "elegida" con controles propios (`chosenCardClass` → `rounded-sm` + tokens) |
+| Cliente / proveedor (`ContactCardGrid` → `ContactCard`) | `ChoiceCard` con `media={<Blobatar/>}` (`rounded-sm`), RUT en `meta`, crédito en `footer` |
+| Fabricación (`Step2_ManufacturingDetails`) | **`MfgLineCard`** (`CardRowWithRail` + tokens), `role="button"`, **no** `ChoiceCard`. Riel ámbar→verde = único estado; ribbon solo en hover (preview). |
+| Variante (`VariantSelectorModal`) | **`CardRow`** (lead 64×64, chips, precio, badge, chevron) |
+| Producción: OV + Producto (`SaleOrderProductStep`) | Órdenes: `CardSurface` stacked; Líneas: **`CardRow`** (lead 40×40) |
+| Producción: Origen (`OriginSelectionStep`) | **`CardSurface`** stacked + tokens (2 cards) |
+| entity-view Collection | **`EntityCard`** → `CardSurface` stacked + tokens |
+
+---
+
+## Variante ligera (`variant="light"`) — ADR-0096
+
+Para wizards y pasos de checkout sin media strip real (icono + título + 1–2 líneas descripción, 2–3 por fila). Anatomía compacta ~60px alto (vs ~142px stacked):
+
+```
+┌────────────────────────────────────────────┐
+│▌  ◨  Título                      │ ●  │  ← lead 40px (icono centrado, sin fondo) | cuerpo | rail 36px con ● / ○
+│▌     descripción                    │    │     ○ = círculo vacío (affordance), ● = check relleno al elegir
+└────────────────────────────────────────────┘
+  ↑ lightSurface: border-foreground/20 + shadow-xs  (borde de control, no de card)
+  ↑ h-auto (intrínseco, no h-10 heredado de Button)
+```
+
+**Props discriminadas** (TypeScript impide mezclar):
+
+| Variante | Props permitidas | Props **prohibidas** |
+|---|---|---|
+| `stacked` (default) | todas | — |
+| `light` | `selected`, `onSelect`, `title`, `description`, `icon`, `iconClassName`, `disabled`, `className` | `meta`, `media`, `badge`, `tone`, `footer`, `size`, `children` |
+
+**Tokens específicos** (`cardAnatomy`): `lightLead`, `lightBody`, `lightTitle`, `lightDescription`, `lightRail`, `lightRailSelected`, `lightSurface`.
+
+| Token | Valor | Nota |
+|---|---|---|
+| `lightLead` | `flex w-10 shrink-0 items-center justify-center self-stretch` | Columna transparente a toda la altura, icono centrado |
+| `lightBody` | `flex min-w-0 flex-1 flex-col gap-0.5 py-2.5 pl-3 pr-2` | |
+| `lightTitle` | `line-clamp-1 text-left text-sm font-semibold leading-snug` | |
+| `lightDescription` | `line-clamp-2 text-2xs leading-snug text-muted-foreground` | |
+| `lightRail` | `flex w-9 shrink-0 items-center justify-center border-l border-border/60 bg-muted/20 transition-colors` | |
+| `lightRailSelected` | `border-primary/30 bg-primary/5` | |
+| `lightSurface` | `border-foreground/20 shadow-xs` | **NUEVO**: borde visible de control (gana sobre border-border) |
+
+**Shell**: mismo `Button` + `selectableCardClass` con override `h-auto flex-row items-stretch`. El riel (`SelectionRail`) muestra un círculo vacío decorativo (`○`, `border-foreground/25`, `group-hover:border-foreground/50`) cuando `!selected`; al elegir (`selected`) aparece el `SelectionCheck` relleno (`●`, check blanco en fondo primario). La cinta CMYK superior se mantiene.
+
+**Comportamiento del icono en `disabled`**: el color se fuerza a `text-muted-foreground/40` aunque el caller pase `iconClassName="text-primary"` (caso `NoteStep_Logistics`).
+
+**Sitios migrados** (14 instancias):
+
+| Archivo | Contexto | Grid |
+|---|---|---|
+| `Step2_PurchaseDTE` | Tipo de documento | `1 / md:3` |
+| `Step4_Receipt` | Tipo de recepción | `1 / md:3` |
+| `NoteStep_Logistics` | Opciones de procesamiento | `1 / md:3` (1 disabled) |
+| `ContactDrawer` | Preferencias comerciales | `2` |
+| `ProductManufacturingTab` | Modo de producción | `3` |
+| `PartnerWithdrawalWizard` | Tipo de recurso | `2` |
+| `PartnerContributionWizard` | Tipo de recurso | `2` |
+
+## `RadioCard` — **Eliminado** (ADR-0095)
+
+14 instancias migradas a `ChoiceCard` (total 37 usos). Diferencia visual: `ChoiceCard` usa media strip (icono en banda) vs `RadioCard` centrado vertical. `CmykRing` restringido a `Checkbox`/`SelectionRing` (controles/tabla).
 
 ## Estados
 

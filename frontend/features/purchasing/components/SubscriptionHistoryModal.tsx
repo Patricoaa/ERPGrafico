@@ -166,7 +166,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                 </div>
                                             </div>
 
-                                            <div className="h-[400px] w-full bg-card rounded-md border p-6 shadow-card">
+                                            <div className="surface-panel h-[400px] w-full p-6 shadow-card">
                                                 <BarChart
                                                     data={filteredPriceHistory as unknown as { date: string; unit_cost: number }[]}
                                                     keys={["unit_cost"]}
@@ -196,14 +196,14 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
 
                                         {/* ORDERS TAB */}
                                         <TabBarContent value="orders" className="mt-0">
-                                            <div className="rounded-md border shadow-card overflow-hidden bg-card">
+                                            <div className="surface-panel shadow-card overflow-hidden">
                                                 <OrderTable orders={data.orders} />
                                             </div>
                                         </TabBarContent>
 
                                         {/* NOTES TAB */}
                                         <TabBarContent value="notes" className="mt-0">
-                                            <div className="rounded-md border shadow-card overflow-hidden bg-card">
+                                            <div className="surface-panel shadow-card overflow-hidden">
                                                 <NoteTable notes={data.notes} />
                                             </div>
                                         </TabBarContent>

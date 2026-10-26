@@ -94,6 +94,7 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
 
     return (
         <div ref={reportRef} className={cn(
+            // card-family-allow: printed receipt (80mm ticket), not a card
             "w-full max-w-[380px] mx-auto bg-card p-6 shadow-overlay border border-border/50 text-card-foreground font-sans relative rounded-md animate-in zoom-in-95 duration-200 motion-reduce:animate-none",
             "print:shadow-none print:border-none print:p-0 print:w-[80mm]"
         )}>

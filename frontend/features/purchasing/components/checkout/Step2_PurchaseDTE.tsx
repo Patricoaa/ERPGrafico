@@ -1,11 +1,10 @@
 "use client"
 
-import {RadioGroup} from "@/components/ui/radio-group"
 import {FileText, Receipt, AlertCircle} from "lucide-react"
 import { useBillingSettingsQuery } from "@/features/settings"
 import { useMemo, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import { DocumentAttachmentDropzone, FolioValidationInput, PeriodValidationDateInput, LabeledSwitch, LabeledContainer, RadioCard, StepHeader } from '@/components/shared'
+import { DocumentAttachmentDropzone, FolioValidationInput, PeriodValidationDateInput, LabeledSwitch, LabeledContainer, ChoiceCard, ChoiceGroup, StepHeader } from '@/components/shared'
 
 import { type DTEData } from "../../types"
 
@@ -44,8 +43,8 @@ export function Step2_PurchaseDTE({
     const dteOptions = [
         { id: 'BOLETA', label: 'Boleta', code: '39', icon: Receipt },
         { id: 'FACTURA', label: 'Factura', code: '33', icon: FileText },
-        { id: 'BOLETA_EXENTA', label: 'Boleta Exenta', code: '41', icon: Receipt, color: 'text-warning' },
-        { id: 'FACTURA_EXENTA', label: 'Factura Exenta', code: '34', icon: FileText, color: 'text-warning' },
+        { id: 'BOLETA_EXENTA', label: 'Boleta Exenta', code: '41', icon: Receipt, iconClassName: 'text-warning' },
+        { id: 'FACTURA_EXENTA', label: 'Factura Exenta', code: '34', icon: FileText, iconClassName: 'text-warning' },
     ]
 
     const filteredOptions = useMemo(() => {
@@ -58,23 +57,24 @@ export function Step2_PurchaseDTE({
             </div>
             <div className="space-y-4">
                 <LabeledContainer label="Tipo de Documento">
-                    <RadioGroup
-                        value={dteData.type}
-                        onValueChange={(val) => setDteData({ ...dteData, type: val })}
-                        className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full"
+                    <ChoiceGroup
+                        label="Tipo de Documento"
+                        columns="grid-cols-1 md:grid-cols-3"
+                        activation="select"
                     >
-                    {filteredOptions.map((opt) => (
-                        <RadioCard
-                            key={opt.id}
-                            id={`type-${opt.id.toLowerCase().replace('_', '-')}`}
-                            value={opt.id}
-                            label={opt.label}
-                            description={`Código SII: ${opt.code}`}
-                            icon={<opt.icon className="h-4 w-4" />}
-                            iconColor={opt.color}
-                        />
-                    ))}
-                    </RadioGroup>
+                        {filteredOptions.map((opt) => (
+                            <ChoiceCard
+                                variant="light"
+                                key={opt.id}
+                                selected={dteData.type === opt.id}
+                                onSelect={() => setDteData({ ...dteData, type: opt.id })}
+                                title={opt.label}
+                                description={`Código SII: ${opt.code}`}
+                                icon={opt.icon}
+                                iconClassName={opt.iconClassName}
+                            />
+                        ))}
+                    </ChoiceGroup>
                 </LabeledContainer>
             </div>
 
@@ -141,7 +141,7 @@ export function Step2_PurchaseDTE({
             {dteData.type === 'BOLETA' && !dteData.isPending && (
                 <div className="flex items-start gap-2 p-3 bg-warning/10 text-warning rounded-md text-xs leading-tight">
                     <AlertCircle className="h-4 w-4 shrink-0" />
-                    <p>El folio de la boleta es obligatorio. Si no lo tiene ahora, marque &quot;Recibiré el documento luego&quot;.</p>
+                    <p>El folio de la boleta es obligatorio. Si no lo tiene ahora, marque "Recibiré el documento luego".</p>
                 </div>
             )}
 

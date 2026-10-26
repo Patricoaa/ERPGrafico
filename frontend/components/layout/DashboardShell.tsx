@@ -7,16 +7,15 @@ import { usePathname } from "next/navigation"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import { UserActions } from "./UserActions"
 import { ModuleRail } from "./ModuleRail"
 import { ModuleSidebarPanel } from "./ModuleSidebarPanel"
+import { WorkspaceTabBar } from "./WorkspaceTabBar"
 import { useHeader } from "@/components/providers/HeaderProvider"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
-import { PageHeaderSkeleton, PrepressPanel, DynamicIcon } from '@/components/shared'
-import { Loader2, Menu } from "lucide-react"
-import Link from "next/link"
+import { PrepressPanel } from '@/components/shared'
+import { Menu } from "lucide-react"
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
 const TaskInboxSidebar = dynamic(
@@ -58,72 +57,39 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         setIsInboxOpen(prev => !prev)
     }
 
-    const titleBlock = config ? (
-        <div
-            key={pathname + config.title}
-            className="flex items-center gap-3 min-w-0 animate-in fade-in ease-premium duration-300 fill-mode-both motion-reduce:animate-none"
-        >
-            {config.isLoading && (
-                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" aria-hidden />
+    // Estado, acciones y controles de la vista: viven en el extremo derecho de la barra de trabajo.
+    const pageActions = config ? (
+        <div className="flex items-center gap-2 min-w-0">
+            {config.status && (
+                config.status.type === 'saving' ? (
+                    <Skeleton className="px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider border shrink-0 bg-primary/20 text-primary border-primary/20 flex items-center justify-center">
+                        {config.status.label}
+                    </Skeleton>
+                ) : (
+                    <div className={cn(
+                        "px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider border shrink-0",
+                        config.status.type === 'synced' && "bg-success/10 text-success border-success/20",
+                        config.status.type === 'error' && "bg-destructive/10 text-destructive border-destructive/20",
+                        !config.status.type && "bg-muted text-muted-foreground border-border"
+                    )}>
+                        {config.status.label}
+                    </div>
+                )
             )}
 
-            {/* Título de la vista = único <h1> de la página (ADR-0079, reemplaza ADR-0073 §1-2).
-                La descripción queda como tooltip. */}
-            <h1 title={config.description || undefined} className="flex items-center gap-2 min-w-0 text-base font-semibold tracking-tight text-foreground/90">
-                {!config.isLoading && (config.icon ? (
-                    <config.icon className="h-4 w-4 text-muted-foreground shrink-0" />
-                ) : config.iconName ? (
-                    <DynamicIcon name={config.iconName} className="h-4 w-4 text-muted-foreground shrink-0" />
-                ) : null)}
-                <span className="truncate">{config.title}</span>
-            </h1>
-            {nav?.breadcrumbs?.map((crumb, idx) => (
-                <span key={idx} className="flex items-center gap-1.5 shrink-0 text-xs font-medium tracking-normal">
-                    <span className="text-border select-none" aria-hidden>/</span>
-                    {crumb.href ? (
-                        <Link href={crumb.href} className="text-muted-foreground hover:text-foreground transition-colors">
-                            {crumb.label}
-                        </Link>
-                    ) : (
-                        <span className="text-foreground/90">{crumb.label}</span>
-                    )}
-                </span>
-            ))}
-
-            <div className="flex items-center gap-2 shrink-0">
-                {config.status && (
-                    config.status.type === 'saving' ? (
-                        <Skeleton className="px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider border shrink-0 bg-primary/20 text-primary border-primary/20 flex items-center justify-center">
-                            {config.status.label}
-                        </Skeleton>
-                    ) : (
-                        <div className={cn(
-                            "px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider border shrink-0",
-                            config.status.type === 'synced' && "bg-success/10 text-success border-success/20",
-                            config.status.type === 'error' && "bg-destructive/10 text-destructive border-destructive/20",
-                            !config.status.type && "bg-muted text-muted-foreground border-border"
-                        )}>
-                            {config.status.label}
-                        </div>
-                    )
-                )}
-
-                {config.titleActions && (
-                    <div className="flex items-center ml-1">
-                        {config.titleActions}
-                    </div>
-                )}
-            </div>
+            {config.titleActions && (
+                <div className="flex items-center">
+                    {config.titleActions}
+                </div>
+            )}
 
             {config.children && (
-                <div className="flex items-center gap-2 ml-2 pl-3 border-l border-border shrink-0">
+                <div className="flex items-center gap-2 pl-3 border-l border-border shrink-0">
                     {config.children}
                 </div>
             )}
         </div>
-    ) : (
-        <PageHeaderSkeleton />
-    )
+    ) : null
 
     const sidebar = (onNavigate?: () => void) => (
         <>
@@ -155,27 +121,24 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             </Sheet>
 
             <div className="flex-1 flex flex-col min-w-0">
-                {/* ── TOP BAR: ancho completo; los paneles laterales abren debajo
-                     (top: --header-height), así las acciones no se desplazan. ── */}
-                <header className="flex-none h-12 flex items-center gap-3 border-b border-border/40 bg-background z-30 pl-4 md:pl-6 pr-2 md:pr-3">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="md:hidden h-8 w-8 shrink-0 -ml-2"
-                        onClick={() => setIsMobileNavOpen(true)}
-                        aria-label="Abrir navegación"
-                    >
-                        <Menu className="h-4 w-4" />
-                    </Button>
-
-                    <div className="flex-1 flex items-center min-w-0">
-                        {titleBlock}
-                    </div>
-
-                    <div className="flex-none flex items-center">
-                        <UserActions />
-                    </div>
-                </header>
+                {/* ── BARRA DE TRABAJO: primer panel del viewport (ADR-0101). Mide --header-height:
+                     los paneles laterales abren debajo, así las acciones no se desplazan. ── */}
+                <WorkspaceTabBar
+                    page={config ? { title: config.title, description: config.description, icon: config.icon, iconName: config.iconName, isLoading: config.isLoading } : null}
+                    breadcrumbs={nav?.breadcrumbs}
+                    actions={pageActions}
+                    leading={
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="md:hidden h-8 w-8 shrink-0 mb-0.5"
+                            onClick={() => setIsMobileNavOpen(true)}
+                            aria-label="Abrir navegación"
+                        >
+                            <Menu className="h-4 w-4" />
+                        </Button>
+                    }
+                />
 
                 {/* ── CONTENT AREA (se repliega ante sheets globales) ─────── */}
                 <div

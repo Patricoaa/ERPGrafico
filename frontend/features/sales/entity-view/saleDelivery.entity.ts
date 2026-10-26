@@ -30,7 +30,11 @@ export const saleDeliveryEntity = defineEntity<SaleDelivery>()((f) => ({
         order: docRef(f, (d) => d.sale_order_document ? { label: d.sale_order_document.label, id: d.sale_order_document.id, display: d.sale_order_document.display_id, url: d.sale_order_document.url } : null, { label: "Orden de Venta", sortable: false }),
         date: f.date("delivery_date", { label: "Fecha", orderBy: "delivery_date" }),
         warehouse: f.text("warehouse_name", { label: "Bodega", tone: "secondary" }),
-        status: f.status((d) => ({ status: d.status, label: d.status_display }), { label: "Estado" }),
+        status: f.status((d) => ({
+            status: d.status,
+            label: d.status_display,
+            intent: d.status === "CONFIRMED" ? "success" : d.status === "CANCELLED" ? "destructive" : "info",
+        }), { label: "Estado" }),
         cost: f.money("total_cost", { label: "Costo", orderBy: "total_cost" }),
     },
 }))
@@ -38,9 +42,10 @@ export const saleDeliveryEntity = defineEntity<SaleDelivery>()((f) => ({
 export const saleDeliveryViews = saleDeliveryEntity.views({
     table: { columns: ["folio", "customer", "order", "date", "warehouse", "status", "cost"], primary: "folio" },
     card: {
+        rail: { status: (d) => (d.status === "CONFIRMED" ? "SUCCESS" : d.status) },
         title: "folio",
         subtitle: ["customer", "date"],
         trailing: ["status"],
-        media: { tone: (d) => (d.status === "CANCELLED" ? "muted" : "primary") },
+        media: { tone: (d) => (d.status === "CANCELLED" ? "muted" : "success") },
     },
 })

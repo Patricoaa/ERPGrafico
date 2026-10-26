@@ -215,8 +215,8 @@ class Invoice(TransactionalDocument):
 
     @property
     def display_id(self):
-        """Retorna ID del documento con prefijo apropiado"""
-        from core.prefix_registry import EntityPrefix
+        """Retorna ID del documento con prefijo apropiado, sin zero-padding."""
+        from core.prefix_registry import EntityPrefix, fmt_seq_num
         try:
             prefix = self.dte_strategy().display_prefix
         except KeyError:
@@ -224,7 +224,8 @@ class Invoice(TransactionalDocument):
         # FACTURA se usa para ventas y compras: FACV para venta, FACC para compra
         if self.dte_type == self.DTEType.FACTURA and self.purchase_order_id:
             prefix = EntityPrefix.INVOICE_COMPRA
-        return f"{prefix}-{self.number or 'Draft'}"
+        number_display = fmt_seq_num(self.number) if self.number else "Draft"
+        return f"{prefix}-{number_display}"
 
     @property
     def total_paid(self):

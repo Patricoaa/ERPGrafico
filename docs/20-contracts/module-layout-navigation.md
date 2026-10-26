@@ -65,9 +65,13 @@ El tope del panel contiene **Buscar** (Ctrl+K) y **Bandeja de entrada** (`Sideba
 
 > Los roles tipográficos del chrome del shell (topbar, riel, panel de módulo, panel lateral) están normados en [typography-scale.md § Escala del chrome del shell](./typography-scale.md#escala-del-chrome-del-shell-adr-0079).
 
-La **topbar** (ancho completo, no se desplaza al abrir sheets) muestra el título de la vista como **único `<h1>`** de la página (la `description` es su tooltip), `breadcrumbs`, `status`, `titleActions`, `children` y los accesos POS / Calculadora a tamaño de riel. Las vistas **no** renderizan título ni descripción propios; `PageSectionHeader` solo dibuja pestañas internas.
+La **barra de trabajo** (ancho completo, no se desplaza al abrir sheets; ADR-0101 sustituye a la antigua topbar) muestra el título de la vista como **único `<h1>`** de la página (la `description` es su tooltip), `breadcrumbs`, `status`, `titleActions`, `children` y los accesos POS / Calculadora a tamaño de riel. Las vistas **no** renderizan título ni descripción propios; `PageSectionHeader` solo dibuja pestañas internas.
 
 Una vista puede montar su propio `<PageHeader>` (p. ej. para `titleActions`) **sin** `navigation`: el sidebar conserva la navegación del módulo (`HeaderProvider.moduleNavigation`).
+
+### 2.1.1 Barra de trabajo (ADR-0101)
+
+`WorkspaceTabBar` sustituye a la topbar: es el primer panel del viewport (`h-12` = `--header-height`). Una sola fila de pestañas con el mismo estilo: la de la **página** elegida en el riel (título e ícono del header de la vista; no se cierra; activa cuando no hay otra pestaña activa), las de los **documentos** abiertos con `openEntity` y la de la **Calculadora de Costos** si se eligió en el riel (`openTool`). Las de documento y herramienta se cierran al cambiar de ruta. En los extremos: estado, `titleActions` y `children` de la vista, migas profundas y, en móvil, el botón de navegación (`UserActions` estaba vacío y se eliminó). El contenido de la pestaña activa ocupa siempre todo el área bajo la barra (full, sin redimensionar, sin cierre por clic fuera): la lista queda inoperable hasta volver a la pestaña de la página. La vista no monta su propio drawer de calculadora.
 
 ### 2.2 Sub-vistas de módulo en el riel (caso Tesorería / Centro de Bancos)
 

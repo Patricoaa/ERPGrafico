@@ -10,6 +10,25 @@
  * (`DocumentRef.url`, ADR-0080 §6). Masters and resolver types (`/d/{label}/{id}`)
  * are left to `openEntity` (ADR-0028).
  */
+/**
+ * Feature flag del drill-down por pila (ADR-0100): con el flag activo, abrir un documento relacionado
+ * apila su ficha sobre la lista de origen en vez de navegar a su ruta canónica (ADR-0086).
+ *
+ * Se activa con `NEXT_PUBLIC_DRILLDOWN_STACK=true` (build) o, para probar en un navegador sin
+ * redeploy, `localStorage["erp.drilldownStack"] = "1"`. Se evalúa en cada clic, no al cargar.
+ */
+export const DRILLDOWN_STACK_STORAGE_KEY = "erp.drilldownStack"
+
+export function isDrilldownStackEnabled(): boolean {
+    if (process.env.NEXT_PUBLIC_DRILLDOWN_STACK === "true") return true
+    if (typeof window === "undefined") return false
+    try {
+        return window.localStorage.getItem(DRILLDOWN_STACK_STORAGE_KEY) === "1"
+    } catch {
+        return false
+    }
+}
+
 export function isListSelectionUrl(url: string | null | undefined): boolean {
     return typeof url === "string" && url.includes("?selected=")
 }

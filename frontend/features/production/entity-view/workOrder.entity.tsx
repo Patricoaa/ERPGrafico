@@ -1,8 +1,10 @@
 "use client"
 
+import { Wrench } from "lucide-react"
 import { defineEntity, registerValueKind } from "@/components/entity-view"
 import { DataCell, Chip } from "@/components/shared"
 import { DocumentRefLink } from "@/features/documents"
+import { formatQuantity } from "@/lib/money"
 import { translateProductionStage } from "@/lib/utils"
 import { isWorkOrderOverdue } from "../utils"
 import type { WorkOrder } from "../types"
@@ -50,19 +52,31 @@ registerValueKind("workOrderSaleRef", {
     inline: () => <DataCell.Empty inline />,
 })
 
+function stageLabel(workOrder: WorkOrder): string | undefined {
+    const label = translateProductionStage(workOrder.current_stage)
+    return label || undefined
+}
+
+function quantityLabel(workOrder: WorkOrder): string {
+    if (workOrder.quantity == null) return ""
+    const quantity = formatQuantity(workOrder.quantity)
+    return workOrder.uom_name ? `${quantity} ${workOrder.uom_name}` : quantity
+}
+
 // ─── Entity definition ──────────────────────────────────────────────────────
 
 export const workOrderEntity = defineEntity<WorkOrder>()((f) => ({
     title: "Órdenes de Trabajo",
     fields: {
-        number: f.code("number", { label: "Folio" }),
+        number: f.code((w) => w.display_id || w.number || "", { label: "Folio" }),
         saleOrderNumber: f.value(
             "workOrderSaleRef",
             (w) => ({ documentRef: w.sale_order_document ?? null }),
             { label: "OV Asociada" },
         ),
         startDate: f.date("start_date", { label: "Fecha Inicio" }),
-        productDescription: f.text("product_description", { label: "Descripción del Trabajo" }),
+        // stage_data.product_description is only set by the manufacturing dialog; `description` is the work order's own title.
+        productDescription: f.text((w) => w.product_description || w.description || "", { label: "Descripción del Trabajo" }),
         status: f.value(
             "workOrderStatus",
             (w) => ({ status: w.status, label: null, isOverdue: isWorkOrderOverdue(w) }),
@@ -72,6 +86,8 @@ export const workOrderEntity = defineEntity<WorkOrder>()((f) => ({
             (w) => translateProductionStage(w.current_stage),
             { label: "Etapa" },
         ),
+        customer: f.text((w) => w.sale_customer_name ?? "", { label: "Cliente" }),
+        quantityLabel: f.text(quantityLabel, { label: "Cantidad" }),
         dueDate: f.date("due_date", { label: "Fecha Entrega" }),
     },
 }))
@@ -82,10 +98,21 @@ export const workOrderViews = workOrderEntity.views({
         primary: "productDescription",
     },
     card: {
+        code: "number",
         title: "productDescription",
-        sections: [
-            { fields: ["number", "saleOrderNumber", "status"] },
-            { fields: ["startDate", "dueDate", "currentStage"] },
-        ],
+        subtitle: ["customer"],
+        meta: ["saleOrderNumber"],
+        footer: {
+            value: "dueDate",
+            visible: (w) => Boolean(w.due_date),
+            fallback: { caption: "Fecha Entrega", value: () => "Sin fecha" },
+        },
+        muted: (w) => w.status?.toUpperCase() === "CANCELLED",
+        media: {
+            placement: "top",
+            icon: Wrench,
+            badge: stageLabel,
+            footnote: quantityLabel,
+        },
     },
 })

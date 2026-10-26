@@ -13,5 +13,11 @@ export const groupEntity = defineEntity<Group>()((f) => ({
 
 export const groupViews = groupEntity.views({
     table: { columns: ["name", "userCount"], defaultSort: "name" },
-    card: { title: "name", meta: ["userCount"], media: { icon: Users } },
+    // Compact document/rail variant: no catalog media band. Groups have no state of their own,
+    // so the leading rail only carries a decorative identity icon, not a status.
+    card: {
+        title: "name",
+        meta: ["userCount"],
+        rail: { status: () => null, icon: Users },
+    },
 })

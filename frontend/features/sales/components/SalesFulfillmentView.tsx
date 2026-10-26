@@ -52,7 +52,7 @@ export function SalesFulfillmentView() {
     const handleOpen = (doc: SaleFulfillment) => {
         // Route to the correct entity sheet based on type
         const entityLabel = doc.fulfillment_type === "DELIVERY" ? "sales.saledelivery" : "sales.salereturn"
-        openEntity(entityLabel, doc.id)
+        openEntity(entityLabel, doc.id, { display_id: doc.display_id, number: doc.number }, undefined, { display: doc.display_id ?? undefined })
     }
 
     return (

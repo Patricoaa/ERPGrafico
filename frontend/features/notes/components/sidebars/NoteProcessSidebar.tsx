@@ -40,7 +40,7 @@ export function NoteProcessSidebar({
             label: 'Productos',
             icon: Package,
             detail: itemsCount > 0 ? (
-                <p className="text-xs font-semibold">{itemsCount} productos seleccionados</p>
+                <p className="text-3xs font-semibold">{itemsCount} productos seleccionados</p>
             ) : undefined
         },
     ]
@@ -50,7 +50,7 @@ export function NoteProcessSidebar({
             id: 'manufacturing',
             label: 'Producción',
             icon: ShoppingBag,
-            detail: <p className="text-xs font-semibold">Producción configurada</p>
+            detail: <p className="text-3xs font-semibold">Producción configurada</p>
         })
     }
 
@@ -59,7 +59,7 @@ export function NoteProcessSidebar({
             id: 'logistics',
             label: 'Logística',
             icon: Truck,
-            detail: <p className="text-xs font-semibold">Movimiento registrado</p>
+            detail: <p className="text-3xs font-semibold">Movimiento registrado</p>
         })
     }
 
@@ -69,7 +69,7 @@ export function NoteProcessSidebar({
             label: 'Documento',
             icon: FileText,
             detail: (
-                <p className="text-xs font-semibold">
+                <p className="text-3xs font-semibold">
                     {dteNumber ? `Folio: ${dteNumber}` : 'Documento registrado'}
                 </p>
             )
@@ -80,8 +80,8 @@ export function NoteProcessSidebar({
             icon: CreditCard,
             detail: paymentData?.method ? (
                 <div className="space-y-0.5">
-                    <p className="text-xs font-semibold">{methodLabels[paymentData.method]}</p>
-                    <p className="text-xs font-bold">
+                    <p className="text-3xs font-semibold">{methodLabels[paymentData.method]}</p>
+                    <p className="text-3xs font-bold">
                         <MoneyDisplay amount={paymentData.amount} inline />
                     </p>
                 </div>
@@ -94,6 +94,8 @@ export function NoteProcessSidebar({
             title={noteType === 'NOTA_CREDITO' ? 'Proceso Nota Crédito' : 'Proceso Nota Débito'}
             currentStep={currentStep}
             steps={steps}
+            showNumbers={true}
+            detailVisibility="both"
         />
     )
 }

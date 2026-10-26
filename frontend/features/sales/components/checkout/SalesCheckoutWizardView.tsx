@@ -18,7 +18,7 @@ import { useInvoices } from "@/features/billing"
 import { getTask } from "@/features/workflow"
 import { formatMoney } from "@/lib/money"
 
-import {Hammer, ShieldAlert, CheckCircle2, FileWarning, Truck, User} from "lucide-react"
+import {Factory, ShieldAlert, CheckCircle2, FileWarning, Truck, User} from "lucide-react"
 import {BaseModal, StepHeader} from '@/components/shared'
 
 import { useAuth } from "@/contexts/AuthContext"
@@ -41,6 +41,7 @@ export interface CheckoutWizardState {
     selectedCustomerName: string
     isQuickSale: boolean
     isWaitingPayment: boolean
+    phaseId?: 'customer' | 'dte' | 'manufacturing' | 'delivery' | 'payment'
 }
 
 export interface SalesCheckoutWizardViewProps {
@@ -131,23 +132,9 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
     }
     const idempotencyKeyRef = useRef<string>(generateUUID())
 
-    const hasManufacturing = useMemo(() => currentOrderLines.some((line: SaleOrderLine) => {
-        const isManufacturable = line.product_type === 'MANUFACTURABLE' || line.has_bom;
-        if (!isManufacturable) return false;
-
-        // ALLOW EXCEPTION: Express products (auto-finalize) skip the restriction
-        if (line.mfg_auto_finalize) return false;
-
-        // ALLOW EXCEPTION: Simple manufacturable products with sufficient availability (stock + fab) skip the manufacturing step
-        const isSimple = !line.requires_advanced_manufacturing;
-        const totalAvailability = (line.qty_available || 0) + (line.manufacturable_quantity || 0);
-        const qtyNeeded = line.qty || line.quantity || 0;
-        const hasAvailability = totalAvailability >= qtyNeeded;
-
-        if (isSimple && hasAvailability) return false;
-
-        return true;
-    }), [currentOrderLines]);
+    const hasManufacturing = useMemo(() => currentOrderLines.some((line: SaleOrderLine) =>
+        line.requires_advanced_manufacturing
+    ), [currentOrderLines]);
 
     const steps = useMemo(() => {
         const s: { id: string; label: string }[] = [
@@ -291,10 +278,11 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                 approvalTaskId,
                 isWaitingApproval,
                 isQuickSale: quickSale,
-                isWaitingPayment: step === totalSteps
+                isWaitingPayment: step === totalSteps,
+                phaseId: steps[step - 1]?.id
             } as unknown as CheckoutWizardState)
         }
-    }, [step, dteData, paymentData, deliveryData, approvalTaskId, isWaitingApproval, isApproved, loading, quickSale, onStateChange, selectedCustomerId, selectedCustomerName, totalSteps])
+    }, [step, dteData, paymentData, deliveryData, approvalTaskId, isWaitingApproval, isApproved, loading, quickSale, onStateChange, selectedCustomerId, selectedCustomerName, totalSteps, steps])
 
 
 
@@ -331,7 +319,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
             case 'manufacturing':
                 return (
                     <div className="space-y-6">
-                        <StepHeader title="Detalles de Fabricación" description="Especifique los parámetros técnicos para la producción." icon={Hammer} />
+                        <StepHeader title="Configuración de la Fabricación" description="Especifique los parámetros técnicos para la producción." icon={Factory} />
                         <Step2_ManufacturingDetails
                             orderLines={currentOrderLines}
                             setOrderLines={setCurrentOrderLines}

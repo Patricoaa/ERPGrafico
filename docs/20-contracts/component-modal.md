@@ -270,10 +270,44 @@ States handled: loading (isLoading), step blocked (isValid=false or onNext retur
 The rails are meant to be composed from two shared building blocks (both
 re-exported from `@/components/shared`):
 
-- **`WizardStepsSidebar`** — step rail. Props: `title`, `currentStep` (1-based),
-  `steps: WizardSidebarStep[]` (with `status: 'active' | 'past' | 'future'`,
-  `disabled`, `icon`, `detail`, `className`), `onStepClick(index)` (0-based),
-  `renderStepActions(step, index)`, `width`, `footer`.
+- **`WizardStepsSidebar`** — step rail.
+  - Props:
+    - `title`: string
+    - `currentStep`: number (1-based)
+    - `steps: WizardSidebarStep[]` — each with:
+      - `id: string | number`
+      - `label: string`
+      - `icon: LucideIcon`
+      - `detail?: ReactNode` — shown below label when visible
+      - `badge?: ReactNode` — optional chip (e.g. "actual")
+      - `status?: 'active' | 'past' | 'future' | 'current'` — explicit status override
+      - `disabled?: boolean` — disables click/keyboard
+      - `className?: string` — extra row classes
+      - `group?: string` — section label rendered before the first step of the group
+      - `warning?: string` — blocker shown as a warning icon + title; included in the row `aria-label`
+    - `onStepClick?: (index: number) => void` (0-based)
+    - `renderStepActions?: (step, index) => ReactNode` — hover-reveal actions column
+    - `width?: string` (default `'w-64'`)
+    - `showNumbers?: boolean` (default `true`) — mono `01..N` on nodes
+    - `detailVisibility?: 'both' | 'active' | 'past' | 'none'` (default `'both'`)
+    - `showCounter?: boolean` (default `true`) — header `03 / 13`
+    - `counterLabel?: string` — prefix for the header counter, e.g. `"Viendo"`
+    - `progressPercent?: number` — 0–100; renders the header progress bar and the progress-aware connector. Omit to keep the legacy gradient connector.
+    - `collapsed?: boolean` (default `false`) — icon-only rail for power users.
+    - `onToggleCollapsed?: () => void` — renders the collapse/expand control in the sticky header when provided.
+    - `collapsedWidth?: string` (default `'w-14'`) — width used when `collapsed` is true.
+    - `headerNote?: ReactNode` — optional banner below the sticky header, e.g. a terminal-state notice.
+    - `density?: 'compact' | 'comfortable'` (default `'compact'`)
+    - `className?: string`
+  - A11y: each row is a `<button>` (stretched-link pattern) with `aria-current="step"` on active, `aria-disabled` on future/disabled. Future steps are non-clickable by construction. Actions render in a separate `z-10` column, never nested inside the button; they are revealed on hover, `focus-within` and coarse pointers, so keyboard and touch users can reach them. Blocked governance actions are rendered as focusable `role="button"` elements with `aria-disabled` (disabled buttons do not fire tooltips reliably). `detail` is linked via `aria-describedby`; warnings are part of the row label.
+  - Collapsed mode: labels, groups, detail, badges, progress bar and actions are hidden; rows keep their node, native `title` and `aria-label`, and a warning dot for blockers. The connector moves to the center and the collapse control flips to "Expandir etapas".
+  - Terminal: `headerNote` renders a banner below the header. `CANCELLED` suppresses progress and blockers, shows a read-only note and leaves only `Cerrar` in the footer. `FINISHED` shows 100% progress, a finished note and no next-stage action.
+  - Auto-scroll: the rail scrolls its own container (never an ancestor drawer) so the active step stays below the sticky header.
+  - Header: sticky, with `Viendo NN/NN` and an optional progress bar (`role="progressbar"`). The counter describes what is on screen; the progress bar describes where the order really is.
+  - Connector: vertical gradient line (success → border) left of nodes; when `progressPercent` is provided, a `success` fill overlays the neutral track up to the current progress.
+  - Work-order adapter: `WizardProcessSidebar` opts into `group`, `warning`, `progressPercent` and per-stage `detail` derived from `stage_history`, `workflow_tasks` and `materials` (ADR-0099).
+  - Work-order mobile: `MobileStageDrawer` replaces the former native `<select>` below `md` and renders the same steps from `buildWorkOrderRailSteps()` (labels, detail, warnings, current/viewing markers) in a bottom `Drawer`. Future stages stay disabled; while creating, all stages except origin remain locked until an OT type is chosen.
+  - Removed: `footer` prop (was unused).
 - **`WizardSummarySidebar`** — summary rail. Props: `header`, `body`, `footer`,
   `side: 'left' | 'right'` (drives the separator border), `width`,
   `scrollAreaClassName`.
@@ -282,6 +316,14 @@ Domain-rich rails become **thin adapters** over these two: e.g. production's
 `WizardProcessSidebar` maps per-stage governance onto `status` + `disabled` +
 `renderStepActions`, and `WizardRightSidebar` delegates its shell to
 `WizardSummarySidebar`.
+
+**Status palette (canonical, no consumer overrides):**
+| Status | Node | Label | Row background |
+|--------|------|-------|----------------|
+| `past` | `bg-success/15 text-success-foreground border-success/25` + ✓ | `text-foreground/80` | `hover:bg-success/5` |
+| `active` | `bg-primary text-primary-foreground` (K100) | `text-foreground font-semibold` | `bg-accent/40` |
+| `current` | `bg-primary/10 text-primary border-primary/30` | `text-foreground` | `bg-accent/20` |
+| `future` | `border border-border text-muted-foreground/50` | `text-muted-foreground` | — |
 
 ### Surface recipes
 

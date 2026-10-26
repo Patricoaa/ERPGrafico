@@ -167,8 +167,6 @@ describe("entity definitions", () => {
  */
 const LEGACY_CEILINGS: { file: string; name: string; max: number }[] = [
     { file: "components/shared/DataTable.tsx", name: "DataTableProps", max: 57 },
-    { file: "components/shared/DataTableView.tsx", name: "DataTableViewProps", max: 12 },
-    { file: "components/shared/AutoEntityCard.tsx", name: "AutoEntityCardProps", max: 22 },
 ]
 const LEGACY_FIELD_TYPES = 15
 
@@ -178,7 +176,6 @@ const LEGACY_FIELD_TYPES = 15
  * reports and trees are specific cases (feature-owned surfaces). The list only shrinks.
  */
 const ADHOC_TABLE_ALLOWLIST = [
-    "features/accounting/components/JournalEntrySheet.tsx",
     "features/notes/components/steps/NoteStep_Logistics.tsx",
     "features/finance/bank-reconciliation/components/SplitAllocationDialog.tsx",
     "features/finance/components/BudgetVarianceTable.tsx",

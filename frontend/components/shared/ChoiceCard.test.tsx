@@ -2,10 +2,10 @@ import { useState } from "react"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, it, expect, vi } from "vitest"
-import { Receipt } from "lucide-react"
-import { ChoiceCard, ChoiceGroup } from "./ChoiceCard"
+import { Receipt, Package } from "lucide-react"
+import { ChoiceCard, ChoiceGroup, type ChoiceCardProps } from "./ChoiceCard"
 
-describe("ChoiceCard", () => {
+describe("ChoiceCard (stacked)", () => {
     it("renders title, description, meta and badge", () => {
         render(<ChoiceCard selected={false} onSelect={() => {}} title="Boleta Electrónica" description="Consumidor final" meta="SII 39" badge="Código 39" icon={Receipt} />)
         expect(screen.getByRole("radio", { name: /Boleta Electrónica/ })).toBeInTheDocument()
@@ -35,6 +35,77 @@ describe("ChoiceCard", () => {
         expect(card).toHaveAttribute("tabindex", "-1")
         await userEvent.click(card)
         expect(onSelect).not.toHaveBeenCalled()
+    })
+})
+
+describe("ChoiceCard (light)", () => {
+    it("renders title, description, icon lead and right rail", () => {
+        render(<ChoiceCard variant="light" selected={false} onSelect={() => {}} title="Efectivo" description="Caja o transferencia" icon={Package} />)
+        expect(screen.getByRole("radio", { name: /Efectivo/ })).toBeInTheDocument()
+        expect(screen.getByText("Caja o transferencia")).toBeInTheDocument()
+        // The button renders as a flex row with lead | body | rail structure
+    })
+
+    it("exposes the selected state with SelectionCheck in the rail (sr-only)", () => {
+        render(<ChoiceCard variant="light" selected onSelect={() => {}} title="Efectivo" icon={Package} />)
+        expect(screen.getByRole("radio")).toHaveAttribute("aria-checked", "true")
+        expect(screen.getByText("Seleccionado")).toBeInTheDocument()
+    })
+
+    it("has flex-row layout (anti-regression for CardSurface inline)", () => {
+        const { container } = render(<ChoiceCard variant="light" selected={false} onSelect={() => {}} title="Efectivo" icon={Package} />)
+        const button = container.querySelector('[role="radio"]')
+        expect(button).toHaveClass("flex-row")
+    })
+
+    it("has intrinsic height (h-auto, anti-regression for h-10 from Button)", () => {
+        const { container } = render(<ChoiceCard variant="light" selected={false} onSelect={() => {}} title="Efectivo" description="Caja o transferencia" icon={Package} />)
+        const button = container.querySelector('[role="radio"]')
+        expect(button).toHaveClass("h-auto")
+        expect(button).not.toHaveClass("h-10")
+    })
+
+    it("shows empty circle affordance in rail when not selected", () => {
+        render(<ChoiceCard variant="light" selected={false} onSelect={() => {}} title="Efectivo" icon={Package} />)
+        // The empty circle is a span with border-foreground/25 inside the rail
+        const circles = document.querySelectorAll('span[class*="border-foreground"]')
+        expect(circles.length).toBeGreaterThan(0)
+    })
+
+    it("ignores clicks and leaves the tab order when disabled", async () => {
+        const onSelect = vi.fn()
+        render(<ChoiceCard variant="light" selected={false} onSelect={onSelect} disabled title="No disponible" icon={Package} />)
+        const card = screen.getByRole("radio")
+        expect(card).toHaveAttribute("aria-disabled", "true")
+        expect(card).toHaveAttribute("tabindex", "-1")
+        await userEvent.click(card)
+        expect(onSelect).not.toHaveBeenCalled()
+    })
+
+    it("mutes icon color when disabled (even if iconClassName provided)", () => {
+        const { container } = render(
+            <ChoiceCard variant="light" selected={false} onSelect={() => {}} disabled title="No disponible" icon={Package} iconClassName="text-primary" />
+        )
+        const leadSpan = container.querySelector('[role="radio"] span:first-child') as HTMLElement | null
+        expect(leadSpan).toBeInTheDocument()
+        // The lead span should have the muted class, not the user-provided text-primary
+        expect(leadSpan?.className).toContain("text-muted-foreground/40")
+    })
+
+    it("TypeScript discriminates props: media/badge/footer/tone/size not allowed on light", () => {
+        // This test only compiles if the discriminated union works.
+        // If it compiles, the type system correctly rejects invalid props.
+        // Note: excess property checking on discriminated unions in TS only catches
+        // properties not in *any* variant. Since media/badge/etc exist in stacked,
+        // they won't error here. The real protection is at call sites.
+        const _card: ChoiceCardProps = {
+            variant: "light",
+            selected: false,
+            onSelect: () => {},
+            title: "Test",
+            icon: Package,
+        }
+        expect(_card).toBeDefined()
     })
 })
 

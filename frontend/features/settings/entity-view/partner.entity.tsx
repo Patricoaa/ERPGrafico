@@ -1,6 +1,6 @@
 "use client"
 
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Handshake } from "lucide-react"
 import { DataCell } from "@/components/shared"
 import { defineEntity, registerValueKind, toNumber, formatMoneyValue, type ValueRenderProps } from "@/components/entity-view"
 import type { Partner } from "@/features/contacts"
@@ -87,7 +87,8 @@ export const partnerViews = partnerEntity.views({
     },
     card: {
         title: "name",
-        meta: ["equityPercentage", "totalContributions", "totalPaidIn"],
-        trailing: ["netEquity"],
+        meta: ["equityPercentage", "totalContributions"],
+        footer: { value: "netEquity" },
+        media: { placement: "top", icon: Handshake },
     },
 })

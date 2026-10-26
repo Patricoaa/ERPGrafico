@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { useTouchMode } from '@/hooks/useTouchMode'
 import { cn } from "@/lib/utils"
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
+import { InfoBlock } from "@/components/shared"
 
 interface POSApprovalCardProps {
     state: 'required' | 'waiting' | 'approved'
@@ -32,52 +33,23 @@ export function POSApprovalCard({
 
     if (state === 'approved') {
         return (
-            <div className="bg-card border border-border/60 rounded-sm p-4 mb-4">
-                <div className="flex items-start gap-3">
-                    <div className="p-2.5 rounded-sm bg-success/10 shrink-0">
-                        <CheckCircle2 className="h-5 w-5 text-success" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="font-bold uppercase tracking-tight text-xs text-primary">
-                            Crédito Aprobado
-                        </p>
-                        <p className="text-sm text-success-foreground/80 leading-relaxed mt-0.5">
-                            La venta ha sido autorizada. Puedes continuar con el cobro.
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <InfoBlock tone="success" icon={CheckCircle2} title="Crédito Aprobado" className="mb-4">
+                La venta ha sido autorizada. Puedes continuar con el cobro.
+            </InfoBlock>
         )
     }
 
     const isWaiting = state === 'waiting'
 
     return (
-        <div className="bg-card border border-border/60 rounded-sm p-4 mb-4">
-            <div className="flex items-start gap-3">
-                <div className="p-2.5 rounded-sm bg-warning/10 shrink-0">
-                    {isWaiting ? (
-                        <Loader2 className="h-5 w-5 text-warning animate-spin motion-reduce:animate-none" />
-                    ) : (
-                        <AlertCircle className="h-5 w-5 text-warning" />
-                    )}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                    <p className="font-bold uppercase tracking-tight text-xs text-primary">
-                        {isWaiting ? "Esperando Autorización..." : "Autorización Requerida"}
-                    </p>
-                    <p className="text-sm text-warning-foreground/80 leading-relaxed mt-0.5">
-                        {isWaiting
-                            ? "Solicitud enviada al supervisor — verificando estado..."
-                            : reason}
-                    </p>
-                </div>
-
-                <div className={cn(
-                    "flex items-start gap-2 shrink-0",
-                    isTouchMode ? "gap-3" : "gap-2"
-                )}>
+        <InfoBlock
+            tone="warning"
+            icon={isWaiting ? Loader2 : AlertCircle}
+            iconClassName={isWaiting ? "animate-spin motion-reduce:animate-none" : undefined}
+            title={isWaiting ? "Esperando Autorización..." : "Autorización Requerida"}
+            className="mb-4"
+            actions={
+                <div className={cn("flex items-start", isTouchMode ? "gap-3" : "gap-2")}>
                     {isWaiting ? (
                         <>
                             <Button
@@ -139,7 +111,9 @@ export function POSApprovalCard({
                         </>
                     )}
                 </div>
-            </div>
-        </div>
+            }
+        >
+            {isWaiting ? "Solicitud enviada al supervisor — verificando estado..." : reason}
+        </InfoBlock>
     )
 }

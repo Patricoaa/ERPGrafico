@@ -6,13 +6,13 @@ import { useSaleOrderSearch } from "@/features/orders";
 import { useSaleOrderManufacturableLines } from "../../hooks/useSaleOrderManufacturableLines";
 import { FileText } from "lucide-react";
 import { DataCell } from "@/components/shared";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, parseDateOnly } from "@/lib/utils";
 import { formatCurrency } from "@/lib/money";
 import type { SaleOrderLine } from "@/features/sales";
 import { resolveMediaUrl } from "@/lib/media-url";
 import { getDomainConceptTitle } from "@/lib/entity-registry";
+import { CardSurface, CardRow, GlyphChevron } from "@/components/shared";
 
 type ExpandedProduct = { id: number; name: string; code: string; image_thumbnail?: string; requires_advanced_manufacturing?: boolean };
 
@@ -51,7 +51,6 @@ export function SaleOrderProductStep({
     selectedOrderId ? selectedOrderId : undefined,
     {
       enabled: !!selectedOrderId,
-      // We'll filter manually below to show only lines without work orders
     }
   );
 
@@ -68,7 +67,6 @@ export function SaleOrderProductStep({
 
     const existing = productsById.get(productKey);
     if (!existing || (line.quantity ?? 0) > (existing.quantity ?? 0)) {
-      // Keep the line with highest quantity for this product (or first if equal)
       productsById.set(productKey, {
         ...line,
         quantity: line.quantity ?? 0,
@@ -112,7 +110,6 @@ export function SaleOrderProductStep({
   };
 
   if (otType === null) {
-    // This shouldn't happen in this step, but just in case
     return (
       <div className="text-center py-8">
         <p className="text-muted-foreground">Seleccione el origen de fabricación primero</p>
@@ -138,14 +135,14 @@ export function SaleOrderProductStep({
 
         {loading ? (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">Cargando ordenes de venta...</p>
+            <p className="text-muted-foreground">Cargando órdenes de venta...</p>
           </div>
         ) : (
           <div className="space-y-4">
             {orders.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">
-                  No se encontraron ordenes de venta. Intente con otro término de búsqueda.
+                  No se encontraron órdenes de venta. Intente con otro término de búsqueda.
                 </p>
               </div>
             ) : (
@@ -160,62 +157,56 @@ export function SaleOrderProductStep({
 
                   if (!hasAvailableLines) return null;
 
+                  const isSelected = selectedOrderId === String(order.id);
+
                   return (
-                    <Button
+                    <CardSurface
                       key={order.id}
-                      type="button"
-                      variant="outline"
-                      className={cn(
-                        "group flex h-[120px] w-full rounded-md border border-border/30",
-                        selectedOrderId === String(order.id) &&
-                        "border-primary/50 bg-primary/[0.03]",
-                        "hover:border-primary/50 hover:bg-primary/[0.03] transition-all duration-300"
-                      )}
+                      layout="inline"
+                      selected={isSelected}
+                      unavailable={false}
+                      role="button"
                       onClick={() => handleOrderSelect(String(order.id))}
+                      className="h-[120px]"
                     >
-                      <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-opacity pointer-events-none" />
-                      <div className="flex h-full w-full p-6 space-x-4">
-                        <div className="flex-shrink-0">
-                          <FileText className="h-6 w-6 text-primary/80 group-hover:text-primary" />
-                        </div>
-                        <div className="flex-1 space-y-3">
-                          <div className="flex justify-between items-start">
-                            <h3 className="font-semibold text-lg text-foreground">
-                              OV #{order.number}
-                            </h3>
-                            <span className="text-xs text-muted-foreground">
-                              {order.date ? parseDateOnly(order.date).toLocaleDateString('es-CL') : "—"}
-                            </span>
-                          </div>
-
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {order.customer?.name || "Cliente desconocido"}
-                          </p>
-
-                          <div className="flex items-center gap-3 text-sm">
-                            <span className="font-medium text-foreground">
-                              {order.lines?.reduce((sum: number, line: { quantity?: number }) =>
-                                sum + (line.quantity || 0), 0) || 0} productos
-                            </span>
-                            <span className="text-muted-foreground">•</span>
-                            <span className="text-muted-foreground">
-                              {formatCurrency(
-                                order.lines?.reduce((sum: number, line: { quantity?: number; unit_price?: number }) =>
-                                  sum + ((line.quantity || 0) * (line.unit_price || 0)), 0) || 0
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                        {selectedOrderId === String(order.id) && (
-                          <div className="flex-shrink-0 space-y-2">
-                            <DataCell.Action
-                              action="delete"
-                              onClick={() => handleOrderSelect(null)}
-                            />
-                          </div>
-                        )}
+                      <div className="w-12 h-12 flex items-center justify-center rounded-sm bg-primary/10 flex-shrink-0">
+                        <FileText className="h-6 w-6 text-primary" />
                       </div>
-                    </Button>
+                      <div className={cn("flex min-w-0 flex-1 flex-col gap-1 px-3 py-4", "inlineBody not defined, using inline styles")}>
+                        <div className="flex justify-between items-start">
+                          <h3 className="font-semibold text-lg text-foreground">
+                            OV #{order.number}
+                          </h3>
+                          <span className="text-xs text-muted-foreground">
+                            {order.date ? parseDateOnly(order.date).toLocaleDateString('es-CL') : "—"}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {order.customer?.name || "Cliente desconocido"}
+                        </p>
+                        <div className="flex items-center gap-3 text-sm mt-auto pt-2">
+                          <span className="font-medium text-foreground">
+                            {order.lines?.reduce((sum: number, line: { quantity?: number }) =>
+                              sum + (line.quantity || 0), 0) || 0} productos
+                          </span>
+                          <span className="text-muted-foreground">•</span>
+                          <span className="text-muted-foreground">
+                            {formatCurrency(
+                              order.lines?.reduce((sum: number, line: { quantity?: number; unit_price?: number }) =>
+                                sum + ((line.quantity || 0) * (line.unit_price || 0)), 0) || 0
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <div className="flex-shrink-0 w-14 items-center justify-center">
+                          <DataCell.Action
+                            action="delete"
+                            onClick={() => handleOrderSelect(null)}
+                          />
+                        </div>
+                      )}
+                    </CardSurface>
                   );
                 })}
               </div>
@@ -248,59 +239,47 @@ export function SaleOrderProductStep({
                       const prod = productOf(line) as ExpandedProduct | undefined;
 
                       return (
-                        <Button
+                        <CardRow
                           key={line.id}
-                          type="button"
-                          variant={isSelected ? "default" : "outline"}
-                          className={cn(
-                            "flex h-[100px] w-full rounded-sm border border-border/30",
-                            isSelected && "border-primary bg-primary/[0.10]",
-                            "hover:border-primary/50 hover:bg-primary/[0.03] transition-all duration-300"
-                          )}
+                          lead={
+                            prod?.image_thumbnail ? (
+                              <Image
+                                src={resolveMediaUrl(prod.image_thumbnail) ?? ""}
+                                alt={prod?.name || ""}
+                                width={40}
+                                height={40}
+                                className="rounded object-cover"
+                              />
+                            ) : (
+                              <div className="h-10 w-10 flex items-center justify-center rounded bg-muted/20">
+                                <FileText className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                            )
+                          }
+                          code={prod?.code ? `#${prod.code}` : undefined}
+                          title={line.product_name || line.description || "Producto sin nombre"}
+                          description={
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="font-mono">Cant:</span>
+                              <span className="font-medium text-foreground">
+                                {line.quantity} {line.uom_name}
+                              </span>
+                            </div>
+                          }
+                          trailing={
+                            prod?.requires_advanced_manufacturing && (
+                              <span className="px-2 py-0.5 text-xs rounded bg-primary/[0.10] text-primary/80">
+                                Fabricación avanzada
+                              </span>
+                            )
+                          }
+                          glyph={<GlyphChevron />}
+                          selected={isSelected}
+                          unavailable={false}
+                          role="button"
                           onClick={() => handleProductSelect(prod?.id?.toString() ?? "")}
-                        >
-                          <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-opacity pointer-events-none" />
-                          <div className="flex h-full w-full p-4 space-x-3">
-                            <div className="flex-shrink-0">
-                              {prod?.image_thumbnail ? (
-                                <Image
-                                  src={resolveMediaUrl(prod.image_thumbnail) ?? ""}
-                                  alt={prod?.name || ""}
-                                  width={40}
-                                  height={40}
-                                  className="rounded object-cover"
-                                />
-                              ) : (
-                                <div className="h-10 w-10 flex items-center justify-center rounded bg-muted/20">
-                                  <FileText className="h-5 w-5 text-muted-foreground" />
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex-1 flex-col space-y-2">
-                              <div className="flex justify-between items-start">
-                                <h3 className="font-semibold text-lg text-foreground">
-                                  {line.product_name || line.description || "Producto sin nombre"}
-                                </h3>
-                                <span className="text-xs text-muted-foreground">
-                                  #{prod?.code}
-                                </span>
-                              </div>
-
-                              <div className="flex items-center gap-2 text-sm">
-                                <span className="font-mono">Cant:</span>
-                                <span className="font-medium text-foreground">
-                                  {line.quantity} {line.uom_name}
-                                </span>
-                              </div>
-
-                              {prod?.requires_advanced_manufacturing && (
-                                <span className="px-2 py-0.5 text-xs rounded bg-primary/[0.10] text-primary/80">
-                                  Fabricación avanzada
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </Button>
+                          className="h-[100px]"
+                        />
                       );
                     })}
                   </div>

@@ -3,11 +3,13 @@
 import React from "react"
 import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared'
 import { Collection, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT, type FieldId } from "@/components/entity-view"
+import type { UnifiedSearchConfig } from '@/types/unified-search'
 
 import { treasuryMovementActions, type TreasuryMovementActionsCtx } from './treasuryMovementActions'
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 
 import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
+import { useBanks } from "@/features/treasury/hooks/useMasterData"
 import { treasuryMovementsUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import type { TreasuryMovement } from "@/features/treasury/types"
@@ -26,7 +28,25 @@ interface BankMovementsClientViewProps {
 
 export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps = {}) {
     const { openEntity } = useGlobalModalActions()
-    const search = useUnifiedSearch(treasuryMovementsUnifiedSearchDef)
+    const { banks } = useBanks()
+    const filterOptions = React.useMemo(
+        () => ({ bank: banks.map((bank) => ({ label: bank.name, value: String(bank.id) })) }),
+        [banks],
+    )
+    const config = React.useMemo<UnifiedSearchConfig>(() => {
+        const filters = [...(treasuryMovementsUnifiedSearchDef.filters ?? [])]
+        if (!bankId) {
+            filters.unshift({
+                type: 'single',
+                key: 'bank',
+                label: 'Banco',
+                serverParam: 'bank',
+                dynamic: true,
+            })
+        }
+        return { ...treasuryMovementsUnifiedSearchDef, filters }
+    }, [bankId])
+    const search = useUnifiedSearch(config, filterOptions)
 
     const allFilters: TreasuryMovementFilters = {
         ...search.filters,
@@ -73,7 +93,12 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                 actions={treasuryMovementActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar>
-                    <UnifiedSearchBar config={treasuryMovementsUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar movimiento..." />
+                    <UnifiedSearchBar
+                        config={config}
+                        {...bindUnifiedSearch(search)}
+                        filterOptions={search.filterOptions}
+                        placeholder="Buscar movimiento..."
+                    />
                 </Collection.Toolbar>
                 <Collection.View
                     table={treasuryMovementViews.table}

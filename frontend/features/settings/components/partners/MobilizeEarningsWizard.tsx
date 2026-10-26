@@ -210,11 +210,11 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1 border p-3 rounded-md bg-card">
+                            <div className="surface-panel space-y-1 p-3">
                                 <p className="text-3xs uppercase text-muted-foreground font-bold tracking-wider">A Dividendos Pagar</p>
                                 <DataCell.Currency value={totalDividend} weight="semibold" className="justify-start text-xl text-foreground" />
                             </div>
-                            <div className="space-y-1 border p-3 rounded-md bg-card">
+                            <div className="surface-panel space-y-1 p-3">
                                 <p className="text-3xs uppercase text-muted-foreground font-bold tracking-wider">A Re-Inversión</p>
                                 <DataCell.Currency value={totalReinvest} weight="semibold" className="justify-start text-xl text-muted-foreground" />
                             </div>

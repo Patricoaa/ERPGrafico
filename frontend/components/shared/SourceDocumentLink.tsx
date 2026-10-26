@@ -2,11 +2,8 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { FileText, ExternalLink } from 'lucide-react'
-import { hasEntityDrawer } from '@/lib/entity-drawers'
-import { isListSelectionUrl } from '@/lib/documentNavigation'
-import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
+import { opensInApp, useOpenDocument } from '@/hooks/useOpenDocument'
 
 interface SourceDocument {
     type: string
@@ -27,39 +24,22 @@ export const SourceDocumentLink: React.FC<SourceDocumentLinkProps> = ({
     showIcon = true,
     className = "",
 }) => {
-    const { openEntity } = useGlobalModals()
-    const router = useRouter()
+    const openDocument = useOpenDocument()
 
     const label = doc.display ?? doc.name ?? `#${doc.id}`
 
     const baseStyle = `inline-flex items-center gap-1 text-primary underline font-medium hover:text-primary/80 text-sm ${className}`
 
-    // 1. Canonical list navigation (preferred): URL + module follow the relationship (ADR-0086)
-    if (isListSelectionUrl(doc.url)) {
-        const go = () => router.push(doc.url as string, { scroll: false })
+    // 1-2. La regla (apilar con "volver" o navegar a la lista canónica) vive en useOpenDocument (ADR-0086 / ADR-0100).
+    // Con ficha registrada o URL de lista (modo heredado) el enlace es interactivo; sin ficha y sin lista, cae al <Link>.
+    const open = () => openDocument({ label: doc.type, id: doc.id, display: label, url: doc.url, data: doc })
+    if (opensInApp({ label: doc.type, url: doc.url })) {
         return (
             <span
                 role="button"
                 tabIndex={0}
-                onClick={(e) => { e.stopPropagation(); go() }}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); go() } }}
-                className={`${baseStyle} cursor-pointer`}
-            >
-                {showIcon && <FileText className="h-3.5 w-3.5" />}
-                {label}
-                <ExternalLink className="h-3 w-3" />
-            </span>
-        )
-    }
-
-    // 2. Drawer drill-down (in-memory stack with "volver")
-    if (hasEntityDrawer(doc.type)) {
-        return (
-            <span
-                role="button"
-                tabIndex={0}
-                onClick={(e) => { e.stopPropagation(); openEntity(doc.type, doc.id, doc) }}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); openEntity(doc.type, doc.id, doc) } }}
+                onClick={(e) => { e.stopPropagation(); open() }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); open() } }}
                 className={`${baseStyle} cursor-pointer`}
             >
                 {showIcon && <FileText className="h-3.5 w-3.5" />}

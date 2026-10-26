@@ -1,5 +1,6 @@
 import { defineEntity } from "@/components/entity-view"
 import { docRef } from "@/features/documents"
+import { TruckReturn } from "@/lib/movement-icons"
 
 /**
  * Sale return header (ADR-0090). "Devoluciones" used to render the notes list
@@ -30,7 +31,11 @@ export const saleReturnEntity = defineEntity<SaleReturn>()((f) => ({
         order: docRef(f, (r) => r.sale_order_document ? { label: r.sale_order_document.label, id: r.sale_order_document.id, display: r.sale_order_document.display_id, url: r.sale_order_document.url } : null, { label: "Orden de Venta", sortable: false }),
         date: f.date("date", { label: "Fecha", orderBy: "date" }),
         warehouse: f.text("warehouse_name", { label: "Bodega", tone: "secondary" }),
-        status: f.status((r) => ({ status: r.status, label: r.status_display }), { label: "Estado" }),
+        status: f.status((r) => ({
+            status: r.status,
+            label: r.status_display,
+            intent: r.status === "CONFIRMED" ? "destructive" : r.status === "CANCELLED" ? "destructive" : "info",
+        }), { label: "Estado" }),
         cost: f.money("total_cost", { label: "Costo", orderBy: "total_cost" }),
     },
 }))
@@ -38,9 +43,13 @@ export const saleReturnEntity = defineEntity<SaleReturn>()((f) => ({
 export const saleReturnViews = saleReturnEntity.views({
     table: { columns: ["folio", "customer", "order", "date", "warehouse", "status", "cost"], primary: "folio" },
     card: {
+        rail: { status: (r) => (r.status === "CONFIRMED" ? "DESTRUCTIVE" : r.status) },
         title: "folio",
         subtitle: ["customer", "date"],
         trailing: ["status"],
-        media: { tone: (r) => (r.status === "CANCELLED" ? "muted" : "warning") },
+        media: {
+            iconFor: () => TruckReturn,
+            tone: (r) => (r.status === "CANCELLED" ? "muted" : "destructive"),
+        },
     },
 })

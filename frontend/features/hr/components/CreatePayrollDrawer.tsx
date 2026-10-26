@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
+import { useGuardedOpenChange } from "@/hooks/useGuardedOpenChange"
+import { useDirtyGuard } from "@/hooks/useDirtyGuard"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { getEmployees } from '@/features/hr/api/hrApi'
@@ -64,6 +66,7 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved }: CreatePayro
     const currentYear = serverYear ?? new Date().getFullYear()
     const currentMonth = serverMonth ?? new Date().getMonth() + 1
 
+    const guardedOpenChange = useGuardedOpenChange(onOpenChange)
     const form = useForm<CreatePayrollValues>({
         resolver: zodResolver(createPayrollSchema),
         defaultValues: {
@@ -73,6 +76,9 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved }: CreatePayro
             notes: "",
         }
     })
+    useDirtyGuard({ form, open, name: "Nueva liquidación" })
+    // Un formulario cerrado vuelve a limpio: si no, reabrirlo mostraría (y la guarda reclamaría) datos viejos.
+    useEffect(() => { if (!open) form.reset() }, [open, form])
 
     const onSubmit = async (data: CreatePayrollValues) => {
         try {
@@ -98,7 +104,7 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved }: CreatePayro
     return (
         <Drawer
             open={open}
-            onOpenChange={onOpenChange}
+            onOpenChange={guardedOpenChange}
             side="left"
             icon={identity.icon}
             title={identity.title}
@@ -108,7 +114,7 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved }: CreatePayro
                 <FormFooter
                     actions={
                         <>
-                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <CancelButton onClick={() => guardedOpenChange(false)} />
                             <SubmitButton
                                 form="create-payroll-form"
                                 loading={saving}

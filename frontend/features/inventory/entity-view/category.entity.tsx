@@ -52,11 +52,22 @@ export const categoryEntity = defineEntity<Category>()((f) => ({
         prefix: f.code("prefix", { label: "Siglas" }),
         name: f.text("name", { label: "Nombre" }),
         parentName: f.text("parent_name", { label: "Categoría Padre", tone: "secondary" }),
+        productCount: f.number("product_count", { label: "Productos" }),
         isActive: f.status((c) => (c.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Archivado" }), { label: "Estado" }),
     },
 }))
 
 export const categoryViews = categoryEntity.views({
     table: { columns: ["icon", "prefix", "name", "parentName", "isActive"], primary: "name", defaultSort: "name" },
-    card: { title: "name", subtitle: ["prefix"], meta: ["parentName"], trailing: ["isActive"], media: { avatar: CategoryAvatar } },
+    card: {
+        title: "name",
+        subtitle: ["parentName"],
+        footer: { value: "productCount" },
+        muted: (c) => !c.is_active,
+        media: {
+            placement: "top",
+            avatar: CategoryAvatar,
+            badge: (c) => (c.is_active ? c.prefix ?? undefined : "Archivada"),
+        },
+    },
 })

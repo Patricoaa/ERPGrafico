@@ -65,6 +65,22 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
+    // Dev: reduce el grafo de módulos por ruta en Turbopack. El dev server remoto
+    // (192.168.1.86) tiene techo de memoria — ver remote-dev-server.md §OOM.
+    // (lucide-react y date-fns ya vienen en los defaults de Next.)
+    optimizePackageImports: [
+      "radix-ui",
+      "@tanstack/react-table",
+      "react-day-picker",
+      "framer-motion",
+      "@dnd-kit/core",
+      "@dnd-kit/sortable",
+      "@nivo/bar",
+      "@nivo/line",
+      "@nivo/pie",
+      "@nivo/radar",
+      "@nivo/funnel",
+    ],
   },
   devIndicators: {
   },

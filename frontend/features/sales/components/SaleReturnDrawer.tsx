@@ -62,7 +62,7 @@ export function SaleReturnDrawer({ id, open, onOpenChange }: SaleReturnDrawerPro
                 open={open}
                 onOpenChange={onOpenChange}
                 document={r ? { id: Number(r.id), display_id: r.display_id as string | undefined } : null}
-                title={r ? String(r.display_id ?? `Devolución ${String(r.number)}`) : undefined}
+                title={r?.display_id ? String(r.display_id) : r?.number ? `Devolución ${String(r.number)}` : undefined}
                 isLoading={isLoading}
                 error={!isLoading && !r ? new Error("No se pudo cargar la devolución.") : undefined}
                 loadingLabel="Cargando devolución"

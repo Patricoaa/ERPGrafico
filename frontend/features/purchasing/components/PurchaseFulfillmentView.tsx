@@ -52,7 +52,7 @@ export function PurchaseFulfillmentView() {
     const handleOpen = (doc: PurchaseFulfillment) => {
         // Route to the correct entity sheet based on type
         const entityLabel = doc.fulfillment_type === "RECEIPT" ? "purchasing.purchasereceipt" : "purchasing.purchasereturn"
-        openEntity(entityLabel, doc.id)
+        openEntity(entityLabel, doc.id, { display_id: doc.display_id, number: doc.number }, undefined, { display: doc.display_id ?? undefined })
     }
 
     return (

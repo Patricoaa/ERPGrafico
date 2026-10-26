@@ -153,11 +153,24 @@ Todo componente del núcleo tiene **≤ 12 props** (test de contrato). Lo que no
 
 `columns` (orden explícito) · `primary?` (columna que abre la fila; por defecto la primera) · `defaultSort?` · `footer?: { sum? }`. `.without(...ids)` produce variantes (líneas de OV con OT, líneas de OC sin ella).
 
+### 6.2a Superficie `cardFooter`
+`Surface` incluye `cardFooter`: el monto anclado de la card (`footer`). Es `card` a escala de importe: los kinds opt-in (`money` y `productPrice` ya lo hacen) renderizan el valor grande (`text-lg font-semibold`; el precio de producto añade la unidad pequeña) y el resto lo trata como `card`. En cards, `tags` mantiene el ancho de cada chip y sigue la alineación (en tabla se centra cada chip como siempre).
+
+### 6.2b `hubStatus` en cards
+En la superficie `card` el kind `hubStatus` muestra solo los anillos del hub, sin el chip con la etiqueta: el estado se lee en el riel y la etiqueta queda como texto `sr-only`. En tabla se mantiene chip + anillos. Las facturas y notas de venta/compra exponen `hub` en su `trailing`.
+
 ### 6.3 `CardLayout` (slots, sin inferencia)
 
-> `media.placement: "top"` (opt-in, [ADR-0093](../10-architecture/adr/0093-choice-card-and-media-top-cards.md)) dibuja una franja de media sobre el título —anatomía de `ProductCard`— con `badge(row)` como chip en la esquina. Por defecto (`inline`) la tarjeta no cambia.
+> `media.placement: "top"` (opt-in, [ADR-0093](../10-architecture/adr/0093-choice-card-and-media-top-cards.md)) dibuja una franja de media sobre el título —anatomía de `ProductCard`— con `badge(row)` como chip en la esquina. Por defecto (`inline`) la tarjeta no cambia. Úsalo en catálogo con foto o icono de identidad (productos, categorías, almacenes, BOM, medios de pago, bancos, cuentas, terminales). **Plantilla catálogo** (la activa `placement: "top"`): franja de 80px con el icono o la foto centrados; `badge(row)` y `footnote(row)` forman un grupo arriba a la izquierda, **siempre apilados en una columna** (nunca en la misma fila) con una separación mínima de 4px, por encima del icono/foto. Grilla de 4 o 5 columnas según el ancho de la propia grilla (container queries), checkbox de lote en la esquina superior derecha de la franja, y las acciones de la entidad (kebab) abajo a la derecha en el pie, en lugar del chevron. Los contactos usan la franja con `Blobatar` y los roles como badges separados; en directorios de personas el avatar es identidad, no una miniatura de 80px.
 
-`title` (1 campo; enlace a la ficha) · `subtitle?` (unidos con " · ") · `meta?` (pares etiqueta/valor bajo la cabecera) · `trailing?` (estado o KPI a la derecha) · `media?` (`icon`, `iconFor(row)`, `tone` (`CardTone` o función por fila), `image(row)`, `avatar`, `placement?: "inline" | "top"`, `badge?(row)`) · `body?`:
+> **Contrato de catálogo para entidades no-producto (piloto 2026-10-22).** La franja es identidad, no escaparate. La card cuenta **identidad + estado por excepción + una métrica de decisión**; no copia campos comerciales de producto (precio, stock, variantes). Reglas:
+> - **Inactivo, no "Activo":** `muted(row)` + badge `Archivado/Archivada/Inactiva`; el estado activo no se muestra por defecto. El estado de negocio (ej. OT atrasada) va en `highlights` o en el badge, no en `trailing` (bajo 28rem `trailing` se pliega a `meta`).
+> - **Máximo 2 pares `meta`.** El resto es identidad (`title`, `subtitle`, `code`, media) o el pie.
+> - **Pie de decisión:** dinero, fecha, conteo o un `fallback` corto. Si no hay valor, el pie se compacta (`EntityCard.Foot compact`) y conserva solo el kebab; no se inventa un "—".
+> - **Sin controles interactivos dentro de la card** (AX-4): los botones de edición van al drawer o al kebab. Los valores de un atributo se muestran como chips de solo lectura en la card; el alta/baja queda en la tabla o el drawer. Los números sensibles se enmascaran en la feature: una tarjeta de crédito muestra solo el nombre y los últimos 4 dígitos del PAN.
+> - **Piloto:** Orden de trabajo (folio, cliente, etapa, cantidad, entrega), Cuenta de tesorería (tipo, entidad externa, saldo), Contacto (roles, crédito bloqueado, RUT), BOM (versión, componentes, costo), Categoría (conteo de productos activos), Bodega (productos con stock + unidades), Atributo (tipo, valores, conteo), Medio de pago (categoría, cuenta, uso), Banco (cuentas), Cuenta corriente (saldo, disponible), Tarjeta de crédito (nombre, PAN enmascarado, cupo, disponible), Terminal POS (código, ubicación, dispositivo, métodos), Proveedor de terminal (contacto, cuenta de recaudación) y Socio (participación, capital suscrito, patrimonio). Grupo no usa catálogo: usa la variante documento compacta con el icono de identidad en el riel izquierdo.
+
+`title` (1 campo; enlace a la ficha **extendido sobre toda la card**: el botón del título lleva `data-card-open` y cubre la tarjeta con `after:absolute after:inset-0`; acciones, checkbox y enlaces de `meta` quedan por encima como hermanos, sin contenedores interactivos anidados, AX-4) · `code?` (identificador en mono sobre el título: folio, SKU) · `subtitle?` (unidos con " · ") · `meta?` (pares etiqueta/valor bajo la cabecera) · `trailing?` (estado o KPI a la derecha; en cards de menos de 28rem se pliega a los pares de `meta`) · `highlights?` (línea de estado sin etiqueta bajo el título: valores con icono/texto como la salud del stock o un aviso; los que no dicen nada —texto vacío o "—"— se omiten) · `muted?(row)` (la card se ve archivada: atenuada y con imágenes en gris) · `footer?: { value, visible?(row), fallback?: { caption, value(row) } }` (monto anclado abajo con caption = etiqueta del campo y chevron, como `ProductCard`; `visible` oculta el monto en filas sin importe —p. ej. un producto que no se vende— y `fallback` pone en su lugar un caption + texto corto, como `Canal · Solo compra`; no repetir ese campo en `trailing`. En catálogo sin valor el pie se compacta y solo conserva el kebab) · `rail?: { status(row), icon?, side?: "left" | "right" }` (riel de estado: contiene el icono de la entidad —el de `media` o el del registro, o `rail.icon`— y su tinte es el estado según la tabla de `StatusBadge`; la fila del título deja de llevar su propio icono; decorativo, el estado sigue visible en el badge/hub. `side` por defecto `left`, la plantilla documento; `right` queda para variantes decorativas que lo pidan explícitamente) · `media?` (`icon`, `iconFor(row)`, `tone` (`CardTone` o función por fila), `image(row)`, `avatar`, `placement?: "inline" | "top"`, `badge?(row)` (un chip, o una lista de chips apilados por separado —por ejemplo los roles de un contacto), `footnote?(row)` + `footnoteIcon` (chip secundario, apilado debajo de los badges arriba a la izquierda)) · `body?`:
 
 | Sección | Para |
 |---|---|
@@ -314,3 +327,34 @@ Reglas de la pantalla:
 - **Drawers, modales y confirmaciones** de la pantalla no cambian.
 
 **3. Cierre.** Se borra el `*Fields.ts` (si no le quedan consumidores), se quita la pantalla de `LEGACY_CONSUMERS` (y de `ADHOC_TABLE_ALLOWLIST` si estaba), y se reporta `bash frontend/scripts/entity-view-progress.sh`.
+
+---
+
+## 11. Cobertura del kit de anatomía (Ajuste 3 / ADR-0096)
+
+La migración de `EntityCard` a `CardSurface` (ADR-0095, Fase 2d) trajo la anatomía unificada a **todas las vistas Collection**.
+
+### Rutas que adoptan el kit actual
+
+| Ruta | Archivos | Estado |
+|---|---|---|
+| **Canónica** (`entity-view/Collection.tsx` → `EntityCard`) | **102 archivos** renderizan `<Collection>` (22 vistas Collection + drawers + modales) | ✅ Kit completo (`CardSurface layout="stacked"` + `cardAnatomy` + `selectableCardClass`) |
+| **Directos tesorería** (`EntityCard.ListItem`) | 3 (`BankCenterDashboard`, `BankRecentActivity`, `BankUpcomingMaturities`) | 🟡 Fuera del kit — usan `card-base` a mano |
+
+### Fuera del kit (fuera de alcance declarado)
+
+53 archivos usan `components/ui/card` directo (`Card variant="default"|"flat"|"transparent"`). Principales:
+
+| Archivo | `<Card>` count | Notas |
+|---|---|---|
+| `UnifiedAccountsView` | 115 | Dashboard contable |
+| `ProfileView` | 25 | `accent-visible` legacy |
+| `StatementDetailPanel` | 20 | Conciliación bancaria |
+| `TaxDeclarationsClientView` | 15 | Impuestos |
+| `SalesSettingsView` | 14 | Ajustes |
+| `WorkflowSettings` | 13 | Workflow |
+| `StatCard` | 10 | Métricas |
+| `TaskInbox` | — | `Card variant="flat"` (excepción declarada ADR-0095) |
+| `ModuleLauncher` | — | Excepción declarada ADR-0095 |
+
+**Conclusión**: la **totalidad de las vistas Collection de entity-view** (102 pantallas) adoptan el kit actual. Los 3 usos directos de tesorería y los 53 archivos con `Card` directo quedan fuera por diseño (legacy o excepciones declaradas).

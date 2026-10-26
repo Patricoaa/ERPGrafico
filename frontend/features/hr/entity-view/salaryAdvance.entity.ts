@@ -16,5 +16,5 @@ export const salaryAdvanceEntity = defineEntity<SalaryAdvance>()((f) => ({
 
 export const salaryAdvanceViews = salaryAdvanceEntity.views({
     table: { columns: ["employee", "employeeCode", "date", "amount", "status", "payroll"], defaultSort: "-date" },
-    card: { title: "employee", subtitle: ["employeeCode", "date"], meta: ["payroll"], trailing: ["status", "amount"] },
+    card: { rail: { status: (r) => r.status }, title: "employee", subtitle: ["employeeCode", "date"], meta: ["payroll"], trailing: ["status", "amount"] },
 })

@@ -268,7 +268,7 @@ export function SessionCloseModal({
     // Step 2: Review & Difference
     const reviewStepContent = (
         <FadeIn className="space-y-6">
-            <div className="bg-card border rounded-md p-4 space-y-3 shadow-card">
+            <div className="surface-panel p-4 space-y-3 shadow-card">
                 <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Efectivo Esperado (Sistema):</span>
                     <span className="font-medium">{formatCurrency(expected)}</span>

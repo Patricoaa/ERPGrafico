@@ -82,7 +82,7 @@ export function POSLayoutSkeleton() {
                 </div>
 
                 <div className="md:col-span-12 lg:col-span-6 flex flex-col min-h-0">
-                    <Card className="py-2 flex-1 flex flex-col overflow-hidden border border-border/50 bg-card shadow-card shadow-black/5 rounded-md">
+                    <Card className="surface-panel py-2 flex-1 flex flex-col overflow-hidden border-border/50 shadow-card shadow-black/5">
                         <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                             <div className="px-4 py-1.5 border-b bg-transparent shrink-0">
                                 <div className="flex justify-between items-center h-10">

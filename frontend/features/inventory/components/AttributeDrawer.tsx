@@ -14,9 +14,11 @@ import { useSuggestions } from "@/hooks/useSuggestions"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 import { MultiTagInput } from "@/components/shared"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 
 const attributeSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
+    values: z.array(z.string()),
 })
 
 type AttributeFormValues = z.infer<typeof attributeSchema>
@@ -39,14 +41,14 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
 
     const { saveAttribute, createAttributeValue, isSaving } = useAttributes()
 
-    const [attrValues, setAttrValues] = useState<string[]>([])
-
     const form = useForm<AttributeFormValues>({
         resolver: zodResolver(attributeSchema) as unknown as Resolver<AttributeFormValues>,
         defaultValues: {
             name: "",
+            values: [],
         },
     })
+    const attrValues = form.watch("values")
 
     const [valueInput] = useState("")
     const { suggestions, isLoading: isLoadingSuggestions } = useSuggestions(
@@ -56,28 +58,14 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
 
     const width = formDrawerWidth("simple", !!initialData?.id)
 
-    const [lastResetId, setLastResetId] = useState<number | undefined>(undefined)
-    const [wasOpen, setWasOpen] = useState(false)
-
-    if (open) {
-        const currentId = initialData?.id
-        const isNewOpen = !wasOpen
-        const isNewData = currentId !== lastResetId
-
-        if (isNewOpen || isNewData) {
-            setWasOpen(true)
-            setLastResetId(currentId)
-            if (initialData && Object.keys(initialData).length > 0) {
-                form.reset({ name: initialData.name || "" })
-                setAttrValues(initialData.values?.map((v) => v.value) ?? [])
-            } else {
-                form.reset({ name: "" })
-                setAttrValues([])
-            }
-        }
-    } else if (wasOpen) {
-        setWasOpen(false)
-    }
+    useInitializeDrawerForm<Partial<Attribute>, AttributeFormValues>({
+        form,
+        open,
+        initialData: initialData && Object.keys(initialData).length > 0 ? initialData : null,
+        mapData: (data) => ({ name: data.name || "", values: data.values?.map((v) => v.value) ?? [] }),
+        defaultValues: { name: "", values: [] },
+        guardName: initialData?.name,
+    })
 
     async function onSubmit(data: AttributeFormValues) {
         try {
@@ -101,7 +89,6 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
             }
 
             form.reset()
-            setAttrValues([])
             setOpen(false)
             if (onSuccess) onSuccess()
         } catch (error: unknown) {
@@ -185,8 +172,8 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
                                     label="Valores del Atributo"
                                     placeholder="Escribe un valor y pulsa Enter..."
                                     values={attrValues}
-                                    onAdd={(v) => setAttrValues([...attrValues, v])}
-                                    onRemove={(v) => setAttrValues(attrValues.filter((t) => t !== v))}
+                                    onAdd={(v) => form.setValue("values", [...attrValues, v], { shouldDirty: true })}
+                                    onRemove={(v) => form.setValue("values", attrValues.filter((t) => t !== v), { shouldDirty: true })}
                                     suggestions={suggestions}
                                     isLoadingSuggestions={isLoadingSuggestions}
                                     hint="Define los valores posibles (ej: Rojo, Azul, Verde). Puedes escribir nuevos o seleccionar de los existentes."

@@ -1,5 +1,5 @@
 import { Home, Package, Wallet, type LucideIcon } from "lucide-react"
-import { getEntityIcon, getEntityIconName } from "@/lib/entity-registry"
+import { getEntityIcon, getEntityIconName, getEntityMetadata } from "@/lib/entity-registry"
 
 export interface ModuleConfig {
   id: string
@@ -17,12 +17,12 @@ export interface ModuleConfig {
 
 export const MODULE_REGISTRY: Record<string, ModuleConfig> = {
   accounting:  { id: "accounting",  label: "Contabilidad",  icon: Home,          iconName: "home",          primaryEntityLabel: 'accounting.account',                   permission: "accounting.view_dashboard_accounting",       defaultUrl: "/accounting/ledger?view=list", headerTitle: "Contabilidad", headerDescription: "Gestión centralizada del plan de cuentas, asientos, periodos y cumplimiento tributario." },
-  sales:       { id: "sales",       label: "Ventas",        icon: Home,          iconName: "home",           primaryEntityLabel: 'sales.saleorder',                      permission: "sales.view_dashboard_sales",                defaultUrl: "/sales/dtes?view=card", headerTitle: "Ventas", headerDescription: "Gestión integral de pedidos, terminales, cobranza y puntos de venta." },
+  sales:       { id: "sales",       label: "Ventas",        icon: Home,          iconName: "home",           primaryEntityLabel: 'sales.saleorder',                      permission: "sales.view_dashboard_sales",                defaultUrl: "/sales/docs", headerTitle: "Ventas", headerDescription: "Gestión integral de pedidos, terminales, cobranza y puntos de venta." },
   contacts:    { id: "contacts",    label: "Contactos",     icon: Home,          iconName: "home",          primaryEntityLabel: 'contacts.contact',                     permission: null,                                         defaultUrl: "/contacts?view=list", headerTitle: "Contactos", headerDescription: "Gestión de clientes, proveedores y contactos comerciales." },
   inventory:   { id: "inventory",   label: "Inventario",    icon: Package,        iconName: "package",        primaryEntityLabel: 'inventory.product',                    permission: "inventory.view_dashboard_inventory",        defaultUrl: "/inventory/products?view=card", headerTitle: "Inventario", headerDescription: "Gestión centralizada de productos, existencias, almacenes y configuración." },
   production:  { id: "production",  label: "Producción",    icon: Home,          iconName: "home",           primaryEntityLabel: 'production.workorder',                  permission: "production.view_dashboard_production",       defaultUrl: "/production/orders?view=list", headerTitle: "Producción", headerDescription: "Gestión de órdenes de producción, listas de materiales y control de fabricación." },
   treasury:    { id: "treasury",    label: "Tesorería",     icon: Wallet,        iconName: "wallet",        primaryEntityLabel: null,                                   permission: "treasury.view_dashboard_treasury",          defaultUrl: "/treasury/operaciones/movements?view=card", headerTitle: "Tesorería", headerDescription: "Gestión centralizada de cuentas, movimientos y conciliación bancaria." },
-  purchasing:  { id: "purchasing",  label: "Compras",       icon: Home,          iconName: "home",           primaryEntityLabel: 'purchasing.purchaseorder',             permission: "purchasing.view_dashboard_purchasing",      defaultUrl: "/purchasing/dtes?view=card", headerTitle: "Compras", headerDescription: "Gestión integral de órdenes de compra, notas y configuración." },
+  purchasing:  { id: "purchasing",  label: "Compras",       icon: Home,          iconName: "home",           primaryEntityLabel: 'purchasing.purchaseorder',             permission: "purchasing.view_dashboard_purchasing",      defaultUrl: "/purchasing/docs", headerTitle: "Compras", headerDescription: "Gestión integral de órdenes de compra, notas y configuración." },
   finances:    { id: "finances",    label: "Finanzas",      icon: Home,          iconName: "home",           primaryEntityLabel: 'finance.bankjournal',                  permission: "finances.view_dashboard_finances",          defaultUrl: "/finances/statements/bs", headerTitle: "Finanzas", headerDescription: "Análisis financiero, presupuestos y estados de resultados." },
   hr:          { id: "hr",          label: "RRHH",          icon: Home,          iconName: "home",           primaryEntityLabel: 'hr.employee',                          permission: "hr.view_dashboard_hr",                     defaultUrl: "/hr/employees?view=list", headerTitle: "Recursos Humanos", headerDescription: "Gestión centralizada de personal, inasistencias, anticipos y liquidaciones." },
 } as const
@@ -60,4 +60,18 @@ export function getModuleHeaderConfig(id: string) {
     headerDescription: mod.headerDescription,
     iconName: mod.iconName,
   }
+}
+/** Id de módulo al que pertenece la ruta (`/sales/...` → `sales`), o `undefined` si no es un módulo. */
+export function getModuleIdFromPath(pathname: string | null | undefined): string | undefined {
+  const segment = (pathname ?? "").split("/").filter(Boolean)[0]
+  return segment && segment in MODULE_REGISTRY ? segment : undefined
+}
+
+/**
+ * Módulo donde "vive" una entidad: el primer segmento de su `listUrl` en el registro de entidades
+ * (`sales.saleorder` → `/sales/dtes/orders` → Ventas). `undefined` si la ruta no pertenece a un módulo.
+ */
+export function getEntityModule(label: string): ModuleConfig | undefined {
+  const id = getModuleIdFromPath(getEntityMetadata(label)?.listUrl)
+  return id ? MODULE_REGISTRY[id] : undefined
 }

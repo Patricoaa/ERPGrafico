@@ -14,6 +14,7 @@
 import { useCallback } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
+import { useOptionalGlobalModalActions } from '@/components/providers/GlobalModalProvider'
 import { toast } from 'sonner'
 import api from '@/lib/api'
 
@@ -67,12 +68,20 @@ export function useSelectedEntity<T = unknown>({
     // Normalise endpoint: strip trailing slash to build a consistent query key
     const baseEndpoint = endpoint.replace(/\/$/, '')
 
-    const clearSelection = useCallback(() => {
+    // Limpieza interna (registro inexistente): nunca pide confirmación.
+    const clearSelectionNow = useCallback(() => {
         const params = new URLSearchParams(searchParams.toString())
         params.delete(paramName)
         const query = params.toString()
         router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }, [router, pathname, searchParams, paramName])
+
+    // Cierre pedido por el usuario: con un formulario sucio pregunta primero (guarda de cambios sin guardar).
+    const runGuarded = useOptionalGlobalModalActions()?.runGuarded
+    const clearSelection = useCallback(
+        () => (runGuarded ? runGuarded(clearSelectionNow) : clearSelectionNow()),
+        [runGuarded, clearSelectionNow],
+    )
 
     const { data: entity = null, isLoading } = useQuery<T | null>({
         queryKey: [baseEndpoint, selectedId],
@@ -89,7 +98,7 @@ export function useSelectedEntity<T = unknown>({
                     toast.error('No encontrado', {
                         description: 'El registro solicitado no existe o fue eliminado.',
                     })
-                    clearSelection()
+                    clearSelectionNow()
                     return null
                 }
 

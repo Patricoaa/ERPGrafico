@@ -370,9 +370,9 @@ Rich catalog picker with card grid, category filter, and search. Lives in `@/com
 
 **Related subcomponents:** `VariantSelectorModal` (variant selection via `useVariants` hook), `ProductGrid` (pure virtualized grid — use standalone if you need a custom layout), `ProductCard` (the card itself, see below).
 
-### Card anatomy ([ADR-0092](../10-architecture/adr/0092-productgrid-card-anatomy.md))
+### Card anatomy ([ADR-0092](../10-architecture/adr/0092-productgrid-card-anatomy.md), [ADR-0094](../10-architecture/adr/0094-card-anatomy-kit-and-radius.md))
 
-One anatomy for every context (POS, calculator, production); only the price and availability sources change.
+One anatomy for every context (POS, calculator, production); only the price and availability sources change. **Implemented via `CardSurface` + `cardAnatomy` tokens**; radius `rounded-sm` (8px) — see ADR-0094 exception.
 
 ```
 ┌─────────────────────────┐ ← ribbon-cmyk: always when selected, on hover/focus otherwise
@@ -396,6 +396,8 @@ One anatomy for every context (POS, calculator, production); only the price and 
 - Loading: `CardSkeleton variant="product"` mirrors the same strip + rows to avoid CLS.
 
 **⚠️ VirtuosoGrid constraint:** The parent container **must** have a defined height (`flex-1 min-h-0` or fixed px). A zero-height container renders nothing.
+
+> **Variante ligera (`ChoiceCard variant="light"`, ADR-0096):** para wizards/selectores sin media strip — lead 32×32 | título+descripción | rail derecho w-9 con `SelectionCheck`. ~60px alto. Usada en `Step2_PurchaseDTE`, `Step4_Receipt`, `NoteStep_Logistics`, `ContactDrawer`, `ProductManufacturingTab`, `PartnerWithdrawalWizard`, `PartnerContributionWizard`.
 
 ## CategorySelector 🟢
 

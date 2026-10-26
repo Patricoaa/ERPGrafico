@@ -1,10 +1,10 @@
 "use client";
 
-import { FileText, Plus, CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { FileText, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { WorkOrderFormValues } from "@/types/forms";
 import { getDomainConceptTitle, getDomainConceptCode } from "@/lib/entity-registry";
+import { CardSurface, SelectionCheck } from "@/components/shared";
 
 interface OriginSelectionStepProps {
   onChoose: (type: "LINKED" | "NONE", defaults: WorkOrderFormValues) => void;
@@ -26,70 +26,57 @@ export function OriginSelectionStep({ onChoose, selected = null }: OriginSelecti
       </div>
 
       <div className="grid gap-6">
-        <Button
-          type="button"
-          variant="outline"
-          aria-pressed={isLinkedSelected}
-          className={cn(
-            "relative h-[200px] w-full rounded-md transition-all duration-300",
-            isLinkedSelected
-              ? "border-2 border-primary bg-primary/[0.06] ring-2 ring-primary/20 shadow-card"
-              : "border border-border/30 hover:border-primary/50 hover:bg-primary/[0.03]",
-            // When another card is already selected, dim this one
-            selected && !isLinkedSelected && "opacity-40"
-          )}
+        <CardSurface
+          layout="stacked"
+          selected={isLinkedSelected}
+          unavailable={selected !== null && !isLinkedSelected}
+          role="button"
           onClick={() => onChoose("LINKED", {
             otType: "LINKED", description: "", sale_order: "", sale_line: "",
             product_description: "", contact_id: "", start_date: null, due_date: null, internal_notes: "",
           } as WorkOrderFormValues)}
+          className="h-[200px]"
+          interactive={!selected || isLinkedSelected}
         >
-          {isLinkedSelected && (
-            <CheckCircle2 className="absolute top-3 right-3 h-5 w-5 text-primary" />
-          )}
-          <div className="flex h-full flex-col items-center justify-center p-8 space-y-4">
-            <FileText className={cn("h-8 w-8", isLinkedSelected ? "text-primary" : "text-primary/80")} />
-            <div className="text-center space-y-2">
-              <h3 className="font-semibold text-lg text-foreground">
-                Vincular a Venta
-              </h3>
-              <p className="text-sm text-muted-foreground max-w-md">
-                Fabricación bajo demanda para una {getDomainConceptTitle('ov')} ({getDomainConceptCode('ov')})
-              </p>
-            </div>
+          <div className="relative flex h-20 w-full shrink-0 items-center justify-center overflow-hidden bg-muted">
+            <FileText className={cn("h-8 w-8", isLinkedSelected ? "text-primary" : "text-primary/80")} aria-hidden />
+            {isLinkedSelected && <SelectionCheck className="absolute top-3 right-3 h-5 w-5" />}
           </div>
-        </Button>
+          <div className="flex w-full flex-1 flex-col gap-1 px-3 pb-3 pt-2.5 text-center">
+            <h3 className="line-clamp-2 text-center text-lg font-semibold leading-snug">
+              Vincular a Venta
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              Fabricación bajo demanda para una {getDomainConceptTitle('ov')} ({getDomainConceptCode('ov')})
+            </p>
+          </div>
+        </CardSurface>
 
-        <Button
-          type="button"
-          variant="outline"
-          aria-pressed={isNoneSelected}
-          className={cn(
-            "relative h-[200px] w-full rounded-md transition-all duration-300",
-            isNoneSelected
-              ? "border-2 border-warning bg-warning/[0.06] ring-2 ring-warning/20 shadow-card"
-              : "border border-border/30 hover:border-warning/50 hover:bg-warning/[0.03]",
-            selected && !isNoneSelected && "opacity-40"
-          )}
+        <CardSurface
+          layout="stacked"
+          selected={isNoneSelected}
+          unavailable={selected !== null && !isNoneSelected}
+          role="button"
           onClick={() => onChoose("NONE", {
             otType: "NONE", description: "", product_id: "", quantity: "",
             uom_id: "", start_date: null, due_date: null, internal_notes: "",
           } as WorkOrderFormValues)}
+          className="h-[200px]"
+          interactive={!selected || isNoneSelected}
         >
-          {isNoneSelected && (
-            <CheckCircle2 className="absolute top-3 right-3 h-5 w-5 text-warning" />
-          )}
-          <div className="flex h-full flex-col items-center justify-center p-8 space-y-4">
-            <Plus className={cn("h-8 w-8", isNoneSelected ? "text-warning" : "text-warning/80")} />
-            <div className="text-center space-y-2">
-              <h3 className="font-semibold text-lg text-foreground">
-                Producción para Stock
-              </h3>
-              <p className="text-sm text-muted-foreground max-w-md">
-                Fabricación manual para inventario o reposición
-              </p>
-            </div>
+          <div className="relative flex h-20 w-full shrink-0 items-center justify-center overflow-hidden bg-muted">
+            <Plus className={cn("h-8 w-8", isNoneSelected ? "text-warning" : "text-warning/80")} aria-hidden />
+            {isNoneSelected && <SelectionCheck className="absolute top-3 right-3 h-5 w-5" />}
           </div>
-        </Button>
+          <div className="flex w-full flex-1 flex-col gap-1 px-3 pb-3 pt-2.5 text-center">
+            <h3 className="line-clamp-2 text-center text-lg font-semibold leading-snug">
+              Producción para Stock
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              Fabricación manual para inventario o reposición
+            </p>
+          </div>
+        </CardSurface>
       </div>
     </div>
   );

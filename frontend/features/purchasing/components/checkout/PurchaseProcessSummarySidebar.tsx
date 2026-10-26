@@ -54,7 +54,7 @@ export function PurchaseProcessSummarySidebar({
             id: 1,
             label: 'Proveedor',
             icon: Building2,
-            detail: supplierName ? <p className="text-xs font-semibold truncate">{supplierName}</p> : undefined
+            detail: supplierName ? <p className="text-3xs font-semibold truncate">{supplierName}</p> : undefined
         },
         {
             id: 2,
@@ -65,7 +65,7 @@ export function PurchaseProcessSummarySidebar({
             id: 3,
             label: 'Documento',
             icon: FileText,
-            detail: dteType ? <p className="text-xs font-semibold">{dteType}</p> : undefined
+            detail: dteType ? <p className="text-3xs font-semibold">{dteType}</p> : undefined
         },
         {
             id: 4,
@@ -73,7 +73,7 @@ export function PurchaseProcessSummarySidebar({
             icon: Package,
             detail: receiptData ? (
                 <div className="space-y-1">
-                    <p className="text-xs font-semibold">{receiptLabels[receiptData.type]}</p>
+                    <p className="text-3xs font-semibold">{receiptLabels[receiptData.type]}</p>
                     {warehouseName && (
                         <div className="flex items-center gap-1.5 mt-1">
                             <Warehouse className="h-3 w-3" />
@@ -89,10 +89,10 @@ export function PurchaseProcessSummarySidebar({
             icon: CreditCard,
             detail: paymentData ? (
                 <div className="space-y-0.5">
-                    <p className="text-xs font-semibold">
+                    <p className="text-3xs font-semibold">
                         {paymentData.method ? (methodLabels[paymentData.method] || paymentData.method) : 'Crédito'}
                     </p>
-                    <MoneyDisplay amount={paymentData.amount} className="text-xs font-bold" />
+                    <MoneyDisplay amount={paymentData.amount} className="text-3xs font-bold" />
                     {paymentData.pendingDebt !== undefined && paymentData.pendingDebt > 0 && (
                         <div className="text-3xs text-warning font-semibold flex items-center gap-1">
                             Deuda: <MoneyDisplay amount={paymentData.pendingDebt} inline />
@@ -110,6 +110,8 @@ export function PurchaseProcessSummarySidebar({
             title="Proceso de Compra"
             currentStep={currentStep}
             steps={steps}
+            showNumbers={true}
+            detailVisibility="both"
         />
     )
 }

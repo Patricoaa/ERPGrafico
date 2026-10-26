@@ -20,6 +20,7 @@ export * from './UniversalSearch';
 // Modals & Sheets
 export * from './ActionConfirmModal';
 export * from './BaseModal';
+export * from './UnsavedChangesDialog';
 export * from './Drawer';
 export * from './PanelHeader';
 export * from './CollapsibleSheet';
@@ -56,7 +57,6 @@ export * from './Chip';
 export * from './HubStatus';
 export * from './EntityBadge';
 export * from './SourceDocumentLink';
-export * from './EntityNavigationContext';
 export * from './RelatedDocumentsTable';
 export * from './DocumentDrawerShell';
 export * from './DocumentLifecycle';
@@ -130,9 +130,12 @@ export * from './DatePicker';
 export * from './DateRangeFilter';
 export * from './ReportToolbar';
 export * from './FacetedFilter'
-export * from './RadioCard';
 export * from './SelectableCard';
 export * from './ChoiceCard';
+export * from './CardSurface';
+export * from './InfoBlock';
+export * from './CardRow';
+export * from './card-anatomy';
 export * from './FolioValidationInput';
 export * from './LabeledInput';
 export * from './LabeledSelect';
@@ -148,14 +151,12 @@ export * from './AccountField';
 export * from './AccountingLinesTable';
 export * from './FormLineItemsTable';
 export * from './EntityCard'
-export * from './AutoEntityCard'
 export * from './SelectorTrigger'
 export type { SelectorTriggerProps } from './SelectorTrigger'
 // ─── Migrated from components/ui — GOVERNANCE rule 21 compliance ─────────────
 // Table system
 export * from './emptyStateResolver';
 export * from './DataTable';
-export * from './DataTableView';
 export * from './DataTableToolbar';
 export * from './DataTablePagination';
 export * from './DataTableColumnHeader';
@@ -178,3 +179,4 @@ export * from './ContactSelector'
 // Product grid family relocated to `components/selectors/ProductGridPicker`
 // (audit T5) — no longer published from the shared barrel.
 export * from './manufacturing'
+export * from './PersistentPanelContext';

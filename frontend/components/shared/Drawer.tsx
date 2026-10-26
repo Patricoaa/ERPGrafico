@@ -1,7 +1,6 @@
 "use client"
 
-import React, { useState, useRef, useEffect, useCallback, useContext, useId, useSyncExternalStore } from "react"
-import { ArrowLeft } from "lucide-react"
+import React, { useState, useRef, useEffect, useCallback, useId, useSyncExternalStore } from "react"
 import {
     Sheet,
     SheetContent,
@@ -11,9 +10,8 @@ import {
 
 import { cn } from "@/lib/utils"
 import { PanelHeader, type PanelBaseProps } from "./PanelHeader"
+import { PersistentPanelContext, usePersistentPanel } from "./PersistentPanelContext"
 import {ScrollArea} from "@/components/ui/scroll-area"
-import { Button } from "@/components/ui/button"
-import { EntityNavigationContext } from "./EntityNavigationContext"
 
 type DrawerMode = 'create' | 'edit' | 'view'
 
@@ -78,10 +76,10 @@ export function Drawer({
     footer,
     side = "bottom",
     boundary = "embedded",
-    resizable = false,
+    resizable: resizableProp = false,
     showOverlay,
     mode,
-    defaultSize,
+    defaultSize: defaultSizeProp,
     minSize,
     maxSize,
     className,
@@ -94,8 +92,11 @@ export function Drawer({
     fillContent = false
 }: DrawerProps) {
     const isHorizontal = side === "left" || side === "right"
-    // ADR-0080: "volver" al documento anterior de la pila de openEntity
-    const navigation = useContext(EntityNavigationContext)
+    // ADR-0101: el panel de una pestaña ocupa siempre todo el área bajo la barra (la lista de origen queda
+    // inoperable) y persiste hasta cerrarlo: un clic fuera no lo descarta y no se redimensiona.
+    const persistent = usePersistentPanel()
+    const defaultSize = persistent ? "100%" : defaultSizeProp
+    const resizable = persistent ? false : resizableProp
     const [size, setSize] = useState<number | string>(
         defaultSize ?? (isHorizontal ? "400px" : "75vh")
     )
@@ -211,6 +212,7 @@ export function Drawer({
     // Only overlays mounted after this drawer count (portals append in opening order): clicking a drawer
     // underneath (an openEntity stack) still dismisses this one.
     const keepOpenForOverlays = (event: Event) => {
+        if (persistent) { event.preventDefault(); return }
         const target = event.target
         const overlay = target instanceof Element ? target.closest('[role="dialog"], [role="alertdialog"]') : null
         const self = document.getElementById(contentId)
@@ -298,18 +300,6 @@ export function Drawer({
                     )} />
                 )}
 
-                {navigation && (
-                    <Button
-                        type="button"
-                        variant="link"
-                        size="sm"
-                        onClick={navigation.goBack}
-                        className="mx-4 mt-1 h-7 gap-1.5 self-start px-2 text-xs text-muted-foreground hover:text-foreground shrink-0"
-                    >
-                        <ArrowLeft className="h-3.5 w-3.5" />
-                        Volver a {navigation.backLabel}
-                    </Button>
-                )}
 
                 {(title || subtitle || headerActions || icon) && (
                     <SheetHeader className={cn("px-6 py-1.5 border-b border-border shrink-0 bg-card", headerClassName)}>
@@ -336,7 +326,7 @@ export function Drawer({
                     </SheetHeader>
                 )}
 
-                <EntityNavigationContext.Provider value={null}>
+                <PersistentPanelContext.Provider value={false}>
                 {fillContent ? (
                     <div className={cn(
                         "flex-1 flex flex-col overflow-hidden",
@@ -354,7 +344,7 @@ export function Drawer({
                         {children}
                     </ScrollArea>
                 )}
-                </EntityNavigationContext.Provider>
+                </PersistentPanelContext.Provider>
 
                 {footer && (
                     <div className={cn("border-t border-border px-6 py-3 flex-shrink-0 bg-card", footerClassName)}>

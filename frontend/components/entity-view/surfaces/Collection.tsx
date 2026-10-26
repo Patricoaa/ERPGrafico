@@ -1,11 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, ChevronDown, ChevronRight, LayoutGrid, Rows3 } from "lucide-react"
-import { BulkActionButtons, DataTablePagination, EmptyState, EntityCard, SelectionDock, SelectionRing, type BulkAction } from "@/components/shared"
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, ChevronDown, ChevronRight, FileText, LayoutGrid, Rows3 } from "lucide-react"
+import { BulkActionButtons, CardRail, DataTablePagination, EmptyState, EntityCard, SelectionDock, SelectionRing, type BulkAction, type CardRailTone } from "@/components/shared"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { resolveStatus, type BadgeIntent } from "@/lib/badge-resolvers"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
 import {
@@ -618,19 +619,35 @@ const TONE_CLASS: Record<CardTone, string> = {
     muted: "text-muted-foreground/60 bg-muted/30",
 }
 
+const RAIL_TONE: Partial<Record<BadgeIntent, CardRailTone>> = {
+    success: "success",
+    warning: "warning",
+    destructive: "destructive",
+    info: "info",
+    cyan: "info",
+    primary: "primary",
+}
+
 function pick<T, V>(value: V | ((row: T) => V) | undefined, row: T): V | undefined {
     return typeof value === "function" ? (value as (r: T) => V)(row) : value
 }
 
 const GRID_CLASS = "grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-[repeat(2,minmax(0,1fr))] xl:grid-cols-[repeat(3,minmax(0,1fr))]"
+/** Catalog grids (media on top) are denser: 4 or 5 columns by the width of the grid itself (container queries). */
+const CATALOG_GRID_CLASS = "grid grid-cols-[minmax(0,1fr)] gap-3 @md:grid-cols-[repeat(2,minmax(0,1fr))] @2xl:grid-cols-[repeat(3,minmax(0,1fr))] @4xl:grid-cols-[repeat(4,minmax(0,1fr))] @7xl:grid-cols-[repeat(5,minmax(0,1fr))]"
 
 function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
     const ctx = useCollectionContext<T>()
     const { table, status, groups } = ctx.collection
     const entity = ctx.collection.entity
     const isBulk = ctx.selection === "bulk"
+    const isCatalog = layout.media?.placement === "top"
+    const gridClass = isCatalog ? CATALOG_GRID_CLASS : GRID_CLASS
     // Meta field definitions are resolved once per layout, not per card.
     const metaDefs = React.useMemo(() => (layout.meta ?? []).map((id) => ({ id, def: fieldById(entity, id) })), [layout.meta, entity])
+    const highlightDefs = React.useMemo(() => (layout.highlights ?? []).map((id) => ({ id, def: fieldById(entity, id) })), [layout.highlights, entity])
+    const footerDef = React.useMemo(() => (layout.footer ? fieldById(entity, layout.footer.value) : null), [layout.footer, entity])
+    const trailingDefs = React.useMemo(() => (layout.trailing ?? []).map((id) => ({ id, def: fieldById(entity, id) })), [layout.trailing, entity])
 
     const renderCard = (row: Row<T>) => {
         const data = row.original
@@ -644,16 +661,71 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
             .filter((t) => t && t !== "—")
             .join(" · ")
         const title = resolveField(fieldById(entity, layout.title), data).text
+        const code = layout.code ? resolveField(fieldById(entity, layout.code), data).text : ""
+        const railTone = layout.rail ? (RAIL_TONE[resolveStatus(layout.rail.status(data)).intent] ?? "neutral") : "neutral"
+        const RailIcon = layout.rail?.icon ?? icon ?? FileText
+        // The rail carries the entity icon (its tint is the state); the title row then has no icon tile of its own.
+        // Highlights speak for themselves: skip the ones with nothing to say.
+        const highlights = highlightDefs.filter(({ def }) => {
+            const text = resolveField(def, data).text
+            return text !== "" && text !== "—"
+        })
+        const rail = layout.rail ? (
+            <CardRail tone={railTone} side={layout.rail.side ?? "left"}>
+                <RailIcon className="size-5" aria-hidden />
+            </CardRail>
+        ) : undefined
         const trailing = layout.trailing && layout.trailing.length > 0
             ? layout.trailing.map((id) => <FieldValue key={id} def={fieldById(entity, id)} row={data} surface="card" align="start" />)
             : null
+        // A row can say it has no amount worth showing (e.g. a product that is not for sale); the
+        // footer then states the alternative (the channel) instead of leaving an empty hole.
+        const showFooter = footerDef ? (layout.footer?.visible?.(data) ?? true) : false
+        const footerFallback = !showFooter ? layout.footer?.fallback?.value(data) : null
+        const hasFooter = showFooter || Boolean(footerFallback) || Boolean(layout.footer?.lines)
+        const footerCaption = showFooter ? footerDef?.label : footerFallback ? layout.footer?.fallback?.caption : undefined
+
+        const footerLinesNode = (() => {
+            if (!layout.footer?.lines) return null
+            const rawLines = (data as Record<string, unknown>)["lines"]
+            if (!Array.isArray(rawLines) || rawLines.length === 0) return null
+            const MAX = 2
+            const visible = rawLines.slice(0, MAX) as Array<{ quantity?: number | string | null; product_name?: string | null }>
+            const overflow = rawLines.length - MAX
+            return (
+                <div className="flex flex-col gap-0.5 min-w-0">
+                    {visible.map((line, i) => {
+                        const qty = Math.round(parseFloat(String(line.quantity ?? 0)) * 100) / 100
+                        const name = line.product_name ?? "—"
+                        return (
+                            <p key={i} className="text-[11px] text-muted-foreground leading-tight truncate">
+                                <span className="font-medium text-foreground/70">{qty}×</span> {name}
+                            </p>
+                        )
+                    })}
+                    {overflow > 0 && (
+                        <p className="text-[11px] text-muted-foreground/60 leading-tight">
+                            +{overflow} más
+                        </p>
+                    )}
+                </div>
+            )
+        })()
+        // Narrow cards (container < 28rem) fold the trailing values into the label/value pairs instead of an orphan row.
+        const metaItems = [
+            ...metaDefs.map(({ id, def }) => ({ key: id, label: def.label, value: <FieldValue def={def} row={data} surface="card" align="start" /> })),
+            ...trailingDefs.map(({ id, def }) => ({ key: `trailing-${id}`, label: def.label, value: <FieldValue def={def} row={data} surface="card" align="start" />, className: "@md:hidden" })),
+        ]
         return (
             <li key={row.id} className="@container min-w-0">
                 <EntityCard
                     variant="compact"
                     isSelected={ctx.selectedId === row.id}
+                    openable={ctx.canOpen}
+                    muted={layout.muted?.(data) ?? false}
+                    rail={rail}
                     // Hub focus (Gate D 2b): while a sheet is open, the other cards step back (dimmed, no blur).
-                    className={cn("transition-opacity", ctx.selection === "panel" && !!ctx.selectedId && ctx.selectedId !== row.id && "opacity-40")}
+                    className={cn("h-full transition-opacity", ctx.selection === "panel" && !!ctx.selectedId && ctx.selectedId !== row.id && "opacity-40")}
                     selectable={isBulk}
                     checked={row.getIsSelected()}
                     onCheckedChange={(v) => row.toggleSelected(v)}
@@ -668,17 +740,23 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                             imageSrc={media?.image?.(data) ?? undefined}
                             avatar={Avatar ? <Avatar row={data} /> : undefined}
                             badge={media?.badge?.(data) ?? undefined}
+                            footnote={media?.footnote?.(data) ?? undefined}
+                            footnoteIcon={media?.footnoteIcon}
                         />
                     )}
                     <EntityCard.Header
-                        icon={mediaOnTop ? undefined : icon}
+                        selection={mediaOnTop ? "corner" : "inline"}
+                        wrapTitle={mediaOnTop}
+                        code={code && code !== "—" ? code : undefined}
+                        icon={mediaOnTop || rail ? undefined : icon}
                         iconClassName={TONE_CLASS[tone]}
                         imageSrc={mediaOnTop ? undefined : media?.image?.(data) ?? undefined}
-                        avatar={!mediaOnTop && Avatar ? <Avatar row={data} /> : undefined}
+                        avatar={!mediaOnTop && !rail && Avatar ? <Avatar row={data} /> : undefined}
                         title={
                             ctx.canOpen ? (
-                                <Button variant="link" className="h-7 p-0 text-sm font-semibold text-foreground underline-offset-2 hover:underline focus-visible:underline" onClick={() => ctx.open(data)}>
-                                    {title}
+                                <Button data-card-open variant="link" className={cn("min-w-0 max-w-full justify-start p-0 text-left text-sm font-semibold text-foreground after:absolute after:inset-0 after:content-[''] hover:no-underline focus-visible:no-underline focus-visible:ring-0", mediaOnTop ? "h-auto min-h-0 whitespace-normal leading-tight" : "h-7")} onClick={() => ctx.open(data)}>
+                                    {/* A flex button cannot ellipsize its own text: the span does. */}
+                                    <span className={mediaOnTop ? "line-clamp-2" : "truncate"}>{title}</span>
                                 </Button>
                             ) : (
                                 title
@@ -688,26 +766,101 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                         // Wide trailing values (hub with label) only fit in the header on wide cards;
                         // narrow cards (container < 28rem) show them below the title instead.
                         trailing={trailing ? <div className="hidden @md:flex items-center gap-3">{trailing}</div> : undefined}
-                        actions={ctx.actions?.(data, "card")}
+                        // Catalog cards keep the kebab in the footer (bottom-right), documents/people in the header.
+                        actions={mediaOnTop ? undefined : ctx.actions?.(data, "card")}
                     />
-                    {trailing && <div className="flex @md:hidden flex-wrap items-center gap-3 px-1">{trailing}</div>}
+                    {highlights.length > 0 && (
+                        <EntityCard.Highlights>
+                            {highlights.map(({ id, def }) => <FieldValue key={id} def={def} row={data} surface="card" align="start" />)}
+                        </EntityCard.Highlights>
+                    )}
                     {/* Meta lives below the header: in the header center it squeezed the title (EntityCard 1fr column). */}
-                    <EntityCard.Meta
-                        items={metaDefs.map(({ id, def }) => ({ key: id, label: def.label, value: <FieldValue def={def} row={data} surface="card" align="start" /> }))}
-                    />
+                    <EntityCard.Meta items={metaItems} />
                     {layout.body && <CardBody section={layout.body} entity={entity} row={data} />}
+                    {(hasFooter || mediaOnTop) && (
+                        <EntityCard.Foot
+                            caption={footerCaption}
+                            compact={mediaOnTop && !hasFooter}
+                            align={layout.footer?.align ?? "start"}
+                            glyph={layout.footer?.glyph ?? true}
+                            leading={footerLinesNode}
+                            actions={mediaOnTop ? ctx.actions?.(data, "card") : undefined}
+                        >
+                            {showFooter && footerDef
+                                ? <FieldValue def={footerDef} row={data} surface="cardFooter" align={layout.footer?.align ?? "start"} />
+                                : footerFallback
+                                    ? <span className="text-sm font-medium text-muted-foreground">{footerFallback}</span>
+                                    : null}
+                        </EntityCard.Foot>
+                    )}
                 </EntityCard>
             </li>
         )
     }
 
     if (status === "loading") {
+        const mediaOnTop = layout.media?.placement === "top"
+        const hasRail = Boolean(layout.rail)
+        const hasFooter = Boolean(footerDef || layout.footer)
+        const hasHighlights = highlightDefs.length > 0
+        const hasMeta = metaDefs.length > 0 || trailingDefs.length > 0
+        const hasSubtitle = Boolean(layout.subtitle?.length)
+        const hasTrailing = trailingDefs.length > 0
+        const hasCode = Boolean(layout.code)
+
+        const metricsCount = (() => {
+            if (!layout.body) return undefined
+            if (layout.body.kind === "metrics") return layout.body.fields.length
+            if (layout.body.kind === "workflow") {
+                const ids = [layout.body.lines, layout.body.total, layout.body.pending, layout.body.date].filter(Boolean)
+                return ids.length
+            }
+            return undefined
+        })()
+        const isProgressBody = layout.body?.kind === "progress"
+
+        // Lead icon is present if not mediaOnTop and not rail and there is media or entity has an icon
+        const hasLead = !mediaOnTop && !hasRail && Boolean(layout.media?.avatar || layout.media?.icon || layout.media?.iconFor || entity.label !== undefined)
+
+        // Count of cards matching page size or filling the grid neatly
+        const skeletonCount = (() => {
+            const pageSize = table.getState().pagination?.pageSize
+            if (pageSize && pageSize > 0) {
+                return Math.min(pageSize, isCatalog ? 15 : 12)
+            }
+            return isCatalog ? 8 : 6
+        })()
+
         return (
-            <ul className={cn(GRID_CLASS, "flex-1 min-h-0 overflow-auto content-start")} aria-busy>
-                {Array.from({ length: 6 }, (_, i) => (
-                    <li key={i}><EntityCard.Skeleton /></li>
-                ))}
-            </ul>
+            <div className="@container flex flex-1 min-h-0 flex-col overflow-auto">
+                <ul className={cn(gridClass, "content-start")} aria-busy>
+                    {Array.from({ length: skeletonCount }, (_, i) => (
+                        <li key={i} className="@container min-w-0">
+                            <EntityCard.Skeleton
+                                variant="compact"
+                                className="h-full"
+                                rail={hasRail ? { side: layout.rail?.side } : false}
+                                media={mediaOnTop}
+                                code={hasCode}
+                                lead={hasLead}
+                                subtitle={hasSubtitle}
+                                trailing={hasTrailing}
+                                highlights={hasHighlights}
+                                highlightsCount={highlightDefs.length}
+                                meta={hasMeta}
+                                metaCount={metaDefs.length}
+                                metrics={metricsCount}
+                                showBody={isProgressBody}
+                                fields={isProgressBody ? 1 : 0}
+                                foot={hasFooter || mediaOnTop}
+                                footAmount={hasFooter}
+                                footAlign={layout.footer?.align}
+                                footLines={Boolean(layout.footer?.lines)}
+                            />
+                        </li>
+                    ))}
+                </ul>
+            </div>
         )
     }
 
@@ -715,18 +868,18 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
         // Same frame as the table: the cards scroll inside the available height, pagination stays below.
         <div className="flex flex-1 flex-col gap-2 min-h-0">
             {/* p-0.5 keeps focus rings and the selected-card accent visible at the scroll edges. */}
-            <div className="flex flex-1 min-h-0 flex-col gap-4 overflow-auto p-0.5">
+            <div className="@container flex flex-1 min-h-0 flex-col gap-4 overflow-auto p-0.5">
                 {groups ? (
                     groups.map((group) => (
                         <section key={group.key} aria-label={group.label} className="flex flex-col gap-2">
                             <h3 className={cn("px-1", HEADER_TEXT)}>
                                 {group.label} <span className="font-normal tabular-nums">({group.rows.length})</span>
                             </h3>
-                            <ul className={GRID_CLASS}>{group.rows.map(renderCard)}</ul>
+                            <ul className={gridClass}>{group.rows.map(renderCard)}</ul>
                         </section>
                     ))
                 ) : (
-                    <ul className={GRID_CLASS} aria-label={ctx.label}>{table.getRowModel().rows.map(renderCard)}</ul>
+                    <ul className={gridClass} aria-label={ctx.label}>{table.getRowModel().rows.map(renderCard)}</ul>
                 )}
             </div>
             {ctx.collection.paginated && <DataTablePagination table={table} />}
@@ -743,6 +896,33 @@ function CardBody<T, Id extends string>({ section, entity, row }: { section: Car
         case "workflow": {
             const ids = [section.lines, section.total, section.pending, section.date].filter((id): id is Id => !!id)
             return <EntityCard.Metrics metrics={ids.map(metric)} className="flex-wrap" />
+        }
+        case "lines": {
+            // Render card-level line summary: "qty× product_name" rows (max 3 + overflow count).
+            // `row` is typed as T; lines live on the raw data under `lines` if present.
+            const rawLines = (row as Record<string, unknown>)["lines"]
+            if (!Array.isArray(rawLines) || rawLines.length === 0) return null
+            const MAX = 3
+            const visible = rawLines.slice(0, MAX) as Array<{ quantity?: number | string | null; product_name?: string | null }>
+            const overflow = rawLines.length - MAX
+            return (
+                <div className="border-t border-border/50 pt-1.5 mt-1 flex flex-col gap-0.5">
+                    {visible.map((line, i) => {
+                        const qty = Math.round(parseFloat(String(line.quantity ?? 0)) * 100) / 100
+                        const name = line.product_name ?? "—"
+                        return (
+                            <p key={i} className="text-[11px] text-muted-foreground leading-tight truncate">
+                                <span className="font-medium text-foreground/70">{qty}×</span> {name}
+                            </p>
+                        )
+                    })}
+                    {overflow > 0 && (
+                        <p className="text-[11px] text-muted-foreground/60 leading-tight">
+                            +{overflow} más
+                        </p>
+                    )}
+                </div>
+            )
         }
         case "metrics":
             return <EntityCard.Metrics metrics={section.fields.map(metric)} className="flex-wrap" />

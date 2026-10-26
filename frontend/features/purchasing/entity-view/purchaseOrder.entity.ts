@@ -1,4 +1,5 @@
 import { defineEntity } from "@/components/entity-view"
+import { isOrderCompleted } from "@/lib/workflow-status"
 import type { PurchaseOrderAPI } from "../types"
 
 const RECEIVING = {
@@ -21,7 +22,14 @@ export const purchaseOrderEntity = defineEntity<PurchaseOrderAPI>()((f) => ({
         expected: f.date("receipt_date", { label: "Entrega esperada", orderBy: "receipt_date" }),
         warehouse: f.text("warehouse_name", { label: "Almacén", tone: "secondary" }),
         receiving: f.status((o) => RECEIVING[o.receiving_status], { label: "Recepción" }),
-        hub: f.hubStatus((o) => o, { label: "Estado", entity: "purchasing.purchaseorder", caption: (o) => ({ status: o.status, label: o.status_display }) }),
+        hub: f.hubStatus((o) => o, {
+            label: "Estado",
+            entity: "purchasing.purchaseorder",
+            caption: (o) =>
+                isOrderCompleted(o)
+                    ? { status: "SUCCESS", label: "Completada" }
+                    : { status: o.status, label: o.status_display },
+        }),
         lines: f.number((o) => o.lines.length, { label: "Líneas" }),
         total: f.money("total", { label: "Total", orderBy: "total" }),
         pending: f.money("pending_amount", { label: "Pendiente" }),
@@ -33,9 +41,9 @@ export const purchaseOrderViews = purchaseOrderEntity.views({
     card: {
         title: "folio",
         subtitle: ["supplier", "date"],
-        meta: ["warehouse"],
         trailing: ["hub"],
-        media: { tone: "info" },
-        body: { kind: "workflow", lines: "lines", total: "total", pending: "pending", date: "expected" },
+        media: { tone: (o) => (o.status === "CANCELLED" ? "muted" : isOrderCompleted(o) ? "success" : "info") },
+        rail: { status: (o) => (isOrderCompleted(o) ? "SUCCESS" : o.status) },
+        footer: { value: "total", align: "end", lines: true },
     },
 })

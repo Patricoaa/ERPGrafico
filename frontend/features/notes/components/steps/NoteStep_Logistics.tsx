@@ -1,8 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import {LabeledInput, LabeledContainer, PeriodValidationDateInput, QuantityDisplay, RadioCard, StepHeader} from "@/components/shared"
-import {RadioGroup} from "@/components/ui/radio-group"
+import {LabeledInput, LabeledContainer, PeriodValidationDateInput, QuantityDisplay, ChoiceCard, ChoiceGroup, StepHeader} from "@/components/shared"
 import { Truck, Package, Calendar, AlertTriangle, ShoppingBag } from "lucide-react"
 import { useAllowedUoMs } from "@/features/inventory"
 import { cn } from "@/lib/utils"
@@ -135,62 +134,65 @@ export function NoteStep_Logistics({
             <LabeledContainer
                 label="Opciones de Procesamiento"
             >
-                <RadioGroup
-                value={formData.delivery_type}
-                onValueChange={(val) => {
-                    if (val === 'PARTIAL') {
-                        const initialLineData = selectedItems
-                            .filter(item => {
-                                const pType = item.productType ?? item.product_type;
-                                const hasBom = item.hasBom ?? item.has_bom;
-                                const auto = item.mfgAutoFinalize ?? item.mfg_auto_finalize;
-                                const createsStockMove = item.createsStockMove ?? item.creates_stock_move;
-                                const isRestricted = !isCreditNote &&
-                                    (pType === 'MANUFACTURABLE' || hasBom) &&
-                                    !auto;
-                                return createsStockMove && !isRestricted;
-                            })
-                            .map(item => ({
-                                line_id: item.lineId ?? item.line_id,
-                                product_id: item.productId ?? item.product_id,
-                                quantity: item.noteQuantity ?? item.quantity,
-                                uom_id: item.uomId ?? item.uom_id
-                            }));
-                        setData({ ...formData, delivery_type: val, line_data: initialLineData });
-                    } else {
-                        setData({ ...formData, delivery_type: val });
-                    }
-                }}
-                className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full mt-4"
-            >
-                <RadioCard
-                    id="del-immediate"
-                    value="IMMEDIATE"
-                    label="Inmediato"
-                    description="Procesar ahora"
-                    icon={<Package className="h-4 w-4" />}
-                    disabled={hasRestrictedItems}
-                    iconColor="text-primary"
-                />
+                <ChoiceGroup
+                    label="Opciones de Procesamiento"
+                    columns="grid-cols-1 md:grid-cols-3"
+                    activation="select"
+                >
+                    <ChoiceCard
+                        variant="light"
+                        selected={formData.delivery_type === 'IMMEDIATE'}
+                        onSelect={() => {
+                            setData({ ...formData, delivery_type: 'IMMEDIATE' });
+                        }}
+                        title="Inmediato"
+                        description="Procesar ahora"
+                        icon={Package}
+                        disabled={hasRestrictedItems}
+                        iconClassName="text-primary"
+                    />
 
-                <RadioCard
-                    id="del-scheduled"
-                    value="SCHEDULED"
-                    label="Programar"
-                    description="Fecha futura"
-                    icon={<Calendar className="h-4 w-4" />}
-                    iconColor="text-primary"
-                />
+                    <ChoiceCard
+                        variant="light"
+                        selected={formData.delivery_type === 'SCHEDULED'}
+                        onSelect={() => {
+                            setData({ ...formData, delivery_type: 'SCHEDULED' });
+                        }}
+                        title="Programar"
+                        description="Fecha futura"
+                        icon={Calendar}
+                        iconClassName="text-primary"
+                    />
 
-                <RadioCard
-                    id="del-partial"
-                    value="PARTIAL"
-                    label="Parcial"
-                    description="Procesar algunos"
-                    icon={<Truck className="h-4 w-4" />}
-                    iconColor="text-primary"
-                />
-                </RadioGroup>
+                    <ChoiceCard
+                        variant="light"
+                        selected={formData.delivery_type === 'PARTIAL'}
+                        onSelect={() => {
+                            const initialLineData = selectedItems
+                                .filter(item => {
+                                    const pType = item.productType ?? item.product_type;
+                                    const hasBom = item.hasBom ?? item.has_bom;
+                                    const auto = item.mfgAutoFinalize ?? item.mfg_auto_finalize;
+                                    const createsStockMove = item.createsStockMove ?? item.creates_stock_move;
+                                    const isRestricted = !isCreditNote &&
+                                        (pType === 'MANUFACTURABLE' || hasBom) &&
+                                        !auto;
+                                    return createsStockMove && !isRestricted;
+                                })
+                                .map(item => ({
+                                    line_id: item.lineId ?? item.line_id,
+                                    product_id: item.productId ?? item.product_id,
+                                    quantity: item.noteQuantity ?? item.quantity,
+                                    uom_id: item.uomId ?? item.uom_id
+                                }));
+                            setData({ ...formData, delivery_type: 'PARTIAL', line_data: initialLineData });
+                        }}
+                        title="Parcial"
+                        description="Procesar algunos"
+                        icon={Truck}
+                        iconClassName="text-primary"
+                    />
+                </ChoiceGroup>
             </LabeledContainer>
 
             <div className="space-y-4 animate-in fade-in duration-300">

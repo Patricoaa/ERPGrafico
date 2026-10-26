@@ -109,7 +109,7 @@ export function StatCard({
 
   if (loading) {
     return (
-      <div className={cn("rounded-md border p-4 space-y-3 bg-card", className)} role="status" aria-label="Cargando">
+      <div className={cn("surface-panel p-4 space-y-3", className)} role="status" aria-label="Cargando">
         <Skeleton className="h-4 w-2/3" />
         <Skeleton className="h-8 w-1/2" />
         <Skeleton className="h-3 w-3/4" />
@@ -118,7 +118,7 @@ export function StatCard({
   }
 
   const baseCardClasses =
-    "rounded-md border bg-card text-card-foreground shadow-card flex flex-col flex-1 min-h-0 h-full"
+    "surface-panel text-card-foreground shadow-card flex flex-col flex-1 min-h-0 h-full"
 
   const Container = variant === "minimal" || variant === "fill" ? "div" : Card
 

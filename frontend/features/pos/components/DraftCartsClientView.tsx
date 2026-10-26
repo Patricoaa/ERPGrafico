@@ -23,6 +23,7 @@ import {
 import { ActionConfirmModal, DangerButton, BaseModal, DataTable, Chip, DataCell } from "@/components/shared"
 import type { ColumnDef } from "@tanstack/react-table"
 import type { SyncDraft } from '@/features/pos/hooks/useDraftSync'
+import { formatDraftNumber, resolveDraftStatusChips } from '../utils/draft-status'
 
 export interface DraftCart {
     id: number
@@ -250,7 +251,7 @@ export function DraftCartsClientView({
     const draftColumns = useMemo<ColumnDef<DraftCart>[]>(() => [
         {
             id: 'id',
-            header: '#',
+            header: 'N°',
             cell: ({ row }) => {
                 const lockInfo = resolveLockInfo(row.original.id)
                 const lockedByOther = lockInfo.isLocked && !lockInfo.isOwnLock
@@ -259,7 +260,7 @@ export function DraftCartsClientView({
                         "text-center text-2xs font-mono font-bold",
                         lockedByOther ? "text-destructive/60" : "text-primary/70"
                     )}>
-                        {row.original.session_local_id}
+                        {formatDraftNumber(row.original)}
                     </span>
                 )
             },
@@ -271,12 +272,18 @@ export function DraftCartsClientView({
                 const draft = row.original
                 const lockInfo = resolveLockInfo(draft.id)
                 const lockedByOther = lockInfo.isLocked && !lockInfo.isOwnLock
+                const isOwnLock = lockInfo.isOwnLock
+
+                // Use shared status resolver for consistent chips
+                const statusChips = resolveDraftStatusChips(draft as unknown as SyncDraft, { isOwnLock })
+                // Filter out the "locked by other" chip here since we show it separately with tooltip
+                const filteredChips = statusChips.filter(c => c.key !== 'locked')
 
                 return (
                     <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-sm font-medium truncate leading-tight">
-                                {draft.name || `Borrador #${draft.session_local_id}`}
+                                {draft.name || `Borrador ${formatDraftNumber(draft)}`}
                             </span>
                             {lockedByOther && (
                                 <Tooltip>
@@ -293,31 +300,16 @@ export function DraftCartsClientView({
                                     </TooltipContent>
                                 </Tooltip>
                             )}
-                            {lockInfo?.isOwnLock && (
-                                <Chip size="xs" intent="primary" icon={Lock}>
-                                    Tú
+                            {filteredChips.map(chip => (
+                                <Chip
+                                    key={chip.key}
+                                    size="xs"
+                                    intent={chip.intent}
+                                    icon={chip.icon}
+                                >
+                                    {chip.label}
                                 </Chip>
-                            )}
-                            {draft.wizard_state?.isWaitingPayment && !lockedByOther && (
-                                <Chip size="xs" intent="warning" icon={Wallet}>
-                                    Por Pagar
-                                </Chip>
-                            )}
-                            {draft.wizard_state?.step && !draft.wizard_state?.isWaitingPayment && !lockedByOther && (
-                                <Chip size="xs" intent="warning" icon={ClipboardCheck}>
-                                    P{draft.wizard_state.step}
-                                </Chip>
-                            )}
-                            {draft.wizard_state?.isWaitingApproval && (
-                                <Chip size="xs" intent="primary" icon={Loader2}>
-                                    Auth
-                                </Chip>
-                            )}
-                            {draft.wizard_state?.isApproved && (
-                                <Chip size="xs" intent="success" icon={ClipboardCheck}>
-                                    OK
-                                </Chip>
-                            )}
+                            ))}
                         </div>
                         <div className="flex items-center gap-2 mt-0.5 text-3xs text-muted-foreground">
                             {draft.customer_name && (
@@ -385,7 +377,7 @@ export function DraftCartsClientView({
                     <div className="py-1">
                         <DataTable
                             variant="compact"
-                            gridTemplate="grid-cols-[2rem_1fr_auto_auto_auto]"
+                            gridTemplate="grid-cols-[2.5rem_1fr_auto_auto_auto]"
                             columns={draftColumns}
                             data={drafts}
                             isLoading={loading}

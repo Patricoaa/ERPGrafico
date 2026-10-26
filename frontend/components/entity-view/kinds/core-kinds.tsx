@@ -77,8 +77,13 @@ export function registerCoreValueKinds(): void {
         format: (v, o) => formatMoneyValue(v, o.currency, o.sign),
         sortValue: (v) => toNumber(v),
         align: "end",
-        render: ({ value, options, align }) => (
-            <DataCell.Currency value={toNumber(value)} currency={options.currency} align={align} />
+        render: ({ value, options, align, surface }) => (
+            <DataCell.Currency
+                value={toNumber(value)}
+                currency={options.currency}
+                align={align}
+                className={surface === "cardFooter" ? "text-lg font-semibold" : undefined}
+            />
         ),
     })
 
@@ -124,15 +129,20 @@ export function registerCoreValueKinds(): void {
     })
 
     registerValueKind("hubStatus", {
-        // Readable label first (StatusBadge, also used for text, sort and export), axes rings after it:
-        // table and card share one status vocabulary (Gate C decision).
+        // Readable label first (StatusBadge, also used for text, sort and export), axes rings after it.
+        // Table: label + rings (Gate C). Card (ADR-0097): rings only, the label goes to the rail and screen readers.
         format: (v, o) => (v ? formatStatus(o.caption) : EMPTY),
         sortValue: (v, o) => (v ? formatStatus(o.caption) : null),
         align: "start",
-        render: ({ value, options, align }) =>
+        render: ({ value, options, align, surface }) =>
             value ? (
                 <div className={cn("flex w-full items-center gap-2", ALIGN_FLEX[align])}>
-                    <StatusBadge status={options.caption.status} label={options.caption.label} intent={options.caption.intent} size="sm" />
+                    {surface === "card" ? (
+                        // Cards show the hub axes only: the state also reads in the rail, and the label stays for screen readers.
+                        <span className="sr-only">{options.caption.label ?? options.caption.status}</span>
+                    ) : (
+                        <StatusBadge status={options.caption.status} label={options.caption.label} intent={options.caption.intent} size="sm" />
+                    )}
                     <DomainHubStatus label={options.entity} data={value} />
                 </div>
             ) : (
@@ -156,14 +166,15 @@ export function registerCoreValueKinds(): void {
     registerValueKind("tags", {
         format: (v) => formatTags(v),
         // DataCell.Category needs a domain (it renders "-" without one): free tags use neutral chips.
-        render: ({ value, options, align }) => {
+        render: ({ value, options, align, surface }) => {
             if (options.domain) return <DataCell.Category value={value ? [...value] : null} domain={options.domain} align={align} />
             if (!value || value.length === 0) return <DataCell.Empty align={align} />
             // One line: the first two chips plus "+N" keep row height stable (full list in the title attribute).
             const shown = value.slice(0, 2)
             return (
                 <div className={cn("flex w-full flex-nowrap items-center gap-1 overflow-hidden", ALIGN_FLEX[align])} title={value.join(", ")}>
-                    {shown.map((tag) => <DataCell.Chip key={tag} size="sm">{tag}</DataCell.Chip>)}
+                    {/* Table cells centre each chip in its share of the row; on cards chips keep their width and follow the alignment. */}
+                    {shown.map((tag) => <DataCell.Chip key={tag} size="sm" className={surface === "table" ? undefined : cn("w-auto", ALIGN_FLEX[align])}>{tag}</DataCell.Chip>)}
                     {value.length > shown.length && <span className="text-xs text-muted-foreground">+{value.length - shown.length}</span>}
                 </div>
             )

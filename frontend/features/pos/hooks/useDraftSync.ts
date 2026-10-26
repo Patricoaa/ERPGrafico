@@ -11,8 +11,17 @@ import { POS_KEYS } from './queryKeys'
 
 // ── Types ────────────────────────────────────────────────────────
 
+export interface SyncDraftWizardState {
+    step?: number
+    isWaitingPayment?: boolean
+    isWaitingApproval?: boolean
+    isApproved?: boolean
+    phaseId?: string
+}
+
 export interface SyncDraft {
     id: number
+    session_local_id: number
     name: string
     customer_name: string | null
     item_count: number
@@ -24,7 +33,7 @@ export interface SyncDraft {
     locked_at: string | null
     created_by_full_name: string | null
     last_modified_by_full_name: string | null
-    wizard_state: Record<string, unknown> | null
+    wizard_state: SyncDraftWizardState | null
     updated_at: string
     created_at: string
 }

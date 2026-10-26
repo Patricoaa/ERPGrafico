@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { CmykRing } from "@/components/shared/CmykRing"
+import { Check, Minus } from "lucide-react"
 
 type SelectionRingSize = "2xs" | "xs" | "sm" | "md" | "lg"
 
@@ -24,11 +24,11 @@ interface SelectionRingProps {
 }
 
 /**
- * SelectionRing — Accessible selection indicator using CmykRing.
+ * SelectionRing — Accessible selection indicator for bulk selection.
  *
  * Replaces Checkbox for mass-selection UIs (table rows, select-all headers, card selectors).
- * Uses the CMYK process-colour wheel as the "checked" visual, with a semicircular
- * overlay for the indeterminate (partial) state.
+ * An empty circle that becomes a filled primary circle with a check when selected (and a minus
+ * for the partial state) — the same "checked" mark as SelectionCheck on cards (ADR-0097), no CmykRing.
  *
  * Keyboard: Space/Enter toggles. Focus ring follows system focus-visible.
  */
@@ -68,13 +68,13 @@ export function SelectionRing({
     lg: "h-6 w-6",
   }
 
-  // CmykRing is one size smaller than hit area for visual padding
-  const ringSizeMap: Record<SelectionRingSize, "2xs" | "xs" | "sm" | "md" | "lg"> = {
-    "2xs": "2xs",
-    xs: "2xs",
-    sm: "xs",
-    md: "sm",
-    lg: "md",
+  // The mark is smaller than the circle that holds it
+  const CHECK_SIZE: Record<SelectionRingSize, string> = {
+    "2xs": "h-2 w-2",
+    xs: "h-2 w-2",
+    sm: "h-2.5 w-2.5",
+    md: "h-3 w-3",
+    lg: "h-3.5 w-3.5",
   }
 
   return (
@@ -108,38 +108,27 @@ export function SelectionRing({
         />
       )}
 
-      {/* Checked state: CmykRing */}
+      {/* Checked state: filled primary circle with a check (same mark as SelectionCheck on cards) */}
       {isChecked && (
-        <CmykRing size={ringSizeMap[size]} className="animate-in zoom-in-95 duration-150" />
+        <span
+          className={cn(
+            "flex items-center justify-center rounded-full bg-primary text-primary-foreground animate-in zoom-in-95 duration-150",
+            SIZE_CLASSES[size]
+          )}
+          aria-hidden="true"
+        >
+          <Check className={CHECK_SIZE[size]} strokeWidth={3} />
+        </span>
       )}
 
-      {/* Indeterminate state: CmykRing + semicircular overlay */}
+      {/* Indeterminate state: filled primary circle with a minus */}
       {isIndeterminate && (
-        <div className="relative" aria-hidden="true">
-          <CmykRing size={ringSizeMap[size]} className="opacity-60" />
-          <svg
-            className="absolute inset-0 pointer-events-none"
-            viewBox="0 0 24 24"
-            preserveAspectRatio="xMidYMid meet"
-          >
-            <circle
-              cx="12"
-              cy="12"
-              r="9.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeDasharray="59.69 59.69"
-              strokeDashoffset="0"
-              strokeLinecap="round"
-              className="text-primary"
-              style={{
-                transform: "rotate(-90deg)",
-                transformOrigin: "12px 12px",
-              }}
-            />
-          </svg>
-        </div>
+        <span
+          className={cn("flex items-center justify-center rounded-full bg-primary text-primary-foreground", SIZE_CLASSES[size])}
+          aria-hidden="true"
+        >
+          <Minus className={CHECK_SIZE[size]} strokeWidth={3} />
+        </span>
       )}
     </button>
   )

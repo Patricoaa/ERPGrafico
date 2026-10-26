@@ -69,7 +69,7 @@ export const PURCHASING_TABS: NavTabConfig[] = [
   {
     value: "dtes",
     label: "Documentos",
-    href: "/purchasing/dtes",
+    href: "/purchasing/docs",
     iconName: getEntityIconName("billing.invoice") ?? "file-text",
     headerTitle: "Documentos",
     headerDescription: "Órdenes, DTE, recepciones y devoluciones del ciclo de abastecimiento.",

@@ -71,6 +71,8 @@ GET    /api/auth/user/         (JWT)                          → CurrentUserSer
 | `production` | `/api/production/` | `orders/`, `boms/` |
 | `purchasing` | `/api/purchasing/` | `orders/`, `receipts/`, `returns/` |
 | `sales` | `/api/sales/` | `orders/`, `deliveries/`, `returns/`, `pos-drafts/`, `settings/`, `pricing/`, `credit_history/` |
+
+> **Nota:** `pos-drafts/` expone `session_local_id` (N° temporal secuencial 1,2,3… por sesión POS) y `wizard_state.phaseId` (fase actual del checkout: `cart`|`customer`|`dte`|`manufacturing`|`delivery`|`payment`) en listado, detalle y endpoint `/sync/`. Único por sesión; se reinicia al cerrar.
 | `tax` | `/api/tax/` | `periods/`, `accounting-periods/`, `declarations/`, `payments/` |
 | `treasury` | `/api/treasury/` | `accounts/`, `movements/`, `payments/` (= movements), `statements/`, `statement-lines/`, `banks/`, `payment-methods/`, `checks/`, `loans/`, `loan-installments/`, `credit-lines/`, `card-statements/`, `pos-terminals/`, `terminal-batches/`, `terminal-providers/`, `terminal-devices/`, `pos-sessions/`, `dashboard/`, `reconciliation-settings/` |
 | `workflow` | `/api/workflow/` | `tasks/`, `notifications/`, `assignment-rules/`, `notification-rules/`, `settings/` |
@@ -455,6 +457,8 @@ POST   /api/inventory/warehouses/       create
 PATCH  /api/inventory/warehouses/{id}/  update
 ```
 
+Lectura (anotaciones, no editables): `stocked_product_count` cuenta productos distintos con `stocks.quantity > 0` y `stock_units` suma las existencias de la bodega (0 si no tiene filas de stock).
+
 ### moves/ (StockMove)
 
 Ruta real del router: `/api/inventory/moves/` (`StockMoveViewSet`, basename `stockmove`).
@@ -528,6 +532,7 @@ Dirección del movimiento (clasificada en DB, prioridad TRANSFER > ADJUSTMENT > 
 
 ```
 GET/POST/PATCH/DELETE   /api/inventory/categories/        categorías de producto
+  · lectura: product_count = productos activos asignados directamente (no suma descendientes)
 GET/POST/PATCH/DELETE   /api/inventory/uoms/              unidades de medida
 GET/POST/PATCH/DELETE   /api/inventory/uom-categories/    categorías de UoM
 GET/POST/PATCH/DELETE   /api/inventory/attributes/        atributos (color, talla, …)

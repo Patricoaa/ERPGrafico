@@ -121,7 +121,49 @@ class BillingService:
     def pos_checkout_from_request(request) -> Invoice:
         params = BillingService._parse_pos_checkout_params(request)
 
-        if not all([params["order_data"], params["dte_type"], params["payment_method"]]):
+        # Make validation more flexible: infer payment_method if possible
+        if not params.get("order_data") or not params.get("dte_type"):
+            raise ValidationError("Missing data")
+
+        payment_method = params.get("payment_method")
+        if not payment_method:
+            # Try to infer from payment_method_id
+            payment_method_id = params.get("payment_method_id")
+            if payment_method_id:
+                try:
+                    from treasury.models import PaymentMethod
+                    pm = PaymentMethod.objects.filter(id=payment_method_id).first()
+                    if pm:
+                        # Map to legacy enum values used by SaleOrder
+                        pm_type_map = {
+                            "CASH": "CASH",
+                            "CHECK": "CHECK",
+                            "CHECKING": "CHECK",
+                            "TRANSFER": "TRANSFER",
+                            "CREDIT_CARD": "CARD",
+                            "DEBIT_CARD": "CARD",
+                            "CARD": "CARD",
+                            "CARD_TERMINAL": "CARD_TERMINAL",
+                            "OTHER": "OTHER",
+                        }
+                        payment_method = pm_type_map.get(pm.method_type) or pm.method_type or "CASH"
+                        params["payment_method"] = payment_method
+                except Exception:
+                    pass
+            # Try to infer from payments array
+            if not payment_method and params.get("payments"):
+                try:
+                    payments = params["payments"]
+                    if isinstance(payments, list) and len(payments) > 0:
+                        first = payments[0]
+                        m = first.get("method") or first.get("payment_method") or first.get("type")
+                        if m:
+                            payment_method = m
+                            params["payment_method"] = m
+                except Exception:
+                    pass
+
+        if not payment_method:
             raise ValidationError("Missing data")
 
         return BillingService.pos_checkout(

@@ -204,7 +204,7 @@ export function VariantQuickEditForm({
       document.body
     )}
     <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando editor rápido de variante" className="flex-1 flex flex-col">
-    <div className="flex flex-col h-full bg-card rounded-md border shadow-card overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+    <div className="surface-panel flex flex-col h-full shadow-card overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
       <TabBar
           value={activeTab}
           onValueChange={setActiveTab}

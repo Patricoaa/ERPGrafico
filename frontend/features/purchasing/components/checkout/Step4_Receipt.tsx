@@ -1,7 +1,7 @@
 "use client"
 
 import {useState, useEffect} from "react"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, RadioCard, StepHeader } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, ChoiceCard, ChoiceGroup, StepHeader } from "@/components/shared"
 import { purchasingApi } from "../../api/purchasingApi"
 import { useServerDate } from "@/hooks/useServerDate"
 import {
@@ -15,7 +15,6 @@ import {
 import { type ReceiptData, type CheckoutLine, type PartialReceiptLine } from "../../types"
 import { type Warehouse, type UoM } from "@/types/entities"
 import {Receipt, FileText, FileCheck} from "lucide-react"
-import {RadioGroup} from "@/components/ui/radio-group"
 interface Step4_ReceiptProps {
     receiptData: ReceiptData
     setReceiptData: (data: ReceiptData | ((prev: ReceiptData) => ReceiptData)) => void
@@ -205,23 +204,24 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             <LabeledContainer
                 label={`Tipo de ${receiptLabel}`}
             >
-                <RadioGroup
-                    value={receiptData.type}
-                    onValueChange={(val) => setReceiptData({ ...receiptData, type: val as ReceiptData['type'] })}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full"
+                <ChoiceGroup
+                    label={`Tipo de ${receiptLabel}`}
+                    columns="grid-cols-1 md:grid-cols-3"
+                    activation="select"
                 >
                     {receiptTypes.map((type) => (
-                        <RadioCard
+                        <ChoiceCard
+                            variant="light"
                             key={type.id}
-                            id={`receipt-${type.id}`}
-                            value={type.id}
-                            label={type.label}
+                            selected={receiptData.type === type.id}
+                            onSelect={() => setReceiptData({ ...receiptData, type: type.id as ReceiptData['type'] })}
+                            title={type.label}
                             description={type.description}
-                            icon={<type.icon className="h-4 w-4" />}
-                            iconColor={type.color}
+                            icon={type.icon}
+                            iconClassName={type.color}
                         />
                     ))}
-                </RadioGroup>
+                </ChoiceGroup>
             </LabeledContainer>
 
             {receiptData.type === 'PARTIAL' && orderLines.length > 0 && (

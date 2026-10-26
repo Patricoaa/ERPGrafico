@@ -151,7 +151,7 @@ export const salesApi = {
         if (filters?.search) params.append('search', String(filters.search))
         if (filters?.note_type) params.append('note_type', String(filters.note_type))
         if (filters?.ordering) params.append('ordering', String(filters.ordering))
-        const { data } = await api.get('/sales/deliveries/', { params })
+        const { data } = await api.get<unknown>('/sales/deliveries/', { params })
         return toPage<Record<string, unknown>>(data, page, page_size)
     },
 
@@ -159,7 +159,7 @@ export const salesApi = {
      * Fetch a single delivery by id
      */
     getDelivery: async (id: number): Promise<Record<string, unknown>> => {
-        const { data } = await api.get(`/sales/deliveries/${id}/`)
+        const { data } = await api.get<Record<string, unknown>>(`/sales/deliveries/${id}/`)
         return data
     },
 
@@ -167,7 +167,7 @@ export const salesApi = {
      * Fetch a single sale return by id
      */
     getReturn: async (id: number): Promise<Record<string, unknown>> => {
-        const { data } = await api.get(`/sales/returns/${id}/`)
+        const { data } = await api.get<Record<string, unknown>>(`/sales/returns/${id}/`)
         return data
     },
 
@@ -189,7 +189,7 @@ export const salesApi = {
         if (filters?.warehouse_id) params.append('warehouse_id', String(filters.warehouse_id))
         if (filters?.search) params.append('search', String(filters.search))
         if (filters?.ordering) params.append('ordering', String(filters.ordering))
-        const { data } = await api.get('/sales/returns/', { params })
+        const { data } = await api.get<unknown>('/sales/returns/', { params })
         return toPage<Record<string, unknown>>(data, page, page_size)
     },
 

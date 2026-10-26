@@ -30,6 +30,8 @@ export { WAREHOUSES_KEYS, WAREHOUSES_QUERY_KEY, useWarehouse, useWarehouses } fr
 export type { Product, ProductFilters, ProductCategory, BaseProduct, InventoryDocument, InventoryDocumentDetail, InventoryDocumentFilters, InventoryCount, InventoryCountLine, InventoryCountFilters } from './types'
 export { PRODUCTS_KEYS, PRODUCTS_QUERY_KEY, BOMS_QUERY_KEY, VARIANTS_QUERY_KEY } from './hooks/queryKeys'
 export { inventoryApi, resolveMediaUrl } from './api/inventoryApi'
+export { getAvailability, getPrice, getAction, getProductCardModel, pluralizeEs, variantChipLabel } from './utils/productCardModel'
+export type { AvailabilityTone, AvailabilityIcon, CardAction, CardAvailability, CardPrice, CardPriceKind, ProductCardContext, ProductCardModel } from './utils/productCardModel'
 export { useProducts, useProduct } from './hooks/useProducts'
 export { useVariants } from './hooks/useVariants'
 export { useCategories, useCategory } from './hooks/useCategories'

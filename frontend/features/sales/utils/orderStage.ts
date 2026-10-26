@@ -1,4 +1,4 @@
-import { getHubStatuses } from "@/lib/workflow-status"
+import { getHubStatuses, isOrderCompleted } from "@/lib/workflow-status"
 import type { BadgeIntent } from "@/lib/badge-resolvers"
 import type { SaleOrder } from "../types"
 
@@ -13,6 +13,7 @@ export function orderStageSummary(order: SaleOrder): { status: string; label: st
     const paid = order.payment_status === 'PAID' || (Number(order.total) === 0 && Number(order.pending_amount) === 0)
 
     if (order.status === 'CANCELLED' || s.origin === 'destructive') return { status: 'CANCELLED', label: 'Cancelada', intent: 'destructive' }
+    if (isOrderCompleted(order)) return { status: 'SUCCESS', label: 'Completada', intent: 'success' }
     if (paid || s.treasury === 'success') return { status: 'PAID', label: 'Cobrada', intent: 'success' }
     if (s.billing === 'success') return { status: 'BILLED', label: 'Facturada', intent: 'info' }
     if (s.production === 'warning' || s.production === 'active') return { status: 'PRODUCTION', label: 'En Producción', intent: 'warning' }

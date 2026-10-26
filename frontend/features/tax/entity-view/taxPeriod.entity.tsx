@@ -59,6 +59,7 @@ export const taxPeriodEntity = defineEntity<TaxPeriod>()((f) => ({
 export const taxPeriodViews = taxPeriodEntity.views({
     table: { columns: ["period", "status", "vatToPay", "paymentStatus"], primary: "period" },
     card: {
+        rail: { status: (r) => r.status },
         // Card title is plain text (the kind's compact year/month box only renders in the table cell).
         title: "period",
         trailing: ["status"],

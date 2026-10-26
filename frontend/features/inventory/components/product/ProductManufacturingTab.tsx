@@ -2,7 +2,7 @@
 "use client"
 
 import { type UoM, type Product } from "@/types/entities"
-import {ActionConfirmModal, FormLineItemsTable, FormSection, LabeledContainer, LabeledSeparator, LabeledSwitch, RadioCard, Badge} from '@/components/shared'
+import {ActionConfirmModal, FormLineItemsTable, FormSection, LabeledContainer, LabeledSeparator, LabeledSwitch, ChoiceCard, ChoiceGroup, Badge} from '@/components/shared'
 import { FormField } from "@/components/ui/form"
 
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,6 @@ import {Package, Layers, Clock, Settings2, Info, Monitor, Printer, Scissors, Tra
 import { type UseFormReturn } from "react-hook-form"
 import { type ProductFormValues } from "./schema"
 import { type ProductInitialData } from "@/types/forms"
-import { RadioGroup } from "@/components/ui/radio-group"
 import { cn } from "@/lib/utils"
 import { Switch } from "@/components/ui/switch"
 
@@ -51,64 +50,74 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                     <LabeledContainer
                         label="Modo de Producción"
                     >
-                        <RadioGroup
-                            value={productionMode}
-                            onValueChange={(value) => {
-                                if (value === productionMode) return;
-
-                                const patch: Record<string, boolean> =
-                                    value === "simple" ? {
+                        <ChoiceGroup
+                            label="Modo de Producción"
+                            columns="grid-cols-3"
+                            activation="select"
+                        >
+                            <ChoiceCard
+                                variant="light"
+                                selected={productionMode === "simple"}
+                                onSelect={() => {
+                                    const patch = {
                                         requires_advanced_manufacturing: false,
                                         mfg_auto_finalize: false,
                                         track_inventory: true,
-                                    }
-                                        : value === "express" ? {
-                                            has_bom: true,
-                                            requires_advanced_manufacturing: false,
-                                            mfg_auto_finalize: true,
-                                            track_inventory: false,
+                                    };
+                                    Object.entries(patch).forEach(([k, v]) => {
+                                        const key = k as keyof ProductFormValues;
+                                        if (form.getValues(key) !== v) {
+                                            form.setValue(key, v, { shouldDirty: true });
                                         }
-                                            : {
-                                                has_bom: true,
-                                                requires_advanced_manufacturing: true,
-                                                mfg_auto_finalize: false,
-                                                track_inventory: false,
-                                            };
-
-                                Object.entries(patch).forEach(([k, v]) => {
-                                    const key = k as keyof ProductFormValues;
-                                    if (form.getValues(key) !== v) {
-                                        form.setValue(key, v, { shouldDirty: true });
-                                    }
-                                });
-                            }}
-                            className="grid grid-cols-3 gap-3 w-full"
-                        >
-                            <RadioCard
-                                id="mfg-mode-simple"
-                                value="simple"
-                                label="Simple"
+                                    });
+                                }}
+                                title="Simple"
                                 description="Manual / Lote"
-                                icon={<Package className="h-4 w-4" />}
-                                orientation="vertical"
+                                icon={Package}
                             />
-                            <RadioCard
-                                id="mfg-mode-express"
-                                value="express"
-                                label="Express"
+                            <ChoiceCard
+                                variant="light"
+                                selected={productionMode === "express"}
+                                onSelect={() => {
+                                    const patch = {
+                                        has_bom: true,
+                                        requires_advanced_manufacturing: false,
+                                        mfg_auto_finalize: true,
+                                        track_inventory: false,
+                                    };
+                                    Object.entries(patch).forEach(([k, v]) => {
+                                        const key = k as keyof ProductFormValues;
+                                        if (form.getValues(key) !== v) {
+                                            form.setValue(key, v, { shouldDirty: true });
+                                        }
+                                    });
+                                }}
+                                title="Express"
                                 description="Auto-cierre"
-                                icon={<Clock className="h-4 w-4" />}
-                                orientation="vertical"
+                                icon={Clock}
                             />
-                            <RadioCard
-                                id="mfg-mode-advanced"
-                                value="advanced"
-                                label="Avanzado"
+                            <ChoiceCard
+                                variant="light"
+                                selected={productionMode === "advanced"}
+                                onSelect={() => {
+                                    const patch = {
+                                        has_bom: true,
+                                        requires_advanced_manufacturing: true,
+                                        mfg_auto_finalize: false,
+                                        track_inventory: false,
+                                    };
+                                    Object.entries(patch).forEach(([k, v]) => {
+                                        const key = k as keyof ProductFormValues;
+                                        if (form.getValues(key) !== v) {
+                                            form.setValue(key, v, { shouldDirty: true });
+                                        }
+                                    });
+                                }}
+                                title="Avanzado"
                                 description="Wizard Etapas"
-                                icon={<Layers className="h-4 w-4" />}
-                                orientation="vertical"
+                                icon={Layers}
                             />
-                        </RadioGroup>
+                        </ChoiceGroup>
                     </LabeledContainer>
 
                     <div className="space-y-4">
@@ -185,7 +194,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                     )}
 
                     {!initialData?.id ? (
-                        <div className="p-12 flex flex-col items-center justify-center text-center border-2 border-dashed border-border/50 rounded-md bg-card">
+                        <div className="surface-panel p-12 flex flex-col items-center justify-center text-center border-2 border-dashed border-border/50">
                             <Package className="h-10 w-10 text-muted-foreground/30 mb-3" />
                             <h3 className="text-sm font-semibold mb-1">Producto no guardado</h3>
                             <p className="text-xs text-muted-foreground max-w-sm">

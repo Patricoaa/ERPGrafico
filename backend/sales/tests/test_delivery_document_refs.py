@@ -67,6 +67,7 @@ def sales_setup(db):
 def test_delivery_serializer_exposes_order_document_ref(sales_setup):
     data = SaleDeliverySerializer(sales_setup["delivery"]).data
 
+    assert data["display_id"].startswith("DES-")
     ref = data["sale_order_document"]
     assert ref["label"] == "sales.saleorder"
     assert ref["id"] == sales_setup["order"].id
@@ -104,7 +105,9 @@ def test_return_serializer_exposes_order_document_ref(sales_setup):
         date=date(2026, 8, 20),
     )
 
-    ref = SaleReturnSerializer(ret).data["sale_order_document"]
+    data = SaleReturnSerializer(ret).data
+    assert data["display_id"].startswith("DEV-")
+    ref = data["sale_order_document"]
     assert ref["label"] == "sales.saleorder"
     assert ref["id"] == sales_setup["order"].id
     assert ref["url"] == f"/sales/dtes/orders?selected={sales_setup['order'].id}"

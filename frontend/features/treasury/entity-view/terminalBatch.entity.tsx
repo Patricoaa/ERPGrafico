@@ -54,6 +54,7 @@ export const terminalBatchEntity = defineEntity<TerminalBatch>()((f) => ({
 export const terminalBatchViews = terminalBatchEntity.views({
     table: { columns: ["salesDate", "provider", "transactionCount", "netAmount", "commissionTotal", "status"], primary: "provider" },
     card: {
+        rail: { status: (r) => r.status },
         title: "provider",
         subtitle: ["salesDate"],
         trailing: ["netAmount"],

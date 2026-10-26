@@ -34,13 +34,14 @@ const METHOD_TONE: Record<string, CardTone> = {
 }
 
 const usage = (m: PaymentMethod): string[] => [...(m.allow_for_sales ? ["Ventas"] : []), ...(m.allow_for_purchases ? ["Compras"] : [])]
+const categoryLabel = (m: PaymentMethod): string => m.method_type_display || METHOD_TYPE_LABELS[m.method_type] || m.method_type
 
 /** Payment method (ADR-0087 oleada A3). Replaces paymentMethodFields.tsx (1 computed) + the per-type card icon. */
 export const paymentMethodEntity = defineEntity<PaymentMethod>()((f) => ({
     label: "treasury.paymentmethod",
     fields: {
         name: f.text("name", { label: "Nombre" }),
-        category: f.text((m) => m.method_type_display || METHOD_TYPE_LABELS[m.method_type] || m.method_type, { label: "Categoría Operativa", tone: "secondary" }),
+        category: f.text(categoryLabel, { label: "Categoría Operativa", tone: "secondary" }),
         treasuryAccount: f.text("treasury_account_name", { label: "Cuenta de Tesorería" }),
         usage: f.tags(usage, { label: "Disponible para", sortable: false }),
         isActive: f.status((m) => (m.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Archivado" }), { label: "Estado" }),
@@ -51,9 +52,14 @@ export const paymentMethodViews = paymentMethodEntity.views({
     table: { columns: ["name", "category", "treasuryAccount", "isActive", "usage"], defaultSort: "name" },
     card: {
         title: "name",
-        subtitle: ["category", "treasuryAccount"],
+        subtitle: ["treasuryAccount"],
         meta: ["usage"],
-        trailing: ["isActive"],
-        media: { iconFor: (m) => METHOD_ICON[m.method_type] ?? CreditCard, tone: (m) => METHOD_TONE[m.method_type] ?? "muted" },
+        muted: (m) => !m.is_active,
+        media: {
+            placement: "top",
+            iconFor: (m) => METHOD_ICON[m.method_type] ?? CreditCard,
+            tone: (m) => (m.is_active ? METHOD_TONE[m.method_type] ?? "muted" : "muted"),
+            badge: (m) => (m.is_active ? categoryLabel(m) : ["Archivado", categoryLabel(m)]),
+        },
     },
 })

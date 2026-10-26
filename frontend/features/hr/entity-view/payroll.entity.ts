@@ -26,6 +26,7 @@ export const payrollViews = payrollEntity.views({
         primary: "folio",
     },
     card: {
+        rail: { status: (r) => r.status },
         title: "employeeName",
         subtitle: ["folio", "period"],
         trailing: ["netSalary"],

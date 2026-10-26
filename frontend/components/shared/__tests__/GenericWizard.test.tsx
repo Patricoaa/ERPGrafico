@@ -267,8 +267,10 @@ describe("WizardStepsSidebar", () => {
         const { WizardStepsSidebar } = await import("@/components/shared")
         await mount(<WizardStepsSidebar title="Proceso" currentStep={2} steps={steps} onStepClick={onStepClick} />)
 
-        const target = screen.getByText("Productos")
-        await press(target.closest("div[class*='cursor-pointer']"))
+        // The row is now a button via stretched link pattern - find via testid
+        const targetRow = screen.getByTestId("step-0")
+        const targetButton = targetRow.querySelector("button")
+        await press(targetButton)
         expect(onStepClick).toHaveBeenCalledWith(0)
     })
 
@@ -298,6 +300,7 @@ describe("WizardStepsSidebar", () => {
                 renderStepActions={(step) => <span role="button" aria-label={`accion-${step.id}`}>x</span>}
             />
         )
-        expect(screen.getAllByRole("button")).toHaveLength(3)
+        // 3 stretched link buttons (one per step) + 3 action buttons = 6 buttons
+        expect(screen.getAllByRole("button")).toHaveLength(6)
     })
 })

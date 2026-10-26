@@ -21,6 +21,7 @@ import { useDocumentRelations } from "@/features/documents/hooks/useDocumentRela
 import type { DocumentDomain, DocumentLink } from "@/features/documents/types"
 import { DocumentRelationsTab } from "@/features/documents/components/DocumentRelationsTab"
 import { useTaxPeriod } from "@/features/tax/hooks/useTaxQueries"
+import type { TaxPeriodDetail } from "@/features/tax/types"
 import { useInvalidateDocuments } from "@/features/documents/hooks/useInvalidateDocuments"
 import { resolveRegistryActions, type ResolvedDocumentAction } from "@/features/documents/utils/actions"
 import { useAuth } from "@/contexts/AuthContext"
@@ -69,9 +70,9 @@ export function AccountingPeriodSheet({ id, open, onOpenChange, embedded = false
     }, [period?.id, displayId, setEntityDisplay])
 
     // No actions registry for accounting period yet
-    const resolved: ResolvedDocumentAction<any>[] = []
+    const resolved: ResolvedDocumentAction<TaxPeriodDetail>[] = []
 
-    const toItem = ({ action, disabled, disabledReason }: ResolvedDocumentAction<any>): DocumentActionItem => ({
+    const toItem = ({ action, disabled, disabledReason }: ResolvedDocumentAction<TaxPeriodDetail>): DocumentActionItem => ({
         id: action.id,
         label: action.label,
         icon: action.icon,
@@ -157,7 +158,7 @@ export function AccountingPeriodSheet({ id, open, onOpenChange, embedded = false
     )
 }
 
-function AccountingPeriodSummaryTab({ period }: { period: any }) {
+function AccountingPeriodSummaryTab({ period }: { period: TaxPeriodDetail }) {
     const contextFields: DocumentField[] = [
         {
             label: "Mes",
@@ -194,7 +195,7 @@ function AccountingPeriodSummaryTab({ period }: { period: any }) {
     )
 }
 
-function getAccountingPeriodLifecycle(period: any): LifecycleStep[] {
+function getAccountingPeriodLifecycle(period: TaxPeriodDetail): LifecycleStep[] {
     const steps: LifecycleStep[] = [
         { id: "origin", label: "Origen", icon: FileText, status: "success" },
     ]
@@ -210,7 +211,7 @@ function getAccountingPeriodLifecycle(period: any): LifecycleStep[] {
     return steps
 }
 
-function getSectionActions(resolved: ResolvedDocumentAction<any>[]): Partial<Record<DocumentDomain, DocumentActionItem[]>> {
+function getSectionActions(resolved: ResolvedDocumentAction<TaxPeriodDetail>[]): Partial<Record<DocumentDomain, DocumentActionItem[]>> {
     return {}
 }
 

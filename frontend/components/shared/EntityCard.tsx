@@ -7,10 +7,11 @@ import { MoneyDisplay } from "./MoneyDisplay"
 import { Badge } from "@/components/shared"
 import type { BadgeIntent } from "@/lib/badge-resolvers"
 import type { LucideIcon } from "lucide-react"
-import { ArrowRight, ArrowLeft } from "lucide-react"
+import { ArrowRight, ArrowLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { SelectionRing } from "@/components/shared/SelectionRing"
+import { SelectionRing } from "@/components/shared"
+import { CardSurface, CardLead, Chip, cardAnatomy } from "@/components/shared"
 
 // ─── Base props ───────────────────────────────────────────────────────────────
 
@@ -41,6 +42,16 @@ interface EntityCardRootProps {
     defaultAction?: ((e: React.MouseEvent) => void) | null
     className?: string
     children: React.ReactNode
+    /**
+     * The whole card opens the record through a stretched link: the title button (marked
+     * `data-card-open`) covers the card, while actions, the checkbox and links in the meta pairs
+     * stay above it. Siblings, never nested interactive containers (AX-4).
+     */
+    openable?: boolean
+    /** Archived/inactive: the card is muted and its images desaturated. */
+    muted?: boolean
+    /** State/document rail (`CardRail`) holding the entity icon. Its side comes from the layout; the padding moves to an inner column so the rail is full height. */
+    rail?: React.ReactNode
     selectable?: boolean
     checked?: boolean
     onCheckedChange?: (checked: boolean) => void
@@ -56,45 +67,41 @@ function EntityCardRoot({
     defaultAction,
     className,
     children,
+    openable = false,
+    muted = false,
+    rail,
     selectable = false,
     checked = false,
     onCheckedChange,
     isAnySelected = false,
     selectionLabel,
 }: EntityCardRootProps) {
+    const padding = variant === "compact" ? "gap-1.5 p-3" : "gap-3 p-4"
     return (
         <EntityCardSelectionContext.Provider value={{ selectable, checked, onCheckedChange, isAnySelected, selectionLabel }}>
-            <div
+            <CardSurface
+                layout={rail ? "inline" : "stacked"}
+                // Same selection language as the POS product grid: CMYK ribbon on hover and once open/checked.
+                kind="choice"
+                pressable={openable || selectable}
+                selected={isSelected || checked ? true : undefined}
+                unavailable={false}
                 role={onClick || defaultAction ? "button" : undefined}
-                tabIndex={onClick || defaultAction ? 0 : undefined}
-                onClick={(e) => {
-                    if (defaultAction) {
-                        defaultAction(e)
-                    } else {
-                        onClick?.()
-                    }
-                }}
-                onKeyDown={(e) => {
-                    if ((onClick || defaultAction) && (e.key === "Enter" || e.key === " ")) {
-                        e.preventDefault()
-                        if (defaultAction) {
-                            defaultAction(e as unknown as React.MouseEvent)
-                        } else {
-                            onClick?.()
-                        }
-                    }
-                }}
+                onClick={onClick}
                 className={cn(
-                    "card-flat border-border group flex flex-col relative transition-all duration-300",
-                    variant === "compact" ? "gap-1.5 p-3" : "gap-3 p-4",
-                    isSelected && "accent-visible",
-                    checked && "border-primary/40 bg-primary/5 shadow-sm",
+                    "group relative transition-all duration-300",
+                    rail ? "flex-row" : cn("flex flex-col", padding),
                     (onClick || defaultAction) && "cursor-pointer select-none",
+                    muted && "opacity-70 [&_img]:grayscale",
+                    // The stretched link covers the card: without its own cursor, the button's default
+                    // cursor wins over the surface's pointer (the POS grid has no overlay to fight).
+                    openable && "cursor-pointer [&_[data-card-open]]:cursor-pointer hover:border-foreground/30 has-[[data-card-open]:focus-visible]:ring-2 has-[[data-card-open]:focus-visible]:ring-ring",
                     className
                 )}
             >
-                {children}
-            </div>
+                {rail}
+                {rail ? <div className={cn("flex min-w-0 flex-1 flex-col", padding)}>{children}</div> : children}
+            </CardSurface>
         </EntityCardSelectionContext.Provider>
     )
 }
@@ -109,24 +116,54 @@ interface EntityCardMediaProps {
     avatar?: React.ReactNode
     /** Tone of the strip and its icon (e.g. "text-success bg-success/10"). */
     iconClassName?: string
-    /** Chip over the top-left corner. */
-    badge?: string
+    /** Chip(s) over the top-left corner, always above the centred icon/photo. Arrays render separate stacked badges. */
+    badge?: string | readonly string[]
+    /** Secondary chip stacked below the badge at the top-left (small gap). */
+    footnote?: string
+    footnoteIcon?: LucideIcon
     className?: string
 }
 
 /** Full-bleed strip above the header (ProductCard anatomy). Bleeds over the card's padding. */
-function EntityCardMedia({ icon: Icon, imageSrc, avatar, iconClassName, badge, className }: EntityCardMediaProps) {
+function EntityCardMedia({ icon: Icon, imageSrc, avatar, iconClassName, badge, footnote, footnoteIcon, className }: EntityCardMediaProps) {
+    const { selectable, checked, onCheckedChange, isAnySelected, selectionLabel } = React.useContext(EntityCardSelectionContext)
+    const badges = (typeof badge === "string" ? [badge] : badge ?? []).filter(Boolean)
     return (
-        <div className={cn("relative -mx-3 -mt-3 mb-1 flex h-16 items-center justify-center overflow-hidden rounded-t-md", iconClassName ?? "bg-muted text-muted-foreground", className)}>
+        <div className={cn("relative -mx-3 -mt-3 mb-1 flex h-20 items-center justify-center overflow-hidden rounded-t-sm", iconClassName ?? "bg-muted text-muted-foreground", className)}>
             {avatar ?? (imageSrc ? (
                 <Image src={imageSrc} alt="" fill unoptimized={imageSrc.startsWith("data:")} className="object-cover" />
             ) : Icon ? (
                 <Icon className="size-6" aria-hidden />
             ) : null)}
-            {badge && (
-                <Badge intent="neutral" size="xs" className="absolute left-2 top-2 border border-border bg-background text-3xs font-normal">
-                    {badge}
-                </Badge>
+            {(badges.length > 0 || footnote) && (
+                <div data-media-chips className="absolute left-2 top-2 z-10 flex max-w-[calc(100%-3rem)] flex-col items-start gap-1">
+                    {badges.map((text, index) => (
+                        <Badge key={`${text}-${index}`} intent="neutral" size="xs" className="max-w-full truncate border border-border bg-background text-3xs font-normal">
+                            {text}
+                        </Badge>
+                    ))}
+                    {footnote && (
+                        <Chip size="xs" icon={footnoteIcon} className="max-w-full truncate border border-border bg-background text-3xs font-normal">
+                            {footnote}
+                        </Chip>
+                    )}
+                </div>
+            )}
+            {/* Bulk checkbox in the corner of the strip (catalog cards): above the stretched link. */}
+            {selectable && (
+                <span
+                    className={cn(
+                        "absolute right-2 top-2 z-10 flex rounded-full bg-background/90 p-1 shadow-xs transition-opacity",
+                        !isAnySelected && "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+                    )}
+                >
+                    <SelectionRing
+                        aria-label={selectionLabel ?? "Seleccionar"}
+                        checked={checked}
+                        onCheckedChange={onCheckedChange}
+                        size="sm"
+                    />
+                </span>
             )}
         </div>
     )
@@ -135,6 +172,12 @@ function EntityCardMedia({ icon: Icon, imageSrc, avatar, iconClassName, badge, c
 // ─── Header ───────────────────────────────────────────────────────────────────
 
 interface EntityCardHeaderProps {
+    /** The title may take two lines (catalog cards) instead of one with an ellipsis. */
+    wrapTitle?: boolean
+    /** `corner`: the bulk checkbox lives on the media strip (`EntityCard.Media`), not beside the title. */
+    selection?: "inline" | "corner"
+    /** Monospace identifier above the title (folio, SKU) — the kit's `code` line. */
+    code?: React.ReactNode
     /** Primary identifier (e.g. document number, name) */
     title: React.ReactNode
     /** Optional subtitle below the title */
@@ -156,17 +199,17 @@ interface EntityCardHeaderProps {
     className?: string
 }
 
-function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Icon, imageSrc, avatar, iconClassName, className }: EntityCardHeaderProps) {
+function EntityCardHeader({ selection = "inline", wrapTitle = false, code, title, subtitle, trailing, actions, center, icon: Icon, imageSrc, avatar, iconClassName, className }: EntityCardHeaderProps) {
     const { selectable, checked, onCheckedChange, isAnySelected, selectionLabel } = React.useContext(EntityCardSelectionContext)
 
-    const checkboxNode = selectable && (
+    const checkboxNode = selectable && selection === "inline" && (
         <SelectionRing
             aria-label={selectionLabel ?? "Seleccionar"}
             checked={checked}
             onCheckedChange={onCheckedChange}
             size="sm"
             className={cn(
-                "shrink-0 z-10 self-center flex items-center justify-center transition-all duration-300",
+                "relative z-10 shrink-0 self-center flex items-center justify-center transition-all duration-300",
                 isAnySelected
                     ? "opacity-100 w-5 mr-1"
                     : "opacity-0 w-0 pointer-events-none group-hover:opacity-100 group-hover:w-5 group-hover:pointer-events-auto group-hover:mr-1 group-focus-within:opacity-100 group-focus-within:w-5 group-focus-within:pointer-events-auto group-focus-within:mr-1 overflow-hidden"
@@ -174,72 +217,54 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
         />
     )
 
+    // Avatar (custom node) > image > icon. The same lead for the plain and the centered header.
+    const leadNode = avatar ?? (imageSrc ? (
+        <CardLead stretch className={imageSrc.startsWith("data:") ? "bg-transparent" : iconClassName}>
+            <Image src={imageSrc} alt="" fill unoptimized={imageSrc.startsWith("data:")} className="object-cover" />
+        </CardLead>
+    ) : Icon ? (
+        <CardLead stretch className={iconClassName}>
+            <Icon className="h-5 w-5" />
+        </CardLead>
+    ) : null)
+
+    const identity = (
+        <div className="flex items-stretch gap-3 min-w-0 flex-1">
+            {checkboxNode}
+            {leadNode}
+            <div className="min-w-0 flex-1">
+                {code && <div className={cardAnatomy.code}>{code}</div>}
+                <div className={cn(cardAnatomy.entityTitle, wrapTitle && "line-clamp-2 whitespace-normal", "[&>div]:w-auto [&>div]:justify-start [&>div]:text-left")}>
+                    {title}
+                </div>
+                {subtitle && <div className={cardAnatomy.entitySubtitle}>{subtitle}</div>}
+            </div>
+        </div>
+    )
+
+    const trailingNode = (trailing || actions) && (
+        <div className="flex items-center gap-2 shrink-0">
+            {trailing}
+            {actions && <div className="relative z-10 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>{actions}</div>}
+        </div>
+    )
+
     if (center) {
         return (
             <div className={cn("grid grid-cols-[1fr_minmax(auto,3fr)_auto] items-start gap-2", className)}>
-                <div className="flex items-stretch gap-3 min-w-0">
-                    {checkboxNode}
-                    {avatar ?? (imageSrc ? (
-                        <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md overflow-hidden", imageSrc.startsWith("data:") ? "bg-transparent" : (iconClassName ?? "bg-accent text-muted-foreground"))}>
-                            <Image src={imageSrc} alt="" fill unoptimized={imageSrc.startsWith("data:")} className="object-cover" />
-                        </div>
-                    ) : Icon ? (
-                        <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-accent text-muted-foreground")}>
-                            <Icon className="h-5 w-5" />
-                        </div>
-                    ) : null)}
-                    <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
-                            {title}
-                        </div>
-                        {subtitle && (
-                            <div className="mt-0.5 truncate text-xs font-medium text-muted-foreground">
-                                {subtitle}
-                            </div>
-                        )}
-                    </div>
-                </div>
+                {identity}
                 <div className="flex items-center justify-center self-center min-w-0">
                     {center}
                 </div>
-                <div className="flex items-center gap-2 justify-self-end">
-                    {trailing}
-                    {actions && <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>{actions}</div>}
-                </div>
+                <div className="justify-self-end">{trailingNode}</div>
             </div>
         )
     }
 
     return (
         <div className={cn("flex items-start justify-between gap-2", className)}>
-            <div className="flex items-stretch gap-3 min-w-0 flex-1">
-                {checkboxNode}
-                {avatar ?? (imageSrc ? (
-                    <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md overflow-hidden", imageSrc.startsWith("data:") ? "bg-transparent" : (iconClassName ?? "bg-accent text-muted-foreground"))}>
-                        <Image src={imageSrc} alt="" fill unoptimized={imageSrc.startsWith("data:")} className="object-cover" />
-                    </div>
-                ) : Icon ? (
-                    <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-accent text-muted-foreground")}>
-                        <Icon className="h-5 w-5" />
-                    </div>
-                ) : null)}
-                <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
-                        {title}
-                    </div>
-                    {subtitle && (
-                        <div className="mt-0.5 truncate text-xs font-medium text-muted-foreground">
-                            {subtitle}
-                        </div>
-                    )}
-                </div>
-            </div>
-            {(trailing || actions) && (
-                <div className="flex items-center gap-2 shrink-0">
-                    {trailing}
-                    {actions && <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>{actions}</div>}
-                </div>
-            )}
+            {identity}
+            {trailingNode}
         </div>
     )
 }
@@ -282,7 +307,7 @@ function EntityCardBody({ children, className, actions }: EntityCardBodyProps) {
     )
 }
 
-// ─── Field ────────────────────────────────────────────────────────────────────
+// ─── Field ─────────────────────────────────────────────────────────────────────
 
 interface EntityCardFieldProps {
     label: string
@@ -296,10 +321,10 @@ interface EntityCardFieldProps {
 function EntityCardField({ label, value, full, className, icon: Icon }: EntityCardFieldProps) {
     return (
         <div className={cn("flex flex-col gap-0.5 min-w-0", full && "col-span-2", className)}>
-            <span className="text-3xs font-medium uppercase tracking-widest text-muted-foreground/60">
+            <span className={cardAnatomy.eyebrow}>
                 {label}
             </span>
-            <span className="flex items-center gap-1 text-xs font-medium text-foreground">
+            <span className={cn("flex items-center gap-1", cardAnatomy.fieldValue)}>
                 {Icon && <Icon className="h-3 w-3 shrink-0 text-muted-foreground/50" />}
                 {value ?? <span className="text-muted-foreground/40">—</span>}
             </span>
@@ -307,7 +332,7 @@ function EntityCardField({ label, value, full, className, icon: Icon }: EntityCa
     )
 }
 
-// ─── Footer ───────────────────────────────────────────────────────────────────
+// ─── Footer ────────────────────────────────────────────────────────────────────
 
 interface EntityCardFooterProps {
     children: React.ReactNode
@@ -327,7 +352,7 @@ function EntityCardFooter({ children, className }: EntityCardFooterProps) {
     )
 }
 
-// ─── Status Badge ─────────────────────────────────────────────────────────────
+// ─── Status Badge ──────────────────────────────────────────────────────────────
 
 interface EntityCardBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
     label: string
@@ -349,7 +374,7 @@ function EntityCardBadge({ label, dot = false, intent = "neutral", className, ..
     )
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
+// ─── Skeleton ──────────────────────────────────────────────────────────────────
 
 interface EntityCardSkeletonProps {
     className?: string
@@ -357,75 +382,249 @@ interface EntityCardSkeletonProps {
     showHeader?: boolean
     showBody?: boolean
     showFooter?: boolean
+    /** Número de campos (label + valor) que se pintan en el body. Default 3. */
+    fields?: number
+    /** Header: línea de código (code) sobre el título */
+    code?: boolean
+    /** Header: lead (icono/avatar) junto al título */
+    lead?: boolean
+    /** Header: subtítulo bajo el título */
+    subtitle?: boolean
+    /** Header: slot trailing (chips / acciones) */
+    trailing?: boolean
+    /** Header: slot centrado entre título y trailing */
+    center?: boolean
+    /** Strip de media superior (EntityCard.Media) */
+    media?: boolean
+    /** Barra/rail lateral de estado (CardRail) */
+    rail?: boolean | { side?: "left" | "right" }
+    /** Sección Meta (pares label/valor bajo el header) */
+    meta?: boolean
+    /** Número de pares label/valor en la sección Meta. Default 2. */
+    metaCount?: number
+    /** Fila Highlights bajo el header */
+    highlights?: boolean
+    /** Número de badges en la fila Highlights. Default 2. */
+    highlightsCount?: number
+    /** Métricas horizontales inferiores (EntityCard.Metrics / workflow) */
+    metrics?: boolean | number
+    /** Foot inferior (monto + glifo / acciones) */
+    foot?: boolean
+    /** Si el foot incluye monto/caption o solo glifo/acción */
+    footAmount?: boolean
+    footAlign?: "start" | "end"
+    footLines?: boolean
+}
+
+/** Un campo del body: etiqueta + valor, espejo de EntityCard.Field. */
+function EntityCardSkeletonField() {
+    return (
+        <div className="flex flex-col gap-0.5 min-w-0">
+            <Skeleton className="h-3 w-3/4" />
+            <Skeleton className="h-4 w-full" />
+        </div>
+    )
+}
+
+/** Media strip superior, espejo de EntityCard.Media. */
+function EntityCardSkeletonMedia() {
+    return (
+        <div className="relative -mx-3 -mt-3 mb-1 flex h-20 items-center justify-center overflow-hidden rounded-t-sm bg-muted text-muted-foreground">
+            <Skeleton className="size-10 shrink-0 rounded-sm" />
+        </div>
+    )
+}
+
+/** Meta: pares label/valor bajo el header, espejo de EntityCard.Meta. */
+function EntityCardSkeletonMeta({ count = 2 }: { count?: number }) {
+    return (
+        <dl className="grid min-w-0 grid-cols-1 @[18rem]:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-start gap-x-4 gap-y-1.5">
+            {Array.from({ length: count }).map((_, i) => (
+                <div key={i} className="flex min-w-0 flex-col items-start">
+                    <dt className={cardAnatomy.eyebrow}>
+                        <Skeleton className="h-3 w-1/3" />
+                    </dt>
+                    <dd className="min-w-0 max-w-full [overflow-wrap:anywhere]">
+                        <Skeleton className={i % 2 === 0 ? "h-4 w-full" : "h-4 w-3/4"} />
+                    </dd>
+                </div>
+            ))}
+        </dl>
+    )
+}
+
+/** Highlights: fila de etiquetas de estado bajo el header. */
+function EntityCardSkeletonHighlights({ count = 2 }: { count?: number }) {
+    return (
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+            {Array.from({ length: count }).map((_, i) => (
+                <Skeleton key={i} className={cn("h-6 rounded-md", i % 2 === 0 ? "w-24" : "w-20")} />
+            ))}
+        </div>
+    )
+}
+
+/** Métricas horizontales inferiores (EntityCard.Metrics / Workflow). */
+function EntityCardSkeletonMetrics({ count = 2 }: { count?: number }) {
+    return (
+        <div className="flex items-stretch justify-start border-t border-border mt-1">
+            {Array.from({ length: count }).map((_, idx) => (
+                <div key={idx} className="flex shrink-0 flex-col gap-0.5 py-2 pl-1 pr-6">
+                    <Skeleton className="h-2.5 w-12 mb-0.5" />
+                    <Skeleton className="h-4 w-16" />
+                </div>
+            ))}
+        </div>
+    )
+}
+
+/** Foot inferior: caption + monto + glifo, espejo de EntityCard.Foot. */
+function EntityCardSkeletonFoot({ amount = true, align = "start", lines = false }: { amount?: boolean; align?: "start" | "end"; lines?: boolean }) {
+    const isEnd = align === "end"
+    const justifyClass = lines ? "justify-between" : isEnd ? "justify-end" : "justify-between"
+    return (
+        <div className={cn(cardAnatomy.footer, "flex items-end gap-2 border-t border-border/40 pt-2", justifyClass)}>
+            {lines ? (
+                <div className="min-w-0 flex-1 flex flex-col gap-1">
+                    <Skeleton className="h-2.5 w-3/4" />
+                    <Skeleton className="h-2.5 w-1/2" />
+                </div>
+            ) : null}
+            {amount ? (
+                <div className={cn("min-w-0 shrink-0", isEnd && "flex flex-col items-end")}>
+                    <div className={cardAnatomy.caption}>
+                        <Skeleton className="h-2.5 w-14 mb-1" />
+                    </div>
+                    <div className={cardAnatomy.amountSlot}>
+                        <Skeleton className="h-5 w-20 tabular-nums" />
+                    </div>
+                </div>
+            ) : (
+                <div />
+            )}
+            <ChevronRight className={cardAnatomy.glyph} aria-hidden />
+        </div>
+    )
 }
 
 function EntityCardSkeleton({
     className,
     variant = "full",
     showHeader = true,
-    showBody = true,
+    showBody = false,
     showFooter = false,
+    fields = 3,
+    code = false,
+    lead = true,
+    subtitle = true,
+    trailing = true,
+    center = false,
+    media = false,
+    rail = false,
+    meta = false,
+    metaCount = 2,
+    highlights = false,
+    highlightsCount = 2,
+    metrics = false,
+    foot = false,
+    footAmount = true,
+    footAlign = "start",
+    footLines = false,
 }: EntityCardSkeletonProps) {
+    const fieldCount = Math.max(0, fields)
+    const metricsCount = typeof metrics === "number" ? metrics : metrics ? 2 : 0
+
+    const railSide = typeof rail === "object" ? (rail.side ?? "left") : "left"
+    const railNode = rail ? (
+        <div
+            className={cn(
+                cardAnatomy.rail,
+                cardAnatomy.railSize.md,
+                "border-border/60 bg-muted/20 text-muted-foreground",
+                railSide === "left" ? "border-l-0 border-r" : "order-last"
+            )}
+            aria-hidden
+        >
+            <Skeleton className="size-5 rounded-sm" />
+        </div>
+    ) : undefined
+
+    // ── Compact: catálogo denso, header mínimo en línea ──
     if (variant === "compact") {
         return (
-            <EntityCardRoot variant="compact" className={cn(className)}>
+            <EntityCardRoot variant="compact" rail={railNode} className={cn(className)}>
+                {media && <EntityCardSkeletonMedia />}
                 {showHeader && (
-                    <div className="flex flex-col gap-2 p-1">
-                        <div className="flex items-center gap-3">
-                            <Skeleton className="h-10 w-10 rounded-sm shrink-0" />
-                            <div className="flex flex-col gap-1.5 flex-1">
-                                <Skeleton className="h-4 w-3/4" />
-                                <Skeleton className="h-3 w-1/2 opacity-60" />
-                            </div>
+                    <EntityCardHeader
+                        avatar={lead ? <Skeleton className="h-8 w-8 rounded-sm shrink-0" /> : undefined}
+                        code={code ? <Skeleton className="h-2.5 w-16 mb-1" /> : undefined}
+                        title={<Skeleton className="h-4 w-3/4" />}
+                        subtitle={subtitle ? <Skeleton className="h-3 w-1/2 opacity-60" /> : undefined}
+                        trailing={trailing ? <Skeleton className="h-5 w-16 rounded-full shrink-0" /> : undefined}
+                        center={center ? <Skeleton className="h-5 w-24 rounded-md" /> : undefined}
+                    />
+                )}
+                {highlights && <EntityCardSkeletonHighlights count={highlightsCount} />}
+                {meta && <EntityCardSkeletonMeta count={metaCount} />}
+                {metricsCount > 0 && <EntityCardSkeletonMetrics count={metricsCount} />}
+                {showBody && (
+                    <EntityCardBody className="gap-4 pt-2 border-t border-border mt-1">
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-x-4 gap-y-2">
+                            {Array.from({ length: fieldCount }).map((_, i) => (
+                                <EntityCardSkeletonField key={i} />
+                            ))}
                         </div>
-                    </div>
+                    </EntityCardBody>
+                )}
+                {foot && <EntityCardSkeletonFoot amount={footAmount} align={footAlign} lines={footLines} />}
+                {showFooter && (
+                    <EntityCardFooter className="pt-2">
+                        <Skeleton className="h-8 w-24 rounded-md" />
+                        <Skeleton className="h-8 w-20 rounded-md" />
+                    </EntityCardFooter>
                 )}
             </EntityCardRoot>
         )
     }
 
+    // ── Full: esqueleto completo con todas las secciones opcionales ──
     return (
-        <EntityCardRoot className={cn(className)}>
+        <EntityCardRoot rail={railNode} className={cn(className)}>
+            {media && <EntityCardSkeletonMedia />}
             {showHeader && (
                 <EntityCardHeader
-                    title={
-                        <div className="flex items-center gap-3 min-w-0">
-                            <Skeleton className="h-8 w-8 rounded-md shrink-0" />
-                            <Skeleton className="h-5 w-48 shrink-0" />
-                        </div>
-                    }
+                    avatar={lead ? <Skeleton className="h-8 w-8 rounded-md shrink-0" /> : undefined}
+                    code={code ? <Skeleton className="h-2.5 w-20 mb-1" /> : undefined}
+                    title={<Skeleton className="h-5 w-48 shrink-0" />}
                     subtitle={
-                        <div className="flex items-center gap-2.5">
-                            <Skeleton className="h-4 w-20 rounded-sm" />
-                            <Skeleton className="h-4 w-24" />
-                        </div>
+                        subtitle ? (
+                            <div className="flex items-center gap-2.5">
+                                <Skeleton className="h-4 w-20 rounded-sm" />
+                                <Skeleton className="h-4 w-24" />
+                            </div>
+                        ) : undefined
                     }
                     trailing={
-                        <div className="flex items-center gap-4">
-                            <div className="hidden sm:flex px-4">
-                                <Skeleton className="h-6 w-24 rounded-full" />
+                        trailing ? (
+                            <div className="flex items-center gap-2 shrink-0">
+                                <Skeleton className="h-6 w-20 rounded-full" />
                             </div>
-                            <div className="flex flex-col items-end gap-1">
-                                <Skeleton className="h-2 w-10" />
-                                <Skeleton className="h-5 w-20" />
-                            </div>
-                            <Skeleton className="h-5 w-5 rounded-full" />
-                        </div>
+                        ) : undefined
                     }
+                    center={center ? <Skeleton className="h-6 w-32 rounded-md" /> : undefined}
                 />
             )}
+            {highlights && <EntityCardSkeletonHighlights count={highlightsCount} />}
+            {meta && <EntityCardSkeletonMeta count={metaCount} />}
+            {metricsCount > 0 && <EntityCardSkeletonMetrics count={metricsCount} />}
             {showBody && (
-                <EntityCardBody className="flex items-start justify-between gap-4 pt-2 border-t border-border mt-1">
-                    <div className="flex flex-wrap gap-x-4 gap-y-2 flex-1">
-                        <Skeleton className="h-3 w-32" />
-                        <Skeleton className="h-3 w-40" />
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                        <Skeleton className="h-2 w-10" />
-                        <Skeleton className="h-4 w-16" />
-                    </div>
+                <EntityCardBody className="gap-x-4 gap-y-2 pt-2 border-t border-border mt-1">
+                    {Array.from({ length: fieldCount }).map((_, i) => (
+                        <EntityCardSkeletonField key={i} />
+                    ))}
                 </EntityCardBody>
             )}
+            {foot && <EntityCardSkeletonFoot amount={footAmount} align={footAlign} lines={footLines} />}
             {showFooter && (
                 <EntityCardFooter className="pt-2">
                     <Skeleton className="h-8 w-24 rounded-md" />
@@ -436,7 +635,7 @@ function EntityCardSkeleton({
     )
 }
 
-// ─── Workflow Body ────────────────────────────────────────────────────────────
+// ─── Workflow Body ─────────────────────────────────────────────────────────────
 
 interface EntityCardWorkflowLine {
     quantity: number | string
@@ -476,18 +675,18 @@ function EntityCardWorkflowBody({ lines, total, pending, deliveryDate, dateLabel
             <div className="flex items-start gap-4 shrink-0 pr-9">
                 {deliveryDate ? (
                     <div className="flex flex-col items-end min-w-[80px]">
-                        <span className="text-4xs text-muted-foreground uppercase tracking-widest font-bold mb-0.5">{dateLabel}</span>
+                        <span className={cn(cardAnatomy.eyebrow, "mb-0.5")}>{dateLabel}</span>
                         <span className="text-xs font-medium tracking-tight whitespace-nowrap">{formatPlainDate(deliveryDate)}</span>
                     </div>
                 ) : null}
                 {pending != null && pending > 0 && (
                     <div className="flex flex-col items-end min-w-[80px]">
-                        <span className="text-4xs text-warning/80 uppercase tracking-widest font-bold mb-0.5">Pendiente</span>
+                        <span className={cn(cardAnatomy.eyebrow, "mb-0.5 text-warning")}>Pendiente</span>
                         <MoneyDisplay amount={pending} showColor={false} className="text-xs font-medium tracking-tight text-warning" />
                     </div>
                 )}
                 <div className="flex flex-col items-end min-w-[80px]">
-                    <span className="text-4xs text-muted-foreground uppercase tracking-widest font-bold mb-0.5">Total</span>
+                    <span className={cn(cardAnatomy.eyebrow, "mb-0.5")}>Total</span>
                     <MoneyDisplay amount={total} showColor={false} className="text-xs font-medium tracking-tight" />
                 </div>
             </div>
@@ -495,7 +694,7 @@ function EntityCardWorkflowBody({ lines, total, pending, deliveryDate, dateLabel
     )
 }
 
-// ─── List Item ────────────────────────────────────────────────────────────────
+// ─── List Item ──────────────────────────────────────────────────────────────────
 
 interface EntityCardListItemProps {
     /** Icon rendered without background (left side) */
@@ -522,7 +721,7 @@ function EntityCardListItem({ icon: Icon, iconClassName, label, sublabel, value,
             onClick={onClick}
             className={cn(
                 "w-full flex items-center gap-3 py-2 px-2 text-left justify-start",
-                "card-base border border-border",
+                "card-flat",
                 "transition-all group",
                 onClick && "cursor-pointer",
                 className
@@ -547,7 +746,7 @@ function EntityCardListItem({ icon: Icon, iconClassName, label, sublabel, value,
     )
 }
 
-// ─── List Item Skeleton ───────────────────────────────────────────────────────
+// ─── List Item Skeleton ────────────────────────────────────────────────────────
 
 interface EntityCardListItemSkeletonProps {
     count?: number
@@ -571,7 +770,7 @@ function EntityCardListItemSkeleton({ count = 3, className }: EntityCardListItem
     )
 }
 
-// ─── Metrics ────────────────────────────────────────────────────────────────
+// ─── Metrics ───────────────────────────────────────────────────────────────────
 
 type MetricVariant = 'default' | 'primary' | 'success' | 'warning'
 
@@ -609,12 +808,12 @@ function EntityCardMetrics({ metrics, defaultVariant = 'default', className }: E
                 return (
                     <div
                         key={idx}
-                        className={cn("shrink-0 flex flex-col gap-0.5 px-4 py-2")}
+                        className="flex shrink-0 flex-col gap-0.5 py-2 pl-1 pr-6"
                     >
                         {item.icon && (
                             <item.icon className={cn("h-3 w-3 mb-0.5", METRIC_VARIANT_CLASSES[variant])} />
                         )}
-            <span className="text-4xs font-bold uppercase tracking-looser text-muted-foreground/60">
+                        <span className={cardAnatomy.eyebrow}>
                             {item.label}
                         </span>
                         <span className={cn("text-xs font-sans font-medium tabular-nums tracking-tight", METRIC_VARIANT_CLASSES[variant])}>
@@ -627,7 +826,7 @@ function EntityCardMetrics({ metrics, defaultVariant = 'default', className }: E
     )
 }
 
-// ─── Dashboard ──────────────────────────────────────────────────────────────
+// ─── Dashboard ────────────────────────────────────────────────────────────────
 
 interface EntityCardDashboardProps {
     /** Rich custom content — typically a grid of sub-cards or complex widgets */
@@ -652,7 +851,7 @@ function EntityCardDashboard({ children, title, className }: EntityCardDashboard
     )
 }
 
-// ─── Hub Trigger ──────────────────────────────────────────────────────────────
+// ─── Hub Trigger ───────────────────────────────────────────────────────────────
 
 interface EntityCardHubTriggerProps {
     /** Whether the hub is currently open for this card */
@@ -694,12 +893,68 @@ function EntityCardHubTrigger({ isSelected, onToggle, className }: EntityCardHub
     )
 }
 
-// ─── Meta ─────────────────────────────────────────────────────────────────────
+// ─── Highlights (unlabelled status line) ───────────────────────────────────────
+
+/** Inline row under the header for values that speak for themselves (stock health, flags). */
+function EntityCardHighlights({ children, className }: { children: React.ReactNode; className?: string }) {
+    return (
+        <div className={cn("flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10", className)}>
+            {children}
+        </div>
+    )
+}
+
+// ─── Foot (pinned amount + open glyph) ──────────────────────────────────────────
+
+interface EntityCardFootProps {
+    /** Small caption above the amount (the field label). */
+    caption?: React.ReactNode
+    /** The amount: any value cell; the slot scales it to the kit's amount size. Optional (catalog cards without a price). */
+    children?: React.ReactNode
+    /** Leading content in the footer (e.g. detail lines summary on the left). */
+    leading?: React.ReactNode
+    /** Entity actions (the kebab) at the bottom-right, replacing the open glyph. */
+    actions?: React.ReactNode
+    /** Open glyph at the bottom-right when there are no actions (default on). */
+    glyph?: boolean
+    /** Action-only footer: drop the top padding when there is no amount to show. */
+    compact?: boolean
+    /** Alignment of the footer content: "start" (default) or "end" (bottom-right). */
+    align?: "start" | "end"
+    className?: string
+}
+
+/** Bottom-pinned amount like the POS ProductCard: caption, amount and a chevron. Needs a card that fills its grid cell (`h-full`). */
+function EntityCardFoot({ caption, children, leading, actions, glyph = true, compact = false, align = "start", className }: EntityCardFootProps) {
+    const hasLeading = Boolean(leading)
+    const isEnd = align === "end"
+    const justifyClass = hasLeading ? "justify-between" : isEnd ? "justify-end" : "justify-between"
+    return (
+        <div className={cn(cardAnatomy.footer, "flex items-end gap-2 border-t border-border/40 pt-2", compact && "pt-0", justifyClass, className)}>
+            {leading ? (
+                <div className="min-w-0 flex-1">{leading}</div>
+            ) : null}
+            <div className={cn("min-w-0 shrink-0", isEnd && "flex flex-col items-end text-right")}>
+                {caption && children && <div className={cardAnatomy.caption}>{caption}</div>}
+                {children && <div className={cn(cardAnatomy.amountSlot, isEnd && "text-right")}>{children}</div>}
+            </div>
+            {actions ? (
+                <div className="relative z-10 -mb-1 -mr-1 shrink-0" onClick={(e) => e.stopPropagation()}>{actions}</div>
+            ) : (
+                glyph && <ChevronRight className={cardAnatomy.glyph} aria-hidden />
+            )}
+        </div>
+    )
+}
+
+// ─── Meta ──────────────────────────────────────────────────────────────────────
 
 interface EntityCardMetaItem {
     key: string
     label: React.ReactNode
     value: React.ReactNode
+    /** Per-item classes, e.g. `@md:hidden` for a value that also lives in the header on wide cards. */
+    className?: string
 }
 
 interface EntityCardMetaProps {
@@ -707,22 +962,27 @@ interface EntityCardMetaProps {
     className?: string
 }
 
-/** Label/value pairs below the header (ADR-0087 R4). In the header center they squeezed the title. */
+/**
+ * Label/value pairs below the header (ADR-0087 R4). In the header center they squeezed the title.
+ * Two fixed columns (not flex-wrap) so the same field starts at the same x on every card of a grid.
+ * The first column is wider (1.4fr): put the long value (email, tags) first, the short one (phone, state) second.
+ * Cards narrower than 18rem (4-5 column catalog grids) stack the pairs in one column instead of truncating them.
+ */
 function EntityCardMeta({ items, className }: EntityCardMetaProps) {
     if (items.length === 0) return null
     return (
-        <dl className={cn("flex flex-wrap items-start gap-x-6 gap-y-1 min-w-0 px-1", className)}>
+        <dl className={cn("grid min-w-0 grid-cols-1 @[18rem]:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-start gap-x-4 gap-y-1.5 [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10", className)}>
             {items.map((item) => (
-                <div key={item.key} className="flex flex-col items-start min-w-0">
-                    <dt className="text-4xs uppercase tracking-widest text-muted-foreground font-bold whitespace-nowrap">{item.label}</dt>
-                    <dd className="min-w-0">{item.value}</dd>
+                <div key={item.key} className={cn("flex min-w-0 flex-col items-start", item.className)}>
+                    <dt className={cn(cardAnatomy.eyebrow, "max-w-full truncate")}>{item.label}</dt>
+                    <dd className="min-w-0 max-w-full [overflow-wrap:anywhere]">{item.value}</dd>
                 </div>
             ))}
         </dl>
     )
 }
 
-// ─── Composite export ─────────────────────────────────────────────────────────
+// ─── Composite export ──────────────────────────────────────────────────────────
 
 export const EntityCard = Object.assign(EntityCardRoot, {
     Media: EntityCardMedia,
@@ -731,6 +991,8 @@ export const EntityCard = Object.assign(EntityCardRoot, {
     Body: EntityCardBody,
     Field: EntityCardField,
     Footer: EntityCardFooter,
+    Foot: EntityCardFoot,
+    Highlights: EntityCardHighlights,
     Badge: EntityCardBadge,
     Skeleton: EntityCardSkeleton,
     ListItem: EntityCardListItem,
@@ -751,6 +1013,7 @@ export type {
     EntityCardBodyProps,
     EntityCardFieldProps,
     EntityCardFooterProps,
+    EntityCardFootProps,
     EntityCardBadgeProps,
     EntityCardListItemProps,
     EntityCardListItemSkeletonProps,

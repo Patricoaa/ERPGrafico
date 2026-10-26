@@ -152,24 +152,74 @@ export interface CardMedia<T> {
      * ProductCard anatomy (ADR-0093). Opt-in; collections that do not set it are unchanged.
      */
     placement?: "inline" | "top"
-    /** Chip over the strip's top-left corner. Only with `placement: "top"`. */
-    badge?: (row: T) => string | null | undefined
+    /**
+     * Chip(s) over the strip's top-left corner. One string renders one badge; an array renders
+     * separate stacked badges (e.g. the roles of a contact). Only with `placement: "top"`.
+     */
+    badge?: (row: T) => string | readonly string[] | null | undefined
+    /** Secondary chip stacked below the badge at the top-left (e.g. "4 gramajes"). Only with `placement: "top"`. */
+    footnote?: (row: T) => string | null | undefined
+    footnoteIcon?: LucideIcon
 }
 
 /** Registrable body sections. `custom` is the typed per-feature escape (receives the row, lives in the feature). */
 export type CardSection<T, Id extends string> =
     | { readonly kind: "workflow"; readonly total: Id; readonly pending?: Id; readonly date?: Id; readonly lines?: Id }
+    | { readonly kind: "lines" }
     | { readonly kind: "progress"; readonly field: Id }
     | { readonly kind: "metrics"; readonly fields: readonly Id[] }
     | { readonly kind: "custom"; readonly component: ComponentType<{ row: T }> }
 
+/**
+ * Left rail that holds the entity icon and encodes the document state in its tint (ADR-0097). `status` returns the business status string;
+ * the surface resolves it to a tone with the same table as StatusBadge. The rail is decorative: the
+ * status text stays in the card (StatusBadge / hub), so colour is never the only carrier.
+ */
+export interface CardRailSpec<T> {
+    readonly status: (row: T) => string | null | undefined
+    /** Default: the entity icon (media icon or registry icon). The rail tint is the state. */
+    readonly icon?: LucideIcon
+    /**
+     * Edge the rail sits on. Documents put the state rail on the left; the compact document
+     * variant may put a decorative entity icon on the right. Defaults to `left`.
+     */
+    readonly side?: "left" | "right"
+}
+
 export interface CardLayout<T, Id extends string> {
     readonly title: Id
+    /** Monospace identifier above the title (folio, SKU, internal code). */
+    readonly code?: Id
     readonly subtitle?: readonly Id[]
     readonly meta?: readonly Id[]
     readonly trailing?: readonly Id[]
     readonly media?: CardMedia<T>
     readonly body?: CardSection<T, Id>
+    /**
+     * Unlabelled status line under the title: icon + text values (stock health, flags). A field whose
+     * text is empty ("—") is skipped, so only what is worth saying takes space.
+     */
+    readonly highlights?: readonly Id[]
+    /** The card reads as inactive (archived): muted and desaturated. */
+    readonly muted?: (row: T) => boolean
+    /** Bottom-pinned amount (caption = the field label) with the open glyph, like the POS ProductCard. */
+    readonly footer?: {
+        readonly value: Id
+        /** Alignment of the footer content: "start" (default) or "end" (bottom-right). */
+        readonly align?: "start" | "end"
+        /** Decorative action glyph at bottom-right (defaults to true). */
+        readonly glyph?: boolean
+        /** Render detail line items (qty × product_name) in the footer. */
+        readonly lines?: boolean
+        /** Some rows have no amount worth showing (e.g. a product that is not for sale). */
+        readonly visible?: (row: T) => boolean
+        /** Shown in the amount slot when `visible` is false (e.g. a channel restriction). */
+        readonly fallback?: {
+            readonly caption: string
+            readonly value: (row: T) => string | null | undefined
+        }
+    }
+    readonly rail?: CardRailSpec<T>
 }
 
 export interface ViewsInput<T, Id extends string> {
