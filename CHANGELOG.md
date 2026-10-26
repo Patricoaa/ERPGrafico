@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.29](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.28...v0.3.29) (2026-10-26)
+
+
+### 🚀 Maintenance
+
+* **env:** remove NEXT_PUBLIC_DRILLDOWN_STACK from .env.dev ([1b7f5d4](https://github.com/Patricoaa/ERPGrafico/commit/1b7f5d4a892764ee6fef0f79601e22168a8aaff7))
+
 ### [0.3.28](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.27...v0.3.28) (2026-10-26)
 
 
