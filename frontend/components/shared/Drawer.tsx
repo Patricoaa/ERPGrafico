@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useState, useRef, useEffect, useCallback, useContext, useId, useSyncExternalStore } from "react"
-import { ArrowLeft } from "lucide-react"
 import {
     Sheet,
     SheetContent,
@@ -12,8 +11,8 @@ import {
 import { cn } from "@/lib/utils"
 import { PanelHeader, type PanelBaseProps } from "./PanelHeader"
 import {ScrollArea} from "@/components/ui/scroll-area"
-import { Button } from "@/components/ui/button"
 import { EntityNavigationContext } from "./EntityNavigationContext"
+import { EntityTrail } from "./EntityTrail"
 
 type DrawerMode = 'create' | 'edit' | 'view'
 
@@ -298,18 +297,7 @@ export function Drawer({
                     )} />
                 )}
 
-                {navigation && (
-                    <Button
-                        type="button"
-                        variant="link"
-                        size="sm"
-                        onClick={navigation.goBack}
-                        className="mx-4 mt-1 h-7 gap-1.5 self-start px-2 text-xs text-muted-foreground hover:text-foreground shrink-0"
-                    >
-                        <ArrowLeft className="h-3.5 w-3.5" />
-                        Volver a {navigation.backLabel}
-                    </Button>
-                )}
+                {navigation && <EntityTrail navigation={navigation} />}
 
                 {(title || subtitle || headerActions || icon) && (
                     <SheetHeader className={cn("px-6 py-1.5 border-b border-border shrink-0 bg-card", headerClassName)}>

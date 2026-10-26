@@ -52,7 +52,7 @@ describe("Drawer back navigation", () => {
     it("renders the back link from EntityNavigationContext", () => {
         const goBack = vi.fn()
         render(
-            <EntityNavigationContext.Provider value={{ backLabel: "OV-12", goBack }}>
+            <EntityNavigationContext.Provider value={{ backLabel: "OV-12", goBack, trail: [], currentLabel: "DES-1", module: null }}>
                 <Drawer open onOpenChange={vi.fn()} title="DES-1" side="left">contenido</Drawer>
             </EntityNavigationContext.Provider>
         )

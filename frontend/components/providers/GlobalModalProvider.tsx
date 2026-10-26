@@ -3,7 +3,9 @@
 import React, { createContext, useContext, useState, type ReactNode, useCallback, useMemo, useEffect } from "react"
 import { ENTITY_DRAWERS, hasEntityDrawer } from "@/lib/entity-drawers"
 import { formatEntityDisplay, getEntityMetadata } from "@/lib/entity-registry"
-import { ErrorBoundary, EntityNavigationContext, UnsavedChangesDialog } from "@/components/shared"
+import { usePathname } from "next/navigation"
+import { getEntityModule, getModuleIcon, getModuleIdFromPath } from "@/lib/module-registry"
+import { ErrorBoundary, EntityNavigationContext, UnsavedChangesDialog, type EntityNavigation } from "@/components/shared"
 import { EntityViewBridge } from "./EntityViewBridge"
 import { DirtyRegistry, type DirtyEntry } from "./dirtyGuardRegistry"
 
@@ -94,6 +96,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     // ADR-0080 (GAP-11): pila de documentos; se muestra el superior y se puede volver.
     const [entityStack, setEntityStack] = useState<OpenEntityState[]>([])
     const openedEntity = entityStack.length > 0 ? entityStack[entityStack.length - 1] : null
+    const pageModuleId = getModuleIdFromPath(usePathname())
     const [sheetStack, setSheetStack] = useState<{id: string, width: number, priority: number, forced: boolean}[]>([])
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1600)
 
@@ -288,6 +291,26 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         totalSheetsWidth
     }), [openedEntity, getSheetOffset, getSheetIndex, isSheetCollapsed, expandedSheetWidth, totalSheetsWidth])
 
+    // Migas del documento superior: tramos anteriores (cada uno desapila hasta él) y, si vive en otro
+    // módulo que la página, el módulo (el riel no sigue al drill-down, ADR-0100).
+    const buildNavigation = (previous: OpenEntityState): EntityNavigation => {
+        const top = entityStack[entityStack.length - 1]
+        const topModule = getEntityModule(top.label)
+        return {
+            backLabel: entityBackLabel(previous),
+            goBack: goBackEntity,
+            trail: entityStack.slice(0, -1).map((entry, index) => ({
+                key: `${entry.label}:${entry.id}`,
+                label: entityBackLabel(entry),
+                onSelect: () => runGuarded(() => setEntityStack(prev => prev.slice(0, index + 1))),
+            })),
+            currentLabel: entityBackLabel(top),
+            module: topModule && topModule.id !== pageModuleId
+                ? { id: topModule.id, label: topModule.label, icon: getModuleIcon(topModule.id) }
+                : null,
+        }
+    }
+
     const handleDrawerOpenChange = useCallback((open: boolean) => {
         if (!open) runGuarded(closeEntity)
     }, [runGuarded, closeEntity])
@@ -297,6 +320,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         const render = ENTITY_DRAWERS[openedEntity.label]
         if (!render) return null
         const previous = entityStack.length > 1 ? entityStack[entityStack.length - 2] : null
+        const navigation: EntityNavigation | null = previous ? buildNavigation(previous) : null
         const drawer = render({
             id: openedEntity.id,
             data: openedEntity.data,
@@ -309,7 +333,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
             // key: cada documento de la pila monta su drawer desde cero
             <EntityNavigationContext.Provider
                 key={`${openedEntity.label}:${openedEntity.id}`}
-                value={previous ? { backLabel: entityBackLabel(previous), goBack: goBackEntity } : null}
+                value={navigation}
             >
                 {drawer}
             </EntityNavigationContext.Provider>

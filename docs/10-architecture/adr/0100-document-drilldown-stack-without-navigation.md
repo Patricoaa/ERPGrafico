@@ -31,7 +31,8 @@ Product decision (2026-10): **keep the origin list and the origin module while n
 4. **Flag off:** ADR-0086 behaviour, unchanged.
 5. **Canonical URLs stay** for external links, universal search, `/d/{label}/{id}` and server redirects (`[id]/page.tsx`). They are the exception to "do not navigate".
 6. **Unsaved-changes guard** (delivered with phase 2, always on): a dirty drawer form blocks opening another document, "Volver", closing (X / Escape / Cancel / row switch) and page unload until the user chooses *Guardar y continuar*, *Descartar y continuar* or *Seguir editando*. Implemented by `DirtyRegistry` in `GlobalModalProvider` (`registerDirty`, `runGuarded`, `requestLeave`), `useDirtyGuard` (wired through `useInitializeDrawerForm`), `UnsavedChangesDialog`, and the URL helpers `useEntityRouteActions` / `useSelectedEntity`. Only the top drawer is mounted, so drawers below the top are always clean.
-7. **Closing** a stacked drawer with X still clears the whole stack (`closeEntity`); popping one level is "Volver". Changing this is deferred to the breadcrumb phase.
+7. **Closing** a stacked drawer with X still clears the whole stack (`closeEntity`); popping one level is "Volver". Changing this is deferred.
+8. **Breadcrumbs and module indicator** (phase 4): the `Drawer` header renders `EntityTrail` (`nav aria-label="Ruta de documentos"`, `ol`, current `aria-current="page"`, previous levels clickable and guarded by `runGuarded`; more than 3 previous levels collapse into "…"; on mobile only "Volver a X"). A `Chip` with the module name appears when the top document's module (from `getEntityMetadata(label).listUrl`) differs from the page module, so the rail staying put is never ambiguous. Context: `EntityNavigation` in `EntityNavigationContext`.
 
 ## Consequences
 

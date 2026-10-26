@@ -15,6 +15,10 @@ function FakeDrawer({ label, id }: { label: string; id: number }) {
         <div>
             <span>open:{label}:{id}</span>
             {navigation && <Button onClick={navigation.goBack}>volver:{navigation.backLabel}</Button>}
+            {navigation && <span>modulo:{navigation.module?.label ?? "ninguno"}</span>}
+            {navigation && navigation.trail.map((item) => (
+                <Button key={item.key} onClick={item.onSelect}>miga:{item.label}</Button>
+            ))}
         </div>
     )
 }
@@ -69,6 +73,26 @@ describe("GlobalModalProvider entity stack", () => {
         click("volver:DES-1")
         expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
         expect(screen.queryByText(/volver:/)).toBeNull()
+    })
+
+    it("builds a trail and pops to a previous document from the breadcrumb (ADR-0100)", () => {
+        setup()
+        click("abrir-despacho")
+        click("abrir-ov")
+        click("abrir-move")
+        expect(screen.getByText("miga:DES-1")).toBeInTheDocument()
+        click("miga:DES-1")
+        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
+        expect(screen.queryByText(/miga:/)).toBeNull()
+    })
+
+    it("shows the document module only when it differs from the page module", () => {
+        setup() // la página está en /sales/...
+        click("abrir-despacho")
+        click("abrir-move") // inventory.stockmove vive en Inventario
+        expect(screen.getByText("modulo:Inventario")).toBeInTheDocument()
+        click("abrir-ov") // sales.saleorder vive en Ventas = módulo de la página
+        expect(screen.getByText("modulo:ninguno")).toBeInTheDocument()
     })
 
     it("closeEntity clears the whole stack and re-opening the top is a no-op", () => {

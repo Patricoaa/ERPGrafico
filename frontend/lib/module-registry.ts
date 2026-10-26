@@ -1,5 +1,5 @@
 import { Home, Package, Wallet, type LucideIcon } from "lucide-react"
-import { getEntityIcon, getEntityIconName } from "@/lib/entity-registry"
+import { getEntityIcon, getEntityIconName, getEntityMetadata } from "@/lib/entity-registry"
 
 export interface ModuleConfig {
   id: string
@@ -60,4 +60,18 @@ export function getModuleHeaderConfig(id: string) {
     headerDescription: mod.headerDescription,
     iconName: mod.iconName,
   }
+}
+/** Id de módulo al que pertenece la ruta (`/sales/...` → `sales`), o `undefined` si no es un módulo. */
+export function getModuleIdFromPath(pathname: string | null | undefined): string | undefined {
+  const segment = (pathname ?? "").split("/").filter(Boolean)[0]
+  return segment && segment in MODULE_REGISTRY ? segment : undefined
+}
+
+/**
+ * Módulo donde "vive" una entidad: el primer segmento de su `listUrl` en el registro de entidades
+ * (`sales.saleorder` → `/sales/dtes/orders` → Ventas). `undefined` si la ruta no pertenece a un módulo.
+ */
+export function getEntityModule(label: string): ModuleConfig | undefined {
+  const id = getModuleIdFromPath(getEntityMetadata(label)?.listUrl)
+  return id ? MODULE_REGISTRY[id] : undefined
 }

@@ -58,6 +58,7 @@ export * from './HubStatus';
 export * from './EntityBadge';
 export * from './SourceDocumentLink';
 export * from './EntityNavigationContext';
+export * from './EntityTrail';
 export * from './RelatedDocumentsTable';
 export * from './DocumentDrawerShell';
 export * from './DocumentLifecycle';
