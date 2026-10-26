@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.30](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.29...v0.3.30) (2026-10-26)
+
+
+### 📚 Documentation
+
+* **contracts:** document sheet header, tab rule, embedded table and source-document rules ([d40bf0c](https://github.com/Patricoaa/ERPGrafico/commit/d40bf0c25e79e18ef151da928913c20894ccce1b))
+
 ### [0.3.29](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.28...v0.3.29) (2026-10-26)
 
 
