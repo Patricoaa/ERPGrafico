@@ -149,7 +149,7 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0083](0083-document-sheet-replaces-order-hub.md) | Document sheet replaces the Order Hub — relations tab, lifecycle and in-sheet actions | Accepted |
 | [0084](0084-document-status-decoupled-from-payment.md) | Document status decoupled from payment — one field per axis (lifecycle, invoicing, fulfilment, payment) | Accepted |
 | [0085](0085-stock-moves-owned-by-business-document.md) | Stock moves owned by the business document — `StockMove.source_document` GFK, `InventoryDocument` reserved for standalone operations | Accepted |
-| [0086](0086-document-drilldown-canonical-navigation.md) | Document drilldown navigates to the target's canonical route — URL and module follow the relationship | Proposed (superseded by 0100 when `drilldownStack` is on) |
+| [0086](0086-document-drilldown-canonical-navigation.md) | Document drilldown navigates to the target's canonical route — URL and module follow the relationship | Superseded by 0100 |
 | [0087](0087-entity-view-system.md) | Entity view system — semantic entity definitions + per-surface composition (replaces createEntityFields / AutoEntityCard / DataTable authoring) | Accepted |
 | [0088](0088-remove-actionslidebutton.md) | Remove ActionSlideButton — button layer standardized on shadcn Button + ActionButtons (kinetic slide animation retired) | Accepted |
 | [0089](0089-fusion-billing-module-into-sales-purchasing.md) | Fin del módulo Facturación — las vistas DTE se mudan a Ventas y Compras | Accepted |
@@ -164,7 +164,7 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0097](0097-card-family-roles-and-surface-tokens.md) | Familia de cards — roles de superficie, layouts, rail único y tokens de superficie | Proposed |
 | [0098](0098-form-reset-layout-effect.md) | Form initialization resets in a layout effect (React 19 cross-component update rule) | Accepted |
 | [0099](0099-work-order-rail-status-board.md) | Work order rail as a status board — per-stage evidence, blockers, progress and collapse | Accepted |
-| [0100](0100-document-drilldown-stack-without-navigation.md) | Document drilldown stacks over the origin list — origin list and module kept, behind a feature flag; unsaved-changes guard | Proposed (breadcrumbs, `?stack=` and pins superseded by 0101) |
+| [0100](0100-document-drilldown-stack-without-navigation.md) | Document drilldown stacks over the origin list — origin list and module kept; unsaved-changes guard | Accepted (breadcrumbs, `?stack=` and pins superseded by 0101) |
 | [0101](0101-workspace-tab-bar.md) | Workspace tab bar — page navigation plus per-page ephemeral document and tool tabs | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

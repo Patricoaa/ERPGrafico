@@ -1,7 +1,7 @@
 ---
 id: 0086
 title: Document drilldown navigates to the target's canonical route — URL and module follow the relationship
-status: Proposed
+status: Superseded by 0100
 date: 2026-10-16
 author: frontend-team
 ---

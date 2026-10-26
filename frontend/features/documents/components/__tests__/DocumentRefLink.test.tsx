@@ -27,7 +27,7 @@ describe("DocumentRefLink", () => {
         expect(rowClick).not.toHaveBeenCalled()
     })
 
-    it("does not bubble the click when navigating to a list selection URL", () => {
+    it("opens a tab and does not bubble when the target has a list selection URL", () => {
         const rowClick = vi.fn()
         render(
             <div onClick={rowClick}>
@@ -37,7 +37,8 @@ describe("DocumentRefLink", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "OV-9" }))
 
-        expect(pushMock).toHaveBeenCalledWith("/sales/dtes/orders?selected=9", { scroll: false })
+        expect(openEntityMock).toHaveBeenCalledWith("sales.saleorder", 9, undefined, undefined, { display: "OV-9" })
+        expect(pushMock).not.toHaveBeenCalled()
         expect(rowClick).not.toHaveBeenCalled()
     })
 })

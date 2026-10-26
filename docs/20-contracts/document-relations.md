@@ -88,7 +88,7 @@ Generated only by `DocumentTypeRegistry.canonical_url(label, obj)`:
 `core/tests/test_document_routes_sync.py` fails if a declared canonical URL (or the resolver) has no frontend route, or if a registered type has neither a declared canonical URL nor a drawer in `ENTITY_DRAWERS`.
 Universal search returns `detail_url = DocumentTypeRegistry.url_for(label, id)` (declared pattern, or the resolver when the URL depends on the instance).
 
-**Drilldown (ADR-0086, superseded by ADR-0100 when the `drilldownStack` flag is on).** All consumers go through `useOpenDocument`. With the flag on the document is stacked over the origin list (module and URL unchanged). With the flag off, the canonical URL decides how: if it opens a real list (`?selected=`, not the `/d/` resolver) the frontend **navigates** to it — URL and module follow the relationship; otherwise it stacks the drawer with `openEntity`. Masters (contact, product…) use the resolver, so they keep the drawer. See `component-entity-drawers.md` §5.2.
+**Drilldown (ADR-0100; ADR-0086 superseded).** All consumers go through `useOpenDocument`. A document with a registered drawer opens as a workspace tab over the origin list (module and URL unchanged, ADR-0101); without a drawer the frontend navigates to the canonical `DocumentRef.url`. Masters (contact, product…) use the resolver, so they keep the drawer. See `component-entity-drawers.md` §5.2.
 
 | label | canonical URL |
 |---|---|
