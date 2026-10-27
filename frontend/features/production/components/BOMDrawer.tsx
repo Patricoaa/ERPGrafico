@@ -289,10 +289,9 @@ export function BOMDrawer({
                 toast.success(getDomainConceptMessage('ldm', 'created'))
             }
             if (onSuccess) onSuccess()
-
-            setTimeout(() => {
-                onOpenChange(false)
-            }, 100)
+            // Cerrar dentro del envío: un cierre diferido llega con el formulario aún "sucio" y la guarda
+            // de cambios sin guardar lo bloquearía (useDirtyGuard).
+            onOpenChange(false)
         } catch (error: unknown) {
             console.error("Error saving BOM:", error)
             showApiError(error, `Error al guardar ${getDomainConceptTitle('ldm')}: `)

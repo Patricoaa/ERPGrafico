@@ -39,6 +39,29 @@ function Opener() {
     return <button onClick={() => { void requestLeave().then((ok) => setResult(ok ? "continue" : "cancel")) }}>salir:{result}</button>
 }
 
+/** Como un drawer real: guarda (API) y se cierra vía la guarda (`panel.close()`), sin `form.reset()`. */
+function ClosingDrawer({ fail = false }: { fail?: boolean }) {
+    const { runGuarded } = useGlobalModals()
+    const [closed, setClosed] = React.useState(false)
+    const form = useForm<Values>({ defaultValues: { name: "" } })
+    useInitializeDrawerForm<{ id: number; name: string }, Values>({
+        form, open: !closed, initialData: { id: 1, name: "Original" }, defaultValues: { name: "" },
+    })
+    const onSubmit = async () => {
+        await Promise.resolve()
+        if (fail) return
+        runGuarded(() => setClosed(true))
+    }
+    return (
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+            <input aria-label="nombre" {...form.register("name")} />
+            <button type="submit">guardar</button>
+            <span>estado:{closed ? "cerrado" : "abierto"}</span>
+            <Opener />
+        </form>
+    )
+}
+
 const setup = (spy = vi.fn(), onRender?: () => void, named = true) => render(
     <GlobalModalProvider>
         <FormDrawer onSubmitSpy={spy} onRender={onRender} named={named} />
@@ -91,6 +114,24 @@ describe("useDirtyGuard via useInitializeDrawerForm", () => {
 
         expect(await screen.findByText("cadena:closed")).toBeInTheDocument()
         expect(screen.queryByText("Cambios sin guardar")).toBeNull()
+    })
+
+    it("a successful save closes its own panel without the unsaved-changes dialog", async () => {
+        render(<GlobalModalProvider><ClosingDrawer /></GlobalModalProvider>)
+        fireEvent.change(screen.getByLabelText("nombre"), { target: { value: "Cambiado" } })
+        await waitFor(() => expect(screen.getByLabelText("nombre")).toHaveValue("Cambiado"))
+        act(() => screen.getByText("guardar").click())
+        expect(await screen.findByText("estado:cerrado")).toBeInTheDocument()
+        expect(screen.queryByText("Cambios sin guardar")).toBeNull()
+    })
+
+    it("still guards the changes after a failed save", async () => {
+        render(<GlobalModalProvider><ClosingDrawer fail /></GlobalModalProvider>)
+        fireEvent.change(screen.getByLabelText("nombre"), { target: { value: "Cambiado" } })
+        await waitFor(() => expect(screen.getByLabelText("nombre")).toHaveValue("Cambiado"))
+        await act(async () => { screen.getByText("guardar").click() })
+        act(() => screen.getByText("salir:none").click())
+        expect(await screen.findByText("Cambios sin guardar")).toBeInTheDocument()
     })
 
     it("falls back to the record name from initialData when no guardName is given", async () => {

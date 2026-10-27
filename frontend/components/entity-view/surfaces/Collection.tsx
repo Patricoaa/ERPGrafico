@@ -32,6 +32,7 @@ import type { EntityCollection } from "../core/use-entity-collection"
 import type { Row } from "@tanstack/react-table"
 import { ALIGN_FLEX, ALIGN_TEXT } from "../core/align"
 import { useEntityOpener } from "./EntityViewProvider"
+import { useSavedRowFlash } from "./useSavedRowFlash"
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 
@@ -54,6 +55,8 @@ interface CollectionContextValue<T> {
     label: string
     /** The Root has a `Collection.Analytics` child: the toolbar offers the analytics view. */
     hasAnalytics: boolean
+    /** Row just saved from a workspace tab (ADR-0101): highlighted briefly so the change is visible. */
+    flashId: string | null
 }
 
 /**
@@ -118,6 +121,12 @@ function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen,
         [controlledView, onViewChange],
     )
     const entity = collection.entity
+    const flashId = useSavedRowFlash(entity.label, collection.table.getCoreRowModel().flatRows.map((row) => row.id))
+    const rootRef = React.useRef<HTMLDivElement>(null)
+    React.useEffect(() => {
+        if (flashId === null) return
+        rootRef.current?.querySelector("[data-saved-flash]")?.scrollIntoView({ block: "nearest" })
+    }, [flashId])
     const open = React.useCallback(
         (row: T) => {
             if (onOpen) return onOpen(row)
@@ -137,12 +146,13 @@ function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen,
         view,
         setView,
         hasAnalytics,
+        flashId,
         label: label ?? (entity.label !== undefined ? opener?.labelOf(entity.label) : undefined) ?? entityName(entity),
     }
     return (
         <CollectionContext.Provider value={value}>
             {/* h-full keeps the height bound even when the parent is not a flex column. */}
-            <div className="flex h-full flex-1 flex-col gap-2 min-h-0">{children}</div>
+            <div ref={rootRef} className="flex h-full flex-1 flex-col gap-2 min-h-0">{children}</div>
         </CollectionContext.Provider>
     )
 }
@@ -426,6 +436,7 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
     const colSpan = cols.length + (isBulk ? 1 : 0) + (hasActions ? 1 : 0)
     const renderRow = (row: Row<T>, index: number) => {
         const isSelected = ctx.selectedId === row.id || row.getIsSelected()
+        const isFlashing = ctx.flashId === row.id
         return (
             <tr
                 key={row.id}
@@ -433,7 +444,9 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
                 // Grouped and tree rows are not a flat sequence of the total: no row index.
                 aria-rowindex={groups || isTree ? undefined : table.getState().pagination.pageIndex * table.getState().pagination.pageSize + index + 2}
                 aria-selected={ctx.selection !== "none" ? isSelected : undefined}
-                className={cn("group border-b border-border/40 table-row-hover transition-colors", ctx.canOpen && "cursor-pointer", isSelected && "bg-primary/5")}
+                data-saved-flash={isFlashing || undefined}
+                // The highlight fades out through `transition-colors` when the flash ends.
+                className={cn("group border-b border-border/40 table-row-hover transition-colors duration-700", ctx.canOpen && "cursor-pointer", isSelected && "bg-primary/5", isFlashing && "bg-primary/10")}
                 // Mouse enhancement only: the keyboard path is the primary cell button (AX-3).
                 onClick={() => ctx.canOpen && ctx.open(row.original)}
             >
@@ -739,7 +752,7 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
             ...trailingDefs.map(({ id, def }) => ({ key: `trailing-${id}`, label: def.label, value: <FieldValue def={def} row={data} surface="card" align="start" />, className: "@md:hidden" })),
         ]
         return (
-            <li key={row.id} className="@container min-w-0">
+            <li key={row.id} data-saved-flash={ctx.flashId === row.id || undefined} className={cn("@container min-w-0 rounded-sm ring-2 ring-transparent transition-shadow duration-700", ctx.flashId === row.id && "ring-primary/40")}>
                 <EntityCard
                     variant="compact"
                     isSelected={ctx.selectedId === row.id}

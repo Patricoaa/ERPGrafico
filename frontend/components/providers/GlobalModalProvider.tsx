@@ -9,6 +9,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { getModuleIdFromPath, getEntityModule } from "@/lib/module-registry"
 import { ErrorBoundary, PersistentPanelContext, UnsavedChangesDialog } from "@/components/shared"
 import { EntityViewBridge } from "./EntityViewBridge"
+import type { RecentSave, SavedRecord } from "./EntityOpenerContext"
 import { DirtyRegistry, type DirtyEntry } from "./dirtyGuardRegistry"
 
 interface OpenEntityState {
@@ -81,6 +82,15 @@ class LiveMirror {
     tabs: WorkspaceTab[] = []
     activeKey: string | null = null
     pending: PendingLeave | null = null
+    /** Momento en que un formulario pidió cerrar durante su envío (el cierre del guardado). */
+    private saveCloseAt = 0
+    markSaveClose() { this.saveCloseAt = Date.now() }
+    /** Consume la marca si el cierre es el de un guardado reciente. */
+    takeSaveClose(): boolean {
+        const recent = Date.now() - this.saveCloseAt < SAVE_CLOSE_WINDOW_MS
+        this.saveCloseAt = 0
+        return recent
+    }
     sync(next: { tabs?: WorkspaceTab[]; activeKey?: string | null; pending?: PendingLeave | null }) {
         if (next.tabs !== undefined) this.tabs = next.tabs
         if (next.activeKey !== undefined) this.activeKey = next.activeKey
@@ -192,6 +202,19 @@ function neighbourKey(tabs: WorkspaceTab[], index: number): string | null {
     return next ? tabKey(next) : null
 }
 
+/**
+ * Pestaña que queda activa al cerrar la `index`: la que la abrió (`origin`; null = la página) si sigue
+ * abierta; si no se conoce o ya se cerró, la vecina.
+ */
+function returnKey(tabs: WorkspaceTab[], index: number, origin: string | null | undefined): string | null {
+    if (origin === null) return null
+    if (origin !== undefined && tabs.some(tab => tabKey(tab) === origin)) return origin
+    return neighbourKey(tabs, index)
+}
+
+/** Ventana en la que el cierre de un panel cuenta como el de su guardado (la URL se actualiza en diferido). */
+const SAVE_CLOSE_WINDOW_MS = 3000
+
 export function GlobalModalProvider({ children }: { children: ReactNode }) {
     // ADR-0101: pestañas efímeras por página (documentos y herramientas); solo la activa se monta.
     const [tabs, setTabs] = useState<WorkspaceTab[]>([])
@@ -205,10 +228,15 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
 
     // Las pestañas son efímeras por página: al cambiar de ruta se cierran todas.
     const [trackedPath, setTrackedPath] = useState(pathname)
+    // Pestaña desde la que se abrió cada pestaña (null = la página): al cerrarla se vuelve allí.
+    const [origins] = useState(() => new Map<string, string | null>())
+    // Último registro guardado desde una pestaña: la colección de la página resalta su fila.
+    const [savedRecord, setSavedRecord] = useState<SavedRecord | null>(null)
     if (trackedPath !== pathname) {
         setTrackedPath(pathname)
         setTabs([])
         setActiveKey(null)
+        setSavedRecord(null)
     }
 
     useEffect(() => {
@@ -230,6 +258,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     useEffect(() => { live.sync({ pending: pendingLeave }) }, [live, pendingLeave])
 
     const runGuarded = useCallback((action: () => void, onCancel?: () => void) => {
+        if (registry.isSubmitting()) live.markSaveClose()
         const dirty = registry.dirtyEntries()
         if (dirty.length === 0) { action(); return }
         // Ya hay una decisión en curso: la nueva petición se cancela, no se encola.
@@ -249,16 +278,22 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         setPendingLeave(null)
     }, [live])
 
-    const closeEntity = useCallback(() => { setTabs([]); setActiveKey(null) }, [])
+    const closeEntity = useCallback(() => { origins.clear(); setTabs([]); setActiveKey(null) }, [origins])
 
-    /** Quita una pestaña y activa la vecina si era la activa. */
+    /** Quita una pestaña y, si era la activa, vuelve a la que la abrió (o a la vecina). */
     const removeTab = useCallback((key: string) => {
         const current = live.tabs
         const index = current.findIndex(tab => tabKey(tab) === key)
         if (index === -1) return
-        if (live.activeKey === key) setActiveKey(neighbourKey(current, index))
+        const origin = origins.get(key)
+        if (live.activeKey === key) setActiveKey(returnKey(current, index, origin))
+        // Las pestañas abiertas desde esta vuelven ahora a su origen.
+        origins.delete(key)
+        for (const [child, parent] of origins) if (parent === key) origins.set(child, origin ?? null)
         setTabs(prev => prev.filter(tab => tabKey(tab) !== key))
-    }, [live])
+    }, [live, origins])
+
+    const markSaved = useCallback((label: string, id: number | null) => setSavedRecord({ label, id, at: Date.now() }), [])
 
     // Los drawers de la página (panel) los cierra su página: la pestaña se retira cuando se desmonta el registro.
     const [panelClosers] = useState(() => new Map<string, () => void>())
@@ -269,15 +304,21 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         else removeTab(key)
     }), [runGuarded, removeTab, panelClosers])
 
+    // Como en un navegador: si el usuario cambia de pestaña a mano, las dos involucradas olvidan su origen
+    // y al cerrarlas se activa la vecina. Volver al origen solo aplica al flujo abrir → trabajar → cerrar.
+    const forgetOrigins = useCallback((...keys: (string | null)[]) => {
+        for (const key of keys) if (key !== null) origins.delete(key)
+    }, [origins])
+
     const activateTab = useCallback((key: string) => {
         if (key === live.activeKey) return
-        runGuarded(() => setActiveKey(key))
-    }, [runGuarded, live])
+        runGuarded(() => { forgetOrigins(live.activeKey, key); setActiveKey(key) })
+    }, [runGuarded, live, forgetOrigins])
 
     const showPage = useCallback(() => {
         if (live.activeKey === null) return
-        runGuarded(() => setActiveKey(null))
-    }, [runGuarded, live])
+        runGuarded(() => { forgetOrigins(live.activeKey); setActiveKey(null) })
+    }, [runGuarded, live, forgetOrigins])
 
     const resolveLeave = useCallback(async (mode: "save" | "discard") => {
         const pending = pendingLeave
@@ -337,13 +378,14 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     /** Añade la pestaña (o solo la activa si ya existe). Con el tope, descarta la más antigua que no sea la nueva. */
     const addTab = useCallback((tab: WorkspaceTab) => {
         const key = tabKey(tab)
+        if (!live.tabs.some(t => tabKey(t) === key)) origins.set(key, live.activeKey === key ? null : live.activeKey)
         setTabs(prev => {
             if (prev.some(t => tabKey(t) === key)) return prev
             const next = [...prev, tab]
             return next.length > MAX_TABS ? next.slice(next.length - MAX_TABS) : next
         })
         setActiveKey(key)
-    }, [])
+    }, [live, origins])
 
     const openEntity = useCallback((label: string, id: number, data?: unknown, segmenter?: React.ReactNode, options?: OpenEntityOptions) => {
         if (!hasEntityDrawer(label)) {
@@ -369,9 +411,11 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         addTab(tab)
         return () => {
             panelClosers.delete(key)
+            // El panel se cerró justo tras pedirlo su envío: fue un guardado (la lista resalta la fila).
+            if (live.takeSaveClose()) markSaved(panel.label, panel.id)
             removeTab(key)
         }
-    }, [addTab, removeTab, panelClosers])
+    }, [addTab, removeTab, panelClosers, live, markSaved])
 
     const openTool = useCallback((tool: ToolTabId) => {
         if (live.activeKey === toolKey(tool)) return
@@ -498,7 +542,20 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     }, [closeTab, live])
 
     // Tras guardar, la pestaña ya cumplió su función: se cierra sin guarda.
-    const closeActiveTab = useCallback(() => { if (live.activeKey) removeTab(live.activeKey) }, [removeTab, live])
+    const closeActiveTab = useCallback(() => {
+        const key = live.activeKey
+        if (!key) return
+        const tab = live.tabs.find(t => tabKey(t) === key)
+        if (tab?.type === "entity") markSaved(tab.label, tab.id)
+        removeTab(key)
+    }, [removeTab, live, markSaved])
+
+    // Etiquetas con un panel de creación abierto: su colección toma la foto de filas para hallar la nueva.
+    const creatingKey = tabs.filter(tab => tab.type === "panel" && tab.id === null).map(tab => (tab.type === "panel" ? tab.label : "")).join("|")
+    const recentSave = useMemo<RecentSave>(
+        () => ({ saved: savedRecord, creating: creatingKey ? creatingKey.split("|") : [] }),
+        [savedRecord, creatingKey],
+    )
 
     const renderActiveTab = () => {
         if (!activeTab) return null
@@ -528,7 +585,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     return (
         <GlobalModalActionsContext.Provider value={actionsValue}>
         <GlobalModalStateContext.Provider value={stateValue}>
-        <EntityViewBridge openEntity={openEntity}>
+        <EntityViewBridge openEntity={openEntity} recentSave={recentSave}>
             {children}
             <ErrorBoundary variant="inline">
                 <PersistentPanelContext.Provider value={true}>

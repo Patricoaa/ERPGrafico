@@ -27,3 +27,30 @@ export function EntityViewProvider({ opener, children }: { opener: EntityOpener;
 export function useEntityOpener(): EntityOpener | null {
     return React.useContext(EntityOpenerContext)
 }
+
+/** Registro recién guardado desde una pestaña (ADR-0101): `id` null = creación (id aún desconocido). */
+export interface SavedRecord {
+    label: string
+    id: number | null
+    /** Marca del guardado: cada guardado es una señal nueva aunque repita registro. */
+    at: number
+}
+
+/**
+ * Último guardado y entidades con un panel de creación abierto. La colección de esa entidad resalta la
+ * fila guardada; en una creación, la fila que no estaba cuando se abrió el panel.
+ */
+export interface RecentSave {
+    saved: SavedRecord | null
+    creating: readonly string[]
+}
+
+const RecentSaveContext = React.createContext<RecentSave>({ saved: null, creating: [] })
+
+export function RecentSaveProvider({ value, children }: { value: RecentSave; children: React.ReactNode }) {
+    return <RecentSaveContext.Provider value={value}>{children}</RecentSaveContext.Provider>
+}
+
+export function useRecentSave(): RecentSave {
+    return React.useContext(RecentSaveContext)
+}
