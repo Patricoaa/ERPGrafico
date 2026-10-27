@@ -1,5 +1,6 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
 import { useState, useMemo, useCallback, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
@@ -139,14 +140,16 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            {wizardMode && (
-                <WorkOrderWizard
-                    mode={wizardMode}
-                    open={true}
-                    onOpenChange={(open) => { if (!open) closeWizard() }}
-                    onSuccess={() => { void refetchOrders() }}
-                />
-            )}
+            <EntityPanelTab label="production.workorder" id={selectedId ? Number(selectedId) : null} open={!!wizardMode} onClose={closeWizard}>
+                {(open) => wizardMode && (
+                    <WorkOrderWizard
+                        mode={wizardMode}
+                        open={open}
+                        onOpenChange={(open) => { if (!open) closeWizard() }}
+                        onSuccess={() => { void refetchOrders() }}
+                    />
+                )}
+            </EntityPanelTab>
 
             <div className="mt-2 flex-1 min-h-0 flex flex-col">
                 <FadeIn key={currentView} className="h-full">

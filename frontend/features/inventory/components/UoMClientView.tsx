@@ -1,16 +1,17 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
 import { showApiError } from "@/lib/errors"
 
 import React, { useMemo } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
+
 import { Archive, ArchiveRestore } from "lucide-react"
 import { toast } from "sonner"
 import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { uomActions, type UoMActionsCtx } from "@/features/inventory/uomActions"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
 import { uomUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
@@ -26,23 +27,12 @@ interface UoMClientViewProps {
 export function UoMClientView({ externalOpen, onExternalOpenChange, createAction }: UoMClientViewProps) {
     const search = useUnifiedSearch(uomUnifiedSearchDef)
     const { uoms, isLoading, isError, refetch, archiveUoM } = useUoMs(search.filters)
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
-    const { entity: selectedUoM, isLoading: isLoadingSelected, clearSelection } = useSelectedEntity<UoM>({ endpoint: '/inventory/uoms' })
+    const panel = useEntityPanelRoute<UoM>({ endpoint: '/inventory/uoms', external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const selectedUoM = panel.entity
     const { openSelected } = useEntityRouteActions()
     const { view, onViewChange } = useCollectionViewMode("inventory.uom")
     const collection = useEntityCollection(uomEntity, { rows: uoms, isLoading, error: isError, refetch, isFiltered: search.isFiltered }, { defaultSort: uomViews.table.defaultSort })
 
-    const handleCloseModal = () => {
-        clearSelection()
-        onExternalOpenChange?.(false)
-        if (externalOpen || searchParams.get("modal")) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }
-    }
     const archiveConfirm = useConfirmAction<UoM>(async (uom) => {
         const isArchiving = uom.is_active
         try {
@@ -51,7 +41,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
         } catch (error) {
             showApiError(error, `No se puede ${isArchiving ? "archivar" : "restaurar"} (puede estar en uso)`)
         }
-    })
+   })
     const bulkArchiveConfirm = useConfirmAction<UoM[]>(async (items) => {
         const isArchiving = items.every(u => u.is_active)
         try {
@@ -61,7 +51,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
             showApiError(error, `Error al ${isArchiving ? "archivar" : "restaurar"} las unidades`)
             throw error
         }
-    })
+   })
     const actionsCtx: UoMActionsCtx = {
         onEdit: (id) => openSelected(id),
         onArchive: (uom) => archiveConfirm.requestConfirm(uom),
@@ -117,12 +107,16 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
 
             {/* Unified Modal — UoMForm keeps rich FK + audit widgets for both create and edit.
                 Edit mode driven by ?selected={id} (ADR-0020); create mode driven by externalOpen. */}
-            <UoMDrawer
-                open={!!selectedUoM || isLoadingSelected || !!externalOpen}
-                onOpenChange={(open) => { if (!open) handleCloseModal() }}
-                initialData={selectedUoM ?? undefined}
-                onSuccess={() => { refetch() }}
-            />
+            <EntityPanelTab label="inventory.uom" {...panel.tab}>
+                {(open) => (
+                    <UoMDrawer
+                        open={open}
+                        onOpenChange={(open) => { if (!open) panel.close() }}
+                        initialData={selectedUoM ?? undefined}
+                        onSuccess={() => { refetch() }}
+                    />
+                )}
+            </EntityPanelTab>
 
             <ActionConfirmModal
                 open={archiveConfirm.isOpen}

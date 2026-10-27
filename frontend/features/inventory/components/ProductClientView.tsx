@@ -1,9 +1,10 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
 import { showApiError } from "@/lib/errors"
 
 import React, { useState, useMemo } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { ActionConfirmModal, AnalyticsPanelContent, type BulkAction } from '@/components/shared'
 import { Collection, GROUP_ROW_LIMIT, orderingParam, useCollectionViewMode, useEntityCollection, useServerPage, type FieldId, type SortSpec } from "@/components/entity-view"
 import { toPage } from '@/lib/pagination'
@@ -24,7 +25,7 @@ import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { useProductAnalytics } from "@/features/inventory/hooks/useProductAnalytics"
 import { type Product, type Restriction, type ProductFilters } from "@/features/inventory/types"
 import { productActions, type ProductActionsCtx } from "@/features/inventory/productActions"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { productUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
@@ -68,8 +69,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     }), [categoryOptions])
 
     const search = useUnifiedSearch(config)
-    const router = useRouter()
-    const pathname = usePathname()
     const searchParams = useSearchParams()
     const filters = useMemo<ProductFilters>(() => {
         const raw = { ...search.filters } as Record<string, string>
@@ -131,8 +130,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         initial: initialPage
             ? { page: toPage<Product>(initialPage, 1, DEFAULT_PRODUCT_LIST_QUERY.page_size), params: DEFAULT_PRODUCT_LIST_QUERY }
             : undefined,
-    })
-
+   })
 
     // Restrictions state
     const [restrictions, setRestrictions] = useState<Restriction[]>([])
@@ -142,28 +140,9 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     const [currentArchivingProduct, setCurrentArchivingProduct] = useState<Product | null>(null)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
 
-    const { entity: selectedFromUrl, clearSelection: clearUrlSelection } = useSelectedEntity<Product>({
-        endpoint: '/inventory/products'
-    })
+    const panel = useEntityPanelRoute<Product>({ endpoint: '/inventory/products', external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const selectedFromUrl = panel.entity
     const { openSelected } = useEntityRouteActions()
-
-    const isCreateOpen = searchParams.get("modal") === "new" || externalOpen
-    const isEditOpen = !!selectedFromUrl
-    const drawerOpen = Boolean(isCreateOpen || isEditOpen)
-
-    const handleCloseModal = (open: boolean = false) => {
-        if (!open) {
-            onExternalOpenChange?.(false)
-            if (isEditOpen) clearUrlSelection()
-            if (isCreateOpen) {
-                const params = new URLSearchParams(searchParams.toString())
-                params.delete("modal")
-                params.delete("action")
-                params.delete("id")
-                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-            }
-        }
-    }
 
     const handleArchive = async (product: Product, isConfirmed = false) => {
         const isArchiving = product.is_active
@@ -189,7 +168,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 description: targetProduct.product_type === 'SUBSCRIPTION'
                     ? `Las suscripciones asociadas han sido ${isArchiving ? 'ocultas' : 'restauradas en la lista'}.`
                     : undefined
-            })
+           })
             setIsRestrictionsDialogOpen(false)
             setIsConfirmModalOpen(false)
         } catch (error: unknown) {
@@ -207,8 +186,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             setIsRetrying(false)
         }
     }
-
-
 
     const actionsCtx: ProductActionsCtx = {
         onEdit: (id) => openSelected(id),
@@ -314,12 +291,16 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 <Collection.BulkBar actions={bulkActions} />
             </Collection.Root>
 
-            <ProductDrawer
-                open={drawerOpen}
-                onOpenChange={handleCloseModal}
-                initialData={(selectedFromUrl || undefined) as ProductInitialData | undefined}
-                onSuccess={refetch}
-            />
+            <EntityPanelTab label="inventory.product" {...panel.tab}>
+                {(open) => (
+                    <ProductDrawer
+                        open={open}
+                        onOpenChange={(open) => { if (!open) panel.close() }}
+                        initialData={(selectedFromUrl || undefined) as ProductInitialData | undefined}
+                        onSuccess={refetch}
+                    />
+                )}
+            </EntityPanelTab>
 
             <ProductInsightsDrawer
                 productId={selectedStockProduct ? (selectedStockProduct.id as number) : null}

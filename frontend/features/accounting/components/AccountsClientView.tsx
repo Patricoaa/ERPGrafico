@@ -1,5 +1,7 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import React, { useState } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
@@ -10,7 +12,6 @@ import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { showApiError } from "@/lib/errors"
 import { type Account } from "@/features/accounting/types"
 import { ActivitySidebar } from "@/features/audit"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { accountActions, type AccountActionsCtx } from "./accountActions"
 import { buildAccountTree } from "../utils/accountTree"
 import { accountUnifiedSearchDef } from "../unifiedSearchDef"
@@ -39,24 +40,11 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Account>({
-        endpoint: '/accounting/accounts'
+    const panel = useEntityPanelRoute<Account>({
+        endpoint: '/accounting/accounts',
+        external: { open: externalOpen, onOpenChange: (open) => { onExternalOpenChange?.(open); if (!open) setFormParentId(null) } },
     })
-
-    const isCreateOpen = searchParams.get("modal") === "new" || externalOpen
-    const isFormOpen = isCreateOpen || !!selectedFromUrl
-    const editingAccount = selectedFromUrl ?? null
-
-    const handleCloseModal = () => {
-        setFormParentId(null)
-        onExternalOpenChange?.(false)
-        clearSelection()
-        if (isCreateOpen) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }
-    }
+    const editingAccount = panel.entity
 
     const confirmArchive = async () => {
         if (!archiveTarget) return
@@ -108,26 +96,26 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 />
             </Collection.Root>
 
-            <AccountDrawer
-                accounts={flatAccounts as unknown as Record<string, unknown>[]}
-                initialData={editingAccount as unknown as Record<string, unknown>}
-                parentId={formParentId || undefined}
-                auditSidebar={
-                    editingAccount ? (
-                        <ActivitySidebar entityId={editingAccount.id} entityType="account" />
-                    ) : undefined
-                }
-                mode={editingAccount ? 'edit' : 'create'}
-                onSuccess={() => {
-                    refetch()
-                }}
-                open={isFormOpen}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        handleCloseModal()
-                    }
-                }}
-            />
+            <EntityPanelTab label="accounting.account" {...panel.tab}>
+                {(open) => (
+                    <AccountDrawer
+                        accounts={flatAccounts as unknown as Record<string, unknown>[]}
+                        initialData={editingAccount as unknown as Record<string, unknown>}
+                        parentId={formParentId || undefined}
+                        auditSidebar={
+                            editingAccount ? (
+                                <ActivitySidebar entityId={editingAccount.id} entityType="account" />
+                            ) : undefined
+                        }
+                        mode={editingAccount ? 'edit' : 'create'}
+                        onSuccess={() => {
+                            refetch()
+                        }}
+                        open={open}
+                        onOpenChange={(open) => { if (!open) panel.close() }}
+                    />
+                )}
+            </EntityPanelTab>
 
             <ActionConfirmModal
                 open={archiveTarget !== null}

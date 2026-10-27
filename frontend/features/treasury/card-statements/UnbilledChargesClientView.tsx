@@ -1,5 +1,7 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useMemo, useState, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -58,7 +60,6 @@ export function UnbilledChargesClientView({
     const pathname = usePathname()
     const router = useRouter()
     const { selectedId, openSelected, clearActions } = useEntityRouteActions()
-    const isNewModal = searchParams.get('modal') === 'new'
 
     const bankParam = searchParams.get('bank')
     const selectedBankId = bankParam && !isNaN(Number(bankParam)) ? Number(bankParam) : undefined
@@ -175,26 +176,14 @@ export function UnbilledChargesClientView({
         [filteredRows, currency],
     )
 
-    const chargeDrawerOpen = !isAllCards && (isNewModal || !!(selectedId && chargeToEdit))
+    const chargePanel = useEntityPanelRoute({ enabled: !isAllCards, resolved: !!chargeToEdit })
 
     useEffect(() => {
         if (selectedId && !chargeToEdit) clearActions()
     }, [selectedId, chargeToEdit, clearActions])
 
-    const handleChargeDrawerOpenChange = (open: boolean) => {
-        if (!open) {
-            clearActions()
-            if (isNewModal) {
-                const params = new URLSearchParams(searchParams.toString())
-                params.delete('modal')
-                const q = params.toString()
-                router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false })
-            }
-        }
-    }
-
     const handleChargeDrawerSuccess = () => {
-        handleChargeDrawerOpenChange(false)
+        chargePanel.close()
         invalidateCrossFeature(queryClient, [['unbilled-charges']])
     }
 
@@ -500,15 +489,19 @@ export function UnbilledChargesClientView({
                 </Collection.Analytics>
             </Collection.Root>
 
-            <CardPendingChargeDrawer
-                open={chargeDrawerOpen}
-                onOpenChange={handleChargeDrawerOpenChange}
-                cardAccountId={selectedCardAccount ?? 0}
-                cardAccountName={cardAccountName}
-                currency={currency}
-                charge={chargeToEdit}
-                onSuccess={handleChargeDrawerSuccess}
-            />
+            <EntityPanelTab label="treasury.cardpendingcharge" {...chargePanel.tab}>
+                {(open) => (
+                    <CardPendingChargeDrawer
+                        open={open}
+                        onOpenChange={(open) => { if (!open) chargePanel.close() }}
+                        cardAccountId={selectedCardAccount ?? 0}
+                        cardAccountName={cardAccountName}
+                        currency={currency}
+                        charge={chargeToEdit}
+                        onSuccess={handleChargeDrawerSuccess}
+                    />
+                )}
+            </EntityPanelTab>
 
             {showBillCharges && (
                 <BillChargesModal

@@ -1,7 +1,8 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
 import React, { useMemo, useState } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
+
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 import { ActionConfirmModal, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
@@ -11,7 +12,7 @@ import { useAdvanceMutations } from "../hooks/useAdvanceMutations"
 import { PaymentModal } from "@/features/treasury"
 import { salaryAdvanceUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import type { SalaryAdvance } from "@/types/hr"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { salaryAdvanceEntity, salaryAdvanceViews } from "../entity-view/salaryAdvance.entity"
 
@@ -21,9 +22,6 @@ interface SalaryAdvanceClientViewProps {
 
 export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClientViewProps) {
     const createAction = <ToolbarCreateButton label="Nuevo Anticipo" href="/hr/advances?modal=new" />
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
     const search = useUnifiedSearch(salaryAdvanceUnifiedSearchDef)
     const { advances, isLoading: loading, isRefetching, isError, refetch: refetchAdvances } = useSalaryAdvances(search.filters, initialAdvances)
     const { filterFn } = search
@@ -37,25 +35,15 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
     )
     const { employees } = useEmployees()
 
-    const isNewModalOpen = searchParams.get("modal") === "new"
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<SalaryAdvance>({ endpoint: '/hr/advances' })
+    const panel = useEntityPanelRoute<SalaryAdvance>({ endpoint: '/hr/advances' })
+    const selectedFromUrl = panel.entity
     const { openSelected } = useEntityRouteActions()
-    const dialogOpen = isNewModalOpen || !!selectedFromUrl
 
     const [paymentModalOpen, setPaymentModalOpen] = useState(false)
     const [tempAdvanceData, setTempAdvanceData] = useState<Record<string, unknown> | null>(null)
     const [toDelete, setToDelete] = useState<SalaryAdvance | null>(null)
     const [toAnnul, setToAnnul] = useState<SalaryAdvance | null>(null)
     const { deleteAdvance, annulAdvance } = useAdvanceMutations()
-
-    const handleClose = () => {
-        clearSelection()
-        if (isNewModalOpen) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }
-    }
 
     const salaryAdvanceActionsCtx: SalaryAdvanceActionsCtx = {
         onEdit: (advance) => openSelected(advance.id),
@@ -89,22 +77,26 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                 />
             </Collection.Root>
 
-            <AdvanceDrawer
-                open={dialogOpen}
-                onOpenChange={(o) => { if (!o) handleClose() }}
-                advance={selectedFromUrl}
-                employees={employees}
-                onSaved={(data) => {
-                    if (selectedFromUrl) {
-                        refetchAdvances()
-                        handleClose()
-                    } else {
-                        setTempAdvanceData(data || null)
-                        handleClose()
-                        setPaymentModalOpen(true)
-                    }
-                }}
-            />
+            <EntityPanelTab label="hr.salaryadvance" {...panel.tab}>
+                {(open) => (
+                    <AdvanceDrawer
+                        open={open}
+                        onOpenChange={(o) => { if (!o) panel.close() }}
+                        advance={selectedFromUrl}
+                        employees={employees}
+                        onSaved={(data) => {
+                            if (selectedFromUrl) {
+                                refetchAdvances()
+                                panel.close()
+                            } else {
+                                setTempAdvanceData(data || null)
+                                panel.close()
+                                setPaymentModalOpen(true)
+                            }
+                        }}
+                    />
+                )}
+            </EntityPanelTab>
 
             <PaymentModal
                 open={paymentModalOpen}

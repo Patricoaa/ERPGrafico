@@ -1,5 +1,7 @@
 "use client"
 
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { EntityPanelTab } from "@/components/providers"
 import React from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { ActionConfirmModal } from '@/components/shared'
@@ -27,10 +29,8 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
 
     const searchParams = useSearchParams()
     const router = useRouter()
-    const isNewModalOpen = searchParams.get("modal") === "new"
-    const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
-    const isFormOpen = isNewModalOpen || !!selectedId
-    const editingBomId = selectedId
+    const panel = useEntityPanelRoute()
+    const editingBomId = panel.selectedId
 
     const { deleteBom } = useDeleteBomMutation()
     const { data: editingBomData } = useBOM(editingBomId ?? undefined)
@@ -49,15 +49,6 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
         { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
     )
 
-
-    const handleFormClose = (open: boolean) => {
-        if (!open) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            params.delete("selected")
-            router.push(`?${params.toString()}`, { scroll: false })
-        }
-    }
 
     const handleEdit = (id: number) => {
         const params = new URLSearchParams(searchParams.toString())
@@ -101,17 +92,21 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
                 />
             </Collection.Root>
 
-            <BOMDrawer
-                open={isFormOpen}
-                onOpenChange={handleFormClose}
-                onSuccess={refetchBoms}
-                bomToEdit={editingBom}
-                product={editingBom ? {
-                    id: editingBom.product,
-                    name: editingBom.product_name,
-                    code: editingBom.product_code,
-                } as unknown as ProductMinimal : undefined}
-            />
+            <EntityPanelTab label="production.bom" {...panel.tab}>
+                {(open) => (
+                    <BOMDrawer
+                        open={open}
+                        onOpenChange={(open) => { if (!open) panel.close() }}
+                        onSuccess={refetchBoms}
+                        bomToEdit={editingBom}
+                        product={editingBom ? {
+                            id: editingBom.product,
+                            name: editingBom.product_name,
+                            code: editingBom.product_code,
+                        } as unknown as ProductMinimal : undefined}
+                    />
+                )}
+            </EntityPanelTab>
 
             <ActionConfirmModal
                 open={deleteConfirm.isOpen}

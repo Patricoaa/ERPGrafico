@@ -1,9 +1,10 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
 import { showApiError } from "@/lib/errors"
 
 import React from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
+
 import { toast } from "sonner"
 import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
@@ -12,7 +13,7 @@ import { pricingRuleActions, type PricingRuleActionsCtx } from "@/features/inven
 import { usePricingRules, type PricingRule } from "@/features/inventory/hooks/usePricingRules"
 import { pricingRuleUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { pricingRuleEntity, pricingRuleViews } from "../entity-view/pricingRule.entity"
 
@@ -28,25 +29,9 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
     const { view, onViewChange } = useCollectionViewMode("inventory.pricingrule")
     const collection = useEntityCollection(pricingRuleEntity, { rows: rules, isLoading, error: isError, refetch, isFiltered: search.isFiltered })
 
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
-
-    const isCreateModal = searchParams.get("modal") === "new"
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<PricingRule>({ endpoint: '/inventory/pricing-rules' })
+    const panel = useEntityPanelRoute<PricingRule>({ endpoint: '/inventory/pricing-rules', external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const selectedFromUrl = panel.entity
     const { openSelected } = useEntityRouteActions()
-
-    const dialogOpen = isCreateModal || !!selectedFromUrl || !!externalOpen
-
-    const handleCloseModal = () => {
-        clearSelection()
-        onExternalOpenChange?.(false)
-        if (searchParams.get("modal")) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }
-    }
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -58,7 +43,7 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
             console.error("Error deleting rule:", error)
             showApiError(error, "Error al eliminar la regla.")
         }
-    })
+   })
 
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
@@ -69,14 +54,18 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <PricingRuleDrawer
-                initialData={isCreateModal ? undefined : (selectedFromUrl ?? undefined)}
-                onSuccess={() => { handleCloseModal(); refetch() }}
-                open={dialogOpen}
-                onOpenChange={(open: boolean) => {
-                    if (!open) handleCloseModal()
-                }}
-            />
+            <EntityPanelTab label="inventory.pricingrule" {...panel.tab}>
+                {(open) => (
+                    <PricingRuleDrawer
+                        initialData={panel.isCreate ? undefined : (selectedFromUrl ?? undefined)}
+                        onSuccess={() => { panel.close(); refetch() }}
+                        open={open}
+                        onOpenChange={(open: boolean) => {
+                            if (!open) panel.close()
+                        }}
+                    />
+                )}
+            </EntityPanelTab>
 
             <Collection.Root
                 collection={collection}

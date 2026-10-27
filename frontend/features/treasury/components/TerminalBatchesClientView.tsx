@@ -1,5 +1,7 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import React, { useState, lazy, Suspense, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { BaseModal, FormFooter, CancelButton, SubmitButton } from "@/components/shared"
@@ -32,17 +34,8 @@ export function TerminalBatchesClientView({
     const { batches, isLoading, isRefetching, isError, refetch } = useTerminalBatches(search.filters)
     const filteredBatches = search.filterFn(batches)
     const { view, onViewChange } = useCollectionViewMode("treasury.terminalbatch")
-    const openCreate = searchParams.get('modal') === 'batch'
-    const openInvoice = searchParams.get('modal') === 'invoice'
-
-    const clearModalParam = useCallback(() => {
-        const searchParams = new URLSearchParams(window.location.search)
-        if (searchParams.has('modal')) {
-            searchParams.delete('modal')
-            const query = searchParams.toString()
-            router.replace(query ? `?${query}` : window.location.pathname, { scroll: false })
-        }
-    }, [router])
+    const batchPanel = useEntityPanelRoute({ actions: [], createValue: 'batch' })
+    const invoicePanel = useEntityPanelRoute({ actions: [], createValue: 'invoice' })
 
     const handleOpenBatch = useCallback(() => {
         const params = new URLSearchParams(searchParams.toString())
@@ -81,31 +74,35 @@ export function TerminalBatchesClientView({
                 />
             </Collection.Root>
 
-             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando modal de lote de terminal">
-                 <Suspense fallback={<div />}>
-                     <TerminalBatchModal
-                     open={openCreate}
-                     onOpenChange={(open: boolean) => {
-                         if (!open) clearModalParam()
-                     }}
-                     onSuccess={() => {
-                         clearModalParam()
-                         refetch()
-                     }}
-                 />
-                 </Suspense>
-             </SkeletonShell>
+            <EntityPanelTab label="treasury.terminalbatch" {...batchPanel.tab}>
+                {(open) => (
+                    <SkeletonShell isLoading={isLoading} ariaLabel="Cargando modal de lote de terminal">
+                        <Suspense fallback={<div />}>
+                            <TerminalBatchModal
+                                open={open}
+                                onOpenChange={(open: boolean) => { if (!open) batchPanel.close() }}
+                                onSuccess={() => {
+                                    batchPanel.close()
+                                    refetch()
+                                }}
+                            />
+                        </Suspense>
+                    </SkeletonShell>
+                )}
+            </EntityPanelTab>
 
-             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando modal de factura mensual">
-                 <Suspense fallback={<div />}>
-                     <MonthlyInvoiceModal
-                     open={openInvoice}
-                     onOpenChange={(open: boolean) => {
-                         if (!open) clearModalParam()
-                     }}
-                 />
-                 </Suspense>
-             </SkeletonShell>
+            <EntityPanelTab label="treasury.terminalbatch" variant="invoice" display="Factura mensual" {...invoicePanel.tab}>
+                {(open) => (
+                    <SkeletonShell isLoading={isLoading} ariaLabel="Cargando modal de factura mensual">
+                        <Suspense fallback={<div />}>
+                            <MonthlyInvoiceModal
+                                open={open}
+                                onOpenChange={(open: boolean) => { if (!open) invoicePanel.close() }}
+                            />
+                        </Suspense>
+                    </SkeletonShell>
+                )}
+            </EntityPanelTab>
         </div>
     )
 }

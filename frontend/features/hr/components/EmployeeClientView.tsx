@@ -1,5 +1,7 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import React from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
@@ -7,7 +9,6 @@ import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } 
 import { EmployeeDrawer, useEmployees } from "@/features/hr"
 import { employeeActions, type EmployeeActionsCtx } from "@/features/hr/employeeActions"
 import type { Employee } from "@/types/hr"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { employeeUnifiedSearchDef } from "../unifiedSearchDef"
 import { employeeEntity, employeeViews } from "../entity-view/employee.entity"
 
@@ -33,24 +34,7 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
         // Groups span the whole list, not one page.
         { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
     )
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Employee>({
-        endpoint: '/hr/employees'
-    })
-
-    const isNewModalOpen = searchParams.get("modal") === "new"
-    const activeEmployee = selectedFromUrl ?? null
-    const dialogOpen = isNewModalOpen || !!activeEmployee
-
-    const setDialogOpen = (open: boolean) => {
-        if (!open) {
-            clearSelection()
-            if (isNewModalOpen) {
-                const params = new URLSearchParams(searchParams.toString())
-                params.delete("modal")
-                router.push(`?${params.toString()}`, { scroll: false })
-            }
-        }
-    }
+    const panel = useEntityPanelRoute<Employee>({ endpoint: '/hr/employees' })
 
     const actionsCtx: EmployeeActionsCtx = {
         onEdit: (id) => {
@@ -85,15 +69,19 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                     onResetFilters={search.clearAll}
                 />
             </Collection.Root>
-            <EmployeeDrawer
-                open={dialogOpen}
-                onOpenChange={setDialogOpen}
-                employee={activeEmployee}
-                onSaved={() => {
-                    setDialogOpen(false)
-                    fetchEmployees()
-                }}
-            />
+            <EntityPanelTab label="hr.employee" {...panel.tab}>
+                {(open) => (
+                    <EmployeeDrawer
+                        open={open}
+                        onOpenChange={(open) => { if (!open) panel.close() }}
+                        employee={panel.entity}
+                        onSaved={() => {
+                            panel.close()
+                            fetchEmployees()
+                        }}
+                    />
+                )}
+            </EntityPanelTab>
         </div>
     )
 }

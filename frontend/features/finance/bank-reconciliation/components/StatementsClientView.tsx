@@ -1,5 +1,6 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
 import React, { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { Upload, Activity, CheckCircle2 } from "lucide-react"
@@ -292,14 +293,18 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                 )}
             </Drawer>
 
-            <StatementImportModal
-                key={modalKey}
-                open={importModalOpen}
-                onOpenChange={handleModalChange}
-                onSuccess={handleImportSuccess}
-                defaultAccountId={search.filters.bank_account_id && search.filters.bank_account_id !== "all" ? Number(search.filters.bank_account_id) : undefined}
-                allowedAccountIds={accounts?.map((a) => a.id)}
-            />
+            <EntityPanelTab label="treasury.bankstatement" id={null} display="Importar extracto" open={importModalOpen} onClose={() => handleModalChange(false)}>
+                {(open) => (
+                    <StatementImportModal
+                        key={modalKey}
+                        open={open}
+                        onOpenChange={handleModalChange}
+                        onSuccess={handleImportSuccess}
+                        defaultAccountId={search.filters.bank_account_id && search.filters.bank_account_id !== "all" ? Number(search.filters.bank_account_id) : undefined}
+                        allowedAccountIds={accounts?.map((a) => a.id)}
+                    />
+                )}
+            </EntityPanelTab>
 
             <Drawer
                 open={!!workbenchStatementId}

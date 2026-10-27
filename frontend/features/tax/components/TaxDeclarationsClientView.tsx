@@ -20,7 +20,8 @@ import { taxDeclarationActions, type TaxDeclarationActionsCtx } from './taxDecla
 import { taxPeriodEntity, taxPeriodViews } from '../entity-view/taxPeriod.entity'
 
 import { type TaxPeriod, type TaxDeclaration, type TaxPaymentData } from "../types"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { EntityPanelTab } from "@/components/providers"
 import { SkeletonShell, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useTaxPeriods, useLazyTaxDeclarations } from "../hooks/useTaxQueries"
@@ -37,9 +38,10 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
     const router = useRouter()
     const pathname = usePathname()
     const [selectedDeclaration, setSelectedDeclaration] = useState<TaxDeclaration | null>(null)
-    const { entity: selectedFromUrl } = useSelectedEntity<TaxPeriod>({
-        endpoint: '/tax/periods'
-    })
+    // Declarar (wizard, `?selected` sin acción o botón externo) y pagar F29 (`?action=pay`) comparten la ruta.
+    const declarationPanel = useEntityPanelRoute<TaxPeriod>({ endpoint: '/tax/periods', actions: [null], external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const paymentPanel = useEntityPanelRoute<TaxPeriod>({ endpoint: '/tax/periods', actions: ['pay'], create: false })
+    const selectedFromUrl = paymentPanel.entity
 
     const { taxPeriods: periodsData, isLoading: isLoadingPeriods, isError: isPeriodsError, refetch: refetchPeriods } = useTaxPeriods()
     const { fetchDeclarations } = useLazyTaxDeclarations()
@@ -49,18 +51,11 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
     const isLoading = isLoadingPeriods
 
     const action = searchParams.get('action')
-    const isWizardOpen = !!selectedFromUrl && (!action || action !== 'pay')
-    const isPaymentOpen = !!selectedFromUrl && action === 'pay'
+    const isPaymentOpen = paymentPanel.open
 
     const handleCloseModal = () => {
         setSelectedDeclaration(null)
-        onExternalOpenChange?.(false)
-
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete("selected")
-        params.delete("action")
-        params.delete("modal")
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        declarationPanel.close()
     }
 
     const openPaymentModal = async (period: TaxPeriod) => {
@@ -253,16 +248,20 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
                     />
                 </Collection.Root>
             </div>
-            <DeclarationWizard
-                isOpen={isWizardOpen || !!externalOpen}
-                onOpenChange={(open) => !open && handleCloseModal()}
-                periodId={selectedFromUrl?.id}
-                onSuccess={() => {
-                    refetchPeriods()
-                    handleCloseModal()
-                }}
-                existingPeriods={periods}
-            />
+            <EntityPanelTab label="tax.taxperiod" {...declarationPanel.tab}>
+                {(open) => (
+                    <DeclarationWizard
+                        isOpen={open}
+                        onOpenChange={(open) => !open && handleCloseModal()}
+                        periodId={declarationPanel.selectedId ?? undefined}
+                        onSuccess={() => {
+                            refetchPeriods()
+                            handleCloseModal()
+                        }}
+                        existingPeriods={periods}
+                    />
+                )}
+            </EntityPanelTab>
 
             {selectedDeclaration && (
                 <F29PaymentModal

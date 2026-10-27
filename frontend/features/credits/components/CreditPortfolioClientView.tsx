@@ -1,5 +1,7 @@
 "use client"
 
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { EntityPanelTab } from "@/components/providers"
 import { useCallback, useMemo, useState } from "react"
 
 import { type CreditContact, type CreditHistoryEntry, writeOffDebt } from '@/features/credits/api/creditsApi'
@@ -10,7 +12,6 @@ import { portfolioActions, type PortfolioActionsCtx } from "../portfolioActions"
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useCreditPortfolio, useCreditHistory } from "../hooks/useCredits"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { ShieldAlert } from "lucide-react"
 import { toast } from "sonner"
@@ -37,8 +38,9 @@ export function CreditPortfolioClientView({
     const { contacts: rawContacts, isLoading, refetch } = useCreditPortfolio()
     const { data: rawHistory, isLoading: loadingHistory } = useCreditHistory()
 
-    const { entity: selectedContact, isLoading: isLoadingSelected, clearSelection } =
-        useSelectedEntity<CreditContact>({ endpoint: '/contacts' })
+    const assignmentPanel = useEntityPanelRoute<CreditContact>({ endpoint: '/contacts', external: { open: externalOpen } })
+    const selectedContact = assignmentPanel.entity
+    const clearSelection = assignmentPanel.close
     const { openSelected } = useEntityRouteActions()
 
     const [writeOffContact, setWriteOffContact] = useState<CreditContact | null>(null)
@@ -136,12 +138,16 @@ export function CreditPortfolioClientView({
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <CreditAssignmentModal
-                open={!!selectedContact || isLoadingSelected || externalOpen}
-                onOpenChange={(open) => { if (!open) clearSelection() }}
-                contact={selectedContact}
-                onSuccess={handleModalSuccess}
-            />
+            <EntityPanelTab label="contacts.contact" variant="credit" display={selectedContact ? `Asignar crédito · ${selectedContact.name}` : "Asignar crédito"} {...assignmentPanel.tab}>
+                {(open) => (
+                    <CreditAssignmentModal
+                        open={open}
+                        onOpenChange={(open) => { if (!open) assignmentPanel.close() }}
+                        contact={selectedContact}
+                        onSuccess={handleModalSuccess}
+                    />
+                )}
+            </EntityPanelTab>
 
             <ActionConfirmModal
                 open={!!writeOffContact}
@@ -164,13 +170,17 @@ export function CreditPortfolioClientView({
                 confirmText="Confirmar Castigo"
             />
 
-            <CreditContactLedgerDrawer
-                contact={ledgerContact}
-                open={!!ledgerContact}
-                onOpenChange={(open) => { if (!open) setLedgerContact(null) }}
-                mode="portfolio"
-                onRefresh={refetch}
-            />
+            <EntityPanelTab label="contacts.contact" variant="ledger" id={ledgerContact?.id ?? null} open={!!ledgerContact} display={ledgerContact ? `Crédito · ${ledgerContact.name}` : undefined} onClose={() => setLedgerContact(null)}>
+                {(open) => (
+                    <CreditContactLedgerDrawer
+                        contact={ledgerContact}
+                        open={open}
+                        onOpenChange={(open) => { if (!open) setLedgerContact(null) }}
+                        mode="portfolio"
+                        onRefresh={refetch}
+                    />
+                )}
+            </EntityPanelTab>
 
             {activeTab === 'portfolio' ? (
                 <div className="flex-1 flex flex-col min-h-0">

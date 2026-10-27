@@ -4,6 +4,7 @@ import React, { useEffect } from "react"
 import Link from "next/link"
 
 import { GlobalModalProvider, useGlobalModals } from "../GlobalModalProvider"
+import { EntityPanelTab } from "../EntityPanelTab"
 import { Button } from "@/components/ui/button"
 
 const nav = vi.hoisted(() => ({ pathname: "/sales/orders", push: vi.fn() }))
@@ -244,5 +245,44 @@ describe("GlobalModalProvider unsaved-changes guard", () => {
 
         click("Descartar y continuar")
         await waitFor(() => expect(nav.push).toHaveBeenCalledWith("/inventory/products"))
+    })
+})
+
+/** ADR-0101: un drawer que monta la página (`?selected`) también ocupa una pestaña. */
+describe("GlobalModalProvider page-mounted panel tabs", () => {
+    function PageWithPanel({ onClose }: { onClose: () => void }) {
+        const [open, setOpen] = React.useState(false)
+        return (
+            <>
+                <Button onClick={() => setOpen(true)}>abrir-panel</Button>
+                <EntityPanelTab label="contacts.contact" id={5} display="Ana" open={open} onClose={() => { onClose(); setOpen(false) }}>
+                    {(visible) => <span>panel:{visible ? "visible" : "oculto"}</span>}
+                </EntityPanelTab>
+            </>
+        )
+    }
+
+    const setupPanel = (onClose = vi.fn()) => {
+        render(<GlobalModalProvider><PageWithPanel onClose={onClose} /><Controls /></GlobalModalProvider>)
+        return onClose
+    }
+
+    it("registers the panel as the active tab and shows its drawer", () => {
+        setupPanel()
+        expect(screen.getByText("panel:oculto")).toBeInTheDocument()
+        click("abrir-panel")
+        expect(tabTitles()).toEqual(["tab:Ana*"])
+        expect(screen.getByText("panel:visible")).toBeInTheDocument()
+    })
+
+    it("hides the drawer on the page tab but keeps the tab, and closing the tab asks the page to close it", () => {
+        const onClose = setupPanel()
+        click("abrir-panel")
+        click("ver-pagina")
+        expect(screen.getByText("panel:oculto")).toBeInTheDocument()
+        expect(tabTitles()).toEqual(["tab:Ana"])
+        click("cerrar:Ana")
+        expect(onClose).toHaveBeenCalledTimes(1)
+        expect(screen.queryAllByText(/^tab:/)).toHaveLength(0)
     })
 })

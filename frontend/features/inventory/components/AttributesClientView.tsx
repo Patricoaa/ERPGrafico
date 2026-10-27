@@ -1,15 +1,16 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
 import { showApiError } from "@/lib/errors"
 
 import React, { useCallback, useMemo } from "react"
 import { Archive, ArchiveRestore } from "lucide-react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
+
 import { toast } from "sonner"
 import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { useAttributes, type Attribute } from "@/features/inventory/hooks/useAttributes"
 import { attributeUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
@@ -41,30 +42,9 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
         { defaultSort: attributeViews.table.defaultSort },
     )
 
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const pathname = usePathname()
-
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Attribute>({
-        endpoint: '/inventory/attributes'
-    })
+    const panel = useEntityPanelRoute<Attribute>({ endpoint: '/inventory/attributes', external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const selectedFromUrl = panel.entity
     const { openSelected } = useEntityRouteActions()
-
-    const isCreateOpen = searchParams.get("modal") === "new" || externalOpen
-    const isEditOpen = !!selectedFromUrl
-    const drawerOpen = Boolean(isCreateOpen || isEditOpen)
-
-    const handleCloseModal = (open: boolean = false) => {
-        if (!open) {
-            onExternalOpenChange?.(false)
-            if (isEditOpen) clearSelection()
-            if (isCreateOpen) {
-                const params = new URLSearchParams(searchParams.toString())
-                params.delete("modal")
-                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-            }
-        }
-    }
 
     const archiveConfirm = useConfirmAction<Attribute>(async (attribute) => {
         const isArchiving = attribute.is_active
@@ -74,7 +54,7 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
         } catch (error) {
             showApiError(error, `Error al ${isArchiving ? "archivar" : "restaurar"}`)
         }
-    })
+   })
 
     const deleteValueConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -83,7 +63,7 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
         } catch (error) {
             showApiError(error, "Error al eliminar valor")
         }
-    })
+   })
 
     const handleDeleteValue = useCallback((id: number) => deleteValueConfirm.requestConfirm(id), [deleteValueConfirm])
 
@@ -101,7 +81,7 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
             showApiError(error, `Error al ${isArchiving ? "archivar" : "restaurar"} los atributos`)
             throw error
         }
-    })
+   })
 
     const bulkActions = useMemo<BulkAction<Attribute>[]>(() => [
         {
@@ -157,12 +137,16 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
                 </Collection.Root>
             </AttributeValuesProvider>
 
-            <AttributeDrawer
-                onSuccess={() => { void refetch() }}
-                open={drawerOpen}
-                onOpenChange={handleCloseModal}
-                initialData={selectedFromUrl || undefined}
-            />
+            <EntityPanelTab label="inventory.attribute" {...panel.tab}>
+                {(open) => (
+                    <AttributeDrawer
+                        onSuccess={() => { void refetch() }}
+                        open={open}
+                        onOpenChange={(open) => { if (!open) panel.close() }}
+                        initialData={selectedFromUrl || undefined}
+                    />
+                )}
+            </EntityPanelTab>
 
             <ActionConfirmModal
                 open={archiveConfirm.isOpen}

@@ -1,5 +1,6 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
 import { useEffect, useMemo, useState } from "react"
 import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
@@ -40,6 +41,11 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
         }
     }, [externalOpen])
 
+    const closeCreate = () => {
+        setShowCreateModal(false)
+        onExternalOpenChange?.(false)
+    }
+
     const handleDelete = async () => {
         if (!deleteId) return
         await deleteGroup(deleteId)
@@ -76,28 +82,32 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
                 />
             </Collection.Root>
 
-            <GroupDrawer
-                open={showCreateModal}
-                onOpenChange={(open) => {
-                    setShowCreateModal(open)
-                    if (!open) onExternalOpenChange?.(false)
-                }}
-                onSuccess={() => {
-                    setShowCreateModal(false)
-                    onExternalOpenChange?.(false)
-                    fetchGroups()
-                }}
-            />
+            <EntityPanelTab label="settings.group" id={null} open={showCreateModal} onClose={closeCreate}>
+                {(open) => (
+                    <GroupDrawer
+                        open={open}
+                        onOpenChange={(open) => { if (!open) closeCreate() }}
+                        onSuccess={() => {
+                            closeCreate()
+                            fetchGroups()
+                        }}
+                    />
+                )}
+            </EntityPanelTab>
 
-            <GroupDrawer
-                open={!!editingGroup}
-                onOpenChange={(open) => { if (!open) setEditingGroup(null) }}
-                initialData={editingGroup || undefined}
-                onSuccess={() => {
-                    setEditingGroup(null)
-                    fetchGroups()
-                }}
-            />
+            <EntityPanelTab label="settings.group" id={editingGroup?.id ?? null} open={!!editingGroup} onClose={() => setEditingGroup(null)}>
+                {(open) => (
+                    <GroupDrawer
+                        open={open}
+                        onOpenChange={(open) => { if (!open) setEditingGroup(null) }}
+                        initialData={editingGroup || undefined}
+                        onSuccess={() => {
+                            setEditingGroup(null)
+                            fetchGroups()
+                        }}
+                    />
+                )}
+            </EntityPanelTab>
 
             <ActionConfirmModal
                 open={!!deleteId}

@@ -27,19 +27,36 @@ const TOOL_TABS: Record<ToolTabId, { title: string; icon: LucideIcon }> = {
     "cost-calculator": { title: "Calculadora de Costos", icon: Calculator },
 }
 
-/** Pestaña efímera del espacio de trabajo: un documento (`entity`) o una herramienta (`tool`). */
+/**
+ * Drawer que monta la propia página (edición por `?selected`, creación): ocupa una pestaña pero lo
+ * renderiza la página, no el provider (`useEntityPanelTab`). `id` null = creación.
+ */
+export interface PanelTabState {
+    label: string
+    id: number | null
+    /** Distingue dos paneles del mismo registro (p. ej. ficha y asignación de crédito de un contacto). */
+    variant?: string
+    /** Texto de la pestaña; por defecto "{Entidad} #{id}" o "Nuevo {entidad}". */
+    display?: string
+}
+
+/** Pestaña efímera del espacio de trabajo: un documento (`entity`), una herramienta (`tool`) o un drawer de la página (`panel`). */
 type WorkspaceTab =
     | ({ type: "entity" } & OpenEntityState)
     | { type: "tool"; tool: ToolTabId }
+    | ({ type: "panel" } & PanelTabState)
 
 const entityKey = (label: string, id: number) => `${label}:${id}`
 const toolKey = (tool: ToolTabId) => `tool:${tool}`
-const tabKey = (tab: WorkspaceTab) => (tab.type === "entity" ? entityKey(tab.label, tab.id) : toolKey(tab.tool))
+/** Clave de la pestaña de un drawer de la página (la usa `useEntityPanelTab` para saber si está activa). */
+export const panelTabKey = ({ label, id, variant }: Pick<PanelTabState, "label" | "id" | "variant">) => `panel:${label}${variant ? `:${variant}` : ""}:${id ?? "new"}`
+const panelKey = panelTabKey
+const tabKey = (tab: WorkspaceTab) => (tab.type === "entity" ? entityKey(tab.label, tab.id) : tab.type === "tool" ? toolKey(tab.tool) : panelKey(tab))
 
 /** Vista de una pestaña para la barra (ADR-0101). */
 export interface WorkspaceTabView {
     key: string
-    kind: "entity" | "tool"
+    kind: "entity" | "tool" | "panel"
     title: string
     /** Ayuda al pasar el cursor: tipo y módulo del documento. */
     description: string
@@ -89,12 +106,14 @@ function tabView(tab: WorkspaceTab, active: boolean, pageModuleId: string | unde
     }
     const metadata = getEntityMetadata(tab.label)
     const documentModule = getEntityModule(tab.label)
-    const title = entityTabLabel(tab)
+    const title = tab.type === "panel"
+        ? (tab.display ?? (tab.id === null ? `Nuevo ${metadata?.title?.toLowerCase() ?? "registro"}` : `${metadata?.title ?? "Registro"} #${tab.id}`))
+        : entityTabLabel(tab)
     // Si el documento vive en otro módulo que la página, la pestaña lo dice (el riel no sigue al drill-down).
     const moduleNote = documentModule && documentModule.id !== pageModuleId ? ` · ${documentModule.label}` : ""
     return {
-        key: entityKey(tab.label, tab.id),
-        kind: "entity",
+        key: tabKey(tab),
+        kind: tab.type,
         title,
         description: `${metadata?.title ?? "Documento"} ${title}${moduleNote}`,
         icon: metadata?.icon ?? null,
@@ -119,6 +138,12 @@ interface GlobalModalActionsContextType {
     closeEntityByRef: (label: string, id: number) => void
     /** Abre una herramienta (p. ej. la calculadora) como pestaña. */
     openTool: (tool: ToolTabId) => void
+    /**
+     * Registra un drawer montado por la página como pestaña activa (`useEntityPanelTab`). `onClose` se
+     * invoca cuando el usuario cierra la pestaña (×, Delete): la página debe cerrar su drawer. Devuelve
+     * la función que la retira.
+     */
+    registerPanelTab: (panel: PanelTabState, onClose: () => void) => () => void
     /** Activa una pestaña (con guarda de cambios sin guardar). */
     activateTab: (key: string) => void
     /** Vuelve a la pestaña de la página (lista) sin cerrar las demás (con guarda de cambios sin guardar). */
@@ -235,7 +260,14 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         setTabs(prev => prev.filter(tab => tabKey(tab) !== key))
     }, [live])
 
-    const closeTab = useCallback((key: string) => runGuarded(() => removeTab(key)), [runGuarded, removeTab])
+    // Los drawers de la página (panel) los cierra su página: la pestaña se retira cuando se desmonta el registro.
+    const [panelClosers] = useState(() => new Map<string, () => void>())
+
+    const closeTab = useCallback((key: string) => runGuarded(() => {
+        const closePanel = panelClosers.get(key)
+        if (closePanel) closePanel()
+        else removeTab(key)
+    }), [runGuarded, removeTab, panelClosers])
 
     const activateTab = useCallback((key: string) => {
         if (key === live.activeKey) return
@@ -330,6 +362,17 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
 
     const closeEntityByRef = useCallback((label: string, id: number) => removeTab(entityKey(label, id)), [removeTab])
 
+    const registerPanelTab = useCallback((panel: PanelTabState, onClose: () => void) => {
+        const tab: WorkspaceTab = { type: "panel", ...panel }
+        const key = tabKey(tab)
+        panelClosers.set(key, onClose)
+        addTab(tab)
+        return () => {
+            panelClosers.delete(key)
+            removeTab(key)
+        }
+    }, [addTab, removeTab, panelClosers])
+
     const openTool = useCallback((tool: ToolTabId) => {
         if (live.activeKey === toolKey(tool)) return
         runGuarded(() => addTab({ type: "tool", tool }))
@@ -414,6 +457,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         openRootEntity,
         closeEntityByRef,
         openTool,
+        registerPanelTab,
         activateTab,
         showPage,
         closeTab,
@@ -423,7 +467,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         requestLeave,
         registerSheet,
         unregisterSheet,
-    }), [openEntity, closeEntity, openRootEntity, closeEntityByRef, openTool, activateTab, showPage, closeTab, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
+    }), [openEntity, closeEntity, openRootEntity, closeEntityByRef, openTool, registerPanelTab, activateTab, showPage, closeTab, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
 
     const tabViews = useMemo(
         () => tabs.map(tab => tabView(tab, tabKey(tab) === activeKey, pageModuleId)),
@@ -435,7 +479,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         [tabs],
     )
 
-    const hasEntityTab = tabs.some(tab => tab.type === "entity")
+    const hasEntityTab = tabs.some(tab => tab.type !== "tool")
 
     const stateValue = useMemo(() => ({
         isSubModalActive: hasEntityTab,
@@ -522,6 +566,13 @@ export function useGlobalModalActions() {
 /** Como `useGlobalModalActions` pero devuelve `undefined` fuera del provider (hooks compartidos, stories). */
 export function useOptionalGlobalModalActions() {
     return useContext(GlobalModalActionsContext)
+}
+
+/** Como `useGlobalModals` pero devuelve `undefined` fuera del provider (vistas montadas en tests o stories). */
+export function useOptionalGlobalModals(): CombinedContextType | undefined {
+    const actions = useContext(GlobalModalActionsContext)
+    const state = useContext(GlobalModalStateContext)
+    return actions && state ? { ...actions, ...state } : undefined
 }
 
 export function useGlobalModals(): CombinedContextType {

@@ -1,5 +1,7 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { Button } from "@/components/ui/button"
 import React, { useState, useEffect, lazy, Suspense, useMemo } from "react"
 import { AnalyticsPanelContent, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared'
@@ -13,7 +15,6 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
 import { useTreasuryMovementAnalytics } from "@/features/treasury/hooks/useTreasuryMovementAnalytics"
 import { treasuryMovementsUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { toast } from "sonner"
 import type { TreasuryMovement } from "@/features/treasury/types"
 import { treasuryMovementEntity, treasuryMovementViews } from "@/features/treasury/entity-view/treasuryMovement.entity"
@@ -64,12 +65,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
 
     const [openModal, setOpenModal] = useState(false)
 
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TreasuryMovement>({
-        endpoint: '/treasury/movements'
-    })
-
-    const detailsOpen = !!selectedFromUrl
-    const selectedMovementId = selectedFromUrl?.id ?? null
+    const panel = useEntityPanelRoute<TreasuryMovement>({ endpoint: '/treasury/movements', create: false })
 
     // T-105: cancelAnimationFrame cleanup prevents setState on unmounted component
     useEffect(() => {
@@ -180,15 +176,15 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 </Collection.Analytics>
             </Collection.Root>
 
-            {selectedMovementId && (
-                <CashMovementDrawer
-                    id={selectedMovementId}
-                    open={detailsOpen}
-                    onOpenChange={(open) => {
-                        if (!open) clearSelection()
-                    }}
-                />
-            )}
+            <EntityPanelTab label="treasury.treasurymovement" {...panel.tab}>
+                {(open) => panel.selectedId && (
+                    <CashMovementDrawer
+                        id={panel.selectedId}
+                        open={open}
+                        onOpenChange={(open) => { if (!open) panel.close() }}
+                    />
+                )}
+            </EntityPanelTab>
         </div>
     )
 }

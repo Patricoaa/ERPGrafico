@@ -1,5 +1,7 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useState, useCallback } from "react"
 import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, LabeledSelect, LabeledInput } from '@/components/shared'
 import { Collection, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
@@ -41,12 +43,14 @@ export function InventoryCountClientView() {
         page_size: pageState.pageSize,
     })
 
-    const { selectedId, openSelected, clearActions } = useEntityRouteActions()
+    const { openSelected } = useEntityRouteActions()
+    const panel = useEntityPanelRoute({ create: false })
+    const selectedId = panel.selectedId
     // Latched (not reset to null on close) so the drawer's internal edit state only remounts
     // when a *different* count opens, not while the current one is closing (keeps its exit animation).
     const [drawerKey, setDrawerKey] = useState("none")
-    if (selectedId && selectedId !== drawerKey) {
-        setDrawerKey(selectedId)
+    if (selectedId && String(selectedId) !== drawerKey) {
+        setDrawerKey(String(selectedId))
     }
     const { createCount, isCreating } = useInventoryCountMutations()
     const { warehouses } = useWarehouses()
@@ -106,13 +110,17 @@ export function InventoryCountClientView() {
                 />
             </Collection.Root>
 
-            <InventoryCountDetailDrawer
-                key={drawerKey}
-                countId={selectedId ? Number(selectedId) : null}
-                open={!!selectedId}
-                onOpenChange={(open) => { if (!open) clearActions() }}
-                onApplied={refetchCounts}
-            />
+            <EntityPanelTab label="inventory.inventorycount" {...panel.tab}>
+                {(open) => (
+                    <InventoryCountDetailDrawer
+                        key={drawerKey}
+                        countId={selectedId}
+                        open={open}
+                        onOpenChange={(open) => { if (!open) panel.close() }}
+                        onApplied={refetchCounts}
+                    />
+                )}
+            </EntityPanelTab>
 
             {/* New Count Dialog - migrated to BaseModal */}
             <BaseModal

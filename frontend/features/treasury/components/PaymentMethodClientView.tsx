@@ -1,5 +1,6 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
 import React, { useState, useEffect } from "react"
 import { frozenFieldsOf } from "@/lib/edit-policy"
 import { CreditCard, Lock, ChevronDown } from "lucide-react"
@@ -66,6 +67,12 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
     const openEdit = (method: PaymentMethod) => {
         setSelectedMethod(method)
         setDialogOpen(true)
+    }
+
+    const closeDialog = () => {
+        setDialogOpen(false)
+        setSelectedMethod(null)
+        onOpenChange?.(false)
     }
 
     const paymentMethodActionsCtx: PaymentMethodActionsCtx = {
@@ -153,24 +160,19 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
                 />
             </Collection.Root>
 
-            <PaymentMethodModal
-                open={dialogOpen || !!externalOpen}
-                onOpenChange={(open: boolean) => {
-                    setDialogOpen(open)
-                    if (!open) {
-                        setSelectedMethod(null)
-                        onOpenChange?.(false)
-                    } else {
-                        setDialogOpen(true)
-                    }
-                }}
-                method={selectedMethod}
-                onSuccess={() => {
-                    setDialogOpen(false)
-                    onOpenChange?.(false)
-                    refetch()
-                }}
-            />
+            <EntityPanelTab label="treasury.paymentmethod" id={selectedMethod?.id ?? null} open={dialogOpen || !!externalOpen} onClose={closeDialog}>
+                {(open) => (
+                    <PaymentMethodModal
+                        open={open}
+                        onOpenChange={(open: boolean) => { if (!open) closeDialog() }}
+                        method={selectedMethod}
+                        onSuccess={() => {
+                            closeDialog()
+                            refetch()
+                        }}
+                    />
+                )}
+            </EntityPanelTab>
 
             <ActionConfirmModal
                 open={archiveConfirm.isOpen}

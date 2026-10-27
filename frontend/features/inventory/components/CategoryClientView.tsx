@@ -1,8 +1,9 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
 import { showApiError } from "@/lib/errors"
 import React, { useMemo } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
+
 import { Archive, ArchiveRestore } from "lucide-react"
 import { toast } from "sonner"
 import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
@@ -10,7 +11,7 @@ import { Collection, useCollectionViewMode, useEntityCollection } from "@/compon
 import { categoryActions, type CategoryActionsCtx } from "@/features/inventory/categoryActions"
 import { useCategories, type Category } from "@/features/inventory/hooks/useCategories"
 import { categoryUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { categoryEntity, categoryViews } from "../entity-view/category.entity"
@@ -34,30 +35,10 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
         { rows, isLoading, isRefetching, error: isError && categories.length === 0, refetch, isFiltered: search.isFiltered },
         { defaultSort: categoryViews.table.defaultSort },
     )
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const pathname = usePathname()
 
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Category>({
-        endpoint: '/inventory/categories'
-    })
+    const panel = useEntityPanelRoute<Category>({ endpoint: '/inventory/categories', external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const selectedFromUrl = panel.entity
     const { openSelected } = useEntityRouteActions()
-
-    const isCreateOpen = searchParams.get("modal") === "new" || externalOpen
-    const isEditOpen = !!selectedFromUrl
-    const drawerOpen = Boolean(isCreateOpen || isEditOpen)
-
-    const handleCloseModal = (open: boolean = false) => {
-        if (!open) {
-            onExternalOpenChange?.(false)
-            if (isEditOpen) clearSelection()
-            if (isCreateOpen) {
-                const params = new URLSearchParams(searchParams.toString())
-                params.delete("modal")
-                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-            }
-        }
-    }
 
     const archiveConfirm = useConfirmAction<Category>(async (category) => {
         const isArchiving = category.is_active
@@ -67,7 +48,7 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
         } catch (error) {
             showApiError(error, `No se puede ${isArchiving ? "archivar" : "restaurar"} la categoría`)
         }
-    })
+   })
 
     const bulkArchiveConfirm = useConfirmAction<Category[]>(async (items) => {
         const isArchiving = items.every(c => c.is_active)
@@ -78,7 +59,7 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
             showApiError(error, `Error al ${isArchiving ? "archivar" : "restaurar"} las categorías`)
             throw error
         }
-    })
+   })
 
     const actionsCtx: CategoryActionsCtx = {
         onEdit: (id) => openSelected(id),
@@ -133,13 +114,17 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
             </Collection.Root>
 
             {/* Unified Modal — CategoryDrawer keeps rich selectors + audit for both create and edit */}
-            <CategoryDrawer
-                onSuccess={() => { void refetch() }}
-                open={drawerOpen}
-                onOpenChange={handleCloseModal}
-                initialData={selectedFromUrl || undefined}
-                // mode is handled internally by CategoryDrawer via useDrawerMode
-            />
+            <EntityPanelTab label="inventory.category" {...panel.tab}>
+                {(open) => (
+                    <CategoryDrawer
+                        onSuccess={() => { void refetch() }}
+                        open={open}
+                        onOpenChange={(open) => { if (!open) panel.close() }}
+                        initialData={selectedFromUrl || undefined}
+                        // mode is handled internally by CategoryDrawer via useDrawerMode
+                    />
+                )}
+            </EntityPanelTab>
 
             <ActionConfirmModal
                 open={archiveConfirm.isOpen}

@@ -28,10 +28,12 @@ ADR-0100 let documents stack over the origin list, first with a "Volver" link, t
 10. **Panels are always full-size.** Inside a tab, `Drawer` (via `PersistentPanelContext`) fills the whole area under the bar, is not resizable and is not dismissed by outside clicks, so the origin list and the rest of the page are not operable while a tab is open; only the bar is. Close with the drawer's X, Escape or the tab's ×. Nested drawers keep their own size and behaviour.
 11. **Accessibility.** The ephemeral group is a `tablist` (`role="tab"`, `aria-selected`, roving `tabindex`); arrows/Home/End move focus, Enter/Space activate, `Delete` closes. Page links are a `nav` with `aria-current="page"`. The close button is a sibling of the tab (no nested interactive).
 
+12. **Page-mounted entity drawers are tabs.** The page keeps rendering its drawer (edit data comes from `useSelectedEntity`, create from `?modal=new`), wrapped in `<EntityPanelTab label {...panel.tab}>`, where `panel = useEntityPanelRoute(...)` is the single place that reads `?selected` / `?action` / `?modal=new`, loads the record and closes: while `open` it registers a `panel` tab (`registerPanelTab`), the drawer is shown only while that tab is active and renders full-size (`PersistentPanelContext`). Closing the tab (×, Delete) calls `onClose` after the unsaved-changes guard; the tab disappears when the page closes the drawer. `id = null` is a creation tab ("Nuevo …").
+
 ## Consequences
 
 - One mental model: the bar says what is open; no hidden stack.
 - Tabs lose their scroll and inner tab on switching (only the active one is mounted). Keeping them alive is an option if usage shows it matters; it would need one Radix sheet per tab.
 - The list is not visible while a document tab is active (by design): the page tab returns to it.
-- Page-mounted form drawers (create/edit, wizards) are not tabs yet; they stay overlays.
+- Page-mounted entity drawers (edit via `?selected`, create via `?modal=new`) are tabs too, through `EntityPanelTab` / `useEntityPanelTab` (decision 12). Everything that creates or edits an entity is a tab (drawers, wizards, form modals: a `BaseModal` inside `EntityPanelTab` renders as a full-size panel); one-off actions on a record (pay, deposit, close, confirm, history, read-only details) stay overlays.
 - Lost: shareable stack URLs and Back/Forward over documents. The `?selected` URL of the previewed row remains.

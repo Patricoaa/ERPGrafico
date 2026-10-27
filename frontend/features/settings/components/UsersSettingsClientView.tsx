@@ -1,5 +1,7 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useMemo, useState } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { FadeIn, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
@@ -7,7 +9,6 @@ import { Collection, useCollectionViewMode, useEntityCollection, useServerPage }
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { UserDrawer, useUsers } from "@/features/users"
 import { GroupsClientView } from "@/features/settings/components/GroupsClientView"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import type { UnifiedSearchConfig } from "@/types/unified-search"
 import type { AppUser } from "@/types/entities"
 import { userEntity, userViews } from "../entity-view/user.entity"
@@ -47,12 +48,7 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
     const router = useRouter()
     const pathname = usePathname()
 
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<AppUser>({
-        endpoint: '/core/users'
-    })
-
-    const isUserModalOpen = !!selectedFromUrl
-    const userToEdit = selectedFromUrl ?? null
+    const panel = useEntityPanelRoute<AppUser>({ endpoint: '/core/users', create: false })
 
     const actionsCtx: UserActionsCtx = {
         onEdit: (id) => {
@@ -110,19 +106,19 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
                                 onResetFilters={search.clearAll}
                             />
                         </Collection.Root>
-                            <UserDrawer
-                                open={isUserModalOpen}
-                                onOpenChange={(open) => {
-                                    if (!open) {
-                                        clearSelection()
-                                    }
-                                }}
-                                initialData={userToEdit || undefined}
-                                onSuccess={() => {
-                                    refetch()
-                                    clearSelection()
-                                }}
-                            />
+                        <EntityPanelTab label="core.user" {...panel.tab}>
+                            {(open) => (
+                                <UserDrawer
+                                    open={open}
+                                    onOpenChange={(open) => { if (!open) panel.close() }}
+                                    initialData={panel.entity || undefined}
+                                    onSuccess={() => {
+                                        refetch()
+                                        panel.close()
+                                    }}
+                                />
+                            )}
+                        </EntityPanelTab>
                     </TabsContent>
 
                     <TabsContent value="groups" className="mt-0 outline-none flex-1 min-h-0">

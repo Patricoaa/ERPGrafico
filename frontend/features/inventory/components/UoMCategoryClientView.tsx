@@ -1,16 +1,17 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
 import { showApiError } from "@/lib/errors"
 
 import React, { useMemo } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
+
 import { Archive, ArchiveRestore } from "lucide-react"
 import { toast } from "sonner"
 import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { uomCategoryActions, type UoMCategoryActionsCtx } from "@/features/inventory/uomCategoryActions"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { useUoMs, type UoMCategory } from "@/features/inventory/hooks/useUoMs"
 import { uomCategoryUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
@@ -36,29 +37,13 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
         { defaultSort: uomCategoryViews.table.defaultSort },
     )
 
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
-
-    const isCreateModal = searchParams.get("modal") === "new"
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<UoMCategory>({ endpoint: '/inventory/uom-categories' })
+    const panel = useEntityPanelRoute<UoMCategory>({ endpoint: '/inventory/uom-categories', external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const selectedFromUrl = panel.entity
     const { openSelected } = useEntityRouteActions()
-
-    const dialogOpen = isCreateModal || !!selectedFromUrl || !!externalOpen
-
-    const handleCloseModal = () => {
-        clearSelection()
-        onExternalOpenChange?.(false)
-        if (searchParams.get("modal")) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }
-    }
 
     const handleSave = async (category?: UoMCategory) => {
         if (category) {
-            handleCloseModal()
+            panel.close()
             void refetchCategories()
         }
     }
@@ -71,7 +56,7 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
         } catch (error) {
             showApiError(error, `No se puede ${isArchiving ? "archivar" : "restaurar"} (puede estar en uso)`)
         }
-    })
+   })
 
     const bulkArchiveConfirm = useConfirmAction<UoMCategory[]>(async (items) => {
         const isArchiving = items.every(c => c.is_active)
@@ -82,7 +67,7 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
             showApiError(error, `Error al ${isArchiving ? "archivar" : "restaurar"} las categorías`)
             throw error
         }
-    })
+   })
 
     const actionsCtx: UoMCategoryActionsCtx = {
         onEdit: (item) => openSelected(item.id),
@@ -136,14 +121,18 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
                 <Collection.BulkBar actions={bulkActions} />
             </Collection.Root>
 
-            <UoMCategoryDrawer
-                open={dialogOpen}
-                onOpenChange={(open) => {
-                    if (!open) handleCloseModal()
-                }}
-                initialData={isCreateModal ? undefined : (selectedFromUrl ?? undefined)}
-                onSuccess={handleSave}
-            />
+            <EntityPanelTab label="inventory.uomcategory" {...panel.tab}>
+                {(open) => (
+                    <UoMCategoryDrawer
+                        open={open}
+                        onOpenChange={(open) => {
+                            if (!open) panel.close()
+                        }}
+                        initialData={panel.isCreate ? undefined : (selectedFromUrl ?? undefined)}
+                        onSuccess={handleSave}
+                    />
+                )}
+            </EntityPanelTab>
 
             <ActionConfirmModal
                 open={archiveConfirm.isOpen}
