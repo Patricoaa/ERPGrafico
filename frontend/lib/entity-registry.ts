@@ -541,7 +541,7 @@ const REGISTRY = {
     shortTemplate: '{code}',
     listUrl: '/accounting/ledger',
     detailUrlPattern: '/accounting/accounts/{id}/ledger',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
+    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
   },
   'accounting.budget': {
     label: 'accounting.budget',

@@ -30,10 +30,9 @@ interface WorkOrdersPageClientProps {
     initialOrders?: WorkOrder[]
 }
 
-/** Maps useViewMode string to CollectionViewMode (kanban/timeline fall back to "table"). */
+/** Maps useViewMode string to CollectionViewMode (unknown values fall back to "table"). */
 function toCollectionView(v: string): CollectionViewMode {
-    if (v === "card") return "card"
-    if (v === "analytics") return "analytics"
+    if (v === "card" || v === "analytics" || v === "kanban" || v === "timeline") return v
     return "table"
 }
 

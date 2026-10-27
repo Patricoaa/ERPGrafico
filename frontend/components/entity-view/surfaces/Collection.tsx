@@ -1,13 +1,13 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, ChevronDown, ChevronRight, FileText, LayoutGrid, Rows3 } from "lucide-react"
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, CalendarRange, ChevronDown, ChevronRight, FileText, Kanban, LayoutGrid, Rows3 } from "lucide-react"
 import { BulkActionButtons, CardRail, DataTablePagination, EmptyState, EntityCard, SelectionDock, SelectionRing, type BulkAction, type CardRailTone } from "@/components/shared"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { resolveStatus, type BadgeIntent } from "@/lib/badge-resolvers"
-import { getEntityIcon } from "@/lib/entity-registry"
+import { ENTITY_REGISTRY, getEntityIcon, type ViewPolicy } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
 import {
     alignOf,
@@ -35,7 +35,8 @@ import { useEntityOpener } from "./EntityViewProvider"
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 
-export type CollectionViewMode = "table" | "card" | "analytics"
+/** `kanban` / `timeline` are rendered by the page itself (like `analytics`): `Collection.View` yields to it. */
+export type CollectionViewMode = "table" | "card" | "analytics" | "kanban" | "timeline"
 export type SelectionMode = "none" | "bulk" | "panel"
 
 /** What the surfaces read from the entity: label and fields (the literal field-id map `F` is erased). */
@@ -153,6 +154,7 @@ export interface CollectionToolbarProps {
     children?: React.ReactNode
     /** Primary action (e.g. create button). Wraps below the search on narrow screens instead of covering it. */
     action?: React.ReactNode
+    /** Overrides the modes offered. Default: the entity's registry `viewPolicy.availableViews`. */
     views?: readonly CollectionViewMode[]
     /** Current filters, forwarded to the entity export hook (export-formats.md). */
     exportFilters?: Record<string, unknown>
@@ -162,13 +164,32 @@ const VIEW_BUTTONS = {
     table: { icon: Rows3, label: "Vista tabla" },
     card: { icon: LayoutGrid, label: "Vista tarjetas" },
     analytics: { icon: BarChart3, label: "Analítica" },
+    kanban: { icon: Kanban, label: "Vista kanban" },
+    timeline: { icon: CalendarRange, label: "Vista cronograma" },
 } as const
 
-function Toolbar({ children, action, views = ["table", "card"], exportFilters = {} }: CollectionToolbarProps) {
+const POLICY_TO_MODE: Record<ViewPolicy["availableViews"][number], CollectionViewMode> = {
+    list: "table",
+    card: "card",
+    grid: "card",
+    analytics: "analytics",
+    kanban: "kanban",
+    timeline: "timeline",
+}
+
+/** Modes the registry `viewPolicy` allows for an entity; unregistered (embedded) collections are table-only. */
+function policyModes(label: string | undefined): readonly CollectionViewMode[] {
+    const available = label !== undefined ? ENTITY_REGISTRY[label]?.viewPolicy?.availableViews : undefined
+    if (!available) return ["table"]
+    return [...new Set(available.map((view) => POLICY_TO_MODE[view]))]
+}
+
+function Toolbar({ children, action, views, exportFilters = {} }: CollectionToolbarProps) {
     const ctx = useCollectionContext<unknown>()
+    const allowed = views ?? policyModes(ctx.collection.entity.label)
     const exportSpec = ctx.collection.entity.export
     // The analytics view is offered only while a `Collection.Analytics` is mounted.
-    const modes = ctx.hasAnalytics && !views.includes("analytics") ? [...views, "analytics" as const] : views
+    const modes = ctx.hasAnalytics && !allowed.includes("analytics") ? [...allowed, "analytics" as const] : allowed
     return (
         <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
@@ -223,7 +244,7 @@ function View<T, Id extends string>({ table, card, emptyTitle, emptyDescription,
     const ctx = useCollectionContext<T>()
     const { status, truncated, total, table: model } = ctx.collection
     // `Collection.Analytics` renders the analytics view itself.
-    if (ctx.view === "analytics") return null
+    if (ctx.view === "analytics" || ctx.view === "kanban" || ctx.view === "timeline") return null
     if (status === "error" || status === "empty") {
         return <CollectionMessage status={status} {...{ emptyTitle, emptyDescription, emptyAction, onResetFilters }} />
     }
