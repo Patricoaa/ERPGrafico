@@ -176,6 +176,38 @@ class Task(models.Model):
         return f"[{self.status}] {self.title}"
 
 
+class TaskEvent(models.Model):
+    """Append-only log of what happened to a task (approved, reopened…).
+
+    ``Task`` keeps only its latest state — reopening a stage clears who approved it and the
+    next approval overwrites the notes — so the step's approval history is read from here.
+    """
+
+    class Action(models.TextChoices):
+        COMPLETED = "COMPLETED", _("Aprobada")
+        REOPENED = "REOPENED", _("Reabierta")
+
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="events")
+    action = models.CharField(_("Acción"), max_length=20, choices=Action.choices)
+    user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="task_events"
+    )
+    notes = models.TextField(_("Notas"), blank=True)
+    # Ids of the task attachments added with this action (they live on the task).
+    attachment_ids = models.JSONField(default=list, blank=True)
+    # Confirmations ticked with this action (e.g. {"design_approved": true}).
+    confirmations = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Evento de tarea")
+        verbose_name_plural = _("Eventos de tarea")
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"{self.task_id} {self.action} @ {self.created_at:%Y-%m-%d %H:%M}"
+
+
 class Notification(models.Model):
     class Type(models.TextChoices):
         INFO = "INFO", _("Información")

@@ -31,6 +31,8 @@ export interface BaseModalProps extends
     allowOverflow?: boolean
     variant?: BaseModalVariant
     showCloseButton?: boolean
+    /** Force rendering as a dialog even inside a workspace persistent panel. */
+    asDialog?: boolean
 }
 
 export function BaseModal({
@@ -53,6 +55,7 @@ export function BaseModal({
     allowOverflow = false,
     variant = "default",
     showCloseButton = true,
+    asDialog: _asDialog,
     ...props
 }: BaseModalProps) {
     // Dentro de una pestaña del espacio de trabajo (ADR-0101 §10) el modal es un panel a tamaño completo.

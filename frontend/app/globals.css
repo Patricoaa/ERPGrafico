@@ -534,6 +534,14 @@
  *                   It does not clip: add overflow-hidden / overflow-auto where the content needs it.
  * card-flat / card-base below derive from them and only add the hover grammar.
  */
+/* A button that sits beside notched fields (LabeledInput, selectors) in a top-aligned row:
+   same visible box as the field. The fieldset's legend overhangs its top border by half its
+   line, so the button starts that much lower. Measured: 45px border box, 5.5px overhang. */
+@utility h-notched-field {
+  height: 2.8125rem;
+  margin-top: 0.34375rem;
+}
+
 @utility surface-item {
   @apply relative overflow-hidden rounded-sm border border-border bg-card text-foreground shadow-none outline-none;
 }
@@ -871,10 +879,11 @@ table [data-notched-field] {
   }
 
   /* Strip border/outline from the actual control — fieldset provides the border.
-     Exclude [role="radio"] (ChoiceCard in ChoiceGroup) which must keep its own border. */
-  fieldset.notched-field input,
+     Exclude [role="radio"] (ChoiceCard in ChoiceGroup) which must keep its own border, and
+     checkboxes/switches (native inputs or Radix <button>s): stripped, they become invisible. */
+  fieldset.notched-field input:not([type="checkbox"]):not([type="radio"]),
   fieldset.notched-field textarea,
-  fieldset.notched-field button:not([role="radio"]),
+  fieldset.notched-field button:not([role="radio"]):not([role="checkbox"]):not([role="switch"]),
   fieldset.notched-field [role="combobox"] {
     border: none !important;
     outline: none !important;
@@ -888,7 +897,7 @@ table [data-notched-field] {
   }
 
   /* Normalize trigger buttons (date pickers) to match input height — exclude combobox & radio, handled above */
-  fieldset.notched-field button:not([role="combobox"]):not([role="radio"]) {
+  fieldset.notched-field button:not([role="combobox"]):not([role="radio"]):not([role="checkbox"]):not([role="switch"]) {
     height: auto !important;
     padding-top: 0.125rem !important;
     padding-bottom: 0.125rem !important;

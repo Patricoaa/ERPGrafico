@@ -1,14 +1,14 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Drawer, FormFooter, CancelButton, SubmitButton, ManufacturingConfigFields, ManufacturingSpecsPanel, emptyManufacturingData } from "@/components/shared"
-import type { ManufacturingData, ManufacturingContact, ManufacturingSpecsView } from "@/components/shared"
+import { Drawer, FormFooter, CancelButton, SubmitButton, ManufacturingConfigFields, ManufacturingSpecsPanel, StepHeader, emptyManufacturingData } from "@/components/shared"
+import type { ManufacturingData, ManufacturingContact, ManufacturingSpecsView, WizardSidebarStep } from "@/components/shared"
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { Package, Settings, Truck, type LucideIcon } from "lucide-react"
 import { toast } from "sonner"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { getDomainConceptTitle } from "@/lib/entity-registry"
-import { DraftMaterialsStep, DraftOutsourcingStep } from "@/features/production"
+import { DraftMaterialsStep, DraftOutsourcingStep, ProductionStepsSidebar } from "@/features/production"
 import type { DraftMaterial, DraftOutsourcedService } from "@/features/production"
 
 interface AdvancedManufacturingDrawerProps {
@@ -37,14 +37,17 @@ interface MfgDataShape {
 
 type StepId = "config" | "materials" | "outsourcing"
 
-const STEPS: { id: StepId; label: string; optional: boolean }[] = [
-    { id: "config", label: "Fabricación", optional: false },
-    { id: "materials", label: "Materiales", optional: true },
-    { id: "outsourcing", label: "Tercerizados", optional: true },
+// Same icons and names as the work order's stages they pre-plan.
+const STEPS: { id: StepId; label: string; description: string; icon: LucideIcon; optional: boolean }[] = [
+    { id: "config", label: "Configuración de la OT", description: "Defina las fases, especificaciones y archivos de diseño del trabajo.", icon: Settings, optional: false },
+    { id: "materials", label: "Asignación de Materiales", description: "Planifique los materiales de stock que consumirá la producción.", icon: Package, optional: true },
+    { id: "outsourcing", label: "Asignación de Tercerizados", description: "Asigne los servicios externos y sus proveedores.", icon: Truck, optional: true },
 ]
 
 export function AdvancedManufacturingDrawer({ open, onOpenChange, product, onConfirm, customer }: AdvancedManufacturingDrawerProps) {
     const [step, setStep] = useState<StepId>("config")
+    // Folded like the work order's rail; the step header names the current step.
+    const [railCollapsed, setRailCollapsed] = useState(true)
     const [contact, setContact] = useState<ManufacturingContact | null>(null)
     const [data, setData] = useState<ManufacturingData>(() => emptyManufacturingData())
     const [materials, setMaterials] = useState<DraftMaterial[]>([])
@@ -141,6 +144,21 @@ export function AdvancedManufacturingDrawer({ open, onOpenChange, product, onCon
     const stepIndex = STEPS.findIndex(s => s.id === step)
     const isLast = stepIndex === STEPS.length - 1
 
+    const railSteps: WizardSidebarStep[] = STEPS.map((s, i) => ({
+        id: s.id,
+        label: s.label,
+        icon: s.icon,
+        status: i === stepIndex ? "active" : i < stepIndex ? "past" : "future",
+        detail: counts[s.id] !== null ? `${counts[s.id]} agregado${counts[s.id] === 1 ? "" : "s"}` : s.optional ? "Opcional" : undefined,
+        // Optional steps can be visited in any order once the configuration is valid.
+        disabled: false,
+    }))
+
+    const goToStep = (index: number) => {
+        const target = STEPS[index]
+        if (target && (target.id === "config" || validateConfig())) setStep(target.id)
+    }
+
     const goNext = () => {
         if (step === "config" && !validateConfig()) return
         setStep(STEPS[stepIndex + 1].id)
@@ -173,35 +191,8 @@ export function AdvancedManufacturingDrawer({ open, onOpenChange, product, onCon
             defaultSize={formDrawerWidth("master", false)}
             contentClassName="p-0"
             fillContent
-            title={
-                <div className="px-6 pt-5 pb-3 space-y-3">
-                    <div>
-                        <div className="text-xl font-black tracking-tight text-foreground">Fabricación</div>
-                        <p className="text-xs font-medium text-muted-foreground truncate">{productName}</p>
-                    </div>
-                    <nav aria-label="Pasos de fabricación" className="flex gap-1">
-                        {STEPS.map((s, i) => (
-                            <Button
-                                key={s.id}
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                aria-current={s.id === step ? "step" : undefined}
-                                onClick={() => (s.id === "config" || validateConfig()) && setStep(s.id)}
-                                className={cn(
-                                    "h-8 gap-2 rounded-md px-3 text-3xs font-black uppercase tracking-wider",
-                                    s.id === step ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : "text-muted-foreground"
-                                )}
-                            >
-                                <span className="font-mono tabular-nums">{i + 1}</span>
-                                {s.label}
-                                {counts[s.id] !== null && <span className="font-mono tabular-nums opacity-80">({counts[s.id]})</span>}
-                                {s.optional && s.id !== step && <span className="text-4xs font-black opacity-70">opcional</span>}
-                            </Button>
-                        ))}
-                    </nav>
-                </div>
-            }
+            title="Fabricación"
+            subtitle={productName}
             footer={
                 <FormFooter
                     actions={
@@ -217,7 +208,15 @@ export function AdvancedManufacturingDrawer({ open, onOpenChange, product, onCon
             }
         >
             <div className="flex flex-1 min-h-0 h-full">
-                <div className="flex-1 min-w-0 overflow-y-auto p-6 space-y-4">
+                <ProductionStepsSidebar
+                    steps={railSteps}
+                    currentStep={stepIndex + 1}
+                    onStepClick={goToStep}
+                    collapsed={railCollapsed}
+                    onToggleCollapsed={() => setRailCollapsed((v) => !v)}
+                />
+                <div className="flex-1 min-w-0 overflow-y-auto p-6 flex flex-col gap-4">
+                    <StepHeader title={STEPS[stepIndex].label} description={STEPS[stepIndex].description} />
                     {step === "config" && (
                         <ManufacturingConfigFields data={data} onDataChange={setData} contact={contact} onContactChange={setContact} />
                     )}
@@ -228,8 +227,8 @@ export function AdvancedManufacturingDrawer({ open, onOpenChange, product, onCon
                         <DraftOutsourcingStep items={outsourced} onChange={setOutsourced} />
                     )}
                 </div>
-                <aside aria-label="Resumen de fabricación" className="hidden xl:block w-64 shrink-0 self-stretch border-l overflow-y-auto p-5">
-                    <ManufacturingSpecsPanel view={view} />
+                <aside aria-label="Resumen de fabricación" className="hidden xl:block w-72 shrink-0 self-stretch border-l overflow-y-auto p-5">
+                    <ManufacturingSpecsPanel view={view} className="min-h-full" />
                 </aside>
             </div>
         </Drawer>

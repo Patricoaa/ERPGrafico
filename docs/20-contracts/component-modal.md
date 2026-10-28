@@ -282,7 +282,11 @@ re-exported from `@/components/shared`):
       - `detail?: ReactNode` — shown below label when visible
       - `badge?: ReactNode` — optional chip (e.g. "actual")
       - `status?: 'active' | 'past' | 'future' | 'current'` — explicit status override
-      - `disabled?: boolean` — disables click/keyboard
+      - `disabled?: boolean` — `true` disables click/keyboard. Future steps are locked by
+        default; an explicit `false` unlocks a future step (jump ahead — e.g. the POS
+        manufacturing drawer's optional steps).
+      - The row content sits above the stretched button with `pointer-events-none`, so a
+        click anywhere on the row reaches it (only the actions column takes events).
       - `className?: string` — extra row classes
       - `group?: string` — section label rendered before the first step of the group
       - `warning?: string` — blocker shown as a warning icon + title; included in the row `aria-label`

@@ -90,6 +90,6 @@ describe("WorkOrderBasicStep Unit and Rendering Tests", () => {
         expect(screen.getAllByText("Post-Impresión").length).toBeGreaterThan(0)
         
         // The Prepress switch was enabled, verify its sections are visible
-        expect(screen.getByText("Diseño Requerido")).toBeInTheDocument()
+        expect(screen.getByText(/diseño requerido/i)).toBeInTheDocument()
     })
 })

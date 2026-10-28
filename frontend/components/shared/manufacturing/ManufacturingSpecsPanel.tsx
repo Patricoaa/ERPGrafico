@@ -12,12 +12,15 @@
  */
 
 import type { ReactNode } from "react"
-import { Building2, CalendarCheck, CalendarIcon, FileIcon, FileText, Hash, Layers, Package, Paintbrush, Printer, User, Wrench } from "lucide-react"
-import { cn, formatPlainDate } from "@/lib/utils"
+import { Building2, CalendarCheck, CalendarIcon, FileIcon, FileText, Hash, Layers, Package, Paintbrush, Printer, Receipt, Sparkles, User, Wrench } from "lucide-react"
+import { formatPlainDate } from "@/lib/utils"
+import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 export interface ManufacturingSpecsView {
   product?: { name: string; quantity?: number | string | null; uomName?: string | null }
   productDescription?: string | null
+  /** Display label of the associated sale order (e.g. "NV-0042"); omitted for a manual OT. */
+  saleOrder?: string | null
   /** Customer of the associated sale order. */
   customer?: { name: string; taxId?: string | null } | null
   /** Related contact the work order is assigned to (e.g. the end client of an intermediary customer). */
@@ -26,6 +29,8 @@ export interface ManufacturingSpecsView {
   specifications?: { prepress?: string; press?: string; postpress?: string }
   designNeeded?: boolean
   designFiles?: string[]
+  /** Openable URL per design file name, when the files are already uploaded (open in a new tab). */
+  designFileUrls?: Record<string, string>
   folioEnabled?: boolean
   folioStart?: string
   /** ISO dates (yyyy-MM-dd). */
@@ -40,41 +45,39 @@ const PRINT_TYPE_LABEL: Record<NonNullable<ManufacturingSpecsView["printType"]>,
   especial: "Especial",
 }
 
-function Section({ icon: Icon, title, children }: { icon: React.ComponentType<{ className?: string }>; title: string; children: ReactNode }) {
+type IconType = React.ComponentType<{ className?: string }>
+
+function Section({ icon: Icon, title, children }: { icon: IconType; title: string; children: ReactNode }) {
   return (
     <section className="py-4 first:pt-0">
-      <h3 className="pb-2 mb-2 border-b border-border/40 flex items-center gap-2 text-2xs font-bold uppercase tracking-[0.25em] text-muted-foreground">
+      <h3 className="pb-2 mb-3 border-b border-border/40 flex items-center gap-2 text-2xs font-bold uppercase tracking-[0.25em] text-muted-foreground">
         <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
         {title}
       </h3>
-      <div className="space-y-2.5">{children}</div>
+      <div className="space-y-3">{children}</div>
     </section>
   )
 }
 
-type IconType = React.ComponentType<{ className?: string }>
-
-function Row({ label, icon: Icon, children, mono }: { label: string; icon?: IconType; children: ReactNode; mono?: boolean }) {
+/** One field: icon + label on top, value below. Every value uses the same `text-xs` type. */
+function Row({ label, icon: Icon, children }: { label: string; icon: IconType; children: ReactNode }) {
   return (
     <div className="min-w-0">
-      <p className="flex items-center gap-1.5 text-2xs font-bold uppercase tracking-widest text-muted-foreground leading-none mb-1">
-        {Icon && <Icon className="h-3 w-3 shrink-0" />}
+      <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground leading-none mb-1">
+        <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
         {label}
       </p>
-      <div className={cn("text-xs font-medium text-foreground leading-snug break-words", mono && "font-mono tabular-nums")}>{children}</div>
+      <div className="pl-5 text-xs text-foreground leading-snug break-words">{children}</div>
     </div>
   )
 }
 
-function PartyLine({ party, icon: Icon }: { party: { name: string; taxId?: string | null }; icon: React.ComponentType<{ className?: string }> }) {
+function Party({ party }: { party: { name: string; taxId?: string | null } }) {
   return (
-    <div className="flex items-start gap-2">
-      <Icon className="h-3.5 w-3.5 mt-px shrink-0 text-muted-foreground/60" />
-      <div className="min-w-0">
-        <p>{party.name}</p>
-        {hasText(party.taxId) && <p className="text-xs font-mono font-medium text-muted-foreground mt-0.5">{party.taxId}</p>}
-      </div>
-    </div>
+    <>
+      <p>{party.name}</p>
+      {hasText(party.taxId) && <p className="text-muted-foreground tabular-nums">{party.taxId}</p>}
+    </>
   )
 }
 
@@ -86,52 +89,51 @@ export function ManufacturingSpecsPanel({ view, className }: { view: Manufacturi
   const hasQty = qty !== undefined && qty !== null && qty !== "" && Number(qty) > 0
 
   const stages = [
-    { key: "prepress", icon: Paintbrush, label: "Pre-Impresión", on: phases?.prepress, spec: specifications?.prepress },
+    { key: "prepress", icon: Paintbrush, label: "Pre-Impresión", on: phases?.prepress || view.designNeeded || view.folioEnabled || designFiles.length > 0, spec: specifications?.prepress },
     { key: "press", icon: Printer, label: "Impresión", on: phases?.press, spec: specifications?.press },
     { key: "postpress", icon: FileText, label: "Post-Impresión", on: phases?.postpress, spec: specifications?.postpress },
   ].filter(s => s.on || hasText(s.spec))
 
-  const hasTech = view.printType || view.designNeeded || view.folioEnabled || designFiles.length > 0
-  const isEmpty = !hasTech && stages.length === 0
+  const isEmpty = !view.printType && stages.length === 0
 
   return (
     <div className={className}>
-      {(product || customer || contact || view.createdAt || view.requestedDelivery) && (
+      {(product || view.saleOrder || customer || contact || view.createdAt || view.requestedDelivery) && (
         <Section icon={Layers} title="Información">
           {product && (
-            <Row label="Producto">
-              <div className="flex items-start gap-2">
-                <Package className="h-3.5 w-3.5 mt-px shrink-0 text-muted-foreground/60" />
-                <div className="min-w-0">
-                  <p className="font-medium">
-                    {hasQty && (
-                      <span className="font-mono tabular-nums">
-                        {qty} {product.uomName ?? "und"} ×{" "}
-                      </span>
-                    )}
-                    {product.name}
-                  </p>
-                  {hasText(view.productDescription) && (
-                    <p className="mt-0.5 text-xs font-normal text-muted-foreground line-clamp-3">{view.productDescription}</p>
-                  )}
-                </div>
-              </div>
+            <Row label="Producto" icon={Package}>
+              <p>
+                {hasQty && <span className="tabular-nums">{qty} {product.uomName ?? "und"} × </span>}
+                {product.name}
+              </p>
+              {hasText(view.productDescription) && (
+                <p className="mt-0.5 text-muted-foreground line-clamp-3">{view.productDescription}</p>
+              )}
+            </Row>
+          )}
+          {hasText(view.saleOrder) && (
+            <Row label={getDomainConceptTitle("ov")} icon={Receipt}>
+              <span className="tabular-nums">{view.saleOrder}</span>
             </Row>
           )}
           {customer && (
-            <Row label="Cliente">
-              <PartyLine party={customer} icon={Building2} />
+            <Row label="Cliente" icon={Building2}>
+              <Party party={customer} />
             </Row>
           )}
-          {(view.createdAt || view.requestedDelivery) && (
-            <>
-              {view.createdAt && <Row label="Fecha de creación" icon={CalendarIcon}><span className="tabular-nums">{formatPlainDate(view.createdAt)}</span></Row>}
-              {view.requestedDelivery && <Row label="Entrega solicitada" icon={CalendarCheck}><span className="tabular-nums">{formatPlainDate(view.requestedDelivery)}</span></Row>}
-            </>
-          )}
           {contact && (
-            <Row label="Contacto relacionado">
-              <PartyLine party={contact} icon={User} />
+            <Row label="Contacto relacionado" icon={User}>
+              <Party party={contact} />
+            </Row>
+          )}
+          {view.createdAt && (
+            <Row label="Fecha de creación" icon={CalendarIcon}>
+              <span className="tabular-nums">{formatPlainDate(view.createdAt)}</span>
+            </Row>
+          )}
+          {view.requestedDelivery && (
+            <Row label="Entrega solicitada" icon={CalendarCheck}>
+              <span className="tabular-nums">{formatPlainDate(view.requestedDelivery)}</span>
             </Row>
           )}
         </Section>
@@ -140,29 +142,36 @@ export function ManufacturingSpecsPanel({ view, className }: { view: Manufacturi
       <Section icon={Wrench} title="Especificaciones">
         {isEmpty && <p className="text-xs text-muted-foreground">Sin especificaciones registradas</p>}
 
-        {view.printType && <Row label="Tecnología"><span className="inline-flex items-center gap-1.5"><Printer className="h-3 w-3 text-muted-foreground/60" />{PRINT_TYPE_LABEL[view.printType]}</span></Row>}
-        {view.designNeeded && <Row label="Diseño">Requerido</Row>}
-        {view.folioEnabled && (
-          <Row label="Folios" mono>
-            <span className="inline-flex items-center gap-1.5"><Hash className="h-3 w-3 text-muted-foreground/60" />{hasText(view.folioStart) ? `Desde ${view.folioStart}` : "Numerado"}</span>
-          </Row>
-        )}
-        {designFiles.length > 0 && (
-          <Row label={`Archivos de diseño (${designFiles.length})`}>
-            <ul className="space-y-1">
-              {designFiles.map((name, i) => (
-                <li key={`${name}-${i}`} className="flex items-center gap-1.5 min-w-0">
-                  <FileIcon className="h-3 w-3 shrink-0 text-muted-foreground/60" />
-                  <span className="truncate">{name}</span>
-                </li>
-              ))}
-            </ul>
-          </Row>
-        )}
-
+        {view.printType && <Row label="Tecnología" icon={Printer}>{PRINT_TYPE_LABEL[view.printType]}</Row>}
         {stages.map(s => (
           <Row key={s.key} label={s.label} icon={s.icon}>
-            {hasText(s.spec) ? <span className="whitespace-pre-line">{s.spec}</span> : <span className="font-normal text-muted-foreground">Sin indicaciones adicionales</span>}
+            {hasText(s.spec) ? <p className="whitespace-pre-line">{s.spec}</p> : <p className="text-muted-foreground">Sin indicaciones adicionales</p>}
+            {/* Design, numbering and files are pre-press specifications: always stated, yes or no. */}
+            {s.key === "prepress" && (
+              <ul className="mt-1.5 space-y-1">
+                <li className="flex items-center gap-1.5">
+                  <Sparkles className="h-3 w-3 shrink-0 text-muted-foreground/70" />
+                  {view.designNeeded ? "Diseño requerido" : "Sin diseño requerido"}
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <Hash className="h-3 w-3 shrink-0 text-muted-foreground/70" />
+                  <span className="tabular-nums">
+                    {view.folioEnabled ? (hasText(view.folioStart) ? `Folios desde ${view.folioStart}` : "Folios numerados") : "Sin folios"}
+                  </span>
+                </li>
+                {designFiles.map((name, i) => {
+                  const url = view.designFileUrls?.[name]
+                  return (
+                    <li key={`${name}-${i}`} className="flex min-w-0 items-center gap-1.5">
+                      <FileIcon className="h-3 w-3 shrink-0 text-muted-foreground/70" />
+                      {url
+                        ? <a href={url} target="_blank" rel="noopener noreferrer" className="truncate text-primary underline-offset-2 hover:underline">{name}</a>
+                        : <span className="truncate">{name}</span>}
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
           </Row>
         ))}
       </Section>

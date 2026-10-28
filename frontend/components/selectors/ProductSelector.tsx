@@ -352,6 +352,7 @@ export function ProductSelector({
             )}
 
             <BaseModal
+                asDialog
                 open={isVariantDialogOpen}
                 onOpenChange={setIsVariantDialogOpen}
                 title="Seleccionar Variante"

@@ -1,7 +1,8 @@
 "use client"
 
 import { Package, Truck } from "lucide-react"
-import { EmptyState } from "@/components/shared"
+import type { ReactNode } from "react"
+import { StepEmptyPanel } from "./StepEmptyPanel"
 
 const COPY = {
   materials: {
@@ -19,9 +20,9 @@ const COPY = {
 export type PlanningEmptyKind = keyof typeof COPY
 
 /** Shared empty state for wizard steps 4/5 and their POS draft counterparts. */
-export function PlanningEmptyState({ kind }: { kind: PlanningEmptyKind }) {
+export function PlanningEmptyState({ kind, action }: { kind: PlanningEmptyKind; action?: ReactNode }) {
   const { icon, title, description } = COPY[kind]
-  return <EmptyState context="production" variant="compact" icon={icon} title={title} description={description} />
+  return <StepEmptyPanel icon={icon} title={title} description={description} action={action} />
 }
 
 export const PLANNING_EMPTY_COPY = COPY

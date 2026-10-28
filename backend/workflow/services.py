@@ -1,7 +1,14 @@
 from django.db import transaction
 from django.utils import timezone
 
-from workflow.models import Notification, NotificationRule, Task, TaskAssignmentRule, Transition
+from workflow.models import (
+    Notification,
+    NotificationRule,
+    Task,
+    TaskAssignmentRule,
+    TaskEvent,
+    Transition,
+)
 
 
 class WorkflowService:
@@ -124,7 +131,7 @@ class WorkflowService:
 
     @staticmethod
     @transaction.atomic
-    def complete_task(task, user, notes=None, files=None):
+    def complete_task(task, user, notes=None, files=None, confirmations=None):
         from rest_framework.exceptions import PermissionDenied
         if task.category == Task.Category.TASK and task.task_type.startswith("HUB_"):
             raise ValueError("Las tareas de etapa del HUB se completan automáticamente al finalizar la etapa correspondiente.")
@@ -143,26 +150,52 @@ class WorkflowService:
             ):
                 raise PermissionDenied(f"No tienes permisos para completar esta tarea. Debes pertenecer al grupo '{candidate_group}'.")
 
+        # The linked object may demand evidence / confirmations for this approval
+        # (e.g. a work order whose design must be approved by the client).
+        confirmations = {k: bool(v) for k, v in (confirmations or {}).items()}
+        requirements_of = getattr(task.content_object, "approval_requirements", None)
+        requirements = requirements_of(task.task_type) if callable(requirements_of) else {}
+        for key, message in requirements.items():
+            if key == "evidence":
+                satisfied = bool(files) or task.attachments.exists()
+            else:
+                satisfied = confirmations.get(key, False)
+            if not satisfied:
+                raise ValueError(message)
+
         task.status = Task.Status.COMPLETED
         task.completed_at = timezone.now()
         task.completed_by = user
         if notes:
             task.notes = notes
+        if confirmations:
+            task.data = {**(task.data or {}), "confirmations": confirmations}
         task.save()
 
+        attachment_ids = []
         if files:
             from django.contrib.contenttypes.models import ContentType
 
             from core.models import Attachment
             task_ct = ContentType.objects.get_for_model(Task)
             for f in files:
-                Attachment.objects.create(
+                attachment = Attachment.objects.create(
                     file=f,
                     original_filename=f.name,
                     content_type=task_ct,
                     object_id=task.id,
                     user=user,
                 )
+                attachment_ids.append(attachment.id)
+
+        TaskEvent.objects.create(
+            task=task,
+            action=TaskEvent.Action.COMPLETED,
+            user=user,
+            notes=notes or "",
+            attachment_ids=attachment_ids,
+            confirmations=confirmations,
+        )
 
         if task.category == Task.Category.APPROVAL and task.created_by and task.task_type == "CREDIT_POS_REQUEST":
             draft_id = task.data.get("request_data", {}).get("draft_id")
@@ -624,10 +657,11 @@ class WorkflowService:
         return f"OT_{stage}" if stage.endswith("_APPROVAL") else f"OT_{stage}_APPROVAL"
 
     @staticmethod
-    def reset_tasks_for_object(content_object, stage_ids=None):
+    def reset_tasks_for_object(content_object, stage_ids=None, user=None):
         """
         Resets completed approval tasks for a given object to PENDING.
         If stage_ids is provided, only tasks matching those stages (via task_type) are reset.
+        Each reset is logged as a REOPENED event so the approval history survives it.
         """
         from django.contrib.contenttypes.models import ContentType
 
@@ -646,6 +680,10 @@ class WorkflowService:
             task_types = [WorkflowService.stage_task_type(stage) for stage in stage_ids]
             query = query.filter(task_type__in=task_types)
 
+        task_ids = list(query.values_list("id", flat=True))
+        TaskEvent.objects.bulk_create(
+            [TaskEvent(task_id=task_id, action=TaskEvent.Action.REOPENED, user=user) for task_id in task_ids]
+        )
         reset_count = query.update(status=Task.Status.PENDING, completed_at=None, completed_by=None)
         return reset_count
 

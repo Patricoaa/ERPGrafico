@@ -35,6 +35,7 @@ import { WizardProcessSidebar } from './WizardProcessSidebar'
 import { MobileStageDrawer } from './MobileStageDrawer'
 import { WizardStickyFooter } from './WizardStickyFooter'
 import { WizardRightSidebar, WizardDraftSidebar } from './WizardRightSidebar'
+import { StageActivityPanel } from './StageActivityPanel'
 import {
   MaterialAssignmentStep,
   MaterialApprovalStep,
@@ -46,11 +47,12 @@ import {
   RectificationStep,
   FinishedStep,
 } from './steps'
-import { useWizardStore, selectPendingTasks } from './WorkOrderWizardStore'
+import { useWizardStore, selectPendingTasks, unmetRequirements } from './WorkOrderWizardStore'
 import type { WorkOrder, WorkOrderMaterial, WorkOrderStage, WorkOrderTask, WizardMode } from '../types'
 import type { WorkOrderInitialData } from '@/types/forms'
 import { STAGES_ORDERED } from '../constants/stages'
 import { getStepCapabilities } from '../lib/stepGovernance'
+import { stageTaskType } from '../lib/stageTask'
 
 import { OriginSelectionStep } from './steps/OriginSelectionStep'
 import { SaleOrderProductStep } from './steps/SaleOrderProductStep'
@@ -193,7 +195,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   // ── store ──────────────────────────────────────────────────────────────────
   const {
     order, loading, viewingStepIndex, stepMode,
-    taskNotes, taskFiles,
+    taskNotes, taskFiles, taskConfirmations,
     isAnnulModalOpen, isBackwardModalOpen, pendingPrevStage,
     showPOPreview, outsourcedPending,
     rectificationAdjustments, rectificationProducedQty, rectificationOutsourcedAdjustments,
@@ -207,6 +209,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     // Creation flow actions
     setChosenOtType, setSelectedSaleOrder, setSelectedSaleLine, setSelectedProduct, setProductDescription, setMfgConfig,
     setSelectedContact, setQuantity, setUomId, setStartDate, setDueDate, setInternalNotes,
+    setTaskConfirmation,
     reset: resetStore,
   } = useWizardStore()
 
@@ -277,6 +280,27 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   }
 
   const canApproveAll = pendingTasks.every(canUserCompleteTask)
+
+  // All tasks (pending + completed) of the current stage type — for the activity panel.
+  const stageTasks = useMemo(() => {
+    if (!order?.current_stage) return []
+    const type = stageTaskType(order.current_stage)
+    return (order.workflow_tasks ?? []).filter((t: WorkOrderTask) => t.task_type === type)
+  }, [order])
+
+  // Stage history entries for the current stage — for the activity panel.
+  const stageEntries = useMemo(
+    () => (order?.stage_history ?? []).filter((h) => h.stage === order?.current_stage),
+    [order]
+  )
+
+  // Blocking reason shown next to "Siguiente" when mandatory approval fields are unfilled.
+  const approvalBlockedReason = useMemo(() => {
+    if (!isViewingCurrentStage) return undefined
+    return pendingTasks
+      .flatMap((t) => unmetRequirements(t, taskFiles, taskConfirmations).map((key) => t.requirements?.[key]))
+      .find(Boolean) as string | undefined
+  }, [isViewingCurrentStage, pendingTasks, taskFiles, taskConfirmations])
 
   // ── data fetching ──────────────────────────────────────────────────────────
   const fetchOrder = async () => {
@@ -383,11 +407,29 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   const approvePendingTasks = async (): Promise<boolean> => {
     const toApprove = pendingTasks.filter(canUserCompleteTask)
     if (toApprove.length === 0) return true
+
+    // Read fresh state to avoid stale closure capturing the values at mount time.
+    const { taskFiles: freshFiles, taskConfirmations: freshConfs, taskNotes: freshNotes } = useWizardStore.getState()
+
+    // Pre-flight: reject immediately if any mandatory field is still empty.
+    for (const t of toApprove) {
+      const unmet = unmetRequirements(t, freshFiles, freshConfs)
+      if (unmet.length > 0) {
+        toast.error(t.requirements?.[unmet[0]] ?? 'Complete todos los campos requeridos de aprobación.')
+        return false
+      }
+    }
+
     setApproving(true)
     try {
       await Promise.all(toApprove.map((t) => {
-        const file = taskFiles[t.id]
-        return completeTask(t.id as number, taskNotes[t.id], file ? [file] : undefined)
+        const file = freshFiles[t.id]
+        return completeTask(
+          t.id as number,
+          freshNotes[t.id],
+          file ? [file] : undefined,
+          freshConfs[t.id],
+        )
       }))
       return true
     } catch (err) {
@@ -500,14 +542,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     } catch { /* shown by the mutation */ }
   }
 
-  // ── task callbacks (passed down to steps) ─────────────────────────────────
-  const taskCallbacks = {
-    canComplete: canUserCompleteTask,
-    taskNotes,
-    taskFiles,
-    onNoteChange: setTaskNote,
-    onFileChange: setTaskFile,
-  }
+
 
   // ── render ─────────────────────────────────────────────────────────────────
   // An OT that exists but is not loaded yet (right after creating it, or while fetching)
@@ -589,6 +624,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             onCancelEdit={() => navigateToStep(viewingStepIndex, 'view')}
             onClose={() => onOpenChange(false)}
             pendingTasks={pendingTasks}
+            approvalBlockedReason={approvalBlockedReason}
             canApproveAll={canApproveAll}
             order={order}
             viewingStepIndex={viewingStepIndex}
@@ -788,7 +824,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                     />
                   )}
                   {currentStageId === 'MATERIAL_APPROVAL' && (
-                    <MaterialApprovalStep order={order as WorkOrder} {...taskCallbacks} />
+                    <MaterialApprovalStep order={order as WorkOrder} />
                   )}
                   {currentStageId === 'OUTSOURCING_ASSIGNMENT' && (
                     <OutsourcingAssignmentStep
@@ -799,16 +835,29 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                     />
                   )}
                   {currentStageId === 'PREPRESS' && (
-                    <PrepressStep order={order as WorkOrder} stageData={stageData} {...taskCallbacks} />
+                    <PrepressStep
+                      order={order as WorkOrder}
+                      stageData={stageData}
+                      actionable={isViewingCurrentStage && !isTerminalOrder}
+                      onRefresh={fetchOrder}
+                    />
                   )}
                   {currentStageId === 'PRESS' && (
-                    <PressStep order={order as WorkOrder} {...taskCallbacks} />
+                    <PressStep
+                      order={order as WorkOrder}
+                      actionable={isViewingCurrentStage && !isTerminalOrder}
+                      onRefresh={fetchOrder}
+                    />
                   )}
                   {currentStageId === 'POSTPRESS' && (
-                    <PostpressStep order={order as WorkOrder} {...taskCallbacks} />
+                    <PostpressStep
+                      order={order as WorkOrder}
+                      actionable={isViewingCurrentStage && !isTerminalOrder}
+                      onRefresh={fetchOrder}
+                    />
                   )}
                   {currentStageId === 'OUTSOURCING_VERIFICATION' && (
-                    <OutsourcingVerificationStep order={order as WorkOrder} {...taskCallbacks} />
+                    <OutsourcingVerificationStep order={order as WorkOrder} />
                   )}
                   {currentStageId === 'RECTIFICATION' && (
                     <div className="space-y-6">
@@ -833,6 +882,22 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                   )}
                 </div>
             </div>
+
+          {/* Stage activity panel: approval form + history, docked above the footer */}
+          {!isCreating && order && wizardTab === 'stages' && (
+            <StageActivityPanel
+              tasks={stageTasks}
+              stageEntries={stageEntries}
+              canComplete={canUserCompleteTask}
+              actionable={isViewingCurrentStage && !isTerminalOrder}
+              taskNotes={taskNotes}
+              taskFiles={taskFiles}
+              taskConfirmations={taskConfirmations}
+              onNoteChange={setTaskNote}
+              onFileChange={setTaskFile}
+              onConfirmationChange={setTaskConfirmation}
+            />
+          )}
           </div>
 
           </div>
@@ -862,6 +927,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
       {/* PO Preview */}
       <BaseModal
+        asDialog
         open={showPOPreview}
         onOpenChange={setShowPOPreview}
         icon={Package}
@@ -984,6 +1050,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       />
 
       <BaseModal
+        asDialog
         open={showCheatsheet}
         onOpenChange={setShowCheatsheet}
         icon={Keyboard}

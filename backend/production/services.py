@@ -770,7 +770,6 @@ class WorkOrderService:
             WorkOrderService._ensure_stage_task(
                 task_type="OT_PREPRESS_APPROVAL",
                 title=f"Aprobación Pre-Impresión: {EntityPrefix.WORK_ORDER}-{work_order.number}",
-                description=f"Valide el diseño y especificaciones para la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
                 content_object=work_order,
                 created_by=user,
             )
@@ -2007,12 +2006,12 @@ class WorkOrderService:
 
         current_idx = stage_index(work_order.current_stage)
 
-        if section == "prepress" and current_idx >= stage_index(WorkOrder.Stage.PREPRESS):
-            raise ValidationError("La etapa de Pre-Impresión ya ha comenzado.")
-        if section == "press" and current_idx >= stage_index(WorkOrder.Stage.PRESS):
-            raise ValidationError("La etapa de Impresión ya ha comenzado.")
-        if section == "postpress" and current_idx >= stage_index(WorkOrder.Stage.POSTPRESS):
-            raise ValidationError("La etapa de Post-Impresión ya ha comenzado.")
+        if section == "prepress" and current_idx > stage_index(WorkOrder.Stage.PREPRESS):
+            raise ValidationError("La etapa de Pre-Impresión ya ha sido completada.")
+        if section == "press" and current_idx > stage_index(WorkOrder.Stage.PRESS):
+            raise ValidationError("La etapa de Impresión ya ha sido completada.")
+        if section == "postpress" and current_idx > stage_index(WorkOrder.Stage.POSTPRESS):
+            raise ValidationError("La etapa de Post-Impresión ya ha sido completada.")
 
         # Only allow known keys for the section to avoid accidental overwrites
         allowed_keys = SECTION_KEYS[section]

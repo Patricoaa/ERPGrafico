@@ -1,6 +1,7 @@
 "use client"
 
 import { create } from 'zustand'
+import { stageTaskType } from '../lib/stageTask'
 import type { WorkOrder, WorkOrderMaterial, WorkOrderTask, WizardStepMode } from '../types'
 import type { ManufacturingData } from '@/components/shared'
 import type { Contact } from '@/features/contacts'
@@ -29,6 +30,8 @@ interface WizardState {
   // ── implicit task approvals (shared across all approval tabs) ─────────
   taskNotes: Record<string | number, string>
   taskFiles: Record<string | number, File | null>
+  /** Confirmations ticked per approval task, e.g. { design_approved: true }. */
+  taskConfirmations: Record<string | number, Record<string, boolean>>
 
   // ── modals ────────────────────────────────────────────────────────────────
   isAnnulModalOpen: boolean
@@ -52,6 +55,7 @@ interface WizardState {
 
   setTaskNote: (taskId: string | number, note: string) => void
   setTaskFile: (taskId: string | number, file: File | null) => void
+  setTaskConfirmation: (taskId: string | number, key: string, value: boolean) => void
 
   setIsAnnulModalOpen: (open: boolean) => void
   setIsBackwardModalOpen: (open: boolean) => void
@@ -87,7 +91,7 @@ interface WizardState {
 
 type WizardStateData = Omit<WizardState,
   | 'setOrder' | 'setLoading' | 'setViewingStepIndex' | 'setStepMode' | 'navigateToStep'
-  | 'setTaskNote' | 'setTaskFile'
+  | 'setTaskNote' | 'setTaskFile' | 'setTaskConfirmation'
   | 'setIsAnnulModalOpen' | 'setIsBackwardModalOpen'
   | 'setPendingPrevStage' | 'setShowPOPreview' | 'setOutsourcedPending'
   | 'setRectificationAdjustments' | 'setRectificationOutsourcedAdjustments' | 'setRectificationProducedQty'
@@ -118,6 +122,7 @@ const INITIAL: WizardStateData = {
   // Other state
   taskNotes: {},
   taskFiles: {},
+  taskConfirmations: {},
   isAnnulModalOpen: false,
   isBackwardModalOpen: false,
   pendingPrevStage: null,
@@ -147,6 +152,8 @@ export const useWizardStore = create<WizardState>((set) => ({
     set((s) => ({ taskNotes: { ...s.taskNotes, [taskId]: note } })),
   setTaskFile: (taskId, file) =>
     set((s) => ({ taskFiles: { ...s.taskFiles, [taskId]: file } })),
+  setTaskConfirmation: (taskId, key, value) =>
+    set((s) => ({ taskConfirmations: { ...s.taskConfirmations, [taskId]: { ...s.taskConfirmations[taskId], [key]: value } } })),
 
   setIsAnnulModalOpen: (open) => set({ isAnnulModalOpen: open }),
   setIsBackwardModalOpen: (open) => set({ isBackwardModalOpen: open }),
@@ -177,7 +184,22 @@ export const useWizardStore = create<WizardState>((set) => ({
 
 // ── Derived selectors (avoid re-render if only unrelated slice changes) ────────
 
-export const selectPendingTasks = (order: WorkOrder | null): WorkOrderTask[] =>
-  order?.workflow_tasks?.filter(
-    (t: WorkOrderTask) => t.status === 'PENDING' || t.status === 'IN_PROGRESS'
+/** Pending approval of the stage the order is in (what "Aprobar y siguiente" completes).
+ *  Other open tasks of the OT (operational ones, other stages) don't gate the transition. */
+/** Requirement keys of an approval task still unmet by what the user entered (evidence, confirmations). */
+export const unmetRequirements = (
+  task: WorkOrderTask,
+  files: Record<string | number, File | null>,
+  confirmations: Record<string | number, Record<string, boolean>>,
+): string[] =>
+  Object.keys(task.requirements ?? {}).filter((key) =>
+    key === 'evidence' ? !files[task.id] && !(task.attachments_data?.length) : !confirmations[task.id]?.[key],
+  )
+
+export const selectPendingTasks = (order: WorkOrder | null): WorkOrderTask[] => {
+  if (!order?.current_stage) return []
+  const type = stageTaskType(order.current_stage)
+  return order.workflow_tasks?.filter(
+    (t: WorkOrderTask) => t.task_type === type && (t.status === 'PENDING' || t.status === 'IN_PROGRESS')
   ) ?? []
+}

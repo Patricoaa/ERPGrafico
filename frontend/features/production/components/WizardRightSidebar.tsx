@@ -5,11 +5,21 @@ import { WizardSummarySidebar, ManufacturingSpecsPanel, type ManufacturingSpecsV
 import type { WorkOrder } from "../types"
 import { useUoMs } from "../hooks"
 import { useWizardStore } from "./WorkOrderWizardStore"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 
 interface WizardRightSidebarProps {
     order: WorkOrder
     productName: string
     stageData: WorkOrder['stage_data']
+}
+
+/** URL of each design file, matched by name against the OT's uploaded attachments. */
+export function designFileUrls(order: WorkOrder, names: string[]): Record<string, string> {
+    const urls: Record<string, string> = {}
+    for (const att of order.attachments ?? []) {
+        if (att.original_filename && names.includes(att.original_filename) && att.file) urls[att.original_filename] = att.file
+    }
+    return urls
 }
 
 /** Maps the persisted work order onto the shared specs projection. */
@@ -22,6 +32,9 @@ export function workOrderSpecsView(order: WorkOrder, productName: string, stageD
             uomName: order.uom_name ?? stageData?.uom_name ?? null,
         },
         productDescription: stageData?.product_description || order.product_description,
+        saleOrder: order.sale_order_number
+            ? formatEntityDisplay('sales.saleorder', { number: order.sale_order_number })
+            : null,
         customer: order.sale_customer_name
             ? { name: order.sale_customer_name, taxId: order.sale_customer_rut }
             : null,
@@ -36,6 +49,7 @@ export function workOrderSpecsView(order: WorkOrder, productName: string, stageD
         },
         designNeeded: stageData?.design_needed,
         designFiles,
+        designFileUrls: designFileUrls(order, designFiles),
         folioEnabled: stageData?.folio_enabled,
         folioStart: stageData?.folio_start,
         printType: (stageData?.print_type ?? null) as ManufacturingSpecsView['printType'],

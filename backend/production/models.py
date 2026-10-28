@@ -193,6 +193,19 @@ class WorkOrder(models.Model):
             data["_version"] = 1
         return data
 
+    def approval_requirements(self, task_type: str) -> dict:
+        """What completing one of this OT's approval tasks demands, as {key: message}.
+
+        ``evidence`` asks for at least one attachment; any other key is a confirmation the
+        approver must tick. Read by WorkflowService.complete_task (and exposed to the wizard).
+        """
+        if task_type == "OT_PREPRESS_APPROVAL" and self.canonical_stage_data.get("design_needed"):
+            return {
+                "design_approved": "Confirme que el cliente aprobó el diseño.",
+                "evidence": "Adjunte la evidencia de la aprobación del diseño.",
+            }
+        return {}
+
     @property
     def product_info(self):
         """
@@ -449,10 +462,19 @@ class WorkOrderHistory(models.Model):
     Track history of stage changes and important actions.
     """
 
+    class Event(models.TextChoices):
+        ENTERED = "ENTERED", _("Etapa iniciada")
+        REOPENED = "REOPENED", _("Etapa reabierta")
+        EDITED = "EDITED", _("Etapa editada")
+        NOTE = "NOTE", _("Registro")
+
     work_order = models.ForeignKey(
         WorkOrder, on_delete=models.CASCADE, related_name="stage_history"
     )
     stage = models.CharField(max_length=30)
+    # What happened to `stage`: entered by a transition, reopened (backward move) or
+    # edited while closed. The wizard's step panel lists these per stage.
+    event = models.CharField(max_length=20, choices=Event.choices, default=Event.ENTERED)
     status = models.CharField(max_length=20)
     notes = models.TextField(blank=True)
     user = models.ForeignKey("core.User", on_delete=models.SET_NULL, null=True)

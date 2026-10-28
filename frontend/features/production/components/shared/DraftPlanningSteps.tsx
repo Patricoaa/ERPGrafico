@@ -66,12 +66,19 @@ export function DraftMaterialsStep({ items, onChange }: DraftListProps<DraftMate
     reset()
   }
 
+  const openAdd = () => { reset(); setOpen(true) }
+
   return (
-    <div className="space-y-4">
-      {items.length === 0 && !open && <PlanningEmptyState kind="materials" />}
+    <div className="flex flex-1 flex-col gap-4">
+      {items.length === 0 && !open && (
+        <PlanningEmptyState
+          kind="materials"
+          action={<Button type="button" variant="outline" size="sm" onClick={openAdd}><Plus className="mr-2 h-4 w-4" />Agregar material de stock</Button>}
+        />
+      )}
       <div className="grid gap-2">
         {items.map((m, i) => (
-          <div key={`${m.product_id}-${i}`} className="flex items-center justify-between gap-3 p-3 border rounded-md bg-background">
+          <div key={`${m.product_id}-${i}`} className="flex items-center justify-between gap-3 p-3 border rounded-md bg-card">
             <div className="flex items-center gap-3 min-w-0">
               <Package className="h-4 w-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0">
@@ -92,9 +99,9 @@ export function DraftMaterialsStep({ items, onChange }: DraftListProps<DraftMate
       </div>
       {open ? (
         <MaterialLineForm value={line} onChange={setLine} onSave={save} onCancel={reset} isEditing={editing !== null} />
-      ) : (
-        <Button type="button" variant="outline" size="sm" className="w-full border-dashed" onClick={() => { reset(); setOpen(true) }}>
-          <Plus className="mr-2 h-4 w-4" />Agregar Material de Stock
+      ) : items.length > 0 && (
+        <Button type="button" variant="outline" size="sm" className="w-full border-dashed" onClick={openAdd}>
+          <Plus className="mr-2 h-4 w-4" />Agregar material de stock
         </Button>
       )}
     </div>
@@ -126,12 +133,19 @@ export function DraftOutsourcingStep({ items, onChange }: DraftListProps<DraftOu
     reset()
   }
 
+  const openAdd = () => { reset(); setOpen(true) }
+
   return (
-    <div className="space-y-4">
-      {items.length === 0 && !open && <PlanningEmptyState kind="outsourcing" />}
+    <div className="flex flex-1 flex-col gap-4">
+      {items.length === 0 && !open && (
+        <PlanningEmptyState
+          kind="outsourcing"
+          action={<Button type="button" variant="outline" size="sm" onClick={openAdd}><Plus className="mr-2 h-4 w-4" />Agregar servicio tercerizado</Button>}
+        />
+      )}
       <div className="grid gap-2">
         {items.map((s, i) => (
-          <div key={`${s.product_id}-${i}`} className="flex items-center justify-between gap-3 p-3 border rounded-md bg-background">
+          <div key={`${s.product_id}-${i}`} className="flex items-center justify-between gap-3 p-3 border rounded-md bg-card">
             <div className="flex items-center gap-3 min-w-0">
               <Truck className="h-4 w-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0">
@@ -164,9 +178,9 @@ export function DraftOutsourcingStep({ items, onChange }: DraftListProps<DraftOu
       </div>
       {open ? (
         <OutsourcedServiceForm value={form} onChange={setForm} onSave={save} onCancel={reset} isEditing={editing !== null} productLocked={editing !== null} showInfo={false} />
-      ) : (
-        <Button type="button" variant="outline" size="sm" className="w-full border-dashed text-primary border-primary/20 bg-primary/5 hover:bg-primary/10" onClick={() => { reset(); setOpen(true) }}>
-          <Plus className="mr-2 h-4 w-4" />Agregar Servicio Tercerizado
+      ) : items.length > 0 && (
+        <Button type="button" variant="outline" size="sm" className="w-full border-dashed" onClick={openAdd}>
+          <Plus className="mr-2 h-4 w-4" />Agregar servicio tercerizado
         </Button>
       )}
     </div>

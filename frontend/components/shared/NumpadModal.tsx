@@ -37,6 +37,7 @@ export function NumpadModal({
 }: NumpadModalProps) {
     return (
         <BaseModal
+            asDialog
             open={open}
             onOpenChange={onOpenChange}
             title={title}

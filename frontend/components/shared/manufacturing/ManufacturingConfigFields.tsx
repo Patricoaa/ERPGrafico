@@ -10,7 +10,7 @@
  * already owns them.
  */
 
-import { ManufacturingSpecsEditor, type ManufacturingData } from "./ManufacturingSpecsEditor"
+import { ManufacturingSpecsEditor, type ManufacturingData, type ManufacturingSpecsEditorProps } from "./ManufacturingSpecsEditor"
 import { ManufacturingContactField, type ManufacturingContact } from "./ManufacturingContactField"
 
 interface ManufacturingConfigFieldsProps {
@@ -22,9 +22,13 @@ interface ManufacturingConfigFieldsProps {
   specsDisabled?: boolean
   /** Locks everything (read-only view). */
   disabled?: boolean
+  /** Phases whose stage already started, with the reason: they can't be toggled nor edited. */
+  lockedPhases?: ManufacturingSpecsEditorProps["lockedPhases"]
+  /** Openable URL per existing design file name. */
+  existingFileUrls?: Record<string, string>
 }
 
-export function ManufacturingConfigFields({ data, onDataChange, contact, onContactChange, specsDisabled, disabled }: ManufacturingConfigFieldsProps) {
+export function ManufacturingConfigFields({ data, onDataChange, contact, onContactChange, specsDisabled, disabled, lockedPhases, existingFileUrls }: ManufacturingConfigFieldsProps) {
   return (
     <div className="space-y-6">
       <ManufacturingContactField value={contact} onChange={onContactChange} disabled={disabled} />
@@ -35,6 +39,8 @@ export function ManufacturingConfigFields({ data, onDataChange, contact, onConta
         showInternalNotes={false}
         variant="inline"
         disabled={disabled || specsDisabled}
+        lockedPhases={lockedPhases}
+        existingFileUrls={existingFileUrls}
       />
     </div>
   )

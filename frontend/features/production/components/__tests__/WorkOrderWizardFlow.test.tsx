@@ -5,6 +5,7 @@ import React from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import api from "@/lib/api"
 import { WorkOrderWizard } from "../WorkOrderWizard"
+import type { StageId } from "../../constants/stages"
 
 // Regressions of the OT flow audit: the wizard must follow the server's stage plan,
 // approve before every forward move, and never offer actions that point nowhere.
@@ -70,10 +71,10 @@ const baseOrder = {
     requires_postpress: false,
 }
 
-const renderManage = () =>
+const renderManage = (targetStage?: StageId) =>
     render(
         <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-            <WorkOrderWizard mode={{ kind: "manage", orderId: 7 }} open onOpenChange={vi.fn()} />
+            <WorkOrderWizard mode={{ kind: "manage", orderId: 7, targetStage }} open onOpenChange={vi.fn()} />
         </QueryClientProvider>
     )
 
@@ -92,7 +93,8 @@ describe("WorkOrderWizard — audit regressions", () => {
         }
         renderManage()
 
-        expect((await screen.findAllByText("Rectificación")).length).toBeGreaterThan(0)
+        // The rail opens folded (numbers only): the stage is found by its row's accessible name.
+        expect(await screen.findByRole("button", { name: /^Rectificación, paso/ })).toBeInTheDocument()
         // The button leads to the next planned stage, not straight to "Finalizar"
         expect(screen.getByRole("button", { name: "Siguiente Etapa" })).toBeInTheDocument()
     })
@@ -125,6 +127,25 @@ describe("WorkOrderWizard — audit regressions", () => {
         const transitionIdx = callOrder.findIndex((c) => c.endsWith("/transition/"))
         expect(taskIdx).toBeGreaterThanOrEqual(0)
         expect(taskIdx).toBeLessThan(transitionIdx)
+    })
+
+    it("follows the order to its new stage after advancing", async () => {
+        const plan = ["MATERIAL_ASSIGNMENT", "OUTSOURCING_ASSIGNMENT", "RECTIFICATION", "FINISHED"]
+        currentOrder = { ...baseOrder, current_stage: "OUTSOURCING_ASSIGNMENT", stage_plan: plan, next_stage: "RECTIFICATION" }
+        vi.mocked(api.post).mockImplementation((url: string) => {
+            callOrder.push(url)
+            // The server moved the order: the reload after the transition returns the new stage.
+            currentOrder = { ...currentOrder, current_stage: "RECTIFICATION", next_stage: "FINISHED" }
+            return Promise.resolve({ data: {} })
+        })
+        // Opened from a URL with ?step=OUTSOURCING_ASSIGNMENT (the wizard keeps that param in sync).
+        renderManage("OUTSOURCING_ASSIGNMENT")
+
+        fireEvent.click(await screen.findByRole("button", { name: "Siguiente Etapa" }))
+        fireEvent.click(await screen.findByRole("button", { name: "Continuar" }))
+
+        // The step header now shows the new stage, without touching the rail.
+        expect(await screen.findByRole("heading", { name: /Rectificación/ })).toBeInTheDocument()
     })
 
     it("does not fire a second transition while the first is in flight", async () => {

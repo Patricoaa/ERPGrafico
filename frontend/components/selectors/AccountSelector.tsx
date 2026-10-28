@@ -161,6 +161,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar...
             </SearchablePopover>
 
             <BaseModal
+                asDialog
                 open={modalOpen}
                 onOpenChange={setModalOpen}
                 size="md"

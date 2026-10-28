@@ -21,15 +21,14 @@ class ProductionSelectorExt:
     def get_stock_available(obj, context):
         from django.db.models import Sum
 
-        from inventory.services import UoMService
         c = obj.component
         if c.product_type == 'SERVICE': return 999999
         if c.strategy.can_have_bom and not c.requires_advanced_manufacturing:
             products_by_id = context.get('products_by_id') or {}
             prefetched = products_by_id.get(c.id)
-            if prefetched is not None:
-                return prefetched.get_manufacturable_quantity() or 0.0
-            return c.get_manufacturable_quantity() or 0.0
+            source = prefetched if prefetched is not None else c
+            # Manufacturable quantity is in the component's base UoM: convert like stock below.
+            return ProductionSelectorExt._in_material_uom(source.get_manufacturable_quantity() or 0.0, obj)
         w = obj.work_order.warehouse
         if not w: return 0.0
 
@@ -47,10 +46,20 @@ class ProductionSelectorExt:
             else:
                 stock = c.stocks.filter(warehouse=w).aggregate(t=Sum('quantity'))['t'] or 0.0
 
+        return ProductionSelectorExt._in_material_uom(stock, obj)
+
+    @staticmethod
+    def _in_material_uom(quantity, obj):
+        """Express a quantity in the component's base UoM in the UoM the material was planned in."""
+        from decimal import Decimal
+
+        from inventory.services import UoMService
+        c = obj.component
         try:
-            if c.uom and obj.uom and c.uom != obj.uom: stock = UoMService.convert_quantity(stock, c.uom, obj.uom)
+            if c.uom and obj.uom and c.uom != obj.uom:
+                quantity = UoMService.convert_quantity(Decimal(str(quantity)), c.uom, obj.uom)
         except Exception: pass
-        return float(stock)
+        return float(quantity)
 
     @staticmethod
     def get_total_cost(obj):

@@ -15,7 +15,7 @@
 
 import { Truck, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { LabeledInput, LabeledSelect } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { ProductSelector } from '@/components/selectors/ProductSelector'
 import { UoMSelector } from '@/components/selectors/UoMSelector'
@@ -23,6 +23,7 @@ import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactS
 import { formatCurrency } from "@/lib/money"
 import { useVatRate } from '@/hooks/useVatRate'
 import { useCoreAllowedDteTypes } from '../../hooks/useProductionQueries'
+import { useUoMs } from '../../hooks'
 import type { Product } from "@/types/entities"
 import type { ProductMinimal, UoM } from '../../types'
 
@@ -84,6 +85,8 @@ export function OutsourcedServiceForm({
   showInfo = true,
 }: OutsourcedServiceFormProps) {
   const { multiplier: vatMultiplier } = useVatRate()
+  // Fallback when the host passes no UoM list: the selector narrows them to the service's category.
+  const { data: allUoms = [] } = useUoMs()
 
   const { data: allowedDteTypes = ["FACTURA", "BOLETA"] } = useCoreAllowedDteTypes()
 
@@ -102,7 +105,7 @@ export function OutsourcedServiceForm({
     parseFloat(value.grossPrice) > 0
 
   return (
-    <div className="p-4 border-2 border-primary/20 rounded-md bg-primary/5 space-y-4 animate-in slide-in-from-top-2 duration-300">
+    <div className="p-4 border rounded-md bg-muted/20 space-y-4 animate-in slide-in-from-top-2 duration-300">
       {/* Info banner (optional) */}
       {showInfo && (
         <div className="flex items-start gap-2 text-xs text-primary/80">
@@ -124,12 +127,13 @@ export function OutsourcedServiceForm({
       )}
 
       {/* Row 1: Servicio · Cantidad · Unidad */}
-      <div className="flex flex-col md:flex-row gap-4 items-end">
-        <div className="flex-1 space-y-2">
-          <label className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">Servicio</label>
+      <div className="flex flex-col md:flex-row gap-3 md:items-start">
+        <div className="flex-1 min-w-0">
           <ProductSelector
+            label="Servicio"
             value={value.productId}
-            onChange={(id) => set({ productId: id })}
+            // onSelect carries the whole selection; onChange (fired right after, same stale value) only clears.
+            onChange={(id) => { if (!id) set({ productId: null, productObj: null, uomId: '' }) }}
             onSelect={(p: Product) => {
               const uomId = p?.uom ? (typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()) : value.uomId
               set({ productId: p?.id?.toString() ?? null, productObj: p as ProductMinimal, uomId })
@@ -140,9 +144,9 @@ export function OutsourcedServiceForm({
           />
         </div>
 
-        <div className="w-full md:w-28 space-y-2">
-          <label className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">Cantidad</label>
-          <Input
+        <div className="w-full md:w-28">
+          <LabeledInput
+            label="Cantidad"
             type="number"
             min="0.0001"
             step="any"
@@ -151,23 +155,23 @@ export function OutsourcedServiceForm({
           />
         </div>
 
-        <div className="w-full md:w-40 space-y-2">
-          <label className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">Unidad</label>
+        <div className="w-full md:w-40">
           <UoMSelector
+            label="Unidad"
             product={value.productObj as unknown as Parameters<typeof UoMSelector>[0]['product']}
             context="bom"
             value={value.uomId}
             onChange={(id) => set({ uomId: id })}
-            uoms={uoms}
+            uoms={uoms.length > 0 ? uoms : allUoms}
           />
         </div>
       </div>
 
       {/* Row 2: Proveedor · Precio Bruto · Documento */}
-      <div className="flex flex-col md:flex-row gap-4 w-full pt-2 border-t border-primary/10">
-        <div className="flex-1 space-y-2">
-          <label className="text-2xs font-bold uppercase tracking-widest text-primary">Proveedor</label>
+      <div className="flex flex-col md:flex-row gap-3 md:items-start w-full">
+        <div className="flex-1 min-w-0">
           <AdvancedContactSelector
+            label="Proveedor"
             value={value.supplierId}
             onChange={(id) => set({ supplierId: id, ...(id ? {} : { supplierName: null }) })}
             onSelectContact={(c) => set({ supplierId: String(c.id), supplierName: c.name })}
@@ -175,46 +179,36 @@ export function OutsourcedServiceForm({
           />
         </div>
 
-        <div className="w-full md:w-36 space-y-2">
-          <label className="text-2xs font-bold uppercase tracking-widest text-primary">Precio Bruto</label>
-          <Input
+        <div className="w-full md:w-36">
+          <LabeledInput
+            label="Precio bruto"
             type="number"
             min="0"
             step="any"
             value={value.grossPrice}
             onChange={(e) => handleGrossPriceChange(e.target.value)}
             onFocus={(e) => e.target.select()}
+            hint={parseFloat(value.grossPrice) > 0 ? `Neto: ${formatCurrency(parseFloat(value.netPrice))}` : undefined}
           />
-          {parseFloat(value.grossPrice) > 0 && (
-            <p className="text-3xs text-muted-foreground font-mono">
-              Neto: {formatCurrency(parseFloat(value.netPrice))}
-            </p>
-          )}
         </div>
 
-        <div className="w-full md:w-32 space-y-2">
-          <label className="text-2xs font-bold uppercase tracking-widest text-primary">Documento</label>
-          <select
-            className="w-full rounded-md border border-primary/30 bg-background px-3 py-2 text-sm ring-offset-background focus:ring-2 focus:ring-primary"
+        <div className="w-full md:w-36">
+          <LabeledSelect
+            label="Documento"
             value={value.documentType}
-            onChange={(e) =>
-              set({ documentType: e.target.value as 'FACTURA' | 'BOLETA' })
-            }
-          >
-            {allowedDteTypes.map((t: string) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
+            onChange={(v) => set({ documentType: v as 'FACTURA' | 'BOLETA' })}
+            options={allowedDteTypes.map((t: string) => ({ value: t, label: t }))}
+          />
         </div>
       </div>
 
       {/* Action buttons */}
       <div className="flex justify-end gap-2 pt-1">
-        <Button variant="ghost" size="sm" onClick={onCancel} type="button">
+        <Button variant="outline" className="h-notched-field" onClick={onCancel} type="button">
           Cancelar
         </Button>
         <Button
-          size="sm"
+          className="h-notched-field"
           onClick={onSave}
           disabled={!canSave || saving}
           type="button"

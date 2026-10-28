@@ -46,6 +46,15 @@ export const productionApi = {
         api.post(`/production/orders/${id}/restart/`).then(r => r.data),
     updateSection: (id: number, section: string, payload: Record<string, unknown>) =>
         api.patch(`/production/orders/${id}/update_section/`, { section, payload }).then(r => r.data),
+    addDesignFiles: (id: number, files: File[]) => {
+        const formData = new FormData()
+        files.forEach((f, i) => formData.append(`design_file_${i}`, f))
+        return api.patch(`/production/orders/${id}/`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        }).then(r => r.data)
+    },
+    removeAttachment: (orderId: number, attachmentId: number) =>
+        api.post(`/production/orders/${orderId}/remove_attachment/`, { attachment_id: attachmentId }).then(r => r.data),
 
     // ── BOMs ──
     getBOMs: (params?: Record<string, unknown>) =>

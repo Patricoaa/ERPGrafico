@@ -284,7 +284,8 @@ function CollectionMessage({ status, emptyTitle, emptyDescription, emptyAction, 
     const { refetch, isFiltered, entity } = ctx.collection
     const noun = ctx.label.toLowerCase()
     return (
-        <div className="rounded-md border">
+        // Fills the space a flex-column host gives it (e.g. a wizard step), centring the message.
+        <div className="flex flex-1 flex-col justify-center rounded-md border">
             {status === "error" ? (
                 <EmptyState
                     icon={AlertTriangle}

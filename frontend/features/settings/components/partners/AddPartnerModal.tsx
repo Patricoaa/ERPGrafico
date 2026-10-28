@@ -200,7 +200,7 @@ function RowTable({ partners, projectedTotal, newAmount }: { partners: Partner[]
     )
 
     return (
-        <div className="border rounded-md overflow-x-auto">
+        <div className="overflow-x-auto">
             <Collection.Root collection={collection} label="Proyección de participación">
                 <Collection.View
                     table={projectionRowViews.table}

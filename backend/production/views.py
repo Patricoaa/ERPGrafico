@@ -117,6 +117,13 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         "sale_order__attachments",
         "sale_line__attachments",
         "tasks",
+        # TaskSerializer reads these per task (assignment, approver, evidence, history)
+        "tasks__assigned_to",
+        "tasks__assigned_group",
+        "tasks__created_by",
+        "tasks__completed_by",
+        "tasks__attachments",
+        "tasks__events__user",
     )
     serializer_class = WorkOrderSerializer
 
@@ -165,14 +172,10 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             WorkOrderService.validate_update_payload(instance, request.data)
         except (ValidationError, ValueError) as e:
             return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
+        before = dict(instance.stage_data or {})
         response = super().update(request, *args, **kwargs)
         if response.status_code == 200:
-            try:
-                WorkOrderService.handle_update_attachments(
-                    self.get_object(), request.FILES, request.user
-                )
-            except Exception:
-                logger.exception("Error attaching files in update for WorkOrder %s", instance.pk)
+            WorkOrderService.after_update(self.get_object(), before, request.FILES, request.user)
         return response
 
     @action(detail=True, methods=["post"])
@@ -216,6 +219,25 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response(WorkOrderSerializer(new_wo).data, status=status.HTTP_201_CREATED)
         except Exception as e:
             logger.exception("Error duplicating WorkOrder")
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["post"], url_path="remove_attachment")
+    def remove_attachment(self, request, pk=None):
+        """Remove a design-file attachment from the work order."""
+        from core.models import Attachment
+        from django.contrib.contenttypes.models import ContentType
+        work_order = self.get_object()
+        attachment_id = request.data.get("attachment_id")
+        if not attachment_id:
+            return Response({"error": "attachment_id es requerido."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            ct = ContentType.objects.get_for_model(work_order)
+            attachment = Attachment.objects.get(id=attachment_id, content_type=ct, object_id=work_order.id)
+            attachment.delete()
+            return Response(WorkOrderSerializer(work_order).data)
+        except Attachment.DoesNotExist:
+            return Response({"error": "Adjunto no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
             return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["patch"], url_path="update_section")
@@ -304,6 +326,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 supplier_id=request.data.get("supplier_id") if "supplier_id" in request.data else None,
                 unit_price=Decimal(str(request.data.get("unit_price", 0))) if "unit_price" in request.data else None,
                 document_type=request.data.get("document_type") if "document_type" in request.data else None,
+                user=request.user,
             )
             return Response(WorkOrderSerializer(work_order).data)
         except WorkOrderMaterial.DoesNotExist:
@@ -315,7 +338,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def remove_material(self, request, pk=None):
         work_order = self.get_object()
         try:
-            WorkOrderService.remove_material(work_order, request.data.get("material_id"))
+            WorkOrderService.remove_material(work_order, request.data.get("material_id"), user=request.user)
             return Response(WorkOrderSerializer(work_order).data)
         except Exception as e:
             return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)

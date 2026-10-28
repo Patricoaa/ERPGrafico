@@ -1,9 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { TooltipProvider } from "@/components/ui/tooltip"
-
-import { WizardStepsSidebar } from "@/components/shared"
+import { ProductionStepsSidebar } from "./ProductionStepsSidebar"
 
 import type { WorkOrderStage, WorkOrder, WizardStepMode } from "../types"
 import { buildWorkOrderRailSteps } from "../lib/railSteps"
@@ -59,24 +57,14 @@ export function WizardProcessSidebar({
     ) : undefined
 
     return (
-        <TooltipProvider delayDuration={300}>
-            <WizardStepsSidebar
-                title="Etapas"
-                currentStep={viewingStepIndex + 1}
-                steps={steps}
-                width="w-64"
-                className="bg-transparent"
-                onStepClick={onStepClick}
-                showNumbers={true}
-                detailVisibility="both"
-                progressPercent={progressPercent}
-                showCounter={false}
-                showConnector={false}
-                listClassName="px-2 pt-1 space-y-1.5"
-                collapsed={collapsed}
-                onToggleCollapsed={onToggleCollapsed}
-                headerNote={headerNote}
-            />
-        </TooltipProvider>
+        <ProductionStepsSidebar
+            steps={steps}
+            currentStep={viewingStepIndex + 1}
+            onStepClick={onStepClick}
+            progressPercent={progressPercent}
+            collapsed={collapsed}
+            onToggleCollapsed={onToggleCollapsed}
+            headerNote={headerNote}
+        />
     )
 }
