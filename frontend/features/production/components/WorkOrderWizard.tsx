@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
-import { AlertTriangle, Package, FileText, Plus, Keyboard, Printer, Link2 } from 'lucide-react'
+import { AlertTriangle, Factory, FileText, Plus, Keyboard, Printer, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 import {
@@ -66,7 +66,7 @@ const RAIL_COLLAPSED_STORAGE_KEY = 'erpgrafico.production.railCollapsed'
 const STEP_ORIGIN: WorkOrderStage = {
   id: 'ORIGIN_SELECTION',
   label: 'Origen de Fabricación',
-  icon: Package,
+  icon: Factory,
   alwaysShow: true,
   isCreationStep: true,
 }
@@ -216,6 +216,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   const [showCheatsheet, setShowCheatsheet] = useState(false)
   const [wizardTab, setWizardTab] = useState('stages')
   const [railCollapsed, setRailCollapsed] = useState(false)
+  const [blockingWarning, setBlockingWarning] = useState<string | null>(null)
   const { data: relationsData } = useDocumentRelations('production.workorder', order?.id ?? null)
 
   // Restore the rail preference after mount (avoids SSR/client hydration mismatch).
@@ -386,6 +387,11 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Clear blocking warning when stage changes
+  useEffect(() => {
+    setBlockingWarning(null)
+  }, [viewingStepIndex])
+
   // Sync viewing stage to URL step query param
   useEffect(() => {
     if (localOrderId === null) return
@@ -449,12 +455,12 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
     if (isMovingForward) {
       const unapprovable = pendingTasks.filter((t) => !canUserCompleteTask(t))
-      if (unapprovable.length > 0) { toast.error('Existen tareas de aprobación pendientes asignadas a otros usuarios.'); return }
+      if (unapprovable.length > 0) { setBlockingWarning('Existen tareas de aprobación pendientes asignadas a otros usuarios.'); return }
     }
 
     if (order.current_stage === 'MATERIAL_APPROVAL' && isMovingForward) {
       const missing = order.materials?.filter((m: WorkOrderMaterial) => !m.is_outsourced && !m.is_available) ?? []
-      if (missing.length > 0) { toast.error(`Stock insuficiente para ${missing.length} componentes. Reponga stock para continuar.`); return }
+      if (missing.length > 0) { setBlockingWarning(`Stock insuficiente para ${missing.length} componentes. Reponga stock para continuar.`); return }
     }
 
     if (order.current_stage === 'OUTSOURCING_ASSIGNMENT' && isMovingForward) {
@@ -512,7 +518,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   const handleRectifyAndFinish = async () => {
     if (!order || transitioning) return
     const unapprovable = pendingTasks.filter((t) => !canUserCompleteTask(t))
-    if (unapprovable.length > 0) { toast.error('Existen tareas de aprobación pendientes asignadas a otros usuarios.'); return }
+    if (unapprovable.length > 0) { setBlockingWarning('Existen tareas de aprobación pendientes asignadas a otros usuarios.'); return }
     try {
       await mutations.rectify({
         materialAdjustments: rectificationAdjustments,
@@ -564,7 +570,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         resizable={false}
         fillContent
         contentClassName="p-0 flex flex-col overflow-hidden"
-        icon={Package}
+        icon={Factory}
         title={
           order
             ? formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)
@@ -651,9 +657,9 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         <div className="flex flex-1 min-h-0 overflow-hidden">
         <TabBar
           items={order ? [
-            { value: 'stages', label: 'Producción', icon: Package },
+            { value: 'stages', label: 'Producción', icon: Factory },
             { value: 'relations', label: 'Relaciones', icon: Link2, badge: relationsData?.relations.length },
-          ] : [{ value: 'stages', label: 'Producción', icon: Package }]}
+          ] : [{ value: 'stages', label: 'Producción', icon: Factory }]}
           value={wizardTab}
           onValueChange={setWizardTab}
           orientation="horizontal"
@@ -679,19 +685,37 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
           {/* Center content */}
           <div className="flex-1 flex flex-col overflow-hidden relative">
-            <div className="px-6 pt-6 mb-4 flex-shrink-0">
-              {showStageNotice && viewedCaps && (
+            {/* Stage header — shown for all workflow stages (not creation steps) */}
+            {!isCreating && order && currentStageId && !['ORIGIN_SELECTION', 'SALE_ORDER_PRODUCT', 'PRODUCT_SELECTION', 'MFG_CONFIG'].includes(currentStageId) && (
+              <div className="px-6 pt-5 pb-0 flex-shrink-0 space-y-2">
                 <WizardStageNotice
+                  stage={STAGES[viewingStepIndex]}
+                  isCurrent={isViewingCurrentStage}
                   isTerminal={isTerminalOrder}
-                  capabilities={viewedCaps}
+                  capabilities={showStageNotice && viewedCaps ? viewedCaps : undefined}
                   editableInline={editableInline}
                   onReopen={() => {
                     setPendingPrevStage(currentStageId as string)
                     setIsBackwardModalOpen(true)
                   }}
                 />
-              )}
-            </div>
+                {blockingWarning && (
+                  <div role="alert" className="flex items-start gap-2.5 rounded-md border border-warning/30 bg-warning/10 px-3 py-2.5 text-sm text-warning">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                    <span>{blockingWarning}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* Blocking warning for creation steps */}
+            {blockingWarning && (isCreating || ['MFG_CONFIG'].includes(currentStageId ?? '')) && (
+              <div className="px-6 pt-4 flex-shrink-0">
+                <div role="alert" className="flex items-start gap-2.5 rounded-md border border-warning/30 bg-warning/10 px-3 py-2.5 text-sm text-warning">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                  <span>{blockingWarning}</span>
+                </div>
+              </div>
+            )}
 
             <div className="flex flex-1 flex-col min-h-0 px-6 relative">
               {/* Mobile navigation */}
@@ -930,7 +954,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         asDialog
         open={showPOPreview}
         onOpenChange={setShowPOPreview}
-        icon={Package}
+        icon={Factory}
         title="Vista Previa de Órdenes de Compra"
         description="Se generarán y confirmarán estas Órdenes de Compra (con su factura en borrador). Después ya no podrás reabrir la asignación de tercerizados de esta OT."
         size="md"

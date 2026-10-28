@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { 
+import {
   ReceiptText, Truck, Undo2, FileText,
-  Wrench, Package, ArrowLeftRight, ArrowRightLeft, Landmark, BookOpen, 
+  Wrench, Factory, Package, ArrowLeftRight, ArrowRightLeft, Landmark, BookOpen,
   Hash, Users, User, UserCheck, Book, ShoppingCart, Receipt,
   List, LayoutDashboard, LayoutGrid, Kanban, CalendarDays, ClipboardCheck,
   Building2, Smartphone, CreditCard, Calendar, CalendarX2, Repeat,
@@ -340,8 +340,8 @@ const REGISTRY = {
     label: 'production.workorder',
     title: 'Orden de Trabajo',
     titlePlural: 'Ordenes de Trabajo',
-    icon: Wrench,
-    iconName: 'Wrench',
+    icon: Factory,
+    iconName: 'Factory',
     feminine: true,
     description: 'Instrucción de fabricación o servicio',
     shortTemplate: 'OT-{number}',
