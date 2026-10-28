@@ -314,8 +314,10 @@ export function WizardStepsSidebar({
                                         className="absolute inset-0 z-0"
                                     />
 
-                                    {/* Row content - above the stretched link */}
-                                    <div className={cn("relative z-10 flex items-start", gap, collapsed && "justify-center")}>
+                                    {/* Row content - above the stretched link; pointer-events-none so clicks
+                                        pass through to the button, except the actions column which
+                                        re-enables them on hover via pointer-events-auto. */}
+                                    <div className={cn("relative z-10 flex items-start pointer-events-none", gap, collapsed && "justify-center")}>
                                         {/* Node column */}
                                         <div className="shrink-0 flex items-center justify-center">
                                             <span
