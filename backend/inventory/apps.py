@@ -62,8 +62,10 @@ class InventoryConfig(AppConfig):
                     search_fields=("id", "description", "adjustment_reason"),
                     short_display_template=f"{EntityPrefix.STOCK_MOVE}-{{id}}",
                     display_template=f"{EntityPrefix.STOCK_MOVE}-{{id}}",
-                    list_url="/inventory/reports/movements",
-                    detail_url_pattern="/inventory/stock-moves/{id}",
+                    # No list of its own: moves are read from the stock report (kardex
+                    # drill-down); the detail is the drawer behind /d/ (ADR-0080).
+                    list_url="/inventory/operations/stock",
+                    detail_url_pattern="/d/inventory.stockmove/{id}",
                     permission="inventory.view_stockmove",
                 )
             )
@@ -113,8 +115,8 @@ class InventoryConfig(AppConfig):
                     display_template="{document_type_display} #{id}",
                     subtitle_template="{partner_name}",
                     extra_info_template="{status_display}",
-                    list_url="/inventory/operations/documents",
-                    detail_url_pattern="/inventory/operations/documents/{id}",
+                    list_url="/inventory/operations/manual-operations",
+                    detail_url_pattern="/d/inventory.inventorydocument/{id}",
                     permission="inventory.view_inventorydocument",
                 )
             )

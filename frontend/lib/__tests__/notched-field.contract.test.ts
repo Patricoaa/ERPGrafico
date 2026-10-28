@@ -72,10 +72,14 @@ interface Violation {
   snippet: string;
 }
 
+// Identity of a baselined violation: file + rule + the offending class string. The line
+// is kept only to read the file: matching by line broke the baseline whenever an
+// unrelated edit (an import, a comment) shifted the code below it.
 interface BaselineEntry {
   file: string;
   line: number;
   rule: 'R1' | 'R2' | 'R3' | 'R4' | 'R5' | 'R6' | 'R7' | 'R8';
+  snippet: string;
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -100,10 +104,11 @@ function saveBaseline(entries: BaselineEntry[]) {
   writeFileSync(BASELINE_PATH, JSON.stringify(sorted, null, 2));
 }
 
+const sameViolation = (b: BaselineEntry, v: Violation): boolean =>
+  b.file === v.file && b.rule === v.rule && b.snippet === v.snippet;
+
 function isBaselined(v: Violation, baseline: BaselineEntry[]): boolean {
-  return baseline.some(b =>
-    b.file === v.file && b.line === v.line && b.rule === v.rule
-  );
+  return baseline.some(b => sameViolation(b, v));
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -491,7 +496,6 @@ function scanAll(): Violation[] {
     allFiles.push(...findTsxFiles(join(ROOT, dir)));
   }
 
-  let primitiveCount = 0;
   for (const file of allFiles) {
     try {
       const text = readFileSync(file, 'utf-8');
@@ -544,10 +548,12 @@ function findNodeAt(sourceFile: ts.SourceFile, position: number): ts.Node | null
 let violations: Violation[];
 let baseline: BaselineEntry[];
 
+// Whole-repo TypeScript AST scan: under a parallel full run it needs more than the
+// default 10 s hook budget.
 beforeAll(() => {
   violations = scanAll();
   baseline = loadBaseline();
-});
+}, 120_000);
 
 describe('Notched Field Contract', () => {
   // Report mode: just print violations
@@ -573,6 +579,7 @@ describe('Notched Field Contract', () => {
         file: v.file,
         line: v.line,
         rule: v.rule,
+        snippet: v.snippet,
       }));
       saveBaseline(entries);
       console.log(`Baseline written with ${entries.length} entries`);
@@ -654,9 +661,7 @@ describe('Notched Field Contract', () => {
 
   // Ensure baseline doesn't have stale entries
   it('Baseline has no stale entries (all still exist)', () => {
-    const stale = baseline.filter(b =>
-      !violations.some(v => v.file === b.file && v.line === b.line && v.rule === b.rule)
-    );
+    const stale = baseline.filter(b => !violations.some(v => sameViolation(b, v)));
     if (stale.length > 0) {
       console.log('\nStale baseline entries (should be removed):', stale);
     }

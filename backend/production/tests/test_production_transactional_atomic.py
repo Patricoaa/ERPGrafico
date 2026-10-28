@@ -1,10 +1,8 @@
-import tempfile
 from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import override_settings
 
 from core.models import Attachment
 from production.services import WorkOrderService
@@ -16,7 +14,6 @@ def _make_file(name: str) -> SimpleUploadedFile:
     return SimpleUploadedFile(name, b"dummy content", content_type="application/pdf")
 
 
-@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
 @pytest.mark.django_db(transaction=True)
 def test_handle_update_attachments_rollback(work_order_factory):
     """

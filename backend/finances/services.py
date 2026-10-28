@@ -199,10 +199,16 @@ class FinanceService:
                 fiscal_year_id=fiscal_year_id, cf_category=category_value
             ).values_list("account_id", flat=True)
             return Account.objects.filter(id__in=account_ids)
-        # Modo vivo: usar IDs de cuentas con effective_cf_category == category_value
-        # (no se puede hacer en SQL porque effective_cf_category es property que hereda)
-        all_accounts = Account.objects.all()
-        matching_ids = [acc.id for acc in all_accounts if acc.effective_cf_category == category_value]
+        # Modo vivo: la categoría se hereda del ancestro más cercano. Se resuelve en memoria
+        # sobre una sola consulta: Account.effective_cf_category sube por `parent` con una
+        # consulta por nivel y por cuenta (cientos de consultas por reporte).
+        from accounting.models import resolve_effective_category
+
+        by_id = {a.id: a for a in Account.objects.only("id", "parent_id", "cf_category")}
+        matching_ids = [
+            a.id for a in by_id.values()
+            if resolve_effective_category(a, "cf_category", by_id) == category_value
+        ]
         return Account.objects.filter(id__in=matching_ids)
 
     @staticmethod

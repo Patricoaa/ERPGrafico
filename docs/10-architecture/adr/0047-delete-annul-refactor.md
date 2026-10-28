@@ -75,4 +75,4 @@ La decisión tomada fue refactorizar todo el ecosistema hacia una taxonomía de 
 - [Deletion policy contract](../../20-contracts/deletion-policy.md) — actualizado con Cancel como tercer patrón.
 - [State map contract](../../20-contracts/state-map.md) — transiciones DRAFT→CANCELLED agregadas.
 - [Component row actions contract](../../20-contracts/component-row-actions.md) — `cancel` agregado al registry.
-- [Plan de refactor](../../50-audit/delete-annul-refactor-plan.md) — documento de planificación original.
+- Plan de refactor (`50-audit/delete-annul-refactor-plan.md` _(snapshot de auditoría retirado; ver historial git)_) — documento de planificación original.

@@ -4,14 +4,13 @@ import { formatEntityDisplay, getEntityIcon, getDomainConceptTitle } from "@/lib
 import { useState, useEffect } from "react"
 import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { DataCell } from "@/components/shared"
+import { DataCell, SelectorTrigger } from "@/components/shared"
 import { useDebounce } from "@/hooks/useDebounce"
 import { format } from "date-fns"
 
 import { useSaleOrderSearch } from "@/features/orders/hooks/useSaleOrderSearch"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { LabeledContainer, SearchablePopover } from '@/components/shared'
-import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
 import { type SaleOrder } from "@/types/entities"
 
 const SaleOrderIcon = getEntityIcon('sales.saleorder')

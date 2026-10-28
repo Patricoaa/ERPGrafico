@@ -6,6 +6,7 @@ import {
     editableSchema,
     formatDate,
     formatDateRange,
+    formatMonth,
     formatFlow,
     formatMoneyValue,
     formatNumber,
@@ -54,6 +55,10 @@ describe("formatters", () => {
         expect(formatDate("not-a-date")).not.toBe("15/01/2026")
         expect(formatDateRange({ from: "2026-01-01", to: "2026-01-03" })).toBe("01/01/2026 – 03/01/2026")
         expect(formatDateRange({ from: "2026-01-01", to: null })).toBe("01/01/2026")
+        // Month of a date-only value: the 1st must not slip to the previous month (UTC parse)
+        expect(formatMonth("2026-10-01")).toBe("octubre de 2026")
+        expect(formatMonth("2026-10-01T00:00:00Z")).toBe("octubre de 2026")
+        expect(formatMonth(null)).toBe(EMPTY)
     })
 
     it("formats status labels and progress", () => {

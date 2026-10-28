@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Button } from "@/components/ui/button"
-import { EmptyState, LabeledSelect } from '@/components/shared'
+import { EmptyState, LabeledSelect, SelectorTrigger } from '@/components/shared'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
@@ -21,7 +21,6 @@ import { useTerminalProviders, usePaymentMethods, useTerminalMovements, useTermi
 import type { TreasuryMovement } from "@/features/treasury/types"
 
 import { BaseModal, SubmitButton, CancelButton, LabeledContainer, LabeledInput, LabeledCheckboxGroup, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
-import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
 
 const terminalBatchSchema = z.object({
     providerId: z.string().min(1, "Seleccione un proveedor"),
@@ -184,7 +183,7 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
                                                     }}
                                                 />
                                             </div>
-                                            // typography-allow: meta - popover content max-height
+                                            {/* typography-allow: meta - popover content max-height */}
                                             <div className="max-h-[200px] overflow-y-auto space-y-1">
                                                 {providers.map((p) => (
                                                     <div

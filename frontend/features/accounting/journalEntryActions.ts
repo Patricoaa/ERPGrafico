@@ -1,6 +1,6 @@
 import type { ActionRegistry } from "@/types/actions"
 import { FileText, RotateCcw, Trash2, Eye, FileEdit } from "lucide-react"
-import type { JournalEntry } from "@/features/accounting/hooks/useJournalEntries"
+import type { JournalEntry } from "./hooks/useJournalEntries"
 
 /**
  * Journal Entry Action Registry

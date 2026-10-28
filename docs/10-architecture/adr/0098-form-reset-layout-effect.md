@@ -60,8 +60,8 @@ This supersedes the form-initialization mechanics of ADR-0051; the rest of ADR-0
 ## References
 
 - [ADR-0051](./0051-adjust-state-during-render.md) — adjust state during render (local state remains canonical)
-- [component-state-sync.md](../20-contracts/component-state-sync.md) — updated form-initialization variants
-- [hook-contracts.md](../20-contracts/hook-contracts.md) — `useInitializeForm`
+- [component-state-sync.md](../../20-contracts/component-state-sync.md) — updated form-initialization variants
+- [hook-contracts.md](../../20-contracts/hook-contracts.md) — `useInitializeForm`
 - `frontend/hooks/useInitializeDrawerForm.ts`
 - `frontend/hooks/useInitializeForm.ts`
 - React: [Cannot update a component while rendering a different component](https://react.dev/link/setstate-in-render)

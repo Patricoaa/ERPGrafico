@@ -6,6 +6,7 @@
 import type { Metadata } from "next"
 import { ALL_BANKS_SUB_VIEWS, BANK_SUB_VIEWS } from "./navigation"
 import { buildMetadataFromTab } from "@/lib/navigation-helpers"
+import { treasuryApi } from "./api/treasuryApi"
 
 /**
  * Build metadata for bank-center sub-pages.
@@ -29,6 +30,20 @@ export function buildBankMetadata(
   })
 
   return baseMetadata
+}
+
+/**
+ * Metadata of a `/treasury/bank-center/<bankId>/<subView>` page, named after the bank.
+ * Falls back to "Banco <id>" when the bank cannot be read.
+ */
+export async function buildBankPageMetadata(bankId: number, subView: string): Promise<Metadata> {
+  try {
+    const overview = await treasuryApi.getBankOverview(bankId)
+    const bankName = (overview?.bank as { name?: string } | undefined)?.name || `Banco ${bankId}`
+    return buildBankMetadata(bankName, subView)
+  } catch {
+    return buildBankMetadata(`Banco ${bankId}`, subView)
+  }
 }
 
 /**

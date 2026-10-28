@@ -30,9 +30,10 @@ BaseModal  (primitiva)
 
 ### ⚠️ Excepciones Autorizadas de Sistema
 
-Existe una única excepción de sistema autorizada para utilizar la primitiva `Dialog` directamente fuera de `BaseModal`:
+Existen dos excepciones de sistema autorizadas para utilizar las primitivas `Dialog` / `Sheet` directamente fuera de sus wrappers:
 
 *   **UniversalSearch (`UniversalSearch.tsx`)**: Al tratarse de la barra de búsqueda global y paleta de comandos (`Ctrl+K`), requiere un comportamiento visual sumamente personalizado que no cumple con el layout de negocio estándar (campo de entrada de texto gigante en el encabezado, segmentadores horizontales y pie de página con atajos de teclado del sistema).
+*   **Navegación móvil (`DashboardShell.tsx`)**: el sidebar completo (riel de módulos + panel) se abre como `Sheet` lateral en móvil. Es navegación, no un panel de negocio: sin título visible (solo `SheetTitle` `sr-only`), sin formulario, y se cierra al navegar. Ver [ADR-0103](../10-architecture/adr/0103-mobile-navigation-sheet-exception.md).
 
 ---
 

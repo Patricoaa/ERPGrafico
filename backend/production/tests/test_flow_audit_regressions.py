@@ -396,22 +396,12 @@ def test_bulk_transition_cannot_rewind(work_order_factory):
 # ── 5. Creation endpoint ───────────────────────────────────────────────────
 
 
-@pytest.fixture
-def media_root(settings, tmp_path):
-    settings.MEDIA_ROOT = str(tmp_path)
-    settings.STORAGES = {
-        **settings.STORAGES,
-        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-    }
-    return tmp_path
-
-
 def _design_file(name="arte.pdf"):
     return SimpleUploadedFile(name, b"%PDF-1.4 test", content_type="application/pdf")
 
 
 @pytest.mark.django_db
-def test_create_manual_ot_keeps_its_design_files(api_client, manufacturable_product, warehouse, media_root):
+def test_create_manual_ot_keeps_its_design_files(api_client, manufacturable_product, warehouse):
     response = api_client.post(
         "/api/production/orders/",
         {
@@ -430,7 +420,7 @@ def test_create_manual_ot_keeps_its_design_files(api_client, manufacturable_prod
 
 
 @pytest.mark.django_db
-def test_create_linked_ot_keeps_its_design_files(api_client, sale_line_factory, warehouse, media_root):
+def test_create_linked_ot_keeps_its_design_files(api_client, sale_line_factory, warehouse):
     line = sale_line_factory()
     response = api_client.post(
         "/api/production/orders/",

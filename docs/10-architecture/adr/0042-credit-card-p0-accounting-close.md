@@ -203,8 +203,8 @@ solo PR (Onda 1)**. Las decisiones concretas son:
 
 - ADR-0034: Estado de cuenta y pago de tarjeta de crédito
   corporativa (modelo base).
-- [docs/50-audit/bancos/fase-3-tarjeta-credito.md](../../../50-audit/bancos/fase-3-tarjeta-credito.md) — Roadmap de Fase 3.
-- Playbook: [docs/30-playbooks/add-migration.md](../../../30-playbooks/add-migration.md).
+- `docs/50-audit/bancos/fase-3-tarjeta-credito.md` _(snapshot de auditoría retirado; ver historial git)_ — Roadmap de Fase 3.
+- Playbook: [docs/30-playbooks/add-migration.md](../../30-playbooks/add-migration.md).
 - Tests: `test_card_statements_tasks.py`, `test_card_recalculate.py`,
   `test_card_pay_validations.py`, `test_card_reapply.py`,
   `test_card_reverse.py`, `test_card_statements_api.py`,

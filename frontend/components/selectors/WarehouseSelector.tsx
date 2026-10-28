@@ -4,8 +4,7 @@ import { useState, useMemo, useCallback } from "react"
 import { Check, Home } from "lucide-react"
 
 import { useWarehouses } from "@/features/inventory/hooks/useWarehouses"
-import { LabeledContainer, SearchablePopover } from '@/components/shared'
-import { SelectorTrigger, SELECTOR_VALUE_CLASS } from "@/components/shared/SelectorTrigger"
+import { LabeledContainer, SearchablePopover, SelectorTrigger, SELECTOR_VALUE_CLASS } from '@/components/shared'
 import { type Warehouse } from "@/types/entities"
 
 interface WarehouseSelectorProps {

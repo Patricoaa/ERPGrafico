@@ -26,6 +26,7 @@ from .models import (
     FiscalYearAccountMapping,
     JournalEntry,
     JournalItem,
+    resolve_effective_category,
 )
 from .services import JournalEntryService
 
@@ -244,16 +245,19 @@ class FiscalYearClosingService:
             closing_entry = None
 
         # Snapshot account→report category mappings for historical reports
-        leaf_accounts = Account.objects.filter(children__isnull=True)
+        # Categories are inherited from the nearest ancestor: resolved over one query
+        by_id = {a.id: a for a in Account.objects.all()}
+        leaf_ids = set(Account.objects.filter(children__isnull=True).values_list("id", flat=True))
         mapping_records = [
             FiscalYearAccountMapping(
                 fiscal_year=fiscal_year,
                 account=account,
-                is_category=account.effective_is_category,
-                bs_category=account.effective_bs_category,
-                cf_category=account.effective_cf_category,
+                is_category=resolve_effective_category(account, "is_category", by_id),
+                bs_category=resolve_effective_category(account, "bs_category", by_id),
+                cf_category=resolve_effective_category(account, "cf_category", by_id),
             )
-            for account in leaf_accounts
+            for account in by_id.values()
+            if account.id in leaf_ids
         ]
         FiscalYearAccountMapping.objects.bulk_create(mapping_records, ignore_conflicts=True)
 

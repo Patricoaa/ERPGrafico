@@ -10,7 +10,7 @@ author: equipo-core
 
 ## Context
 
-La auditoría de cancelación/anulación ([cancel-annul-entity-audit.md](../../50-audit/cancel-annul-entity-audit.md),
+La auditoría de cancelación/anulación (`50-audit/cancel-annul-entity-audit.md` _(snapshot de auditoría retirado; ver historial git)_,
 gap G-16) detectó una contradicción contractual: [deletion-policy.md](../../20-contracts/deletion-policy.md)
 declaraba la cancelación "Reversible: Sí (Reset to Draft)", pero no existe ningún
 endpoint ni servicio `reset_to_draft` en el backend (grep: cero ocurrencias), y

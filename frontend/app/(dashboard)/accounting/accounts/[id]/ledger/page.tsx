@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { JournalEntryDrawer, useLedger, useJournalEntry, ledgerMovementEntity, ledgerMovementPageViews } from "@/features/accounting"
 import type { JournalEntryInitialData } from "@/types/forms"
-import type { LedgerMovement } from "@/features/accounting/types"
+import type { LedgerMovement } from "@/features/accounting"
 
 export default function AccountLedgerPage() {
     const params = useParams()

@@ -290,9 +290,12 @@ describe('typography contract', () => {
       expect(/SelectorTrigger/.test(src)).toBe(true);
     });
 
-    it('ProductSelector inline variant uses text-xs', () => {
+    // component-selectors.md § Trigger display (N3): the selected value is text-sm
+    // text-foreground in every variant — inline no longer shrinks it to text-xs.
+    it('ProductSelector selected value follows the trigger contract in every variant', () => {
       const src = selectors.productSelector;
-      expect(/variant === 'inline'.*text-xs/.test(src)).toBe(true);
+      expect(/text-sm text-foreground truncate/.test(src)).toBe(true);
+      expect(/variant === 'inline'[^\n]*text-xs/.test(src)).toBe(false);
     });
   });
 });

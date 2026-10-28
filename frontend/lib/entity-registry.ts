@@ -373,7 +373,7 @@ const REGISTRY = {
     description: 'Entrada o salida de existencias',
     shortTemplate: 'MOV-{id}',
     listUrl: '/inventory/operations/stock',
-    detailUrlPattern: '/inventory/stock-moves/{id}',
+    detailUrlPattern: '/d/inventory.stockmove/{id}',
     viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'full' },
   },
   'inventory.inventorydocument': {

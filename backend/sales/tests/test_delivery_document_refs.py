@@ -83,7 +83,7 @@ def test_delivery_line_serializer_exposes_stock_move_document_ref(sales_setup):
     ref = data["stock_move_document"]
     assert ref["label"] == "inventory.stockmove"
     assert ref["id"] == line.stock_move_id
-    assert ref["url"] == f"/inventory/reports/movements?selected={line.stock_move_id}"
+    assert ref["url"] == f"/d/inventory.stockmove/{line.stock_move_id}"
 
 
 def test_delivery_serializer_document_ref_without_lines(db):

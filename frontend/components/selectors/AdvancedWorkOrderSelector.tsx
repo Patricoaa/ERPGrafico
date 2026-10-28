@@ -4,13 +4,12 @@ import { formatEntityDisplay, getEntityIcon, getDomainConceptTitle } from "@/lib
 import { useState, useEffect } from "react"
 import { Check, X } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { DataCell } from "@/components/shared"
+import { DataCell, SelectorTrigger } from "@/components/shared"
 import { useDebounce } from "@/hooks/useDebounce"
 import { format } from "date-fns"
 import { WorkOrderWizard } from "@/features/production"
 import { useWorkOrderSearch } from "@/features/production/hooks/useWorkOrderSearch"
 import { LabeledContainer, SearchablePopover } from '@/components/shared'
-import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
 import { type WorkOrder } from "@/types/entities"
 
 const WorkOrderIcon = getEntityIcon('production.workorder')
