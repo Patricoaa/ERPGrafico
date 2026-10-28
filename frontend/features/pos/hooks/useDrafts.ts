@@ -39,6 +39,13 @@ interface UseDraftsOptions {
     forceSync?: () => void
 }
 
+/** Design files can't be stored in a draft (JSON): they must be attached again on restore. */
+function withoutFiles(mfgData: unknown): unknown {
+    if (!mfgData || typeof mfgData !== 'object') return mfgData
+    const { design_files: _files, ...rest } = mfgData as Record<string, unknown>
+    return rest
+}
+
 export function useDrafts(options: UseDraftsOptions = {}) {
     const {
         items,
@@ -141,7 +148,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
                     unit_price_gross: item.unit_price_gross,
                     total_net: (item.qty || 0) * (item.unit_price_net || 0),
                     total_gross: (item.qty || 0) * (item.unit_price_gross || 0),
-                    manufacturing_data: item.manufacturing_data
+                    manufacturing_data: withoutFiles(item.manufacturing_data)
                 })),
                 customer_id: selectedCustomerId,
                 wizard_state: manualWizardState || wizardState,

@@ -40,16 +40,6 @@
     "rule": "R4"
   },
   {
-    "file": "features/production/components/steps/ManufacturingConfigStep.tsx",
-    "line": 524,
-    "rule": "R4"
-  },
-  {
-    "file": "features/production/components/steps/ManufacturingConfigSummary.tsx",
-    "line": 477,
-    "rule": "R4"
-  },
-  {
     "file": "features/treasury/components/TerminalBatchSelectionModal.tsx",
     "line": 188,
     "rule": "R2"

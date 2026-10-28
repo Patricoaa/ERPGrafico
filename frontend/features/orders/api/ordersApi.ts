@@ -20,7 +20,7 @@ export const ordersApi = {
     // ── Sales ──
     getSaleOrder: (id: string | number) =>
         api.get(`/sales/orders/${id}/`).then(r => r.data),
-    searchSaleOrders: (params: { search?: string; limit?: string }) =>
+    searchSaleOrders: (params: { search?: string; page_size?: string }) =>
         api.get('/sales/orders/', { params }).then(r => r.data),
     annulSaleOrder: (id: number, reason: string = '', force: boolean = false) =>
         api.post(`/sales/orders/${id}/annul/`, { force, reason }).then(r => r.data),

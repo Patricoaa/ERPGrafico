@@ -22,7 +22,7 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { workOrderUnifiedSearchDef } from "@/features/production"
 import { toast } from "sonner"
 import { Collection, useEntityCollection, type CollectionViewMode } from "@/components/entity-view"
-import { workOrderEntity, workOrderViews, type WorkOrder } from "@/features/production/entity-view/workOrder.entity"
+import { workOrderEntity, workOrderViews, type WorkOrder } from "@/features/production"
 
 import type { WizardMode, StageId } from "@/features/production/types"
 
@@ -62,7 +62,7 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
         }
     }, [isOverLimit, totalCount])
 
-    const { deleteOrder, annulOrder, duplicateOrder, bulkPrint, isBulkPrinting } = useWorkOrderListActions({ onSuccess: refetchOrders })
+    const { annulOrder, duplicateOrder, bulkPrint, isBulkPrinting } = useWorkOrderListActions({ onSuccess: refetchOrders })
 
     const isNew = searchParams.get('new') === 'true' || searchParams.get('modal') === 'new'
     const selectedId = searchParams.get('selected')
@@ -100,11 +100,9 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
         router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     }, [router, pathname, searchParams])
 
-    const deleteConfirm = useConfirmAction<number>(async (id) => { await deleteOrder({ id }) })
     const cancelConfirm = useConfirmAction<number>(async (id) => { await annulOrder({ id }) })
     const duplicateConfirm = useConfirmAction<number>(async (id) => { await duplicateOrder({ id }) })
 
-    const handleDelete = useCallback((id: number) => deleteConfirm.requestConfirm(id), [deleteConfirm])
     const handleCancel = useCallback((id: number) => cancelConfirm.requestConfirm(id), [cancelConfirm])
     const handleDuplicate = useCallback((id: number) => duplicateConfirm.requestConfirm(id), [duplicateConfirm])
 
@@ -112,7 +110,6 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
         onEdit: (id) => handleManage(id),
         onDuplicate: handleDuplicate,
         onAnnul: handleCancel,
-        onDelete: handleDelete,
     }
 
     const groupBy = null // WorkOrder groupBy uses search.groupBy for data fetch, not entity-view groupBy
@@ -193,7 +190,6 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                                 onManage={handleManage}
                                 onDuplicate={handleDuplicate}
                                 onAnnul={handleCancel}
-                                onDelete={handleDelete}
                                 isLoading={isLoading}
                             />
                         )}
@@ -221,14 +217,6 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                 </FadeIn>
             </div>
 
-            <ActionConfirmModal
-                open={deleteConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
-                onConfirm={deleteConfirm.confirm}
-                title="Eliminar OT"
-                description="¿Está seguro de que desea eliminar esta OT? Esta acción es irreversible."
-                variant="destructive"
-            />
             <ActionConfirmModal
                 open={cancelConfirm.isOpen}
                 onOpenChange={(open) => { if (!open) cancelConfirm.cancel() }}

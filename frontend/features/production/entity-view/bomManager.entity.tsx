@@ -114,13 +114,13 @@ export const bomManagerEntity = defineEntity<BOMManagerRow>()((f) => ({
     title: `Estructuras técnicas (${getDomainConceptTitle('ldm')})`,
     rowId: (r) => String(r.id ?? r.name),
     fields: {
-        name: f.value("bomManagerName", (r) => ({ name: r.name, notes: r.notes }), { ...fixed, label: `${getDomainConceptTitle('ldm')} (Receta)` }),
+        name: f.value("bomManagerName", (r) => ({ name: r.name, notes: r.notes }), { ...fixed, label: getDomainConceptTitle('ldm') }),
         variantCtx: f.value("bomManagerVariantCtx", (r) => ({
             isBase: r._isBase ?? false,
             code: r.product_internal_code,
             productName: r.product_name,
         }), { ...fixed, label: "Variante / Contexto" }),
-        yield: f.quantity((r) => r.yield_quantity, { ...fixed, label: "Rendimiento (Output)", uom: (r) => r.yield_uom_name ?? r._fallbackUom }),
+        yield: f.quantity((r) => r.yield_quantity, { ...fixed, label: "Rendimiento", uom: (r) => r.yield_uom_name ?? r._fallbackUom }),
         active: f.value("bomManagerActive", (r) => ({ active: r.active, onToggle: r._onToggle ?? null }), { ...fixed, label: "Estado" }),
         linesCount: f.text((r) => `${r.lines?.length ?? 0} ITEMS`, { ...fixed, label: "Comp." }),
         updatedAt: f.date("updated_at", { ...fixed, label: "Actualizado", time: true }),

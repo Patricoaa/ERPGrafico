@@ -1237,12 +1237,9 @@ class AccountingMapper:
             if not product.track_inventory and product.strategy.requires_manufacturing_profile:
                 # Check if this product has a work order (advanced manufacturing)
                 # If so, the cost was already expensed during OT finalization
-                if line.sale_line.work_orders.exists():
+                if line.sale_line.work_orders.filter(status="FINISHED").exists():
                     # Cost was already expensed during OT finalization
                     # Skip accounting entry creation to avoid duplication
-                    print(
-                        f"DEBUG: Skipping COGS entry for {product.internal_code} - already expensed in OT"
-                    )
                     continue
 
             # COGS Account (always from finished product)

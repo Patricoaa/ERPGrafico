@@ -12,8 +12,7 @@ import { posApi } from "../api/posApi"
 import { GenericWizard, Numpad, FadeIn, type WizardStep } from '@/components/shared'
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 
-import { LabeledContainer } from "@/components/shared"
-import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
+import { LabeledContainer, SelectorTrigger } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { useTouchMode } from "@/hooks/useTouchMode"
 import { POSReport, type POSReportData } from "./POSReport"

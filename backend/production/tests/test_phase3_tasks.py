@@ -155,11 +155,12 @@ def test_task202_manual_branch_creates_work_order(manufacturable_product, uom, w
 
 
 @pytest.mark.django_db
-def test_task202_fallback_returns_none_when_no_known_payload():
-    """Branch 3: no product_id, no sale_line → returns None (view falls back to DRF)."""
+def test_task202_unknown_payload_is_rejected():
+    """No product_id nor sale_line: rejected. The old fallback (bare DRF create)
+    produced an OT without BOM, tasks nor history."""
     files = MagicMock()
-    result = WorkOrderService.create_from_request_payload({}, files, user=None)
-    assert result is None
+    with pytest.raises(ValidationError, match="Indique un producto"):
+        WorkOrderService.create_from_request_payload({}, files, user=None)
 
 
 @pytest.mark.django_db

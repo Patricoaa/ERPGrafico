@@ -1172,7 +1172,7 @@ class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             BankLoan.objects.select_related(
                 "lender",
                 "disbursement_account",
-                "liability_account",
+                "liability_account__account",
                 "created_by",
             )
             .prefetch_related("installments")

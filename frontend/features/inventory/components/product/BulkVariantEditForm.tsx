@@ -340,7 +340,7 @@ export function BulkVariantEditForm({
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-sm font-black uppercase tracking-widest text-foreground">
-                  Recetas de Producción
+                  LdM de producción
                 </h4>
                 <p className="text-2xs text-muted-foreground mt-0.5">
                   {variantsWithBOM === selectedVariants.length
@@ -365,10 +365,10 @@ export function BulkVariantEditForm({
               onClick={() => setBomModalOpen(true)}
             >
               <PlusCircle className="h-3.5 w-3.5 mr-2" />
-              Crear Receta y Clonar a Todas
+              Crear LdM y clonar a todas
             </Button>
             <p className="text-3xs text-muted-foreground text-center -mt-2">
-              Crea una receta nueva y la replica automáticamente al resto de la selección.
+              Crea una LdM nueva y la replica automáticamente al resto de la selección.
             </p>
 
             {/* Divider */}
@@ -408,7 +408,7 @@ export function BulkVariantEditForm({
                   onClick={handleCloneBOM}
                 >
                   <Copy className="h-4 w-4 mr-2" />
-                  Clonar LDM a {selectedVariants.length} Variantes
+                  Clonar LdM a {selectedVariants.length} variantes
                 </Button>
               </div>
             )}

@@ -6,32 +6,33 @@ export interface SideEffectsCheck {
 }
 
 /**
- * Determines whether rewinding to `targetStage` is blocked by existing side-effects.
+ * Determines whether rewinding to `targetStage` is blocked by existing side-effects
+ * (purchase orders only block reopening the outsourcing that generated them).
  *
  * Prefers the `side_effects` field from the backend serializer (Phase 4) when present;
  * otherwise falls back to client-visible order data.
  */
-export function hasSideEffects(order: WorkOrder): SideEffectsCheck {
+export function hasSideEffects(order: WorkOrder, targetStage?: string): SideEffectsCheck {
     if (order.side_effects) {
-        return fromBackendSideEffects(order.side_effects)
+        return fromBackendSideEffects(order.side_effects, targetStage)
     }
     return fromClientData(order)
 }
 
-function fromBackendSideEffects(se: WorkOrderSideEffects): SideEffectsCheck {
-    const reasons: string[] = []
-    if (se.has_confirmed_pos) reasons.push('OC confirmadas')
-    if (se.has_stock_movements) reasons.push('movimientos de stock')
-    if (se.completed_tasks_count > 0)
-        reasons.push(`${se.completed_tasks_count} tarea(s) completada(s)`)
-    if (se.manually_edited_materials_count > 0)
-        reasons.push('materiales editados manualmente')
-
-    if (reasons.length === 0) return { blocked: false }
-    return {
-        blocked: true,
-        reason: `Retroceso bloqueado: ${reasons.join(', ')}.`,
-    }
+/**
+ * Only irreversible effects block a rewind. Completed approvals are reset by the
+ * rewind itself and manually added materials are ordinary editable data, so
+ * counting them (as this used to) disabled the rewind on every OT past its
+ * first stage. The server enforces the same list in `transition_to`.
+ */
+function fromBackendSideEffects(se: WorkOrderSideEffects, targetStage?: string): SideEffectsCheck {
+    const perStage = targetStage ? se.rewind_blockers_by_stage?.[targetStage] : undefined
+    const blockers = perStage ?? se.rewind_blockers ?? [
+        ...(se.has_confirmed_pos ? ['Existen Órdenes de Compra confirmadas.'] : []),
+        ...(se.has_stock_movements ? ['Existen movimientos de stock.'] : []),
+    ]
+    if (blockers.length === 0) return { blocked: false }
+    return { blocked: true, reason: `Retroceso bloqueado: ${blockers.join(' ')}` }
 }
 
 function fromClientData(order: WorkOrder): SideEffectsCheck {

@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
-import { getEntityIconName, getDomainConceptTitle, getDomainConceptCode } from "@/lib/entity-registry"
+import { getEntityIconName, getDomainConceptTitle } from "@/lib/entity-registry"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
 
 export function ProductionHeader() {
@@ -29,7 +29,7 @@ export function ProductionHeader() {
     }
 
     const getHeaderConfig = () => {
-        if (activeValue === 'boms') return { title: `Fichas Técnicas (${getDomainConceptCode('ldm')})`, description: "Estructuras de productos, componentes y costos de fabricación.", iconName: "layers" as const }
+        if (activeValue === 'boms') return { title: getDomainConceptTitle('ldm', true), description: "Estructuras de productos, componentes y costos de fabricación.", iconName: "layers" as const }
         return { title: getDomainConceptTitle('ot', true), description: "Planificación y seguimiento de procesos fabriles.", iconName: getEntityIconName('production.workorder') ?? "printer" }
     }
 

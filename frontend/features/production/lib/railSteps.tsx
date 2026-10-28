@@ -6,14 +6,12 @@ import { cn } from "@/lib/utils"
 import type { WorkOrder, WorkOrderStage, WizardStepMode } from "../types"
 import { deriveStageEvidence, stageGroup, stageSummary } from "./stageEvidence"
 
-function RailBadge({ children, tone = "primary" }: { children: ReactNode; tone?: "primary" | "info" | "warning" }) {
+function RailBadge({ children }: { children: ReactNode }) {
     return (
         <span
             className={cn(
                 "text-2xs font-semibold px-1.5 py-0.5 rounded border whitespace-nowrap",
-                tone === "primary" && "text-primary bg-primary/10 border-primary/30",
-                tone === "info" && "text-info bg-info/10 border-info/30",
-                tone === "warning" && "text-warning bg-warning/10 border-warning/30",
+                "text-primary bg-primary/10 border-primary/30",
             )}
         >
             {children}
@@ -66,11 +64,7 @@ export function buildWorkOrderRailSteps({
             status = "future"
         }
 
-        const badge = isActive && stepMode === "edit-in-place"
-            ? <RailBadge tone="info">Editando</RailBadge>
-            : isActive && stepMode === "rewind"
-            ? <RailBadge tone="warning">Retroceso</RailBadge>
-            : isCurrent && !isActive
+        const badge = isCurrent && !isActive
             ? <RailBadge>Actual</RailBadge>
             : undefined
 
@@ -80,8 +74,8 @@ export function buildWorkOrderRailSteps({
             icon: stage.icon,
             group: stageGroup(stageId),
             detail: stageSummary(stageId, stageEvidence, order, isCurrent),
-            // Only warn where the operator can still act: current and future stages.
-            warning: !isTerminal && index >= actualStepIndex ? stageEvidence?.warning : undefined,
+            // The blocker belongs to the stage the order is in; past and future rows stay quiet.
+            warning: !isTerminal && isCurrent ? stageEvidence?.warning : undefined,
             status,
             disabled: isFuture,
             className: cn("group"),

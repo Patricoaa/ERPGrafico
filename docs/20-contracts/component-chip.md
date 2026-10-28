@@ -132,7 +132,7 @@ These are part of the invariant and are applied internally by `intent` and `size
 <Chip.Category domain="product_type" value="STORABLE" />
 
 // BOM status in manufacturing tab
-<Chip.Flag isTrue={hasBom} trueLabel="BOM ACTIVA" falseLabel="SIN RECETA" falseIntent="destructive" />
+<Chip.Flag isTrue={hasBom} trueLabel="BOM ACTIVA" falseLabel="SIN LDM" falseIntent="destructive" />
 
 // Count badge on a tab trigger
 <Chip.Count value={count} size="xs" />

@@ -874,19 +874,10 @@ class Product(models.Model):
                 self.track_inventory = self.product_type == self.Type.STORABLE
 
             # Express manufacturables (mfg_auto_finalize) do not track inventory
-            auto_finalize = (
-                self.mfg_profile.mfg_auto_finalize
-                if hasattr(self, "mfg_profile") and self.mfg_profile
-                else self.mfg_auto_finalize
-            )
-            advanced_mfg = (
-                self.mfg_profile.requires_advanced_manufacturing
-                if hasattr(self, "mfg_profile") and self.mfg_profile
-                else self.requires_advanced_manufacturing
-            )
-            if auto_finalize:
+            # The profile has no requires_advanced_manufacturing: that flag lives on Product.
+            if self.is_express:
                 self.track_inventory = False
-            elif self.product_type == self.Type.MANUFACTURABLE and not advanced_mfg:
+            elif self.product_type == self.Type.MANUFACTURABLE and not self.requires_advanced_manufacturing:
                 self.track_inventory = True
         # Fallback for base UoM if missing but others are present
         if not self.uom:
@@ -985,10 +976,7 @@ class Product(models.Model):
 
         # BOM Requirement for Express Products
         # Express products (mfg_auto_finalize=True) MUST have a BOM
-        auto_finalize = (
-            self.mfg_profile.mfg_auto_finalize if self.mfg_profile else self.mfg_auto_finalize
-        )
-        if auto_finalize and not self.parent_template:
+        if self.is_express and not self.parent_template:
             self.has_bom = True
 
         super().save(*args, **kwargs)
@@ -1004,14 +992,21 @@ class Product(models.Model):
         except Exception:
             return None
 
+    @property
+    def is_express(self):
+        """Express flow (mfg_auto_finalize): the profile wins, else the legacy field.
+
+        Single reader of the flag — services must not read only the profile, since
+        products created after the T-44 backfill have none.
+        """
+        profile = self.mfg_profile
+        return bool(profile.mfg_auto_finalize if profile else self.mfg_auto_finalize)
+
     # BOM-related helpers
     @property
     def is_express_variant(self):
         """Check if this is an Express variant (has parent and is Express)."""
-        auto_finalize = (
-            self.mfg_profile.mfg_auto_finalize if self.mfg_profile else self.mfg_auto_finalize
-        )
-        return self.parent_template is not None and auto_finalize
+        return self.parent_template is not None and self.is_express
 
     def has_active_bom(self):
         """Check if this product has an active BOM assigned."""
@@ -1025,11 +1020,8 @@ class Product(models.Model):
         Express products/variants require a BOM.
         Returns True if this product should have a BOM but doesn't.
         """
-        auto_finalize = (
-            self.mfg_profile.mfg_auto_finalize if self.mfg_profile else self.mfg_auto_finalize
-        )
         # Only Express products (auto-finalize) require BOM validation
-        if not auto_finalize:
+        if not self.is_express:
             return False
 
         # Templates with variants don't need their own BOM

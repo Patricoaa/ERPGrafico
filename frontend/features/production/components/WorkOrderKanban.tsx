@@ -19,7 +19,6 @@ interface KanbanCardHandlers {
     onManage: (orderId: number) => void
     onDuplicate?: (orderId: number) => void
     onAnnul?: (orderId: number) => void
-    onDelete?: (orderId: number) => void
 }
 
 interface KanbanProps extends KanbanCardHandlers {
@@ -29,12 +28,11 @@ interface KanbanProps extends KanbanCardHandlers {
 
 const STAGES = STAGES_ORDERED.filter(s => s.showInKanban)
 
-function KanbanCard({ order, onManage, onDuplicate, onAnnul, onDelete }: { order: WorkOrder } & KanbanCardHandlers) {
+function KanbanCard({ order, onManage, onDuplicate, onAnnul }: { order: WorkOrder } & KanbanCardHandlers) {
     const actionsCtx: WorkOrderActionsCtx = {
         onEdit: onManage,
         onDuplicate: onDuplicate ?? (() => {}),
         onAnnul: onAnnul ?? (() => {}),
-        onDelete: onDelete ?? (() => {}),
     }
 
     return (
@@ -93,7 +91,7 @@ function KanbanCard({ order, onManage, onDuplicate, onAnnul, onDelete }: { order
     )
 }
 
-export function WorkOrderKanban({ orders, onManage, onDuplicate, onAnnul, onDelete, isLoading }: KanbanProps) {
+export function WorkOrderKanban({ orders, onManage, onDuplicate, onAnnul, isLoading }: KanbanProps) {
     return (
         <div className="flex space-x-4 overflow-x-auto pb-4 h-[calc(100vh-250px)]">
             {STAGES.map((stage) => {
@@ -131,7 +129,6 @@ export function WorkOrderKanban({ orders, onManage, onDuplicate, onAnnul, onDele
                                         onManage={onManage}
                                         onDuplicate={onDuplicate}
                                         onAnnul={onAnnul}
-                                        onDelete={onDelete}
                                     />
                                 ))}
                                 {stageOrders.length === 0 && (

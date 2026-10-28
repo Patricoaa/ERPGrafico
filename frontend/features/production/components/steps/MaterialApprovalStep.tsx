@@ -32,9 +32,6 @@ export function MaterialApprovalStep({
       />
 
       <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          Verifique la disponibilidad de stock en {order.warehouse_name ?? 'la bodega seleccionada'}.
-        </p>
         <div className="grid gap-4">
           {stockMaterials.map((m: WorkOrderMaterial) => (
             <div key={m.id} className="flex items-center justify-between p-3 border rounded-md">

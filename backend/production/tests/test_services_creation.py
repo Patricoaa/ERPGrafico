@@ -169,3 +169,49 @@ def test_create_from_request_payload_rolls_back_on_invalid_material(
         WorkOrderService.create_from_request_payload(payload, files=None, user=None)
 
     assert WorkOrder.objects.count() == initial_count
+
+
+@pytest.mark.django_db
+def test_create_from_sale_line_applies_pos_planning_drafts(
+    sale_line_factory, warehouse_factory, component_product
+):
+    """Materials / outsourced drafts from the POS drawer become OT materials."""
+    from contacts.models import Contact
+    from inventory.models import Product
+
+    warehouse_factory(name="Default", code="WH-DEF3")
+    supplier = Contact.objects.create(name="Imprenta Externa", tax_id="76.111.111-1")
+    service = Product.objects.create(
+        name="Servicio Troquelado",
+        internal_code="SRV-TEST-001",
+        product_type=Product.Type.SERVICE,
+        uom=component_product.uom,
+        category=component_product.category,
+    )
+    sale_line = sale_line_factory(
+        manufacturing_data={
+            "phases": {"press": True},
+            "materials_draft": [{"product_id": component_product.id, "quantity": "5"}],
+            "outsourced_draft": [
+                {
+                    "product_id": service.id,
+                    "supplier_id": supplier.id,
+                    "quantity": "2",
+                    "unit_price": "1500",
+                    "document_type": "FACTURA",
+                },
+                # Stale draft entry: product no longer exists, must be skipped.
+                {"product_id": 999999, "supplier_id": supplier.id, "quantity": "1"},
+            ],
+        }
+    )
+
+    ot = WorkOrderService.create_from_sale_line(sale_line)
+
+    stock = ot.materials.get(is_outsourced=False)
+    assert (stock.component_id, stock.quantity_planned) == (component_product.id, Decimal("5"))
+    outsourced = ot.materials.get(is_outsourced=True)
+    assert outsourced.component_id == service.id
+    assert outsourced.supplier_id == supplier.id
+    assert outsourced.unit_price == Decimal("1500")
+    assert ot.materials.count() == 2

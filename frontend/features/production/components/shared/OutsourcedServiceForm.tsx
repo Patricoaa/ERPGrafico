@@ -31,6 +31,8 @@ export interface OutsourcedServiceValues {
   productId: string | null
   productObj: ProductMinimal | null
   supplierId: string | null
+  /** Display name captured at selection time (drafts have no persisted supplier to join). */
+  supplierName?: string | null
   qty: string
   uomId: string
   /** Gross price (with VAT) — stored as string for input ergonomics */
@@ -45,6 +47,7 @@ export function emptyOutsourcedService(): OutsourcedServiceValues {
     productId: null,
     productObj: null,
     supplierId: null,
+    supplierName: null,
     qty: '1',
     uomId: '',
     grossPrice: '0',
@@ -123,7 +126,7 @@ export function OutsourcedServiceForm({
       {/* Row 1: Servicio · Cantidad · Unidad */}
       <div className="flex flex-col md:flex-row gap-4 items-end">
         <div className="flex-1 space-y-2">
-          <label className="text-xs font-bold uppercase">Servicio</label>
+          <label className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">Servicio</label>
           <ProductSelector
             value={value.productId}
             onChange={(id) => set({ productId: id })}
@@ -138,7 +141,7 @@ export function OutsourcedServiceForm({
         </div>
 
         <div className="w-full md:w-28 space-y-2">
-          <label className="text-xs font-bold uppercase">Cantidad</label>
+          <label className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">Cantidad</label>
           <Input
             type="number"
             min="0.0001"
@@ -149,7 +152,7 @@ export function OutsourcedServiceForm({
         </div>
 
         <div className="w-full md:w-40 space-y-2">
-          <label className="text-xs font-bold uppercase">Unidad</label>
+          <label className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">Unidad</label>
           <UoMSelector
             product={value.productObj as unknown as Parameters<typeof UoMSelector>[0]['product']}
             context="bom"
@@ -163,16 +166,17 @@ export function OutsourcedServiceForm({
       {/* Row 2: Proveedor · Precio Bruto · Documento */}
       <div className="flex flex-col md:flex-row gap-4 w-full pt-2 border-t border-primary/10">
         <div className="flex-1 space-y-2">
-          <label className="text-xs font-bold uppercase text-primary">Proveedor</label>
+          <label className="text-2xs font-bold uppercase tracking-widest text-primary">Proveedor</label>
           <AdvancedContactSelector
             value={value.supplierId}
-            onChange={(id) => set({ supplierId: id })}
+            onChange={(id) => set({ supplierId: id, ...(id ? {} : { supplierName: null }) })}
+            onSelectContact={(c) => set({ supplierId: String(c.id), supplierName: c.name })}
             contactType="SUPPLIER"
           />
         </div>
 
         <div className="w-full md:w-36 space-y-2">
-          <label className="text-xs font-bold uppercase text-primary">Precio Bruto</label>
+          <label className="text-2xs font-bold uppercase tracking-widest text-primary">Precio Bruto</label>
           <Input
             type="number"
             min="0"
@@ -189,7 +193,7 @@ export function OutsourcedServiceForm({
         </div>
 
         <div className="w-full md:w-32 space-y-2">
-          <label className="text-xs font-bold uppercase text-primary">Documento</label>
+          <label className="text-2xs font-bold uppercase tracking-widest text-primary">Documento</label>
           <select
             className="w-full rounded-md border border-primary/30 bg-background px-3 py-2 text-sm ring-offset-background focus:ring-2 focus:ring-primary"
             value={value.documentType}

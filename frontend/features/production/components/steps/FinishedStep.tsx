@@ -54,7 +54,7 @@ export function FinishedStep({ order, onPrintCopy, isDuplicating }: FinishedStep
 
         {onPrintCopy && (
           <SubmitButton className="gap-2" loading={isDuplicating} onClick={onPrintCopy} icon={Copy}>
-            Imprimir copia
+            Duplicar OT
           </SubmitButton>
         )}
 

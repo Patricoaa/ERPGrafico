@@ -1,14 +1,14 @@
 "use client"
 
-import { Plus, Truck, Info } from 'lucide-react'
+import { Plus, Truck } from 'lucide-react'
 import { ActionConfirmModal, Chip, DataCell } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatCurrency } from "@/lib/money"
 import { showApiError } from '@/lib/errors'
 import { useWorkOrderMutations, productionApi } from '../../hooks'
 import { useState } from 'react'
 import { useVatRate } from '@/hooks/useVatRate'
+import { PlanningEmptyState } from '../shared/PlanningEmptyState'
 import { OutsourcedServiceForm, type OutsourcedServiceValues, emptyOutsourcedService } from '../shared/OutsourcedServiceForm'
 import type { WorkOrder, WorkOrderMaterial, UoM, ProductMinimal } from '../../types'
 import { getDomainConceptTitle } from "@/lib/entity-registry"
@@ -94,31 +94,8 @@ export function OutsourcingAssignmentStep({
 
   return (
     <div className="space-y-6">
-      <div className="p-4 bg-primary/10 border border-info/10 rounded-md flex gap-3">
-        <Plus className="h-5 w-5 text-primary shrink-0" />
-        <div className="text-sm text-primary">
-          <div className="flex items-center gap-2">
-            <p className="font-bold">Asignación de Servicios Tercerizados</p>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-3.5 w-3.5 text-info/50 cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <p className="text-xs">
-                    Los servicios tercerizados generarán automáticamente Órdenes de Compra en estado Confirmado que deberán procesarse desde el Hub de la OC.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <p className="text-xs">
-            Si el trabajo requiere servicios externos de un proveedor, agréguelos aquí. Se generará una Orden de Compra automáticamente.
-          </p>
-        </div>
-      </div>
-
       <div className="space-y-4">
+        {outsourced.length === 0 && !isAddOpen && <PlanningEmptyState kind="outsourcing" />}
         <div className="grid gap-3">
           {outsourced.map((m: WorkOrderMaterial) => (
             <div key={m.id} className="flex items-center justify-between p-3 border rounded-md bg-background group">

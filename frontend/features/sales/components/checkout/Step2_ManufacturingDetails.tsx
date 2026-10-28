@@ -10,9 +10,10 @@ import { MfgLineCard } from "./MfgLineCard"
 interface Step2_ManufacturingDetailsProps {
     orderLines: SaleOrderLine[]
     setOrderLines: (lines: SaleOrderLine[]) => void
+    customer?: { name: string; tax_id?: string | null } | null
 }
 
-export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_ManufacturingDetailsProps) {
+export function Step2_ManufacturingDetails({ orderLines, setOrderLines, customer }: Step2_ManufacturingDetailsProps) {
     const [editingLineIndex, setEditingLineIndex] = useState<number | null>(null)
 
     const advancedLines: ManufacturableLine[] = useMemo(() =>
@@ -69,6 +70,7 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                         mfg_enable_postpress: editingLine.mfg_enable_postpress ?? true
                     }}
                     onConfirm={handleConfirmManufacturing}
+                    customer={customer}
                 />
             )}
         </div>

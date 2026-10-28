@@ -32,7 +32,6 @@ interface WizardState {
 
   // ── modals ────────────────────────────────────────────────────────────────
   isAnnulModalOpen: boolean
-  isDeleteModalOpen: boolean
   isBackwardModalOpen: boolean
   pendingPrevStage: string | null
   showPOPreview: boolean
@@ -55,7 +54,6 @@ interface WizardState {
   setTaskFile: (taskId: string | number, file: File | null) => void
 
   setIsAnnulModalOpen: (open: boolean) => void
-  setIsDeleteModalOpen: (open: boolean) => void
   setIsBackwardModalOpen: (open: boolean) => void
   setPendingPrevStage: (stage: string | null) => void
   setShowPOPreview: (show: boolean) => void
@@ -90,7 +88,7 @@ interface WizardState {
 type WizardStateData = Omit<WizardState,
   | 'setOrder' | 'setLoading' | 'setViewingStepIndex' | 'setStepMode' | 'navigateToStep'
   | 'setTaskNote' | 'setTaskFile'
-  | 'setIsAnnulModalOpen' | 'setIsDeleteModalOpen' | 'setIsBackwardModalOpen'
+  | 'setIsAnnulModalOpen' | 'setIsBackwardModalOpen'
   | 'setPendingPrevStage' | 'setShowPOPreview' | 'setOutsourcedPending'
   | 'setRectificationAdjustments' | 'setRectificationOutsourcedAdjustments' | 'setRectificationProducedQty'
   | 'setChosenOtType' | 'setSelectedSaleOrder' | 'setSelectedSaleLine' | 'setSelectedProduct'
@@ -121,7 +119,6 @@ const INITIAL: WizardStateData = {
   taskNotes: {},
   taskFiles: {},
   isAnnulModalOpen: false,
-  isDeleteModalOpen: false,
   isBackwardModalOpen: false,
   pendingPrevStage: null,
   showPOPreview: false,
@@ -152,7 +149,6 @@ export const useWizardStore = create<WizardState>((set) => ({
     set((s) => ({ taskFiles: { ...s.taskFiles, [taskId]: file } })),
 
   setIsAnnulModalOpen: (open) => set({ isAnnulModalOpen: open }),
-  setIsDeleteModalOpen: (open) => set({ isDeleteModalOpen: open }),
   setIsBackwardModalOpen: (open) => set({ isBackwardModalOpen: open }),
   setPendingPrevStage: (stage) => set({ pendingPrevStage: stage }),
   setShowPOPreview: (show) => set({ showPOPreview: show }),

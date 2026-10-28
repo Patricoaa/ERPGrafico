@@ -16,8 +16,6 @@ export const productionApi = {
         api.patch(`/production/orders/${id}/`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         }).then(r => r.data),
-    deleteWorkOrder: (id: number) =>
-        api.delete(`/production/orders/${id}/`).then(r => r.data),
     transitionWorkOrder: (id: number, data: Record<string, unknown>) =>
         api.post(`/production/orders/${id}/transition/`, data).then(r => r.data),
     rectifyWorkOrder: (id: number, data: Record<string, unknown>) =>

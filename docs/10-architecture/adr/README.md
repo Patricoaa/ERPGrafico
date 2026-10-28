@@ -166,5 +166,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0099](0099-work-order-rail-status-board.md) | Work order rail as a status board — per-stage evidence, blockers, progress and collapse | Accepted |
 | [0100](0100-document-drilldown-stack-without-navigation.md) | Document drilldown stacks over the origin list — origin list and module kept; unsaved-changes guard | Accepted (breadcrumbs, `?stack=` and pins superseded by 0101) |
 | [0101](0101-workspace-tab-bar.md) | Workspace tab bar — page navigation plus per-page ephemeral document and tool tabs | Proposed |
+| [0102](0102-work-order-stage-graph-owned-by-server.md) | Work order stage graph owned by the server — applicable stages, cancellation through annulment, merged stage_data | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

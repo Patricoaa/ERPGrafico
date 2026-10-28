@@ -1,27 +1,27 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Drawer, FormFooter, CancelButton, SubmitButton } from "@/components/shared"
+import { useState, useEffect, useMemo } from "react"
+import { Drawer, FormFooter, CancelButton, SubmitButton, ManufacturingConfigFields, ManufacturingSpecsPanel, emptyManufacturingData } from "@/components/shared"
+import type { ManufacturingData, ManufacturingContact, ManufacturingSpecsView } from "@/components/shared"
 import { Button } from "@/components/ui/button"
-import { User, Paintbrush, X } from "lucide-react"
-import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
+import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { ManufacturingSpecsEditor, emptyManufacturingData, type ManufacturingData } from '@/components/shared'
-import { type Contact } from "@/types/entities"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { getDomainConceptTitle } from "@/lib/entity-registry"
+import { DraftMaterialsStep, DraftOutsourcingStep } from "@/features/production"
+import type { DraftMaterial, DraftOutsourcedService } from "@/features/production"
 
 interface AdvancedManufacturingDrawerProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     product: { id: number; manufacturing_data?: Record<string, unknown>;[key: string]: unknown } | null | undefined
     onConfirm: (data: Record<string, unknown>) => void
+    /** Customer of the sale being built; shown apart from the related contact. */
+    customer?: { name: string; tax_id?: string | null } | null
 }
 
-type ContactData = { id: number; name: string; tax_id: string | null; rut?: string | null } | null
-
 interface MfgDataShape {
-    contact?: ContactData
+    contact?: ManufacturingContact | null
     phases?: { prepress?: boolean; press?: boolean; postpress?: boolean }
     specifications?: { prepress?: string; press?: string; postpress?: string }
     design_needed?: boolean
@@ -31,84 +31,126 @@ interface MfgDataShape {
     print_type?: string | null
     description?: string
     product_description?: string
+    materials_draft?: DraftMaterial[]
+    outsourced_draft?: DraftOutsourcedService[]
 }
 
-function asMfgData(val: unknown): MfgDataShape {
-    return val as MfgDataShape
-}
+type StepId = "config" | "materials" | "outsourcing"
 
-export function AdvancedManufacturingDrawer({
-    open, onOpenChange, product, onConfirm
-}: AdvancedManufacturingDrawerProps) {
-    const [contact, setContact] = useState<ContactData>(null)
+const STEPS: { id: StepId; label: string; optional: boolean }[] = [
+    { id: "config", label: "Fabricación", optional: false },
+    { id: "materials", label: "Materiales", optional: true },
+    { id: "outsourcing", label: "Tercerizados", optional: true },
+]
+
+export function AdvancedManufacturingDrawer({ open, onOpenChange, product, onConfirm, customer }: AdvancedManufacturingDrawerProps) {
+    const [step, setStep] = useState<StepId>("config")
+    const [contact, setContact] = useState<ManufacturingContact | null>(null)
     const [data, setData] = useState<ManufacturingData>(() => emptyManufacturingData())
+    const [materials, setMaterials] = useState<DraftMaterial[]>([])
+    const [outsourced, setOutsourced] = useState<DraftOutsourcedService[]>([])
 
     // Sync from product on open
     useEffect(() => {
         if (!open || !product) return
+        const prod = product as Record<string, unknown>
+        const saved = prod.manufacturing_data as MfgDataShape | undefined
 
-        const prod = product as unknown as Record<string, unknown>
-        const mfgData = asMfgData(prod?.manufacturing_data)
-
-        if (mfgData) {
-            requestAnimationFrame(() => {
-                setContact(mfgData.contact ?? null)
-                setData({
+        requestAnimationFrame(() => {
+            setStep("config")
+            setContact(saved?.contact ?? null)
+            setMaterials(saved?.materials_draft ?? [])
+            setOutsourced(saved?.outsourced_draft ?? [])
+            setData(saved
+                ? {
                     phases: {
-                        prepress: mfgData.phases?.prepress ?? !!prod.mfg_enable_prepress,
-                        press: mfgData.phases?.press ?? !!prod.mfg_enable_press,
-                        postpress: mfgData.phases?.postpress ?? !!prod.mfg_enable_postpress,
+                        prepress: saved.phases?.prepress ?? !!prod.mfg_enable_prepress,
+                        press: saved.phases?.press ?? !!prod.mfg_enable_press,
+                        postpress: saved.phases?.postpress ?? !!prod.mfg_enable_postpress,
                     },
                     specifications: {
-                        prepress: mfgData.specifications?.prepress || '',
-                        press: mfgData.specifications?.press || '',
-                        postpress: mfgData.specifications?.postpress || '',
+                        prepress: saved.specifications?.prepress || '',
+                        press: saved.specifications?.press || '',
+                        postpress: saved.specifications?.postpress || '',
                     },
-                    design_needed: mfgData.design_needed || false,
-                    design_files: mfgData.design_files || [],
+                    design_needed: saved.design_needed || false,
+                    design_files: saved.design_files || [],
                     existing_design_files: [],
-                    folio_enabled: mfgData.folio_enabled || false,
-                    folio_start: mfgData.folio_start || '',
-                    print_type: (mfgData.print_type as "offset" | "digital" | "especial") || null,
-                    internal_notes: mfgData.description || '',
-                    product_description: mfgData.product_description || '',
-                })
-            })
-        } else {
-            requestAnimationFrame(() => {
-                setContact(null)
-                setData(emptyManufacturingData({
-                mfg_enable_prepress: prod?.mfg_enable_prepress as boolean | undefined,
-                mfg_enable_press: prod?.mfg_enable_press as boolean | undefined,
-                mfg_enable_postpress: prod?.mfg_enable_postpress as boolean | undefined,
-                mfg_prepress_design: prod?.mfg_prepress_design as boolean | undefined,
-                mfg_prepress_folio: prod?.mfg_prepress_folio as boolean | undefined,
-                mfg_press_offset: prod?.mfg_press_offset as boolean | undefined,
-                mfg_press_digital: prod?.mfg_press_digital as boolean | undefined,
-                mfg_press_special: prod?.mfg_press_special as boolean | undefined,
-            }))
-            })
-        }
+                    folio_enabled: saved.folio_enabled || false,
+                    folio_start: saved.folio_start || '',
+                    print_type: (saved.print_type as ManufacturingData['print_type']) || null,
+                    internal_notes: saved.description || '',
+                    product_description: saved.product_description || '',
+                }
+                : emptyManufacturingData({
+                    mfg_enable_prepress: prod.mfg_enable_prepress as boolean | undefined,
+                    mfg_enable_press: prod.mfg_enable_press as boolean | undefined,
+                    mfg_enable_postpress: prod.mfg_enable_postpress as boolean | undefined,
+                    mfg_prepress_design: prod.mfg_prepress_design as boolean | undefined,
+                    mfg_prepress_folio: prod.mfg_prepress_folio as boolean | undefined,
+                    mfg_press_offset: prod.mfg_press_offset as boolean | undefined,
+                    mfg_press_digital: prod.mfg_press_digital as boolean | undefined,
+                    mfg_press_special: prod.mfg_press_special as boolean | undefined,
+                }))
+        })
     }, [open, product])
+
+    const p = (product ?? {}) as Record<string, unknown>
+    const productName = (p.product_name ?? p.name ?? p.description ?? "Producto") as string
+    const qty = (p.qty ?? p.quantity) as number | string | undefined
+    const uomName = (p.uom_name as string | undefined) ?? "und"
+    const requiresDescription = p.product_type === 'MANUFACTURABLE' && !p.has_bom
+    const anyPhaseEnabled = data.phases.prepress || data.phases.press || data.phases.postpress
+
+    const view = useMemo<ManufacturingSpecsView>(() => ({
+        product: { name: productName, quantity: qty ?? null, uomName },
+        productDescription: data.product_description,
+        customer: customer ? { name: customer.name, taxId: customer.tax_id } : null,
+        contact: contact ? { name: contact.name, taxId: contact.tax_id } : null,
+        phases: data.phases,
+        specifications: data.specifications,
+        designNeeded: data.design_needed,
+        designFiles: [...data.existing_design_files, ...data.design_files.map(f => f.name)],
+        folioEnabled: data.folio_enabled,
+        folioStart: data.folio_start,
+        printType: data.print_type,
+    }), [productName, qty, uomName, data, contact, customer])
 
     if (!product) return null
 
-    const p = product as unknown as Record<string, unknown>
-    const showProductDescription = p.product_type === 'MANUFACTURABLE' && !p.has_bom
-    const anyPhaseEnabled = data.phases.prepress || data.phases.press || data.phases.postpress
+    const counts: Record<StepId, number | null> = {
+        config: null,
+        materials: materials.length || null,
+        outsourcing: outsourced.length || null,
+    }
 
-    const handleConfirm = () => {
-        if (showProductDescription && !data.product_description?.trim()) {
+    const validateConfig = (): boolean => {
+        if (requiresDescription && !data.product_description?.trim()) {
             toast.error(`La descripción del producto es obligatoria para productos sin ${getDomainConceptTitle('ldm').toLowerCase()}.`)
-            return
+            setStep("config")
+            return false
         }
         if (!anyPhaseEnabled) {
             toast.error("Debe habilitar al menos una etapa de fabricación")
-            return
+            setStep("config")
+            return false
         }
+        return true
+    }
+
+    const stepIndex = STEPS.findIndex(s => s.id === step)
+    const isLast = stepIndex === STEPS.length - 1
+
+    const goNext = () => {
+        if (step === "config" && !validateConfig()) return
+        setStep(STEPS[stepIndex + 1].id)
+    }
+
+    const handleConfirm = () => {
+        if (!validateConfig()) return
         onConfirm({
             design_needed: data.design_needed,
-            contact: contact ? { id: contact.id, name: contact.name, tax_id: contact.tax_id || contact.rut } : null,
+            contact: contact ? { id: contact.id, name: contact.name, tax_id: contact.tax_id } : null,
             description: data.internal_notes,
             product_description: data.product_description,
             design_files: data.design_files,
@@ -117,6 +159,8 @@ export function AdvancedManufacturingDrawer({
             phases: data.phases,
             specifications: data.specifications,
             print_type: data.print_type,
+            materials_draft: materials,
+            outsourced_draft: outsourced,
         })
         onOpenChange(false)
     }
@@ -128,66 +172,65 @@ export function AdvancedManufacturingDrawer({
             side="left"
             defaultSize={formDrawerWidth("master", false)}
             contentClassName="p-0"
+            fillContent
             title={
-                <div className="flex items-center gap-6 p-4">
-                    <div className="p-4 rounded-md bg-primary text-primary-foreground shadow-elevated animate-in spin-in-12 duration-300 fill-mode-both ease-premium">
-                        <Paintbrush className="h-8 w-8" />
+                <div className="px-6 pt-5 pb-3 space-y-3">
+                    <div>
+                        <div className="text-xl font-black tracking-tight text-foreground">Fabricación</div>
+                        <p className="text-xs font-medium text-muted-foreground truncate">{productName}</p>
                     </div>
-                    <div className="space-y-1">
-                        <div className="text-3xl font-black tracking-tighter uppercase  text-foreground">Fabricación</div>
-                        <p className="text-xs font-mono uppercase tracking-looser text-muted-foreground">
-                            {p.name as string} {"// REF:"} {p.code as string}
-                        </p>
-                    </div>
+                    <nav aria-label="Pasos de fabricación" className="flex gap-1">
+                        {STEPS.map((s, i) => (
+                            <Button
+                                key={s.id}
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                aria-current={s.id === step ? "step" : undefined}
+                                onClick={() => (s.id === "config" || validateConfig()) && setStep(s.id)}
+                                className={cn(
+                                    "h-8 gap-2 rounded-md px-3 text-3xs font-black uppercase tracking-wider",
+                                    s.id === step ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : "text-muted-foreground"
+                                )}
+                            >
+                                <span className="font-mono tabular-nums">{i + 1}</span>
+                                {s.label}
+                                {counts[s.id] !== null && <span className="font-mono tabular-nums opacity-80">({counts[s.id]})</span>}
+                                {s.optional && s.id !== step && <span className="text-4xs font-black opacity-70">opcional</span>}
+                            </Button>
+                        ))}
+                    </nav>
                 </div>
             }
             footer={
                 <FormFooter
                     actions={
                         <>
-                            <CancelButton onClick={() => onOpenChange(false)} />
-                            <SubmitButton onClick={handleConfirm}>
-                                Validar Producción
-                            </SubmitButton>
+                            {stepIndex === 0
+                                ? <CancelButton onClick={() => onOpenChange(false)} />
+                                : <Button type="button" variant="outline" onClick={() => setStep(STEPS[stepIndex - 1].id)}>Atrás</Button>}
+                            {!isLast && <Button type="button" variant="outline" onClick={goNext}>Siguiente</Button>}
+                            <SubmitButton onClick={handleConfirm}>Validar Producción</SubmitButton>
                         </>
                     }
                 />
             }
         >
-            <div className="flex-1 overflow-y-auto">
-                <div className="grid gap-8 p-8 py-6">
-                    {/* Contact */}
-                    <div className="space-y-1">
-                        <span className="text-3xs font-bold uppercase tracking-widest text-primary">01. Contacto / Referencia</span>
-                        {contact ? (
-                            <div className="flex items-center justify-between p-2 bg-primary/5 border-l-4 border-primary">
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                    <User className="h-4 w-4 text-primary shrink-0" />
-                                    <span className="text-sm font-bold tracking-tight">{contact.name}</span>
-                                </div>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive" onClick={() => setContact(null)}>
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ) : (
-                            <AdvancedContactSelector
-                                onSelectContact={setContact as unknown as (contact: Contact) => void}
-                                onChange={() => { }}
-                                placeholder="IDENTIFICAR CLIENTE O RESPONSABLE..."
-                                className="border-none shadow-none focus-visible:ring-0 h-9"
-                            />
-                        )}
-                    </div>
-
-                    {/* Manufacturing specs */}
-                    <ManufacturingSpecsEditor
-                        value={data}
-                        onChange={setData}
-                        showProductDescription={showProductDescription}
-                        showInternalNotes
-                        variant="modal"
-                    />
+            <div className="flex flex-1 min-h-0 h-full">
+                <div className="flex-1 min-w-0 overflow-y-auto p-6 space-y-4">
+                    {step === "config" && (
+                        <ManufacturingConfigFields data={data} onDataChange={setData} contact={contact} onContactChange={setContact} />
+                    )}
+                    {step === "materials" && (
+                        <DraftMaterialsStep items={materials} onChange={setMaterials} />
+                    )}
+                    {step === "outsourcing" && (
+                        <DraftOutsourcingStep items={outsourced} onChange={setOutsourced} />
+                    )}
                 </div>
+                <aside aria-label="Resumen de fabricación" className="hidden xl:block w-64 shrink-0 self-stretch border-l overflow-y-auto p-5">
+                    <ManufacturingSpecsPanel view={view} />
+                </aside>
             </div>
         </Drawer>
     )

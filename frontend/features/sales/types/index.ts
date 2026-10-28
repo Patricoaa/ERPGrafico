@@ -7,6 +7,8 @@ export type DeliveryStatus = 'PENDING' | 'PARTIAL' | 'DELIVERED'
 
 export interface SaleOrderLine {
     id?: number
+    /** Id of the persisted line when a checkout reuses `id` for the product (existing order). */
+    line_id?: number
     product?: string | number | {
         id: number;
         name: string;

@@ -134,6 +134,14 @@ class WorkflowService:
                 raise PermissionDenied("No tienes permisos para completar esta tarea asignada a otro usuario.")
             if task.assigned_group and not user.groups.filter(id=task.assigned_group.id).exists():
                 raise PermissionDenied(f"No tienes permisos para completar esta tarea. Debes pertenecer al grupo '{task.assigned_group.name}'.")
+            # Pool tasks (create_task) carry the group by name in data, not in assigned_group
+            candidate_group = (task.data or {}).get("candidate_group")
+            if (
+                not task.assigned_to
+                and candidate_group
+                and not user.groups.filter(name=candidate_group).exists()
+            ):
+                raise PermissionDenied(f"No tienes permisos para completar esta tarea. Debes pertenecer al grupo '{candidate_group}'.")
 
         task.status = Task.Status.COMPLETED
         task.completed_at = timezone.now()
@@ -610,6 +618,12 @@ class WorkflowService:
             pass
 
     @staticmethod
+    def stage_task_type(stage):
+        """Approval task type of a work-order stage (MATERIAL_APPROVAL's type has no suffix)."""
+        stage = str(stage)
+        return f"OT_{stage}" if stage.endswith("_APPROVAL") else f"OT_{stage}_APPROVAL"
+
+    @staticmethod
     def reset_tasks_for_object(content_object, stage_ids=None):
         """
         Resets completed approval tasks for a given object to PENDING.
@@ -629,7 +643,7 @@ class WorkflowService:
         # We assume OT_STAGE_ID_APPROVAL is the task type pattern
         if stage_ids:
             # Create a list of task types to match
-            task_types = [f"OT_{stage}_APPROVAL" for stage in stage_ids]
+            task_types = [WorkflowService.stage_task_type(stage) for stage in stage_ids]
             query = query.filter(task_type__in=task_types)
 
         reset_count = query.update(status=Task.Status.PENDING, completed_at=None, completed_by=None)

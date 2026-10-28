@@ -10,7 +10,7 @@ import { BOMDrawer } from "./BOMDrawer"
 
 import { ActionConfirmModal, LabeledSelect } from '@/components/shared'
 import { cn } from "@/lib/utils"
-import { getDomainConceptCode, getDomainConceptMessage } from "@/lib/entity-registry"
+import { getDomainConceptCode, getDomainConceptLabel, getDomainConceptMessage, getDomainConceptTitle } from "@/lib/entity-registry"
 import { bomManagerActions, type BOMManagerActionsCtx } from './bomManagerActions'
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { bomManagerEntity, bomManagerViews, type BOMManagerRow } from "../entity-view/bomManager.entity"
@@ -130,7 +130,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                             <div className="flex-1">
                                 <h3 className="text-sm font-black uppercase text-primary tracking-widest flex items-center gap-2 leading-none">
                                     <Workflow className="h-4 w-4 text-primary opacity-50" />
-                                    Estructuras Técnicas ({getDomainConceptCode('ldm')})
+                                    {getDomainConceptTitle('ldm', true)} ({getDomainConceptLabel('ldm')})
                                 </h3>
                                 <p className="text-3xs font-bold uppercase text-muted-foreground mt-1.5 opacity-60">
                                     Gestión de fórmulas y procesos de fabricación
@@ -163,7 +163,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                         onChange={setSelectedVariantId}
                                         className="font-mono h-10"
                                         options={[
-                                            { value: "all", label: "-- Ver Todas las Recetas --" },
+                                            { value: "all", label: "-- Ver todas las LdM --" },
                                             ...variants.map(v => ({
                                                 value: v.id.toString(),
                                                 label: (
@@ -185,7 +185,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                         disabled={selectedVariantId === "all"}
                                     >
                                         <Plus className="h-4 w-4" />
-                                        Configurar Receta
+                                        Configurar LdM
                                     </Button>
                                 </div>
                             </div>
@@ -197,7 +197,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                     <div className="flex justify-between items-center py-4 px-6 border-b bg-background/50">
                         <div className="flex items-center gap-2">
                             <Workflow className="h-4 w-4 text-primary opacity-50" />
-                            <span className="font-bold uppercase text-3xs tracking-widest text-primary">Recetas de esta variante</span>
+                            <span className="font-bold uppercase text-3xs tracking-widest text-primary">LdM de esta variante</span>
                         </div>
                         <Button
                             type="button"
@@ -209,7 +209,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                             variant="outline"
                         >
                             <Plus className="h-3.5 w-3.5" />
-                            Añadir Receta
+                            Añadir LdM
                         </Button>
                     </div>
                 )}
@@ -221,7 +221,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                 <Workflow className="h-10 w-10 text-primary" />
                             </div>
                             <div className="space-y-1.5 max-w-sm">
-                                <p className="text-base font-black uppercase tracking-widest text-primary">Sin recetas de producción</p>
+                                <p className="text-base font-black uppercase tracking-widest text-primary">Sin LdM de producción</p>
                                 <p className="text-sm font-medium text-muted-foreground/80">
                                     Defina la {getDomainConceptCode('ldm')} y el ruteo de etapas para fabricar este producto.
                                 </p>
@@ -233,7 +233,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                     className="gap-2 h-10 px-6 text-xs font-black uppercase tracking-widest shadow-elevated hover:-translate-y-0.5 transition-transform"
                                 >
                                     <Plus className="h-4 w-4" />
-                                    Crear receta base
+                                    Crear LdM base
                                 </Button>
                                 <Button
                                     type="button"
@@ -258,7 +258,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                         >
                             <Collection.View
                                 table={bomManagerViews.table}
-                                emptyTitle="Sin recetas"
+                                emptyTitle="Sin LdM"
                                 emptyDescription="No se encontraron estructuras técnicas."
                             />
                         </Collection.Root>
@@ -290,7 +290,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                 description={
                     <div className="space-y-3 pt-2">
                         <p className="text-sm font-bold uppercase tracking-tight">
-                            ¿Está seguro de que desea eliminar la receta <strong>{bomToDelete?.name}</strong>?
+                            ¿Está seguro de que desea eliminar la LdM <strong>{bomToDelete?.name}</strong>?
                         </p>
                         <p className="text-2xs font-medium text-muted-foreground bg-destructive/5 p-3 border-l-4 border-destructive">
                             Esta acción no se puede deshacer y el producto perderá esta definición técnica de fabricación.

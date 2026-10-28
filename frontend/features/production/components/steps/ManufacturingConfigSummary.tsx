@@ -4,266 +4,126 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { format } from "date-fns"
 import { toast } from "sonner"
-import { Lock, Pencil, Calendar, User, Package, Settings, X, RotateCcw, Copy } from "lucide-react"
+import { Lock, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { cn, parseDateOnly } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { LabeledInput, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
-import { ManufacturingSpecsEditor, emptyManufacturingData } from '@/components/shared'
-import type { ManufacturingData } from "@/components/shared"
-import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { UoMSelector } from "@/components/selectors/UoMSelector"
-import type { Contact } from "@/features/contacts"
+import { ManufacturingConfigFields, emptyManufacturingData } from '@/components/shared'
+import type { ManufacturingData, ManufacturingContact } from "@/components/shared"
 import type { WorkOrder } from "../../types"
-import type { MfgSection } from "../../lib/mfgConfigEditability"
 import { canEditMfgSection } from "../../lib/mfgConfigEditability"
 import { useWizardStore } from "../WorkOrderWizardStore"
 import { productionApi } from "../../api/productionApi"
-import { useUoMs, useWorkOrderIdentityActions } from "../../hooks"
 import { getErrorMessage } from "@/lib/errors"
-import { getDomainConceptTitle, getDomainConceptCode } from "@/lib/entity-registry"
+
+// Fields are controlled by ManufacturingConfigFields; the form only owns submit.
+const mfgConfigSchema = z.object({})
 
 interface ManufacturingConfigSummaryProps {
     order: WorkOrder
     onSaved: () => void
-    onRestartComplete?: () => void
-    onCorrectionComplete?: (newOrderId: number) => void
 }
 
-// ── Section header with optional edit toggle ──────────────────────────────────
-
-interface SectionHeaderProps {
-    icon: React.ReactNode
-    title: string
-    section: MfgSection
-    order: WorkOrder
-    editingSection: MfgSection | null
-    onEdit: (section: MfgSection) => void
-}
-
-function SectionHeader({ icon, title, section, order, editingSection, onEdit }: SectionHeaderProps) {
-    const { canEdit, reason } = canEditMfgSection(section, order)
-    const isEditing = editingSection === section
-
-    return (
-        <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase text-muted-foreground">
-                {icon}
-                {title}
-            </div>
-            {section !== 'identity' && !isEditing && (
-                <TooltipProvider delayDuration={200}>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                disabled={!canEdit || editingSection !== null}
-                                onClick={() => canEdit && editingSection === null && onEdit(section)}
-                                className={cn(
-                                    "flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors",
-                                    canEdit && editingSection === null
-                                        ? "text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
-                                        : "text-muted-foreground/40 cursor-not-allowed"
-                                )}
-                            >
-                                {canEdit ? <Pencil className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-                                {canEdit ? "Editar" : "Bloqueado"}
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="left">
-                            {!canEdit
-                                ? reason
-                                : editingSection !== null
-                                    ? "Guarda o cancela la sección actual antes de editar otra"
-                                    : `Editar ${title.toLowerCase()}`
-                            }
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            )}
-        </div>
-    )
-}
-
-const mfgConfigSchema = z.object({
-    quantity: z.string().optional(),
-    uomId: z.string().optional(),
-    contact: z.unknown().nullable().optional(),
-    startDate: z.date().nullable().optional(),
-    dueDate: z.date().nullable().optional(),
-    notes: z.string().optional(),
-})
-
-type MfgConfigFormValues = z.infer<typeof mfgConfigSchema>
-
-// ── Main component ────────────────────────────────────────────────────────────
-
-export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, onCorrectionComplete }: ManufacturingConfigSummaryProps) {
+/**
+ * Step 3 once the work order exists.
+ *
+ * Product, quantity and dates live in the right rail and the sale order, so this
+ * step only carries what the operator can still change: contact/reference,
+ * job description and per-stage specifications.
+ */
+export function ManufacturingConfigSummary({ order, onSaved }: ManufacturingConfigSummaryProps) {
     const { stepMode, setStepMode } = useWizardStore()
-    const { data: uoms = [] } = useUoMs()
+    const form = useForm({ resolver: zodResolver(mfgConfigSchema) })
     const [saving, setSaving] = useState(false)
-    const [editingSection, setEditingSection] = useState<MfgSection | null>(null)
-    const [isRestartDialogOpen, setIsRestartDialogOpen] = useState(false)
-    const [isCorrectionDialogOpen, setIsCorrectionDialogOpen] = useState(false)
-    const { restart, createCorrection, isRestarting, isCreatingCorrection } = useWorkOrderIdentityActions(order.id)
+    const [editing, setEditing] = useState(false)
 
-    const form = useForm<MfgConfigFormValues>({
-        resolver: zodResolver(mfgConfigSchema),
-        defaultValues: {
-            quantity: "",
-            uomId: "",
-            contact: null,
-            startDate: null,
-            dueDate: null,
-            notes: "",
-        }
+    const stageData = order.stage_data ?? {}
+    // Contact stays editable until the OT closes; specifications freeze with their stage.
+    const { canEdit, reason } = canEditMfgSection('planning', order)
+    const specsLocked = !canEditMfgSection('prepress', order).canEdit
+
+    const toMfgData = (): ManufacturingData => ({
+        phases: {
+            prepress: stageData.phases?.prepress ?? false,
+            press: stageData.phases?.press ?? false,
+            postpress: stageData.phases?.postpress ?? false,
+        },
+        specifications: {
+            prepress: stageData.prepress_specs ?? "",
+            press: stageData.press_specs ?? "",
+            postpress: stageData.postpress_specs ?? "",
+        },
+        design_needed: stageData.design_needed ?? false,
+        design_files: [],
+        existing_design_files: stageData.design_attachments ?? [],
+        folio_enabled: stageData.folio_enabled ?? false,
+        folio_start: stageData.folio_start ?? "",
+        print_type: (stageData.print_type as ManufacturingData['print_type']) ?? null,
+        internal_notes: stageData.internal_notes ?? "",
+        product_description: stageData.product_description ?? "",
     })
+    const toContact = (): ManufacturingContact | null =>
+        stageData.contact_id
+            ? { id: Number(stageData.contact_id), name: stageData.contact_name ?? "", tax_id: stageData.contact_tax_id ?? "" }
+            : null
 
-    const [editMfgData, setEditMfgData] = useState<ManufacturingData>(emptyManufacturingData())
+    const [mfgData, setMfgData] = useState<ManufacturingData>(emptyManufacturingData())
+    const [contact, setContact] = useState<ManufacturingContact | null>(null)
 
     // When wizard footer "Cancelar" resets stepMode → exit edit
     useEffect(() => {
         if (stepMode === 'view') {
-            requestAnimationFrame(() => setEditingSection(null))
+            requestAnimationFrame(() => setEditing(false))
         }
     }, [stepMode])
 
-    const handleRestartConfirm = async () => {
-        try {
-            await restart()
-            toast.success("OT eliminada. Abriendo formulario de creación...")
-            onRestartComplete?.()
-        } catch {
-            // error shown by the hook's onError
-        } finally {
-            setIsRestartDialogOpen(false)
-        }
-    }
-
-    const handleCorrectionConfirm = async () => {
-        try {
-            const result = await createCorrection()
-            toast.success(`OT corregida creada: ${result.display_id}`)
-            onCorrectionComplete?.(result.id)
-        } catch {
-            // error shown by the hook's onError
-        } finally {
-            setIsCorrectionDialogOpen(false)
-        }
-    }
-
-    const handleEditStart = (section: MfgSection) => {
-        setEditingSection(section)
+    const handleEditStart = () => {
+        setMfgData(toMfgData())
+        setContact(toContact())
+        setEditing(true)
         setStepMode('edit-in-place')
-
-        if (section === 'volume') {
-            form.reset({
-                quantity: String(order.quantity ?? order.stage_data?.quantity ?? ""),
-                uomId: String(order.uom_id ?? order.stage_data?.uom_id ?? ""),
-            })
-        }
-        if (section === 'planning') {
-            form.reset({
-                contact: order.stage_data?.contact_id
-                    ? { id: Number(order.stage_data.contact_id), name: order.stage_data.contact_name ?? "", tax_id: order.stage_data.contact_tax_id ?? "" } as Contact
-                    : null,
-                startDate: order.start_date ? parseDateOnly(order.start_date) : null,
-                dueDate: order.due_date ? parseDateOnly(order.due_date) : null,
-                notes: order.stage_data?.internal_notes ?? "",
-            })
-        }
-        if (section === 'prepress' || section === 'press' || section === 'postpress') {
-            setEditMfgData({
-                phases: {
-                    prepress: order.stage_data?.phases?.prepress ?? false,
-                    press: order.stage_data?.phases?.press ?? false,
-                    postpress: order.stage_data?.phases?.postpress ?? false,
-                },
-                specifications: {
-                    prepress: order.stage_data?.prepress_specs ?? "",
-                    press: order.stage_data?.press_specs ?? "",
-                    postpress: order.stage_data?.postpress_specs ?? "",
-                },
-                design_needed: order.stage_data?.design_needed ?? false,
-                design_files: [],
-                existing_design_files: order.stage_data?.design_attachments ?? [],
-                folio_enabled: order.stage_data?.folio_enabled ?? false,
-                folio_start: order.stage_data?.folio_start ?? "",
-                print_type: (order.stage_data?.print_type as ManufacturingData['print_type']) ?? null,
-                internal_notes: order.stage_data?.internal_notes ?? "",
-                product_description: order.stage_data?.product_description ?? "",
-            })
-        }
     }
 
-    const handleSave = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!editingSection || saving) return
+    const handleSave = async () => {
+        if (!editing || saving) return
         setSaving(true)
         try {
-            const values = form.getValues()
             const fd = new FormData()
-
-            if (editingSection === 'volume') {
-                fd.append('stage_data', JSON.stringify({
-                    ...order.stage_data,
-                    quantity: values.quantity,
-                    uom_id: values.uomId,
-                }))
+            if (contact) fd.append('related_contact', String(contact.id))
+            const contactFields = {
+                contact_id: contact?.id ?? null,
+                contact_name: contact?.name ?? null,
+                contact_tax_id: contact?.tax_id ?? null,
             }
-
-            if (editingSection === 'planning') {
-                if (values.startDate) fd.append('start_date', format(values.startDate, 'yyyy-MM-dd'))
-                if (values.dueDate) fd.append('estimated_completion_date', format(values.dueDate, 'yyyy-MM-dd'))
-                if (values.contact) fd.append('related_contact', String((values.contact as Contact).id))
-                fd.append('stage_data', JSON.stringify({
-                    ...order.stage_data,
-                    internal_notes: values.notes,
-                    contact_id: (values.contact as Contact)?.id,
-                    contact_name: (values.contact as Contact)?.name,
-                    contact_tax_id: (values.contact as Contact)?.tax_id,
-                }))
-            }
-
-            if (['prepress', 'press', 'postpress'].includes(editingSection)) {
-                fd.append('stage_data', JSON.stringify({
-                    ...order.stage_data,
-                    phases: editMfgData.phases,
-                    specifications: editMfgData.specifications,
-                    prepress_specs: editMfgData.specifications.prepress,
-                    press_specs: editMfgData.specifications.press,
-                    postpress_specs: editMfgData.specifications.postpress,
-                    design_needed: editMfgData.design_needed,
-                    folio_enabled: editMfgData.folio_enabled,
-                    folio_start: editMfgData.folio_start,
-                    print_type: editMfgData.print_type,
-                    product_description: editMfgData.product_description,
-                }))
-                editMfgData.design_files.forEach((file, i) => {
-                    fd.append(`design_file_${i}`, file)
-                })
-            }
+            // Only the edited keys: the server merges them into the current stage_data
+            fd.append('stage_data', JSON.stringify(specsLocked
+                ? contactFields
+                : {
+                phases: mfgData.phases,
+                specifications: mfgData.specifications,
+                prepress_specs: mfgData.specifications.prepress,
+                press_specs: mfgData.specifications.press,
+                postpress_specs: mfgData.specifications.postpress,
+                design_needed: mfgData.design_needed,
+                folio_enabled: mfgData.folio_enabled,
+                folio_start: mfgData.folio_start,
+                print_type: mfgData.print_type,
+                product_description: mfgData.product_description,
+                ...contactFields,
+            }))
+            if (!specsLocked) mfgData.design_files.forEach((file, i) => {
+                fd.append(`design_file_${i}`, file)
+            })
 
             await productionApi.patchWorkOrder(order.id, fd)
             toast.success("Cambios guardados correctamente")
-            setEditingSection(null)
+            setEditing(false)
             setStepMode('view')
             onSaved()
         } catch (err) {
@@ -273,294 +133,42 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
         }
     }
 
-    const stageData = order.stage_data ?? {}
-    const isLinked = !!(order.sale_order_number || order.sale_order)
-    // Unified accessors — serializer exposes these for both LINKED (from sale_line)
-    // and MANUAL (from stage_data) OTs.
-    const effectiveQuantity = order.quantity ?? stageData.quantity ?? null
-    const effectiveUomName = order.uom_name ?? stageData.uom_name ?? null
-
     return (
-        <form id="wizard-edit-form" onSubmit={handleSave} className="space-y-4">
-
-            {/* ── Card 1: Identidad (always locked) ── */}
-            <div className="border rounded-md p-4 bg-muted/20">
-                <SectionHeader
-                    icon={<Package className="h-3.5 w-3.5" />}
-                    title="Identidad"
-                    section="identity"
-                    order={order}
-                    editingSection={editingSection}
-                    onEdit={handleEditStart}
-                />
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                        <p className="text-xs text-muted-foreground">N° OT</p>
-                        <p className="font-semibold">{order.display_id}</p>
-                    </div>
-                    <div>
-                        <p className="text-xs text-muted-foreground">Producto</p>
-                        <p className="font-medium truncate">{order.product_name}</p>
-                    </div>
-                    {isLinked && (
-                        <div className="col-span-2">
-                            <p className="text-xs text-muted-foreground">{getDomainConceptTitle('ov')}</p>
-                            <p className="font-medium">{getDomainConceptCode('ov')}-{order.sale_order_number ?? order.sale_order?.number ?? '—'}</p>
-                        </div>
-                    )}
-                </div>
-                <div className="mt-3 pt-3 border-t flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-muted-foreground">¿Producto o OV incorrecto?</span>
-                    {order.status === 'DRAFT' && (
+        <form id="wizard-edit-form" onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
+            <div className={cn("border rounded-md p-4", editing && "border-info/40 bg-info/5")}>
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xs font-bold uppercase text-muted-foreground">Configuración de fabricación</h3>
+                    {!editing && (
                         <TooltipProvider delayDuration={200}>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                                        disabled={isRestarting || isCreatingCorrection}
-                                        onClick={() => setIsRestartDialogOpen(true)}
-                                    >
-                                        <RotateCcw className="h-3 w-3 mr-1" />
-                                        Empezar de cero
-                                    </Button>
+                                    <span>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            disabled={!canEdit}
+                                            onClick={handleEditStart}
+                                            className="flex items-center gap-1 text-xs px-2 py-1"
+                                        >
+                                            {canEdit ? <Pencil className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+                                            {canEdit ? "Editar" : "Bloqueado"}
+                                        </Button>
+                                    </span>
                                 </TooltipTrigger>
-                                <TooltipContent side="bottom">
-                                    Elimina esta OT y abre el formulario de creación desde el inicio
-                                </TooltipContent>
+                                {!canEdit && <TooltipContent side="left">{reason}</TooltipContent>}
                             </Tooltip>
                         </TooltipProvider>
                     )}
-                    <TooltipProvider delayDuration={200}>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 text-xs"
-                                    disabled={isRestarting || isCreatingCorrection}
-                                    onClick={() => setIsCorrectionDialogOpen(true)}
-                                >
-                                    <Copy className="h-3 w-3 mr-1" />
-                                    Crear OT corregida
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">
-                                Crea una copia editable de esta OT. La original permanece sin cambios.
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
                 </div>
-            </div>
-
-            {/* ── Card 2: Volumen ── */}
-            <div className={cn("border rounded-md p-4", editingSection === 'volume' && "border-info/40 bg-info/5")}>
-                <SectionHeader
-                    icon={<Package className="h-3.5 w-3.5" />}
-                    title="Volumen"
-                    section="volume"
-                    order={order}
-                    editingSection={editingSection}
-                    onEdit={handleEditStart}
-                />
-                {editingSection === 'volume' ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <LabeledInput
-                            label="Cantidad a Fabricar"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            {...form.register("quantity")}
-                        />
-                        <UoMSelector
-                            value={form.watch("uomId") ?? ""}
-                            onChange={(val) => form.setValue("uomId", val)}
-                            uoms={uoms as Parameters<typeof UoMSelector>[0]['uoms']}
-                            context="sale"
-                            variant="standalone"
-                        />
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                            <p className="text-xs text-muted-foreground">Cantidad</p>
-                            <p className="font-medium">{effectiveQuantity ?? "—"}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-muted-foreground">Unidad</p>
-                            <p className="font-medium">{effectiveUomName ?? "—"}</p>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* ── Card 3: Parámetros de fabricación ── */}
-            <div className={cn("border rounded-md p-4", ['prepress', 'press', 'postpress'].includes(editingSection ?? '') && "border-info/40 bg-info/5")}>
-                <SectionHeader
-                    icon={<Settings className="h-3.5 w-3.5" />}
-                    title="Parámetros de Fabricación"
-                    section="prepress"
-                    order={order}
-                    editingSection={editingSection}
-                    onEdit={handleEditStart}
-                />
-                <ManufacturingSpecsEditor
-                    value={['prepress', 'press', 'postpress'].includes(editingSection ?? '') ? editMfgData : {
-                        phases: {
-                            prepress: stageData.phases?.prepress ?? false,
-                            press: stageData.phases?.press ?? false,
-                            postpress: stageData.phases?.postpress ?? false,
-                        },
-                        specifications: {
-                            prepress: stageData.prepress_specs ?? "",
-                            press: stageData.press_specs ?? "",
-                            postpress: stageData.postpress_specs ?? "",
-                        },
-                        design_needed: stageData.design_needed ?? false,
-                        design_files: [],
-                        existing_design_files: stageData.design_attachments ?? [],
-                        folio_enabled: stageData.folio_enabled ?? false,
-                        folio_start: stageData.folio_start ?? "",
-                        print_type: (stageData.print_type as ManufacturingData['print_type']) ?? null,
-                        internal_notes: stageData.internal_notes ?? "",
-                        product_description: stageData.product_description ?? "",
-                    }}
-                    onChange={setEditMfgData}
-                    disabled={!['prepress', 'press', 'postpress'].includes(editingSection ?? '')}
-                    showProductDescription={false}
-                    showInternalNotes={false}
-                    variant="inline"
+                <ManufacturingConfigFields
+                    data={editing ? mfgData : toMfgData()}
+                    onDataChange={setMfgData}
+                    contact={editing ? contact : toContact()}
+                    onContactChange={setContact}
+                    disabled={!editing}
+                    specsDisabled={specsLocked}
                 />
             </div>
-
-            {/* ── Card 4: Planificación ── */}
-            <div className={cn("border rounded-md p-4", editingSection === 'planning' && "border-info/40 bg-info/5")}>
-                <SectionHeader
-                    icon={<Calendar className="h-3.5 w-3.5" />}
-                    title="Planificación"
-                    section="planning"
-                    order={order}
-                    editingSection={editingSection}
-                    onEdit={handleEditStart}
-                />
-                {editingSection === 'planning' ? (
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <PeriodValidationDateInput
-                                date={form.watch("startDate") ?? undefined}
-                                onDateChange={(d) => form.setValue("startDate", d ?? null)}
-                                label="Fecha Inicio"
-                                validationType="tax"
-                            />
-                            <PeriodValidationDateInput
-                                date={form.watch("dueDate") ?? undefined}
-                                onDateChange={(d) => form.setValue("dueDate", d ?? null)}
-                                label="Fecha Entrega"
-                                validationType="tax"
-                            />
-                        </div>
-                        <LabeledContainer label="Contacto Relacionado">
-                            {form.watch("contact") ? (
-                                <div className="flex items-center justify-between w-full h-6">
-                                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                        <User className="h-3.5 w-3.5 text-primary shrink-0" />
-                                        <span className="text-sm text-foreground truncate">{(form.watch("contact") as Contact).name}</span>
-                                    </div>
-                                    // typography-allow: meta - clear button
-                                    <Button
-                                        variant="ghost"
-                                        type="button"
-                                        onClick={() => form.setValue("contact", null)}
-                                        className="h-5 w-5 text-muted-foreground hover:text-destructive shrink-0"
-                                    >
-                                        <X className="h-3.5 w-3.5" />
-                                    </Button>
-                                </div>
-                            ) : (
-                                <AdvancedContactSelector
-                                    onSelectContact={(c) => form.setValue("contact", c as Contact)}
-                                    onChange={() => { }}
-                                    placeholder="Buscar contacto..."
-                                    variant="standalone"
-                                    className="h-6 px-0 border-none bg-transparent shadow-none text-sm text-muted-foreground"
-                                />
-                            )}
-                        </LabeledContainer>
-                        <LabeledInput
-                            label="Notas Internas"
-                            {...form.register("notes")}
-                        />
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                            <p className="text-xs text-muted-foreground">Fecha Inicio</p>
-                            <p className="font-medium">
-                                {order.start_date ? format(parseDateOnly(order.start_date), 'dd/MM/yyyy') : "—"}
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-muted-foreground">Fecha Entrega</p>
-                            <p className="font-medium">
-                                {order.due_date ? format(parseDateOnly(order.due_date), 'dd/MM/yyyy') : "—"}
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-muted-foreground">Contacto</p>
-                            <p className="font-medium">{stageData.contact_name ?? "—"}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-muted-foreground">Notas</p>
-                            <p className="text-muted-foreground text-xs truncate">{stageData.internal_notes || "—"}</p>
-                        </div>
-                    </div>
-                )}
-            </div>
-        {/* ── Restart confirmation ── */}
-        <AlertDialog open={isRestartDialogOpen} onOpenChange={setIsRestartDialogOpen}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Eliminar y empezar de cero</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Esta acción eliminará permanentemente la OT <strong>{order.display_id}</strong> y abrirá el formulario de creación desde el principio. No se puede deshacer.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isRestarting}>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        disabled={isRestarting}
-                        onClick={handleRestartConfirm}
-                    >
-                        {isRestarting ? "Eliminando..." : "Eliminar y empezar de cero"}
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-
-        {/* ── Correction confirmation ── */}
-        <AlertDialog open={isCorrectionDialogOpen} onOpenChange={setIsCorrectionDialogOpen}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Crear OT corregida</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Se creará una copia de <strong>{order.display_id}</strong> que podrás modificar libremente. La OT original permanecerá sin cambios.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isCreatingCorrection}>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                        disabled={isCreatingCorrection}
-                        onClick={handleCorrectionConfirm}
-                    >
-                        {isCreatingCorrection ? "Creando..." : "Crear OT corregida"}
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
         </form>
     )
 }

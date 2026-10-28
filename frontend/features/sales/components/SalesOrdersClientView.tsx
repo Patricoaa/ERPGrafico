@@ -70,6 +70,7 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
                          order={payingOrder}
                          orderLines={(payingOrder?.lines || checkoutData?.lines || []).map((l: SaleOrderLine) => ({
                              ...l,
+                             line_id: l.id,
                              id: l.product as number,
                              product_name: l.product_name || l.description,
                              name: l.product_name || l.description,

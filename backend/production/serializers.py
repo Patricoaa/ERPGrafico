@@ -159,17 +159,34 @@ class WorkOrderWriteSerializer(serializers.ModelSerializer):
             "stage_data",
             "estimated_completion_date",
             "start_date",
-            "end_date",
             "no_materials_required",
             "is_manual",
             "status",
             "current_stage",
             "actual_quantity_produced",
             "is_rectified",
-            "rectified_from",
-            "notes",
         ]
         read_only_fields = ["id", "number", "status", "current_stage", "is_rectified"]
+
+    def validate_stage_data(self, value):
+        # Multipart requests send stage_data as a JSON string
+        if isinstance(value, str):
+            import json
+
+            try:
+                value = json.loads(value)
+            except json.JSONDecodeError as exc:
+                raise serializers.ValidationError("stage_data no es JSON válido.") from exc
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("stage_data debe ser un objeto.")
+        return value
+
+    def update(self, instance, validated_data):
+        # stage_data is merged, not replaced: a client sends the keys it edits, and keys
+        # written meanwhile by the server (approval, rectification snapshot…) survive.
+        if "stage_data" in validated_data:
+            validated_data["stage_data"] = {**(instance.stage_data or {}), **validated_data["stage_data"]}
+        return super().update(instance, validated_data)
 
 class WorkOrderSerializer(serializers.ModelSerializer):
     consumptions = ProductionConsumptionSerializer(many=True, read_only=True)
@@ -216,6 +233,9 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     workflow_tasks = serializers.SerializerMethodField()
     production_discrepancy = serializers.SerializerMethodField()
     side_effects = serializers.SerializerMethodField()
+    # Stage graph owned by the server: the wizard rail and "Siguiente" follow it.
+    stage_plan = serializers.SerializerMethodField()
+    next_stage = serializers.SerializerMethodField()
 
     # Unified accessors for product/volume that work for both LINKED (sale_line)
     # and MANUAL (product + stage_data) OTs.
@@ -237,6 +257,16 @@ class WorkOrderSerializer(serializers.ModelSerializer):
         from .services import WorkOrderService
 
         return WorkOrderService.check_side_effects(obj)
+
+    def get_stage_plan(self, obj):
+        from .services import WorkOrderService
+
+        return WorkOrderService.stage_plan(obj)
+
+    def get_next_stage(self, obj):
+        from .services import WorkOrderService
+
+        return WorkOrderService.next_stage(obj)
 
     def get_product_name(self, obj):
         if obj.sale_line and obj.sale_line.product:
@@ -319,40 +349,15 @@ class WorkOrderSerializer(serializers.ModelSerializer):
             return obj.sale_order.customer.tax_id
         return ""
 
+    # The model is the single source for the phase flags (the transition guard reads it too).
     def get_requires_prepress(self, obj):
-        # 1. Try stage_data (specific for this order)
-        if obj.stage_data and "phases" in obj.stage_data:
-            return obj.stage_data["phases"].get("prepress", False)
-        # 2. Fallback to product default
-        if obj.sale_line and obj.sale_line.product:
-            return (
-                obj.sale_line.product.mfg_profile.mfg_enable_prepress
-                if obj.sale_line.product.mfg_profile
-                else False
-            )
-        return False
+        return obj.requires_prepress
 
     def get_requires_press(self, obj):
-        if obj.stage_data and "phases" in obj.stage_data:
-            return obj.stage_data["phases"].get("press", False)
-        if obj.sale_line and obj.sale_line.product:
-            return (
-                obj.sale_line.product.mfg_profile.mfg_enable_press
-                if obj.sale_line.product.mfg_profile
-                else False
-            )
-        return False
+        return obj.requires_press
 
     def get_requires_postpress(self, obj):
-        if obj.stage_data and "phases" in obj.stage_data:
-            return obj.stage_data["phases"].get("postpress", False)
-        if obj.sale_line and obj.sale_line.product:
-            return (
-                obj.sale_line.product.mfg_profile.mfg_enable_postpress
-                if obj.sale_line.product.mfg_profile
-                else False
-            )
-        return False
+        return obj.requires_postpress
 
     def get_main_product_id(self, obj):
         if obj.sale_line and obj.sale_line.product_id:
@@ -552,7 +557,10 @@ class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
     component_cost = serializers.DecimalField(
         source="component.cost_price", max_digits=12, decimal_places=0, read_only=True
     )
+    # component_cost is per component_uom (the component's base unit), not per the line's uom.
+    component_uom = serializers.IntegerField(source="component.uom_id", read_only=True)
     uom_name = serializers.CharField(source="uom.name", read_only=True)
+    uom_category = serializers.IntegerField(source="uom.category_id", read_only=True)
     component_stock = serializers.SerializerMethodField()
     supplier_name = serializers.CharField(source="supplier.name", read_only=True)
 
@@ -564,10 +572,12 @@ class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
             "component_code",
             "component_name",
             "component_cost",
+            "component_uom",
             "component_stock",
             "quantity",
             "uom",
             "uom_name",
+            "uom_category",
             "is_outsourced",
             "supplier",
             "supplier_name",

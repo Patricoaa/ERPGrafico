@@ -155,6 +155,10 @@ export interface WorkOrder {
         delta: number
     } | null
     side_effects?: WorkOrderSideEffects
+    /** Stages of this OT in order, as the server's stage graph sees them. */
+    stage_plan?: StageId[]
+    /** Stage the "Siguiente" action leads to (server-computed). */
+    next_stage?: StageId | null
 }
 
 export interface BOMLine {
@@ -163,6 +167,8 @@ export interface BOMLine {
     component_name?: string
     component_code?: string
     component_cost?: number
+    /** Component's base UoM: component_cost is expressed per this unit. */
+    component_uom?: number
     quantity: number
     uom?: string | number
     uom_name?: string
@@ -240,7 +246,7 @@ export interface ProductVariantMinimal extends ProductMinimal {
 
 // ── Wizard navigation governance ──────────────────────────────────────────────
 
-export type WizardStepMode = 'view' | 'edit-in-place' | 'rewind'
+export type WizardStepMode = 'view' | 'edit-in-place'
 
 export interface StepCapabilities {
     canView: boolean
@@ -257,4 +263,8 @@ export interface WorkOrderSideEffects {
     has_stock_movements: boolean
     completed_tasks_count: number
     manually_edited_materials_count: number
+    /** Irreversible effects that block a rewind (the only ones the server enforces). */
+    rewind_blockers?: string[]
+    /** Blockers per reopenable stage: purchase orders only block reopening outsourcing. */
+    rewind_blockers_by_stage?: Record<string, string[]>
 }

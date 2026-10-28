@@ -77,31 +77,30 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 | Status | Intent | Transitions allowed to |
 |--------|--------|------------------------|
 | `DRAFT` | `info` | `IN_PROGRESS`, `CANCELLED` |
-| `IN_PROGRESS` | `warning` | `FINISHED`, `CANCELLED` |
+| `IN_PROGRESS` | `warning` | `FINISHED`, `CANCELLED`, `DRAFT` (rewind to `MATERIAL_ASSIGNMENT` / `MATERIAL_APPROVAL`) |
 | `FINISHED` | `success` | — (terminal) |
 | `CANCELLED` | `destructive` | — (terminal) |
 
-### Stage (multi-stage pipeline)
+### Stage (multi-stage pipeline) — ADR-0102
 
-| Stage | Intent | Next stages |
-|-------|--------|-------------|
-| `MATERIAL_ASSIGNMENT` | `info` | `MATERIAL_APPROVAL`, `CANCELLED` |
-| `MATERIAL_APPROVAL` | `warning` | `OUTSOURCING_ASSIGNMENT`, `PREPRESS`, `CANCELLED` |
-| `OUTSOURCING_ASSIGNMENT` | `info` | `PREPRESS`, `CANCELLED` |
-| `PREPRESS` | `info` | `PRESS`, `CANCELLED` |
-| `PRESS` | `primary` | `POSTPRESS`, `CANCELLED` |
-| `POSTPRESS` | `primary` | `OUTSOURCING_VERIFICATION`, `RECTIFICATION`, `CANCELLED` |
-| `OUTSOURCING_VERIFICATION` | `info` | `RECTIFICATION`, `CANCELLED` |
-| `RECTIFICATION` | `warning` | `FINISHED`, `CANCELLED` |
-| `FINISHED` | `success` | — (terminal) |
-| `CANCELLED` | `destructive` | — (terminal) |
+Sequence: `MATERIAL_ASSIGNMENT` → `MATERIAL_APPROVAL` → `OUTSOURCING_ASSIGNMENT` → `PREPRESS` → `PRESS` → `POSTPRESS` → `OUTSOURCING_VERIFICATION` → `RECTIFICATION` → `FINISHED`. `CANCELLED` is outside the sequence.
+
+| Stage | Intent | Mandatory (cannot be skipped) when |
+|-------|--------|-----------------------------------|
+| `MATERIAL_ASSIGNMENT` | `info` | — (start) |
+| `MATERIAL_APPROVAL` | `warning` | the OT has own (non-outsourced) materials |
+| `OUTSOURCING_ASSIGNMENT` | `info` | never (optional) |
+| `PREPRESS` / `PRESS` / `POSTPRESS` | `info` / `primary` / `primary` | the OT requires the phase (only reachable then) |
+| `OUTSOURCING_VERIFICATION` | `info` | the OT has outsourced services |
+| `RECTIFICATION` | `warning` | always |
+| `FINISHED` | `success` | — (terminal; only from `RECTIFICATION`, or directly by the Express flow) |
+| `CANCELLED` | `destructive` | — (terminal; only through annulment) |
 
 **Stage rules:**
-- Forward transitions governed by allowlist per stage.
-- Backward moves to non-terminal stages permitted (resets approval tasks).
-- Terminal stages (`FINISHED`, `CANCELLED`) cannot transition out.
-- PREPRESS/PRESS/POSTPRESS only allowed if product enables them.
-- Cancellation limit: typically PRESS (if available) or earlier.
+- Forward: to any later stage, skipping only non-mandatory ones (`allowed_forward_stages`). The serializer exposes `stage_plan` and `next_stage`; the wizard follows them.
+- Backward: to any earlier stage with a reason; blocked by stock consumptions, and by confirmed purchase orders only when reopening `OUTSOURCING_ASSIGNMENT` or earlier (`side_effects.rewind_blockers_by_stage`). Bulk moves cannot rewind.
+- `CANCELLED` goes through `annul_work_order` (limit stage `is_cancellable`, no consumptions; cancels pending purchase orders and open tasks).
+- Terminal stages (`FINISHED`, `CANCELLED`) cannot transition out. A move to the current stage is rejected.
 
 **Edit restrictions:** Terminal stages (`FINISHED`, `CANCELLED`) block all edits. Identity fields (`product`, `sale_order`, `sale_line`) immutable post-creation. Campos inmutables: `id`, `number`, `status`, `current_stage`.
 

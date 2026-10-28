@@ -41,10 +41,12 @@ export function useSaleOrderSearch(): UseSaleOrderSearchReturn {
             if (search) params.append("search", search)
             params.append("limit", "50")
 
-            const data = await ordersApi.searchSaleOrders({
+            const response = await ordersApi.searchSaleOrders({
                 search: search || undefined,
-                limit: '50',
-            }) as SaleOrder[]
+                page_size: '50',
+            }) as SaleOrder[] | { results?: SaleOrder[] }
+            // The list endpoint is paginated ({ count, results }); older callers got an array.
+            const data = Array.isArray(response) ? response : (response.results ?? [])
 
             globalCache[cacheKey] = data
             setOrders(data)

@@ -375,12 +375,12 @@ export function VariantQuickEditForm({
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-sm font-black uppercase tracking-widest text-foreground">
-                  Recetas de esta Variante
+                  LdM de esta variante
                 </h4>
                 <p className="text-2xs text-muted-foreground mt-0.5">
                   {availableBOMs.length > 0
-                    ? `${availableBOMs.length} receta(s) configurada(s) para esta variante.`
-                    : "Esta variante aún no tiene recetas de producción propias."}
+                    ? `${availableBOMs.length} LdM configurada(s) para esta variante.`
+                    : "Esta variante aún no tiene LdM de producción propias."}
                 </p>
               </div>
               {availableBOMs.length > 0
@@ -412,7 +412,7 @@ export function VariantQuickEditForm({
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-muted-foreground hover:text-primary"
-                        title="Editar receta"
+                        title="Editar LdM"
                         onClick={() => { setBomToEdit(bom); setBomModalOpen(true) }}
                       >
                         <Pencil className="h-3.5 w-3.5" />
@@ -423,7 +423,7 @@ export function VariantQuickEditForm({
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                        title="Eliminar receta"
+                        title="Eliminar LdM"
                         onClick={() => bom.id !== undefined && handleDeleteBOM(bom.id)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -435,9 +435,9 @@ export function VariantQuickEditForm({
             ) : (
               <div className="rounded-md border border-dashed border-muted-foreground/30 p-6 text-center bg-muted/5">
                 <Factory className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-                <p className="text-xs text-muted-foreground font-medium">Sin recetas de producción</p>
+                <p className="text-xs text-muted-foreground font-medium">Sin LdM de producción</p>
                 <p className="text-3xs text-muted-foreground/70 mt-1">
-                  Cree una nueva receta o clone desde el template padre u otra variante.
+                  Cree una nueva LdM o clone desde el template padre u otra variante.
                 </p>
               </div>
             )}
@@ -450,7 +450,7 @@ export function VariantQuickEditForm({
               onClick={() => { setBomToEdit(undefined); setBomModalOpen(true) }}
             >
               <PlusCircle className="h-3.5 w-3.5 mr-2" />
-              Nueva Receta
+              Nueva LdM
             </Button>
 
             {/* Divider */}
@@ -490,7 +490,7 @@ export function VariantQuickEditForm({
                   onClick={handleCloneBOM}
                 >
                   <Copy className="h-4 w-4 mr-2" />
-                  Clonar LDM y Guardar
+                  Clonar LdM y guardar
                 </Button>
               </div>
             )}

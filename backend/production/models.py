@@ -217,34 +217,29 @@ class WorkOrder(models.Model):
             }
         return None
 
+    def _requires_phase(self, phase):
+        # 1. The OT's own configuration (stage_data.phases)
+        if isinstance(self.stage_data, dict) and "phases" in self.stage_data:
+            return bool((self.stage_data["phases"] or {}).get(phase, False))
+        # 2. Fallback to the product default: profile first, then the legacy field
+        product = self.product or (self.sale_line.product if self.sale_line else None)
+        if not product:
+            return False
+        field = f"mfg_enable_{phase}"
+        profile = product.mfg_profile
+        return bool(getattr(profile, field) if profile else getattr(product, field))
+
     @property
     def requires_prepress(self):
-        # 1. Try stage_data (specific for this order)
-        if isinstance(self.stage_data, dict) and "phases" in self.stage_data:
-            return self.stage_data["phases"].get("prepress", False)
-        # 2. Fallback to product default
-        product = self.product or (self.sale_line.product if self.sale_line else None)
-        if product:
-            return product.mfg_enable_prepress
-        return False
+        return self._requires_phase("prepress")
 
     @property
     def requires_press(self):
-        if isinstance(self.stage_data, dict) and "phases" in self.stage_data:
-            return self.stage_data["phases"].get("press", False)
-        product = self.product or (self.sale_line.product if self.sale_line else None)
-        if product:
-            return product.mfg_enable_press
-        return False
+        return self._requires_phase("press")
 
     @property
     def requires_postpress(self):
-        if isinstance(self.stage_data, dict) and "phases" in self.stage_data:
-            return self.stage_data["phases"].get("postpress", False)
-        product = self.product or (self.sale_line.product if self.sale_line else None)
-        if product:
-            return product.mfg_enable_postpress
-        return False
+        return self._requires_phase("postpress")
 
     @property
     def cancellation_limit_stage(self):

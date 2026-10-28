@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useSaleOrderSearch } from "@/features/orders";
 import { useSaleOrderManufacturableLines } from "../../hooks/useSaleOrderManufacturableLines";
@@ -32,20 +32,33 @@ interface SaleOrderProductStepProps {
     saleLineId?: string
   ) => void;
   initialOtType?: "LINKED" | "NONE" | null;
+  /** Opened from a sale order ("Crear OT"): preselect it and, with a line, go on with it. */
+  initialSaleOrderId?: string;
+  initialSaleLineId?: string;
 }
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 export function SaleOrderProductStep({
   onChooseProduct,
-  initialOtType
+  initialOtType,
+  initialSaleOrderId,
+  initialSaleLineId,
 }: SaleOrderProductStepProps) {
   const [otType] = useState<"LINKED" | "NONE" | null>(
     initialOtType ?? null
   );
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(initialSaleOrderId || null);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [search, setSearch] = useState<string>("");
 
-  const { orders, loading } = useSaleOrderSearch();
+  const { orders, loading, fetchOrders } = useSaleOrderSearch();
+
+  // Load the orders on open and follow the search box
+  useEffect(() => {
+    const handle = setTimeout(() => { void fetchOrders(search.trim()) }, search ? SEARCH_DEBOUNCE_MS : 0);
+    return () => clearTimeout(handle);
+  }, [search, fetchOrders]);
 
   const { data: lines = [], isLoading: loadingLines } = useSaleOrderManufacturableLines(
     selectedOrderId ? selectedOrderId : undefined,
@@ -59,23 +72,6 @@ export function SaleOrderProductStep({
     (line) => !line.work_order_summary
   );
 
-  // Group lines by product for display (we want to show unique products)
-  const productsById = new Map<string, SaleOrderLine & { quantity: number; uom_name: string }>();
-  availableLines.forEach(line => {
-    const productKey = productOf(line)?.id?.toString() ?? "";
-    if (!productKey) return;
-
-    const existing = productsById.get(productKey);
-    if (!existing || (line.quantity ?? 0) > (existing.quantity ?? 0)) {
-      productsById.set(productKey, {
-        ...line,
-        quantity: line.quantity ?? 0,
-        uom_name: line.uom_name ?? ""
-      });
-    }
-  });
-
-  const availableProducts = Array.from(productsById.values());
 
   useEffect(() => {
     if (!selectedOrderId) {
@@ -88,12 +84,9 @@ export function SaleOrderProductStep({
     setSelectedLineId(null);
   };
 
-  const handleProductSelect = (productId: string) => {
-    const line = availableLines.find(l =>
-      productOf(l)?.id?.toString() === productId
-    );
-
-    if (!line) return;
+  const handleLineSelect = (line: SaleOrderLine) => {
+    const productId = productOf(line)?.id?.toString() ?? "";
+    if (!productId) return;
 
     setSelectedLineId(line.id?.toString() ?? null);
 
@@ -108,6 +101,17 @@ export function SaleOrderProductStep({
       line.id?.toString() ?? ""
     );
   };
+
+  // Coming from a specific sale order line: continue with it once it is loaded
+  const autoChosenRef = useRef(false);
+  useEffect(() => {
+    if (autoChosenRef.current || !initialSaleLineId || loadingLines) return;
+    const line = availableLines.find((l) => l.id?.toString() === initialSaleLineId);
+    if (!line) return;
+    autoChosenRef.current = true;
+    requestAnimationFrame(() => handleLineSelect(line));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once, when the preselected line appears
+  }, [initialSaleLineId, loadingLines, availableLines.length]);
 
   if (otType === null) {
     return (
@@ -226,7 +230,7 @@ export function SaleOrderProductStep({
                   <p className="text-muted-foreground">Cargando productos disponibles...</p>
                 </div>
               ) : (
-                availableProducts.length === 0 ? (
+                availableLines.length === 0 ? (
                   <div className="text-center py-6">
                     <p className="text-muted-foreground">
                       No hay productos fabricables avanzados pendientes en esta {getDomainConceptTitle('ov').toLowerCase()}.
@@ -234,7 +238,7 @@ export function SaleOrderProductStep({
                   </div>
                 ) : (
                   <div className="grid gap-3">
-                    {availableProducts.map((line) => {
+                    {availableLines.map((line) => {
                       const isSelected = selectedLineId === line.id?.toString();
                       const prod = productOf(line) as ExpandedProduct | undefined;
 
@@ -277,7 +281,7 @@ export function SaleOrderProductStep({
                           selected={isSelected}
                           unavailable={false}
                           role="button"
-                          onClick={() => handleProductSelect(prod?.id?.toString() ?? "")}
+                          onClick={() => handleLineSelect(line)}
                           className="h-[100px]"
                         />
                       );

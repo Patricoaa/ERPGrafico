@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from core.models import Attachment
 from core.prefix_registry import EntityPrefix
-from inventory.models import Product, StockMove, UoM, Warehouse
+from inventory.models import Product, UoM, Warehouse
 from purchasing.models import PurchaseLine, PurchaseOrder
 from workflow.models import Task
 from workflow.services import WorkflowService
@@ -123,7 +123,7 @@ class WorkOrderService:
             related_note=getattr(sale_line, "related_note", None),
             status=WorkOrder.Status.DRAFT,
             current_stage=WorkOrder.Stage.MATERIAL_ASSIGNMENT,
-            warehouse=delivery_with_wh.warehouse if delivery_with_wh else Warehouse.objects.first(),
+            warehouse=delivery_with_wh.warehouse if delivery_with_wh else WorkOrderService._default_warehouse(),
             stage_data={},
             start_date=timezone.now().date(),
         )
@@ -137,34 +137,15 @@ class WorkOrderService:
 
         # Attach files if provided
         if files:
-            content_type = ContentType.objects.get_for_model(work_order)
-            # Design files
-            for design_file in files.get("design", []):
-                Attachment.objects.create(
-                    file=design_file,
-                    original_filename=design_file.name,
-                    content_type=content_type,
-                    object_id=work_order.id,
-                )
-            # Approval file
-            approval_file = files.get("approval")
-            if approval_file:
-                Attachment.objects.create(
-                    file=approval_file,
-                    original_filename=approval_file.name,
-                    content_type=content_type,
-                    object_id=work_order.id,
-                )
-                # Fix: Store filename in stage_data so frontend can link it as evidence
-                if not work_order.stage_data:
-                    work_order.stage_data = {}
-                work_order.stage_data["approval_attachment"] = approval_file.name
-                work_order.save()
+            WorkOrderService._attach_creation_files(work_order, files)
 
         # TASK-110: Expand BOM via shared helper
         WorkOrderService._expand_bom_into_materials(
             work_order, product, sale_line.quantity, sale_line.uom
         )
+
+        # Materials / outsourced services captured in the POS manufacturing drawer
+        WorkOrderService._apply_planning_drafts(work_order, sale_line.manufacturing_data)
 
         # TASK-111: Create history + workflow task via shared helper
         WorkOrderService._create_initial_artifacts(
@@ -179,15 +160,12 @@ class WorkOrderService:
         )
 
         # Express Flow: Auto-finalize if product is configured for it
-        auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
-        if auto_finalize:
+        if product.is_express:
             try:
-                # Use a savepoint to rollback only the transition if it fails
+                # Use a savepoint to rollback only the finalization if it fails
                 with transaction.atomic():
-                    WorkOrderService.transition_to(
-                        work_order,
-                        WorkOrder.Stage.FINISHED,
-                        notes="Finalización automática (Flujo Express)",
+                    WorkOrderService._finalize_express(
+                        work_order, notes="Finalización automática (Flujo Express)"
                     )
             except Exception as e:
                 # Log error but keep OT created
@@ -252,8 +230,24 @@ class WorkOrderService:
         Clones description, product, warehouse, stage_data, materials (as MANUAL).
         No link to sale_line.
         """
+        # Configuration is copied; the run state of the original is not (its rectification
+        # snapshot points at the original's materials, photos/approvals are its evidence).
+        run_state_keys = {"rectification_snapshot", "final_photo", "approval_attachment"}
+        stage_data = {
+            key: value
+            for key, value in (work_order.stage_data or {}).items()
+            if key not in run_state_keys
+        }
+        stage_data.setdefault("_version", 1)
+        # A linked OT takes its volume from the sale line: the manual copy needs it explicitly
+        if work_order.sale_line:
+            stage_data.setdefault("quantity", float(work_order.sale_line.quantity))
+            if work_order.sale_line.uom_id:
+                stage_data.setdefault("uom_id", work_order.sale_line.uom_id)
+                stage_data.setdefault("uom_name", work_order.sale_line.uom.name)
+
         new_wo = WorkOrder.objects.create(
-            description=f"Copia de {work_order.description or str(EntityPrefix.WORK_ORDER) + '-' + str(work_order.number)}",
+            description=f"Copia de {work_order.description or work_order.display_id}",
             is_manual=True,
             product=work_order.product
             if not work_order.sale_line
@@ -261,11 +255,8 @@ class WorkOrderService:
             status=WorkOrder.Status.DRAFT,
             current_stage=WorkOrder.Stage.MATERIAL_ASSIGNMENT,
             warehouse=work_order.warehouse,
-            stage_data=work_order.canonical_stage_data.copy()
-            if hasattr(work_order, "canonical_stage_data")
-            else (work_order.stage_data or {}).copy(),
+            stage_data=stage_data,
             estimated_completion_date=work_order.estimated_completion_date,
-            notes=work_order.notes,
         )
 
         for mat in work_order.materials.all():
@@ -309,14 +300,7 @@ class WorkOrderService:
         sale_line = delivery_line.sale_line
 
         # Only for express manufacturable products
-        auto_finalize = (
-            product.mfg_profile.mfg_auto_finalize
-            if product
-            and product.strategy.requires_manufacturing_profile
-            and product.mfg_profile
-            else False
-        )
-        if not (product and product.strategy.requires_manufacturing_profile and auto_finalize):
+        if not (product and product.strategy.requires_manufacturing_profile and product.is_express):
             return None
 
         # TASK-209: Centralised validation
@@ -352,29 +336,58 @@ class WorkOrderService:
             },
         )
 
-        # Express Flow: Auto-finalize
-        auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
-        if auto_finalize:
-            try:
-                with transaction.atomic():
-                    WorkOrderService.transition_to(
-                        work_order,
-                        WorkOrder.Stage.FINISHED,
-                        notes="Finalización automática (Flujo Express - Despacho)",
-                    )
-            except Exception as e:
-                logger.exception(
-                    "Auto-finalize failed for %s-%s during delivery", EntityPrefix.WORK_ORDER, work_order.number
-                )
-                WorkOrderHistory.objects.create(
-                    work_order=work_order,
-                    stage=work_order.current_stage,
-                    status=work_order.status,
-                    notes=f"Fallo en finalización automática: {str(e)}",
-                    user=None,
-                )
+        # Express Flow: finalize right away. A failure must abort the dispatch: the
+        # delivery skips the BOM explosion for lines whose OT consumed it, so a draft
+        # OT left behind would mean components never consumed nor costed.
+        WorkOrderService._finalize_express(
+            work_order, notes="Finalización automática (Flujo Express - Despacho)"
+        )
 
         return work_order
+
+    @staticmethod
+    def _parse_creation_files(files):
+        """Design / approval files of a creation request, whatever key the client used.
+
+        The wizard sends ``design_file_<n>``; older clients ``design_files`` / ``design``.
+        """
+        if not files:
+            return {}
+        design = list(files.getlist("design_files")) + list(files.getlist("design"))
+        design += [f for key, f in files.items() if key.startswith("design_file_")]
+        parsed = {}
+        if design:
+            parsed["design"] = design
+        approval = files.get("approval_file") or files.get("approval")
+        if approval:
+            parsed["approval"] = approval
+        return parsed
+
+    @staticmethod
+    def _attach_creation_files(work_order, parsed_files, user=None):
+        content_type = ContentType.objects.get_for_model(work_order)
+        for design_file in parsed_files.get("design", []):
+            Attachment.objects.create(
+                file=design_file,
+                original_filename=design_file.name,
+                content_type=content_type,
+                object_id=work_order.id,
+                user=user,
+            )
+        approval_file = parsed_files.get("approval")
+        if approval_file:
+            Attachment.objects.create(
+                file=approval_file,
+                original_filename=approval_file.name,
+                content_type=content_type,
+                object_id=work_order.id,
+                user=user,
+            )
+            work_order.stage_data = {
+                **(work_order.stage_data or {}),
+                "approval_attachment": approval_file.name,
+            }
+            work_order.save(update_fields=["stage_data"])
 
     @staticmethod
     @transaction.atomic
@@ -387,7 +400,7 @@ class WorkOrderService:
         Branches:
             1. Manual (product_id present, no sale_line) -> create_manual()
             2. Sale-linked (sale_line_id present) -> create_from_sale_line() + partial update
-            3. Fallback -> returns None (view falls back to super().create())
+        Anything else is rejected: a bare model create would skip BOM, tasks and history.
         """
         import json
 
@@ -402,6 +415,8 @@ class WorkOrderService:
                 stage_data = json.loads(stage_data)
             except (json.JSONDecodeError, TypeError):
                 stage_data = {}
+        if not isinstance(stage_data, dict):
+            stage_data = {}
 
         initial_materials_raw = data.get("initial_materials")
         if isinstance(initial_materials_raw, str):
@@ -414,11 +429,37 @@ class WorkOrderService:
 
         product_id = data.get("product_id")
         sale_line_id = data.get("sale_line")
+        is_linked = bool(sale_line_id) and sale_line_id not in _EMPTY_SALE_LINE
+        parsed_files = WorkOrderService._parse_creation_files(files)
 
-        work_order = None
+        if is_linked:
+            sale_line = SaleLine.objects.select_related("order", "product").get(pk=sale_line_id)
+            sale_order_id = data.get("sale_order")
+            if sale_order_id not in (None, "", *_EMPTY_SALE_LINE) and str(sale_line.order_id) != str(sale_order_id):
+                raise ValidationError("La línea seleccionada no pertenece a la Orden de Venta indicada.")
 
-        # Branch 1: Manual
-        if product_id and (not sale_line_id or sale_line_id in _EMPTY_SALE_LINE):
+            work_order = WorkOrderService.create_from_sale_line(sale_line, files=parsed_files or None)
+            if work_order is None:
+                raise ValidationError(
+                    f"El producto '{sale_line.product.name if sale_line.product else ''}' no es fabricable."
+                )
+
+            from .serializers import WorkOrderWriteSerializer
+
+            # Wizard values complete the configuration captured at the sale (POS);
+            # identity fields are fixed by the line itself.
+            fields = {
+                key: data.get(key)
+                for key in ("description", "start_date", "estimated_completion_date", "related_contact")
+                if data.get(key) not in (None, "")
+            }
+            if stage_data:
+                fields["stage_data"] = {**(work_order.stage_data or {}), **stage_data}
+            serializer = WorkOrderWriteSerializer(work_order, data=fields, partial=True)
+            serializer.is_valid(raise_exception=True)
+            work_order = serializer.save()
+
+        elif product_id:
             from decimal import Decimal as _D
 
             product = Product.objects.get(pk=product_id)
@@ -427,7 +468,7 @@ class WorkOrderService:
             wh_id = data.get("warehouse_id")
             desc = data.get("description", "")
 
-            warehouse = Warehouse.objects.get(pk=wh_id) if wh_id else Warehouse.objects.first()
+            warehouse = Warehouse.objects.get(pk=wh_id) if wh_id else WorkOrderService._default_warehouse()
             if not uom_id:
                 raise ValidationError(
                     "La unidad de medida es requerida para fabricaciones manuales."
@@ -442,32 +483,12 @@ class WorkOrderService:
                 uom=uom,
                 stage_data=stage_data,
             )
+            WorkOrderService._attach_creation_files(work_order, parsed_files, user)
 
-        # Branch 2: Sale-linked
-        if sale_line_id and sale_line_id not in _EMPTY_SALE_LINE:
-            sale_line = SaleLine.objects.get(pk=sale_line_id)
+        else:
+            raise ValidationError("Indique un producto o una línea de Orden de Venta para crear la OT.")
 
-            parsed_files: dict = {}
-            if files:
-                design_files = files.getlist("design_files") or files.getlist("design")
-                approval_file = files.get("approval_file") or files.get("approval")
-                if design_files:
-                    parsed_files["design"] = design_files
-                if approval_file:
-                    parsed_files["approval"] = approval_file
-
-            work_order = WorkOrderService.create_from_sale_line(
-                sale_line, files=parsed_files or None
-            )
-
-            if work_order:
-                from .serializers import WorkOrderSerializer
-
-                serializer = WorkOrderSerializer(work_order, data=data, partial=True)
-                if serializer.is_valid():
-                    work_order = serializer.save()
-
-        if work_order and initial_materials:
+        if initial_materials:
             from .models import WorkOrderMaterial
             from .serializers import WorkOrderInitialMaterialSerializer
 
@@ -495,8 +516,10 @@ class WorkOrderService:
 
         return work_order
 
-        # Branch 3: Fallback
-        return None
+    @staticmethod
+    def _default_warehouse():
+        """Deterministic fallback warehouse (lowest id) when none is given."""
+        return Warehouse.objects.order_by("pk").first()
 
     @staticmethod
     @transaction.atomic
@@ -513,33 +536,9 @@ class WorkOrderService:
             return work_order
 
         # VALIDATION 1: Dynamic Production Stage Limit (Printing/Prepress/Approval)
-        # Sequence of stages to determine if the limit has been surpassed
-        STAGES_SEQUENCE = [
-            WorkOrder.Stage.MATERIAL_ASSIGNMENT,
-            WorkOrder.Stage.MATERIAL_APPROVAL,
-            WorkOrder.Stage.OUTSOURCING_ASSIGNMENT,
-            WorkOrder.Stage.PREPRESS,
-            WorkOrder.Stage.PRESS,
-            WorkOrder.Stage.POSTPRESS,
-            WorkOrder.Stage.OUTSOURCING_VERIFICATION,
-            WorkOrder.Stage.FINISHED,
-        ]
-
         limit_stage = work_order.cancellation_limit_stage
-        try:
-            current_idx = STAGES_SEQUENCE.index(work_order.current_stage)
-            limit_idx = STAGES_SEQUENCE.index(limit_stage)
-        except ValueError:
-            # Fallback for unexpected stages
-            current_idx = 0
-            limit_idx = 0
-
-        if current_idx > limit_idx:
-            limit_display = (
-                work_order.get_stage_display(limit_stage)
-                if hasattr(work_order, "get_stage_display")
-                else limit_stage
-            )
+        if not work_order.is_cancellable:
+            limit_display = WorkOrder.Stage(limit_stage).label
             raise ValidationError(
                 f"❌ No se puede anular: la OT ya superó la etapa límite permitida ({limit_display}).\n"
                 f"📍 Etapa actual: {work_order.get_current_stage_display()}\n"
@@ -569,13 +568,13 @@ class WorkOrderService:
         work_order.current_stage = WorkOrder.Stage.CANCELLED
         work_order.save()
 
-        # Complete any pending OT_CREATION tasks
+        # Nothing is left to do on an annulled OT: close its open tasks (creation and
+        # stage approvals) so they don't linger in the inbox.
         Task.objects.filter(
             content_type=ContentType.objects.get_for_model(work_order),
             object_id=work_order.id,
-            task_type="OT_CREATION",
             status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS],
-        ).update(status=Task.Status.COMPLETED, completed_at=timezone.now(), completed_by=user)
+        ).update(status=Task.Status.CANCELLED, completed_at=timezone.now(), completed_by=user)
 
         WorkOrderHistory.objects.create(
             work_order=work_order,
@@ -591,62 +590,53 @@ class WorkOrderService:
 
     @staticmethod
     @transaction.atomic
+    def _ensure_stage_task(*, content_object, task_type, **kwargs):
+        """Create the stage approval task unless the OT already has one of that type.
+
+        Re-entering a stage after a rewind must reuse (and reopen) the existing task
+        instead of stacking a duplicate approval next to the reset one.
+        """
+        work_order = content_object
+        existing = Task.objects.filter(
+            content_type=ContentType.objects.get_for_model(work_order),
+            object_id=work_order.pk,
+            task_type=task_type,
+            category=Task.Category.APPROVAL,
+        ).first()
+        if existing is None:
+            return WorkflowService.create_task(task_type=task_type, content_object=work_order, **kwargs)
+        if existing.status == Task.Status.COMPLETED:
+            existing.status = Task.Status.PENDING
+            existing.completed_at = None
+            existing.completed_by = None
+            existing.save(update_fields=["status", "completed_at", "completed_by"])
+        return existing
+
+    @staticmethod
+    @transaction.atomic
     def transition_to(work_order, next_stage, user=None, notes="", data=None, files=None):
         """
         Handles transition between stages and business logic for each.
         """
         Stage = WorkOrder.Stage
+        # Lock the row: two concurrent transitions (double click, two operators) would
+        # otherwise both run the side effects of the same move (e.g. purchase orders).
+        if work_order.pk:
+            locked = WorkOrder.objects.select_for_update().get(pk=work_order.pk)
+            work_order.current_stage = locked.current_stage
+            work_order.status = locked.status
         # Terminal states cannot transition out
         if work_order.current_stage in (Stage.FINISHED, Stage.CANCELLED):
             raise ValidationError(
                 f"Transición inválida: la OT está en estado terminal '{work_order.get_current_stage_display()}'."
             )
-        # Explicit forward-transition allowlist (backward moves to any non-terminal are always permitted)
-        FORWARD_ONLY_TRANSITIONS = {
-            Stage.MATERIAL_ASSIGNMENT: {
-                Stage.MATERIAL_APPROVAL,
-                Stage.OUTSOURCING_ASSIGNMENT,
-                Stage.PREPRESS,
-                Stage.PRESS,
-                Stage.CANCELLED,
-            },
-            Stage.MATERIAL_APPROVAL: {
-                Stage.OUTSOURCING_ASSIGNMENT,
-                Stage.PREPRESS,
-                Stage.PRESS,
-                Stage.CANCELLED,
-            },
-            Stage.OUTSOURCING_ASSIGNMENT: {
-                Stage.PREPRESS,
-                Stage.PRESS,
-                Stage.CANCELLED,
-            },
-            Stage.PREPRESS: {
-                Stage.PRESS,
-                Stage.POSTPRESS,
-                Stage.OUTSOURCING_VERIFICATION,
-                Stage.CANCELLED,
-            },
-            Stage.PRESS: {
-                Stage.POSTPRESS,
-                Stage.OUTSOURCING_VERIFICATION,
-                Stage.RECTIFICATION,
-                Stage.CANCELLED,
-            },
-            Stage.POSTPRESS: {
-                Stage.OUTSOURCING_VERIFICATION,
-                Stage.RECTIFICATION,
-                Stage.CANCELLED,
-            },
-            Stage.OUTSOURCING_VERIFICATION: {
-                Stage.RECTIFICATION,
-                Stage.CANCELLED,
-            },
-            Stage.RECTIFICATION: {
-                Stage.FINISHED,
-                Stage.CANCELLED,
-            },
-        }
+        if next_stage == work_order.current_stage:
+            raise ValidationError(
+                f"La OT ya está en la etapa {work_order.get_current_stage_display()}."
+            )
+        # Cancelling has its own rules (limit stage, consumptions, purchase orders)
+        if next_stage == Stage.CANCELLED:
+            return WorkOrderService.annul_work_order(work_order, user=user, notes=notes)
 
         # TASK-311: Enforce manufacturing profile requirements
         # If moving FORWARD, ensure the target stage is enabled in the OT's profile.
@@ -660,27 +650,40 @@ class WorkOrderService:
                 "Esta OT no requiere etapa de Post-Impresión según su configuración."
             )
 
-        NON_TERMINAL_STAGES = list(FORWARD_ONLY_TRANSITIONS.keys())
-        allowed_forward = FORWARD_ONLY_TRANSITIONS.get(work_order.current_stage, set())
-        # Forward moves (higher index in sequence) must be in the explicit allowlist.
-        # Backward moves to any non-terminal stage are always permitted.
-        try:
-            old_idx = NON_TERMINAL_STAGES.index(work_order.current_stage)
-            new_idx = (
-                NON_TERMINAL_STAGES.index(next_stage)
-                if next_stage in NON_TERMINAL_STAGES
-                else len(NON_TERMINAL_STAGES)
-            )
-        except ValueError:
-            old_idx = new_idx = 0
+        sequence = WorkOrderService.STAGE_SEQUENCE
+        if next_stage not in sequence:
+            raise ValidationError(f"Etapa inválida: {next_stage}")
+        old_idx = sequence.index(work_order.current_stage)
+        new_idx = sequence.index(next_stage)
         is_forward = new_idx > old_idx
-        if is_forward and next_stage not in allowed_forward:
+        if not is_forward:
+            blockers = WorkOrderService.rewind_blockers(work_order, next_stage)
+            if blockers:
+                raise ValidationError("Retroceso bloqueado: " + " ".join(blockers))
+        # Forward moves may skip only the stages that do not apply to this OT
+        if is_forward and next_stage not in WorkOrderService.allowed_forward_stages(work_order):
             raise ValidationError(
                 f"Transición inválida: {work_order.get_current_stage_display()} → "
-                f"{WorkOrder.Stage(next_stage).label if next_stage in Stage.values else next_stage}."
+                f"{WorkOrder.Stage(next_stage).label}."
             )
 
         old_stage = work_order.current_stage
+
+        # Moving forward: the current stage's approval tasks must be completed. This runs
+        # before any mutation (and before auto-completion below) so it is enforced for
+        # every caller, not only the wizard footer.
+        if is_forward:
+            pending_tasks = Task.objects.filter(
+                content_type=ContentType.objects.get_for_model(work_order),
+                object_id=work_order.pk,
+                task_type=WorkflowService.stage_task_type(old_stage),
+                category=Task.Category.APPROVAL,
+                status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS],
+            )
+            if pending_tasks.exists():
+                raise ValidationError(
+                    f"Existen aprobaciones pendientes para la etapa {work_order.get_current_stage_display()}. Por favor, complételas antes de continuar."
+                )
 
         # Validate and merge stage data
         if data:
@@ -740,24 +743,22 @@ class WorkOrderService:
                 status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS],
             ).update(status=Task.Status.COMPLETED, completed_at=timezone.now(), completed_by=user)
 
-        # Specific logic per stage transition
-        if next_stage == WorkOrder.Stage.MATERIAL_APPROVAL:
-            # Check if all materials have enough stock
-            for mat in work_order.materials.all():
-                available = mat.component.qty_available
-                if available < mat.quantity_planned:
-                    # We allow proceeding but maybe log a warning or require explicit approval
-                    pass
+        # Leaving stock approval: every material must be available. Enforced here so the
+        # Kanban / bulk moves can't bypass it either.
+        if old_stage == WorkOrder.Stage.MATERIAL_APPROVAL and is_forward:
+            from .serializers import WorkOrderSerializer
 
-        # --- NEW WORKFLOW INTEGRATION ---
-        # 1. Automation: Auto-complete tasks of the OLD stage when moving forward
-        # In a fluid workflow, advancing stage implies approval.
-        if next_stage != WorkOrder.Stage.CANCELLED:
-            WorkflowService.auto_complete_approval_tasks(work_order, user)
+            stocks, products_by_id = WorkOrderService.build_stock_context(work_order)
+            materials = WorkOrderSerializer(
+                work_order, context={"stocks_by_product": stocks, "products_by_id": products_by_id}
+            ).data.get("materials", [])
+            WorkOrderService.validate_transition_stock(work_order, next_stage, materials)
 
+        # Entering a stage (re)opens its approval task. Approvals of the stage being left
+        # were checked above; nothing else is auto-approved on the user's behalf.
         # 2. Automation: Create tasks upon ENTERING a new stage
         if next_stage == WorkOrder.Stage.MATERIAL_APPROVAL:
-            WorkflowService.create_task(
+            WorkOrderService._ensure_stage_task(
                 task_type="OT_MATERIAL_APPROVAL",
                 title=f"Aprobación Stock: {EntityPrefix.WORK_ORDER}-{work_order.number}",
                 description=f"Valide la disponibilidad de stock para procesar la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
@@ -766,7 +767,7 @@ class WorkOrderService:
             )
 
         if next_stage == WorkOrder.Stage.PREPRESS:
-            WorkflowService.create_task(
+            WorkOrderService._ensure_stage_task(
                 task_type="OT_PREPRESS_APPROVAL",
                 title=f"Aprobación Pre-Impresión: {EntityPrefix.WORK_ORDER}-{work_order.number}",
                 description=f"Valide el diseño y especificaciones para la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
@@ -775,7 +776,7 @@ class WorkOrderService:
             )
 
         if next_stage == WorkOrder.Stage.PRESS:
-            WorkflowService.create_task(
+            WorkOrderService._ensure_stage_task(
                 task_type="OT_PRESS_APPROVAL",
                 title=f"Supervisión Impresión: {EntityPrefix.WORK_ORDER}-{work_order.number}",
                 description=f"Supervise el inicio de tiraje de la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
@@ -784,7 +785,7 @@ class WorkOrderService:
             )
 
         if next_stage == WorkOrder.Stage.POSTPRESS:
-            WorkflowService.create_task(
+            WorkOrderService._ensure_stage_task(
                 task_type="OT_POSTPRESS_APPROVAL",
                 title=f"Supervisión Post-Impresión: {EntityPrefix.WORK_ORDER}-{work_order.number}",
                 description=f"Valide terminaciones y empaque de la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
@@ -793,7 +794,7 @@ class WorkOrderService:
             )
 
         if next_stage == WorkOrder.Stage.OUTSOURCING_VERIFICATION:
-            WorkflowService.create_task(
+            WorkOrderService._ensure_stage_task(
                 task_type="OT_OUTSOURCING_VERIFICATION_APPROVAL",
                 title=f"Verificación Tercerizados: {EntityPrefix.WORK_ORDER}-{work_order.number}",
                 description=f"Valide la recepción de servicios externos para la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
@@ -802,7 +803,7 @@ class WorkOrderService:
             )
 
         if next_stage == WorkOrder.Stage.RECTIFICATION:
-            WorkflowService.create_task(
+            WorkOrderService._ensure_stage_task(
                 task_type="OT_RECTIFICATION_APPROVAL",
                 title=f"Rectificación: {EntityPrefix.WORK_ORDER}-{work_order.number}",
                 description=f"Revise y confirme las cantidades reales de materiales consumidos y producción para la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
@@ -852,8 +853,12 @@ class WorkOrderService:
             WorkOrderService.finalize_production(work_order, user)
             work_order.status = WorkOrder.Status.FINISHED
 
-        elif next_stage == WorkOrder.Stage.CANCELLED:
-            work_order.status = WorkOrder.Status.CANCELLED
+        elif (
+            next_stage in [WorkOrder.Stage.MATERIAL_ASSIGNMENT, WorkOrder.Stage.MATERIAL_APPROVAL]
+            and work_order.status == WorkOrder.Status.IN_PROGRESS
+        ):
+            # Rewinding to the draft stages (no irreversible effects, checked above)
+            work_order.status = WorkOrder.Status.DRAFT
 
         elif (
             next_stage
@@ -863,56 +868,17 @@ class WorkOrderService:
             # If moving past initial stages (Assignment/Approval), status becomes IN_PROGRESS
             work_order.status = WorkOrder.Status.IN_PROGRESS
 
-        # Define stage sequence to detect forward/backward moves
-        STAGES_SEQUENCE = [
-            WorkOrder.Stage.MATERIAL_ASSIGNMENT,
-            WorkOrder.Stage.MATERIAL_APPROVAL,
-            WorkOrder.Stage.OUTSOURCING_ASSIGNMENT,
-            WorkOrder.Stage.PREPRESS,
-            WorkOrder.Stage.PRESS,
-            WorkOrder.Stage.POSTPRESS,
-            WorkOrder.Stage.OUTSOURCING_VERIFICATION,
-            WorkOrder.Stage.RECTIFICATION,
-            WorkOrder.Stage.FINISHED,
-        ]
-
-        try:
-            old_idx = STAGES_SEQUENCE.index(old_stage)
-            next_idx = STAGES_SEQUENCE.index(next_stage)
-        except ValueError:
-            # If stage not in sequence (e.g. CANCELLED), allow transition without sequence logic
-            old_idx = next_idx = 0
-
-        # Moving Forward: Validate required approval tasks are completed
-        if next_idx > old_idx:
-            # Check for pending approval tasks for the CURRENT stage
-            content_type = ContentType.objects.get_for_model(work_order)
-
-            # The pattern is OT_{STAGE}_APPROVAL
-            current_stage_task_type = f"OT_{old_stage}_APPROVAL"
-
-            pending_tasks = Task.objects.filter(
-                content_type=content_type,
-                object_id=work_order.pk,
-                task_type=current_stage_task_type,
-                category=Task.Category.APPROVAL,
-                status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS],
-            )
-
-            if pending_tasks.exists():
-                raise ValidationError(
-                    f"Existen aprobaciones pendientes para la etapa {work_order.get_current_stage_display()}. Por favor, complételas antes de continuar."
-                )
+        old_idx = sequence.index(old_stage)
+        next_idx = sequence.index(next_stage)
 
         # Moving Backward: Reset tasks for the stages being "un-done"
         if next_idx < old_idx:
-            # Stages to reset: from the next_stage up to (and including) the current_stage
-            # Wait, if I go back to MATERIAL_ASSIGNMENT from PREPRESS,
-            # I should reset MATERIAL_APPROVAL, OUTSOURCING_ASSIGNMENT, PREPRESS?
-            # User said: "si se devuelve a la etapa anterior debe existir una advertencia que las aprobaciones realizadas se reinciaran"
-            # It makes sense to reset any approval that happens AFTER the new stage.
-            stages_to_reset = STAGES_SEQUENCE[next_idx:]
-            WorkflowService.reset_tasks_for_object(work_order, stages_to_reset)
+            # The reopened stage must be approved again. Later stages keep their completed
+            # task, which _ensure_stage_task reopens when the OT enters them again — so no
+            # stale "pending" approval sits in the inbox for a stage the OT is not in.
+            WorkflowService.reset_tasks_for_object(work_order, [next_stage])
+            if old_stage == WorkOrder.Stage.RECTIFICATION:
+                WorkOrderService._restore_planned_quantities(work_order)
 
         work_order.current_stage = next_stage
         work_order.save()
@@ -926,6 +892,27 @@ class WorkOrderService:
         )
 
         return work_order
+
+    @staticmethod
+    @transaction.atomic
+    def _finalize_express(work_order, notes, user=None):
+        """Finish an Express OT at creation time.
+
+        Express products have no production stages to walk through, so this does not go
+        through ``transition_to`` (whose stage graph only reaches FINISHED from
+        RECTIFICATION): it consumes the materials and closes the OT directly.
+        """
+        WorkOrderService.finalize_production(work_order, user)
+        work_order.status = WorkOrder.Status.FINISHED
+        work_order.current_stage = WorkOrder.Stage.FINISHED
+        work_order.save(update_fields=["status", "current_stage"])
+        WorkOrderHistory.objects.create(
+            work_order=work_order,
+            stage=WorkOrder.Stage.FINISHED,
+            status=WorkOrder.Status.FINISHED,
+            notes=notes,
+            user=user,
+        )
 
     @staticmethod
     @transaction.atomic
@@ -945,18 +932,18 @@ class WorkOrderService:
 
         total_material_cost = Decimal("0")
 
-        # 1. Consume materials
-        for mat in work_order.materials.all():
-            # Skip stock moves for services
-            if mat.component.product_type == Product.Type.SERVICE:
-                mat.quantity_consumed = mat.quantity_planned
-                mat.save()
-
-                # Add service cost to production total
-                # Use unit_price (OC price) if outsourced, else component base cost
-                service_cost = mat.unit_price if mat.is_outsourced else mat.component.cost_price
-                total_material_cost += mat.quantity_planned * service_cost
+        # 1. Services: no stock move, their cost is the OC price (outsourced) or the
+        # component cost. They are kept apart so they are counted exactly once.
+        service_costs = []  # (material, cost)
+        for mat in work_order.materials.select_related("component"):
+            if mat.component.product_type != Product.Type.SERVICE:
                 continue
+            mat.quantity_consumed = mat.quantity_planned
+            mat.save(update_fields=["quantity_consumed"])
+            unit_cost = mat.unit_price if mat.is_outsourced else mat.component.cost_price
+            cost = (mat.quantity_planned * unit_cost).quantize(Decimal("0.01"))
+            service_costs.append((mat, cost))
+            total_material_cost += cost
 
         from inventory.models import InventoryDocument, InventoryDocumentDetail
         from inventory.services import InventoryService
@@ -972,9 +959,9 @@ class WorkOrderService:
         details_to_create = []
         mat_consumptions_data = []
 
-        # 1. Process Material Consumption
-        for mat in work_order.materials.all():
-            if not mat.component:
+        # 2. Process Material Consumption (stock items only)
+        for mat in work_order.materials.select_related("component", "component__uom", "uom"):
+            if not mat.component or mat.component.product_type == Product.Type.SERVICE:
                 continue
 
             # Convert quantity from planned UoM to component base UoM
@@ -982,10 +969,8 @@ class WorkOrderService:
                 mat.quantity_planned, from_uom=mat.uom, to_uom=mat.component.uom
             )
 
-            # Calculate cost of this material usage
-            # cost_price is per Base Unit
-            material_cost = base_comp_qty * mat.component.cost_price
-            total_material_cost += material_cost
+            # Calculate cost of this material usage (cost_price is per base unit)
+            total_material_cost += (base_comp_qty * mat.component.cost_price).quantize(Decimal("0.01"))
 
             # VALIDATION: Prevent negative stock during production consumption
             if mat.component.track_inventory and mat.component.qty_on_hand < base_comp_qty:
@@ -1007,9 +992,9 @@ class WorkOrderService:
             mat_consumptions_data.append((mat, base_comp_qty))
 
             mat.quantity_consumed = mat.quantity_planned  # We consume what was planned
-            mat.save()
+            mat.save(update_fields=["quantity_consumed"])
 
-        # 2. Add finished product
+        # 3. Add finished product
         product = None
         quantity = Decimal("0")
         uom = None
@@ -1031,7 +1016,6 @@ class WorkOrderService:
                 quantity = Decimal(str(work_order.canonical_stage_data.get("quantity", 0)))
             uom = product.uom
 
-        finished_product_created = False
         if product and product.track_inventory:
             # Convert quantity from work order/sale line UoM to product base UoM
             base_qty = UoMService.convert_quantity(quantity, from_uom=uom, to_uom=product.uom)
@@ -1067,25 +1051,33 @@ class WorkOrderService:
                         unit_cost=unit_production_cost
                     )
                 )
-                finished_product_created = True
 
+        finished_move = None
         if details_to_create:
             InventoryDocumentDetail.objects.bulk_create(details_to_create)
-            doc_inv, generated_moves = InventoryService.confirmar_documento(doc_inv)
+            doc_inv, _moves = InventoryService.confirmar_documento(doc_inv)
+
+            # Each detail knows its own move; pairing by list position mixed them up.
+            consumption_moves = {}
+            for detail in doc_inv.details.select_related("stock_move"):
+                if detail.quantity < 0:
+                    consumption_moves[detail.product_id] = detail.stock_move
+                elif product and detail.product_id == product.id:
+                    finished_move = detail.stock_move
 
             # Create traceability records for materials
-            for (mat, base_comp_qty), move in zip(mat_consumptions_data, generated_moves[:len(mat_consumptions_data)]):
+            for mat, base_comp_qty in mat_consumptions_data:
                 ProductionConsumption.objects.create(
                     work_order=work_order,
                     product=mat.component,
                     warehouse=work_order.warehouse,
                     quantity=base_comp_qty,
-                    stock_move=move,
+                    stock_move=consumption_moves.get(mat.component_id),
                 )
         else:
             doc_inv.delete()
 
-        # 3. Generate Accounting Entry for Production
+        # 4. Generate Accounting Entry for Production
         if product and product.strategy.requires_manufacturing_profile:
             if total_material_cost > 0:
                 from accounting.models import AccountingSettings, JournalEntry
@@ -1149,6 +1141,25 @@ class WorkOrderService:
                         component_credits.get(comp_inventory_account, Decimal("0.00")) + comp_cost
                     )
 
+                # Outsourced / internal services: their cost was booked as expense by the
+                # purchase bill; production moves it into the finished product.
+                for mat, cost in service_costs:
+                    if cost <= 0:
+                        continue
+                    service_account = (
+                        mat.component.get_expense_account or settings.default_expense_account
+                    )
+                    if not service_account:
+                        raise ValidationError(
+                            f"Falta cuenta de gasto para el servicio {mat.component.internal_code}"
+                        )
+                    component_credits[service_account] = (
+                        component_credits.get(service_account, Decimal("0.00")) + cost
+                    )
+
+                # The debit is the sum of the credits, so rounding can never unbalance it
+                items[0]["debit"] = sum(component_credits.values(), Decimal("0.00"))
+
                 # Add credit items
                 for account, amount in component_credits.items():
                     items.append(
@@ -1171,15 +1182,11 @@ class WorkOrderService:
                         consumption.stock_move._allow_update = True
                         consumption.stock_move.save()
 
-                # If track_inventory, also link the entry to the entry move
-                if product.track_inventory:
-                    entry_move = StockMove.objects.filter(
-                        product=product, description=f"Entrada producción {EntityPrefix.WORK_ORDER}-{work_order.number}"
-                    ).first()
-                    if entry_move:
-                        entry_move.journal_entry = entry
-                        entry_move._allow_update = True
-                        entry_move.save()
+                # If track_inventory, also link the entry to the finished-product move
+                if finished_move:
+                    finished_move.journal_entry = entry
+                    finished_move._allow_update = True
+                    finished_move.save()
 
         # Record production discrepancy in audit trail when quantity differs from sale line
         if work_order.sale_line and work_order.actual_quantity_produced is not None:
@@ -1235,6 +1242,9 @@ class WorkOrderService:
             raise ValidationError("No se puede rectificar una OT ya finalizada.")
 
         changes_summary = []
+
+        # Keep the planned figures once, so reopening Rectification can restore them
+        WorkOrderService._snapshot_planned_quantities(work_order)
 
         # 1. Adjust material quantities
         if material_adjustments:
@@ -1364,29 +1374,147 @@ class WorkOrderService:
     ):
         """
         Adds a material manually to a Work Order.
-        """
-        material, created = WorkOrderMaterial.objects.get_or_create(
-            work_order=work_order,
-            component=component,
-            defaults={
-                "quantity_planned": Decimal(str(quantity)),
-                "uom": uom or component.uom,
-                "source": "MANUAL",
-                "is_outsourced": is_outsourced,
-                "supplier": supplier,
-                "unit_price": Decimal(str(unit_price)),
-                "document_type": document_type,
-            },
-        )
-        if not created:
-            material.quantity_planned += Decimal(str(quantity))
-            material.is_outsourced = is_outsourced
-            material.supplier = supplier
-            material.unit_price = Decimal(str(unit_price))
-            material.document_type = document_type
-            material.save()
 
+        Merges only into the row of the same component, kind (own / outsourced),
+        supplier and UoM — the identity of ``unique_workorder_material_variant``.
+        Merging by component alone turned an own BOM material into an outsourced one
+        and added quantities across UoMs.
+        """
+        identity = {
+            "work_order": work_order,
+            "component": component,
+            "is_outsourced": is_outsourced,
+            "supplier": supplier,
+            "uom": uom or component.uom,
+        }
+        material = WorkOrderMaterial.objects.filter(**identity).first()
+        if material is None:
+            return WorkOrderMaterial.objects.create(
+                **identity,
+                quantity_planned=Decimal(str(quantity)),
+                source="MANUAL",
+                unit_price=Decimal(str(unit_price)),
+                document_type=document_type,
+            )
+
+        WorkOrderService._assert_material_not_ordered(material)
+        material.quantity_planned += Decimal(str(quantity))
+        material.unit_price = Decimal(str(unit_price))
+        material.document_type = document_type
+        material.save()
         return material
+
+    # Production stages in order. CANCELLED is not part of the sequence: it is reached
+    # through annul_work_order from any stage up to the cancellation limit.
+    STAGE_SEQUENCE = [
+        "MATERIAL_ASSIGNMENT", "MATERIAL_APPROVAL", "OUTSOURCING_ASSIGNMENT", "PREPRESS",
+        "PRESS", "POSTPRESS", "OUTSOURCING_VERIFICATION", "RECTIFICATION", "FINISHED",
+    ]
+
+    @staticmethod
+    def _stage_is_mandatory(work_order, stage, materials):
+        """A stage that applies to this OT and therefore cannot be skipped."""
+        if stage == "MATERIAL_APPROVAL":
+            return any(not m.is_outsourced for m in materials)
+        if stage in ("PREPRESS", "PRESS", "POSTPRESS"):
+            return getattr(work_order, f"requires_{stage.lower()}")
+        if stage == "OUTSOURCING_VERIFICATION":
+            return any(m.is_outsourced for m in materials)
+        return stage in ("RECTIFICATION", "FINISHED")
+
+    @staticmethod
+    def _stage_is_reachable(work_order, stage):
+        if stage in ("PREPRESS", "PRESS", "POSTPRESS"):
+            return getattr(work_order, f"requires_{stage.lower()}")
+        return True
+
+    @staticmethod
+    def allowed_forward_stages(work_order) -> list[str]:
+        """Stages the OT may move forward to: up to (and including) the first mandatory one."""
+        sequence = WorkOrderService.STAGE_SEQUENCE
+        if work_order.current_stage not in sequence:
+            return []
+        materials = list(work_order.materials.all())
+        allowed = []
+        for stage in sequence[sequence.index(work_order.current_stage) + 1:]:
+            if WorkOrderService._stage_is_reachable(work_order, stage):
+                allowed.append(stage)
+            if WorkOrderService._stage_is_mandatory(work_order, stage, materials):
+                break
+        return allowed
+
+    @staticmethod
+    def stage_plan(work_order) -> list[str]:
+        """Stages the wizard shows for this OT, in order (single source for the UI rail)."""
+        materials = list(work_order.materials.all())
+        return [
+            stage
+            for stage in WorkOrderService.STAGE_SEQUENCE
+            if stage in ("MATERIAL_ASSIGNMENT", "OUTSOURCING_ASSIGNMENT")
+            or stage == work_order.current_stage
+            or WorkOrderService._stage_is_mandatory(work_order, stage, materials)
+        ]
+
+    @staticmethod
+    def next_stage(work_order):
+        """The stage "Siguiente" leads to: the next one in the plan."""
+        sequence = WorkOrderService.STAGE_SEQUENCE
+        if work_order.current_stage not in sequence:
+            return None
+        current = sequence.index(work_order.current_stage)
+        return next(
+            (s for s in WorkOrderService.stage_plan(work_order) if sequence.index(s) > current), None
+        )
+
+    @staticmethod
+    def _is_backward(work_order, next_stage):
+        order = WorkOrderService.STAGE_SEQUENCE
+        if work_order.current_stage not in order or next_stage not in order:
+            return False
+        return order.index(next_stage) < order.index(work_order.current_stage)
+
+    @staticmethod
+    def _snapshot_planned_quantities(work_order):
+        """Store planned quantities/prices before the first rectification overwrites them."""
+        stage_data = dict(work_order.stage_data or {})
+        if "rectification_snapshot" in stage_data:
+            return
+        stage_data["rectification_snapshot"] = {
+            "materials": {
+                str(m.pk): {
+                    "quantity_planned": str(m.quantity_planned),
+                    "unit_price": str(m.unit_price),
+                }
+                for m in work_order.materials.all()
+            },
+        }
+        work_order.stage_data = stage_data
+
+    @staticmethod
+    def _restore_planned_quantities(work_order):
+        """Undo a rectification: planned figures return and the OT is no longer rectified."""
+        stage_data = dict(work_order.stage_data or {})
+        snapshot = stage_data.pop("rectification_snapshot", None)
+        if snapshot:
+            for material in work_order.materials.all():
+                saved = snapshot.get("materials", {}).get(str(material.pk))
+                if saved:
+                    material.quantity_planned = Decimal(saved["quantity_planned"])
+                    material.unit_price = Decimal(saved["unit_price"])
+                    material.save(update_fields=["quantity_planned", "unit_price"])
+        work_order.stage_data = stage_data
+        work_order.is_rectified = False
+        work_order.actual_quantity_produced = None
+
+    @staticmethod
+    def _assert_material_not_ordered(material):
+        """A service already covered by a live purchase order is read-only on the OT."""
+        line = material.purchase_line
+        if line is not None and line.order.status != PurchaseOrder.Status.CANCELLED:
+            raise ValidationError(
+                f"'{material.component.name}' ya tiene la Orden de Compra "
+                f"OC-{line.order.number}. Modifique la OC o use \"Crear OT corregida\"."
+            )
 
     @staticmethod
     def update_material(
@@ -1411,6 +1539,7 @@ class WorkOrderService:
             WorkOrderMaterial.DoesNotExist: Si el material no pertenece al work_order.
         """
         material = WorkOrderMaterial.objects.get(pk=material_id, work_order=work_order)
+        WorkOrderService._assert_material_not_ordered(material)
         material.quantity_planned = quantity
 
         if uom_id is not None:
@@ -1433,8 +1562,12 @@ class WorkOrderService:
         Creates confirmed Purchase Orders and draft Invoices for outsourced materials in the Work Order.
         Groups materials by supplier and document type (Factura/Boleta).
         """
+        from django.db.models import Q
+
         outsourced_mats = work_order.materials.filter(
-            is_outsourced=True, supplier__isnull=False, purchase_line__isnull=True
+            Q(purchase_line__isnull=True) | Q(purchase_line__order__status=PurchaseOrder.Status.CANCELLED),
+            is_outsourced=True,
+            supplier__isnull=False,
         )
         if not outsourced_mats.exists():
             return
@@ -1457,7 +1590,7 @@ class WorkOrderService:
                 number=SequenceService.get_next_number(PurchaseOrder),
                 supplier_id=supplier_id,
                 work_order=work_order,
-                warehouse=work_order.warehouse or Warehouse.objects.first(),
+                warehouse=work_order.warehouse or WorkOrderService._default_warehouse(),
                 status=PurchaseOrder.Status.CONFIRMED,
                 notes=f"Generado automáticamente desde {work_order.display_id}",
             )
@@ -1565,10 +1698,7 @@ class WorkOrderService:
         product = work_order.product or (
             work_order.sale_line.product if work_order.sale_line else None
         )
-        auto_finalize = (
-            product.mfg_profile.mfg_auto_finalize if product and product.mfg_profile else False
-        )
-        if not auto_finalize:
+        if not (product and product.is_express):
             WorkflowService.create_task(
                 task_type="OT_CREATION",
                 title=f"Asignación materiales: {work_order.display_id}",
@@ -1579,6 +1709,55 @@ class WorkOrderService:
                 content_object=work_order,
                 category=Task.Category.TASK,
                 data=task_meta,
+            )
+
+    @staticmethod
+    def _apply_planning_drafts(work_order, mfg_data):
+        """
+        Applies the optional ``materials_draft`` / ``outsourced_draft`` lists that the
+        POS drawer stores inside ``SaleLine.manufacturing_data``.
+
+        Same effect as the operator adding them in wizard steps 4 and 5. Entries that
+        point to a product / supplier / UoM that no longer exists are skipped, so a
+        stale draft can never block the OT creation.
+        """
+        if not mfg_data:
+            return
+
+        def _uom_for(entry, component):
+            uom_id = entry.get("uom_id")
+            return UoM.objects.filter(pk=uom_id).first() if uom_id else component.uom
+
+        for entry in mfg_data.get("materials_draft") or []:
+            component = Product.objects.filter(pk=entry.get("product_id")).first()
+            if component is None:
+                continue
+            WorkOrderService.add_material(
+                work_order,
+                component,
+                entry.get("quantity") or 1,
+                uom=_uom_for(entry, component),
+            )
+
+        if not mfg_data.get("outsourced_draft"):
+            return
+
+        from contacts.models import Contact
+
+        for entry in mfg_data["outsourced_draft"]:
+            component = Product.objects.filter(pk=entry.get("product_id")).first()
+            supplier = Contact.objects.filter(pk=entry.get("supplier_id")).first()
+            if component is None or supplier is None:
+                continue
+            WorkOrderService.add_material(
+                work_order,
+                component,
+                entry.get("quantity") or 1,
+                uom=_uom_for(entry, component),
+                is_outsourced=True,
+                supplier=supplier,
+                unit_price=entry.get("unit_price") or 0,
+                document_type=entry.get("document_type") or "FACTURA",
             )
 
     @staticmethod
@@ -1606,7 +1785,8 @@ class WorkOrderService:
             "folio_enabled": mfg_data.get("folio_enabled", False),
             "folio_start": mfg_data.get("folio_start", ""),
             "design_attachments": mfg_data.get("design_filenames", []),
-            "approval_attachment": mfg_data.get("approval_filename"),
+            # No approval_attachment: the sale never captures the customer's approval;
+            # the prepress approval does (and sets the key when a file is attached).
             # Map specs
             "prepress_specs": mfg_data.get("specifications", {}).get("prepress", ""),
             "press_specs": mfg_data.get("specifications", {}).get("press", ""),
@@ -1633,9 +1813,11 @@ class WorkOrderService:
         from purchasing.models import PurchaseOrder
         from workflow.models import Task
 
-        has_confirmed_pos = work_order.purchase_orders.exclude(
-            status=PurchaseOrder.Status.DRAFT
-        ).exists()
+        has_confirmed_pos = (
+            work_order.purchase_orders.exclude(status=PurchaseOrder.Status.DRAFT)
+            .exclude(status=PurchaseOrder.Status.CANCELLED)
+            .exists()
+        )
 
         has_stock_movements = ProductionConsumption.objects.filter(work_order=work_order).exists()
 
@@ -1656,7 +1838,56 @@ class WorkOrderService:
             "has_stock_movements": has_stock_movements,
             "completed_tasks_count": completed_tasks_count,
             "manually_edited_materials_count": manually_edited_materials_count,
+            "rewind_blockers": WorkOrderService.rewind_blockers(work_order),
+            # Per reopenable stage: purchase orders only block reopening the outsourcing.
+            "rewind_blockers_by_stage": WorkOrderService._rewind_blockers_by_stage(
+                work_order, has_confirmed_pos, has_stock_movements
+            ),
         }
+
+    @staticmethod
+    def _rewind_blockers_by_stage(work_order, has_confirmed_pos, has_stock_movements):
+        sequence = WorkOrderService.STAGE_SEQUENCE
+        if work_order.current_stage not in sequence:
+            return {}
+        outsourcing_idx = sequence.index("OUTSOURCING_ASSIGNMENT")
+        result = {}
+        for idx, stage in enumerate(sequence[: sequence.index(work_order.current_stage)]):
+            blockers = []
+            if has_confirmed_pos and idx <= outsourcing_idx:
+                blockers.append("Existen Órdenes de Compra confirmadas para servicios tercerizados.")
+            if has_stock_movements:
+                blockers.append("Existen movimientos de stock asociados a la OT.")
+            result[stage] = blockers
+        return result
+
+    @staticmethod
+    def rewind_blockers(work_order, target_stage=None) -> list[str]:
+        """Irreversible effects that make moving the OT back to ``target_stage`` unsafe.
+
+        Completed approval tasks and manually added materials are NOT blockers: the
+        rewind resets the former and the latter are plain editable data. Only effects
+        that leave the OT's own data (purchase orders, stock) block the move — and the
+        purchase orders only when the rewind reopens the outsourcing assignment that
+        generated them. Without a target, the deepest rewind is assumed.
+        """
+        from purchasing.models import PurchaseOrder
+
+        sequence = WorkOrderService.STAGE_SEQUENCE
+        reopens_outsourcing = target_stage is None or (
+            target_stage in sequence
+            and sequence.index(target_stage) <= sequence.index("OUTSOURCING_ASSIGNMENT")
+        )
+        blockers = []
+        if reopens_outsourcing and (
+            work_order.purchase_orders.exclude(status=PurchaseOrder.Status.DRAFT)
+            .exclude(status=PurchaseOrder.Status.CANCELLED)
+            .exists()
+        ):
+            blockers.append("Existen Órdenes de Compra confirmadas para servicios tercerizados.")
+        if ProductionConsumption.objects.filter(work_order=work_order).exists():
+            blockers.append("Existen movimientos de stock asociados a la OT.")
+        return blockers
 
     @staticmethod
     @transaction.atomic
@@ -1686,16 +1917,28 @@ class WorkOrderService:
                 "Existen Órdenes de Compra asociadas. No se puede modificar el volumen."
             )
 
+        from inventory.services import UoMService
+
         old_quantity = float(
             work_order.stage_data.get("quantity", 0) if work_order.stage_data else 0
         )
+        old_uom_id = (work_order.stage_data or {}).get("uom_id")
+        old_uom = UoM.objects.filter(pk=old_uom_id).first() if old_uom_id else None
+        new_uom = UoM.objects.filter(pk=uom_id).first() if uom_id else None
+
+        # Compare both volumes in the same unit, or 1000 un → 10 cientos scales by 0.01
+        new_in_old_uom = float(
+            UoMService.convert_quantity(Decimal(str(quantity)), from_uom=new_uom, to_uom=old_uom)
+            if old_uom and new_uom
+            else quantity
+        )
 
         # Recalculate BOM-sourced materials proportionally
-        if old_quantity > 0 and old_quantity != quantity:
-            ratio = quantity / old_quantity
+        if old_quantity > 0 and old_quantity != new_in_old_uom:
+            ratio = Decimal(str(new_in_old_uom)) / Decimal(str(old_quantity))
             bom_materials = work_order.materials.filter(source="BOM")
             for mat in bom_materials:
-                mat.quantity_planned = round(float(mat.quantity_planned) * ratio, 6)
+                mat.quantity_planned = (mat.quantity_planned * ratio).quantize(Decimal("0.000001"))
                 mat.save(update_fields=["quantity_planned"])
 
         # Update stage_data
@@ -1912,6 +2155,68 @@ class WorkOrderService:
             products_by_id = {p.id: p for p in products}
         return stocks, products_by_id
 
+    # Keys of stage_data that belong to a production stage; once that stage has started
+    # they are frozen. Everything else (contact, description, notes) stays editable.
+    _STAGE_DATA_LOCKS = (
+        (
+            "PREPRESS",
+            (
+                "prepress_specs",
+                "design_needed",
+                "folio_enabled",
+                "folio_start",
+                "design_attachments",
+            ),
+            "Pre-Impresión",
+        ),
+        ("PRESS", ("press_specs", "print_type"), "Impresión"),
+        ("POSTPRESS", ("postpress_specs",), "Post-Impresión"),
+    )
+
+    @staticmethod
+    def validate_stage_data_edit(work_order, new_stage_data):
+        """Reject changes to stage-owned stage_data once that stage has started.
+
+        Mirrors ``update_mfg_section`` so the generic PATCH can't bypass its locks.
+        """
+        order = [
+            "MATERIAL_ASSIGNMENT",
+            "MATERIAL_APPROVAL",
+            "OUTSOURCING_ASSIGNMENT",
+            "PREPRESS",
+            "PRESS",
+            "POSTPRESS",
+            "OUTSOURCING_VERIFICATION",
+            "RECTIFICATION",
+            "FINISHED",
+        ]
+        current = order.index(work_order.current_stage) if work_order.current_stage in order else -1
+        old = work_order.stage_data or {}
+        phases_old = old.get("phases") or {}
+        phases_new = new_stage_data.get("phases") or {}
+
+        for stage, keys, label in WorkOrderService._STAGE_DATA_LOCKS:
+            if current < order.index(stage):
+                continue
+            changed = any(k in new_stage_data and new_stage_data[k] != old.get(k) for k in keys)
+            phase_key = stage.lower()
+            if phase_key in phases_new and phases_new.get(phase_key) != phases_old.get(phase_key):
+                changed = True
+            if changed:
+                raise ValidationError(f"La etapa de {label} ya ha comenzado.")
+
+    @staticmethod
+    def validate_update_payload(work_order, data):
+        """Checks of a generic PATCH/PUT: editable OT, identity fields, stage locks."""
+        import json
+
+        WorkOrderService.validate_update_allowed(work_order, data.keys())
+        raw_stage_data = data.get("stage_data")
+        if raw_stage_data:
+            parsed = json.loads(raw_stage_data) if isinstance(raw_stage_data, str) else raw_stage_data
+            if isinstance(parsed, dict):
+                WorkOrderService.validate_stage_data_edit(work_order, parsed)
+
     @staticmethod
     def validate_update_allowed(work_order, data_keys):
         terminal_stages = {WorkOrder.Stage.FINISHED, WorkOrder.Stage.CANCELLED}
@@ -1932,27 +2237,6 @@ class WorkOrderService:
 
     @staticmethod
     @transaction.atomic
-    def delete_work_order(work_order):
-        if work_order.current_stage != WorkOrder.Stage.MATERIAL_ASSIGNMENT:
-            raise ValidationError(
-                "Solo se pueden eliminar órdenes en etapa de Asignación de Materiales. Para otras etapas, use la opción Anular."
-            )
-
-        if work_order.purchase_orders.exists():
-            raise ValidationError(
-                "No se puede eliminar una orden con Órdenes de Compra generadas. Anule la OT en su lugar."
-            )
-
-        from django.contrib.contenttypes.models import ContentType
-
-        from workflow.models import Notification, Task
-
-        content_type = ContentType.objects.get_for_model(work_order)
-        Task.objects.filter(content_type=content_type, object_id=work_order.id).delete()
-        Notification.objects.filter(content_type=content_type, object_id=work_order.id).delete()
-        work_order.delete()
-
-    @staticmethod
     def rectify_from_request(work_order, request):
         material_adjustments = request.data.get("material_adjustments", [])
         outsourced_adjustments = request.data.get("outsourced_adjustments", [])
@@ -1981,6 +2265,11 @@ class WorkOrderService:
             except Exception:
                 data = {}
 
+        if not str(notes or "").strip() and WorkOrderService._is_backward(
+            work_order, next_stage
+        ):
+            raise ValidationError("Indica el motivo para reabrir la etapa.")
+
         # Validate stage
         stage_match = None
         for choice, label in WorkOrder.Stage.choices:
@@ -1990,15 +2279,6 @@ class WorkOrderService:
 
         if not stage_match:
             raise ValidationError(f"Etapa inválida: {next_stage}")
-
-        # Validate stock availability via service
-        from .serializers import WorkOrderSerializer
-        stocks, products_by_id = WorkOrderService.build_stock_context(work_order)
-        ctx = {"stocks_by_product": stocks, "products_by_id": products_by_id}
-        serializer = WorkOrderSerializer(work_order, context=ctx)
-        WorkOrderService.validate_transition_stock(
-            work_order, next_stage, serializer.data.get("materials", [])
-        )
 
         WorkOrderService.transition_to(
             work_order=work_order,
@@ -2082,19 +2362,26 @@ class WorkOrderService:
     @staticmethod
     def remove_material(work_order, material_id):
         material = WorkOrderMaterial.objects.get(pk=material_id, work_order=work_order)
+        WorkOrderService._assert_material_not_ordered(material)
         if material.source != "MANUAL":
             raise ValidationError("Solo se pueden eliminar materiales agregados manualmente.")
         material.delete()
 
     @staticmethod
-    def bulk_transition(ids, next_stage):
+    def bulk_transition(ids, next_stage, user=None):
         if not ids or not next_stage:
             raise ValidationError("ids y next_stage son requeridos")
         results = {"ok": [], "errors": []}
         for pk in ids:
             try:
                 wo = WorkOrder.objects.get(pk=pk)
-                WorkOrderService.transition_to(wo, next_stage)
+                # Reopening a stage needs a reason and resets approvals: wizard only.
+                if WorkOrderService._is_backward(wo, next_stage):
+                    raise ValidationError(
+                        "Reabrir una etapa se hace desde la OT, indicando el motivo."
+                    )
+                with transaction.atomic():
+                    WorkOrderService.transition_to(wo, next_stage, user=user)
                 results["ok"].append(pk)
             except Exception as e:
                 results["errors"].append({"id": pk, "error": str(e)})
@@ -2160,7 +2447,7 @@ class WorkOrderService:
         warehouse = (
             Warehouse.objects.get(pk=warehouse_id)
             if warehouse_id
-            else Warehouse.objects.first()
+            else WorkOrderService._default_warehouse()
         )
         if not uom_id:
             raise ValidationError("La unidad de medida es requerida para fabricaciones manuales.")

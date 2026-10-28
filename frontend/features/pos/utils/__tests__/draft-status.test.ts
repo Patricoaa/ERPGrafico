@@ -7,7 +7,7 @@ import {
     statusToneBg,
     statusToneText,
 } from "../draft-status"
-import type { SyncDraft } from "@/features/pos/hooks/useDraftSync"
+import type { SyncDraft } from "../../hooks"
 
 function makeDraft(overrides: Partial<SyncDraft>): SyncDraft {
     const base: SyncDraft = {

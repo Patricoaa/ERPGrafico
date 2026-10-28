@@ -68,7 +68,8 @@ describe("WizardProcessSidebar — status board", () => {
         expect(screen.getAllByText("Preparación")).toHaveLength(1)
         expect(screen.getAllByText("Producción")).toHaveLength(1)
         expect(screen.getByTestId("rail-progress")).toHaveAttribute("aria-valuenow", "67")
-        expect(screen.getByText("Viendo 02 / 03")).toBeInTheDocument()
+        expect(screen.queryByText(/Viendo/)).not.toBeInTheDocument()
+        expect(screen.queryByTestId("step-connector")).not.toBeInTheDocument()
     })
 
     it("shows the blocker warning on the current stage", () => {
@@ -85,7 +86,6 @@ describe("WizardProcessSidebar — status board", () => {
         renderSidebar(makeOrder(), 0, 1)
 
         expect(screen.getByText("Actual")).toBeInTheDocument()
-        expect(screen.getByText("Viendo 01 / 03")).toBeInTheDocument()
     })
 
     it("does not show warnings for past stages", () => {
@@ -117,45 +117,12 @@ describe("WizardProcessSidebar — status board", () => {
         expect(screen.getByText("Desde 20/10/2026 · Ana")).toBeInTheDocument()
     })
 
-    it("exposes blocked governance actions as focusable disabled controls", () => {
+    it("keeps rows navigation-only: no per-row view / edit / rewind actions", () => {
         renderSidebar(makeOrder({ status: "IN_PROGRESS" }), 0, 1)
 
-        const edit = screen.getByLabelText(/Editar datos de etapa: No se puede editar/)
-        expect(edit).toHaveAttribute("aria-disabled", "true")
-        expect(edit).toHaveAttribute("tabindex", "0")
-        expect(edit).toHaveAttribute("title", expect.stringContaining("No se puede editar"))
-
-        const rewind = screen.getByLabelText(/Retroceder a esta etapa: No se puede retroceder/)
-        expect(rewind).toHaveAttribute("aria-disabled", "true")
-        expect(rewind).toHaveAttribute("tabindex", "0")
-
-        // View stays enabled and is a real button.
-        expect(screen.getByLabelText("Ver etapa (solo lectura)").tagName).toBe("BUTTON")
-    })
-
-    it("labels the active edit and rewind modes", () => {
-        const { rerender } = renderSidebar(makeOrder(), 1, 1, "edit-in-place")
-        expect(screen.getByText("Editando")).toBeInTheDocument()
-
-        rerender(
-            <WizardProcessSidebar
-                stages={stages}
-                viewingStepIndex={1}
-                actualStepIndex={1}
-                stepMode="rewind"
-                onStepClick={vi.fn()}
-                order={makeOrder()}
-            />,
-        )
-        expect(screen.getByText("Retroceso")).toBeInTheDocument()
-    })
-
-    it("does not render governance actions on future stages", () => {
-        renderSidebar(makeOrder(), 1, 1)
-
-        const futureRow = screen.getByTestId("step-2")
-        expect(within(futureRow).queryByRole("button", { name: /Ver etapa/ })).not.toBeInTheDocument()
-        expect(within(futureRow).queryByLabelText(/Editar datos de etapa/)).not.toBeInTheDocument()
+        expect(screen.queryByLabelText(/Editar datos de etapa/)).not.toBeInTheDocument()
+        expect(screen.queryByLabelText(/Retroceder a esta etapa/)).not.toBeInTheDocument()
+        expect(screen.queryByLabelText(/Ver etapa/)).not.toBeInTheDocument()
     })
 
     it("supports the collapsed icon-only rail", () => {

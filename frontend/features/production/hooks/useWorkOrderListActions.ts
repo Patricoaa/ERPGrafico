@@ -16,7 +16,6 @@ import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useRealtime } from '@/features/realtime'
 import { WORK_ORDERS_LIST_KEY, WORK_ORDER_QUERY_KEY } from './useWorkOrderMutations'
 
-interface DeletePayload { id: number | string }
 interface AnnulPayload  { id: number | string; notes?: string }
 interface TransitionListPayload { id: number | string; nextStage: string }
 interface BulkTransitionPayload { ids: number[]; nextStage: string }
@@ -40,19 +39,6 @@ export function useWorkOrderListActions(
     invalidateCrossFeature(queryClient, keys)
     onSuccess?.()
   }
-
-  // ── delete ─────────────────────────────────────────────────────────────────
-  const deleteMutation = useMutation({
-    mutationFn: async ({ id }: DeletePayload) => {
-      await api.delete(`/production/orders/${id}/`)
-    },
-    onSuccess: (_, { id }) => {
-      markLocalMutation()
-      toast.success('OT eliminada correctamente.')
-      invalidate(id)
-    },
-    onError: (err) => showApiError(err, 'Error al eliminar la OT'),
-  })
 
   // ── annul ──────────────────────────────────────────────────────────────────
   const annulMutation = useMutation({
@@ -144,13 +130,11 @@ export function useWorkOrderListActions(
   })
 
   return {
-    deleteOrder:  deleteMutation.mutateAsync,
     annulOrder:   annulMutation.mutateAsync,
     transition:   transitionMutation.mutateAsync,
     duplicateOrder: duplicateMutation.mutateAsync,
     bulkTransition: bulkTransitionMutation.mutateAsync,
     bulkPrint:    bulkPrintMutation.mutateAsync,
-    isDeleting:   deleteMutation.isPending,
     isAnnuling:   annulMutation.isPending,
     isTransitioning: transitionMutation.isPending,
     isDuplicating: duplicateMutation.isPending,

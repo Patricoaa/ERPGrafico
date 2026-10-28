@@ -16,7 +16,7 @@ import React from "react"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { FileIcon, Paintbrush, Printer, FileText, Upload, Plus, X } from "lucide-react"
+import { FileIcon, Paintbrush, Printer, FileText, Upload, Plus, X, Wrench } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { LabeledInput, FormSection } from "@/components/shared"
 
@@ -142,14 +142,14 @@ export function ManufacturingSpecsEditor({
       {showProductDescription && (
         <LabeledInput
           label="Descripción del Trabajo"
-          placeholder="DETALLES ESPECÍFICOS DEL PRODUCTO..."
+          placeholder="Detalles específicos del producto…"
           value={value.product_description}
           onChange={e => set({ product_description: e.target.value })}
           disabled={disabled}
         />
       )}
 
-      <FormSection title="Especificaciones Técnicas" icon={Paintbrush} />
+      <FormSection title="Especificaciones Técnicas" icon={Wrench} />
 
       <div className={cn(
         "grid grid-cols-1 gap-4",
@@ -161,7 +161,7 @@ export function ManufacturingSpecsEditor({
           <FormSection title="Pre-Impresión" icon={Paintbrush} className="pt-0 pb-4" />
 
           <div className="flex items-center justify-between mb-4 mt-1">
-            <span className="text-3xs text-muted-foreground font-bold uppercase tracking-tight">Habilitar Fase</span>
+            <span className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">Habilitar Fase</span>
             <Switch
               checked={value.phases.prepress}
               onCheckedChange={v => setPhase('prepress', v)}
@@ -178,12 +178,12 @@ export function ManufacturingSpecsEditor({
                 rows={3}
                 value={value.specifications.prepress}
                 onChange={e => setSpec('prepress', e.target.value)}
-                placeholder="Instrucciones de diseño..."
+                placeholder="Instrucciones de diseño…"
                 disabled={disabled}
               />
 
-              <div className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/20 border border-border/40">
-                <span className="text-3xs font-bold uppercase tracking-tight text-muted-foreground">Diseño Requerido</span>
+              <div className="flex items-center justify-between px-3 py-2 rounded-sm bg-muted/20 border border-border/40">
+                <span className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">Diseño Requerido</span>
                 <Switch
                   checked={value.design_needed}
                   onCheckedChange={v => set({ design_needed: v })}
@@ -196,10 +196,10 @@ export function ManufacturingSpecsEditor({
                 <div className="space-y-3 pt-2 border-t border-dashed">
                   {value.existing_design_files.length > 0 && (
                     <div className="space-y-1.5">
-                      <Label className="text-4xs uppercase text-muted-foreground/80 font-bold tracking-widest pl-1">Archivos Originales</Label>
+                      <Label className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">Archivos Originales</Label>
                       <div className="space-y-1">
                         {value.existing_design_files.map((file, idx) => (
-                          <div key={`existing-${idx}`} className="flex items-center justify-between px-2 py-1.5 bg-primary/5 rounded-md text-2xs border border-primary/20">
+                          <div key={`existing-${idx}`} className="flex items-center justify-between px-2 py-1.5 bg-primary/5 rounded-md text-xs border border-primary/20">
                             <div className="flex items-center gap-2 truncate">
                               <FileIcon className="h-3 w-3 shrink-0 text-primary" />
                               <span className="truncate font-bold">{file}</span>
@@ -216,10 +216,10 @@ export function ManufacturingSpecsEditor({
                   )}
 
                   <div className="space-y-1.5">
-                    {value.design_files.length > 0 && <Label className="text-4xs uppercase text-muted-foreground/80 font-bold tracking-widest pl-1">Nuevos Archivos</Label>}
+                    {value.design_files.length > 0 && <Label className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">Nuevos Archivos</Label>}
                     <div className="space-y-1">
                       {value.design_files.map((file, idx) => (
-                        <div key={`new-${idx}`} className="flex items-center justify-between px-2 py-1.5 bg-muted/40 rounded-md text-2xs border border-border/40">
+                        <div key={`new-${idx}`} className="flex items-center justify-between px-2 py-1.5 bg-muted/40 rounded-md text-xs border border-border/40">
                           <div className="flex items-center gap-2 truncate">
                             <Upload className="h-3 w-3 shrink-0 text-muted-foreground" />
                             <span className="truncate">{file.name}</span>
@@ -233,7 +233,7 @@ export function ManufacturingSpecsEditor({
                       ))}
                     </div>
                     {!disabled && (
-                      <label className="flex items-center justify-center gap-2 py-2 border border-dashed border-primary/30 rounded-md text-3xs text-primary font-bold uppercase tracking-widest cursor-pointer hover:bg-primary/5 transition-all">
+                      <label className="flex items-center justify-center gap-2 py-2 border border-dashed border-primary/30 rounded-md text-2xs text-primary font-bold uppercase tracking-widest cursor-pointer hover:bg-primary/5 transition-all">
                         <Plus className="h-3 w-3" /> Adjuntar Diseño
                         <input type="file" multiple className="hidden" onChange={handleFileChange} />
                       </label>
@@ -243,8 +243,8 @@ export function ManufacturingSpecsEditor({
               )}
 
               <div className="space-y-3 pt-2 border-t border-dashed">
-                <div className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/20 border border-border/40">
-                  <span className="text-3xs font-bold uppercase tracking-tight text-muted-foreground">Numeración (Folio)</span>
+                <div className="flex items-center justify-between px-3 py-2 rounded-sm bg-muted/20 border border-border/40">
+                  <span className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">Numeración (Folio)</span>
                   <Switch
                     checked={value.folio_enabled}
                     onCheckedChange={v => set({ folio_enabled: v })}
@@ -259,7 +259,6 @@ export function ManufacturingSpecsEditor({
                       placeholder="Ej: 0001"
                       value={value.folio_start}
                       onChange={e => set({ folio_start: e.target.value })}
-                      className="font-mono font-bold"
                       disabled={disabled}
                     />
                   </div>
@@ -274,7 +273,7 @@ export function ManufacturingSpecsEditor({
           <FormSection title="Impresión" icon={Printer} className="pt-0 pb-4" />
 
           <div className="flex items-center justify-between mb-4 mt-1">
-            <span className="text-3xs text-muted-foreground font-bold uppercase tracking-tight">Habilitar Fase</span>
+            <span className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">Habilitar Fase</span>
             <Switch
               checked={value.phases.press}
               onCheckedChange={v => setPhase('press', v)}
@@ -291,13 +290,13 @@ export function ManufacturingSpecsEditor({
                 rows={3}
                 value={value.specifications.press}
                 onChange={e => setSpec('press', e.target.value)}
-                placeholder="Tintas, papel, terminaciones..."
+                placeholder="Tintas, papel, terminaciones…"
                 disabled={disabled}
               />
 
               <div className="space-y-2">
-                <span className="text-4xs uppercase text-muted-foreground font-bold tracking-widest pl-1">Tecnología</span>
-                <div className="grid grid-cols-3 gap-1.5 p-1 bg-muted/30 rounded-md border border-border/40">
+                <span className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">Tecnología</span>
+                <div className="grid grid-cols-3 gap-1.5 p-1 bg-muted/30 rounded-sm border border-border/40">
                   {(['offset', 'digital', 'especial'] as const).map(type => (
                     <Button
                       key={type}
@@ -327,7 +326,7 @@ export function ManufacturingSpecsEditor({
           <FormSection title="Post-Impresión" icon={FileText} className="pt-0 pb-4" />
 
           <div className="flex items-center justify-between mb-4 mt-1">
-            <span className="text-3xs text-muted-foreground font-bold uppercase tracking-tight">Habilitar Fase</span>
+            <span className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">Habilitar Fase</span>
             <Switch
               checked={value.phases.postpress}
               onCheckedChange={v => setPhase('postpress', v)}
@@ -344,7 +343,7 @@ export function ManufacturingSpecsEditor({
                 rows={3}
                 value={value.specifications.postpress}
                 onChange={e => setSpec('postpress', e.target.value)}
-                placeholder="Acabados, laminado, troquel, etc."
+                placeholder="Acabados, laminado, troquel…"
                 disabled={disabled}
               />
             </div>
@@ -360,7 +359,7 @@ export function ManufacturingSpecsEditor({
             as="textarea"
             label=""
             rows={4}
-            placeholder="INSTRUCCIONES CRÍTICAS PARA EL EQUIPO DE PRODUCCIÓN..."
+            placeholder="Instrucciones para el equipo de producción…"
             value={value.internal_notes}
             onChange={e => set({ internal_notes: e.target.value })}
             disabled={disabled}
