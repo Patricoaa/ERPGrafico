@@ -1,10 +1,11 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
-import { AlertTriangle, Factory, FileText, Plus, Keyboard, Printer, Link2 } from 'lucide-react'
+import { AlertTriangle, Eye, Factory, FileText, Pencil, Plus, Keyboard, Printer, Link2, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 import {
@@ -30,7 +31,6 @@ import { DocumentRelationsTab, useDocumentRelations } from '@/features/documents
 import { useWorkOrderMutations, productionApi } from '../hooks'
 import { completeTask } from '@/features/workflow'
 
-import { WizardStageNotice } from './WizardStageNotice'
 import { WizardProcessSidebar } from './WizardProcessSidebar'
 import { MobileStageDrawer } from './MobileStageDrawer'
 import { WizardStickyFooter } from './WizardStickyFooter'
@@ -187,6 +187,9 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     mode.kind === 'manage' ? mode.orderId : null
   )
   const wasCreatingRef = useRef(false)
+  // targetStage from the URL is only used for the initial navigation; subsequent
+  // fetchOrder calls (after transitions) must navigate to the actual current_stage.
+  const initialTargetUsedRef = useRef(false)
   const isCreating = localOrderId === null
 
   // ── mutations (all write ops via hook) ─────────────────────────────────────
@@ -303,6 +306,46 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       .find(Boolean) as string | undefined
   }, [isViewingCurrentStage, pendingTasks, taskFiles, taskConfirmations])
 
+  // Actions rendered inside each step's StepHeader.rightContent — read/edit/reopen badge.
+  const stageHeaderActions = useMemo((): ReactNode => {
+    if (isCreating || !order || isViewingCurrentStage) return null
+    if (isTerminalOrder) {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground">
+          <Eye className="h-3 w-3 shrink-0" aria-hidden />Solo lectura
+        </span>
+      )
+    }
+    if (!viewedCaps) return null
+    const openRewind = () => { setPendingPrevStage(currentStageId as string); setIsBackwardModalOpen(true) }
+    if (viewedCaps.canEdit) {
+      return (
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-info/30 bg-info/10 px-2.5 py-1 text-xs font-medium text-info">
+            <Pencil className="h-3 w-3 shrink-0" aria-hidden />Editable
+          </span>
+          {viewedCaps.canRewind && (
+            <Button type="button" variant="outline" size="sm" onClick={openRewind} className="h-7 gap-1.5 text-xs">
+              <RotateCcw className="h-3 w-3" aria-hidden />Reabrir
+            </Button>
+          )}
+        </div>
+      )
+    }
+    if (viewedCaps.canRewind) {
+      return (
+        <Button type="button" variant="outline" size="sm" onClick={openRewind} className="h-7 gap-1.5 text-xs">
+          <RotateCcw className="h-3 w-3" aria-hidden />Reabrir etapa
+        </Button>
+      )
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground" title={viewedCaps.rewindBlockedReason}>
+        <Eye className="h-3 w-3 shrink-0" aria-hidden />Solo lectura
+      </span>
+    )
+  }, [isCreating, order, isViewingCurrentStage, isTerminalOrder, viewedCaps, currentStageId, setPendingPrevStage, setIsBackwardModalOpen])
+
   // ── data fetching ──────────────────────────────────────────────────────────
   const fetchOrder = async () => {
     if (!localOrderId) return
@@ -319,9 +362,12 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       // Resolve index using the same STAGES the component uses
       const stages = getUnifiedStages(inferredType, orderData as unknown as WorkOrder)
       let resolvedIndex = -1
-      const targetStage = mode.kind === 'manage' ? mode.targetStage : undefined
+      // targetStage (from the URL ?step= param) is only honoured on the first load.
+      // Post-transition refreshes must follow the order to its new current_stage.
+      const targetStage = !initialTargetUsedRef.current && mode.kind === 'manage' ? mode.targetStage : undefined
       if (targetStage) {
         resolvedIndex = stages.findIndex((s) => s.id === targetStage)
+        initialTargetUsedRef.current = true
       }
       if (resolvedIndex === -1) {
         resolvedIndex = stages.findIndex((s) => s.id === (orderData as unknown as WorkOrder).current_stage)
@@ -345,6 +391,8 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     setPrevMode(mode)
     setPrevOpen(open)
     setLocalOrderId(open && mode.kind === 'manage' ? mode.orderId : null)
+    // Reset so the new targetStage (from the URL) is honoured on re-open.
+    initialTargetUsedRef.current = false
   }
 
   useEffect(() => {
@@ -685,30 +733,8 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
           {/* Center content */}
           <div className="flex-1 flex flex-col overflow-hidden relative">
-            {/* Stage header — shown for all workflow stages (not creation steps) */}
-            {!isCreating && order && currentStageId && !['ORIGIN_SELECTION', 'SALE_ORDER_PRODUCT', 'PRODUCT_SELECTION', 'MFG_CONFIG'].includes(currentStageId) && (
-              <div className="px-6 pt-5 pb-0 flex-shrink-0 space-y-2">
-                <WizardStageNotice
-                  stage={STAGES[viewingStepIndex]}
-                  isCurrent={isViewingCurrentStage}
-                  isTerminal={isTerminalOrder}
-                  capabilities={showStageNotice && viewedCaps ? viewedCaps : undefined}
-                  editableInline={editableInline}
-                  onReopen={() => {
-                    setPendingPrevStage(currentStageId as string)
-                    setIsBackwardModalOpen(true)
-                  }}
-                />
-                {blockingWarning && (
-                  <div role="alert" className="flex items-start gap-2.5 rounded-md border border-warning/30 bg-warning/10 px-3 py-2.5 text-sm text-warning">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                    <span>{blockingWarning}</span>
-                  </div>
-                )}
-              </div>
-            )}
-            {/* Blocking warning for creation steps */}
-            {blockingWarning && (isCreating || ['MFG_CONFIG'].includes(currentStageId ?? '')) && (
+            {/* Blocking warning (inline, replaces toast for transition validation) */}
+            {blockingWarning && (
               <div className="px-6 pt-4 flex-shrink-0">
                 <div role="alert" className="flex items-start gap-2.5 rounded-md border border-warning/30 bg-warning/10 px-3 py-2.5 text-sm text-warning">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
@@ -845,10 +871,11 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       isViewingCurrentStage={isViewingCurrentStage || editableInline}
                       onMaterialSaved={fetchOrder}
                       onMaterialDeleted={fetchOrder}
+                      headerActions={stageHeaderActions}
                     />
                   )}
                   {currentStageId === 'MATERIAL_APPROVAL' && (
-                    <MaterialApprovalStep order={order as WorkOrder} />
+                    <MaterialApprovalStep order={order as WorkOrder} headerActions={stageHeaderActions} />
                   )}
                   {currentStageId === 'OUTSOURCING_ASSIGNMENT' && (
                     <OutsourcingAssignmentStep
@@ -856,6 +883,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       isViewingCurrentStage={isViewingCurrentStage || editableInline}
                       onMaterialSaved={fetchOrder}
                       onMaterialDeleted={fetchOrder}
+                      headerActions={stageHeaderActions}
                     />
                   )}
                   {currentStageId === 'PREPRESS' && (
@@ -864,6 +892,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       stageData={stageData}
                       actionable={isViewingCurrentStage && !isTerminalOrder}
                       onRefresh={fetchOrder}
+                      headerActions={stageHeaderActions}
                     />
                   )}
                   {currentStageId === 'PRESS' && (
@@ -871,6 +900,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       order={order as WorkOrder}
                       actionable={isViewingCurrentStage && !isTerminalOrder}
                       onRefresh={fetchOrder}
+                      headerActions={stageHeaderActions}
                     />
                   )}
                   {currentStageId === 'POSTPRESS' && (
@@ -878,15 +908,17 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       order={order as WorkOrder}
                       actionable={isViewingCurrentStage && !isTerminalOrder}
                       onRefresh={fetchOrder}
+                      headerActions={stageHeaderActions}
                     />
                   )}
                   {currentStageId === 'OUTSOURCING_VERIFICATION' && (
-                    <OutsourcingVerificationStep order={order as WorkOrder} />
+                    <OutsourcingVerificationStep order={order as WorkOrder} headerActions={stageHeaderActions} />
                   )}
                   {currentStageId === 'RECTIFICATION' && (
                     <div className="space-y-6">
                       <RectificationStep
                         order={order as WorkOrder}
+                        headerActions={stageHeaderActions}
                         onChange={(adjustments, producedQty, outsourcedAdj) => {
                           setRectificationAdjustments(adjustments)
                           setRectificationProducedQty(producedQty)
@@ -902,6 +934,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       isUploadingPhoto={mutations.isUploadingPhoto}
                       onPrintCopy={async () => setIsDuplicateModalOpen(true)}
                       isDuplicating={mutations.isDuplicating}
+                      headerActions={stageHeaderActions}
                     />
                   )}
                 </div>

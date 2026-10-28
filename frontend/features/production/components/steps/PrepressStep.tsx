@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { ExternalLink, FileText, Hash, Layers, Lock, Package, Pencil, Sparkles, X, type LucideIcon } from 'lucide-react'
+import { ExternalLink, FileText, Hash, Layers, Package, Pencil, Sparkles, X, type LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LabeledInput, LabeledSwitch, DocumentAttachmentDropzone, StepHeader } from '@/components/shared'
 import { cn, formatBytes } from '@/lib/utils'
@@ -20,6 +21,7 @@ interface PrepressStepProps {
   stageData: WorkOrder['stage_data']
   actionable?: boolean
   onRefresh?: () => void
+  headerActions?: ReactNode
 }
 
 function FileGroup({ icon: Icon, title, files }: { icon: LucideIcon; title: string; files: ProductionAttachment[] }) {
@@ -52,7 +54,7 @@ function FileGroup({ icon: Icon, title, files }: { icon: LucideIcon; title: stri
 }
 
 /** The approval lives in the step's bottom panel; the body shows the design files and instructions. */
-export function PrepressStep({ order, stageData, actionable, onRefresh }: PrepressStepProps) {
+export function PrepressStep({ order, stageData, actionable, onRefresh, headerActions }: PrepressStepProps) {
   const { stepMode, setStepMode } = useWizardStore()
   const editing = stepMode === 'edit-in-place'
   const form = useForm({ resolver: zodResolver(schema) })
@@ -127,7 +129,7 @@ export function PrepressStep({ order, stageData, actionable, onRefresh }: Prepre
       <Pencil className="h-3.5 w-3.5" /> Editar
     </Button>
   ) : (
-    <Lock className="h-4 w-4 text-muted-foreground" />
+    headerActions ?? null
   )
 
   if (editing) {

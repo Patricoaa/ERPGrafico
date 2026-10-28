@@ -1,22 +1,30 @@
 "use client"
 
+import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
-import { Package } from 'lucide-react'
-import { StatusBadge, QuantityDisplay } from '@/components/shared'
+import { CheckCircle2, Package } from 'lucide-react'
+import { StatusBadge, QuantityDisplay, StepHeader } from '@/components/shared'
 import { StepEmptyPanel } from '../shared/StepEmptyPanel'
 import type { WorkOrder, WorkOrderMaterial } from '../../types'
 
 interface MaterialApprovalStepProps {
   order: WorkOrder
+  headerActions?: ReactNode
 }
 
 export function MaterialApprovalStep({
-  order,
+  order, headerActions,
 }: MaterialApprovalStepProps) {
   const stockMaterials = order.materials?.filter((m: WorkOrderMaterial) => !m.is_outsourced) ?? []
 
   return (
     <div className="flex flex-1 flex-col gap-3">
+      <StepHeader
+        title="Aprobación de Stock"
+        description="Verifica que los materiales asignados estén disponibles en bodega."
+        icon={CheckCircle2}
+        rightContent={headerActions}
+      />
       {stockMaterials.length === 0 && (
         <StepEmptyPanel
           icon={Package}

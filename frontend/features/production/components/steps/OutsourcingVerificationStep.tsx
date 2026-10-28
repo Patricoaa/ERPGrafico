@@ -1,24 +1,32 @@
 "use client"
 
+import type { ReactNode } from 'react'
 import { ExternalLink, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { StatusBadge, QuantityDisplay } from '@/components/shared'
+import { StatusBadge, QuantityDisplay, StepHeader } from '@/components/shared'
 import { PlanningEmptyState } from '../shared/PlanningEmptyState'
 import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
 import type { WorkOrder, WorkOrderMaterial } from '../../types'
 
 interface OutsourcingVerificationStepProps {
   order: WorkOrder
+  headerActions?: ReactNode
 }
 
 export function OutsourcingVerificationStep({
-  order,
+  order, headerActions,
 }: OutsourcingVerificationStepProps) {
   const { openEntity } = useGlobalModals()
   const outsourced = order.materials?.filter((m: WorkOrderMaterial) => m.is_outsourced) ?? []
 
   return (
     <div className="flex flex-1 flex-col gap-3">
+      <StepHeader
+        title="Verificación de Tercerizados"
+        description="Confirma la recepción de los servicios externos contratados."
+        icon={Truck}
+        rightContent={headerActions}
+      />
       {outsourced.length === 0 && <PlanningEmptyState kind="outsourcing" />}
       <div className="grid gap-3">
         {outsourced.map((m: WorkOrderMaterial) => {

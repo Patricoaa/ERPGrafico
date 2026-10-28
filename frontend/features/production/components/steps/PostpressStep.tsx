@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Layers, Lock, Pencil } from 'lucide-react'
+import { Layers, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LabeledInput, StepHeader } from '@/components/shared'
 import { StageInstructionsPanel } from './StageInstructionsPanel'
@@ -19,10 +20,11 @@ interface PostpressStepProps {
   order: WorkOrder
   actionable?: boolean
   onRefresh?: () => void
+  headerActions?: ReactNode
 }
 
 /** The approval lives in the step's bottom panel; the body shows the finishing instructions. */
-export function PostpressStep({ order, actionable, onRefresh }: PostpressStepProps) {
+export function PostpressStep({ order, actionable, onRefresh, headerActions }: PostpressStepProps) {
   const { stepMode, setStepMode } = useWizardStore()
   const editing = stepMode === 'edit-in-place'
   const form = useForm({ resolver: zodResolver(schema) })
@@ -64,7 +66,7 @@ export function PostpressStep({ order, actionable, onRefresh }: PostpressStepPro
       <Pencil className="h-3.5 w-3.5" /> Editar
     </Button>
   ) : (
-    <Lock className="h-4 w-4 text-muted-foreground" />
+    headerActions ?? null
   )
 
   return (

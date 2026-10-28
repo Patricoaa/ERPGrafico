@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { Package, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { ActionConfirmModal, DataCell } from '@/components/shared'
+import { ActionConfirmModal, DataCell, StepHeader } from '@/components/shared'
 import { productionApi } from '../../hooks'
 import { PLANNING_EMPTY_COPY } from '../shared/PlanningEmptyState'
 import { MaterialLineForm, emptyMaterialLine, type MaterialLineValues } from '../shared/MaterialLineForm'
@@ -20,10 +21,11 @@ interface MaterialAssignmentStepProps {
   isViewingCurrentStage: boolean
   onMaterialSaved: () => void
   onMaterialDeleted: () => void
+  headerActions?: ReactNode
 }
 
 export function MaterialAssignmentStep({
-  order, isViewingCurrentStage, onMaterialSaved, onMaterialDeleted,
+  order, isViewingCurrentStage, onMaterialSaved, onMaterialDeleted, headerActions,
 }: MaterialAssignmentStepProps) {
   const { addMaterial, updateMaterial, removeMaterial, isAddingMaterial } = useWorkOrderMutations(
     order.id,
@@ -105,6 +107,12 @@ export function MaterialAssignmentStep({
 
   return (
     <div className="flex flex-1 flex-col gap-4">
+      <StepHeader
+        title="Asignación de Materiales"
+        description="Define los materiales de stock que se consumirán en esta producción."
+        icon={Package}
+        rightContent={headerActions}
+      />
       {isEmpty && isAddOpen && isViewingCurrentStage ? form : (
         <div className="flex flex-1 flex-col overflow-x-auto">
           <Collection.Root

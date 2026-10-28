@@ -1,7 +1,8 @@
 "use client"
 
+import type { ReactNode } from 'react'
 import { Plus, Truck } from 'lucide-react'
-import { ActionConfirmModal, Chip, DataCell, QuantityDisplay } from '@/components/shared'
+import { ActionConfirmModal, Chip, DataCell, QuantityDisplay, StepHeader } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from "@/lib/money"
 import { showApiError } from '@/lib/errors'
@@ -18,10 +19,11 @@ interface OutsourcingAssignmentStepProps {
   isViewingCurrentStage: boolean
   onMaterialSaved: () => void
   onMaterialDeleted: () => void
+  headerActions?: ReactNode
 }
 
 export function OutsourcingAssignmentStep({
-  order, isViewingCurrentStage, onMaterialSaved, onMaterialDeleted,
+  order, isViewingCurrentStage, onMaterialSaved, onMaterialDeleted, headerActions,
 }: OutsourcingAssignmentStepProps) {
   const { multiplier: vatMultiplier } = useVatRate()
   const { addMaterial, updateMaterial, removeMaterial, isAddingMaterial } = useWorkOrderMutations(
@@ -96,6 +98,12 @@ export function OutsourcingAssignmentStep({
 
   return (
     <div className="flex flex-1 flex-col gap-4">
+      <StepHeader
+        title="Asignación de Tercerizados"
+        description="Servicios externos contratados para esta orden de producción."
+        icon={Truck}
+        rightContent={headerActions}
+      />
         {isEmpty && !isAddOpen && (
           <PlanningEmptyState
             kind="outsourcing"
