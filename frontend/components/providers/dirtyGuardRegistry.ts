@@ -15,6 +15,8 @@ export interface DirtyEntry {
     discard: () => void
     /** Hay un envío del formulario en curso: un cierre pedido ahora es el del guardado. */
     isSubmitting?: () => boolean
+    /** Fin del último envío (ms epoch, 0 = nunca): detecta cierres que escaparon de la ventana del envío. */
+    submittedAt?: () => number
 }
 
 export class DirtyRegistry {

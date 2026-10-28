@@ -62,7 +62,6 @@ interface ContactDrawerProps {
 export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, mode: modeProp }: ContactDrawerProps) {
     const [confirmReplacement, setConfirmReplacement] = useState<{ type: 'customer' | 'vendor' | null, name: string }>({ type: null, name: "" })
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
-    const [pendingValues, setPendingValues] = useState<z.infer<typeof contactSchema> | null>(null)
 
     const { mode, isView } = useDrawerMode({ mode: modeProp, initialData: contact })
     const { printRef, handlePrint } = usePrintableDrawer()
@@ -157,14 +156,12 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
 
     const onSubmit = async (values: z.infer<typeof contactSchema>) => {
         if (values.is_default_customer && defaultCustomer && defaultCustomer.id !== c?.id) {
-            setPendingValues(values)
             setConfirmReplacement({ type: 'customer', name: defaultCustomer.name })
             setIsConfirmModalOpen(true)
             return
         }
 
         if (values.is_default_vendor && defaultVendor && defaultVendor.id !== c?.id) {
-            setPendingValues(values)
             setConfirmReplacement({ type: 'vendor', name: defaultVendor.name })
             setIsConfirmModalOpen(true)
             return
@@ -516,7 +513,9 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                 title="Cambiar preferencia comercial"
                 variant="warning"
                 onConfirm={() => {
-                    if (pendingValues) saveContact(pendingValues)
+                    // Vuelve a pasar por el envío del formulario: el cierre tras guardar ocurre dentro de
+                    // `handleSubmit` y la guarda de cambios sin guardar no lo bloquea (useDirtyGuard).
+                    void form.handleSubmit(saveContact)()
                     setIsConfirmModalOpen(false)
                 }}
                 confirmText="Confirmar cambio"

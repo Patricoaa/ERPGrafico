@@ -222,6 +222,7 @@ Todos los drawers deben adherirse a esta estructura unificada:
 - [ ] `FormFooter` canónico (o ausente si drawer read-only)
 - [ ] `contentClassName="p-0"` cuando usa `FormSplitLayout`
 - [ ] Callbacks estandarizados: Usa `onSuccess` (no `onSaved`, no `onUpdate`)
+- [ ] Cierre tras guardar **dentro** del callback de `form.handleSubmit` (`await` de la mutación → `onSuccess` → cerrar). Un guardado que pide confirmación vuelve a entrar con `form.handleSubmit(save)()` desde el modal (ver §5, guarda)
 - [ ] Registrado en `ENTITY_DRAWERS` si necesita apertura global desde link
 
 ---
@@ -259,6 +260,13 @@ otro documento, "Volver", cerrar y salir de la página hasta elegir *Guardar y c
 o *Seguir editando* (`UnsavedChangesDialog`). Los drawers con formulario la reciben gratis vía
 `useInitializeDrawerForm`; el resto de rutas (`useEntityRouteActions`, `useSelectedEntity`) pasan por
 `runGuarded` de `GlobalModalProvider`.
+
+**El cierre del guardado no pasa por la guarda solo si ocurre durante el envío.** `useDirtyGuard` cuenta el
+formulario como limpio mientras corre el callback de `form.handleSubmit` (el espejo de `isDirty` llega un render
+tarde). Si el drawer cierra fuera de esa ventana — `setTimeout`, `mutate(…, { onSuccess })` sin `await`, o un
+guardado lanzado desde un modal de confirmación — la guarda ve el formulario sucio, muestra *Cambios sin
+guardar* y la pestaña no se cierra (y *Guardar y continuar* reenvía). En desarrollo el provider lo avisa con
+`console.warn("[useDirtyGuard] …")` cuando bloquea a menos de 1 s del fin de un envío del mismo formulario.
 
 ### 5.1 Detalle de entidad = overlay siempre-recargable (reglas de foco y URL)
 
@@ -315,6 +323,8 @@ son las que lo hacen operar como un detalle real (DET-02):
 | Combinar `initialData` con fetch interno (`useQuery` dentro del drawer) | Elegir UNA estrategia: O `initialData`, O fetch con `id` |
 | `handleClose*` / `isCreateOpen` / `useSelectedEntity` + `router.replace` escritos en cada vista | `useEntityPanelRoute` + `EntityPanelTab` |
 | Adaptador con aliases: `<Drawer accountId={id} onSaved={onSuccess} />` | Estandarizar props en el Drawer a `id` y `onSuccess` |
+| Cerrar tras guardar con `setTimeout(() => onOpenChange(false), …)` o en `mutate(…, { onSuccess })` sin `await` | `await` de la mutación y cerrar dentro del callback de `handleSubmit` |
+| Modal de confirmación que llama `save(pendingValues)` directo | `onConfirm={() => void form.handleSubmit(save)()}` |
 
 ---
 

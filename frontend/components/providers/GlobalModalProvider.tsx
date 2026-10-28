@@ -212,6 +212,27 @@ function returnKey(tabs: WorkspaceTab[], index: number, origin: string | null | 
     return neighbourKey(tabs, index)
 }
 
+/** Un formulario sucio que bloquea una acción a menos de esto de terminar su envío: cierre fuera del envío. */
+const LATE_CLOSE_MS = 1000
+
+/**
+ * Aviso de desarrollo: la guarda bloqueó justo después de un envío del mismo formulario. Casi siempre es
+ * un drawer que cierra tras guardar fuera del callback de `handleSubmit` (ver `useDirtyGuard`).
+ */
+function warnLateClose(dirty: DirtyEntry[]) {
+    if (process.env.NODE_ENV === "production") return
+    const now = Date.now()
+    for (const entry of dirty) {
+        const at = entry.submittedAt?.() ?? 0
+        if (at > 0 && now - at < LATE_CLOSE_MS) {
+            console.warn(
+                `[useDirtyGuard] "${entry.name ?? "formulario"}" pidió cerrarse ${now - at} ms después de terminar su envío y la guarda lo bloqueó. ` +
+                "Cierra el drawer dentro del callback de handleSubmit (await de la mutación, sin setTimeout ni guardar desde otro modal).",
+            )
+        }
+    }
+}
+
 /** Ventana en la que el cierre de un panel cuenta como el de su guardado (la URL se actualiza en diferido). */
 const SAVE_CLOSE_WINDOW_MS = 3000
 
@@ -261,6 +282,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         if (registry.isSubmitting()) live.markSaveClose()
         const dirty = registry.dirtyEntries()
         if (dirty.length === 0) { action(); return }
+        warnLateClose(dirty)
         // Ya hay una decisión en curso: la nueva petición se cancela, no se encola.
         if (live.pending) { onCancel?.(); return }
         const current = live.tabs.find(tab => tabKey(tab) === live.activeKey)

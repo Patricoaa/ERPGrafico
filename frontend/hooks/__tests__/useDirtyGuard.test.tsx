@@ -40,7 +40,7 @@ function Opener() {
 }
 
 /** Como un drawer real: guarda (API) y se cierra vía la guarda (`panel.close()`), sin `form.reset()`. */
-function ClosingDrawer({ fail = false }: { fail?: boolean }) {
+function ClosingDrawer({ fail = false, deferred = false }: { fail?: boolean; deferred?: boolean }) {
     const { runGuarded } = useGlobalModals()
     const [closed, setClosed] = React.useState(false)
     const form = useForm<Values>({ defaultValues: { name: "" } })
@@ -50,7 +50,10 @@ function ClosingDrawer({ fail = false }: { fail?: boolean }) {
     const onSubmit = async () => {
         await Promise.resolve()
         if (fail) return
-        runGuarded(() => setClosed(true))
+        const close = () => runGuarded(() => setClosed(true))
+        // Antipatrón (BOMDrawer): cerrar después de que terminó el envío.
+        if (deferred) setTimeout(close, 0)
+        else close()
     }
     return (
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -123,6 +126,17 @@ describe("useDirtyGuard via useInitializeDrawerForm", () => {
         act(() => screen.getByText("guardar").click())
         expect(await screen.findByText("estado:cerrado")).toBeInTheDocument()
         expect(screen.queryByText("Cambios sin guardar")).toBeNull()
+    })
+
+    it("warns in development when a drawer closes after its submit ended (late close)", async () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+        render(<GlobalModalProvider><ClosingDrawer deferred /></GlobalModalProvider>)
+        fireEvent.change(screen.getByLabelText("nombre"), { target: { value: "Cambiado" } })
+        await waitFor(() => expect(screen.getByLabelText("nombre")).toHaveValue("Cambiado"))
+        act(() => screen.getByText("guardar").click())
+        expect(await screen.findByText("Cambios sin guardar")).toBeInTheDocument()
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining("handleSubmit"))
+        warn.mockRestore()
     })
 
     it("still guards the changes after a failed save", async () => {
