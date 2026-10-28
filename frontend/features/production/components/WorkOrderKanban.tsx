@@ -93,7 +93,7 @@ function KanbanCard({ order, onManage, onDuplicate, onAnnul }: { order: WorkOrde
 
 export function WorkOrderKanban({ orders, onManage, onDuplicate, onAnnul, isLoading }: KanbanProps) {
     return (
-        <div className="flex space-x-4 overflow-x-auto pb-4 h-[calc(100vh-250px)]">
+        <div className="flex flex-1 min-h-0 gap-4 overflow-x-auto pb-4">
             {STAGES.map((stage) => {
                 const stageOrders = isLoading ? [] : orders.filter(o => o.current_stage === stage.id)
                 const Icon = stage.icon

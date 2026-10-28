@@ -349,7 +349,7 @@ const REGISTRY = {
     detailUrlPattern: '/production/orders/{id}',
     partnerField: 'name',
     workflowType: 'order',
-    viewPolicy: { availableViews: ['list', 'card', 'kanban', 'timeline'], defaultView: 'card', cardComponent: 'entity' },
+    viewPolicy: { availableViews: ['list', 'card', 'kanban'], defaultView: 'card', cardComponent: 'entity', cardVariant: 'workflow' },
   },
   'production.bom': {
     label: 'production.bom',
