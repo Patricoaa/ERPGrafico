@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.models import Group
+from django.db.models import Count
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view
@@ -21,7 +22,13 @@ from .serializers import (
     MeSerializer,
     UserSerializer,
 )
-from .services import ActionLoggingService, CoreSelector, CoreService, UserService
+from .services import (
+    ActionLoggingService,
+    CoreSelector,
+    CoreService,
+    GroupService,
+    UserService,
+)
 
 
 class BackgroundJobViewSet(viewsets.ModelViewSet):
@@ -209,10 +216,17 @@ class GroupViewSet(viewsets.ModelViewSet):
     Expose user groups (roles) with full CRUD.
     """
 
-    queryset = Group.objects.all()
+    queryset = Group.objects.annotate(user_count=Count("user")).order_by("name")
     serializer_class = GroupSerializer
     pagination_class = None  # Master data
-    permission_classes = [IsAuthenticated]
+
+    def perform_update(self, serializer):
+        GroupService.validate_mutable(serializer.instance, serializer.validated_data.get("name"))
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        GroupService.validate_mutable(instance)
+        instance.delete()
 
 
 class CompanySettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):

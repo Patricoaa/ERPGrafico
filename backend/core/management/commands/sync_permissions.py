@@ -61,6 +61,7 @@ class Command(BaseCommand):
             # Core / Settings
             "view_companysettings",
             "view_user",
+            "view_group",
             # Accounting & Auxiliary reads
             "view_account",
             "view_tax",

@@ -5,6 +5,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils import timezone
 
+from core.permissions import Roles
+
 
 class SequenceService:
     """
@@ -197,6 +199,22 @@ class PINService:
             if user.check_pos_pin(pin_text):
                 return user
         return None
+
+
+class GroupService:
+    """Guards for role (Group) mutations."""
+
+    SYSTEM_ROLES = frozenset({Roles.ADMIN, Roles.MANAGER, Roles.OPERATOR, Roles.READ_ONLY})
+
+    @classmethod
+    def validate_mutable(cls, group, new_name=None):
+        """Block deletion (new_name None) or renaming of system roles."""
+        if group.name not in cls.SYSTEM_ROLES:
+            return
+        if new_name is None:
+            raise ValidationError({"detail": f"El rol del sistema '{group.name}' no puede eliminarse."})
+        if new_name != group.name:
+            raise ValidationError({"detail": f"El rol del sistema '{group.name}' no puede renombrarse."})
 
 
 class UserService:

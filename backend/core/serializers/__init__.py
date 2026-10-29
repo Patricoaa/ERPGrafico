@@ -127,7 +127,7 @@ class MeSerializer(UserSerializer):
 
 
 class GroupSerializer(serializers.ModelSerializer):
-    user_count = serializers.IntegerField(source="user_set.count", read_only=True)
+    user_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Group
