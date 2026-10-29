@@ -35,7 +35,6 @@ import { WizardProcessSidebar } from './WizardProcessSidebar'
 import { MobileStageDrawer } from './MobileStageDrawer'
 import { WizardStickyFooter } from './WizardStickyFooter'
 import { WizardRightSidebar, WizardDraftSidebar } from './WizardRightSidebar'
-import { StageActivityPanel } from './StageActivityPanel'
 import {
   MaterialAssignmentStep,
   MaterialApprovalStep,
@@ -62,6 +61,7 @@ import { ManufacturingConfigStep } from './steps/ManufacturingConfigStep'
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const RAIL_COLLAPSED_STORAGE_KEY = 'erpgrafico.production.railCollapsed'
+const RIGHT_RAIL_COLLAPSED_STORAGE_KEY = 'erpgrafico.production.rightRailCollapsed'
 
 const STEP_ORIGIN: WorkOrderStage = {
   id: 'ORIGIN_SELECTION',
@@ -218,15 +218,20 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   const [showCheatsheet, setShowCheatsheet] = useState(false)
   const [wizardTab, setWizardTab] = useState('stages')
   const [railCollapsed, setRailCollapsed] = useState(false)
+  const [rightRailCollapsed, setRightRailCollapsed] = useState(false)
   const [blockingWarning, setBlockingWarning] = useState<string | null>(null)
   const { data: relationsData } = useDocumentRelations('production.workorder', order?.id ?? null)
 
-  // Restore the rail preference after mount (avoids SSR/client hydration mismatch).
+  // Restore the rail preferences after mount (avoids SSR/client hydration mismatch).
   useEffect(() => {
     try {
       if (window.localStorage.getItem(RAIL_COLLAPSED_STORAGE_KEY) === '1') {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- restore a browser preference after mount to avoid an SSR/client hydration mismatch
         setRailCollapsed(true)
+      }
+      if (window.localStorage.getItem(RIGHT_RAIL_COLLAPSED_STORAGE_KEY) === '1') {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- restore a browser preference after mount to avoid an SSR/client hydration mismatch
+        setRightRailCollapsed(true)
       }
     } catch {
       // Storage can be unavailable (private mode); keep the expanded default.
@@ -238,6 +243,18 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       const next = !previous
       try {
         window.localStorage.setItem(RAIL_COLLAPSED_STORAGE_KEY, next ? '1' : '0')
+      } catch {
+        // Ignore storage failures; the in-memory preference still works.
+      }
+      return next
+    })
+  }, [])
+
+  const toggleRightRail = useCallback(() => {
+    setRightRailCollapsed((previous) => {
+      const next = !previous
+      try {
+        window.localStorage.setItem(RIGHT_RAIL_COLLAPSED_STORAGE_KEY, next ? '1' : '0')
       } catch {
         // Ignore storage failures; the in-memory preference still works.
       }
@@ -560,6 +577,11 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         toggleRail()
         return
       }
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === 'i') {
+        e.preventDefault()
+        toggleRightRail()
+        return
+      }
       if (!e.ctrlKey) return
       if (e.key === 'ArrowRight' && isViewingCurrentStage && order?.status !== 'FINISHED' && order?.status !== 'CANCELLED') {
         // Same path as the footer button: it knows what is blocked and asks for confirmation.
@@ -573,7 +595,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [open, viewingStepIndex, isViewingCurrentStage, order, pendingTasks, toggleRail])
+  }, [open, viewingStepIndex, isViewingCurrentStage, order, pendingTasks, toggleRail, toggleRightRail])
 
   const handleRectifyAndFinish = async () => {
     if (!order || transitioning) return
@@ -958,23 +980,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                 </div>
             </div>
 
-          {/* Stage activity panel: approval form + history, docked above the footer */}
-          {!isCreating && order && wizardTab === 'stages' && (
-            <StageActivityPanel
-              currentStageId={currentStageId as string}
-              tasks={viewedStageTasks}
-              allTasks={order.workflow_tasks}
-              stageEntries={allStageHistory}
-              canComplete={canUserCompleteTask}
-              actionable={isViewingCurrentStage && !isTerminalOrder}
-              taskNotes={taskNotes}
-              taskFiles={taskFiles}
-              taskConfirmations={taskConfirmations}
-              onNoteChange={setTaskNote}
-              onFileChange={setTaskFile}
-              onConfirmationChange={setTaskConfirmation}
-            />
-          )}
           </div>
 
           </div>
@@ -995,6 +1000,20 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             order={order}
             productName={productName}
             stageData={stageData}
+            currentStageId={currentStageId as string}
+            tasks={viewedStageTasks}
+            allTasks={order.workflow_tasks}
+            stageEntries={allStageHistory}
+            canComplete={canUserCompleteTask}
+            actionable={isViewingCurrentStage && !isTerminalOrder}
+            taskNotes={taskNotes}
+            taskFiles={taskFiles}
+            taskConfirmations={taskConfirmations}
+            onNoteChange={setTaskNote}
+            onFileChange={setTaskFile}
+            onConfirmationChange={setTaskConfirmation}
+            collapsed={rightRailCollapsed}
+            onToggleCollapse={toggleRightRail}
           />
         ) : currentStageId === 'MFG_CONFIG' ? (
           <WizardDraftSidebar />
@@ -1153,6 +1172,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             { keys: ['Ctrl', '→'], desc: 'Avanzar a la siguiente etapa' },
             { keys: ['Ctrl', '←'], desc: 'Ver etapa anterior (sin transicionar)' },
             { keys: ['Alt', 'B'], desc: 'Colapsar/expandir etapas' },
+            { keys: ['Alt', 'I'], desc: 'Colapsar/expandir panel de información' },
             { keys: ['Esc'], desc: 'Cerrar el wizard' },
             { keys: ['?'], desc: 'Mostrar/ocultar esta ayuda' },
           ].map(({ keys, desc }) => (
