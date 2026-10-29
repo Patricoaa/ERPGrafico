@@ -108,9 +108,9 @@ describe("orderLineViews", () => {
         expect(orderLineEntity.field("received").label).toBe("Recibido")
     })
 
-    it("invoice: product · quantity · unit price · subtotal last", async () => {
+    it("invoice: product · quantity · unit price · OT · subtotal last", async () => {
         const { orderLineViews } = await import("../entity-view/orderLine.entity")
-        expect(orderLineViews.invoice.columns).toEqual(["product", "quantity", "unitPrice", "subtotal"])
+        expect(orderLineViews.invoice.columns).toEqual(["product", "quantity", "unitPrice", "workOrder", "subtotal"])
     })
 })
 
@@ -145,9 +145,75 @@ describe("ciclo: fuente única tarjeta/ficha", () => {
     it("maps stage statuses to badge intents (in progress is not green)", async () => {
         const { stageIntent } = await import("@/lib/workflow-status")
         expect(stageIntent("active")).toBe("warning")
+        expect(stageIntent("warning")).toBe("warning")
         expect(stageIntent("success")).toBe("success")
         expect(stageIntent("neutral")).toBe("neutral")
         expect(stageIntent(undefined)).toBe("neutral")
+    })
+
+    it("marks production as warning when manufacturable lines lack a work order", async () => {
+        const { getHubStatuses, getInvoiceHubStatuses } = await import("@/lib/workflow-status")
+        const orderWithoutOT = {
+            status: "CONFIRMED",
+            lines: [
+                {
+                    quantity: 1,
+                    requires_advanced_manufacturing: true,
+                    work_order_summary: null,
+                },
+            ],
+            work_orders: [],
+        }
+        expect(getHubStatuses(orderWithoutOT).production).toBe("warning")
+        expect(getHubStatuses(orderWithoutOT).productionProgress).toBe(100)
+
+        const orderWithOT = {
+            status: "CONFIRMED",
+            lines: [
+                {
+                    quantity: 1,
+                    requires_advanced_manufacturing: true,
+                    work_order_summary: { id: 101 },
+                },
+            ],
+            work_orders: [{ status: "IN_PROGRESS", production_progress: 50 }],
+        }
+        expect(getHubStatuses(orderWithOT).production).toBe("active")
+
+        const invoiceWithoutOT = {
+            status: "POSTED",
+            number: "123",
+            lines: [
+                {
+                    quantity: 1,
+                    requires_advanced_manufacturing: true,
+                    work_order_summary: null,
+                },
+            ],
+            work_orders: [],
+        }
+        expect(getInvoiceHubStatuses(invoiceWithoutOT).production).toBe("warning")
+        expect(getInvoiceHubStatuses(invoiceWithoutOT).productionProgress).toBe(100)
+
+        const lifecycle = getOrderLifecycle(orderWithoutOT as unknown as Order, "sale")
+        const prodStep = lifecycle.find((s) => s.id === "production")
+        expect(prodStep?.status).toBe("warning")
+        expect(prodStep?.progress).toBe(100)
+        expect(prodStep?.detail).toBe("Falta crear OT")
+
+        const invoiceWithOT = {
+            status: "POSTED",
+            number: "123",
+            lines: [
+                {
+                    quantity: 1,
+                    requires_advanced_manufacturing: true,
+                    work_order_summary: { id: 202 },
+                },
+            ],
+            work_orders: [{ status: "FINISHED", production_progress: 100 }],
+        }
+        expect(getInvoiceHubStatuses(invoiceWithOT).production).toBe("success")
     })
 })
 

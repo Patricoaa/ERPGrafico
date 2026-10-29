@@ -218,7 +218,7 @@ export const getHubStatuses = (order: HubOrderSource) => {
         origin: originStatus,
         hasPendingTransactions: false,
         billingFolioPending,
-        productionProgress: Math.round(totalOTProgress),
+        productionProgress: prodStatus === 'warning' ? 100 : Math.round(totalOTProgress),
         logisticsProgress,
         treasuryProgress,
     }
@@ -360,7 +360,7 @@ export const getInvoiceHubStatuses = (invoice: InvoiceInternal) => {
     return {
         origin: originStatus,
         production: prodStatus,
-        productionProgress: Math.round(prodProgress),
+        productionProgress: prodStatus === 'warning' ? 100 : Math.round(prodProgress),
         logistics: logStatus,
         billing: billingStatus,
         treasury: treasuryStatus,

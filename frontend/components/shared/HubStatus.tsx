@@ -44,6 +44,11 @@ interface HubStatusProps {
 export function HubStatus({ statuses, className }: HubStatusProps) {
     const { tooltips = {}, progress = {} } = statuses
 
+    const resolveStageProgress = (status?: string, prog?: number) => {
+        if (status === 'warning') return 100
+        return prog
+    }
+
     return (
         <div className={className || "flex items-center gap-2"}>
             <TooltipProvider delayDuration={0}>
@@ -55,7 +60,7 @@ export function HubStatus({ statuses, className }: HubStatusProps) {
                     status={statuses.origin || 'info'}
                     intent={stageIntent(statuses.origin)}
                     tooltip={tooltips.origin}
-                    progress={progress.origin}
+                    progress={resolveStageProgress(statuses.origin, progress.origin)}
                 />
 
                 {/* 2. Production (Optional) */}
@@ -65,9 +70,9 @@ export function HubStatus({ statuses, className }: HubStatusProps) {
                         size="lg"
                         icon={ClipboardList}
                         status={statuses.production}
-                    intent={stageIntent(statuses.production)}
+                        intent={stageIntent(statuses.production)}
                         tooltip={tooltips.production}
-                        progress={progress.production}
+                        progress={resolveStageProgress(statuses.production, progress.production)}
                     />
                 )}
 
@@ -79,7 +84,7 @@ export function HubStatus({ statuses, className }: HubStatusProps) {
                     status={statuses.billing || 'info'}
                     intent={stageIntent(statuses.billing)}
                     tooltip={tooltips.billing}
-                    progress={progress.billing}
+                    progress={resolveStageProgress(statuses.billing, progress.billing)}
                 />
 
                 {/* 4. Treasury */}
@@ -90,7 +95,7 @@ export function HubStatus({ statuses, className }: HubStatusProps) {
                     status={statuses.treasury || 'info'}
                     intent={stageIntent(statuses.treasury)}
                     tooltip={tooltips.treasury}
-                    progress={progress.treasury}
+                    progress={resolveStageProgress(statuses.treasury, progress.treasury)}
                 />
 
                 {/* 5. Logistics */}
@@ -100,9 +105,9 @@ export function HubStatus({ statuses, className }: HubStatusProps) {
                         size="lg"
                         icon={Package}
                         status={statuses.logistics || 'info'}
-                    intent={stageIntent(statuses.logistics)}
+                        intent={stageIntent(statuses.logistics)}
                         tooltip={tooltips.logistics}
-                        progress={progress.logistics}
+                        progress={resolveStageProgress(statuses.logistics, progress.logistics)}
                     />
                 )}
             </TooltipProvider>
@@ -172,7 +177,7 @@ export function DomainHubStatus({ label, data, className }: DomainHubStatusProps
             ...s,
             progress: {
                 origin: d.status && d.status !== 'DRAFT' ? 100 : 0,
-                production: s.productionProgress ?? totalOTProgress,
+                production: s.production === 'warning' ? 100 : (s.productionProgress ?? totalOTProgress),
                 billing: s.billing === 'success' ? 100 : 0,
                 treasury: s.treasuryProgress ?? 0,
                 logistics: s.logisticsProgress ?? logisticsProgress,
@@ -199,7 +204,7 @@ export function DomainHubStatus({ label, data, className }: DomainHubStatusProps
             ...s,
             progress: {
                 origin: isNote ? 100 : s.origin === 'success' || s.origin === 'destructive' ? 100 : s.origin === 'active' ? 50 : 0,
-                production: s.productionProgress ?? 0,
+                production: s.production === 'warning' ? 100 : (s.productionProgress ?? 0),
                 billing: hasFolio ? 100 : 0,
                 treasury: s.treasuryProgress ?? 0,
                 logistics: s.logisticsProgress ?? 0,
