@@ -308,6 +308,8 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                         <form onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="flex-1 w-full h-full flex flex-col overflow-visible min-h-0">
                             <fieldset disabled={isView} className="contents">
                                 <FormSplitLayout
+                                    collapsible
+                                    collapseStorageKey="erpgrafico.drawer.sidebar.employee"
                                     showSidebar={!!employee?.id}
                                     sidebar={employee?.id ? (
                                         <ActivitySidebar entityId={employee.id} entityType="employee" />

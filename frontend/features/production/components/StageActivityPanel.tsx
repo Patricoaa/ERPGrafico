@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, ClipboardCheck, History, MessageSquare, Paperclip, User, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DocumentAttachmentDropzone, EmptyState, LabeledCheckbox, LabeledInput, StatusBadge } from "@/components/shared"
@@ -36,9 +36,15 @@ interface StageActivityPanelProps {
     onConfirmationChange: (taskId: string | number, key: string, value: boolean) => void
 }
 
-const time = (iso: string) => {
-    const d = new Date(iso)
-    return `${formatPlainDate(iso.slice(0, 10))} ${d.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}`
+const time = (iso?: string | null) => {
+    if (!iso) return ""
+    try {
+        const d = new Date(iso)
+        if (isNaN(d.getTime())) return iso
+        return `${formatPlainDate(iso.slice(0, 10))} ${d.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}`
+    } catch {
+        return iso ?? ""
+    }
 }
 
 /**
@@ -59,13 +65,15 @@ export function StageActivityPanel({
     const hasMandatoryFields = pending.some(t => Object.keys(t.requirements ?? {}).length > 0)
     const [approvalExpanded, setApprovalExpanded] = useState(actionable && isPending && hasMandatoryFields)
     const [historyExpanded, setHistoryExpanded] = useState(false)
-    const [stageFilter, setStageFilter] = useState<string>(currentStageId ?? "ALL")
-
-    useEffect(() => {
-        if (currentStageId) {
-            setStageFilter(currentStageId)
-        }
-    }, [currentStageId])
+    const [userFilter, setUserFilter] = useState<string | null>(null)
+    const [prevStageId, setPrevStageId] = useState(currentStageId)
+    if (currentStageId !== prevStageId) {
+        setPrevStageId(currentStageId)
+        setUserFilter(null)
+        setApprovalExpanded(actionable && isPending && hasMandatoryFields)
+        setHistoryExpanded(false)
+    }
+    const stageFilter = userFilter ?? currentStageId ?? "ALL"
 
     const tasksForHistory = allTasks ?? tasks
     const history: HistoryItem[] = useMemo(
@@ -116,8 +124,8 @@ export function StageActivityPanel({
     return (
         <section aria-label="Actividad de la etapa" className="shrink-0 border-t bg-card/95 backdrop-blur-sm">
 
-            {/* ── Collapsible 1: Aprobación (solo se muestra en su propia etapa) ── */}
-            {requiresApproval && (
+            {/* ── Collapsible 1: Aprobación (solo se muestra cuando está pendiente) ── */}
+            {requiresApproval && isPending && (
                 <div className="border-b border-border">
                     <Button
                         type="button"
@@ -129,8 +137,8 @@ export function StageActivityPanel({
                         <ClipboardCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
                         <span className="text-sm font-medium text-foreground">Aprobación</span>
                         <StatusBadge
-                            status={isPending ? "PENDING" : "COMPLETED"}
-                            label={isPending ? "Pendiente" : "Aprobada"}
+                            status="PENDING"
+                            label="Pendiente"
                             size="sm"
                         />
                         {who && (
@@ -149,9 +157,6 @@ export function StageActivityPanel({
                         <div className="max-h-72 overflow-y-auto px-6 pb-4 pt-1 space-y-3">
                             {pending.map((task) => (
                                 <div key={task.id} className="space-y-3">
-                                    {(task.description || task.title) && (
-                                        <p className="text-xs text-muted-foreground">{task.description || task.title}</p>
-                                    )}
                                     {!actionable ? (
                                         <p className="text-xs text-muted-foreground">
                                             La aprobación se registra cuando la orden está en esta etapa.
@@ -191,12 +196,6 @@ export function StageActivityPanel({
                                     )}
                                 </div>
                             ))}
-                            {requiresApproval && !isPending && (
-                                <p className="flex items-center gap-1.5 text-xs text-success">
-                                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                                    Etapa aprobada{tasks[0].completed_by_data ? ` por ${tasks[0].completed_by_data.username}` : ""}.
-                                </p>
-                            )}
                         </div>
                     )}
                 </div>
@@ -233,9 +232,9 @@ export function StageActivityPanel({
                                     <div className="flex flex-wrap items-center gap-1 pb-2 border-b border-border">
                                         <button
                                             type="button"
-                                            onClick={() => setStageFilter("ALL")}
+                                            onClick={() => setUserFilter("ALL")}
                                             className={cn(
-                                                "rounded-full px-2 py-0.5 text-3xs font-medium transition-colors",
+                                                "inline-flex items-center rounded-sm h-4.5 px-1.5 text-3xs font-medium transition-colors leading-none",
                                                 stageFilter === "ALL"
                                                     ? "bg-primary text-primary-foreground font-semibold"
                                                     : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -250,9 +249,9 @@ export function StageActivityPanel({
                                                 <button
                                                     key={grp.stageId}
                                                     type="button"
-                                                    onClick={() => setStageFilter(grp.stageId)}
+                                                    onClick={() => setUserFilter(grp.stageId)}
                                                     className={cn(
-                                                        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-3xs font-medium transition-colors",
+                                                        "inline-flex items-center gap-1 rounded-sm h-4.5 px-1.5 text-3xs font-medium transition-colors leading-none",
                                                         isSelected
                                                             ? "bg-primary text-primary-foreground font-semibold"
                                                             : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"

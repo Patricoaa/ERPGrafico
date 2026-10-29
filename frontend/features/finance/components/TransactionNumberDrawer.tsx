@@ -130,6 +130,8 @@ export function TransactionNumberDrawer({
                 )}
             >
                 <FormSplitLayout
+                    collapsible
+                    collapseStorageKey="erpgrafico.drawer.sidebar.payment"
                     sidebar={paymentId ? (
                         <ActivitySidebar
                             entityId={paymentId}

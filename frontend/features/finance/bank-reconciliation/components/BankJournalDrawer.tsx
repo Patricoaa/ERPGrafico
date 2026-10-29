@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/form"
 import { financeApi } from "../../api/financeApi"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, SubmitButton } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, SubmitButton, FormSplitLayout } from "@/components/shared"
+import { ActivitySidebar } from "@/features/audit"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -152,7 +153,22 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                     />
                 )}
             >
-                <div className="flex-1 flex overflow-hidden min-h-[400px]">
+                <FormSplitLayout
+                    collapsible
+                    collapseStorageKey="erpgrafico.drawer.sidebar.bankjournal"
+                    showSidebar={!!initialData?.id}
+                    sidebar={
+                        initialData?.id ? (
+                            auditSidebar ?? (
+                                <ActivitySidebar
+                                    entityType="bank_journal"
+                                    entityId={initialData.id as number | string}
+                                />
+                            )
+                        ) : undefined
+                    }
+                    className="h-full overflow-hidden p-0"
+                >
                     <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
                         <Form {...form}>
                             <form id="bank-journal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
@@ -219,13 +235,7 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                             </form>
                         </Form>
                     </div>
-
-                    {!!initialData?.id && (
-                        <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
-                            {auditSidebar}
-                        </div>
-                    )}
-                </div>
+                </FormSplitLayout>
             </Drawer>
         </>
     )

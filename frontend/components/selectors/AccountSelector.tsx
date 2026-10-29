@@ -142,7 +142,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar...
                         open={open}
                         disabled={disabled}
                     >
-                        <span className="font-mono text-xs font-semibold text-primary shrink-0">{selectedAccount?.code}</span>
+                        <span className="text-xs font-semibold text-primary shrink-0">{selectedAccount?.code}</span>
                         <span className={cn(SELECTOR_VALUE_CLASS, "truncate")}>{selectedAccount?.name}</span>
                     </SelectorTrigger>
                 }

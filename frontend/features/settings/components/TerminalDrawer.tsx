@@ -236,6 +236,8 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
             >
                 <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de terminal" className="flex-1 flex flex-col">
                     <FormSplitLayout
+                        collapsible
+                        collapseStorageKey="erpgrafico.drawer.sidebar.terminal"
                         showSidebar={!!terminal?.id}
                         sidebar={
                             terminal?.id && (

@@ -139,6 +139,8 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
             >
                 {advance ? (
                     <FormSplitLayout
+                        collapsible
+                        collapseStorageKey="erpgrafico.drawer.sidebar.salaryadvance"
                         showSidebar={true}
                         sidebar={<ActivitySidebar entityId={advance.id} entityType="salaryadvance" title="Historial" />}
                     >

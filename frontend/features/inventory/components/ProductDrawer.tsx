@@ -657,6 +657,8 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                     <fieldset disabled={isView} className="contents h-full">
                     <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando ficha de producto" className="flex-1 flex flex-col h-full">
                         <FormSplitLayout
+                            collapsible
+                            collapseStorageKey="erpgrafico.drawer.sidebar.product"
                             showSidebar={!!initialData?.id}
                             sidebar={
                                 initialData?.id ? (

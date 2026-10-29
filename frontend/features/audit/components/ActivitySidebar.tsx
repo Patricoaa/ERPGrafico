@@ -10,7 +10,7 @@ import { es } from "date-fns/locale"
 import { cn, translateFieldName } from "@/lib/utils"
 import { getDomainConceptTitle } from "@/lib/entity-registry"
 import { useEntityHistory } from "@/features/audit/hooks/useEntityHistory"
-import { EmptyState, SkeletonShell, StatusBadge } from "@/components/shared"
+import { CollapsibleSection, EmptyState, SkeletonShell, StatusBadge } from "@/components/shared"
 import {
     resolveHistoryOperation,
     getChangedFields,
@@ -19,7 +19,7 @@ import {
 
 interface ActivitySidebarProps {
     entityId: number | string
-    entityType: 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'sale_return' | 'purchase_receipt' | 'purchase_return' | 'inventory_document' | 'check' | 'terminal_batch' | 'profit_distribution' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'pricing_rule' | 'reordering_rule' | 'treasuryaccount' | 'bank' | 'paymentmethod' | 'terminal' | 'category' | 'warehouse' | 'uom' | 'uom_category' | 'attribute' | 'account' | 'bank_journal' | 'employee' | 'salaryadvance' | 'absence' | 'fiscal_year' | 'tax_period' | 'f29_declaration' | 'task' | 'attachment' | 'group'
+    entityType: 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'sale_return' | 'purchase_receipt' | 'purchase_return' | 'inventory_document' | 'check' | 'terminal_batch' | 'profit_distribution' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'pricing_rule' | 'reordering_rule' | 'treasuryaccount' | 'bank' | 'paymentmethod' | 'terminal' | 'category' | 'warehouse' | 'uom' | 'uom_category' | 'attribute' | 'account' | 'bank_journal' | 'employee' | 'salaryadvance' | 'absence' | 'fiscal_year' | 'tax_period' | 'f29_declaration' | 'task' | 'attachment' | 'group' | 'inventory_count' | 'bank_loan'
     className?: string
     title?: string
 }
@@ -64,7 +64,10 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
     f29_declaration: 'la declaración F29',
     task: 'la tarea',
     attachment: 'el archivo adjunto',
-    group: 'el grupo'
+    group: 'el grupo',
+    inventory_count: 'el recuento de inventario',
+    bank_loan: 'el préstamo bancario',
+    absence: 'la ausencia',
 }
 
 const PLACEHOLDER_RECORDS: HistoricalRecord[] = [
@@ -73,8 +76,9 @@ const PLACEHOLDER_RECORDS: HistoricalRecord[] = [
     { history_id: -3, history_date: '2024-01-01T14:00:00.000Z', history_change_reason: null, history_type: '~', history_user_id: null, history_user_username: 'Operador' },
 ]
 
-export function ActivitySidebar({ entityId, entityType, className = "", title = "Actividad" }: ActivitySidebarProps) {
+export function ActivitySidebar({ entityId, entityType, className, title = "Actividad" }: ActivitySidebarProps) {
     const { history, loading, error } = useEntityHistory(entityType, entityId)
+    const [open, setOpen] = React.useState(true)
     const [expandedRecords, setExpandedRecords] = React.useState<Record<string | number, boolean>>({})
 
     const records = loading ? PLACEHOLDER_RECORDS : history
@@ -87,24 +91,24 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
         }))
     }
 
-    return (
-        <SkeletonShell isLoading={loading} ariaLabel="Cargando actividad" className="flex-1 min-h-0">
-            <div className={cn("flex flex-col h-full p-4", className)}>
-                {/* Encabezado del Módulo (Capa L1 - FormSection) */}
-                <div className="pb-3 mb-4 shrink-0 flex items-center justify-between gap-2 border-b border-border/40 select-none">
-                    <h3 className="text-2xs font-bold uppercase tracking-[0.25em] text-muted-foreground/70 flex items-center gap-2.5">
-                        <Clock className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
-                        {title}
-                    </h3>
-                    {records.length > 0 && (
-                        <span className="text-3xs font-medium text-muted-foreground/60 tabular-nums">
-                            ({records.length} {records.length === 1 ? 'registro' : 'registros'})
-                        </span>
-                    )}
-                </div>
+    const badge = !loading && records.length > 0 ? (
+        <span className="text-3xs font-medium text-muted-foreground/60 tabular-nums">
+            {records.length}
+        </span>
+    ) : undefined
 
+    return (
+        <CollapsibleSection
+            title={title}
+            icon={Clock}
+            badge={badge}
+            open={open}
+            onOpenChange={setOpen}
+            className={className}
+        >
+            <SkeletonShell isLoading={loading} ariaLabel="Cargando actividad" className="flex flex-col flex-1 min-h-0">
                 {/* Scroll Container */}
-                <ScrollArea className="flex-1 min-h-0 pr-2">
+                <ScrollArea className="flex-1 min-h-0 px-4 py-3">
                     {!loading && error ? (
                         <div role="alert" className="rounded-md border border-dashed border-destructive/25 bg-destructive/5 px-3 py-8 text-center">
                             <p className="text-xs font-medium text-destructive">No se pudo cargar la actividad</p>
@@ -224,7 +228,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                         </ol>
                     )}
                 </ScrollArea>
-            </div>
-        </SkeletonShell>
+            </SkeletonShell>
+        </CollapsibleSection>
     )
 }

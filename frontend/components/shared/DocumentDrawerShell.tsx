@@ -130,6 +130,7 @@ function DocumentSheetBody({
     }
     return (
         <FormSplitLayout
+            collapsible
             showSidebar={!!sidebar}
             sidebar={sidebar}
             className={cn("min-w-0 h-full overflow-hidden p-0", className)}

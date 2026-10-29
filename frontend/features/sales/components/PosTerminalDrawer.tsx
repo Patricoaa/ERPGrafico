@@ -239,6 +239,8 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                 )}
             >
                 <FormSplitLayout
+                    collapsible
+                    collapseStorageKey="erpgrafico.drawer.sidebar.terminal_pos"
                     showSidebar={!!terminal?.id}
                     sidebar={terminal?.id ? (
                         <ActivitySidebar

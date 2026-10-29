@@ -472,6 +472,8 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                 )}
             >
                 <FormSplitLayout
+                    collapsible
+                    collapseStorageKey="erpgrafico.drawer.sidebar.pricing_rule"
                     showSidebar={!!initialData?.id}
                     sidebar={auditSidebar}
                     className="px-4 pb-4 pt-0"

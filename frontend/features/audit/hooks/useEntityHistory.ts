@@ -39,6 +39,7 @@ const ENDPOINT_MAP: Record<string, string> = {
     employee: '/hr/employees',
     salaryadvance: '/hr/salary-advances',
     absence: '/hr/absences',
+    bank_loan: '/treasury/loans',
 }
 
 export const ENTITY_HISTORY_KEYS = {

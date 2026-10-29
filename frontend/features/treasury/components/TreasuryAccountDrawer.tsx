@@ -246,6 +246,8 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                 )}
             >
                 <FormSplitLayout
+                    collapsible
+                    collapseStorageKey="erpgrafico.drawer.sidebar.treasuryaccount"
                     showSidebar={!!accountId}
                     sidebar={
                         accountId && (

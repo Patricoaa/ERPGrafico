@@ -228,6 +228,8 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
         >
             {initialData ? (
                 <FormSplitLayout
+                    collapsible
+                    collapseStorageKey="erpgrafico.drawer.sidebar.purchase_order"
                     showSidebar={true}
                     sidebar={<ActivitySidebar entityType="purchase_order" entityId={initialData.id ?? 0} />}
                 >

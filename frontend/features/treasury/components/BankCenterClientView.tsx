@@ -253,6 +253,8 @@ function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
             }
         >
             <FormSplitLayout
+                collapsible
+                collapseStorageKey="erpgrafico.drawer.sidebar.bank"
                 showSidebar={!!bank?.id}
                 sidebar={
                     bank?.id && (

@@ -223,16 +223,12 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   const [blockingWarning, setBlockingWarning] = useState<string | null>(null)
   const { data: relationsData } = useDocumentRelations('production.workorder', order?.id ?? null)
 
-  // Restore the rail preferences after mount (avoids SSR/client hydration mismatch).
+  // Restore the left rail preference after mount (avoids SSR/client hydration mismatch).
   useEffect(() => {
     try {
       if (window.localStorage.getItem(RAIL_COLLAPSED_STORAGE_KEY) === '1') {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- restore a browser preference after mount to avoid an SSR/client hydration mismatch
         setRailCollapsed(true)
-      }
-      if (window.localStorage.getItem(RIGHT_RAIL_COLLAPSED_STORAGE_KEY) === '1') {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- restore a browser preference after mount to avoid an SSR/client hydration mismatch
-        setRightRailCollapsed(true)
       }
     } catch {
       // Storage can be unavailable (private mode); keep the expanded default.

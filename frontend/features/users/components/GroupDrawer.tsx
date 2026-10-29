@@ -163,6 +163,8 @@ export function GroupDrawer({
                 )}
             >
                 <FormSplitLayout
+                    collapsible
+                    collapseStorageKey="erpgrafico.drawer.sidebar.group"
                     sidebar={initialData?.id ? (
                         <ActivitySidebar entityType="group" entityId={initialData.id} />
                     ) : undefined}

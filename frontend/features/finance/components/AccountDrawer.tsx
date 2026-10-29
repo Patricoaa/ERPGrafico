@@ -184,7 +184,6 @@ export function AccountDrawer({
                         <LabeledInput
                             label="Código"
                             disabled={true}
-                            hint="Jerárquico"
                             {...field}
                         />
                     )}
@@ -287,6 +286,8 @@ export function AccountDrawer({
 
     const formContent = (
         <FormSplitLayout
+            collapsible
+            collapseStorageKey="erpgrafico.drawer.sidebar.account"
             sidebar={initialData?.id ? (
                 <ActivitySidebar entityType="account" entityId={initialData.id as number} />
             ) : undefined}

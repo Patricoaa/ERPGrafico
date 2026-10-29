@@ -157,10 +157,15 @@ Cuando el formulario tiene modo edición, usar `FormSplitLayout` con `ActivitySi
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
 | `children` | `ReactNode` | ✅ | — | Contenido principal |
-| `sidebar` | `ReactNode` | ❌ | — | Típicamente `ActivitySidebar` |
+| `sidebar` | `ReactNode` | ❌ | — | Típicamente `ActivitySidebar` (o composición de `CollapsibleSection`) |
 | `showSidebar` | `boolean` | ❌ | `false` | Solo `true` en edición |
 | `sidebarWidth` | `string` | ❌ | `"w-72"` | |
+| `collapsible` | `boolean` | ❌ | `false` | Habilita riel colapsable OT-style |
+| `collapseStorageKey` | `string` | ❌ | — | Clave localStorage para persistir estado colapsado |
+| `defaultCollapsed` | `boolean` | ❌ | `false` | Estado inicial colapsado |
 | `className` | `string` | ❌ | — | |
+
+> **Composición interna del sidebar**: `ActivitySidebar` renderiza internamente sobre `CollapsibleSection`, permitiendo apilar futuras secciones colapsables (Comentarios, Adjuntos, etc.) en el mismo panel lateral sin romper la estructura.
 
 **¿Cuándo mostrar ActivitySidebar?**
 

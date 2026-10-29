@@ -266,6 +266,8 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                     <form id="contact-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 w-full h-full flex flex-col min-h-0 overflow-visible">
                         <fieldset disabled={isView} className="contents">
                         <FormSplitLayout
+                            collapsible
+                            collapseStorageKey="erpgrafico.drawer.sidebar.contact"
                             showSidebar={!!contact?.id}
                             sidebar={contact?.id ? (
                                 <ActivitySidebar entityId={contact.id.toString()} entityType="contact" />

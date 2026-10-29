@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, ClipboardCheck, History, MessageSquare, Paperclip, Settings2, User } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
@@ -95,7 +95,7 @@ export function WizardDraftSidebar() {
     }), [mfgConfig, selectedContact, productDescription, quantity, uomName])
 
     return (
-        <div className="hidden lg:flex border-l w-72 shrink-0 flex-col h-full overflow-hidden">
+        <div className="hidden lg:flex border-l w-88 shrink-0 flex-col h-full overflow-hidden">
             <div className="flex-1 overflow-y-auto p-4">
                 <ManufacturingSpecsPanel view={view} />
             </div>
@@ -106,10 +106,7 @@ export function WizardDraftSidebar() {
 // ── Approval section content ──────────────────────────────────────────────────
 
 interface ApprovalContentProps {
-    tasks: WorkOrderTask[]
     pending: WorkOrderTask[]
-    isPending: boolean
-    requiresApproval: boolean
     actionable: boolean
     canComplete: (task: WorkOrderTask) => boolean
     taskNotes: Record<string | number, string>
@@ -121,7 +118,7 @@ interface ApprovalContentProps {
 }
 
 function ApprovalContent({
-    tasks, pending, isPending, requiresApproval,
+    pending,
     actionable, canComplete,
     taskNotes, taskFiles, taskConfirmations,
     onNoteChange, onFileChange, onConfirmationChange,
@@ -130,11 +127,8 @@ function ApprovalContent({
         <div className="overflow-y-auto px-4 py-3 space-y-3 flex-1">
             {pending.map((task) => (
                 <div key={task.id} className="space-y-3">
-                    {(task.description || task.title) && (
-                        <p className="text-2xs text-muted-foreground">{task.description || task.title}</p>
-                    )}
                     {!actionable ? (
-                        <p className="text-2xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                             La aprobación se registra cuando la orden está en esta etapa.
                         </p>
                     ) : canComplete(task) ? (
@@ -165,19 +159,13 @@ function ApprovalContent({
                             />
                         </>
                     ) : (
-                        <p className="flex items-center gap-1.5 text-2xs text-destructive">
+                        <p className="flex items-center gap-1.5 text-xs text-destructive">
                             <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                             Requiere validación por {assignee(task) ?? "otro usuario"}.
                         </p>
                     )}
                 </div>
             ))}
-            {requiresApproval && !isPending && (
-                <p className="flex items-center gap-1.5 text-2xs text-success">
-                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                    Etapa aprobada{tasks[0].completed_by_data ? ` por ${tasks[0].completed_by_data.username}` : ""}.
-                </p>
-            )}
         </div>
     )
 }
@@ -223,7 +211,7 @@ function HistoryContent({ history, currentStageId, stageFilter, onStageFilter }:
                         type="button"
                         onClick={() => onStageFilter("ALL")}
                         className={cn(
-                            "rounded-full px-1 py-0 text-3xs font-medium transition-colors leading-3",
+                            "rounded-sm h-4 px-1.5 text-3xs font-medium transition-colors leading-none inline-flex items-center justify-center",
                             stageFilter === "ALL"
                                 ? "bg-primary text-primary-foreground"
                                 : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -239,7 +227,7 @@ function HistoryContent({ history, currentStageId, stageFilter, onStageFilter }:
                                 type="button"
                                 onClick={() => onStageFilter(grp.stageId)}
                                 className={cn(
-                                    "rounded-full px-1 py-0 text-3xs font-medium transition-colors leading-3 max-w-[7rem] truncate",
+                                    "rounded-sm h-4 px-1.5 text-3xs font-medium transition-colors leading-none inline-flex items-center justify-center max-w-[7rem] truncate",
                                     isSelected
                                         ? "bg-primary text-primary-foreground"
                                         : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -257,7 +245,7 @@ function HistoryContent({ history, currentStageId, stageFilter, onStageFilter }:
                 {history.length === 0 ? (
                     <EmptyState variant="minimal" icon={History} title="Sin registros aún." />
                 ) : visibleItems.length === 0 ? (
-                    <p className="text-2xs text-muted-foreground italic">Sin actividad en esta etapa.</p>
+                    <p className="text-xs text-muted-foreground italic">Sin actividad en esta etapa.</p>
                 ) : (
                     <ol className="space-y-0">
                         {visibleItems.map((e, idx) => {
@@ -281,25 +269,25 @@ function HistoryContent({ history, currentStageId, stageFilter, onStageFilter }:
                                     {/* Content */}
                                     <div className="flex-1 min-w-0 pb-3 space-y-0.5">
                                         <div className="flex items-baseline justify-between gap-1">
-                                            <span className="text-2xs font-semibold text-foreground truncate">{label}</span>
+                                            <span className="text-xs font-medium text-foreground truncate">{label}</span>
                                             <time className="shrink-0 text-3xs text-muted-foreground/60">
                                                 {formatDistanceToNow(new Date(e.createdAt), { addSuffix: true, locale: es })}
                                             </time>
                                         </div>
                                         {e.userName && (
-                                            <p className="text-2xs text-muted-foreground/80 flex items-center gap-1">
+                                            <p className="text-xs text-muted-foreground/80 flex items-center gap-1">
                                                 <User className="h-2.5 w-2.5 shrink-0" aria-hidden />
                                                 {e.userName}
                                             </p>
                                         )}
                                         {Object.entries(e.confirmations ?? {}).filter(([, v]) => v).map(([key]) => (
-                                            <p key={key} className="flex items-center gap-1.5 text-2xs text-success">
+                                            <p key={key} className="flex items-center gap-1.5 text-xs text-success">
                                                 <CheckCircle2 className="h-3 w-3 shrink-0" />
-                                                {CONFIRMATION_LABELS[key]?.label ?? key}
+                                                {key === "design_approved" ? "Cliente aprobó el diseño" : (CONFIRMATION_LABELS[key]?.label ?? key)}
                                             </p>
                                         ))}
                                         {e.notes && (
-                                            <p className="flex gap-1.5 text-2xs text-muted-foreground">
+                                            <p className="flex gap-1.5 text-xs text-muted-foreground">
                                                 <MessageSquare className="mt-0.5 h-3 w-3 shrink-0" />
                                                 <span className="whitespace-pre-line">{e.notes}</span>
                                             </p>
@@ -378,15 +366,17 @@ export function WizardRightSidebar({
     const [specsOpen, setSpecsOpen] = useState(true)
     const [approvalOpen, setApprovalOpen] = useState(actionable && isPending && hasMandatoryFields)
     const [historyOpen, setHistoryOpen] = useState(false)
-    const [stageFilter, setStageFilter] = useState<string>(currentStageId ?? "ALL")
+    const [userFilter, setUserFilter] = useState<string | null>(null)
+    const [prevStageId, setPrevStageId] = useState(currentStageId)
 
-    // Auto-open approval when navigating to a stage with mandatory fields
-    useEffect(() => {
-        if (actionable && isPending && hasMandatoryFields) {
-            setApprovalOpen(true)
-        }
-        if (currentStageId) setStageFilter(currentStageId)
-    }, [currentStageId, actionable, isPending, hasMandatoryFields])
+    if (currentStageId !== prevStageId) {
+        setPrevStageId(currentStageId)
+        setUserFilter(null)
+        setSpecsOpen(true)
+        setApprovalOpen(actionable && isPending && hasMandatoryFields)
+        setHistoryOpen(false)
+    }
+    const stageFilter = userFilter ?? currentStageId ?? "ALL"
 
     return (
         <div className="relative hidden lg:flex shrink-0 flex-col h-full">
@@ -418,10 +408,10 @@ export function WizardRightSidebar({
                     >
                         <Settings2 className="h-3.5 w-3.5" />
                     </button>
-                    {requiresApproval && (
+                    {requiresApproval && isPending && (
                         <button
                             type="button"
-                            title={isPending ? "Aprobación pendiente" : "Aprobación"}
+                            title="Aprobación pendiente"
                             aria-label="Aprobación"
                             onClick={() => { setApprovalOpen(true); onToggleCollapse?.() }}
                             className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
@@ -439,7 +429,7 @@ export function WizardRightSidebar({
                         <History className="h-3.5 w-3.5" />
                     </button>
                 </div>
-            ) : <div className="border-l w-72 flex flex-col flex-1 min-h-0 overflow-hidden bg-background h-full">
+            ) : <div className="border-l w-88 flex flex-col flex-1 min-h-0 overflow-hidden bg-background h-full">
                 <CollapsibleSection
                     title="Datos de la OT"
                     icon={Settings2}
@@ -451,7 +441,7 @@ export function WizardRightSidebar({
                     </div>
                 </CollapsibleSection>
 
-                {requiresApproval && (
+                {requiresApproval && isPending && (
                     <CollapsibleSection
                         title="Aprobación"
                         icon={ClipboardCheck}
@@ -460,8 +450,8 @@ export function WizardRightSidebar({
                         badge={
                             <div className="flex items-center gap-1.5">
                                 <StatusBadge
-                                    status={isPending ? "PENDING" : "COMPLETED"}
-                                    label={isPending ? "Pendiente" : "Aprobada"}
+                                    status="PENDING"
+                                    label="Pendiente"
                                     size="sm"
                                 />
                                 {who && (
@@ -471,10 +461,7 @@ export function WizardRightSidebar({
                         }
                     >
                         <ApprovalContent
-                            tasks={tasks}
                             pending={pending}
-                            isPending={isPending}
-                            requiresApproval={requiresApproval}
                             actionable={actionable}
                             canComplete={canComplete}
                             taskNotes={taskNotes}
@@ -502,7 +489,7 @@ export function WizardRightSidebar({
                         history={history}
                         currentStageId={currentStageId}
                         stageFilter={stageFilter}
-                        onStageFilter={setStageFilter}
+                        onStageFilter={setUserFilter}
                     />
                 </CollapsibleSection>
             </div>}

@@ -275,6 +275,8 @@ export function CategoryDrawer({
 
     const formContent = (
         <FormSplitLayout
+            collapsible
+            collapseStorageKey="erpgrafico.drawer.sidebar.category"
             showSidebar={!!initialData?.id}
             sidebar={initialData?.id ? <ActivitySidebar entityId={initialData.id} entityType="category" /> : sidebar}
         >

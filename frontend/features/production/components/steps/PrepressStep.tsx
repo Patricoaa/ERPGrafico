@@ -203,7 +203,6 @@ export function PrepressStep({ order, stageData, actionable, onRefresh, headerAc
 
           {/* New file uploads */}
           <section className="space-y-2">
-            <h4 className="text-xs font-medium text-muted-foreground">Añadir archivos de diseño</h4>
             {newFiles.map((f, i) => (
               <div key={i} className="flex items-center gap-2 rounded-sm border bg-card px-3 py-2 text-xs">
                 <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />

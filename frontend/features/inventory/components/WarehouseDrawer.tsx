@@ -93,6 +93,8 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
 
     const formContent = (
         <FormSplitLayout
+            collapsible
+            collapseStorageKey="erpgrafico.drawer.sidebar.warehouse"
             sidebar={initialData?.id ? (
                 <ActivitySidebar
                     entityId={initialData.id}

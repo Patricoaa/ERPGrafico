@@ -145,7 +145,11 @@ export function ManufacturingSpecsPanel({ view, className }: { view: Manufacturi
         {view.printType && <Row label="Tecnología" icon={Printer}>{PRINT_TYPE_LABEL[view.printType]}</Row>}
         {stages.map(s => (
           <Row key={s.key} label={s.label} icon={s.icon}>
-            {hasText(s.spec) ? <p className="whitespace-pre-line">{s.spec}</p> : <p className="text-muted-foreground">Sin indicaciones adicionales</p>}
+            {hasText(s.spec) ? (
+              <p className="whitespace-pre-line">{s.spec}</p>
+            ) : s.key !== "prepress" ? (
+              <p className="text-muted-foreground">Sin indicaciones adicionales</p>
+            ) : null}
             {/* Design, numbering and files are pre-press specifications: always stated, yes or no. */}
             {s.key === "prepress" && (
               <ul className="mt-1.5 space-y-1">

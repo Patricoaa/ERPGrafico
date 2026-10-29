@@ -143,6 +143,8 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
             >
                 {absence ? (
                     <FormSplitLayout
+                        collapsible
+                        collapseStorageKey="erpgrafico.drawer.sidebar.absence"
                         showSidebar={true}
                         sidebar={<ActivitySidebar entityType="absence" entityId={absence.id} />}
                     >

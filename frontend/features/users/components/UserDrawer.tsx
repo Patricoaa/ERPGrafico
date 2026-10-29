@@ -267,7 +267,7 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
                     <Form {...form}>
                         <form id="user-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 w-full h-full flex flex-col overflow-visible min-h-0">
                             <fieldset disabled={isView} className="contents">
-                                <FormSplitLayout sidebar={initialData?.id ? <ActivitySidebar entityId={initialData.id.toString()} entityType="user" /> : undefined} showSidebar={!!initialData?.id} className="min-w-0 h-full overflow-hidden p-0">
+                                <FormSplitLayout collapsible collapseStorageKey="erpgrafico.drawer.sidebar.user" sidebar={initialData?.id ? <ActivitySidebar entityId={initialData.id.toString()} entityType="user" /> : undefined} showSidebar={!!initialData?.id} className="min-w-0 h-full overflow-hidden p-0">
                                     <TabBar
                                         items={tabItems}
                                         value={activeTab}

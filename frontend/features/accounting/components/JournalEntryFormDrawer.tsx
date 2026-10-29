@@ -312,6 +312,8 @@ export function JournalEntryFormDrawer({
     const formContent = (
         <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando asiento contable" className="flex-1 flex flex-col">
             <FormSplitLayout
+                collapsible
+                collapseStorageKey="erpgrafico.drawer.sidebar.journal_entry"
                 sidebar={entityId ? (
                     <ActivitySidebar entityType="journal_entry" entityId={entityId} />
                 ) : undefined}

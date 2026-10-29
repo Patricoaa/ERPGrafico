@@ -128,6 +128,8 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
             )}
         >
             <FormSplitLayout
+                collapsible
+                collapseStorageKey="erpgrafico.drawer.sidebar.attribute"
                 sidebar={initialData?.id ? (
                     <ActivitySidebar
                         entityId={initialData.id}

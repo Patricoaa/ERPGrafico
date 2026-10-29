@@ -162,6 +162,8 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
             >
                 {initialData?.id ? (
                     <FormSplitLayout
+                        collapsible
+                        collapseStorageKey="erpgrafico.drawer.sidebar.uom_category"
                         sidebar={
                             <ActivitySidebar
                                 entityId={initialData.id}

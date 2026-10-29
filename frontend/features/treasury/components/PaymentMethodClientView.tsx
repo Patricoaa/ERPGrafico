@@ -301,6 +301,8 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
             }
         >
             <FormSplitLayout
+                collapsible
+                collapseStorageKey="erpgrafico.drawer.sidebar.paymentmethod"
                 showSidebar={!!method?.id}
                 sidebar={
                     method?.id && (
