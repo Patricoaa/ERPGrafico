@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.36](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.35...v0.3.36) (2026-10-29)
+
+
+### ✨ Features
+
+* **drawer:** migrar ActivitySidebar a CollapsibleSection y agregar riel colapsable a drawers ([e5afb87](https://github.com/Patricoaa/ERPGrafico/commit/e5afb87fc064032c3a7f79e1edbab91d8bd559a4))
+
 ### [0.3.35](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.34...v0.3.35) (2026-10-29)
 
 
