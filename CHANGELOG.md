@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.35](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.34...v0.3.35) (2026-10-29)
+
+
+### ✨ Features
+
+* **rbac:** sincronizar permisos registrados en post_migrate (aditivo) ([35519b6](https://github.com/Patricoaa/ERPGrafico/commit/35519b627b6bdfa4e0fedcce36d275d07a84e1b9))
+
+
+### 🐛 Bug Fixes
+
+* **core:** /auth/me solo permite editar el tema (cierra escalada de rol) ([eac4df5](https://github.com/Patricoaa/ERPGrafico/commit/eac4df5742d0c4be00fe7932b9606adaadb5a0f1))
+* **core:** eliminar el endpoint genérico de acciones documentales (sin control de permisos) ([ee43d14](https://github.com/Patricoaa/ERPGrafico/commit/ee43d1404ac4501785a9a95e1fd1f7a17e348476))
+* **core:** roles exigen permisos auth.*_group; roles del sistema inmutables; sin N+1 en user_count ([9eaca33](https://github.com/Patricoaa/ERPGrafico/commit/9eaca33afbc5528ac2e65d73ca22adc4365f9bb6))
+* **core:** sin sesión solo se exponen nombre y logo de la empresa ([ea58306](https://github.com/Patricoaa/ERPGrafico/commit/ea58306eb892529e9cbfb32cdf8d6ee7295bb4c5))
+* **rbac:** exigir permisos en reportes, bitácora, parámetros RRHH y dashboard de tesorería ([515d245](https://github.com/Patricoaa/ERPGrafico/commit/515d245c9764ebf2534e53b30408177d4a383041))
+* **rbac:** permisos de modelo en tax y en la configuración de workflow; reparar la lista de reglas ([cdf43f9](https://github.com/Patricoaa/ERPGrafico/commit/cdf43f9e40a429a61b173143986521f15314e41c))
+* **rbac:** PermissionRegistry sin duplicados; permiso de Finanzas con su app correcta ([9a33dd0](https://github.com/Patricoaa/ERPGrafico/commit/9a33dd07eb943167823396a8485219b536534c4c))
+* **rbac:** registrar permisos referenciados y test de referencias ([3999d3c](https://github.com/Patricoaa/ERPGrafico/commit/3999d3ceaaedf1fd087c241a0a1fafaed043c19c))
+
+
+### 💅 Styling
+
+* **test:** fix import ordering in test_permission_registry ([c2c6262](https://github.com/Patricoaa/ERPGrafico/commit/c2c626242daf89c7ecc07d73e6ccccf421fa8756))
+
 ### [0.3.34](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.33...v0.3.34) (2026-10-29)
 
 
