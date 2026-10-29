@@ -819,8 +819,20 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                         setViewingStepIndex(idx >= 0 ? idx : 1)
                       }}
                       initialOtType={chosenOtType}
-                      initialSaleOrderId={mode.kind === 'create' ? refId(mode.initialData?.sale_order) : (order?.sale_order ? String(order.sale_order) : undefined)}
-                      initialSaleLineId={mode.kind === 'create' ? refId(mode.initialData?.sale_line) : (order?.sale_line ? String(order.sale_line) : undefined)}
+                      initialSaleOrderId={mode.kind === 'create' ? refId(mode.initialData?.sale_order) : (order?.sale_order ? String(typeof order.sale_order === 'object' ? order.sale_order?.id : order.sale_order) : undefined)}
+                      initialSaleLineId={mode.kind === 'create' ? refId(mode.initialData?.sale_line) : (order?.sale_line ? String(order.sale_line.id) : undefined)}
+                      readOnly={!isCreating}
+                      readOnlyOrderInfo={!isCreating && order ? {
+                        number: order.sale_order_number ?? (typeof order.sale_order === 'object' ? order.sale_order?.number : undefined),
+                        customer_name: order.sale_customer_name,
+                        date: order.sale_order_date,
+                      } : undefined}
+                      readOnlyLineInfo={!isCreating && order?.sale_line ? {
+                        product_name: order.sale_line.product?.name ?? order.product_name,
+                        description: order.sale_line.description,
+                        quantity: order.sale_line.quantity,
+                        uom_name: order.sale_line.uom?.name,
+                      } : undefined}
                     />
                   )}
                   {currentStageId === 'PRODUCT_SELECTION' && chosenOtType === "NONE" && (
