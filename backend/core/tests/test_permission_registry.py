@@ -169,3 +169,61 @@ def test_merge_duplicates_keeps_group_assignments():
     assert group.permissions.filter(pk=real_perm.pk).exists()
     user = type(user).objects.get(pk=user.pk)
     assert user.has_perm("tax.view_accountingperiod")
+
+
+# ---------------------------------------------------------------------------
+#  post_migrate: automatic, additive sync
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_post_migrate_creates_registered_permissions():
+    from django.core.management import call_command
+
+    original = PermissionRegistry._registry.copy()
+    try:
+        PermissionRegistry._registry = {}
+        PermissionRegistry.register("core", [("pm_test_perm", "Can pm test")])
+        assert not Permission.objects.filter(codename="pm_test_perm").exists()
+        call_command("migrate", verbosity=0)
+        assert Permission.objects.filter(
+            content_type__app_label="core", codename="pm_test_perm"
+        ).exists()
+    finally:
+        PermissionRegistry._registry = original
+
+
+@pytest.mark.django_db
+def test_post_migrate_sync_is_additive():
+    from django.core.management import call_command
+
+    from core.permissions import Roles
+
+    admin, _ = Group.objects.get_or_create(name=Roles.ADMIN)
+    operator, _ = Group.objects.get_or_create(name=Roles.OPERATOR)
+    extra = Permission.objects.filter(codename="view_user").first()
+    operator.permissions.add(extra)
+
+    original = PermissionRegistry._registry.copy()
+    try:
+        PermissionRegistry._registry = {}
+        PermissionRegistry.register("core", [("pm_test_perm2", "Can pm test 2")])
+        call_command("migrate", verbosity=0)
+    finally:
+        PermissionRegistry._registry = original
+
+    assert operator.permissions.filter(pk=extra.pk).exists()
+    new = Permission.objects.get(codename="pm_test_perm2")
+    assert admin.permissions.filter(pk=new.pk).exists()
+    assert not operator.permissions.filter(pk=new.pk).exists()
+
+
+@pytest.mark.django_db
+def test_post_migrate_without_admin_group_does_not_fail():
+    from django.core.management import call_command
+
+    from core.permissions import Roles
+
+    Group.objects.filter(name=Roles.ADMIN).delete()
+    call_command("migrate", verbosity=0)
+    assert not Group.objects.filter(name=Roles.ADMIN).exists()

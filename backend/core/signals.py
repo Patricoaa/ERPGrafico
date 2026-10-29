@@ -61,3 +61,24 @@ def clear_schema_cache_on_migrate(sender, **kwargs):
         # Redis no disponible (ej. entorno de test local sin Docker).
         # Registrar en silencio para no bloquear las migraciones.
         pass
+
+
+@receiver(post_migrate)
+def sync_registered_permissions(sender, **kwargs):
+    """
+    Sincroniza (solo aditivamente) los permisos de PermissionRegistry tras
+    `migrate` y se los otorga al rol ADMIN. Se ejecuta una vez por migrate
+    (solo para la app "core"). Nunca quita permisos de ningún grupo.
+    """
+    if getattr(sender, "name", None) != "core":
+        return
+
+    from django.contrib.auth.models import Group, Permission
+
+    from .permissions import PermissionRegistry, Roles
+
+    PermissionRegistry.sync_to_db()
+
+    admin = Group.objects.filter(name=Roles.ADMIN).first()
+    if admin is not None:
+        admin.permissions.add(*Permission.objects.all())
