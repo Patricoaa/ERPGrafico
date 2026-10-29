@@ -148,6 +148,43 @@ describe("WorkOrderWizard — audit regressions", () => {
         expect(await screen.findByRole("heading", { name: /Rectificación/ })).toBeInTheDocument()
     })
 
+    it("keeps the reopen modal open when the transition API call fails", async () => {
+        // Order is at PRESS with PREPRESS as a past reopenable stage (no blockers).
+        currentOrder = {
+            ...baseOrder,
+            current_stage: "PRESS",
+            requires_press: true,
+            requires_prepress: true,
+            stage_plan: ["MATERIAL_ASSIGNMENT", "MATERIAL_APPROVAL", "PREPRESS", "PRESS", "RECTIFICATION", "FINISHED"],
+            next_stage: "RECTIFICATION",
+            side_effects: {
+                has_confirmed_pos: false,
+                has_stock_movements: false,
+                completed_tasks_count: 0,
+                manually_edited_materials_count: 0,
+                rewind_blockers: [],
+                rewind_blockers_by_stage: {
+                    MATERIAL_ASSIGNMENT: [], MATERIAL_APPROVAL: [], PREPRESS: [],
+                },
+            },
+        }
+        // Mock: transition always fails
+        vi.mocked(api.post).mockRejectedValue(new Error("Server error"))
+
+        renderManage()
+        // Navigate to PREPRESS (a past stage) via the rail
+        fireEvent.click(await screen.findByRole("button", { name: /Pre-Impresión, paso/ }))
+        // The reopen button should appear in the stage header
+        const reopenBtn = await screen.findByRole("button", { name: /Reabrir etapa/ })
+        fireEvent.click(reopenBtn)
+        // Modal opens — fill reason and confirm
+        const reasonInput = await screen.findByRole("textbox")
+        fireEvent.change(reasonInput, { target: { value: "Ajuste de diseño" } })
+        fireEvent.click(screen.getByRole("button", { name: /Reabrir etapa/ }))
+        // Modal must remain open after the API failure
+        await waitFor(() => expect(screen.getByRole("textbox")).toBeInTheDocument())
+    })
+
     it("does not fire a second transition while the first is in flight", async () => {
         let release: (value: { data: object }) => void = () => {}
         vi.mocked(api.post).mockImplementation((url: string) => {

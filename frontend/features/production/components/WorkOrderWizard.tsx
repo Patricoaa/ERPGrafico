@@ -1119,7 +1119,9 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         requireReason
         reasonLabel="Motivo para reabrir"
         reasonPlaceholder="Ej.: el cliente cambió el diseño"
-        onConfirm={(reason) => { if (pendingPrevStage) handleTransition(pendingPrevStage, {}, reason); setIsBackwardModalOpen(false) }}
+        onConfirm={async (reason) => {
+          if (pendingPrevStage) await mutations.transition({ nextStageId: pendingPrevStage, notes: reason })
+        }}
         confirmText="Reabrir etapa"
         description={
           <div className="space-y-3">
