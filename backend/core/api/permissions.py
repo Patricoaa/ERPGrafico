@@ -25,6 +25,17 @@ class StandardizedModelPermissions(permissions.DjangoModelPermissions):
     }
 
     def has_permission(self, request, view):
+        # Explicit per-action permissions (view.action_permissions). Evaluated before
+        # the "no queryset" branch so modelless ViewSets are covered too (C4).
+        # None means "reviewed, use the HTTP method map below".
+        action_permissions = getattr(view, "action_permissions", {})
+        action = getattr(view, "action", None)
+        if action in action_permissions and action_permissions[action] is not None:
+            required = action_permissions[action]
+            perms = (required,) if isinstance(required, str) else tuple(required)
+            user = request.user
+            return bool(user and user.is_authenticated and user.has_perms(perms))
+
         # If the view doesn't have a queryset, DjangoModelPermissions will blow up.
         # This happens in pure viewsets.ViewSet classes used for reports/actions.
         if not hasattr(view, "queryset") and not hasattr(view, "get_queryset"):
