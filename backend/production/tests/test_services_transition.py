@@ -182,6 +182,39 @@ def _supplier():
     return Contact.objects.create(name="Proveedor Test", tax_id="76.000.000-0")
 
 
+def _make_consumption(work_order, product, warehouse):
+    from decimal import Decimal
+    from production.models import ProductionConsumption
+
+    ProductionConsumption.objects.create(work_order=work_order, product=product, warehouse=warehouse, quantity=Decimal("1"))
+
+
+@pytest.mark.django_db
+def test_stock_movements_block_reopening_press(work_order_factory, manufacturable_product, warehouse_factory):
+    """Stock movements (material consumptions) block reopening PRESS just like they block
+    MATERIAL_ASSIGNMENT — once products are consumed the production pipeline is committed."""
+    wo = work_order_factory(current_stage=Stage.POSTPRESS, status=WorkOrder.Status.IN_PROGRESS)
+    _make_consumption(wo, manufacturable_product, warehouse_factory())
+
+    blockers_for_press = WorkOrderService.rewind_blockers(wo, target_stage="PRESS")
+    assert blockers_for_press, (
+        "Stock movements must block reopening PRESS once consumption records exist."
+    )
+
+
+@pytest.mark.django_db
+def test_stock_movements_block_reopening_material_assignment(work_order_factory, manufacturable_product, warehouse_factory):
+    """When material consumptions exist, reopening MATERIAL_ASSIGNMENT must be blocked
+    because you can't 'unassign' materials that were already recorded as consumed."""
+    wo = work_order_factory(current_stage=Stage.PRESS, status=WorkOrder.Status.IN_PROGRESS)
+    _make_consumption(wo, manufacturable_product, warehouse_factory())
+
+    blockers_for_material = WorkOrderService.rewind_blockers(wo, target_stage="MATERIAL_ASSIGNMENT")
+    assert blockers_for_material, (
+        "Stock movements must block reopening MATERIAL_ASSIGNMENT."
+    )
+
+
 @pytest.mark.django_db
 def test_rewind_from_rectification_restores_planned_quantities(
     work_order_factory, manufacturable_product
@@ -238,3 +271,25 @@ def test_ordered_outsourced_service_is_read_only(work_order_factory, manufactura
         WorkOrderService.update_material(work_order=wo, material_id=mat.pk, quantity=2)
     with pytest.raises(ValidationError):
         WorkOrderService.remove_material(wo, mat.pk)
+
+
+@pytest.mark.django_db
+def test_backward_transition_records_reopened_event(work_order_factory):
+    """A backward transition must create a WorkOrderHistory entry with event=REOPENED."""
+    from production.models import WorkOrderHistory
+    wo = work_order_factory(current_stage=Stage.PRESS, status=WorkOrder.Status.IN_PROGRESS)
+    WorkOrderService.transition_to(wo, Stage.MATERIAL_APPROVAL, notes="ajuste de diseño")
+    entry = WorkOrderHistory.objects.filter(work_order=wo, stage=Stage.MATERIAL_APPROVAL).order_by("-created_at").first()
+    assert entry is not None
+    assert entry.event == WorkOrderHistory.Event.REOPENED
+
+
+@pytest.mark.django_db
+def test_forward_transition_records_entered_event(work_order_factory):
+    """A forward transition must create a WorkOrderHistory entry with event=ENTERED."""
+    from production.models import WorkOrderHistory
+    wo = work_order_factory(current_stage=Stage.MATERIAL_ASSIGNMENT)
+    WorkOrderService.transition_to(wo, Stage.MATERIAL_APPROVAL)
+    entry = WorkOrderHistory.objects.filter(work_order=wo, stage=Stage.MATERIAL_APPROVAL).order_by("-created_at").first()
+    assert entry is not None
+    assert entry.event == WorkOrderHistory.Event.ENTERED

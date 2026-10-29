@@ -60,7 +60,7 @@ export function getStepCapabilities(stage: string, order: WorkOrder): StepCapabi
                 : stage === 'OUTSOURCING_ASSIGNMENT'
                     ? se.reason
                     : 'Esta etapa ya se cerró. Retrocede a ella para modificarla.',
-            canRewind: !se.blocked,
+            canRewind: !canEditOutsourcing && !se.blocked,
             rewindBlockedReason: se.blocked ? se.reason : undefined,
         }
     }

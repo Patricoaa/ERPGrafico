@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
-import { Cog, Eye, Pencil } from "lucide-react"
+import { Check, Cog, Eye, Pencil, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ManufacturingConfigFields, emptyManufacturingData, StepHeader } from '@/components/shared'
 import type { ManufacturingData, ManufacturingContact } from "@/components/shared"
@@ -130,26 +130,49 @@ export function ManufacturingConfigSummary({ order, onSaved, headerActions }: Ma
 
     const isTerminal = order.status === 'FINISHED' || order.status === 'CANCELLED'
 
-    const headerRight = isTerminal ? (
-        headerActions ?? (
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground">
-                <Eye className="h-3 w-3 shrink-0" aria-hidden />Solo lectura
-            </span>
-        )
-    ) : !editing ? (
+    // Editing: replace whatever came from the parent with explicit cancel + save.
+    // View: use the wizard's header actions (WizardStageActions toggle) when provided,
+    //       or fall back to a local edit button for standalone use.
+    const headerRight = editing ? (
         <div className="flex items-center gap-2">
-            {headerActions}
             <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="gap-1.5 text-muted-foreground hover:text-foreground h-7 text-xs"
-                onClick={() => setStepMode('edit-in-place')}
+                className="gap-1.5 h-8 text-xs"
+                onClick={() => setStepMode('view')}
             >
-                <Pencil className="h-3.5 w-3.5" /> Editar
+                <X className="h-3.5 w-3.5" />Cancelar
+            </Button>
+            <Button
+                type="submit"
+                form="wizard-edit-form"
+                size="sm"
+                disabled={saving}
+                className="gap-1.5 h-8 text-xs"
+            >
+                <Check className="h-3.5 w-3.5" />{saving ? 'Guardando...' : 'Guardar cambios'}
             </Button>
         </div>
-    ) : null
+    ) : (
+        headerActions ?? (
+            isTerminal ? (
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground">
+                    <Eye className="h-3 w-3 shrink-0" aria-hidden />Solo lectura
+                </span>
+            ) : (
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 text-muted-foreground hover:text-foreground h-7 text-xs"
+                    onClick={() => setStepMode('edit-in-place')}
+                >
+                    <Pencil className="h-3.5 w-3.5" /> Editar
+                </Button>
+            )
+        )
+    )
 
     return (
         <div className="flex flex-1 flex-col gap-5">

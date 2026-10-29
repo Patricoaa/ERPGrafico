@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
-import { AlertTriangle, Eye, Factory, FileText, Pencil, Plus, Keyboard, Printer, Link2, RotateCcw } from 'lucide-react'
+import { AlertTriangle, Eye, Factory, FileText, Plus, Keyboard, Printer, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 import {
@@ -32,6 +32,7 @@ import { useWorkOrderMutations, productionApi } from '../hooks'
 import { completeTask } from '@/features/workflow'
 
 import { WizardProcessSidebar } from './WizardProcessSidebar'
+import { WizardStageActions } from './WizardStageActions'
 import { MobileStageDrawer } from './MobileStageDrawer'
 import { WizardStickyFooter } from './WizardStickyFooter'
 import { WizardRightSidebar, WizardDraftSidebar } from './WizardRightSidebar'
@@ -324,45 +325,48 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       .find(Boolean) as string | undefined
   }, [isViewingCurrentStage, pendingTasks, taskFiles, taskConfirmations])
 
-  // Actions rendered inside each step's StepHeader.rightContent — read/edit/reopen badge.
+  // Actions rendered inside each step's StepHeader.rightContent — view/edit toggle and reopen.
   const stageHeaderActions = useMemo((): ReactNode => {
-    if (isCreating || !order || isViewingCurrentStage) return null
-    if (isTerminalOrder) {
+    if (isCreating || !order || isViewingCurrentStage || !viewedCaps) return null
+    const reopenStage = () => { setPendingPrevStage(currentStageId as string); setIsBackwardModalOpen(true) }
+    const toggleEdit = (editing: boolean) => navigateToStep(viewingStepIndex, editing ? 'edit-in-place' : 'view')
+
+    // While editing, ManufacturingConfigSummary renders its own Cancel+Save in the header
+    // (it ignores headerActions when editing=true). For other editable stages the toggle
+    // stays; suppress "Volver" to avoid navigating away mid-edit.
+    if (stepMode === 'edit-in-place') {
       return (
-        <span className="inline-flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground">
-          <Eye className="h-3 w-3 shrink-0" aria-hidden />Solo lectura
-        </span>
+        <WizardStageActions
+          isTerminal={isTerminalOrder}
+          capabilities={viewedCaps}
+          editing
+          onEditingChange={toggleEdit}
+          onReopen={reopenStage}
+        />
       )
     }
-    if (!viewedCaps) return null
-    const openRewind = () => { setPendingPrevStage(currentStageId as string); setIsBackwardModalOpen(true) }
-    if (viewedCaps.canEdit) {
-      return (
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-md border border-info/30 bg-info/10 px-2.5 py-1 text-xs font-medium text-info">
-            <Pencil className="h-3 w-3 shrink-0" aria-hidden />Editable
-          </span>
-          {viewedCaps.canRewind && (
-            <Button type="button" variant="outline" size="sm" onClick={openRewind} className="h-7 gap-1.5 text-xs">
-              <RotateCcw className="h-3 w-3" aria-hidden />Reabrir
-            </Button>
-          )}
-        </div>
-      )
-    }
-    if (viewedCaps.canRewind) {
-      return (
-        <Button type="button" variant="outline" size="sm" onClick={openRewind} className="h-7 gap-1.5 text-xs">
-          <RotateCcw className="h-3 w-3" aria-hidden />Reabrir etapa
-        </Button>
-      )
-    }
+
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground" title={viewedCaps.rewindBlockedReason}>
-        <Eye className="h-3 w-3 shrink-0" aria-hidden />Solo lectura
-      </span>
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setViewingStepIndex(actualStepIndex)}
+          className="gap-1.5 h-8 text-xs"
+        >
+          <Eye className="h-3.5 w-3.5" />Etapa actual
+        </Button>
+        <WizardStageActions
+          isTerminal={isTerminalOrder}
+          capabilities={viewedCaps}
+          editing={false}
+          onEditingChange={toggleEdit}
+          onReopen={reopenStage}
+        />
+      </div>
     )
-  }, [isCreating, order, isViewingCurrentStage, isTerminalOrder, viewedCaps, currentStageId, setPendingPrevStage, setIsBackwardModalOpen])
+  }, [isCreating, order, isViewingCurrentStage, viewedCaps, isTerminalOrder, stepMode, viewingStepIndex, actualStepIndex, currentStageId, setPendingPrevStage, setIsBackwardModalOpen, navigateToStep, setViewingStepIndex])
 
   // ── data fetching ──────────────────────────────────────────────────────────
   const fetchOrder = async () => {
@@ -709,8 +713,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
           <WizardStickyFooter
             isViewingCurrentStage={isViewingCurrentStage}
             stepMode={stepMode}
-            onCancelEdit={() => navigateToStep(viewingStepIndex, 'view')}
-            onClose={() => onOpenChange(false)}
             pendingTasks={pendingTasks}
             approvalBlockedReason={approvalBlockedReason}
             canApproveAll={canApproveAll}
@@ -720,7 +722,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             stages={STAGES}
             transitioning={transitioning}
             onTransition={handleTransition}
-            onBackToCurrent={() => setViewingStepIndex(actualStepIndex)}
             onBack={() => setViewingStepIndex(Math.max(0, viewingStepIndex - 1))}
             isMaterialApprovalIncomplete={
               !!(currentStageId === 'MATERIAL_APPROVAL' && order?.materials?.some((m: WorkOrderMaterial) => !m.is_available))
@@ -781,6 +782,19 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                 />
               </div>
 
+              {/* Header actions for workflow stages — rendered OUTSIDE the masked zone so
+                  pointer-events-none on the content div never blocks these buttons. */}
+              {stageHeaderActions
+                && currentStageId !== 'ORIGIN_SELECTION'
+                && currentStageId !== 'SALE_ORDER_PRODUCT'
+                && currentStageId !== 'PRODUCT_SELECTION'
+                && currentStageId !== 'MFG_CONFIG'
+                && (
+                  <div className="flex justify-end pb-1 pt-1">
+                    {stageHeaderActions}
+                  </div>
+                )}
+
               <div
                   key={viewingStepIndex}
                   className={cn(
@@ -793,8 +807,8 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       || currentStageId === 'SALE_ORDER_PRODUCT'
                       || currentStageId === 'PRODUCT_SELECTION'
                     ) && 'pointer-events-none opacity-70',
-                    // Disable interaction only in view mode for closed workflow steps (not edit-in-place)
-                    stepMode === 'view' && !isViewingCurrentStage && !editableInline
+                    // Disable interaction in view mode for closed workflow steps; edit-in-place lifts this.
+                    stepMode === 'view' && !isViewingCurrentStage
                       && currentStageId !== 'ORIGIN_SELECTION'
                       && currentStageId !== 'SALE_ORDER_PRODUCT'
                       && currentStageId !== 'PRODUCT_SELECTION'
@@ -806,7 +820,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                     <OriginSelectionStep
                       selected={chosenOtType}
                       locked={!isCreating}
-                      headerActions={stageHeaderActions}
                       onChoose={(type) => {
                         if (type !== chosenOtType) {
                           // Switching origin invalidates everything chosen for the previous one
@@ -907,22 +920,20 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                   {currentStageId === 'MATERIAL_ASSIGNMENT' && (
                     <MaterialAssignmentStep
                       order={order as WorkOrder}
-                      isViewingCurrentStage={isViewingCurrentStage || editableInline}
+                      isViewingCurrentStage={isViewingCurrentStage || (editableInline && stepMode === 'edit-in-place')}
                       onMaterialSaved={fetchOrder}
                       onMaterialDeleted={fetchOrder}
-                      headerActions={stageHeaderActions}
                     />
                   )}
                   {currentStageId === 'MATERIAL_APPROVAL' && (
-                    <MaterialApprovalStep order={order as WorkOrder} headerActions={stageHeaderActions} />
+                    <MaterialApprovalStep order={order as WorkOrder} />
                   )}
                   {currentStageId === 'OUTSOURCING_ASSIGNMENT' && (
                     <OutsourcingAssignmentStep
                       order={order as WorkOrder}
-                      isViewingCurrentStage={isViewingCurrentStage || editableInline}
+                      isViewingCurrentStage={isViewingCurrentStage || (editableInline && stepMode === 'edit-in-place')}
                       onMaterialSaved={fetchOrder}
                       onMaterialDeleted={fetchOrder}
-                      headerActions={stageHeaderActions}
                     />
                   )}
                   {currentStageId === 'PREPRESS' && (
@@ -931,7 +942,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       stageData={stageData}
                       actionable={isViewingCurrentStage && !isTerminalOrder}
                       onRefresh={fetchOrder}
-                      headerActions={stageHeaderActions}
                     />
                   )}
                   {currentStageId === 'PRESS' && (
@@ -939,7 +949,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       order={order as WorkOrder}
                       actionable={isViewingCurrentStage && !isTerminalOrder}
                       onRefresh={fetchOrder}
-                      headerActions={stageHeaderActions}
                     />
                   )}
                   {currentStageId === 'POSTPRESS' && (
@@ -947,17 +956,15 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       order={order as WorkOrder}
                       actionable={isViewingCurrentStage && !isTerminalOrder}
                       onRefresh={fetchOrder}
-                      headerActions={stageHeaderActions}
                     />
                   )}
                   {currentStageId === 'OUTSOURCING_VERIFICATION' && (
-                    <OutsourcingVerificationStep order={order as WorkOrder} headerActions={stageHeaderActions} />
+                    <OutsourcingVerificationStep order={order as WorkOrder} />
                   )}
                   {currentStageId === 'RECTIFICATION' && (
                     <div className="space-y-6">
                       <RectificationStep
                         order={order as WorkOrder}
-                        headerActions={stageHeaderActions}
                         onChange={(adjustments, producedQty, outsourcedAdj) => {
                           setRectificationAdjustments(adjustments)
                           setRectificationProducedQty(producedQty)
@@ -973,7 +980,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       isUploadingPhoto={mutations.isUploadingPhoto}
                       onPrintCopy={async () => setIsDuplicateModalOpen(true)}
                       isDuplicating={mutations.isDuplicating}
-                      headerActions={stageHeaderActions}
                     />
                   )}
                 </div>
@@ -1119,7 +1125,9 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         requireReason
         reasonLabel="Motivo para reabrir"
         reasonPlaceholder="Ej.: el cliente cambió el diseño"
-        onConfirm={(reason) => { if (pendingPrevStage) handleTransition(pendingPrevStage, {}, reason); setIsBackwardModalOpen(false) }}
+        onConfirm={async (reason) => {
+          if (pendingPrevStage) await mutations.transition({ nextStageId: pendingPrevStage, notes: reason })
+        }}
         confirmText="Reabrir etapa"
         description={
           <div className="space-y-3">

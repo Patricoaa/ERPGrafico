@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
-import { AlertTriangle, Check, ArrowRight, Eye, X } from "lucide-react"
+import { AlertTriangle, Check, ArrowRight } from "lucide-react"
 import { ActionConfirmModal, SubmitButton, FormFooter } from "@/components/shared"
 
 import type { WorkOrder, WorkOrderTask, WorkOrderStage, WizardStepMode } from "../types"
@@ -11,8 +11,6 @@ import { getDomainConceptTitle } from "@/lib/entity-registry"
 interface WizardFooterProps {
     isViewingCurrentStage: boolean
     stepMode: WizardStepMode
-    onCancelEdit: () => void
-    onClose: () => void
     pendingTasks: WorkOrderTask[]
     /** A requirement of the stage's approval still missing (shown as the reason "Siguiente" is off). */
     approvalBlockedReason?: string
@@ -22,7 +20,6 @@ interface WizardFooterProps {
     stages: WorkOrderStage[]
     viewingStepIndex: number
     actualStepIndex: number
-    onBackToCurrent: () => void
     onTransition: (stageId: string) => void
     onBack?: () => void
     isMaterialApprovalIncomplete: boolean
@@ -40,8 +37,6 @@ interface WizardFooterProps {
 export function WizardStickyFooter({
     isViewingCurrentStage,
     stepMode,
-    onCancelEdit,
-    onClose,
     pendingTasks,
     approvalBlockedReason,
     canApproveAll,
@@ -50,7 +45,6 @@ export function WizardStickyFooter({
     stages,
     viewingStepIndex,
     actualStepIndex,
-    onBackToCurrent,
     onTransition,
     onBack,
     isMaterialApprovalIncomplete,
@@ -131,37 +125,10 @@ export function WizardStickyFooter({
         }
     }
 
-    // ── Left actions: Cerrar, Anterior, Ir a etapa actual ──
+    // ── Left actions: Anterior ──
     const leftActions = useMemo(() => {
-        if (isTerminal) {
-            return (
-                <Button variant="outline" size="sm" onClick={onClose} className="gap-1.5">
-                    <X className="h-4 w-4" />
-                    Cerrar
-                </Button>
-            )
-        }
-
-        if (stepMode === 'edit-in-place') {
-            return (
-                <Button variant="outline" size="sm" onClick={onCancelEdit} className="gap-1.5">
-                    <X className="h-4 w-4" />
-                    Cancelar
-                </Button>
-            )
-        }
-
-        if (!isViewingCurrentStage) {
-            return (
-                <Button
-                    variant="outline"
-                    className="gap-2"
-                    onClick={onBackToCurrent}
-                >
-                    <Eye className="h-4 w-4" />
-                    Volver a la Etapa Actual
-                </Button>
-            )
+        if (isTerminal || !isViewingCurrentStage) {
+            return null
         }
 
         if (actualStepIndex > 0 && order?.status !== 'FINISHED' && onBack) {
@@ -178,7 +145,7 @@ export function WizardStickyFooter({
             )
         }
         return null
-    }, [isTerminal, stepMode, isViewingCurrentStage, onCancelEdit, onBackToCurrent, onClose, onBack, actualStepIndex, order?.status, transitioning])
+    }, [isTerminal, isViewingCurrentStage, onBack, actualStepIndex, order?.status, transitioning])
 
     // ── Right actions: Siguiente / Rectificar / Guardar / Seleccionar ──
     const rightActions = useMemo(() => {
@@ -187,21 +154,7 @@ export function WizardStickyFooter({
             return null
         }
 
-        // Edit-in-place: Guardar cambios
-        if (stepMode === 'edit-in-place') {
-            return (
-                <SubmitButton
-                    type="submit"
-                    form="wizard-edit-form"
-                    loading={transitioning}
-                    icon={Check}
-                >
-                    {transitioning ? 'Guardando...' : 'Guardar cambios'}
-                </SubmitButton>
-            )
-        }
-
-        // Viewing past stage: just back to current (handled in left)
+        // Viewing past stage: nothing in the right
         if (!isViewingCurrentStage) {
             return null
         }
@@ -320,7 +273,7 @@ export function WizardStickyFooter({
         isProductSelectionStep, isMfgConfigStep, isRectificationStep, isCreating,
         isBasicInfoEditable, chosenOtType, transitioning, order?.status, stages,
         viewingStepIndex, pendingTasks, canApproveAll, isImplicitlyApproving,
-        isNextDisabled, blockedReason, onCancelEdit, onBackToCurrent, onStepChange, onRectifyAndFinish,
+        isNextDisabled, blockedReason, onStepChange, onRectifyAndFinish,
     ])
 
     return (

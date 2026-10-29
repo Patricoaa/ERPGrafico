@@ -58,6 +58,15 @@ describe('getStepCapabilities', () => {
         expect(getStepCapabilities('OUTSOURCING_ASSIGNMENT', o).canRewind).toBe(false)
     })
 
+    it('suppresses canRewind for OUTSOURCING_ASSIGNMENT when it is still editable in-place', () => {
+        // When canEdit=true (no POs yet), showing canRewind simultaneously is semantically
+        // contradictory — edit in-place is sufficient, a formal rewind is not needed.
+        const clean = { has_confirmed_pos: false, has_stock_movements: false, completed_tasks_count: 1, manually_edited_materials_count: 0, rewind_blockers: [] }
+        const caps = getStepCapabilities('OUTSOURCING_ASSIGNMENT', order({ side_effects: clean }))
+        expect(caps.canEdit).toBe(true)
+        expect(caps.canRewind).toBe(false)
+    })
+
     it('handles creation steps and MFG_CONFIG editability properly', () => {
         const activeOrder = order({ current_stage: 'PREPRESS', status: 'IN_PROGRESS' })
         const finishedOrder = order({ current_stage: 'FINISHED', status: 'FINISHED' })

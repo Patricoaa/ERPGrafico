@@ -907,6 +907,7 @@ class WorkOrderService:
             work_order=work_order,
             stage=next_stage,
             status=work_order.status,
+            event=WorkOrderHistory.Event.REOPENED if next_idx < old_idx else WorkOrderHistory.Event.ENTERED,
             notes=notes,
             user=user,
         )
@@ -1431,6 +1432,14 @@ class WorkOrderService:
         "PRESS", "POSTPRESS", "OUTSOURCING_VERIFICATION", "RECTIFICATION", "FINISHED",
     ]
 
+    # Stock movements (ProductionConsumption) block reopening any stage that preceded
+    # or includes the production execution.  All stages from MATERIAL_ASSIGNMENT onward
+    # (except OUTSOURCING_VERIFICATION and later) are blocked once consumption records exist.
+    _STOCK_BLOCKED_STAGES = {
+        "MATERIAL_ASSIGNMENT", "MATERIAL_APPROVAL", "OUTSOURCING_ASSIGNMENT",
+        "PREPRESS", "PRESS", "POSTPRESS",
+    }
+
     @staticmethod
     def _stage_is_mandatory(work_order, stage, materials):
         """A stage that applies to this OT and therefore cannot be skipped."""
@@ -1866,6 +1875,7 @@ class WorkOrderService:
         }
 
     @staticmethod
+    @staticmethod
     def _rewind_blockers_by_stage(work_order, has_confirmed_pos, has_stock_movements):
         sequence = WorkOrderService.STAGE_SEQUENCE
         if work_order.current_stage not in sequence:
@@ -1876,7 +1886,7 @@ class WorkOrderService:
             blockers = []
             if has_confirmed_pos and idx <= outsourcing_idx:
                 blockers.append("Existen Órdenes de Compra confirmadas para servicios tercerizados.")
-            if has_stock_movements:
+            if has_stock_movements and stage in WorkOrderService._STOCK_BLOCKED_STAGES:
                 blockers.append("Existen movimientos de stock asociados a la OT.")
             result[stage] = blockers
         return result
@@ -1905,7 +1915,13 @@ class WorkOrderService:
             .exists()
         ):
             blockers.append("Existen Órdenes de Compra confirmadas para servicios tercerizados.")
-        if ProductionConsumption.objects.filter(work_order=work_order).exists():
+        # Stock movements only make it unsafe to reopen the material-assignment stages.
+        # Process stages (PREPRESS, PRESS, POSTPRESS, …) can still be reopened because
+        # going back to them does not change material records in any way.
+        reopens_material_stage = (
+            target_stage is None or target_stage in WorkOrderService._STOCK_BLOCKED_STAGES
+        )
+        if reopens_material_stage and ProductionConsumption.objects.filter(work_order=work_order).exists():
             blockers.append("Existen movimientos de stock asociados a la OT.")
         return blockers
 

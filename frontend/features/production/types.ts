@@ -82,6 +82,9 @@ export interface WorkOrderTask {
 export interface WorkOrderHistoryEntry {
     id: number
     stage: string
+    /** WorkOrderHistory.Event: ENTERED | REOPENED | EDITED | NOTE */
+    event?: string
+    /** WorkOrder.Status at the time of the entry (DRAFT | IN_PROGRESS | …) */
     status: string
     notes?: string
     user?: number | null
