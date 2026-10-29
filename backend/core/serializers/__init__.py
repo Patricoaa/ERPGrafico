@@ -167,6 +167,15 @@ class AttachmentSerializer(serializers.ModelSerializer):
         return f"{size:.1f} TB"
 
 
+class PublicCompanyBrandingSerializer(serializers.ModelSerializer):
+    """Minimal read-only serializer for unauthenticated branding (login, 404, etc.)."""
+
+    class Meta:
+        model = CompanySettings
+        fields = ["name", "trade_name", "logo", "logo_url"]
+        read_only_fields = fields
+
+
 class CompanySettingsSerializer(serializers.ModelSerializer):
     name = serializers.CharField(required=False, allow_blank=True)
     tax_id = serializers.CharField(required=False, allow_blank=True)

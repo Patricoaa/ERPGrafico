@@ -9,6 +9,7 @@ import type {
     AccountingSettings,
     CompanySettings,
     CompanySettingsUpdatePayload,
+    CompanyBranding,
     PartnerSettings,
     PartnerSettingsUpdatePayload,
     SystemStatus,
@@ -144,10 +145,18 @@ export const settingsApi = {
     // ========== Company Settings ==========
 
     /**
-     * Fetch company settings
+     * Fetch company settings (requires authentication)
      */
     getCompanySettings: async (): Promise<CompanySettings> => {
         const { data } = await api.get<CompanySettings>('/core/company/current/')
+        return data
+    },
+
+    /**
+     * Fetch public branding (name, trade_name, logo) — no auth required.
+     */
+    getCompanyBranding: async (): Promise<CompanyBranding> => {
+        const { data } = await api.get<CompanyBranding>('/core/company/branding/')
         return data
     },
 

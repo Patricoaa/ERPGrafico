@@ -111,3 +111,47 @@ def test_generic_document_action_endpoint_removed():
         reverse("document-action", kwargs={"content_type_id": 1, "object_id": 1, "action": "confirm"})
     user = make_user("op", groups=(Roles.OPERATOR,))
     assert _client(user).post("/api/core/documents/1/1/confirm/").status_code == 404
+
+
+# --- Task 9: sin sesión solo nombre y logo ---
+
+
+@pytest.mark.django_db
+def test_branding_is_public_and_minimal():
+    """Anonymous GET /api/core/company/branding/ returns 200 with only branding fields."""
+    from core.models import CompanySettings
+
+    CompanySettings.objects.create(
+        name="ACME Ltda",
+        trade_name="ACME",
+        tax_id="76.000.000-0",
+        address="Calle 123",
+        phone="+56912345678",
+        email="info@acme.cl",
+    )
+    client = APIClient()  # anonymous
+    r = client.get("/api/core/company/branding/")
+    assert r.status_code == 200
+    assert set(r.data.keys()) == {"name", "trade_name", "logo", "logo_url"}
+    assert r.data["name"] == "ACME Ltda"
+    assert r.data["trade_name"] == "ACME"
+
+
+@pytest.mark.django_db
+def test_company_current_requires_authentication():
+    """Anonymous GET /api/core/company/current/ now returns 401; authenticated returns 200 with tax_id."""
+    from core.models import CompanySettings
+
+    CompanySettings.objects.create(
+        name="ACME Ltda",
+        trade_name="ACME",
+        tax_id="76.000.000-0",
+    )
+    anon = APIClient()
+    assert anon.get("/api/core/company/current/").status_code == 401
+
+    user = make_user("viewer", "core.view_companysettings")
+    auth = _client(user)
+    r = auth.get("/api/core/company/current/")
+    assert r.status_code == 200
+    assert "tax_id" in r.data

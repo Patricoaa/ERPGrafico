@@ -21,6 +21,7 @@ from .serializers import (
     CustomTokenRefreshSerializer,
     GroupSerializer,
     MeSerializer,
+    PublicCompanyBrandingSerializer,
     UserSerializer,
 )
 from .services import (
@@ -242,8 +243,6 @@ class CompanySettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             serializer = self.get_serializer(obj)
             return Response(serializer.data)
 
-        # Check permission for PUT/PATCH manually if we're bypassing StandardizedModelPermissions
-        # But actually, get_permissions is better
         serializer = self.get_serializer(
             obj, data=request.data, partial=(request.method == "PATCH")
         )
@@ -251,16 +250,17 @@ class CompanySettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         serializer.save()
         return Response(serializer.data)
 
-    def get_permissions(self):
-        """
-        Allow any user to GET current company settings (needed for initial dashboard render/SSR).
-        Maintain model permissions for other actions and methods.
-        """
-        if self.action == "current" and self.request.method == "GET":
-            from rest_framework.permissions import AllowAny
-
-            return [AllowAny()]
-        return super().get_permissions()
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="branding",
+        permission_classes=[],  # AllowAny — explicit empty list
+    )
+    def branding(self, request):
+        """Public endpoint: returns only name, trade_name and logo for branding (login, 404, etc.)."""
+        obj = CoreService.get_or_create_company_settings()
+        serializer = PublicCompanyBrandingSerializer(obj)
+        return Response(serializer.data)
 
 
 class ActionLogViewSet(viewsets.ReadOnlyModelViewSet):

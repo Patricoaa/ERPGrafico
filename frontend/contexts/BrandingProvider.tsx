@@ -1,25 +1,25 @@
 "use client"
 
 import React, { createContext, useContext, useMemo } from 'react'
-import { useCompanySettings, type CompanySettings } from '@/features/settings'
+import { useCompanyBranding, type CompanyBranding } from '@/features/settings'
 import { resolveMediaUrl } from '@/lib/media-url'
 
 interface BrandingContextType {
     logo: string | null
-    company?: CompanySettings
+    company?: CompanyBranding
 }
 
 const BrandingContext = createContext<BrandingContextType | undefined>(undefined)
 
 export function BrandingProvider({ children }: { children: React.ReactNode }) {
-    const { settings } = useCompanySettings()
+    const { branding } = useCompanyBranding()
 
-    const logo = resolveMediaUrl(settings?.logo)
+    const logo = resolveMediaUrl(branding?.logo)
 
     const value = useMemo(() => ({
         logo,
-        company: settings
-    }), [logo, settings])
+        company: branding
+    }), [logo, branding])
 
     return (
         <BrandingContext.Provider value={value}>
