@@ -18,6 +18,7 @@ from .serializers import (
     CompanySettingsSerializer,
     CustomTokenRefreshSerializer,
     GroupSerializer,
+    MeSerializer,
     UserSerializer,
 )
 from .services import ActionLoggingService, CoreSelector, CoreService, UserService
@@ -75,12 +76,12 @@ class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        serializer = UserSerializer(request.user)
+        serializer = MeSerializer(request.user)
         return Response(serializer.data)
 
     def patch(self, request):
         user = request.user
-        serializer = UserSerializer(user, data=request.data, partial=True)
+        serializer = MeSerializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 

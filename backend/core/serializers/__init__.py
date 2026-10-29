@@ -106,6 +106,26 @@ class UserSerializer(serializers.ModelSerializer):
         return instance
 
 
+class MeSerializer(UserSerializer):
+    """Self-service serializer for /me: same shape as UserSerializer, but only
+    `theme` is writable (prevents self role/status escalation)."""
+
+    class Meta(UserSerializer.Meta):
+        read_only_fields = [
+            f for f in UserSerializer.Meta.fields if f != "theme"
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # DRF ignores Meta.read_only_fields for explicitly declared fields
+        # (groups, email, contact, ...), so force it here.
+        for name, field in self.fields.items():
+            if name != "theme" and name != "password":
+                field.read_only = True
+                field.required = False
+        self.fields.pop("password", None)
+
+
 class GroupSerializer(serializers.ModelSerializer):
     user_count = serializers.IntegerField(source="user_set.count", read_only=True)
 
