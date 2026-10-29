@@ -737,6 +737,17 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         }
       >
         <div className="flex flex-1 min-h-0 overflow-hidden">
+        <WizardProcessSidebar
+          stages={STAGES}
+          viewingStepIndex={viewingStepIndex}
+          actualStepIndex={actualStepIndex}
+          stepMode={stepMode}
+          onStepClick={(index) => navigateToStep(index, 'view')}
+          order={order}
+          collapsed={railCollapsed}
+          onToggleCollapsed={toggleRail}
+        />
+
         <TabBar
           items={order ? [
             { value: 'stages', label: 'Producción', icon: Factory },
@@ -753,18 +764,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             value="stages"
             className="data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden"
           >
-          <div className="flex flex-1 min-h-0 overflow-hidden">
-          <WizardProcessSidebar
-            stages={STAGES}
-            viewingStepIndex={viewingStepIndex}
-            actualStepIndex={actualStepIndex}
-            stepMode={stepMode}
-            onStepClick={(index) => navigateToStep(index, 'view')}
-            order={order}
-            collapsed={railCollapsed}
-            onToggleCollapsed={toggleRail}
-          />
-
           {/* Center content */}
           <div className="flex-1 flex flex-col overflow-hidden relative">
             <div className="flex flex-1 flex-col min-h-0 px-6 relative">
@@ -981,31 +980,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             </div>
 
           </div>
-
-          {order ? (
-            <WizardRightSidebar
-              order={order}
-              productName={productName}
-              stageData={stageData}
-              currentStageId={currentStageId as string}
-              tasks={viewedStageTasks}
-              allTasks={order.workflow_tasks}
-              stageEntries={allStageHistory}
-              canComplete={canUserCompleteTask}
-              actionable={isViewingCurrentStage && !isTerminalOrder}
-              taskNotes={taskNotes}
-              taskFiles={taskFiles}
-              taskConfirmations={taskConfirmations}
-              onNoteChange={setTaskNote}
-              onFileChange={setTaskFile}
-              onConfirmationChange={setTaskConfirmation}
-              collapsed={rightRailCollapsed}
-              onToggleCollapse={toggleRightRail}
-            />
-          ) : currentStageId === 'MFG_CONFIG' ? (
-            <WizardDraftSidebar />
-          ) : null}
-          </div>
           </TabBarContent>
 
           {order && (
@@ -1017,6 +991,30 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             </TabBarContent>
           )}
         </TabBar>
+
+        {order ? (
+          <WizardRightSidebar
+            order={order}
+            productName={productName}
+            stageData={stageData}
+            currentStageId={currentStageId as string}
+            tasks={viewedStageTasks}
+            allTasks={order.workflow_tasks}
+            stageEntries={allStageHistory}
+            canComplete={canUserCompleteTask}
+            actionable={isViewingCurrentStage && !isTerminalOrder}
+            taskNotes={taskNotes}
+            taskFiles={taskFiles}
+            taskConfirmations={taskConfirmations}
+            onNoteChange={setTaskNote}
+            onFileChange={setTaskFile}
+            onConfirmationChange={setTaskConfirmation}
+            collapsed={rightRailCollapsed}
+            onToggleCollapse={toggleRightRail}
+          />
+        ) : currentStageId === 'MFG_CONFIG' ? (
+          <WizardDraftSidebar />
+        ) : null}
         </div>
       </Drawer>
 

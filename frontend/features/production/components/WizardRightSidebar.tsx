@@ -406,8 +406,40 @@ export function WizardRightSidebar({
                 </button>
             )}
 
-            {/* Sections — only when expanded */}
-            {!collapsed && <div className="border-l w-72 flex flex-col flex-1 min-h-0 overflow-hidden bg-background h-full">
+            {/* Icon rail when collapsed / full sections when expanded */}
+            {collapsed ? (
+                <div className="border-l w-10 flex flex-col items-center gap-2 pt-3 bg-background/95 h-full">
+                    <button
+                        type="button"
+                        title="Especificaciones"
+                        aria-label="Especificaciones"
+                        onClick={() => { setSpecsOpen(true); onToggleCollapse?.() }}
+                        className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                        <Settings2 className="h-3.5 w-3.5" />
+                    </button>
+                    {requiresApproval && (
+                        <button
+                            type="button"
+                            title={isPending ? "Aprobación pendiente" : "Aprobación"}
+                            aria-label="Aprobación"
+                            onClick={() => { setApprovalOpen(true); onToggleCollapse?.() }}
+                            className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                        >
+                            <ClipboardCheck className="h-3.5 w-3.5" />
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        title="Historial"
+                        aria-label="Historial"
+                        onClick={() => { setHistoryOpen(true); onToggleCollapse?.() }}
+                        className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                        <History className="h-3.5 w-3.5" />
+                    </button>
+                </div>
+            ) : <div className="border-l w-72 flex flex-col flex-1 min-h-0 overflow-hidden bg-background h-full">
                 <CollapsibleSection
                     title="Datos de la OT"
                     icon={Settings2}
