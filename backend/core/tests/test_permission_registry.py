@@ -10,7 +10,6 @@ from django.core.exceptions import ImproperlyConfigured
 from core.permissions import PermissionRegistry
 from core.tests.rbac_factories import make_user
 
-
 # ---------------------------------------------------------------------------
 #  Duplicate prevention
 # ---------------------------------------------------------------------------
