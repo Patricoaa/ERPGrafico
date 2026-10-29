@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.33](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.32...v0.3.33) (2026-10-29)
+
+
+### ✨ Features
+
+* **production:** add external tab toggles to left sidebar, compact history chips ([9ad3b02](https://github.com/Patricoaa/ERPGrafico/commit/9ad3b022519e9db1223f9516077ab2a537457c8d))
+* **production:** refactor WizardRightSidebar with 3 CollapsibleSection panels ([cd422ec](https://github.com/Patricoaa/ERPGrafico/commit/cd422ec3e4e527f5f7d8fdee3ad1567fb6ff61c8))
+* **production:** wire activity sections to right sidebar, remove StageActivityPanel from center ([592efdc](https://github.com/Patricoaa/ERPGrafico/commit/592efdcdc376e1c6e3298c4658f9df3cb480c76b))
+* **shared:** add CollapsibleSection reusable component ([cf47547](https://github.com/Patricoaa/ERPGrafico/commit/cf47547dbbc7812d830c9dae77aec8fb8e70ea29))
+
+
+### 🐛 Bug Fixes
+
+* **production:** align sidebar heights, unify collapse tab pattern, full-height left rail ([d0124d3](https://github.com/Patricoaa/ERPGrafico/commit/d0124d3c9197978cb77fe19579f311001859a68a))
+* **production:** correct right sidebar toggle button positioning ([fa191ef](https://github.com/Patricoaa/ERPGrafico/commit/fa191efa5dac43ab924b8915e4bd8560c220c579))
+* **production:** full-height sidebars outside TabBar, icon rail when right rail collapsed ([1bf7473](https://github.com/Patricoaa/ERPGrafico/commit/1bf7473f31d53d2bb58e5a111f56d7e0c6e8e799))
+
 ### [0.3.32](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.31...v0.3.32) (2026-10-29)
 
 
