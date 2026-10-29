@@ -35,14 +35,12 @@ function makeOrder(status: string): WorkOrder {
 }
 
 function renderFooter(status: string, actualStepIndex: number) {
-    const onClose = vi.fn()
     const viewingStepIndex = actualStepIndex >= 0 ? actualStepIndex : 0
 
     render(
         <WizardStickyFooter
             isViewingCurrentStage={actualStepIndex >= 0}
             stepMode="view"
-            onClose={onClose}
             pendingTasks={[]}
             canApproveAll={true}
             transitioning={false}
@@ -55,28 +53,22 @@ function renderFooter(status: string, actualStepIndex: number) {
             hasMaterials={true}
         />,
     )
-
-    return { onClose }
 }
 
 describe("WizardStickyFooter — terminal states", () => {
-    it("offers only a close action for a cancelled order", () => {
-        const { onClose } = renderFooter("CANCELLED", -1)
+    it("shows no navigation actions for a cancelled order", () => {
+        renderFooter("CANCELLED", -1)
 
-        expect(screen.queryByText("Volver a la Etapa Actual")).not.toBeInTheDocument()
         expect(screen.queryByText("Siguiente Etapa")).not.toBeInTheDocument()
         expect(screen.queryByText("Finalizar Producción")).not.toBeInTheDocument()
-
-        const close = screen.getByRole("button", { name: /Cerrar/ })
-        fireEvent.click(close)
-        expect(onClose).toHaveBeenCalled()
+        expect(screen.queryByRole("button", { name: /Cerrar/ })).not.toBeInTheDocument()
     })
 
-    it("offers only a close action for a finished order", () => {
+    it("shows no navigation actions for a finished order", () => {
         renderFooter("FINISHED", 2)
 
         expect(screen.queryByText("Siguiente Etapa")).not.toBeInTheDocument()
         expect(screen.queryByText("Finalizar Producción")).not.toBeInTheDocument()
-        expect(screen.getByRole("button", { name: /Cerrar/ })).toBeInTheDocument()
+        expect(screen.queryByRole("button", { name: /Cerrar/ })).not.toBeInTheDocument()
     })
 })

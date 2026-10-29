@@ -190,16 +190,15 @@ def _make_consumption(work_order, product, warehouse):
 
 
 @pytest.mark.django_db
-def test_stock_movements_do_not_block_reopening_press(work_order_factory, manufacturable_product, warehouse_factory):
-    """Stock movements (material consumptions) should only block reopening the material-
-    assignment stages.  Process stages like PRESS / PREPRESS / POSTPRESS have nothing to do
-    with stock records and must remain reopenable even after a consumption exists."""
-    wo = work_order_factory(current_stage=Stage.PRESS, status=WorkOrder.Status.IN_PROGRESS)
+def test_stock_movements_block_reopening_press(work_order_factory, manufacturable_product, warehouse_factory):
+    """Stock movements (material consumptions) block reopening PRESS just like they block
+    MATERIAL_ASSIGNMENT — once products are consumed the production pipeline is committed."""
+    wo = work_order_factory(current_stage=Stage.POSTPRESS, status=WorkOrder.Status.IN_PROGRESS)
     _make_consumption(wo, manufacturable_product, warehouse_factory())
 
     blockers_for_press = WorkOrderService.rewind_blockers(wo, target_stage="PRESS")
-    assert blockers_for_press == [], (
-        "Stock movements must NOT block reopening PRESS; they only block material stages."
+    assert blockers_for_press, (
+        "Stock movements must block reopening PRESS once consumption records exist."
     )
 
 

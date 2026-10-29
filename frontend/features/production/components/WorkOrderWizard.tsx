@@ -713,7 +713,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
           <WizardStickyFooter
             isViewingCurrentStage={isViewingCurrentStage}
             stepMode={stepMode}
-            onClose={() => onOpenChange(false)}
             pendingTasks={pendingTasks}
             approvalBlockedReason={approvalBlockedReason}
             canApproveAll={canApproveAll}
@@ -783,6 +782,19 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                 />
               </div>
 
+              {/* Header actions for workflow stages — rendered OUTSIDE the masked zone so
+                  pointer-events-none on the content div never blocks these buttons. */}
+              {stageHeaderActions
+                && currentStageId !== 'ORIGIN_SELECTION'
+                && currentStageId !== 'SALE_ORDER_PRODUCT'
+                && currentStageId !== 'PRODUCT_SELECTION'
+                && currentStageId !== 'MFG_CONFIG'
+                && (
+                  <div className="flex justify-end pb-1 pt-1">
+                    {stageHeaderActions}
+                  </div>
+                )}
+
               <div
                   key={viewingStepIndex}
                   className={cn(
@@ -808,7 +820,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                     <OriginSelectionStep
                       selected={chosenOtType}
                       locked={!isCreating}
-                      headerActions={stageHeaderActions}
                       onChoose={(type) => {
                         if (type !== chosenOtType) {
                           // Switching origin invalidates everything chosen for the previous one
@@ -912,11 +923,10 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       isViewingCurrentStage={isViewingCurrentStage || (editableInline && stepMode === 'edit-in-place')}
                       onMaterialSaved={fetchOrder}
                       onMaterialDeleted={fetchOrder}
-                      headerActions={stageHeaderActions}
                     />
                   )}
                   {currentStageId === 'MATERIAL_APPROVAL' && (
-                    <MaterialApprovalStep order={order as WorkOrder} headerActions={stageHeaderActions} />
+                    <MaterialApprovalStep order={order as WorkOrder} />
                   )}
                   {currentStageId === 'OUTSOURCING_ASSIGNMENT' && (
                     <OutsourcingAssignmentStep
@@ -924,7 +934,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       isViewingCurrentStage={isViewingCurrentStage || (editableInline && stepMode === 'edit-in-place')}
                       onMaterialSaved={fetchOrder}
                       onMaterialDeleted={fetchOrder}
-                      headerActions={stageHeaderActions}
                     />
                   )}
                   {currentStageId === 'PREPRESS' && (
@@ -933,7 +942,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       stageData={stageData}
                       actionable={isViewingCurrentStage && !isTerminalOrder}
                       onRefresh={fetchOrder}
-                      headerActions={stageHeaderActions}
                     />
                   )}
                   {currentStageId === 'PRESS' && (
@@ -941,7 +949,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       order={order as WorkOrder}
                       actionable={isViewingCurrentStage && !isTerminalOrder}
                       onRefresh={fetchOrder}
-                      headerActions={stageHeaderActions}
                     />
                   )}
                   {currentStageId === 'POSTPRESS' && (
@@ -949,17 +956,15 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       order={order as WorkOrder}
                       actionable={isViewingCurrentStage && !isTerminalOrder}
                       onRefresh={fetchOrder}
-                      headerActions={stageHeaderActions}
                     />
                   )}
                   {currentStageId === 'OUTSOURCING_VERIFICATION' && (
-                    <OutsourcingVerificationStep order={order as WorkOrder} headerActions={stageHeaderActions} />
+                    <OutsourcingVerificationStep order={order as WorkOrder} />
                   )}
                   {currentStageId === 'RECTIFICATION' && (
                     <div className="space-y-6">
                       <RectificationStep
                         order={order as WorkOrder}
-                        headerActions={stageHeaderActions}
                         onChange={(adjustments, producedQty, outsourcedAdj) => {
                           setRectificationAdjustments(adjustments)
                           setRectificationProducedQty(producedQty)
@@ -975,7 +980,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       isUploadingPhoto={mutations.isUploadingPhoto}
                       onPrintCopy={async () => setIsDuplicateModalOpen(true)}
                       isDuplicating={mutations.isDuplicating}
-                      headerActions={stageHeaderActions}
                     />
                   )}
                 </div>

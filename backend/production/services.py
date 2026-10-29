@@ -1432,10 +1432,13 @@ class WorkOrderService:
         "PRESS", "POSTPRESS", "OUTSOURCING_VERIFICATION", "RECTIFICATION", "FINISHED",
     ]
 
-    # Stock movements (ProductionConsumption) only block reopening the material-assignment
-    # stages.  Production-process stages (PREPRESS, PRESS, POSTPRESS, …) can be reopened
-    # even after consumption records exist — they do not alter material assignment.
-    _STOCK_BLOCKED_STAGES = {"MATERIAL_ASSIGNMENT", "MATERIAL_APPROVAL"}
+    # Stock movements (ProductionConsumption) block reopening any stage that preceded
+    # or includes the production execution.  All stages from MATERIAL_ASSIGNMENT onward
+    # (except OUTSOURCING_VERIFICATION and later) are blocked once consumption records exist.
+    _STOCK_BLOCKED_STAGES = {
+        "MATERIAL_ASSIGNMENT", "MATERIAL_APPROVAL", "OUTSOURCING_ASSIGNMENT",
+        "PREPRESS", "PRESS", "POSTPRESS",
+    }
 
     @staticmethod
     def _stage_is_mandatory(work_order, stage, materials):

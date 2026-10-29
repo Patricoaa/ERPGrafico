@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
-import { AlertTriangle, Check, ArrowRight, X } from "lucide-react"
+import { AlertTriangle, Check, ArrowRight } from "lucide-react"
 import { ActionConfirmModal, SubmitButton, FormFooter } from "@/components/shared"
 
 import type { WorkOrder, WorkOrderTask, WorkOrderStage, WizardStepMode } from "../types"
@@ -11,7 +11,6 @@ import { getDomainConceptTitle } from "@/lib/entity-registry"
 interface WizardFooterProps {
     isViewingCurrentStage: boolean
     stepMode: WizardStepMode
-    onClose: () => void
     pendingTasks: WorkOrderTask[]
     /** A requirement of the stage's approval still missing (shown as the reason "Siguiente" is off). */
     approvalBlockedReason?: string
@@ -38,7 +37,6 @@ interface WizardFooterProps {
 export function WizardStickyFooter({
     isViewingCurrentStage,
     stepMode,
-    onClose,
     pendingTasks,
     approvalBlockedReason,
     canApproveAll,
@@ -127,18 +125,9 @@ export function WizardStickyFooter({
         }
     }
 
-    // ── Left actions: Cerrar, Anterior, Ir a etapa actual ──
+    // ── Left actions: Anterior ──
     const leftActions = useMemo(() => {
-        if (isTerminal) {
-            return (
-                <Button variant="outline" size="sm" onClick={onClose} className="gap-1.5">
-                    <X className="h-4 w-4" />
-                    Cerrar
-                </Button>
-            )
-        }
-
-        if (!isViewingCurrentStage) {
+        if (isTerminal || !isViewingCurrentStage) {
             return null
         }
 
@@ -156,7 +145,7 @@ export function WizardStickyFooter({
             )
         }
         return null
-    }, [isTerminal, isViewingCurrentStage, onClose, onBack, actualStepIndex, order?.status, transitioning])
+    }, [isTerminal, isViewingCurrentStage, onBack, actualStepIndex, order?.status, transitioning])
 
     // ── Right actions: Siguiente / Rectificar / Guardar / Seleccionar ──
     const rightActions = useMemo(() => {
