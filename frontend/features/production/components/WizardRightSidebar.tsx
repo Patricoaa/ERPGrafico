@@ -406,19 +406,17 @@ export function WizardRightSidebar({
     }
 
     return (
-        <div className="hidden lg:flex border-l w-72 shrink-0 flex-col h-full overflow-hidden bg-background">
-            {/* Toggle button */}
-            <div className="absolute right-72 top-1/2 -translate-y-1/2 z-10 hidden lg:block">
-                <button
-                    type="button"
-                    onClick={onToggleCollapse}
-                    className="flex h-6 w-4 items-center justify-center rounded-l border border-r-0 border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                    title="Colapsar panel de información"
-                    aria-label="Colapsar panel de información"
-                >
-                    <ChevronRight className="h-3 w-3" aria-hidden />
-                </button>
-            </div>
+        <div className="relative hidden lg:flex border-l w-72 shrink-0 flex-col h-full bg-background">
+            {/* Toggle tab — anchored to the left edge, extends into the center column */}
+            <button
+                type="button"
+                onClick={onToggleCollapse}
+                className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 z-10 flex h-6 w-4 items-center justify-center rounded-l border border-r-0 border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                title="Colapsar panel de información"
+                aria-label="Colapsar panel de información"
+            >
+                <ChevronRight className="h-3 w-3" aria-hidden />
+            </button>
 
             {/* Sections */}
             <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
