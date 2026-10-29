@@ -98,3 +98,16 @@ def test_group_list_query_count(django_assert_max_num_queries):
     c = _client(make_user("adm", *ADMIN_GROUP_PERMS))
     with django_assert_max_num_queries(3):
         assert c.get("/api/core/groups/").status_code == 200
+
+
+# --- Task 7: endpoint genérico de acciones documentales eliminado ---
+
+
+@pytest.mark.django_db
+def test_generic_document_action_endpoint_removed():
+    from django.urls import NoReverseMatch, reverse
+
+    with pytest.raises(NoReverseMatch):
+        reverse("document-action", kwargs={"content_type_id": 1, "object_id": 1, "action": "confirm"})
+    user = make_user("op", groups=(Roles.OPERATOR,))
+    assert _client(user).post("/api/core/documents/1/1/confirm/").status_code == 404
