@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.32](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.31...v0.3.32) (2026-10-29)
+
+
+### ✨ Features
+
+* **production:** read-only mode and icon-in-rail redesign for SaleOrderProductStep ([f649ebe](https://github.com/Patricoaa/ERPGrafico/commit/f649ebed2923fc46772d2a0f136f0d544cfdb2dd))
+
 ### [0.3.31](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.30...v0.3.31) (2026-10-29)
 
 
