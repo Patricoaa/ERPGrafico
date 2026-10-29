@@ -8,6 +8,16 @@ class HrConfig(AppConfig):
 
     def ready(self):
         try:
+            from core.permissions import PermissionRegistry
+
+            PermissionRegistry.register(
+                "hr",
+                [("view_dashboard_hr", "Can view HR dashboard")],
+            )
+        except ImportError:
+            pass
+
+        try:
             from core.prefix_registry import EntityPrefix
             from core.registry import SearchableEntity, UniversalRegistry
             from hr.models import Absence, Employee, Payroll, PayrollConcept, SalaryAdvance

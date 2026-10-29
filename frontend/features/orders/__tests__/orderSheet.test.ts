@@ -11,7 +11,7 @@ type Doc = { status: string; pending_amount?: number }
 const registry: ActionRegistry<Doc> = {
     payments: {
         id: "payments", label: "Pagos", icon: Banknote, actions: [
-            { id: "register-payment", label: "Registrar pago", icon: Banknote, requiredPermissions: ["treasury.add_payment"], checkAvailability: (d) => (d.pending_amount ?? 0) > 0 },
+            { id: "register-payment", label: "Registrar pago", icon: Banknote, requiredPermissions: ["treasury.add_treasurymovement"], checkAvailability: (d) => (d.pending_amount ?? 0) > 0 },
             { id: "payment-history", label: "Historial", icon: Banknote },
         ],
     },
@@ -36,7 +36,7 @@ const registry: ActionRegistry<Doc> = {
 /** ADR-0083: acciones de la ficha documental (mismas reglas que PhaseCard del Hub). */
 describe("resolveRegistryActions", () => {
     it("applies permissions (any of), excluded status, availability and dedupes ids", () => {
-        const resolved = resolveRegistryActions(registry, { status: "CONFIRMED", pending_amount: 10 }, ["treasury.add_payment"], (id) => SHEET_EXCLUDED_ACTIONS.has(id))
+        const resolved = resolveRegistryActions(registry, { status: "CONFIRMED", pending_amount: 10 }, ["treasury.add_treasurymovement"], (id) => SHEET_EXCLUDED_ACTIONS.has(id))
         expect(resolved.map((r) => r.action.id)).toEqual(["register-payment", "register-delivery", "register-merchandise-return", "create-credit-note"])
         expect(resolved.find((r) => r.action.id === "create-credit-note")).toMatchObject({ disabled: true, disabledReason: "Falta folio" })
     })
@@ -50,7 +50,7 @@ describe("resolveRegistryActions", () => {
 
 describe("planOrderSheetActions", () => {
     it("picks the next cycle step as primary and maps categories to areas", () => {
-        const plan = planOrderSheetActions(resolveRegistryActions(registry, { status: "CONFIRMED", pending_amount: 10 }, ["treasury.add_payment"]))
+        const plan = planOrderSheetActions(resolveRegistryActions(registry, { status: "CONFIRMED", pending_amount: 10 }, ["treasury.add_treasurymovement"]))
         expect(plan.primary?.action.id).toBe("register-delivery")
         expect(plan.secondary.map((r) => r.action.id)).toEqual(["register-payment"])
         expect(plan.overflow.map((r) => r.action.id)).toEqual(["payment-history", "register-merchandise-return", "create-credit-note"])

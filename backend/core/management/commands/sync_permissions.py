@@ -64,9 +64,6 @@ class Command(BaseCommand):
             "view_group",
             # Accounting & Auxiliary reads
             "view_account",
-            "view_tax",
-            "view_pricelist",
-            "view_cashbox",
             # Production
             "view_workorder",
             "add_workorder",
@@ -147,7 +144,7 @@ class Command(BaseCommand):
             "view_salaryadvance",
             "add_salaryadvance",
             "view_afp",
-            "view_employeconceptamount",
+            "view_employeeconceptamount",
             "view_globalhrsettings",
         ]
 

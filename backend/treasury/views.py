@@ -386,7 +386,7 @@ class TreasuryMovementViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHisto
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if not request.user.is_staff:
+        if not request.user.has_perm("treasury.purge_treasurymovement"):
             return Response(
                 {"error": "Solo administradores pueden purgar documentos cancelados."},
                 status=status.HTTP_403_FORBIDDEN,
