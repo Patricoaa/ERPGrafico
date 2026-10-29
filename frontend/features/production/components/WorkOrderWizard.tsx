@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
-import { AlertTriangle, Factory, FileText, Plus, Keyboard, Printer, Link2 } from 'lucide-react'
+import { AlertTriangle, Eye, Factory, FileText, Plus, Keyboard, Printer, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 import {
@@ -328,16 +328,45 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   // Actions rendered inside each step's StepHeader.rightContent — view/edit toggle and reopen.
   const stageHeaderActions = useMemo((): ReactNode => {
     if (isCreating || !order || isViewingCurrentStage || !viewedCaps) return null
+    const reopenStage = () => { setPendingPrevStage(currentStageId as string); setIsBackwardModalOpen(true) }
+    const toggleEdit = (editing: boolean) => navigateToStep(viewingStepIndex, editing ? 'edit-in-place' : 'view')
+
+    // While editing, ManufacturingConfigSummary renders its own Cancel+Save in the header
+    // (it ignores headerActions when editing=true). For other editable stages the toggle
+    // stays; suppress "Volver" to avoid navigating away mid-edit.
+    if (stepMode === 'edit-in-place') {
+      return (
+        <WizardStageActions
+          isTerminal={isTerminalOrder}
+          capabilities={viewedCaps}
+          editing
+          onEditingChange={toggleEdit}
+          onReopen={reopenStage}
+        />
+      )
+    }
+
     return (
-      <WizardStageActions
-        isTerminal={isTerminalOrder}
-        capabilities={viewedCaps}
-        editing={stepMode === 'edit-in-place'}
-        onEditingChange={(editing) => navigateToStep(viewingStepIndex, editing ? 'edit-in-place' : 'view')}
-        onReopen={() => { setPendingPrevStage(currentStageId as string); setIsBackwardModalOpen(true) }}
-      />
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setViewingStepIndex(actualStepIndex)}
+          className="gap-1.5 h-7 text-xs"
+        >
+          <Eye className="h-3.5 w-3.5" />Etapa actual
+        </Button>
+        <WizardStageActions
+          isTerminal={isTerminalOrder}
+          capabilities={viewedCaps}
+          editing={false}
+          onEditingChange={toggleEdit}
+          onReopen={reopenStage}
+        />
+      </div>
     )
-  }, [isCreating, order, isViewingCurrentStage, viewedCaps, isTerminalOrder, stepMode, viewingStepIndex, currentStageId, setPendingPrevStage, setIsBackwardModalOpen, navigateToStep])
+  }, [isCreating, order, isViewingCurrentStage, viewedCaps, isTerminalOrder, stepMode, viewingStepIndex, actualStepIndex, currentStageId, setPendingPrevStage, setIsBackwardModalOpen, navigateToStep, setViewingStepIndex])
 
   // ── data fetching ──────────────────────────────────────────────────────────
   const fetchOrder = async () => {
