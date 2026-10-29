@@ -26,7 +26,7 @@ export function ProductionStepsSidebar({
 }: ProductionStepsSidebarProps) {
     return (
         <TooltipProvider delayDuration={300}>
-            <div className="relative hidden md:block">
+            <div className="relative hidden md:flex flex-col h-full">
                 {onToggleCollapsed && (
                     <button
                         type="button"
@@ -47,7 +47,7 @@ export function ProductionStepsSidebar({
                     currentStep={currentStep}
                     steps={steps}
                     width="w-64"
-                    className="bg-transparent"
+                    className="bg-transparent flex-1 min-h-0"
                     onStepClick={onStepClick}
                     showNumbers={true}
                     detailVisibility="both"

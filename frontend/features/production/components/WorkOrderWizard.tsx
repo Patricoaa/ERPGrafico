@@ -982,6 +982,29 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
           </div>
 
+          {order ? (
+            <WizardRightSidebar
+              order={order}
+              productName={productName}
+              stageData={stageData}
+              currentStageId={currentStageId as string}
+              tasks={viewedStageTasks}
+              allTasks={order.workflow_tasks}
+              stageEntries={allStageHistory}
+              canComplete={canUserCompleteTask}
+              actionable={isViewingCurrentStage && !isTerminalOrder}
+              taskNotes={taskNotes}
+              taskFiles={taskFiles}
+              taskConfirmations={taskConfirmations}
+              onNoteChange={setTaskNote}
+              onFileChange={setTaskFile}
+              onConfirmationChange={setTaskConfirmation}
+              collapsed={rightRailCollapsed}
+              onToggleCollapse={toggleRightRail}
+            />
+          ) : currentStageId === 'MFG_CONFIG' ? (
+            <WizardDraftSidebar />
+          ) : null}
           </div>
           </TabBarContent>
 
@@ -994,30 +1017,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             </TabBarContent>
           )}
         </TabBar>
-
-        {order ? (
-          <WizardRightSidebar
-            order={order}
-            productName={productName}
-            stageData={stageData}
-            currentStageId={currentStageId as string}
-            tasks={viewedStageTasks}
-            allTasks={order.workflow_tasks}
-            stageEntries={allStageHistory}
-            canComplete={canUserCompleteTask}
-            actionable={isViewingCurrentStage && !isTerminalOrder}
-            taskNotes={taskNotes}
-            taskFiles={taskFiles}
-            taskConfirmations={taskConfirmations}
-            onNoteChange={setTaskNote}
-            onFileChange={setTaskFile}
-            onConfirmationChange={setTaskConfirmation}
-            collapsed={rightRailCollapsed}
-            onToggleCollapse={toggleRightRail}
-          />
-        ) : currentStageId === 'MFG_CONFIG' ? (
-          <WizardDraftSidebar />
-        ) : null}
         </div>
       </Drawer>
 

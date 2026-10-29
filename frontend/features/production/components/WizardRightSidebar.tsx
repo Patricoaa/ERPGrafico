@@ -388,40 +388,28 @@ export function WizardRightSidebar({
         if (currentStageId) setStageFilter(currentStageId)
     }, [currentStageId, actionable, isPending, hasMandatoryFields])
 
-    // Collapsed: show only the toggle strip
-    if (collapsed) {
-        return (
-            <div className="hidden lg:flex border-l w-8 shrink-0 flex-col items-center pt-2 bg-background">
+    return (
+        <div className="relative hidden lg:flex shrink-0 flex-col h-full">
+            {/* Toggle tab — always visible, anchored to the left edge, protrudes into the center column */}
+            {onToggleCollapse && (
                 <button
                     type="button"
                     onClick={onToggleCollapse}
-                    className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
-                    title="Expandir panel de información"
-                    aria-label="Expandir panel de información"
+                    className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 z-10 flex h-6 w-4 items-center justify-center rounded-l border border-r-0 border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                    title={collapsed ? "Expandir panel de información" : "Colapsar panel de información"}
+                    aria-label={collapsed ? "Expandir panel de información" : "Colapsar panel de información"}
                 >
-                    <ChevronLeft className="h-4 w-4" aria-hidden />
+                    {collapsed
+                        ? <ChevronLeft className="h-3 w-3" aria-hidden />
+                        : <ChevronRight className="h-3 w-3" aria-hidden />
+                    }
                 </button>
-            </div>
-        )
-    }
+            )}
 
-    return (
-        <div className="relative hidden lg:flex border-l w-72 shrink-0 flex-col h-full bg-background">
-            {/* Toggle tab — anchored to the left edge, extends into the center column */}
-            <button
-                type="button"
-                onClick={onToggleCollapse}
-                className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 z-10 flex h-6 w-4 items-center justify-center rounded-l border border-r-0 border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                title="Colapsar panel de información"
-                aria-label="Colapsar panel de información"
-            >
-                <ChevronRight className="h-3 w-3" aria-hidden />
-            </button>
-
-            {/* Sections */}
-            <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            {/* Sections — only when expanded */}
+            {!collapsed && <div className="border-l w-72 flex flex-col flex-1 min-h-0 overflow-hidden bg-background h-full">
                 <CollapsibleSection
-                    title="Especificaciones"
+                    title="Datos de la OT"
                     icon={Settings2}
                     open={specsOpen}
                     onOpenChange={setSpecsOpen}
@@ -485,7 +473,7 @@ export function WizardRightSidebar({
                         onStageFilter={setStageFilter}
                     />
                 </CollapsibleSection>
-            </div>
+            </div>}
         </div>
     )
 }
