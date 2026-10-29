@@ -12,7 +12,7 @@ import { formatCurrency } from "@/lib/money";
 import type { SaleOrderLine } from "@/features/sales";
 import { resolveMediaUrl } from "@/lib/media-url";
 import { getDomainConceptTitle } from "@/lib/entity-registry";
-import { CardSurface, CardRow, GlyphChevron } from "@/components/shared";
+import { CardSurface, CardRow, GlyphChevron, StepHeader } from "@/components/shared";
 
 type ExpandedProduct = { id: number; name: string; code: string; image_thumbnail?: string; requires_advanced_manufacturing?: boolean };
 
@@ -123,6 +123,11 @@ export function SaleOrderProductStep({
 
   return (
     <div className="space-y-6">
+      <StepHeader
+        title={`Selección de ${getDomainConceptTitle('ov')} y Producto`}
+        description={`Seleccione la ${getDomainConceptTitle('ov').toLowerCase()} y el ítem a fabricar para vincular esta ${getDomainConceptTitle('ot').toLowerCase()}.`}
+        icon={FileText}
+      />
 
       <div className="space-y-4">
         <div className="space-y-2">

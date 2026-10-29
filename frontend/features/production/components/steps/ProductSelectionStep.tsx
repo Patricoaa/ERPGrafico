@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import {FileText, X} from "lucide-react";
+import {FileText, Plus, X} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BaseProduct } from "@/features/inventory";
 import { resolveMediaUrl } from '@/lib/media-url';
-import { StaleDataBanner } from '@/components/shared';
+import { StaleDataBanner, StepHeader } from '@/components/shared';
 import { ProductGridPicker } from '@/components/selectors';
 import { useWorkOrderProducts } from "../../hooks/useWorkOrderProducts";
 
@@ -72,8 +72,11 @@ export function ProductSelectionStep({
 
   return (
     <div className="flex flex-col flex-1 min-h-0 space-y-6">
-      <div className="flex items-center justify-between mb-4">
-      </div>
+      <StepHeader
+        title="Selección de Producto"
+        description="Seleccione el producto del catálogo para fabricar y reponer stock."
+        icon={Plus}
+      />
 
       <div className="flex flex-col flex-1 min-h-0">
 

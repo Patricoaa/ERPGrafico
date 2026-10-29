@@ -71,20 +71,23 @@ const STEP_ORIGIN: WorkOrderStage = {
   isCreationStep: true,
 }
 
-const STEP_SALE_ORDER_PRODUCT: WorkOrderStage = {
-  id: 'SALE_ORDER_PRODUCT',
-  label: 'Selección de OV y Producto',
-  icon: FileText,
-  alwaysShow: true,
-  isCreationStep: true,
-}
-
-const STEP_PRODUCT_SELECTION: WorkOrderStage = {
-  id: 'PRODUCT_SELECTION',
-  label: 'Selección de Producto',
-  icon: Plus,
-  alwaysShow: true,
-  isCreationStep: true,
+function getProductSelectionStage(otType: 'LINKED' | 'NONE' | null): WorkOrderStage {
+  if (otType === 'LINKED') {
+    return {
+      id: 'SALE_ORDER_PRODUCT',
+      label: `Selección de ${getDomainConceptTitle('ov')} y Producto`,
+      icon: FileText,
+      alwaysShow: true,
+      isCreationStep: true,
+    }
+  }
+  return {
+    id: 'PRODUCT_SELECTION',
+    label: otType === 'NONE' ? 'Selección de Producto (Stock)' : 'Selección de Producto',
+    icon: Plus,
+    alwaysShow: true,
+    isCreationStep: true,
+  }
 }
 
 const STEP_MFG_CONFIG: WorkOrderStage = {
@@ -100,13 +103,11 @@ const BASE_STAGES: WorkOrderStage[] = STAGES_ORDERED.filter(s => s.id !== 'CANCE
 function getCreateStages(otType: 'LINKED' | 'NONE' | null): WorkOrderStage[] {
   if (otType === null) return [STEP_ORIGIN]
 
-  const virtualSteps: WorkOrderStage[] = [STEP_ORIGIN]
-  if (otType === "LINKED") {
-    virtualSteps.push(STEP_SALE_ORDER_PRODUCT)
-  } else {
-    virtualSteps.push(STEP_PRODUCT_SELECTION)
-  }
-  virtualSteps.push(STEP_MFG_CONFIG)
+  const virtualSteps: WorkOrderStage[] = [
+    STEP_ORIGIN,
+    getProductSelectionStage(otType),
+    STEP_MFG_CONFIG,
+  ]
   return [...virtualSteps, ...BASE_STAGES.filter((s) => s.alwaysShow)]
 }
 
@@ -114,14 +115,12 @@ function getUnifiedStages(
   chosenOtType: 'LINKED' | 'NONE' | null,
   order: WorkOrder | null
 ): WorkOrderStage[] {
-  // Build completed creation steps
-  const creationSteps: WorkOrderStage[] = [{ ...STEP_ORIGIN, alwaysShow: true }]
-  if (chosenOtType === "LINKED") {
-    creationSteps.push({ ...STEP_SALE_ORDER_PRODUCT, alwaysShow: true })
-  } else if (chosenOtType === "NONE") {
-    creationSteps.push({ ...STEP_PRODUCT_SELECTION, alwaysShow: true })
-  }
-  creationSteps.push({ ...STEP_MFG_CONFIG, alwaysShow: true })
+  const effectiveType = chosenOtType ?? (order?.sale_order ? 'LINKED' : 'NONE')
+  const creationSteps: WorkOrderStage[] = [
+    { ...STEP_ORIGIN, alwaysShow: true },
+    { ...getProductSelectionStage(effectiveType), alwaysShow: true },
+    { ...STEP_MFG_CONFIG, alwaysShow: true },
+  ]
 
   // Build workflow steps (filtered if order is available, otherwise alwaysShow)
   const workflowStages = order
@@ -285,16 +284,18 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
   const canApproveAll = pendingTasks.every(canUserCompleteTask)
 
-  // All tasks (pending + completed) of the current stage type — for the activity panel.
-  const stageTasks = useMemo(() => {
-    if (!order?.current_stage) return []
-    const type = stageTaskType(order.current_stage)
-    return (order.workflow_tasks ?? []).filter((t: WorkOrderTask) => t.task_type === type)
-  }, [order])
+  // Approval tasks belonging specifically to the stage currently being viewed.
+  // When viewing stages that have no approval tasks (or non-approval stages), this will be empty,
+  // ensuring the approval collapsible only visualizes on its own stage.
+  const viewedStageTasks = useMemo(() => {
+    if (!currentStageId) return []
+    const type = stageTaskType(currentStageId)
+    return (order?.workflow_tasks ?? []).filter((t: WorkOrderTask) => t.task_type === type)
+  }, [order, currentStageId])
 
-  // Stage history entries for the current stage — for the activity panel.
-  const stageEntries = useMemo(
-    () => (order?.stage_history ?? []).filter((h) => h.stage === order?.current_stage),
+  // All stage history entries of the order — for the segmented history timeline.
+  const allStageHistory = useMemo(
+    () => order?.stage_history ?? [],
     [order]
   )
 
@@ -387,7 +388,12 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   const [prevMode, setPrevMode] = useState(mode)
   const [prevOpen, setPrevOpen] = useState(open)
 
-  if (mode !== prevMode || open !== prevOpen) {
+  const isModeChanged = !prevMode ||
+    mode.kind !== prevMode.kind ||
+    (mode.kind === 'manage' && prevMode.kind === 'manage' && mode.orderId !== prevMode.orderId) ||
+    (mode.kind === 'create' && prevMode.kind === 'create' && (mode.defaultOtType !== prevMode.defaultOtType || mode.defaultProductId !== prevMode.defaultProductId))
+
+  if (isModeChanged || open !== prevOpen) {
     setPrevMode(mode)
     setPrevOpen(open)
     setLocalOrderId(open && mode.kind === 'manage' ? mode.orderId : null)
@@ -519,7 +525,13 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     if (transitioning) return
     if (isMovingForward && !(await approvePendingTasks())) return
     try {
-      await mutations.transition({ nextStageId, data, notes })
+      const res = await mutations.transition({ nextStageId, data, notes })
+      initialTargetUsedRef.current = true
+      const targetStage = (res as { current_stage?: string })?.current_stage || nextStageId
+      const targetIdx = STAGES.findIndex((s) => s.id === targetStage)
+      if (targetIdx >= 0) {
+        setViewingStepIndex(targetIdx)
+      }
     } catch {
       // The mutation already showed the error
     }
@@ -943,8 +955,9 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
           {/* Stage activity panel: approval form + history, docked above the footer */}
           {!isCreating && order && wizardTab === 'stages' && (
             <StageActivityPanel
-              tasks={stageTasks}
-              stageEntries={stageEntries}
+              tasks={viewedStageTasks}
+              allTasks={order.workflow_tasks}
+              stageEntries={allStageHistory}
               canComplete={canUserCompleteTask}
               actionable={isViewingCurrentStage && !isTerminalOrder}
               taskNotes={taskNotes}
