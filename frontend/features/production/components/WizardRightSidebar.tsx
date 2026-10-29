@@ -223,7 +223,7 @@ function HistoryContent({ history, currentStageId, stageFilter, onStageFilter }:
                         type="button"
                         onClick={() => onStageFilter("ALL")}
                         className={cn(
-                            "rounded-full px-1.5 py-0 text-3xs font-medium transition-colors leading-4",
+                            "rounded-full px-1 py-0 text-3xs font-medium transition-colors leading-3",
                             stageFilter === "ALL"
                                 ? "bg-primary text-primary-foreground"
                                 : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -239,7 +239,7 @@ function HistoryContent({ history, currentStageId, stageFilter, onStageFilter }:
                                 type="button"
                                 onClick={() => onStageFilter(grp.stageId)}
                                 className={cn(
-                                    "rounded-full px-1.5 py-0 text-3xs font-medium transition-colors leading-4 max-w-[7rem] truncate",
+                                    "rounded-full px-1 py-0 text-3xs font-medium transition-colors leading-3 max-w-[7rem] truncate",
                                     isSelected
                                         ? "bg-primary text-primary-foreground"
                                         : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
