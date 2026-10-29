@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.31](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.30...v0.3.31) (2026-10-29)
+
+
+### ⚙️ Refactors
+
+* **production:** distill compact WorkOrderKanban card with essential OT info ([f17a9ab](https://github.com/Patricoaa/ERPGrafico/commit/f17a9ab95d9963c832db9057a94aabfd078b1b32))
+
+
+### ✨ Features
+
+* **entity-view:** offer view modes from the entity registry viewPolicy ([edfd3c8](https://github.com/Patricoaa/ERPGrafico/commit/edfd3c8af481e9fddbd661b693057e81a430afc8))
+* **hub:** show warning ring when manufacturable lines lack work orders and add inline OT creation ([6ca6d54](https://github.com/Patricoaa/ERPGrafico/commit/6ca6d54f3a0e8dba06eaff7378fb7e3a74751969))
+* **production:** enable MFG_CONFIG editability and refine wizard creation steps ([f31b668](https://github.com/Patricoaa/ERPGrafico/commit/f31b668662e7bbb28343d4debab9ff6bd6b9e087))
+* **production:** enhance StageActivityPanel history timeline and wizard step navigation ([389aba2](https://github.com/Patricoaa/ERPGrafico/commit/389aba20817e19bb20a6f948995f3f620d6ef2a5))
+* **production:** Factory icon, inline warnings, unified stage headers ([ba90847](https://github.com/Patricoaa/ERPGrafico/commit/ba90847d0894f604387ff1214e5696359ae49171))
+* **production:** step headers with mode actions, delete WizardStageNotice ([fff7d1b](https://github.com/Patricoaa/ERPGrafico/commit/fff7d1be9c21f000fa3bb2fa90246a7458b11f26))
+* **production:** workorder viewPolicy card-default + kanban toolbar + full-height kanban ([39d5e05](https://github.com/Patricoaa/ERPGrafico/commit/39d5e05bdfcd7d9045555845e82a891efa575d6d))
+* **production:** WorkOrderWizard — StageActivityPanel, step headers, inline spec editing ([18bc000](https://github.com/Patricoaa/ERPGrafico/commit/18bc00083eb00a2731ce89678d5eded0b4c3f39a))
+* **workspace:** entity create/edit panels as workspace tabs ([82f77d6](https://github.com/Patricoaa/ERPGrafico/commit/82f77d6159b1d55c3b1027f219a92f5a38d3f53d))
+
+
+### 🐛 Bug Fixes
+
+* **drawers:** keep the post-save close inside handleSubmit ([9ec7d27](https://github.com/Patricoaa/ERPGrafico/commit/9ec7d275616175bf10640f01a041895f627daab6))
+* green test suites and zero lint errors ([4f896e4](https://github.com/Patricoaa/ERPGrafico/commit/4f896e4aba01edbb639c6d5e8e9dc6d3d616b74b))
+* **production:** align kanban stages with WorkOrderWizard production phases ([5156a3b](https://github.com/Patricoaa/ERPGrafico/commit/5156a3bf32821e2009c6f6ab8dfe353e481214aa))
+* **production:** fix product selection in SaleOrderProductStep and add CardRail to cards ([58291aa](https://github.com/Patricoaa/ERPGrafico/commit/58291aa74dfa81d1901204973d578369ca4d0fe7))
+* **production:** harden OT annulment — block FINISHED, require reason, guard consumptions ([a08b7e6](https://github.com/Patricoaa/ERPGrafico/commit/a08b7e64a5f57e5ff61efd229ca48ec95b422d41))
+* **production:** render warnings and confirmations in modal dialogs instead of embedded drawer ([f385fc4](https://github.com/Patricoaa/ERPGrafico/commit/f385fc47c6eae4a62b548dc02743b826b7c0825e))
+* **production:** server-owned OT stage graph and OT creation flow audit ([b204c91](https://github.com/Patricoaa/ERPGrafico/commit/b204c91731357cd62027f915a49df09f27273b07))
+* **production:** update module defaultUrl to use view=card for production ([d0b0eac](https://github.com/Patricoaa/ERPGrafico/commit/d0b0eac02f1ffc70902df1df7923ff57bc762f9d))
+* **rail:** pass pointer events through content overlay to stretched-link button ([e8f055c](https://github.com/Patricoaa/ERPGrafico/commit/e8f055c428626f1d3dcd17a7d9ad370d79d41df8))
+* **workspace:** close tabs on save and show where the change landed ([cafe7ab](https://github.com/Patricoaa/ERPGrafico/commit/cafe7ab0118901b8310439ee66de8cc628f0f5b3))
+
 ### [0.3.30](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.29...v0.3.30) (2026-10-26)
 
 
