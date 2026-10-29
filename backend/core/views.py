@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.models import Group
+from django.db.models import Count
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view
@@ -9,6 +10,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from core.api.pagination import StandardResultsSetPagination
+from core.api.permissions import require_perms
 from core.mixins import AuditHistoryMixin
 
 from .models import ActionLog, BackgroundJob, CompanySettings, User
@@ -18,9 +20,17 @@ from .serializers import (
     CompanySettingsSerializer,
     CustomTokenRefreshSerializer,
     GroupSerializer,
+    MeSerializer,
+    PublicCompanyBrandingSerializer,
     UserSerializer,
 )
-from .services import ActionLoggingService, CoreSelector, CoreService, UserService
+from .services import (
+    ActionLoggingService,
+    CoreSelector,
+    CoreService,
+    GroupService,
+    UserService,
+)
 
 
 class BackgroundJobViewSet(viewsets.ModelViewSet):
@@ -75,12 +85,12 @@ class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        serializer = UserSerializer(request.user)
+        serializer = MeSerializer(request.user)
         return Response(serializer.data)
 
     def patch(self, request):
         user = request.user
-        serializer = UserSerializer(user, data=request.data, partial=True)
+        serializer = MeSerializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
@@ -208,10 +218,17 @@ class GroupViewSet(viewsets.ModelViewSet):
     Expose user groups (roles) with full CRUD.
     """
 
-    queryset = Group.objects.all()
+    queryset = Group.objects.annotate(user_count=Count("user")).order_by("name")
     serializer_class = GroupSerializer
     pagination_class = None  # Master data
-    permission_classes = [IsAuthenticated]
+
+    def perform_update(self, serializer):
+        GroupService.validate_mutable(serializer.instance, serializer.validated_data.get("name"))
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        GroupService.validate_mutable(instance)
+        instance.delete()
 
 
 class CompanySettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
@@ -226,8 +243,6 @@ class CompanySettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             serializer = self.get_serializer(obj)
             return Response(serializer.data)
 
-        # Check permission for PUT/PATCH manually if we're bypassing StandardizedModelPermissions
-        # But actually, get_permissions is better
         serializer = self.get_serializer(
             obj, data=request.data, partial=(request.method == "PATCH")
         )
@@ -235,16 +250,17 @@ class CompanySettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         serializer.save()
         return Response(serializer.data)
 
-    def get_permissions(self):
-        """
-        Allow any user to GET current company settings (needed for initial dashboard render/SSR).
-        Maintain model permissions for other actions and methods.
-        """
-        if self.action == "current" and self.request.method == "GET":
-            from rest_framework.permissions import AllowAny
-
-            return [AllowAny()]
-        return super().get_permissions()
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="branding",
+        permission_classes=[],  # AllowAny — explicit empty list
+    )
+    def branding(self, request):
+        """Public endpoint: returns only name, trade_name and logo for branding (login, 404, etc.)."""
+        obj = CoreService.get_or_create_company_settings()
+        serializer = PublicCompanyBrandingSerializer(obj)
+        return Response(serializer.data)
 
 
 class ActionLogViewSet(viewsets.ReadOnlyModelViewSet):
@@ -256,7 +272,7 @@ class ActionLogViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class GlobalAuditLogView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [require_perms("core.view_actionlog")]
 
     def get(self, request):
         from .services import CoreSelector

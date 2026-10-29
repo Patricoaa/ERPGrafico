@@ -8,6 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
+from core.api.permissions import require_perms
 from core.edit_policy import annotate_edit_usage, assert_editable
 from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin as AuditHistory
@@ -49,6 +50,10 @@ from .services import PayrollPaymentService
 
 class GlobalHRSettingsViewSet(viewsets.ViewSet):
     """Parámetros globales de RRHH Chile."""
+
+    def get_permissions(self):
+        perm = "view" if self.request.method in ("GET", "HEAD", "OPTIONS") else "change"
+        return [require_perms(f"hr.{perm}_globalhrsettings")()]
 
     def retrieve(self, request, pk=None):
         obj, _ = GlobalHRSettings.objects.get_or_create(pk=1)

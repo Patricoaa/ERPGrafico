@@ -44,18 +44,19 @@ class StandardizedModelPermissions(permissions.DjangoModelPermissions):
         return super().has_permission(request, view)
 
 
-class HasActionPermission(permissions.BasePermission):
-    """
-    Checks for a specific, explicit permission string required by a view.
-    Usage:
-        class MyView(APIView):
-            permission_classes = [HasActionPermission]
-            required_permission = 'sales.approve_large_orders'
+def require_perms(*perms: str) -> type[permissions.BasePermission]:
+    """Build a permission class requiring every given "app_label.codename".
+
+    For views without a model (function views, ViewSets without queryset), where
+    DjangoModelPermissions cannot derive the permission.
+    Usage: permission_classes = [require_perms("core.view_actionlog")]
     """
 
-    def has_permission(self, request, view):
-        required_perm = getattr(view, "required_permission", None)
-        if not required_perm:
-            return True  # No specific permission required
+    class RequirePerms(permissions.BasePermission):
+        required_perms = perms
 
-        return request.user.has_perm(required_perm)
+        def has_permission(self, request, view):
+            user = request.user
+            return bool(user and user.is_authenticated and user.has_perms(perms))
+
+    return RequirePerms

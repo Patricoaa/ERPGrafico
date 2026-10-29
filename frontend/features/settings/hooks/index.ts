@@ -3,6 +3,7 @@ export type { Group, TreasuryAccount, PosTerminal, Warehouse, UoM, ProductMinima
 
 export { useAccountingSettings, ACCOUNTING_SETTINGS_QUERY_KEY } from "./useAccountingSettings"
 export { useBillingSettings, useBillingSettingsQuery } from "./useBillingSettings"
+export { useCompanyBranding, COMPANY_BRANDING_QUERY_KEY } from "./useCompanyBranding"
 export { useCompanySettings } from "./useCompanySettings"
 export { useInventorySettings } from "./useInventorySettings"
 export { usePartnerSettings } from "./usePartnerSettings"

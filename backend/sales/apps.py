@@ -15,6 +15,7 @@ class SalesConfig(AppConfig):
                     ("view_dashboard_sales", "Can view sales dashboard"),
                     ("approve_large_orders", "Can approve large orders"),
                     ("override_credit_limit", "Can override credit limit"),
+                    ("approve_credit", "Puede aprobar crédito directo en caja"),
                 ],
             )
         except ImportError:

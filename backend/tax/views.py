@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework import exceptions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
@@ -33,7 +33,6 @@ class TaxPeriodViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     queryset = TaxPeriod.objects.select_related("closed_by").all()
     serializer_class = TaxPeriodSerializer
-    permission_classes = [IsAuthenticated]
     filterset_fields = ["year", "month", "status"]
     ordering_fields = ["year", "month", "status"]
     ordering = ["-year", "-month"]
@@ -73,7 +72,7 @@ class TaxPeriodViewSet(viewsets.ModelViewSet):
         checklist = TaxPeriodService.get_period_status(period.year, month=period.month)
         return Response(checklist)
 
-    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def check_closed(self, request):
         try:
             return Response(TaxPeriodService.parse_and_check_closed(request.query_params.get('date')))
@@ -85,7 +84,6 @@ class F29DeclarationViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     queryset = F29Declaration.objects.select_related("tax_period").all()
     serializer_class = F29DeclarationSerializer
-    permission_classes = [IsAuthenticated]
     filterset_fields = ["tax_period__year", "tax_period__month", "tax_period__status"]
     ordering_fields = ["tax_period__year", "tax_period__month", "declaration_date"]
     ordering = ["-tax_period__year", "-tax_period__month"]
@@ -168,7 +166,6 @@ class F29PaymentViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     queryset = F29Payment.objects.select_related("declaration", "treasury_account", "journal_entry").all()
     serializer_class = F29PaymentSerializer
-    permission_classes = [IsAuthenticated]
     filterset_fields = ["declaration", "payment_date", "payment_method"]
     ordering_fields = ["payment_date", "amount"]
     ordering = ["-payment_date"]
@@ -207,7 +204,6 @@ class AccountingPeriodViewSet(viewsets.ModelViewSet):
     queryset = AccountingPeriod.objects.select_related("closed_by", "tax_period").all()
     serializer_class = AccountingPeriodSerializer
     pagination_class = None  # Master data
-    permission_classes = [IsAuthenticated]
     filterset_fields = ["year", "month", "status"]
     ordering_fields = ["year", "month", "status"]
     ordering = ["-year", "-month"]
@@ -253,7 +249,7 @@ class AccountingPeriodViewSet(viewsets.ModelViewSet):
         status_data = AccountingPeriodService.get_period_status(period.year, period.month)
         return Response(status_data)
 
-    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def check_closed(self, request):
         try:
             return Response(AccountingPeriodService.parse_and_check_closed(request.query_params.get('date')))

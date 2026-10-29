@@ -187,6 +187,14 @@ export interface CompanySettings {
 
 export type CompanySettingsUpdatePayload = Partial<CompanySettings> | FormData
 
+// Public branding (unauthenticated: login, 404, sidebar)
+export interface CompanyBranding {
+    name: string
+    trade_name: string
+    logo: string | null
+    logo_url: string
+}
+
 // System Status Info
 export interface SystemStatus {
     version: string

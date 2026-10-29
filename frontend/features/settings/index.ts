@@ -1,10 +1,11 @@
 // Re-export all settings-related modules for convenient importing
-export type { AccountingSettings, AccountingSettingsUpdatePayload, BillingSettings, BillingSettingsUpdatePayload, CompanySettings, CompanySettingsUpdatePayload, HRSettings, InventorySettings, InventorySettingsUpdatePayload, PartnerSettings, PartnerSettingsUpdatePayload, SalesSettings, SalesSettingsUpdatePayload, SystemStatus, TreasurySettings, TreasurySettingsUpdatePayload } from './types'
+export type { AccountingSettings, AccountingSettingsUpdatePayload, BillingSettings, BillingSettingsUpdatePayload, CompanyBranding, CompanySettings, CompanySettingsUpdatePayload, HRSettings, InventorySettings, InventorySettingsUpdatePayload, PartnerSettings, PartnerSettingsUpdatePayload, SalesSettings, SalesSettingsUpdatePayload, SystemStatus, TreasurySettings, TreasurySettingsUpdatePayload } from './types'
 export { settingsApi } from './api/settingsApi'
 export { ACCOUNTING_SETTINGS_QUERY_KEY, useAccountingSettings } from './hooks/useAccountingSettings'
 export { SALES_SETTINGS_QUERY_KEY, useSalesSettings } from './hooks/useSalesSettings'
 export { useBillingSettings, useBillingSettingsQuery } from './hooks/useBillingSettings'
 export { useInventorySettings } from './hooks/useInventorySettings'
+export { COMPANY_BRANDING_QUERY_KEY, useCompanyBranding } from './hooks/useCompanyBranding'
 export { COMPANY_SETTINGS_QUERY_KEY, useCompanySettings } from './hooks/useCompanySettings'
 export { usePartnerSettings } from './hooks/usePartnerSettings'
 export { useSystemStatus } from './hooks/useSystemStatus'

@@ -13,6 +13,7 @@ class TreasuryConfig(AppConfig):
                 "treasury",
                 [
                     ("view_dashboard_treasury", "Can view treasury dashboard"),
+                    ("purge_treasurymovement", "Puede purgar movimientos anulados"),
                 ],
             )
         except ImportError:

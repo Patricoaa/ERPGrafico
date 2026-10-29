@@ -16,6 +16,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
+from core.api.permissions import require_perms
 from core.idempotency import idempotent_endpoint
 from core.edit_policy import annotate_edit_usage
 from core.mixins import AuditHistoryMixin, EditPolicyMixin
@@ -386,7 +387,7 @@ class TreasuryMovementViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHisto
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if not request.user.is_staff:
+        if not request.user.has_perm("treasury.purge_treasurymovement"):
             return Response(
                 {"error": "Solo administradores pueden purgar documentos cancelados."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -1032,6 +1033,14 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
     Vista consolidada de flujos de efectivo y gestión de tesorería.
     Combina Payments y CashMovements en una sola vista filtrable y provee balances consolidados.
     """
+
+    def get_permissions(self):
+        perm = (
+            "treasury.add_treasurymovement"
+            if self.action == "register_transfer"
+            else "treasury.view_dashboard_treasury"
+        )
+        return [require_perms(perm)()]
 
     @action(detail=False, methods=["get"])
     def stats(self, request):
