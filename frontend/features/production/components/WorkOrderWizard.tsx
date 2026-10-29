@@ -261,7 +261,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   const isTerminalOrder = order?.status === 'FINISHED' || order?.status === 'CANCELLED'
   // A closed stage is read-only; its only action is "Reabrir etapa". Materials and services
   // stay adjustable in place while the server still allows it.
-  const showStageNotice = !isCreating && !!order && !isViewingCurrentStage && currentStageId !== 'MFG_CONFIG'
+  const showStageNotice = !isCreating && !!order && !isViewingCurrentStage
   const viewedCaps = showStageNotice && order ? getStepCapabilities(currentStageId as string, order) : null
   const editableInline = !!viewedCaps?.canEdit
   const isBasicInfoEditable = !isCreating && EDITABLE_STAGES.includes(order?.current_stage ?? '')
@@ -795,6 +795,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                     <OriginSelectionStep
                       selected={chosenOtType}
                       locked={!isCreating}
+                      headerActions={stageHeaderActions}
                       onChoose={(type) => {
                         if (type !== chosenOtType) {
                           // Switching origin invalidates everything chosen for the previous one
@@ -815,6 +816,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                   )}
                   {currentStageId === 'SALE_ORDER_PRODUCT' && chosenOtType === "LINKED" && (
                     <SaleOrderProductStep
+                      headerActions={stageHeaderActions}
                       onChooseProduct={(otType, productId, quantity, uomId, productDescription, saleOrderId, saleLineId) => {
                         setChosenOtType(otType)
                         setSelectedSaleOrder(saleOrderId ?? null)
@@ -827,12 +829,13 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                         setViewingStepIndex(idx >= 0 ? idx : 1)
                       }}
                       initialOtType={chosenOtType}
-                      initialSaleOrderId={mode.kind === 'create' ? refId(mode.initialData?.sale_order) : undefined}
-                      initialSaleLineId={mode.kind === 'create' ? refId(mode.initialData?.sale_line) : undefined}
+                      initialSaleOrderId={mode.kind === 'create' ? refId(mode.initialData?.sale_order) : (order?.sale_order ? String(order.sale_order) : undefined)}
+                      initialSaleLineId={mode.kind === 'create' ? refId(mode.initialData?.sale_line) : (order?.sale_line ? String(order.sale_line) : undefined)}
                     />
                   )}
                   {currentStageId === 'PRODUCT_SELECTION' && chosenOtType === "NONE" && (
                     <ProductSelectionStep
+                      headerActions={stageHeaderActions}
                       onChooseProduct={(otType, productId, quantity, uomId, productDescription) => {
                         setChosenOtType(otType)
                         setSelectedProduct(productId)
@@ -843,13 +846,14 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                         setViewingStepIndex(idx >= 0 ? idx : 1)
                       }}
                       initialOtType={chosenOtType}
-                      initialProductId={mode.kind === 'create' ? mode.defaultProductId : undefined}
+                      initialProductId={mode.kind === 'create' ? mode.defaultProductId : (order?.main_product_id ? String(order.main_product_id) : undefined)}
                     />
                   )}
                   {currentStageId === 'MFG_CONFIG' && (
                     <ManufacturingConfigStep
                       formId="wizard-basic-form"
                       initialData={isCreating ? undefined : (order as unknown as WorkOrderInitialData)}
+                      headerActions={stageHeaderActions}
                       onSuccess={(workOrderId) => {
                         if (isCreating) {
                           wasCreatingRef.current = true
@@ -955,6 +959,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
           {/* Stage activity panel: approval form + history, docked above the footer */}
           {!isCreating && order && wizardTab === 'stages' && (
             <StageActivityPanel
+              currentStageId={currentStageId as string}
               tasks={viewedStageTasks}
               allTasks={order.workflow_tasks}
               stageEntries={allStageHistory}

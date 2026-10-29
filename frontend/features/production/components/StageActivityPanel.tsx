@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { AlertCircle, ArrowRightCircle, CheckCircle2, ChevronDown, ChevronUp, ClipboardCheck, Factory, History, MessageSquare, Paperclip, Pencil, Plus, Printer, RotateCcw, StickyNote, User, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DocumentAttachmentDropzone, EmptyState, LabeledCheckbox, LabeledInput, StatusBadge } from "@/components/shared"
@@ -12,6 +12,8 @@ import { TASK_TYPE_TO_STAGE } from "../lib/stageEvidence"
 
 
 interface StageActivityPanelProps {
+    /** The stage currently being viewed in the wizard. */
+    currentStageId?: string
     /** Approval tasks of the viewed stage (pending AND completed). Only present if the viewed stage has approvals. */
     tasks: WorkOrderTask[]
     /** All tasks across all stages of the work order (used to build full activity history). */
@@ -89,6 +91,7 @@ const assignee = (t: WorkOrderTask) =>
  * A permanent border-bottom on the approval panel separates the two visually.
  */
 export function StageActivityPanel({
+    currentStageId,
     tasks, allTasks, stageEntries, canComplete, actionable, taskNotes, taskFiles, taskConfirmations,
     onNoteChange, onFileChange, onConfirmationChange,
 }: StageActivityPanelProps) {
@@ -99,7 +102,13 @@ export function StageActivityPanel({
     const hasMandatoryFields = pending.some(t => Object.keys(t.requirements ?? {}).length > 0)
     const [approvalExpanded, setApprovalExpanded] = useState(actionable && isPending && hasMandatoryFields)
     const [historyExpanded, setHistoryExpanded] = useState(false)
-    const [stageFilter, setStageFilter] = useState<string>("ALL")
+    const [stageFilter, setStageFilter] = useState<string>(currentStageId ?? "ALL")
+
+    useEffect(() => {
+        if (currentStageId) {
+            setStageFilter(currentStageId)
+        }
+    }, [currentStageId])
 
     const tasksForHistory = allTasks ?? tasks
     const history: HistoryItem[] = useMemo(() => {
@@ -142,6 +151,19 @@ export function StageActivityPanel({
 
     const stageGroups = useMemo(() => {
         const groupMap = new Map<string, { stageId: string; stageLabel: string; icon: LucideIcon; items: HistoryItem[]; latestCreatedAt: string }>()
+
+        // Ensure current viewed stage always appears as a filter chip
+        if (currentStageId) {
+            const meta = getStageMetadata(currentStageId)
+            groupMap.set(currentStageId, {
+                stageId: currentStageId,
+                stageLabel: meta.label,
+                icon: meta.icon,
+                items: [],
+                latestCreatedAt: new Date().toISOString(),
+            })
+        }
+
         for (const item of history) {
             let grp = groupMap.get(item.stageId)
             if (!grp) {
@@ -158,7 +180,10 @@ export function StageActivityPanel({
             grp.items.push(item)
         }
         return Array.from(groupMap.values())
-    }, [history])
+    }, [history, currentStageId])
+
+    const selectedGroup = stageGroups.find((g) => g.stageId === stageFilter)
+    const visibleCount = stageFilter === "ALL" ? history.length : (selectedGroup?.items.length ?? 0)
 
     if (tasks.length === 0 && history.length === 0) return null
 
@@ -265,7 +290,7 @@ export function StageActivityPanel({
                     <History className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <span className="text-sm font-medium text-foreground">Historial</span>
                     <span className="text-xs text-muted-foreground tabular-nums">
-                        {history.length} {history.length === 1 ? "registro" : "registros"}
+                        {visibleCount} {visibleCount === 1 ? "registro" : "registros"}
                     </span>
                     <span className="ml-auto">
                         {historyExpanded
@@ -281,34 +306,35 @@ export function StageActivityPanel({
                         ) : (
                             <>
                                 {stageGroups.length > 1 && (
-                                    <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-border">
+                                    <div className="flex flex-wrap items-center gap-1 pb-2 border-b border-border">
                                         <button
                                             type="button"
                                             onClick={() => setStageFilter("ALL")}
                                             className={cn(
-                                                "rounded-full px-2.5 py-0.5 text-2xs font-medium transition-colors",
+                                                "rounded-full px-2 py-0.5 text-3xs font-medium transition-colors",
                                                 stageFilter === "ALL"
                                                     ? "bg-primary text-primary-foreground font-semibold"
-                                                    : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                                    : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
                                             )}
                                         >
                                             Todas ({history.length})
                                         </button>
                                         {stageGroups.map((grp) => {
                                             const ChipIcon = grp.icon
+                                            const isSelected = stageFilter === grp.stageId
                                             return (
                                                 <button
                                                     key={grp.stageId}
                                                     type="button"
                                                     onClick={() => setStageFilter(grp.stageId)}
                                                     className={cn(
-                                                        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-2xs font-medium transition-colors",
-                                                        stageFilter === grp.stageId
+                                                        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-3xs font-medium transition-colors",
+                                                        isSelected
                                                             ? "bg-primary text-primary-foreground font-semibold"
-                                                            : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                                            : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
                                                     )}
                                                 >
-                                                    <ChipIcon className="h-3 w-3" />
+                                                    <ChipIcon className="h-2.5 w-2.5 shrink-0" />
                                                     <span>{grp.stageLabel}</span>
                                                     <span className="tabular-nums">({grp.items.length})</span>
                                                 </button>
@@ -317,10 +343,15 @@ export function StageActivityPanel({
                                     </div>
                                 )}
 
-                                <div className="space-y-4">
-                                    {stageGroups
-                                        .filter((grp) => stageFilter === "ALL" || stageFilter === grp.stageId)
-                                        .map((grp) => {
+                                {visibleCount === 0 ? (
+                                    <p className="text-xs text-muted-foreground py-2 italic">
+                                        Sin registros de actividad en esta etapa.
+                                    </p>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {stageGroups
+                                            .filter((grp) => (stageFilter === "ALL" || stageFilter === grp.stageId) && grp.items.length > 0)
+                                            .map((grp) => {
                                             const GroupIcon = grp.icon
                                             return (
                                                 <div key={grp.stageId} className="space-y-2 border-l-2 border-primary/20 pl-3">
@@ -379,7 +410,8 @@ export function StageActivityPanel({
                                                 </div>
                                             )
                                         })}
-                                </div>
+                                    </div>
+                                )}
                             </>
                         )}
                     </div>

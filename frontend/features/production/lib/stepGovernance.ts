@@ -28,9 +28,11 @@ export function getStepCapabilities(stage: string, order: WorkOrder): StepCapabi
     const { status } = order
 
     // Creation steps are summary-only once the OT exists.
-    // MFG_CONFIG gets per-section editability in Phase 3 via mfgConfigEditability.ts,
-    // but the step-level canEdit stays false here.
+    // MFG_CONFIG gets per-section editability via mfgConfigEditability.ts.
     if (CREATION_STEP_IDS.has(stage)) {
+        if (stage === 'MFG_CONFIG' && status !== 'FINISHED' && status !== 'CANCELLED') {
+            return { canView: true, canEdit: true, canRewind: false }
+        }
         return { canView: true, canEdit: false, canRewind: false }
     }
 

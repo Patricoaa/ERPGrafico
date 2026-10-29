@@ -57,4 +57,30 @@ describe('getStepCapabilities', () => {
         expect(getStepCapabilities('PRESS', o).canRewind).toBe(true)
         expect(getStepCapabilities('OUTSOURCING_ASSIGNMENT', o).canRewind).toBe(false)
     })
+
+    it('handles creation steps and MFG_CONFIG editability properly', () => {
+        const activeOrder = order({ current_stage: 'PREPRESS', status: 'IN_PROGRESS' })
+        const finishedOrder = order({ current_stage: 'FINISHED', status: 'FINISHED' })
+
+        expect(getStepCapabilities('ORIGIN_SELECTION', activeOrder)).toEqual({
+            canView: true,
+            canEdit: false,
+            canRewind: false,
+        })
+        expect(getStepCapabilities('SALE_ORDER_PRODUCT', activeOrder)).toEqual({
+            canView: true,
+            canEdit: false,
+            canRewind: false,
+        })
+        expect(getStepCapabilities('MFG_CONFIG', activeOrder)).toEqual({
+            canView: true,
+            canEdit: true,
+            canRewind: false,
+        })
+        expect(getStepCapabilities('MFG_CONFIG', finishedOrder)).toEqual({
+            canView: true,
+            canEdit: false,
+            canRewind: false,
+        })
+    })
 })

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import Image from "next/image";
 import { useSaleOrderSearch } from "@/features/orders";
 import { useSaleOrderManufacturableLines } from "../../hooks/useSaleOrderManufacturableLines";
@@ -35,6 +35,7 @@ interface SaleOrderProductStepProps {
   /** Opened from a sale order ("Crear OT"): preselect it and, with a line, go on with it. */
   initialSaleOrderId?: string;
   initialSaleLineId?: string;
+  headerActions?: ReactNode;
 }
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -44,6 +45,7 @@ export function SaleOrderProductStep({
   initialOtType,
   initialSaleOrderId,
   initialSaleLineId,
+  headerActions,
 }: SaleOrderProductStepProps) {
   const [otType] = useState<"LINKED" | "NONE" | null>(
     initialOtType ?? null
@@ -127,6 +129,7 @@ export function SaleOrderProductStep({
         title={`Selección de ${getDomainConceptTitle('ov')} y Producto`}
         description={`Seleccione la ${getDomainConceptTitle('ov').toLowerCase()} y el ítem a fabricar para vincular esta ${getDomainConceptTitle('ot').toLowerCase()}.`}
         icon={FileText}
+        rightContent={headerActions}
       />
 
       <div className="space-y-4">

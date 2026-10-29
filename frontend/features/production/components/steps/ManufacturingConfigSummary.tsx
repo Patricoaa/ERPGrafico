@@ -1,11 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
-import { ManufacturingConfigFields, emptyManufacturingData } from '@/components/shared'
+import { Cog, Eye, Pencil } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { ManufacturingConfigFields, emptyManufacturingData, StepHeader } from '@/components/shared'
 import type { ManufacturingData, ManufacturingContact } from "@/components/shared"
 import { designFileUrls } from "../WizardRightSidebar"
 import type { WorkOrder } from "../../types"
@@ -20,6 +22,7 @@ const mfgConfigSchema = z.object({})
 interface ManufacturingConfigSummaryProps {
     order: WorkOrder
     onSaved: () => void
+    headerActions?: ReactNode
 }
 
 type Phase = keyof ManufacturingData['phases']
@@ -34,7 +37,7 @@ const PHASES: Phase[] = ['prepress', 'press', 'postpress']
  * switched from the step header ("Editar"), which puts the wizard in edit-in-place;
  * the footer saves.
  */
-export function ManufacturingConfigSummary({ order, onSaved }: ManufacturingConfigSummaryProps) {
+export function ManufacturingConfigSummary({ order, onSaved, headerActions }: ManufacturingConfigSummaryProps) {
     const { stepMode, setStepMode } = useWizardStore()
     const editing = stepMode === 'edit-in-place'
     const form = useForm({ resolver: zodResolver(mfgConfigSchema) })
@@ -125,17 +128,48 @@ export function ManufacturingConfigSummary({ order, onSaved }: ManufacturingConf
         }
     }
 
+    const isTerminal = order.status === 'FINISHED' || order.status === 'CANCELLED'
+
+    const headerRight = isTerminal ? (
+        headerActions ?? (
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground">
+                <Eye className="h-3 w-3 shrink-0" aria-hidden />Solo lectura
+            </span>
+        )
+    ) : !editing ? (
+        <div className="flex items-center gap-2">
+            {headerActions}
+            <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-muted-foreground hover:text-foreground h-7 text-xs"
+                onClick={() => setStepMode('edit-in-place')}
+            >
+                <Pencil className="h-3.5 w-3.5" /> Editar
+            </Button>
+        </div>
+    ) : null
+
     return (
-        <form id="wizard-edit-form" onSubmit={form.handleSubmit(handleSave)}>
-            <ManufacturingConfigFields
-                data={editing ? mfgData : toMfgData()}
-                onDataChange={setMfgData}
-                contact={editing ? contact : toContact()}
-                onContactChange={setContact}
-                disabled={!editing}
-                lockedPhases={lockedPhases}
-                existingFileUrls={designFileUrls(order, stageData.design_attachments ?? [])}
+        <div className="flex flex-1 flex-col gap-5">
+            <StepHeader
+                title="Configuración de Fabricación"
+                description="Especificaciones técnicas, fases de producción y contacto asociado."
+                icon={Cog}
+                rightContent={headerRight}
             />
-        </form>
+            <form id="wizard-edit-form" onSubmit={form.handleSubmit(handleSave)}>
+                <ManufacturingConfigFields
+                    data={editing ? mfgData : toMfgData()}
+                    onDataChange={setMfgData}
+                    contact={editing ? contact : toContact()}
+                    onContactChange={setContact}
+                    disabled={!editing}
+                    lockedPhases={lockedPhases}
+                    existingFileUrls={designFileUrls(order, stageData.design_attachments ?? [])}
+                />
+            </form>
+        </div>
     )
 }

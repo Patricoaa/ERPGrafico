@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import Image from "next/image";
 import {FileText, Plus, X} from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,12 +20,14 @@ interface ProductSelectionStepProps {
   ) => void;
   initialOtType?: "LINKED" | "NONE" | null;
   initialProductId?: string;
+  headerActions?: ReactNode;
 }
 
 export function ProductSelectionStep({
   onChooseProduct,
   initialOtType,
-  initialProductId
+  initialProductId,
+  headerActions,
 }: ProductSelectionStepProps) {
   const [otType] = useState<"LINKED" | "NONE" | null>(
     initialOtType ?? null
@@ -76,6 +78,7 @@ export function ProductSelectionStep({
         title="Selección de Producto"
         description="Seleccione el producto del catálogo para fabricar y reponer stock."
         icon={Plus}
+        rightContent={headerActions}
       />
 
       <div className="flex flex-col flex-1 min-h-0">

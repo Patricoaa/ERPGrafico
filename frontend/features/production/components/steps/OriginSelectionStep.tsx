@@ -1,31 +1,41 @@
 "use client";
 
-import { FileText, Plus } from "lucide-react";
+import { type ReactNode } from "react";
+import { FileText, Layers, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { WorkOrderFormValues } from "@/types/forms";
 import { getDomainConceptTitle, getDomainConceptCode } from "@/lib/entity-registry";
-import { CardSurface, SelectionCheck } from "@/components/shared";
+import { CardSurface, SelectionCheck, StepHeader } from "@/components/shared";
 
 interface OriginSelectionStepProps {
   onChoose: (type: "LINKED" | "NONE", defaults: WorkOrderFormValues) => void;
   selected?: "LINKED" | "NONE" | null;
   /** The OT already exists: its origin can no longer change. */
   locked?: boolean;
+  headerActions?: ReactNode;
 }
 
-export function OriginSelectionStep({ onChoose, selected = null, locked = false }: OriginSelectionStepProps) {
+export function OriginSelectionStep({
+  onChoose,
+  selected = null,
+  locked = false,
+  headerActions,
+}: OriginSelectionStepProps) {
   const isLinkedSelected = selected === "LINKED";
   const isNoneSelected = selected === "NONE";
 
   return (
-    <div className="space-y-8">
-      <div className="text-center">
-        <p className="mt-2 text-muted-foreground max-w-md mx-auto">
-          {locked
-            ? "Origen ya definido para esta OT"
-            : `Seleccione cómo desea crear esta ${getDomainConceptTitle('ot')}`}
-        </p>
-      </div>
+    <div className="space-y-6">
+      <StepHeader
+        title="Origen de Fabricación"
+        description={
+          locked
+            ? "Origen ya definido para esta orden de trabajo."
+            : `Seleccione cómo desea originar esta ${getDomainConceptTitle('ot').toLowerCase()}: vinculada a una venta o para inventario.`
+        }
+        icon={Layers}
+        rightContent={headerActions}
+      />
 
       <div className="grid gap-6">
         <CardSurface

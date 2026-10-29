@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useProduct } from "@/features/inventory";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler, type Resolver, type Control } from "react-hook-form";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { Cog } from "lucide-react";
 import { getErrorMessage } from "@/lib/errors"
 import { toDate } from "@/lib/utils";
 import { getDomainConceptTitle, getDomainConceptMessage } from "@/lib/entity-registry";
@@ -25,7 +26,7 @@ import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms";
 import type { Contact } from "@/features/contacts";
 import { useWizardStore } from "../WorkOrderWizardStore";
 import type { ManufacturingData } from "@/components/shared";
-import { ManufacturingConfigFields, emptyManufacturingData, type ManufacturingContact } from '@/components/shared';
+import { ManufacturingConfigFields, emptyManufacturingData, type ManufacturingContact, StepHeader } from '@/components/shared';
 import { UoMSelector } from "@/components/selectors/UoMSelector";
 import { LabeledInput, SkeletonShell } from "@/components/shared";
 import { workOrderSchema } from "@/types/forms";
@@ -40,12 +41,14 @@ interface ManufacturingConfigStepProps {
   initialData?: WorkOrderInitialData;
   onSuccess: (workOrderId: number) => void;
   formId?: string;
+  headerActions?: ReactNode;
 }
 
 export function ManufacturingConfigStep({
   initialData,
   onSuccess,
   formId,
+  headerActions,
 }: ManufacturingConfigStepProps) {
   const [loading, setLoading] = useState(false);
 
@@ -373,6 +376,7 @@ export function ManufacturingConfigStep({
       <ManufacturingConfigSummary
         order={initialData as unknown as WorkOrder}
         onSaved={() => onSuccess(Number(initialData.id))}
+        headerActions={headerActions}
       />
     )
   }
@@ -384,6 +388,12 @@ export function ManufacturingConfigStep({
 
   return (
     <SkeletonShell isLoading={isVatLoading} ariaLabel="Cargando configuración de fabricación">
+      <StepHeader
+        title="Configuración de Fabricación"
+        description="Defina especificaciones técnicas, fases y requerimientos de producción."
+        icon={Cog}
+        rightContent={headerActions}
+      />
       <Form {...form}>
         <form id={formIdValue} onSubmit={handleFormSubmit} className="space-y-6 py-4">
           <fieldset>
