@@ -1,14 +1,19 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { AlertCircle, ArrowRightCircle, CheckCircle2, ChevronDown, ChevronUp, ClipboardCheck, Factory, History, MessageSquare, Paperclip, Pencil, Plus, Printer, RotateCcw, StickyNote, User, type LucideIcon } from "lucide-react"
+import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, ClipboardCheck, History, MessageSquare, Paperclip, User, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DocumentAttachmentDropzone, EmptyState, LabeledCheckbox, LabeledInput, StatusBadge } from "@/components/shared"
 import { cn, formatPlainDate } from "@/lib/utils"
-import type { TaskAttachment } from "@/features/workflow"
 import type { WorkOrderHistoryEntry, WorkOrderTask } from "../types"
-import { STAGES_REGISTRY, type StageId } from "../constants/stages"
-import { TASK_TYPE_TO_STAGE } from "../lib/stageEvidence"
+import {
+    assignee,
+    buildHistory,
+    CONFIRMATION_LABELS,
+    getStageMetadata,
+    HISTORY_KIND,
+    type HistoryItem,
+} from "../lib/stageHistory"
 
 
 interface StageActivityPanelProps {
@@ -31,58 +36,10 @@ interface StageActivityPanelProps {
     onConfirmationChange: (taskId: string | number, key: string, value: boolean) => void
 }
 
-const CONFIRMATION_LABELS: Record<string, { label: string; description: string }> = {
-    design_approved: { label: "¿El cliente aprobó el diseño?", description: "Marque si existe aprobación del cliente" },
-}
-
-interface HistoryItem {
-    key: string
-    stageId: string
-    stageLabel: string
-    kind: "approved" | "reopened" | "entered" | "edited" | "note"
-    confirmations?: Record<string, boolean>
-    userName: string | null
-    notes: string
-    attachments: TaskAttachment[]
-    createdAt: string
-}
-
-function getStageMetadata(stageId: string): { label: string; icon: LucideIcon } {
-    const meta = STAGES_REGISTRY[stageId as StageId]
-    if (meta) {
-        return { label: meta.label, icon: meta.icon }
-    }
-    if (stageId === "ORIGIN_SELECTION") return { label: "Origen de Fabricación", icon: Factory }
-    if (stageId === "SALE_ORDER_PRODUCT") return { label: "Selección de OV y Producto", icon: ClipboardCheck }
-    if (stageId === "PRODUCT_SELECTION") return { label: "Selección de Producto", icon: Plus }
-    if (stageId === "MFG_CONFIG") return { label: "Configurar Fabricación", icon: Printer }
-    return { label: stageId, icon: History }
-}
-
-const HISTORY_KIND: Record<HistoryItem["kind"], { icon: LucideIcon; label: string; tone: string }> = {
-    approved: { icon: CheckCircle2, label: "Aprobada", tone: "text-success" },
-    reopened: { icon: RotateCcw, label: "Etapa reabierta", tone: "text-warning" },
-    entered: { icon: ArrowRightCircle, label: "Etapa iniciada", tone: "text-muted-foreground" },
-    edited: { icon: Pencil, label: "Editada con la etapa cerrada", tone: "text-info" },
-    note: { icon: StickyNote, label: "Registro", tone: "text-muted-foreground" },
-}
-
-const STATUS_TO_KIND: Record<string, HistoryItem["kind"]> = {
-    ENTERED: "entered",
-    REOPENED: "reopened",
-    EDITED: "edited",
-    NOTE: "note",
-}
-
 const time = (iso: string) => {
     const d = new Date(iso)
     return `${formatPlainDate(iso.slice(0, 10))} ${d.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}`
 }
-
-const assignee = (t: WorkOrderTask) =>
-    t.assigned_to_data?.username
-    ?? t.assigned_group_name
-    ?? (typeof t.data?.candidate_group === "string" ? t.data.candidate_group : null)
 
 /**
  * Docked at the bottom of a step: two independent collapsibles.
@@ -111,43 +68,10 @@ export function StageActivityPanel({
     }, [currentStageId])
 
     const tasksForHistory = allTasks ?? tasks
-    const history: HistoryItem[] = useMemo(() => {
-        const items: HistoryItem[] = [
-            ...tasksForHistory.flatMap((t) => {
-                const stageId = TASK_TYPE_TO_STAGE[t.task_type]
-                    ?? (t.task_type === "OT_CREATION" ? "MATERIAL_ASSIGNMENT"
-                    : t.task_type.startsWith("OT_") && t.task_type.endsWith("_APPROVAL") ? t.task_type.slice(3, -9)
-                    : t.task_type)
-                const meta = getStageMetadata(stageId)
-                return (t.events_data ?? []).map((e): HistoryItem => ({
-                    key: `event-${e.id}`,
-                    stageId,
-                    stageLabel: meta.label,
-                    kind: e.action === "COMPLETED" ? "approved" : "reopened",
-                    userName: e.user_name,
-                    notes: e.notes,
-                    confirmations: e.confirmations,
-                    attachments: e.attachments_data,
-                    createdAt: e.created_at,
-                }))
-            }),
-            ...stageEntries.map((h): HistoryItem => {
-                const stageId = h.stage
-                const meta = getStageMetadata(stageId)
-                return {
-                    key: `stage-${h.id}`,
-                    stageId,
-                    stageLabel: meta.label,
-                    kind: STATUS_TO_KIND[h.status ?? "ENTERED"] ?? "entered",
-                    userName: h.user_name ?? null,
-                    notes: h.notes ?? "",
-                    attachments: [],
-                    createdAt: h.created_at,
-                }
-            }),
-        ]
-        return items.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    }, [tasksForHistory, stageEntries])
+    const history: HistoryItem[] = useMemo(
+        () => buildHistory(tasksForHistory, stageEntries),
+        [tasksForHistory, stageEntries]
+    )
 
     const stageGroups = useMemo(() => {
         const groupMap = new Map<string, { stageId: string; stageLabel: string; icon: LucideIcon; items: HistoryItem[]; latestCreatedAt: string }>()

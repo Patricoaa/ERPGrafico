@@ -35,6 +35,7 @@ export * from './ActionButtons'
 export * from './StepHeader';
 export * from './WizardStepsSidebar';
 export * from './WizardSummarySidebar';
+export * from './CollapsibleSection';
 export * from './ActionDock';
 
 // Cards & Containers
