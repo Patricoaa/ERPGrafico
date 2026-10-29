@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.34](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.33...v0.3.34) (2026-10-29)
+
+
+### 🐛 Bug Fixes
+
+* **production:** corregir botón reabrir etapa y simplificar footer ([4ada639](https://github.com/Patricoaa/ERPGrafico/commit/4ada639882c2524f9a0697a4fb8666f17aab20d9))
+* **production:** corregir doble editar MFG_CONFIG y mover acciones al header ([0d8cf50](https://github.com/Patricoaa/ERPGrafico/commit/0d8cf50d9f10af9ffa3f7435e1f524539be886a4))
+* **production:** limpiar footer y altura de botones en reabrir etapas ([613fd09](https://github.com/Patricoaa/ERPGrafico/commit/613fd09a9eada28a3739ab0261c986f73018c78a))
+* **production:** reabrir etapa espera la petición antes de cerrar el modal ([000cdb1](https://github.com/Patricoaa/ERPGrafico/commit/000cdb15826f74033e507452dd7d0f4fbc76f923))
+* **production:** registrar event=REOPENED en historial para transiciones backward ([04c9348](https://github.com/Patricoaa/ERPGrafico/commit/04c934858f9de884cbc3cf9556606af4f8badd59))
+* **production:** suprimir canRewind cuando canEdit=true y wirear WizardStageActions ([09d7913](https://github.com/Patricoaa/ERPGrafico/commit/09d7913efea23909ea61443448aade30e27352ae))
+* **production:** usar h.event para kind en buildHistory en vez de h.status ([2c75274](https://github.com/Patricoaa/ERPGrafico/commit/2c7527499942e57886fffceb4779071fc95619bc))
+
 ### [0.3.33](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.32...v0.3.33) (2026-10-29)
 
 
