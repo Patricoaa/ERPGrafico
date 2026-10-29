@@ -10,7 +10,9 @@ export interface WorkOrderActionsCtx {
 }
 
 export const workOrderActionItems = (order: WorkOrder, ctx: WorkOrderActionsCtx): StructuredAction[] => {
-    const canAnnul = !['FINISHED', 'CANCELLED'].includes(order.status) && order.is_cancellable !== false
+    const canAnnul = !['FINISHED', 'CANCELLED'].includes(order.status)
+        && order.is_cancellable !== false
+        && !order.has_consumptions
 
     return [
         { action: "edit", onClick: () => ctx.onEdit(order.id) },

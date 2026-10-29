@@ -10,6 +10,8 @@ from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from purchasing.models import PurchaseOrder
+
 from .models import (
     BillOfMaterials,
     WorkOrder,
@@ -182,12 +184,41 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def annul(self, request, pk=None):
         """Annul an OT and reverse its effects"""
         work_order = self.get_object()
+        notes = request.data.get("notes", "") or request.data.get("reason", "")
+        if not (notes or "").strip():
+            return Response(
+                {"error": "El motivo de anulación es obligatorio."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         try:
-            notes = request.data.get("notes", "") or request.data.get("reason", "")
             WorkOrderService.annul_work_order(work_order=work_order, user=request.user, notes=notes)
-            return Response(WorkOrderSerializer(work_order).data)
-        except Exception as e:
+        except ValidationError as e:
             return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(WorkOrderSerializer(work_order).data)
+
+    @action(detail=True, methods=["get"], url_path="annul_impact")
+    def annul_impact(self, request, pk=None):
+        """Read-only preview of what an annulment would affect."""
+        work_order = self.get_object()
+        affected_pos = [
+            {"id": po.id, "display_id": po.display_id, "status": po.status}
+            for po in work_order.purchase_orders.exclude(
+                status=PurchaseOrder.Status.CANCELLED
+            )
+        ]
+        open_tasks_count = work_order.tasks.filter(
+            status__in=["PENDING", "IN_PROGRESS"]
+        ).count()
+        has_consumptions = work_order.consumptions.exists()
+        return Response(
+            {
+                "is_cancellable": work_order.is_cancellable,
+                "cancellation_limit_stage": work_order.cancellation_limit_stage,
+                "has_consumptions": has_consumptions,
+                "purchase_orders_affected": affected_pos,
+                "open_tasks_count": open_tasks_count,
+            }
+        )
 
     @action(detail=True, methods=["post"])
     def rectify(self, request, pk=None):

@@ -527,15 +527,21 @@ class WorkOrderService:
         """
         Annuls a Work Order with strict business rule validations.
         Only allowed if materials have not been physically consumed yet.
-        1. Validates stage and consumption status
+        1. Validates terminal state, stage limit, consumptions and PO state
         2. Cancels linked Purchase Orders (if status permits)
-        3. Reverses stock movements (consumptions and finished products)
-        4. Updates status to CANCELLED and stage to CANCELLED
+        3. Updates status to CANCELLED and stage to CANCELLED
+        4. Closes pending approval tasks
         """
         if work_order.status == WorkOrder.Status.CANCELLED:
             return work_order
 
-        # VALIDATION 1: Dynamic Production Stage Limit (Printing/Prepress/Approval)
+        # VALIDATION 0: Estado terminal explícito — FINISHED no es anulable
+        if work_order.status == WorkOrder.Status.FINISHED:
+            raise ValidationError(
+                "No se puede anular una OT finalizada. FINISHED es un estado terminal."
+            )
+
+        # VALIDATION 2: Dynamic Production Stage Limit (Printing/Prepress/Approval)
         limit_stage = work_order.cancellation_limit_stage
         if not work_order.is_cancellable:
             limit_display = WorkOrder.Stage(limit_stage).label
@@ -546,17 +552,31 @@ class WorkOrderService:
                 f"💡 Si necesita anular, considere revertir los consumos manualmente si aplica."
             )
 
-        # VALIDATION 2: Consumos ya registrados en sistema (Safety check)
+        # VALIDATION 3: Consumos ya registrados en sistema (Safety check)
         if ProductionConsumption.objects.filter(work_order=work_order).exists():
             raise ValidationError(
                 "❌ No se puede anular: ya existen consumos de materiales registrados en el sistema.\n"
                 "⚠️ Debe revertir los consumos manualmente antes de anular la OT.\n"
             )
 
-        # 2. Cancel Linked Purchase Orders via service (cascades invoices,
-        # payments, receipts and JE cleanup; reversals if PO is CONFIRMED)
+        # VALIDATION 4: Guard para OCs con estado fuera del ciclo esperado (future-proof)
         from purchasing.services import PurchasingService
 
+        non_cancellable_pos = work_order.purchase_orders.exclude(
+            status__in=[
+                PurchaseOrder.Status.DRAFT,
+                PurchaseOrder.Status.CONFIRMED,
+                PurchaseOrder.Status.CANCELLED,
+            ]
+        )
+        if non_cancellable_pos.exists():
+            ids = ", ".join(po.display_id for po in non_cancellable_pos)
+            raise ValidationError(
+                f"No se puede anular: existen OC vinculadas que no pueden cancelarse ({ids})."
+            )
+
+        # 2. Cancel Linked Purchase Orders via service (cascades invoices,
+        # payments, receipts and JE cleanup; reversals if PO is CONFIRMED)
         for po in work_order.purchase_orders.all():
             if po.status in [PurchaseOrder.Status.DRAFT, PurchaseOrder.Status.CONFIRMED]:
                 PurchasingService.cancel_purchase_order(po)
@@ -566,6 +586,7 @@ class WorkOrderService:
         # 3. Finalize Annulment
         work_order.status = WorkOrder.Status.CANCELLED
         work_order.current_stage = WorkOrder.Stage.CANCELLED
+        work_order._change_reason = notes  # G-03: propagate reason to django-simple-history
         work_order.save()
 
         # Nothing is left to do on an annulled OT: close its open tasks (creation and

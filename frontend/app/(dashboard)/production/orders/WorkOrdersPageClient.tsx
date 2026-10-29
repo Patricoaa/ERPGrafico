@@ -100,10 +100,14 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
         router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     }, [router, pathname, searchParams])
 
-    const cancelConfirm = useConfirmAction<number>(async (id) => { await annulOrder({ id }) })
+    const [annulOpen, setAnnulOpen] = useState(false)
+    const [annulTargetId, setAnnulTargetId] = useState<number | null>(null)
     const duplicateConfirm = useConfirmAction<number>(async (id) => { await duplicateOrder({ id }) })
 
-    const handleCancel = useCallback((id: number) => cancelConfirm.requestConfirm(id), [cancelConfirm])
+    const handleCancel = useCallback((id: number) => {
+        setAnnulTargetId(id)
+        setAnnulOpen(true)
+    }, [])
     const handleDuplicate = useCallback((id: number) => duplicateConfirm.requestConfirm(id), [duplicateConfirm])
 
     const workOrderActionsCtx: WorkOrderActionsCtx = {
@@ -218,12 +222,17 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
             </div>
 
             <ActionConfirmModal
-                open={cancelConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) cancelConfirm.cancel() }}
-                onConfirm={cancelConfirm.confirm}
+                open={annulOpen}
+                onOpenChange={(open) => { if (!open) { setAnnulOpen(false); setAnnulTargetId(null) } }}
+                onConfirm={async (reason) => {
+                    if (annulTargetId !== null) await annulOrder({ id: annulTargetId, notes: reason ?? '' })
+                }}
                 title={`Anular ${getDomainConceptCode('ot')}`}
                 description={`¿Está seguro de que desea ANULAR esta ${getDomainConceptCode('ot')}? Esto detendrá el proceso y liberará reservas.`}
                 variant="destructive"
+                requireReason
+                reasonLabel="Motivo de anulación"
+                reasonPlaceholder="Explique por qué se anula esta OT..."
             />
             <ActionConfirmModal
                 open={duplicateConfirm.isOpen}

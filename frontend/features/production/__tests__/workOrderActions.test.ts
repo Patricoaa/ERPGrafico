@@ -24,4 +24,8 @@ describe("workOrderActions", () => {
         expect(visible(order({ status: "IN_PROGRESS", current_stage: "RECTIFICATION", is_cancellable: false }))).not.toContain("annul")
         expect(visible(order({ status: "FINISHED", current_stage: "FINISHED" }))).not.toContain("annul")
     })
+
+    it("hides annul when consumptions already exist", () => {
+        expect(visible(order({ has_consumptions: true }))).not.toContain("annul")
+    })
 })

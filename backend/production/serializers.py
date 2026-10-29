@@ -218,6 +218,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     attachments = AttachmentSerializer(many=True, read_only=True)
     is_cancellable = serializers.ReadOnlyField()
     cancellation_limit_stage = serializers.ReadOnlyField()
+    has_consumptions = serializers.SerializerMethodField()
     display_id = serializers.SerializerMethodField()
 
     # Alias para compatibilidad con frontend (modelo usa estimated_completion_date)
@@ -252,6 +253,10 @@ class WorkOrderSerializer(serializers.ModelSerializer):
 
     def get_display_id(self, obj):
         return obj.display_id
+
+    def get_has_consumptions(self, obj):
+        # Uses prefetch cache when prefetch_related("consumptions") is active
+        return len(obj.consumptions.all()) > 0
 
     def get_side_effects(self, obj):
         from .services import WorkOrderService
@@ -451,6 +456,7 @@ class WorkOrderListSerializer(serializers.ModelSerializer):
     display_id = serializers.SerializerMethodField()
     is_cancellable = serializers.ReadOnlyField()
     cancellation_limit_stage = serializers.ReadOnlyField()
+    has_consumptions = serializers.SerializerMethodField()
     due_date = serializers.DateField(
         source="estimated_completion_date", read_only=True, allow_null=True
     )
@@ -464,7 +470,7 @@ class WorkOrderListSerializer(serializers.ModelSerializer):
             "product", "product_name", "quantity", "uom_name", "main_product_id",
             "sale_customer_name", "due_date", "estimated_completion_date", "start_date",
             "production_progress", "outsourcing_status",
-            "is_cancellable", "cancellation_limit_stage",
+            "is_cancellable", "cancellation_limit_stage", "has_consumptions",
             "no_materials_required", "actual_quantity_produced", "is_rectified",
             "created_at", "updated_at",
         ]
@@ -472,6 +478,10 @@ class WorkOrderListSerializer(serializers.ModelSerializer):
 
     def get_display_id(self, obj):
         return obj.display_id
+
+    def get_has_consumptions(self, obj):
+        # Uses prefetch cache when prefetch_related("consumptions") is active
+        return len(obj.consumptions.all()) > 0
 
     def get_sale_order_document(self, obj):
         return _build_sale_order_document(self, obj)

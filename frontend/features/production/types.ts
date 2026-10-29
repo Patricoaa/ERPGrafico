@@ -166,6 +166,7 @@ export interface WorkOrder {
     total_price?: number
     created_at?: string
     is_cancellable?: boolean
+    has_consumptions?: boolean
     checkout_files?: ProductionAttachment[]
     attachments?: ProductionAttachment[]
     production_discrepancy?: {

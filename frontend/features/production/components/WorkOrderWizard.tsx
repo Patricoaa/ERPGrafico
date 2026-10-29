@@ -594,9 +594,9 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   }
 
   // Errors are shown by the mutations themselves; the handlers only keep the modal open.
-  const handleAnnul = async () => {
+  const handleAnnul = async (reason?: string) => {
     try {
-      await mutations.annul('')
+      await mutations.annul(reason ?? '')
       setIsAnnulModalOpen(false)
     } catch { /* shown by the mutation */ }
   }
@@ -666,8 +666,8 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                     disabled: mutations.isDuplicating,
                   })
 
-                  // Same rule the server applies (limit stage of the OT's profile)
-                  if (order.status !== 'FINISHED' && order.status !== 'CANCELLED' && order.is_cancellable !== false) {
+                  // Same rule the server applies (limit stage, no consumptions)
+                  if (order.status !== 'FINISHED' && order.status !== 'CANCELLED' && order.is_cancellable !== false && !order.has_consumptions) {
                     items.push({
                       id: 'annul',
                       label: 'Anular',
@@ -1054,6 +1054,9 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         variant="warning"
         onConfirm={handleAnnul}
         confirmText={`Anular ${getDomainConceptCode('ot')}`}
+        requireReason
+        reasonLabel="Motivo de anulación"
+        reasonPlaceholder="Explique por qué se anula esta OT..."
         description={
           <div className="space-y-3">
             <p>¿Está seguro de que desea <strong>ANULAR</strong> esta {getDomainConceptTitle('ot')}?</p>

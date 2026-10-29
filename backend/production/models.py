@@ -255,15 +255,25 @@ class WorkOrder(models.Model):
         return self._requires_phase("postpress")
 
     @property
+    def has_outsourced_materials(self) -> bool:
+        """True when the OT has at least one outsourced material line."""
+        return self.materials.filter(is_outsourced=True).exists()
+
+    @property
     def cancellation_limit_stage(self):
         """
         Determines the limit stage for cancellation.
-        Default is PRESS if available, else the previous one (PREPRESS or MATERIAL_APPROVAL).
+        - PRESS when the OT requires a press phase (production has started)
+        - PREPRESS when the OT only requires prepress
+        - OUTSOURCING_ASSIGNMENT when the OT is outsourcing-only (no press/prepress)
+        - MATERIAL_APPROVAL otherwise
         """
         if self.requires_press:
             return self.Stage.PRESS
         if self.requires_prepress:
             return self.Stage.PREPRESS
+        if self.has_outsourced_materials:
+            return self.Stage.OUTSOURCING_ASSIGNMENT
         return self.Stage.MATERIAL_APPROVAL
 
     @property
