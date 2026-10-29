@@ -4,21 +4,24 @@ import { useState, useEffect, useRef, type ReactNode } from "react";
 import Image from "next/image";
 import { useSaleOrderSearch } from "@/features/orders";
 import { useSaleOrderManufacturableLines } from "../../hooks/useSaleOrderManufacturableLines";
-import { FileText } from "lucide-react";
-import { DataCell } from "@/components/shared";
+import { FileText, ChevronRight, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn, parseDateOnly } from "@/lib/utils";
 import { formatCurrency } from "@/lib/money";
 import type { SaleOrderLine } from "@/features/sales";
 import { resolveMediaUrl } from "@/lib/media-url";
 import { getDomainConceptTitle } from "@/lib/entity-registry";
-import { CardSurface, CardRow, GlyphChevron, StepHeader } from "@/components/shared";
+import { CardSurface, CardRow, CardRail, StepHeader } from "@/components/shared";
 
 type ExpandedProduct = { id: number; name: string; code: string; image_thumbnail?: string; requires_advanced_manufacturing?: boolean };
 
-// Safe: the API always returns expanded product objects for manufacturable lines
+// Safe: the API may return expanded product objects or plain IDs
 function productOf(line: SaleOrderLine): ExpandedProduct | undefined {
-  return line.product as unknown as ExpandedProduct | undefined;
+  const p = line.product;
+  if (p && typeof p === "object" && !Array.isArray(p)) {
+    return p as ExpandedProduct;
+  }
+  return undefined;
 }
 
 interface SaleOrderProductStepProps {
@@ -74,7 +77,6 @@ export function SaleOrderProductStep({
     (line) => !line.work_order_summary
   );
 
-
   useEffect(() => {
     if (!selectedOrderId) {
       requestAnimationFrame(() => setSelectedLineId(null))
@@ -87,7 +89,16 @@ export function SaleOrderProductStep({
   };
 
   const handleLineSelect = (line: SaleOrderLine) => {
-    const productId = productOf(line)?.id?.toString() ?? "";
+    // product_id is always a plain number returned by SaleLineSerializer.
+    // Falls back to line.product if it's a number/string or an expanded object.
+    const productId =
+      line.product_id?.toString() ??
+      (typeof line.product === "number"
+        ? line.product.toString()
+        : typeof line.product === "string"
+          ? line.product
+          : productOf(line)?.id?.toString()) ??
+      "";
     if (!productId) return;
 
     setSelectedLineId(line.id?.toString() ?? null);
@@ -170,6 +181,10 @@ export function SaleOrderProductStep({
                   if (!hasAvailableLines) return null;
 
                   const isSelected = selectedOrderId === String(order.id);
+                  const totalProducts = order.lines?.reduce((sum: number, line: { quantity?: number }) =>
+                    sum + (line.quantity || 0), 0) || 0;
+                  const totalAmount = order.lines?.reduce((sum: number, line: { quantity?: number; unit_price?: number }) =>
+                    sum + ((line.quantity || 0) * (line.unit_price || 0)), 0) || 0;
 
                   return (
                     <CardSurface
@@ -178,46 +193,44 @@ export function SaleOrderProductStep({
                       selected={isSelected}
                       unavailable={false}
                       role="button"
-                      onClick={() => handleOrderSelect(String(order.id))}
-                      className="h-[120px]"
+                      onClick={() => handleOrderSelect(isSelected ? null : String(order.id))}
+                      className="items-stretch"
                     >
-                      <div className="w-12 h-12 flex items-center justify-center rounded-sm bg-primary/10 flex-shrink-0">
-                        <FileText className="h-6 w-6 text-primary" />
+                      {/* Icon lead */}
+                      <div className="w-12 flex shrink-0 items-center justify-center">
+                        <div className={cn(
+                          "w-10 h-10 flex items-center justify-center rounded-sm",
+                          isSelected ? "bg-primary/15" : "bg-muted/30"
+                        )}>
+                          <FileText className={cn("h-5 w-5", isSelected ? "text-primary" : "text-muted-foreground")} />
+                        </div>
                       </div>
-                      <div className={cn("flex min-w-0 flex-1 flex-col gap-1 px-3 py-4", "inlineBody not defined, using inline styles")}>
+                      {/* Body */}
+                      <div className="flex min-w-0 flex-1 flex-col gap-1 px-3 py-3">
                         <div className="flex justify-between items-start">
-                          <h3 className="font-semibold text-lg text-foreground">
+                          <h3 className="font-semibold text-sm text-foreground">
                             OV #{order.number}
                           </h3>
                           <span className="text-xs text-muted-foreground">
                             {order.date ? parseDateOnly(order.date).toLocaleDateString('es-CL') : "—"}
                           </span>
                         </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">
+                        <p className="text-xs text-muted-foreground line-clamp-1">
                           {order.customer?.name || "Cliente desconocido"}
                         </p>
-                        <div className="flex items-center gap-3 text-sm mt-auto pt-2">
-                          <span className="font-medium text-foreground">
-                            {order.lines?.reduce((sum: number, line: { quantity?: number }) =>
-                              sum + (line.quantity || 0), 0) || 0} productos
-                          </span>
+                        <div className="flex items-center gap-2 text-xs mt-auto pt-1">
+                          <span className="font-medium text-foreground">{totalProducts} productos</span>
                           <span className="text-muted-foreground">•</span>
-                          <span className="text-muted-foreground">
-                            {formatCurrency(
-                              order.lines?.reduce((sum: number, line: { quantity?: number; unit_price?: number }) =>
-                                sum + ((line.quantity || 0) * (line.unit_price || 0)), 0) || 0
-                            )}
-                          </span>
+                          <span className="text-muted-foreground">{formatCurrency(totalAmount)}</span>
                         </div>
                       </div>
-                      {isSelected && (
-                        <div className="flex-shrink-0 w-14 items-center justify-center">
-                          <DataCell.Action
-                            action="delete"
-                            onClick={() => handleOrderSelect(null)}
-                          />
-                        </div>
-                      )}
+                      {/* Right rail — primary when selected, neutral otherwise */}
+                      <CardRail tone={isSelected ? "primary" : "neutral"} size="sm" side="right">
+                        {isSelected
+                          ? <X className="h-3.5 w-3.5" />
+                          : <ChevronRight className="h-3.5 w-3.5" />
+                        }
+                      </CardRail>
                     </CardSurface>
                   );
                 })}
@@ -248,7 +261,9 @@ export function SaleOrderProductStep({
                   <div className="grid gap-3">
                     {availableLines.map((line) => {
                       const isSelected = selectedLineId === line.id?.toString();
-                      const prod = productOf(line) as ExpandedProduct | undefined;
+                      const prod = productOf(line);
+                      const productCode = line.product_code || line.code || prod?.code;
+                      const isAdvanced = line.requires_advanced_manufacturing ?? prod?.requires_advanced_manufacturing;
 
                       return (
                         <CardRow
@@ -257,7 +272,7 @@ export function SaleOrderProductStep({
                             prod?.image_thumbnail ? (
                               <Image
                                 src={resolveMediaUrl(prod.image_thumbnail) ?? ""}
-                                alt={prod?.name || ""}
+                                alt={prod?.name || line.product_name || ""}
                                 width={40}
                                 height={40}
                                 className="rounded object-cover"
@@ -268,7 +283,7 @@ export function SaleOrderProductStep({
                               </div>
                             )
                           }
-                          code={prod?.code ? `#${prod.code}` : undefined}
+                          code={productCode ? `#${productCode}` : undefined}
                           title={line.product_name || line.description || "Producto sin nombre"}
                           description={
                             <div className="flex items-center gap-2 text-sm">
@@ -279,18 +294,21 @@ export function SaleOrderProductStep({
                             </div>
                           }
                           trailing={
-                            prod?.requires_advanced_manufacturing && (
+                            isAdvanced && (
                               <span className="px-2 py-0.5 text-xs rounded bg-primary/[0.10] text-primary/80">
                                 Fabricación avanzada
                               </span>
                             )
                           }
-                          glyph={<GlyphChevron />}
+                          rail={
+                            <CardRail tone={isSelected ? "primary" : "neutral"} size="sm" side="right">
+                              <ChevronRight className="h-3.5 w-3.5" />
+                            </CardRail>
+                          }
                           selected={isSelected}
                           unavailable={false}
                           role="button"
                           onClick={() => handleLineSelect(line)}
-                          className="h-[100px]"
                         />
                       );
                     })}

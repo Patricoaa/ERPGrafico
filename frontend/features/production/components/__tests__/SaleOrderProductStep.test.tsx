@@ -81,4 +81,13 @@ describe("SaleOrderProductStep", () => {
             expect(onChooseProduct).toHaveBeenCalledWith("LINKED", "3", "1000", "1", "Volante", "5", "92")
         )
     })
+
+    it("clicking a product line selects it and calls onChooseProduct", async () => {
+        const onChooseProduct = vi.fn()
+        renderStep({ onChooseProduct })
+        fireEvent.click(await screen.findByText("OV #105"))
+        const productLine = await screen.findByText(/500/)
+        fireEvent.click(productLine)
+        expect(onChooseProduct).toHaveBeenCalledWith("LINKED", "3", "500", "1", "Volante", "5", "91")
+    })
 })
