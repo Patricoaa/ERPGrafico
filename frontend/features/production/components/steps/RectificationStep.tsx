@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useMemo } from "react"
+import type { ReactNode } from "react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 
@@ -14,7 +15,7 @@ import {
     Info,
     Scale
 } from "lucide-react"
-import { Chip, QuantityDisplay, LabeledInput } from "@/components/shared"
+import { Chip, QuantityDisplay, LabeledInput, StepHeader } from "@/components/shared"
 import { EditableCollection, initialEditableValues, type EditableRowValue } from "@/components/entity-view"
 import { stockMatEditable, outsourcedMatEditable } from '../../entity-view/workOrderMaterial.entity'
 
@@ -33,6 +34,7 @@ interface OutsourcedAdjustment {
 
 interface RectificationStepProps {
     order: WorkOrder | null
+    headerActions?: ReactNode
     onChange: (
         materialAdjustments: MaterialAdjustment[],
         producedQuantity: number | null,
@@ -126,7 +128,7 @@ function CostImpactPanel({
     )
 }
 
-export function RectificationStep({ order, onChange }: RectificationStepProps) {
+export function RectificationStep({ order, headerActions, onChange }: RectificationStepProps) {
     const materials = order?.materials || []
     const stockMaterials = materials.filter((m: WorkOrderMaterial) => !m.is_outsourced)
     const outsourcedMaterials = materials.filter((m: WorkOrderMaterial) => m.is_outsourced)
@@ -190,24 +192,22 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
 
     return (
         <div className="space-y-6 p-1">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-4">
-                <div>
-                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                        <ClipboardList className="h-4 w-4 text-primary" />
-                        Rectificación de Producción
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                        Declare las cantidades reales consumidas. Esto ajustará los movimientos de inventario antes de finalizar.
-                    </p>
-                </div>
-                {hasMeaningfulChanges && (
-                    <Button variant="ghost" size="sm" onClick={resetAll} className="shrink-0 text-muted-foreground hover:text-foreground">
-                        <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-                        Restablecer
-                    </Button>
-                )}
-            </div>
+            <StepHeader
+                title="Rectificación de Producción"
+                description="Declare las cantidades reales consumidas. Esto ajustará los movimientos de inventario antes de finalizar."
+                icon={ClipboardList}
+                rightContent={
+                    <div className="flex items-center gap-2">
+                        {hasMeaningfulChanges && (
+                            <Button variant="ghost" size="sm" onClick={resetAll} className="shrink-0 text-muted-foreground hover:text-foreground">
+                                <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                                Restablecer
+                            </Button>
+                        )}
+                        {headerActions}
+                    </div>
+                }
+            />
 
             {hasMeaningfulChanges && (
                 <Alert variant="warning">

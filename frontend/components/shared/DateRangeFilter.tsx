@@ -95,6 +95,7 @@ export function DateRangeFilter({
             </Button>
 
             <BaseModal
+                asDialog
                 open={open}
                 onOpenChange={handleOpenChange}
                 centered={true}

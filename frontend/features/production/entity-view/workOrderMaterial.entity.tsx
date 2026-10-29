@@ -2,6 +2,7 @@
 
 import { defineEntity, defineEditable, registerValueKind, type ValueRenderProps } from "@/components/entity-view"
 import { cn } from "@/lib/utils"
+import { QuantityDisplay } from "@/components/shared"
 import type { WorkOrderMaterial } from "../types"
 
 // ─── workOrderMaterialStock: colored available-vs-planned display ─────────────
@@ -18,13 +19,11 @@ declare module "@/components/entity-view/core/value-kinds" {
 function WorkOrderMaterialStockCell({ value }: ValueRenderProps<"workOrderMaterialStock">) {
     if (!value) return null
     const sufficient = value.available >= value.planned
+    // `available` already comes in the material's planned UoM (server converts it).
     return (
-        <div className="text-right">
-            <p className={cn("text-sm font-bold", sufficient ? "text-success" : "text-destructive")}>
-                {value.available} {value.uomName}
-            </p>
-            <p className="text-3xs text-muted-foreground">Disponible</p>
-        </div>
+        <span className={cn("tabular-nums font-medium", sufficient ? "text-success" : "text-destructive")}>
+            <QuantityDisplay value={value.available} uom={value.uomName} decimals={2} className="font-sans" />
+        </span>
     )
 }
 
@@ -42,12 +41,13 @@ export const workOrderMaterialEntity = defineEntity<WorkOrderMaterial>()((f) => 
     rowId: (m) => m.id,
     fields: {
         componentName: f.text("component_name", { ...fixed, label: "Componente" }),
-        plannedQty: f.quantity("quantity_planned", { ...fixed, label: "Planificado", uom: (m) => m.uom_name }),
+        plannedQty: f.quantity("quantity_planned", { ...fixed, label: "Un. planificadas", uom: (m) => m.uom_name }),
         stockAvail: f.value("workOrderMaterialStock", (m) => ({
             available: m.stock_available ?? 0,
             planned: m.quantity_planned,
             uomName: m.uom_name,
-        }), { ...fixed, label: "UoM / Disponible" }),
+        }), { ...fixed, label: "Un. disponibles" }),
+        consumedQty: f.quantity("quantity_consumed", { ...fixed, label: "Un. consumidas", uom: (m) => m.uom_name }),
         totalCost: f.money("total_cost", { ...fixed, label: "Costo Total" }),
         source: f.status((m) => ({
             status: m.source === 'MANUAL' ? 'NEUTRAL' : 'INFO',
@@ -58,6 +58,11 @@ export const workOrderMaterialEntity = defineEntity<WorkOrderMaterial>()((f) => 
 
 export const workOrderMaterialViews = workOrderMaterialEntity.views({
     table: { columns: ["componentName", "plannedQty", "stockAvail", "totalCost", "source"] },
+})
+
+/** Closed rectification: what was planned vs what was actually consumed. */
+export const workOrderMaterialRectifiedViews = workOrderMaterialEntity.views({
+    table: { columns: ["componentName", "plannedQty", "consumedQty", "totalCost"] },
 })
 
 // ─── Editable definitions (RectificationStep) ────────────────────────────────

@@ -8,8 +8,35 @@ from .models import (
     NotificationRule,
     Task,
     TaskAssignmentRule,
+    TaskEvent,
     WorkflowSettings,
 )
+
+
+class TaskEventSerializer(serializers.ModelSerializer):
+    """One entry of a task's history. Attachments are resolved from the task's own (prefetched) list."""
+
+    user_name = serializers.SerializerMethodField()
+    attachments_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TaskEvent
+        fields = ["id", "action", "user", "user_name", "notes", "confirmations", "attachments_data", "created_at"]
+
+    def get_user_name(self, obj):
+        if not obj.user:
+            return None
+        return obj.user.get_full_name() or obj.user.username
+
+    def get_attachments_data(self, obj):
+        if not obj.attachment_ids:
+            return []
+        wanted = set(obj.attachment_ids)
+        return [
+            {"id": a.id, "file": a.file.url if a.file else None, "original_filename": a.original_filename}
+            for a in obj.task.attachments.all()
+            if a.id in wanted
+        ]
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -17,6 +44,7 @@ class TaskSerializer(serializers.ModelSerializer):
     created_by_data = UserSerializer(source="created_by", read_only=True)
     completed_by_data = UserSerializer(source="completed_by", read_only=True)
     attachments_data = AttachmentSerializer(source="attachments", many=True, read_only=True)
+    events_data = TaskEventSerializer(source="events", many=True, read_only=True)
 
     # We might want group data too
     assigned_group_name = serializers.ReadOnlyField(source="assigned_group.name")

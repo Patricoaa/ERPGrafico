@@ -1,57 +1,51 @@
 "use client"
 
+import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
-import { StatusBadge } from '@/components/shared'
-import { ApprovalTaskListPanel } from './ApprovalTaskListPanel'
-import type { WorkOrder, WorkOrderMaterial, WorkOrderTask } from '../../types'
+import { CheckCircle2, Package } from 'lucide-react'
+import { StatusBadge, QuantityDisplay, StepHeader } from '@/components/shared'
+import { StepEmptyPanel } from '../shared/StepEmptyPanel'
+import type { WorkOrder, WorkOrderMaterial } from '../../types'
 
 interface MaterialApprovalStepProps {
   order: WorkOrder
-  canComplete: (task: WorkOrderTask) => boolean
-  taskNotes: Record<string | number, string>
-  taskFiles: Record<string | number, File | null>
-  onNoteChange: (taskId: string | number, note: string) => void
-  onFileChange: (taskId: string | number, file: File | null) => void
+  headerActions?: ReactNode
 }
 
 export function MaterialApprovalStep({
-  order, canComplete, taskNotes, taskFiles, onNoteChange, onFileChange,
+  order, headerActions,
 }: MaterialApprovalStepProps) {
   const stockMaterials = order.materials?.filter((m: WorkOrderMaterial) => !m.is_outsourced) ?? []
 
   return (
-    <div className="space-y-6">
-      <ApprovalTaskListPanel
-        tasks={order.workflow_tasks ?? []}
-        taskType="OT_MATERIAL_APPROVAL"
-        canComplete={canComplete}
-        taskNotes={taskNotes}
-        taskFiles={taskFiles}
-        onNoteChange={onNoteChange}
-        onFileChange={onFileChange}
+    <div className="flex flex-1 flex-col gap-3">
+      <StepHeader
+        title="Aprobación de Stock"
+        description="Verifica que los materiales asignados estén disponibles en bodega."
+        icon={CheckCircle2}
+        rightContent={headerActions}
       />
-
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          Verifique la disponibilidad de stock en {order.warehouse_name ?? 'la bodega seleccionada'}.
-        </p>
-        <div className="grid gap-4">
+      {stockMaterials.length === 0 && (
+        <StepEmptyPanel
+          icon={Package}
+          title="Sin materiales de stock"
+          description="Esta OT no consume materiales de stock: no hay nada que aprobar."
+        />
+      )}
+      <div className="grid gap-3">
           {stockMaterials.map((m: WorkOrderMaterial) => (
-            <div key={m.id} className="flex items-center justify-between p-3 border rounded-md">
-              <div className="space-y-1">
-                <p className="text-sm font-medium">
-                  {m.component_name}{' '}
-                  <span className="text-xs text-muted-foreground">({m.component_code})</span>
-                </p>
+            <div key={m.id} className="flex items-center justify-between gap-4 p-3 border rounded-md bg-card">
+              <div className="min-w-0 space-y-0.5">
+                <p className="text-sm font-medium truncate">{m.component_name}</p>
                 <p className="text-xs text-muted-foreground">
-                  Requerido: {m.quantity_planned} {m.uom_name}
+                  {m.component_code} · Requerido: <QuantityDisplay value={m.quantity_planned} uom={m.uom_name} decimals={2} className="font-sans" />
                 </p>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="text-right mr-2">
-                  <p className="text-3xs font-bold uppercase text-muted-foreground">En Bodega</p>
+              <div className="flex items-center gap-4 shrink-0">
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">En bodega</p>
                   <p className={cn(
-                    'text-sm font-bold',
+                    'text-sm font-medium tabular-nums',
                     (m.stock_available ?? 0) >= m.quantity_planned ? 'text-success' : 'text-destructive',
                   )}>
                     {(m.stock_available ?? 0) >= 999999 ? '∞' : (m.stock_available ?? 0)} {m.uom_name}
@@ -65,12 +59,6 @@ export function MaterialApprovalStep({
               </div>
             </div>
           ))}
-          {stockMaterials.length === 0 && (
-            <div className="text-center py-4 text-muted-foreground text-sm italic border rounded-md border-dashed">
-              Sin materiales de stock requeridos.
-            </div>
-          )}
-        </div>
       </div>
     </div>
   )

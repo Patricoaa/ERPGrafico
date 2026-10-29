@@ -1,5 +1,7 @@
 "use client";
 
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { EntityPanelTab } from "@/components/providers"
 import React, {useState, useMemo, useCallback} from 'react';
 import { useFiscalYears } from '../../hooks/useFiscalYears';
 import { useAccountingPeriods } from '../../hooks/useAccountingPeriods';
@@ -82,20 +84,12 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
 
     const isLoading = isLoadingYr || isLoadingPeriods || isLoadingTax;
 
-    // Derivado de URL: abrir nuevo año fiscal si ?modal=new o externalOpen
-    const newFYModalOpen = externalOpen || searchParams.get('modal') === 'new';
+    // Nuevo año fiscal: ?modal=new o externalOpen. Solo creación: ?selected es el preview de cierre.
+    const newFYPanel = useEntityPanelRoute({ actions: [], external: { open: externalOpen, onOpenChange: onExternalOpenChange } });
 
     // Derivado de URL: abrir preview wizard si hay ?selected= con datos
     const previewModalOpen = !!selectedFromUrl;
     const previewData = selectedFromUrl ?? null;
-
-    const handleCloseNewFY = () => {
-        onExternalOpenChange?.(false);
-
-        const params = new URLSearchParams(searchParams.toString());
-        params.delete("modal");
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-    };
 
     const clearSelection = () => {
         clearUrlSelection();
@@ -318,14 +312,18 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                     title="Aún no hay periodos contables"
                     description="Los periodos y cierres se activan automáticamente al registrar el primer asiento contable."
                 />
-                <NewFiscalYearDrawer
-                    isOpen={newFYModalOpen}
-                    onClose={handleCloseNewFY}
-                    onConfirm={handleCreateFY}
-                    isLoading={actionLoadingPeriod}
-                    existingYears={fiscalYears.map(fy => fy.year)}
-                    hasOpenPeriods={periods.some(p => p.status === 'OPEN')}
-                />
+                <EntityPanelTab label="accounting.fiscalyear" {...newFYPanel.tab}>
+                    {(open) => (
+                        <NewFiscalYearDrawer
+                            isOpen={open}
+                            onClose={newFYPanel.close}
+                            onConfirm={handleCreateFY}
+                            isLoading={actionLoadingPeriod}
+                            existingYears={fiscalYears.map(fy => fy.year)}
+                            hasOpenPeriods={periods.some(p => p.status === 'OPEN')}
+                        />
+                    )}
+                </EntityPanelTab>
             </div>
         );
     }
@@ -383,14 +381,18 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                 onSuccess={handleDeclarationSuccess}
             />
 
-            <NewFiscalYearDrawer
-                isOpen={newFYModalOpen}
-                onClose={handleCloseNewFY}
-                onConfirm={handleCreateFY}
-                isLoading={actionLoadingPeriod}
-                existingYears={fiscalYears.map(fy => fy.year)}
-                hasOpenPeriods={periods.some(p => p.status === 'OPEN')}
-            />
+            <EntityPanelTab label="accounting.fiscalyear" {...newFYPanel.tab}>
+                {(open) => (
+                    <NewFiscalYearDrawer
+                        isOpen={open}
+                        onClose={newFYPanel.close}
+                        onConfirm={handleCreateFY}
+                        isLoading={actionLoadingPeriod}
+                        existingYears={fiscalYears.map(fy => fy.year)}
+                        hasOpenPeriods={periods.some(p => p.status === 'OPEN')}
+                    />
+                )}
+            </EntityPanelTab>
 
             {/* F29 Close Modal */}
             {closeF29Declaration && (

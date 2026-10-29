@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/nextjs-vite"
 import { WizardStepsSidebar, type WizardSidebarStep } from "./WizardStepsSidebar"
 import { Package, Truck, CreditCard, User, FileText, Hammer, Building2, ShoppingCart, Warehouse, CheckCircle2, Eye, Pencil, RotateCcw } from "lucide-react"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"

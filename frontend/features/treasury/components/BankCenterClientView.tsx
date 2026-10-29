@@ -1,5 +1,6 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Landmark } from "lucide-react"
@@ -67,6 +68,17 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
         setDialogOpen(true)
     }
 
+    const closeWizard = () => {
+        setWizardOpen(false)
+        onOpenChange?.(false)
+    }
+
+    const closeBankModal = () => {
+        setDialogOpen(false)
+        setSelectedBank(null)
+        onOpenChange?.(false)
+    }
+
     const bankActionsCtx: BankActionsCtx = {
         onView: (id) => router.push(`/treasury/bank-center/${id}/overview`),
         onEdit: openEdit,
@@ -118,37 +130,31 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
                 />
             </Collection.Root>
 
-            <BankCreationWizard
-                open={wizardOpen || (!!externalOpen && !selectedBank)}
-                onOpenChange={(open: boolean) => {
-                    setWizardOpen(open)
-                    if (!open) {
-                        onOpenChange?.(false)
-                    }
-                }}
-                onSuccess={() => {
-                    refetch()
-                }}
-            />
+            <EntityPanelTab label="treasury.bank" id={null} open={wizardOpen || (!!externalOpen && !selectedBank)} onClose={closeWizard}>
+                {(open) => (
+                    <BankCreationWizard
+                        open={open}
+                        onOpenChange={(open: boolean) => { if (!open) closeWizard() }}
+                        onSuccess={() => {
+                            refetch()
+                        }}
+                    />
+                )}
+            </EntityPanelTab>
 
-            <BankModal
-                open={dialogOpen || (!!externalOpen && !!selectedBank)}
-                onOpenChange={(open: boolean) => {
-                    setDialogOpen(open)
-                    if (!open) {
-                        setSelectedBank(null)
-                        onOpenChange?.(false)
-                    } else {
-                        setDialogOpen(true)
-                    }
-                }}
-                bank={selectedBank}
-                onSuccess={() => {
-                    setDialogOpen(false)
-                    onOpenChange?.(false)
-                    refetch()
-                }}
-            />
+            <EntityPanelTab label="treasury.bank" id={selectedBank?.id ?? null} open={dialogOpen || (!!externalOpen && !!selectedBank)} onClose={closeBankModal}>
+                {(open) => (
+                    <BankModal
+                        open={open}
+                        onOpenChange={(open: boolean) => { if (!open) closeBankModal() }}
+                        bank={selectedBank}
+                        onSuccess={() => {
+                            closeBankModal()
+                            refetch()
+                        }}
+                    />
+                )}
+            </EntityPanelTab>
 
             <ActionConfirmModal
                 open={archiveConfirm.isOpen}

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import Image from "next/image";
-import {FileText, X} from "lucide-react";
+import {FileText, Plus, X} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BaseProduct } from "@/features/inventory";
 import { resolveMediaUrl } from '@/lib/media-url';
-import { StaleDataBanner } from '@/components/shared';
+import { StaleDataBanner, StepHeader } from '@/components/shared';
 import { ProductGridPicker } from '@/components/selectors';
 import { useWorkOrderProducts } from "../../hooks/useWorkOrderProducts";
 
@@ -20,12 +20,14 @@ interface ProductSelectionStepProps {
   ) => void;
   initialOtType?: "LINKED" | "NONE" | null;
   initialProductId?: string;
+  headerActions?: ReactNode;
 }
 
 export function ProductSelectionStep({
   onChooseProduct,
   initialOtType,
-  initialProductId
+  initialProductId,
+  headerActions,
 }: ProductSelectionStepProps) {
   const [otType] = useState<"LINKED" | "NONE" | null>(
     initialOtType ?? null
@@ -72,8 +74,12 @@ export function ProductSelectionStep({
 
   return (
     <div className="flex flex-col flex-1 min-h-0 space-y-6">
-      <div className="flex items-center justify-between mb-4">
-      </div>
+      <StepHeader
+        title="Selección de Producto"
+        description="Seleccione el producto del catálogo para fabricar y reponer stock."
+        icon={Plus}
+        rightContent={headerActions}
+      />
 
       <div className="flex flex-col flex-1 min-h-0">
 

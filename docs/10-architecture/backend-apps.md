@@ -249,7 +249,7 @@ SaleOrder.history.model._meta.db_table           # history table name
 
 ### Overall strategy
 
-See [docs/50-audit/observability/strategy.md](../50-audit/observability/strategy.md) for the full architecture decision (business audit log, SIEM, APM, analytics).
+See `docs/50-audit/observability/strategy.md` _(snapshot de auditoría retirado; ver historial git)_ for the full architecture decision (business audit log, SIEM, APM, analytics).
 
 ## Shared patterns
 

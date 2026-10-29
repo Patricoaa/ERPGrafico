@@ -1,9 +1,10 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useState, useMemo, useEffect } from "react"
 import { stockMoveActions, type StockMoveActionsCtx } from "@/features/inventory/stockMoveActions"
 import { LazyDrawer, type TransactionType } from "@/features/_shared"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { stockMoveEntity, stockMoveViews, type StockMove } from "@/features/inventory/entity-view/stockMove.entity"
@@ -36,9 +37,8 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
         }
     }, [search.groupBy, totalCount])
 
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<StockMove>({
-        endpoint: '/inventory/moves'
-    })
+    const panel = useEntityPanelRoute<StockMove>({ endpoint: '/inventory/moves', create: false })
+    const selectedFromUrl = panel.entity
     const { openView } = useEntityRouteActions()
 
     const viewingTransaction = selectedFromUrl ? { type: 'stock_move' as TransactionType, id: selectedFromUrl.id } : null
@@ -320,14 +320,16 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                 </Collection.Root>
             </div>
 
-            {viewingTransaction && (
-                <LazyDrawer
-                    type={viewingTransaction.type}
-                    id={Number(viewingTransaction.id)}
-                    open={!!viewingTransaction}
-                    onOpenChange={(open) => { if (!open) clearSelection() }}
-                />
-            )}
+            <EntityPanelTab label="inventory.stockmove" {...panel.tab}>
+                {(open) => viewingTransaction && (
+                    <LazyDrawer
+                        type={viewingTransaction.type}
+                        id={Number(viewingTransaction.id)}
+                        open={open}
+                        onOpenChange={(open) => { if (!open) panel.close() }}
+                    />
+                )}
+            </EntityPanelTab>
         </div>
     )
 }

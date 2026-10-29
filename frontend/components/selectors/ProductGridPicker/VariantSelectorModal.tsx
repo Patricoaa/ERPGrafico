@@ -76,6 +76,7 @@ export function VariantSelectorModal({
 
     return (
         <BaseModal
+            asDialog
             open={open}
             onOpenChange={onOpenChange}
             title={

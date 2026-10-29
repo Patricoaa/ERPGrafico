@@ -14,6 +14,8 @@ interface WizardFooterProps {
     onCancelEdit: () => void
     onClose: () => void
     pendingTasks: WorkOrderTask[]
+    /** A requirement of the stage's approval still missing (shown as the reason "Siguiente" is off). */
+    approvalBlockedReason?: string
     canApproveAll: boolean
     transitioning: boolean
     order: WorkOrder | null
@@ -41,6 +43,7 @@ export function WizardStickyFooter({
     onCancelEdit,
     onClose,
     pendingTasks,
+    approvalBlockedReason,
     canApproveAll,
     transitioning,
     order,
@@ -77,7 +80,14 @@ export function WizardStickyFooter({
 
     const isNextDisabled = transitioning ||
         isMaterialApprovalIncomplete ||
-        (pendingTasks.length > 0 && !canApproveAll)
+        (pendingTasks.length > 0 && !canApproveAll) ||
+        !!approvalBlockedReason
+
+    // The one place that says why "Siguiente" is off (the rail only marks the stage).
+    const blockedReason = transitioning ? null
+        : isMaterialApprovalIncomplete ? 'Hay materiales sin stock suficiente'
+        : pendingTasks.length > 0 && !canApproveAll ? 'Hay aprobaciones pendientes de otros usuarios'
+        : approvalBlockedReason ?? null
 
     const handleNextClick = () => {
         const nextStage = stages[viewingStepIndex + 1]
@@ -101,7 +111,7 @@ export function WizardStickyFooter({
             const isMaterialApprovalAdvance = currentStageId === 'MATERIAL_APPROVAL'
             const advanceDescription = isMaterialApprovalAdvance
                 ? `${warningMsg}Esta acción activa la producción y cambia el estado de Borrador a En Proceso. A partir de aquí todas las modificaciones quedarán auditadas y no podrás editar los datos de configuración inicial.`
-                : `${warningMsg}Una vez que avances a la siguiente etapa, no podrás volver atrás para modificar la etapa actual. Asegúrate de haber completado todos los pasos necesarios.`
+                : `${warningMsg}Podrás reabrir esta etapa más adelante mientras no existan órdenes de compra ni movimientos de stock.`
 
             if (!warningMsg && isImplicitlyApproving && !isMaterialApprovalAdvance) {
                 onTransition(nextStage.id)
@@ -227,10 +237,10 @@ export function WizardStickyFooter({
                             form="wizard-basic-form"
                             loading={transitioning}
                             disabled={!chosenOtType}
-                            aria-label="Seleccionar producto"
-                            icon={ArrowRight}
+                            aria-label={isMfgConfigStep ? 'Crear OT' : 'Seleccionar producto'}
+                            icon={isMfgConfigStep ? Check : ArrowRight}
                         >
-                            {transitioning ? 'Procesando...' : 'Seleccionar Producto'}
+                            {transitioning ? 'Procesando...' : isMfgConfigStep ? 'Crear OT' : 'Seleccionar Producto'}
                         </SubmitButton>
                     </div>
                 )
@@ -280,18 +290,21 @@ export function WizardStickyFooter({
 
             return (
                 <div className="flex items-center gap-2">
-                    {pendingTasks.length > 0 && !canApproveAll && (
+                    {blockedReason && (
                         <span className="text-xs text-warning flex items-center gap-1.5 font-medium">
                             <AlertTriangle className="h-3.5 w-3.5" />
-                            Tareas pendientes de otros
+                            {blockedReason}
                         </span>
                     )}
                     <SubmitButton
+                        id="wizard-next"
                         disabled={isNextDisabled}
                         onClick={handleNextClick}
                         loading={transitioning}
                         aria-label={viewingStepIndex === stages.length - 2 ? "Finalizar Producción" : "Siguiente Etapa"}
-                        icon={viewingStepIndex === stages.length - 2 ? Check : ArrowRight}
+                        icon={viewingStepIndex === stages.length - 2 || isImplicitlyApproving ? Check : ArrowRight}
+                        // Green when moving on also approves the stage: it's a sign-off, not just a step.
+                        className={isImplicitlyApproving ? "bg-success hover:bg-success/90 text-success-foreground" : undefined}
                     >
                         {viewingStepIndex === stages.length - 2 ? 'Finalizar Producción'
                             : isImplicitlyApproving ? 'Aprobar y Siguiente'
@@ -307,7 +320,7 @@ export function WizardStickyFooter({
         isProductSelectionStep, isMfgConfigStep, isRectificationStep, isCreating,
         isBasicInfoEditable, chosenOtType, transitioning, order?.status, stages,
         viewingStepIndex, pendingTasks, canApproveAll, isImplicitlyApproving,
-        isNextDisabled, onCancelEdit, onBackToCurrent, onStepChange, onRectifyAndFinish,
+        isNextDisabled, blockedReason, onCancelEdit, onBackToCurrent, onStepChange, onRectifyAndFinish,
     ])
 
     return (

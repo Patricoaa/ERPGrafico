@@ -1,6 +1,5 @@
 import { BankPageHeader, BankCenterDashboard } from "@/features/treasury"
-import { treasuryApi } from "@/features/treasury/api/treasuryApi"
-import { buildBankMetadata } from "@/features/treasury/navigation.server"
+import { buildBankPageMetadata } from "@/features/treasury/navigation.server"
 
 interface PageProps {
   params: Promise<{ bankId: string }>
@@ -8,14 +7,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<import("next").Metadata> {
   const { bankId } = await params
-  const id = Number(bankId)
-  try {
-    const overview = await treasuryApi.getBankOverview(id)
-    const bankName = (overview?.bank as { name?: string } | undefined)?.name || `Banco ${id}`
-    return buildBankMetadata(bankName, "movements")
-  } catch {
-    return buildBankMetadata(`Banco ${id}`, "movements")
-  }
+  return buildBankPageMetadata(Number(bankId), "movements")
 }
 
 export default async function BankMovementsPage({ params }: PageProps) {

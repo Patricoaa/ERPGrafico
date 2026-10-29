@@ -1,6 +1,7 @@
 "use client"
 
-import { useRouter, useSearchParams } from "next/navigation"
+import { EntityPanelTab } from "@/components/providers"
+
 import React, {useState, lazy, Suspense} from "react"
 import { toast } from "sonner"
 import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
@@ -9,14 +10,13 @@ import { useContacts, type Contact } from "@/features/contacts"
 import { LoadingFallback, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { contactsUnifiedSearchDef } from "@/features/contacts/unifiedSearchDef"
 import type { ContactFilters } from "@/features/contacts/types"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { contactEntity, contactViews } from "../entity-view/contact.entity"
 
 // Lazy load heavy components
 const ContactDrawer = lazy(() => import("./ContactDrawer"))
 const ActionConfirmModal = lazy(() => import("@/components/shared/ActionConfirmModal").then(m => ({ default: m.ActionConfirmModal })))
-
 
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
 const CONTACT_GROUPS: Record<string, FieldId<typeof contactEntity.fields>> = { contact_type: "contactType", credit_risk_level: "riskLevel" }
@@ -32,30 +32,12 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
     const { contacts, isLoading, isRefetching, isError, refetch, archiveContact } = useContacts({
         filters: search.filters as ContactFilters,
         initialData: initialContacts,
-    })
+   })
     const [archiveTarget, setArchiveTarget] = useState<Contact | null>(null)
-    const router = useRouter()
-    const searchParams = useSearchParams()
     const { openSelected } = useEntityRouteActions()
 
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Contact>({
-        endpoint: '/contacts'
-    })
-
-    const isCreateOpen = searchParams.get("modal") === "new" || isNewModalOpen
-    const isEditOpen = !!selectedFromUrl
-    const drawerOpen = isCreateOpen || isEditOpen
-
-    const handleCloseModal = (open: boolean) => {
-        if (!open) {
-            if (isEditOpen) clearSelection()
-            if (isCreateOpen && searchParams.get("modal") === "new") {
-                const params = new URLSearchParams(searchParams.toString())
-                params.delete("modal")
-                router.push(`?${params.toString()}`)
-            }
-        }
-    }
+    const panel = useEntityPanelRoute<Contact>({ endpoint: '/contacts', external: { open: isNewModalOpen } })
+    const selectedFromUrl = panel.entity
 
     const confirmArchive = async () => {
         if (!archiveTarget) return
@@ -107,15 +89,19 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
             </Collection.Root>
 
             <Suspense fallback={<LoadingFallback />}>
-                <ContactDrawer
-                    open={drawerOpen}
-                    onOpenChange={handleCloseModal}
-                    contact={selectedFromUrl ?? undefined}
-                    onSuccess={() => {
-                        handleCloseModal(false)
-                        // Automatic invalidation handles refetch
-                    }}
-                />
+                <EntityPanelTab label="contacts.contact" {...panel.tab}>
+                    {(open) => (
+                        <ContactDrawer
+                            open={open}
+                            onOpenChange={(open) => { if (!open) panel.close() }}
+                            contact={selectedFromUrl ?? undefined}
+                            onSuccess={() => {
+                                panel.close()
+                                // Automatic invalidation handles refetch
+                            }}
+                        />
+                    )}
+                </EntityPanelTab>
             </Suspense>
 
             <Suspense fallback={<LoadingFallback />}>

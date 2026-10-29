@@ -26,6 +26,7 @@ import {
 } from "@/features/documents"
 import { saleOrderActions } from "@/features/sales"
 import { purchaseOrderActions } from "@/features/purchasing"
+import { WorkOrderWizard } from "@/features/production"
 import { useOrderDocument } from "../../hooks/useCommercialDocument"
 import { useCancelOrderFlow } from "../../hooks/useCancelOrderFlow"
 import { useOrderActionEngine } from "../../hooks/useOrderActionEngine"
@@ -67,6 +68,7 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
 
     const [tab, setTab] = useState("summary")
     const [domain, setDomain] = useState<DocumentDomain | null>(null)
+    const [creatingWorkOrderLine, setCreatingWorkOrderLine] = useState<OrderLine | null>(null)
 
     const handleSuccess = () => {
         void fetchOrderDetails()
@@ -141,7 +143,18 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
     }
 
     const tabs: DocumentSheetTab[] = order ? [
-        { value: "summary", label: "Resumen", icon: FileText, content: <OrderSummaryTab order={order} kind={kind} /> },
+        {
+            value: "summary",
+            label: "Resumen",
+            icon: FileText,
+            content: (
+                <OrderSummaryTab
+                    order={order}
+                    kind={kind}
+                    onCreateWorkOrder={isSale && order.status !== "CANCELLED" ? (line) => setCreatingWorkOrderLine(line) : undefined}
+                />
+            ),
+        },
         {
             value: "relations", label: "Relaciones", icon: Link2, badge: relations?.relations.length,
             content: (
@@ -213,6 +226,31 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
             {engine.host}
             {related.host}
             <ActionConfirmModal {...cancelModalProps} />
+
+            {creatingWorkOrderLine && order && (
+                <WorkOrderWizard
+                    open={!!creatingWorkOrderLine}
+                    onOpenChange={(isOpen) => {
+                        if (!isOpen) setCreatingWorkOrderLine(null)
+                    }}
+                    mode={{
+                        kind: "create",
+                        defaultOtType: "LINKED",
+                        initialData: {
+                            sale_order: order.id,
+                            sale_line: creatingWorkOrderLine.id,
+                            product: {
+                                id: Number(creatingWorkOrderLine.product ?? creatingWorkOrderLine.product_id),
+                                name: creatingWorkOrderLine.product_name ?? creatingWorkOrderLine.description ?? "",
+                            },
+                        },
+                    }}
+                    onSuccess={() => {
+                        setCreatingWorkOrderLine(null)
+                        handleSuccess()
+                    }}
+                />
+            )}
         </>
     )
 }

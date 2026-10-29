@@ -1,5 +1,7 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import React, { useMemo, useCallback } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import {
@@ -86,27 +88,18 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
 
     const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
     const action = searchParams.get("action")
-    const isCreateOpen = searchParams.get("modal") === "new"
-    const { openAction, clearActions } = useEntityRouteActions()
+    const { openAction } = useEntityRouteActions()
 
-    const isDetailOpen = !!selectedId && (action === "detail" || !action)
-    const isDisburseOpen = !!selectedId && action === "disburse"
+    // Una misma ruta, cuatro superficies: registrar (`?modal=new`), detalle, desembolso y cronograma (`?action=`).
+    const registerPanel = useEntityPanelRoute({ actions: [] })
+    const viewPanel = useEntityPanelRoute({ actions: [null, 'detail'], create: false })
+    const disbursePanel = useEntityPanelRoute({ actions: ['disburse'], create: false })
     const isAmortizationOpen = !!selectedId && action === "amortization"
 
     const selectedLoan = useMemo(
         () => selectedId ? filteredLoans.find(l => l.id === selectedId) ?? null : null,
         [selectedId, filteredLoans],
     )
-
-    const clearAll = useCallback(() => {
-        clearActions()
-        const params = new URLSearchParams(searchParams.toString())
-        if (params.has("modal")) {
-            params.delete("modal")
-            const query = params.toString()
-            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-        }
-    }, [clearActions, router, pathname, searchParams])
 
     const handleReset = useCallback(() => {
         search.clearAll()
@@ -162,25 +155,37 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                 />
             </Collection.Root>
 
-            <LoanRegisterDrawer
-                open={isCreateOpen}
-                onOpenChange={(open) => { if (!open) clearAll() }}
-                bankId={bankId}
-            />
-            <LoanViewDrawer
-                loanId={selectedId}
-                open={isDetailOpen}
-                onOpenChange={(open) => { if (!open) clearAll() }}
-            />
-            <LoanDisburseDrawer
-                open={isDisburseOpen}
-                onOpenChange={(open) => { if (!open) clearAll() }}
-                loan={selectedLoan}
-            />
+            <EntityPanelTab label="treasury.bankloan" {...registerPanel.tab}>
+                {(open) => (
+                    <LoanRegisterDrawer
+                        open={open}
+                        onOpenChange={(open) => { if (!open) registerPanel.close() }}
+                        bankId={bankId}
+                    />
+                )}
+            </EntityPanelTab>
+            <EntityPanelTab label="treasury.bankloan" {...viewPanel.tab}>
+                {(open) => (
+                    <LoanViewDrawer
+                        loanId={selectedId}
+                        open={open}
+                        onOpenChange={(open) => { if (!open) viewPanel.close() }}
+                    />
+                )}
+            </EntityPanelTab>
+            <EntityPanelTab label="treasury.bankloan" {...disbursePanel.tab}>
+                {(open) => (
+                    <LoanDisburseDrawer
+                        open={open}
+                        onOpenChange={(open) => { if (!open) disbursePanel.close() }}
+                        loan={selectedLoan}
+                    />
+                )}
+            </EntityPanelTab>
             <LoanDetailModal
                 loanId={selectedId}
                 open={isAmortizationOpen}
-                onOpenChange={(open) => { if (!open) clearAll() }}
+                onOpenChange={(open) => { if (!open) viewPanel.close() }}
             />
         </div>
     )

@@ -149,6 +149,8 @@ describe("WorkOrderWizard Tests", () => {
         const dialogs = screen.getAllByRole("dialog")
         expect(dialogs).toHaveLength(1)
         
-        expect(screen.getByText("Orden de Trabajo · Manual · Pre-Impresión")).toBeInTheDocument()
+        // The stage lives in the rail; the header no longer repeats it.
+        expect(screen.getByText("Orden de Trabajo · Manual")).toBeInTheDocument()
+        expect(screen.getAllByText("Pre-Impresión").length).toBeGreaterThan(0)
     })
 })

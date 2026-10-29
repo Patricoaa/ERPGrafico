@@ -102,6 +102,7 @@ export function DocumentCompletionModal({
 
     return (
         <BaseModal
+            asDialog
             open={open}
             onOpenChange={onOpenChange}
             size="sm"

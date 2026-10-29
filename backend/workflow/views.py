@@ -51,12 +51,28 @@ class TaskViewSet(viewsets.ModelViewSet):
                 user=request.user,
                 notes=request.data.get("notes"),
                 files=request.FILES.getlist("attachments"),
+                confirmations=_parse_confirmations(request.data.get("confirmations")),
             )
             return Response({"status": "completed"})
         except PermissionDenied as e:
             return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+def _parse_confirmations(raw):
+    """`confirmations` arrives as a JSON object string in the multipart body."""
+    import json
+
+    if not raw:
+        return {}
+    if isinstance(raw, dict):
+        return raw
+    try:
+        value = json.loads(raw)
+    except (TypeError, ValueError):
+        return {}
+    return value if isinstance(value, dict) else {}
 
 
 class NotificationViewSet(viewsets.ModelViewSet):

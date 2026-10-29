@@ -327,7 +327,7 @@ describe("Catalog card pilot (ADR-0097)", () => {
         expect(active).not.toHaveTextContent("CAJ-001")
         expect(active).not.toHaveTextContent("10 Cajas")
         expect(active).toHaveTextContent("3 componentes")
-        expect(active).toHaveTextContent("Costo Total")
+        expect(active).toHaveTextContent("Costo por u. de rendimiento")
         expect(active).toHaveTextContent("15.000")
         expect(archived).toHaveTextContent("BOM archivada")
         expect(archived).toHaveTextContent("Inactiva")

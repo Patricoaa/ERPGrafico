@@ -1,94 +1,64 @@
 "use client"
 
-import { cn } from '@/lib/utils'
-import { LayoutDashboard } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { ExternalLink, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { StatusBadge } from '@/components/shared'
-import { ApprovalTaskListPanel } from './ApprovalTaskListPanel'
+import { StatusBadge, QuantityDisplay, StepHeader } from '@/components/shared'
+import { PlanningEmptyState } from '../shared/PlanningEmptyState'
 import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
-import type { WorkOrder, WorkOrderMaterial, WorkOrderTask } from '../../types'
+import type { WorkOrder, WorkOrderMaterial } from '../../types'
 
 interface OutsourcingVerificationStepProps {
   order: WorkOrder
-  canComplete: (task: WorkOrderTask) => boolean
-  taskNotes: Record<string | number, string>
-  taskFiles: Record<string | number, File | null>
-  onNoteChange: (taskId: string | number, note: string) => void
-  onFileChange: (taskId: string | number, file: File | null) => void
+  headerActions?: ReactNode
 }
 
 export function OutsourcingVerificationStep({
-  order, canComplete, taskNotes, taskFiles, onNoteChange, onFileChange,
+  order, headerActions,
 }: OutsourcingVerificationStepProps) {
   const { openEntity } = useGlobalModals()
   const outsourced = order.materials?.filter((m: WorkOrderMaterial) => m.is_outsourced) ?? []
 
   return (
-    <div className="space-y-6">
-      <ApprovalTaskListPanel
-        tasks={order.workflow_tasks ?? []}
-        taskType="OT_OUTSOURCING_VERIFICATION"
-        canComplete={canComplete}
-        taskNotes={taskNotes}
-        taskFiles={taskFiles}
-        onNoteChange={onNoteChange}
-        onFileChange={onFileChange}
+    <div className="flex flex-1 flex-col gap-3">
+      <StepHeader
+        title="Verificación de Tercerizados"
+        description="Confirma la recepción de los servicios externos contratados."
+        icon={Truck}
+        rightContent={headerActions}
       />
-
-      <div className="p-4 bg-warning/5 border border-warning/10 rounded-md flex gap-3">
-        <LayoutDashboard className="h-5 w-5 text-warning shrink-0" />
-        <div className="text-sm text-warning font-medium">
-          <p className="font-bold">Verificación de Servicios Tercerizados</p>
-          <p className="text-xs">
-            Valide que todos los servicios externos hayan sido recibidos correctamente en el sistema.
-          </p>
-        </div>
-      </div>
-
-      <div className="grid gap-4">
+      {outsourced.length === 0 && <PlanningEmptyState kind="outsourcing" />}
+      <div className="grid gap-3">
         {outsourced.map((m: WorkOrderMaterial) => {
-          const isReceived = m.purchase_order_receiving_status === 'RECEIVED'
-          const statusLabel = isReceived
-            ? 'Recibido'
-            : m.purchase_order_receiving_status === 'PARTIAL'
-            ? 'Parcial'
-            : 'Pendiente'
+          const receiving = m.purchase_order_receiving_status === 'RECEIVED' || m.purchase_order_receiving_status === 'PARTIAL'
+            ? m.purchase_order_receiving_status
+            : 'PENDING'
 
           return (
-            <div key={m.id} className="flex items-center justify-between p-4 border rounded-md bg-background">
-              <div className="flex items-center gap-4">
-                <div className={cn(
-                  'h-3 w-3 rounded-full animate-pulse',
-                  isReceived
-                    ? 'bg-success shadow-[0_0_8px_oklch(var(--success-raw)/0.6)] animate-none'
-                    : 'bg-warning shadow-[0_0_8px_oklch(var(--warning-raw)/0.6)]',
-                )} />
-                <div className="space-y-0.5">
-                  <p className="text-sm font-bold">{m.component_name}</p>
-                  <div className="flex items-center gap-2 text-3xs text-muted-foreground uppercase font-bold">
-                    <span className={cn(isReceived ? 'text-success' : 'text-warning')}>{statusLabel}</span>
-                    <span>•</span>
-                    <span>{m.supplier_name}</span>
-                    <span>•</span>
-                    <span>Cant: {m.quantity_planned} {m.uom_name}</span>
-                    <span>•</span>
-                    <span>OC: {m.purchase_order_number ?? '---'}</span>
-                  </div>
+            <div key={m.id} className="flex items-center justify-between gap-4 p-3 border rounded-md bg-card">
+              <div className="flex items-center gap-3 min-w-0">
+                <Truck className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 space-y-0.5">
+                  <p className="text-sm font-medium truncate">{m.component_name}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {m.supplier_name} · <QuantityDisplay value={m.quantity_planned} uom={m.uom_name} decimals={2} className="font-sans" />
+                    {m.purchase_order_number && <> · OC {m.purchase_order_number}</>}
+                  </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 shrink-0">
+                <StatusBadge status={receiving} size="sm" />
                 {m.purchase_order_id && (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="gap-2 h-8"
+                    className="gap-1.5"
                     onClick={() => m.purchase_order_id && openEntity('purchasing.purchaseorder', m.purchase_order_id)}
                   >
-                    <LayoutDashboard className="h-4 w-4" />
+                    <ExternalLink className="h-3.5 w-3.5" />
                     Ver OC
                   </Button>
                 )}
-                <StatusBadge status={isReceived ? 'RECEIVED' : 'PENDING'} size="sm" />
               </div>
             </div>
           )

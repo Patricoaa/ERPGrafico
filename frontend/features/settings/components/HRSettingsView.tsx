@@ -187,7 +187,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                             <ConceptDialog onSaved={() => refetch()} onCreate={createConcept} onUpdate={updateConcept} />
                         </div>
 
-                        <div className="flex-1 min-h-0 border rounded-md overflow-x-auto">
+                        <div className="flex-1 min-h-0 overflow-x-auto">
                             <Collection.Root
                                 collection={conceptCollection}
                                 label="Conceptos de nómina"

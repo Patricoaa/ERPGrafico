@@ -9,6 +9,7 @@ import type { Order, OrderLine } from "../../types"
 interface OrderSummaryTabProps {
     order: Order
     kind: "sale" | "purchase"
+    onCreateWorkOrder?: (line: OrderLine) => void
 }
 
 const text = (value: unknown) => (typeof value === "string" && value.trim() ? value : null)
@@ -35,7 +36,7 @@ function documentDateTime(order: Order): { value: string; showTime: boolean } | 
  * Tab Resumen de la ficha de OV/OC (ADR-0083, referencia para las demás fichas):
  * Contexto en una fila (contraparte, fecha y hora, canal, notas) y Productos (tabla + totales).
  */
-export function OrderSummaryTab({ order, kind }: OrderSummaryTabProps) {
+export function OrderSummaryTab({ order, kind, onCreateWorkOrder }: OrderSummaryTabProps) {
     const isSale = kind === "sale"
     const partnerName = isSale
         ? (typeof order.customer_name === "string" ? order.customer_name : order.customer_name?.name)
@@ -78,7 +79,7 @@ export function OrderSummaryTab({ order, kind }: OrderSummaryTabProps) {
 
             <section className="space-y-4">
                 <FormSection title="Productos" icon={Package} />
-                <DocumentLinesTable lines={lines} kind={kind} />
+                <DocumentLinesTable lines={lines} kind={kind} onCreateWorkOrder={onCreateWorkOrder} />
                 <DocumentTotalsBox
                     subtotal={subtotal}
                     tax={num(order.total_tax)}

@@ -1,5 +1,5 @@
 import { formatMoney, formatQuantity } from "@/lib/money"
-import { EMPTY_VALUE, formatPlainDate, isMissing, translateStatus } from "@/lib/utils"
+import { EMPTY_VALUE, formatPlainDate, isMissing, parseDateOnly, translateStatus } from "@/lib/utils"
 
 export { isMissing }
 import type { CurrencyCode, DecimalString, FlowDirection, ISODate, StatusValue } from "./value-kinds"
@@ -65,6 +65,15 @@ export function formatTimeOfDay(value: string | null | undefined): string {
     if (isMissing(value) || !value) return EMPTY
     const d = new Date(value)
     return Number.isNaN(d.getTime()) ? EMPTY : TIME_FORMAT.format(d)
+}
+
+const MONTH_FORMAT = new Intl.DateTimeFormat("es-CL", { year: "numeric", month: "long" })
+
+/** Month and year of a date-only value ("octubre de 2026"), without timezone shift. */
+export function formatMonth(value: ISODate | null | undefined): string {
+    if (isMissing(value) || !value) return EMPTY
+    const d = parseDateOnly(value.split("T")[0])
+    return Number.isNaN(d.getTime()) ? EMPTY : MONTH_FORMAT.format(d)
 }
 
 export function formatDateRange(range: { from: ISODate; to: ISODate | null } | null): string {

@@ -191,4 +191,4 @@ class InvoiceQueryCountTest(TestCase):
 - Contrato global de performance: [docs/40-quality/performance.md](../40-quality/performance.md)
 - Contrato de API (regla inline): [docs/20-contracts/api-contracts.md §Serializer Integrity](../20-contracts/api-contracts.md#serializer-integrity--performance-zero-n1)
 - Playbook de selectores: [docs/30-playbooks/add-selector.md](../30-playbooks/add-selector.md)
-- Auditoría de deuda técnica: [docs/50-audit/n-plus-one-backlog.md](../50-audit/n-plus-one-backlog.md) _(a crear)_
+- Auditoría de deuda técnica: `docs/50-audit/n-plus-one-backlog.md` _(a crear)_

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { 
+import {
   ReceiptText, Truck, Undo2, FileText,
-  Wrench, Package, ArrowLeftRight, ArrowRightLeft, Landmark, BookOpen, 
+  Wrench, Factory, Package, ArrowLeftRight, ArrowRightLeft, Landmark, BookOpen,
   Hash, Users, User, UserCheck, Book, ShoppingCart, Receipt,
   List, LayoutDashboard, LayoutGrid, Kanban, CalendarDays, ClipboardCheck,
   Building2, Smartphone, CreditCard, Calendar, CalendarX2, Repeat,
@@ -340,8 +340,8 @@ const REGISTRY = {
     label: 'production.workorder',
     title: 'Orden de Trabajo',
     titlePlural: 'Ordenes de Trabajo',
-    icon: Wrench,
-    iconName: 'Wrench',
+    icon: Factory,
+    iconName: 'Factory',
     feminine: true,
     description: 'Instrucción de fabricación o servicio',
     shortTemplate: 'OT-{number}',
@@ -349,7 +349,7 @@ const REGISTRY = {
     detailUrlPattern: '/production/orders/{id}',
     partnerField: 'name',
     workflowType: 'order',
-    viewPolicy: { availableViews: ['list', 'card', 'kanban', 'timeline'], defaultView: 'card', cardComponent: 'entity' },
+    viewPolicy: { availableViews: ['list', 'card', 'kanban'], defaultView: 'card', cardComponent: 'entity', cardVariant: 'workflow' },
   },
   'production.bom': {
     label: 'production.bom',
@@ -373,7 +373,7 @@ const REGISTRY = {
     description: 'Entrada o salida de existencias',
     shortTemplate: 'MOV-{id}',
     listUrl: '/inventory/operations/stock',
-    detailUrlPattern: '/inventory/stock-moves/{id}',
+    detailUrlPattern: '/d/inventory.stockmove/{id}',
     viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'full' },
   },
   'inventory.inventorydocument': {
@@ -541,7 +541,7 @@ const REGISTRY = {
     shortTemplate: '{code}',
     listUrl: '/accounting/ledger',
     detailUrlPattern: '/accounting/accounts/{id}/ledger',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
+    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
   },
   'accounting.budget': {
     label: 'accounting.budget',

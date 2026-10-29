@@ -28,6 +28,20 @@ def _test_env(settings):
 
 
 @pytest.fixture(autouse=True)
+def _isolated_media(settings, tmp_path_factory):
+    """
+    Uploaded files go to a throwaway directory on the local filesystem: never to the
+    project's media/ (owned by the container user, and polluted by every run) nor to
+    MinIO/S3 when the environment configures it.
+    """
+    settings.MEDIA_ROOT = str(tmp_path_factory.mktemp("media"))
+    settings.STORAGES = {
+        **settings.STORAGES,
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    }
+
+
+@pytest.fixture(autouse=True)
 def _clear_cache_between_tests(_test_env):
     """
     La caché locmem sobrevive entre tests mientras la BD se revierte: singletons cacheados

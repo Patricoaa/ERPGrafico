@@ -9,6 +9,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { getModuleIdFromPath, getEntityModule } from "@/lib/module-registry"
 import { ErrorBoundary, PersistentPanelContext, UnsavedChangesDialog } from "@/components/shared"
 import { EntityViewBridge } from "./EntityViewBridge"
+import type { RecentSave, SavedRecord } from "./EntityOpenerContext"
 import { DirtyRegistry, type DirtyEntry } from "./dirtyGuardRegistry"
 
 interface OpenEntityState {
@@ -27,19 +28,36 @@ const TOOL_TABS: Record<ToolTabId, { title: string; icon: LucideIcon }> = {
     "cost-calculator": { title: "Calculadora de Costos", icon: Calculator },
 }
 
-/** Pestaña efímera del espacio de trabajo: un documento (`entity`) o una herramienta (`tool`). */
+/**
+ * Drawer que monta la propia página (edición por `?selected`, creación): ocupa una pestaña pero lo
+ * renderiza la página, no el provider (`useEntityPanelTab`). `id` null = creación.
+ */
+export interface PanelTabState {
+    label: string
+    id: number | null
+    /** Distingue dos paneles del mismo registro (p. ej. ficha y asignación de crédito de un contacto). */
+    variant?: string
+    /** Texto de la pestaña; por defecto "{Entidad} #{id}" o "Nuevo {entidad}". */
+    display?: string
+}
+
+/** Pestaña efímera del espacio de trabajo: un documento (`entity`), una herramienta (`tool`) o un drawer de la página (`panel`). */
 type WorkspaceTab =
     | ({ type: "entity" } & OpenEntityState)
     | { type: "tool"; tool: ToolTabId }
+    | ({ type: "panel" } & PanelTabState)
 
 const entityKey = (label: string, id: number) => `${label}:${id}`
 const toolKey = (tool: ToolTabId) => `tool:${tool}`
-const tabKey = (tab: WorkspaceTab) => (tab.type === "entity" ? entityKey(tab.label, tab.id) : toolKey(tab.tool))
+/** Clave de la pestaña de un drawer de la página (la usa `useEntityPanelTab` para saber si está activa). */
+export const panelTabKey = ({ label, id, variant }: Pick<PanelTabState, "label" | "id" | "variant">) => `panel:${label}${variant ? `:${variant}` : ""}:${id ?? "new"}`
+const panelKey = panelTabKey
+const tabKey = (tab: WorkspaceTab) => (tab.type === "entity" ? entityKey(tab.label, tab.id) : tab.type === "tool" ? toolKey(tab.tool) : panelKey(tab))
 
 /** Vista de una pestaña para la barra (ADR-0101). */
 export interface WorkspaceTabView {
     key: string
-    kind: "entity" | "tool"
+    kind: "entity" | "tool" | "panel"
     title: string
     /** Ayuda al pasar el cursor: tipo y módulo del documento. */
     description: string
@@ -64,6 +82,15 @@ class LiveMirror {
     tabs: WorkspaceTab[] = []
     activeKey: string | null = null
     pending: PendingLeave | null = null
+    /** Momento en que un formulario pidió cerrar durante su envío (el cierre del guardado). */
+    private saveCloseAt = 0
+    markSaveClose() { this.saveCloseAt = Date.now() }
+    /** Consume la marca si el cierre es el de un guardado reciente. */
+    takeSaveClose(): boolean {
+        const recent = Date.now() - this.saveCloseAt < SAVE_CLOSE_WINDOW_MS
+        this.saveCloseAt = 0
+        return recent
+    }
     sync(next: { tabs?: WorkspaceTab[]; activeKey?: string | null; pending?: PendingLeave | null }) {
         if (next.tabs !== undefined) this.tabs = next.tabs
         if (next.activeKey !== undefined) this.activeKey = next.activeKey
@@ -89,12 +116,14 @@ function tabView(tab: WorkspaceTab, active: boolean, pageModuleId: string | unde
     }
     const metadata = getEntityMetadata(tab.label)
     const documentModule = getEntityModule(tab.label)
-    const title = entityTabLabel(tab)
+    const title = tab.type === "panel"
+        ? (tab.display ?? (tab.id === null ? `Nuevo ${metadata?.title?.toLowerCase() ?? "registro"}` : `${metadata?.title ?? "Registro"} #${tab.id}`))
+        : entityTabLabel(tab)
     // Si el documento vive en otro módulo que la página, la pestaña lo dice (el riel no sigue al drill-down).
     const moduleNote = documentModule && documentModule.id !== pageModuleId ? ` · ${documentModule.label}` : ""
     return {
-        key: entityKey(tab.label, tab.id),
-        kind: "entity",
+        key: tabKey(tab),
+        kind: tab.type,
         title,
         description: `${metadata?.title ?? "Documento"} ${title}${moduleNote}`,
         icon: metadata?.icon ?? null,
@@ -119,6 +148,12 @@ interface GlobalModalActionsContextType {
     closeEntityByRef: (label: string, id: number) => void
     /** Abre una herramienta (p. ej. la calculadora) como pestaña. */
     openTool: (tool: ToolTabId) => void
+    /**
+     * Registra un drawer montado por la página como pestaña activa (`useEntityPanelTab`). `onClose` se
+     * invoca cuando el usuario cierra la pestaña (×, Delete): la página debe cerrar su drawer. Devuelve
+     * la función que la retira.
+     */
+    registerPanelTab: (panel: PanelTabState, onClose: () => void) => () => void
     /** Activa una pestaña (con guarda de cambios sin guardar). */
     activateTab: (key: string) => void
     /** Vuelve a la pestaña de la página (lista) sin cerrar las demás (con guarda de cambios sin guardar). */
@@ -167,6 +202,40 @@ function neighbourKey(tabs: WorkspaceTab[], index: number): string | null {
     return next ? tabKey(next) : null
 }
 
+/**
+ * Pestaña que queda activa al cerrar la `index`: la que la abrió (`origin`; null = la página) si sigue
+ * abierta; si no se conoce o ya se cerró, la vecina.
+ */
+function returnKey(tabs: WorkspaceTab[], index: number, origin: string | null | undefined): string | null {
+    if (origin === null) return null
+    if (origin !== undefined && tabs.some(tab => tabKey(tab) === origin)) return origin
+    return neighbourKey(tabs, index)
+}
+
+/** Un formulario sucio que bloquea una acción a menos de esto de terminar su envío: cierre fuera del envío. */
+const LATE_CLOSE_MS = 1000
+
+/**
+ * Aviso de desarrollo: la guarda bloqueó justo después de un envío del mismo formulario. Casi siempre es
+ * un drawer que cierra tras guardar fuera del callback de `handleSubmit` (ver `useDirtyGuard`).
+ */
+function warnLateClose(dirty: DirtyEntry[]) {
+    if (process.env.NODE_ENV === "production") return
+    const now = Date.now()
+    for (const entry of dirty) {
+        const at = entry.submittedAt?.() ?? 0
+        if (at > 0 && now - at < LATE_CLOSE_MS) {
+            console.warn(
+                `[useDirtyGuard] "${entry.name ?? "formulario"}" pidió cerrarse ${now - at} ms después de terminar su envío y la guarda lo bloqueó. ` +
+                "Cierra el drawer dentro del callback de handleSubmit (await de la mutación, sin setTimeout ni guardar desde otro modal).",
+            )
+        }
+    }
+}
+
+/** Ventana en la que el cierre de un panel cuenta como el de su guardado (la URL se actualiza en diferido). */
+const SAVE_CLOSE_WINDOW_MS = 3000
+
 export function GlobalModalProvider({ children }: { children: ReactNode }) {
     // ADR-0101: pestañas efímeras por página (documentos y herramientas); solo la activa se monta.
     const [tabs, setTabs] = useState<WorkspaceTab[]>([])
@@ -180,10 +249,15 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
 
     // Las pestañas son efímeras por página: al cambiar de ruta se cierran todas.
     const [trackedPath, setTrackedPath] = useState(pathname)
+    // Pestaña desde la que se abrió cada pestaña (null = la página): al cerrarla se vuelve allí.
+    const [origins] = useState(() => new Map<string, string | null>())
+    // Último registro guardado desde una pestaña: la colección de la página resalta su fila.
+    const [savedRecord, setSavedRecord] = useState<SavedRecord | null>(null)
     if (trackedPath !== pathname) {
         setTrackedPath(pathname)
         setTabs([])
         setActiveKey(null)
+        setSavedRecord(null)
     }
 
     useEffect(() => {
@@ -205,8 +279,10 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     useEffect(() => { live.sync({ pending: pendingLeave }) }, [live, pendingLeave])
 
     const runGuarded = useCallback((action: () => void, onCancel?: () => void) => {
+        if (registry.isSubmitting()) live.markSaveClose()
         const dirty = registry.dirtyEntries()
         if (dirty.length === 0) { action(); return }
+        warnLateClose(dirty)
         // Ya hay una decisión en curso: la nueva petición se cancela, no se encola.
         if (live.pending) { onCancel?.(); return }
         const current = live.tabs.find(tab => tabKey(tab) === live.activeKey)
@@ -224,28 +300,47 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         setPendingLeave(null)
     }, [live])
 
-    const closeEntity = useCallback(() => { setTabs([]); setActiveKey(null) }, [])
+    const closeEntity = useCallback(() => { origins.clear(); setTabs([]); setActiveKey(null) }, [origins])
 
-    /** Quita una pestaña y activa la vecina si era la activa. */
+    /** Quita una pestaña y, si era la activa, vuelve a la que la abrió (o a la vecina). */
     const removeTab = useCallback((key: string) => {
         const current = live.tabs
         const index = current.findIndex(tab => tabKey(tab) === key)
         if (index === -1) return
-        if (live.activeKey === key) setActiveKey(neighbourKey(current, index))
+        const origin = origins.get(key)
+        if (live.activeKey === key) setActiveKey(returnKey(current, index, origin))
+        // Las pestañas abiertas desde esta vuelven ahora a su origen.
+        origins.delete(key)
+        for (const [child, parent] of origins) if (parent === key) origins.set(child, origin ?? null)
         setTabs(prev => prev.filter(tab => tabKey(tab) !== key))
-    }, [live])
+    }, [live, origins])
 
-    const closeTab = useCallback((key: string) => runGuarded(() => removeTab(key)), [runGuarded, removeTab])
+    const markSaved = useCallback((label: string, id: number | null) => setSavedRecord({ label, id, at: Date.now() }), [])
+
+    // Los drawers de la página (panel) los cierra su página: la pestaña se retira cuando se desmonta el registro.
+    const [panelClosers] = useState(() => new Map<string, () => void>())
+
+    const closeTab = useCallback((key: string) => runGuarded(() => {
+        const closePanel = panelClosers.get(key)
+        if (closePanel) closePanel()
+        else removeTab(key)
+    }), [runGuarded, removeTab, panelClosers])
+
+    // Como en un navegador: si el usuario cambia de pestaña a mano, las dos involucradas olvidan su origen
+    // y al cerrarlas se activa la vecina. Volver al origen solo aplica al flujo abrir → trabajar → cerrar.
+    const forgetOrigins = useCallback((...keys: (string | null)[]) => {
+        for (const key of keys) if (key !== null) origins.delete(key)
+    }, [origins])
 
     const activateTab = useCallback((key: string) => {
         if (key === live.activeKey) return
-        runGuarded(() => setActiveKey(key))
-    }, [runGuarded, live])
+        runGuarded(() => { forgetOrigins(live.activeKey, key); setActiveKey(key) })
+    }, [runGuarded, live, forgetOrigins])
 
     const showPage = useCallback(() => {
         if (live.activeKey === null) return
-        runGuarded(() => setActiveKey(null))
-    }, [runGuarded, live])
+        runGuarded(() => { forgetOrigins(live.activeKey); setActiveKey(null) })
+    }, [runGuarded, live, forgetOrigins])
 
     const resolveLeave = useCallback(async (mode: "save" | "discard") => {
         const pending = pendingLeave
@@ -305,13 +400,14 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     /** Añade la pestaña (o solo la activa si ya existe). Con el tope, descarta la más antigua que no sea la nueva. */
     const addTab = useCallback((tab: WorkspaceTab) => {
         const key = tabKey(tab)
+        if (!live.tabs.some(t => tabKey(t) === key)) origins.set(key, live.activeKey === key ? null : live.activeKey)
         setTabs(prev => {
             if (prev.some(t => tabKey(t) === key)) return prev
             const next = [...prev, tab]
             return next.length > MAX_TABS ? next.slice(next.length - MAX_TABS) : next
         })
         setActiveKey(key)
-    }, [])
+    }, [live, origins])
 
     const openEntity = useCallback((label: string, id: number, data?: unknown, segmenter?: React.ReactNode, options?: OpenEntityOptions) => {
         if (!hasEntityDrawer(label)) {
@@ -329,6 +425,19 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     }, [addTab])
 
     const closeEntityByRef = useCallback((label: string, id: number) => removeTab(entityKey(label, id)), [removeTab])
+
+    const registerPanelTab = useCallback((panel: PanelTabState, onClose: () => void) => {
+        const tab: WorkspaceTab = { type: "panel", ...panel }
+        const key = tabKey(tab)
+        panelClosers.set(key, onClose)
+        addTab(tab)
+        return () => {
+            panelClosers.delete(key)
+            // El panel se cerró justo tras pedirlo su envío: fue un guardado (la lista resalta la fila).
+            if (live.takeSaveClose()) markSaved(panel.label, panel.id)
+            removeTab(key)
+        }
+    }, [addTab, removeTab, panelClosers, live, markSaved])
 
     const openTool = useCallback((tool: ToolTabId) => {
         if (live.activeKey === toolKey(tool)) return
@@ -414,6 +523,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         openRootEntity,
         closeEntityByRef,
         openTool,
+        registerPanelTab,
         activateTab,
         showPage,
         closeTab,
@@ -423,7 +533,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         requestLeave,
         registerSheet,
         unregisterSheet,
-    }), [openEntity, closeEntity, openRootEntity, closeEntityByRef, openTool, activateTab, showPage, closeTab, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
+    }), [openEntity, closeEntity, openRootEntity, closeEntityByRef, openTool, registerPanelTab, activateTab, showPage, closeTab, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
 
     const tabViews = useMemo(
         () => tabs.map(tab => tabView(tab, tabKey(tab) === activeKey, pageModuleId)),
@@ -435,7 +545,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         [tabs],
     )
 
-    const hasEntityTab = tabs.some(tab => tab.type === "entity")
+    const hasEntityTab = tabs.some(tab => tab.type !== "tool")
 
     const stateValue = useMemo(() => ({
         isSubModalActive: hasEntityTab,
@@ -454,7 +564,20 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     }, [closeTab, live])
 
     // Tras guardar, la pestaña ya cumplió su función: se cierra sin guarda.
-    const closeActiveTab = useCallback(() => { if (live.activeKey) removeTab(live.activeKey) }, [removeTab, live])
+    const closeActiveTab = useCallback(() => {
+        const key = live.activeKey
+        if (!key) return
+        const tab = live.tabs.find(t => tabKey(t) === key)
+        if (tab?.type === "entity") markSaved(tab.label, tab.id)
+        removeTab(key)
+    }, [removeTab, live, markSaved])
+
+    // Etiquetas con un panel de creación abierto: su colección toma la foto de filas para hallar la nueva.
+    const creatingKey = tabs.filter(tab => tab.type === "panel" && tab.id === null).map(tab => (tab.type === "panel" ? tab.label : "")).join("|")
+    const recentSave = useMemo<RecentSave>(
+        () => ({ saved: savedRecord, creating: creatingKey ? creatingKey.split("|") : [] }),
+        [savedRecord, creatingKey],
+    )
 
     const renderActiveTab = () => {
         if (!activeTab) return null
@@ -484,7 +607,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     return (
         <GlobalModalActionsContext.Provider value={actionsValue}>
         <GlobalModalStateContext.Provider value={stateValue}>
-        <EntityViewBridge openEntity={openEntity}>
+        <EntityViewBridge openEntity={openEntity} recentSave={recentSave}>
             {children}
             <ErrorBoundary variant="inline">
                 <PersistentPanelContext.Provider value={true}>
@@ -522,6 +645,13 @@ export function useGlobalModalActions() {
 /** Como `useGlobalModalActions` pero devuelve `undefined` fuera del provider (hooks compartidos, stories). */
 export function useOptionalGlobalModalActions() {
     return useContext(GlobalModalActionsContext)
+}
+
+/** Como `useGlobalModals` pero devuelve `undefined` fuera del provider (vistas montadas en tests o stories). */
+export function useOptionalGlobalModals(): CombinedContextType | undefined {
+    const actions = useContext(GlobalModalActionsContext)
+    const state = useContext(GlobalModalStateContext)
+    return actions && state ? { ...actions, ...state } : undefined
 }
 
 export function useGlobalModals(): CombinedContextType {

@@ -7,7 +7,8 @@ import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSear
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import type { UnifiedSearchConfig } from "@/types/unified-search"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { EntityPanelTab } from "@/components/providers"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { terminalProviderEntity, terminalProviderViews } from "../entity-view/terminalProvider.entity"
 import { terminalDeviceEntity, terminalDeviceViews } from "../entity-view/terminalDevice.entity"
@@ -72,27 +73,8 @@ export function PaymentHardwareClientView({
         { pagination: { mode: "client", pageSize: 20 }, defaultSort: terminalDeviceViews.table.defaultSort },
     )
 
-    const isCreateProvider = searchParams.get("modal") === "new-provider"
-    const isCreateDevice = searchParams.get("modal") === "new-device"
-    const { entity: selectedProvider, clearSelection: clearProvider } = useSelectedEntity<PaymentTerminalProvider>({ endpoint: '/treasury/terminal-providers', paramName: 'selected-provider' })
-    const { entity: selectedDevice, clearSelection: clearDevice } = useSelectedEntity<PaymentTerminalDevice>({ endpoint: '/treasury/terminal-devices', paramName: 'selected-device' })
-
-    const providerDialogOpen = isCreateProvider || !!selectedProvider
-    const deviceDialogOpen = isCreateDevice || !!selectedDevice
-
-    const clearAllParams = useCallback(() => {
-        clearProvider()
-        clearDevice()
-        const params = new URLSearchParams(searchParams.toString())
-        const changed = params.has("modal") || params.has("selected-provider") || params.has("selected-device")
-        params.delete("modal")
-        params.delete("selected-provider")
-        params.delete("selected-device")
-        if (changed) {
-            const query = params.toString()
-            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-        }
-    }, [router, pathname, searchParams, clearProvider, clearDevice])
+    const providerPanel = useEntityPanelRoute<PaymentTerminalProvider>({ endpoint: '/treasury/terminal-providers', selectedParam: 'selected-provider', createValue: 'new-provider' })
+    const devicePanel = useEntityPanelRoute<PaymentTerminalDevice>({ endpoint: '/treasury/terminal-devices', selectedParam: 'selected-device', createValue: 'new-device' })
 
     const openProviderSelected = useCallback((id: number) => {
         const params = new URLSearchParams(searchParams.toString())
@@ -203,24 +185,28 @@ export function PaymentHardwareClientView({
             )}
 
             {/* Dialogs */}
-            <ProviderDrawer
-                open={providerDialogOpen}
-                onOpenChange={(v) => {
-                    if (!v) clearAllParams()
-                }}
-                provider={isCreateProvider ? null : selectedProvider}
-                onSuccess={() => { clearAllParams(); refetchProviders() }}
-            />
+            <EntityPanelTab label="treasury.terminalprovider" {...providerPanel.tab}>
+                {(open) => (
+                    <ProviderDrawer
+                        open={open}
+                        onOpenChange={(v) => { if (!v) providerPanel.close() }}
+                        provider={providerPanel.entity}
+                        onSuccess={() => { providerPanel.close(); refetchProviders() }}
+                    />
+                )}
+            </EntityPanelTab>
 
-            <DeviceDrawer
-                open={deviceDialogOpen}
-                onOpenChange={(v) => {
-                    if (!v) clearAllParams()
-                }}
-                device={isCreateDevice ? null : selectedDevice}
-                providers={providers}
-                onSuccess={() => { clearAllParams(); refetchDevices() }}
-            />
+            <EntityPanelTab label="treasury.terminaldevice" {...devicePanel.tab}>
+                {(open) => (
+                    <DeviceDrawer
+                        open={open}
+                        onOpenChange={(v) => { if (!v) devicePanel.close() }}
+                        device={devicePanel.entity}
+                        providers={providers}
+                        onSuccess={() => { devicePanel.close(); refetchDevices() }}
+                    />
+                )}
+            </EntityPanelTab>
 
             {/* Confirmation Modals */}
             <ActionConfirmModal

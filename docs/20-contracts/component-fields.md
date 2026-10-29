@@ -175,13 +175,13 @@ los chips/tags con valor real renderizan badge. Sin texto placeholder (`"--"`, `
 
 | ADR | Tema |
 |-----|------|
-| [ADR-0054](adr/0054-entity-fields-schema.md) | Schema original — **histórico**, superseded por 0066 |
-| [ADR-0066](adr/0066-entity-fields-discriminated-union.md) | Unión discriminada `FieldDef`, null policy, registry type→cell |
-| [ADR-0067](adr/0067-entity-fields-placement-surface-and-weight.md) | `fieldRole`/`placement`/`surfaces`, peso por zona |
-| [ADR-0062](adr/0062-datacell-date-time-weights.md) | Pesos de `DataCell.Date` (`dateWeight`/`timeWeight`, token `light`) |
-| [ADR-0060](adr/0060-flow-cells-tinted-badge.md) | Badge tintado de flow cells |
-| [ADR-0061](adr/0061-datacell-text-default-text-xs.md) | Default `text-xs` en celdas de texto |
-| [ADR-0065](adr/0065-datacell-status-ghost-pill-unification.md) · [ADR-0068](adr/0068-badge-currencyflow-default.md) | Estética de badges/status |
+| [ADR-0054](../10-architecture/adr/0054-entity-fields-schema.md) | Schema original — **histórico**, superseded por 0066 |
+| [ADR-0066](../10-architecture/adr/0066-entity-fields-discriminated-union.md) | Unión discriminada `FieldDef`, null policy, registry type→cell |
+| [ADR-0067](../10-architecture/adr/0067-entity-fields-placement-surface-and-weight.md) | `fieldRole`/`placement`/`surfaces`, peso por zona |
+| [ADR-0062](../10-architecture/adr/0062-datacell-date-time-weights.md) | Pesos de `DataCell.Date` (`dateWeight`/`timeWeight`, token `light`) |
+| [ADR-0060](../10-architecture/adr/0060-flow-cells-tinted-badge.md) | Badge tintado de flow cells |
+| [ADR-0061](../10-architecture/adr/0061-datacell-text-default-text-xs.md) | Default `text-xs` en celdas de texto |
+| [ADR-0065](../10-architecture/adr/0065-datacell-status-ghost-pill-unification.md) · [ADR-0068](../10-architecture/adr/0068-badge-currencyflow-default.md) | Estética de badges/status |
 
 - Implementación: `frontend/components/shared/entity-fields.tsx`
 - Primitivas DataCell: `frontend/components/shared/DataTableCells.tsx` + [component-contracts.md §DataCell](./component-contracts.md#datacell-primitives)

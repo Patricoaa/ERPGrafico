@@ -7,9 +7,8 @@ import { ChevronDown } from "lucide-react"
 
 import { useDebounce } from "@/hooks/useDebounce"
 import { useUserSearch, useSingleUser } from "@/features/users/hooks/useUserSearch"
-import { LabeledContainer, SearchablePopover } from '@/components/shared'
+import { LabeledContainer, SearchablePopover, SelectorTrigger, SELECTOR_VALUE_CLASS } from '@/components/shared'
 import type { AppUser } from "@/types/entities"
-import { SelectorTrigger, SELECTOR_VALUE_CLASS } from "@/components/shared/SelectorTrigger"
 
 const UserIcon = getEntityIcon('core.user')
 

@@ -120,6 +120,13 @@ describe("WizardStepsSidebar — status board rail", () => {
         expect(onStepClick).toHaveBeenCalledWith(0)
     })
 
+    it("content wrapper has pointer-events-none so clicks pass through to the stretched button", async () => {
+        render(<WizardStepsSidebar title="Proceso" currentStep={3} steps={baseSteps} />)
+        const contentWrapper = screen.getByTestId("step-0").querySelector(".pointer-events-none.z-10")
+        expect(contentWrapper).not.toBeNull()
+        expect(contentWrapper).toHaveClass("pointer-events-none")
+    })
+
     it("renders renderStepActions in hover-reveal column (outside the stretched link button)", async () => {
         render(
             <WizardStepsSidebar

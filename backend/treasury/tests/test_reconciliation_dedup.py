@@ -121,13 +121,15 @@ class TestReconciliationDedup:
         # Deben haber 2 líneas creadas (Mov 1 y Mov 3), Mov 2 omitido
         assert result["total_lines"] == 2
 
-        # Validar que advierta las 2 duplicadas ignoradas (si implementas esa validación)
+        # The skipped duplicate is reported, not dropped silently
         assert any("ID de transacción duplicado" in w["message"] for w in result["warnings"])
 
         # Verificar en DB
         statement = result["statement"]
         assert statement.lines.count() == 2
         assert statement.lines.filter(transaction_id="TX123").count() == 1
+        # The first occurrence wins: the later duplicate is the one skipped
+        assert statement.lines.get(transaction_id="TX123").description == "Mov 1"
         assert statement.lines.filter(transaction_id="TX456").count() == 1
 
     def test_db_constraint_unique_transaction_id(self):

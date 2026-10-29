@@ -1,8 +1,7 @@
 "use client"
 
-import { defineEntity, registerValueKind } from "@/components/entity-view"
+import { defineEntity, formatMonth, registerValueKind } from "@/components/entity-view"
 import { DataCell } from "@/components/shared"
-import { parseDateOnly } from "@/lib/utils"
 import type { StatementChargeRow, StatementChargeSource, StatementInstallment } from "../card-statements/types"
 import type { CardPurchaseGroup } from "../types"
 
@@ -47,7 +46,7 @@ registerValueKind("statementChargeDesc", {
             v.source === "installment"
                 ? [inst?.purchase_order_display_id, v.reference].filter(Boolean).join(" — ") || inst?.partner_name || null
                 : v.source === "pending"
-                    ? parseDateOnly(v.date).toLocaleDateString("es-CL", { year: "numeric", month: "long" })
+                    ? formatMonth(v.date)
                     : v.notes ?? null
         return (
             <div className="flex flex-col items-start gap-0.5">

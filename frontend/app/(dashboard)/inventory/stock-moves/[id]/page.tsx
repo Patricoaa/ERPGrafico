@@ -1,10 +1,8 @@
 import { redirect } from 'next/navigation'
-import { searchableEntityRoutes } from '@/lib/searchableEntityRoutes'
 
-// T-99 (F9): StockMove → /inventory/stock/movements?selected=<id>
-// MovementList está montada en /inventory/stock/movements. (ADR-0020)
+// Legacy link: a stock move has no list page of its own, its detail is the drawer
+// behind the canonical document URL (ADR-0080).
 export default async function DetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
-    const listUrl = searchableEntityRoutes['inventory.stockmove']
-    redirect(`${listUrl}?selected=${id}`)
+    redirect(`/d/inventory.stockmove/${id}`)
 }

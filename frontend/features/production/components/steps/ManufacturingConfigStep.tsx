@@ -1,37 +1,31 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useProduct } from "@/features/inventory";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler, type Resolver, type Control } from "react-hook-form";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { Cog } from "lucide-react";
 import { getErrorMessage } from "@/lib/errors"
 import { toDate } from "@/lib/utils";
 import { getDomainConceptTitle, getDomainConceptMessage } from "@/lib/entity-registry";
 import { Form, FormField } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { FileText, User, X } from "lucide-react";
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms";
 import type { Contact } from "@/features/contacts";
 import { useWizardStore } from "../WorkOrderWizardStore";
 import type { ManufacturingData } from "@/components/shared";
-import { ManufacturingSpecsEditor, emptyManufacturingData } from '@/components/shared';
-import type { Contact as EntityContact } from "@/types/entities";
-import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector";
+import {
+  ManufacturingConfigFields,
+  emptyManufacturingData,
+  type ManufacturingContact,
+  StepHeader,
+  ActionConfirmModal,
+  LabeledInput,
+  SkeletonShell,
+} from '@/components/shared';
 import { UoMSelector } from "@/components/selectors/UoMSelector";
-import { LabeledInput, LabeledContainer, PeriodValidationDateInput, SkeletonShell } from "@/components/shared";
 import { workOrderSchema } from "@/types/forms";
 import { productionApi } from "../../api/productionApi";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,16 +38,14 @@ interface ManufacturingConfigStepProps {
   initialData?: WorkOrderInitialData;
   onSuccess: (workOrderId: number) => void;
   formId?: string;
-  onRestartComplete?: () => void;
-  onCorrectionComplete?: (newOrderId: number) => void;
+  headerActions?: ReactNode;
 }
 
 export function ManufacturingConfigStep({
   initialData,
   onSuccess,
   formId,
-  onRestartComplete,
-  onCorrectionComplete,
+  headerActions,
 }: ManufacturingConfigStepProps) {
   const [loading, setLoading] = useState(false);
 
@@ -68,8 +60,7 @@ export function ManufacturingConfigStep({
     selectedContact: selectedContactFromStore,
     quantity: quantityFromStore,
     uomId: uomIdFromStore,
-    startDate: startDateFromStore,
-    dueDate: dueDateFromStore,
+    setMfgConfig,
     setSelectedContact,
   } = useWizardStore();
 
@@ -78,17 +69,13 @@ export function ManufacturingConfigStep({
   const [mfgData, setMfgData] = useState<ManufacturingData>(
     mfgDataFromStore ?? emptyManufacturingData()
   );
-  const [selectedContact] = useState<Contact | null>(
-    selectedContactFromStore
-  );
+  const selectedContact = selectedContactFromStore;
   const [quantity, setQuantity] = useState<string>(
     otType === "LINKED" ? (quantityFromStore ?? "") : ""
   );
   const [uomId, setUomId] = useState<string>(
     otType === "LINKED" ? (uomIdFromStore ?? "") : ""
   );
-  const [startDate, setStartDate] = useState<Date | null>(startDateFromStore);
-  const [dueDate, setDueDate] = useState<Date | null>(dueDateFromStore);
   const [isCreateConfirmOpen, setIsCreateConfirmOpen] = useState(false);
   const pendingDataRef = useRef<WorkOrderFormValues | null>(null);
   const [idempotencyKey] = useState(() => {
@@ -145,6 +132,11 @@ export function ManufacturingConfigStep({
     })
   }, [selectedProduct]);
 
+  // Mirror the draft into the store so the right rail previews it live.
+  useEffect(() => {
+    setMfgConfig(mfgData);
+  }, [mfgData, setMfgConfig]);
+
   // Initialize form with current values
   const form = useForm<WorkOrderFormValues>({
     // Safe: discriminated union requires casting through unknown to align resolver/control types
@@ -159,8 +151,8 @@ export function ManufacturingConfigStep({
       contact_id: selectedContact?.id?.toString() ?? "",
       quantity: otType === "NONE" ? (quantityFromStore ?? "") : "",
       uom_id: otType === "NONE" ? (uomIdFromStore ?? "") : "",
-      start_date: startDate ?? new Date(),
-      due_date: dueDate ?? null,
+      start_date: new Date(),
+      due_date: null,
       internal_notes: "",
     } as WorkOrderFormValues,
   });
@@ -224,20 +216,17 @@ export function ManufacturingConfigStep({
 
         setQuantity(isLinked ? "" : (initialData.stage_data?.quantity?.toString() ?? ""));
         setUomId(isLinked ? "" : (initialData.stage_data?.uom_id?.toString() ?? ""));
-        setStartDate(initialData.start_date ?
-          toDate(initialData.start_date) : new Date());
-        setDueDate(initialData.estimated_completion_date ?
-          toDate(initialData.estimated_completion_date) :
-          (initialData.sale_order_delivery_date ?
-            toDate(initialData.sale_order_delivery_date) : null));
       })
     }
   }, [initialData]);
 
-  // Handle contact selection
-  const handleContactSelect = (contact: Contact) => {
-    setSelectedContact(contact);
-    form.setValue('contact_id', String(contact.id));
+  const contactValue: ManufacturingContact | null = selectedContact
+    ? { id: Number(selectedContact.id), name: selectedContact.name, tax_id: selectedContact.tax_id ?? null }
+    : null;
+
+  const handleContactChange = (contact: ManufacturingContact | null) => {
+    setSelectedContact(contact as unknown as Contact | null);
+    form.setValue('contact_id' as never, (contact ? String(contact.id) : "") as never);
   };
 
   // Handle quantity change (only for MANUAL)
@@ -256,19 +245,7 @@ export function ManufacturingConfigStep({
   const handleMfgChange = (next: ManufacturingData) => {
     setMfgData(next);
     form.setValue('product_description', next.product_description);
-    form.setValue('internal_notes', next.internal_notes);
     form.setValue('description', next.product_description);
-  };
-
-  // Handle date changes
-  const handleStartDateChange = (date: Date | undefined) => {
-    setStartDate(date ?? null);
-    form.setValue('start_date', date ?? undefined);
-  };
-
-  const handleDueDateChange = (date: Date | undefined) => {
-    setDueDate(date ?? null);
-    form.setValue('due_date', date ?? undefined);
   };
 
   // Execute the actual API call (used both for direct update and after confirmation)
@@ -280,7 +257,6 @@ export function ManufacturingConfigStep({
       formData.append('description', data.description || '');
 
       if (data.start_date) formData.append('start_date', format(data.start_date, 'yyyy-MM-dd'));
-      if (data.due_date) formData.append('estimated_completion_date', format(data.due_date, 'yyyy-MM-dd'));
       if (selectedContact?.id) formData.append('related_contact', selectedContact.id.toString());
 
       if (data.otType === 'LINKED') {
@@ -397,8 +373,7 @@ export function ManufacturingConfigStep({
       <ManufacturingConfigSummary
         order={initialData as unknown as WorkOrder}
         onSaved={() => onSuccess(Number(initialData.id))}
-        onRestartComplete={onRestartComplete}
-        onCorrectionComplete={onCorrectionComplete}
+        headerActions={headerActions}
       />
     )
   }
@@ -410,168 +385,57 @@ export function ManufacturingConfigStep({
 
   return (
     <SkeletonShell isLoading={isVatLoading} ariaLabel="Cargando configuración de fabricación">
+      <StepHeader
+        title="Configuración de Fabricación"
+        description="Defina especificaciones técnicas, fases y requerimientos de producción."
+        icon={Cog}
+        rightContent={headerActions}
+      />
       <Form {...form}>
         <form id={formIdValue} onSubmit={handleFormSubmit} className="space-y-6 py-4">
           <fieldset>
             <div className="space-y-6">
-              {/* Product info (read-only) */}
-              {otType === "LINKED" ? (
-                <div className="p-4 bg-muted/20 border rounded-md">
-                  <Label className="text-3xs uppercase text-muted-foreground font-bold flex items-center gap-1">
-                    <FileText className="h-3.5 w-3.5" /> Producto de la {getDomainConceptTitle('ov')}
-                  </Label>
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-xs text-muted-foreground uppercase font-semibold">Producto</p>
-                        <p className="font-medium">{productDescriptionFromStore}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground uppercase font-semibold">Cantidad</p>
-                        <p className="font-medium">
-                          {quantityFromStore ?? "0"}
-                          {uomIdFromStore ?
-                            (() => {
-                              // We'd need to fetch the UoM name, but for now show the ID
-                              return uomIdFromStore;
-                            })() : ""}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-4 bg-muted/20 border rounded-md">
-                  <Label className="text-3xs uppercase text-muted-foreground font-bold flex items-center gap-1">
-                    <FileText className="h-3.5 w-3.5" /> Producto Seleccionado
-                  </Label>
-                  <div className="space-y-3 mt-2">
-                    <div>
-                      <p className="font-medium">{productDescriptionFromStore}</p>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <LabeledInput
-                        label="Cantidad a Fabricar"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={quantity}
-                        onChange={(e) => handleQuantityChange(e.target.value)}
-                      />
-                      <UoMSelector
-                        value={uomId}
-                        onChange={handleUomChange}
-                        uoms={uoms as unknown as Parameters<typeof UoMSelector>[0]['uoms']}
-                        product={productForUoM as unknown as Parameters<typeof UoMSelector>[0]['product']}
-                        context="sale"
-                        variant="standalone"
-                      />
-                    </div>
-                  </div>
+              {/* Manual OTs have no sale line to inherit the volume from */}
+              {otType === "NONE" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <LabeledInput
+                    label="Cantidad a Fabricar"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={quantity}
+                    onChange={(e) => handleQuantityChange(e.target.value)}
+                  />
+                  <UoMSelector
+                    value={uomId}
+                    onChange={handleUomChange}
+                    uoms={uoms as unknown as Parameters<typeof UoMSelector>[0]['uoms']}
+                    product={productForUoM as unknown as Parameters<typeof UoMSelector>[0]['product']}
+                    context="sale"
+                    variant="standalone"
+                  />
                 </div>
               )}
 
-              {/* Fechas */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  // Safe: discriminated union forces cast through unknown
-                  control={form.control as unknown as Control<WorkOrderFormValues>}
-                  name="start_date"
-                  render={() => (
-                    <PeriodValidationDateInput
-                      date={startDate ?? undefined}
-                      onDateChange={handleStartDateChange}
-                      label="Fecha Inicio"
-                      validationType="tax"
-                      required
-                    />
-                  )}
-                />
-                <FormField
-                  // Safe: discriminated union forces cast through unknown
-                  control={form.control as unknown as Control<WorkOrderFormValues>}
-                  name="due_date"
-                  render={() => (
-                    <PeriodValidationDateInput
-                      date={dueDate ?? undefined}
-                      onDateChange={handleDueDateChange}
-                      label="Fecha Entrega"
-                      validationType="tax"
-                      required
-                    />
-                  )}
-                />
-              </div>
-
-              {/* Contacto Relacionado */}
-              <LabeledContainer label="Contacto Relacionado">
-                {selectedContact ? (
-                  <div className="flex items-center justify-between w-full h-6">
-                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                      <User className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span className="text-sm text-foreground truncate">{selectedContact.name}</span>
-                      {selectedContact.tax_id && (
-                        <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">
-                          [{selectedContact.tax_id}]
-                        </span>
-                      )}
-                    </div>
-                    // typography-allow: meta - clear button
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-5 w-5 text-muted-foreground hover:text-destructive shrink-0"
-                        onClick={() => {
-                          setSelectedContact(null);
-                          form.setValue('contact_id' as never, "" as never);
-                        }}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                  </div>
-                ) : (
-                  <AdvancedContactSelector
-                    // Safe: handleContactSelect only uses fields common to both Contact types (id, name, tax_id)
-                    onSelectContact={handleContactSelect as unknown as (contact: EntityContact) => void}
-                    onChange={() => { }}
-                    placeholder="Buscar contacto..."
-                    variant="standalone"
-                    className="h-6 px-0 border-none bg-transparent hover:bg-transparent shadow-none text-sm text-muted-foreground font-normal"
-                  />
-                )}
-              </LabeledContainer>
-
-              {/* Manufacturing Specs */}
-              <ManufacturingSpecsEditor
-                value={mfgData}
-                onChange={handleMfgChange}
-                showProductDescription={true}
-                showInternalNotes={true}
-                variant="inline"
+              <ManufacturingConfigFields
+                data={mfgData}
+                onDataChange={handleMfgChange}
+                contact={contactValue}
+                onContactChange={handleContactChange}
               />
             </div>
           </fieldset>
         </form>
       </Form>
 
-      <AlertDialog open={isCreateConfirmOpen} onOpenChange={setIsCreateConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{getDomainConceptMessage('ot', 'create')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              Una vez creada la OT no podrás modificar la configuración de fabricación
-              ni volver a los pasos anteriores. ¿Deseas continuar?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmCreate}>
-              Crear orden
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ActionConfirmModal
+        open={isCreateConfirmOpen}
+        onOpenChange={setIsCreateConfirmOpen}
+        title={getDomainConceptMessage('ot', 'create')}
+        description="El producto y la OV no se podrán cambiar después de crear la OT. Las especificaciones y el contacto seguirán editables mientras la etapa correspondiente no haya comenzado. ¿Deseas continuar?"
+        confirmText="Crear orden"
+        onConfirm={handleConfirmCreate}
+      />
     </SkeletonShell>
   );
 }

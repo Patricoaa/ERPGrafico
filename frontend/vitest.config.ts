@@ -26,6 +26,10 @@ export default defineConfig({
       test: {
         environment: 'jsdom',
         setupFiles: ['./vitest.setup.ts'],
+        // A full run shares the CPU with the repo-wide contract scans (type-aware eslint,
+        // TS AST): integration renders that take <1 s alone went past the 5 s default.
+        testTimeout: 15_000,
+        hookTimeout: 30_000,
         globals: true,
         exclude: ['node_modules', '.next', 'e2e/**']
       }

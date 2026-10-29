@@ -50,7 +50,8 @@ export function getOrderLifecycle(order: Order, kind: "sale" | "purchase"): Life
         {
             id: "production", label: "Manufactura", icon: ClipboardList,
             status: kind === "sale" && !isCancelled ? (hub.production as LifecycleStepStatus) : "not_applicable",
-            progress: productionPct, detail: `${workOrders.length} OT · ${productionPct}%`,
+            progress: hub.production === "warning" ? 100 : productionPct,
+            detail: hub.production === "warning" ? "Falta crear OT" : `${workOrders.length} OT · ${productionPct}%`,
         },
         {
             id: "logistics", label: "Logística", icon: Package, status: isCancelled ? "not_applicable" : (hub.logistics as LifecycleStepStatus),

@@ -1,6 +1,66 @@
-import { defineEntity, formatNumber, toNumber, type StatusValue } from "@/components/entity-view"
-import { docRef } from "@/features/documents"
+import { defineEntity, formatNumber, registerValueKind, toNumber, type StatusValue, type ValueRenderProps } from "@/components/entity-view"
+import { docRef, DocumentRefLink } from "@/features/documents"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
+import { useOrderLineActions } from "../components/sheet/OrderLineActionsContext"
 import type { OrderLine } from "../types"
+
+export interface OrderLineWorkOrderValue {
+    workOrderId?: number | null
+    display?: string | null
+    isManufacturable: boolean
+    line: OrderLine
+}
+
+declare module "@/components/entity-view/core/value-kinds" {
+    interface ValueKinds {
+        orderLineWorkOrder: { value: OrderLineWorkOrderValue | null; options: Record<never, never> }
+    }
+}
+
+function OrderLineWorkOrderCell({ value }: ValueRenderProps<"orderLineWorkOrder">) {
+    const { onCreateWorkOrder } = useOrderLineActions()
+
+    if (!value) return <span className="text-xs text-muted-foreground">—</span>
+
+    if (value.workOrderId) {
+        return (
+            <DocumentRefLink
+                label="production.workorder"
+                id={value.workOrderId}
+                display={value.display ?? `OT-${value.workOrderId}`}
+                mono={false}
+            />
+        )
+    }
+
+    if (value.isManufacturable) {
+        if (onCreateWorkOrder) {
+            return (
+                <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-6 text-xs px-2 gap-1 border-warning/40 text-warning hover:bg-warning/10 hover:text-warning"
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        onCreateWorkOrder(value.line)
+                    }}
+                >
+                    <Plus className="h-3 w-3" />
+                    Crear OT
+                </Button>
+            )
+        }
+        return <span className="text-xs text-warning font-medium">Sin OT</span>
+    }
+
+    return <span className="text-xs text-muted-foreground">—</span>
+}
+
+registerValueKind("orderLineWorkOrder", {
+    format: (v) => v?.display ?? (v?.isManufacturable ? "Sin OT" : "—"),
+    render: OrderLineWorkOrderCell,
+})
 
 export const lineQty = (v: number | string | null | undefined): number => toNumber(v) ?? 0
 
@@ -88,12 +148,22 @@ export const orderLineEntity = defineEntity<OrderLine>()((f) => ({
         ),
         pending: f.quantity((l) => linePending(l), { ...fixed, label: "Pendiente", uom: uomOf }),
         availability: f.status((l) => availability(l), { ...fixed, label: "Stock" }),
-        workOrder: docRef(
-            f,
+        workOrder: f.value(
+            "orderLineWorkOrder",
             (l) => {
                 const wo = l.work_order_summary
-                if (!wo?.id) return null
-                return { label: "production.workorder", id: Number(wo.id), display: String(wo.display_id ?? wo.number ?? `OT-${wo.id}`) }
+                const isMfg = Boolean(
+                    l.requires_advanced_manufacturing ||
+                    l.product_type === "MANUFACTURABLE" ||
+                    l.is_manufacturable ||
+                    (typeof l.product === "object" && l.product !== null && (l.product as { requires_advanced_manufacturing?: boolean }).requires_advanced_manufacturing)
+                )
+                return {
+                    workOrderId: wo?.id ? Number(wo.id) : null,
+                    display: wo?.id ? String(wo.display_id ?? wo.number ?? `OT-${wo.id}`) : null,
+                    isManufacturable: isMfg,
+                    line: l,
+                }
             },
             { ...fixed, label: "OT" },
         ),
@@ -112,5 +182,5 @@ export const orderLineViews = {
     purchase: orderLineEntity.views({
         table: { columns: ["product", "quantity", "unitPrice", "received", "invoiced", "subtotal"] },
     }).table,
-    invoice: saleTable.without("delivered", "invoiced", "workOrder"),
+    invoice: saleTable.without("delivered", "invoiced"),
 }

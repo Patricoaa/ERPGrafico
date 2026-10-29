@@ -287,4 +287,4 @@ if (!open) {
 - Surface y tamaño del modal: [component-form-patterns.md §2](./component-form-patterns.md)
 - FormSplitLayout + ActivitySidebar (sidebar en modo edición): [form-layout-architecture.md §5-6](./form-layout-architecture.md)
 - Mapa de rutas canónicas de entidades searchable: [module-layout-navigation.md §7.3](./module-layout-navigation.md#73-tabla-de-patrones-canónicos-26-entidades)
-- Decommission de DetailClients y EntityDetailPage: [20-task-list.md T-95](../50-audit/Arquitectura%20Django/20-task-list.md#t-95--decommission-de-detailclients-y-entitydetailpage)
+- Decommission de DetailClients y EntityDetailPage: `50-audit/Arquitectura Django/20-task-list.md` T-95 _(snapshot de auditoría retirado; ver historial git)_

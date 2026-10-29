@@ -69,7 +69,7 @@ export function ErrorPage({
 
     const codeClass = cn(
         "text-xs font-mono text-destructive bg-destructive/5 p-2 rounded border border-destructive/10 break-words w-full text-center",
-        isInline ? "text-[10px] p-1.5" : ""
+        isInline ? "text-3xs p-1.5" : ""
     )
 
     return (

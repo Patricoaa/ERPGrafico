@@ -8,8 +8,7 @@ import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { SubmitButton, CancelButton, Drawer, FormFooter, FormSection, FormSplitLayout, LabeledContainer, LabeledInput, LabeledSwitch } from "@/components/shared"
-import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
+import { SubmitButton, CancelButton, Drawer, FormFooter, FormSection, FormSplitLayout, LabeledContainer, LabeledInput, LabeledSwitch, SelectorTrigger } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -115,7 +114,7 @@ function RichIconSelector({ value, onChange, label, error, required }: { value: 
                                 }}
                             />
                         </div>
-                        // typography-allow: meta - popover content max-height
+                        {/* typography-allow: meta - popover content max-height */}
                         <div className="h-[250px] overflow-y-auto p-1 grid grid-cols-2 gap-1">
                             {ICON_OPTIONS.map((item) => {
                                 const Icon = (LucideIcons as unknown as Record<string, LucideIcon>)[item.name] || LucideIcons.Package

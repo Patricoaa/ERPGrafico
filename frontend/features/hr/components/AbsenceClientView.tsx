@@ -1,14 +1,15 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
 import React, { useMemo } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
+
 import { toast } from "sonner"
 import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
 import { AbsenceDrawer, useAbsences, deleteAbsence, absenceActions, type AbsenceActionsCtx, useEmployees } from "@/features/hr"
 import { absenceUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import type { Absence } from "@/types/hr"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { absenceEntity, absenceViews } from "../entity-view/absence.entity"
 
@@ -21,9 +22,6 @@ const ABSENCE_GROUPS: Record<string, FieldId<typeof absenceEntity.fields>> = { a
 
 export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
     const createAction = <ToolbarCreateButton label="Nueva Inasistencia" href="/hr/absences?modal=new" />
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
     const search = useUnifiedSearch(absenceUnifiedSearchDef)
     const { absences, isLoading: loading, isRefetching, isError, refetch: fetchAbsences } = useAbsences(search.filters, initialAbsences)
     const { filterFn } = search
@@ -39,19 +37,9 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
     )
     const { employees } = useEmployees()
 
-    const isNewModalOpen = searchParams.get("modal") === "new"
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Absence>({ endpoint: '/hr/absences' })
+    const panel = useEntityPanelRoute<Absence>({ endpoint: '/hr/absences' })
+    const selectedFromUrl = panel.entity
     const { openSelected } = useEntityRouteActions()
-    const dialogOpen = isNewModalOpen || !!selectedFromUrl
-
-    const handleClose = () => {
-        clearSelection()
-        if (isNewModalOpen) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }
-    }
 
     const absenceActionsCtx: AbsenceActionsCtx = {
         onEdit: (absence) => openSelected(absence.id),
@@ -70,13 +58,17 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
     return (
         <div className="flex-1 min-h-0 flex flex-col">
 
-            <AbsenceDrawer
-                open={dialogOpen}
-                onOpenChange={(open) => { if (!open) handleClose() }}
-                absence={selectedFromUrl}
-                employees={employees}
-                onSaved={() => { handleClose(); fetchAbsences() }}
-            />
+            <EntityPanelTab label="hr.absence" {...panel.tab}>
+                {(open) => (
+                    <AbsenceDrawer
+                        open={open}
+                        onOpenChange={(open) => { if (!open) panel.close() }}
+                        absence={selectedFromUrl}
+                        employees={employees}
+                        onSaved={() => { panel.close(); fetchAbsences() }}
+                    />
+                )}
+            </EntityPanelTab>
 
             <Collection.Root
                 collection={collection}

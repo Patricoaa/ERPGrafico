@@ -13,8 +13,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { toast } from "sonner"
 import { posApi } from "../api/posApi"
-import { GenericWizard, Numpad, Chip, FadeIn, type WizardStep } from '@/components/shared'
-import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
+import { GenericWizard, Numpad, Chip, FadeIn, SelectorTrigger, type WizardStep } from '@/components/shared'
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { useTouchMode } from "@/hooks/useTouchMode"
 

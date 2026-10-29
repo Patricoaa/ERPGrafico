@@ -1,7 +1,8 @@
 "use client"
 
+import type { ReactNode } from 'react'
 import {CheckCircle2, AlertTriangle, Copy} from 'lucide-react'
-import { SubmitButton } from "@/components/shared"
+import { SubmitButton, StepHeader } from "@/components/shared"
 import type { WorkOrder } from '../../types'
 import { getDomainConceptTitle } from "@/lib/entity-registry"
 
@@ -11,12 +12,20 @@ interface FinishedStepProps {
   isUploadingPhoto?: boolean
   onPrintCopy?: () => Promise<void>
   isDuplicating?: boolean
+  headerActions?: ReactNode
 }
 
-export function FinishedStep({ order, onPrintCopy, isDuplicating }: FinishedStepProps) {
+export function FinishedStep({ order, onPrintCopy, isDuplicating, headerActions }: FinishedStepProps) {
   const discrepancy = order.production_discrepancy
 
   return (
+    <div className="flex flex-1 flex-col gap-6">
+      <StepHeader
+        title="Producción Finalizada"
+        description="Todos los materiales han sido consumidos y el producto está listo."
+        icon={CheckCircle2}
+        rightContent={headerActions}
+      />
     <div className="flex flex-col items-center justify-center py-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
       <div className="relative">
         <div className="absolute inset-0 bg-success/20 blur-2xl rounded-full scale-150 animate-pulse" />
@@ -54,11 +63,12 @@ export function FinishedStep({ order, onPrintCopy, isDuplicating }: FinishedStep
 
         {onPrintCopy && (
           <SubmitButton className="gap-2" loading={isDuplicating} onClick={onPrintCopy} icon={Copy}>
-            Imprimir copia
+            Duplicar OT
           </SubmitButton>
         )}
 
       </div>
+    </div>
     </div>
   )
 }

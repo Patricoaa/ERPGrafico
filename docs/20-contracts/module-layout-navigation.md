@@ -126,7 +126,7 @@ Las páginas dentro de los directorios de vista (sub-carpetas) tienen un contrat
 ## 7. Searchable Entity Detail Route
 
 > **Origen:** ADR-0019 (2026-05-08). **Depende de:** F7 — Detail routes para Universal Search.  
-> Ver audit: [F7-route-matrix.md](../../docs/50-audit/Arquitectura%20Django/F7-route-matrix.md)
+> Ver audit: `50-audit/Arquitectura Django/F7-route-matrix.md` _(snapshot de auditoría retirado; ver historial git)_
 
 ### 7.1 Convención de ruta
 
@@ -219,5 +219,5 @@ Para implementar hoy:
 - ADR original (superseded): [ADR-0019](../10-architecture/adr/0019-entity-detail-route-convention.md) — revertido por ADR-0020
 - ADR canónico (URL-state redirect): [ADR-0020](../10-architecture/adr/0020-modal-on-list-edit-ux.md)
 - **Patrón canónico de edición desde lista / Universal Search:** [list-modal-edit-pattern.md](./list-modal-edit-pattern.md)
-- Matriz de gap: [F7-route-matrix.md](../../docs/50-audit/Arquitectura%20Django/F7-route-matrix.md)
+- Matriz de gap: `50-audit/Arquitectura Django/F7-route-matrix.md` _(snapshot de auditoría retirado; ver historial git)_
 

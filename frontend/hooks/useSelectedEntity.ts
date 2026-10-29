@@ -27,7 +27,7 @@ export interface UseSelectedEntityOptions {
      * Base API endpoint sin trailing slash ni id, e.g. '/api/inventory/categories'
      * El hook construye `${endpoint}/${id}/` internamente.
      */
-    endpoint: string
+    endpoint: string | null
 
     /**
      * Nombre del query param a leer. Default: 'selected'.
@@ -66,7 +66,7 @@ export function useSelectedEntity<T = unknown>({
     const selectedId = searchParams.get(paramName)
 
     // Normalise endpoint: strip trailing slash to build a consistent query key
-    const baseEndpoint = endpoint.replace(/\/$/, '')
+    const baseEndpoint = (endpoint ?? '').replace(/\/$/, '')
 
     // Limpieza interna (registro inexistente): nunca pide confirmación.
     const clearSelectionNow = useCallback(() => {
@@ -129,7 +129,7 @@ export function useSelectedEntity<T = unknown>({
         // with data from before the last save.
         gcTime: 0,
         // Only run when there is an id to fetch
-        enabled: !!selectedId,
+        enabled: !!selectedId && !!endpoint,
         // Don't retry on 404/403 — they are definitive answers
         retry: (failureCount, err: unknown) => {
             const status = (err as { response?: { status?: number } })?.response?.status
@@ -139,8 +139,8 @@ export function useSelectedEntity<T = unknown>({
     })
 
     return {
-        entity: selectedId ? (entity ?? null) : null,
-        isLoading: !!selectedId && isLoading,
+        entity: selectedId && endpoint ? (entity ?? null) : null,
+        isLoading: !!selectedId && !!endpoint && isLoading,
         clearSelection,
     }
 }

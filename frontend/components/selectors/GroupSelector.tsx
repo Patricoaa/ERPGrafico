@@ -4,10 +4,9 @@ import { useState, useEffect, useCallback } from "react"
 import { Check, Users } from "lucide-react"
 
 import { useDebounce } from "@/hooks/useDebounce"
-import { LabeledContainer, SearchablePopover } from '@/components/shared'
+import { LabeledContainer, SearchablePopover, SelectorTrigger, SELECTOR_VALUE_CLASS } from '@/components/shared'
 import { useGroupSearch } from "@/features/users/hooks/useGroupSearch"
 import { type AppGroup as Group } from "@/types/entities"
-import { SelectorTrigger, SELECTOR_VALUE_CLASS } from "@/components/shared/SelectorTrigger"
 
 interface GroupSelectorProps {
     value?: string | null // Group name

@@ -841,6 +841,12 @@ class BillingService:
         if "id" in order_data:
             order = SaleOrder.objects.get(id=order_data["id"])
 
+            from sales.services import SalesService
+
+            line_files = SalesService.apply_checkout_line_edits(
+                order, order_data.get("line_edits"), line_files
+            )
+
             # Update tax rate for existing order if needed based on DTE type
             from accounting.utils import get_default_vat_rate
 

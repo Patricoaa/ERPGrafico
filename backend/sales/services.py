@@ -1,3 +1,4 @@
+import logging
 from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
@@ -8,11 +9,12 @@ from django.utils import timezone
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import JournalEntry, JournalItem
 from accounting.services import AccountingMapper, JournalEntryService
-from core.prefix_registry import EntityPrefix
 from core.services import BaseNoteService
 from inventory.models import Warehouse
 
 from .models import SaleDelivery, SaleDeliveryLine, SaleLine, SaleOrder
+
+logger = logging.getLogger(__name__)
 
 
 class SalesService:
@@ -98,6 +100,37 @@ class SalesService:
 
         SalesService.confirm_sale(order, line_files=line_files)
         return order
+
+    @staticmethod
+    def apply_checkout_line_edits(order, line_edits, line_files=None):
+        """Manufacturing data edited while checking out an existing order.
+
+        ``line_edits`` (``[{line_id, manufacturing_data}]``) follows the checkout's
+        line order, and so do the keys of ``line_files``. confirm() keys the files by
+        the lines' pk order, so they are re-keyed here. Returns the re-keyed files.
+        """
+        if not line_edits:
+            return line_files
+
+        lines = {line.pk: line for line in order.lines.prefetch_related("work_orders")}
+        pk_position = {pk: i for i, pk in enumerate(sorted(lines))}
+        rekeyed = {}
+        for position, edit in enumerate(line_edits):
+            line = lines.get(edit.get("line_id"))
+            if line is None:
+                raise ValidationError("La línea editada no pertenece a la Orden de Venta.")
+            if line_files and position in line_files:
+                rekeyed[pk_position[line.pk]] = line_files[position]
+            if not edit.get("manufacturing_data"):
+                continue
+            # Once confirmed, the configuration lives in the line's OT
+            if order.status != SaleOrder.Status.DRAFT or any(line.work_orders.all()):
+                raise ValidationError(
+                    f"La línea '{line.description}' ya tiene su OT: edite la fabricación desde la OT."
+                )
+            line.manufacturing_data = edit["manufacturing_data"]
+            line.save(update_fields=["manufacturing_data"])
+        return rekeyed
 
     @staticmethod
     def write_off(order):
@@ -208,9 +241,7 @@ class SalesService:
                     and product.requires_advanced_manufacturing
                 ):
                     # Check if all associated OTs are finished (unless auto-finalize/express)
-                    auto_finalize = (
-                        product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
-                    )
+                    auto_finalize = product.is_express
                     if not auto_finalize:
                         ots = sale_line.work_orders.exclude(status="CANCELLED")
                         if not ots.exists() or not all(
@@ -226,9 +257,7 @@ class SalesService:
                     product.strategy.requires_manufacturing_profile
                     and not product.requires_advanced_manufacturing
                 ):
-                    auto_finalize = (
-                        product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
-                    )
+                    auto_finalize = product.is_express
                     if product.has_bom and not auto_finalize:
                         manufacturable_qty = product.get_manufacturable_quantity()
                         # get_manufacturable_quantity returns None if no BOM or no constraints
@@ -411,9 +440,7 @@ class SalesService:
                     product.strategy.requires_manufacturing_profile
                     and product.requires_advanced_manufacturing
                 ):
-                    auto_finalize = (
-                        product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
-                    )
+                    auto_finalize = product.is_express
                     if not auto_finalize:
                         ots = sale_line.work_orders.exclude(status="CANCELLED")
                         if not ots.exists() or not all(
@@ -429,9 +456,7 @@ class SalesService:
                     product.strategy.requires_manufacturing_profile
                     and not product.requires_advanced_manufacturing
                 ):
-                    auto_finalize = (
-                        product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
-                    )
+                    auto_finalize = product.is_express
                     if product.has_bom and not auto_finalize:
                         manufacturable_qty = product.get_manufacturable_quantity()
                         if manufacturable_qty is not None and manufacturable_qty < quantity:
@@ -553,13 +578,8 @@ class SalesService:
                     continue
 
                 # Create OT for express products
-                auto_finalize = (
-                    product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
-                )
+                auto_finalize = product.is_express
                 if auto_finalize:
-                    print(
-                        f"DEBUG: Creating OT for EXPRESS product {product.internal_code} in delivery {delivery.number}"
-                    )
                     work_order = WorkOrderService.create_ot_for_delivery_line(
                         delivery_line=line,
                         related_note=delivery.related_note,  # Will be set for debit note deliveries
@@ -568,9 +588,6 @@ class SalesService:
                         # Link to delivery for traceability
                         line.work_order = work_order
                         line.save()
-                        print(f"DEBUG: Created {EntityPrefix.WORK_ORDER}-{work_order.number} for {product.internal_code}")
-                    else:
-                        print(f"DEBUG: No OT created for {product.internal_code} (not express)")
 
         # 2. Process lines for stock moves and quantity updates
         # ADR-0085: el despacho es dueño de sus StockMove; ya no se acuña un InventoryDocument.
@@ -624,10 +641,8 @@ class SalesService:
                 if product.strategy.can_have_bom:
                     # SAFEGUARD: If this sale line already has a Work Order,
                     # do NOT explode BOM again here (production already consumed materials).
-                    if line.sale_line.work_orders.exists():
-                        print(
-                            f"DEBUG: Product {product.internal_code} has Work Order - cost already expensed in OT"
-                        )
+                    # Only a FINISHED OT has consumed and costed the components.
+                    if line.sale_line.work_orders.filter(status="FINISHED").exists():
                         # For products with finished OTs, the cost was already expensed during production
                         # We just need to set the unit_cost for reference (no new stock moves or accounting entries)
                         line.unit_cost = product.get_bom_cost()
@@ -1351,43 +1366,39 @@ class SaleOrderService(DocumentService):
             # Express products (mfg_auto_finalize=True) will have OTs created at dispatch time
             from production.services import WorkOrderService
 
-            lines = order.lines.select_related("product").prefetch_related("work_orders")
+            # Same order as the checkout payload: line_files are keyed by that index.
+            lines = (
+                order.lines.select_related("product").prefetch_related("work_orders").order_by("pk")
+            )
             for i, line in enumerate(lines):
-                if line.product and line.product.strategy.requires_manufacturing_profile:
-                    # IMPORTANT: Only create OT if requires advanced manufacturing
-                    # Express products: OT will be created during delivery confirmation
-                    if line.product.requires_advanced_manufacturing:
-                        # Check if an OT already exists for this line to avoid duplicates
-                        if not any(line.work_orders.all()):
-                            print(
-                                f"DEBUG: Triggering auto-OT for ADVANCED product {line.product.internal_code} on SaleOrder {order.number}"
-                            )
-                            try:
-                                # Extract files for this specific line if provided
-                                current_line_files = line_files.get(i) if line_files else None
-                                ot = WorkOrderService.create_from_sale_line(
-                                    line, files=current_line_files
-                                )
-                                if ot:
-                                    print(
-                                        f"DEBUG: Successfully created OT {ot.number} for {line.product.internal_code}"
-                                    )
-                                else:
-                                    print(
-                                        f"DEBUG: WorkOrderService.create_from_sale_line returned None for {line.product.internal_code}"
-                                    )
-                            except Exception as e:
-                                print(
-                                    f"ERROR creating OT for {line.product.internal_code}: {str(e)}"
-                                )
-                        else:
-                            print(
-                                f"DEBUG: OT already exists for line {line.id} ({line.product.internal_code})"
-                            )
-                    else:
-                        print(
-                            f"DEBUG: Skipping OT creation for EXPRESS product {line.product.internal_code} - will be created at dispatch"
-                        )
+                if not (line.product and line.product.strategy.requires_manufacturing_profile):
+                    continue
+                # Only advanced manufacturing gets its OT now; Express OTs are created at dispatch.
+                if not line.product.requires_advanced_manufacturing or any(line.work_orders.all()):
+                    continue
+                current_line_files = line_files.get(i) if line_files else None
+                try:
+                    WorkOrderService.create_from_sale_line(line, files=current_line_files)
+                except Exception as exc:
+                    # The sale stays confirmed, but the missing OT must not go unnoticed:
+                    # without it the line can never be dispatched.
+                    logger.exception(
+                        "OT creation failed for line %s of %s", line.pk, order.display_id
+                    )
+                    from workflow.models import Task
+                    from workflow.services import WorkflowService
+
+                    WorkflowService.create_task(
+                        task_type="OT_CREATION_FAILED",
+                        title=f"Crear OT pendiente: {order.display_id} · {line.product.name}",
+                        description=(
+                            f"No se pudo generar la Orden de Trabajo automáticamente: {exc}. "
+                            "Créela desde la Orden de Venta."
+                        ),
+                        content_object=order,
+                        category=Task.Category.TASK,
+                        data={"sale_line_id": line.pk, "error": str(exc)},
+                    )
 
             # NOTE: Accounting entry moved to BillingService.create_sale_invoice
 

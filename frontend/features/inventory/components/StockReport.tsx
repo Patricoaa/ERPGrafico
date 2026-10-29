@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback, useEffect } from "react"
+import { useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
@@ -45,16 +45,9 @@ export function StockReport({ externalFilters, onSelectProduct, selectedProduct 
     const urlProductId = embedded ? null : searchParams.get('product_id')
     const urlProductName = embedded ? null : searchParams.get('product_name')
 
-    // Drawer state for standalone drill-down
-    const [detailProductId, setDetailProductId] = useState<number | null>(null)
-    const [detailProductName, setDetailProductName] = useState<string | null>(null)
-
-    useEffect(() => {
-        if (urlProductId) {
-            setDetailProductId(Number(urlProductId))
-            setDetailProductName(urlProductName)
-        }
-    }, [urlProductId, urlProductName])
+    // Standalone drill-down: the URL is the drawer's state (shareable, survives reload)
+    const detailProductId = urlProductId ? Number(urlProductId) : null
+    const detailProductName = urlProductName
 
     const warehouseId = embedded ? null : (search.paramValues.warehouse_id as string | null)
     const { report, isLoading } = useStockReport(warehouseId)
@@ -63,8 +56,6 @@ export function StockReport({ externalFilters, onSelectProduct, selectedProduct 
         if (embedded && onSelectProduct) {
             onSelectProduct(item)
         } else {
-            setDetailProductId(Number(item.id))
-            setDetailProductName(item.name ?? null)
             const params = new URLSearchParams(searchParams.toString())
             params.set('product_id', String(item.id))
             params.set('product_name', item.name ?? '')
@@ -73,16 +64,12 @@ export function StockReport({ externalFilters, onSelectProduct, selectedProduct 
     }
 
     const handleCloseDrawer = (open: boolean) => {
-        if (!open) {
-            setDetailProductId(null)
-            setDetailProductName(null)
-            if (!embedded) {
-                const params = new URLSearchParams(searchParams.toString())
-                params.delete('product_id')
-                params.delete('product_name')
-                const query = params.toString()
-                router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
-            }
+        if (!open && !embedded) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete('product_id')
+            params.delete('product_name')
+            const query = params.toString()
+            router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
         }
     }
 
@@ -187,8 +174,6 @@ export function StockReport({ externalFilters, onSelectProduct, selectedProduct 
                     open={!!detailProductId}
                     onOpenChange={handleCloseDrawer}
                     onProductChange={(id, name) => {
-                        setDetailProductId(id)
-                        setDetailProductName(name)
                         const params = new URLSearchParams(searchParams.toString())
                         params.set('product_id', String(id))
                         params.set('product_name', name)

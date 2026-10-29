@@ -118,6 +118,7 @@ export function ActionConfirmModal({
 
     return (
         <BaseModal
+            asDialog
             open={open}
             onOpenChange={onOpenChange}
             size="xs"

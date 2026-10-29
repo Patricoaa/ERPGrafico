@@ -3,12 +3,11 @@
 import React, { useMemo, useState } from 'react'
 import { CheckCircle, XCircle, ShoppingCart } from 'lucide-react'
 import { BaseModal, StatusBadge, SkeletonShell } from '@/components/shared'
-import { Collection, useEntityCollection } from '@/components/entity-view'
+import { Collection, formatDate, useEntityCollection } from '@/components/entity-view'
 import { Button } from '@/components/ui/button'
 import { useCardStatement, useStatementCharges, useCardStatementMutations } from '../hooks/useCardStatements'
 import { PayStatementModal } from './PayStatementModal'
 import { mapToStatementChargeRows } from './utils'
-import { parseDateOnly } from '@/lib/utils'
 import { statementChargeEntity, statementChargeViews } from '../entity-view/statementCharge.entity'
 
 interface StatementDetailModalProps {
@@ -87,13 +86,13 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
                                 <div>
                                     <span className="text-muted-foreground">Cierre:</span>{' '}
                                     <span className="font-medium">
-                                        {parseDateOnly(stmt.cut_off_date).toLocaleDateString('es-CL')}
+                                        {formatDate(stmt.cut_off_date)}
                                     </span>
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground">Vencimiento:</span>{' '}
                                     <span className="font-medium">
-                                        {parseDateOnly(stmt.due_date).toLocaleDateString('es-CL')}
+                                        {formatDate(stmt.due_date)}
                                     </span>
                                 </div>
                                 <div>
@@ -104,7 +103,7 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
                                     <div>
                                         <span className="text-muted-foreground">Pagado el:</span>{' '}
                                         <span className="font-medium">
-                                            {parseDateOnly(stmt.paid_at).toLocaleDateString('es-CL')}
+                                            {formatDate(stmt.paid_at)}
                                         </span>
                                     </div>
                                 )}

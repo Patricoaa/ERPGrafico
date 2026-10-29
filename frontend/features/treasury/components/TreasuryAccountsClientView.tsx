@@ -1,5 +1,7 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import React, { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { useTreasuryAccounts, type TreasuryAccount, treasuryAccountActions, type TreasuryAccountActionsCtx } from "@/features/treasury"
@@ -17,7 +19,6 @@ import { TreasuryAccountDrawer } from "./TreasuryAccountDrawer"
 import { FadeIn } from '@/components/shared'
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
 const ACCOUNT_GROUPS: Record<string, FieldId<typeof treasuryAccountEntity.fields>> = { account_type: "accountType" }
@@ -43,18 +44,13 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TreasuryAccount>({
-        endpoint: '/treasury/accounts'
-    })
-
-    const detailsOpen = !!selectedFromUrl
-    const selectedAccountId = selectedFromUrl?.id ?? null
+    const panel = useEntityPanelRoute<TreasuryAccount>({ endpoint: '/treasury/accounts', create: false })
 
     const handleCloseModal = () => {
         setIsBankModalOpen(false)
         setIsMethodModalOpen(false)
         setIsLocalAccountModalOpen(false)
-        clearSelection()
+        panel.close()
 
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
@@ -187,17 +183,19 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                 : "¿Está seguro de restaurar esta cuenta de tesorería?"}
         />
 
-        <TreasuryAccountDrawer
-            accountId={selectedAccountId}
-            open={detailsOpen}
-            onOpenChange={(open) => {
-                if (!open) clearSelection()
-            }}
-            onSuccess={() => {
-                clearSelection()
-                refetch()
-            }}
-        />
+        <EntityPanelTab label="treasury.treasuryaccount" {...panel.tab}>
+            {(open) => (
+                <TreasuryAccountDrawer
+                    accountId={panel.selectedId}
+                    open={open}
+                    onOpenChange={(open) => { if (!open) panel.close() }}
+                    onSuccess={() => {
+                        panel.close()
+                        refetch()
+                    }}
+                />
+            )}
+        </EntityPanelTab>
 
         <TreasuryAccountWizard
             open={isLocalAccountModalOpen}

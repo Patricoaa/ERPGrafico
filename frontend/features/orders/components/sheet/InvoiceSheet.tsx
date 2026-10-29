@@ -23,6 +23,7 @@ import {
 } from "@/features/documents"
 import { saleOrderActions } from "@/features/sales"
 import { purchaseOrderActions } from "@/features/purchasing"
+import { WorkOrderWizard } from "@/features/production"
 import { useInvoiceDocument } from "../../hooks/useCommercialDocument"
 import { useOrderActionEngine } from "../../hooks/useOrderActionEngine"
 import { useOrderRelatedActions } from "../../hooks/useOrderRelatedActions"
@@ -68,6 +69,7 @@ export function InvoiceSheet({ id, open, onOpenChange, embedded = false, posSess
 
     const [tab, setTab] = useState("summary")
     const [domain, setDomain] = useState<DocumentDomain | null>(null)
+    const [creatingWorkOrderLine, setCreatingWorkOrderLine] = useState<OrderLine | null>(null)
 
     const handleSuccess = () => {
         void fetchOrderDetails()
@@ -125,7 +127,17 @@ export function InvoiceSheet({ id, open, onOpenChange, embedded = false, posSess
     }
 
     const tabs: DocumentSheetTab[] = invoice ? [
-        { value: "summary", label: "Resumen", icon: FileText, content: <InvoiceSummaryTab invoice={invoice} /> },
+        {
+            value: "summary",
+            label: "Resumen",
+            icon: FileText,
+            content: (
+                <InvoiceSummaryTab
+                    invoice={invoice}
+                    onCreateWorkOrder={isSale && invoice.status !== "CANCELLED" ? (line) => setCreatingWorkOrderLine(line) : undefined}
+                />
+            ),
+        },
         {
             value: "relations", label: "Relaciones", icon: Link2, badge: relations?.relations.length,
             content: (
@@ -196,6 +208,36 @@ export function InvoiceSheet({ id, open, onOpenChange, embedded = false, posSess
 
             {engine.host}
             {related.host}
+
+            {creatingWorkOrderLine && invoice && (
+                <WorkOrderWizard
+                    open={!!creatingWorkOrderLine}
+                    onOpenChange={(isOpen) => {
+                        if (!isOpen) setCreatingWorkOrderLine(null)
+                    }}
+                    mode={{
+                        kind: "create",
+                        defaultOtType: invoice.sale_order ? "LINKED" : "NONE",
+                        defaultProductId: !invoice.sale_order
+                            ? String(creatingWorkOrderLine.product ?? creatingWorkOrderLine.product_id ?? "")
+                            : undefined,
+                        initialData: {
+                            sale_order: (typeof invoice.sale_order === "number" || typeof invoice.sale_order === "string")
+                                ? invoice.sale_order
+                                : (invoice.sale_order as { id?: number | string })?.id,
+                            sale_line: creatingWorkOrderLine.id,
+                            product: {
+                                id: Number(creatingWorkOrderLine.product ?? creatingWorkOrderLine.product_id),
+                                name: creatingWorkOrderLine.product_name ?? creatingWorkOrderLine.description ?? "",
+                            },
+                        },
+                    }}
+                    onSuccess={() => {
+                        setCreatingWorkOrderLine(null)
+                        handleSuccess()
+                    }}
+                />
+            )}
         </>
     )
 }

@@ -1,42 +1,54 @@
 "use client";
 
-import { FileText, Plus } from "lucide-react";
+import { type ReactNode } from "react";
+import { FileText, Layers, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { WorkOrderFormValues } from "@/types/forms";
 import { getDomainConceptTitle, getDomainConceptCode } from "@/lib/entity-registry";
-import { CardSurface, SelectionCheck } from "@/components/shared";
+import { CardSurface, SelectionCheck, StepHeader } from "@/components/shared";
 
 interface OriginSelectionStepProps {
   onChoose: (type: "LINKED" | "NONE", defaults: WorkOrderFormValues) => void;
   selected?: "LINKED" | "NONE" | null;
+  /** The OT already exists: its origin can no longer change. */
+  locked?: boolean;
+  headerActions?: ReactNode;
 }
 
-export function OriginSelectionStep({ onChoose, selected = null }: OriginSelectionStepProps) {
+export function OriginSelectionStep({
+  onChoose,
+  selected = null,
+  locked = false,
+  headerActions,
+}: OriginSelectionStepProps) {
   const isLinkedSelected = selected === "LINKED";
   const isNoneSelected = selected === "NONE";
 
   return (
-    <div className="space-y-8">
-      <div className="text-center">
-        <p className="mt-2 text-muted-foreground max-w-md mx-auto">
-          {selected
-            ? "Origen ya definido para esta OT"
-            : `Seleccione cómo desea crear esta ${getDomainConceptTitle('ot')}`}
-        </p>
-      </div>
+    <div className="space-y-6">
+      <StepHeader
+        title="Origen de Fabricación"
+        description={
+          locked
+            ? "Origen ya definido para esta orden de trabajo."
+            : `Seleccione cómo desea originar esta ${getDomainConceptTitle('ot').toLowerCase()}: vinculada a una venta o para inventario.`
+        }
+        icon={Layers}
+        rightContent={headerActions}
+      />
 
       <div className="grid gap-6">
         <CardSurface
           layout="stacked"
           selected={isLinkedSelected}
-          unavailable={selected !== null && !isLinkedSelected}
+          unavailable={locked && !isLinkedSelected}
           role="button"
           onClick={() => onChoose("LINKED", {
             otType: "LINKED", description: "", sale_order: "", sale_line: "",
             product_description: "", contact_id: "", start_date: null, due_date: null, internal_notes: "",
           } as WorkOrderFormValues)}
           className="h-[200px]"
-          interactive={!selected || isLinkedSelected}
+          interactive={!locked}
         >
           <div className="relative flex h-20 w-full shrink-0 items-center justify-center overflow-hidden bg-muted">
             <FileText className={cn("h-8 w-8", isLinkedSelected ? "text-primary" : "text-primary/80")} aria-hidden />
@@ -55,14 +67,14 @@ export function OriginSelectionStep({ onChoose, selected = null }: OriginSelecti
         <CardSurface
           layout="stacked"
           selected={isNoneSelected}
-          unavailable={selected !== null && !isNoneSelected}
+          unavailable={locked && !isNoneSelected}
           role="button"
           onClick={() => onChoose("NONE", {
             otType: "NONE", description: "", product_id: "", quantity: "",
             uom_id: "", start_date: null, due_date: null, internal_notes: "",
           } as WorkOrderFormValues)}
           className="h-[200px]"
-          interactive={!selected || isNoneSelected}
+          interactive={!locked}
         >
           <div className="relative flex h-20 w-full shrink-0 items-center justify-center overflow-hidden bg-muted">
             <Plus className={cn("h-8 w-8", isNoneSelected ? "text-warning" : "text-warning/80")} aria-hidden />

@@ -1,5 +1,7 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import React, { useState, useMemo, useCallback } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { toast } from "sonner"
@@ -11,7 +13,6 @@ import { Button } from "@/components/ui/button"
 import { FileText } from "lucide-react"
 import { payrollActions, type PayrollActionsCtx } from '@/features/hr/payrollActions'
 import { PaymentModal } from "@/features/treasury"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { usePayrolls } from "@/features/hr"
 import { useServerDate } from "@/hooks/useServerDate"
 import { payrollUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
@@ -69,24 +70,9 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
         </>
     )
 
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Payroll>({
-        endpoint: '/hr/payrolls'
-    })
-
-    const detailSheetOpen = !!selectedFromUrl
-    const activePayrollId = selectedFromUrl?.id ?? null
-
-    const isNewModalOpen = searchParams.get("modal") === "new"
-    // Derive from URL directly — no useState + useEffect needed
-    const dialogOpen = isNewModalOpen
-
-    const handleOpenChange = (open: boolean) => {
-        if (!open) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.push(`?${params.toString()}`, { scroll: false })
-        }
-    }
+    // `?modal=new` crea una nómina; `?selected` abre el detalle (dos paneles sobre la misma ruta).
+    const createPanel = useEntityPanelRoute({ actions: [] })
+    const detailPanel = useEntityPanelRoute<Payroll>({ endpoint: '/hr/payrolls', create: false })
 
     const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null)
     const [paymentMode, setPaymentMode] = useState<'SALARY' | 'PREVIRED' | 'ADVANCE' | null>(null)
@@ -152,11 +138,15 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <CreatePayrollDrawer
-                open={dialogOpen}
-                onOpenChange={handleOpenChange}
-                onSaved={(id) => { handleOpenChange(false); openDetail(id) }}
-            />
+            <EntityPanelTab label="hr.payroll" {...createPanel.tab}>
+                {(open) => (
+                    <CreatePayrollDrawer
+                        open={open}
+                        onOpenChange={(open) => { if (!open) createPanel.close() }}
+                        onSaved={(id) => { createPanel.close(); openDetail(id) }}
+                    />
+                )}
+            </EntityPanelTab>
 
             <Collection.Root
                 collection={collection}
@@ -181,14 +171,16 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                 </Collection.Analytics>
             </Collection.Root>
 
-            <PayrollDetailDrawer
-                payrollId={activePayrollId}
-                open={detailSheetOpen}
-                onOpenChange={(open) => {
-                    if (!open) clearSelection()
-                }}
-                onUpdate={fetchPayrolls}
-            />
+            <EntityPanelTab label="hr.payroll" {...detailPanel.tab}>
+                {(open) => (
+                    <PayrollDetailDrawer
+                        payrollId={detailPanel.selectedId}
+                        open={open}
+                        onOpenChange={(open) => { if (!open) detailPanel.close() }}
+                        onUpdate={fetchPayrolls}
+                    />
+                )}
+            </EntityPanelTab>
 
             <PaymentModal
                 open={!!paymentMode}

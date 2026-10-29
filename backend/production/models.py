@@ -193,6 +193,19 @@ class WorkOrder(models.Model):
             data["_version"] = 1
         return data
 
+    def approval_requirements(self, task_type: str) -> dict:
+        """What completing one of this OT's approval tasks demands, as {key: message}.
+
+        ``evidence`` asks for at least one attachment; any other key is a confirmation the
+        approver must tick. Read by WorkflowService.complete_task (and exposed to the wizard).
+        """
+        if task_type == "OT_PREPRESS_APPROVAL" and self.canonical_stage_data.get("design_needed"):
+            return {
+                "design_approved": "Confirme que el cliente aprobó el diseño.",
+                "evidence": "Adjunte la evidencia de la aprobación del diseño.",
+            }
+        return {}
+
     @property
     def product_info(self):
         """
@@ -217,45 +230,50 @@ class WorkOrder(models.Model):
             }
         return None
 
+    def _requires_phase(self, phase):
+        # 1. The OT's own configuration (stage_data.phases)
+        if isinstance(self.stage_data, dict) and "phases" in self.stage_data:
+            return bool((self.stage_data["phases"] or {}).get(phase, False))
+        # 2. Fallback to the product default: profile first, then the legacy field
+        product = self.product or (self.sale_line.product if self.sale_line else None)
+        if not product:
+            return False
+        field = f"mfg_enable_{phase}"
+        profile = product.mfg_profile
+        return bool(getattr(profile, field) if profile else getattr(product, field))
+
     @property
     def requires_prepress(self):
-        # 1. Try stage_data (specific for this order)
-        if isinstance(self.stage_data, dict) and "phases" in self.stage_data:
-            return self.stage_data["phases"].get("prepress", False)
-        # 2. Fallback to product default
-        product = self.product or (self.sale_line.product if self.sale_line else None)
-        if product:
-            return product.mfg_enable_prepress
-        return False
+        return self._requires_phase("prepress")
 
     @property
     def requires_press(self):
-        if isinstance(self.stage_data, dict) and "phases" in self.stage_data:
-            return self.stage_data["phases"].get("press", False)
-        product = self.product or (self.sale_line.product if self.sale_line else None)
-        if product:
-            return product.mfg_enable_press
-        return False
+        return self._requires_phase("press")
 
     @property
     def requires_postpress(self):
-        if isinstance(self.stage_data, dict) and "phases" in self.stage_data:
-            return self.stage_data["phases"].get("postpress", False)
-        product = self.product or (self.sale_line.product if self.sale_line else None)
-        if product:
-            return product.mfg_enable_postpress
-        return False
+        return self._requires_phase("postpress")
+
+    @property
+    def has_outsourced_materials(self) -> bool:
+        """True when the OT has at least one outsourced material line."""
+        return self.materials.filter(is_outsourced=True).exists()
 
     @property
     def cancellation_limit_stage(self):
         """
         Determines the limit stage for cancellation.
-        Default is PRESS if available, else the previous one (PREPRESS or MATERIAL_APPROVAL).
+        - PRESS when the OT requires a press phase (production has started)
+        - PREPRESS when the OT only requires prepress
+        - OUTSOURCING_ASSIGNMENT when the OT is outsourcing-only (no press/prepress)
+        - MATERIAL_APPROVAL otherwise
         """
         if self.requires_press:
             return self.Stage.PRESS
         if self.requires_prepress:
             return self.Stage.PREPRESS
+        if self.has_outsourced_materials:
+            return self.Stage.OUTSOURCING_ASSIGNMENT
         return self.Stage.MATERIAL_APPROVAL
 
     @property
@@ -454,10 +472,19 @@ class WorkOrderHistory(models.Model):
     Track history of stage changes and important actions.
     """
 
+    class Event(models.TextChoices):
+        ENTERED = "ENTERED", _("Etapa iniciada")
+        REOPENED = "REOPENED", _("Etapa reabierta")
+        EDITED = "EDITED", _("Etapa editada")
+        NOTE = "NOTE", _("Registro")
+
     work_order = models.ForeignKey(
         WorkOrder, on_delete=models.CASCADE, related_name="stage_history"
     )
     stage = models.CharField(max_length=30)
+    # What happened to `stage`: entered by a transition, reopened (backward move) or
+    # edited while closed. The wizard's step panel lists these per stage.
+    event = models.CharField(max_length=20, choices=Event.choices, default=Event.ENTERED)
     status = models.CharField(max_length=20)
     notes = models.TextField(blank=True)
     user = models.ForeignKey("core.User", on_delete=models.SET_NULL, null=True)

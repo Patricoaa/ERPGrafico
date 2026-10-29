@@ -13,7 +13,7 @@ Ejecutar:
     pytest treasury/tests/test_sprint2_dod.py -v
 """
 
-import pathlib
+import inspect
 import re
 
 # ─── S2.5: Normalización de glosas ───────────────────────────────────────────
@@ -95,15 +95,28 @@ def test_fuzzy_ratio_case_insensitive_via_normalization():
     assert ratio >= 80, f"Expected ratio >= 80 with both uppercased, got {ratio}"
 
 
+# ─── Structural checks ───────────────────────────────────────────────────────
+# They inspect the imported code (not a hard-coded /app path): the same test passes
+# in the container, on a host checkout and in CI. Each one reads the function it is
+# about, so an unrelated match elsewhere in the module cannot satisfy it.
+
+
+def _source(obj):
+    return inspect.getsource(obj)
+
+
 # ─── S2.3 Fase 1: Sin escrituras a .reconciled_lines ────────────────────────
 
 
 def test_no_reconciled_lines_write_in_matching_service():
     """S2.3 Fase 1 DoD: 0 asignaciones a .reconciled_lines en matching_service.py"""
-    src = pathlib.Path("/app/treasury/matching_service.py").read_text()
+    from treasury import matching_service
+
     pattern = re.compile(r"\.reconciled_lines\s*=")
     hits = [
-        (i + 1, line.strip()) for i, line in enumerate(src.splitlines()) if pattern.search(line)
+        (i + 1, line.strip())
+        for i, line in enumerate(_source(matching_service).splitlines())
+        if pattern.search(line)
     ]
     assert not hits, (
         f"Found {len(hits)} write(s) to .reconciled_lines (S2.3 Fase 1 violated):\n"
@@ -113,11 +126,13 @@ def test_no_reconciled_lines_write_in_matching_service():
 
 def test_reconciled_lines_is_property_in_models():
     """S2.3b DoD: reconciled_lines es @property derivada (columna eliminada)"""
-    src = pathlib.Path("/app/treasury/models.py").read_text()
-    assert "reconciled_lines = models.IntegerField" not in src, (
+    from treasury.models import BankStatement
+
+    column_names = {f.name for f in BankStatement._meta.concrete_fields}
+    assert "reconciled_lines" not in column_names, (
         "BankStatement.reconciled_lines should NOT be a DB column anymore (S2.3b completed)"
     )
-    assert "def reconciled_lines(self)" in src, (
+    assert isinstance(inspect.getattr_static(BankStatement, "reconciled_lines"), property), (
         "BankStatement.reconciled_lines should be a @property deriving from lines queryset"
     )
 
@@ -126,11 +141,13 @@ def test_reconciled_lines_is_property_in_models():
 
 
 def test_bulk_update_present_in_matching_service():
-    """S2.2 DoD: matching_service usa BankStatementLine.objects.bulk_update"""
-    src = pathlib.Path("/app/treasury/matching_service.py").read_text()
-    assert "BankStatementLine.objects.bulk_update" in src, (
-        "S2.2: bulk_update not found in matching_service.py"
-    )
+    """S2.2 DoD: confirm_match y unmatch actualizan las líneas con bulk_update"""
+    from treasury.matching_service import MatchingService
+
+    for method in (MatchingService.confirm_match, MatchingService.unmatch):
+        assert "BankStatementLine.objects.bulk_update" in _source(method), (
+            f"S2.2: bulk_update not found in {method.__name__}"
+        )
 
 
 # ─── S2.4: Cap de candidatos ─────────────────────────────────────────────────
@@ -138,7 +155,9 @@ def test_bulk_update_present_in_matching_service():
 
 def test_candidate_cap_is_200():
     """S2.4 DoD: cap de candidatos en suggest_matches es [:200], no [:50]"""
-    src = pathlib.Path("/app/treasury/matching_service.py").read_text()
+    from treasury.matching_service import MatchingService
+
+    src = _source(MatchingService.suggest_matches)
     assert "[:200]" in src, "S2.4: cap should be [:200]"
     assert "[:50]" not in src, "S2.4: old [:50] cap still present"
 
@@ -148,12 +167,18 @@ def test_candidate_cap_is_200():
 
 def test_payment_matches_account_sense_helper_exists():
     """S2.1: _payment_matches_account_sense helper presente"""
-    src = pathlib.Path("/app/treasury/matching_service.py").read_text()
-    assert "_payment_matches_account_sense" in src, "S2.1: helper not found"
+    from treasury.matching_service import MatchingService
+
+    assert callable(getattr(MatchingService, "_payment_matches_account_sense", None)), (
+        "S2.1: helper not found"
+    )
 
 
 def test_batch_prefetch_pattern_exists():
-    """S2.1: auto_match_statement usa pre-fetch (all_candidates en RAM)"""
-    src = pathlib.Path("/app/treasury/matching_service.py").read_text()
+    """S2.1: auto_match_statement trae los candidatos una sola vez (all_candidates en RAM)
+    y los filtra con el helper, en vez de consultar por cada línea."""
+    from treasury.matching_service import MatchingService
+
+    src = _source(MatchingService.auto_match_statement)
     assert "all_candidates" in src, "S2.1: all_candidates batch pattern not found"
-    assert "Pre-fetch" in src or "pre-fetch" in src, "S2.1: pre-fetch comment not found"
+    assert "_payment_matches_account_sense" in src, "S2.1: candidates not filtered in memory"

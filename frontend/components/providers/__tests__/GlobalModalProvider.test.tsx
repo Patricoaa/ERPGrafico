@@ -4,6 +4,8 @@ import React, { useEffect } from "react"
 import Link from "next/link"
 
 import { GlobalModalProvider, useGlobalModals } from "../GlobalModalProvider"
+import { EntityPanelTab } from "../EntityPanelTab"
+import { useRecentSave } from "../EntityOpenerContext"
 import { Button } from "@/components/ui/button"
 
 const nav = vi.hoisted(() => ({ pathname: "/sales/orders", push: vi.fn() }))
@@ -58,6 +60,12 @@ function Controls() {
             ))}
         </div>
     )
+}
+
+/** Muestra la última señal de guardado que reciben las colecciones de la página. */
+function SavedProbe() {
+    const { saved } = useRecentSave()
+    return <span>{saved ? `saved:${saved.label}:${saved.id}` : "saved:none"}</span>
 }
 
 const setup = () => render(
@@ -118,6 +126,39 @@ describe("GlobalModalProvider workspace tabs", () => {
         click("abrir-move")
         click("guardado")
         expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
+    })
+
+    it("closing a drill-down returns to the tab that opened it, not to the neighbour", () => {
+        setup()
+        click("abrir-despacho")
+        click("abrir-ov")
+        click("tab:DES-1")
+        // Desde el despacho se abre el movimiento: queda a la derecha de la OV, pero su origen es el despacho.
+        click("abrir-move")
+        expect(tabTitles()).toEqual(["tab:DES-1", "tab:OV-42", "tab:MOV-7*"])
+        click("x")
+        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
+    })
+
+    it("a tab opened from the page returns to the page when it closes", () => {
+        setup()
+        click("abrir-despacho")
+        click("ver-pagina")
+        click("tab:DES-1")
+        click("abrir-ov")
+        click("x")
+        // La OV vuelve al despacho; el despacho se activó a mano, así que su cierre va a la vecina (ninguna).
+        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
+        click("x")
+        expect(screen.queryByText(/open:/)).toBeNull()
+    })
+
+    it("saving an entity tab announces the saved record to the page's collections", () => {
+        render(<GlobalModalProvider><SavedProbe /><Controls /></GlobalModalProvider>)
+        click("abrir-ov")
+        expect(screen.getByText("saved:none")).toBeInTheDocument()
+        click("guardado")
+        expect(screen.getByText("saved:sales.saleorder:42")).toBeInTheDocument()
     })
 
     it("goes back to the page (list) without closing the open tabs", () => {
@@ -244,5 +285,75 @@ describe("GlobalModalProvider unsaved-changes guard", () => {
 
         click("Descartar y continuar")
         await waitFor(() => expect(nav.push).toHaveBeenCalledWith("/inventory/products"))
+    })
+})
+
+/** ADR-0101: un drawer que monta la página (`?selected`) también ocupa una pestaña. */
+describe("GlobalModalProvider page-mounted panel tabs", () => {
+    function PageWithPanel({ onClose }: { onClose: () => void }) {
+        const [open, setOpen] = React.useState(false)
+        return (
+            <>
+                <Button onClick={() => setOpen(true)}>abrir-panel</Button>
+                <EntityPanelTab label="contacts.contact" id={5} display="Ana" open={open} onClose={() => { onClose(); setOpen(false) }}>
+                    {(visible) => <span>panel:{visible ? "visible" : "oculto"}</span>}
+                </EntityPanelTab>
+            </>
+        )
+    }
+
+    const setupPanel = (onClose = vi.fn()) => {
+        render(<GlobalModalProvider><PageWithPanel onClose={onClose} /><Controls /></GlobalModalProvider>)
+        return onClose
+    }
+
+    it("registers the panel as the active tab and shows its drawer", () => {
+        setupPanel()
+        expect(screen.getByText("panel:oculto")).toBeInTheDocument()
+        click("abrir-panel")
+        expect(tabTitles()).toEqual(["tab:Ana*"])
+        expect(screen.getByText("panel:visible")).toBeInTheDocument()
+    })
+
+    /** Panel cuyo formulario se cierra desde su propio envío (lo que hace `useDirtyGuard` + `panel.close()`). */
+    function PageWithSavingPanel() {
+        const [open, setOpen] = React.useState(false)
+        const { registerDirty, runGuarded } = useGlobalModals()
+        const submitting = React.useRef(false)
+        useEffect(() => registerDirty({ isDirty: () => false, save: async () => true, discard: () => {}, isSubmitting: () => submitting.current }), [registerDirty])
+        const close = () => runGuarded(() => setOpen(false))
+        return (
+            <>
+                <Button onClick={() => setOpen(true)}>abrir-panel</Button>
+                <Button onClick={() => { submitting.current = true; close(); submitting.current = false }}>guardar-panel</Button>
+                <Button onClick={close}>cancelar-panel</Button>
+                <EntityPanelTab label="contacts.contact" id={null} open={open} onClose={close}>
+                    {(visible) => <span>panel:{visible ? "visible" : "oculto"}</span>}
+                </EntityPanelTab>
+                <SavedProbe />
+            </>
+        )
+    }
+
+    it("a panel closed by its own save announces the record; a cancel does not", () => {
+        render(<GlobalModalProvider><PageWithSavingPanel /><Controls /></GlobalModalProvider>)
+        click("abrir-panel")
+        click("cancelar-panel")
+        expect(screen.getByText("saved:none")).toBeInTheDocument()
+        click("abrir-panel")
+        click("guardar-panel")
+        expect(screen.queryAllByText(/^tab:/)).toHaveLength(0)
+        expect(screen.getByText("saved:contacts.contact:null")).toBeInTheDocument()
+    })
+
+    it("hides the drawer on the page tab but keeps the tab, and closing the tab asks the page to close it", () => {
+        const onClose = setupPanel()
+        click("abrir-panel")
+        click("ver-pagina")
+        expect(screen.getByText("panel:oculto")).toBeInTheDocument()
+        expect(tabTitles()).toEqual(["tab:Ana"])
+        click("cerrar:Ana")
+        expect(onClose).toHaveBeenCalledTimes(1)
+        expect(screen.queryAllByText(/^tab:/)).toHaveLength(0)
     })
 })

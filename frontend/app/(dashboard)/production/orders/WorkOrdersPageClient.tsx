@@ -1,5 +1,6 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
 import { useState, useMemo, useCallback, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
@@ -21,7 +22,7 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { workOrderUnifiedSearchDef } from "@/features/production"
 import { toast } from "sonner"
 import { Collection, useEntityCollection, type CollectionViewMode } from "@/components/entity-view"
-import { workOrderEntity, workOrderViews, type WorkOrder } from "@/features/production/entity-view/workOrder.entity"
+import { workOrderEntity, workOrderViews, type WorkOrder } from "@/features/production"
 
 import type { WizardMode, StageId } from "@/features/production/types"
 
@@ -29,10 +30,9 @@ interface WorkOrdersPageClientProps {
     initialOrders?: WorkOrder[]
 }
 
-/** Maps useViewMode string to CollectionViewMode (kanban/timeline fall back to "table"). */
+/** Maps useViewMode string to CollectionViewMode (unknown values fall back to "table"). */
 function toCollectionView(v: string): CollectionViewMode {
-    if (v === "card") return "card"
-    if (v === "analytics") return "analytics"
+    if (v === "card" || v === "analytics" || v === "kanban" || v === "timeline") return v
     return "table"
 }
 
@@ -62,7 +62,7 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
         }
     }, [isOverLimit, totalCount])
 
-    const { deleteOrder, annulOrder, duplicateOrder, bulkPrint, isBulkPrinting } = useWorkOrderListActions({ onSuccess: refetchOrders })
+    const { annulOrder, duplicateOrder, bulkPrint, isBulkPrinting } = useWorkOrderListActions({ onSuccess: refetchOrders })
 
     const isNew = searchParams.get('new') === 'true' || searchParams.get('modal') === 'new'
     const selectedId = searchParams.get('selected')
@@ -100,19 +100,20 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
         router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     }, [router, pathname, searchParams])
 
-    const deleteConfirm = useConfirmAction<number>(async (id) => { await deleteOrder({ id }) })
-    const cancelConfirm = useConfirmAction<number>(async (id) => { await annulOrder({ id }) })
+    const [annulOpen, setAnnulOpen] = useState(false)
+    const [annulTargetId, setAnnulTargetId] = useState<number | null>(null)
     const duplicateConfirm = useConfirmAction<number>(async (id) => { await duplicateOrder({ id }) })
 
-    const handleDelete = useCallback((id: number) => deleteConfirm.requestConfirm(id), [deleteConfirm])
-    const handleCancel = useCallback((id: number) => cancelConfirm.requestConfirm(id), [cancelConfirm])
+    const handleCancel = useCallback((id: number) => {
+        setAnnulTargetId(id)
+        setAnnulOpen(true)
+    }, [])
     const handleDuplicate = useCallback((id: number) => duplicateConfirm.requestConfirm(id), [duplicateConfirm])
 
     const workOrderActionsCtx: WorkOrderActionsCtx = {
         onEdit: (id) => handleManage(id),
         onDuplicate: handleDuplicate,
         onAnnul: handleCancel,
-        onDelete: handleDelete,
     }
 
     const groupBy = null // WorkOrder groupBy uses search.groupBy for data fetch, not entity-view groupBy
@@ -139,14 +140,16 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            {wizardMode && (
-                <WorkOrderWizard
-                    mode={wizardMode}
-                    open={true}
-                    onOpenChange={(open) => { if (!open) closeWizard() }}
-                    onSuccess={() => { void refetchOrders() }}
-                />
-            )}
+            <EntityPanelTab label="production.workorder" id={selectedId ? Number(selectedId) : null} open={!!wizardMode} onClose={closeWizard}>
+                {(open) => wizardMode && (
+                    <WorkOrderWizard
+                        mode={wizardMode}
+                        open={open}
+                        onOpenChange={(open) => { if (!open) closeWizard() }}
+                        onSuccess={() => { void refetchOrders() }}
+                    />
+                )}
+            </EntityPanelTab>
 
             <div className="mt-2 flex-1 min-h-0 flex flex-col">
                 <FadeIn key={currentView} className="h-full">
@@ -191,7 +194,6 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                                 onManage={handleManage}
                                 onDuplicate={handleDuplicate}
                                 onAnnul={handleCancel}
-                                onDelete={handleDelete}
                                 isLoading={isLoading}
                             />
                         )}
@@ -220,20 +222,17 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
             </div>
 
             <ActionConfirmModal
-                open={deleteConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
-                onConfirm={deleteConfirm.confirm}
-                title="Eliminar OT"
-                description="¿Está seguro de que desea eliminar esta OT? Esta acción es irreversible."
-                variant="destructive"
-            />
-            <ActionConfirmModal
-                open={cancelConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) cancelConfirm.cancel() }}
-                onConfirm={cancelConfirm.confirm}
+                open={annulOpen}
+                onOpenChange={(open) => { if (!open) { setAnnulOpen(false); setAnnulTargetId(null) } }}
+                onConfirm={async (reason) => {
+                    if (annulTargetId !== null) await annulOrder({ id: annulTargetId, notes: reason ?? '' })
+                }}
                 title={`Anular ${getDomainConceptCode('ot')}`}
                 description={`¿Está seguro de que desea ANULAR esta ${getDomainConceptCode('ot')}? Esto detendrá el proceso y liberará reservas.`}
                 variant="destructive"
+                requireReason
+                reasonLabel="Motivo de anulación"
+                reasonPlaceholder="Explique por qué se anula esta OT..."
             />
             <ActionConfirmModal
                 open={duplicateConfirm.isOpen}

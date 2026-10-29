@@ -7,6 +7,10 @@ export type DeliveryStatus = 'PENDING' | 'PARTIAL' | 'DELIVERED'
 
 export interface SaleOrderLine {
     id?: number
+    /** Id of the persisted line when a checkout reuses `id` for the product (existing order). */
+    line_id?: number
+    /** Plain product ID returned by SaleLineSerializer (always present when line has a product). */
+    product_id?: number
     product?: string | number | {
         id: number;
         name: string;
@@ -15,6 +19,7 @@ export interface SaleOrderLine {
         requires_advanced_manufacturing?: boolean;
     }
     product_name?: string
+    product_code?: string
     description: string
     quantity: number
     subtotal?: number

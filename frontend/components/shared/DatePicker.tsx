@@ -65,6 +65,7 @@ export function DatePicker({
             </Button>
 
             <BaseModal
+                asDialog
                 open={open}
                 onOpenChange={handleOpenChange}
                 centered={true}

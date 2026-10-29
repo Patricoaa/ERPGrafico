@@ -30,9 +30,10 @@ BaseModal  (primitiva)
 
 ### ⚠️ Excepciones Autorizadas de Sistema
 
-Existe una única excepción de sistema autorizada para utilizar la primitiva `Dialog` directamente fuera de `BaseModal`:
+Existen dos excepciones de sistema autorizadas para utilizar las primitivas `Dialog` / `Sheet` directamente fuera de sus wrappers:
 
 *   **UniversalSearch (`UniversalSearch.tsx`)**: Al tratarse de la barra de búsqueda global y paleta de comandos (`Ctrl+K`), requiere un comportamiento visual sumamente personalizado que no cumple con el layout de negocio estándar (campo de entrada de texto gigante en el encabezado, segmentadores horizontales y pie de página con atajos de teclado del sistema).
+*   **Navegación móvil (`DashboardShell.tsx`)**: el sidebar completo (riel de módulos + panel) se abre como `Sheet` lateral en móvil. Es navegación, no un panel de negocio: sin título visible (solo `SheetTitle` `sr-only`), sin formulario, y se cierra al navegar. Ver [ADR-0103](../10-architecture/adr/0103-mobile-navigation-sheet-exception.md).
 
 ---
 
@@ -281,7 +282,11 @@ re-exported from `@/components/shared`):
       - `detail?: ReactNode` — shown below label when visible
       - `badge?: ReactNode` — optional chip (e.g. "actual")
       - `status?: 'active' | 'past' | 'future' | 'current'` — explicit status override
-      - `disabled?: boolean` — disables click/keyboard
+      - `disabled?: boolean` — `true` disables click/keyboard. Future steps are locked by
+        default; an explicit `false` unlocks a future step (jump ahead — e.g. the POS
+        manufacturing drawer's optional steps).
+      - The row content sits above the stretched button with `pointer-events-none`, so a
+        click anywhere on the row reaches it (only the actions column takes events).
       - `className?: string` — extra row classes
       - `group?: string` — section label rendered before the first step of the group
       - `warning?: string` — blocker shown as a warning icon + title; included in the row `aria-label`

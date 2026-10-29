@@ -37,6 +37,10 @@ export interface WizardStepsSidebarProps {
     density?: "compact" | "comfortable"
     /** 0-100. When provided, renders a progress bar and a progress-aware spine. */
     progressPercent?: number
+    /** Vertical line joining the step icons. Defaults to true. */
+    showConnector?: boolean
+    /** Extra classes for the list of steps (e.g. outer padding). */
+    listClassName?: string
     /** Prefix for the header counter, e.g. "Viendo". */
     counterLabel?: string
     /** Icon-only rail for power users. */
@@ -64,6 +68,8 @@ export function WizardStepsSidebar({
     showCounter = true,
     density = "compact",
     progressPercent,
+    showConnector = true,
+    listClassName,
     counterLabel,
     collapsed = false,
     onToggleCollapsed,
@@ -187,7 +193,7 @@ export function WizardStepsSidebar({
 
             <div className="flex-1 min-h-0 overflow-hidden relative">
                 {/* Connector: progress-aware fill when progressPercent is provided. */}
-                {hasProgress ? (
+                {!showConnector ? null : hasProgress ? (
                     <>
                         <div
                             data-testid="step-connector"
@@ -213,7 +219,7 @@ export function WizardStepsSidebar({
                     />
                 )}
 
-                <div className="relative z-10 space-y-1 pb-4" role="list" aria-label={title}>
+                <div className={cn("relative z-10 space-y-1 pb-4", listClassName)} role="list" aria-label={title}>
                     {steps.map((step, index) => {
                         const stepNumber = index + 1
                         const Icon = step.icon
@@ -308,8 +314,10 @@ export function WizardStepsSidebar({
                                         className="absolute inset-0 z-0"
                                     />
 
-                                    {/* Row content - above the stretched link */}
-                                    <div className={cn("relative z-10 flex items-start", gap, collapsed && "justify-center")}>
+                                    {/* Row content - above the stretched link; pointer-events-none so clicks
+                                        pass through to the button, except the actions column which
+                                        re-enables them on hover via pointer-events-auto. */}
+                                    <div className={cn("relative z-10 flex items-start pointer-events-none", gap, collapsed && "justify-center")}>
                                         {/* Node column */}
                                         <div className="shrink-0 flex items-center justify-center">
                                             <span

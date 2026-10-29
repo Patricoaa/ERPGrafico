@@ -19,6 +19,9 @@ function setupHook(opts?: {
 }) {
     const onSave = opts?.onSave ?? vi.fn().mockResolvedValue(undefined)
     const defaultValues = opts?.defaultValues ?? { name: 'init', age: 30 }
+    // Every status the hook goes through, in order: asserting the sequence does not
+    // depend on catching a short-lived state (e.g. 'synced') between two polls.
+    const statuses: string[] = []
 
     const result = renderHook(() => {
         const form = useForm<TestFormValues>({ defaultValues })
@@ -34,10 +37,11 @@ function setupHook(opts?: {
             validate: opts?.validate,
             syncedDurationMs: opts?.syncedDurationMs ?? 80,
         })
+        if (statuses[statuses.length - 1] !== auto.status) statuses.push(auto.status)
         return { form, auto }
     })
 
-    return { ...result, onSave }
+    return { ...result, onSave, statuses }
 }
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -89,17 +93,21 @@ describe('useAutoSaveForm', () => {
     })
 
     it('transitions through dirty → saving → synced → idle', async () => {
-        const { result, onSave } = setupHook({ debounceMs: 30, syncedDurationMs: 60 })
+        // The save stays pending until released, so 'saving' is a real, observable state
+        let release: () => void = () => {}
+        const pending = vi.fn(() => new Promise<void>((resolve) => { release = resolve }))
+        const { result, onSave, statuses } = setupHook({ debounceMs: 30, syncedDurationMs: 60, onSave: pending })
 
         act(() => {
             result.current.form.setValue('name', 'changed', { shouldDirty: true })
         })
 
         await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1))
-        await waitFor(() => expect(result.current.auto.status).toBe('synced'))
+        await waitFor(() => expect(result.current.auto.status).toBe('saving'))
+        await act(async () => { release() })
+        await waitFor(() => expect(result.current.auto.status).toBe('idle'))
         expect(result.current.auto.lastSavedAt).toBeInstanceOf(Date)
-
-        await waitFor(() => expect(result.current.auto.status).toBe('idle'), { timeout: 200 })
+        expect(statuses).toEqual(['idle', 'dirty', 'saving', 'synced', 'idle'])
     })
 
     it('gates the save when validate returns a string and exposes the reason', async () => {

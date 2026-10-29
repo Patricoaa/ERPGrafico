@@ -1,13 +1,13 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, ChevronDown, ChevronRight, FileText, LayoutGrid, Rows3 } from "lucide-react"
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, CalendarRange, ChevronDown, ChevronRight, FileText, Kanban, LayoutGrid, Rows3 } from "lucide-react"
 import { BulkActionButtons, CardRail, DataTablePagination, EmptyState, EntityCard, SelectionDock, SelectionRing, type BulkAction, type CardRailTone } from "@/components/shared"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { resolveStatus, type BadgeIntent } from "@/lib/badge-resolvers"
-import { getEntityIcon } from "@/lib/entity-registry"
+import { ENTITY_REGISTRY, getEntityIcon, type ViewPolicy } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
 import {
     alignOf,
@@ -32,10 +32,12 @@ import type { EntityCollection } from "../core/use-entity-collection"
 import type { Row } from "@tanstack/react-table"
 import { ALIGN_FLEX, ALIGN_TEXT } from "../core/align"
 import { useEntityOpener } from "./EntityViewProvider"
+import { useSavedRowFlash } from "./useSavedRowFlash"
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 
-export type CollectionViewMode = "table" | "card" | "analytics"
+/** `kanban` / `timeline` are rendered by the page itself (like `analytics`): `Collection.View` yields to it. */
+export type CollectionViewMode = "table" | "card" | "analytics" | "kanban" | "timeline"
 export type SelectionMode = "none" | "bulk" | "panel"
 
 /** What the surfaces read from the entity: label and fields (the literal field-id map `F` is erased). */
@@ -53,6 +55,8 @@ interface CollectionContextValue<T> {
     label: string
     /** The Root has a `Collection.Analytics` child: the toolbar offers the analytics view. */
     hasAnalytics: boolean
+    /** Row just saved from a workspace tab (ADR-0101): highlighted briefly so the change is visible. */
+    flashId: string | null
 }
 
 /**
@@ -117,6 +121,12 @@ function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen,
         [controlledView, onViewChange],
     )
     const entity = collection.entity
+    const flashId = useSavedRowFlash(entity.label, collection.table.getCoreRowModel().flatRows.map((row) => row.id))
+    const rootRef = React.useRef<HTMLDivElement>(null)
+    React.useEffect(() => {
+        if (flashId === null) return
+        rootRef.current?.querySelector("[data-saved-flash]")?.scrollIntoView({ block: "nearest" })
+    }, [flashId])
     const open = React.useCallback(
         (row: T) => {
             if (onOpen) return onOpen(row)
@@ -136,12 +146,13 @@ function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen,
         view,
         setView,
         hasAnalytics,
+        flashId,
         label: label ?? (entity.label !== undefined ? opener?.labelOf(entity.label) : undefined) ?? entityName(entity),
     }
     return (
         <CollectionContext.Provider value={value}>
             {/* h-full keeps the height bound even when the parent is not a flex column. */}
-            <div className="flex h-full flex-1 flex-col gap-2 min-h-0">{children}</div>
+            <div ref={rootRef} className="flex h-full flex-1 flex-col gap-2 min-h-0">{children}</div>
         </CollectionContext.Provider>
     )
 }
@@ -153,6 +164,7 @@ export interface CollectionToolbarProps {
     children?: React.ReactNode
     /** Primary action (e.g. create button). Wraps below the search on narrow screens instead of covering it. */
     action?: React.ReactNode
+    /** Overrides the modes offered. Default: the entity's registry `viewPolicy.availableViews`. */
     views?: readonly CollectionViewMode[]
     /** Current filters, forwarded to the entity export hook (export-formats.md). */
     exportFilters?: Record<string, unknown>
@@ -162,13 +174,32 @@ const VIEW_BUTTONS = {
     table: { icon: Rows3, label: "Vista tabla" },
     card: { icon: LayoutGrid, label: "Vista tarjetas" },
     analytics: { icon: BarChart3, label: "Analítica" },
+    kanban: { icon: Kanban, label: "Vista kanban" },
+    timeline: { icon: CalendarRange, label: "Vista cronograma" },
 } as const
 
-function Toolbar({ children, action, views = ["table", "card"], exportFilters = {} }: CollectionToolbarProps) {
+const POLICY_TO_MODE: Record<ViewPolicy["availableViews"][number], CollectionViewMode> = {
+    list: "table",
+    card: "card",
+    grid: "card",
+    analytics: "analytics",
+    kanban: "kanban",
+    timeline: "timeline",
+}
+
+/** Modes the registry `viewPolicy` allows for an entity; unregistered (embedded) collections are table-only. */
+function policyModes(label: string | undefined): readonly CollectionViewMode[] {
+    const available = label !== undefined ? ENTITY_REGISTRY[label]?.viewPolicy?.availableViews : undefined
+    if (!available) return ["table"]
+    return [...new Set(available.map((view) => POLICY_TO_MODE[view]))]
+}
+
+function Toolbar({ children, action, views, exportFilters = {} }: CollectionToolbarProps) {
     const ctx = useCollectionContext<unknown>()
+    const allowed = views ?? policyModes(ctx.collection.entity.label)
     const exportSpec = ctx.collection.entity.export
     // The analytics view is offered only while a `Collection.Analytics` is mounted.
-    const modes = ctx.hasAnalytics && !views.includes("analytics") ? [...views, "analytics" as const] : views
+    const modes = ctx.hasAnalytics && !allowed.includes("analytics") ? [...allowed, "analytics" as const] : allowed
     return (
         <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
@@ -223,7 +254,7 @@ function View<T, Id extends string>({ table, card, emptyTitle, emptyDescription,
     const ctx = useCollectionContext<T>()
     const { status, truncated, total, table: model } = ctx.collection
     // `Collection.Analytics` renders the analytics view itself.
-    if (ctx.view === "analytics") return null
+    if (ctx.view === "analytics" || ctx.view === "kanban" || ctx.view === "timeline") return null
     if (status === "error" || status === "empty") {
         return <CollectionMessage status={status} {...{ emptyTitle, emptyDescription, emptyAction, onResetFilters }} />
     }
@@ -253,7 +284,8 @@ function CollectionMessage({ status, emptyTitle, emptyDescription, emptyAction, 
     const { refetch, isFiltered, entity } = ctx.collection
     const noun = ctx.label.toLowerCase()
     return (
-        <div className="rounded-md border">
+        // Fills the space a flex-column host gives it (e.g. a wizard step), centring the message.
+        <div className="flex flex-1 flex-col justify-center rounded-md border">
             {status === "error" ? (
                 <EmptyState
                     icon={AlertTriangle}
@@ -405,6 +437,7 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
     const colSpan = cols.length + (isBulk ? 1 : 0) + (hasActions ? 1 : 0)
     const renderRow = (row: Row<T>, index: number) => {
         const isSelected = ctx.selectedId === row.id || row.getIsSelected()
+        const isFlashing = ctx.flashId === row.id
         return (
             <tr
                 key={row.id}
@@ -412,7 +445,9 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
                 // Grouped and tree rows are not a flat sequence of the total: no row index.
                 aria-rowindex={groups || isTree ? undefined : table.getState().pagination.pageIndex * table.getState().pagination.pageSize + index + 2}
                 aria-selected={ctx.selection !== "none" ? isSelected : undefined}
-                className={cn("group border-b border-border/40 table-row-hover transition-colors", ctx.canOpen && "cursor-pointer", isSelected && "bg-primary/5")}
+                data-saved-flash={isFlashing || undefined}
+                // The highlight fades out through `transition-colors` when the flash ends.
+                className={cn("group border-b border-border/40 table-row-hover transition-colors duration-700", ctx.canOpen && "cursor-pointer", isSelected && "bg-primary/5", isFlashing && "bg-primary/10")}
                 // Mouse enhancement only: the keyboard path is the primary cell button (AX-3).
                 onClick={() => ctx.canOpen && ctx.open(row.original)}
             >
@@ -718,7 +753,7 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
             ...trailingDefs.map(({ id, def }) => ({ key: `trailing-${id}`, label: def.label, value: <FieldValue def={def} row={data} surface="card" align="start" />, className: "@md:hidden" })),
         ]
         return (
-            <li key={row.id} className="@container min-w-0">
+            <li key={row.id} data-saved-flash={ctx.flashId === row.id || undefined} className={cn("@container min-w-0 rounded-sm ring-2 ring-transparent transition-shadow duration-700", ctx.flashId === row.id && "ring-primary/40")}>
                 <EntityCard
                     variant="compact"
                     isSelected={ctx.selectedId === row.id}

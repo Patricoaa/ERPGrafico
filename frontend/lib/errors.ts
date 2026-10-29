@@ -58,7 +58,6 @@ export function getErrorMessage(error: unknown): string {
     // Axios-like errors (most common in this codebase)
     if (isAxiosLikeError(error)) {
         const data = error.response?.data
-        console.log("DEBUG getErrorMessage data:", data)
         if (data) {
             // Handle custom error shape from core.api.exceptions
             if (typeof data.error === "object" && data.error !== null) {

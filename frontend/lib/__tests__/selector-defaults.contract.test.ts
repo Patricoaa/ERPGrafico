@@ -388,10 +388,12 @@ function scanAll(): Violation[] {
 let violations: Violation[];
 let baseline: BaselineEntry[];
 
+// Whole-repo TypeScript AST scan: under a parallel full run it needs more than the
+// default 10 s hook budget.
 beforeAll(() => {
   violations = scanAll();
   baseline = loadBaseline();
-});
+}, 120_000);
 
 describe('Selector Defaults Contract', () => {
   if (process.env.SELECTOR_DEFAULTS_REPORT === '1') {

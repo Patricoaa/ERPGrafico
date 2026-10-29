@@ -10,18 +10,31 @@ type ValidHandler = SubmitHandler<FieldValues>
  * Captura el último `onValid` que el drawer pasó a `form.handleSubmit(...)` para poder enviar el
  * formulario desde "Guardar y continuar" sin tocar cada drawer. `handleSubmit` se llama en el JSX,
  * después de este hook, así que el parche se instala en el primer render.
+ *
+ * Mientras `onValid` corre (`submitting`), el formulario cuenta como limpio: el drawer que se cierra al
+ * guardar (`setOpen(false)` → `panel.close()` → `runGuarded`) no debe toparse con su propia guarda. Un
+ * envío fallido no cierra, así que los cambios siguen protegidos.
+ *
+ * Regla para los drawers: el cierre tras guardar ocurre DENTRO del callback de `handleSubmit` (con
+ * `await` de la mutación). Un cierre diferido (`setTimeout`, `mutate(…, { onSuccess })` sin `await`) o un
+ * guardado lanzado desde otro modal (confirmación) queda fuera de la ventana y la guarda lo bloquea; en
+ * desarrollo el provider lo avisa por consola (`submittedAt`).
  */
-const submitters = new WeakMap<object, { onValid: ValidHandler | null; original: UseFormReturn<FieldValues>["handleSubmit"] }>()
+const submitters = new WeakMap<object, { onValid: ValidHandler | null; original: UseFormReturn<FieldValues>["handleSubmit"]; submitting: number; submittedAt: number }>()
 
 function captureSubmitter<T extends FieldValues>(form: UseFormReturn<T>) {
     let slot = submitters.get(form)
     if (!slot) {
         const original = form.handleSubmit as unknown as UseFormReturn<FieldValues>["handleSubmit"]
-        slot = { onValid: null, original }
+        slot = { onValid: null, original, submitting: 0, submittedAt: 0 }
         const captured = slot
         form.handleSubmit = ((onValid: ValidHandler, onInvalid?: Parameters<typeof original>[1]) => {
-            captured.onValid = onValid
-            return original(onValid, onInvalid)
+            const tracked: ValidHandler = async (data, event) => {
+                captured.submitting++
+                try { return await onValid(data, event) } finally { captured.submitting--; captured.submittedAt = Date.now() }
+            }
+            captured.onValid = tracked
+            return original(tracked, onInvalid)
         }) as unknown as typeof form.handleSubmit
         submitters.set(form, slot)
     }
@@ -65,7 +78,9 @@ export function useDirtyGuard<T extends FieldValues>({ form, open, name }: UseDi
         mountedRef.current = true
         const unregister = registerDirty({
             get name() { return nameRef.current },
-            isDirty: () => dirtyRef.current,
+            isDirty: () => dirtyRef.current && slot.submitting === 0,
+            isSubmitting: () => slot.submitting > 0,
+            submittedAt: () => slot.submittedAt,
             discard: () => {
                 // Limpia ya el espejo: otra guarda en la misma cadena (drawer + pila) no debe volver a preguntar.
                 dirtyRef.current = false

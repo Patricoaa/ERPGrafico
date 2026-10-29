@@ -101,6 +101,16 @@ class InvoiceListSerializer(serializers.ModelSerializer):
             for line in obj.lines.all()
         ]
 
+class InvoiceSummarySerializer(InvoiceListSerializer):
+    """Flat invoice row for document listings that never show line detail (F29
+    documents, P1-4): without ``lines``, so it needs no line prefetch."""
+
+    lines = None
+
+    class Meta(InvoiceListSerializer.Meta):
+        fields = [f for f in InvoiceListSerializer.Meta.fields if f != "lines"]
+
+
 class InvoiceWriteSerializer(serializers.ModelSerializer):
     """Optimized serializer for create and update views.
     Omits all computed and related read-only fields."""

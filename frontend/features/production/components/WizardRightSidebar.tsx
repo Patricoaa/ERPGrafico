@@ -1,17 +1,11 @@
 "use client"
 
-import {
-    CalendarIcon,
-    User,
-    FileText,
-    Wrench,
-    Layers,
-    Package,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { WizardSummarySidebar } from "@/components/shared"
-import { formatPlainDate, cn } from "@/lib/utils"
+import { useMemo } from "react"
+import { WizardSummarySidebar, ManufacturingSpecsPanel, type ManufacturingSpecsView } from "@/components/shared"
 import type { WorkOrder } from "../types"
+import { useUoMs } from "../hooks"
+import { useWizardStore } from "./WorkOrderWizardStore"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 
 interface WizardRightSidebarProps {
     order: WorkOrder
@@ -19,154 +13,88 @@ interface WizardRightSidebarProps {
     stageData: WorkOrder['stage_data']
 }
 
-interface SidebarSectionProps {
-    icon: React.ComponentType<{ className?: string }>
-    title: string
-    children: React.ReactNode
-    className?: string
+/** URL of each design file, matched by name against the OT's uploaded attachments. */
+export function designFileUrls(order: WorkOrder, names: string[]): Record<string, string> {
+    const urls: Record<string, string> = {}
+    for (const att of order.attachments ?? []) {
+        if (att.original_filename && names.includes(att.original_filename) && att.file) urls[att.original_filename] = att.file
+    }
+    return urls
 }
 
-function SidebarSection({ icon: Icon, title, children, className }: SidebarSectionProps) {
-    return (
-        <div className={cn("py-4", className)}>
-            <div className="pb-3 mb-3 shrink-0 flex items-center gap-2.5 border-b border-border/40">
-                <h3 className="text-2xs font-bold uppercase tracking-[0.25em] text-muted-foreground/70 flex items-center gap-2">
-                    <Icon className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
-                    {title}
-                </h3>
-            </div>
-            {children}
-        </div>
-    )
+/** Maps the persisted work order onto the shared specs projection. */
+export function workOrderSpecsView(order: WorkOrder, productName: string, stageData: WorkOrder['stage_data']): ManufacturingSpecsView {
+    const designFiles = stageData?.design_attachments ?? []
+    return {
+        product: {
+            name: productName,
+            quantity: order.quantity ?? stageData?.quantity ?? null,
+            uomName: order.uom_name ?? stageData?.uom_name ?? null,
+        },
+        productDescription: stageData?.product_description || order.product_description,
+        saleOrder: order.sale_order_number
+            ? formatEntityDisplay('sales.saleorder', { number: order.sale_order_number })
+            : null,
+        customer: order.sale_customer_name
+            ? { name: order.sale_customer_name, taxId: order.sale_customer_rut }
+            : null,
+        contact: stageData?.contact_name
+            ? { name: stageData.contact_name, taxId: stageData.contact_tax_id }
+            : null,
+        phases: stageData?.phases,
+        specifications: {
+            prepress: stageData?.prepress_specs,
+            press: stageData?.press_specs,
+            postpress: stageData?.postpress_specs,
+        },
+        designNeeded: stageData?.design_needed,
+        designFiles,
+        designFileUrls: designFileUrls(order, designFiles),
+        folioEnabled: stageData?.folio_enabled,
+        folioStart: stageData?.folio_start,
+        printType: (stageData?.print_type ?? null) as ManufacturingSpecsView['printType'],
+        createdAt: order.created_at ?? order.start_date ?? null,
+        requestedDelivery: order.sale_order_delivery_date ? String(order.sale_order_delivery_date) : null,
+    }
 }
 
-interface InfoRowProps {
-    label: string
-    value: React.ReactNode
-    icon?: React.ComponentType<{ className?: string }>
+/** Right rail shown while the work order is still being configured (nothing persisted yet). */
+export function WizardDraftSidebar() {
+    const { mfgConfig, selectedContact, productDescription, quantity, uomId } = useWizardStore()
+    const { data: uoms = [] } = useUoMs()
+    const uomName = uoms.find(u => String(u.id) === uomId)?.name ?? null
+    const view = useMemo<ManufacturingSpecsView>(() => ({
+        product: { name: productDescription || 'Producto', quantity: quantity || null, uomName },
+        productDescription: mfgConfig?.product_description,
+        contact: selectedContact ? { name: selectedContact.name, taxId: selectedContact.tax_id } : null,
+        phases: mfgConfig?.phases,
+        specifications: mfgConfig?.specifications,
+        designNeeded: mfgConfig?.design_needed,
+        designFiles: [...(mfgConfig?.existing_design_files ?? []), ...(mfgConfig?.design_files.map(f => f.name) ?? [])],
+        folioEnabled: mfgConfig?.folio_enabled,
+        folioStart: mfgConfig?.folio_start,
+        printType: mfgConfig?.print_type,
+    }), [mfgConfig, selectedContact, productDescription, quantity, uomName])
+    return <SpecsRail view={view} />
 }
 
-function InfoRow({ label, value, icon: Icon }: InfoRowProps) {
-    return (
-        <div className="flex items-start gap-2 py-1.5">
-            {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground/50 mt-0.5 shrink-0" />}
-            <div className="flex-1 min-w-0">
-                <p className="text-3xs font-medium uppercase tracking-wide text-muted-foreground/60 leading-none mb-0.5">{label}</p>
-                <p className="text-xs text-foreground leading-snug">{value}</p>
-            </div>
-        </div>
-    )
-}
-
-export function WizardRightSidebar({
-    order,
-    productName,
-    stageData,
-}: WizardRightSidebarProps) {
-    const techSpecs = [
-        { label: "Pre-Impresión", value: stageData?.prepress_specs },
-        { label: "Diseño", value: stageData?.design_needed ? "Requerido" : null },
-        { label: "Folio Inicial", value: stageData?.folio_start },
-        { label: "Impresión", value: stageData?.press_specs },
-        { label: "Post-Impresión", value: stageData?.postpress_specs },
-    ].filter(s => s.value)
-
-    const hasInfo = productName || order?.start_date || order?.sale_order_delivery_date ||
-        stageData?.contact_name || order?.sale_customer_name
-
+function SpecsRail({ view }: { view: ManufacturingSpecsView }) {
     return (
         <WizardSummarySidebar
             side="right"
-            width="w-64"
-            className="hidden lg:flex"
+            width="w-72"
+            className="hidden lg:flex self-stretch h-auto"
             scrollAreaClassName="min-h-0"
             body={
                 <>
-                    {/* General Info */}
-                    {hasInfo && (
-                        <SidebarSection icon={Layers} title="Información">
-                            <div className="space-y-0">
-                                <InfoRow
-                                    icon={Package}
-                                    label="Producto"
-                                    value={
-                                        <span>
-                                            {productName}
-                                            {order?.product_description && (
-                                                <span className="block text-2xs text-muted-foreground/70 italic leading-tight mt-0.5 line-clamp-2">
-                                                    {order.product_description}
-                                                </span>
-                                            )}
-                                        </span>
-                                    }
-                                />
-                                {order?.start_date && (
-                                    <InfoRow
-                                        icon={CalendarIcon}
-                                        label="Inicio"
-                                        value={formatPlainDate(order.start_date)}
-                                    />
-                                )}
-                                {order?.sale_order_delivery_date && (
-                                    <InfoRow
-                                        icon={CalendarIcon}
-                                        label="Entrega"
-                                        value={formatPlainDate(order.sale_order_delivery_date)}
-                                    />
-                                )}
-                                {(stageData?.contact_name || order?.sale_customer_name) && (
-                                    <InfoRow
-                                        icon={User}
-                                        label="Cliente"
-                                        value={
-                                            <span>
-                                                {stageData?.contact_name || order?.sale_customer_name}
-                                                {(stageData?.contact_tax_id || order?.sale_customer_rut) && (
-                                                    <span className="block text-2xs text-muted-foreground/60 font-mono mt-0.5">
-                                                        {stageData?.contact_tax_id || order?.sale_customer_rut}
-                                                    </span>
-                                                )}
-                                            </span>
-                                        }
-                                    />
-                                )}
-                            </div>
-                        </SidebarSection>
-                    )}
-
-                    {/* Technical Specs — always shown */}
-                    <SidebarSection icon={Wrench} title="Especificaciones" className={cn(hasInfo && "border-t border-border/20")}>
-                        <div className="space-y-0">
-                            {order?.prepress_archive && (
-                                <div className="mb-3">
-                                    <p className="text-3xs font-medium uppercase tracking-wide text-muted-foreground/60 mb-1.5 flex items-center gap-1.5">
-                                        <FileText className="h-3 w-3" />
-                                        Archivo de Diseño
-                                    </p>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="w-full text-xs h-7"
-                                        onClick={() => window.open(order.prepress_archive, '_blank')}
-                                    >
-                                        Ver Archivo
-                                    </Button>
-                                </div>
-                            )}
-                            {techSpecs.map((spec) => (
-                                <InfoRow
-                                    key={spec.label}
-                                    label={spec.label}
-                                    value={String(spec.value)}
-                                />
-                            ))}
-                            {!order?.prepress_archive && techSpecs.length === 0 && (
-                                <p className="text-3xs text-muted-foreground/50 italic py-1">Sin especificaciones registradas</p>
-                            )}
-                        </div>
-                    </SidebarSection>
+                    <ManufacturingSpecsPanel view={view} />
                 </>
             }
         />
     )
+}
+
+export function WizardRightSidebar({ order, productName, stageData }: WizardRightSidebarProps) {
+    const view = useMemo(() => workOrderSpecsView(order, productName, stageData), [order, productName, stageData])
+    return <SpecsRail view={view} />
 }

@@ -2,56 +2,55 @@
   {
     "file": "components/shared/DocumentAttachmentDropzone.tsx",
     "line": 48,
-    "rule": "R2"
+    "rule": "R2",
+    "snippet": "relative group w-full min-h-[72px]"
   },
   {
     "file": "components/shared/DocumentAttachmentDropzone.tsx",
     "line": 57,
-    "rule": "R2"
+    "rule": "R2",
+    "snippet": "min-h-[72px] w-full flex flex-col items-center justify-center gap-1 group-hover:text-primary transition-colors"
   },
   {
     "file": "components/shared/LabeledCheckbox.tsx",
     "line": 45,
-    "rule": "R2"
+    "rule": "R2",
+    "snippet": "flex items-center justify-between w-full px-3 py-1.5 min-h-[1.5rem] cursor-pointer"
   },
   {
     "file": "components/shared/LabeledSwitch.tsx",
     "line": 98,
-    "rule": "R2"
+    "rule": "R2",
+    "snippet": "flex items-center justify-between w-full px-3 h-full min-h-[1.5rem] cursor-pointer gap-3"
   },
   {
     "file": "features/inventory/components/CategoryDrawer.tsx",
-    "line": 119,
-    "rule": "R2"
+    "line": 118,
+    "rule": "R2",
+    "snippet": "h-[250px] overflow-y-auto p-1 grid grid-cols-2 gap-1"
   },
   {
     "file": "features/inventory/components/UoMDrawer.tsx",
-    "line": 324,
-    "rule": "R2"
+    "line": 323,
+    "rule": "R2",
+    "snippet": "max-h-[200px] overflow-y-auto space-y-1"
   },
   {
     "file": "features/inventory/components/UoMDrawer.tsx",
-    "line": 380,
-    "rule": "R2"
+    "line": 379,
+    "rule": "R2",
+    "snippet": "max-h-[200px] overflow-y-auto space-y-1"
   },
   {
     "file": "features/production/components/forms/WorkOrderBasicStep/WorkOrderBasicInfo.tsx",
     "line": 319,
-    "rule": "R4"
-  },
-  {
-    "file": "features/production/components/steps/ManufacturingConfigStep.tsx",
-    "line": 524,
-    "rule": "R4"
-  },
-  {
-    "file": "features/production/components/steps/ManufacturingConfigSummary.tsx",
-    "line": 477,
-    "rule": "R4"
+    "rule": "R4",
+    "snippet": "h-5 w-5 text-muted-foreground hover:text-destructive shrink-0"
   },
   {
     "file": "features/treasury/components/TerminalBatchSelectionModal.tsx",
-    "line": 188,
-    "rule": "R2"
+    "line": 187,
+    "rule": "R2",
+    "snippet": "max-h-[200px] overflow-y-auto space-y-1"
   }
 ]

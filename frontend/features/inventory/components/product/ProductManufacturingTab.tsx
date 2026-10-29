@@ -127,7 +127,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                             render={({ field }) => (
                                 <LabeledSwitch
                                     label={getDomainConceptTitle('ldm')}
-                                    description={isExpress && !hasVariants ? "Requerido para modo Express." : "Habilitar receta de fabricación."}
+                                    description={isExpress && !hasVariants ? "Requerido para modo Express." : "Habilitar LdM de fabricación."}
                                     checked={field.value}
                                     onCheckedChange={(val) => {
                                         form.setValue("has_bom", val, { shouldDirty: true, shouldValidate: false })
@@ -187,8 +187,8 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                         <div className="flex items-start gap-3 p-3 rounded-md bg-info/5 border border-info/20 mb-4">
                             <Info className="h-3.5 w-3.5 text-info mt-0.5 shrink-0" />
                             <p className="text-3xs text-info/80 font-medium leading-relaxed">
-                                Esta receta aplica al <strong>producto plantilla</strong>.
-                                Para gestionar las recetas de las variantes, use <strong>&quot;Clonar BOM&quot;</strong> en el Tab Variantes.
+                                Esta LdM aplica al <strong>producto plantilla</strong>.
+                                Para gestionar las LdM de las variantes, use <strong>&quot;Clonar LdM&quot;</strong> en el Tab Variantes.
                             </p>
                         </div>
                     )}
@@ -210,7 +210,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                             }}
                             addButtonText={`Nueva ${getDomainConceptTitle('ldm')}`}
                             columns={[
-                                { header: "Nombre de la Receta", width: "w-1/2", align: "left" },
+                                { header: "Nombre de la LdM", width: "w-1/2", align: "left" },
                                 { header: "Componentes", width: "w-1/4", align: "center" },
                                 { header: "Activa", width: "w-24", align: "center" },
                                 { header: "", width: "w-16" },
@@ -220,7 +220,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                                 {isBOMsLoading ? (
                                     <TableRow>
                                         <TableCell colSpan={4} className="text-center py-8 text-muted-foreground text-xs italic">
-                                            Cargando recetas...
+                                            Cargando LdM...
                                         </TableCell>
                                     </TableRow>
                                 ) : boms.map((bom) => (
@@ -276,7 +276,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                                 {!isBOMsLoading && boms.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={4} className="text-center py-8 text-muted-foreground text-xs italic">
-                                            No hay recetas configuradas. Haga clic en &quot;Nueva {getDomainConceptTitle('ldm')}&quot;.
+                                            No hay LdM configuradas. Haga clic en &quot;Nueva {getDomainConceptTitle('ldm')}&quot;.
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -304,8 +304,8 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                         await deleteBom(confirmDeleteBomId)
                     }
                 }}
-                title="Eliminar Receta"
-                description="¿Eliminar esta receta? Esta acción no se puede deshacer."
+                title="Eliminar LdM"
+                description="¿Eliminar esta LdM? Esta acción no se puede deshacer."
                 variant="destructive"
                 confirmText="Eliminar"
             />

@@ -298,6 +298,7 @@ export function FiscalYearClosingWizard({
 
             {/* Financial Statements Detail Modal */}
             <BaseModal
+                asDialog
                 open={showTrialBalance}
                 onOpenChange={setShowTrialBalance}
                 icon={Scale}
@@ -316,6 +317,7 @@ export function FiscalYearClosingWizard({
 
             {/* Income Statement Detail Modal */}
             <BaseModal
+                asDialog
                 open={showIncomeStatement}
                 onOpenChange={setShowIncomeStatement}
                 icon={PieChart}

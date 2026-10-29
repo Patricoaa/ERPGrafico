@@ -4,8 +4,7 @@ import { Check, X } from "lucide-react"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useUniversalSearch } from "@/features/search"
 
-import { DynamicIcon, LabeledContainer, SearchablePopover } from '@/components/shared'
-import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
+import { DynamicIcon, LabeledContainer, SearchablePopover, SelectorTrigger } from '@/components/shared'
 import { hasEntityDrawer } from "@/lib/entity-drawers"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import type { SearchResult } from "@/features/search/api/searchApi"

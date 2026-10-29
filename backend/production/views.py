@@ -10,6 +10,8 @@ from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from purchasing.models import PurchaseOrder
+
 from .models import (
     BillOfMaterials,
     WorkOrder,
@@ -61,7 +63,28 @@ from .serializers import (
 from .services import WorkOrderMetricsService, WorkOrderPdfService, WorkOrderService
 
 
+def _error_message(exc):
+    """Readable text of an error: str() of a Django ValidationError is "['…']"."""
+    from rest_framework.exceptions import ValidationError as DRFValidationError
+
+    if isinstance(exc, DRFValidationError):
+        detail = exc.detail
+        if isinstance(detail, dict):
+            return " ".join(
+                f"{field}: {' '.join(map(str, msgs)) if isinstance(msgs, list) else msgs}"
+                for field, msgs in detail.items()
+            )
+        if isinstance(detail, list):
+            return " ".join(map(str, detail))
+        return str(detail)
+    if hasattr(exc, "messages"):
+        return " ".join(exc.messages)
+    return str(exc)
+
+
 class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    # deletion-policy: a WorkOrder is annulled (POST annul/), never hard-deleted
+    http_method_names = ["get", "post", "put", "patch", "head", "options"]
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = WorkOrderFilterSet
@@ -76,7 +99,15 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         "related_contact__tax_id",
     ]
     queryset = WorkOrder.objects.select_related(
-        "sale_order", "sale_order__customer", "related_contact", "product", "sale_line", "warehouse"
+        "sale_order",
+        "sale_order__customer",
+        "related_contact",
+        "product",
+        "product__manufacturing_profile",
+        "sale_line",
+        "sale_line__product",
+        "sale_line__product__manufacturing_profile",
+        "warehouse",
     ).prefetch_related(
         "materials",
         "materials__component",
@@ -88,6 +119,13 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         "sale_order__attachments",
         "sale_line__attachments",
         "tasks",
+        # TaskSerializer reads these per task (assignment, approver, evidence, history)
+        "tasks__assigned_to",
+        "tasks__assigned_group",
+        "tasks__created_by",
+        "tasks__completed_by",
+        "tasks__attachments",
+        "tasks__events__user",
     )
     serializer_class = WorkOrderSerializer
 
@@ -128,42 +166,59 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return super().create(request, *args, **kwargs)
         except Exception as e:
             logger.exception("Error creating WorkOrder")
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         try:
-            WorkOrderService.validate_update_allowed(instance, request.data.keys())
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            WorkOrderService.validate_update_payload(instance, request.data)
+        except (ValidationError, ValueError) as e:
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
+        before = dict(instance.stage_data or {})
         response = super().update(request, *args, **kwargs)
         if response.status_code == 200:
-            try:
-                WorkOrderService.handle_update_attachments(
-                    self.get_object(), request.FILES, request.user
-                )
-            except Exception:
-                logger.exception("Error attaching files in update for WorkOrder %s", instance.pk)
+            WorkOrderService.after_update(self.get_object(), before, request.FILES, request.user)
         return response
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        try:
-            WorkOrderService.delete_work_order(instance)
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["post"])
     def annul(self, request, pk=None):
         """Annul an OT and reverse its effects"""
         work_order = self.get_object()
+        notes = request.data.get("notes", "") or request.data.get("reason", "")
+        if not (notes or "").strip():
+            return Response(
+                {"error": "El motivo de anulación es obligatorio."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         try:
-            notes = request.data.get("notes", "") or request.data.get("reason", "")
             WorkOrderService.annul_work_order(work_order=work_order, user=request.user, notes=notes)
-            return Response(WorkOrderSerializer(work_order).data)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as e:
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(WorkOrderSerializer(work_order).data)
+
+    @action(detail=True, methods=["get"], url_path="annul_impact")
+    def annul_impact(self, request, pk=None):
+        """Read-only preview of what an annulment would affect."""
+        work_order = self.get_object()
+        affected_pos = [
+            {"id": po.id, "display_id": po.display_id, "status": po.status}
+            for po in work_order.purchase_orders.exclude(
+                status=PurchaseOrder.Status.CANCELLED
+            )
+        ]
+        open_tasks_count = work_order.tasks.filter(
+            status__in=["PENDING", "IN_PROGRESS"]
+        ).count()
+        has_consumptions = work_order.consumptions.exists()
+        return Response(
+            {
+                "is_cancellable": work_order.is_cancellable,
+                "cancellation_limit_stage": work_order.cancellation_limit_stage,
+                "has_consumptions": has_consumptions,
+                "purchase_orders_affected": affected_pos,
+                "open_tasks_count": open_tasks_count,
+            }
+        )
 
     @action(detail=True, methods=["post"])
     def rectify(self, request, pk=None):
@@ -173,7 +228,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             work_order.refresh_from_db()
             return Response(WorkOrderSerializer(work_order).data)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["post"])
     def transition(self, request, pk=None):
@@ -182,9 +237,9 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             WorkOrderService.transition_from_request(work_order, request)
             return Response(WorkOrderSerializer(work_order).data)
         except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["post"])
     def duplicate(self, request, pk=None):
@@ -195,7 +250,26 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response(WorkOrderSerializer(new_wo).data, status=status.HTTP_201_CREATED)
         except Exception as e:
             logger.exception("Error duplicating WorkOrder")
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["post"], url_path="remove_attachment")
+    def remove_attachment(self, request, pk=None):
+        """Remove a design-file attachment from the work order."""
+        from core.models import Attachment
+        from django.contrib.contenttypes.models import ContentType
+        work_order = self.get_object()
+        attachment_id = request.data.get("attachment_id")
+        if not attachment_id:
+            return Response({"error": "attachment_id es requerido."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            ct = ContentType.objects.get_for_model(work_order)
+            attachment = Attachment.objects.get(id=attachment_id, content_type=ct, object_id=work_order.id)
+            attachment.delete()
+            return Response(WorkOrderSerializer(work_order).data)
+        except Attachment.DoesNotExist:
+            return Response({"error": "Adjunto no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["patch"], url_path="update_section")
     def update_section(self, request, pk=None):
@@ -216,7 +290,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 WorkOrderService.update_mfg_section(work_order, section, payload, user=request.user)
             return Response(WorkOrderSerializer(work_order).data)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["post"], url_path="restart")
     def restart(self, request, pk=None):
@@ -226,11 +300,11 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({"initial_data": initial_data}, status=status.HTTP_200_OK)
         except ValidationError as e:
             if work_order.status != WorkOrder.Status.DRAFT:
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
             se = WorkOrderService.check_side_effects(work_order)
             return Response({"error": str(e), "side_effects": se}, status=status.HTTP_409_CONFLICT)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=["get"])
     def metrics(self, request):
@@ -242,7 +316,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response(data)
         except Exception as e:
             logger.exception("Error calculating metrics")
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["get"])
     def print_pdf(self, request, pk=None):
@@ -258,7 +332,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return response
         except Exception as e:
             logger.exception("Error generating PDF")
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": _error_message(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=["post"])
     def add_material(self, request, pk=None):
@@ -267,7 +341,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             WorkOrderService.add_material_from_request(work_order, request)
             return Response(WorkOrderSerializer(work_order).data)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["post"])
     def update_material(self, request, pk=None):
@@ -283,32 +357,33 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 supplier_id=request.data.get("supplier_id") if "supplier_id" in request.data else None,
                 unit_price=Decimal(str(request.data.get("unit_price", 0))) if "unit_price" in request.data else None,
                 document_type=request.data.get("document_type") if "document_type" in request.data else None,
+                user=request.user,
             )
             return Response(WorkOrderSerializer(work_order).data)
         except WorkOrderMaterial.DoesNotExist:
             return Response({"error": "Material no encontrado en esta orden."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["post"])
     def remove_material(self, request, pk=None):
         work_order = self.get_object()
         try:
-            WorkOrderService.remove_material(work_order, request.data.get("material_id"))
+            WorkOrderService.remove_material(work_order, request.data.get("material_id"), user=request.user)
             return Response(WorkOrderSerializer(work_order).data)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @idempotent_endpoint(scope="production.order.bulk_transition")
     @action(detail=False, methods=["post"], url_path="bulk_transition")
     def bulk_transition(self, request):
         try:
             results = WorkOrderService.bulk_transition(
-                request.data.get("ids", []), request.data.get("next_stage")
+                request.data.get("ids", []), request.data.get("next_stage"), user=request.user
             )
             return Response(results)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=["post"], url_path="bulk_print")
     def bulk_print(self, request):
@@ -321,7 +396,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return response
         except Exception as e:
             logger.exception("Error generating bulk PDF")
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": _error_message(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=["get", "post"], url_path="comments")
     def comments(self, request, pk=None):
@@ -334,9 +409,9 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             comment = WorkOrderService.add_comment_from_request(order, request)
             return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=["post"])
     def create_manual(self, request):
@@ -344,7 +419,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             work_order = WorkOrderService.create_manual_from_request(request)
             return Response(WorkOrderSerializer(work_order).data, status=status.HTTP_201_CREATED)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _error_message(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class BillOfMaterialsViewSet(viewsets.ModelViewSet):

@@ -27,6 +27,7 @@ import { useServerDate } from "@/hooks/useServerDate"
 
 import { PINPadModal, POSApprovalCard } from "@/features/pos"
 import {type SaleOrder, type SaleOrderLine, type CheckoutDTEData, type CheckoutPaymentData, type CheckoutDeliveryData, type CheckoutResponse} from "../../types"
+import { canEditManufacturing, cleanManufacturingData, designFilesOf, existingOrderPayload } from "./checkoutPayload"
 import { type Contact } from "@/features/contacts"
 import { ManualTerminalNotice, type ManualTerminalReason } from "@/features/treasury"
 
@@ -141,13 +142,14 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
             { id: 'customer', label: 'Cliente' },
             { id: 'dte', label: 'Documento' },
         ]
-        if (hasManufacturing) {
+        // A confirmed order already has its OTs: the configuration is edited there
+        if (hasManufacturing && canEditManufacturing(order)) {
             s.push({ id: 'manufacturing', label: 'Fabricación' })
         }
         s.push({ id: 'delivery', label: 'Entrega' })
         s.push({ id: 'payment', label: 'Pago' })
         return s
-    }, [hasManufacturing])
+    }, [hasManufacturing, order])
 
     const totalSteps = steps.length;
 
@@ -323,6 +325,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                         <Step2_ManufacturingDetails
                             orderLines={currentOrderLines}
                             setOrderLines={setCurrentOrderLines}
+                            customer={selectedCustomerName ? { name: selectedCustomerName, tax_id: selectedCustomer?.tax_id ?? null } : null}
                         />
                     </div>
                 )
@@ -522,6 +525,21 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
         }
     }
 
+    const serializeLine = (l: SaleOrderLine) => {
+        return {
+            product: l.product || l.id || null,
+            description: l.product_name || l.description,
+            quantity: l.qty || l.quantity || 0,
+            unit_price: l.unit_price_net || l.unit_price,
+            unit_price_gross: l.unit_price_gross,
+            uom: l.uom || null,
+            tax_rate: (dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA') ? 0 : rate,
+            discount_amount: l.discount_amount || 0,
+            discount_percentage: parseFloat(((l.discount_percentage || 0)).toFixed(2)),
+            manufacturing_data: cleanManufacturingData(l),
+        }
+    }
+
     // Checkout handlers
     const executeCheckout = async (pin?: string) => {
         setLoading(true)
@@ -529,47 +547,20 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
         try {
             const formData = new FormData()
 
-            const payloadOrder = order ? { id: order.id } : {
+            const payloadOrder = order ? existingOrderPayload(order, currentOrderLines) : {
                 customer: selectedCustomerId ? parseInt(selectedCustomerId) : null,
                 payment_method: paymentData.method,
                 payment_method_id: paymentData.paymentMethodId ?? null,
                 channel: channel,
                 total_discount_amount: totalDiscountAmount,
-                lines: currentOrderLines.map((l: SaleOrderLine) => {
-                    let cleanMfgData = null
-                    if (l.manufacturing_data) {
-                        const { design_files, ...rest } = l.manufacturing_data as unknown as Record<string, unknown>
-                        cleanMfgData = {
-                            ...rest,
-                            design_filenames: ((design_files as unknown as File[]) || []).map((f: File) => f.name),
-                        }
-                    }
-                    return {
-                        product: l.product || l.id || null,
-                        description: l.product_name || l.description,
-                        quantity: l.qty || l.quantity || 0,
-                        unit_price: l.unit_price_net || l.unit_price,
-                        unit_price_gross: l.unit_price_gross,
-                        uom: l.uom || null,
-                        tax_rate: (dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA') ? 0 : rate,
-                        discount_amount: l.discount_amount || 0,
-                        discount_percentage: parseFloat(((l.discount_percentage || 0)).toFixed(2)),
-                        manufacturing_data: cleanMfgData
-                    }
-                })
+                lines: currentOrderLines.map(serializeLine)
             }
             formData.append('order_data', JSON.stringify(payloadOrder))
 
             currentOrderLines.forEach((l: SaleOrderLine, lineIdx: number) => {
-                if (l.manufacturing_data) {
-                    const mfgData = l.manufacturing_data as unknown as Record<string, unknown>
-                    const designFiles = mfgData.design_files as File[] | undefined
-                    if (designFiles) {
-                        designFiles.forEach((file: File, fileIdx: number) => {
-                            formData.append(`line_${lineIdx}_design_${fileIdx}`, file)
-                        })
-                    }
-                }
+                designFilesOf(l).forEach((file: File, fileIdx: number) => {
+                    formData.append(`line_${lineIdx}_design_${fileIdx}`, file)
+                })
             })
 
             formData.append('dte_type', dteData.type)
@@ -744,23 +735,14 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
         try {
             // Re-using logic to build formData
             // This would normally be abstracted into a helper
-            const payloadOrder = order ? { id: order.id } : {
+            const payloadOrder = order ? existingOrderPayload(order, currentOrderLines) : {
                 customer: selectedCustomerId ? parseInt(selectedCustomerId) : null,
                 payment_method: paymentData.method,
                 payment_method_id: paymentData.paymentMethodId ?? null,
                 channel: channel,
                 total_discount_amount: totalDiscountAmount,
-                lines: currentOrderLines.map((l: SaleOrderLine) => ({
-                    product: l.product || l.id || null,
-                    description: l.product_name || l.description,
-                    quantity: l.qty || l.quantity || 0,
-                    unit_price: l.unit_price_net || l.unit_price,
-                    unit_price_gross: l.unit_price_gross,
-                    uom: l.uom || null,
-                    tax_rate: (dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA') ? 0 : rate,
-                    discount_amount: l.discount_amount || 0,
-                    discount_percentage: parseFloat(((l.discount_percentage || 0)).toFixed(2))
-                }))
+                // Same lines as the checkout: the approved sale must keep its manufacturing data
+                lines: currentOrderLines.map(serializeLine)
             }
             const formData = new FormData()
             formData.append('order_data', JSON.stringify(payloadOrder))

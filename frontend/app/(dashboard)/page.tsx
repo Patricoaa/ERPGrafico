@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { MODULE_ORDER, getModuleConfig, getModuleDefaultUrl } from "@/lib/module-registry"
 import { useAuth } from "@/contexts/AuthContext"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/shared"
 
 /**
  * Rutas raíz. Redirige al primer módulo disponible para el usuario.

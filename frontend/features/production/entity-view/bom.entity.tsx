@@ -56,7 +56,7 @@ export const bomEntity = defineEntity<BOM>()((f) => ({
         product: f.value("bomProduct", (b) => b, { label: "Producto" }),
         name: f.text("name", { label: "Nombre / Versión", align: "center" }),
         linesCount: f.number((b) => b.lines_count ?? 0, { label: "Componentes", suffix: "comp." }),
-        totalCost: f.money("total_cost", { label: "Costo Total" }),
+        totalCost: f.money("total_cost", { label: "Costo por u. de rendimiento" }),
         active: f.status((b) => (b.active ? { status: "active", label: "Activa" } : { status: "inactive", label: "Inactiva" }), { label: "Estado" }),
     },
 }))

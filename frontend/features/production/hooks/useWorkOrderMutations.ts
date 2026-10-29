@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import api from '@/lib/api'
 import { showApiError } from '@/lib/errors'
 import { invalidateCrossFeature } from '@/lib/invalidation'
-import { getDomainConceptTitle, getDomainConceptMessage } from '@/lib/entity-registry'
+import { getDomainConceptTitle } from '@/lib/entity-registry'
 import { useRealtime } from '@/features/realtime'
 import type { WorkOrderStageData } from '../schemas'
 
@@ -17,6 +17,8 @@ export interface TransitionPayload {
   data?: WorkOrderStageData
   /** Optional design file to attach (multipart) */
   designFile?: File | null
+  /** Recorded in the order history; required by the server when reopening a stage */
+  notes?: string
 }
 
 export interface RectifyPayload {
@@ -70,10 +72,11 @@ export function useWorkOrderMutations(
 
   // ── transition ─────────────────────────────────────────────────────────────
   const transitionMutation = useMutation({
-    mutationFn: async ({ nextStageId, data = {}, designFile }: TransitionPayload) => {
+    mutationFn: async ({ nextStageId, data = {}, designFile, notes }: TransitionPayload) => {
       const formData = new FormData()
       formData.append('next_stage', nextStageId)
       formData.append('data', JSON.stringify(data))
+      if (notes) formData.append('notes', notes)
       if (designFile) {
         formData.append('design_attachment', designFile)
       }
@@ -190,19 +193,6 @@ export function useWorkOrderMutations(
     onError: (err) => showApiError(err, 'Error al anular la orden'),
   })
 
-  // ── deleteOrder ────────────────────────────────────────────────────────────
-  const deleteOrderMutation = useMutation({
-    mutationFn: async () => {
-      await api.delete(`/production/orders/${orderId}/`)
-    },
-    onSuccess: () => {
-      markLocalMutation()
-      toast.success(getDomainConceptMessage('ot', 'deleted'))
-      invalidate()
-    },
-    onError: (err) => showApiError(err, 'Error al eliminar la orden'),
-  })
-
   // ── duplicateOrder ─────────────────────────────────────────────────────────
   const duplicateOrderMutation = useMutation({
     mutationFn: async () => {
@@ -245,7 +235,6 @@ export function useWorkOrderMutations(
     updateMaterial: updateMaterialMutation.mutateAsync,
     removeMaterial: removeMaterialMutation.mutateAsync,
     annul: annulMutation.mutateAsync,
-    deleteOrder: deleteOrderMutation.mutateAsync,
     duplicateOrder: duplicateOrderMutation.mutateAsync,
 
     uploadFinalPhoto: uploadFinalPhotoMutation.mutateAsync,
@@ -255,7 +244,6 @@ export function useWorkOrderMutations(
     isRectifying: rectifyMutation.isPending,
     isAddingMaterial: addMaterialMutation.isPending || updateMaterialMutation.isPending,
     isAnnuling: annulMutation.isPending,
-    isDeleting: deleteOrderMutation.isPending,
     isDuplicating: duplicateOrderMutation.isPending,
     isUploadingPhoto: uploadFinalPhotoMutation.isPending,
   }

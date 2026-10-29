@@ -65,7 +65,8 @@ El riel de pasos compartido (`WizardStepsSidebar` en `components/shared`) tenía
 
 - Cada fila es un `<button>` con `after:absolute after:inset-0` (stretched link).
 - `aria-current="step"` en el activo.
-- `aria-disabled` + `disabled` en futuros/deshabilitados.
+- `aria-disabled` + `disabled` en futuros/deshabilitados (un `disabled: false` explícito habilita un paso futuro).
+- El contenido de la fila (`z-10`) es `pointer-events-none`: el clic llega al botón estirado.
 - Acciones de governance (ver/editar/retroceder) en columna separada `z-10` → **nunca botones anidados**.
 - Navegación por teclado nativa (Tab/Enter/Space).
 

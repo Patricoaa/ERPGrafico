@@ -4,6 +4,7 @@ import type { StageId } from './constants/stages'
 export type { StageId }
 
 import type { WorkOrderInitialData } from '@/types/forms'
+import type { TaskAttachment } from '@/features/workflow'
 
 export type WizardMode =
     | { kind: 'create'; defaultOtType?: 'LINKED' | 'NONE'; defaultProductId?: string; initialData?: WorkOrderInitialData }
@@ -44,6 +45,16 @@ export interface ProductionAttachment {
     uploaded_by_name?: string
 }
 
+export interface WorkOrderTaskEvent {
+    id: number
+    action: "COMPLETED" | "REOPENED" | string
+    user_name: string | null
+    notes: string
+    confirmations?: Record<string, boolean>
+    attachments_data: TaskAttachment[]
+    created_at: string
+}
+
 export interface WorkOrderTask {
     id: string | number
     task_type: string
@@ -51,12 +62,20 @@ export interface WorkOrderTask {
     assigned_to?: number
     assigned_group?: string
     assigned_group_name?: string
+    assigned_to_data?: { username: string } | null
     data?: Record<string, unknown>
     title?: string
     description?: string
     priority?: string
     created_by?: string
     created_at?: string
+    /** Serialized requirements: key → human-readable message.  Key "evidence" means a file attachment is required. */
+    requirements?: Record<string, string>
+    /** Past completion/reopening events for this task. */
+    events_data?: WorkOrderTaskEvent[]
+    /** User who last completed this task. */
+    completed_by_data?: { username: string } | null
+    attachments_data?: TaskAttachment[]
 }
 
 /** One entry of `WorkOrder.stage_history` (WorkOrderHistorySerializer). */
@@ -147,6 +166,7 @@ export interface WorkOrder {
     total_price?: number
     created_at?: string
     is_cancellable?: boolean
+    has_consumptions?: boolean
     checkout_files?: ProductionAttachment[]
     attachments?: ProductionAttachment[]
     production_discrepancy?: {
@@ -155,6 +175,26 @@ export interface WorkOrder {
         delta: number
     } | null
     side_effects?: WorkOrderSideEffects
+    /** Stages of this OT in order, as the server's stage graph sees them. */
+    stage_plan?: StageId[]
+    /** Stage the "Siguiente" action leads to (server-computed). */
+    next_stage?: StageId | null
+    production_outcome?: WorkOrderProductionOutcome | null
+}
+
+export interface WorkOrderProductionOutcome {
+    kind: "STOCK" | "SALE_ORDER" | string
+    finished_at: string
+    product_name: string
+    quantity: number
+    stocked: boolean
+    warehouse_name: string
+    sale_order: { id: number; number: string } | null
+    delivery: {
+        status: "PARTIAL" | "DELIVERED" | string
+        ordered: number
+        delivered: number
+    } | null
 }
 
 export interface BOMLine {
@@ -163,6 +203,8 @@ export interface BOMLine {
     component_name?: string
     component_code?: string
     component_cost?: number
+    /** Component's base UoM: component_cost is expressed per this unit. */
+    component_uom?: number
     quantity: number
     uom?: string | number
     uom_name?: string
@@ -240,7 +282,7 @@ export interface ProductVariantMinimal extends ProductMinimal {
 
 // ── Wizard navigation governance ──────────────────────────────────────────────
 
-export type WizardStepMode = 'view' | 'edit-in-place' | 'rewind'
+export type WizardStepMode = 'view' | 'edit-in-place'
 
 export interface StepCapabilities {
     canView: boolean
@@ -257,4 +299,8 @@ export interface WorkOrderSideEffects {
     has_stock_movements: boolean
     completed_tasks_count: number
     manually_edited_materials_count: number
+    /** Irreversible effects that block a rewind (the only ones the server enforces). */
+    rewind_blockers?: string[]
+    /** Blockers per reopenable stage: purchase orders only block reopening outsourcing. */
+    rewind_blockers_by_stage?: Record<string, string[]>
 }

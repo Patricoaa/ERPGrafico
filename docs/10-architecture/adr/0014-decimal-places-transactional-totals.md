@@ -14,7 +14,7 @@ relates-to: [F2-T07, docs/50-audit/Arquitectura Django/20-task-list.md]
 
 ## Contexto
 
-La Fase 2 de la refactorización de arquitectura (ver [10-roadmap.md](../../50-audit/Arquitectura%20Django/10-roadmap.md)) requiere crear una clase abstracta `TransactionalDocument` que centralice los campos `total_net`, `total_tax` y `total` compartidos por los documentos cabecera del ERP. Esta clase debe declarar un único valor de `decimal_places` para esos campos.
+La Fase 2 de la refactorización de arquitectura (ver `50-audit/Arquitectura Django/10-roadmap.md` _(snapshot de auditoría retirado; ver historial git)_) requiere crear una clase abstracta `TransactionalDocument` que centralice los campos `total_net`, `total_tax` y `total` compartidos por los documentos cabecera del ERP. Esta clase debe declarar un único valor de `decimal_places` para esos campos.
 
 ### Estado del codebase hoy
 
@@ -64,7 +64,7 @@ En CLP, ningún `SaleOrder.total` tiene decimales significativos en la base de d
 
 ### 4. Descarte de la opción `=2` (multi-moneda futura)
 
-El [roadmap de refactorización](../../50-audit/Arquitectura%20Django/10-roadmap.md) lista explícitamente entre sus anti-objetivos: _"No introducir microservicios. Esta es una refactorización dentro del monolito."_ y no hay requerimiento de multi-moneda en el backlog actual. Diseñar para multi-moneda con `=2` ahora sería YAGNI. Si en el futuro se implementa multi-moneda, ese ADR propio decidirá la precisión adecuada (probablemente un campo separado de conversión, no cambiar `decimal_places` en los totales CLP).
+El roadmap de refactorización (`50-audit/Arquitectura Django/10-roadmap.md` _(snapshot de auditoría retirado; ver historial git)_) lista explícitamente entre sus anti-objetivos: _"No introducir microservicios. Esta es una refactorización dentro del monolito."_ y no hay requerimiento de multi-moneda en el backlog actual. Diseñar para multi-moneda con `=2` ahora sería YAGNI. Si en el futuro se implementa multi-moneda, ese ADR propio decidirá la precisión adecuada (probablemente un campo separado de conversión, no cambiar `decimal_places` en los totales CLP).
 
 ## Consecuencias
 

@@ -66,7 +66,7 @@ function quantityLabel(workOrder: WorkOrder): string {
 // ─── Entity definition ──────────────────────────────────────────────────────
 
 export const workOrderEntity = defineEntity<WorkOrder>()((f) => ({
-    title: "Órdenes de Trabajo",
+    label: "production.workorder",
     fields: {
         number: f.code((w) => w.display_id || w.number || "", { label: "Folio" }),
         saleOrderNumber: f.value(

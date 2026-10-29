@@ -201,12 +201,13 @@ function scanFile(file: string): Violation[] {
 
 let violations: Violation[];
 
+// AST scan of every selector: give it room under a parallel full run.
 beforeAll(() => {
   violations = [];
   for (const file of [...findTsxFiles(SELECTORS_DIR), ...SHARED_FILES]) {
     violations.push(...scanFile(file));
   }
-});
+}, 120_000);
 
 describe('Selector Typography Contract', () => {
   it('R9: Selectors must use the shared SelectorTrigger primitive', () => {

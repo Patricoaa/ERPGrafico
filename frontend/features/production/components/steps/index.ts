@@ -1,5 +1,4 @@
 export * from './RectificationStep'
-export * from './ApprovalTaskListPanel'
 export * from './MaterialAssignmentStep'
 export * from './MaterialApprovalStep'
 export * from './OutsourcingAssignmentStep'

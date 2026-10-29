@@ -128,6 +128,22 @@ goBackEntity()  // vuelve al documento anterior
 
 **Pestañas efímeras (ADR-0101, sustituye la pila y las migas de ADR-0080/0100).** `openEntity` abre el documento como **pestaña** en la barra de trabajo permanente (`WorkspaceTabBar`, bajo la topbar) o activa la pestaña si ya está abierta (máx. 8). Solo se monta el drawer de la pestaña activa; el provider no envuelve nada: los drawers no necesitan cambios. Cerrar (X / Escape / × de la pestaña / `onSuccess`) cierra la pestaña activa y activa a su vecina, con guarda. Las pestañas se cierran al cambiar de página y no se serializan en la URL. `closeEntity` cierra todas. La Calculadora de Costos es otra pestaña (`openTool("cost-calculator")`) y conserva su estado mientras exista. `?selected` es una sola pestaña, la fila explorada: elegir otra la reemplaza y cerrarla limpia `?selected`.
 
+**Drawers que monta la página (edición `?selected`, creación `?modal=new`).** Dos piezas, siempre juntas:
+
+```tsx
+const panel = useEntityPanelRoute<Contact>({ endpoint: '/contacts', external: { open: externalOpen, onOpenChange } })
+<EntityPanelTab label="contacts.contact" {...panel.tab}>
+  {(open) => <ContactDrawer open={open} contact={panel.entity ?? undefined} onOpenChange={(o) => { if (!o) panel.close() }} />}
+</EntityPanelTab>
+```
+
+- `useEntityPanelRoute` (`@/hooks`) es el **único** lugar que lee `?selected` / `?action` / `?modal=new`, carga el registro (`endpoint`, vía `useSelectedEntity`) y cierra (`close`: limpia los tres params, con guarda de cambios sin guardar). Las vistas **no** escriben `handleClose*`, `isCreateOpen` ni `router.replace` a mano.
+- Varios paneles sobre una ruta se separan con `actions` (`[null, 'detail']`, `['disburse']`, `['view']`); `create: false` en los paneles que no crean; `enabled` / `resolved` cubren pestañas de la página y selecciones que la vista resuelve de sus filas.
+- `EntityPanelTab` (`@/components/providers`) registra la pestaña mientras `open`, muestra el drawer solo con su pestaña activa y a tamaño completo, y llama `onClose` al cerrar la pestaña. `id = null` = creación. Para estado no ligado a la URL (p. ej. libro de crédito) se pasan `id`/`open`/`onClose` a mano.
+- Alcance: **todo lo que crea o edita una entidad** es pestaña (drawers, wizards y modales de formulario). Quedan como overlay las acciones puntuales sobre un registro (pagar, depositar, cerrar sesión/año/periodo, confirmaciones, historiales y detalles de solo lectura).
+- Parámetros propios: `selectedParam` / `createValue` (`selected-device`, `modal=new-device`, `modal=batch`). Dos paneles del mismo registro se distinguen con `variant` en `EntityPanelTab`.
+- Un `BaseModal` (y por tanto un `GenericWizard` en `surface="modal"`) montado dentro de `EntityPanelTab` se renderiza solo como panel a tamaño completo (`PersistentPanelContext`); no hay que reescribirlo como `Drawer`.
+
 **Ficha documental (ADR-0083, revierte D4).** Los documentos abren su ficha documental ([component-document-sheet.md](./component-document-sheet.md)): OV y OC → `OrderSheet`, factura/nota → `InvoiceSheet` (U2–U3; `SaleOrderDrawer`, `PurchaseOrderDrawer` e `InvoiceDrawer` eliminados). Ningún label redirige al Order Hub. Las fichas documentales **no** reciben `onSuccess` en su adaptador: sus acciones no deben cerrar la pila.
 
 **`LazyDrawer` (legacy, GAP-12).** `DRAWER_MAP` se retiró: `LazyDrawer({ type, id, open, onOpenChange })` traduce el `docType` snake_case (`TYPE_TO_REGISTRY` + `service_obligation`, `inventory_document`) al label y renderiza el adaptador de `ENTITY_DRAWERS`. Hay un solo registro de fichas. Para código nuevo usar `openEntity`.
@@ -206,6 +222,7 @@ Todos los drawers deben adherirse a esta estructura unificada:
 - [ ] `FormFooter` canónico (o ausente si drawer read-only)
 - [ ] `contentClassName="p-0"` cuando usa `FormSplitLayout`
 - [ ] Callbacks estandarizados: Usa `onSuccess` (no `onSaved`, no `onUpdate`)
+- [ ] Cierre tras guardar **dentro** del callback de `form.handleSubmit` (`await` de la mutación → `onSuccess` → cerrar). Un guardado que pide confirmación vuelve a entrar con `form.handleSubmit(save)()` desde el modal (ver §5, guarda)
 - [ ] Registrado en `ENTITY_DRAWERS` si necesita apertura global desde link
 
 ---
@@ -243,6 +260,13 @@ otro documento, "Volver", cerrar y salir de la página hasta elegir *Guardar y c
 o *Seguir editando* (`UnsavedChangesDialog`). Los drawers con formulario la reciben gratis vía
 `useInitializeDrawerForm`; el resto de rutas (`useEntityRouteActions`, `useSelectedEntity`) pasan por
 `runGuarded` de `GlobalModalProvider`.
+
+**El cierre del guardado no pasa por la guarda solo si ocurre durante el envío.** `useDirtyGuard` cuenta el
+formulario como limpio mientras corre el callback de `form.handleSubmit` (el espejo de `isDirty` llega un render
+tarde). Si el drawer cierra fuera de esa ventana — `setTimeout`, `mutate(…, { onSuccess })` sin `await`, o un
+guardado lanzado desde un modal de confirmación — la guarda ve el formulario sucio, muestra *Cambios sin
+guardar* y la pestaña no se cierra (y *Guardar y continuar* reenvía). En desarrollo el provider lo avisa con
+`console.warn("[useDirtyGuard] …")` cuando bloquea a menos de 1 s del fin de un envío del mismo formulario.
 
 ### 5.1 Detalle de entidad = overlay siempre-recargable (reglas de foco y URL)
 
@@ -297,7 +321,10 @@ son las que lo hacen operar como un detalle real (DET-02):
 | Drawer de entidad sin `mode` (dos componentes view/edit separados) | un drawer con `mode?: DrawerMode` |
 | Calcular modo manualmente: `mode ?? (initialData ? "view" : "create")` | Usar `useDrawerMode({ mode, initialData })` |
 | Combinar `initialData` con fetch interno (`useQuery` dentro del drawer) | Elegir UNA estrategia: O `initialData`, O fetch con `id` |
+| `handleClose*` / `isCreateOpen` / `useSelectedEntity` + `router.replace` escritos en cada vista | `useEntityPanelRoute` + `EntityPanelTab` |
 | Adaptador con aliases: `<Drawer accountId={id} onSaved={onSuccess} />` | Estandarizar props en el Drawer a `id` y `onSuccess` |
+| Cerrar tras guardar con `setTimeout(() => onOpenChange(false), …)` o en `mutate(…, { onSuccess })` sin `await` | `await` de la mutación y cerrar dentro del callback de `handleSubmit` |
+| Modal de confirmación que llama `save(pendingValues)` directo | `onConfirm={() => void form.handleSubmit(save)()}` |
 
 ---
 

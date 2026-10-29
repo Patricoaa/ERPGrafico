@@ -124,7 +124,7 @@ def test_receipt_line_serializer_exposes_stock_move_document_ref(purchasing_setu
     ref = PurchaseReceiptLineSerializer(line).data["stock_move_document"]
     assert ref["label"] == "inventory.stockmove"
     assert ref["id"] == move.id
-    assert ref["url"] == f"/inventory/reports/movements?selected={move.id}"
+    assert ref["url"] == f"/d/inventory.stockmove/{move.id}"
 
 
 def test_receipt_serializer_document_ref_without_request_context(purchasing_setup):
@@ -170,4 +170,4 @@ def test_return_line_serializer_exposes_stock_move_document_ref(purchasing_setup
     ref = PurchaseReturnLineSerializer(line).data["stock_move_document"]
     assert ref["label"] == "inventory.stockmove"
     assert ref["id"] == line.stock_move_id
-    assert ref["url"] == f"/inventory/reports/movements?selected={line.stock_move_id}"
+    assert ref["url"] == f"/d/inventory.stockmove/{line.stock_move_id}"

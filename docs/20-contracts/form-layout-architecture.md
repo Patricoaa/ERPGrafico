@@ -89,7 +89,7 @@ Seguir este orden dentro del flujo vertical del formulario para mejorar la cogni
 
 ### FormSection 🟢
 
-Separador visual estandarizado para agrupar campos lógicamente. Implementa el **Level 1** de la [jerarquía visual](./component-visual-hierarchy.md).
+Separador visual estandarizado para agrupar campos lógicamente. Implementa el **Level 1** de la [jerarquía visual](./typography-scale.md).
 
 ```tsx
 <FormSection title="Alcance y Referencia" icon={Layers} />

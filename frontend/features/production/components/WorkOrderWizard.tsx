@@ -1,10 +1,11 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
-import { AlertTriangle, Package, FileText, Plus, Keyboard, Printer, Link2 } from 'lucide-react'
+import { AlertTriangle, Eye, Factory, FileText, Pencil, Plus, Keyboard, Printer, Link2, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 import {
@@ -22,7 +23,6 @@ import {
 import { cn } from '@/lib/utils'
 import { formatEntityDisplay, getDomainConceptTitle, getDomainConceptCode } from '@/lib/entity-registry'
 import { showApiError } from '@/lib/errors'
-import { useConfirmAction } from '@/hooks/useConfirmAction'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useAuth } from '@/contexts/AuthContext'
 import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
@@ -31,11 +31,11 @@ import { DocumentRelationsTab, useDocumentRelations } from '@/features/documents
 import { useWorkOrderMutations, productionApi } from '../hooks'
 import { completeTask } from '@/features/workflow'
 
-import { WizardModeBanner } from './WizardModeBanner'
 import { WizardProcessSidebar } from './WizardProcessSidebar'
 import { MobileStageDrawer } from './MobileStageDrawer'
 import { WizardStickyFooter } from './WizardStickyFooter'
-import { WizardRightSidebar } from './WizardRightSidebar'
+import { WizardRightSidebar, WizardDraftSidebar } from './WizardRightSidebar'
+import { StageActivityPanel } from './StageActivityPanel'
 import {
   MaterialAssignmentStep,
   MaterialApprovalStep,
@@ -47,10 +47,12 @@ import {
   RectificationStep,
   FinishedStep,
 } from './steps'
-import { useWizardStore, selectPendingTasks } from './WorkOrderWizardStore'
+import { useWizardStore, selectPendingTasks, unmetRequirements } from './WorkOrderWizardStore'
 import type { WorkOrder, WorkOrderMaterial, WorkOrderStage, WorkOrderTask, WizardMode } from '../types'
 import type { WorkOrderInitialData } from '@/types/forms'
 import { STAGES_ORDERED } from '../constants/stages'
+import { getStepCapabilities } from '../lib/stepGovernance'
+import { stageTaskType } from '../lib/stageTask'
 
 import { OriginSelectionStep } from './steps/OriginSelectionStep'
 import { SaleOrderProductStep } from './steps/SaleOrderProductStep'
@@ -64,25 +66,28 @@ const RAIL_COLLAPSED_STORAGE_KEY = 'erpgrafico.production.railCollapsed'
 const STEP_ORIGIN: WorkOrderStage = {
   id: 'ORIGIN_SELECTION',
   label: 'Origen de Fabricación',
-  icon: Package,
+  icon: Factory,
   alwaysShow: true,
   isCreationStep: true,
 }
 
-const STEP_SALE_ORDER_PRODUCT: WorkOrderStage = {
-  id: 'SALE_ORDER_PRODUCT',
-  label: 'Selección de OV y Producto',
-  icon: FileText,
-  alwaysShow: true,
-  isCreationStep: true,
-}
-
-const STEP_PRODUCT_SELECTION: WorkOrderStage = {
-  id: 'PRODUCT_SELECTION',
-  label: 'Selección de Producto',
-  icon: Plus,
-  alwaysShow: true,
-  isCreationStep: true,
+function getProductSelectionStage(otType: 'LINKED' | 'NONE' | null): WorkOrderStage {
+  if (otType === 'LINKED') {
+    return {
+      id: 'SALE_ORDER_PRODUCT',
+      label: `Selección de ${getDomainConceptTitle('ov')} y Producto`,
+      icon: FileText,
+      alwaysShow: true,
+      isCreationStep: true,
+    }
+  }
+  return {
+    id: 'PRODUCT_SELECTION',
+    label: otType === 'NONE' ? 'Selección de Producto (Stock)' : 'Selección de Producto',
+    icon: Plus,
+    alwaysShow: true,
+    isCreationStep: true,
+  }
 }
 
 const STEP_MFG_CONFIG: WorkOrderStage = {
@@ -98,13 +103,11 @@ const BASE_STAGES: WorkOrderStage[] = STAGES_ORDERED.filter(s => s.id !== 'CANCE
 function getCreateStages(otType: 'LINKED' | 'NONE' | null): WorkOrderStage[] {
   if (otType === null) return [STEP_ORIGIN]
 
-  const virtualSteps: WorkOrderStage[] = [STEP_ORIGIN]
-  if (otType === "LINKED") {
-    virtualSteps.push(STEP_SALE_ORDER_PRODUCT)
-  } else {
-    virtualSteps.push(STEP_PRODUCT_SELECTION)
-  }
-  virtualSteps.push(STEP_MFG_CONFIG)
+  const virtualSteps: WorkOrderStage[] = [
+    STEP_ORIGIN,
+    getProductSelectionStage(otType),
+    STEP_MFG_CONFIG,
+  ]
   return [...virtualSteps, ...BASE_STAGES.filter((s) => s.alwaysShow)]
 }
 
@@ -112,14 +115,12 @@ function getUnifiedStages(
   chosenOtType: 'LINKED' | 'NONE' | null,
   order: WorkOrder | null
 ): WorkOrderStage[] {
-  // Build completed creation steps
-  const creationSteps: WorkOrderStage[] = [{ ...STEP_ORIGIN, alwaysShow: true }]
-  if (chosenOtType === "LINKED") {
-    creationSteps.push({ ...STEP_SALE_ORDER_PRODUCT, alwaysShow: true })
-  } else if (chosenOtType === "NONE") {
-    creationSteps.push({ ...STEP_PRODUCT_SELECTION, alwaysShow: true })
-  }
-  creationSteps.push({ ...STEP_MFG_CONFIG, alwaysShow: true })
+  const effectiveType = chosenOtType ?? (order?.sale_order ? 'LINKED' : 'NONE')
+  const creationSteps: WorkOrderStage[] = [
+    { ...STEP_ORIGIN, alwaysShow: true },
+    { ...getProductSelectionStage(effectiveType), alwaysShow: true },
+    { ...STEP_MFG_CONFIG, alwaysShow: true },
+  ]
 
   // Build workflow steps (filtered if order is available, otherwise alwaysShow)
   const workflowStages = order
@@ -130,6 +131,10 @@ function getUnifiedStages(
 }
 
 function getFilteredStages(order: WorkOrder): WorkOrderStage[] {
+  // The server owns the stage graph; its plan is what transitions accept.
+  if (order.stage_plan?.length) {
+    return BASE_STAGES.filter((stage) => order.stage_plan?.some((id) => id === stage.id))
+  }
   return BASE_STAGES.filter((stage) => {
     if (stage.alwaysShow) return true
     if (stage.id === 'MATERIAL_APPROVAL') {
@@ -143,14 +148,21 @@ function getFilteredStages(order: WorkOrder): WorkOrderStage[] {
       return order.current_stage === 'OUTSOURCING_VERIFICATION' ||
         (order.materials ?? []).some((m: WorkOrderMaterial) => m.is_outsourced)
     }
-    if (stage.id === 'RECTIFICATION') {
-      return order.current_stage === 'RECTIFICATION' || (order.materials ?? []).length > 0
-    }
+    // Always part of the flow: FINISHED is only reachable from RECTIFICATION
+    if (stage.id === 'RECTIFICATION') return true
     return false
   })
 }
 
 const EDITABLE_STAGES = ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS']
+
+type RefValue = string | number | { id: string | number } | null | undefined
+
+/** Id of a reference that may come expanded ({ id }) or as a plain id. */
+function refId(value: RefValue): string | undefined {
+  if (value === null || value === undefined || value === '') return undefined
+  return String(typeof value === 'object' ? value.id : value)
+}
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -174,6 +186,9 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     mode.kind === 'manage' ? mode.orderId : null
   )
   const wasCreatingRef = useRef(false)
+  // targetStage from the URL is only used for the initial navigation; subsequent
+  // fetchOrder calls (after transitions) must navigate to the actual current_stage.
+  const initialTargetUsedRef = useRef(false)
   const isCreating = localOrderId === null
 
   // ── mutations (all write ops via hook) ─────────────────────────────────────
@@ -182,26 +197,28 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   // ── store ──────────────────────────────────────────────────────────────────
   const {
     order, loading, viewingStepIndex, stepMode,
-    taskNotes, taskFiles,
-    isAnnulModalOpen, isDeleteModalOpen, isBackwardModalOpen, pendingPrevStage,
+    taskNotes, taskFiles, taskConfirmations,
+    isAnnulModalOpen, isBackwardModalOpen, pendingPrevStage,
     showPOPreview, outsourcedPending,
     rectificationAdjustments, rectificationProducedQty, rectificationOutsourcedAdjustments,
     // Creation flow state
-    chosenOtType,
+    chosenOtType, mfgConfig, selectedProduct,
     setOrder, setLoading, setViewingStepIndex, navigateToStep,
     setTaskNote, setTaskFile,
-    setIsAnnulModalOpen, setIsDeleteModalOpen, setIsBackwardModalOpen, setPendingPrevStage,
+    setIsAnnulModalOpen, setIsBackwardModalOpen, setPendingPrevStage,
     setShowPOPreview, setOutsourcedPending,
     setRectificationAdjustments, setRectificationProducedQty, setRectificationOutsourcedAdjustments,
     // Creation flow actions
     setChosenOtType, setSelectedSaleOrder, setSelectedSaleLine, setSelectedProduct, setProductDescription, setMfgConfig,
     setSelectedContact, setQuantity, setUomId, setStartDate, setDueDate, setInternalNotes,
+    setTaskConfirmation,
     reset: resetStore,
   } = useWizardStore()
 
   const [showCheatsheet, setShowCheatsheet] = useState(false)
   const [wizardTab, setWizardTab] = useState('stages')
   const [railCollapsed, setRailCollapsed] = useState(false)
+  const [blockingWarning, setBlockingWarning] = useState<string | null>(null)
   const { data: relationsData } = useDocumentRelations('production.workorder', order?.id ?? null)
 
   // Restore the rail preference after mount (avoids SSR/client hydration mismatch).
@@ -240,6 +257,13 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     : STAGES.findIndex((s) => s.id === order?.current_stage)
   const isViewingCurrentStage = viewingStepIndex === actualStepIndex
   const pendingTasks = selectPendingTasks(order)
+  const currentStageId = STAGES[viewingStepIndex]?.id
+  const isTerminalOrder = order?.status === 'FINISHED' || order?.status === 'CANCELLED'
+  // A closed stage is read-only; its only action is "Reabrir etapa". Materials and services
+  // stay adjustable in place while the server still allows it.
+  const showStageNotice = !isCreating && !!order && !isViewingCurrentStage
+  const viewedCaps = showStageNotice && order ? getStepCapabilities(currentStageId as string, order) : null
+  const editableInline = !!viewedCaps?.canEdit
   const isBasicInfoEditable = !isCreating && EDITABLE_STAGES.includes(order?.current_stage ?? '')
 
   const canUserCompleteTask = (task: WorkOrderTask): boolean => {
@@ -260,6 +284,69 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
   const canApproveAll = pendingTasks.every(canUserCompleteTask)
 
+  // Approval tasks belonging specifically to the stage currently being viewed.
+  // When viewing stages that have no approval tasks (or non-approval stages), this will be empty,
+  // ensuring the approval collapsible only visualizes on its own stage.
+  const viewedStageTasks = useMemo(() => {
+    if (!currentStageId) return []
+    const type = stageTaskType(currentStageId)
+    return (order?.workflow_tasks ?? []).filter((t: WorkOrderTask) => t.task_type === type)
+  }, [order, currentStageId])
+
+  // All stage history entries of the order — for the segmented history timeline.
+  const allStageHistory = useMemo(
+    () => order?.stage_history ?? [],
+    [order]
+  )
+
+  // Blocking reason shown next to "Siguiente" when mandatory approval fields are unfilled.
+  const approvalBlockedReason = useMemo(() => {
+    if (!isViewingCurrentStage) return undefined
+    return pendingTasks
+      .flatMap((t) => unmetRequirements(t, taskFiles, taskConfirmations).map((key) => t.requirements?.[key]))
+      .find(Boolean) as string | undefined
+  }, [isViewingCurrentStage, pendingTasks, taskFiles, taskConfirmations])
+
+  // Actions rendered inside each step's StepHeader.rightContent — read/edit/reopen badge.
+  const stageHeaderActions = useMemo((): ReactNode => {
+    if (isCreating || !order || isViewingCurrentStage) return null
+    if (isTerminalOrder) {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground">
+          <Eye className="h-3 w-3 shrink-0" aria-hidden />Solo lectura
+        </span>
+      )
+    }
+    if (!viewedCaps) return null
+    const openRewind = () => { setPendingPrevStage(currentStageId as string); setIsBackwardModalOpen(true) }
+    if (viewedCaps.canEdit) {
+      return (
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-info/30 bg-info/10 px-2.5 py-1 text-xs font-medium text-info">
+            <Pencil className="h-3 w-3 shrink-0" aria-hidden />Editable
+          </span>
+          {viewedCaps.canRewind && (
+            <Button type="button" variant="outline" size="sm" onClick={openRewind} className="h-7 gap-1.5 text-xs">
+              <RotateCcw className="h-3 w-3" aria-hidden />Reabrir
+            </Button>
+          )}
+        </div>
+      )
+    }
+    if (viewedCaps.canRewind) {
+      return (
+        <Button type="button" variant="outline" size="sm" onClick={openRewind} className="h-7 gap-1.5 text-xs">
+          <RotateCcw className="h-3 w-3" aria-hidden />Reabrir etapa
+        </Button>
+      )
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground" title={viewedCaps.rewindBlockedReason}>
+        <Eye className="h-3 w-3 shrink-0" aria-hidden />Solo lectura
+      </span>
+    )
+  }, [isCreating, order, isViewingCurrentStage, isTerminalOrder, viewedCaps, currentStageId, setPendingPrevStage, setIsBackwardModalOpen])
+
   // ── data fetching ──────────────────────────────────────────────────────────
   const fetchOrder = async () => {
     if (!localOrderId) return
@@ -276,9 +363,12 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       // Resolve index using the same STAGES the component uses
       const stages = getUnifiedStages(inferredType, orderData as unknown as WorkOrder)
       let resolvedIndex = -1
-      const targetStage = mode.kind === 'manage' ? mode.targetStage : undefined
+      // targetStage (from the URL ?step= param) is only honoured on the first load.
+      // Post-transition refreshes must follow the order to its new current_stage.
+      const targetStage = !initialTargetUsedRef.current && mode.kind === 'manage' ? mode.targetStage : undefined
       if (targetStage) {
         resolvedIndex = stages.findIndex((s) => s.id === targetStage)
+        initialTargetUsedRef.current = true
       }
       if (resolvedIndex === -1) {
         resolvedIndex = stages.findIndex((s) => s.id === (orderData as unknown as WorkOrder).current_stage)
@@ -293,42 +383,45 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   // Al volver de la ficha de la orden (ADR-0083) se recarga la OT
   useOnEntityStackClose(() => { void fetchOrder() })
 
-  // Synchronize state with props during render to avoid useEffect setStates
+  // Local state follows the props during render (no effect needed); the zustand store must
+  // not be touched here, since updating it while rendering warns, so it resets in an effect.
   const [prevMode, setPrevMode] = useState(mode)
   const [prevOpen, setPrevOpen] = useState(open)
 
-  if (mode !== prevMode || open !== prevOpen) {
+  const isModeChanged = !prevMode ||
+    mode.kind !== prevMode.kind ||
+    (mode.kind === 'manage' && prevMode.kind === 'manage' && mode.orderId !== prevMode.orderId) ||
+    (mode.kind === 'create' && prevMode.kind === 'create' && (mode.defaultOtType !== prevMode.defaultOtType || mode.defaultProductId !== prevMode.defaultProductId))
+
+  if (isModeChanged || open !== prevOpen) {
     setPrevMode(mode)
     setPrevOpen(open)
     setLocalOrderId(open && mode.kind === 'manage' ? mode.orderId : null)
-    if (open) {
-      if (mode.kind === 'create') {
-        const defaultType = mode.defaultOtType || null
-        setChosenOtType(defaultType)
-        // Reset creation flow state
-        setSelectedSaleOrder(null)
-        setSelectedSaleLine(null)
-        setSelectedProduct(null)
-        setMfgConfig(null)
-        setSelectedContact(null)
-        setQuantity("")
-        setUomId("")
-        setStartDate(null)
-        setDueDate(null)
-        setInternalNotes("")
-
-        if (defaultType === "LINKED") {
-          setViewingStepIndex(0) // ORIGIN_SELECTION
-        } else if (defaultType === "NONE") {
-          setViewingStepIndex(0) // ORIGIN_SELECTION (will go to PRODUCT_SELECTION after)
-        } else {
-          setViewingStepIndex(0) // ORIGIN_SELECTION
-        }
-      } else {
-        // chosenOtType gets set by fetchOrder after the order loads
-      }
-    }
+    // Reset so the new targetStage (from the URL) is honoured on re-open.
+    initialTargetUsedRef.current = false
   }
+
+  useEffect(() => {
+    // chosenOtType of a managed OT is set by fetchOrder once the order loads
+    if (!open || mode.kind !== 'create') return
+    // Opened from a sale order ("Crear OT") or a product ("Fabricar"): start on the
+    // selection step of that origin instead of asking for it again.
+    const fromSaleOrder = !!refId(mode.initialData?.sale_order)
+    const otType = fromSaleOrder ? 'LINKED' : (mode.defaultOtType || null)
+    setChosenOtType(otType)
+    setSelectedSaleOrder(null)
+    setSelectedSaleLine(null)
+    setSelectedProduct(null)
+    setMfgConfig(null)
+    setSelectedContact(null)
+    setQuantity("")
+    setUomId("")
+    setStartDate(null)
+    setDueDate(null)
+    setInternalNotes("")
+    setViewingStepIndex(fromSaleOrder || (otType === 'NONE' && mode.defaultProductId) ? 1 : 0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, open])
 
   useEffect(() => {
     if (open) {
@@ -348,6 +441,11 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Clear blocking warning when stage changes
+  useEffect(() => {
+    setBlockingWarning(null)
+  }, [viewingStepIndex])
+
   // Sync viewing stage to URL step query param
   useEffect(() => {
     if (localOrderId === null) return
@@ -361,7 +459,48 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   }, [viewingStepIndex, localOrderId, STAGES, router])
 
   // ── handlers ───────────────────────────────────────────────────────────────
-  const handleTransition = async (nextStageId: string, data: Record<string, unknown> = {}) => {
+  const [approving, setApproving] = useState(false)
+  const transitioning = loading || approving || mutations.isTransitioning || mutations.isRectifying
+
+  // Moving forward requires the current stage's approvals (the server enforces it too).
+  // Returns false when they could not be completed, after telling the user why.
+  const approvePendingTasks = async (): Promise<boolean> => {
+    const toApprove = pendingTasks.filter(canUserCompleteTask)
+    if (toApprove.length === 0) return true
+
+    // Read fresh state to avoid stale closure capturing the values at mount time.
+    const { taskFiles: freshFiles, taskConfirmations: freshConfs, taskNotes: freshNotes } = useWizardStore.getState()
+
+    // Pre-flight: reject immediately if any mandatory field is still empty.
+    for (const t of toApprove) {
+      const unmet = unmetRequirements(t, freshFiles, freshConfs)
+      if (unmet.length > 0) {
+        toast.error(t.requirements?.[unmet[0]] ?? 'Complete todos los campos requeridos de aprobación.')
+        return false
+      }
+    }
+
+    setApproving(true)
+    try {
+      await Promise.all(toApprove.map((t) => {
+        const file = freshFiles[t.id]
+        return completeTask(
+          t.id as number,
+          freshNotes[t.id],
+          file ? [file] : undefined,
+          freshConfs[t.id],
+        )
+      }))
+      return true
+    } catch (err) {
+      showApiError(err, 'No se pudieron completar las aprobaciones de la etapa')
+      return false
+    } finally {
+      setApproving(false)
+    }
+  }
+
+  const handleTransition = async (nextStageId: string, data: Record<string, unknown> = {}, notes?: string) => {
     if (!order) return
 
     const nextIndex = STAGES.findIndex((s) => s.id === nextStageId)
@@ -370,12 +509,12 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
     if (isMovingForward) {
       const unapprovable = pendingTasks.filter((t) => !canUserCompleteTask(t))
-      if (unapprovable.length > 0) { toast.error('Existen tareas de aprobación pendientes asignadas a otros usuarios.'); return }
+      if (unapprovable.length > 0) { setBlockingWarning('Existen tareas de aprobación pendientes asignadas a otros usuarios.'); return }
     }
 
     if (order.current_stage === 'MATERIAL_APPROVAL' && isMovingForward) {
       const missing = order.materials?.filter((m: WorkOrderMaterial) => !m.is_outsourced && !m.is_available) ?? []
-      if (missing.length > 0) { toast.error(`Stock insuficiente para ${missing.length} componentes. Reponga stock para continuar.`); return }
+      if (missing.length > 0) { setBlockingWarning(`Stock insuficiente para ${missing.length} componentes. Reponga stock para continuar.`); return }
     }
 
     if (order.current_stage === 'OUTSOURCING_ASSIGNMENT' && isMovingForward) {
@@ -383,29 +522,36 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       if (pending.length > 0 && !showPOPreview) { setOutsourcedPending(pending); setShowPOPreview(true); return }
     }
 
+    if (transitioning) return
+    if (isMovingForward && !(await approvePendingTasks())) return
     try {
-      if (isMovingForward) {
-        const toApprove = pendingTasks.filter(canUserCompleteTask)
-        if (toApprove.length > 0) {
-          await Promise.all(toApprove.map((t) => {
-            const file = taskFiles[t.id]
-            return completeTask(t.id as number, taskNotes[t.id], file ? [file] : undefined)
-          }))
-        }
+      const res = await mutations.transition({ nextStageId, data, notes })
+      initialTargetUsedRef.current = true
+      const targetStage = (res as { current_stage?: string })?.current_stage || nextStageId
+      const targetIdx = STAGES.findIndex((s) => s.id === targetStage)
+      if (targetIdx >= 0) {
+        setViewingStepIndex(targetIdx)
       }
-      await mutations.transition({ nextStageId, data })
-    } catch (err) {
-      showApiError(err, 'Error al cambiar de etapa')
+    } catch {
+      // The mutation already showed the error
     }
   }
 
-  const finishConfirm = useConfirmAction<string>(async (stageId) => { handleTransition(stageId) })
+  // Closing never throws work away silently: Esc / the close button first leave an in-progress
+  // edit, then ask before discarding a work order that is still being created.
+  const [discardOpen, setDiscardOpen] = useState(false)
+  const hasCreationDraft = isCreating && !!(selectedProduct || mfgConfig)
+  const handleOpenChange = (next: boolean) => {
+    if (next) { onOpenChange(true); return }
+    if (stepMode === 'edit-in-place') { navigateToStep(viewingStepIndex, 'view'); return }
+    if (hasCreationDraft) { setDiscardOpen(true); return }
+    onOpenChange(false)
+  }
 
   // ── keyboard navigation ────────────────────────────────────────────────────
   useEffect(() => {
     if (!open) return
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { onOpenChange(false); return }
       if (e.key === '?' && !e.ctrlKey && !e.altKey && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
         setShowCheatsheet((v) => !v); return
       }
@@ -416,13 +562,10 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       }
       if (!e.ctrlKey) return
       if (e.key === 'ArrowRight' && isViewingCurrentStage && order?.status !== 'FINISHED' && order?.status !== 'CANCELLED') {
-        const nextStage = STAGES[viewingStepIndex + 1]
-        if (!nextStage) return
-        const blocked = pendingTasks.some((t) => !canUserCompleteTask(t)) ||
-          (STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' && order?.materials?.some((m: WorkOrderMaterial) => !m.is_available))
-        if (!blocked) {
-          if (nextStage.id === 'FINISHED') { finishConfirm.requestConfirm(nextStage.id) } else { handleTransition(nextStage.id) }
-        }
+        // Same path as the footer button: it knows what is blocked and asks for confirmation.
+        if (!order) return
+        e.preventDefault()
+        document.getElementById('wizard-next')?.click()
       }
       if (e.key === 'ArrowLeft' && viewingStepIndex > 0) {
         setViewingStepIndex((v) => v - 1)
@@ -433,7 +576,9 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   }, [open, viewingStepIndex, isViewingCurrentStage, order, pendingTasks, toggleRail])
 
   const handleRectifyAndFinish = async () => {
-    if (!order) return
+    if (!order || transitioning) return
+    const unapprovable = pendingTasks.filter((t) => !canUserCompleteTask(t))
+    if (unapprovable.length > 0) { setBlockingWarning('Existen tareas de aprobación pendientes asignadas a otros usuarios.'); return }
     try {
       await mutations.rectify({
         materialAdjustments: rectificationAdjustments,
@@ -441,63 +586,51 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         producedQuantity: rectificationProducedQty,
         notes: 'Rectificación desde wizard',
       })
+      if (!(await approvePendingTasks())) return
       await mutations.transition({ nextStageId: 'FINISHED' })
-    } catch (err) {
-      showApiError(err, 'Error al rectificar y finalizar la OT')
+    } catch {
+      // The mutation already showed the error
     }
   }
 
-  const handleAnnul = async () => {
+  // Errors are shown by the mutations themselves; the handlers only keep the modal open.
+  const handleAnnul = async (reason?: string) => {
     try {
-      await mutations.annul('')
+      await mutations.annul(reason ?? '')
       setIsAnnulModalOpen(false)
-    } catch (err) { showApiError(err, 'Error al anular la orden') }
-  }
-
-  const handleDelete = async () => {
-    try {
-      await mutations.deleteOrder()
-      setIsDeleteModalOpen(false)
-      onOpenChange(false)
-    } catch (err) { showApiError(err, 'Error al eliminar la orden') }
+    } catch { /* shown by the mutation */ }
   }
 
   const handleDuplicate = async () => {
     try {
       await mutations.duplicateOrder()
       setIsDuplicateModalOpen(false)
-    } catch (err) { showApiError(err, 'Error al duplicar la orden') }
+    } catch { /* shown by the mutation */ }
   }
 
-  // ── task callbacks (passed down to steps) ─────────────────────────────────
-  const taskCallbacks = {
-    canComplete: canUserCompleteTask,
-    taskNotes,
-    taskFiles,
-    onNoteChange: setTaskNote,
-    onFileChange: setTaskFile,
-  }
+
 
   // ── render ─────────────────────────────────────────────────────────────────
-  if (!order && loading) return null
+  // An OT that exists but is not loaded yet (right after creating it, or while fetching)
+  // has no data for the workflow steps, which all assume `order`.
+  if (!order && (loading || !isCreating)) return null
 
   const stageData = order?.stage_data ?? {}
   const productName = order?.product_name ?? order?.sale_line?.product?.name ?? 'Producto'
   const orderHasMaterials = !!(order?.materials ?? []).some((m: WorkOrderMaterial) => !m.is_outsourced)
-  const currentStageId = STAGES[viewingStepIndex]?.id
 
   return (
     <>
       <Drawer
         open={open}
-        onOpenChange={onOpenChange}
+        onOpenChange={handleOpenChange}
         side="bottom"
         boundary="embedded"
         defaultSize="100%"
         resizable={false}
         fillContent
         contentClassName="p-0 flex flex-col overflow-hidden"
-        icon={Package}
+        icon={Factory}
         title={
           order
             ? formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)
@@ -505,7 +638,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         }
         subtitle={
           order
-            ? `${getDomainConceptTitle('ot')} · ${order.sale_customer_name || 'Manual'} · ${STAGES[viewingStepIndex]?.label ?? ''}`
+            ? `${getDomainConceptTitle('ot')} · ${order.sale_customer_name || 'Manual'}`
             : 'Planificación de Producción'
         }
         headerActions={
@@ -514,16 +647,13 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
               <StatusBadge status={order.status} variant="badge" />
               <DocumentActionsMenu
                 primary={(() => {
-                  if (order.status !== 'IN_PROGRESS') return null
+                  // Only a linked OT has an order to open (a manual OT has none).
                   const saleOrderId = typeof order.sale_order === 'object' ? order.sale_order?.id : order.sale_order
-                  const id = saleOrderId ?? order.id
-                  const type = saleOrderId ? 'sale' : 'purchase'
+                  if (!saleOrderId) return null
                   return {
                     id: 'view-order',
-                    label: 'Ver orden',
-                    onClick: () => {
-                      openEntity(type === 'sale' ? 'sales.saleorder' : 'purchasing.purchaseorder', id)
-                    },
+                    label: `Ver ${getDomainConceptCode('ov')}`,
+                    onClick: () => openEntity('sales.saleorder', saleOrderId),
                   }
                 })()}
                 actions={(() => {
@@ -536,22 +666,13 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                     disabled: mutations.isDuplicating,
                   })
 
-                  if (order.status !== 'FINISHED' && order.status !== 'CANCELLED') {
+                  // Same rule the server applies (limit stage, no consumptions)
+                  if (order.status !== 'FINISHED' && order.status !== 'CANCELLED' && order.is_cancellable !== false && !order.has_consumptions) {
                     items.push({
                       id: 'annul',
                       label: 'Anular',
                       onClick: () => setIsAnnulModalOpen(true),
                       disabled: mutations.isAnnuling,
-                      destructive: true,
-                    })
-                  }
-
-                  if (order.status === 'DRAFT') {
-                    items.push({
-                      id: 'delete',
-                      label: 'Eliminar',
-                      onClick: () => setIsDeleteModalOpen(true),
-                      disabled: mutations.isDeleting,
                       destructive: true,
                     })
                   }
@@ -569,18 +690,16 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             onCancelEdit={() => navigateToStep(viewingStepIndex, 'view')}
             onClose={() => onOpenChange(false)}
             pendingTasks={pendingTasks}
+            approvalBlockedReason={approvalBlockedReason}
             canApproveAll={canApproveAll}
             order={order}
             viewingStepIndex={viewingStepIndex}
             actualStepIndex={actualStepIndex}
             stages={STAGES}
-            transitioning={loading}
+            transitioning={transitioning}
             onTransition={handleTransition}
             onBackToCurrent={() => setViewingStepIndex(actualStepIndex)}
-            onBack={() => {
-              const prevStage = STAGES[actualStepIndex - 1]
-              if (prevStage) { setPendingPrevStage(prevStage.id); setIsBackwardModalOpen(true) }
-            }}
+            onBack={() => setViewingStepIndex(Math.max(0, viewingStepIndex - 1))}
             isMaterialApprovalIncomplete={
               !!(currentStageId === 'MATERIAL_APPROVAL' && order?.materials?.some((m: WorkOrderMaterial) => !m.is_available))
             }
@@ -598,9 +717,9 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         <div className="flex flex-1 min-h-0 overflow-hidden">
         <TabBar
           items={order ? [
-            { value: 'stages', label: 'Producción', icon: Package },
+            { value: 'stages', label: 'Producción', icon: Factory },
             { value: 'relations', label: 'Relaciones', icon: Link2, badge: relationsData?.relations.length },
-          ] : [{ value: 'stages', label: 'Producción', icon: Package }]}
+          ] : [{ value: 'stages', label: 'Producción', icon: Factory }]}
           value={wizardTab}
           onValueChange={setWizardTab}
           orientation="horizontal"
@@ -618,18 +737,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             viewingStepIndex={viewingStepIndex}
             actualStepIndex={actualStepIndex}
             stepMode={stepMode}
-            onStepClick={(index, mode) => {
-              if (mode === 'rewind') {
-                // Trigger backward transition modal without moving the viewing index yet
-                const targetStage = STAGES[index]
-                if (targetStage) {
-                  setPendingPrevStage(targetStage.id)
-                  setIsBackwardModalOpen(true)
-                }
-              } else {
-                navigateToStep(index, mode)
-              }
-            }}
+            onStepClick={(index) => navigateToStep(index, 'view')}
             order={order}
             collapsed={railCollapsed}
             onToggleCollapsed={toggleRail}
@@ -637,10 +745,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
           {/* Center content */}
           <div className="flex-1 flex flex-col overflow-hidden relative">
-            <div className="px-6 pt-6 mb-4 flex-shrink-0">
-              <WizardModeBanner mode={stepMode} isViewingCurrentStage={isViewingCurrentStage} />
-            </div>
-
             <div className="flex flex-1 flex-col min-h-0 px-6 relative">
               {/* Mobile navigation */}
               <div className="md:hidden sticky top-0 z-10 bg-background/95 backdrop-blur p-3 mb-4">
@@ -669,7 +773,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       || currentStageId === 'PRODUCT_SELECTION'
                     ) && 'pointer-events-none opacity-70',
                     // Disable interaction only in view mode for closed workflow steps (not edit-in-place)
-                    stepMode === 'view' && !isViewingCurrentStage
+                    stepMode === 'view' && !isViewingCurrentStage && !editableInline
                       && currentStageId !== 'ORIGIN_SELECTION'
                       && currentStageId !== 'SALE_ORDER_PRODUCT'
                       && currentStageId !== 'PRODUCT_SELECTION'
@@ -680,7 +784,20 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                   {currentStageId === 'ORIGIN_SELECTION' && (
                     <OriginSelectionStep
                       selected={chosenOtType}
+                      locked={!isCreating}
+                      headerActions={stageHeaderActions}
                       onChoose={(type) => {
+                        if (type !== chosenOtType) {
+                          // Switching origin invalidates everything chosen for the previous one
+                          setSelectedSaleOrder(null)
+                          setSelectedSaleLine(null)
+                          setSelectedProduct(null)
+                          setProductDescription('')
+                          setMfgConfig(null)
+                          setSelectedContact(null)
+                          setQuantity('')
+                          setUomId('')
+                        }
                         setChosenOtType(type)
                         const idx = getCreateStages(type).findIndex(s => s.id === (type === "LINKED" ? 'SALE_ORDER_PRODUCT' : 'PRODUCT_SELECTION'))
                         setViewingStepIndex(idx >= 0 ? idx : 1)
@@ -689,6 +806,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                   )}
                   {currentStageId === 'SALE_ORDER_PRODUCT' && chosenOtType === "LINKED" && (
                     <SaleOrderProductStep
+                      headerActions={stageHeaderActions}
                       onChooseProduct={(otType, productId, quantity, uomId, productDescription, saleOrderId, saleLineId) => {
                         setChosenOtType(otType)
                         setSelectedSaleOrder(saleOrderId ?? null)
@@ -701,10 +819,13 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                         setViewingStepIndex(idx >= 0 ? idx : 1)
                       }}
                       initialOtType={chosenOtType}
+                      initialSaleOrderId={mode.kind === 'create' ? refId(mode.initialData?.sale_order) : (order?.sale_order ? String(order.sale_order) : undefined)}
+                      initialSaleLineId={mode.kind === 'create' ? refId(mode.initialData?.sale_line) : (order?.sale_line ? String(order.sale_line) : undefined)}
                     />
                   )}
                   {currentStageId === 'PRODUCT_SELECTION' && chosenOtType === "NONE" && (
                     <ProductSelectionStep
+                      headerActions={stageHeaderActions}
                       onChooseProduct={(otType, productId, quantity, uomId, productDescription) => {
                         setChosenOtType(otType)
                         setSelectedProduct(productId)
@@ -715,12 +836,14 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                         setViewingStepIndex(idx >= 0 ? idx : 1)
                       }}
                       initialOtType={chosenOtType}
+                      initialProductId={mode.kind === 'create' ? mode.defaultProductId : (order?.main_product_id ? String(order.main_product_id) : undefined)}
                     />
                   )}
                   {currentStageId === 'MFG_CONFIG' && (
                     <ManufacturingConfigStep
                       formId="wizard-basic-form"
-                      initialData={isCreating ? (mode.kind === 'create' ? mode.initialData : undefined) : (order as unknown as WorkOrderInitialData)}
+                      initialData={isCreating ? undefined : (order as unknown as WorkOrderInitialData)}
+                      headerActions={stageHeaderActions}
                       onSuccess={(workOrderId) => {
                         if (isCreating) {
                           wasCreatingRef.current = true
@@ -746,62 +869,62 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                           onSuccess?.(workOrderId)
                         }
                       }}
-                      onRestartComplete={() => {
-                        // Navigate to create mode — URL change naturally switches wizard from manage → create
-                        const url = new URL(window.location.href)
-                        url.searchParams.delete('selected')
-                        url.searchParams.delete('step')
-                        url.searchParams.set('new', '1')
-                        url.searchParams.set('type', order?.sale_order ? 'sale' : 'stock')
-                        router.push(url.pathname + url.search)
-                      }}
-                      onCorrectionComplete={(newOrderId) => {
-                        // Navigate to the newly created order
-                        const url = new URL(window.location.href)
-                        url.searchParams.delete('new')
-                        url.searchParams.delete('type')
-                        url.searchParams.delete('product_id')
-                        url.searchParams.set('selected', String(newOrderId))
-                        url.searchParams.delete('step')
-                        router.push(url.pathname + url.search)
-                      }}
                     />
                   )}
                   {currentStageId === 'MATERIAL_ASSIGNMENT' && (
                     <MaterialAssignmentStep
                       order={order as WorkOrder}
-                      isViewingCurrentStage={isViewingCurrentStage}
+                      isViewingCurrentStage={isViewingCurrentStage || editableInline}
                       onMaterialSaved={fetchOrder}
                       onMaterialDeleted={fetchOrder}
+                      headerActions={stageHeaderActions}
                     />
                   )}
                   {currentStageId === 'MATERIAL_APPROVAL' && (
-                    <MaterialApprovalStep order={order as WorkOrder} {...taskCallbacks} />
+                    <MaterialApprovalStep order={order as WorkOrder} headerActions={stageHeaderActions} />
                   )}
                   {currentStageId === 'OUTSOURCING_ASSIGNMENT' && (
                     <OutsourcingAssignmentStep
                       order={order as WorkOrder}
-                      isViewingCurrentStage={isViewingCurrentStage}
+                      isViewingCurrentStage={isViewingCurrentStage || editableInline}
                       onMaterialSaved={fetchOrder}
                       onMaterialDeleted={fetchOrder}
+                      headerActions={stageHeaderActions}
                     />
                   )}
                   {currentStageId === 'PREPRESS' && (
-                    <PrepressStep order={order as WorkOrder} stageData={stageData} {...taskCallbacks} />
+                    <PrepressStep
+                      order={order as WorkOrder}
+                      stageData={stageData}
+                      actionable={isViewingCurrentStage && !isTerminalOrder}
+                      onRefresh={fetchOrder}
+                      headerActions={stageHeaderActions}
+                    />
                   )}
                   {currentStageId === 'PRESS' && (
-                    <PressStep order={order as WorkOrder} {...taskCallbacks} />
+                    <PressStep
+                      order={order as WorkOrder}
+                      actionable={isViewingCurrentStage && !isTerminalOrder}
+                      onRefresh={fetchOrder}
+                      headerActions={stageHeaderActions}
+                    />
                   )}
                   {currentStageId === 'POSTPRESS' && (
-                    <PostpressStep order={order as WorkOrder} {...taskCallbacks} />
+                    <PostpressStep
+                      order={order as WorkOrder}
+                      actionable={isViewingCurrentStage && !isTerminalOrder}
+                      onRefresh={fetchOrder}
+                      headerActions={stageHeaderActions}
+                    />
                   )}
                   {currentStageId === 'OUTSOURCING_VERIFICATION' && (
-                    <OutsourcingVerificationStep order={order as WorkOrder} {...taskCallbacks} />
+                    <OutsourcingVerificationStep order={order as WorkOrder} headerActions={stageHeaderActions} />
                   )}
                   {currentStageId === 'RECTIFICATION' && (
                     <div className="space-y-6">
                       <RectificationStep
                         order={order as WorkOrder}
+                        headerActions={stageHeaderActions}
                         onChange={(adjustments, producedQty, outsourcedAdj) => {
                           setRectificationAdjustments(adjustments)
                           setRectificationProducedQty(producedQty)
@@ -815,12 +938,31 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       order={order as WorkOrder}
                       onUploadPhoto={mutations.uploadFinalPhoto}
                       isUploadingPhoto={mutations.isUploadingPhoto}
-                      onPrintCopy={mutations.duplicateOrder}
+                      onPrintCopy={async () => setIsDuplicateModalOpen(true)}
                       isDuplicating={mutations.isDuplicating}
+                      headerActions={stageHeaderActions}
                     />
                   )}
                 </div>
             </div>
+
+          {/* Stage activity panel: approval form + history, docked above the footer */}
+          {!isCreating && order && wizardTab === 'stages' && (
+            <StageActivityPanel
+              currentStageId={currentStageId as string}
+              tasks={viewedStageTasks}
+              allTasks={order.workflow_tasks}
+              stageEntries={allStageHistory}
+              canComplete={canUserCompleteTask}
+              actionable={isViewingCurrentStage && !isTerminalOrder}
+              taskNotes={taskNotes}
+              taskFiles={taskFiles}
+              taskConfirmations={taskConfirmations}
+              onNoteChange={setTaskNote}
+              onFileChange={setTaskFile}
+              onConfirmationChange={setTaskConfirmation}
+            />
+          )}
           </div>
 
           </div>
@@ -836,23 +978,26 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
           )}
         </TabBar>
 
-        {order && (
+        {order ? (
           <WizardRightSidebar
             order={order}
             productName={productName}
             stageData={stageData}
           />
-        )}
+        ) : currentStageId === 'MFG_CONFIG' ? (
+          <WizardDraftSidebar />
+        ) : null}
         </div>
       </Drawer>
 
       {/* PO Preview */}
       <BaseModal
+        asDialog
         open={showPOPreview}
         onOpenChange={setShowPOPreview}
-        icon={Package}
+        icon={Factory}
         title="Vista Previa de Órdenes de Compra"
-        description="Se generarán las siguientes Órdenes de Compra en borrador para los servicios tercerizados asignados."
+        description="Se generarán y confirmarán estas Órdenes de Compra (con su factura en borrador). Después ya no podrás reabrir la asignación de tercerizados de esta OT."
         size="md"
         footer={
           <FormFooter
@@ -909,14 +1054,17 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         variant="warning"
         onConfirm={handleAnnul}
         confirmText={`Anular ${getDomainConceptCode('ot')}`}
+        requireReason
+        reasonLabel="Motivo de anulación"
+        reasonPlaceholder="Explique por qué se anula esta OT..."
         description={
           <div className="space-y-3">
             <p>¿Está seguro de que desea <strong>ANULAR</strong> esta {getDomainConceptTitle('ot')}?</p>
             <div className="bg-warning/10 border border-warning/20 p-3 rounded-md text-warning text-xs flex gap-3 font-medium">
               <AlertTriangle className="h-5 w-5 shrink-0" />
               <ul className="list-disc pl-4 space-y-1">
-                <li>Se revertirán los movimientos de stock realizados.</li>
-                <li>Se anularán los documentos internos vinculados.</li>
+                <li>Se anularán las Órdenes de Compra vinculadas que aún no se hayan recibido.</li>
+                <li>Las aprobaciones pendientes de la OT se cancelarán.</li>
                 <li>La OT quedará en estado ANULADA y no podrá procesarse más.</li>
               </ul>
             </div>
@@ -924,22 +1072,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         }
       />
 
-      <ActionConfirmModal
-        open={isDeleteModalOpen}
-        onOpenChange={setIsDeleteModalOpen}
-        title={`Borrar ${getDomainConceptTitle('ot')}`}
-        variant="destructive"
-        onConfirm={handleDelete}
-        confirmText="Eliminar permanentemente"
-        description={
-          <div className="space-y-3">
-            <p>¿Está seguro de que desea <strong>ELIMINAR</strong> permanentemente esta {getDomainConceptTitle('ot')}?</p>
-            <p className="text-destructive font-semibold bg-destructive/10 p-2 rounded text-xs">
-              Esta acción es irreversible y borrará todos los registros históricos de esta orden.
-            </p>
-          </div>
-        }
-      />
 
       <ActionConfirmModal
         open={isDuplicateModalOpen}
@@ -954,33 +1086,49 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       <ActionConfirmModal
         open={isBackwardModalOpen}
         onOpenChange={setIsBackwardModalOpen}
-        title="Retroceder Etapa"
+        title="Reabrir etapa"
         variant="warning"
-        onConfirm={() => { if (pendingPrevStage) handleTransition(pendingPrevStage); setIsBackwardModalOpen(false) }}
-        confirmText="Retroceder"
+        requireReason
+        reasonLabel="Motivo para reabrir"
+        reasonPlaceholder="Ej.: el cliente cambió el diseño"
+        onConfirm={(reason) => { if (pendingPrevStage) handleTransition(pendingPrevStage, {}, reason); setIsBackwardModalOpen(false) }}
+        confirmText="Reabrir etapa"
         description={
           <div className="space-y-3">
-            <p>¿Está seguro de que desea retroceder a la etapa <strong>{STAGES.find((s) => s.id === pendingPrevStage)?.label}</strong>?</p>
+            <p>La orden volverá a la etapa <strong>{STAGES.find((s) => s.id === pendingPrevStage)?.label}</strong> para que puedas modificarla.</p>
             <div className="bg-warning/10 border border-warning/20 p-3 rounded-md text-warning text-xs flex gap-3 font-medium">
               <AlertTriangle className="h-5 w-5 shrink-0" />
-              <p>Si retrocede, todas las aprobaciones y tareas completadas en las etapas posteriores se reiniciarán y deberán realizarse nuevamente.</p>
+              <div className="space-y-1">
+                <p>Las aprobaciones completadas desde esa etapa en adelante se reiniciarán y deberán aprobarse de nuevo.</p>
+                <p>Los datos cargados (materiales, servicios y especificaciones) se conservan.</p>
+              </div>
             </div>
           </div>
         }
       />
 
       <ActionConfirmModal
-        open={finishConfirm.isOpen}
-        onOpenChange={(open) => { if (!open) finishConfirm.cancel() }}
-        onConfirm={finishConfirm.confirm}
-        title="Finalizar Producción"
-        description="¿Estás seguro de finalizar la producción? Una vez finalizada la OT, no se puede modificar."
-        confirmText="Finalizar"
+        open={discardOpen}
+        onOpenChange={setDiscardOpen}
+        title="Descartar la OT en creación"
+        variant="warning"
+        confirmText="Descartar"
+        description="Aún no se ha creado la OT. Si cierras ahora, se perderá lo que cargaste."
+        onConfirm={() => { setDiscardOpen(false); onOpenChange(false) }}
       />
 
-
+      <ActionConfirmModal
+        open={blockingWarning !== null}
+        onOpenChange={(open) => { if (!open) setBlockingWarning(null) }}
+        title="Validación de etapa"
+        variant="warning"
+        confirmText="Entendido"
+        description={blockingWarning ?? ''}
+        onConfirm={() => setBlockingWarning(null)}
+      />
 
       <BaseModal
+        asDialog
         open={showCheatsheet}
         onOpenChange={setShowCheatsheet}
         icon={Keyboard}

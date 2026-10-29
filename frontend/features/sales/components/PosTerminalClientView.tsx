@@ -1,5 +1,6 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
 import { useMemo } from "react"
 import { useSearchParams, usePathname, useRouter } from "next/navigation"
 import { Plus } from "lucide-react"
@@ -11,7 +12,7 @@ import type { Terminal } from "@/features/treasury"
 import { posTerminalActions, type PosTerminalActionsCtx } from "@/features/sales/posTerminalActions"
 import { terminalPosUnifiedSearchDef } from "@/features/pos/unifiedSearchDef"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { posTerminalEntity, posTerminalViews } from "../entity-view/posTerminal.entity"
 import { PosTerminalDrawer } from "./PosTerminalDrawer"
@@ -29,20 +30,9 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
     const pathname = usePathname()
     const router = useRouter()
 
-    const isCreateModal = searchParams.get("modal") === "new"
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Terminal>({ endpoint: '/treasury/pos-terminals' })
+    const panel = useEntityPanelRoute<Terminal>({ endpoint: '/treasury/pos-terminals', external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const selectedFromUrl = panel.entity
     const { openSelected } = useEntityRouteActions()
-    const dialogOpen = isCreateModal || !!selectedFromUrl || !!externalOpen
-
-    const handleCloseDialog = () => {
-        clearSelection()
-        onExternalOpenChange?.(false)
-        if (searchParams.get("modal")) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }
-    }
 
     const handleToggleActive = async (terminal: Terminal) => {
         try {
@@ -58,7 +48,7 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
         } catch {
             // Error already handled by hook
         }
-    })
+   })
 
     const handleDelete = (terminal: Terminal) => {
         deleteConfirm.requestConfirm(terminal)
@@ -114,14 +104,18 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                 />
             </Collection.Root>
 
-            <PosTerminalDrawer
-                open={dialogOpen}
-                onOpenChange={(open: boolean) => {
-                    if (!open) handleCloseDialog()
-                }}
-                terminal={isCreateModal ? null : selectedFromUrl}
-                onSuccess={() => { handleCloseDialog(); refetch() }}
-            />
+            <EntityPanelTab label="treasury.terminal" {...panel.tab}>
+                {(open) => (
+                    <PosTerminalDrawer
+                        open={open}
+                        onOpenChange={(open: boolean) => {
+                            if (!open) panel.close()
+                        }}
+                        terminal={panel.isCreate ? null : selectedFromUrl}
+                        onSuccess={() => { panel.close(); refetch() }}
+                    />
+                )}
+            </EntityPanelTab>
 
             <ActionConfirmModal
                 open={deleteConfirm.isOpen}

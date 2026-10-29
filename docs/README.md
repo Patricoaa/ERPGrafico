@@ -72,14 +72,12 @@ last_review: 2026-06-19
 | “signals”, “signal receiver”, “post_save hook”, “cross-app event” | [workflow-signals-registry.md](10-architecture/workflow-signals-registry.md) | 10 |
 | “entity identity”, “entity prefix”, “registry”, “display id”, “centralized icons” | [entity-identity.md](20-contracts/entity-identity.md) | 20 |
 | “searchable entity”, “global search”, “index”, “rebuild search” | [add-searchable-entity.md](30-playbooks/add-searchable-entity.md) | 30 |
-| “generic form”, “universal registry”, “metadata schema”, “data-driven UI”, “Django architecture refactor” | [50-audit/Arquitectura Django/README.md](50-audit/Arquitectura%20Django/README.md) | 50 |
 | "UI audit", "sobreingeniería", "ad-hoc que compartido ya resuelve", "centralizar componente", "simplificar shared", "deuda design system", "DataTable bloated", "refactor componentes shared", "barrel compartido" | [design-system-ui-audit.md](50-audit/design-system-ui-audit.md) | 50 |
 | “card”, “tarjeta”, “ChoiceCard”, “CardSurface”, “CardRail”, “CardLead”, “cardAnatomy”, “surface-item”, “card-flat”, “card-base”, “qué card uso”, “rol de card” | [component-card-family.md](20-contracts/component-card-family.md) | 20 |
 | “DataTable”, “view mode”, “card view”, “kanban view”, “view switching”, “cardMode”, “isLoading skeleton”, “EntityCard”, “variant embedded” | [component-datatable-views.md](20-contracts/component-datatable-views.md) | 20 |
 | “analytics”, “chart”, “analytics panel”, “DataTable analytics” | [add-analytics-panel.md](30-playbooks/add-analytics-panel.md) | 30 |
 | “search bar”, “filter”, “búsqueda”, “filtro”, “useUnifiedSearch”, “UnifiedSearchBar”, “unifiedSearchDef”, “searchDef”, “segmentation”, “SegmentationBar”, “SmartSearchBar”, “date filter in toolbar” | [unified-searchbar.md](20-contracts/unified-searchbar.md) | 20 |
-| “ProductSelector”, “selector de productos shared”, “migrar POS selector”, “CategoryFilter shared”, “ProductGrid shared”, “VariantSelectorModal shared” | [50-audit/POSSelector/README.md](50-audit/POSSelector/README.md) | 50 |
-| “stale cache”, “queryKey mismatch”, “FSD compliance”, “invariante #4”, “invariante #5”, “raw api en componente”, “useMutation en componente”, “refactor data layer” | [50-audit/fsddata/fsd-data-layer-audit.md](50-audit/fsddata/fsd-data-layer-audit.md) + [refactor-plan](50-audit/fsddata/fsd-data-layer-refactor-plan.md) | 50 |
+| “stale cache”, “queryKey mismatch”, “FSD compliance”, “invariante #4”, “invariante #5”, “raw api en componente”, “useMutation en componente”, “refactor data layer” | [frontend-fsd.md](10-architecture/frontend-fsd.md) | 10 |
 | “delete entity”, “borrar”, “anular”, “archivar”, “soft delete”, “hard delete”, “archive vs annul”, “is_active”, “status=cancelled” | [deletion-policy.md](20-contracts/deletion-policy.md) | 20 |
 | “editar documento contabilizado”, “bloqueo de edición”, “EditPolicy”, “DOCUMENT_LOCKED”, “is_editable”, “frozen_fields”, “campos congelados” | [ADR-0091](10-architecture/adr/0091-economic-immutability-edit-policy.md) + [state-map.md](20-contracts/state-map.md) | 10/20 |
 | “realtime”, “WebSocket”, “SSE”, “EventSource”, “Django Channels”, “live update”, “push notification”, “useDraftSync”, “useNotifications” | [realtime-channels.md](20-contracts/realtime-channels.md) | 20 |
@@ -95,8 +93,8 @@ last_review: 2026-06-19
 | “backup Postgres”, “pg_dump”, “restore”, “subir backup a R2”, “test mensual de backup” | [backup-and-restore-postgres.md](30-playbooks/backup-and-restore-postgres.md) | 30 |
 | “disaster recovery”, “el ERP no levanta”, “runbook incidente”, “DB corrupta”, “host caído”, “restore en emergencia” | [disaster-recovery-pyme.md](30-playbooks/disaster-recovery-pyme.md) | 30 |
 | “aggregator”, “features/orders”, “feature sin barrel root”, “hub de visualización”, “agregar varias entities” | [frontend-fsd.md#aggregator-pattern](10-architecture/frontend-fsd.md#aggregator-pattern-read-only-feature-without-root-barrel) | 10 |
-| “créditos bancarios”, “préstamos”, “cuotas”, “amortización”, “UF”, “tarjeta de crédito estado/pago”, “cheques propios/girados”, “endoso”, “Centro de Bancos”, “roadmap bancos”, “pendientes de tesorería” | [50-audit/bancos/README.md](50-audit/bancos/README.md) | 50 |
-| “graph”, “graphify”, “knowledge graph”, “usar el grafo”, “query sobre el codebase”, “qué skill GStack”, “routing a skills”, “analizar el codebase” | [30-playbooks/graph-gstack-workflow.md](30-playbooks/graph-gstack-workflow.md) | 30 |
+| “créditos bancarios”, “préstamos”, “cuotas”, “amortización”, “UF”, “tarjeta de crédito estado/pago”, “cheques propios/girados”, “endoso”, “Centro de Bancos”, “roadmap bancos”, “pendientes de tesorería” | [ADR-0033](10-architecture/adr/0033-bank-loans-liabilidad-y-uf.md) · [ADR-0034](10-architecture/adr/0034-credit-card-statement-and-payment.md) · [ADR-0035](10-architecture/adr/0035-checks-issued-endorsed.md) · [bank-reconciliation-roadmap.md](30-playbooks/bank-reconciliation-roadmap.md) | 10 |
+| “graph”, “graphify”, “knowledge graph”, “usar el grafo”, “query sobre el codebase”, “qué skill GStack”, “routing a skills”, “analizar el codebase” | [50-tooling/graph-gstack-workflow.md](50-tooling/graph-gstack-workflow.md) | 50 |
 
 ## Global invariants (violate = PR rejected)
 

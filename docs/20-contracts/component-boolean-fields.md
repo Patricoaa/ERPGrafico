@@ -54,7 +54,7 @@ The semantic color `X` should match the feature's purpose:
 ```tsx
 <LabeledSwitch
   label="Lista de Materiales"
-  description={field.value ? "Habilitado." : "Habilitar receta de fabricación."}
+  description={field.value ? "Habilitado." : "Habilitar LdM de fabricación."}
   checked={field.value}
   onCheckedChange={field.onChange}
   icon={<Layers className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}

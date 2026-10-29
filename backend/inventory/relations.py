@@ -10,7 +10,7 @@ from core.documents import (
 from core.documents.details import display, join, lines_count, quantity
 
 DocumentTypeRegistry.register(DocumentType(
-    label="inventory.stockmove", canonical_url="/inventory/reports/movements?selected={id}", status_field=None,
+    label="inventory.stockmove", canonical_url="/d/inventory.stockmove/{id}", status_field=None,
     amount_field=None,
     detail=lambda m: join(getattr(m.product, "name", None), f"{quantity(m.quantity)} {getattr(m.uom, 'name', '')}".strip()),
 ))

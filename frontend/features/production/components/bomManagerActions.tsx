@@ -7,7 +7,7 @@ export interface BOMManagerActionsCtx {
 }
 
 export const bomManagerActions = createEntityActions<unknown, BOMManagerActionsCtx>((item, ctx) => [
-    { action: "duplicate", label: "Clonar Receta", className: "text-success hover:text-success", onClick: () => ctx.onClone(item) },
+    { action: "duplicate", label: "Clonar LdM", className: "text-success hover:text-success", onClick: () => ctx.onClone(item) },
     { action: "edit", label: "Editar", className: "text-primary hover:text-primary", onClick: () => ctx.onEdit(item) },
     { action: "delete", label: "Eliminar", className: "text-destructive hover:text-destructive", onClick: () => ctx.onDelete(item) },
 ])

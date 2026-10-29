@@ -3,6 +3,7 @@ export * from './BOMClientView';
 export * from './BOMManager';
 export * from './MaterialAssignmentTabs';
 export * from './WizardProcessSidebar';
+export * from './ProductionStepsSidebar';
 export * from './WizardRightSidebar';
 export * from './WizardStickyFooter';
 export * from './WorkOrderKanban';

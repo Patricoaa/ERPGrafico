@@ -48,6 +48,21 @@ class BSCategory(models.TextChoices):
     EQUITY = "EQUITY", _("Patrimonio")
 
 
+def resolve_effective_category(account, field, by_id):
+    """``Account.effective_<field>`` resolved against a preloaded ``{id: account}`` map.
+
+    The properties walk ``parent`` with one query per level; in a loop over the chart
+    that is hundreds of queries. ``field`` is ``is_category``, ``bs_category`` or
+    ``cf_category``.
+    """
+    while account is not None:
+        value = getattr(account, field)
+        if value:
+            return value
+        account = by_id.get(account.parent_id)
+    return None
+
+
 class Account(TimeStampedModel):
 
     # ADR-0091 (clase C): type and posting role are frozen once the account has entries.

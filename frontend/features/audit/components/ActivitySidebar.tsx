@@ -151,7 +151,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                                         {/* Bloque de Información del Registro */}
                                          <div className={cn("flex-1 min-w-0 flex flex-col", !isLast && isExpanded && "pb-6")}>
                                             <div className="flex items-baseline justify-between gap-2">
-                                                 <span className="min-w-0 truncate text-[11px] font-semibold leading-tight text-foreground">
+                                                 <span className="min-w-0 truncate text-2xs font-semibold leading-tight text-foreground">
                                                      {username}
                                                  </span>
                                                 <time
@@ -162,7 +162,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                                                 </time>
                                             </div>
 
-                                            <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground/80">
+                                            <p className="mt-0.5 text-2xs leading-snug text-muted-foreground/80">
                                                 {operation.verb}{' '}
                                                 <span className="font-semibold text-foreground">{entityLabel}</span>
                                             </p>

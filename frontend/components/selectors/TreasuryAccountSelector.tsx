@@ -6,8 +6,7 @@ import { useState } from "react"
 import { Check, Loader2, Banknote, CreditCard, Wallet, Landmark } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTreasuryAccounts, type PaymentContext, type TreasuryAccount } from "@/hooks/useTreasuryAccounts"
-import { LabeledContainer, SearchablePopover, MoneyDisplay } from '@/components/shared'
-import { SelectorTrigger, SELECTOR_VALUE_CLASS } from "@/components/shared/SelectorTrigger"
+import { LabeledContainer, SearchablePopover, MoneyDisplay, SelectorTrigger, SELECTOR_VALUE_CLASS } from '@/components/shared'
 import type { TreasuryAccountType } from "@/features/treasury/types"
 
 interface TreasuryAccountSelectorProps {

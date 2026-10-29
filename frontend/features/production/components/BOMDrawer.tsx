@@ -17,24 +17,25 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { cn } from "@/lib/utils"
-import { getDomainConceptTitle, getDomainConceptCode, getDomainConceptMessage } from "@/lib/entity-registry"
+import { getDomainConceptTitle, getDomainConceptLabel, getDomainConceptCode, getDomainConceptMessage } from "@/lib/entity-registry"
 import { toast } from "sonner"
 import { productionApi, useAllowedDteTypes } from "../hooks"
 import { useUoMs, useProductionVariants } from "../hooks"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
 import type { Product } from "@/types/entities"
-import { SubmitButton, CancelButton, DataCell, Drawer, FormFooter, FormLineItemsTable, IconButton, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
+import { SubmitButton, CancelButton, DataCell, Drawer, FormFooter, FormLineItemsTable, IconButton, LabeledContainer, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
 import { useVatRate } from "@/hooks/useVatRate"
 import { formDrawerWidth } from "@/lib/form-widths"
+import { formatQuantity } from "@/lib/money"
 
-const tableInputClass = "h-9 w-full bg-background border border-border/80 rounded-sm px-2 text-xs focus:border-primary/40 focus:outline-none transition-all disabled:opacity-50"
+const tableInputClass = "h-9 w-full bg-card border border-border/80 rounded-sm px-2 text-sm font-normal text-foreground placeholder:text-muted-foreground/60 focus:border-primary/40 focus:outline-none transition-all disabled:opacity-50"
 
 function MaterialSelector(props: React.ComponentProps<typeof ProductSelector>) {
-    return <ProductSelector productTypes={['STORABLE']} shouldResolveVariants={false} {...props} />
+    return <ProductSelector productTypes={['STORABLE']} shouldResolveVariants={false} context="purchase" {...props} />
 }
 
 function ServiceSelector(props: React.ComponentProps<typeof ProductSelector>) {
-    return <ProductSelector productTypes={['SERVICE']} canBePurchased shouldResolveVariants={false} {...props} />
+    return <ProductSelector productTypes={['SERVICE']} canBePurchased shouldResolveVariants={false} context="purchase" {...props} />
 }
 
 // Schema for material lines (stock components)
@@ -70,7 +71,7 @@ const bomSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
     active: z.boolean().default(true),
     yield_quantity: z.coerce.number().min(0.0001, "El rendimiento debe ser mayor a 0").default(1),
-    yield_uom: z.string().min(1, "La unidad de salida es requerida"),
+    yield_uom: z.string().min(1, "La unidad de rendimiento es requerida"),
     estimated_prepress_min: z.coerce.number().int().min(0).default(0),
     estimated_press_min: z.coerce.number().int().min(0).default(0),
     estimated_postpress_min: z.coerce.number().int().min(0).default(0),
@@ -215,8 +216,8 @@ export function BOMDrawer({
                     component_code: l.component_code,
                     component_name: l.component_name,
                     component_cost: l.component_cost || 0,
-                    base_cost: l.component_cost || 0,
-                    base_uom: l.uom?.toString() || "",
+                    base_cost: Number(l.component_cost) || 0,
+                    base_uom: l.component_uom?.toString() || l.uom?.toString() || "",
                     quantity: l.quantity,
                     uom: l.uom?.toString() || "",
                     uom_name: l.uom_name || "",
@@ -289,16 +290,32 @@ export function BOMDrawer({
                 toast.success(getDomainConceptMessage('ldm', 'created'))
             }
             if (onSuccess) onSuccess()
-
-            setTimeout(() => {
-                onOpenChange(false)
-            }, 100)
+            // Cerrar dentro del envío: un cierre diferido llega con el formulario aún "sucio" y la guarda
+            // de cambios sin guardar lo bloquearía (useDirtyGuard).
+            onOpenChange(false)
         } catch (error: unknown) {
             console.error("Error saving BOM:", error)
             showApiError(error, `Error al guardar ${getDomainConceptTitle('ldm')}: `)
         } finally {
             setLoading(false)
         }
+    }
+
+    // Costo por unidad de la línea: el costo base viene en la unidad base del componente.
+    const lineUnitCost = (line: z.infer<typeof materialLineSchema>) => line.base_uom && line.uom
+        ? getEffectiveCost(Number(line.base_cost) || 0, line.base_uom, line.uom)
+        : Number(line.component_cost) || 0
+    const watchedLines = form.watch("lines") || []
+    const watchedServices = form.watch("service_lines") || []
+    const yieldQuantity = Number(form.watch("yield_quantity")) || 0
+    const yieldUomName = uoms.find((u: UoM) => String(u.id) === String(form.watch("yield_uom")))?.name
+    const materialsCost = watchedLines.reduce((sum, l) => sum + (Number(l.quantity) || 0) * lineUnitCost(l), 0)
+    const servicesCost = watchedServices.reduce((sum, l) => sum + (Number(l.quantity) || 0) * ((Number(l.gross_price) || 0) / vatMultiplier), 0)
+    const costs = {
+        materials: materialsCost,
+        services: servicesCost,
+        total: materialsCost + servicesCost,
+        perYieldUnit: yieldQuantity > 0 ? (materialsCost + servicesCost) / yieldQuantity : 0,
     }
 
     const identity = useDrawerIdentity('production.bom', mode, bomToEdit, {
@@ -308,7 +325,7 @@ export function BOMDrawer({
                 ? `${getDomainConceptTitle('ldm')} • Plantilla Base: ${selectedProduct.name}`
                 : selectedProduct
                     ? `${getDomainConceptTitle('ldm')} • P: ${selectedProduct.name}`
-                    : `${getDomainConceptTitle('ldm')} • Receta de Fabricación`,
+                    : `${getDomainConceptTitle('ldm')} • Componentes y servicios de fabricación`,
         printable: (mode === 'view' || mode === 'edit') && !!bomToEdit?.id,
         onPrint: handlePrint,
     })
@@ -341,6 +358,25 @@ export function BOMDrawer({
                 subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
+                        leftActions={
+                            <dl className="flex items-center gap-6">
+                                <div className="flex flex-col gap-0.5">
+                                    <dt className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">Costo total {getDomainConceptLabel('ldm')}</dt>
+                                    <dd><DataCell.Currency value={costs.total} weight="medium" className="w-auto justify-start text-sm" /></dd>
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                    <dt className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">
+                                        Costo por {yieldUomName ? yieldUomName.toLowerCase() : "unidad de rendimiento"}
+                                    </dt>
+                                    <dd className="flex items-baseline gap-1.5">
+                                        <DataCell.Currency value={costs.perYieldUnit} weight="bold" className="w-auto justify-start text-sm" />
+                                        {yieldQuantity !== 1 && yieldQuantity > 0 && (
+                                            <span className="text-xs text-muted-foreground">rinde {formatQuantity(yieldQuantity)}</span>
+                                        )}
+                                    </dd>
+                                </div>
+                            </dl>
+                        }
                         actions={
                             <>
                                 <CancelButton onClick={() => onOpenChange(false)} />
@@ -351,7 +387,7 @@ export function BOMDrawer({
                                     icon={Save}
                                     disabled={form.formState.isSubmitting}
                                 >
-                                    {bomToEdit ? "Guardar Cambios" : "Crear Receta"}
+                                    {bomToEdit ? "Guardar Cambios" : `Crear ${getDomainConceptLabel('ldm')}`}
                                 </SubmitButton>
                             </>
                         }
@@ -368,18 +404,18 @@ export function BOMDrawer({
                                         toast.error("Por favor, verifique los campos marcados en rojo")
                                     })(e)
                                 }}
-                                className="space-y-6 px-6 pb-6 pt-6"
+                                className="px-6 pb-6 pt-6"
                             >
-                                <fieldset disabled={isView} className="contents">
+                                <fieldset disabled={isView} className="flex min-w-0 flex-col gap-8">
                                     {/* 📋 HEADER: IDENTIFICACIÓN Y CONFIGURACIÓN */}
-                                    <div className="grid grid-cols-2 gap-4 items-start border-b border-border/40 pb-8 mb-2">
+                                    <div className="grid grid-cols-2 gap-4 items-start">
                                         {/* FILA 1 */}
                                         <FormField
                                             control={form.control as unknown as Control<BOMFormValues>}
                                             name="active"
                                             render={({ field }) => (
                                                 <LabeledSwitch
-                                                    label="Receta Activa"
+                                                    label={`${getDomainConceptLabel('ldm')} activa`}
                                                     checked={field.value}
                                                     onCheckedChange={field.onChange}
                                                     description={field.value ? "Lista Principal" : "Lista de Respaldo"}
@@ -397,7 +433,7 @@ export function BOMDrawer({
                                             name="name"
                                             render={({ field, fieldState }) => (
                                                 <LabeledInput
-                                                    label="Nombre de la Receta"
+                                                    label={`Nombre de la ${getDomainConceptLabel('ldm')}`}
                                                     required
                                                     placeholder="Ej: Versión Estándar 2024"
                                                     error={fieldState.error?.message}
@@ -451,19 +487,16 @@ export function BOMDrawer({
                                                     )}
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center gap-3 bg-primary/[0.02] p-2 rounded-sm border border-primary/10 h-[2.5rem]">
-                                                    <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                                                        <Box className="h-3.5 w-3.5 text-primary" />
-                                                    </div>
-                                                    <div className="flex flex-col min-w-0">
-                                                        <span className="text-4xs font-bold uppercase text-primary/60 tracking-widest leading-none mb-0.5">
-                                                            {selectedVariant ? "Variante" : (selectedProduct?.has_variants ? "Plantilla Base" : "Producto")}
-                                                        </span>
-                                                        <span className="text-3xs font-bold text-foreground truncate uppercase">
+                                                <LabeledContainer
+                                                    label={selectedVariant ? "Variante a fabricar" : (selectedProduct?.has_variants ? "Plantilla base" : "Producto a fabricar")}
+                                                >
+                                                    <div className="flex h-6 min-w-0 items-center gap-1.5 px-3">
+                                                        <Box className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                                        <span className="truncate text-sm text-foreground">
                                                             {selectedVariant ? (selectedVariant.variant_display_name || selectedVariant.name) : (selectedProduct?.name || "")}
                                                         </span>
                                                     </div>
-                                                </div>
+                                                </LabeledContainer>
                                             )}
                                         </div>
 
@@ -473,7 +506,7 @@ export function BOMDrawer({
                                                 name="yield_uom"
                                                 render={({ field, fieldState }) => (
                                                     <UoMSelector
-                                                        label="Unidad de Salida"
+                                                        label="Unidad de rendimiento"
                                                         required
                                                         value={field.value || ""}
                                                         onChange={field.onChange}
@@ -512,7 +545,7 @@ export function BOMDrawer({
                                     <FormLineItemsTable
                                         icon={Package}
                                         title="Materias Primas y Componentes"
-                                        subtitle={`${materialFields.length} ítem(s) definido(s) en la receta`}
+                                        subtitle={`${materialFields.length} ítem(s) definido(s) en la ${getDomainConceptLabel('ldm')}`}
                                         columns={[
                                             { header: "Componente", width: "w-[35%]" },
                                             { header: "Cantidad", width: "w-[10%]" },
@@ -523,23 +556,12 @@ export function BOMDrawer({
                                         ]}
                                         onAdd={isView ? undefined : () => appendMaterial({ component: "", quantity: 1, uom: "", component_cost: 0, notes: "" })}
                                         addButtonText="Agregar Línea"
-                                        footer={(() => {
-                                            const materials = form.watch("lines") || []
-            const totalUnitCost = materials.reduce((sum: number, m: z.infer<typeof materialLineSchema>) => sum + (Number(m.component_cost) || 0), 0)
-            const totalLineCost = materials.reduce((sum: number, m: z.infer<typeof materialLineSchema>) => sum + ((Number(m.quantity) || 0) * (Number(m.component_cost) || 0)), 0)
-                                            return (
-                                                <div className="flex flex-col items-end text-3xs font-bold uppercase text-foreground/80 pr-12 gap-1">
-                                                    <div className="flex items-center gap-4">
-                                                        <span className="text-muted-foreground">Total Unitarios:</span>
-                                                        <DataCell.Currency value={totalUnitCost} weight="bold" className="text-primary w-auto justify-end text-3xs" />
-                                                    </div>
-                                                    <div className="flex items-center gap-4 pt-1">
-                                                        <span className="text-muted-foreground">Total Receta:</span>
-                                                        <DataCell.Currency value={totalLineCost} weight="bold" className="text-primary w-auto justify-end text-3xs" />
-                                                    </div>
-                                                </div>
-                                            )
-                                        })()}
+                                        footer={
+                                            <div className="flex items-center gap-4 pr-12 text-3xs font-bold uppercase tracking-widest">
+                                                <span className="text-muted-foreground">Total materiales</span>
+                                                <DataCell.Currency value={costs.materials} weight="bold" className="w-auto justify-end text-primary" />
+                                            </div>
+                                        }
                                     >
                                         <TableBody>
                                             {materialFields.map((field, index) => (
@@ -590,7 +612,7 @@ export function BOMDrawer({
                                                                             placeholder="Buscar componente..."
                                                                             excludeIds={selectedProduct ? [selectedProduct.id] : []}
                                                                             variant="inline"
-                                                                            className={cn(tableInputClass, "w-full text-left font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
+                                                                            className={cn(tableInputClass, "w-full text-left", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                                         />
                                                                     )
                                                                 }
@@ -631,7 +653,7 @@ export function BOMDrawer({
                                                                             placeholder="Buscar..."
                                                                             excludeIds={selectedProduct ? [selectedProduct.id] : []}
                                                                             variant="inline"
-                                                                            className={cn(tableInputClass, "flex-1 text-left font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
+                                                                            className={cn(tableInputClass, "flex-1 text-left", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                                         />
                                                                         <LabeledSelect
                                                                             value={form.watch(`lines.${index}.component`)}
@@ -671,7 +693,7 @@ export function BOMDrawer({
                                                             control={form.control as unknown as Control<BOMFormValues>}
                                                             name={`lines.${index}.quantity`}
                                                             render={({ field, fieldState }) => (
-                                                                <input type="number" step="1" {...field} className={cn(tableInputClass, "text-center font-bold", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")} />
+                                                                <input type="number" step="1" {...field} className={cn(tableInputClass, "text-center tabular-nums", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")} />
                                                             )}
                                                         />
                                                     </TableCell>
@@ -709,7 +731,7 @@ export function BOMDrawer({
                                                                         showConversionHint={false}
                                                                         quantity={quantity}
                                                                         label=""
-                                                                        className={cn(tableInputClass, "font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
+                                                                        className={cn(tableInputClass, fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                                     />
                                                                 )
                                                             }}
@@ -719,8 +741,8 @@ export function BOMDrawer({
                                                     {/* Costo Est. */}
                                                     <TableCell className="py-1 px-3">
                                                         <DataCell.Currency
-                                                            value={form.watch(`lines.${index}.component_cost`) || 0}
-                                                            className="justify-end text-muted-foreground pr-1 text-3xs"
+                                                            value={lineUnitCost(form.watch(`lines.${index}`))}
+                                                            className="justify-end text-muted-foreground pr-1"
                                                             weight="medium"
                                                         />
                                                     </TableCell>
@@ -728,8 +750,8 @@ export function BOMDrawer({
                                                     {/* Costo Total */}
                                                     <TableCell className="py-1 px-3">
                                                         <DataCell.Currency
-                                                            value={(Number(form.watch(`lines.${index}.quantity`)) || 0) * (Number(form.watch(`lines.${index}.component_cost`)) || 0)}
-                                                            className="justify-end text-primary pr-1 text-3xs"
+                                                            value={(Number(form.watch(`lines.${index}.quantity`)) || 0) * lineUnitCost(form.watch(`lines.${index}`))}
+                                                            className="justify-end text-primary pr-1"
                                                             weight="bold"
                                                         />
                                                     </TableCell>
@@ -783,20 +805,12 @@ export function BOMDrawer({
                                             gross_price: 0, document_type: "FACTURA", notes: ""
                                         })}
                                         addButtonText="Agregar Servicio"
-                                        footer={(() => {
-                                            const services = form.watch("service_lines") || []
-                                            const totalGrossPrice = services.reduce((sum: number, s: z.infer<typeof serviceLineSchema>) => sum + (Number(s.gross_price) || 0), 0)
-                                            return (
-                                                <div className="flex items-center gap-4 text-3xs font-bold uppercase tracking-widest text-foreground/80 pr-24">
-                                                    <span className="text-muted-foreground">Total Bruto Unit.:</span>
-                                                    <DataCell.Currency
-                                                        value={totalGrossPrice}
-                                                        className="w-auto text-primary text-3xs"
-                                                        weight="black"
-                                                    />
-                                                </div>
-                                            )
-                                        })()}
+                                        footer={
+                                            <div className="flex items-center gap-4 pr-12 text-3xs font-bold uppercase tracking-widest">
+                                                <span className="text-muted-foreground">Total servicios (neto)</span>
+                                                <DataCell.Currency value={costs.services} weight="bold" className="w-auto justify-end text-primary" />
+                                            </div>
+                                        }
                                     >
                                         <TableBody>
                                             {serviceFields.map((field, index) => (
@@ -827,7 +841,7 @@ if (p.has_variants) fetchLineVariants(p.id)
                                                                             onChange={(val) => propField.onChange(val)}
                                                                             placeholder="Buscar servicio..."
                                                                             variant="inline"
-                                                                            className={cn(tableInputClass, "w-full text-left font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
+                                                                            className={cn(tableInputClass, "w-full text-left", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                                         />
                                                                     )
                                                                 }
@@ -848,7 +862,7 @@ if (p.has_variants) fetchLineVariants(p.id)
                                                                             onChange={(val) => propField.onChange(val)}
                                                                             placeholder="Buscar..."
                                                                             variant="inline"
-                                                                            className={cn(tableInputClass, "flex-1 text-left font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
+                                                                            className={cn(tableInputClass, "flex-1 text-left", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                                         />
                                                                         <LabeledSelect
                                                                             variant="inline"
@@ -886,7 +900,7 @@ if (p.has_variants) fetchLineVariants(p.id)
                                                                     }}
                                                                     contactType="SUPPLIER"
                                                                     variant="inline"
-                                                                    className={cn(tableInputClass, "text-left font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
+                                                                    className={cn(tableInputClass, "text-left", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                                 />
                                                             )}
                                                         />
@@ -898,7 +912,7 @@ if (p.has_variants) fetchLineVariants(p.id)
                                                             control={form.control as unknown as Control<BOMFormValues>}
                                                             name={`service_lines.${index}.quantity`}
                                                             render={({ field, fieldState }) => (
-                                                                <input type="number" step="1" {...field} className={cn(tableInputClass, "text-center font-bold", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")} />
+                                                                <input type="number" step="1" {...field} className={cn(tableInputClass, "text-center tabular-nums", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")} />
                                                             )}
                                                         />
                                                     </TableCell>
@@ -920,7 +934,7 @@ if (p.has_variants) fetchLineVariants(p.id)
                                                                     variant="inline"
                                                                     showConversionHint={false}
                                                                     label=""
-                                                                    className={cn(tableInputClass, "font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
+                                                                    className={cn(tableInputClass, fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                                 />
                                                             )}
                                                         />
@@ -936,7 +950,7 @@ if (p.has_variants) fetchLineVariants(p.id)
                                                                     type="number"
                                                                     {...field}
                                                                     onFocus={e => e.target.select()}
-                                                                    className={cn(tableInputClass, "text-right font-mono font-bold text-primary", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
+                                                                    className={cn(tableInputClass, "text-right tabular-nums", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                                 />
                                                             )}
                                                         />

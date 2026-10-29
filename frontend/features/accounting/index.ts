@@ -1,6 +1,6 @@
 export type { AccountActionsCtx } from './components'
 export { AccountingClosuresClientView, AccountsClientView, JournalEntryDrawer, LedgerDrawer, accountActions } from './components'
-export type { Account, AccountFilters, AccountPayload, AccountingPeriod, FiscalYear } from './types'
+export type { Account, AccountFilters, AccountPayload, AccountingPeriod, FiscalYear, LedgerMovement } from './types'
 export { IS_CATEGORIES, CF_CATEGORIES, BS_CATEGORIES } from './types'
 export { accountUnifiedSearchDef, fiscalYearUnifiedSearchDef, journalEntryUnifiedSearchDef } from './unifiedSearchDef'
 export { useAccountingSettings, ACCOUNTING_SETTINGS_QUERY_KEY } from './hooks/useAccountingSettings'

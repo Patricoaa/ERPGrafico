@@ -4,8 +4,7 @@ import { useState } from "react"
 import { Package, Zap, Factory, Wrench, Repeat } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
-import { LabeledContainer } from "@/components/shared"
-import { SELECTOR_PLACEHOLDER_CLASS, SELECTOR_TRIGGER_BASE } from "@/components/shared/SelectorTrigger"
+import { LabeledContainer, SELECTOR_PLACEHOLDER_CLASS, SELECTOR_TRIGGER_BASE } from "@/components/shared"
 
 interface ProductTypeSelectorProps {
     value?: string | null

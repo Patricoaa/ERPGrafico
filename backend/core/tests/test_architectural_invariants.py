@@ -47,8 +47,16 @@ DRAWER_DETAIL_ENTITIES: set[str] = {
     "sales.salereturn",  # lista /sales/dtes/returns; detalle en drawer
     "purchasing.purchasereceipt",  # lista /purchasing/dtes/receipts; detalle en drawer (ADR-0090)
     "purchasing.purchasereturn",  # lista /purchasing/dtes/returns; detalle en drawer (ADR-0090)
-    "inventory.inventorydocument",  # lista /inventory/operations/documents; detalle en drawer
+    "inventory.inventorydocument",  # lista /inventory/operations/manual-operations; detalle en drawer
 }
+
+
+def _route_matches(pattern: str, route: str) -> bool:
+    """`route` is an App Router path with dynamic segments as `{id}`: they match any value."""
+    pattern_parts, route_parts = pattern.strip("/").split("/"), route.strip("/").split("/")
+    return len(pattern_parts) == len(route_parts) and all(
+        r == "{id}" or r == p for p, r in zip(pattern_parts, route_parts)
+    )
 
 
 @pytest.mark.django_db
@@ -225,7 +233,10 @@ class TestArchitecturalInvariants:
         1. Descubrir todos los page.tsx bajo frontend/app/(dashboard)/.
         2. Convertir la ruta de filesystem a patrón de URL canónico:
            - segmentos [xxx] se normalizan a {id}.
-        3. Para cada entidad, verificar que su detail_url_pattern coincide.
+        3. Para cada entidad, verificar que su detail_url_pattern coincide segmento a
+           segmento: un segmento dinámico de la ruta acepta cualquier valor, así
+           `/d/billing.invoice/{id}` cae en el resolvedor genérico `/d/[label]/[id]`
+           (ADR-0080).
         Entidades drawer/tab-only (DRAWER_ENTITIES / DRAWER_DETAIL_ENTITIES,
         ver ADR-0022) se omiten: su detalle vive en un drawer, no en una página.
         """
@@ -262,7 +273,7 @@ class TestArchitecturalInvariants:
             if not pattern:
                 violations.append(f"  {label}: detail_url_pattern vacío")
                 continue
-            if pattern not in router_patterns:
+            if not any(_route_matches(pattern, route) for route in router_patterns):
                 sample = sorted(r for r in router_patterns if "{id}" in r)[:6]
                 violations.append(
                     f"  {label}: '{pattern}' no coincide con ninguna ruta real.\n"

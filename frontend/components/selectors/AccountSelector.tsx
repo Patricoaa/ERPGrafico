@@ -5,14 +5,13 @@ import { Check } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
 
-import { BaseModal, LabeledContainer, SearchablePopover } from '@/components/shared'
+import { BaseModal, LabeledContainer, SearchablePopover, SelectorTrigger, SELECTOR_VALUE_CLASS } from '@/components/shared'
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { selectorAccountEntity, selectorAccountViews } from "./entity-view/selectorAccount.entity"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useAccountSearch, useSingleAccount } from "@/features/accounting/hooks/useAccountSearch"
 import { type Account } from "@/types/entities"
-import { SelectorTrigger, SELECTOR_VALUE_CLASS } from "@/components/shared/SelectorTrigger"
 
 const AccountIcon = getEntityIcon('accounting.account')
 
@@ -162,6 +161,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar...
             </SearchablePopover>
 
             <BaseModal
+                asDialog
                 open={modalOpen}
                 onOpenChange={setModalOpen}
                 size="md"

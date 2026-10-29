@@ -36,6 +36,8 @@ const ALLOWLIST = new Set([
     'components/shared/Drawer.tsx',
     'components/shared/CollapsibleSheet.tsx',
     'components/shared/UniversalSearch.tsx', // authorized exception per component-modal.md
+    'components/layout/DashboardShell.tsx', // mobile navigation sheet — ADR-0103
+    'components/ui/sidebar.tsx', // shadcn primitive, same layer as ui/sheet — ADR-0103
 ]);
 
 function createRule(context) {

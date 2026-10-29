@@ -1,16 +1,17 @@
 "use client"
 
-import { Plus, Truck, Info } from 'lucide-react'
-import { ActionConfirmModal, Chip, DataCell } from '@/components/shared'
+import type { ReactNode } from 'react'
+import { Plus, Truck } from 'lucide-react'
+import { ActionConfirmModal, Chip, DataCell, QuantityDisplay, StepHeader } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatCurrency } from "@/lib/money"
 import { showApiError } from '@/lib/errors'
 import { useWorkOrderMutations, productionApi } from '../../hooks'
 import { useState } from 'react'
 import { useVatRate } from '@/hooks/useVatRate'
+import { PlanningEmptyState } from '../shared/PlanningEmptyState'
 import { OutsourcedServiceForm, type OutsourcedServiceValues, emptyOutsourcedService } from '../shared/OutsourcedServiceForm'
-import type { WorkOrder, WorkOrderMaterial, UoM, ProductMinimal } from '../../types'
+import type { WorkOrder, WorkOrderMaterial, ProductMinimal } from '../../types'
 import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 interface OutsourcingAssignmentStepProps {
@@ -18,10 +19,11 @@ interface OutsourcingAssignmentStepProps {
   isViewingCurrentStage: boolean
   onMaterialSaved: () => void
   onMaterialDeleted: () => void
+  headerActions?: ReactNode
 }
 
 export function OutsourcingAssignmentStep({
-  order, isViewingCurrentStage, onMaterialSaved, onMaterialDeleted,
+  order, isViewingCurrentStage, onMaterialSaved, onMaterialDeleted, headerActions,
 }: OutsourcingAssignmentStepProps) {
   const { multiplier: vatMultiplier } = useVatRate()
   const { addMaterial, updateMaterial, removeMaterial, isAddingMaterial } = useWorkOrderMutations(
@@ -32,7 +34,6 @@ export function OutsourcingAssignmentStep({
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [formData, setFormData] = useState<OutsourcedServiceValues>(emptyOutsourcedService())
-  const [uoms] = useState<UoM[]>([])
   const [serviceToDelete, setServiceToDelete] = useState<WorkOrderMaterial | null>(null)
 
   const reset = () => {
@@ -92,47 +93,38 @@ export function OutsourcingAssignmentStep({
 
   const outsourced = order.materials?.filter((m: WorkOrderMaterial) => m.is_outsourced) ?? []
 
-  return (
-    <div className="space-y-6">
-      <div className="p-4 bg-primary/10 border border-info/10 rounded-md flex gap-3">
-        <Plus className="h-5 w-5 text-primary shrink-0" />
-        <div className="text-sm text-primary">
-          <div className="flex items-center gap-2">
-            <p className="font-bold">Asignación de Servicios Tercerizados</p>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-3.5 w-3.5 text-info/50 cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <p className="text-xs">
-                    Los servicios tercerizados generarán automáticamente Órdenes de Compra en estado Confirmado que deberán procesarse desde el Hub de la OC.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <p className="text-xs">
-            Si el trabajo requiere servicios externos de un proveedor, agréguelos aquí. Se generará una Orden de Compra automáticamente.
-          </p>
-        </div>
-      </div>
+  const openAdd = () => { reset(); setIsAddOpen(true) }
+  const isEmpty = outsourced.length === 0
 
-      <div className="space-y-4">
-        <div className="grid gap-3">
+  return (
+    <div className="flex flex-1 flex-col gap-4">
+      <StepHeader
+        title="Asignación de Tercerizados"
+        description="Servicios externos contratados para esta orden de producción."
+        icon={Truck}
+        rightContent={headerActions}
+      />
+        {isEmpty && !isAddOpen && (
+          <PlanningEmptyState
+            kind="outsourcing"
+            action={isViewingCurrentStage ? (
+              <Button variant="outline" size="sm" onClick={openAdd}>
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar servicio tercerizado
+              </Button>
+            ) : undefined}
+          />
+        )}
+        {!isEmpty && <div className="grid gap-3">
           {outsourced.map((m: WorkOrderMaterial) => (
-            <div key={m.id} className="flex items-center justify-between p-3 border rounded-md bg-background group">
+            <div key={m.id} className="flex items-center justify-between p-3 border rounded-md bg-card group">
               <div className="flex items-center gap-3">
                 <Truck className="h-4 w-4 text-muted-foreground" />
                 <div className="space-y-0.5">
-                  <p className="text-sm font-bold">{m.component_name}</p>
-                  <div className="flex items-center gap-2 text-3xs text-muted-foreground uppercase font-bold">
-                    <span>{m.supplier_name}</span>
-                    <span>•</span>
-                    <span>Cant: {m.quantity_planned} {m.uom_name}</span>
-                    <span>•</span>
-                    <span>{formatCurrency(parseFloat(m.unit_price ?? '0') * vatMultiplier)} (Bruto) c/u</span>
-                  </div>
+                  <p className="text-sm font-medium">{m.component_name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {m.supplier_name} · <QuantityDisplay value={m.quantity_planned} uom={m.uom_name} decimals={2} className="font-sans" /> · {formatCurrency(parseFloat(m.unit_price ?? '0') * vatMultiplier)} bruto c/u
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -148,17 +140,14 @@ export function OutsourcingAssignmentStep({
                     <DataCell.Action action="delete" onClick={() => setServiceToDelete(m)} />
                   </DataCell.ActionGroup>
                 )}
-                <div className="flex items-center gap-2">
-                  <Chip size="xs">OCS-{m.purchase_order_number}</Chip>
-                  <span className="text-3xs font-medium text-muted-foreground">({m.supplier_name})</span>
-                </div>
+                {m.purchase_order_number && <Chip size="xs">OC {m.purchase_order_number}</Chip>}
               </div>
             </div>
           ))}
-        </div>
+        </div>}
 
-        {isViewingCurrentStage && (
-          <div className="pt-2">
+        {isViewingCurrentStage && (isAddOpen || !isEmpty) && (
+          <div>
             {isAddOpen ? (
               <OutsourcedServiceForm
                 value={formData}
@@ -167,15 +156,14 @@ export function OutsourcingAssignmentStep({
                 onCancel={reset}
                 saving={isAddingMaterial}
                 isEditing={!!editingId}
-                uoms={uoms}
                 productLocked={!!editingId}
                 showInfo={false}
               />
             ) : (
               <Button
                 variant="outline" size="sm"
-                className="w-full border-dashed text-primary border-primary/20 bg-primary/5 hover:bg-primary/10"
-                onClick={() => { reset(); setIsAddOpen(true) }}
+                className="w-full border-dashed"
+                onClick={openAdd}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Agregar Servicio Tercerizado
@@ -183,7 +171,6 @@ export function OutsourcingAssignmentStep({
             )}
           </div>
         )}
-      </div>
 
       <ActionConfirmModal
         open={serviceToDelete !== null}

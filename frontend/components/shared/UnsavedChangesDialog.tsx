@@ -26,6 +26,7 @@ export function UnsavedChangesDialog({ open, names, saving, onSave, onDiscard, o
 
     return (
         <BaseModal
+            asDialog
             open={open}
             onOpenChange={(next) => { if (!next && !saving) onKeepEditing() }}
             size="sm"

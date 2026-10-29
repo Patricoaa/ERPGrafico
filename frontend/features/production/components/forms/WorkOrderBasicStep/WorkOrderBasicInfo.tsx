@@ -311,7 +311,7 @@ export function WorkOrderBasicInfo({
                                         </span>
                                     )}
                                 </div>
-                                // typography-allow: meta - clear button
+                                {/* typography-allow: meta - clear button */}
                                 <Button
                                     type="button"
                                     variant="ghost"

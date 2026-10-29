@@ -1,5 +1,7 @@
 "use client"
 
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { EntityPanelTab } from "@/components/providers"
 import { showApiError } from "@/lib/errors"
 
 import { useState, useMemo, useCallback, useEffect } from "react"
@@ -108,8 +110,9 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
     // URL-driven state
     const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
     const action = searchParams.get("action")
-    const isCreateOpen = searchParams.get("modal") === "new" || !!externalOpen
-    const isEditOpen = isCreateOpen || (!!selectedId && action === "edit")
+    // Crear (`?modal=new`) o editar (`?selected&action=edit`) comparten el drawer de producto.
+    const formPanel = useEntityPanelRoute({ actions: ['edit'], external: { open: externalOpen } })
+    const isEditOpen = formPanel.open
     const isHistoryOpen = !!selectedId && action === "history"
 
     // Find subscription from the local list
@@ -323,18 +326,20 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                 <Collection.BulkBar actions={bulkActions} />
             </Collection.Root>
 
-            <ProductDrawer
-                open={isEditOpen}
-                onOpenChange={(open) => {
-                    if (!open) clearAll()
-                }}
-                initialData={(editingProduct || undefined) as ProductInitialData | undefined}
-                onSuccess={() => {
-                    clearAll()
-                    fetchSubscriptions()
-                }}
-                lockedType="SUBSCRIPTION"
-            />
+            <EntityPanelTab label="inventory.subscription" {...formPanel.tab}>
+                {(open) => (
+                    <ProductDrawer
+                        open={open}
+                        onOpenChange={(open) => { if (!open) formPanel.close() }}
+                        initialData={(editingProduct || undefined) as ProductInitialData | undefined}
+                        onSuccess={() => {
+                            formPanel.close()
+                            fetchSubscriptions()
+                        }}
+                        lockedType="SUBSCRIPTION"
+                    />
+                )}
+            </EntityPanelTab>
 
             <ActionConfirmModal
                 open={isConfirmModalOpen}

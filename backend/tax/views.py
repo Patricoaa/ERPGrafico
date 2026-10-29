@@ -140,12 +140,12 @@ class F29DeclarationViewSet(EditPolicyMixin, viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def documents(self, request, pk=None):
-        from billing.serializers import InvoiceListSerializer
+        from billing.serializers import InvoiceSummarySerializer
 
         from .selectors import TaxSelectorExt
         queryset = TaxSelectorExt.get_declaration_documents_queryset(self.get_object())
         page = self.paginate_queryset(queryset)
-        serializer = InvoiceListSerializer(page if page is not None else queryset, many=True)
+        serializer = InvoiceSummarySerializer(page if page is not None else queryset, many=True)
         if page is not None:
             return self.get_paginated_response(serializer.data)
         return Response(serializer.data)

@@ -69,12 +69,15 @@ export function getAvailableNextStages(order: WorkOrder): string[] {
         if (stageId === Stage.PREPRESS && !order.requires_prepress) return false
         if (stageId === Stage.PRESS && !order.requires_press) return false
         if (stageId === Stage.POSTPRESS && !order.requires_postpress) return false
-        
+
+        // CANCELLED is only valid when the server allows it (mirrors is_cancellable)
+        if (stageId === Stage.CANCELLED && order.is_cancellable === false) return false
+
         // MATERIAL_APPROVAL is only relevant if there are manual/stock materials (not just outsourced)
         if (stageId === Stage.MATERIAL_APPROVAL) {
             return (order.materials ?? []).some(m => !m.is_outsourced)
         }
-        
+
         // OUTSOURCING_VERIFICATION only if there are outsourced materials
         if (stageId === Stage.OUTSOURCING_VERIFICATION) {
             return (order.materials ?? []).some(m => m.is_outsourced)

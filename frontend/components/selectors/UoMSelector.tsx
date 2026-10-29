@@ -3,8 +3,7 @@ import { Info, Check, Search } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { LabeledContainer } from "@/components/shared"
-import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
+import { LabeledContainer, SelectorTrigger } from "@/components/shared"
 
 interface UoM {
     id: number
@@ -127,21 +126,20 @@ export function UoMSelector({
                     hasValue={!!selectedUoM}
                     placeholder={placeholder}
                     variant={variant}
-                    buttonVariant="outline"
                     open={open}
                     disabled={disabled || (context !== 'stock' && !product && !categoryId)}
-                    className={cn("h-full!", variant !== 'standalone' && className)}
+                    className={cn(variant === 'standalone' ? "h-full!" : className)}
                     chevronClassName="ml-1 h-3 w-3"
                 >
-                    <span className="text-sm truncate">{selectedUoM?.name}</span>
+                    <span className="text-sm text-foreground truncate">{selectedUoM?.name}</span>
                 </SelectorTrigger>
             </PopoverTrigger>
-            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+            <PopoverContent className="w-[max(var(--radix-popover-trigger-width),13rem)] p-0 rounded-sm" align="start">
                 <div className="p-2">
-                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                        <Search className="mr-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+                    <div className="flex items-center px-3 border rounded-sm mb-2 bg-background">
+                        <Search className="mr-2 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
                         <input
-                            className="flex h-8 w-full rounded-md bg-transparent py-2 text-xs outline-none placeholder:text-muted-foreground"
+                            className="flex h-8 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/60"
                             placeholder="Buscar UdM..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -153,7 +151,7 @@ export function UoMSelector({
                             <div
                                 key={uom.id}
                                 className={cn(
-                                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none hover:bg-accent hover:text-accent-foreground transition-colors",
+                                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground transition-colors",
                                     String(value) === String(uom.id) && "bg-accent"
                                 )}
                                 onClick={() => {
@@ -164,12 +162,12 @@ export function UoMSelector({
                             >
                                 <span className="flex-1 truncate">{uom.name}</span>
                                 {String(value) === String(uom.id) && (
-                                    <Check className="ml-2 h-3 w-3 opacity-100" />
+                                    <Check className="ml-2 h-3.5 w-3.5 text-primary" />
                                 )}
                             </div>
                         ))}
                         {filteredAndSearchedUoMs.length === 0 && (
-                            <div className="p-3 text-3xs text-center text-muted-foreground italic">
+                            <div className="p-3 text-xs text-center text-muted-foreground">
                                 {product || categoryId ? "No se encontraron unidades" : "Seleccione producto primero"}
                             </div>
                         )}

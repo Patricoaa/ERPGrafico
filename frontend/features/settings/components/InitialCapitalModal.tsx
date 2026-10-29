@@ -147,7 +147,7 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
                         />
                     </LabeledContainer>
 
-                    <div className="border rounded-md overflow-hidden flex flex-col">
+                    <div className="overflow-hidden flex flex-col">
                         <Collection.Root
                             collection={partnerEntryCollection}
                             label="Socios del capital inicial"

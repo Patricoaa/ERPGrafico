@@ -35,7 +35,13 @@ function dateTime(invoice: Order): { value: string; showTime: boolean } | null {
  * Tab Resumen de la ficha de factura/nota (ADR-0083): Contexto en una fila (contraparte,
  * fecha y hora, documento y folio, origen) y Productos (tabla + totales).
  */
-export function InvoiceSummaryTab({ invoice }: { invoice: Order }) {
+export function InvoiceSummaryTab({
+    invoice,
+    onCreateWorkOrder,
+}: {
+    invoice: Order
+    onCreateWorkOrder?: (line: OrderLine) => void
+}) {
     const isSale = invoice.is_sale_document === true || !!invoice.sale_order
     const partnerId = typeof invoice.partner_id === "number" ? invoice.partner_id : undefined
     const when = dateTime(invoice)
@@ -83,7 +89,7 @@ export function InvoiceSummaryTab({ invoice }: { invoice: Order }) {
 
             <section className="space-y-4">
                 <FormSection title="Productos" icon={Package} />
-                <DocumentLinesTable lines={lines} kind="invoice" />
+                <DocumentLinesTable lines={lines} kind="invoice" onCreateWorkOrder={onCreateWorkOrder} />
                 <DocumentTotalsBox
                     subtotal={subtotal}
                     tax={toNumber(invoice.total_tax)}

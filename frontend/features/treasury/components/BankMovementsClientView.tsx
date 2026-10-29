@@ -1,5 +1,7 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import React from "react"
 import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared'
 import { Collection, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT, type FieldId } from "@/components/entity-view"
@@ -11,7 +13,6 @@ import { useGlobalModalActions } from "@/components/providers/GlobalModalProvide
 import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
 import { useBanks } from "@/features/treasury/hooks/useMasterData"
 import { treasuryMovementsUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import type { TreasuryMovement } from "@/features/treasury/types"
 import { treasuryMovementEntity, treasuryMovementViews } from "@/features/treasury/entity-view/treasuryMovement.entity"
 
@@ -61,12 +62,7 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
         page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
     })
 
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TreasuryMovement>({
-        endpoint: '/treasury/movements'
-    })
-
-    const detailsOpen = !!selectedFromUrl
-    const selectedMovementId = selectedFromUrl?.id ?? null
+    const panel = useEntityPanelRoute<TreasuryMovement>({ endpoint: '/treasury/movements', create: false })
 
     const handleViewDetails = React.useCallback((id: number) => {
         openEntity("treasury.treasurymovement", id)
@@ -111,15 +107,15 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                 />
             </Collection.Root>
 
-            {selectedMovementId && (
-                <CashMovementDrawer
-                    id={selectedMovementId}
-                    open={detailsOpen}
-                    onOpenChange={(open) => {
-                        if (!open) clearSelection()
-                    }}
-                />
-            )}
+            <EntityPanelTab label="treasury.bankmovement" {...panel.tab}>
+                {(open) => panel.selectedId && (
+                    <CashMovementDrawer
+                        id={panel.selectedId}
+                        open={open}
+                        onOpenChange={(open) => { if (!open) panel.close() }}
+                    />
+                )}
+            </EntityPanelTab>
         </div>
     )
 }

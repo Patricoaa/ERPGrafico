@@ -28,9 +28,11 @@ export function getStepCapabilities(stage: string, order: WorkOrder): StepCapabi
     const { status } = order
 
     // Creation steps are summary-only once the OT exists.
-    // MFG_CONFIG gets per-section editability in Phase 3 via mfgConfigEditability.ts,
-    // but the step-level canEdit stays false here.
+    // MFG_CONFIG gets per-section editability via mfgConfigEditability.ts.
     if (CREATION_STEP_IDS.has(stage)) {
+        if (stage === 'MFG_CONFIG' && status !== 'FINISHED' && status !== 'CANCELLED') {
+            return { canView: true, canEdit: true, canRewind: false }
+        }
         return { canView: true, canEdit: false, canRewind: false }
     }
 
@@ -45,12 +47,19 @@ export function getStepCapabilities(stage: string, order: WorkOrder): StepCapabi
         return { canView: true, canEdit: true, canRewind: true }
     }
 
-    // IN_PROGRESS: all past workflow stages allow view; rewind requires no side-effects.
+    // IN_PROGRESS: all past workflow stages allow view; rewind requires no irreversible effects.
     if (status === 'IN_PROGRESS') {
-        const se = hasSideEffects(order)
+        const se = hasSideEffects(order, stage)
+        // Services can still be changed until their purchase orders exist.
+        const canEditOutsourcing = stage === 'OUTSOURCING_ASSIGNMENT' && !se.blocked
         return {
             canView: true,
-            canEdit: false,
+            canEdit: canEditOutsourcing,
+            editBlockedReason: canEditOutsourcing
+                ? undefined
+                : stage === 'OUTSOURCING_ASSIGNMENT'
+                    ? se.reason
+                    : 'Esta etapa ya se cerró. Retrocede a ella para modificarla.',
             canRewind: !se.blocked,
             rewindBlockedReason: se.blocked ? se.reason : undefined,
         }

@@ -21,8 +21,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useProductSearch, useSingleProduct } from "@/features/inventory/hooks/useProductSearch"
 
 import { type Product, type ProductType, type ProductVariant, type ProductAttributeValue } from "@/types/entities"
-import { BaseModal, CardSkeleton, EmptyState, LabeledContainer, MoneyDisplay, Badge } from '@/components/shared'
-import { SelectorTrigger } from "@/components/shared/SelectorTrigger"
+import { BaseModal, CardSkeleton, EmptyState, LabeledContainer, MoneyDisplay, Chip, SelectorTrigger } from '@/components/shared'
 
 const ProductIcon = getEntityIcon('inventory.product')
 
@@ -46,6 +45,8 @@ interface ProductSelectorProps {
     error?: string
     required?: boolean
     variant?: 'standalone' | 'inline'
+    /** Price shown in trigger and list: 'sale' = sale price incl. IVA, 'purchase' = net cost price. */
+    context?: 'sale' | 'purchase'
 }
 
 export function ProductSelector({
@@ -67,8 +68,13 @@ export function ProductSelector({
     label,
     error,
     required = false,
-    variant = 'standalone'
+    variant = 'standalone',
+    context = 'sale'
 }: ProductSelectorProps) {
+    const showCost = context === 'purchase'
+    const listPrice = (product: Product) => showCost
+        ? Number(product.cost_price) || 0
+        : Number(product.sale_price_gross) || PricingUtils.netToGross(Number(product.sale_price))
     const [open, setOpen] = useState(false)
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
     const [searchTerm, setSearchTerm] = useState("")
@@ -201,23 +207,21 @@ export function ProductSelector({
                     <div className="flex items-center justify-between gap-1.5 min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 min-w-0">
                             <ProductIcon className={cn("h-3.5 w-3.5 shrink-0 text-primary", variant === 'inline' && "h-3 w-3")} />
-                            <span className={cn("text-sm text-foreground truncate", variant === 'inline' && "text-xs")}>{selectedProduct?.name}</span>
+                            <span className="text-sm text-foreground truncate">{selectedProduct?.name}</span>
                         </div>
-                        <span className={cn("text-muted-foreground shrink-0 pr-1 text-right", variant === 'inline' ? "text-3xs" : "text-xs")}>
-                            {PricingUtils.formatCurrency(Number(selectedProduct?.sale_price_gross ?? selectedProduct?.sale_price))}
+                        <span className="text-xs text-muted-foreground tabular-nums shrink-0 pr-1 text-right">
+                            {selectedProduct && PricingUtils.formatCurrency(listPrice(selectedProduct))}
                         </span>
                     </div>
                 </SelectorTrigger>
             </PopoverTrigger>
-            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+            <PopoverContent className="w-[max(var(--radix-popover-trigger-width),22rem)] p-0 rounded-sm" align="start">
                 <div className="p-2">
-                    <div className="flex items-center px-3 border rounded-md mb-2 relative">
-                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                    <div className="flex items-center px-3 border rounded-sm relative">
+                        <Search className="mr-2 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
                         <input
-                            className={cn(
-                                "flex h-10 w-full rounded-md bg-transparent py-3 outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
-                                variant === 'inline' ? "text-xs" : "text-sm"
-                            )}
+                            className="flex h-9 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/60 disabled:cursor-not-allowed disabled:opacity-50"
+                            placeholder="Buscar por nombre o código..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -244,8 +248,7 @@ export function ProductSelector({
                                     key={product.id}
                                     data-disabled={isStockRestricted(product) || isCustomDisabled(product)}
                                     className={cn(
-                                        "relative flex cursor-default select-none items-start rounded-sm px-2 py-2 outline-none hover:bg-accent hover:text-accent-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
-                                        variant === 'inline' ? "text-xs" : "text-sm",
+                                        "relative mx-1 flex cursor-default select-none items-start rounded-sm px-2 py-2 outline-none hover:bg-accent hover:text-accent-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
                                         selectedProduct?.id === product.id && "bg-accent"
                                     )}
                                     onClick={() => handleSelect(product)}
@@ -264,61 +267,58 @@ export function ProductSelector({
                                     ) : null}
                                     <Check
                                         className={cn(
-                                            "absolute left-2 top-3 h-4 w-4 opacity-0",
+                                            "absolute left-2 top-2.5 h-3.5 w-3.5 text-primary opacity-0",
                                             selectedProduct?.id === product.id && "opacity-100"
                                         )}
                                     />
-                                    <div className="flex flex-col w-full ml-6">
-                                        <div className="flex items-center justify-between gap-2 w-full">
-                                            <span className="font-medium truncate text-left">
+                                    <div className="flex flex-col gap-1.5 w-full min-w-0 ml-5">
+                                        <div className="flex items-baseline justify-between gap-3 w-full min-w-0">
+                                            <span className="text-sm font-medium text-foreground truncate text-left">
                                                 {product.name}
                                             </span>
-                                            <span className="text-muted-foreground whitespace-nowrap text-right">
-                                                {PricingUtils.formatCurrency(Number(product.sale_price_gross ?? product.sale_price))}
-                                            </span>
+                                            {product.is_dynamic_pricing && !showCost ? (
+                                                <Chip intent="warning" size="xs">Precio Dinámico</Chip>
+                                            ) : (
+                                                <span className="flex items-baseline gap-1 whitespace-nowrap">
+                                                    <MoneyDisplay amount={listPrice(product)} inline showColor={false} className="text-xs tabular-nums" />
+                                                    <span className="text-3xs text-muted-foreground">{showCost ? "costo neto" : "IVA inc."}</span>
+                                                </span>
+                                            )}
                                         </div>
-                                        <div className="flex justify-between mt-1 items-center">
-                                            <div className="flex gap-1 flex-wrap">
-                                                {['STORABLE', 'MANUFACTURABLE'].includes(product.product_type) && (
-                                                    <>
-                                                        <Badge intent={(product.current_stock || 0) > 0 ? "success" : "destructive"} size="xs" className={(product.current_stock || 0) > 0 ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"}>
-                                                            Stock: {product.current_stock || 0}
-                                                        </Badge>
-                                                        <Badge intent={(product.qty_available || 0) > 0 ? "success" : "destructive"} size="xs" className={(product.qty_available || 0) > 0 ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"}>
-                                                            Disp: {product.qty_available || 0}
-                                                        </Badge>
-                                                    </>
-                                                )}
+                                        <div className="flex gap-1 flex-wrap">
+                                            {(product.internal_code || product.code) && (
+                                                <span className="text-xs font-mono text-muted-foreground mr-1">
+                                                    {product.internal_code || product.code}
+                                                </span>
+                                            )}
+                                            {['STORABLE', 'MANUFACTURABLE'].includes(product.product_type) && (
+                                                <>
+                                                    <Chip intent={(product.current_stock || 0) > 0 ? "success" : "destructive"} size="xs">
+                                                        Stock: {product.current_stock || 0}
+                                                    </Chip>
+                                                    <Chip intent={(product.qty_available || 0) > 0 ? "success" : "destructive"} size="xs">
+                                                        Disp: {product.qty_available || 0}
+                                                    </Chip>
+                                                </>
+                                            )}
 
-                                                {product.requires_advanced_manufacturing ? (
-                                                    <Badge intent="primary" size="xs">
-                                                        Fab: Avanzada
-                                                    </Badge>
-                                                ) : product.mfg_auto_finalize ? (
-                                                    <Badge intent="warning" size="xs">
-                                                        Fab: Express
-                                                    </Badge>
-                                                ) : product.has_bom ? (
-                                                    <Badge intent={(product.manufacturable_quantity ?? 0) <= 0 ? "destructive" : "primary"} size="xs">
-                                                        Fab: {product.manufacturable_quantity ?? 'N/A'}
-                                                    </Badge>
-                                                ) : product.product_type === 'MANUFACTURABLE' ? (
-                                                    <Badge intent="neutral" size="xs">
-                                                        Sin Receta
-                                                    </Badge>
-                                                ) : null}
-                                            </div>
-
-                                            <span className="text-3xs font-bold whitespace-nowrap ml-2">
-                                                {product.is_dynamic_pricing ? (
-                                                    <Badge intent="warning" size="xs">Precio Dinámico</Badge>
-                                                ) : (
-                                                    <>
-                                                        <MoneyDisplay amount={Number(product.sale_price_gross) || PricingUtils.netToGross(Number(product.sale_price))} inline />
-                                                        <span className="text-4xs text-muted-foreground ml-0.5">IVA Inc.</span>
-                                                    </>
-                                                )}
-                                            </span>
+                                            {product.requires_advanced_manufacturing ? (
+                                                <Chip intent="primary" size="xs">
+                                                    Fab: Avanzada
+                                                </Chip>
+                                            ) : product.mfg_auto_finalize ? (
+                                                <Chip intent="warning" size="xs">
+                                                    Fab: Express
+                                                </Chip>
+                                            ) : product.has_bom ? (
+                                                <Chip intent={(product.manufacturable_quantity ?? 0) <= 0 ? "destructive" : "primary"} size="xs">
+                                                    Fab: {product.manufacturable_quantity ?? 'N/A'}
+                                                </Chip>
+                                            ) : product.product_type === 'MANUFACTURABLE' ? (
+                                                <Chip intent="neutral" size="xs">
+                                                    Sin LdM
+                                                </Chip>
+                                            ) : null}
                                         </div>
                                     </div>
                                 </div>
@@ -352,6 +352,7 @@ export function ProductSelector({
             )}
 
             <BaseModal
+                asDialog
                 open={isVariantDialogOpen}
                 onOpenChange={setIsVariantDialogOpen}
                 title="Seleccionar Variante"
@@ -379,17 +380,17 @@ export function ProductSelector({
                                                 <span className="font-medium">{v.variant_display_name || v.name}</span>
                                                 <div className="flex gap-1 mt-1">
                                                     {v.attribute_values_data?.map((av: ProductAttributeValue) => (
-                                                        <Badge key={av.id} intent="neutral" size="xs">
+                                                        <Chip key={av.id} intent="neutral" size="xs">
                                                             {av.attribute_name}: {av.value}
-                                                        </Badge>
+                                                        </Chip>
                                                     ))}
                                                 </div>
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Badge intent={(v.current_stock || 0) > 0 ? "success" : "neutral"} size="sm">
+                                            <Chip intent={(v.current_stock || 0) > 0 ? "success" : "neutral"} size="sm">
                                                 {v.current_stock || 0} disp.
-                                            </Badge>
+                                            </Chip>
                                         </TableCell>
                                     </TableRow>
                                 ))}

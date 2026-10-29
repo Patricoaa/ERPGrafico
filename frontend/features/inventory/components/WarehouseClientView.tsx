@@ -1,13 +1,14 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
 import { showApiError } from "@/lib/errors"
 import React, { useMemo } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
+
 import { Archive, ArchiveRestore } from "lucide-react"
 import { toast } from "sonner"
 import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { warehouseActions, type WarehouseActionsCtx } from "@/features/inventory/warehouseActions"
@@ -35,10 +36,6 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
         { defaultSort: warehouseViews.table.defaultSort },
     )
 
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const pathname = usePathname()
-
     const archiveConfirm = useConfirmAction<Warehouse>(async (warehouse) => {
         const isArchiving = warehouse.is_active
         try {
@@ -47,7 +44,7 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
         } catch (error) {
             showApiError(error, `No se puede ${isArchiving ? "archivar" : "restaurar"} el almacén`)
         }
-    })
+   })
 
     const bulkArchiveConfirm = useConfirmAction<Warehouse[]>(async (items) => {
         const isArchiving = items.every(w => w.is_active)
@@ -58,29 +55,12 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
             showApiError(error, `Error al ${isArchiving ? "archivar" : "restaurar"} los almacenes`)
             throw error
         }
-    })
+   })
 
     // T-106: clearSelection viene directamente del hook — no re-declarar localmente (ADR-0020)
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Warehouse>({
-        endpoint: '/inventory/warehouses'
-    })
+    const panel = useEntityPanelRoute<Warehouse>({ endpoint: '/inventory/warehouses', external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const selectedFromUrl = panel.entity
     const { openSelected } = useEntityRouteActions()
-
-    const isCreateOpen = searchParams.get("modal") === "new" || externalOpen
-    const isEditOpen = !!selectedFromUrl
-    const drawerOpen = Boolean(isCreateOpen || isEditOpen)
-
-    const handleCloseModal = (open: boolean = false) => {
-        if (!open) {
-            onExternalOpenChange?.(false)
-            if (isEditOpen) clearSelection()
-            if (isCreateOpen) {
-                const params = new URLSearchParams(searchParams.toString())
-                params.delete("modal")
-                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-            }
-        }
-    }
 
     const actionsCtx: WarehouseActionsCtx = {
         onEdit: (id) => openSelected(id),
@@ -134,12 +114,16 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                 <Collection.BulkBar actions={bulkActions} />
             </Collection.Root>
 
-            <WarehouseDrawer
-                onSuccess={refetch}
-                open={drawerOpen}
-                onOpenChange={handleCloseModal}
-                initialData={selectedFromUrl || undefined}
-            />
+            <EntityPanelTab label="inventory.warehouse" {...panel.tab}>
+                {(open) => (
+                    <WarehouseDrawer
+                        onSuccess={refetch}
+                        open={open}
+                        onOpenChange={(open) => { if (!open) panel.close() }}
+                        initialData={selectedFromUrl || undefined}
+                    />
+                )}
+            </EntityPanelTab>
 
             <ActionConfirmModal
                 open={archiveConfirm.isOpen}

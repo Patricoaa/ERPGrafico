@@ -13,6 +13,10 @@ export interface DirtyEntry {
     save: () => Promise<boolean>
     /** Descarta los cambios (reset al estado inicial). */
     discard: () => void
+    /** Hay un envío del formulario en curso: un cierre pedido ahora es el del guardado. */
+    isSubmitting?: () => boolean
+    /** Fin del último envío (ms epoch, 0 = nunca): detecta cierres que escaparon de la ventana del envío. */
+    submittedAt?: () => number
 }
 
 export class DirtyRegistry {
@@ -30,5 +34,9 @@ export class DirtyRegistry {
 
     hasDirty(): boolean {
         return this.dirtyEntries().length > 0
+    }
+
+    isSubmitting(): boolean {
+        return [...this.entries.values()].some((e) => e.isSubmitting?.() ?? false)
     }
 }

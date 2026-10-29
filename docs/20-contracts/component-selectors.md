@@ -121,7 +121,7 @@ Combobox for inventory products. Popover + advanced modal. Shows price and stock
 | `disabled` | `boolean` | ❌ | `false` | |
 | `restrictStock` | `boolean` | ❌ | `false` | Warn when item has no stock |
 | `excludeIds` | `(string \| number)[]` | ❌ | — | Exclude specific products |
-| `context` | `'sale' \| 'purchase'` | ❌ | — | Adjusts price display |
+| `context` | `'sale' \| 'purchase'` | ❌ | `'sale'` | Price shown in trigger and list: `sale` = sale price incl. IVA; `purchase` = net `cost_price` (BOM components, purchases) |
 | `excludeVariantTemplates` | `boolean` | ❌ | `false` | Hide variant parent templates |
 | `onSelect` | `(product: Product) => void` | ❌ | — | Full product object on select (for price auto-fill) |
 | `customFilter` | `(product: Product) => boolean` | ❌ | — | Additional client-side filter |

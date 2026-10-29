@@ -1,5 +1,7 @@
 "use client"
 
+import { EntityPanelTab } from "@/components/providers"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import React, { useEffect } from "react"
 
 import { JournalEntryDrawer, usePostJournalEntry, useReverseJournalEntry, useDeleteJournalEntry } from "@/features/accounting"
@@ -8,7 +10,6 @@ import { journalEntryActions, type JournalEntryActionsCtx } from './journalEntry
 
 import { useJournalEntries, type JournalEntry, journalEntryEntity, journalEntryViews } from "@/features/accounting"
 import { useAccountingAccounts } from "@/features/accounting"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { journalEntryUnifiedSearchDef } from "@/features/accounting"
@@ -47,30 +48,16 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
     }, [isTruncated, totalCount])
 
     const { accounts } = useAccountingAccounts({ filters: { is_leaf: true } })
-    const { entity: selectedFromUrl } = useSelectedEntity<JournalEntry>({
-        endpoint: '/accounting/entries'
+    const { openSelected, openView } = useEntityRouteActions()
+
+    // ?selected=<id> (sin action) → form de edición; ?selected=<id>&action=view → visor read-only
+    const editPanel = useEntityPanelRoute<JournalEntry>({
+        endpoint: '/accounting/entries',
+        actions: [null],
+        external: { open: externalOpen, onOpenChange: onExternalOpenChange },
     })
-    const { selectedId, viewAction, openSelected, openView, clearActions } = useEntityRouteActions()
-
-    // ?selected=<id>&action=view → abre el visor de transacción (read-only)
-    const viewingTransaction = selectedId && viewAction === 'view'
-        ? { type: 'journal_entry' as const, id: Number(selectedId) }
-        : null
-
-    // ?selected=<id> (sin action=view) → abre el form de edición
-    const editingEntry = selectedFromUrl && viewAction !== 'view' ? selectedFromUrl : null
-    const isFormOpen = (!!editingEntry) || !!externalOpen
-
-    const clearSelection = () => {
-        clearActions()
-    }
-
-    const handleFormOpenChange = (open: boolean) => {
-        if (!open) {
-            onExternalOpenChange?.(false)
-            clearActions()
-        }
-    }
+    const viewPanel = useEntityPanelRoute({ actions: ['view'], create: false })
+    const editingEntry = editPanel.entity
 
     const { postEntry } = usePostJournalEntry()
     const { deleteEntry } = useDeleteJournalEntry()
@@ -130,29 +117,31 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     />
                 </Collection.Root>
 
-                <JournalEntryDrawer
-                    accounts={accounts as unknown as Record<string, unknown>[]}
-                    initialData={editingEntry as unknown as JournalEntryInitialData | undefined}
-                    onSuccess={() => {
-                        refetch()
-                        handleFormOpenChange(false)
-                    }}
-                    open={isFormOpen}
-                    onOpenChange={handleFormOpenChange}
-                />
+                <EntityPanelTab label="accounting.journalentry" {...editPanel.tab}>
+                    {(open) => (
+                        <JournalEntryDrawer
+                            accounts={accounts as unknown as Record<string, unknown>[]}
+                            initialData={editingEntry as unknown as JournalEntryInitialData | undefined}
+                            onSuccess={() => {
+                                refetch()
+                                editPanel.close()
+                            }}
+                            open={open}
+                            onOpenChange={(open) => { if (!open) editPanel.close() }}
+                        />
+                    )}
+                </EntityPanelTab>
 
-                {viewingTransaction && (
-                    <JournalEntryDrawer
-                        journalEntryId={Number(viewingTransaction.id)}
-                        mode="view"
-                        open={!!viewingTransaction}
-                        onOpenChange={(open) => {
-                            if (!open) {
-                                clearSelection()
-                            }
-                        }}
-                    />
-                )}
+                <EntityPanelTab label="accounting.journalentry" {...viewPanel.tab}>
+                    {(open) => viewPanel.selectedId && (
+                        <JournalEntryDrawer
+                            journalEntryId={viewPanel.selectedId}
+                            mode="view"
+                            open={open}
+                            onOpenChange={(open) => { if (!open) viewPanel.close() }}
+                        />
+                    )}
+                </EntityPanelTab>
             </div>
         </div>
     )

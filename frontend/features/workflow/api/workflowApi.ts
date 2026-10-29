@@ -94,7 +94,21 @@ export interface Task {
     completed_at?: string
     notes?: string
     attachments_data?: TaskAttachment[]
+    /** Append-only history (approved, reopened…), oldest first. */
+    events_data?: TaskEvent[]
     data?: TaskContextData
+}
+
+export interface TaskEvent {
+    id: number
+    action: 'COMPLETED' | 'REOPENED'
+    user: number | null
+    user_name: string | null
+    notes: string
+    /** Confirmations ticked with this action, e.g. { design_approved: true }. */
+    confirmations: Record<string, boolean>
+    attachments_data: TaskAttachment[]
+    created_at: string
 }
 
 export interface Notification {
@@ -157,9 +171,10 @@ export const getTask = async <T = Task>(taskId: number | string): Promise<T> => 
     return response.data
 }
 
-export const completeTask = async (id: number, notes?: string, attachments?: File[]) => {
+export const completeTask = async (id: number, notes?: string, attachments?: File[], confirmations?: Record<string, boolean>) => {
     const formData = new FormData()
     if (notes) formData.append('notes', notes)
+    if (confirmations && Object.keys(confirmations).length > 0) formData.append('confirmations', JSON.stringify(confirmations))
     if (attachments) {
         attachments.forEach(file => formData.append('attachments', file))
     }
