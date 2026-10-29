@@ -2,8 +2,10 @@ from datetime import date
 
 from celery.result import AsyncResult
 from django.utils import timezone
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+
+from core.api.permissions import require_perms
 
 from .bi_analytics import BIAnalyticsService
 from .services import FinanceService
@@ -12,6 +14,7 @@ from .services import FinanceService
 
 
 @api_view(["GET"])
+@permission_classes([require_perms("finances.view_dashboard_finances")])
 def get_report_status_data(request, task_id):
     """Check the status of an asynchronous report generation task."""
     task = AsyncResult(task_id)
@@ -40,6 +43,7 @@ def _handle_report_request(request, report_type, generator_func, default_start=N
     return Response(res)
 
 @api_view(["GET"])
+@permission_classes([require_perms("finances.view_dashboard_finances")])
 def get_balance_sheet_data(request):
     """Returns the Balance Sheet data as JSON."""
     return _handle_report_request(
@@ -51,6 +55,7 @@ def get_balance_sheet_data(request):
 
 
 @api_view(["GET"])
+@permission_classes([require_perms("finances.view_dashboard_finances")])
 def get_income_statement_data(request):
     """Returns the Income Statement data as JSON."""
     return _handle_report_request(
@@ -63,6 +68,7 @@ def get_income_statement_data(request):
 
 
 @api_view(["GET"])
+@permission_classes([require_perms("finances.view_dashboard_finances")])
 def get_trial_balance_data(request):
     """Returns the Trial Balance data as JSON."""
     return _handle_report_request(
@@ -74,6 +80,7 @@ def get_trial_balance_data(request):
 
 
 @api_view(["GET"])
+@permission_classes([require_perms("finances.view_dashboard_finances")])
 def get_cash_flow_data(request):
     """Returns the Cash Flow data as JSON."""
     return _handle_report_request(
@@ -86,6 +93,7 @@ def get_cash_flow_data(request):
 
 
 @api_view(["GET"])
+@permission_classes([require_perms("finances.view_dashboard_finances")])
 def get_financial_analysis_data(request):
     """Returns key financial ratios and structure for dashboards."""
     return _handle_report_request(
@@ -97,6 +105,7 @@ def get_financial_analysis_data(request):
 
 
 @api_view(["GET"])
+@permission_classes([require_perms("finances.view_dashboard_finances")])
 def get_bi_analytics_data(request):
     """Returns real cross-module BI analytics data."""
     return _handle_report_request(

@@ -16,6 +16,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
+from core.api.permissions import require_perms
 from core.idempotency import idempotent_endpoint
 from core.edit_policy import annotate_edit_usage
 from core.mixins import AuditHistoryMixin, EditPolicyMixin
@@ -1032,6 +1033,14 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
     Vista consolidada de flujos de efectivo y gestión de tesorería.
     Combina Payments y CashMovements en una sola vista filtrable y provee balances consolidados.
     """
+
+    def get_permissions(self):
+        perm = (
+            "treasury.add_treasurymovement"
+            if self.action == "register_transfer"
+            else "treasury.view_dashboard_treasury"
+        )
+        return [require_perms(perm)()]
 
     @action(detail=False, methods=["get"])
     def stats(self, request):

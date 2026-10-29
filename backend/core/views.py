@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from core.api.pagination import StandardResultsSetPagination
+from core.api.permissions import require_perms
 from core.mixins import AuditHistoryMixin
 
 from .models import ActionLog, BackgroundJob, CompanySettings, User
@@ -271,7 +272,7 @@ class ActionLogViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class GlobalAuditLogView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [require_perms("core.view_actionlog")]
 
     def get(self, request):
         from .services import CoreSelector

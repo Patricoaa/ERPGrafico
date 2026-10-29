@@ -125,21 +125,18 @@ class MyModelViewSet(viewsets.ModelViewSet):
     queryset = MyModel.objects.all()
 ```
 
-**Pattern B — Custom action permission** (for non-CRUD actions):
+**Pattern B — Model-less view / custom action permission** (views without a queryset, or an action needing its own permission):
 
 ```python
-from core.api.permissions import HasActionPermission
+from core.api.permissions import require_perms
 
-class MyModelViewSet(viewsets.ModelViewSet):
-    ...
+class MyReportView(APIView):
+    permission_classes = [require_perms("my_app.view_my_report")]
 
-    @action(detail=True, methods=['post'])
-    def approve(self, request, pk=None):
-        self.required_permission = 'my_app.approve_large_orders'
-        if not HasActionPermission().has_permission(request, self):
-            return Response({'error': 'Permission denied'}, status=403)
-
-        # ... action logic
+# Per-action permissions in a ViewSet:
+def get_permissions(self):
+    perm = "my_app.approve_large_orders" if self.action == "approve" else "my_app.view_x"
+    return [require_perms(perm)()]
 ```
 
 **Pattern C — Service layer check** (when permission must be verified inside a service):
@@ -241,7 +238,7 @@ Manual: log in as OPERATOR user, verify guarded action is blocked; log in as use
 - [ ] Permission registered in `AppConfig.ready()` via `PermissionRegistry`.
 - [ ] Permission assigned to correct role(s) in `sync_permissions` command.
 - [ ] `python manage.py sync_permissions` runs without error.
-- [ ] Backend view enforces permission (StandardizedModelPermissions or HasActionPermission or service check).
+- [ ] Backend view enforces permission (StandardizedModelPermissions or require_perms or service check).
 - [ ] Frontend UI element guarded via `<PermissionGuard>` or `usePermission()`.
 - [ ] Tests: unauthorized → 403, authorized → 2xx.
 - [ ] No `is_staff` or hardcoded user ID checks added.
