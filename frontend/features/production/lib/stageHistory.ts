@@ -23,7 +23,7 @@ export const HISTORY_KIND: Record<HistoryItem["kind"], { icon: LucideIcon; label
     note: { icon: StickyNote, label: "Registro", toneClasses: "border-border bg-muted text-muted-foreground", tone: "text-muted-foreground" },
 }
 
-const STATUS_TO_KIND: Record<string, HistoryItem["kind"]> = {
+const EVENT_TO_KIND: Record<string, HistoryItem["kind"]> = {
     ENTERED: "entered",
     REOPENED: "reopened",
     EDITED: "edited",
@@ -79,7 +79,7 @@ export function buildHistory(
                 key: `stage-${h.id}`,
                 stageId: h.stage,
                 stageLabel: meta.label,
-                kind: STATUS_TO_KIND[h.status ?? "ENTERED"] ?? "entered",
+                kind: EVENT_TO_KIND[h.event ?? "ENTERED"] ?? "entered",
                 userName: h.user_name ?? null,
                 notes: h.notes ?? "",
                 attachments: [],
