@@ -907,6 +907,7 @@ class WorkOrderService:
             work_order=work_order,
             stage=next_stage,
             status=work_order.status,
+            event=WorkOrderHistory.Event.REOPENED if next_idx < old_idx else WorkOrderHistory.Event.ENTERED,
             notes=notes,
             user=user,
         )

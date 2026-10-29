@@ -238,3 +238,25 @@ def test_ordered_outsourced_service_is_read_only(work_order_factory, manufactura
         WorkOrderService.update_material(work_order=wo, material_id=mat.pk, quantity=2)
     with pytest.raises(ValidationError):
         WorkOrderService.remove_material(wo, mat.pk)
+
+
+@pytest.mark.django_db
+def test_backward_transition_records_reopened_event(work_order_factory):
+    """A backward transition must create a WorkOrderHistory entry with event=REOPENED."""
+    from production.models import WorkOrderHistory
+    wo = work_order_factory(current_stage=Stage.PRESS, status=WorkOrder.Status.IN_PROGRESS)
+    WorkOrderService.transition_to(wo, Stage.MATERIAL_APPROVAL, notes="ajuste de diseño")
+    entry = WorkOrderHistory.objects.filter(work_order=wo, stage=Stage.MATERIAL_APPROVAL).order_by("-created_at").first()
+    assert entry is not None
+    assert entry.event == WorkOrderHistory.Event.REOPENED
+
+
+@pytest.mark.django_db
+def test_forward_transition_records_entered_event(work_order_factory):
+    """A forward transition must create a WorkOrderHistory entry with event=ENTERED."""
+    from production.models import WorkOrderHistory
+    wo = work_order_factory(current_stage=Stage.MATERIAL_ASSIGNMENT)
+    WorkOrderService.transition_to(wo, Stage.MATERIAL_APPROVAL)
+    entry = WorkOrderHistory.objects.filter(work_order=wo, stage=Stage.MATERIAL_APPROVAL).order_by("-created_at").first()
+    assert entry is not None
+    assert entry.event == WorkOrderHistory.Event.ENTERED
