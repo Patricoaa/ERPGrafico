@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
-import { AlertTriangle, Eye, Factory, FileText, Pencil, Plus, Keyboard, Printer, Link2, RotateCcw } from 'lucide-react'
+import { AlertTriangle, Factory, FileText, Plus, Keyboard, Printer, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 import {
@@ -32,6 +32,7 @@ import { useWorkOrderMutations, productionApi } from '../hooks'
 import { completeTask } from '@/features/workflow'
 
 import { WizardProcessSidebar } from './WizardProcessSidebar'
+import { WizardStageActions } from './WizardStageActions'
 import { MobileStageDrawer } from './MobileStageDrawer'
 import { WizardStickyFooter } from './WizardStickyFooter'
 import { WizardRightSidebar, WizardDraftSidebar } from './WizardRightSidebar'
@@ -324,45 +325,19 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       .find(Boolean) as string | undefined
   }, [isViewingCurrentStage, pendingTasks, taskFiles, taskConfirmations])
 
-  // Actions rendered inside each step's StepHeader.rightContent — read/edit/reopen badge.
+  // Actions rendered inside each step's StepHeader.rightContent — view/edit toggle and reopen.
   const stageHeaderActions = useMemo((): ReactNode => {
-    if (isCreating || !order || isViewingCurrentStage) return null
-    if (isTerminalOrder) {
-      return (
-        <span className="inline-flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground">
-          <Eye className="h-3 w-3 shrink-0" aria-hidden />Solo lectura
-        </span>
-      )
-    }
-    if (!viewedCaps) return null
-    const openRewind = () => { setPendingPrevStage(currentStageId as string); setIsBackwardModalOpen(true) }
-    if (viewedCaps.canEdit) {
-      return (
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-md border border-info/30 bg-info/10 px-2.5 py-1 text-xs font-medium text-info">
-            <Pencil className="h-3 w-3 shrink-0" aria-hidden />Editable
-          </span>
-          {viewedCaps.canRewind && (
-            <Button type="button" variant="outline" size="sm" onClick={openRewind} className="h-7 gap-1.5 text-xs">
-              <RotateCcw className="h-3 w-3" aria-hidden />Reabrir
-            </Button>
-          )}
-        </div>
-      )
-    }
-    if (viewedCaps.canRewind) {
-      return (
-        <Button type="button" variant="outline" size="sm" onClick={openRewind} className="h-7 gap-1.5 text-xs">
-          <RotateCcw className="h-3 w-3" aria-hidden />Reabrir etapa
-        </Button>
-      )
-    }
+    if (isCreating || !order || isViewingCurrentStage || !viewedCaps) return null
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground" title={viewedCaps.rewindBlockedReason}>
-        <Eye className="h-3 w-3 shrink-0" aria-hidden />Solo lectura
-      </span>
+      <WizardStageActions
+        isTerminal={isTerminalOrder}
+        capabilities={viewedCaps}
+        editing={stepMode === 'edit-in-place'}
+        onEditingChange={(editing) => navigateToStep(viewingStepIndex, editing ? 'edit-in-place' : 'view')}
+        onReopen={() => { setPendingPrevStage(currentStageId as string); setIsBackwardModalOpen(true) }}
+      />
     )
-  }, [isCreating, order, isViewingCurrentStage, isTerminalOrder, viewedCaps, currentStageId, setPendingPrevStage, setIsBackwardModalOpen])
+  }, [isCreating, order, isViewingCurrentStage, viewedCaps, isTerminalOrder, stepMode, viewingStepIndex, currentStageId, setPendingPrevStage, setIsBackwardModalOpen, navigateToStep])
 
   // ── data fetching ──────────────────────────────────────────────────────────
   const fetchOrder = async () => {
@@ -793,8 +768,8 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       || currentStageId === 'SALE_ORDER_PRODUCT'
                       || currentStageId === 'PRODUCT_SELECTION'
                     ) && 'pointer-events-none opacity-70',
-                    // Disable interaction only in view mode for closed workflow steps (not edit-in-place)
-                    stepMode === 'view' && !isViewingCurrentStage && !editableInline
+                    // Disable interaction in view mode for closed workflow steps; edit-in-place lifts this.
+                    stepMode === 'view' && !isViewingCurrentStage
                       && currentStageId !== 'ORIGIN_SELECTION'
                       && currentStageId !== 'SALE_ORDER_PRODUCT'
                       && currentStageId !== 'PRODUCT_SELECTION'
@@ -907,7 +882,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                   {currentStageId === 'MATERIAL_ASSIGNMENT' && (
                     <MaterialAssignmentStep
                       order={order as WorkOrder}
-                      isViewingCurrentStage={isViewingCurrentStage || editableInline}
+                      isViewingCurrentStage={isViewingCurrentStage || (editableInline && stepMode === 'edit-in-place')}
                       onMaterialSaved={fetchOrder}
                       onMaterialDeleted={fetchOrder}
                       headerActions={stageHeaderActions}
@@ -919,7 +894,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                   {currentStageId === 'OUTSOURCING_ASSIGNMENT' && (
                     <OutsourcingAssignmentStep
                       order={order as WorkOrder}
-                      isViewingCurrentStage={isViewingCurrentStage || editableInline}
+                      isViewingCurrentStage={isViewingCurrentStage || (editableInline && stepMode === 'edit-in-place')}
                       onMaterialSaved={fetchOrder}
                       onMaterialDeleted={fetchOrder}
                       headerActions={stageHeaderActions}
