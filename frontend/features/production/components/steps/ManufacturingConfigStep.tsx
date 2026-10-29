@@ -12,23 +12,20 @@ import { toDate } from "@/lib/utils";
 import { getDomainConceptTitle, getDomainConceptMessage } from "@/lib/entity-registry";
 import { Form, FormField } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms";
 import type { Contact } from "@/features/contacts";
 import { useWizardStore } from "../WorkOrderWizardStore";
 import type { ManufacturingData } from "@/components/shared";
-import { ManufacturingConfigFields, emptyManufacturingData, type ManufacturingContact, StepHeader } from '@/components/shared';
+import {
+  ManufacturingConfigFields,
+  emptyManufacturingData,
+  type ManufacturingContact,
+  StepHeader,
+  ActionConfirmModal,
+  LabeledInput,
+  SkeletonShell,
+} from '@/components/shared';
 import { UoMSelector } from "@/components/selectors/UoMSelector";
-import { LabeledInput, SkeletonShell } from "@/components/shared";
 import { workOrderSchema } from "@/types/forms";
 import { productionApi } from "../../api/productionApi";
 import { useAuth } from "@/contexts/AuthContext";
@@ -431,23 +428,14 @@ export function ManufacturingConfigStep({
         </form>
       </Form>
 
-      <AlertDialog open={isCreateConfirmOpen} onOpenChange={setIsCreateConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{getDomainConceptMessage('ot', 'create')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              El producto y la OV no se podrán cambiar después de crear la OT. Las especificaciones
-              y el contacto seguirán editables mientras la etapa correspondiente no haya comenzado. ¿Deseas continuar?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmCreate}>
-              Crear orden
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ActionConfirmModal
+        open={isCreateConfirmOpen}
+        onOpenChange={setIsCreateConfirmOpen}
+        title={getDomainConceptMessage('ot', 'create')}
+        description="El producto y la OV no se podrán cambiar después de crear la OT. Las especificaciones y el contacto seguirán editables mientras la etapa correspondiente no haya comenzado. ¿Deseas continuar?"
+        confirmText="Crear orden"
+        onConfirm={handleConfirmCreate}
+      />
     </SkeletonShell>
   );
 }

@@ -1,12 +1,14 @@
 import type { BadgeIntent } from '@/lib/badge-resolvers'
 interface OrderLine {
     is_manufacturable?: boolean;
+    requires_advanced_manufacturing?: boolean;
     product_type?: string;
     quantity?: number | string;
     quantity_delivered?: number | string;
     quantity_received?: number | string;
     delivered_quantity?: number | string;
     received_quantity?: number | string;
+    work_order_summary?: { id?: number | string | null } | null;
     [key: string]: unknown;
 }
 
@@ -50,14 +52,18 @@ export interface HubOrderSource {
     readonly payment_status?: string | null
     readonly pending_amount?: number | string | null
     readonly total?: number | string | null
+    /** Backend-computed: true when there are manufacturable lines without a finalized work order. */
+    readonly has_pending_work_orders?: boolean | null
 }
 
 export interface HubOrderLine {
     readonly is_manufacturable?: boolean | null
     readonly product_type?: string | null
+    readonly requires_advanced_manufacturing?: boolean | null
     readonly quantity?: number | string | null
     readonly quantity_delivered?: number | string | null
     readonly quantity_received?: number | string | null
+    readonly work_order_summary?: { readonly id?: number | string | null } | null
 }
 
 interface NoteBase {
@@ -79,6 +85,7 @@ interface InvoiceInternal {
     status?: string;
     order_delivery_status?: string;
     po_receiving_status?: string;
+    work_orders?: Array<{ status: string; production_progress?: number }>;
     lines?: Array<OrderLine>;
     items?: Array<OrderLine>;
     number?: string;
@@ -97,6 +104,7 @@ interface InvoiceInternal {
 export const STAGE_INTENT: Record<string, BadgeIntent> = {
     success: 'success',
     active: 'warning',
+    warning: 'warning',
     neutral: 'neutral',
     destructive: 'destructive',
     not_applicable: 'neutral',
@@ -126,25 +134,39 @@ export function billingStage(order: HubOrderSource): { billingStatus: string; bi
     return { billingStatus, billingFolioPending }
 }
 
+export function isLineManufacturable(line: HubOrderLine | OrderLine): boolean {
+    return Boolean(
+        line.is_manufacturable ||
+        line.requires_advanced_manufacturing ||
+        line.product_type === 'MANUFACTURABLE'
+    )
+}
+
 export const getHubStatuses = (order: HubOrderSource) => {
     // 1. Production
     // Visible if order has manufacturable items or existing work orders
-    const showProduction = (order.work_orders?.length ?? 0) > 0 || (order.lines || order.items || []).some((l) => l.is_manufacturable)
+    const lines = order.lines || order.items || []
+    const mfgLines = lines.filter(isLineManufacturable)
     const activeOTs = order.work_orders?.filter((ot) => ot.status !== 'CANCELLED') || []
     const totalOTs = activeOTs.length
+    const showProduction = totalOTs > 0 || mfgLines.length > 0
     const totalOTProgress = totalOTs > 0
         ? activeOTs.reduce((sum, ot) => sum + (ot.production_progress || 0), 0) / totalOTs
         : 0
 
+    const hasUnassignedMfgLine =
+        (mfgLines.length > 0 && totalOTs === 0) ||
+        mfgLines.some((l) => !l.work_order_summary?.id)
+
     let prodStatus = 'neutral' // default / pending
     if (!showProduction) prodStatus = 'not_applicable'
+    else if (hasUnassignedMfgLine) prodStatus = 'warning'
     else if (totalOTs > 0 && totalOTProgress === 100) prodStatus = 'success'
     else if (totalOTs > 0 && totalOTProgress > 0) prodStatus = 'active'
     else prodStatus = 'neutral'
 
     // 2. Logistics
     // Visible if there are physical items
-    const lines = order.lines || order.items || []
     const showLogistics = lines.length > 0 && !lines.every((l) => l.product_type === 'SUBSCRIPTION')
 
     let logStatus = 'neutral'
@@ -252,6 +274,8 @@ export const getNoteHubStatuses = (note: NoteBase) => {
 
     return {
         origin: originStatus,
+        production: 'not_applicable',
+        productionProgress: 0,
         logistics: logStatus,
         billing: billingStatus,
         treasury: treasuryStatus,
@@ -264,6 +288,7 @@ export const getNoteHubStatuses = (note: NoteBase) => {
 
 export const getInvoiceHubStatuses = (invoice: InvoiceInternal) => {
     const isSale = !!invoice.sale_order
+    const lines: OrderLine[] = invoice.lines || invoice.items || []
 
     // 1. Origin
     let originStatus = 'neutral'
@@ -278,7 +303,6 @@ export const getInvoiceHubStatuses = (invoice: InvoiceInternal) => {
         logStatus = 'success'
         logisticsProgress = 100
     } else {
-        const lines = invoice.lines || invoice.items || []
         const totalOrdered = lines.reduce((acc, line) => acc + (parseFloat(String(line.quantity)) || 0), 0)
 
         if (totalOrdered > 0) {
@@ -312,8 +336,31 @@ export const getInvoiceHubStatuses = (invoice: InvoiceInternal) => {
 
     const treasuryProgress = totalAmount > 0 ? Math.min(100, Math.round((1 - (pendingAmount / totalAmount)) * 100)) : 0
 
+    // 5. Production (Optional)
+    const mfgLines = lines.filter(isLineManufacturable)
+    const activeOTs = (invoice.work_orders || []).filter((ot) => ot.status !== 'CANCELLED')
+    const totalOTs = activeOTs.length
+    const showProduction = totalOTs > 0 || mfgLines.length > 0
+    let prodProgress = 0
+    if (totalOTs > 0) {
+        prodProgress = activeOTs.reduce((sum, ot) => sum + (ot.production_progress || 0), 0) / totalOTs
+    }
+
+    const hasUnassignedMfgLine =
+        (mfgLines.length > 0 && totalOTs === 0) ||
+        mfgLines.some((l: OrderLine) => !l.work_order_summary?.id)
+
+    let prodStatus = 'neutral'
+    if (!showProduction) prodStatus = 'not_applicable'
+    else if (hasUnassignedMfgLine) prodStatus = 'warning'
+    else if (totalOTs > 0 && prodProgress === 100) prodStatus = 'success'
+    else if (totalOTs > 0 && prodProgress > 0) prodStatus = 'active'
+    else prodStatus = 'neutral'
+
     return {
         origin: originStatus,
+        production: prodStatus,
+        productionProgress: Math.round(prodProgress),
         logistics: logStatus,
         billing: billingStatus,
         treasury: treasuryStatus,

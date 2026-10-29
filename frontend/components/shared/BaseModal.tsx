@@ -55,10 +55,11 @@ export function BaseModal({
     allowOverflow = false,
     variant = "default",
     showCloseButton = true,
-    asDialog: _asDialog,
+    asDialog = false,
     ...props
 }: BaseModalProps) {
     // Dentro de una pestaña del espacio de trabajo (ADR-0101 §10) el modal es un panel a tamaño completo.
+    // Salvo que asDialog=true indique expresamente forzar modal flotante (p. ej. confirmaciones/alertas).
     const persistent = usePersistentPanel()
     const isTransaction = variant === "transaction"
     const isWizard = variant === "wizard"
@@ -98,7 +99,7 @@ export function BaseModal({
             : icon
         : null
 
-    if (persistent) {
+    if (persistent && !asDialog) {
         const fill = hideScrollArea || isRaw
         return (
             <Drawer

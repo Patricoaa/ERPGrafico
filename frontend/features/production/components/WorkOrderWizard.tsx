@@ -745,16 +745,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
           {/* Center content */}
           <div className="flex-1 flex flex-col overflow-hidden relative">
-            {/* Blocking warning (inline, replaces toast for transition validation) */}
-            {blockingWarning && (
-              <div className="px-6 pt-4 flex-shrink-0">
-                <div role="alert" className="flex items-start gap-2.5 rounded-md border border-warning/30 bg-warning/10 px-3 py-2.5 text-sm text-warning">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                  <span>{blockingWarning}</span>
-                </div>
-              </div>
-            )}
-
             <div className="flex flex-1 flex-col min-h-0 px-6 relative">
               {/* Mobile navigation */}
               <div className="md:hidden sticky top-0 z-10 bg-background/95 backdrop-blur p-3 mb-4">
@@ -1122,6 +1112,16 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         confirmText="Descartar"
         description="Aún no se ha creado la OT. Si cierras ahora, se perderá lo que cargaste."
         onConfirm={() => { setDiscardOpen(false); onOpenChange(false) }}
+      />
+
+      <ActionConfirmModal
+        open={blockingWarning !== null}
+        onOpenChange={(open) => { if (!open) setBlockingWarning(null) }}
+        title="Validación de etapa"
+        variant="warning"
+        confirmText="Entendido"
+        description={blockingWarning ?? ''}
+        onConfirm={() => setBlockingWarning(null)}
       />
 
       <BaseModal

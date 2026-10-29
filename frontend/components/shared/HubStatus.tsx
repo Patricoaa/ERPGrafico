@@ -183,7 +183,9 @@ export function DomainHubStatus({ label, data, className }: DomainHubStatusProps
             origin: `Origen: ${translateStatus(d.status)}`,
             billing: s.billing === 'success' ? "Facturado" : "Pendiente de Facturación",
             treasury: `Tesorería: ${paidPct}% Pagado${s.hasPendingTransactions ? ' - falta N° de transacción' : ''}`,
-            production: showProduction ? `Producción: ${totalOTProgress}%` : undefined,
+            production: showProduction
+                ? (s.production === 'warning' ? 'Producción: falta crear OT' : `Producción: ${totalOTProgress}%`)
+                : undefined,
             logistics: `Logística: ${logisticsProgress}%`
         }
     } else if (meta.workflowType === 'invoice') {
@@ -191,11 +193,13 @@ export function DomainHubStatus({ label, data, className }: DomainHubStatusProps
         const isNote = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(d.dte_type ?? '')
         const s = isNote ? getNoteHubStatuses(d) : getInvoiceHubStatuses(d)
         const hasFolio = d.number && d.number !== 'Draft'
+        const showProduction = Boolean(s.production && s.production !== 'not_applicable')
 
         statuses = {
             ...s,
             progress: {
                 origin: isNote ? 100 : s.origin === 'success' || s.origin === 'destructive' ? 100 : s.origin === 'active' ? 50 : 0,
+                production: s.productionProgress ?? 0,
                 billing: hasFolio ? 100 : 0,
                 treasury: s.treasuryProgress ?? 0,
                 logistics: s.logisticsProgress ?? 0,
@@ -203,6 +207,9 @@ export function DomainHubStatus({ label, data, className }: DomainHubStatusProps
         }
 
         tooltips = {
+            production: showProduction
+                ? (s.production === 'warning' ? 'Producción: falta crear OT' : `Producción: ${s.productionProgress ?? 0}%`)
+                : undefined,
             origin: (() => {
                 if (isNote) {
                     const source = d.corrected_invoice?.display_id || d.corrected_invoice?.number || "Factura"

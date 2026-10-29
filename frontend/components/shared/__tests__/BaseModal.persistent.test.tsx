@@ -33,4 +33,18 @@ describe("BaseModal inside a workspace tab", () => {
         )
         expect(screen.getByRole("dialog").getAttribute("data-slot")).toBe("dialog-content")
     })
+
+    it("stays a centred dialog inside a tab when asDialog is true", () => {
+        render(
+            <PersistentPanelContext.Provider value={true}>
+                <BaseModal open onOpenChange={() => {}} title="Confirmación" asDialog>
+                    <p>¿Está seguro?</p>
+                </BaseModal>
+            </PersistentPanelContext.Provider>,
+        )
+        const dialog = screen.getByRole("dialog")
+        expect(dialog.getAttribute("data-slot")).toBe("dialog-content")
+        expect(screen.getByText("Confirmación")).toBeInTheDocument()
+        expect(screen.getByText("¿Está seguro?")).toBeInTheDocument()
+    })
 })
