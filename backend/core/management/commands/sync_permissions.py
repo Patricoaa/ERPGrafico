@@ -64,6 +64,8 @@ class Command(BaseCommand):
             "view_group",
             # Accounting & Auxiliary reads
             "view_account",
+            "view_taxperiod",
+            "view_accountingperiod",
             # Production
             "view_workorder",
             "add_workorder",

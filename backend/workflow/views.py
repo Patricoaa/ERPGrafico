@@ -28,7 +28,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # Personal inbox: row-level filtering in selector (ADR-0104)
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ["status", "priority", "task_type", "assigned_to", "category"]
     search_fields = ["title", "description"]
@@ -83,7 +83,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = NotificationSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # Personal inbox: row-level filtering in selector (ADR-0104)
 
     def get_queryset(self):
         return NotificationSelector.get_queryset_for_user(self.request.user)
@@ -111,10 +111,9 @@ class TaskAssignmentRuleViewSet(viewsets.ModelViewSet):
     For now, restrict to admins or users with specific permission.
     """
 
-    queryset = TaskAssignmentRule.objects.select_related("assigned_user", "assigned_group").all()
+    queryset = TaskAssignmentRule.objects.select_related("assigned_user").all()
     serializer_class = TaskAssignmentRuleSerializer
     pagination_class = None  # Master data
-    permission_classes = [IsAuthenticated]  # Should refine to specific permission later
 
 
 class WorkflowSettingsViewSet(viewsets.ModelViewSet):
@@ -124,7 +123,11 @@ class WorkflowSettingsViewSet(viewsets.ModelViewSet):
 
     queryset = WorkflowSettings.objects.all()
     serializer_class = WorkflowSettingsSerializer
-    permission_classes = [IsAuthenticated]  # Should refine to specific permission later
+
+    def get_permissions(self):
+        if self.action == "current" and self.request.method == "GET":
+            return [IsAuthenticated()]
+        return super().get_permissions()
 
     def get_object(self):
         return WorkflowSettings.get_settings()
@@ -153,4 +156,3 @@ class NotificationRuleViewSet(viewsets.ModelViewSet):
     queryset = NotificationRule.objects.all()
     serializer_class = NotificationRuleSerializer
     pagination_class = None  # Master data
-    permission_classes = [IsAuthenticated]  # Should refine to specific permission later
