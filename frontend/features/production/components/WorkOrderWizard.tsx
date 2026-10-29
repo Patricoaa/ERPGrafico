@@ -353,7 +353,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
           variant="outline"
           size="sm"
           onClick={() => setViewingStepIndex(actualStepIndex)}
-          className="gap-1.5 h-7 text-xs"
+          className="gap-1.5 h-8 text-xs"
         >
           <Eye className="h-3.5 w-3.5" />Etapa actual
         </Button>
@@ -713,7 +713,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
           <WizardStickyFooter
             isViewingCurrentStage={isViewingCurrentStage}
             stepMode={stepMode}
-            onCancelEdit={() => navigateToStep(viewingStepIndex, 'view')}
             onClose={() => onOpenChange(false)}
             pendingTasks={pendingTasks}
             approvalBlockedReason={approvalBlockedReason}
@@ -724,7 +723,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             stages={STAGES}
             transitioning={transitioning}
             onTransition={handleTransition}
-            onBackToCurrent={() => setViewingStepIndex(actualStepIndex)}
             onBack={() => setViewingStepIndex(Math.max(0, viewingStepIndex - 1))}
             isMaterialApprovalIncomplete={
               !!(currentStageId === 'MATERIAL_APPROVAL' && order?.materials?.some((m: WorkOrderMaterial) => !m.is_available))

@@ -182,6 +182,40 @@ def _supplier():
     return Contact.objects.create(name="Proveedor Test", tax_id="76.000.000-0")
 
 
+def _make_consumption(work_order, product, warehouse):
+    from decimal import Decimal
+    from production.models import ProductionConsumption
+
+    ProductionConsumption.objects.create(work_order=work_order, product=product, warehouse=warehouse, quantity=Decimal("1"))
+
+
+@pytest.mark.django_db
+def test_stock_movements_do_not_block_reopening_press(work_order_factory, manufacturable_product, warehouse_factory):
+    """Stock movements (material consumptions) should only block reopening the material-
+    assignment stages.  Process stages like PRESS / PREPRESS / POSTPRESS have nothing to do
+    with stock records and must remain reopenable even after a consumption exists."""
+    wo = work_order_factory(current_stage=Stage.PRESS, status=WorkOrder.Status.IN_PROGRESS)
+    _make_consumption(wo, manufacturable_product, warehouse_factory())
+
+    blockers_for_press = WorkOrderService.rewind_blockers(wo, target_stage="PRESS")
+    assert blockers_for_press == [], (
+        "Stock movements must NOT block reopening PRESS; they only block material stages."
+    )
+
+
+@pytest.mark.django_db
+def test_stock_movements_block_reopening_material_assignment(work_order_factory, manufacturable_product, warehouse_factory):
+    """When material consumptions exist, reopening MATERIAL_ASSIGNMENT must be blocked
+    because you can't 'unassign' materials that were already recorded as consumed."""
+    wo = work_order_factory(current_stage=Stage.PRESS, status=WorkOrder.Status.IN_PROGRESS)
+    _make_consumption(wo, manufacturable_product, warehouse_factory())
+
+    blockers_for_material = WorkOrderService.rewind_blockers(wo, target_stage="MATERIAL_ASSIGNMENT")
+    assert blockers_for_material, (
+        "Stock movements must block reopening MATERIAL_ASSIGNMENT."
+    )
+
+
 @pytest.mark.django_db
 def test_rewind_from_rectification_restores_planned_quantities(
     work_order_factory, manufacturable_product

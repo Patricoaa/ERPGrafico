@@ -42,7 +42,6 @@ function renderFooter(status: string, actualStepIndex: number) {
         <WizardStickyFooter
             isViewingCurrentStage={actualStepIndex >= 0}
             stepMode="view"
-            onCancelEdit={vi.fn()}
             onClose={onClose}
             pendingTasks={[]}
             canApproveAll={true}
@@ -51,7 +50,6 @@ function renderFooter(status: string, actualStepIndex: number) {
             stages={stages}
             viewingStepIndex={viewingStepIndex}
             actualStepIndex={actualStepIndex}
-            onBackToCurrent={vi.fn()}
             onTransition={vi.fn()}
             isMaterialApprovalIncomplete={false}
             hasMaterials={true}

@@ -139,7 +139,7 @@ export function ManufacturingConfigSummary({ order, onSaved, headerActions }: Ma
                 type="button"
                 variant="outline"
                 size="sm"
-                className="gap-1.5 h-7 text-xs"
+                className="gap-1.5 h-8 text-xs"
                 onClick={() => setStepMode('view')}
             >
                 <X className="h-3.5 w-3.5" />Cancelar
@@ -149,7 +149,7 @@ export function ManufacturingConfigSummary({ order, onSaved, headerActions }: Ma
                 form="wizard-edit-form"
                 size="sm"
                 disabled={saving}
-                className="gap-1.5 h-7 text-xs"
+                className="gap-1.5 h-8 text-xs"
             >
                 <Check className="h-3.5 w-3.5" />{saving ? 'Guardando...' : 'Guardar cambios'}
             </Button>
