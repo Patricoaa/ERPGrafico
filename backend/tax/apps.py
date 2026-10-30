@@ -10,6 +10,18 @@ class TaxConfig(AppConfig):
         import tax.signals  # noqa
 
         try:
+            from core.permissions import PermissionRegistry
+
+            PermissionRegistry.register(
+                "tax",
+                [
+                    ("annul_f29payment", "Puede anular pago de F29"),
+                ],
+            )
+        except ImportError:
+            pass
+
+        try:
             from core.prefix_registry import EntityPrefix
             from core.registry import SearchableEntity, UniversalRegistry
             from tax.models import TaxPeriod

@@ -366,6 +366,10 @@ class TreasuryMovementViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHisto
     serializer_class = TreasuryMovementSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend]
+    action_permissions = {
+        "cancel": "treasury.cancel_treasurymovement",
+        "annul": "treasury.annul_treasurymovement",
+    }
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -545,6 +549,9 @@ class BankStatementViewSet(viewsets.ModelViewSet):
 
     queryset = BankStatement.objects.all().select_related("treasury_account", "imported_by")
     filterset_fields = ["status", "treasury_account"]
+    action_permissions = {
+        "confirm": "treasury.confirm_bankstatement",
+    }
 
     def get_queryset(self):
         return BankStatementSelector.list_bank_statements(self.queryset, self.request.query_params)

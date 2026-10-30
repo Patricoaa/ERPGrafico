@@ -135,6 +135,12 @@ class SaleOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewS
     filter_backends = [DjangoFilterBackend, DistinctSearchFilter, filters.OrderingFilter]
     filterset_class = SaleOrderFilterSet
     search_fields = ["customer__name", "customer__tax_id", "number", "lines__product__name"]
+    action_permissions = {
+        "confirm": "sales.confirm_saleorder",
+        "cancel": "sales.cancel_saleorder",
+        "annul": "sales.annul_saleorder",
+        "write_off": "sales.write_off_saleorder",
+    }
     # Server ordering of the list (ADR-0087 lote 2b): `?ordering=<key>,id`. Without it, the
     # selector's "-date,-id" order is kept.
     ordering_fields = ["id", "number", "date", "customer__name", "total"]
@@ -366,6 +372,9 @@ class SaleDeliveryViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelVi
         "sale_order__customer__name",
     ]
     ordering = ["-delivery_date", "-id"]
+    action_permissions = {
+        "annul": "sales.annul_saledelivery",
+    }
 
     def get_queryset(self):
         return SaleDeliverySelector.get_base_queryset()
@@ -397,6 +406,9 @@ class SaleReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelView
     search_fields = ["number", "sale_order__customer__name", "sale_order__number"]
     ordering_fields = ["number", "date", "total_cost", "status", "sale_order__customer__name"]
     ordering = ["-date", "-id"]
+    action_permissions = {
+        "annul": "sales.annul_salereturn",
+    }
 
     @action(detail=True, methods=["post"])
     def annul(self, request, pk=None):

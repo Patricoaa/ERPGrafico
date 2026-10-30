@@ -14,6 +14,9 @@ class TreasuryConfig(AppConfig):
                 [
                     ("view_dashboard_treasury", "Can view treasury dashboard"),
                     ("purge_treasurymovement", "Puede purgar movimientos anulados"),
+                    ("cancel_treasurymovement", "Puede cancelar movimiento de tesorería"),
+                    ("annul_treasurymovement", "Puede anular movimiento de tesorería"),
+                    ("confirm_bankstatement", "Puede confirmar cartola bancaria"),
                 ],
             )
         except ImportError:

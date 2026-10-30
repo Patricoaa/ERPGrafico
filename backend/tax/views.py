@@ -36,6 +36,10 @@ class TaxPeriodViewSet(viewsets.ModelViewSet):
     filterset_fields = ["year", "month", "status"]
     ordering_fields = ["year", "month", "status"]
     ordering = ["-year", "-month"]
+    action_permissions = {
+        "close": "tax.can_close_tax_period",
+        "reopen": "tax.can_reopen_tax_period",
+    }
 
     @idempotent_endpoint(scope="tax.period.close")
     @action(detail=True, methods=["post"])
@@ -169,6 +173,9 @@ class F29PaymentViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     filterset_fields = ["declaration", "payment_date", "payment_method"]
     ordering_fields = ["payment_date", "amount"]
     ordering = ["-payment_date"]
+    action_permissions = {
+        "annul": "tax.annul_f29payment",
+    }
 
     def create(self, request, *args, **kwargs):
         """Create a new tax payment"""
@@ -207,6 +214,10 @@ class AccountingPeriodViewSet(viewsets.ModelViewSet):
     filterset_fields = ["year", "month", "status"]
     ordering_fields = ["year", "month", "status"]
     ordering = ["-year", "-month"]
+    action_permissions = {
+        "close": "tax.can_close_accounting_period",
+        "reopen": "tax.can_reopen_accounting_period",
+    }
 
     @idempotent_endpoint(scope="tax.period.close")
     @action(detail=True, methods=["post"])

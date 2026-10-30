@@ -155,6 +155,10 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = JournalEntryFilterSet
     search_fields = ["description", "display_id", "items__partner__name", "items__partner__tax_id"]
+    action_permissions = {
+        "post_entry": "accounting.post_journalentry",
+        "reverse_entry": "accounting.reverse_journalentry",
+    }
 
     @action(detail=True, methods=["post"])
     def post_entry(self, request, pk=None):

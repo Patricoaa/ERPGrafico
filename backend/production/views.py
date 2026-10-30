@@ -128,6 +128,9 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         "tasks__events__user",
     )
     serializer_class = WorkOrderSerializer
+    action_permissions = {
+        "annul": "production.annul_workorder",
+    }
 
     def get_serializer_class(self):
         if self.action == "list":

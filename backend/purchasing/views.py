@@ -113,6 +113,11 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelV
     # has no Meta.ordering and an unordered queryset pages unstably).
     ordering_fields = ["id", "number", "date", "supplier__name", "receipt_date", "total"]
     ordering = ["-date", "-id"]
+    action_permissions = {
+        "confirm": "purchasing.confirm_purchaseorder",
+        "cancel": "purchasing.cancel_purchaseorder",
+        "annul": "purchasing.annul_purchaseorder",
+    }
 
     @action(detail=False, methods=["get"], url_path="analytics")
     def analytics(self, request):
@@ -255,6 +260,9 @@ class PurchaseReceiptViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.Mode
         "purchase_order__supplier__name",
     ]
     ordering = ["-receipt_date", "-id"]
+    action_permissions = {
+        "annul": "purchasing.annul_purchasereceipt",
+    }
 
     def get_queryset(self):
         return PurchaseReceiptSelector.get_base_queryset()
@@ -287,6 +295,9 @@ class PurchaseReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.Model
     search_fields = ["number", "purchase_order__supplier__name", "purchase_order__number"]
     ordering_fields = ["number", "date", "total_cost", "status", "purchase_order__supplier__name"]
     ordering = ["-date", "-id"]
+    action_permissions = {
+        "annul": "purchasing.annul_purchasereturn",
+    }
 
     @action(detail=True, methods=["post"])
     def annul(self, request, pk=None):

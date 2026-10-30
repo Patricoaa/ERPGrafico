@@ -223,6 +223,11 @@ class PayrollViewSet(EditPolicyMixin, viewsets.ModelViewSet):
         )
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = PayrollFilter
+    action_permissions = {
+        "post_payroll": "hr.post_payroll",
+        "pay_salary": "hr.pay_payroll",
+        "pay_previred": "hr.pay_payroll",
+    }
     search_fields = ["employee__contact__name"]
 
     def get_serializer_class(self):
@@ -384,6 +389,9 @@ class SalaryAdvanceViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     serializer_class = SalaryAdvanceSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = SalaryAdvanceFilter
+    action_permissions = {
+        "annul": "hr.annul_salaryadvance",
+    }
 
     def perform_create(self, serializer):
         from .services import SalaryAdvanceService
@@ -428,6 +436,9 @@ class PayrollPaymentViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = PayrollPaymentSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = PayrollPaymentFilter
+    action_permissions = {
+        "annul": "hr.annul_payrollpayment",
+    }
 
     @action(detail=True, methods=["post"])
     def annul(self, request, pk=None):

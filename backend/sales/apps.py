@@ -16,6 +16,12 @@ class SalesConfig(AppConfig):
                     ("approve_large_orders", "Can approve large orders"),
                     ("override_credit_limit", "Can override credit limit"),
                     ("approve_credit", "Puede aprobar crédito directo en caja"),
+                    ("confirm_saleorder", "Puede confirmar orden de venta"),
+                    ("cancel_saleorder", "Puede cancelar orden de venta"),
+                    ("annul_saleorder", "Puede anular orden de venta"),
+                    ("write_off_saleorder", "Puede castigar orden de venta"),
+                    ("annul_saledelivery", "Puede anular guía de despacho"),
+                    ("annul_salereturn", "Puede anular devolución de venta"),
                 ],
             )
         except ImportError:

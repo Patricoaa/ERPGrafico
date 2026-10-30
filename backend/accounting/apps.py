@@ -13,6 +13,8 @@ class AccountingConfig(AppConfig):
                 "accounting",
                 [
                     ("view_dashboard_accounting", "Can view accounting dashboard"),
+                    ("post_journalentry", "Puede contabilizar asiento contable"),
+                    ("reverse_journalentry", "Puede revertir asiento contable"),
                 ],
             )
         except ImportError:

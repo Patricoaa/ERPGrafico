@@ -12,7 +12,13 @@ class HrConfig(AppConfig):
 
             PermissionRegistry.register(
                 "hr",
-                [("view_dashboard_hr", "Can view HR dashboard")],
+                [
+                    ("view_dashboard_hr", "Can view HR dashboard"),
+                    ("post_payroll", "Puede contabilizar nómina"),
+                    ("pay_payroll", "Puede pagar nómina/previred"),
+                    ("annul_salaryadvance", "Puede anular anticipo de sueldo"),
+                    ("annul_payrollpayment", "Puede anular pago de nómina"),
+                ],
             )
         except ImportError:
             pass
