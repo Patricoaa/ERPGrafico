@@ -45,8 +45,8 @@ export function LabeledSwitch({
     const colorStyles = {
         primary: {
             container: {
-                checked: "bg-transparent border-solid border-primary/30 ring-1 ring-primary/20",
-                unchecked: "bg-transparent border-dashed border-border ring-1 ring-primary/10",
+                checked: "bg-transparent border-solid border-primary/20",
+                unchecked: "bg-transparent border-dashed",
             },
             switch: "data-[state=checked]:bg-primary/60 data-[state=unchecked]:bg-primary/15 border-primary/20",
             thumb: "bg-primary shadow-[0_0_8px_oklch(var(--primary-raw)/0.5)]",
@@ -54,8 +54,8 @@ export function LabeledSwitch({
         },
         warning: {
             container: {
-                checked: "bg-transparent border-solid border-warning/30 ring-1 ring-warning/20",
-                unchecked: "bg-transparent border-dashed border-border ring-1 ring-warning/10",
+                checked: "bg-transparent border-solid border-primary/20",
+                unchecked: "bg-transparent border-dashed",
             },
             switch: "data-[state=checked]:bg-warning/60 data-[state=unchecked]:bg-warning/15 border-warning/20",
             thumb: "bg-warning shadow-[0_0_8px_oklch(var(--warning-raw)/0.5)]",
@@ -63,8 +63,8 @@ export function LabeledSwitch({
         },
         success: {
             container: {
-                checked: "bg-transparent border-solid border-success/30 ring-1 ring-success/20",
-                unchecked: "bg-transparent border-dashed border-border ring-1 ring-success/10",
+                checked: "bg-transparent border-solid border-primary/20",
+                unchecked: "bg-transparent border-dashed",
             },
             switch: "data-[state=checked]:bg-success/60 data-[state=unchecked]:bg-success/15 border-success/20",
             thumb: "bg-success shadow-[0_0_8px_oklch(var(--success-raw)/0.5)]",
@@ -72,8 +72,8 @@ export function LabeledSwitch({
         },
         destructive: {
             container: {
-                checked: "bg-transparent border-solid border-destructive/30 ring-1 ring-destructive/20",
-                unchecked: "bg-transparent border-dashed border-border ring-1 ring-destructive/10",
+                checked: "bg-transparent border-solid border-primary/20",
+                unchecked: "bg-transparent border-dashed ",
             },
             switch: "data-[state=checked]:bg-destructive/60 data-[state=unchecked]:bg-destructive/15 border-destructive/20",
             thumb: "bg-destructive shadow-[0_0_8px_oklch(var(--destructive-raw)/0.5)]",
@@ -81,8 +81,8 @@ export function LabeledSwitch({
         },
         info: {
             container: {
-                checked: "bg-transparent border-solid border-info/30 ring-1 ring-info/20",
-                unchecked: "bg-transparent border-dashed border-border ring-1 ring-info/10",
+                checked: "bg-transparent border-solid border-primary/20",
+                unchecked: "bg-transparent border-dashed",
             },
             switch: "data-[state=checked]:bg-info/60 data-[state=unchecked]:bg-info/15 border-info/20",
             thumb: "bg-info shadow-[0_0_8px_oklch(var(--info-raw)/0.5)]",

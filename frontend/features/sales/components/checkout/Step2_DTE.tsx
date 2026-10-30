@@ -109,7 +109,8 @@ export function Step2_DTE({
                             }
                         }}
                         icon={<FileText className={cn("h-4 w-4 transition-colors", dteData.isPending ? "text-warning" : "text-muted-foreground/30")} />}
-                        className={cn(dteData.isPending ? "bg-warning/5 border-warning/20 shadow-card" : "border-dashed")}
+                        className="h-full"
+                        color="info"
                     />
 
                     {!dteData.isPending && (

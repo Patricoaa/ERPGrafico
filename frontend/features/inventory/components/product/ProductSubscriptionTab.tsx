@@ -196,8 +196,9 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                         description="El monto se ajusta según consumo cada periodo."
                                         checked={field.value ?? false}
                                         onCheckedChange={field.onChange}
-                                        icon={<Wallet className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
-                                        className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-card" : "border-dashed")}
+                                        color="info"
+                                        icon={<Wallet className="h-4 w-4 transition-colors"/>}
+                                        className="h-full"
                                     />
                                 )}
                             />
@@ -215,8 +216,10 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                         description="Renovación automática hasta cancelación manual."
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
-                                        icon={<Calendar className={cn("h-4 w-4 transition-colors", field.value ? "text-warning" : "text-muted-foreground/30")} />}
-                                        className={cn(field.value ? "bg-warning/5 border-warning/20 shadow-card" : "border-dashed")}
+                                        color="info"
+                                        className="h-full"
+                                        icon={<Calendar className="h-4 w-4 transition-colors"/>}
+      
                                     />
                                 )}
                             />

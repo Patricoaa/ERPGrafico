@@ -122,7 +122,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
                 </div>
 
                 {/* Logistics Section */}
-                <div className="col-span-2 space-y-4">
+                <div className="col-span-2 space-y-2">
                     <FormSection title="Control y Abastecimiento" icon={Warehouse} />
                     <FormField
                         control={form.control}
