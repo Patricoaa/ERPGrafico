@@ -187,7 +187,7 @@ class AbsenceFilter(django_filters.FilterSet):
         fields = ["employee", "absence_type", "start_date"]
 
 
-class AbsenceViewSet(viewsets.ModelViewSet):
+class AbsenceViewSet(AuditHistory, viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     queryset = Absence.objects.select_related("employee", "employee__contact").all()
     serializer_class = AbsenceSerializer

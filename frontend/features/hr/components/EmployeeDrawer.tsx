@@ -190,6 +190,8 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                 id: employee?.id ?? null,
                 payload: payload as unknown as Partial<Employee>
             })
+            form.reset()
+            onOpenChange(false)
             onSaved()
         } catch (e: unknown) {
             showApiError(e, "Error al guardar empleado")

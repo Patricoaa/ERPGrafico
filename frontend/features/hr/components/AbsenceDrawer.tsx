@@ -90,6 +90,8 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                 id: absence?.id ?? null,
                 payload: payload as Partial<Absence>
             })
+            form.reset()
+            onOpenChange(false)
             onSaved()
         } catch (e: unknown) {
             showApiError(e, "Error al guardar ausencia")

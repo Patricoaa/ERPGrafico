@@ -90,6 +90,8 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved }: CreatePayro
                     notes: data.notes || "",
                 } as unknown as Partial<Payroll>
             })
+            form.reset()
+            onOpenChange(false)
             onSaved(created.id)
         } catch (e: unknown) {
             showApiError(e, "Error al crear liquidación")

@@ -85,9 +85,13 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
             }
             if (advance) {
                 await saveAdvance({ id: advance.id, payload })
+                form.reset()
+                onOpenChange(false)
                 onSaved()
             } else {
                 // For NEW advances, pass data to next step (PaymentDialog)
+                form.reset()
+                onOpenChange(false)
                 onSaved(payload)
             }
         } catch (e: unknown) {
