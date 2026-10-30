@@ -156,7 +156,7 @@ export function AdvancedSaleOrderSelector({
                             disabled={disabled}
                             className={cn(disabled && "opacity-50 cursor-not-allowed", icon && "pl-1.5")}
                         >
-                            <span className="text-sm shrink-0">{formatEntityDisplay('sales.saleorder', selectedOrder as unknown as Record<string, unknown>)}</span>
+                            <span className="text-sm shrink-0">{selectedOrder ? formatEntityDisplay('sales.saleorder', selectedOrder) : null}</span>
                             <span className="text-sm text-muted-foreground truncate">{selectedOrder?.customer_name}</span>
                         </SelectorTrigger>
                     }
