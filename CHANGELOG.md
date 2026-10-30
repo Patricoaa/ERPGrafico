@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.40](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.39...v0.3.40) (2026-10-30)
+
+
+### 🐛 Bug Fixes
+
+* **selectors:** guard formatEntityDisplay against null records ([4725afe](https://github.com/Patricoaa/ERPGrafico/commit/4725afe7c96ca5b08c6cff0708c84f71e712ba80))
+
 ### [0.3.39](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.38...v0.3.39) (2026-10-30)
 
 
