@@ -1241,10 +1241,17 @@ function templateFromData(template: string, data: Record<string, unknown>): stri
  *   1. API config (from UniversalRegistry via /api/core/entity-config/)
  *   2. ENTITY_REGISTRY shortTemplate (fallback for frontend-only entities)
  *   3. data.id as last resort
+ *
+ * Null-safe by design: selectors evaluate their trigger content eagerly, before
+ * any value exists, so `data` may be null/undefined. Returns '' in that case.
  */
-export function formatEntityDisplay(label: string, data: Record<string, unknown>): string {
+export function formatEntityDisplay(label: string, data?: object | null): string {
+  if (!data || typeof data !== 'object') return '';
+
+  const record = data as Record<string, unknown>
+
   // 0. Use backend-supplied display_id directly when present (canonical, no zero-padding)
-  if (typeof data.display_id === 'string' && data.display_id) return data.display_id;
+  if (typeof record.display_id === 'string' && record.display_id) return record.display_id;
 
   // 1. Try API-served template first
   const config = getEntityConfig(label);
@@ -1257,19 +1264,19 @@ export function formatEntityDisplay(label: string, data: Record<string, unknown>
   }
 
   // 3. Fallback to data.id
-  if (!template) return String(data.id ?? '');
+  if (!template) return String(record.id ?? '');
 
   // Domain-specific override for Billing Invoices (Dynamic Prefixes)
-  const dteType = data.dte_type
+  const dteType = record.dte_type
   if (label === 'billing.invoice' && dteType) {
     const prefix = getDtePrefix(String(dteType));
     template = `${prefix}-{number}`;
   }
 
   // Strip legacy embedded prefix from data.number (e.g. "FACV-1002" → "1002")
-  const cleanData = { ...data }
+  const cleanData = { ...record }
   if (label === 'billing.invoice' && dteType) {
-    const rawNumber = String(data.number ?? '')
+    const rawNumber = String(record.number ?? '')
     const knownPrefixes = ['FACV', 'FACC', 'FAC-EX', 'BOL', 'BE', 'NC', 'ND', 'GUI', 'CPE', 'FACT']
     const allVariants = knownPrefixes.flatMap(p => [p, p.replace(/-/g, '')])
 

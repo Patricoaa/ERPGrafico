@@ -162,7 +162,7 @@ export function AdvancedWorkOrderSelector({
                             ) : undefined}
                         >
                             <WorkOrderIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
-                            <span className="text-sm text-primary shrink-0">{formatEntityDisplay('production.workorder', selectedOrder as unknown as Record<string, unknown>)}</span>
+                            <span className="text-sm text-primary shrink-0">{selectedOrder ? formatEntityDisplay('production.workorder', selectedOrder) : null}</span>
                             <span className="text-sm text-muted-foreground truncate">{selectedOrder?.product_name}</span>
                         </SelectorTrigger>
                     }
