@@ -668,7 +668,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
     ]
 
     const drawerIdentity = useDrawerIdentity('inventory.product', mode, initialData, {
-        overrideSubtitle: initialData ? form.watch("name") : "Maestro de Producto",
+        overrideSubtitle: initialData ? form.watch("name") : "",
         printable: false, // We'll handle print manually in custom headerActions
         onPrint: handlePrint,
     })

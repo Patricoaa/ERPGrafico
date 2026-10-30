@@ -168,5 +168,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0101](0101-workspace-tab-bar.md) | Workspace tab bar — page navigation plus per-page ephemeral document and tool tabs | Proposed |
 | [0102](0102-work-order-stage-graph-owned-by-server.md) | Work order stage graph owned by the server — applicable stages, cancellation through annulment, merged stage_data | Proposed |
 | [0103](0103-mobile-navigation-sheet-exception.md) | Mobile navigation sheet is an authorized SheetContent exception | Proposed |
+| [0104](0104-labeled-switch-transparent-container-presets.md) | LabeledSwitch presets use transparent container backgrounds and tinted rings in both states | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

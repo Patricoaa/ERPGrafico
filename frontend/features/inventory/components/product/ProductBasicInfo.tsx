@@ -40,7 +40,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                 <LabeledInput
                                     label="Nombre Comercial del Producto"
                                     required
-                                    placeholder="Ej: Camiseta de Algodón Premium"
+                                    placeholder="Ej: Talonarios  Boleta 5x1"
                                     error={fieldState.error?.message}
                                     {...field}
                                 />
@@ -62,13 +62,13 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                             className="w-full"
                         >
                             <div className="flex items-center gap-2 h-full px-3">
-                                <span className="text-muted-foreground text-3xs font-mono">#</span>
+                                
                                 {isEditing ? (
-                                    <span className="font-mono font-medium text-primary text-xs">
+                                    <span className="text-primary text-sm">
                                         {form.getValues("internal_code")}
                                     </span>
                                 ) : (
-                                    <span className="text-3xs font-medium text-primary/40 uppercase tracking-tighter italic">Auto</span>
+                                    <span className="text-sm text-primary/40">Se asigna automáticamente</span>
                                 )}
                             </div>
                         </LabeledContainer>
@@ -80,7 +80,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                             name="can_be_sold"
                             render={({ field }) => (
                                 <LabeledSwitch
-                                    label="Venta"
+                                    label="Disponible para Venta"
                                     checked={field.value}
                                     onCheckedChange={(val) => {
                                         requestAnimationFrame(() => {
@@ -88,13 +88,9 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                         })
                                     }}
                                     disabled={false}
-                                    icon={<ShoppingCart className={cn("h-3.5 w-3.5 transition-colors", field.value ? "text-success" : "text-muted-foreground/60")} />}
-                                    className={cn(
-                                        "h-full transition-all duration-300",
-                                        field.value
-                                            ? "bg-success/10 border-success/30 shadow-card ring-1 ring-success/10"
-                                            : "bg-transparent border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]"
-                                    )}
+                                    color="info"
+                                    icon={<ShoppingCart className="h-3.5 w-3.5 transition-colors" />}
+                                    className="h-full"
                                 />
                             )}
                         />
@@ -106,7 +102,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                             name="can_be_purchased"
                             render={({ field }) => (
                                 <LabeledSwitch
-                                    label="Compra"
+                                    label="Disponible para Compra"
                                     checked={field.value}
                                     onCheckedChange={(val) => {
                                         requestAnimationFrame(() => {
@@ -114,13 +110,9 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                         })
                                     }}
                                     disabled={['STORABLE', 'MANUFACTURABLE'].includes(productType)}
-                                    icon={<Truck className={cn("h-3.5 w-3.5 transition-colors", field.value ? "text-warning" : "text-muted-foreground/40")} />}
-                                    className={cn(
-                                        "h-full transition-all duration-300",
-                                        field.value
-                                            ? "bg-warning/10 border-warning/30 shadow-card ring-1 ring-warning/10"
-                                            : "bg-transparent border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]"
-                                    )}
+                                    color="info"
+                                    icon={<Truck className="h-3.5 w-3.5 transition-colors" />}
+                                    className="h-full"
                                 />
                             )}
                         />
@@ -189,13 +181,9 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                         })
                                     }}
                                     disabled={isEditing}
-                                    icon={<Layers className={cn("h-3.5 w-3.5 transition-colors", field.value ? "text-primary" : "text-muted-foreground/40")} />}
-                                    className={cn(
-                                        "h-full transition-all duration-300",
-                                        field.value
-                                            ? "bg-primary/10 border-primary/30 shadow-card ring-1 ring-primary/10"
-                                            : "bg-transparent border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]"
-                                    )}
+                                    color="info"
+                                    icon={<Layers className="h-3.5 w-3.5 transition-colors" />}
+                                    className="h-full"
                                 />
                             )}
                         />
