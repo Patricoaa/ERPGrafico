@@ -158,9 +158,11 @@ UNMAPPED_WRITE_ACTIONS: frozenset[str] = frozenset({
     "workflow.views.WorkflowSettingsViewSet.current",
 })
 
-# Lista cerrada permanente de vistas personales/públicas que usan solo IsAuthenticated.
-# Esta lista NUNCA crece; solo se actualiza cuando una vista cambia de categoría.
+# Lista PERMANENTE de vistas que son legítimamente IsAuthenticated-only.
+# A diferencia de UNMAPPED_WRITE_ACTIONS (que Task 3c vaciará), esta lista nunca se vacía.
+# Solo cambia cuando una vista cambia fundamentalmente de categoría.
 AUTHENTICATED_ONLY_VIEWS: frozenset[str] = frozenset({
+    # --- ViewSet-based personal/read-only views ---
     "core.views.BackgroundJobViewSet",
     "core.views.ChangePasswordView",
     "core.views.ChangePinView",
@@ -170,4 +172,15 @@ AUTHENTICATED_ONLY_VIEWS: frozenset[str] = frozenset({
     "core.views.MyProfileView",
     "core.views.UserPreferenceView",
     "sales.pricing_views.PricingViewSet",
+    # --- @api_view system/utility endpoints (read-only or personal) ---
+    "core.api.documents.document_ref",
+    "core.api.documents.document_relations",
+    "core.api.search.universal_search",
+    "core.views.entity_config",
+    "core.views.entity_prefixes",
+    "core.views.logout_view",
+    "core.views.server_time",
+    "core.views.system_status",
+    # --- DRF built-in views ---
+    "rest_framework.routers.APIRootView",
 })

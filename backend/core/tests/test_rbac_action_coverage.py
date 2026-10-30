@@ -171,22 +171,22 @@ def test_modelless_views_declare_permissions():
             continue
 
         # Condition 3: action_permissions covers every write extra-action.
-        # Non-ViewSet views (APIView, WrappedAPIView from @api_view) do not have
-        # get_extra_actions and therefore cannot register write extra-actions; they
-        # pass this condition vacuously and are out of scope for action_permissions.
-        if not hasattr(cls, "get_extra_actions"):
-            continue
-
-        ap = getattr(cls, "action_permissions", {})
-        missing_keys = [
-            a.__name__
-            for a in cls.get_extra_actions()
-            if set(a.mapping) & {"post", "put", "patch", "delete"}
-            and a.__name__ not in ap
-        ]
-        if not missing_keys:
-            # All write extra-actions are covered (or there are none)
-            continue
+        # This condition applies only to ViewSet classes (with get_extra_actions).
+        # Non-ViewSet classes (WrappedAPIView from @api_view) cannot satisfy this
+        # condition; they must use require_perms (condition 1), override
+        # get_permissions (condition 2), or be listed in AUTHENTICATED_ONLY_VIEWS
+        # (condition 4).
+        if hasattr(cls, "get_extra_actions"):
+            ap = getattr(cls, "action_permissions", {})
+            missing_keys = [
+                a.__name__
+                for a in cls.get_extra_actions()
+                if set(a.mapping) & {"post", "put", "patch", "delete"}
+                and a.__name__ not in ap
+            ]
+            if not missing_keys:
+                # All write extra-actions are covered (or there are none)
+                continue
 
         failing.append(qname)
 
