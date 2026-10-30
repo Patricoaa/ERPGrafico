@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.51](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.50...v0.3.51) (2026-10-30)
+
+
+### 🐛 Bug Fixes
+
+* **tests:** resolve failing test suites in backend and frontend ([38afeb8](https://github.com/Patricoaa/ERPGrafico/commit/38afeb85a39fe38ef6ee928cb161aa58cd5b6de1))
+
 ### [0.3.50](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.49...v0.3.50) (2026-10-30)
 
 
