@@ -1,10 +1,11 @@
 "use client"
 
-import React, { useState, useEffect, type ReactNode } from "react"
-import { type LucideIcon, ChevronLeft, ChevronRight, Clock } from "lucide-react"
+import React, { useState, type ReactNode } from "react"
+import { type LucideIcon, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { TabBar, TabBarContent } from "./TabBar"
+import { DrawerResizableRail } from "./DrawerResizableRail"
 
 export interface DrawerLayoutTab {
     value: string
@@ -123,36 +124,6 @@ export function DrawerLayout({
 
     const currentTabDef = tabs?.find((t) => t.value === currentTab)
 
-    // ── Right Rail Collapse State (SSR safe) ─────────────────────────────────
-    const [rightCollapsed, setRightCollapsed] = useState(rightRailDefaultCollapsed)
-
-    useEffect(() => {
-        if (!rightRailCollapsible || !rightRailStorageKey) return
-        try {
-            if (window.localStorage.getItem(rightRailStorageKey) === "1") {
-                // eslint-disable-next-line react-hooks/set-state-in-effect -- restore user preference post-mount
-                setRightCollapsed(true)
-            }
-        } catch {
-            // Storage unavailable; keep default
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
-    }, [])
-
-    const toggleRightCollapse = () => {
-        setRightCollapsed((prev) => {
-            const next = !prev
-            if (rightRailStorageKey) {
-                try {
-                    window.localStorage.setItem(rightRailStorageKey, next ? "1" : "0")
-                } catch {
-                    // Ignore storage errors
-                }
-            }
-            return next
-        })
-    }
-
     // Determine rail visibility based on current active tab rules
     const showLeftRail = !!leftRail && !currentTabDef?.hideLeftRail
     const showRightRail = !!rightRail && !currentTabDef?.hideRightRail
@@ -216,50 +187,29 @@ export function DrawerLayout({
                 rightRailRaw ? (
                     rightRail
                 ) : rightRailCollapsible ? (
-                    <aside className="relative hidden lg:flex flex-col h-full shrink-0">
-                        {/* Toggle button en el borde izquierdo del riel */}
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={toggleRightCollapse}
-                            className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 z-10 flex h-6 w-4 items-center justify-center rounded-l rounded-r-none border border-r-0 border-border bg-card p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                            title={rightCollapsed ? "Expandir panel lateral" : "Colapsar panel lateral"}
-                            aria-label={rightCollapsed ? "Expandir panel lateral" : "Colapsar panel lateral"}
-                            aria-expanded={!rightCollapsed}
-                        >
-                            {rightCollapsed ? (
-                                <ChevronLeft className="h-3 w-3" aria-hidden />
-                            ) : (
-                                <ChevronRight className="h-3 w-3" aria-hidden />
-                            )}
-                        </Button>
-
-                        {rightCollapsed ? (
-                            <div className="border-l border-border/60 w-10 flex flex-col items-center gap-2 pt-3 bg-card h-full">
+                    <DrawerResizableRail
+                        side="right"
+                        storageKey={rightRailStorageKey}
+                        defaultCollapsed={rightRailDefaultCollapsed}
+                        collapsedContent={
+                            <div className="w-10 flex flex-col items-center gap-2 pt-3 bg-card h-full">
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     size="icon"
                                     title="Actividad / Información"
                                     aria-label="Expandir panel lateral"
-                                    onClick={toggleRightCollapse}
                                     className="flex h-7 w-7 items-center justify-center rounded p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
                                 >
                                     <Clock className="h-3.5 w-3.5" />
                                 </Button>
                             </div>
-                        ) : (
-                            <div
-                                className={cn(
-                                    rightRailWidth,
-                                    "border-l border-border/60 flex flex-col bg-card shadow-elevated min-h-0 h-full overflow-y-auto scrollbar-thin"
-                                )}
-                            >
-                                {rightRail}
-                            </div>
-                        )}
-                    </aside>
+                        }
+                        className="hidden lg:flex"
+                        contentClassName="shadow-elevated overflow-y-auto scrollbar-thin"
+                    >
+                        {rightRail}
+                    </DrawerResizableRail>
                 ) : (
                     <aside
                         className={cn(

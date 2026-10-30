@@ -1,7 +1,7 @@
 "use client"
 
-import { ChevronLeft, ChevronRight, FileText, Building2, CreditCard, Package, Warehouse, ShoppingCart } from "lucide-react"
-import { MoneyDisplay, WizardStepsSidebar, type WizardSidebarStep } from "@/components/shared"
+import { FileText, Building2, CreditCard, Package, Warehouse, ShoppingCart } from "lucide-react"
+import { DrawerResizableRail, MoneyDisplay, WizardStepsSidebar, type WizardSidebarStep } from "@/components/shared"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
 export interface PurchaseProcessSummarySidebarProps {
@@ -137,28 +137,23 @@ export function PurchaseProcessSummarySidebar({
 
     return (
         <TooltipProvider delayDuration={300}>
-            <div className="relative hidden md:flex flex-col h-full bg-card">
-                {onToggleCollapsed && (
-                    // eslint-disable-next-line no-restricted-syntax -- external collapse tab button matching ProductionStepsSidebar pattern
-                    <button
-                        type="button"
-                        onClick={onToggleCollapsed}
-                        className="absolute right-0 top-1/2 translate-x-full -translate-y-1/2 z-10 flex h-6 w-4 items-center justify-center rounded-r border border-l-0 border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                        title={collapsed ? "Expandir etapas" : "Colapsar etapas"}
-                        aria-label={collapsed ? "Expandir etapas" : "Colapsar etapas"}
-                        aria-expanded={!collapsed}
-                    >
-                        {collapsed
-                            ? <ChevronRight className="h-3 w-3" aria-hidden />
-                            : <ChevronLeft className="h-3 w-3" aria-hidden />
-                        }
-                    </button>
-                )}
+            <DrawerResizableRail
+                side="left"
+                collapsed={collapsed}
+                onToggleCollapsed={onToggleCollapsed}
+                storageKey="erpgrafico.purchasing.railCollapsed"
+                defaultWidth={256}
+                minWidth={200}
+                maxWidth={420}
+                compactWidth={56}
+                ariaLabel="Redimensionar proceso de compra"
+                className="hidden md:flex"
+            >
                 <WizardStepsSidebar
                     title="Proceso de Compra"
                     currentStep={currentStep}
                     steps={steps}
-                    width="w-64"
+                    width="w-full"
                     className="bg-transparent flex-1 min-h-0"
                     onStepClick={onStepClick}
                     showNumbers={true}
@@ -168,7 +163,7 @@ export function PurchaseProcessSummarySidebar({
                     listClassName="px-2 pt-1 space-y-1.5"
                     collapsed={collapsed}
                 />
-            </div>
+            </DrawerResizableRail>
         </TooltipProvider>
     )
 }
