@@ -2,6 +2,7 @@ import { readdirSync, statSync } from "node:fs"
 import { join, relative, sep } from "node:path"
 import { describe, it, expect } from "vitest"
 import { ENTITY_REGISTRY } from "../entity-registry"
+import { searchableEntityRoutes } from "../searchableEntityRoutes"
 
 /**
  * ADR-0080 (GAP-08): todo `detailUrlPattern` del registro de entidades apunta a una ruta
@@ -67,5 +68,20 @@ describe("ENTITY_REGISTRY list routes", () => {
 
     it("every known-broken entry is still broken (remove fixed ones from the list)", () => {
         expect(KNOWN_BROKEN_LIST_URLS.filter((label) => !broken.includes(label))).toEqual([])
+    })
+})
+
+/**
+ * ADR-0022 / #178: todo `searchableEntityRoutes` apunta a una página estática existente.
+ * Cada entrada se usa en [id]/page.tsx para redirigir al modal de lista; un 404 rompe la navegación.
+ */
+describe("searchableEntityRoutes routes", () => {
+    const routes = collectRoutes(APP_DIR)
+
+    it("every searchableEntityRoutes entry resolves to an existing static page", () => {
+        const broken = Object.entries(searchableEntityRoutes)
+            .filter(([, url]) => !hasStaticRoute(url, routes))
+            .map(([label, url]) => `${label} → ${url}`)
+        expect(broken).toEqual([])
     })
 })

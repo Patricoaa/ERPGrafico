@@ -84,7 +84,7 @@ class TreasuryConfig(AppConfig):
                     display_template=f"{EntityPrefix.BANK_STATEMENT}-{{id}}",
                     subtitle_template="{treasury_account.name}",
                     extra_info_template="{date}",
-                    list_url="/treasury/reconciliation",
+                    list_url="/treasury/bank-center/reconciliation",  # ADR-0090
                     detail_url_pattern="/treasury/statements/{id}",
                     permission="treasury.view_bankstatement",
                 )

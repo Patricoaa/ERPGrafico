@@ -26,8 +26,8 @@ class TaxConfig(AppConfig):
                     display_template="{month}/{year}",
                     subtitle_template="{status}",
                     extra_info_template="",
-                    list_url="/tax/periods",
-                    detail_url_pattern="/tax/periods/{id}",
+                    list_url="/accounting/closures",  # TaxPeriod se muestra en AccountingClosuresClientView
+                    detail_url_pattern="/accounting/closures/{id}",
                     permission="tax.view_taxperiod",
                 )
             )

@@ -2,4 +2,4 @@
 
 from core.documents import DocumentType, DocumentTypeRegistry
 
-DocumentTypeRegistry.register(DocumentType(label="tax.taxperiod", canonical_url="/tax/periods/{id}"))
+DocumentTypeRegistry.register(DocumentType(label="tax.taxperiod", canonical_url="/accounting/closures/{id}"))  # ADR-0090

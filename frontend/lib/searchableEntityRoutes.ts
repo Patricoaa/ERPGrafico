@@ -29,13 +29,13 @@
 export const searchableEntityRoutes: Record<string, string> = {
     // Sales
     'sales.saleorder':     '/sales/dtes/orders',
-    'sales.saledelivery':  '/sales/dtes/deliveries',
-    'sales.salereturn':    '/sales/dtes/returns',
+    'sales.saledelivery':  '/sales/dtes/fulfillment',  // ADR-0090: fulfillment unifica despachos y devoluciones
+    'sales.salereturn':    '/sales/dtes/fulfillment',  // ADR-0090: ídem
 
     // Purchasing
     'purchasing.purchaseorder': '/purchasing/dtes/orders',
-    'purchasing.purchasereceipt': '/purchasing/dtes/receipts',
-    'purchasing.purchasereturn': '/purchasing/dtes/returns',
+    'purchasing.purchasereceipt': '/purchasing/dtes/fulfillment',  // ADR-0090: fulfillment unifica recepciones y devoluciones
+    'purchasing.purchasereturn': '/purchasing/dtes/fulfillment',   // ADR-0090: ídem
 
     // Billing (split entries — each resolves to its own list, ADR-0089)
     'billing.invoice_sales':     '/sales/dtes',
@@ -72,9 +72,9 @@ export const searchableEntityRoutes: Record<string, string> = {
     'treasury.check':            '/treasury/operaciones/checks',
     // possession: vive en /sales/sessions (POSSessionsView) — T-99
     'treasury.possession':       '/sales/sessions',
-    // bankstatement: la lista vive en /treasury/reconciliation; el detalle
+    // bankstatement: la lista vive en /treasury/bank-center/reconciliation (ADR-0090); el detalle
     // re-navega al workbench — T-99
-    'treasury.bankstatement':    '/treasury/reconciliation',
+    'treasury.bankstatement':    '/treasury/bank-center/reconciliation',
     // loans/cards/credit lines: tabs del hub /treasury/bank-center (ADR-0022 DRAWER_ENTITIES)
 
     // HR
@@ -90,7 +90,8 @@ export const searchableEntityRoutes: Record<string, string> = {
     // Tax
     // f29declaration: vive en /accounting/tax (TaxDeclarationsView) — T-99
     'tax.f29declaration': '/accounting/tax',
-    'tax.taxperiod':      '/tax/periods',
+    // taxperiod: la lista de cierres vive en /accounting/closures (AccountingClosuresClientView)
+    'tax.taxperiod':      '/accounting/closures',
 
     // Core
     'core.user': '/settings/users',
