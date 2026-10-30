@@ -163,7 +163,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
         const uomFields = ['uom', 'purchase_uom', 'allowed_sale_uoms']
         uomFields.forEach(field => {
             if (errors[field as keyof typeof errors]) {
-                tabErrors['uoms'] = (tabErrors['uoms'] || 0) + 1
+                tabErrors['logistics'] = (tabErrors['logistics'] || 0) + 1
             }
         })
 
@@ -220,7 +220,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
             switch (tab) {
                 case "general": return true
                 case "manufacturing": return productType === 'MANUFACTURABLE' || hasBom || watchedAdvancedMfg
-                case "logistics": return ['STORABLE', 'MANUFACTURABLE'].includes(productType)
+                case "logistics": return ['STORABLE', 'MANUFACTURABLE', 'SERVICE'].includes(productType)
                 case "commercial": return productType === 'SUBSCRIPTION'
                 case "pricing": return canBeSold && productType !== 'SUBSCRIPTION'
                 case "variants": return hasVariants && !variantMode
@@ -596,9 +596,9 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
         },
         {
             value: "logistics",
-            label: "Logística",
+            label: productType === 'SERVICE' ? "Unidades" : "Logística",
             icon: Truck,
-            hidden: !['STORABLE', 'MANUFACTURABLE'].includes(productType),
+            hidden: !['STORABLE', 'MANUFACTURABLE', 'SERVICE'].includes(productType),
             hasErrors: !!tabErrors['logistics'],
             content: (
                 <ProductInventoryTab
