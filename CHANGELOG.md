@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.47](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.46...v0.3.47) (2026-10-30)
+
+
+### ✨ Features
+
+* **shared:** implement DrawerResizableRail for drawer sidebars with drag and hover UI feedback ([ab8795d](https://github.com/Patricoaa/ERPGrafico/commit/ab8795d3b8f216095f53b6af02445cbdfadc4285))
+
 ### [0.3.46](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.45...v0.3.46) (2026-10-30)
 
 
