@@ -26,12 +26,12 @@ export function ProductionStepsSidebar({
 }: ProductionStepsSidebarProps) {
     return (
         <TooltipProvider delayDuration={300}>
-            <div className="relative hidden md:flex flex-col h-full">
+            <div className="relative hidden md:flex flex-col h-full bg-card">
                 {onToggleCollapsed && (
                     <button
                         type="button"
                         onClick={onToggleCollapsed}
-                        className="absolute right-0 top-1/2 translate-x-full -translate-y-1/2 z-10 flex h-6 w-4 items-center justify-center rounded-r border border-l-0 border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                        className="absolute right-0 top-1/2 translate-x-full -translate-y-1/2 z-10 flex h-6 w-4 items-center justify-center rounded-r border border-l-0 border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
                         title={collapsed ? "Expandir etapas" : "Colapsar etapas"}
                         aria-label={collapsed ? "Expandir etapas" : "Colapsar etapas"}
                         aria-expanded={!collapsed}

@@ -421,7 +421,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                             type="number"
                                                             step="0.00001"
                                                             error={fieldState.error?.message}
-                                                            className="font-mono text-sm"
+                                                            className="text-sm"
                                                             hint={frozen.has("ratio") ? FROZEN_FIELD_HINT : watchType === 'BIGGER'
                                                                 ? 'Cuántas unidades base equivalen a esta unidad'
                                                                 : 'Cuántas unidades de estas equivalen a la unidad base'}

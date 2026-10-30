@@ -19,7 +19,7 @@ import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
 
 import { useOptionalGlobalModalActions } from '@/components/providers/GlobalModalProvider'
-import {Drawer, FormSplitLayout, TabBar, TabBarContent, SkeletonShell, type TabItem} from '@/components/shared'
+import {Drawer, DrawerLayout, SkeletonShell, type DrawerLayoutTab} from '@/components/shared'
 import { ActivitySidebar } from "@/features/audit"
 // Removed Badge import for governance compliance
 
@@ -560,12 +560,23 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
         }
     }
 
-    const tabItems: TabItem[] = [
+    const productTabs: DrawerLayoutTab[] = [
         {
             value: "general",
             label: "General",
             icon: Package,
             hasErrors: !!tabErrors['general'],
+            content: (
+                <div className="space-y-8 pr-2">
+                    <ProductBasicInfo
+                        form={form}
+                        isEditing={!!initialData}
+                        imagePreview={imagePreview}
+                        setImagePreview={setImagePreview}
+                        lockedType={lockedType}
+                    />
+                </div>
+            ),
         },
         {
             value: "manufacturing",
@@ -573,6 +584,15 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
             icon: Factory,
             hidden: !(productType === 'MANUFACTURABLE' || hasBom),
             hasErrors: !!tabErrors['manufacturing'],
+            content: (
+                <ProductManufacturingTab
+                    form={form}
+                    initialData={initialData}
+                    products={products as unknown as Product[]}
+                    uoms={uoms as unknown as UoM[]}
+                    variantMode={variantMode}
+                />
+            ),
         },
         {
             value: "logistics",
@@ -580,6 +600,15 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
             icon: Truck,
             hidden: !['STORABLE', 'MANUFACTURABLE'].includes(productType),
             hasErrors: !!tabErrors['logistics'],
+            content: (
+                <ProductInventoryTab
+                    form={form}
+                    initialData={initialData}
+                    warehouses={warehouses}
+                    uoms={uoms as unknown as UoM[]}
+                    isEditing={!!initialData}
+                />
+            ),
         },
         {
             value: "commercial",
@@ -587,6 +616,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
             icon: ShoppingCart,
             hidden: productType !== 'SUBSCRIPTION',
             hasErrors: !!tabErrors['commercial'],
+            content: <ProductSubscriptionTab form={form} isEditing={!!initialData} />,
         },
         {
             value: "pricing",
@@ -594,6 +624,27 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
             icon: DollarSign,
             hidden: !canBeSold || productType === 'SUBSCRIPTION',
             hasErrors: !!tabErrors['pricing'],
+            content: (
+                <div className="space-y-8 pr-2">
+                    <ProductPricingSection
+                        form={form}
+                        initialData={initialData}
+                        canBeSold={canBeSold}
+                        uoms={uoms as unknown as UoM[]}
+                    />
+                    <ProductPricingTab
+                        initialData={initialData}
+                        pricingRules={pricingRules}
+                        fetchPricingRules={refetchPricingRules}
+                        onOpenRuleDialog={(rule) => {
+                            setSelectedPricingRule(rule as unknown as PricingRuleInitialData | null)
+                            setPricingRuleDialogOpen(true)
+                        }}
+                        isDynamicPricing={form.watch('is_dynamic_pricing')}
+                        isVariant={!!initialData?.parent_template}
+                    />
+                </div>
+            ),
         },
         {
             value: "variants",
@@ -601,6 +652,18 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
             icon: Layers,
             hidden: !hasVariants || variantMode,
             hasErrors: !!tabErrors['variants'],
+            forceMount: true,
+            content: (
+                <ProductVariantsTab
+                    key={variantsRefreshKey}
+                    form={form}
+                    initialData={initialData}
+                    onTabChange={(tab: string) => setActiveTab(tab)}
+                    onEditVariant={(v) => {
+                        window.open(`/inventory/products?selected=${v.id}`, '_blank');
+                    }}
+                />
+            ),
         },
     ]
 
@@ -627,22 +690,6 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
         </>
     )
 
-    const tabHeader = (
-        <div className="flex flex-col p-6 pb-2">
-            <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-3">
-                <Package className="h-6 w-6 text-primary" />
-                <div className="flex flex-col">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-0.5">
-                        {drawerIdentity.title}
-                    </span>
-                    <span className="truncate max-w-[300px]">
-                        {initialData ? form.watch("name") : "Maestro de Producto"}
-                    </span>
-                </div>
-            </h1>
-        </div>
-    )
-
     const footerSlot = drawerFooter(isView, <>
         <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
         <SubmitButton type="submit" form="product-form" loading={form.formState.isSubmitting}>
@@ -654,104 +701,23 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
         <>
             <Form {...form}>
                 <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="flex-1 w-full h-full flex flex-col min-h-0 overflow-visible">
-                    <fieldset disabled={isView} className="contents h-full">
-                    <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando ficha de producto" className="flex-1 flex flex-col h-full">
-                        <FormSplitLayout
-                            collapsible
-                            collapseStorageKey="erpgrafico.drawer.sidebar.product"
-                            showSidebar={!!initialData?.id}
-                            sidebar={
-                                initialData?.id ? (
-                                    <ActivitySidebar entityId={initialData.id.toString()} entityType="product" />
-                                ) : undefined
-                            }
-                            className="min-w-0 h-full overflow-hidden p-0"
-                        >
-                            <TabBar
-                                items={tabItems}
-                                value={activeTab}
-                                onValueChange={setActiveTab}
-                                orientation="horizontal"
-                                variant="underline"
-                                header={inline ? tabHeader : undefined}
-                                className="flex-1"
-                                contentClassName="bg-transparent"
-                            >
-                                <fieldset disabled={loading} className="flex-1 min-w-0 flex flex-col h-full min-h-0">
-                                    <TabBarContent value="general" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
-                                        <div className="space-y-8 pr-2">
-                                            <ProductBasicInfo
-                                                form={form}
-                                                isEditing={!!initialData}
-                                                imagePreview={imagePreview}
-                                                setImagePreview={setImagePreview}
-                                                lockedType={lockedType}
-                                            />
-                                        </div>
-                                    </TabBarContent>
-
-                                    <TabBarContent value="manufacturing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
-                                        <ProductManufacturingTab
-                                            form={form}
-                                            initialData={initialData}
-                                            products={products as unknown as Product[]}
-                                            uoms={uoms as unknown as UoM[]}
-                                            variantMode={variantMode}
-                                        />
-                                    </TabBarContent>
-
-                                    <TabBarContent forceMount value="variants" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 data-[state=inactive]:hidden overflow-y-auto scrollbar-thin">
-                                        <ProductVariantsTab
-                                            key={variantsRefreshKey}
-                                            form={form}
-                                            initialData={initialData}
-                                            onTabChange={(tab: string) => setActiveTab(tab)}
-                                            onEditVariant={(v) => {
-                                                window.open(`/inventory/products?selected=${v.id}`, '_blank');
-                                            }}
-                                        />
-                                    </TabBarContent>
-
-                                    <TabBarContent value="logistics" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
-                                        <ProductInventoryTab
-                                            form={form}
-                                            initialData={initialData}
-                                            warehouses={warehouses}
-                                            uoms={uoms as unknown as UoM[]}
-                                            isEditing={!!initialData}
-                                        />
-                                    </TabBarContent>
-
-                                    <TabBarContent value="commercial" className="mt-0 animate-in fade-in duration-300 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
-                                        <ProductSubscriptionTab form={form} isEditing={!!initialData} />
-                                    </TabBarContent>
-
-                                    <TabBarContent value="pricing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
-                                        <div className="space-y-8 pr-2">
-                                            <ProductPricingSection
-                                                form={form}
-                                                initialData={initialData}
-                                                canBeSold={canBeSold}
-                                                uoms={uoms as unknown as UoM[]}
-                                            />
-                                            <ProductPricingTab
-                                                initialData={initialData}
-                                                pricingRules={pricingRules}
-                                                fetchPricingRules={refetchPricingRules}
-                                                    onOpenRuleDialog={(rule) => {
-                                                    setSelectedPricingRule(rule as unknown as PricingRuleInitialData | null)
-                                                    setPricingRuleDialogOpen(true)
-                                                }}
-                                                isDynamicPricing={form.watch('is_dynamic_pricing')}
-                                                isVariant={!!initialData?.parent_template}
-                                            />
-                                        </div>
-                                    </TabBarContent>
-                                </fieldset>
-                            </TabBar>
-                        </FormSplitLayout>
-                    </SkeletonShell>
-                </fieldset>
+                    <fieldset disabled={isView || loading} className="contents h-full">
+                        <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando ficha de producto" className="flex-1 flex flex-col h-full">
+                            <DrawerLayout
+                                activeTab={activeTab}
+                                onTabChange={setActiveTab}
+                                tabs={productTabs}
+                                rightRail={
+                                    initialData?.id ? (
+                                        <ActivitySidebar entityId={initialData.id.toString()} entityType="product" />
+                                    ) : undefined
+                                }
+                                rightRailCollapsible
+                                rightRailStorageKey="erpgrafico.drawer.sidebar.product"
+                                className="min-w-0 h-full overflow-hidden"
+                            />
+                        </SkeletonShell>
+                    </fieldset>
                 </form>
             </Form>
 

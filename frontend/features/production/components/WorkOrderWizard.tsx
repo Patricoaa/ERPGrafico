@@ -16,8 +16,7 @@ import {
   FormFooter,
   StatusBadge,
   DocumentActionsMenu,
-  TabBar,
-  TabBarContent,
+  DrawerLayout,
   type DocumentActionItem,
 } from '@/components/shared'
 import { cn } from '@/lib/utils'
@@ -651,7 +650,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         defaultSize="100%"
         resizable={false}
         fillContent
-        contentClassName="p-0 flex flex-col overflow-hidden"
+        contentClassName="p-0 flex flex-col overflow-hidden bg-card"
         icon={Factory}
         title={
           order
@@ -733,35 +732,34 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
           />
         }
       >
-        <div className="flex flex-1 min-h-0 overflow-hidden">
-        <WizardProcessSidebar
-          stages={STAGES}
-          viewingStepIndex={viewingStepIndex}
-          actualStepIndex={actualStepIndex}
-          stepMode={stepMode}
-          onStepClick={(index) => navigateToStep(index, 'view')}
-          order={order}
-          collapsed={railCollapsed}
-          onToggleCollapsed={toggleRail}
-        />
-
-        <TabBar
-          items={order ? [
-            { value: 'stages', label: 'Producción', icon: Factory },
-            { value: 'relations', label: 'Relaciones', icon: Link2, badge: relationsData?.relations.length },
-          ] : [{ value: 'stages', label: 'Producción', icon: Factory }]}
-          value={wizardTab}
-          onValueChange={setWizardTab}
-          orientation="horizontal"
-          variant="underline"
-          className="flex-1 min-h-0"
-          contentClassName="bg-transparent"
-        >
-          <TabBarContent
-            value="stages"
-            className="data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden"
-          >
-          {/* Center content */}
+        <DrawerLayout
+          leftRail={
+            <WizardProcessSidebar
+              stages={STAGES}
+              viewingStepIndex={viewingStepIndex}
+              actualStepIndex={actualStepIndex}
+              stepMode={stepMode}
+              onStepClick={(index) => navigateToStep(index, 'view')}
+              order={order}
+              collapsed={railCollapsed}
+              onToggleCollapsed={toggleRail}
+            />
+          }
+          leftRailRaw
+          leftRailWidth={railCollapsed ? "w-14" : "w-64"}
+          activeTab={wizardTab}
+          onTabChange={setWizardTab}
+          noPadding
+          tabs={[
+            {
+              value: 'stages',
+              label: 'Producción',
+              icon: Factory,
+              noPadding: true,
+              className: 'overflow-hidden',
+              content: (
+                <>
+                {/* Center content */}
           <div className="flex-1 flex flex-col overflow-hidden relative">
             <div className="flex flex-1 flex-col min-h-0 px-6 relative">
               {/* Mobile navigation */}
@@ -982,42 +980,46 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             </div>
 
           </div>
-          </TabBarContent>
-
-          {order && (
-            <TabBarContent
-              value="relations"
-              className="mt-0 px-6 pt-4 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin"
-            >
-              <DocumentRelationsTab label="production.workorder" id={order.id} />
-            </TabBarContent>
-          )}
-        </TabBar>
-
-        {order ? (
-          <WizardRightSidebar
-            order={order}
-            productName={productName}
-            stageData={stageData}
-            currentStageId={currentStageId as string}
-            tasks={viewedStageTasks}
-            allTasks={order.workflow_tasks}
-            stageEntries={allStageHistory}
-            canComplete={canUserCompleteTask}
-            actionable={isViewingCurrentStage && !isTerminalOrder}
-            taskNotes={taskNotes}
-            taskFiles={taskFiles}
-            taskConfirmations={taskConfirmations}
-            onNoteChange={setTaskNote}
-            onFileChange={setTaskFile}
-            onConfirmationChange={setTaskConfirmation}
-            collapsed={rightRailCollapsed}
-            onToggleCollapse={toggleRightRail}
-          />
-        ) : currentStageId === 'MFG_CONFIG' ? (
-          <WizardDraftSidebar />
-        ) : null}
-        </div>
+                </>
+              ),
+            },
+            ...(order ? [{
+              value: 'relations',
+              label: 'Relaciones',
+              icon: Link2,
+              badge: relationsData?.relations.length,
+              noPadding: true,
+              className: 'mt-0 px-6 pt-4 pb-8',
+              content: <DocumentRelationsTab label="production.workorder" id={order.id} />,
+            }] : []),
+          ]}
+          rightRail={
+            order ? (
+              <WizardRightSidebar
+                order={order}
+                productName={productName}
+                stageData={stageData}
+                currentStageId={currentStageId as string}
+                tasks={viewedStageTasks}
+                allTasks={order.workflow_tasks}
+                stageEntries={allStageHistory}
+                canComplete={canUserCompleteTask}
+                actionable={isViewingCurrentStage && !isTerminalOrder}
+                taskNotes={taskNotes}
+                taskFiles={taskFiles}
+                taskConfirmations={taskConfirmations}
+                onNoteChange={setTaskNote}
+                onFileChange={setTaskFile}
+                onConfirmationChange={setTaskConfirmation}
+                collapsed={rightRailCollapsed}
+                onToggleCollapse={toggleRightRail}
+              />
+            ) : currentStageId === 'MFG_CONFIG' ? (
+              <WizardDraftSidebar />
+            ) : undefined
+          }
+          rightRailRaw
+        />
       </Drawer>
 
       {/* PO Preview */}

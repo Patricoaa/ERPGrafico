@@ -148,7 +148,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                         showSidebar={true}
                         sidebar={<ActivitySidebar entityType="absence" entityId={absence.id} />}
                     >
-                        <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-4 scrollbar-thin">
+                        
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
 
@@ -239,7 +239,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
 
                                 </form>
                             </Form>
-                        </div>
+                        
                     </FormSplitLayout>
                 ) : (
                     <FormSplitLayout>

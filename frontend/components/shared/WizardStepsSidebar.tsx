@@ -119,7 +119,7 @@ export function WizardStepsSidebar({
             data-collapsed={collapsed || undefined}
             className={cn(
                 collapsed ? collapsedWidth : width,
-                "border-r bg-transparent flex flex-col overflow-y-auto",
+                "border-r border-border/60 bg-card flex flex-col overflow-y-auto",
                 "transition-[width] duration-200 ease-premium motion-reduce:transition-none",
                 "hidden md:flex",
                 className

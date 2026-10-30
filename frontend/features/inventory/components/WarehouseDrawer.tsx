@@ -107,48 +107,49 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
                 <form
                     id="warehouse-form"
                     onSubmit={form.handleSubmit(onSubmit)}
-                    className="space-y-6 px-4 pb-4 pt-4"
+                    className="space-y-6 px-6 pb-6 pt-6"
                 >
                     <fieldset disabled={isView} className="contents">
-
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field, fieldState }) => (
-                                <LabeledInput
-                                    label="Nombre de Bodega"
-                                    required
-                                    placeholder="Ej: Bodega Central"
-                                    error={fieldState.error?.message}
-                                    {...field}
-                                />
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="code"
-                            render={({ field, fieldState }) => (
-                                <LabeledInput
-                                    label="Código Interno"
-                                    required
-                                    placeholder="Ej: BOD-01"
-                                    error={fieldState.error?.message}
-                                    {...field}
-                                />
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="address"
-                            render={({ field, fieldState }) => (
-                                <LabeledInput
-                                    label="Dirección Física"
-                                    placeholder="Ej: Av. Industrial 1234, Santiago"
-                                    error={fieldState.error?.message}
-                                    {...field}
-                                />
-                            )}
-                        />
+                        <div className="space-y-6">
+                            <FormField
+                                control={form.control}
+                                name="name"
+                                render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        label="Nombre de Bodega"
+                                        required
+                                        placeholder="Ej: Bodega Central"
+                                        error={fieldState.error?.message}
+                                        {...field}
+                                    />
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="code"
+                                render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        label="Código Interno"
+                                        required
+                                        placeholder="Ej: BOD-01"
+                                        error={fieldState.error?.message}
+                                        {...field}
+                                    />
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="address"
+                                render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        label="Dirección Física"
+                                        placeholder="Ej: Av. Industrial 1234, Santiago"
+                                        error={fieldState.error?.message}
+                                        {...field}
+                                    />
+                                )}
+                            />
+                        </div>
                     </fieldset>
                 </form>
             </Form>

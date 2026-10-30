@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Form, FormField } from "@/components/ui/form"
 import { Plus, User, ShieldCheck } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit"
-import { Drawer, CancelButton, SubmitButton, LabeledInput, LabeledCheckboxGroup, FormSection, TabBar, TabBarContent, type TabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
+import { Drawer, CancelButton, SubmitButton, LabeledInput, LabeledCheckboxGroup, FormSection, DrawerLayout, FormFooter, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { type AppGroup } from "@/types/entities"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
@@ -186,20 +186,7 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
 
     const tabErrors = getTabsWithErrors()
 
-    const tabItems: TabItem[] = [
-        {
-            value: "general",
-            label: "General",
-            icon: User,
-            hasErrors: tabErrors['general'],
-        },
-        {
-            value: "permissions",
-            label: "Permisos",
-            icon: ShieldCheck,
-            hasErrors: tabErrors['permissions'],
-        },
-    ]
+
 
     const identity = useDrawerIdentity('core.user', mode, initialData, {
         overrideSubtitle: "Gestión de cuentas, roles y permisos de acceso.",
@@ -247,6 +234,7 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
                 headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 defaultSize={width}
+                contentClassName="p-0 flex flex-col overflow-hidden bg-card"
                 mode={mode}
                 icon={identity.icon}
                 side="left"
@@ -266,19 +254,21 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
                 <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de usuario" className="flex-1 flex flex-col h-full">
                     <Form {...form}>
                         <form id="user-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 w-full h-full flex flex-col overflow-visible min-h-0">
-                            <fieldset disabled={isView} className="contents">
-                                <FormSplitLayout collapsible collapseStorageKey="erpgrafico.drawer.sidebar.user" sidebar={initialData?.id ? <ActivitySidebar entityId={initialData.id.toString()} entityType="user" /> : undefined} showSidebar={!!initialData?.id} className="min-w-0 h-full overflow-hidden p-0">
-                                    <TabBar
-                                        items={tabItems}
-                                        value={activeTab}
-                                        onValueChange={setActiveTab}
-                                        orientation="horizontal"
-                                        variant="underline"
-                                        contentClassName="bg-transparent"
-                                        className="flex-1"
-                                    >
-                                        <fieldset disabled={loading} className="flex-1 min-w-0 flex flex-col h-full min-h-0">
-                                            <TabBarContent value="general" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                            <fieldset disabled={isView || loading} className="contents">
+                                <DrawerLayout
+                                    activeTab={activeTab}
+                                    onTabChange={setActiveTab}
+                                    rightRail={initialData?.id ? <ActivitySidebar entityId={initialData.id.toString()} entityType="user" /> : undefined}
+                                    rightRailCollapsible
+                                    rightRailStorageKey="erpgrafico.drawer.sidebar.user"
+                                    tabs={[
+                                        {
+                                            value: "general",
+                                            label: "General",
+                                            icon: User,
+                                            hasErrors: !!tabErrors['general'],
+                                            className: "pt-6 px-6 pb-8",
+                                            content: (
                                                 <div className="space-y-8">
                                                     <div className="space-y-4">
                                                         <FormSection title="Vinculación y Cuenta" icon={User} />
@@ -357,8 +347,15 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </TabBarContent>
-                                            <TabBarContent value="permissions" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden">
+                                            ),
+                                        },
+                                        {
+                                            value: "permissions",
+                                            label: "Permisos",
+                                            icon: ShieldCheck,
+                                            hasErrors: !!tabErrors['permissions'],
+                                            className: "pt-6 px-6 pb-8 overflow-hidden",
+                                            content: (
                                                 <div className="flex flex-col flex-1 min-h-0 gap-8">
                                                     <div className="shrink-0">
                                                         <FormField
@@ -393,10 +390,10 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
                                                         />
                                                     </div>
                                                 </div>
-                                            </TabBarContent>
-                                        </fieldset>
-                                    </TabBar>
-                                </FormSplitLayout>
+                                            ),
+                                        },
+                                    ]}
+                                />
                             </fieldset>
                         </form>
                     </Form>

@@ -7,7 +7,7 @@ import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Plus, Book, Search } from "lucide-react"
+import { Plus, Book } from "lucide-react"
 import {
     Form,
     FormField,
@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccountMutations } from "@/features/accounting"
 import { type AccountPayload } from "@/features/accounting"
-import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, FormSplitLayout, SubmitButton, TabBar, TabBarContent, UnifiedSearchBar, DateRangeFilter, SkeletonShell, useUnifiedSearch, type UnifiedSearchConfig } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, SubmitButton, DrawerLayout, UnifiedSearchBar, DateRangeFilter, SkeletonShell, useUnifiedSearch, type UnifiedSearchConfig } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { ActivitySidebar } from "@/features/audit"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -284,18 +284,7 @@ export function AccountDrawer({
         onPrint: handlePrint,
     })
 
-    const formContent = (
-        <FormSplitLayout
-            collapsible
-            collapseStorageKey="erpgrafico.drawer.sidebar.account"
-            sidebar={initialData?.id ? (
-                <ActivitySidebar entityType="account" entityId={initialData.id as number} />
-            ) : undefined}
-            showSidebar={!!initialData?.id}
-        >
-            {formFields}
-        </FormSplitLayout>
-    )
+    const formContent = formFields
 
     const filteredMovements = useMemo(() => ledgerSearch.filterFn(ledgerData?.movements ?? []), [ledgerSearch.filterFn, ledgerData?.movements])
 
@@ -401,11 +390,6 @@ export function AccountDrawer({
         </div>
     )
 
-    const tabs = [
-        { value: "form", label: "Ficha", icon: Book },
-        { value: "ledger", label: "Libro Mayor", icon: Book },
-    ] as const
-
     if (inline) {
         return <>{formContent}</>
     }
@@ -441,6 +425,7 @@ export function AccountDrawer({
                 onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
+                contentClassName="p-0 flex flex-col overflow-hidden bg-card"
                 icon={identity.icon}
                 title={identity.title}
                 headerActions={identity.headerActions}
@@ -459,21 +444,34 @@ export function AccountDrawer({
                     />
                 )}
             >
-                <TabBar
-                    items={tabs.map((t, i) => ({ ...t, badge: i === 1 && filteredMovements.length ? filteredMovements.length : undefined }))}
-                    value={activeTab}
-                    onValueChange={handleTabChange}
-                    variant="underline"
-                    className="flex-1 flex flex-col overflow-hidden"
-                    contentClassName="bg-transparent"
-                >
-                    <TabBarContent value="form" className="mt-0 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
-                        {formContent}
-                    </TabBarContent>
-                    <TabBarContent value="ledger" className="mt-0 flex flex-1 flex-col min-h-0 overflow-hidden">
-                        {ledgerContent}
-                    </TabBarContent>
-                </TabBar>
+                <DrawerLayout
+                    activeTab={activeTab}
+                    onTabChange={handleTabChange}
+                    rightRail={initialData?.id ? (
+                        <ActivitySidebar entityType="account" entityId={initialData.id as number} />
+                    ) : undefined}
+                    rightRailCollapsible
+                    rightRailStorageKey="erpgrafico.drawer.sidebar.account"
+                    tabs={[
+                        {
+                            value: "form",
+                            label: "Ficha",
+                            icon: Book,
+                            className: "p-6",
+                            content: formFields,
+                        },
+                        {
+                            value: "ledger",
+                            label: "Libro Mayor",
+                            icon: Book,
+                            badge: filteredMovements.length ? filteredMovements.length : undefined,
+                            noPadding: true,
+                            hideRightRail: true,
+                            className: "overflow-hidden",
+                            content: ledgerContent,
+                        },
+                    ]}
+                />
             </Drawer>
         </>
     )

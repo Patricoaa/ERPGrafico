@@ -10,10 +10,9 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useEmployeeMutations } from '../hooks/useEmployeeMutations'
 import type { Employee, EmployeeConceptAmount } from "@/types/hr"
-import { SubmitButton, CancelButton } from "@/components/shared"
+import { SubmitButton, CancelButton, DrawerLayout } from "@/components/shared"
 import { UserCog, CalendarCheck2, Plus, ShieldCheck } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit"
-import { FormSplitLayout } from "@/components/shared"
 
 import {
     Form, FormField
@@ -21,7 +20,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { cn, toDateOnlyISO } from "@/lib/utils"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { Drawer, LabeledInput, LabeledSelect, TabBar, TabBarContent, FormSection, type TabItem, FormFooter, DatePicker, LabeledContainer, SkeletonShell } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, FormSection, FormFooter, DatePicker, LabeledContainer, SkeletonShell } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useServerDate } from "@/hooks/useServerDate"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
@@ -227,26 +226,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
         }
     }
 
-    const tabItems: TabItem[] = [
-        {
-            value: "contratacion",
-            label: "Contratación",
-            icon: UserCog,
-            hasErrors: tabErrors['contratacion'],
-        },
-        {
-            value: "jornada",
-            label: "Jornada y Previsión",
-            icon: CalendarCheck2,
-            hasErrors: tabErrors['jornada'],
-        },
-        {
-            value: "haberes",
-            label: "Haberes Específicos",
-            icon: Plus,
-            hasErrors: tabErrors['haberes'],
-        },
-    ]
+
 
     const watchSalud = form.watch("salud_type")
 
@@ -299,6 +279,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                 subtitle={identity.subtitle}
                 defaultSize={formDrawerWidth("master", !!employee)}
                 className="h-[90vh]"
+                contentClassName="p-0 flex flex-col overflow-hidden bg-card"
                 mode={mode}
                 footer={footer}
                 side="left"
@@ -306,30 +287,23 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                 <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando ficha de empleado" className="flex-1 flex flex-col h-full">
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="flex-1 w-full h-full flex flex-col overflow-visible min-h-0">
-                            <fieldset disabled={isView} className="contents">
-                                <FormSplitLayout
-                                    collapsible
-                                    collapseStorageKey="erpgrafico.drawer.sidebar.employee"
-                                    showSidebar={!!employee?.id}
-                                    sidebar={employee?.id ? (
+                            <fieldset disabled={isView || saving} className="contents">
+                                <DrawerLayout
+                                    activeTab={activeTab}
+                                    onTabChange={setActiveTab}
+                                    rightRail={employee?.id ? (
                                         <ActivitySidebar entityId={employee.id} entityType="employee" />
                                     ) : undefined}
-                                    className="min-w-0 h-full overflow-hidden p-0"
-                                >
-                                    <TabBar
-                                        items={tabItems}
-                                        value={activeTab}
-                                        onValueChange={setActiveTab}
-                                        orientation="horizontal"
-                                        variant="underline"
-                                        className="flex-1"
-                                        contentClassName="bg-transparent"
-                                    >
-                                        <fieldset disabled={saving} className="flex-1 min-w-0 flex flex-col h-full min-h-0">
-                                            <TabBarContent
-                                                value="contratacion"
-                                                className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin"
-                                            >
+                                    rightRailCollapsible
+                                    rightRailStorageKey="erpgrafico.drawer.sidebar.employee"
+                                    tabs={[
+                                        {
+                                            value: "contratacion",
+                                            label: "Contratación",
+                                            icon: UserCog,
+                                            hasErrors: !!tabErrors['contratacion'],
+                                            className: "pt-6 px-6 pb-8",
+                                            content: (
                                                 <div className="space-y-8">
                                                     <div className="grid grid-cols-4 gap-6 items-start">
                                                         <div className="col-span-4">
@@ -428,163 +402,179 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </TabBarContent>
-                                            <TabBarContent value="jornada" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin space-y-12">
-                                                <div className="space-y-8">
-                                                    <FormSection title="Detalles de Jornada" icon={CalendarCheck2} />
-                                                    <div className="grid grid-cols-4 gap-6 items-start">
-                                                        <div className="col-span-2">
-                                                            <FormField control={form.control} name="jornada_type" render={({ field, fieldState }) => (
-                                                                <LabeledSelect
-                                                                    label="Régimen de Trabajo"
-                                                                    required
-                                                                    value={field.value}
-                                                                    onChange={field.onChange}
-                                                                    error={fieldState.error?.message}
-                                                                    options={[
-                                                                        { value: "ORDINARIA_22", label: "Ordinaria Art. 22" },
-                                                                        { value: "PARCIAL_40BIS", label: "Parcial Art 40 BIS" },
-                                                                        { value: "EXENTA_22", label: "Exenta Art. 22" },
-                                                                        { value: "EXTRAORDINARIA_30", label: "Extraordinaria Art. 30" }
-                                                                    ]}
-                                                                />
-                                                            )} />
-                                                        </div>
-                                                        <div className="col-span-1">
-                                                            <FormField control={form.control} name="dias_pactados" render={({ field, fieldState }) => (
-                                                                <LabeledInput
-                                                                    label="Días Mensuales"
-                                                                    required
-                                                                    type="number"
-                                                                    min="1"
-                                                                    max="31"
-                                                                    error={fieldState.error?.message}
-                                                                    {...field}
-                                                                    onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                                                                    className="h-6"
-                                                                />
-                                                            )} />
-                                                        </div>
-                                                        <div className="col-span-1">
-                                                            <FormField control={form.control} name="jornada_hours" render={({ field, fieldState }) => (
-                                                                <LabeledInput
-                                                                    label="Horas / Sem"
-                                                                    required
-                                                                    type="number"
-                                                                    step="0.5"
-                                                                    error={fieldState.error?.message}
-                                                                    {...field}
-                                                                    className="h-6"
-                                                                />
-                                                            )} />
-                                                        </div>
-
-                                                        <div className="col-span-4 grid grid-cols-3 gap-4">
-                                                            {[
-                                                                { name: "gratificacion", label: "Gratificación Legal" },
-                                                                { name: "trabajo_pesado", label: "Trabajo Pesado" },
-                                                                { name: "trabajo_agricola", label: "Trabajo Agrícola" }
-                                                            ].map((sw) => (
-                                                                <FormField key={sw.name} control={form.control} name={sw.name as 'gratificacion' | 'trabajo_pesado' | 'trabajo_agricola'} render={({ field }) => (
-                                                                    <div className={cn(
-                                                                        "flex items-center justify-between p-3.5 rounded-md border transition-all",
-                                                                        field.value ? "bg-primary/5 border-primary/20" : "bg-background border-dashed"
-                                                                    )}>
-                                                                        <label className="text-xs font-medium text-muted-foreground">{sw.label}</label>
-                                                                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                                    </div>
-                                                                )} />
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="space-y-8 pt-6 border-t border-dashed">
-                                                    <FormSection title="Previsión y Salud" icon={ShieldCheck} />
-                                                    <div className="grid grid-cols-4 gap-6 items-start">
-                                                        <div className="col-span-2">
-                                                            <FormField control={form.control} name="afp" render={({ field, fieldState }) => (
-                                                                <LabeledSelect
-                                                                    label="Institución Previsional (AFP)"
-                                                                    required
-                                                                    value={field.value || ""}
-                                                                    onChange={field.onChange}
-                                                                    error={fieldState.error?.message}
-                                                                    options={afps.map(afp => ({
-                                                                        value: afp.id.toString(),
-                                                                        label: `${afp.name} (${afp.percentage}%)`
-                                                                    }))}
-                                                                />
-                                                            )} />
-                                                        </div>
-                                                        <div className="col-span-2">
-                                                            <FormField control={form.control} name="salud_type" render={({ field, fieldState }) => (
-                                                                <LabeledSelect
-                                                                    label="Sistema de Salud"
-                                                                    required
-                                                                    value={field.value}
-                                                                    onChange={field.onChange}
-                                                                    error={fieldState.error?.message}
-                                                                    options={[
-                                                                        { value: "FONASA", label: "Fonasa (7%)" },
-                                                                        { value: "ISAPRE", label: "Isapre (Pactado)" }
-                                                                    ]}
-                                                                />
-                                                            )} />
-                                                        </div>
-
-                                                        {watchSalud === "ISAPRE" && (
-                                                            <div className="col-span-4 animate-in slide-in-from-top-2 duration-300">
-                                                                <FormField control={form.control} name="isapre_amount_uf" render={({ field, fieldState }) => (
-                                                                    <LabeledInput
-                                                                        label="Monto Pactado (UF)"
+                                            ),
+                                        },
+                                        {
+                                            value: "jornada",
+                                            label: "Jornada y Previsión",
+                                            icon: CalendarCheck2,
+                                            hasErrors: !!tabErrors['jornada'],
+                                            className: "pt-6 px-6 pb-8 space-y-12",
+                                            content: (
+                                                <>
+                                                    <div className="space-y-8">
+                                                        <FormSection title="Detalles de Jornada" icon={CalendarCheck2} />
+                                                        <div className="grid grid-cols-4 gap-6 items-start">
+                                                            <div className="col-span-2">
+                                                                <FormField control={form.control} name="jornada_type" render={({ field, fieldState }) => (
+                                                                    <LabeledSelect
+                                                                        label="Régimen de Trabajo"
                                                                         required
-                                                                        type="number"
-                                                                        step="0.0001"
-                                                                        hint="Se descontará el mayor entre el 7% y este monto."
+                                                                        value={field.value}
+                                                                        onChange={field.onChange}
                                                                         error={fieldState.error?.message}
-                                                                        {...field}
-                                                                        className="font-mono h-6"
+                                                                        options={[
+                                                                            { value: "ORDINARIA_22", label: "Ordinaria Art. 22" },
+                                                                            { value: "PARCIAL_40BIS", label: "Parcial Art 40 BIS" },
+                                                                            { value: "EXENTA_22", label: "Exenta Art. 22" },
+                                                                            { value: "EXTRAORDINARIA_30", label: "Extraordinaria Art. 30" }
+                                                                        ]}
                                                                     />
                                                                 )} />
                                                             </div>
-                                                        )}
+                                                            <div className="col-span-1">
+                                                                <FormField control={form.control} name="dias_pactados" render={({ field, fieldState }) => (
+                                                                    <LabeledInput
+                                                                        label="Días Mensuales"
+                                                                        required
+                                                                        type="number"
+                                                                        min="1"
+                                                                        max="31"
+                                                                        error={fieldState.error?.message}
+                                                                        {...field}
+                                                                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                                                                        className="h-6"
+                                                                    />
+                                                                )} />
+                                                            </div>
+                                                            <div className="col-span-1">
+                                                                <FormField control={form.control} name="jornada_hours" render={({ field, fieldState }) => (
+                                                                    <LabeledInput
+                                                                        label="Horas / Sem"
+                                                                        required
+                                                                        type="number"
+                                                                        step="0.5"
+                                                                        error={fieldState.error?.message}
+                                                                        {...field}
+                                                                        className="h-6"
+                                                                    />
+                                                                )} />
+                                                            </div>
 
-                                                        <div className="col-span-2">
-                                                            <FormField control={form.control} name="asignacion_familiar" render={({ field, fieldState }) => (
-                                                                <LabeledSelect
-                                                                    label="Tramo Asignación Familiar"
-                                                                    required
-                                                                    value={field.value}
-                                                                    onChange={field.onChange}
-                                                                    error={fieldState.error?.message}
-                                                                    options={[
-                                                                        { value: "A", label: "Tramo A" },
-                                                                        { value: "B", label: "Tramo B" },
-                                                                        { value: "C", label: "Tramo C" },
-                                                                        { value: "D", label: "Tramo D" }
-                                                                    ]}
-                                                                />
-                                                            )} />
-                                                        </div>
-                                                        <div className="col-span-2">
-                                                            <FormField control={form.control} name="cargas_familiares" render={({ field, fieldState }) => (
-                                                                <LabeledInput
-                                                                    label="Número de Cargas"
-                                                                    required
-                                                                    type="number"
-                                                                    min="0"
-                                                                    error={fieldState.error?.message}
-                                                                    {...field}
-                                                                    onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                                                                    className="h-6"
-                                                                />
-                                                            )} />
+                                                            <div className="col-span-4 grid grid-cols-3 gap-4">
+                                                                {[
+                                                                    { name: "gratificacion", label: "Gratificación Legal" },
+                                                                    { name: "trabajo_pesado", label: "Trabajo Pesado" },
+                                                                    { name: "trabajo_agricola", label: "Trabajo Agrícola" }
+                                                                ].map((sw) => (
+                                                                    <FormField key={sw.name} control={form.control} name={sw.name as 'gratificacion' | 'trabajo_pesado' | 'trabajo_agricola'} render={({ field }) => (
+                                                                        <div className={cn(
+                                                                            "flex items-center justify-between p-3.5 rounded-md border transition-all",
+                                                                            field.value ? "bg-primary/5 border-primary/20" : "bg-background border-dashed"
+                                                                        )}>
+                                                                            <label className="text-xs font-medium text-muted-foreground">{sw.label}</label>
+                                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                                        </div>
+                                                                    )} />
+                                                                ))}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </TabBarContent>
-                                            <TabBarContent value="haberes" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+
+                                                    <div className="space-y-8 pt-6 border-t border-dashed">
+                                                        <FormSection title="Previsión y Salud" icon={ShieldCheck} />
+                                                        <div className="grid grid-cols-4 gap-6 items-start">
+                                                            <div className="col-span-2">
+                                                                <FormField control={form.control} name="afp" render={({ field, fieldState }) => (
+                                                                    <LabeledSelect
+                                                                        label="Institución Previsional (AFP)"
+                                                                        required
+                                                                        value={field.value || ""}
+                                                                        onChange={field.onChange}
+                                                                        error={fieldState.error?.message}
+                                                                        options={afps.map(afp => ({
+                                                                            value: afp.id.toString(),
+                                                                            label: `${afp.name} (${afp.percentage}%)`
+                                                                        }))}
+                                                                    />
+                                                                )} />
+                                                            </div>
+                                                            <div className="col-span-2">
+                                                                <FormField control={form.control} name="salud_type" render={({ field, fieldState }) => (
+                                                                    <LabeledSelect
+                                                                        label="Sistema de Salud"
+                                                                        required
+                                                                        value={field.value}
+                                                                        onChange={field.onChange}
+                                                                        error={fieldState.error?.message}
+                                                                        options={[
+                                                                            { value: "FONASA", label: "Fonasa (7%)" },
+                                                                            { value: "ISAPRE", label: "Isapre (Pactado)" }
+                                                                        ]}
+                                                                    />
+                                                                )} />
+                                                            </div>
+
+                                                            {watchSalud === "ISAPRE" && (
+                                                                <div className="col-span-4 animate-in slide-in-from-top-2 duration-300">
+                                                                    <FormField control={form.control} name="isapre_amount_uf" render={({ field, fieldState }) => (
+                                                                        <LabeledInput
+                                                                            label="Monto Pactado (UF)"
+                                                                            required
+                                                                            type="number"
+                                                                            step="0.0001"
+                                                                            hint="Se descontará el mayor entre el 7% y este monto."
+                                                                            error={fieldState.error?.message}
+                                                                            {...field}
+                                                                            className="font-mono h-6"
+                                                                        />
+                                                                    )} />
+                                                                </div>
+                                                            )}
+
+                                                            <div className="col-span-2">
+                                                                <FormField control={form.control} name="asignacion_familiar" render={({ field, fieldState }) => (
+                                                                    <LabeledSelect
+                                                                        label="Tramo Asignación Familiar"
+                                                                        required
+                                                                        value={field.value}
+                                                                        onChange={field.onChange}
+                                                                        error={fieldState.error?.message}
+                                                                        options={[
+                                                                            { value: "A", label: "Tramo A" },
+                                                                            { value: "B", label: "Tramo B" },
+                                                                            { value: "C", label: "Tramo C" },
+                                                                            { value: "D", label: "Tramo D" }
+                                                                        ]}
+                                                                    />
+                                                                )} />
+                                                            </div>
+                                                            <div className="col-span-2">
+                                                                <FormField control={form.control} name="cargas_familiares" render={({ field, fieldState }) => (
+                                                                    <LabeledInput
+                                                                        label="Número de Cargas"
+                                                                        required
+                                                                        type="number"
+                                                                        min="0"
+                                                                        error={fieldState.error?.message}
+                                                                        {...field}
+                                                                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                                                                        className="h-6"
+                                                                    />
+                                                                )} />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            ),
+                                        },
+                                        {
+                                            value: "haberes",
+                                            label: "Haberes Específicos",
+                                            icon: Plus,
+                                            hasErrors: !!tabErrors['haberes'],
+                                            className: "pt-6 px-6 pb-8",
+                                            content: (
                                                 <div className="space-y-8">
                                                     {availableConcepts.length > 0 ? (
                                                         <div className="grid grid-cols-4 gap-6 items-start">
@@ -615,10 +605,10 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                         </div>
                                                     )}
                                                 </div>
-                                            </TabBarContent>
-                                        </fieldset>
-                                    </TabBar>
-                                </FormSplitLayout>
+                                            ),
+                                        },
+                                    ]}
+                                />
                             </fieldset>
                         </form>
                     </Form>

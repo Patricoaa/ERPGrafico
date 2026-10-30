@@ -385,7 +385,7 @@ export function WizardRightSidebar({
                 <button
                     type="button"
                     onClick={onToggleCollapse}
-                    className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 z-10 flex h-6 w-4 items-center justify-center rounded-l border border-r-0 border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                    className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 z-10 flex h-6 w-4 items-center justify-center rounded-l border border-r-0 border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
                     title={collapsed ? "Expandir panel de información" : "Colapsar panel de información"}
                     aria-label={collapsed ? "Expandir panel de información" : "Colapsar panel de información"}
                 >
@@ -398,7 +398,7 @@ export function WizardRightSidebar({
 
             {/* Icon rail when collapsed / full sections when expanded */}
             {collapsed ? (
-                <div className="border-l w-10 flex flex-col items-center gap-2 pt-3 bg-background/95 h-full">
+                <div className="border-l w-10 flex flex-col items-center gap-2 pt-3 bg-card h-full">
                     <button
                         type="button"
                         title="Especificaciones"
@@ -429,7 +429,7 @@ export function WizardRightSidebar({
                         <History className="h-3.5 w-3.5" />
                     </button>
                 </div>
-            ) : <div className="border-l w-88 flex flex-col flex-1 min-h-0 overflow-hidden bg-background h-full">
+            ) : <div className="border-l w-88 flex flex-col flex-1 min-h-0 overflow-hidden bg-card h-full">
                 <CollapsibleSection
                     title="Datos de la OT"
                     icon={Settings2}

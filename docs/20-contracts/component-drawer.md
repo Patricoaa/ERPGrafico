@@ -139,14 +139,80 @@ a un `size` de `BaseModal`:
 
 Para las reglas de layout dentro del drawer (grid de 4 columnas, anchos de campo, `FormSection`, orden semántico), ver **[form-layout-architecture.md](./form-layout-architecture.md)**.
 
-### FormSplitLayout + ActivitySidebar
+### DrawerLayout (Layout Centralizado con Rieles y Tabs)
 
-Cuando el formulario tiene modo edición, usar `FormSplitLayout` con `ActivitySidebar`:
+`DrawerLayout` es el componente estructural canónico para el interior de cualquier `Drawer` complejo o con rieles. Centraliza el manejo de rieles (izquierdo y derecho) y la barra de pestañas (`TabBar`), garantizando que:
+1. **Las pestañas superiores van arriba a ancho completo** (inmediatamente debajo del header del Drawer).
+2. **Los rieles (izquierdo y derecho) y el workspace central se sitúan bajo las pestañas**.
+3. **Alineación del contenido**: Los items de las pestañas inician visualmente alineados con la columna del workspace/contenido central (desplazados si hay un riel izquierdo).
+4. **Fondo uniforme `bg-card`**: Header, tabs, riel izquierdo (stepper OT), contenido/workspace y footer comparten `bg-card`.
+5. **Variante de pestañas estándar**: `underline` con acentos de color CMYK.
+6. **Padding por defecto**: `p-6` en cada tab, desactivable con `noPadding: true`.
+7. **Riel derecho colapsable** con persistencia en `localStorage`.
+
+```tsx
+import { DrawerLayout, type DrawerLayoutTab } from "@/components/shared"
+
+const tabs: DrawerLayoutTab[] = [
+  {
+    value: "general",
+    label: "General",
+    icon: Package,
+    content: <GeneralForm />,
+  },
+  {
+    value: "inventory",
+    label: "Inventario",
+    icon: Warehouse,
+    content: <InventoryTable />,
+    noPadding: true, // para vistas densas o tablas
+  },
+]
+
+return (
+  <Drawer open={open} onOpenChange={onOpenChange} contentClassName="p-0" fillContent>
+    <DrawerLayout
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      leftRail={<ProcessStepper />} // opcional
+      rightRail={<ActivitySidebar entityId={id} entityType="product" />}
+      rightRailCollapsible
+      rightRailStorageKey="erpgrafico.drawer.sidebar.product"
+    />
+  </Drawer>
+)
+```
+
+| Prop | Tipo | Default | Descripción |
+|------|------|---------|-------------|
+| `tabs` | `DrawerLayoutTab[]` | `undefined` | Definición de pestañas con su contenido |
+| `activeTab` / `onTabChange` | `string` / `(tab: string) => void` | `undefined` | Control del tab activo |
+| `defaultTab` | `string` | primer tab | Tab inicial no controlado |
+| `children` | `ReactNode` | `undefined` | Contenido si no se usan tabs |
+| `leftRail` | `ReactNode` | `undefined` | Riel izquierdo (stepper, árbol de categorías, etc.) |
+| `leftRailWidth` | `string` | `"w-48"` | Ancho del riel izquierdo |
+| `leftRailBorder` | `boolean` | `true` | Borde derecho divisorio |
+| `leftRailRaw` | `boolean` | `false` | Renderiza `leftRail` directamente sin envoltorio `<aside>` |
+| `rightRail` | `ReactNode` | `undefined` | Riel derecho (`ActivitySidebar`, tareas, etc.) |
+| `rightRailWidth` | `string` | `"w-72"` | Ancho del riel derecho |
+| `rightRailCollapsible` | `boolean` | `false` | Habilita botón de colapso con chevron y pestaña iconificada |
+| `rightRailStorageKey` | `string` | `undefined` | Clave localStorage para persistir el colapso |
+| `rightRailDefaultCollapsed` | `boolean` | `false` | Estado inicial colapsado |
+| `rightRailRaw` | `boolean` | `false` | Renderiza `rightRail` directamente sin envoltorio `<aside>` |
+| `noPadding` | `boolean` | `false` | Elimina el `p-6` del workspace por defecto |
+| `contentClassName` | `string` | `undefined` | Clases adicionales para el contenedor de contenido |
+
+### FormSplitLayout (Adaptador retrocompatible)
+
+`FormSplitLayout` es ahora un adaptador que delega internamente en `DrawerLayout`. Los 25+ formularios existentes en la base de código continúan funcionando sin cambios de API:
 
 ```tsx
 <FormSplitLayout
   sidebar={<ActivitySidebar entityId={entity.id} entityType="product" />}
   showSidebar={!!entity?.id}
+  collapsible
+  collapseStorageKey="erpgrafico.drawer.sidebar.entity"
 >
   <form className="space-y-6 px-4 pb-4 pt-4">
     {/* campos */}

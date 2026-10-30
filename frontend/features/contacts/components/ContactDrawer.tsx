@@ -4,7 +4,7 @@ import {useEffect, useState, useMemo} from "react"
 import { useFormWithToast } from "@/hooks/useFormWithToast"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import * as z from "zod"
-import {ActionConfirmModal, DomainHubStatus, Drawer, StatCard} from '@/components/shared'
+import {ActionConfirmModal, Drawer, StatCard} from '@/components/shared'
 import { DocumentActionsMenu } from '@/components/shared'
 import { formDrawerWidth } from "@/lib/form-widths"
 import {
@@ -34,7 +34,7 @@ import { contactCreditDocumentEntity, contactCreditDocumentViews, type ContactCr
 import { type LucideIcon } from "lucide-react"
 
 import { getHubStatuses } from '@/features/orders'
-import { LabeledInput, LabeledContainer, ChoiceCard, ChoiceGroup, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
+import { LabeledInput, LabeledContainer, ChoiceCard, ChoiceGroup, DrawerLayout, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
 import { getDomainConceptTitle, getDomainConceptCode } from "@/lib/entity-registry"
 
@@ -170,37 +170,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
         await saveContact(values)
     }
 
-    const tabItems: TabItem[] = [
-        {
-            value: "profile",
-            label: "Perfil",
-            icon: User,
-        },
-        {
-            value: "sales",
-            label: "Cliente",
-            icon: ShoppingCart,
-            badge: insightsData?.sales?.count || 0,
-        },
-        {
-            value: "purchases",
-            label: "Proveedor",
-            icon: Package,
-            badge: insightsData?.purchases?.count || 0,
-        },
-        {
-            value: "work_orders",
-            label: "Relacionado",
-            icon: Wand2,
-            badge: insightsData?.work_orders?.count || 0,
-        },
-        {
-            value: "credit",
-            label: "Crédito",
-            icon: Banknote,
-            hidden: !c?.id,
-        },
-    ]
+
 
     const identity = useDrawerIdentity('contacts.contact', mode, contact, {
         printable: false,
@@ -265,29 +235,22 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
 
                     <form id="contact-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 w-full h-full flex flex-col min-h-0 overflow-visible">
                         <fieldset disabled={isView} className="contents">
-                        <FormSplitLayout
-                            collapsible
-                            collapseStorageKey="erpgrafico.drawer.sidebar.contact"
-                            showSidebar={!!contact?.id}
-                            sidebar={contact?.id ? (
+                        <DrawerLayout
+                            activeTab={activeTab}
+                            onTabChange={setActiveTab}
+                            rightRail={contact?.id ? (
                                 <ActivitySidebar entityId={contact.id.toString()} entityType="contact" />
                             ) : undefined}
-                            className="min-w-0 h-full overflow-hidden p-0"
-                        >
-                            <TabBar
-                                items={tabItems}
-                                value={activeTab}
-                                onValueChange={setActiveTab}
-                                orientation="horizontal"
-                                variant="underline"
-                                className="flex-1"
-                                contentClassName="bg-transparent"
-                            >
-                                <TabBarContent
-                                    value="profile"
-                                    className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin"
-                                >
-                                    <div className="space-y-6">
+                            rightRailCollapsible
+                            rightRailStorageKey="erpgrafico.drawer.sidebar.contact"
+                            className="min-w-0 h-full overflow-hidden"
+                            tabs={[
+                                {
+                                    value: "profile",
+                                    label: "Perfil",
+                                    icon: User,
+                                    content: (
+                                        <div className="space-y-6">
                                         <div className="space-y-4">
                                             <FormSection title="Roles" icon={Scale} />
 
@@ -471,39 +434,63 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                             </div>
                                         </div>
                                     </div>
-                                </TabBarContent>
-
-                                <TabBarContent value="sales" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
-                                    <InsightsTable
-                                        data={insightsData?.sales?.orders || []}
-                                        type="sale"
-                                        title={`Historial de Ventas (${getDomainConceptCode('ov')})`}
-                                        icon={ShoppingCart}
-                                    />
-                                </TabBarContent>
-
-                                <TabBarContent value="purchases" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
-                                    <InsightsTable
-                                        data={insightsData?.purchases?.orders || []}
-                                        type="purchase"
-                                        title="Historial de Compras (OC)"
-                                        icon={Package}
-                                    />
-                                </TabBarContent>
-
-                                <TabBarContent value="work_orders" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
-                                    <InsightsTable
-                                        data={insightsData?.work_orders?.orders || []}
-                                        type="work_order"
-                                        title={`Historial de ${getDomainConceptTitle('ot', true)}`}
-                                        icon={Wand2}
-                                    />
-                                </TabBarContent>
-                                <TabBarContent value="credit" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
-                                    <CreditLedgerTable data={ledgerData} loading={loadingLedger} />
-                                </TabBarContent>
-                            </TabBar>
-                        </FormSplitLayout>
+                                    ),
+                                },
+                                {
+                                    value: "sales",
+                                    label: "Cliente",
+                                    icon: ShoppingCart,
+                                    badge: insightsData?.sales?.count || 0,
+                                    noPadding: true,
+                                    content: (
+                                        <InsightsTable
+                                            data={insightsData?.sales?.orders || []}
+                                            type="sale"
+                                            title={`Historial de Ventas (${getDomainConceptCode('ov')})`}
+                                            icon={ShoppingCart}
+                                        />
+                                    ),
+                                },
+                                {
+                                    value: "purchases",
+                                    label: "Proveedor",
+                                    icon: Package,
+                                    badge: insightsData?.purchases?.count || 0,
+                                    noPadding: true,
+                                    content: (
+                                        <InsightsTable
+                                            data={insightsData?.purchases?.orders || []}
+                                            type="purchase"
+                                            title="Historial de Compras (OC)"
+                                            icon={Package}
+                                        />
+                                    ),
+                                },
+                                {
+                                    value: "work_orders",
+                                    label: "Relacionado",
+                                    icon: Wand2,
+                                    badge: insightsData?.work_orders?.count || 0,
+                                    noPadding: true,
+                                    content: (
+                                        <InsightsTable
+                                            data={insightsData?.work_orders?.orders || []}
+                                            type="work_order"
+                                            title={`Historial de ${getDomainConceptTitle('ot', true)}`}
+                                            icon={Wand2}
+                                        />
+                                    ),
+                                },
+                                {
+                                    value: "credit",
+                                    label: "Crédito",
+                                    icon: Banknote,
+                                    hidden: !c?.id,
+                                    noPadding: true,
+                                    content: <CreditLedgerTable data={ledgerData} loading={loadingLedger} />,
+                                },
+                            ]}
+                        />
                     </fieldset>
                     </form>
                 </Form>
