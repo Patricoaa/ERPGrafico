@@ -1,13 +1,14 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, ClipboardCheck, History, MessageSquare, Paperclip, Settings2, User } from "lucide-react"
+import { AlertCircle, CheckCircle2, ClipboardCheck, History, MessageSquare, Paperclip, Settings2, User } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 
 import {
     CollapsibleSection,
     DocumentAttachmentDropzone,
+    DrawerResizableRail,
     EmptyState,
     LabeledCheckbox,
     LabeledInput,
@@ -378,58 +379,55 @@ export function WizardRightSidebar({
     }
     const stageFilter = userFilter ?? currentStageId ?? "ALL"
 
-    return (
-        <div className="relative hidden lg:flex shrink-0 flex-col h-full">
-            {/* Toggle tab — always visible, anchored to the left edge, protrudes into the center column */}
-            {onToggleCollapse && (
+    const collapsedIconBar = (
+        <div className="w-10 flex flex-col items-center gap-2 pt-3 bg-card h-full">
+            <button
+                type="button"
+                title="Especificaciones"
+                aria-label="Especificaciones"
+                onClick={() => { setSpecsOpen(true); onToggleCollapse?.() }}
+                className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+            >
+                <Settings2 className="h-3.5 w-3.5" />
+            </button>
+            {requiresApproval && isPending && (
                 <button
                     type="button"
-                    onClick={onToggleCollapse}
-                    className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 z-10 flex h-6 w-4 items-center justify-center rounded-l border border-r-0 border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                    title={collapsed ? "Expandir panel de información" : "Colapsar panel de información"}
-                    aria-label={collapsed ? "Expandir panel de información" : "Colapsar panel de información"}
+                    title="Aprobación pendiente"
+                    aria-label="Aprobación"
+                    onClick={() => { setApprovalOpen(true); onToggleCollapse?.() }}
+                    className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
                 >
-                    {collapsed
-                        ? <ChevronLeft className="h-3 w-3" aria-hidden />
-                        : <ChevronRight className="h-3 w-3" aria-hidden />
-                    }
+                    <ClipboardCheck className="h-3.5 w-3.5" />
                 </button>
             )}
+            <button
+                type="button"
+                title="Historial"
+                aria-label="Historial"
+                onClick={() => { setHistoryOpen(true); onToggleCollapse?.() }}
+                className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+            >
+                <History className="h-3.5 w-3.5" />
+            </button>
+        </div>
+    )
 
-            {/* Icon rail when collapsed / full sections when expanded */}
-            {collapsed ? (
-                <div className="border-l w-10 flex flex-col items-center gap-2 pt-3 bg-card h-full">
-                    <button
-                        type="button"
-                        title="Especificaciones"
-                        aria-label="Especificaciones"
-                        onClick={() => { setSpecsOpen(true); onToggleCollapse?.() }}
-                        className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                    >
-                        <Settings2 className="h-3.5 w-3.5" />
-                    </button>
-                    {requiresApproval && isPending && (
-                        <button
-                            type="button"
-                            title="Aprobación pendiente"
-                            aria-label="Aprobación"
-                            onClick={() => { setApprovalOpen(true); onToggleCollapse?.() }}
-                            className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                        >
-                            <ClipboardCheck className="h-3.5 w-3.5" />
-                        </button>
-                    )}
-                    <button
-                        type="button"
-                        title="Historial"
-                        aria-label="Historial"
-                        onClick={() => { setHistoryOpen(true); onToggleCollapse?.() }}
-                        className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                    >
-                        <History className="h-3.5 w-3.5" />
-                    </button>
-                </div>
-            ) : <div className="border-l w-88 flex flex-col flex-1 min-h-0 overflow-hidden bg-card h-full">
+    return (
+        <DrawerResizableRail
+            side="right"
+            collapsed={collapsed}
+            onToggleCollapsed={onToggleCollapse}
+            storageKey="erpgrafico.production.rightRailCollapsed"
+            defaultWidth={352}
+            minWidth={260}
+            maxWidth={500}
+            compactWidth={40}
+            ariaLabel="Redimensionar panel de información"
+            className="hidden lg:flex"
+            collapsedContent={collapsedIconBar}
+        >
+            <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-card h-full w-full">
                 <CollapsibleSection
                     title="Datos de la OT"
                     icon={Settings2}
@@ -492,7 +490,7 @@ export function WizardRightSidebar({
                         onStageFilter={setUserFilter}
                     />
                 </CollapsibleSection>
-            </div>}
-        </div>
+            </div>
+        </DrawerResizableRail>
     )
 }
