@@ -667,6 +667,9 @@ class BankStatementViewSet(viewsets.ModelViewSet):
 
 class BankStatementLineViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     """ViewSet for bank statement lines"""
+    action_permissions = {
+        "confirm": "treasury.confirm_bankstatement",
+    }
 
     queryset = BankStatementLine.objects.all().select_related(
         "statement", "reconciled_by", "reconciliation_match", "difference_journal_entry"
@@ -822,6 +825,9 @@ class POSSessionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
     """ViewSet for POS Session Management (Apertura/Cierre de Caja)"""
+    action_permissions = {
+        "close_session": "treasury.close_possession",
+    }
 
     def get_permissions(self):
         from treasury.api.permissions import IsPOSSessionActive
@@ -939,6 +945,10 @@ class CheckViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     from .serializers import CheckSerializer
 
     serializer_class = CheckSerializer
+    action_permissions = {
+        "bounce": "treasury.annul_check",
+        "void": "treasury.annul_check",
+    }
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
     filterset_class = CheckFilter
     search_fields = ["check_number", "drawer_name", "counterparty__name", "bank__name", "amount"]
@@ -1104,6 +1114,9 @@ class TerminalBatchViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryM
     """
     ViewSet for managing Terminal Batches (Settlements).
     """
+    action_permissions = {
+        "generate_invoice": "billing.add_invoice",
+    }
 
     queryset = (
         TerminalBatch.objects.select_related(
@@ -1174,6 +1187,10 @@ class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         persistir (útil al registrar el crédito).
       - GET  /loans/{id}/amortization_table/ -> tabla persistida con cuotas.
     """
+    action_permissions = {
+        "disburse": "treasury.post_bankloan",
+        "prepay": "treasury.pay_loaninstallment",
+    }
 
     from .models import BankLoan
     from .serializers import BankLoanSerializer as _BLRead
@@ -1331,6 +1348,9 @@ class LoanInstallmentViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     """Listado y pago de cuotas. Creación/edición no expuestas (se generan
     vía `BankLoan.generate_schedule` y se cierran vía acciones de pago)."""
+    action_permissions = {
+        "pay": "treasury.pay_loaninstallment",
+    }
 
     from .models import LoanInstallment
 
@@ -1367,6 +1387,11 @@ class CreditCardStatementViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHi
       - POST /card-statements/{id}/apply-charges/ -> imputar interés/comisiones.
       - POST /card-statements/{id}/cancel/       -> anular un statement OPEN.
     """
+    action_permissions = {
+        "pay": "treasury.pay_creditcardstatement",
+        "cancel": "treasury.cancel_creditcardstatement",
+        "reverse": "treasury.reverse_creditcardstatement",
+    }
 
     from .models import CreditCardStatement
 

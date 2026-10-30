@@ -13,6 +13,10 @@ class ContactsConfig(AppConfig):
                 "contacts",
                 [
                     ("view_dashboard_contacts", "Can view contacts dashboard"),
+                    ("write_off_contact", "Puede castigar deuda de contacto"),
+                    ("post_partnertransaction", "Puede registrar transacción de socio"),
+                    ("approve_profitdistributionresolution", "Puede aprobar distribución de utilidades"),
+                    ("pay_profitdistributionresolution", "Puede pagar distribución de utilidades"),
                 ],
             )
         except ImportError:

@@ -68,6 +68,7 @@ class InvoiceViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet
         "confirm": "billing.confirm_invoice",
         "annul": "billing.annul_invoice",
         "cancel": "billing.cancel_invoice",
+        "process_logistics": "sales.dispatch_saleorder",
     }
 
     def get_queryset(self):

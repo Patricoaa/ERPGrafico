@@ -66,6 +66,67 @@ WAVE_1 = [
 ]
 
 # ---------------------------------------------------------------------------
+# Wave 2 mapping table  (viewset_module.ClassName, action, "app.perm")
+# ---------------------------------------------------------------------------
+WAVE_2 = [
+    # Ventas — despacho
+    ("sales.views.SaleOrderViewSet", "dispatch_order", "sales.dispatch_saleorder"),
+    ("sales.views.SaleOrderViewSet", "partial_dispatch", "sales.dispatch_saleorder"),
+    ("sales.views.SaleOrderViewSet", "register_merchandise_return", "sales.add_salereturn"),
+    ("sales.views.SaleOrderViewSet", "register_note", "billing.add_invoice"),
+    # Facturación
+    ("billing.views.InvoiceViewSet", "process_logistics", "sales.dispatch_saleorder"),
+    ("billing.note_views.NoteWorkflowViewSet", "checkout", "billing.add_invoice"),
+    ("billing.note_views.NoteWorkflowViewSet", "complete", "billing.confirm_invoice"),
+    # Compras
+    ("purchasing.views.PurchaseOrderViewSet", "receive", "purchasing.receive_purchaseorder"),
+    ("purchasing.views.PurchaseOrderViewSet", "partial_receive", "purchasing.receive_purchaseorder"),
+    ("purchasing.views.PurchaseOrderViewSet", "partial_return", "purchasing.add_purchasereturn"),
+    ("purchasing.views.PurchaseOrderViewSet", "register_note", "billing.add_invoice"),
+    # Inventario
+    ("inventory.views.InventoryDocumentViewSet", "confirm", "inventory.confirm_inventorydocument"),
+    ("inventory.views.InventoryDocumentViewSet", "annul", "inventory.annul_inventorydocument"),
+    ("inventory.views.InventoryCountViewSet", "apply", "inventory.post_inventorycount"),
+    ("inventory.subscription_views.SubscriptionViewSet", "cancel", "inventory.cancel_subscription"),
+    # Producción
+    ("production.views.WorkOrderViewSet", "rectify", "production.reopen_workorder"),
+    ("production.views.WorkOrderViewSet", "restart", "production.reopen_workorder"),
+    # Contactos / socios
+    ("contacts.views.ContactViewSet", "unblock_credit", "sales.override_credit_limit"),
+    ("contacts.views.ContactViewSet", "write_off_debt", "contacts.write_off_contact"),
+    ("contacts.views.ContactViewSet", "recover_written_off_debt", "contacts.write_off_contact"),
+    ("contacts.views.ContactViewSet", "promote_partner", "contacts.post_partnertransaction"),
+    ("contacts.views.ContactViewSet", "demote_partner", "contacts.post_partnertransaction"),
+    ("contacts.views.ContactViewSet", "setup_partner", "contacts.post_partnertransaction"),
+    ("contacts.views.ContactViewSet", "initial_setup", "contacts.post_partnertransaction"),
+    ("contacts.views.ContactViewSet", "equity_subscription", "contacts.post_partnertransaction"),
+    ("contacts.views.ContactViewSet", "equity_transfer", "contacts.post_partnertransaction"),
+    ("contacts.views.ContactViewSet", "individual_dividend_payment", "contacts.post_partnertransaction"),
+    ("contacts.views.ContactViewSet", "partner_transactions", "contacts.post_partnertransaction"),
+    ("contacts.views.ContactViewSet", "mass_mobilize_retained_earnings", "contacts.post_partnertransaction"),
+    # Distribución de utilidades
+    ("contacts.profit_distribution_views.ProfitDistributionResolutionViewSet", "approve", "contacts.approve_profitdistributionresolution"),
+    ("contacts.profit_distribution_views.ProfitDistributionResolutionViewSet", "execute", "contacts.pay_profitdistributionresolution"),
+    ("contacts.profit_distribution_views.ProfitDistributionResolutionViewSet", "mass_payment", "contacts.pay_profitdistributionresolution"),
+    # Tesorería
+    ("treasury.views.TerminalBatchViewSet", "generate_invoice", "billing.add_invoice"),
+    ("treasury.views.POSSessionViewSet", "close_session", "treasury.close_possession"),
+    ("treasury.views.BankStatementLineViewSet", "confirm", "treasury.confirm_bankstatement"),
+    ("treasury.views.CheckViewSet", "bounce", "treasury.annul_check"),
+    ("treasury.views.CheckViewSet", "void", "treasury.annul_check"),
+    ("treasury.views.BankLoanViewSet", "disburse", "treasury.post_bankloan"),
+    ("treasury.views.BankLoanViewSet", "prepay", "treasury.pay_loaninstallment"),
+    ("treasury.views.LoanInstallmentViewSet", "pay", "treasury.pay_loaninstallment"),
+    ("treasury.views.CreditCardStatementViewSet", "pay", "treasury.pay_creditcardstatement"),
+    ("treasury.views.CreditCardStatementViewSet", "cancel", "treasury.cancel_creditcardstatement"),
+    ("treasury.views.CreditCardStatementViewSet", "reverse", "treasury.reverse_creditcardstatement"),
+    # Tributario
+    ("tax.views.F29DeclarationViewSet", "register", "tax.post_f29declaration"),
+    # Contabilidad
+    ("accounting.views.AccountViewSet", "populate_ifrs", "accounting.override_account"),
+]
+
+# ---------------------------------------------------------------------------
 # Helper
 # ---------------------------------------------------------------------------
 
@@ -98,8 +159,8 @@ def _ensure_perm_in_db(perm_str: str) -> Permission:
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("viewset_path,action,perm", WAVE_1)
-def test_wave1_action_requires_business_permission(viewset_path, action, perm):
+@pytest.mark.parametrize("viewset_path,action,perm", WAVE_1 + WAVE_2)
+def test_business_action_requires_permission(viewset_path, action, perm):
     """Business-critical actions must declare an explicit business permission and enforce it."""
     module_path, cls_name = viewset_path.rsplit(".", 1)
     module = importlib.import_module(module_path)

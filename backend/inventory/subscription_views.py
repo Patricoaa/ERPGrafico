@@ -11,6 +11,9 @@ from .subscription_serializers import SubscriptionSerializer
 class SubscriptionViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     serializer_class = SubscriptionSerializer
+    action_permissions = {
+        "cancel": "inventory.cancel_subscription",
+    }
 
     def get_queryset(self):
         return SubscriptionSelector.list_subscriptions(params=self.request.query_params)

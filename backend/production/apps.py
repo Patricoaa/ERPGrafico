@@ -14,6 +14,7 @@ class ProductionConfig(AppConfig):
                 [
                     ("view_dashboard_production", "Can view production dashboard"),
                     ("annul_workorder", "Puede anular orden de trabajo"),
+                    ("reopen_workorder", "Puede reabrir orden de trabajo"),
                 ],
             )
         except ImportError:

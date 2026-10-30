@@ -16,6 +16,7 @@ class TaxConfig(AppConfig):
                 "tax",
                 [
                     ("annul_f29payment", "Puede anular pago de F29"),
+                    ("post_f29declaration", "Puede registrar declaración F29"),
                 ],
             )
         except ImportError:

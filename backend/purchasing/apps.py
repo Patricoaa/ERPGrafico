@@ -18,6 +18,7 @@ class PurchasingConfig(AppConfig):
                     ("annul_purchaseorder", "Puede anular orden de compra"),
                     ("annul_purchasereceipt", "Puede anular recepción de compra"),
                     ("annul_purchasereturn", "Puede anular devolución de compra"),
+                    ("receive_purchaseorder", "Puede recepcionar orden de compra"),
                 ],
             )
         except ImportError:

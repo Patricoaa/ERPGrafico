@@ -19,6 +19,10 @@ class NoteWorkflowViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     queryset = NoteWorkflow.objects.none()
     serializer_class = NoteWorkflowSerializer
+    action_permissions = {
+        "checkout": "billing.add_invoice",
+        "complete": "billing.confirm_invoice",
+    }
 
     def get_queryset(self):
         return NoteWorkflowSelector.get_queryset_from_request(self, self.request)

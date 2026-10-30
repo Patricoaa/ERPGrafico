@@ -92,6 +92,9 @@ class AccountViewSet(EditPolicyMixin, BulkImportMixin, AuditHistory, viewsets.Mo
     queryset = Account.objects.all()  # Base queryset includes archived for detail/update
     serializer_class = AccountSerializer
     pagination_class = None  # Master data
+    action_permissions = {
+        "populate_ifrs": "accounting.override_account",
+    }
 
     def get_queryset(self):
         # List view uses selector with is_active filter

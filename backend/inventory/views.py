@@ -500,6 +500,10 @@ class ProductUoMPriceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet):
 
 
 class InventoryDocumentViewSet(viewsets.ModelViewSet, AuditHistory):
+    action_permissions = {
+        "confirm": "inventory.confirm_inventorydocument",
+        "annul": "inventory.annul_inventorydocument",
+    }
     queryset = InventoryDocument.objects.select_related(
         "partner", "created_by", "confirmed_by"
     ).prefetch_related(
@@ -545,6 +549,9 @@ class InventoryDocumentViewSet(viewsets.ModelViewSet, AuditHistory):
 
 
 class InventoryCountViewSet(viewsets.ModelViewSet):
+    action_permissions = {
+        "apply": "inventory.post_inventorycount",
+    }
     queryset = (
         InventoryCount.objects.select_related("warehouse", "created_by", "document")
         .prefetch_related("lines", "lines__product")

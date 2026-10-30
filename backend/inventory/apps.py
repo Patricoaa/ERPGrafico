@@ -19,6 +19,10 @@ class InventoryConfig(AppConfig):
                 "inventory",
                 [
                     ("view_dashboard_inventory", "Can view inventory dashboard"),
+                    ("confirm_inventorydocument", "Puede confirmar documento de inventario"),
+                    ("annul_inventorydocument", "Puede anular documento de inventario"),
+                    ("post_inventorycount", "Puede aplicar conteo de inventario"),
+                    ("cancel_subscription", "Puede cancelar suscripción"),
                 ],
             )
         except ImportError:

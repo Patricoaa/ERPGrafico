@@ -89,6 +89,9 @@ class F29DeclarationViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     queryset = F29Declaration.objects.select_related("tax_period").all()
     serializer_class = F29DeclarationSerializer
     filterset_fields = ["tax_period__year", "tax_period__month", "tax_period__status"]
+    action_permissions = {
+        "register": "tax.post_f29declaration",
+    }
     ordering_fields = ["tax_period__year", "tax_period__month", "declaration_date"]
     ordering = ["-tax_period__year", "-tax_period__month"]
 

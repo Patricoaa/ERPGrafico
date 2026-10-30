@@ -14,6 +14,11 @@ class ProfitDistributionResolutionViewSet(EditPolicyMixin, viewsets.ModelViewSet
     pagination_class = StandardResultsSetPagination
     queryset = ProfitDistributionResolution.objects.all().order_by("-fiscal_year", "-created_at")
     serializer_class = ProfitDistributionResolutionSerializer
+    action_permissions = {
+        "approve": "contacts.approve_profitdistributionresolution",
+        "execute": "contacts.pay_profitdistributionresolution",
+        "mass_payment": "contacts.pay_profitdistributionresolution",
+    }
 
     def get_queryset(self):
         qs = super().get_queryset().prefetch_related(

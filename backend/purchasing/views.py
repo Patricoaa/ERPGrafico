@@ -117,6 +117,10 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelV
         "confirm": "purchasing.confirm_purchaseorder",
         "cancel": "purchasing.cancel_purchaseorder",
         "annul": "purchasing.annul_purchaseorder",
+        "receive": "purchasing.receive_purchaseorder",
+        "partial_receive": "purchasing.receive_purchaseorder",
+        "partial_return": "purchasing.add_purchasereturn",
+        "register_note": "billing.add_invoice",
     }
 
     @action(detail=False, methods=["get"], url_path="analytics")

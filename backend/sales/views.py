@@ -140,6 +140,10 @@ class SaleOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewS
         "cancel": "sales.cancel_saleorder",
         "annul": "sales.annul_saleorder",
         "write_off": "sales.write_off_saleorder",
+        "dispatch_order": "sales.dispatch_saleorder",
+        "partial_dispatch": "sales.dispatch_saleorder",
+        "register_merchandise_return": "sales.add_salereturn",
+        "register_note": "billing.add_invoice",
     }
     # Server ordering of the list (ADR-0087 lote 2b): `?ordering=<key>,id`. Without it, the
     # selector's "-date,-id" order is kept.

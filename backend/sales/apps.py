@@ -22,6 +22,7 @@ class SalesConfig(AppConfig):
                     ("write_off_saleorder", "Puede castigar orden de venta"),
                     ("annul_saledelivery", "Puede anular guía de despacho"),
                     ("annul_salereturn", "Puede anular devolución de venta"),
+                    ("dispatch_saleorder", "Puede despachar orden de venta"),
                 ],
             )
         except ImportError:

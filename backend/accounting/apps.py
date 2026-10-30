@@ -15,6 +15,7 @@ class AccountingConfig(AppConfig):
                     ("view_dashboard_accounting", "Can view accounting dashboard"),
                     ("post_journalentry", "Puede contabilizar asiento contable"),
                     ("reverse_journalentry", "Puede revertir asiento contable"),
+                    ("override_account", "Puede sobreescribir plan de cuentas"),
                 ],
             )
         except ImportError:
