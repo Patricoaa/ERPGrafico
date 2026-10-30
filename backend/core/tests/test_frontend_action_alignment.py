@@ -32,7 +32,7 @@ def _read(rel_path: str) -> str:
 # Map: (frontend_file, human_label, expected_permission_string_in_that_file)
 # ---------------------------------------------------------------------------
 ENDPOINT_PERMISSION_MAP: list[tuple[str, str, str]] = [
-    # ── Invoice ────────────────────────────────────────────────────────────
+    # ── JournalEntry ───────────────────────────────────────────────────────
     (
         "features/accounting/journalEntryActions.ts",
         "post-entry uses accounting.post_journalentry",
@@ -43,7 +43,7 @@ ENDPOINT_PERMISSION_MAP: list[tuple[str, str, str]] = [
         "reverse-entry uses accounting.reverse_journalentry",
         "accounting.reverse_journalentry",
     ),
-    # ── Invoice (billing) ──────────────────────────────────────────────────
+    # ── TreasuryMovement ───────────────────────────────────────────────────
     (
         "features/treasury/paymentActions.ts",
         "annul-payment uses treasury.annul_treasurymovement",
@@ -54,7 +54,7 @@ ENDPOINT_PERMISSION_MAP: list[tuple[str, str, str]] = [
         "cancel-payment uses treasury.cancel_treasurymovement",
         "treasury.cancel_treasurymovement",
     ),
-    # ── Invoice cancel (billing) ───────────────────────────────────────────
+    # ── Invoice ────────────────────────────────────────────────────────────
     (
         "features/orders/hooks/useOrderRelatedActions.tsx",
         "cancel-draft-invoice uses billing.cancel_invoice",
