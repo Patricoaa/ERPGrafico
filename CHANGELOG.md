@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.45](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.44...v0.3.45) (2026-10-30)
+
+
+### ✨ Features
+
+* **input:** implement notched field legends with opaque backing and layering adjustments ([a2b3cbb](https://github.com/Patricoaa/ERPGrafico/commit/a2b3cbb94780790ef1072da32987ee9a140d0089))
+
 ### [0.3.44](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.43...v0.3.44) (2026-10-30)
 
 
