@@ -133,7 +133,9 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                                         form.setValue("has_bom", val, { shouldDirty: true, shouldValidate: false })
                                     }}
                                     disabled={isExpress && !hasVariants}
+                                    color="info"
                                     icon={<Package className="h-4 w-4" />}
+                                    className="h-full"
                                 />
                             )}
                         />
