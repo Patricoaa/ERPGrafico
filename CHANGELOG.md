@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.44](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.43...v0.3.44) (2026-10-30)
+
+
+### ⚙️ Refactors
+
+* **shared, inventory, production, sales, users:** standardize color and class properties in various components ([845ae44](https://github.com/Patricoaa/ERPGrafico/commit/845ae444fcbacaf8d95c7c85fa2b07cf19396398))
+
 ### [0.3.43](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.42...v0.3.43) (2026-10-30)
 
 
