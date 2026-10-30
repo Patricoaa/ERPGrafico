@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.50](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.49...v0.3.50) (2026-10-30)
+
+
+### 🐛 Bug Fixes
+
+* **production:** clarify work order wizard transitions ([b5484c0](https://github.com/Patricoaa/ERPGrafico/commit/b5484c071b0a6bc1e906ac0eb504ace64535f0ec))
+
 ### [0.3.49](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.48...v0.3.49) (2026-10-30)
 
 
