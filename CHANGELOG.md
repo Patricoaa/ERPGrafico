@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.43](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.42...v0.3.43) (2026-10-30)
+
+
+### ✨ Features
+
+* **purchasing:** PurchaseCheckoutWizard DrawerLayout with top tabs and collapsible sidebar ([e343e04](https://github.com/Patricoaa/ERPGrafico/commit/e343e049c33603b8277dee4ea9efc06e16ee430b))
+* **shared:** ADR-0104 — LabeledSwitch transparent container presets and colored rings ([ff24531](https://github.com/Patricoaa/ERPGrafico/commit/ff245319a0d46e1d0a7aac085ac1fad18c5ab903))
+
+
+### ⚙️ Refactors
+
+* **inventory:** adopt LabeledSwitch color preset in ProductManufacturingTab ([1baf98c](https://github.com/Patricoaa/ERPGrafico/commit/1baf98cbf22618be91bf6007ce3bd1e90ee6c8d9))
+
+
+### 🐛 Bug Fixes
+
+* **shared:** correct info preset border color in LabeledSwitch ([d6cdef5](https://github.com/Patricoaa/ERPGrafico/commit/d6cdef5b920c8c1a6786d5a582307c9780902b6e))
+
 ### [0.3.42](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.41...v0.3.42) (2026-10-30)
 
 
