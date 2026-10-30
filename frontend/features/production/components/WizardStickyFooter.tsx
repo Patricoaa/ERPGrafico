@@ -1,31 +1,31 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, Check, ArrowRight } from "lucide-react"
 import { ActionConfirmModal, SubmitButton, FormFooter } from "@/components/shared"
 
-import type { WorkOrder, WorkOrderTask, WorkOrderStage, WizardStepMode } from "../types"
-import { getDomainConceptTitle } from "@/lib/entity-registry"
+import type { WorkOrder, WorkOrderTask, WorkOrderStage } from "../types"
 
 interface WizardFooterProps {
     isViewingCurrentStage: boolean
-    stepMode: WizardStepMode
     pendingTasks: WorkOrderTask[]
     /** A requirement of the stage's approval still missing (shown as the reason "Siguiente" is off). */
     approvalBlockedReason?: string
+    /** Specific stock shortfall, shown beside the disabled transition action. */
+    materialApprovalBlockedReason?: string
     canApproveAll: boolean
     transitioning: boolean
     order: WorkOrder | null
     stages: WorkOrderStage[]
     viewingStepIndex: number
     actualStepIndex: number
-    onTransition: (stageId: string) => void
+    onTransition: (stageId: string) => void | Promise<void>
     onBack?: () => void
     isMaterialApprovalIncomplete: boolean
     hasMaterials: boolean
     isRectificationStep?: boolean
-    onRectifyAndFinish?: () => void
+    onRectifyAndFinish?: () => void | Promise<void>
     isBasicInfoStep?: boolean
     isCreating?: boolean
     isBasicInfoEditable?: boolean
@@ -36,9 +36,9 @@ interface WizardFooterProps {
 
 export function WizardStickyFooter({
     isViewingCurrentStage,
-    stepMode,
     pendingTasks,
     approvalBlockedReason,
+    materialApprovalBlockedReason,
     canApproveAll,
     transitioning,
     order,
@@ -66,7 +66,8 @@ export function WizardStickyFooter({
     const [alertConfig, setAlertConfig] = useState<{
         title: string
         description: string
-        onConfirm: () => void
+        confirmText?: string
+        onConfirm: () => void | Promise<void>
     } | null>(null)
 
     const isImplicitlyApproving = pendingTasks.length > 0 && canApproveAll
@@ -79,51 +80,51 @@ export function WizardStickyFooter({
 
     // The one place that says why "Siguiente" is off (the rail only marks the stage).
     const blockedReason = transitioning ? null
-        : isMaterialApprovalIncomplete ? 'Hay materiales sin stock suficiente'
-        : pendingTasks.length > 0 && !canApproveAll ? 'Hay aprobaciones pendientes de otros usuarios'
+        : isMaterialApprovalIncomplete ? materialApprovalBlockedReason ?? 'Hay materiales sin stock suficiente'
+        : pendingTasks.length > 0 && !canApproveAll ? 'Hay aprobaciones pendientes que tu usuario no puede completar. Solicita que las apruebe la persona o grupo responsable.'
         : approvalBlockedReason ?? null
 
-    const handleNextClick = () => {
+    const handleNextClick = useCallback(() => {
         const nextStage = stages[viewingStepIndex + 1]
         if (!nextStage) return
 
         if (nextStage.id === 'FINISHED') {
             setAlertConfig({
-                title: "¿Finalizar Producción?",
-                description: "Una vez finalizada la OT, no se puede modificar y el producto se encuentra disponible para despacho de inmediato. Esta acción no se puede deshacer.",
-                onConfirm: () => {
-                    onTransition(nextStage.id)
-                    setShowAlert(false)
-                }
+                title: "Finalizar producción",
+                confirmText: "Finalizar producción",
+                description: "La OT quedará cerrada y no podrá modificarse. Se registrarán los consumos y costos de producción; si el producto controla inventario, se ingresará lo producido al stock. Las Órdenes de Compra vinculadas deben estar recibidas completamente antes de finalizar. Esta acción no se puede deshacer.",
+                onConfirm: () => onTransition(nextStage.id),
             })
             setShowAlert(true)
-        } else {
-            const warningMsg = !hasMaterials && currentStageId === 'MATERIAL_ASSIGNMENT'
-                ? `⚠️ No has asignado materiales a esta ${getDomainConceptTitle('ot')}.\n\n`
-                : ""
-
-            const isMaterialApprovalAdvance = currentStageId === 'MATERIAL_APPROVAL'
-            const advanceDescription = isMaterialApprovalAdvance
-                ? `${warningMsg}Esta acción activa la producción y cambia el estado de Borrador a En Proceso. A partir de aquí todas las modificaciones quedarán auditadas y no podrás editar los datos de configuración inicial.`
-                : `${warningMsg}Podrás reabrir esta etapa más adelante mientras no existan órdenes de compra ni movimientos de stock.`
-
-            if (!warningMsg && isImplicitlyApproving && !isMaterialApprovalAdvance) {
-                onTransition(nextStage.id)
-            } else {
-                setAlertConfig({
-                    title: isMaterialApprovalAdvance
-                        ? `Activar producción · Avanzar a "${nextStage.label}"`
-                        : `Avanzar a "${nextStage.label}"`,
-                    description: advanceDescription,
-                    onConfirm: () => {
-                        onTransition(nextStage.id)
-                        setShowAlert(false)
-                    }
-                })
-                setShowAlert(true)
-            }
+            return
         }
-    }
+
+        if (currentStageId === 'MATERIAL_ASSIGNMENT' && !hasMaterials) {
+            setAlertConfig({
+                title: "Continuar sin materiales",
+                confirmText: "Continuar sin materiales",
+                description: "Esta OT no tiene materiales ni servicios asignados. Si es intencional, puedes continuar; de lo contrario, cancela y asígnalos antes de avanzar. No se registrará consumo de componentes al finalizar.",
+                onConfirm: () => onTransition(nextStage.id),
+            })
+            setShowAlert(true)
+            return
+        }
+
+        if (currentStageId === 'MATERIAL_APPROVAL') {
+            setAlertConfig({
+                title: "Activar producción",
+                confirmText: "Activar producción",
+                description: `La OT pasará de Borrador a En Proceso y avanzará a "${nextStage.label}". La edición posterior dependerá de las reglas de cada etapa; no todos los datos tienen el mismo bloqueo.`,
+                onConfirm: () => onTransition(nextStage.id),
+            })
+            setShowAlert(true)
+            return
+        }
+
+        // Routine stage changes do not need a confirmation; the action label already
+        // communicates whether the user is approving the stage or simply advancing.
+        void onTransition(nextStage.id)
+    }, [stages, viewingStepIndex, currentStageId, hasMaterials, onTransition])
 
     // ── Left actions: Anterior ──
     const leftActions = useMemo(() => {
@@ -222,12 +223,10 @@ export function WizardStickyFooter({
                         disabled={isNextDisabled}
                         onClick={() => {
                             setAlertConfig({
-                                title: "¿Rectificar y Finalizar Producción?",
-                                description: "Se ajustarán las cantidades de materiales consumidos (y producción en OTs de stock) y la OT pasará a estado Finalizado. Los movimientos de inventario y costos serán calculados con las cantidades reales declaradas. Esta acción no se puede deshacer.",
-                                onConfirm: () => {
-                                    onRectifyAndFinish()
-                                    setShowAlert(false)
-                                }
+                                title: "Rectificar y finalizar producción",
+                                confirmText: "Rectificar y finalizar",
+                                description: "Se guardarán las cantidades reales declaradas; los datos que no ajustes conservarán la cantidad planificada. Después, la OT quedará cerrada y se registrarán los consumos y costos. Si el producto controla inventario, se ingresará lo producido al stock. Las Órdenes de Compra vinculadas deben estar recibidas completamente. Esta acción no se puede deshacer.",
+                                onConfirm: () => onRectifyAndFinish(),
                             })
                             setShowAlert(true)
                         }}
@@ -269,11 +268,12 @@ export function WizardStickyFooter({
 
         return null
     }, [
-        isTerminal, stepMode, isViewingCurrentStage, isOriginSelectionStep, isSaleOrderProductStep,
+        isTerminal, isViewingCurrentStage, isOriginSelectionStep, isSaleOrderProductStep,
         isProductSelectionStep, isMfgConfigStep, isRectificationStep, isCreating,
         isBasicInfoEditable, chosenOtType, transitioning, order?.status, stages,
-        viewingStepIndex, pendingTasks, canApproveAll, isImplicitlyApproving,
+        viewingStepIndex, isImplicitlyApproving,
         isNextDisabled, blockedReason, onStepChange, onRectifyAndFinish,
+        handleNextClick,
     ])
 
     return (
@@ -288,9 +288,9 @@ export function WizardStickyFooter({
                 open={showAlert}
                 onOpenChange={setShowAlert}
                 title={alertConfig?.title ?? ''}
-                description={alertConfig?.description}
-                onConfirm={alertConfig?.onConfirm || (() => {})}
-                confirmText="Continuar"
+                description={alertConfig?.description ?? " "}
+                onConfirm={async () => { await alertConfig?.onConfirm() }}
+                confirmText={alertConfig?.confirmText ?? "Continuar"}
             />
         </>
     )

@@ -164,6 +164,19 @@ function refId(value: RefValue): string | undefined {
   return String(typeof value === 'object' ? value.id : value)
 }
 
+const APPROVAL_PERMISSION_BLOCKED_MESSAGE =
+  'Hay aprobaciones pendientes que tu usuario no puede completar. Solicita que las apruebe la persona o grupo responsable.'
+
+function getStockShortfallMessage(materials: WorkOrderMaterial[]): string {
+  const names = materials.slice(0, 3).map((material) => material.component_name)
+  const remaining = materials.length - names.length
+  const listedNames = names.length > 0
+    ? ` (${names.join(', ')}${remaining > 0 ? ` y ${remaining} más` : ''})`
+    : ''
+
+  return `Stock insuficiente para ${materials.length} ${materials.length === 1 ? 'componente' : 'componentes'}${listedNames}. Repón existencias en la bodega asignada a la OT y vuelve a comprobar.`
+}
+
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface WorkOrderWizardProps {
@@ -219,7 +232,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   const [wizardTab, setWizardTab] = useState('stages')
   const [railCollapsed, setRailCollapsed] = useState(false)
   const [rightRailCollapsed, setRightRailCollapsed] = useState(false)
-  const [blockingWarning, setBlockingWarning] = useState<string | null>(null)
   const { data: relationsData } = useDocumentRelations('production.workorder', order?.id ?? null)
 
   // Restore the left rail preference after mount (avoids SSR/client hydration mismatch).
@@ -270,6 +282,12 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     : STAGES.findIndex((s) => s.id === order?.current_stage)
   const isViewingCurrentStage = viewingStepIndex === actualStepIndex
   const pendingTasks = selectPendingTasks(order)
+  const stockShortfallMaterials = order?.materials?.filter((material) =>
+    !material.is_outsourced && !material.is_available,
+  ) ?? []
+  const materialApprovalBlockedReason = stockShortfallMaterials.length > 0
+    ? getStockShortfallMessage(stockShortfallMaterials)
+    : undefined
   const currentStageId = STAGES[viewingStepIndex]?.id
   const isTerminalOrder = order?.status === 'FINISHED' || order?.status === 'CANCELLED'
   // A closed stage is read-only; its only action is "Reabrir etapa". Materials and services
@@ -413,9 +431,12 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     setPrevMode(mode)
     setPrevOpen(open)
     setLocalOrderId(open && mode.kind === 'manage' ? mode.orderId : null)
+  }
+
+  useEffect(() => {
     // Reset so the new targetStage (from the URL) is honoured on re-open.
     initialTargetUsedRef.current = false
-  }
+  }, [mode, open])
 
   useEffect(() => {
     // chosenOtType of a managed OT is set by fetchOrder once the order loads
@@ -456,11 +477,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  // Clear blocking warning when stage changes
-  useEffect(() => {
-    setBlockingWarning(null)
-  }, [viewingStepIndex])
 
   // Sync viewing stage to URL step query param
   useEffect(() => {
@@ -525,12 +541,12 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
     if (isMovingForward) {
       const unapprovable = pendingTasks.filter((t) => !canUserCompleteTask(t))
-      if (unapprovable.length > 0) { setBlockingWarning('Existen tareas de aprobación pendientes asignadas a otros usuarios.'); return }
+      if (unapprovable.length > 0) { toast.error(APPROVAL_PERMISSION_BLOCKED_MESSAGE); return }
     }
 
     if (order.current_stage === 'MATERIAL_APPROVAL' && isMovingForward) {
       const missing = order.materials?.filter((m: WorkOrderMaterial) => !m.is_outsourced && !m.is_available) ?? []
-      if (missing.length > 0) { setBlockingWarning(`Stock insuficiente para ${missing.length} componentes. Reponga stock para continuar.`); return }
+      if (missing.length > 0) { toast.error(getStockShortfallMessage(missing)); return }
     }
 
     if (order.current_stage === 'OUTSOURCING_ASSIGNMENT' && isMovingForward) {
@@ -599,7 +615,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   const handleRectifyAndFinish = async () => {
     if (!order || transitioning) return
     const unapprovable = pendingTasks.filter((t) => !canUserCompleteTask(t))
-    if (unapprovable.length > 0) { setBlockingWarning('Existen tareas de aprobación pendientes asignadas a otros usuarios.'); return }
+    if (unapprovable.length > 0) { toast.error(APPROVAL_PERMISSION_BLOCKED_MESSAGE); return }
     try {
       await mutations.rectify({
         materialAdjustments: rectificationAdjustments,
@@ -638,7 +654,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
   const stageData = order?.stage_data ?? {}
   const productName = order?.product_name ?? order?.sale_line?.product?.name ?? 'Producto'
-  const orderHasMaterials = !!(order?.materials ?? []).some((m: WorkOrderMaterial) => !m.is_outsourced)
+  const orderHasMaterials = (order?.materials ?? []).length > 0
 
   return (
     <>
@@ -707,9 +723,9 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         footer={
           <WizardStickyFooter
             isViewingCurrentStage={isViewingCurrentStage}
-            stepMode={stepMode}
             pendingTasks={pendingTasks}
             approvalBlockedReason={approvalBlockedReason}
+            materialApprovalBlockedReason={materialApprovalBlockedReason}
             canApproveAll={canApproveAll}
             order={order}
             viewingStepIndex={viewingStepIndex}
@@ -718,9 +734,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             transitioning={transitioning}
             onTransition={handleTransition}
             onBack={() => setViewingStepIndex(Math.max(0, viewingStepIndex - 1))}
-            isMaterialApprovalIncomplete={
-              !!(currentStageId === 'MATERIAL_APPROVAL' && order?.materials?.some((m: WorkOrderMaterial) => !m.is_available))
-            }
+            isMaterialApprovalIncomplete={currentStageId === 'MATERIAL_APPROVAL' && stockShortfallMaterials.length > 0}
             hasMaterials={orderHasMaterials}
             isRectificationStep={currentStageId === 'RECTIFICATION'}
             onRectifyAndFinish={handleRectifyAndFinish}
@@ -1028,20 +1042,20 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         open={showPOPreview}
         onOpenChange={setShowPOPreview}
         icon={Factory}
-        title="Vista Previa de Órdenes de Compra"
-        description="Se generarán y confirmarán estas Órdenes de Compra (con su factura en borrador). Después ya no podrás reabrir la asignación de tercerizados de esta OT."
+        title="Confirmar compras de servicios tercerizados"
+        description="Al avanzar se crearán Órdenes de Compra confirmadas, agrupadas por proveedor y tipo de documento, y sus facturas quedarán en borrador. Después no podrás reabrir la etapa de Asignación de Tercerizados. Revisa los proveedores, cantidades y precios antes de confirmar."
         size="md"
         footer={
           <FormFooter
             actions={
               <>
                 <CancelButton onClick={() => setShowPOPreview(false)}>Cancelar y Revisar</CancelButton>
-                <Button onClick={() => {
+                <Button disabled={transitioning} onClick={() => {
                   setShowPOPreview(false)
                   const nextStage = STAGES[actualStepIndex + 1]?.id
-                  if (nextStage) handleTransition(nextStage)
+                  if (nextStage) void handleTransition(nextStage)
                 }}>
-                  Confirmar y Generar OC
+                  {transitioning ? 'Generando y avanzando…' : 'Crear OC y avanzar'}
                 </Button>
               </>
             }
@@ -1133,8 +1147,12 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             <div className="bg-warning/10 border border-warning/20 p-3 rounded-md text-warning text-xs flex gap-3 font-medium">
               <AlertTriangle className="h-5 w-5 shrink-0" />
               <div className="space-y-1">
-                <p>Las aprobaciones completadas desde esa etapa en adelante se reiniciarán y deberán aprobarse de nuevo.</p>
-                <p>Los datos cargados (materiales, servicios y especificaciones) se conservan.</p>
+                <p>Se reiniciará la aprobación de la etapa reabierta. Las aprobaciones de etapas posteriores se solicitarán de nuevo al volver a esas etapas.</p>
+                {order?.current_stage === 'RECTIFICATION' ? (
+                  <p>Al salir de Rectificación se restaurarán las cantidades planificadas y se descartarán los ajustes reales declarados.</p>
+                ) : (
+                  <p>Los materiales, servicios y especificaciones se conservarán.</p>
+                )}
               </div>
             </div>
           </div>
@@ -1149,16 +1167,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         confirmText="Descartar"
         description="Aún no se ha creado la OT. Si cierras ahora, se perderá lo que cargaste."
         onConfirm={() => { setDiscardOpen(false); onOpenChange(false) }}
-      />
-
-      <ActionConfirmModal
-        open={blockingWarning !== null}
-        onOpenChange={(open) => { if (!open) setBlockingWarning(null) }}
-        title="Validación de etapa"
-        variant="warning"
-        confirmText="Entendido"
-        description={blockingWarning ?? ''}
-        onConfirm={() => setBlockingWarning(null)}
       />
 
       <BaseModal

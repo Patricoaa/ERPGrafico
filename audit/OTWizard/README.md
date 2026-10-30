@@ -1,16 +1,18 @@
 ---
 layer: 50-audit
 doc: ot-wizard-unification-audit
-status: active
+status: superseded
 owner: production-frontend
 created: 2026-05-19
-last_review: 2026-05-19
+last_review: 2026-10-30
 related:
   - ../OT/production-audit.md
   - ../../30-playbooks/refactor-workflow.md
 ---
 
-# Auditoría: Unificación del flujo de creación de OT en el Wizard
+# Auditoría histórica: Unificación del flujo de creación de OT en el Wizard
+
+> **Estado actual (2026-10-30):** la unificación descrita aquí ya está implementada. Este documento conserva el análisis y plan originales; sus secciones de “estado actual”, entry points y tareas no describen necesariamente el producto vigente. La implementación actual está en [WorkOrderWizard.tsx](../../frontend/features/production/components/WorkOrderWizard.tsx) y sus pruebas de flujo en [WorkOrderWizardFlow.test.tsx](../../frontend/features/production/components/__tests__/WorkOrderWizardFlow.test.tsx). No ejecutar las tareas históricas sin volver a validar el código y los contratos actuales.
 
 Evalúa la factibilidad de absorber `WorkOrderForm` (modal de creación/edición) como **Step 0** del `WorkOrderWizard`, eliminando el patrón actual de modal-sobre-modal.
 

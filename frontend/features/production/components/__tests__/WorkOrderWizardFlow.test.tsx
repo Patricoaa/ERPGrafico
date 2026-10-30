@@ -120,7 +120,7 @@ describe("WorkOrderWizard — audit regressions", () => {
         renderManage()
 
         fireEvent.click(await screen.findByRole("button", { name: "Rectificar y Finalizar Producción" }))
-        fireEvent.click(await screen.findByRole("button", { name: "Continuar" }))
+        fireEvent.click(await screen.findByRole("button", { name: "Rectificar y finalizar" }))
 
         await waitFor(() => expect(callOrder.some((c) => c.endsWith("/transition/"))).toBe(true))
         const taskIdx = callOrder.findIndex((c) => c.includes("tasks/55/complete"))
@@ -142,7 +142,6 @@ describe("WorkOrderWizard — audit regressions", () => {
         renderManage("OUTSOURCING_ASSIGNMENT")
 
         fireEvent.click(await screen.findByRole("button", { name: "Siguiente Etapa" }))
-        fireEvent.click(await screen.findByRole("button", { name: "Continuar" }))
 
         // The step header now shows the new stage, without touching the rail.
         expect(await screen.findByRole("heading", { name: /Rectificación/ })).toBeInTheDocument()
@@ -177,12 +176,30 @@ describe("WorkOrderWizard — audit regressions", () => {
         // The reopen button should appear in the stage header
         const reopenBtn = await screen.findByRole("button", { name: /Reabrir etapa/ })
         fireEvent.click(reopenBtn)
+        expect(screen.getByText(/Se reiniciará la aprobación de la etapa reabierta/)).toBeInTheDocument()
+        expect(screen.getByText(/Las aprobaciones de etapas posteriores se solicitarán de nuevo/)).toBeInTheDocument()
+        expect(screen.queryByText(/desde esa etapa en adelante se reiniciarán/)).not.toBeInTheDocument()
         // Modal opens — fill reason and confirm
         const reasonInput = await screen.findByRole("textbox")
         fireEvent.change(reasonInput, { target: { value: "Ajuste de diseño" } })
         fireEvent.click(screen.getByRole("button", { name: /Reabrir etapa/ }))
         // Modal must remain open after the API failure
         await waitFor(() => expect(screen.getByRole("textbox")).toBeInTheDocument())
+    })
+
+    it("warns that reopening from Rectification restores planned quantities", async () => {
+        currentOrder = {
+            ...baseOrder,
+            current_stage: "RECTIFICATION",
+            stage_plan: ["MATERIAL_ASSIGNMENT", "OUTSOURCING_ASSIGNMENT", "RECTIFICATION", "FINISHED"],
+        }
+
+        renderManage("MATERIAL_ASSIGNMENT")
+
+        fireEvent.click(await screen.findByRole("button", { name: /Reabrir etapa/ }))
+
+        expect(screen.getByText(/Al salir de Rectificación se restaurarán las cantidades planificadas/)).toBeInTheDocument()
+        expect(screen.queryByText("Los materiales, servicios y especificaciones se conservarán.")).not.toBeInTheDocument()
     })
 
     it("does not fire a second transition while the first is in flight", async () => {
@@ -201,7 +218,6 @@ describe("WorkOrderWizard — audit regressions", () => {
 
         const next = await screen.findByRole("button", { name: "Siguiente Etapa" })
         fireEvent.click(next)
-        fireEvent.click(await screen.findByRole("button", { name: "Continuar" }))
         await waitFor(() => expect(screen.getByRole("button", { name: "Siguiente Etapa" })).toBeDisabled())
         release({ data: {} })
     })
