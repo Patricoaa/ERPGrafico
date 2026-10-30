@@ -133,6 +133,7 @@ export function NoteStep_Logistics({
 
             <LabeledContainer
                 label="Opciones de Procesamiento"
+                className="border-transparent group-focus-within:border-transparent group-focus-within:ring-0 group-focus-within:shadow-none"
             >
                 <ChoiceGroup
                     label="Opciones de Procesamiento"

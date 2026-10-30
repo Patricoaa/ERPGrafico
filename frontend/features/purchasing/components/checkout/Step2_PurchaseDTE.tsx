@@ -56,7 +56,10 @@ export function Step2_PurchaseDTE({
                 <StepHeader title="Registro de Documento" description="Ingrese la información relacionada al DTE y adjunte el respaldo legal." icon={FileText} />
             </div>
             <div className="space-y-4">
-                <LabeledContainer label="Tipo de Documento">
+                <LabeledContainer
+                    label="Tipo de Documento"
+                    className="border-transparent group-focus-within:border-transparent group-focus-within:ring-0 group-focus-within:shadow-none"
+                >
                     <ChoiceGroup
                         label="Tipo de Documento"
                         columns="grid-cols-1 md:grid-cols-3"

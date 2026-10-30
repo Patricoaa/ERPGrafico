@@ -1,1 +1,8 @@
-{}
+{
+  "features/production/components/shared/DraftPlanningSteps.tsx": 2,
+  "features/production/components/steps/MaterialApprovalStep.tsx": 1,
+  "features/production/components/steps/OutsourcingAssignmentStep.tsx": 1,
+  "features/production/components/steps/OutsourcingVerificationStep.tsx": 1,
+  "features/production/components/steps/PrepressStep.tsx": 4,
+  "features/production/components/steps/StageInstructionsPanel.tsx": 1
+}

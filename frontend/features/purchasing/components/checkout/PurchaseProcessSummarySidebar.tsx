@@ -162,6 +162,7 @@ export function PurchaseProcessSummarySidebar({
                     showConnector={false}
                     listClassName="px-2 pt-1 space-y-1.5"
                     collapsed={collapsed}
+                    onToggleCollapsed={onToggleCollapsed}
                 />
             </DrawerResizableRail>
         </TooltipProvider>

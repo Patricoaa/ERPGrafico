@@ -45,7 +45,7 @@ export function DesignFilesField({
                 <span className="min-w-0 flex-1 truncate">{name}</span>
               )}
               {!disabled && (
-                <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-destructive" onClick={() => onRemoveExisting(i)} aria-label={`Quitar ${name}`}>
+                <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground/60 hover:text-destructive" onClick={() => onRemoveExisting(i)} aria-label={`Quitar ${name}`}>
                   <X className="h-3 w-3" />
                 </Button>
               )}
@@ -57,7 +57,7 @@ export function DesignFilesField({
             <Upload className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate">{file.name}</span>
             {!disabled && (
-              <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-destructive" onClick={() => onRemoveNew(i)} aria-label={`Quitar ${file.name}`}>
+              <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground/60 hover:text-destructive" onClick={() => onRemoveNew(i)} aria-label={`Quitar ${file.name}`}>
                 <X className="h-3 w-3" />
               </Button>
             )}

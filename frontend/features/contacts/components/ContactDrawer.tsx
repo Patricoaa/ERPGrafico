@@ -259,7 +259,10 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                 const isDefaultVendor = form.watch('is_default_vendor')
                                                 const commercialValue = isDefaultCustomer ? "customer" : isDefaultVendor ? "vendor" : "none"
                                                 return (
-                                                    <LabeledContainer label="Preferencias Comerciales">
+                                                    <LabeledContainer
+                                                        label="Preferencias Comerciales"
+                                                        className="border-transparent group-focus-within:border-transparent group-focus-within:ring-0 group-focus-within:shadow-none"
+                                                    >
                                                         <ChoiceGroup
                                                             label="Preferencias Comerciales"
                                                             columns="grid-cols-2"

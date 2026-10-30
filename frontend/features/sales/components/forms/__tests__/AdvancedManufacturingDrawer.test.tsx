@@ -26,7 +26,7 @@ describe("AdvancedManufacturingDrawer — production rail", () => {
     it("lists the three planning steps in the shared stage rail, not a top nav", () => {
         renderDrawer()
         expect(screen.getByRole("list", { name: "Etapas" })).toBeInTheDocument()
-        expect(screen.getByRole("button", { name: /^Configurar Fabricación, paso 1 de 3/ })).toBeInTheDocument()
+        expect(screen.getByRole("button", { name: /^Configuración de la OT, paso 1 de 3/ })).toBeInTheDocument()
         expect(screen.getByRole("button", { name: /^Asignación de Materiales, paso 2 de 3/ })).toBeInTheDocument()
         expect(screen.getByRole("button", { name: /^Asignación de Tercerizados, paso 3 de 3/ })).toBeInTheDocument()
         expect(screen.queryByRole("navigation", { name: "Pasos de fabricación" })).not.toBeInTheDocument()

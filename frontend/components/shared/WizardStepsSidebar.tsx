@@ -231,7 +231,7 @@ export function WizardStepsSidebar({
                         // When both explicit status and currentStep align to "active", prefer explicit
                         const effectiveStatus = explicitStatus ?? (isActive ? "active" : isPast ? "past" : isFuture ? "future" : "current")
 
-                        const isClickable = !step.disabled && !isFuture && !!onStepClick
+                        const isClickable = !step.disabled && (!isFuture || step.disabled === false) && !!onStepClick
                         const showDetail = detailVisibility === "both"
                             ? (isActive || isPast)
                             : detailVisibility === "active"

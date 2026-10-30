@@ -37,6 +37,8 @@ EXEMPT_MODELS = {
     "core.PeriodReopenLog",
     "core.User",
     "core.UserPreference",
+    "finances.FinancesPermissions",  # permission-holder unmanaged model
+    "workflow.TaskEvent",  # append-only immutable audit log (ADR-0102)
     # Proyecto — excepciones con ADR
     # (vaciar esta lista es el objetivo; cada entrada requerirá ADR-ref a menos que se migre)
     # Resto de los eximidos
