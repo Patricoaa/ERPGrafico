@@ -592,6 +592,10 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
             const isCreating = !effectiveInitialData?.id
             const savedProduct = await saveProduct({ id: effectiveInitialData?.id ?? null, payload: formData })
             if (isCreating) {
+                // The create is persisted; establish the submitted values as the clean baseline
+                // before changing the drawer identity. Otherwise the global dirty guard can
+                // interpret the create submission itself as unsaved follow-up edits.
+                form.reset(data)
                 let productToContinue = toProductInitialData(savedProduct)
                 try {
                     productToContinue = toProductInitialData(await fetchProductById(savedProduct.id))
@@ -819,9 +823,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                 )}
             >
                 <p className="px-1 py-4 text-sm leading-relaxed text-muted-foreground">
-                    Las reglas de precio y las listas de materiales dependen de la configuración del producto y
-                    no siempre son necesarias. Puedes configurarlas ahora, revisar las variantes o volver a la
-                    ficha más tarde. ¿Deseas seguir editando?
+                    Las reglas de precio y las LdM son opcionales. Puedes configurarlas ahora o más tarde.
                 </p>
             </BaseModal>
         </>
