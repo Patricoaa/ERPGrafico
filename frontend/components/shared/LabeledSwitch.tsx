@@ -81,7 +81,7 @@ export function LabeledSwitch({
         },
         info: {
             container: {
-                checked: "bg-transparent border-solid border-primary/20 ring-1 ring-info/20",
+                checked: "bg-transparent border-solid border-info/30 ring-1 ring-info/20",
                 unchecked: "bg-transparent border-dashed border-border ring-1 ring-info/10",
             },
             switch: "data-[state=checked]:bg-info/60 data-[state=unchecked]:bg-info/15 border-info/20",
