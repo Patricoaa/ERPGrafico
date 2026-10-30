@@ -186,6 +186,10 @@ export function DrawerLayout({
                             forceMount={t.forceMount}
                             className={cn(
                                 "data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin bg-card",
+                                // Radix no aplica el atributo `hidden` a los paneles con
+                                // `forceMount`, así que un panel inactivo quedaría visible
+                                // dentro del workspace del tab activo. Lo ocultamos por CSS.
+                                "data-[state=inactive]:hidden",
                                 (t.noPadding ?? noPadding) ? "" : "p-6",
                                 t.className,
                                 contentClassName
