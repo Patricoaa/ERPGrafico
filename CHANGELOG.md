@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.46](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.45...v0.3.46) (2026-10-30)
+
+
+### ✨ Features
+
+* **inventory:** enhance ProductInventoryTab for service handling and update logistics checks ([2cd84bc](https://github.com/Patricoaa/ERPGrafico/commit/2cd84bcbb37b8a4c351d41e53f9bd94484f6408d))
+
 ### [0.3.45](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.44...v0.3.45) (2026-10-30)
 
 
