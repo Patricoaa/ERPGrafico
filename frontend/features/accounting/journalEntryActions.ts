@@ -17,7 +17,7 @@ export const journalEntryActions: ActionRegistry<JournalEntry> = {
                 id: "post-entry",
                 label: "Publicar Asiento",
                 icon: FileEdit,
-                requiredPermissions: ["accounting.change_journalentry"],
+                requiredPermissions: ["accounting.post_journalentry"],
                 checkAvailability: (entry) => {
                     if (!entry) return false
                     return entry.status === "DRAFT"
@@ -29,7 +29,7 @@ export const journalEntryActions: ActionRegistry<JournalEntry> = {
                 id: "reverse-entry",
                 label: "Reversar Asiento",
                 icon: RotateCcw,
-                requiredPermissions: ["accounting.change_journalentry"],
+                requiredPermissions: ["accounting.reverse_journalentry"],
                 checkAvailability: (entry) => {
                     if (!entry) return false
                     return entry.status === "POSTED" && !entry.reversal_of
