@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.37](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.36...v0.3.37) (2026-10-30)
+
+
+### ✨ Features
+
+* **shared:** implement DrawerLayout with top tabs, rails below, and bg-card consistency ([d5c7a55](https://github.com/Patricoaa/ERPGrafico/commit/d5c7a55dd85d0869f28d799d9eb000337746dc19))
+
 ### [0.3.36](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.35...v0.3.36) (2026-10-29)
 
 
