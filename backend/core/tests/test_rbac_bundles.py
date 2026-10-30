@@ -118,6 +118,45 @@ def test_expand_sensitive_bundle_content():
 
 
 # ---------------------------------------------------------------------------
+# Spec-required: test_levels_are_cumulative
+# ---------------------------------------------------------------------------
+@pytest.mark.django_db
+def test_levels_are_cumulative():
+    """expand(read) ⊆ expand(operate) ⊆ expand(manage) for sales."""
+    read = expand(["sales.read"])
+    operate = expand(["sales.operate"])
+    manage = expand(["sales.manage"])
+    assert read <= operate, f"sales.read not ⊆ sales.operate; extras: {sorted(read - operate)}"
+    assert operate <= manage, f"sales.operate not ⊆ sales.manage; extras: {sorted(operate - manage)}"
+
+
+# ---------------------------------------------------------------------------
+# Spec-required: test_manage_includes_annul_and_delete
+# ---------------------------------------------------------------------------
+@pytest.mark.django_db
+def test_manage_includes_annul_and_delete():
+    """Destructive verbs must be present in sales.manage."""
+    manage = expand(["sales.manage"])
+    for code in ("sales.annul_saleorder", "sales.cancel_saleorder", "sales.delete_saleorder"):
+        assert code in manage, f"{code} must be in sales.manage"
+
+
+# ---------------------------------------------------------------------------
+# Spec-required: test_security_bundle_contains_user_and_group_admin
+# ---------------------------------------------------------------------------
+@pytest.mark.django_db
+def test_security_bundle_contains_user_and_group_admin():
+    """core.security must contain user + group admin + audit log perms."""
+    security = expand(["core.security"])
+    for code in (
+        "core.view_user", "core.add_user", "core.change_user", "core.delete_user",
+        "auth.view_group", "auth.add_group", "auth.change_group", "auth.delete_group",
+        "core.view_actionlog",
+    ):
+        assert code in security, f"{code} must be in core.security"
+
+
+# ---------------------------------------------------------------------------
 # 7. Every curated permission belongs to at least one bundle
 # ---------------------------------------------------------------------------
 @pytest.mark.django_db

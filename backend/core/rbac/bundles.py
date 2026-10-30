@@ -336,8 +336,8 @@ def _expand_one(bundle_key: str, catalog: set[str]) -> set[str]:
     app_perms = {p for p in catalog if _app_label(p) == app}
 
     if level == "read":
-        # All view_* for the app (including view_dashboard_*, regardless of sensitivity)
-        return {p for p in app_perms if _codename(p).startswith("view_")}
+        # All view_* for the app, minus sensitive perms (those belong to their own bundle only).
+        return {p for p in app_perms if _codename(p).startswith("view_") and p not in _ALL_SENSITIVE}
 
     if level == "operate":
         # All non-destructive, non-sensitive perms for the app
