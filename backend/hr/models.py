@@ -512,6 +512,8 @@ class Absence(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    history = HistoricalRecords()
+
     class Meta:
         ordering = ["-start_date"]
         verbose_name = _("Inasistencia")

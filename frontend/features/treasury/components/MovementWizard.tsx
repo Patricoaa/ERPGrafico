@@ -9,7 +9,7 @@ import { Numpad, LabeledInput, MoneyDisplay, GenericWizard, type WizardStep } fr
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { treasuryApi } from "../api/treasuryApi"
-import { validateAccountingPeriod } from '@/features/accounting'
+import { accountingApi } from '@/features/accounting'
 import { useServerDate } from '@/hooks/useServerDate'
 import { usePeriodValidation } from '@/hooks/usePeriodValidation'
 import { toast } from 'sonner'
@@ -575,7 +575,7 @@ export function MovementWizard({
         setSubmitting(true)
         try {
             const today = dateString || new Date().toISOString().split('T')[0]
-            const periodStatus = await validateAccountingPeriod(today)
+            const periodStatus = await accountingApi.checkPeriodClosed(today)
             if (periodStatus.is_closed) {
                 toast.error("No se puede registrar el movimiento: El periodo contable actual está cerrado.", {
                     icon: <ShieldAlert className="h-4 w-4 text-destructive" />,

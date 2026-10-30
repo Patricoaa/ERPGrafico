@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { validateTaxPeriod } from '@/features/tax'
-import { validateAccountingPeriod } from '@/features/accounting'
+import { taxApi } from '@/features/tax'
+import { accountingApi } from '@/features/accounting'
 
 type ValidationType = 'tax' | 'accounting' | 'both'
 
@@ -32,12 +32,12 @@ export function usePeriodValidation() {
             let accountingClosed = false
 
             if (type === 'tax' || type === 'both') {
-                const result = await validateTaxPeriod(date)
+                const result = await taxApi.checkPeriodClosed(date)
                 taxClosed = result.is_closed
             }
 
             if (type === 'accounting' || type === 'both') {
-                const result = await validateAccountingPeriod(date)
+                const result = await accountingApi.checkPeriodClosed(date)
                 accountingClosed = result.is_closed
             }
 
