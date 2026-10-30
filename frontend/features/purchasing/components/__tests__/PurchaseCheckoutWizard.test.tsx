@@ -143,8 +143,8 @@ describe("PurchaseCheckoutWizard with DrawerLayout and Tab system", () => {
         expect(screen.getAllByText("01 / 05").length).toBeGreaterThanOrEqual(1)
         expect(screen.getAllByText("Proveedor").length).toBeGreaterThanOrEqual(1)
 
-        // Tab bar trigger from DrawerLayout
-        expect(screen.getByRole("tab", { name: /compra/i })).toBeInTheDocument()
+        // Tab bar should be hidden in creation mode when there is only a single tab (no order ID)
+        expect(screen.queryByRole("tab", { name: /compra/i })).not.toBeInTheDocument()
 
         // Left rail (Process Summary)
         expect(screen.getByText("Proceso de Compra")).toBeInTheDocument()

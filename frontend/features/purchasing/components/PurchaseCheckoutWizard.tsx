@@ -532,20 +532,22 @@ export function PurchaseCheckoutWizard({
         }
     }
 
-    const checkoutTabs: DrawerLayoutTab[] = [
+    const checkoutContent = (
+        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto p-6">
+            {renderStepContent(step)}
+        </div>
+    )
+
+    const checkoutTabs: DrawerLayoutTab[] | undefined = effectiveOrderId ? [
         {
             value: 'checkout',
             label: 'Compra',
             icon: ShoppingCart,
             noPadding: true,
             className: 'overflow-hidden flex flex-col flex-1 min-h-0',
-            content: (
-                <div className="flex-1 flex flex-col min-h-0 overflow-y-auto p-6">
-                    {renderStepContent(step)}
-                </div>
-            ),
+            content: checkoutContent,
         },
-        ...(effectiveOrderId ? [{
+        {
             value: 'relations',
             label: 'Relaciones',
             icon: Link2,
@@ -555,8 +557,8 @@ export function PurchaseCheckoutWizard({
             hideRightRail: true,
             className: 'mt-0 px-6 pt-4 pb-8',
             content: <DocumentRelationsTab label="purchasing.purchaseorder" id={effectiveOrderId} />,
-        }] : []),
-    ]
+        },
+    ] : undefined
 
     return (
         <Drawer
@@ -680,7 +682,9 @@ export function PurchaseCheckoutWizard({
                 rightRailCollapsible
                 rightRailStorageKey="erpgrafico.drawer.sidebar.purchase_checkout"
                 rightRailWidth="w-80"
-            />
+            >
+                {!checkoutTabs && checkoutContent}
+            </DrawerLayout>
         </Drawer>
     )
 }

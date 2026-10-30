@@ -863,7 +863,11 @@ table [data-notched-field] {
   }
 
   fieldset.notched-field legend {
+    position: relative;
+    z-index: 1;
     padding: 0 0.25rem;
+    background-color: var(--notched-field-label-background, var(--background));
+    border-radius: var(--radius-sm);
     font-size: var(--notched-legend-size);
     font-weight: 900;
     letter-spacing: 0.1em;
@@ -872,6 +876,18 @@ table [data-notched-field] {
     line-height: 1;
     transition: color var(--duration-fast) var(--ease-micro);
     white-space: nowrap;
+  }
+
+  /* Match the opaque legend backing to common elevated form surfaces. */
+  :is(
+    .surface-item,
+    .surface-panel,
+    .card-base,
+    [data-slot="dialog-content"],
+    [data-slot="sheet-content"],
+    [class~="bg-card"]
+  ) {
+    --notched-field-label-background: var(--card);
   }
 
   fieldset.notched-field:focus-within legend {

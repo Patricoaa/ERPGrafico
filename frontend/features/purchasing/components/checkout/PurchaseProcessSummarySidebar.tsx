@@ -139,6 +139,7 @@ export function PurchaseProcessSummarySidebar({
         <TooltipProvider delayDuration={300}>
             <div className="relative hidden md:flex flex-col h-full bg-card">
                 {onToggleCollapsed && (
+                    // eslint-disable-next-line no-restricted-syntax -- external collapse tab button matching ProductionStepsSidebar pattern
                     <button
                         type="button"
                         onClick={onToggleCollapsed}

@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-input
 status: active
 owner: frontend-team
-last_review: 2026-05-06
+last_review: 2026-10-30
 stability: beta
 changelog:
   - 2026-05-06: Agregadas secciones de excepciones documentadas — Toolbar Filter Input y resumen de cuándo NO usar notched. Tabla de especializaciones ampliada.
@@ -36,6 +36,7 @@ El componente usa `<fieldset class="notched-field"> + <legend>` nativo. No hay J
 - El `border` lo provee el `fieldset` — la `legend` "rompe" el borde visualmente (comportamiento HTML estándar).
 - El `input`/`textarea` interno no tiene border ni outline propios.
 - Los estados (focus, error, disabled) se controlan con `data-*` attrs que activan reglas CSS en `globals.css`.
+- El `<legend>` queda en una capa superior (`z-index`) y tiene un fondo opaco para cubrir rings/sombras que crucen la muesca. Por defecto usa `--background`; superficies elevadas comunes usan `--card`. Una superficie custom puede definir `--notched-field-label-background` para que el backing coincida con su fondo.
 
 ## Prop Table 🟡
 

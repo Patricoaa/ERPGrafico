@@ -169,5 +169,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0102](0102-work-order-stage-graph-owned-by-server.md) | Work order stage graph owned by the server — applicable stages, cancellation through annulment, merged stage_data | Proposed |
 | [0103](0103-mobile-navigation-sheet-exception.md) | Mobile navigation sheet is an authorized SheetContent exception | Proposed |
 | [0104](0104-labeled-switch-transparent-container-presets.md) | LabeledSwitch presets use transparent container backgrounds and tinted rings in both states | Proposed |
+| [0105](0105-notched-field-legends-over-rings.md) | Notched field legends stay above rings with an opaque surface-matched backing | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.
