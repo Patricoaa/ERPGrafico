@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.38](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.37...v0.3.38) (2026-10-30)
+
+
+### 🐛 Bug Fixes
+
+* **hr:** add AuditHistoryMixin to AbsenceViewSet + drawer form reset on save ([d087c76](https://github.com/Patricoaa/ERPGrafico/commit/d087c76cc6836b25afc1815dcd0f61fae8996888))
+
 ### [0.3.37](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.36...v0.3.37) (2026-10-30)
 
 
