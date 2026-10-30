@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.48](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.47...v0.3.48) (2026-10-30)
+
+
+### ✨ Features
+
+* **inventory:** continue product setup after creation ([4902ca4](https://github.com/Patricoaa/ERPGrafico/commit/4902ca4a43641d4fa3db3b6d3b034a768d60d83a))
+
 ### [0.3.47](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.46...v0.3.47) (2026-10-30)
 
 
