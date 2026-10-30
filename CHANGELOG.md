@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.42](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.41...v0.3.42) (2026-10-30)
+
+
+### 🐛 Bug Fixes
+
+* **registry:** [#178](https://github.com/Patricoaa/ERPGrafico/issues/178) — corregir 6 listUrl rotas en searchableEntityRoutes + backend ([3fec6f4](https://github.com/Patricoaa/ERPGrafico/commit/3fec6f493a6fb62e67dc63a778ed2f00e2db211f))
+
 ### [0.3.41](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.40...v0.3.41) (2026-10-30)
 
 
