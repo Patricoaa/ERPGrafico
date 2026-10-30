@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.39](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.38...v0.3.39) (2026-10-30)
+
+
+### 🐛 Bug Fixes
+
+* **hr,tax:** add HistoricalRecords to Absence and call check_closed directly from client ([fb53d89](https://github.com/Patricoaa/ERPGrafico/commit/fb53d8913a13907ee5c448bf6dcf9c1f4c8eee87))
+
 ### [0.3.38](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.37...v0.3.38) (2026-10-30)
 
 
