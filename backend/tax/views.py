@@ -91,6 +91,10 @@ class F29DeclarationViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     filterset_fields = ["tax_period__year", "tax_period__month", "tax_period__status"]
     action_permissions = {
         "register": "tax.post_f29declaration",
+        # Read-like POST → view_*
+        "calculate": "tax.view_f29declaration",
+        # Edit via POST → change_*
+        "attach_document": "tax.change_f29declaration",
     }
     ordering_fields = ["tax_period__year", "tax_period__month", "declaration_date"]
     ordering = ["-tax_period__year", "-tax_period__month"]

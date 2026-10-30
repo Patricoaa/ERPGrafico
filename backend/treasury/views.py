@@ -93,6 +93,11 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Bank.objects.prefetch_related("account_executives").order_by("name")
     serializer_class = BankSerializer
     pagination_class = None  # Master data
+    action_permissions = {
+        # Edit via POST → change_*
+        "archive": "treasury.change_bank",
+        "restore": "treasury.change_bank",
+    }
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -224,6 +229,10 @@ class TreasuryAccountViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistor
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
     filterset_class = TreasuryAccountFilterSet
     search_fields = ["name"]
+    action_permissions = {
+        # Creation → None (add_* by method is correct)
+        "provision": None,
+    }
 
     def get_queryset(self):
         qs = annotate_edit_usage(
@@ -369,6 +378,12 @@ class TreasuryMovementViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHisto
     action_permissions = {
         "cancel": "treasury.cancel_treasurymovement",
         "annul": "treasury.annul_treasurymovement",
+        # Edit via POST → change_*
+        "allocate": "treasury.change_treasurymovement",
+        # Creation → None (add_* by method is correct)
+        "register_movement": None,
+        "card_purchase": None,
+        "register_return": None,
     }
 
     def get_serializer_class(self):
@@ -551,6 +566,13 @@ class BankStatementViewSet(viewsets.ModelViewSet):
     filterset_fields = ["status", "treasury_account"]
     action_permissions = {
         "confirm": "treasury.confirm_bankstatement",
+        # Read-like POSTs → view_*
+        "dry_run": "treasury.view_bankstatement",
+        "preview": "treasury.view_bankstatement",
+        # Edit via POST → change_*
+        "auto_match": "treasury.change_bankstatementline",
+        # Creation → None (add_* by method is correct)
+        "import_statement": None,
     }
 
     def get_queryset(self):
@@ -669,6 +691,11 @@ class BankStatementLineViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     """ViewSet for bank statement lines"""
     action_permissions = {
         "confirm": "treasury.confirm_bankstatement",
+        # Edit via POST → change_*
+        "match": "treasury.change_bankstatementline",
+        "match_group": "treasury.change_bankstatementline",
+        "unmatch": "treasury.change_bankstatementline",
+        "bulk_exclude": "treasury.change_bankstatementline",
     }
 
     queryset = BankStatementLine.objects.all().select_related(
@@ -827,6 +854,9 @@ class POSSessionViewSet(viewsets.ModelViewSet):
     """ViewSet for POS Session Management (Apertura/Cierre de Caja)"""
     action_permissions = {
         "close_session": "treasury.close_possession",
+        # Creation → None (add_* by method is correct)
+        "open_session": None,
+        "register_manual_movement": None,
     }
 
     def get_permissions(self):
@@ -948,6 +978,9 @@ class CheckViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     action_permissions = {
         "bounce": "treasury.annul_check",
         "void": "treasury.annul_check",
+        # Edit via POST → change_*
+        "deposit": "treasury.change_check",
+        "clear": "treasury.change_check",
     }
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
     filterset_class = CheckFilter
@@ -1050,6 +1083,12 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
     Vista consolidada de flujos de efectivo y gestión de tesorería.
     Combina Payments y CashMovements en una sola vista filtrable y provee balances consolidados.
     """
+
+    action_permissions = {
+        # get_permissions() overrides this for register_transfer dynamically;
+        # the entry is declared here so the coverage test is satisfied (ADR-0104).
+        "register_transfer": "treasury.add_treasurymovement",
+    }
 
     def get_permissions(self):
         perm = (
@@ -1391,6 +1430,14 @@ class CreditCardStatementViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHi
         "pay": "treasury.pay_creditcardstatement",
         "cancel": "treasury.cancel_creditcardstatement",
         "reverse": "treasury.reverse_creditcardstatement",
+        # Edit via POST → change_*
+        "apply_charges": "treasury.change_creditcardstatement",
+        "reapply_charges": "treasury.change_creditcardstatement",
+        "recalculate": "treasury.change_creditcardstatement",
+        "add_charge": "treasury.change_creditcardstatement",
+        "update_charge": "treasury.change_creditcardstatement",
+        "delete_charge": "treasury.change_creditcardstatement",
+        "bill_charges": "treasury.change_creditcardstatement",
     }
 
     from .models import CreditCardStatement

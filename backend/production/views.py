@@ -132,6 +132,20 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         "annul": "production.annul_workorder",
         "rectify": "production.reopen_workorder",
         "restart": "production.reopen_workorder",
+        # Read-like POSTs → view_*
+        "bulk_print": "production.view_workorder",
+        "comments": "production.view_workorder",
+        # Edit via POST → change_*
+        "update_section": "production.change_workorder",
+        "add_material": "production.change_workorder",
+        "update_material": "production.change_workorder",
+        "remove_material": "production.change_workorder",
+        "remove_attachment": "production.change_workorder",
+        "transition": "production.change_workorder",
+        "bulk_transition": "production.change_workorder",
+        # Creation → None (add_* by method is correct)
+        "duplicate": None,
+        "create_manual": None,
     }
 
     def get_serializer_class(self):

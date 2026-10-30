@@ -13,6 +13,10 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     serializer_class = SubscriptionSerializer
     action_permissions = {
         "cancel": "inventory.cancel_subscription",
+        # Edit via POST → change_*
+        "pause": "inventory.change_subscription",
+        "resume": "inventory.change_subscription",
+        "trigger_inspection": "inventory.change_subscription",
     }
 
     def get_queryset(self):

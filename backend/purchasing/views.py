@@ -121,6 +121,8 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelV
         "partial_receive": "purchasing.receive_purchaseorder",
         "partial_return": "purchasing.add_purchasereturn",
         "register_note": "billing.add_invoice",
+        # Creation → None (add_* by method is correct)
+        "purchase_checkout": None,
     }
 
     @action(detail=False, methods=["get"], url_path="analytics")

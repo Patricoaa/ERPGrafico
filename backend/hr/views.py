@@ -51,6 +51,11 @@ from .services import PayrollPaymentService
 class GlobalHRSettingsViewSet(viewsets.ViewSet):
     """Parámetros globales de RRHH Chile."""
 
+    action_permissions = {
+        # current: PUT/PATCH → change_* by method; get_permissions() handles it dynamically
+        "current": None,
+    }
+
     def get_permissions(self):
         perm = "view" if self.request.method in ("GET", "HEAD", "OPTIONS") else "change"
         return [require_perms(f"hr.{perm}_globalhrsettings")()]
@@ -227,6 +232,11 @@ class PayrollViewSet(EditPolicyMixin, viewsets.ModelViewSet):
         "post_payroll": "hr.post_payroll",
         "pay_salary": "hr.pay_payroll",
         "pay_previred": "hr.pay_payroll",
+        # Edit via POST → change_*
+        "recalculate": "hr.change_payroll",
+        "generate_proforma": "hr.change_payroll",
+        # Creation → None (add_* by method is correct)
+        "create_draft_payrolls": None,
     }
     search_fields = ["employee__contact__name"]
 

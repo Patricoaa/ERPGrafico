@@ -27,6 +27,10 @@ from .services import SalesService
 class SalesSettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = SalesSettings.objects.all()
     serializer_class = SalesSettingsSerializer
+    action_permissions = {
+        # current: PUT/PATCH → change_* by method; GET has custom permission check
+        "current": None,
+    }
 
     def get_permissions(self):
         if self.action == "current" and self.request.method == "GET":
@@ -144,6 +148,8 @@ class SaleOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewS
         "partial_dispatch": "sales.dispatch_saleorder",
         "register_merchandise_return": "sales.add_salereturn",
         "register_note": "billing.add_invoice",
+        # Read-like POST → view_* (commenting reads the document)
+        "comments": "sales.view_saleorder",
     }
     # Server ordering of the list (ADR-0087 lote 2b): `?ordering=<key>,id`. Without it, the
     # selector's "-date,-id" order is kept.

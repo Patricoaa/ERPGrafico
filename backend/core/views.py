@@ -234,6 +234,10 @@ class GroupViewSet(viewsets.ModelViewSet):
 class CompanySettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = CompanySettings.objects.all()
     serializer_class = CompanySettingsSerializer
+    action_permissions = {
+        # current: PUT/PATCH → change_* by method; GET is open to authenticated users
+        "current": None,
+    }
 
     @action(detail=False, methods=["get", "put", "patch"])
     def current(self, request):

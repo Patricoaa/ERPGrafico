@@ -62,6 +62,19 @@ from .services import (
 class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    action_permissions = {
+        # Read-like POSTs → view_*
+        "check_availability": "inventory.view_product",
+        "toggle_favorite": "inventory.view_product",
+        # Edit via POST → change_*
+        "sync_variant_prices": "inventory.change_product",
+        "bulk_set_surcharge": "inventory.change_product",
+        # Creation → None (add_* by method is correct)
+        "generate_variants": None,
+        "bulk_import": None,
+        # Cross-resource creation → explicit permission
+        "bulk_clone_bom": "production.add_billofmaterials",
+    }
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -551,6 +564,8 @@ class InventoryDocumentViewSet(viewsets.ModelViewSet, AuditHistory):
 class InventoryCountViewSet(viewsets.ModelViewSet):
     action_permissions = {
         "apply": "inventory.post_inventorycount",
+        # Edit via POST → change_*
+        "save_lines": "inventory.change_inventorycount",
     }
     queryset = (
         InventoryCount.objects.select_related("warehouse", "created_by", "document")

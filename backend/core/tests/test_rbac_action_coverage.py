@@ -2,16 +2,41 @@
 ADR-0104 — RBAC Phase 1: cobertura de action_permissions.
 
 Ratchet que verifica que toda acción de escritura de un ViewSet declare
-``action_permissions`` (o esté en el baseline temporal UNMAPPED_WRITE_ACTIONS).
-El baseline sólo se reduce; nunca se agregan entradas sin justificación en el PR.
+``action_permissions``.  Task 3c eliminó la lista de excepciones UNMAPPED_WRITE_ACTIONS;
+a partir de aquí todas las acciones deben declarar su permiso.
 """
 
 from __future__ import annotations
 
 from django.urls import get_resolver
 
-from core.tests.rbac_action_baseline import AUTHENTICATED_ONLY_VIEWS, UNMAPPED_WRITE_ACTIONS
 from core.tests.test_permission_references import permission_catalog
+
+# Lista PERMANENTE de vistas que son legítimamente IsAuthenticated-only.
+# Solo cambia cuando una vista cambia fundamentalmente de categoría.
+AUTHENTICATED_ONLY_VIEWS: frozenset[str] = frozenset({
+    # --- ViewSet-based personal/read-only views ---
+    "core.views.BackgroundJobViewSet",
+    "core.views.ChangePasswordView",
+    "core.views.ChangePinView",
+    "core.views.CurrentUserView",
+    "core.views.GlobalAuditLogView",
+    "core.views.MyProfilePayrollPreviewView",
+    "core.views.MyProfileView",
+    "core.views.UserPreferenceView",
+    "sales.pricing_views.PricingViewSet",
+    # --- @api_view system/utility endpoints (read-only or personal) ---
+    "core.api.documents.document_ref",
+    "core.api.documents.document_relations",
+    "core.api.search.universal_search",
+    "core.views.entity_config",
+    "core.views.entity_prefixes",
+    "core.views.logout_view",
+    "core.views.server_time",
+    "core.views.system_status",
+    # --- DRF built-in views ---
+    "rest_framework.routers.APIRootView",
+})
 
 
 # ---------------------------------------------------------------------------
@@ -76,45 +101,15 @@ def _overrides_get_permissions(cls) -> bool:
 
 
 def test_every_write_action_declares_permission():
-    """Every write extra-action must declare action_permissions, or be in the baseline."""
+    """Every write extra-action must declare action_permissions (ADR-0104)."""
     missing = {
         key
         for (key, cls, name) in _write_actions()
         if name not in getattr(cls, "action_permissions", {})
-        and key not in UNMAPPED_WRITE_ACTIONS
     }
     assert missing == set(), (
-        f"Declara action_permissions para estas acciones (ADR-0104). "
-        f"Si aún no lo puedes hacer, agrega la clave al baseline UNMAPPED_WRITE_ACTIONS "
-        f"con justificación en el PR:\n  " + "\n  ".join(sorted(missing))
-    )
-
-
-def test_baseline_has_no_stale_entries():
-    """
-    Each entry in UNMAPPED_WRITE_ACTIONS must still correspond to an actual write
-    action that is NOT yet covered by action_permissions.  Stale entries (removed
-    actions or already-fixed actions) must be deleted from the baseline.
-    """
-    current_keys = {key for (key, _cls, _name) in _write_actions()}
-    stale = set()
-    for key in UNMAPPED_WRITE_ACTIONS:
-        if key not in current_keys:
-            # Action no longer exists.
-            stale.add(key)
-            continue
-        # Action still exists — check if it has been fixed.
-        module_cls, _, action_name = key.rpartition(".")
-        module, _, cls_name = module_cls.rpartition(".")
-        # Find the actual class from the URL conf.
-        for _key, cls, name in _write_actions():
-            if _key == key and name in getattr(cls, "action_permissions", {}):
-                stale.add(key)
-                break
-
-    assert stale == set(), (
-        "Quita estas entradas obsoletas del baseline UNMAPPED_WRITE_ACTIONS:\n  "
-        + "\n  ".join(sorted(stale))
+        f"Declara action_permissions para estas acciones (ADR-0104):\n  "
+        + "\n  ".join(sorted(missing))
     )
 
 
@@ -195,6 +190,103 @@ def test_modelless_views_declare_permissions():
         "(usa require_perms, action_permissions, o agrégala a AUTHENTICATED_ONLY_VIEWS):\n  "
         + "\n  ".join(sorted(failing))
     )
+
+
+def test_read_like_post_actions_only_need_view(db):
+    """
+    A user with only view_product (no change/add) can call check_availability and
+    toggle_favorite on ProductViewSet — those are read-like POSTs mapped to view_*.
+    """
+    from django.contrib.auth import get_user_model
+    from django.contrib.auth.models import Permission
+    from django.contrib.contenttypes.models import ContentType
+    from rest_framework.request import Request
+    from rest_framework.test import APIRequestFactory
+
+    from inventory.views import ProductViewSet
+
+    User = get_user_model()
+    user = User.objects.create_user(username="rbac_view_test", password="x")
+    ct = ContentType.objects.get(app_label="inventory", model="product")
+    perm = Permission.objects.get(content_type=ct, codename="view_product")
+    user.user_permissions.add(perm)
+    user = User.objects.get(pk=user.pk)  # fresh instance, clears _perm_cache
+
+    factory = APIRequestFactory()
+
+    for action_name in ("check_availability", "toggle_favorite"):
+        raw = factory.post(f"/api/products/{action_name}/", content_type="application/json")
+        # Force the user without going through authentication middleware.
+        request = Request(raw)
+        request._user = user  # bypass DRF auth; user is already chosen
+        vs = ProductViewSet()
+        vs.request = request
+        vs.kwargs = {}
+        vs.action = action_name
+        vs.format_kwarg = None
+        for perm_class in vs.get_permissions():
+            assert perm_class.has_permission(request, vs), (
+                f"Permission denied for action '{action_name}' with only view_product"
+            )
+
+
+def test_edit_post_actions_need_change_not_add(db):
+    """
+    A user with only production.add_workorder (no change_workorder) must be denied
+    add_material and update_section; a user with change_workorder must be allowed.
+    """
+    from django.contrib.auth import get_user_model
+    from django.contrib.auth.models import Permission
+    from django.contrib.contenttypes.models import ContentType
+    from rest_framework.request import Request
+    from rest_framework.test import APIRequestFactory
+
+    from production.views import WorkOrderViewSet
+
+    User = get_user_model()
+    factory = APIRequestFactory()
+    ct = ContentType.objects.get(app_label="production", model="workorder")
+
+    # User with only add_workorder
+    user_add = User.objects.create_user(username="rbac_add_only", password="x")
+    perm_add = Permission.objects.get(content_type=ct, codename="add_workorder")
+    user_add.user_permissions.add(perm_add)
+    user_add = User.objects.get(pk=user_add.pk)
+
+    # User with change_workorder
+    user_change = User.objects.create_user(username="rbac_change_only", password="x")
+    perm_change = Permission.objects.get(content_type=ct, codename="change_workorder")
+    user_change.user_permissions.add(perm_change)
+    user_change = User.objects.get(pk=user_change.pk)
+
+    for action_name in ("add_material", "update_section"):
+        raw_add = factory.post(f"/api/work-orders/{action_name}/", content_type="application/json")
+        req_add = Request(raw_add)
+        req_add._user = user_add
+        vs_add = WorkOrderViewSet()
+        vs_add.request = req_add
+        vs_add.kwargs = {}
+        vs_add.action = action_name
+        vs_add.format_kwarg = None
+
+        for perm_class in vs_add.get_permissions():
+            assert not perm_class.has_permission(req_add, vs_add), (
+                f"add_workorder user must be denied '{action_name}'"
+            )
+
+        raw_chg = factory.post(f"/api/work-orders/{action_name}/", content_type="application/json")
+        req_chg = Request(raw_chg)
+        req_chg._user = user_change
+        vs_chg = WorkOrderViewSet()
+        vs_chg.request = req_chg
+        vs_chg.kwargs = {}
+        vs_chg.action = action_name
+        vs_chg.format_kwarg = None
+
+        for perm_class in vs_chg.get_permissions():
+            assert perm_class.has_permission(req_chg, vs_chg), (
+                f"change_workorder user must be allowed '{action_name}'"
+            )
 
 
 def test_authenticated_only_views_still_exist():

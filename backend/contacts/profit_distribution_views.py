@@ -18,6 +18,9 @@ class ProfitDistributionResolutionViewSet(EditPolicyMixin, viewsets.ModelViewSet
         "approve": "contacts.approve_profitdistributionresolution",
         "execute": "contacts.pay_profitdistributionresolution",
         "mass_payment": "contacts.pay_profitdistributionresolution",
+        # Edit via POST → change_*
+        "update_destinations": "contacts.change_profitdistributionresolution",
+        "recalculate": "contacts.change_profitdistributionresolution",
     }
 
     def get_queryset(self):

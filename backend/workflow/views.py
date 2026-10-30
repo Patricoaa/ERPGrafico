@@ -29,6 +29,10 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]  # Personal inbox: row-level filtering in selector (ADR-0104)
+    action_permissions = {
+        # Personal action → None (row-level gate in WorkflowService.complete_task)
+        "complete": None,
+    }
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ["status", "priority", "task_type", "assigned_to", "category"]
     search_fields = ["title", "description"]
@@ -84,6 +88,11 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
     serializer_class = NotificationSerializer
     permission_classes = [IsAuthenticated]  # Personal inbox: row-level filtering in selector (ADR-0104)
+    action_permissions = {
+        # Personal actions → None (row-level filtering in selector)
+        "mark_read": None,
+        "mark_all_read": None,
+    }
 
     def get_queryset(self):
         return NotificationSelector.get_queryset_for_user(self.request.user)
@@ -123,6 +132,10 @@ class WorkflowSettingsViewSet(viewsets.ModelViewSet):
 
     queryset = WorkflowSettings.objects.all()
     serializer_class = WorkflowSettingsSerializer
+    action_permissions = {
+        # current: PUT/PATCH → change_* by method; GET has custom permission check
+        "current": None,
+    }
 
     def get_permissions(self):
         if self.action == "current" and self.request.method == "GET":

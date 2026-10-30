@@ -22,6 +22,14 @@ class DraftCartViewSet(viewsets.ModelViewSet):
 
     serializer_class = DraftCartSerializer
     permission_classes = [StandardizedModelPermissions, IsPOSSessionActive]
+    action_permissions = {
+        # Edit via POST → change_*
+        "restore": "sales.change_draftcart",
+        "lock": "sales.change_draftcart",
+        "unlock": "sales.change_draftcart",
+        "heartbeat": "sales.change_draftcart",
+        "withdraw": "sales.change_draftcart",
+    }
 
     def retrieve(self, request, pk=None):
         try:

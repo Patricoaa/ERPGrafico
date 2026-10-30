@@ -16,6 +16,8 @@ class AccountingConfig(AppConfig):
                     ("post_journalentry", "Puede contabilizar asiento contable"),
                     ("reverse_journalentry", "Puede revertir asiento contable"),
                     ("override_account", "Puede sobreescribir plan de cuentas"),
+                    ("close_fiscalyear", "Puede cerrar ejercicio fiscal"),
+                    ("reopen_fiscalyear", "Puede reabrir ejercicio fiscal"),
                 ],
             )
         except ImportError:
