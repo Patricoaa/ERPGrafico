@@ -75,6 +75,7 @@ export const SETTINGS_TABS = [
             { value: "approvals", label: "Aprobaciones", iconName: "check-circle-2", href: "/settings/workflow/approvals" },
             { value: "tasks", label: "Tareas", iconName: "list-todo", href: "/settings/workflow/tasks" },
             { value: "notif", label: "Notificaciones", iconName: "bell", href: "/settings/workflow/notifications" },
+            { value: "policies", label: "Políticas", iconName: "shield-check", href: "/settings/workflow/policies" },
         ]
     },
 ]

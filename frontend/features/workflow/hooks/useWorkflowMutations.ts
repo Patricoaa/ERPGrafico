@@ -142,6 +142,34 @@ export function useUpdateWorkflowSettings() {
   return { updateWorkflowSettings: updateWorkflowSettingsMutation.mutateAsync, isUpdatingWorkflowSettings: updateWorkflowSettingsMutation.isPending }
 }
 
+export function useSaveApprovalPolicy() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: workflowApi.saveApprovalPolicy,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workflow-approval-policies"] })
+      toast.success("Política de aprobación guardada")
+    },
+    onError: (error: Error) => {
+      showApiError(error, "Error al guardar la política de aprobación")
+    },
+  })
+}
+
+export function useDeleteApprovalPolicy() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: workflowApi.deleteApprovalPolicy,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workflow-approval-policies"] })
+      toast.success("Política eliminada")
+    },
+    onError: (error: Error) => {
+      showApiError(error, "Error al eliminar la política")
+    },
+  })
+}
+
 export function useGetUnreadNotificationCount() {
   const queryClient = useQueryClient()
   const { markLocalMutation } = useRealtime()

@@ -64,3 +64,13 @@ export function useTask(taskId: number | string) {
     })
     return { task: task ?? null, isLoading, isError }
 }
+
+export const APPROVAL_POLICIES_KEY = ["workflow-approval-policies"] as const
+
+export function useApprovalPolicies() {
+    return useQuery({
+        queryKey: APPROVAL_POLICIES_KEY,
+        queryFn: workflowApi.getApprovalPolicies,
+        staleTime: staleTime.slow,
+    })
+}

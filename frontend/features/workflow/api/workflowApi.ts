@@ -247,3 +247,44 @@ export const updateWorkflowSettings = async (data: Record<string, unknown>) => {
     const response = await api.patch("/workflow/settings/current/", data)
     return response.data
 }
+
+// ─── ApprovalPolicy ───────────────────────────────────────
+
+export interface ApprovalPolicy {
+    id: number
+    document_type: string
+    min_amount: string | null
+    required_permission: string
+    forbid_self_approval: boolean
+    approvals_required: number
+    created_at: string
+    updated_at: string
+}
+
+export interface ApprovalPolicyPayload {
+    document_type: string
+    min_amount?: string | null
+    required_permission?: string
+    forbid_self_approval?: boolean
+    approvals_required?: number
+}
+
+export const getApprovalPolicies = async (): Promise<ApprovalPolicy[]> => {
+    const response = await api.get("/workflow/approval-policies/")
+    return response.data
+}
+
+export const saveApprovalPolicy = async (
+    payload: ApprovalPolicyPayload & { id?: number }
+): Promise<ApprovalPolicy> => {
+    if (payload.id) {
+        const response = await api.patch(`/workflow/approval-policies/${payload.id}/`, payload)
+        return response.data
+    }
+    const response = await api.post("/workflow/approval-policies/", payload)
+    return response.data
+}
+
+export const deleteApprovalPolicy = async (id: number): Promise<void> => {
+    await api.delete(`/workflow/approval-policies/${id}/`)
+}

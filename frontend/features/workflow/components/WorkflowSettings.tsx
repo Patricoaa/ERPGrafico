@@ -32,6 +32,7 @@ import {
     workflowKeys,
     type WorkflowRecurrentSettings,
 } from "../hooks/useWorkflowQueries"
+import { ApprovalPoliciesView } from "./ApprovalPoliciesView"
 import {
     useUpdateAssignmentRule,
     useCreateAssignmentRule,
@@ -718,6 +719,10 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                                 </CardDescription>
                             </CardHeader>
                         </Card>
+                    </TabsContent>
+
+                    <TabsContent value="policies" className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+                        <ApprovalPoliciesView />
                     </TabsContent>
                 </FadeIn>
             </Tabs>
