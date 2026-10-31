@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.54](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.53...v0.3.54) (2026-10-31)
+
+
+### ✨ Features
+
+* **rbac:** Phase 1 — action permissions, bundles, roles, no-escalation, SoD ([#202](https://github.com/Patricoaa/ERPGrafico/issues/202)) ([0eb653f](https://github.com/Patricoaa/ERPGrafico/commit/0eb653fb86f2e407c70e90e81ea0eb85806499e2))
+
 ### [0.3.53](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.52...v0.3.53) (2026-10-31)
 
 
