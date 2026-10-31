@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.53](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.52...v0.3.53) (2026-10-31)
+
+
+### 🐛 Bug Fixes
+
+* **profile:** improve button styling in ProfileSettingsSidebar component ([49fe676](https://github.com/Patricoaa/ERPGrafico/commit/49fe676e44036c771a9900b3b5a3db2ac5effaed))
+* **profile:** update text and layout in PartnerProfileTab and ProfileView components ([74921fa](https://github.com/Patricoaa/ERPGrafico/commit/74921faf56a6ad59093c29ed38250a70012c26c2))
+
 ### [0.3.52](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.51...v0.3.52) (2026-10-31)
 
 
