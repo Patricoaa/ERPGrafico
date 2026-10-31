@@ -185,6 +185,15 @@ class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return User.objects.filter(is_active=True)
         return super().get_queryset()
 
+    def perform_create(self, serializer):
+        from core.rbac.services import RoleService
+        new_groups = serializer.validated_data.get("groups")
+        instance = serializer.save()
+        if new_groups is not None:
+            sod_warnings = RoleService.validate_role_assignment(self.request.user, instance, list(new_groups))
+            after = set(instance.groups.values_list("name", flat=True))
+            RoleService.log_user_roles_change(instance, set(), after, self.request.user, self.request, sod_warnings=sod_warnings)
+
     def perform_update(self, serializer):
         from core.rbac.services import RoleService
         instance = self.get_object()
@@ -196,12 +205,13 @@ class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return
         new_groups = serializer.validated_data.get("groups")
         before = set(instance.groups.values_list("name", flat=True)) if new_groups is not None else None
+        sod_warnings: list = []
         if new_groups is not None:
-            RoleService.validate_role_assignment(self.request.user, instance, list(new_groups))
+            sod_warnings = RoleService.validate_role_assignment(self.request.user, instance, list(new_groups))
         super().perform_update(serializer)
         if new_groups is not None:
             after = set(instance.groups.values_list("name", flat=True))
-            RoleService.log_user_roles_change(instance, before, after, self.request.user, self.request)
+            RoleService.log_user_roles_change(instance, before, after, self.request.user, self.request, sod_warnings=sod_warnings)
 
     def destroy(self, request, *args, **kwargs):
         # Archivo pattern: hard DELETE not allowed, use PATCH is_active=false to archive

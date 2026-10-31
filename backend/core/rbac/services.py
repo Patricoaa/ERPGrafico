@@ -254,7 +254,7 @@ class RoleService:
         return RoleService.check_sod(all_bundles)
 
     @staticmethod
-    def log_user_roles_change(user, before: set, after: set, actor, request) -> None:
+    def log_user_roles_change(user, before: set, after: set, actor, request, *, sod_warnings: list | None = None) -> None:
         """Log ActionLog SECURITY if before != after."""
         if before == after:
             return
@@ -263,6 +263,16 @@ class RoleService:
 
         added = after - before
         removed = before - after
+        metadata: dict = {
+            "user_id": user.pk,
+            "username": user.username,
+            "added_groups": sorted(added),
+            "removed_groups": sorted(removed),
+        }
+        if sod_warnings:
+            metadata["sod_conflicts"] = [
+                {"rule": w["rule"], "label": w["label"]} for w in sod_warnings
+            ]
         ActionLoggingService.log_action(
             user=actor,
             action_type=ActionLog.Type.SECURITY,
@@ -271,10 +281,5 @@ class RoleService:
                 f"+{len(added)} grupos, -{len(removed)} grupos."
             ),
             request=request,
-            metadata={
-                "user_id": user.pk,
-                "username": user.username,
-                "added_groups": sorted(added),
-                "removed_groups": sorted(removed),
-            },
+            metadata=metadata,
         )
