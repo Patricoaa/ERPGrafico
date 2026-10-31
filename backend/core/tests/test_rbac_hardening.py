@@ -5,34 +5,41 @@ from rest_framework.test import APIClient
 from core.permissions import Roles
 from core.tests.rbac_factories import make_user
 
+# Stable group names used throughout these tests
+_OPERATOR_GROUP = "Operadores Demo"
+_ADMIN_LIKE_GROUP = Roles.SYSTEM_ADMIN
+
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("url", ["/api/auth/user/", "/api/core/auth/me/"])
 def test_me_patch_cannot_change_groups(url):
-    Group.objects.get_or_create(name=Roles.ADMIN)
-    user = make_user("op", groups=(Roles.OPERATOR,))
+    admin_group, _ = Group.objects.get_or_create(name=_ADMIN_LIKE_GROUP)
+    admin_group.profile.kind = "ROLE"
+    admin_group.profile.is_system = True
+    admin_group.profile.save()
+    user = make_user("op", groups=(_OPERATOR_GROUP,))
     client = APIClient()
     client.force_authenticate(user)
-    client.patch(url, {"groups": [Roles.ADMIN], "is_active": False}, format="json")
+    client.patch(url, {"groups": [_ADMIN_LIKE_GROUP], "is_active": False}, format="json")
     user.refresh_from_db()
-    assert list(user.groups.values_list("name", flat=True)) == [Roles.OPERATOR]
+    assert list(user.groups.values_list("name", flat=True)) == [_OPERATOR_GROUP]
     assert user.is_active is True
 
 
 @pytest.mark.django_db
 def test_me_patch_mixed_payload_only_applies_theme():
-    user = make_user("op", groups=(Roles.OPERATOR,))
+    user = make_user("op", groups=(_OPERATOR_GROUP,))
     client = APIClient()
     client.force_authenticate(user)
     r = client.patch(
         "/api/core/auth/me/",
-        {"theme": "dark", "username": "root", "groups": [Roles.ADMIN]},
+        {"theme": "dark", "username": "root", "groups": [_ADMIN_LIKE_GROUP]},
         format="json",
     )
     user.refresh_from_db()
     assert r.status_code == 200
     assert (user.theme, user.username) == ("dark", "op")
-    assert r.data["groups"] == [Roles.OPERATOR]
+    assert r.data["groups"] == [_OPERATOR_GROUP]
 
 
 # --- Task 2: roles ---
@@ -48,9 +55,12 @@ def _client(user):
 
 @pytest.mark.django_db
 def test_operator_cannot_create_rename_or_delete_groups():
-    admin_group = Group.objects.get_or_create(name=Roles.ADMIN)[0]
+    admin_group = Group.objects.get_or_create(name=_ADMIN_LIKE_GROUP)[0]
+    admin_group.profile.kind = "ROLE"
+    admin_group.profile.is_system = True
+    admin_group.profile.save()
     team = Group.objects.create(name="Equipo")
-    c = _client(make_user("op", groups=(Roles.OPERATOR,)))
+    c = _client(make_user("op", groups=(_OPERATOR_GROUP,)))
     assert c.post("/api/core/groups/", {"name": "X"}, format="json").status_code == 403
     assert c.patch(f"/api/core/groups/{team.id}/", {"name": "Y"}, format="json").status_code == 403
     assert c.delete(f"/api/core/groups/{team.id}/").status_code == 403
@@ -59,7 +69,10 @@ def test_operator_cannot_create_rename_or_delete_groups():
 
 @pytest.mark.django_db
 def test_admin_cannot_delete_system_role():
-    admin_group = Group.objects.get_or_create(name=Roles.ADMIN)[0]
+    admin_group = Group.objects.get_or_create(name=_ADMIN_LIKE_GROUP)[0]
+    admin_group.profile.kind = "ROLE"
+    admin_group.profile.is_system = True
+    admin_group.profile.save()
     c = _client(make_user("adm", *ADMIN_GROUP_PERMS))
     assert c.delete(f"/api/core/groups/{admin_group.id}/").status_code == 400
     assert Group.objects.filter(pk=admin_group.pk).exists()
@@ -67,11 +80,14 @@ def test_admin_cannot_delete_system_role():
 
 @pytest.mark.django_db
 def test_admin_cannot_rename_system_role():
-    op = Group.objects.get_or_create(name=Roles.OPERATOR)[0]
+    op = Group.objects.get_or_create(name=_OPERATOR_GROUP)[0]
+    op.profile.kind = "ROLE"
+    op.profile.is_system = True
+    op.profile.save()
     c = _client(make_user("adm", *ADMIN_GROUP_PERMS))
     assert c.patch(f"/api/core/groups/{op.id}/", {"name": "X"}, format="json").status_code == 400
     op.refresh_from_db()
-    assert op.name == Roles.OPERATOR
+    assert op.name == _OPERATOR_GROUP
 
 
 @pytest.mark.django_db
@@ -87,7 +103,9 @@ def test_operator_template_can_list_groups():
     from django.core.management import call_command
 
     call_command("sync_permissions")
-    c = _client(make_user("op", groups=(Roles.OPERATOR,)))
+    # After sync_permissions a user with auth.view_group can list groups.
+    # auth.view_group is part of core.security (sysadmin bundle).
+    c = _client(make_user("op", "auth.view_group"))
     assert c.get("/api/core/groups/").status_code == 200
 
 
@@ -109,7 +127,7 @@ def test_generic_document_action_endpoint_removed():
 
     with pytest.raises(NoReverseMatch):
         reverse("document-action", kwargs={"content_type_id": 1, "object_id": 1, "action": "confirm"})
-    user = make_user("op", groups=(Roles.OPERATOR,))
+    user = make_user("op", groups=(_OPERATOR_GROUP,))
     assert _client(user).post("/api/core/documents/1/1/confirm/").status_code == 404
 
 

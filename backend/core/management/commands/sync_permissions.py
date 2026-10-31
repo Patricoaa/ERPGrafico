@@ -1,157 +1,104 @@
-from django.contrib.auth.models import Group, Permission
+"""sync_permissions — idempotent command to sync RBAC permissions and seeded roles.
+
+Steps:
+  1. Sync custom permissions to DB via PermissionRegistry.
+  2. For each SeededRole in SEEDED_ROLES: get-or-create Group + GroupProfile.
+     Never overwrite an existing, already-configured GroupProfile (preserves
+     admin customisations).
+  3. Materialize all ROLE groups via RoleService.
+"""
+
+from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
 
-from core.permissions import PermissionRegistry, Roles
+from core.permissions import PermissionRegistry
+from core.rbac.seed import SEEDED_ROLES
 
 
 class Command(BaseCommand):
-    help = "Syncs permissions and standard roles to the database"
+    help = "Syncs permissions and seeded role groups to the database"
 
     def handle(self, *args, **options):
-        self.stdout.write("Syncing Permissions...")
+        verbosity = options.get("verbosity", 1)
 
-        # 1. Trigger AppConfigurations to ensure they have registered their perms
-        # defined in 'ready'. (Django does this automatically on startup)
-
-        # 2. Sync Permissions to DB
+        # ------------------------------------------------------------------ #
+        # 1. Sync custom permissions                                          #
+        # ------------------------------------------------------------------ #
+        if verbosity >= 1:
+            self.stdout.write("Syncing Permissions...")
         count = PermissionRegistry.sync_to_db()
-        self.stdout.write(self.style.SUCCESS(f"Synced {count} custom permissions."))
+        if verbosity >= 1:
+            self.stdout.write(self.style.SUCCESS(f"Synced {count} custom permissions."))
 
-        # 3. Ensure Standard Groups Exist
-        self.stdout.write("Syncing Groups...")
-        groups = {
-            Roles.ADMIN: "Full System Access",
-            Roles.MANAGER: "Department Manager Access",
-            Roles.OPERATOR: "Standard Operational Access",
-            Roles.READ_ONLY: "Read Only Access",
-        }
+        # ------------------------------------------------------------------ #
+        # 2. Create / configure seeded role groups                            #
+        # ------------------------------------------------------------------ #
+        from core.models import GroupProfile
 
-        for role_name, desc in groups.items():
-            group, created = Group.objects.get_or_create(name=role_name)
-            if created:
-                self.stdout.write(f"Created Group: {role_name}")
+        if verbosity >= 1:
+            self.stdout.write("Syncing seeded roles...")
+
+        for key, role_data in SEEDED_ROLES.items():
+            group, group_created = Group.objects.get_or_create(name=role_data["name"])
+
+            if group_created:
+                # The post_save signal auto-created a TEAM profile.
+                # Configure it properly for this seeded role.
+                profile = group.profile
+                profile.kind = GroupProfile.ROLE
+                profile.is_system = role_data["is_system"]
+                profile.description = role_data["description"]
+                profile.bundles = list(role_data["bundles"])
+                profile.save()
+                if verbosity >= 2:
+                    self.stdout.write(f"  Created seeded role: {role_data['name']}")
             else:
-                self.stdout.write(f"Group exists: {role_name}")
+                # Group already exists — only configure profile if it has no
+                # bundles and is still in the default TEAM state (auto-created
+                # by signal).  If bundles are already set, an admin may have
+                # customised the profile → preserve it.
+                try:
+                    profile = group.profile
+                except GroupProfile.DoesNotExist:
+                    GroupProfile.objects.create(
+                        group=group,
+                        kind=GroupProfile.ROLE,
+                        is_system=role_data["is_system"],
+                        description=role_data["description"],
+                        bundles=list(role_data["bundles"]),
+                    )
+                    if verbosity >= 2:
+                        self.stdout.write(
+                            f"  Created missing profile for: {role_data['name']}"
+                        )
+                else:
+                    if not profile.bundles and profile.kind == GroupProfile.TEAM:
+                        # Default auto-created profile — configure it
+                        profile.kind = GroupProfile.ROLE
+                        profile.is_system = role_data["is_system"]
+                        profile.description = role_data["description"]
+                        profile.bundles = list(role_data["bundles"])
+                        profile.save()
+                        if verbosity >= 2:
+                            self.stdout.write(
+                                f"  Configured existing group: {role_data['name']}"
+                            )
+                    else:
+                        # Already configured — preserve admin customisations
+                        if verbosity >= 2:
+                            self.stdout.write(
+                                f"  Preserved existing profile: {role_data['name']}"
+                            )
 
-        # 4. Assign Default Permissions
-        admin_group = Group.objects.get(name=Roles.ADMIN)
-        all_perms = Permission.objects.all()
-        admin_group.permissions.set(all_perms)
+        # ------------------------------------------------------------------ #
+        # 3. Materialize permissions for all ROLE groups                      #
+        # ------------------------------------------------------------------ #
+        from core.rbac.services import RoleService
 
-        # READ_ONLY: All 'view_' permissions
-        read_only_group = Group.objects.get(name=Roles.READ_ONLY)
-        view_perms = Permission.objects.filter(codename__startswith="view_")
-        read_only_group.permissions.set(view_perms)
-
-        # MANAGER: Currently same as Admin, can refine later
-        manager_group = Group.objects.get(name=Roles.MANAGER)
-        manager_group.permissions.set(all_perms)
-
-        # OPERATOR: Focus on Production and Inventory
-        operator_group = Group.objects.get(name=Roles.OPERATOR)
-
-        operator_codenames = [
-            # Dashboards
-            "view_dashboard_production",
-            "view_dashboard_inventory",
-            "view_dashboard_sales",
-            "view_dashboard_purchasing",
-            "view_dashboard_contacts",
-            "view_dashboard_treasury",
-            # Core / Settings
-            "view_companysettings",
-            "view_user",
-            "view_group",
-            # Accounting & Auxiliary reads
-            "view_account",
-            "view_taxperiod",
-            "view_accountingperiod",
-            # Production
-            "view_workorder",
-            "add_workorder",
-            "change_workorder",
-            "view_productionconsumption",
-            "add_productionconsumption",
-            "change_productionconsumption",
-            "view_billofmaterials",
-            # Inventory
-            "view_product",
-            "view_warehouse",
-            "view_uom",
-            "view_productcategory",
-            # Sales & POS
-            "view_saleorder",
-            "add_saleorder",
-            "change_saleorder",
-            "view_saleline",
-            "add_saleline",
-            "change_saleline",
-            "view_saledelivery",
-            "add_saledelivery",
-            "change_saledelivery",
-            "view_salereturn",
-            "add_salereturn",
-            "change_salereturn",
-            "view_draftcart",
-            "add_draftcart",
-            "change_draftcart",
-            "delete_draftcart",
-            # Billing / Invoicing
-            "view_invoice",
-            "add_invoice",
-            "change_invoice",
-            # Purchasing
-            "view_purchaseorder",
-            "add_purchaseorder",
-            "change_purchaseorder",
-            "view_purchaseline",
-            "add_purchaseline",
-            "change_purchaseline",
-            "view_purchasereceipt",
-            "add_purchasereceipt",
-            "change_purchasereceipt",
-            "view_purchasereturn",
-            "add_purchasereturn",
-            "change_purchasereturn",
-            # Contacts
-            "view_contact",
-            "add_contact",
-            "change_contact",
-            # Treasury (for POS and basic payments)
-            "view_possession",
-            "add_possession",
-            "change_possession",
-            "view_posterminal",
-            "view_paymentmethod",
-            "view_treasuryaccount",
-            "view_treasurymovement",
-            "add_treasurymovement",
-            "view_creditline",
-            # Workflow
-            "view_task",
-            "add_task",
-            "change_task",
-            # HR (read + basic write for operators)
-            "view_dashboard_hr",
-            "view_employee",
-            "add_employee",
-            "change_employee",
-            "view_payroll",
-            "view_payrollitem",
-            "view_payrollconcept",
-            "view_payrollpayment",
-            "view_absence",
-            "add_absence",
-            "change_absence",
-            "view_salaryadvance",
-            "add_salaryadvance",
-            "view_afp",
-            "view_employeeconceptamount",
-            "view_globalhrsettings",
-        ]
-
-        # We use __in for codenames
-        operator_perms = Permission.objects.filter(codename__in=operator_codenames)
-        operator_group.permissions.set(operator_perms)
-
-        self.stdout.write(self.style.SUCCESS("Permission Sync Complete."))
+        materialized = RoleService.materialize_all()
+        if verbosity >= 1:
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Permission Sync Complete. Materialized {materialized} role(s)."
+                )
+            )

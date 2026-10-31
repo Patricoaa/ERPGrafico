@@ -101,18 +101,13 @@ class PermissionRegistry:
         return created_count
 
 
-# Pre-defined Standard Roles
+# Canonical role constants
 class Roles:
-    ADMIN = "ADMIN"
-    MANAGER = "MANAGER"  # Accountant / Sales Manager
-    OPERATOR = "OPERATOR"
-    READ_ONLY = "READ_ONLY"
+    SYSTEM_ADMIN = "Administrador del sistema"
 
     @classmethod
     def get_choices(cls):
+        """Return choices for system-level roles (for forms and serializers)."""
         return [
-            (cls.ADMIN, "Administrador"),
-            (cls.MANAGER, "Gerente/Contador"),
-            (cls.OPERATOR, "Operador"),
-            (cls.READ_ONLY, "Lectura"),
+            (cls.SYSTEM_ADMIN, "Administrador del sistema"),
         ]

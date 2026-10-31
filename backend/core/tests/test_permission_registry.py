@@ -198,8 +198,10 @@ def test_post_migrate_sync_is_additive():
 
     from core.permissions import Roles
 
-    admin, _ = Group.objects.get_or_create(name=Roles.ADMIN)
-    operator, _ = Group.objects.get_or_create(name=Roles.OPERATOR)
+    # Use the seeded system admin role name; also create a plain group for the
+    # operator-like assertion (additive check: operator perms are preserved).
+    admin, _ = Group.objects.get_or_create(name=Roles.SYSTEM_ADMIN)
+    operator, _ = Group.objects.get_or_create(name="OperadorTest")
     extra = Permission.objects.filter(codename="view_user").first()
     operator.permissions.add(extra)
 
@@ -223,6 +225,6 @@ def test_post_migrate_without_admin_group_does_not_fail():
 
     from core.permissions import Roles
 
-    Group.objects.filter(name=Roles.ADMIN).delete()
+    Group.objects.filter(name=Roles.SYSTEM_ADMIN).delete()
     call_command("migrate", verbosity=0)
-    assert not Group.objects.filter(name=Roles.ADMIN).exists()
+    assert not Group.objects.filter(name=Roles.SYSTEM_ADMIN).exists()

@@ -7,7 +7,16 @@ from contacts.models import Contact
 from .models import CompanySettings
 
 
-_SYSTEM_ROLE_NAMES: frozenset[str] = frozenset({"ADMIN", "MANAGER", "OPERATOR", "READ_ONLY"})
+def _get_system_role_names() -> frozenset[str]:
+    """Return the set of names for system roles (seeded roles with is_system=True)."""
+    try:
+        from core.rbac.seed import SEEDED_ROLES
+        return frozenset(r["name"] for r in SEEDED_ROLES.values() if r["is_system"])
+    except Exception:
+        return frozenset()
+
+
+_SYSTEM_ROLE_NAMES: frozenset[str] = _get_system_role_names()
 
 
 @receiver(post_save, sender=Group)
@@ -104,6 +113,6 @@ def sync_registered_permissions(sender, **kwargs):
     from core.rbac.services import RoleService
     RoleService.materialize_all()
 
-    admin = Group.objects.filter(name=Roles.ADMIN).first()
+    admin = Group.objects.filter(name=Roles.SYSTEM_ADMIN).first()
     if admin is not None:
         admin.permissions.add(*Permission.objects.all())

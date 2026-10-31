@@ -204,7 +204,7 @@ class PINService:
 class GroupService:
     """Guards for role (Group) mutations."""
 
-    SYSTEM_ROLES = frozenset({Roles.ADMIN, Roles.MANAGER, Roles.OPERATOR, Roles.READ_ONLY})
+    SYSTEM_ROLES = frozenset({Roles.SYSTEM_ADMIN})
 
     @classmethod
     def _is_system(cls, group) -> bool:
