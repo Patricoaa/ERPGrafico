@@ -40,6 +40,8 @@ export interface UoM {
 export interface Group {
     id: number
     name: string
+    kind?: 'ROLE' | 'TEAM'
+    is_system?: boolean
     user_count?: number
 }
 

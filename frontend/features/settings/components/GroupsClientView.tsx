@@ -4,12 +4,15 @@ import { EntityPanelTab } from "@/components/providers"
 import { useEffect, useMemo, useState } from "react"
 import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
-import { GroupDrawer } from "@/features/users"
+import { GroupDrawer, RoleCompositionEditor } from "@/features/users"
 import { groupUnifiedSearchDef } from "@/features/settings/unifiedSearchDef"
 import { useGroups } from "../hooks"
+import { useAuth } from "@/contexts/AuthContext"
 import type { Group } from "../api/types"
+import type { AppGroup } from "@/types/entities"
 import { groupEntity, groupViews } from "../entity-view/group.entity"
 import { groupActions, type GroupActionsCtx } from "./groupActions"
+import { Drawer } from "@/components/shared"
 
 interface GroupsClientViewProps {
     externalOpen?: boolean
@@ -29,9 +32,11 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
         { rows, isLoading: loading, error: isError && groups.length === 0, refetch, isFiltered: search.isFiltered },
         { defaultSort: groupViews.table.defaultSort },
     )
+    const { can } = useAuth()
     const [deleteId, setDeleteId] = useState<number | null>(null)
     const [showCreateModal, setShowCreateModal] = useState(false)
     const [editingGroup, setEditingGroup] = useState<Group | null>(null)
+    const [composingGroup, setComposingGroup] = useState<AppGroup | null>(null)
 
     useEffect(() => {
         if (externalOpen) {
@@ -55,6 +60,8 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
     const groupActionsCtx: GroupActionsCtx = {
         onEdit: (group) => setEditingGroup(group),
         onDelete: (id) => setDeleteId(id),
+        onCompose: (group) => setComposingGroup(group as AppGroup),
+        canChangeGroup: can("auth.change_group"),
     }
 
     return (
@@ -118,6 +125,22 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
                 variant="destructive"
                 confirmText="Eliminar"
             />
+
+            <Drawer
+                open={!!composingGroup}
+                onOpenChange={(open) => { if (!open) setComposingGroup(null) }}
+                title={`Composición: ${composingGroup?.name ?? ""}`}
+                side="right"
+                defaultSize="480px"
+            >
+                {composingGroup && (
+                    <RoleCompositionEditor
+                        group={composingGroup}
+                        readOnly={!can("auth.change_group")}
+                        onSuccess={() => setComposingGroup(null)}
+                    />
+                )}
+            </Drawer>
         </div>
     )
 }
