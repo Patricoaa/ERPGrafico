@@ -4,8 +4,8 @@ import { formatCurrency } from "@/lib/money"
 import { getChartPalette } from "@/lib/chart-colors"
 
 import { useMemo } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartLegend, SectionCard, SkeletonShell, StatCard, PieChart, StaleDataBanner } from '@/components/shared'
+import { ChartLegend, EmptyState, SkeletonShell, PieChart, StaleDataBanner } from '@/components/shared'
+import { Button } from '@/components/ui/button'
 import { usePartners, netEquityPercentages } from "@/features/contacts"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { usePartnerStatement } from "../hooks/usePartnerStatement"
@@ -22,7 +22,7 @@ const isOutflow = (type: string) =>
     ['WITHDRAWAL', 'PROV_WITHDRAWAL', 'REDUCTION', 'TRANSFER_OUT', 'LOSS_ABSORB', 'DIVIDEND_PAY'].includes(type)
 
 export function PartnerProfileTab({ contactId }: Props) {
-    const { data: statement, isLoading, isError } = usePartnerStatement(contactId)
+    const { data: statement, isLoading, isError, refetch } = usePartnerStatement(contactId)
 
     const { partners } = usePartners()
 
@@ -60,7 +60,18 @@ export function PartnerProfileTab({ contactId }: Props) {
 
     const txCollection = useEntityCollection(partnerTransactionEntity, { rows: txsWithBalance }, { pagination: { mode: "none" } })
 
-    if (!statement) return null
+    if (!statement) {
+        if (isLoading) return <SkeletonShell isLoading ariaLabel="Cargando perfil de socio" />
+        return (
+            <EmptyState
+                context="finance"
+                variant="compact"
+                title={isError ? "No se pudo cargar la información societaria" : "Sin información societaria"}
+                description={isError ? "Comprueba la conexión e inténtalo nuevamente." : "No hay datos de participación disponibles."}
+                action={isError ? <Button type="button" variant="outline" size="sm" onClick={() => refetch()}>Reintentar</Button> : undefined}
+            />
+        )
+    }
 
     const { contact, summary } = statement
     const equityPct = pieData.find((d) => d.id === contact.name)?.value ?? 0
@@ -69,17 +80,17 @@ export function PartnerProfileTab({ contactId }: Props) {
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando perfil de socio">
             {isError && <StaleDataBanner className="mx-4 mt-2" />}
-            <div className="h-full overflow-y-auto custom-scrollbar space-y-6">
-                {/* Top: Distribution chart (left, wider) + stacked KPIs (right) */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    <SectionCard
-                        title="Distribución de capital"
-                        description="Participación porcentual de los socios"
-                        headerRight={<ChartLegend items={pieData.map((d) => ({ label: String(d.id), color: d.color }))} />}
-                        chartHeight="320px"
-                        className="rounded-sm lg:col-span-2"
-                    >
-                        <div className="h-full">
+            <div className="h-full overflow-y-auto custom-scrollbar space-y-8">
+                {/* Resumen de capital */}
+                <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)] lg:gap-10">
+                    <section className="flex min-w-0 flex-col">
+                        <header className="mb-2 flex items-start justify-between gap-4 border-b border-border/70 pb-3">
+                            <div>
+                                <h2 className="text-base font-semibold text-foreground">Distribución de capital</h2>
+                                <p className="mt-1 text-sm text-muted-foreground">Participación porcentual de los socios</p>
+                            </div>
+                        </header>
+                        <div className="min-h-[280px] flex-1 sm:min-h-[320px]">
                             <PieChart
                                 data={pieData}
                                 activeId={contact.name}
@@ -93,68 +104,64 @@ export function PartnerProfileTab({ contactId }: Props) {
                                 enableArcLabels={false}
                                 enableArcLinkLabels={false}
                                 legends={[]}
-                                margin={{ top: 16, right: 16, bottom: 20, left: 16 }}
+                                margin={{ top: 8, right: 16, bottom: 8, left: 16 }}
                                 centerLabel={{ value: `${equityPct}%`, label: "Participación" }}
                                 renderTooltip={(datum) => (
                                     <div className="flex items-center gap-2">
-                                        <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: datum.color }} />
+                                        <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: datum.color }} />
                                         <span className="font-medium">{String(datum.label ?? datum.id)}</span>
                                         <span className="font-bold">{datum.value.toFixed(1)}%</span>
                                     </div>
                                 )}
                             />
                         </div>
-                    </SectionCard>
-
-                    <div className="flex flex-col gap-3">
-                        <StatCard
-                            value={contact.name}
-                            subtext={partnerSince ? `Socio desde ${formatPlainDate(partnerSince)}` : "Socio desde —"}
-                            variant="default"
-                            accent="primary"
-                        />
-                        <StatCard
-                            label="Capital suscrito"
-                            value={formatCurrency(summary.total_contributions)}
-                            variant="default"
-                            accent="primary"
-                        />
-                        <StatCard
-                            label="Capital pagado"
-                            value={formatCurrency(summary.total_paid_in)}
-                            variant="default"
-                            accent="success"
-                        />
-                        <StatCard
-                            label="Retiro provisorio"
-                            value={formatCurrency(summary.provisional_withdrawals)}
-                            variant="default"
-                            accent="warning"
-                        />
-                        <StatCard
-                            label="Utilidades retenidas"
-                            value={formatCurrency(summary.earnings_balance)}
-                            variant="default"
-                            accent="info"
-                        />
-                    </div>
+                        <div className="flex min-h-10 items-center justify-center border-t border-border/60 pt-2">
+                            <ChartLegend items={pieData.map((d) => ({ label: String(d.id), color: d.color }))} />
+                        </div>
+                    </section>
+                    <section aria-labelledby="partner-summary-heading" className="flex min-w-0 flex-col">
+                        <h2 id="partner-summary-heading" className="border-b border-border/70 pb-3 text-base font-semibold text-foreground">Resumen</h2>
+                        <dl className="flex flex-1 flex-col divide-y divide-border/70">
+                        <div className="flex items-center justify-between gap-3 py-3">
+                            <dt className="text-xs text-muted-foreground">Socio</dt>
+                            <dd className="text-sm font-medium tabular-nums text-foreground">{partnerSince ? `Desde ${formatPlainDate(partnerSince)}` : "Desde —"}</dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 py-3">
+                            <dt className="text-sm text-muted-foreground">Capital suscrito</dt>
+                            <dd className="text-sm font-medium tabular-nums text-foreground">{formatCurrency(summary.total_contributions)}</dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 py-3">
+                            <dt className="text-sm text-muted-foreground">Capital pagado</dt>
+                            <dd className="text-sm font-medium tabular-nums text-foreground">{formatCurrency(summary.total_paid_in)}</dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 py-3">
+                            <dt className="text-sm text-muted-foreground">Retiro provisorio</dt>
+                            <dd className="text-sm font-medium tabular-nums text-foreground">{formatCurrency(summary.provisional_withdrawals)}</dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 py-3">
+                            <dt className="text-sm text-muted-foreground">Utilidades retenidas</dt>
+                            <dd className="text-sm font-medium tabular-nums text-foreground">{formatCurrency(summary.earnings_balance)}</dd>
+                        </div>
+                        <div className="flex-1" aria-hidden="true" />
+                        </dl>
+                    </section>
                 </div>
 
                 {/* Bottom: Capital History — flows naturally, page scrolls */}
-                <Card className="w-full">
-                    <CardHeader className="py-3">
-                        <CardTitle className="text-sm text-primary">Historial de Capital</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                        <Collection.Root collection={txCollection} label="Historial de Capital">
-                            <Collection.View
-                                table={partnerTransactionViews.table}
-                                emptyTitle="Sin movimientos"
-                                emptyDescription="No hay movimientos de capital registrados."
-                            />
-                        </Collection.Root>
-                    </CardContent>
-                </Card>
+                <section>
+                    <header className="mb-3 border-b border-border/70 pb-3">
+                        <h2 className="text-base font-semibold text-foreground">Historial de capital</h2>
+                    </header>
+                    <div className="[&>div>div]:rounded-none [&>div>div]:border-0">
+                    <Collection.Root collection={txCollection} label="Historial de Capital">
+                        <Collection.View
+                            table={partnerTransactionViews.table}
+                            emptyTitle="Sin movimientos"
+                            emptyDescription="No hay movimientos de capital registrados."
+                        />
+                    </Collection.Root>
+                    </div>
+                </section>
             </div>
         </SkeletonShell>
     )

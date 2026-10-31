@@ -23,11 +23,17 @@ const TaskInboxSidebar = dynamic(
     { ssr: false }
 )
 
+const ProfileSettingsModal = dynamic(
+    () => import("@/features/profile").then(m => ({ default: m.ProfileSettingsModal })),
+    { ssr: false },
+)
+
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
 
     const [isInboxOpen, setIsInboxOpen] = useState(false)
     const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
+    const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false)
 
     const currentModuleId = pathname.split('/').filter(Boolean)[0] || 'dashboard'
 
@@ -93,7 +99,11 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
     const sidebar = (onNavigate?: () => void) => (
         <>
-            <ModuleRail currentModuleId={currentModuleId} onNavigate={onNavigate} />
+            <ModuleRail
+                currentModuleId={currentModuleId}
+                onNavigate={onNavigate}
+                onProfileOpen={() => setIsProfileSettingsOpen(true)}
+            />
             <ModuleSidebarPanel
                 currentModuleId={currentModuleId}
                 navigation={nav}
@@ -167,6 +177,10 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 isOpen={isInboxOpen}
                 onClose={() => setIsInboxOpen(false)}
             />
+
+            {isProfileSettingsOpen && (
+                <ProfileSettingsModal onOpenChange={setIsProfileSettingsOpen} />
+            )}
 
             <Toaster />
         </div>

@@ -7,6 +7,6 @@ export default function PersonalEmployeePage() {
     const { profile } = useMyProfile()
     return (
         <>
-            <ProfileView activeTab="personal" activeSubTab="employee" initialProfile={profile} />
+            <ProfileView activeSection="employee" initialProfile={profile} />
         </>)
 }

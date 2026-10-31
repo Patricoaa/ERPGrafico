@@ -11,20 +11,18 @@ import type { MyProfile } from "@/types/profile"
 import type { Payroll } from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { SubmitButton, FadeIn, MoneyDisplay, type BulkAction } from "@/components/shared"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Form, FormField } from "@/components/ui/form"
 import { cn } from "@/lib/utils"
 import {
-    User, ShieldCheck, KeyRound, Mail,
-    Building2, Briefcase, Calendar, CreditCard, Wallet,
-    Download, FileText,
-    Sun, Moon, Monitor
+    User, KeyRound, Wallet,
+    Download,
+    Check, Sun, Moon, Monitor
 } from "lucide-react"
 import { EmptyState, LabeledInput, StatusBadge } from "@/components/shared"
-import { EmployeePayrollPreview } from "./EmployeePayrollPreview"
+import { EmployeePayrollModal } from "./EmployeePayrollModal"
 import { PartnerProfileTab } from "./PartnerProfileTab"
 import { profilePayrollActions, type ProfilePayrollActionsCtx } from './profilePayrollActions'
-import { PayrollPaymentsDrawer } from './PayrollPaymentsDrawer'
+import { PayrollPaymentsModal } from './PayrollPaymentsModal'
 
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { payrollEntity, payrollViews } from "../entity-view/payroll.entity"
@@ -36,12 +34,12 @@ import { passwordSchema, pinSchema } from "../schema"
 import type { PasswordFormValues, PinFormValues } from "../schema"
 
 interface ProfileViewProps {
-    activeTab: string
-    activeSubTab?: string
+    activeSection: string
     initialProfile?: MyProfile
+    onSectionChange?: (section: string) => void
 }
 
-export function ProfileView({ activeTab, activeSubTab = "employee", initialProfile }: ProfileViewProps) {
+export function ProfileView({ activeSection, initialProfile, onSectionChange }: ProfileViewProps) {
     const profile = initialProfile
     const contactDetail = profile?.contact_detail || profile?.employee?.contact_detail
     const isPartner = contactDetail?.is_partner
@@ -49,17 +47,22 @@ export function ProfileView({ activeTab, activeSubTab = "employee", initialProfi
     if (!profile) return null
 
     return (
-        <Tabs value={activeTab} className="w-full flex-1 min-h-0 flex flex-col">
+        <Tabs value={activeSection} onValueChange={onSectionChange} className="w-full min-w-0 flex-1 min-h-0 flex flex-col">
             <div className="pt-0 flex-1 min-h-0 flex flex-col">
-                <TabsContent value="account" className="mt-0 outline-none flex-1 min-h-0 flex flex-col">
-                    <AccountTab activeSubTab={activeSubTab} />
+                <TabsContent value="preferences" className="mt-0 outline-none flex-1 min-h-0 flex flex-col">
+                    <AccountTab activeSubTab="preferences" />
                 </TabsContent>
 
-                <TabsContent value="personal" className="mt-0 outline-none flex-1 min-h-0 flex flex-col">
-                    <PersonalTab
-                        profile={profile}
-                        activeSubTab={activeSubTab}
-                    />
+                <TabsContent value="security" className="mt-0 outline-none flex-1 min-h-0 flex flex-col">
+                    <AccountTab activeSubTab="security" />
+                </TabsContent>
+
+                <TabsContent value="employee" className="mt-0 outline-none flex-1 min-h-0 flex flex-col">
+                    <PersonalTab profile={profile} activeSubTab="employee" />
+                </TabsContent>
+
+                <TabsContent value="payrolls" className="mt-0 outline-none flex-1 min-h-0 flex flex-col">
+                    <PersonalTab profile={profile} activeSubTab="payrolls" />
                 </TabsContent>
 
                 {isPartner && contactDetail && (
@@ -81,18 +84,18 @@ function AccountTab({ activeSubTab }: { activeSubTab?: string }) {
         <div className="w-full flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-8 pb-6">
             {activeSubTab === "preferences" && (
                 <FadeIn delay={0.1} yOffset={10}>
-                    <ThemeSelectionCard />
+                    <ThemeSelectionSection />
                 </FadeIn>
             )}
 
             {activeSubTab === "security" && (
                 <>
                     <FadeIn delay={0.1} yOffset={10}>
-                        <PasswordChangeCard />
+                        <PasswordChangeSection />
                     </FadeIn>
 
                     <FadeIn delay={0.2} yOffset={10}>
-                        <PinChangeCard />
+                        <PinChangeSection />
                     </FadeIn>
                 </>
             )}
@@ -100,9 +103,14 @@ function AccountTab({ activeSubTab }: { activeSubTab?: string }) {
     )
 }
 
-function ThemeSelectionCard() {
+function ThemeSelectionSection() {
     const { theme } = useTheme()
     const { changeTheme, isSyncing } = useThemeSync()
+    const options = [
+        { value: "light", label: "Modo claro", description: "Colores limpios para entornos bien iluminados", icon: Sun },
+        { value: "dark", label: "Modo oscuro", description: "Una superficie oscura para reducir el brillo", icon: Moon },
+        { value: "system", label: "Preferencia del sistema", description: "Usar automáticamente el tema de su dispositivo", icon: Monitor },
+    ] as const
 
     const handleThemeKeyDown = (e: React.KeyboardEvent, next: "light" | "dark" | "system") => {
         if (e.key === "Enter" || e.key === " ") {
@@ -112,97 +120,51 @@ function ThemeSelectionCard() {
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg text-primary">Tema & Apariencia</CardTitle>
-                    {isSyncing && (
-                        <span className="text-4xs uppercase tracking-widest font-bold text-primary animate-pulse">
-                            Sincronizando...
-                        </span>
-                    )}
+        <section className="w-full max-w-none">
+            <header className="flex items-start justify-between gap-4 border-b border-border/70 pb-4">
+                <div className="space-y-1">
+                    <h2 className="text-base font-semibold text-foreground">Tema y apariencia</h2>
+                    <p className="text-sm text-muted-foreground">Personalice su entorno de trabajo visual.</p>
                 </div>
-                <CardDescription>Personalice su entorno de trabajo visual</CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => changeTheme('light')}
-                        onKeyDown={(e) => handleThemeKeyDown(e, 'light')}
-                        className={cn(
-                            "cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
-                            theme === 'light'
-                                ? "border-primary bg-primary/5 scale-[1.01] shadow-card accent-visible"
-                                : "border-border hover:border-muted-foreground/30 bg-muted/5"
-                        )}
-                    >
-                        <Sun className={cn("h-8 w-8 transition-transform duration-normal ease-premium", theme === 'light' ? "text-warning scale-110" : "text-muted-foreground")} />
-                        <div className="text-center space-y-1">
-                            <span className="font-black text-xs uppercase tracking-wider block">Modo Claro</span>
-                            <span className="text-4xs text-muted-foreground block font-bold leading-snug">Colores limpios y legibilidad óptima para luz diurna</span>
+                {isSyncing && <span role="status" className="shrink-0 text-xs text-muted-foreground">Guardando…</span>}
+            </header>
+            <div className="divide-y divide-border/70">
+                {options.map(({ value, label, description, icon: Icon }) => {
+                    const selected = theme === value
+                    return (
+                        <div
+                            key={value}
+                            role="button"
+                            tabIndex={0}
+                            aria-pressed={selected}
+                            onClick={() => changeTheme(value)}
+                            onKeyDown={(event) => handleThemeKeyDown(event, value)}
+                            className="flex min-h-16 cursor-pointer items-center gap-3 px-1 py-3 text-left transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                        >
+                            <Icon className={cn("h-4 w-4 shrink-0", selected ? "text-foreground" : "text-muted-foreground")} aria-hidden="true" />
+                            <span className="min-w-0 flex-1">
+                                <span className="block text-sm font-medium text-foreground">{label}</span>
+                                <span className="block text-xs text-muted-foreground">{description}</span>
+                            </span>
+                            {selected && <Check className="h-4 w-4 shrink-0 text-foreground" aria-label="Seleccionado" />}
                         </div>
-                    </div>
-
-                    <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => changeTheme('dark')}
-                        onKeyDown={(e) => handleThemeKeyDown(e, 'dark')}
-                        className={cn(
-                            "cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
-                            theme === 'dark'
-                                ? "border-primary bg-primary/5 scale-[1.01] shadow-card accent-visible"
-                                : "border-border hover:border-muted-foreground/30 bg-muted/5"
-                        )}
-                    >
-                        <Moon className={cn("h-8 w-8 transition-transform duration-normal ease-premium", theme === 'dark' ? "text-primary scale-110" : "text-muted-foreground")} />
-                        <div className="text-center space-y-1">
-                            <span className="font-black text-xs uppercase tracking-wider block">Modo Oscuro</span>
-                            <span className="text-4xs text-muted-foreground block font-bold leading-snug">Gris industrial desaturado para reducir fatiga visual</span>
-                        </div>
-                    </div>
-
-                    <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => changeTheme('system')}
-                        onKeyDown={(e) => handleThemeKeyDown(e, 'system')}
-                        className={cn(
-                            "cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
-                            theme === 'system'
-                                ? "border-primary bg-primary/5 scale-[1.01] shadow-card accent-visible"
-                                : "border-border hover:border-muted-foreground/30 bg-muted/5"
-                        )}
-                    >
-                        <Monitor className={cn("h-8 w-8 transition-transform duration-normal ease-premium", theme === 'system' ? "text-primary scale-110" : "text-muted-foreground")} />
-                        <div className="text-center space-y-1">
-                            <span className="font-black text-xs uppercase tracking-wider block">Preferencia del Sistema</span>
-                            <span className="text-4xs text-muted-foreground block font-bold leading-snug">Sincroniza automáticamente según su sistema operativo</span>
-                        </div>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
+                    )
+                })}
+            </div>
+        </section>
     )
 }
 
-function InfoField({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function InfoField({ label, value }: { label: string; value: React.ReactNode }) {
     return (
-        <LabeledInput
-            label={label}
-            value={value}
-            disabled
-            readOnly
-            icon={icon}
-            className="bg-background/50 text-foreground"
-            containerClassName="pointer-events-none"
-        />
+        <div className="flex min-w-0 flex-col gap-1 py-2 sm:flex-row sm:items-baseline sm:gap-8">
+            <dt className="w-48 shrink-0 text-xs text-muted-foreground">{label}</dt>
+            <dd className="min-w-0 break-words text-sm font-medium text-foreground">{value}</dd>
+        </div>
     )
 }
 
-function PasswordChangeCard() {
+function PasswordChangeSection() {
     const [saving, setSaving] = useState(false)
 
     const form = useForm<PasswordFormValues>({
@@ -227,12 +189,12 @@ function PasswordChangeCard() {
     }
 
     return (
-        <Card >
-            <CardHeader>
-                <CardTitle className="text-lg text-primary">Cambiar Contraseña</CardTitle>
-                <CardDescription>Actualice sus credenciales de acceso</CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
+        <section className="w-full max-w-none">
+            <header className="border-b border-border/70 pb-4">
+                <h2 className="text-base font-semibold text-foreground">Cambiar contraseña</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Actualice sus credenciales de acceso.</p>
+            </header>
+            <div className="pt-5">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                         <FormField control={form.control} name="current_password" render={({ field, fieldState }) => (
@@ -275,8 +237,8 @@ function PasswordChangeCard() {
                         </div>
                     </form>
                 </Form>
-            </CardContent>
-        </Card>
+            </div>
+        </section>
     )
 }
 
@@ -358,7 +320,7 @@ function PersonalTab({
             <div className="flex-1 flex items-center justify-center w-full">
                 <EmptyState
                     icon={User}
-                    title="Sin Ficha de Empleado"
+                    title="Sin Ficha de Personal"
                     description="Su cuenta de usuario no tiene un perfil de empleado asociado. Contacte al administrador si necesita vincular su ficha."
                 />
             </div>
@@ -366,96 +328,79 @@ function PersonalTab({
     }
 
     return (
-        <div className="flex flex-col w-full flex-1 min-h-0 space-y-6">
-            {/* Sub-tab 1: Ficha de Empleado */}
+        <div className="flex min-w-0 w-full flex-1 min-h-0 flex-col space-y-6">
+            {/* Sub-tab 1: Ficha de Personal */}
             {activeSubTab === "employee" && (
                 <FadeIn yOffset={10}>
-                    <Card >
-                        <CardHeader>
-                            <CardTitle className="text-lg text-primary">Ficha de Empleado</CardTitle>
-                            <CardDescription>
-                                {employee.display_id} <span className="opacity-30">|</span> <StatusBadge status={employee.status} label={employee.status_display} />
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <InfoField icon={<User className="h-3.5 w-3.5" />} label="Nombre" value={contact?.name || "—"} />
-                                <InfoField icon={<FileText className="h-3.5 w-3.5" />} label="RUT" value={contact?.tax_id || "—"} />
-                                <InfoField icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={contact?.email || "—"} />
+                    <section className="w-full min-w-0 space-y-6">
+                        <header className="flex items-start justify-between gap-4 border-b border-border/70 pb-4">
+                            <div>
+                                <h2 className="text-base font-semibold text-foreground">Ficha de Personal</h2>
+                                <p className="mt-1 text-sm text-muted-foreground">{employee.display_id}</p>
                             </div>
+                            <StatusBadge status={employee.status} label={employee.status_display} />
+                        </header>
+                        <section aria-labelledby="employee-contact-heading" className="space-y-1">
+                            <h3 id="employee-contact-heading" className="text-sm font-semibold text-foreground">Datos personales</h3>
+                            <dl className="divide-y divide-border/60">
+                                <InfoField label="Nombre" value={contact?.name || "—"} />
+                                <InfoField label="RUT" value={contact?.tax_id || "—"} />
+                                <InfoField label="Correo electrónico" value={contact?.email || "—"} />
+                            </dl>
+                        </section>
 
-                            <div className="flex items-center gap-2 pt-6 pb-2">
-                                <div className="flex-1 h-px bg-border" />
-                                <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/60">Información Laboral</span>
-                                <div className="flex-1 h-px bg-border" />
-                            </div>
+                        <section aria-labelledby="employee-work-heading" className="space-y-1">
+                            <h3 id="employee-work-heading" className="text-sm font-semibold text-foreground">Información laboral</h3>
+                            <dl className="divide-y divide-border/60">
+                                <InfoField label="Cargo" value={employee.position || "—"} />
+                                <InfoField label="Departamento" value={employee.department || "—"} />
+                                <InfoField label="Fecha de ingreso" value={employee.start_date ? formatPlainDate(employee.start_date) : "—"} />
+                                <InfoField label="Tipo de contrato" value={employee.contract_type_display || "—"} />
+                            </dl>
+                        </section>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 pt-2">
-                                <InfoField icon={<Briefcase className="h-3.5 w-3.5" />} label="Cargo" value={employee.position || "—"} />
-                                <InfoField icon={<Building2 className="h-3.5 w-3.5" />} label="Departamento" value={employee.department || "—"} />
-                                <InfoField icon={<Calendar className="h-3.5 w-3.5" />} label="Fecha Ingreso" value={employee.start_date ? formatPlainDate(employee.start_date) : "—"} />
-                                <InfoField icon={<FileText className="h-3.5 w-3.5" />} label="Contrato" value={employee.contract_type_display || "—"} />
-                            </div>
-
-                            <div className="flex items-center gap-2 pt-6 pb-2">
-                                <div className="flex-1 h-px bg-border" />
-                                <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/60">Información Previsional</span>
-                                <div className="flex-1 h-px bg-border" />
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 pt-2">
-                                <InfoField icon={<ShieldCheck className="h-3.5 w-3.5" />} label="AFP" value={employee.afp_detail?.name || "—"} />
-                                <InfoField icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Sistema Salud" value={employee.salud_type_display || "—"} />
-                                <fieldset className="notched-field pointer-events-none" aria-disabled="true">
-                                    <legend className="px-1.5 text-3xs font-bold uppercase tracking-widest text-muted-foreground">
-                                        Sueldo Base
-                                    </legend>
-                                    <div className="flex items-center gap-2 h-5 px-2 text-sm font-bold text-foreground">
-                                        <CreditCard className="h-3.5 w-3.5 text-muted-foreground/60" />
-                                        <MoneyDisplay amount={parseFloat(employee.base_salary || "0")} />
-                                    </div>
-                                </fieldset>
-                                <InfoField icon={<FileText className="h-3.5 w-3.5" />} label="Jornada" value={employee.jornada_type_display || "—"} />
-                            </div>
-                        </CardContent>
-                    </Card>
+                        <section aria-labelledby="employee-benefits-heading" className="space-y-1">
+                            <h3 id="employee-benefits-heading" className="text-sm font-semibold text-foreground">Previsión y remuneración</h3>
+                            <dl className="divide-y divide-border/60">
+                                <InfoField label="AFP" value={employee.afp_detail?.name || "—"} />
+                                <InfoField label="Sistema de salud" value={employee.salud_type_display || "—"} />
+                                <InfoField label="Sueldo base" value={<MoneyDisplay amount={parseFloat(employee.base_salary || "0")} />} />
+                                <InfoField label="Jornada" value={employee.jornada_type_display || "—"} />
+                            </dl>
+                        </section>
+                    </section>
                 </FadeIn>
             )}
 
             {/* Sub-tab 2: Liquidaciones */}
             {activeSubTab === "payrolls" && (
                 <FadeIn delay={0.1} yOffset={10}>
-                    <div className="flex-1 min-h-0 flex flex-col">
-                        <Collection.Root
-                            collection={payrollCollection}
-                            selection="bulk"
-                            actions={profilePayrollActions.forCollection(profilePayrollActionsCtx)}
-                            onOpen={(payroll) => { setPreviewPayrollId(payroll.id); setPreviewOpen(true) }}
-                        >
-                            <Collection.View
-                                table={payrollViews.table}
-                                emptyTitle="No tiene liquidaciones"
-                                emptyDescription="Las liquidaciones contabilizadas aparecerán aquí una vez que sean emitidas."
-                            />
-                            <Collection.BulkBar actions={bulkDownloadAction} />
-                        </Collection.Root>
-                    </div>
-                </FadeIn>
-            )}
+                    <section className="flex flex-1 min-h-0 flex-col">
+                        <header className="mb-4 border-b border-border/70 pb-4">
+                            <h2 className="text-base font-semibold text-foreground">Liquidaciones</h2>
+                            <p className="mt-1 text-sm text-muted-foreground">Consulta y descarga tus liquidaciones emitidas.</p>
+                        </header>
+                        <div className="min-w-0 flex flex-1 flex-col gap-8 [&>div>div]:rounded-none [&>div>div]:border-0">
+                            <Collection.Root
+                                collection={payrollCollection}
+                                selection="bulk"
+                                actions={profilePayrollActions.forCollection(profilePayrollActionsCtx)}
+                                onOpen={(payroll) => { setPreviewPayrollId(payroll.id); setPreviewOpen(true) }}
+                            >
+                                <Collection.View
+                                    table={payrollViews.table}
+                                    emptyTitle="No tiene liquidaciones"
+                                    emptyDescription="Las liquidaciones contabilizadas aparecerán aquí una vez que sean emitidas."
+                                />
+                                <Collection.BulkBar actions={bulkDownloadAction} />
+                            </Collection.Root>
 
-            {/* Sub-tab 3: Pagos */}
-            {activeSubTab === "payments" && (
-                <FadeIn delay={0.2} yOffset={10}>
-                    <Card className="flex-1 flex flex-col">
-                        <CardHeader>
-                            <CardTitle className="text-lg text-primary">Historial de Pagos y Anticipos</CardTitle>
-                            <CardDescription>
-                                {unifiedPayments.length} transacción(es) registrada(s)
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-0 flex-1 flex flex-col">
-                            <div className="px-0 flex-1 flex flex-col">
-                                <Collection.Root collection={paymentCollection}>
+                            <div className="flex min-h-0 flex-1 flex-col [&>div>div]:rounded-none [&>div>div]:border-0">
+                                <header className="mb-3 border-b border-border/70 pb-3">
+                                    <h3 className="text-sm font-semibold text-foreground">Pagos y anticipos</h3>
+                                    <p className="mt-1 text-xs text-muted-foreground">{unifiedPayments.length} transacción(es) registrada(s)</p>
+                                </header>
+                                <Collection.Root collection={paymentCollection} label="Pagos y anticipos">
                                     <Collection.View
                                         table={unifiedPaymentViews.table}
                                         emptyTitle="No tiene transacciones"
@@ -463,19 +408,19 @@ function PersonalTab({
                                     />
                                 </Collection.Root>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </section>
                 </FadeIn>
             )}
 
-            <EmployeePayrollPreview
+            <EmployeePayrollModal
                 payrollId={previewPayrollId}
                 open={previewOpen}
                 onOpenChange={setPreviewOpen}
                 employee={employee}
             />
 
-            <PayrollPaymentsDrawer
+            <PayrollPaymentsModal
                 open={paymentsOpen}
                 onOpenChange={setPaymentsOpen}
                 payroll={paymentsPayroll}
@@ -485,7 +430,7 @@ function PersonalTab({
     )
 }
 
-function PinChangeCard() {
+function PinChangeSection() {
     const [saving, setSaving] = useState(false)
 
     const form = useForm<PinFormValues>({
@@ -510,12 +455,12 @@ function PinChangeCard() {
     }
 
     return (
-        <Card >
-            <CardHeader>
-                <CardTitle className="text-lg text-primary">Pin de Seguridad POS</CardTitle>
-                <CardDescription>Defina su PIN para operaciones en Punto de Venta</CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
+        <section className="w-full max-w-none">
+            <header className="border-b border-border/70 pb-4">
+                <h2 className="text-base font-semibold text-foreground">PIN de seguridad POS</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Defina su PIN para operaciones en Punto de Venta.</p>
+            </header>
+            <div className="pt-5">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                         <FormField control={form.control} name="current_password" render={({ field, fieldState }) => (
@@ -564,7 +509,7 @@ function PinChangeCard() {
                         </div>
                     </form>
                 </Form>
-            </CardContent>
-        </Card>
+            </div>
+        </section>
     )
 }

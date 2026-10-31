@@ -34,10 +34,15 @@ import { Button } from "@/components/ui/button"
 
 const NOTIFICATIONS_SHOWN = 5
 
+interface UserSidebarMenuProps {
+    onProfileOpen: () => void
+    onNavigate?: () => void
+}
+
 /**
  * Menú del avatar (pie del riel de módulos): perfil, notificaciones y sesión (ADR-0079).
  */
-export function UserSidebarMenu() {
+export function UserSidebarMenu({ onProfileOpen, onNavigate }: UserSidebarMenuProps) {
     const router = useRouter()
     const { logout, user } = useAuth()
     const [notifications, setNotifications] = useState<Notification[]>([])
@@ -163,7 +168,7 @@ export function UserSidebarMenu() {
 
                     <DropdownMenuSeparator />
                     <div className="p-1">
-                        <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer">
+                        <DropdownMenuItem onClick={() => { onProfileOpen(); onNavigate?.() }} className="cursor-pointer">
                             <User className="mr-3 h-4 w-4 text-primary" />
                             <span className="text-xs">Perfil</span>
                         </DropdownMenuItem>
