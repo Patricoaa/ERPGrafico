@@ -102,7 +102,7 @@ SEEDED_ROLES: dict[str, SeededRole] = {
             "crédito, créditos bancarios y distribución de utilidades."
         ),
         bundles=_GERENCIA_BUNDLES,
-        is_system=True,
+        is_system=False,
     ),
     "ventas": SeededRole(
         name="Ventas",
@@ -117,7 +117,7 @@ SEEDED_ROLES: dict[str, SeededRole] = {
             "billing.operate",
             "inventory.read",
         ],
-        is_system=True,
+        is_system=False,
     ),
     "bodega": SeededRole(
         name="Bodega y Despacho",
@@ -131,7 +131,7 @@ SEEDED_ROLES: dict[str, SeededRole] = {
             "sales.read",
             "production.read",
         ],
-        is_system=True,
+        is_system=False,
     ),
     "produccion": SeededRole(
         name="Producción",
@@ -144,7 +144,7 @@ SEEDED_ROLES: dict[str, SeededRole] = {
             "production.operate",
             "inventory.read",
         ],
-        is_system=True,
+        is_system=False,
     ),
     "jefatura_produccion": SeededRole(
         name="Jefatura de Producción",
@@ -159,7 +159,7 @@ SEEDED_ROLES: dict[str, SeededRole] = {
             "inventory.read",
             "inventory.operate",
         ],
-        is_system=True,
+        is_system=False,
     ),
     "admin_finanzas": SeededRole(
         name="Administración y Finanzas",
@@ -175,7 +175,7 @@ SEEDED_ROLES: dict[str, SeededRole] = {
             "treasury.bank_loans",
             "hr.read",
         ],
-        is_system=True,
+        is_system=False,
     ),
     "contabilidad": SeededRole(
         name="Contabilidad",
@@ -189,7 +189,7 @@ SEEDED_ROLES: dict[str, SeededRole] = {
             "accounting.manage",
             "accounting.fiscal_year",
         ],
-        is_system=True,
+        is_system=False,
     ),
     "rrhh": SeededRole(
         name="RRHH",
@@ -204,7 +204,7 @@ SEEDED_ROLES: dict[str, SeededRole] = {
             "hr.payroll",
             "hr.salary_advances",
         ],
-        is_system=True,
+        is_system=False,
     ),
     "tesorero": SeededRole(
         name="Tesorero",
@@ -220,7 +220,7 @@ SEEDED_ROLES: dict[str, SeededRole] = {
             "treasury.credit_cards",
             "treasury.bank_loans",
         ],
-        is_system=True,
+        is_system=False,
     ),
     "auditor": SeededRole(
         name="Auditor",
@@ -229,6 +229,6 @@ SEEDED_ROLES: dict[str, SeededRole] = {
             "Sin acceso a capacidades sensibles ni operaciones de modificación."
         ),
         bundles=_ALL_READ_BUNDLES,
-        is_system=True,
+        is_system=False,
     ),
 }

@@ -196,3 +196,187 @@ def test_sync_permissions_materializes_permissions():
     assert any("sales" in c for c in perm_codes), (
         "Ventas group has no sales permissions after sync_permissions"
     )
+
+
+# ---------------------------------------------------------------------------
+# 4. Additional spec-required tests (Fix 5)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+def test_seed_creates_missing_roles_only():
+    """sync_permissions run twice must not overwrite manually-configured profiles."""
+    from django.core.management import call_command
+    from core.rbac.seed import SEEDED_ROLES
+
+    # First run — creates all 11 seeded roles
+    call_command("sync_permissions", verbosity=0)
+
+    # Manually change the 'produccion' role bundles to simulate admin customization
+    produccion_group = Group.objects.get(name=SEEDED_ROLES["produccion"]["name"])
+    profile = produccion_group.profile
+    original_bundles = list(profile.bundles)
+    profile.bundles = ["inventory.read"]  # narrowed by admin
+    profile.save()
+
+    # Second run — must NOT overwrite the customization
+    call_command("sync_permissions", verbosity=0)
+
+    profile.refresh_from_db()
+    assert profile.bundles == ["inventory.read"], (
+        "sync_permissions overwrote an admin-customized profile on second run"
+    )
+
+
+def test_only_system_admin_is_system():
+    """Only the 'sysadmin' key must have is_system=True; all others must be False."""
+    from core.rbac.seed import SEEDED_ROLES
+
+    for key, role in SEEDED_ROLES.items():
+        expected = key == "sysadmin"
+        assert role["is_system"] == expected, (
+            f"Role '{key}': expected is_system={expected}, got {role['is_system']}"
+        )
+
+
+@pytest.mark.django_db
+def test_auditor_reads_finances_but_not_payroll_or_security():
+    """Auditor gets all *.read perms but not sensitive perms like view_payroll or change_user."""
+    from core.rbac.seed import SEEDED_ROLES
+    from core.rbac.bundles import expand
+
+    auditor_bundles = SEEDED_ROLES["auditor"]["bundles"]
+    expanded = expand(auditor_bundles)
+
+    # Auditor should NOT have sensitive perms
+    assert "hr.view_payroll" not in expanded, (
+        "Auditor should NOT have hr.view_payroll (sensitive)"
+    )
+    assert "core.change_user" not in expanded, (
+        "Auditor should NOT have core.change_user (sensitive)"
+    )
+    # Auditor SHOULD have read perms for all regular modules
+    # finances.read includes view_* perms for the finances app
+    finances_read = expand(["finances.read"])
+    assert finances_read.issubset(expanded), (
+        f"Auditor is missing finances.read perms: {finances_read - expanded}"
+    )
+
+
+@pytest.mark.django_db
+def test_plan_does_not_write():
+    """Running --plan must not create or modify any Group or GroupProfile."""
+    from django.core.management import call_command
+    from core.models import GroupProfile
+
+    # Create the legacy groups so the command has something to report
+    for name in ("ADMIN", "MANAGER", "OPERATOR", "READ_ONLY"):
+        Group.objects.get_or_create(name=name)
+
+    groups_before = set(Group.objects.values_list("name", flat=True))
+    profiles_before = set(GroupProfile.objects.values_list("id", flat=True))
+
+    # --plan is the default; explicitly pass no --apply
+    call_command("rbac_migrate_legacy_roles", verbosity=0)
+
+    groups_after = set(Group.objects.values_list("name", flat=True))
+    profiles_after = set(GroupProfile.objects.values_list("id", flat=True))
+
+    assert groups_before == groups_after, (
+        f"--plan created/deleted groups: before={groups_before}, after={groups_after}"
+    )
+    assert profiles_before == profiles_after, (
+        "--plan modified GroupProfile records"
+    )
+
+
+@pytest.mark.django_db
+def test_apply_maps_legacy_roles_and_teams():
+    """--apply correctly maps ADMIN→sysadmin+gerencia, OPERATOR+Taller→Producción, MANAGER→Gerencia."""
+    from django.core.management import call_command
+    from core.models import User
+
+    # Set up seeded groups
+    call_command("sync_permissions", verbosity=0)
+
+    # Create legacy groups
+    admin_grp, _ = Group.objects.get_or_create(name="ADMIN")
+    manager_grp, _ = Group.objects.get_or_create(name="MANAGER")
+    operator_grp, _ = Group.objects.get_or_create(name="OPERATOR")
+    taller_grp, _ = Group.objects.get_or_create(name="Taller")
+
+    # Create users
+    admin_user = User.objects.create_user(username="u_admin_test", password="x")
+    admin_user.groups.add(admin_grp)
+
+    manager_user = User.objects.create_user(username="u_manager_test", password="x")
+    manager_user.groups.add(manager_grp)
+
+    operator_user = User.objects.create_user(username="u_operator_test", password="x")
+    operator_user.groups.add(operator_grp, taller_grp)
+
+    call_command("rbac_migrate_legacy_roles", "--apply", verbosity=0)
+
+    admin_user.refresh_from_db()
+    manager_user.refresh_from_db()
+    operator_user.refresh_from_db()
+
+    admin_group_names = set(admin_user.groups.values_list("name", flat=True))
+    manager_group_names = set(manager_user.groups.values_list("name", flat=True))
+    operator_group_names = set(operator_user.groups.values_list("name", flat=True))
+
+    # ADMIN user must be in both sysadmin and Gerencia
+    assert "Administrador del sistema" in admin_group_names, (
+        f"ADMIN user missing 'Administrador del sistema'. Groups: {admin_group_names}"
+    )
+    assert "Gerencia" in admin_group_names, (
+        f"ADMIN user missing 'Gerencia'. Groups: {admin_group_names}"
+    )
+
+    # MANAGER user must be in Gerencia
+    assert "Gerencia" in manager_group_names, (
+        f"MANAGER user missing 'Gerencia'. Groups: {manager_group_names}"
+    )
+
+    # OPERATOR+Taller user must be in Producción
+    assert "Producción" in operator_group_names, (
+        f"OPERATOR/Taller user missing 'Producción'. Groups: {operator_group_names}"
+    )
+
+    # Legacy groups must be deleted
+    for legacy_name in ("ADMIN", "MANAGER", "OPERATOR"):
+        assert not Group.objects.filter(name=legacy_name).exists(), (
+            f"Legacy group '{legacy_name}' was not deleted after --apply"
+        )
+
+
+@pytest.mark.django_db
+def test_apply_leaves_no_active_user_without_role():
+    """--apply aborts if an OPERATOR user has no team match (unless --allow-unassigned)."""
+    from django.core.management import call_command
+    from django.core.management.base import CommandError
+    from core.models import User
+
+    # Set up seeded groups
+    call_command("sync_permissions", verbosity=0)
+
+    # Create OPERATOR group and a user with NO team assignment
+    operator_grp, _ = Group.objects.get_or_create(name="OPERATOR")
+    orphan = User.objects.create_user(username="u_orphan_test", password="x")
+    orphan.groups.add(operator_grp)
+
+    # Without --allow-unassigned must raise
+    with pytest.raises(CommandError, match="unassigned"):
+        call_command("rbac_migrate_legacy_roles", "--apply", verbosity=0)
+
+    # Legacy group must still exist (transaction rolled back / command aborted before apply)
+    assert Group.objects.filter(name="OPERATOR").exists(), (
+        "OPERATOR group was deleted even though CommandError was raised"
+    )
+
+    # With --allow-unassigned must succeed
+    call_command(
+        "rbac_migrate_legacy_roles", "--apply", "--allow-unassigned", verbosity=0
+    )
+    assert not Group.objects.filter(name="OPERATOR").exists(), (
+        "OPERATOR group should have been deleted after --apply --allow-unassigned"
+    )
