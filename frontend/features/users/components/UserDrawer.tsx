@@ -64,7 +64,7 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
             .filter((g): g is AppGroup => typeof g === 'object' && g !== null && (g as AppGroup).kind === 'TEAM')
             .map((g) => (g as AppGroup).name)
 
-        // Fallback: if kind info not available (old data), put all in roles
+        // Fallback for pre-loaded initialData without API kind field (API always returns kind now)
         const allGroupNames = rawGroups.map((g) => (typeof g === 'string' ? g : (g as AppGroup).name))
         const fallbackRoles = roles.length === 0 && allGroupNames.length > 0 ? allGroupNames : roles
 

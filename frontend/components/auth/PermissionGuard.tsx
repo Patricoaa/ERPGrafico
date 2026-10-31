@@ -1,7 +1,7 @@
 "use client";
 
-import { usePermission } from "@/hooks/usePermission";
 import React from "react";
+import { Can } from "./Can";
 
 interface PermissionGuardProps extends React.HTMLAttributes<HTMLDivElement> {
     permission?: string | null;
@@ -10,15 +10,5 @@ interface PermissionGuardProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function PermissionGuard({ permission, children, fallback = null }: PermissionGuardProps) {
-    const hasAccess = usePermission(permission || "");
-
-    if (!permission) {
-        return <>{children}</>;
-    }
-
-    if (!hasAccess) {
-        return <>{fallback}</>;
-    }
-
-    return <>{children}</>;
+    return <Can permission={permission ?? null} fallback={fallback}>{children}</Can>;
 }

@@ -27,6 +27,7 @@ interface AuthContextType {
     isLoading: boolean;
     login: (token: string) => Promise<void>;
     logout: () => void;
+    can: (permission: string) => boolean;
     hasPermission: (permission: string) => boolean;
     updateUser: (updatedFields: Partial<User>) => void;
 }
@@ -122,19 +123,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push("/login");
     };
 
-    const hasPermission = (permission: string): boolean => {
+    const can = useCallback((permission: string): boolean => {
         if (!user) return false;
-        if (user.is_superuser) return true;
+        return user.is_superuser || user.permissions.includes(permission);
+    }, [user]);
 
-        return user.permissions?.includes(permission) || false;
-    };
+    const hasPermission = can;
 
     const updateUser = (updatedFields: Partial<User>) => {
         setUser(prev => prev ? { ...prev, ...updatedFields } : null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout, hasPermission, updateUser }}>
+        <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout, can, hasPermission, updateUser }}>
             {children}
         </AuthContext.Provider>
     );
