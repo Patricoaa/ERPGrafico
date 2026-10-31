@@ -1,5 +1,9 @@
+import logging
+
 from django.db import transaction
 from django.utils import timezone
+
+_sod_log = logging.getLogger("workflow.sod")
 
 from workflow.models import (
     Notification,
@@ -147,12 +151,9 @@ class WorkflowService:
             )
 
         task._sod_warnings = []
-        if task.created_by and task.created_by == user:
+        if task.category == Task.Category.APPROVAL and task.created_by and task.created_by == user:
             task._sod_warnings.append("self_approval")
-            import logging
-            logging.getLogger("workflow.sod").warning(
-                "SoD: self-approval by user=%s on task=%s", user.pk, task.pk
-            )
+            _sod_log.warning("SoD: self-approval by user=%s on task=%s", user.pk, task.pk)
 
         # The linked object may demand evidence / confirmations for this approval
         # (e.g. a work order whose design must be approved by the client).

@@ -96,11 +96,23 @@ def test_complete_task_self_approval_warns_not_blocks():
     task = Task.objects.create(
         title="Self approval task",
         task_type="SELF_TASK",
+        category=Task.Category.APPROVAL,
         created_by=user,
     )
     completed = WorkflowService.complete_task(task, user)
     assert completed.status == Task.Status.COMPLETED
     assert "self_approval" in getattr(completed, "_sod_warnings", [])
+
+    # TASK-category self-completion must NOT trigger SoD warning
+    task_task = Task.objects.create(
+        title="Regular task",
+        task_type="REGULAR_TASK",
+        category=Task.Category.TASK,
+        created_by=user,
+    )
+    completed_task = WorkflowService.complete_task(task_task, user)
+    assert completed_task.status == Task.Status.COMPLETED
+    assert "self_approval" not in getattr(completed_task, "_sod_warnings", [])
 
 
 @pytest.mark.django_db

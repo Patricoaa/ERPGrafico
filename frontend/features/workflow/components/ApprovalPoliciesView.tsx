@@ -10,6 +10,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { BaseModal, CardSkeleton } from "@/components/shared"
 import { useApprovalPolicies } from "../hooks/useWorkflowQueries"
 import { useSaveApprovalPolicy, useDeleteApprovalPolicy } from "../hooks/useWorkflowMutations"
@@ -98,6 +102,7 @@ export function ApprovalPoliciesView() {
 
     const [dialogOpen, setDialogOpen] = useState(false)
     const [editing, setEditing] = useState<ApprovalPolicy | null>(null)
+    const [deleteTarget, setDeleteTarget] = useState<ApprovalPolicy | null>(null)
 
     function openNew() {
         setEditing(null)
@@ -168,7 +173,7 @@ export function ApprovalPoliciesView() {
                                     size="icon"
                                     variant="ghost"
                                     className="h-7 w-7 text-destructive hover:text-destructive"
-                                    onClick={() => remove(policy.id)}
+                                    onClick={() => setDeleteTarget(policy)}
                                 >
                                     <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
@@ -191,6 +196,26 @@ export function ApprovalPoliciesView() {
                     </CardDescription>
                 </CardHeader>
             </Card>
+
+            <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Eliminar política?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Se eliminará la política para <strong>{deleteTarget?.document_type}</strong>. Esta acción no se puede deshacer.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => { if (deleteTarget) { remove(deleteTarget.id); setDeleteTarget(null) } }}
+                        >
+                            Eliminar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <BaseModal
                 open={dialogOpen}
