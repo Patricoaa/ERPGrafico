@@ -69,11 +69,13 @@ class TaskAssignmentRule(models.Model):
         verbose_name=_("Usuario Asignado por Defecto"),
     )
 
-    assigned_group = models.CharField(
-        _("Grupo Asignado (Legacy)"),
-        max_length=100,
+    assigned_group = models.ForeignKey(
+        Group,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
-        help_text="Si no hay usuario, se puede usar un string para lógica custom",
+        related_name="assignment_rules",
+        verbose_name=_("Grupo Asignado"),
     )
 
     created_at = models.DateTimeField(auto_now_add=True)

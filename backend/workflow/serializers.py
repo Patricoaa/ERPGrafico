@@ -78,8 +78,14 @@ class NotificationSerializer(serializers.ModelSerializer):
         read_only_fields = ["user", "created_at"]
 
 
+class _GroupMinSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+
 class TaskAssignmentRuleSerializer(serializers.ModelSerializer):
     assigned_user_data = UserSerializer(source="assigned_user", read_only=True)
+    assigned_group_data = _GroupMinSerializer(source="assigned_group", read_only=True)
 
     class Meta:
         model = TaskAssignmentRule

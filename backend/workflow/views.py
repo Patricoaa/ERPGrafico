@@ -120,7 +120,7 @@ class TaskAssignmentRuleViewSet(viewsets.ModelViewSet):
     For now, restrict to admins or users with specific permission.
     """
 
-    queryset = TaskAssignmentRule.objects.select_related("assigned_user").all()
+    queryset = TaskAssignmentRule.objects.select_related("assigned_user", "assigned_group").all()
     serializer_class = TaskAssignmentRuleSerializer
     pagination_class = None  # Master data
 
