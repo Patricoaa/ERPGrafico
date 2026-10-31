@@ -12,9 +12,9 @@ class GroupProfile(models.Model):
     kind = models.CharField(max_length=10, choices=KIND_CHOICES, default=TEAM)
     is_system = models.BooleanField(default=False)
     description = models.TextField(blank=True, default="")
-    bundles = models.JSONField(default=list)
-    extra_permissions = models.JSONField(default=list)
-    excluded_permissions = models.JSONField(default=list)
+    bundles = models.JSONField(default=list, blank=True)
+    extra_permissions = models.JSONField(default=list, blank=True)
+    excluded_permissions = models.JSONField(default=list, blank=True)
 
     class Meta:
         verbose_name = "Group Profile"
