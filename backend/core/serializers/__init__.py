@@ -128,10 +128,31 @@ class MeSerializer(UserSerializer):
 
 class GroupSerializer(serializers.ModelSerializer):
     user_count = serializers.IntegerField(read_only=True)
+    kind = serializers.SerializerMethodField()
+    is_system = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
-        fields = ["id", "name", "user_count"]
+        fields = ["id", "name", "user_count", "kind", "is_system", "description"]
+
+    def get_kind(self, obj):
+        try:
+            return obj.profile.kind
+        except Exception:
+            return None
+
+    def get_is_system(self, obj):
+        try:
+            return obj.profile.is_system
+        except Exception:
+            return False
+
+    def get_description(self, obj):
+        try:
+            return obj.profile.description
+        except Exception:
+            return ""
 
 
 class AttachmentSerializer(serializers.ModelSerializer):

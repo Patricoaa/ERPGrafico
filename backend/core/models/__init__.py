@@ -15,6 +15,7 @@ from .abstracts import AuditedModel, TimeStampedModel, TransactionalDocument
 from .idempotency import IdempotencyRecord
 from .jobs import BackgroundJob
 from .period_reopen_log import PeriodReopenLog
+from .rbac import GroupProfile
 from .search import GlobalSearchIndex
 from .user_preference import UserPreference
 
@@ -28,6 +29,7 @@ __all__ = [
     "AuditedModel",
     "TransactionalDocument",
     "GlobalSearchIndex",
+    "GroupProfile",
     "IdempotencyRecord",
     "PeriodReopenLog",
     "UserPreference",

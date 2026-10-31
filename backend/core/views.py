@@ -218,9 +218,16 @@ class GroupViewSet(viewsets.ModelViewSet):
     Expose user groups (roles) with full CRUD.
     """
 
-    queryset = Group.objects.annotate(user_count=Count("user")).order_by("name")
+    queryset = Group.objects.select_related("profile").annotate(user_count=Count("user")).order_by("name")
     serializer_class = GroupSerializer
     pagination_class = None  # Master data
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        kind = self.request.query_params.get("kind")
+        if kind:
+            qs = qs.filter(profile__kind=kind)
+        return qs
 
     def perform_update(self, serializer):
         GroupService.validate_mutable(serializer.instance, serializer.validated_data.get("name"))

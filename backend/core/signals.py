@@ -79,6 +79,9 @@ def sync_registered_permissions(sender, **kwargs):
 
     PermissionRegistry.sync_to_db()
 
+    from core.rbac.services import RoleService
+    RoleService.materialize_all()
+
     admin = Group.objects.filter(name=Roles.ADMIN).first()
     if admin is not None:
         admin.permissions.add(*Permission.objects.all())
