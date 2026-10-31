@@ -4,16 +4,21 @@ import type { AppGroup } from '@/types/entities'
 import { GROUP_KEYS } from './queryKeys'
 import { staleTime } from '@/lib/query-config'
 
-export function useGroupSearch(search: string = "", enabled: boolean = true) {
-    const query = useQuery({
-        queryKey: GROUP_KEYS.list({ search }),
-        queryFn: async () => {
-            const params = new URLSearchParams()
-            if (search) params.append("search", search)
-            params.append("limit", "50")
+function extractGroups(data: { results?: AppGroup[] } | AppGroup[]): AppGroup[] {
+    if (Array.isArray(data)) return data
+    return data.results ?? []
+}
 
-            const data = await usersApi.getGroups({ params: Object.fromEntries(params) })
-            return data as AppGroup[]
+export function useGroupSearch(search: string = "", enabled: boolean = true, kind?: 'ROLE' | 'TEAM') {
+    const query = useQuery({
+        queryKey: GROUP_KEYS.list({ search, kind }),
+        queryFn: async () => {
+            const params: Record<string, unknown> = { limit: 50 }
+            if (search) params.search = search
+            if (kind) params.kind = kind
+
+            const data = await usersApi.getGroups(params as Parameters<typeof usersApi.getGroups>[0])
+            return extractGroups(data)
         },
         enabled,
         staleTime: staleTime.stable,

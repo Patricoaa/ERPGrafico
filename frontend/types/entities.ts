@@ -308,6 +308,10 @@ export interface AppUser {
 export interface AppGroup {
     id: number
     name: string
+    kind?: 'ROLE' | 'TEAM'
+    is_system?: boolean
+    description?: string
+    user_count?: number
 }
 
 // ─── Treasury View Row Types ─────────────────────────────

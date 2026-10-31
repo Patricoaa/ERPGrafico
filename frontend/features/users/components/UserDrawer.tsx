@@ -9,13 +9,13 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { type UserInitialData } from "@/types/forms"
 import * as z from "zod"
 import { toast } from "sonner"
-import { usersApi } from "../api/usersApi"
+import { usersApi, type SodWarning } from "../api/usersApi"
 import { useSingleUser } from "../hooks/useUserSearch"
 import { Button } from "@/components/ui/button"
 import { Form, FormField } from "@/components/ui/form"
 import { Plus, User, ShieldCheck } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit"
-import { Drawer, CancelButton, SubmitButton, LabeledInput, LabeledCheckboxGroup, FormSection, DrawerLayout, FormFooter, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
+import { Drawer, CancelButton, SubmitButton, LabeledInput, LabeledCheckboxGroup, FormSection, DrawerLayout, FormFooter, LabeledSwitch, SkeletonShell } from "@/components/shared"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { type AppGroup } from "@/types/entities"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
@@ -24,8 +24,8 @@ import { formDrawerWidth } from "@/lib/form-widths"
 
 const userSchema = z.object({
     username: z.string().min(3, "Mínimo 3 caracteres"),
-    primary_role: z.string().min(1, "Debe seleccionar un rol principal"),
-    functional_groups: z.array(z.string()),
+    roles: z.array(z.string()).min(1, "Debe seleccionar al menos un puesto"),
+    teams: z.array(z.string()),
     contact: z.number().min(1, "Debe seleccionar un contacto"),
     password: z.string().optional(),
     is_active: z.boolean(),
@@ -42,6 +42,11 @@ interface UserDrawerProps {
     mode?: DrawerMode
 }
 
+function extractGroupList(data: { results?: AppGroup[] } | AppGroup[]): AppGroup[] {
+    if (Array.isArray(data)) return data
+    return data.results ?? []
+}
+
 export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOpen, onOpenChange: setControlledOpen, mode: modeProp }: UserDrawerProps) {
     const [internalOpen, setInternalOpen] = useState(false)
     const isControlled = controlledOpen !== undefined
@@ -49,8 +54,8 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
     const setOpen = isControlled ? (setControlledOpen as (v: boolean) => void) : setInternalOpen
     const [loading, setLoading] = useState(false)
     const [isFetchingDeps, setIsFetchingDeps] = useState(false)
-    const [availableRoles, setAvailableRoles] = useState<[string, string][]>([])
-    const [availableGroups, setAvailableGroups] = useState<AppGroup[]>([])
+    const [availableRoles, setAvailableRoles] = useState<AppGroup[]>([])
+    const [availableTeams, setAvailableTeams] = useState<AppGroup[]>([])
     const [activeTab, setActiveTab] = useState("general")
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
     const isView = mode === 'view'
@@ -62,20 +67,25 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
     // Helper to parse groups from initialData or API data
     const parsedInitialValues = useMemo(() => {
         const source = apiUser ?? initialData ?? {}
-        const rawGroups = source.groups || []
-        const groups: string[] = rawGroups.map((g) => (typeof g === 'string' ? g : g.name))
-        const systemRoles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
+        const rawGroups = (source as { groups?: unknown[] }).groups || []
+        const roles: string[] = rawGroups
+            .filter((g): g is AppGroup => typeof g === 'object' && g !== null && (g as AppGroup).kind === 'ROLE')
+            .map((g) => (g as AppGroup).name)
+        const teams: string[] = rawGroups
+            .filter((g): g is AppGroup => typeof g === 'object' && g !== null && (g as AppGroup).kind === 'TEAM')
+            .map((g) => (g as AppGroup).name)
 
-        const primaryRole = groups.find((g) => systemRoles.includes(g)) || "OPERATOR"
-        const functionalGroups = groups.filter((g) => !systemRoles.includes(g))
+        // Fallback: if kind info not available (old data), put all in roles
+        const allGroupNames = rawGroups.map((g) => (typeof g === 'string' ? g : (g as AppGroup).name))
+        const fallbackRoles = roles.length === 0 && allGroupNames.length > 0 ? allGroupNames : roles
 
         return {
             username: initialData?.username || apiUser?.username || "",
-            primary_role: primaryRole,
-            functional_groups: functionalGroups,
-            contact: Number(source.contact || 0),
+            roles: fallbackRoles,
+            teams,
+            contact: Number((source as { contact?: number }).contact || 0),
             password: "",
-            is_active: source.is_active ?? true,
+            is_active: (source as { is_active?: boolean }).is_active ?? true,
         }
     }, [apiUser, initialData])
 
@@ -86,33 +96,28 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
 
     const width = formDrawerWidth("medium", !!initialData?.id)
 
-    // Fetch static data once when opened
+    // Fetch roles (kind=ROLE) and teams (kind=TEAM) when drawer opens
     useEffect(() => {
         if (!open) return
 
         const fetchDisplayData = async () => {
             setIsFetchingDeps(true)
             try {
-                const [rolesData, groupsData] = await Promise.all([
-                    usersApi.getRoles(),
-                    usersApi.getGroups()
+                const [rolesData, teamsData] = await Promise.all([
+                    usersApi.getGroups({ kind: 'ROLE', limit: 50 }),
+                    usersApi.getGroups({ kind: 'TEAM', limit: 50 }),
                 ])
 
-                setAvailableRoles(rolesData)
-
-                const systemRoles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
-                const functionalGroupsData = (groupsData.results || groupsData).filter(
-                    (g: AppGroup) => !systemRoles.includes(g.name)
-                )
-                setAvailableGroups(functionalGroupsData)
+                setAvailableRoles(extractGroupList(rolesData))
+                setAvailableTeams(extractGroupList(teamsData))
             } catch (error) {
-                console.error("Error fetching form data", error)
+                console.error("Error fetching group data", error)
             } finally {
                 setIsFetchingDeps(false)
             }
         }
 
-        fetchDisplayData()
+        void fetchDisplayData()
     }, [open])
 
     const isFetchingInitialData = open && (isFetchingDeps || userLoading)
@@ -129,17 +134,10 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
     async function onSubmit(data: UserFormValues) {
         setLoading(true)
         try {
-            const groups = [data.primary_role, ...data.functional_groups]
+            // Merge roles and teams into a flat groups list for the API
+            const groups = [...data.roles, ...data.teams]
 
-            interface UserApiPayload {
-                username: string
-                groups: string[]
-                contact: number
-                is_active: boolean
-                password?: string
-            }
-
-            const payload: UserApiPayload = {
+            const payload: Record<string, unknown> = {
                 username: data.username,
                 contact: data.contact,
                 is_active: data.is_active,
@@ -148,13 +146,24 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
 
             if (data.password) payload.password = data.password
 
+            let result: { sod_warnings?: SodWarning[] } = {}
+
             if (initialData?.id) {
-                await usersApi.updateUser(initialData.id, payload as unknown as Record<string, unknown>)
+                result = await usersApi.updateUser(initialData.id, payload)
                 toast.success("Usuario actualizado")
             } else {
-                await usersApi.createUser(payload as unknown as Record<string, unknown>)
+                result = await usersApi.createUser(payload)
                 toast.success("Usuario creado")
             }
+
+            // Show non-blocking warning for SoD conflicts
+            if (result.sod_warnings && result.sod_warnings.length > 0) {
+                const labels = result.sod_warnings.map((w) => w.label).join(", ")
+                toast.warning(`Conflictos de segregación detectados: ${labels}`, {
+                    duration: 8000,
+                })
+            }
+
             setOpen(false)
             if (onSuccess) onSuccess()
         } catch (error: unknown) {
@@ -176,7 +185,7 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
         })
 
         // Permissions tab fields
-        const permFields: (keyof UserFormValues)[] = ['primary_role', 'functional_groups']
+        const permFields: (keyof UserFormValues)[] = ['roles', 'teams']
         permFields.forEach(field => {
             if (errors[field]) tabErrors['permissions'] = true
         })
@@ -186,10 +195,8 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
 
     const tabErrors = getTabsWithErrors()
 
-
-
     const identity = useDrawerIdentity('core.user', mode, initialData, {
-        overrideSubtitle: "Gestión de cuentas, roles y permisos de acceso.",
+        overrideSubtitle: "Gestión de cuentas, puestos y equipos.",
         printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
         onPrint: handlePrint,
     })
@@ -360,15 +367,16 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
                                                     <div className="shrink-0">
                                                         <FormField
                                                             control={form.control}
-                                                            name="primary_role"
+                                                            name="roles"
                                                             render={({ field, fieldState }) => (
-                                                                <LabeledSelect
-                                                                    label="Nivel de Permisos (Rol)"
-                                                                    required
-                                                                    error={fieldState.error?.message}
-                                                                    options={availableRoles.map(([val, label]) => ({ value: val, label }))}
-                                                                    value={field.value}
+                                                                <LabeledCheckboxGroup
+                                                                    columns={2}
+                                                                    label="Puestos (Roles)"
+                                                                    items={availableRoles.map((g) => ({ value: g.name, label: g.name }))}
+                                                                    value={field.value || []}
                                                                     onChange={field.onChange}
+                                                                    maxHeight="none"
+                                                                    error={fieldState.error?.message}
                                                                 />
                                                             )}
                                                         />
@@ -376,16 +384,16 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
                                                     <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
                                                         <FormField
                                                             control={form.control}
-                                                            name="functional_groups"
+                                                            name="teams"
                                                             render={({ field }) => (
-                                                                 <LabeledCheckboxGroup
-                                                                     columns={2}
-                                                                     label="Equipos Funcionales"
-                                                                     items={availableGroups.map((g) => ({ value: g.name, label: g.name }))}
-                                                                     value={field.value || []}
-                                                                     onChange={field.onChange}
-                                                                     maxHeight="none"
-                                                                 />
+                                                                <LabeledCheckboxGroup
+                                                                    columns={2}
+                                                                    label="Equipos"
+                                                                    items={availableTeams.map((g) => ({ value: g.name, label: g.name }))}
+                                                                    value={field.value || []}
+                                                                    onChange={field.onChange}
+                                                                    maxHeight="none"
+                                                                />
                                                             )}
                                                         />
                                                     </div>
