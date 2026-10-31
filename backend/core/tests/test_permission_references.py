@@ -1,32 +1,16 @@
 """Ningún código referencia un permiso que no existe (F2, F3, F4)."""
 
-import ast
 import re
 from pathlib import Path
 
 from django.apps import apps
 from django.conf import settings
 
-from core.permissions import PermissionRegistry
+from core.rbac.catalog import permission_catalog
 
 BACKEND_DIR = Path(settings.BASE_DIR)
 FRONTEND_DIR = Path(settings.BASE_DIR).parent / "frontend"
 EXCLUDED_PARTS = {"venv", ".venv", "migrations", "tests", "scripts", "node_modules", "__pycache__"}
-
-
-def permission_catalog() -> set[str]:
-    """Todos los permisos válidos como 'app_label.codename', sin consultar la BD."""
-    catalog: set[str] = set()
-    for model in apps.get_models():
-        meta = model._meta
-        for action in meta.default_permissions:
-            catalog.add(f"{meta.app_label}.{action}_{meta.model_name}")
-        for codename, _name in meta.permissions:
-            catalog.add(f"{meta.app_label}.{codename}")
-    for app_label, perms in PermissionRegistry.get_registered_permissions().items():
-        for codename, _name in perms:
-            catalog.add(f"{app_label}.{codename}")
-    return catalog
 
 
 def _backend_py_files(names=None):
@@ -60,20 +44,6 @@ def test_registry_permission_literals_exist():
     missing = used - permission_catalog()
     assert not missing, f"permission= referencia permisos inexistentes: {sorted(missing)}"
 
-
-def test_operator_template_codenames_exist():
-    path = BACKEND_DIR / "core" / "management" / "commands" / "sync_permissions.py"
-    tree = ast.parse(path.read_text(encoding="utf-8"))
-    codenames: set[str] = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Assign) and any(
-            isinstance(t, ast.Name) and t.id == "operator_codenames" for t in node.targets
-        ):
-            codenames = {e.value for e in node.value.elts if isinstance(e, ast.Constant)}
-    assert codenames, "No se encontró operator_codenames"
-    valid = {p.split(".", 1)[1] for p in permission_catalog()}
-    missing = codenames - valid
-    assert not missing, f"Plantilla de operador con codenames inexistentes: {sorted(missing)}"
 
 
 FRONTEND_PERM_RE = (

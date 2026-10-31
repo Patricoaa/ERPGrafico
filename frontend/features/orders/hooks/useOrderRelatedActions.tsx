@@ -81,7 +81,7 @@ export function useOrderRelatedActions({ order, isSale, permissions, onSuccess }
      * cancela; una emitida no se anula, se corrige con NC/ND (acciones del registro).
      */
     const invoiceActions = (invoice: { id: number; status?: string }): DocumentActionItem[] => {
-        if (!can('billing.delete_invoice') || invoice.status !== 'DRAFT') return []
+        if (!can('billing.cancel_invoice') || invoice.status !== 'DRAFT') return []
         return [{
             id: 'cancel-draft-invoice', label: 'Cancelar borrador', icon: Trash2, destructive: true,
             onClick: () => confirmThen(
@@ -102,13 +102,14 @@ export function useOrderRelatedActions({ order, isSale, permissions, onSuccess }
         }
 
         if (label === 'treasury.treasurymovement') {
-            if (!can('treasury.delete_treasurymovement')) return []
             if (status === 'POSTED') {
+                if (!can('treasury.annul_treasurymovement')) return []
                 return [{
                     id: 'annul-payment', label: 'Anular pago', icon: Ban, destructive: true,
                     onClick: () => setPaymentToAnnul({ id, amount: Number(link.amount ?? 0) }),
                 }]
             }
+            if (!can('treasury.cancel_treasurymovement')) return []
             return [{
                 id: 'cancel-payment', label: 'Cancelar pago', icon: Trash2, destructive: true,
                 onClick: () => confirmThen(
@@ -122,7 +123,7 @@ export function useOrderRelatedActions({ order, isSale, permissions, onSuccess }
         const logistics = LOGISTICS_DOC_TYPES[label]
         if (logistics) {
             const isReturn = logistics.docType.endsWith('_return')
-            const perm = isSale ? 'sales.delete_saledelivery' : 'purchasing.delete_purchasereceipt'
+            const perm = isSale ? 'sales.annul_saledelivery' : 'purchasing.annul_purchasereceipt'
             // Despacho/recepción: solo mientras la factura siga en borrador (regla del Hub)
             if (!can(perm) || (!isReturn && !hasDraftInvoice)) return []
             return [{
@@ -140,7 +141,7 @@ export function useOrderRelatedActions({ order, isSale, permissions, onSuccess }
 
         if (label === 'production.workorder') {
             const workOrder = (order?.work_orders ?? []).find((ot: WorkOrder) => Number(ot.id) === id)
-            const annullable = can('production.delete_workorder') && hasDraftInvoice
+            const annullable = can('production.annul_workorder') && hasDraftInvoice
                 && ANNULLABLE_OT_STAGES.includes(workOrder?.current_stage ?? '')
             if (!annullable) return []
             return [{

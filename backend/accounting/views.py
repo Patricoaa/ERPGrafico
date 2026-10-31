@@ -58,6 +58,10 @@ from .services import AccountingService, BudgetService, JournalEntryService
 class AccountingSettingsViewSet(viewsets.ModelViewSet):
     queryset = AccountingSettings.objects.all()
     serializer_class = AccountingSettingsSerializer
+    action_permissions = {
+        # current: PUT/PATCH → change_* by method; GET has custom permission check
+        "current": None,
+    }
 
     def get_permissions(self):
         if self.action == "current" and self.request.method == "GET":
@@ -92,6 +96,11 @@ class AccountViewSet(EditPolicyMixin, BulkImportMixin, AuditHistory, viewsets.Mo
     queryset = Account.objects.all()  # Base queryset includes archived for detail/update
     serializer_class = AccountSerializer
     pagination_class = None  # Master data
+    action_permissions = {
+        "populate_ifrs": "accounting.override_account",
+        # Edit via POST → change_*
+        "bulk_import": "accounting.change_account",
+    }
 
     def get_queryset(self):
         # List view uses selector with is_active filter
@@ -155,6 +164,10 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = JournalEntryFilterSet
     search_fields = ["description", "display_id", "items__partner__name", "items__partner__tax_id"]
+    action_permissions = {
+        "post_entry": "accounting.post_journalentry",
+        "reverse_entry": "accounting.reverse_journalentry",
+    }
 
     @action(detail=True, methods=["post"])
     def post_entry(self, request, pk=None):
@@ -219,6 +232,11 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
 
 class BudgetViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
+    action_permissions = {
+        # Edit via POST → change_*
+        "set_items": "accounting.change_budget",
+    }
+
     def get_queryset(self):
         return Budget.objects.prefetch_related("items", "items__account").all()
     serializer_class = BudgetSerializer
@@ -309,6 +327,15 @@ class FiscalYearViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     """
     CRUD + custom actions for Fiscal Year management and annual closing.
     """
+
+    action_permissions = {
+        # Business verbs → explicit permissions registered in apps.py
+        "close": "accounting.close_fiscalyear",
+        "reopen": "accounting.reopen_fiscalyear",
+        # Edit via POST → change_*
+        "complete_checklist_item": "accounting.change_fiscalyear",
+        "generate_opening": "accounting.change_fiscalyear",
+    }
 
     def get_queryset(self):
         return FiscalYear.objects.select_related("closing_entry", "opening_entry", "closed_by").all()

@@ -7,6 +7,15 @@ import { afterEach } from 'vitest'
 // failure still fails, only later (testTimeout in vitest.config.ts is 15 s).
 configure({ asyncUtilTimeout: 4000 })
 
+// Radix UI (Drawer, Popover, etc.) uses ResizeObserver; jsdom does not provide it.
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+}
+
 // Clean up DOM after each test
 afterEach(() => {
   cleanup()

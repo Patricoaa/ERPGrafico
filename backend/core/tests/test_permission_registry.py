@@ -198,8 +198,13 @@ def test_post_migrate_sync_is_additive():
 
     from core.permissions import Roles
 
-    admin, _ = Group.objects.get_or_create(name=Roles.ADMIN)
-    operator, _ = Group.objects.get_or_create(name=Roles.OPERATOR)
+    # I10 fix: sysadmin gets new perms via its bundles (core.manage ⊃ new perm),
+    # so sync_permissions must run first to configure the profile's bundles.
+    call_command("sync_permissions", verbosity=0)
+
+    # Get the now-configured admin group and create an unrelated TEAM group.
+    admin = Group.objects.get(name=Roles.SYSTEM_ADMIN)
+    operator, _ = Group.objects.get_or_create(name="OperadorTest")
     extra = Permission.objects.filter(codename="view_user").first()
     operator.permissions.add(extra)
 
@@ -211,8 +216,10 @@ def test_post_migrate_sync_is_additive():
     finally:
         PermissionRegistry._registry = original
 
+    # TEAM group's permissions must be preserved (materialize_all skips non-ROLE groups)
     assert operator.permissions.filter(pk=extra.pk).exists()
     new = Permission.objects.get(codename="pm_test_perm2")
+    # Sysadmin gets the new core.* perm via materialize_all + core.manage bundle
     assert admin.permissions.filter(pk=new.pk).exists()
     assert not operator.permissions.filter(pk=new.pk).exists()
 
@@ -223,6 +230,6 @@ def test_post_migrate_without_admin_group_does_not_fail():
 
     from core.permissions import Roles
 
-    Group.objects.filter(name=Roles.ADMIN).delete()
+    Group.objects.filter(name=Roles.SYSTEM_ADMIN).delete()
     call_command("migrate", verbosity=0)
-    assert not Group.objects.filter(name=Roles.ADMIN).exists()
+    assert not Group.objects.filter(name=Roles.SYSTEM_ADMIN).exists()

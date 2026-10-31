@@ -1,12 +1,20 @@
 import json
 
+from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 
 class POSDraftConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        if not self.scope["user"].is_authenticated:
+        user = self.scope["user"]
+        if not user.is_authenticated:
             await self.close(code=4001)
+            return
+
+        # Require view permission on the DraftCart model.
+        has_perm = await sync_to_async(user.has_perm)("sales.view_draftcart")
+        if not has_perm:
+            await self.close(code=4003)
             return
 
         self.session_id = self.scope["url_route"]["kwargs"]["session_id"]
@@ -18,8 +26,8 @@ class POSDraftConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
     async def disconnect(self, close_code):
-        # Salir del grupo
-        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        if hasattr(self, "group_name"):
+            await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def receive(self, text_data):
         """

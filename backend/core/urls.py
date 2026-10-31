@@ -2,6 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .api.documents import document_ref, document_relations
+from .api.rbac import catalog_view, bundles_view
 from .api.search import universal_search
 from .views import (
     ActionLogViewSet,
@@ -47,6 +48,8 @@ urlpatterns = [
     path("entity-config/", entity_config, name="entity-config"),
     path("preferences/", UserPreferenceView.as_view(), name="user-preferences"),
     path("search/", universal_search, name="universal-search"),
+    path("permissions/catalog/", catalog_view, name="permissions-catalog"),
+    path("permissions/bundles/", bundles_view, name="permissions-bundles"),
     # ADR-0080: DocumentRef y relaciones (label = app.model)
     path("documents/<str:label>/<int:pk>/", document_ref, name="document-ref"),
     path("documents/<str:label>/<int:pk>/relations/", document_relations, name="document-relations"),

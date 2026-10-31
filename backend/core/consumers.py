@@ -22,6 +22,7 @@ so a feature does NOT need to subscribe to it explicitly to get cross-tab sync.
 import json
 import re
 
+from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 # Matches `<app>.<model>` or `<app>.<model>.<int_id>` with lowercase identifiers.
@@ -62,6 +63,19 @@ class EntityBusConsumer(AsyncJsonWebsocketConsumer):
 
         group = f"entity.{topic}"
         if op == "subscribe":
+            # Require view permission for the subscribed model.
+            # Topic format: <app>.<model> or <app>.<model>.<id>
+            parts = topic.split(".")
+            app, model = parts[0], parts[1]
+            has_perm = await sync_to_async(self.scope["user"].has_perm)(
+                f"{app}.view_{model}"
+            )
+            if not has_perm:
+                await self.send_json(
+                    {"event": "error", "code": "forbidden", "topic": topic}
+                )
+                return
+
             if topic not in self.subscriptions:
                 await self.channel_layer.group_add(group, self.channel_name)
                 self.subscriptions.add(topic)

@@ -33,6 +33,7 @@ EXEMPT_MODELS = {
     "core.Attachment",
     "core.CompanySettings",
     "core.GlobalSearchIndex",
+    "core.GroupProfile",  # RBAC metadata — not a business transaction model
     "core.IdempotencyRecord",
     "core.PeriodReopenLog",
     "core.User",

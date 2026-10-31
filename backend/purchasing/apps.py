@@ -13,6 +13,12 @@ class PurchasingConfig(AppConfig):
                 "purchasing",
                 [
                     ("view_dashboard_purchasing", "Can view purchasing dashboard"),
+                    ("confirm_purchaseorder", "Puede confirmar orden de compra"),
+                    ("cancel_purchaseorder", "Puede cancelar orden de compra"),
+                    ("annul_purchaseorder", "Puede anular orden de compra"),
+                    ("annul_purchasereceipt", "Puede anular recepción de compra"),
+                    ("annul_purchasereturn", "Puede anular devolución de compra"),
+                    ("receive_purchaseorder", "Puede recepcionar orden de compra"),
                 ],
             )
         except ImportError:

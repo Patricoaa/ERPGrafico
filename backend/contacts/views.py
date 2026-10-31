@@ -28,6 +28,20 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     queryset = Contact.objects.all()  # Base queryset includes archived for detail/update
     serializer_class = ContactSerializer
+    action_permissions = {
+        "unblock_credit": "sales.override_credit_limit",
+        "write_off_debt": "contacts.write_off_contact",
+        "recover_written_off_debt": "contacts.write_off_contact",
+        "promote_partner": "contacts.post_partnertransaction",
+        "demote_partner": "contacts.post_partnertransaction",
+        "setup_partner": "contacts.post_partnertransaction",
+        "initial_setup": "contacts.post_partnertransaction",
+        "equity_subscription": "contacts.post_partnertransaction",
+        "equity_transfer": "contacts.post_partnertransaction",
+        "individual_dividend_payment": "contacts.post_partnertransaction",
+        "partner_transactions": "contacts.post_partnertransaction",
+        "mass_mobilize_retained_earnings": "contacts.post_partnertransaction",
+    }
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ["is_default_customer", "is_default_vendor"]
     search_fields = ["name", "tax_id", "email", "contact_name", "code"]

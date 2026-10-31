@@ -109,10 +109,12 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
     })
 
     const managementActions: DocumentActionItem[] = []
-    if (order && permissions.includes(isSale ? "sales.delete_saleorder" : "purchasing.delete_purchaseorder")) {
-        if (order.status === "DRAFT") {
+    if (order) {
+        const cancelPerm = isSale ? "sales.cancel_saleorder" : "purchasing.cancel_purchaseorder"
+        const annulPerm = isSale ? "sales.annul_saleorder" : "purchasing.annul_purchaseorder"
+        if (order.status === "DRAFT" && permissions.includes(cancelPerm)) {
             managementActions.push({ id: "cancel-order", label: "Cancelar orden", icon: Trash2, destructive: true, onClick: () => requestCancel(order.id) })
-        } else if (order.status !== "CANCELLED") {
+        } else if (order.status !== "CANCELLED" && order.status !== "DRAFT" && permissions.includes(annulPerm)) {
             managementActions.push({
                 id: "annul-order", label: "Anular orden", icon: Ban, destructive: true,
                 disabled: isAnnulBlocked, disabledReason: annulBlockedReason || undefined,

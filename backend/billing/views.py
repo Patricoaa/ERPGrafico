@@ -64,6 +64,17 @@ class InvoiceViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet
         "sale_order__customer__name",
         "sale_order__customer__tax_id",
     ]
+    action_permissions = {
+        "confirm": "billing.confirm_invoice",
+        "annul": "billing.annul_invoice",
+        "cancel": "billing.cancel_invoice",
+        "process_logistics": "sales.dispatch_saleorder",
+        # Creation → None (add_* by method is correct)
+        "create_from_order": None,
+        "from_lines": None,
+        "pos_checkout": None,
+        "request_credit": None,
+    }
 
     def get_queryset(self):
         from .selectors import InvoiceSelectorExt

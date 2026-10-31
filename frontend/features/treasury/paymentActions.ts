@@ -24,7 +24,7 @@ export const paymentActions: ActionRegistry<PaymentDoc> = {
                 id: "annul-payment",
                 label: "Anular Pago",
                 icon: Ban,
-                requiredPermissions: ["treasury.delete_treasurymovement"],
+                requiredPermissions: ["treasury.annul_treasurymovement"],
                 checkAvailability: (payment) => {
                     if (!payment) return false
                     return payment.status === "POSTED"
@@ -47,7 +47,7 @@ export const paymentActions: ActionRegistry<PaymentDoc> = {
                 id: "cancel-payment",
                 label: "Cancelar Pago",
                 icon: Trash2,
-                requiredPermissions: ["treasury.delete_treasurymovement"],
+                requiredPermissions: ["treasury.cancel_treasurymovement"],
                 checkAvailability: (payment) => {
                     if (!payment) return false
                     return payment.status !== "RECONCILED"

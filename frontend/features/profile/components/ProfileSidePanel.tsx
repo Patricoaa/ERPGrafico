@@ -87,10 +87,6 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
 
     const { user, employee, contact_detail } = profile
 
-    // Determine Role
-    const systemRoles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
-    const primaryRole = user.groups?.find(g => systemRoles.includes(g)) || 'Sin Rol'
-
     // Get Initials
     const firstName = user.first_name || ""
     const lastName = user.last_name || ""
@@ -102,7 +98,9 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
     // Position/Department priority: employee -> direct info (if it existed)
     const position = employee?.position || "—"
 
-    const functionalGroups = user.groups?.filter(g => !systemRoles.includes(g)) || []
+    // All groups are displayed uniformly — the new model uses kind (ROLE/TEAM)
+    // which is not available in the profile's string[] groups, so we show them all.
+    const allGroups = user.groups ?? []
 
     return (
         <CollapsibleSheet
@@ -147,23 +145,15 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                         </div>
 
                         <div className="space-y-6 flex flex-col items-center w-full">
-                            {/* Rol Principal */}
-                            <div className="flex flex-col items-center text-center space-y-1.5">
-                                <div className="flex flex-col items-center">
-                                    <span className="text-3xs text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1">Rol Principal</span>
-                                    <span className="font-semibold text-sm leading-none">{primaryRole}</span>
-                                </div>
-                            </div>
-
-                            {/* Equipos Funcionales */}
+                            {/* Puestos y Equipos */}
                             <div className="flex flex-col items-center text-center space-y-1.5">
                                 <div className="flex flex-col items-center min-w-0">
-                                    <span className="text-3xs text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1.5">Equipos Funcionales</span>
+                                    <span className="text-3xs text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1.5">Puestos y Equipos</span>
                                     <div className="flex flex-wrap justify-center gap-1.5">
-                                        {functionalGroups.length > 0 ? functionalGroups.map(g => (
+                                        {allGroups.length > 0 ? allGroups.map(g => (
                                             <Chip key={g} size="xs" intent="neutral">{g}</Chip>
                                         )) : (
-                                            <span className="text-xs text-muted-foreground italic leading-none">Sin equipos asignados</span>
+                                            <span className="text-xs text-muted-foreground italic leading-none">Sin grupos asignados</span>
                                         )}
                                     </div>
                                 </div>

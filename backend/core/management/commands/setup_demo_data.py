@@ -1568,21 +1568,57 @@ class Command(BaseCommand):
         # Ensure functional groups exist
         self._create_groups()
 
-        # User definitions: (username, role, rut_body, first_name, last_name, email)
+        # User definitions: (username, role_name, rut_body, first_name, last_name, email)
+        # role_name now maps to a seeded role group from SEEDED_ROLES
         user_definitions = [
-            ("admin", Roles.ADMIN, "11111111", "Admin", "Sistema", "admin@erpgrafico.com"),
-            ("gerente", Roles.MANAGER, "22222222", "Gerente", "General", "gerente@erpgrafico.com"),
+            (
+                "admin",
+                Roles.SYSTEM_ADMIN,
+                "11111111",
+                "Admin",
+                "Sistema",
+                "admin@erpgrafico.com",
+            ),
+            (
+                "gerente",
+                "Gerencia",
+                "22222222",
+                "Gerente",
+                "General",
+                "gerente@erpgrafico.com",
+            ),
             (
                 "operador",
-                Roles.OPERATOR,
+                "Producción",
                 "33333333",
                 "Operador",
                 "Producción",
                 "operador@erpgrafico.com",
             ),
-            ("bodega", Roles.OPERATOR, "44444444", "Encargado", "Bodega", "bodega@erpgrafico.com"),
-            ("ventas", Roles.OPERATOR, "55555555", "Ejecutivo", "Ventas", "ventas@erpgrafico.com"),
-            ("diseno", Roles.OPERATOR, "66666666", "Diseñador", "Gráfico", "diseno@erpgrafico.com"),
+            (
+                "bodega",
+                "Bodega y Despacho",
+                "44444444",
+                "Encargado",
+                "Bodega",
+                "bodega@erpgrafico.com",
+            ),
+            (
+                "ventas",
+                "Ventas",
+                "55555555",
+                "Ejecutivo",
+                "Ventas",
+                "ventas@erpgrafico.com",
+            ),
+            (
+                "diseno",
+                "Producción",
+                "66666666",
+                "Diseñador",
+                "Gráfico",
+                "diseno@erpgrafico.com",
+            ),
         ]
 
         for username, role_name, rut_body, first, last, email in user_definitions:
@@ -1604,7 +1640,7 @@ class Command(BaseCommand):
                     "last_name": last,
                     "contact": contact,
                     "is_staff": True,
-                    "is_superuser": (role_name == Roles.ADMIN),
+                    "is_superuser": (role_name == Roles.SYSTEM_ADMIN),
                     "pos_pin": make_password("1234"),
                 },
             )

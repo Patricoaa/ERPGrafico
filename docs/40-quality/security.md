@@ -3,7 +3,7 @@ layer: 40-quality
 doc: security
 status: active
 owner: security-team
-last_review: 2026-04-21
+last_review: 2026-10-30
 ---
 
 # Security
@@ -23,23 +23,62 @@ Single-tenant ERP, sensitive data: financial records, customer PII, invoices (fi
 - JWT access (15 min) + refresh (7 days) via `/api/token/`.
 - Refresh rotation on use; old refresh blacklisted.
 - Passwords: Django hasher (`PBKDF2` min, `argon2` preferred).
-- MFA: TOTP via `django-otp` (required for role `admin`, `finance`).
+- MFA: TOTP via `django-otp` (required for roles with `core.security` or `treasury.payments` bundles, e.g. *Administrador del sistema*, *Administración y Finanzas*).
 - Login throttle: 5 attempts / 15 min per IP + per username.
 
-## Authorization
+## Authorization (RBAC Fase 1)
 
-- Every viewset declares `permission_classes` explicitly.
+**Architecture decision:** [ADR-0104](../10-architecture/adr/0104-rbac-action-permissions-roles-teams.md) — `action_permissions` dict, bundle taxonomy, GroupProfile.
+
+### Invariants
+
+- Most ViewSets declare `permission_classes = [IsAuthenticated, StandardizedModelPermissions]`; exceptions (public endpoints, custom auth flows) must document the deviation.
+- Every non-standard action is listed in the ViewSet's `action_permissions` class-level dict. An unlisted write action raises `PermissionDenied` by construction.
 - Object-level permission checks for detail/update/delete (never assume list filter is enough).
-- Role matrix in `core/roles.py`; documented.
 - Frontend route guards are UX, never trust — always enforce server-side.
 
-```python
-# ✅ correct — object-level check
-class InvoiceViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated, IsOwnerOrAccountingTeam]
+### Model
 
-    def get_queryset(self):
-        return Invoice.objects.filter(organization=self.request.user.organization)
+Django Groups are typed as **puestos** (ROLE) or **equipos** (TEAM) via `GroupProfile` (one-to-one). Effective permissions = `expand(bundles) ∪ extra_permissions − excluded_permissions`.
+
+Permissions are grouped into 48 bundles: 13 apps × 3 module levels (read ⊂ operate ⊂ manage) + 9 sensitive capability bundles. Sensitive bundles (`hr.payroll`, `treasury.payments`, `core.security`, `core.users`, `accounting.close`, `accounting.audit`, `sales.pricing`, `purchasing.pricing`, `core.export_any`) are **never** included in module-level bundles; they must be granted explicitly.
+
+### Custom permission verbs (closed list)
+
+`annul`, `cancel`, `confirm`, `post`, `reverse`, `pay`, `dispatch`, `close`, `reopen`, `write_off`, `purge`, `approve`, `export`, `import`
+
+Any other verb requires an ADR update.
+
+### RoleService rules
+
+- `set_role_composition()` is the only authorized way to change a group's bundle/extra/excluded set — it is atomic, calls `materialize()`, and writes an `ActionLog(kind=SECURITY)` entry.
+- `validate_role_assignment()` enforces the no-escalation rule: users cannot grant groups whose combined permissions exceed their own.
+- Four Separation-of-Duties rules are evaluated in warn mode: `purchasing_treasury`, `sales_billing`, `payroll_accounting`, `hr_treasury`. Warnings are persisted in the audit log but never block the assignment.
+
+### Guarantee tests
+
+Three CI tests protect the RBAC invariants:
+
+| Test | What it checks |
+|------|----------------|
+| `test_rbac_action_coverage.py` | Every write action declares a permission in `action_permissions` |
+| `test_permission_references.py` | Every `action_permissions` value references an existing DB permission |
+| `test_rbac_bundles.py` | Module levels are cumulative; sensitive perms not in module bundles |
+
+### Example — correct ViewSet declaration
+
+```python
+from core.api.permissions import StandardizedModelPermissions
+
+class SalesOrderViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, StandardizedModelPermissions]
+    queryset = SalesOrder.objects.select_related("customer")
+
+    action_permissions: dict[str, str | tuple[str, ...] | None] = {
+        "confirm": "sales.confirm_salesorder",
+        "annul":   "sales.annul_salesorder",
+        "summary": None,   # authenticated, no extra permission
+    }
 ```
 
 ## Input validation
@@ -115,7 +154,7 @@ PR requires security review if it touches:
 - Authentication / JWT / permission classes.
 - New external integration (outbound HTTP).
 - File upload / download.
-- New role or permission in `core/roles.py`.
+- New role (puesto/equipo) or permission bundle change in `core/rbac/`.
 - Dependencies with known CVEs.
 
 ## Incident response

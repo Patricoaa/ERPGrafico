@@ -185,19 +185,38 @@ class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return User.objects.filter(is_active=True)
         return super().get_queryset()
 
+    def perform_create(self, serializer):
+        from django.db import transaction
+
+        from core.rbac.services import RoleService
+
+        actor = self.request.user
+        new_groups = list(serializer.validated_data.get("groups") or [])
+        # C1: raises PermissionDenied BEFORE save if any group exceeds actor's perms
+        RoleService.validate_new_user_groups(actor, new_groups)
+        with transaction.atomic():
+            instance = serializer.save()
+            if new_groups:
+                RoleService.audit_new_user_groups(instance, new_groups, actor, self.request)
+
     def perform_update(self, serializer):
+        from core.rbac.services import RoleService
         instance = self.get_object()
-        is_active_before = instance.is_active
-        is_active_after = serializer.validated_data.get("is_active", instance.is_active)
-        
-        # If archiving (True -> False), use deactivate service
-        if is_active_before and not is_active_after:
+        is_before = instance.is_active
+        is_after = serializer.validated_data.get("is_active", is_before)
+        if is_before and not is_after:
             from .services import UserService
             UserService.deactivate(user=instance, deactivated_by=self.request.user, request=self.request)
-            # The service handles setting is_active=False and logging
             return
-            
+        new_groups = serializer.validated_data.get("groups")
+        before = set(instance.groups.values_list("name", flat=True)) if new_groups is not None else None
+        sod_warnings: list = []
+        if new_groups is not None:
+            sod_warnings = RoleService.validate_role_assignment(self.request.user, instance, list(new_groups))
         super().perform_update(serializer)
+        if new_groups is not None:
+            after = set(instance.groups.values_list("name", flat=True))
+            RoleService.log_user_roles_change(instance, before, after, self.request.user, self.request, sod_warnings=sod_warnings)
 
     def destroy(self, request, *args, **kwargs):
         # Archivo pattern: hard DELETE not allowed, use PATCH is_active=false to archive
@@ -218,9 +237,19 @@ class GroupViewSet(viewsets.ModelViewSet):
     Expose user groups (roles) with full CRUD.
     """
 
-    queryset = Group.objects.annotate(user_count=Count("user")).order_by("name")
+    queryset = Group.objects.select_related("profile").annotate(user_count=Count("user")).order_by("name")
     serializer_class = GroupSerializer
     pagination_class = None  # Master data
+    action_permissions = {
+        "role_composition": None,  # reviewed — GET uses view_group, PUT uses change_group
+    }
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        kind = self.request.query_params.get("kind")
+        if kind:
+            qs = qs.filter(profile__kind=kind)
+        return qs
 
     def perform_update(self, serializer):
         GroupService.validate_mutable(serializer.instance, serializer.validated_data.get("name"))
@@ -230,10 +259,30 @@ class GroupViewSet(viewsets.ModelViewSet):
         GroupService.validate_mutable(instance)
         instance.delete()
 
+    @action(detail=True, methods=["get", "put"], url_path="composition")
+    def role_composition(self, request, pk=None):
+        from rest_framework.exceptions import PermissionDenied
+
+        from core.rbac.services import RoleService
+
+        group = self.get_object()
+        if request.method == "GET":
+            if not request.user.has_perm("auth.view_group"):
+                raise PermissionDenied()
+            return Response(RoleService.get_composition(group))
+        if not request.user.has_perm("auth.change_group"):
+            raise PermissionDenied()
+        sod = RoleService.apply_composition(group, request.data, request.user, request)
+        return Response({"status": "ok", "sod_warnings": sod})
+
 
 class CompanySettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = CompanySettings.objects.all()
     serializer_class = CompanySettingsSerializer
+    action_permissions = {
+        # current: PUT/PATCH → change_* by method; GET is open to authenticated users
+        "current": None,
+    }
 
     @action(detail=False, methods=["get", "put", "patch"])
     def current(self, request):

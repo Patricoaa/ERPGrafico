@@ -11,6 +11,20 @@ class BillingConfig(AppConfig):
         # de objeto (view/add/change/delete sobre Invoice) no cambian.
 
         try:
+            from core.permissions import PermissionRegistry
+
+            PermissionRegistry.register(
+                "billing",
+                [
+                    ("confirm_invoice", "Puede confirmar factura/DTE"),
+                    ("annul_invoice", "Puede anular factura/DTE"),
+                    ("cancel_invoice", "Puede cancelar factura/DTE"),
+                ],
+            )
+        except ImportError:
+            pass
+
+        try:
             from billing.models import Invoice
             from core.prefix_registry import EntityPrefix
             from core.registry import SearchableEntity, UniversalRegistry

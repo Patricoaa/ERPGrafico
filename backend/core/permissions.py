@@ -3,6 +3,17 @@ from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ImproperlyConfigured
 
+# Backward-compatible re-export (Ruling R-01)
+# The canonical definition lives in core.rbac.catalog.
+# Import is deferred to avoid circular imports at module load time.
+
+
+def permission_catalog() -> "set[str]":  # noqa: F821
+    """Re-export: see core.rbac.catalog.permission_catalog for the canonical version."""
+    from core.rbac.catalog import permission_catalog as _catalog
+
+    return _catalog()
+
 
 class PermissionRegistry:
     """
@@ -90,18 +101,13 @@ class PermissionRegistry:
         return created_count
 
 
-# Pre-defined Standard Roles
+# Canonical role constants
 class Roles:
-    ADMIN = "ADMIN"
-    MANAGER = "MANAGER"  # Accountant / Sales Manager
-    OPERATOR = "OPERATOR"
-    READ_ONLY = "READ_ONLY"
+    SYSTEM_ADMIN = "Administrador del sistema"
 
     @classmethod
     def get_choices(cls):
+        """Return choices for system-level roles (for forms and serializers)."""
         return [
-            (cls.ADMIN, "Administrador"),
-            (cls.MANAGER, "Gerente/Contador"),
-            (cls.OPERATOR, "Operador"),
-            (cls.READ_ONLY, "Lectura"),
+            (cls.SYSTEM_ADMIN, "Administrador del sistema"),
         ]

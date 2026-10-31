@@ -14,6 +14,16 @@ class TreasuryConfig(AppConfig):
                 [
                     ("view_dashboard_treasury", "Can view treasury dashboard"),
                     ("purge_treasurymovement", "Puede purgar movimientos anulados"),
+                    ("cancel_treasurymovement", "Puede cancelar movimiento de tesorería"),
+                    ("annul_treasurymovement", "Puede anular movimiento de tesorería"),
+                    ("confirm_bankstatement", "Puede confirmar cartola bancaria"),
+                    ("close_possession", "Puede cerrar sesión de caja"),
+                    ("annul_check", "Puede anular cheque"),
+                    ("post_bankloan", "Puede desembolsar crédito bancario"),
+                    ("pay_loaninstallment", "Puede pagar cuota de crédito"),
+                    ("pay_creditcardstatement", "Puede pagar tarjeta de crédito"),
+                    ("cancel_creditcardstatement", "Puede cancelar cartola de tarjeta de crédito"),
+                    ("reverse_creditcardstatement", "Puede reversar tarjeta de crédito"),
                 ],
             )
         except ImportError:

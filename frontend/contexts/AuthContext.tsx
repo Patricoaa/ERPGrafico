@@ -124,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const hasPermission = (permission: string): boolean => {
         if (!user) return false;
-        if (user.is_superuser || user.groups?.includes('ADMIN')) return true;
+        if (user.is_superuser) return true;
 
         return user.permissions?.includes(permission) || false;
     };

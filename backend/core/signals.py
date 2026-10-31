@@ -1,9 +1,40 @@
+from django.contrib.auth.models import Group
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from contacts.models import Contact
 
 from .models import CompanySettings
+
+
+def _get_system_role_names() -> frozenset[str]:
+    """Return the set of names for system roles (seeded roles with is_system=True)."""
+    try:
+        from core.rbac.seed import SEEDED_ROLES
+        return frozenset(r["name"] for r in SEEDED_ROLES.values() if r["is_system"])
+    except Exception:
+        return frozenset()
+
+
+_SYSTEM_ROLE_NAMES: frozenset[str] = _get_system_role_names()
+
+
+@receiver(post_save, sender=Group)
+def create_group_profile_on_group_create(sender, instance, created, **kwargs):
+    """Auto-create a GroupProfile whenever a Group is created outside the API.
+
+    System-role names get kind=ROLE + is_system=True; all others get kind=TEAM.
+    """
+    if created:
+        from core.models import GroupProfile
+        is_system_role = instance.name in _SYSTEM_ROLE_NAMES
+        GroupProfile.objects.get_or_create(
+            group=instance,
+            defaults={
+                "kind": GroupProfile.ROLE if is_system_role else GroupProfile.TEAM,
+                "is_system": is_system_role,
+            },
+        )
 
 
 @receiver(post_save, sender=Contact)
@@ -73,12 +104,20 @@ def sync_registered_permissions(sender, **kwargs):
     if getattr(sender, "name", None) != "core":
         return
 
-    from django.contrib.auth.models import Group, Permission
-
-    from .permissions import PermissionRegistry, Roles
+    from .permissions import PermissionRegistry
 
     PermissionRegistry.sync_to_db()
 
-    admin = Group.objects.filter(name=Roles.ADMIN).first()
-    if admin is not None:
-        admin.permissions.add(*Permission.objects.all())
+    from core.rbac.services import RoleService
+    # materialize_all() covers sysadmin via its ALL_MODULE_BUNDLES + ALL_SENSITIVE_BUNDLES,
+    # keeping post_migrate and sync_permissions consistent (I10).
+    # NOTE: on a fresh DB, GroupProfile for seeded roles does not exist yet —
+    # run `manage.py sync_permissions` after the initial `migrate` to bootstrap roles.
+    count = RoleService.materialize_all()
+    if count == 0:
+        import warnings
+        warnings.warn(
+            "post_migrate: materialize_all() found no ROLE groups. "
+            "Run `manage.py sync_permissions` to create seeded roles.",
+            stacklevel=2,
+        )

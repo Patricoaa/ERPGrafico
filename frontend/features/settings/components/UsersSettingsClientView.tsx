@@ -25,14 +25,7 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
         searchFields: [
             { key: 'search', label: 'Nombre / Email / Usuario', serverParam: 'search' },
         ],
-        filters: [
-            { key: 'role', label: 'Rol', type: 'single', serverParam: 'role', options: [
-                { label: 'Admin', value: 'ADMIN' },
-                { label: 'Gerente', value: 'MANAGER' },
-                { label: 'Operador', value: 'OPERATOR' },
-                { label: 'Lectura', value: 'READ_ONLY' },
-            ]},
-        ],
+        filters: [],
     }), [])
     const search = useUnifiedSearch(config)
     const isFiltered = search.isFiltered

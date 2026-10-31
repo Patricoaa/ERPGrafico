@@ -71,18 +71,16 @@ export function useCashMovementActions({ movement, onSuccess }: UseCashMovementA
     const status = movement?.status ?? ''
 
     // Movement statuses from serializer: POSTED, PENDING, RECONCILED (no DRAFT)
-    const canModify = status !== 'RECONCILED' && can('treasury.delete_treasurymovement')
-
-    if (canModify) {
-        if (status === 'POSTED') {
-            actions.push({
-                id: 'annul-payment',
-                label: 'Anular pago',
-                icon: Ban,
-                destructive: true,
-                onClick: () => setAnnulState({ id: movement!.id, amount: Number(movement!.amount), mode: 'annul' }),
-            })
-        }
+    if (status === 'POSTED' && can('treasury.annul_treasurymovement')) {
+        actions.push({
+            id: 'annul-payment',
+            label: 'Anular pago',
+            icon: Ban,
+            destructive: true,
+            onClick: () => setAnnulState({ id: movement!.id, amount: Number(movement!.amount), mode: 'annul' }),
+        })
+    }
+    if (status !== 'RECONCILED' && can('treasury.cancel_treasurymovement')) {
         actions.push({
             id: 'cancel-payment',
             label: 'Cancelar pago',
@@ -115,7 +113,7 @@ export function useCashMovementActions({ movement, onSuccess }: UseCashMovementA
         const { label, id, status: linkStatus, accessible } = link.target
         if (!accessible || linkStatus === 'CANCELLED') return []
 
-        if (label === 'billing.invoice' && linkStatus === 'DRAFT' && can('billing.delete_invoice')) {
+        if (label === 'billing.invoice' && linkStatus === 'DRAFT' && can('billing.cancel_invoice')) {
             return [{
                 id: 'cancel-draft-invoice',
                 label: 'Cancelar borrador',

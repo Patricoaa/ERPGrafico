@@ -1,9 +1,11 @@
 import { defineEntity } from "@/components/entity-view"
 import type { AppUser } from "@/types/entities"
 
-const SYSTEM_ROLES: readonly string[] = ["ADMIN", "MANAGER", "OPERATOR", "READ_ONLY"]
-
 const groupNames = (u: AppUser): string[] => (u.groups ?? []).map((g) => (typeof g === "string" ? g : g.name))
+const roleNames = (u: AppUser): string[] =>
+    (u.groups ?? []).filter((g) => typeof g !== "string" && g.kind === "ROLE").map((g) => (typeof g === "string" ? g : g.name))
+const teamNames = (u: AppUser): string[] =>
+    (u.groups ?? []).filter((g) => typeof g !== "string" && g.kind === "TEAM").map((g) => (typeof g === "string" ? g : g.name))
 const fullName = (u: AppUser): string => `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim()
 
 /** System user (ADR-0087 oleada A1). Replaces userFields.tsx (1 computed) + the inline contact column + renderCard. */
@@ -13,8 +15,18 @@ export const userEntity = defineEntity<AppUser>()((f) => ({
         username: f.text("username", { label: "Usuario" }),
         email: f.text("email", { label: "Email" }),
         fullName: f.text((u) => fullName(u) || null, { label: "Nombre" }),
-        role: f.tags((u) => groupNames(u).filter((g) => SYSTEM_ROLES.includes(g)).slice(0, 1), { label: "Rol", domain: "user_role" }),
-        groups: f.tags((u) => groupNames(u).filter((g) => !SYSTEM_ROLES.includes(g)), { label: "Grupos", sortable: false }),
+        role: f.tags((u) => {
+            // Prefer kind-based filtering; fall back to all groups if kind info is absent
+            const roles = roleNames(u)
+            return roles.length > 0 ? roles : groupNames(u).slice(0, 1)
+        }, { label: "Rol", domain: "user_role" }),
+        groups: f.tags((u) => {
+            // Prefer kind-based team filtering; fall back to all groups if kind info is absent
+            const teams = teamNames(u)
+            if (teams.length > 0) return teams
+            const all = groupNames(u)
+            return all.length > 1 ? all.slice(1) : []
+        }, { label: "Grupos", sortable: false }),
         isActive: f.status((u) => (u.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Inactivo" }), { label: "Estado" }),
         contact: f.contact((u) => (u.contact ? { id: u.contact, name: fullName(u) || u.username } : null), { label: "Contacto", sortable: false }),
     },

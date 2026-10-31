@@ -282,13 +282,9 @@ const CATEGORY_MAP: Record<CategoryDomain, Record<string, CategoryEntry>> = {
         'PERMISO_SIN_GOCE': { intent: 'warning',     label: 'Permiso s/Goce' },
         'AUSENCIA_HORAS':   { intent: 'neutral',     label: 'Horas' },
     },
-    // System roles (Django groups seeded by core); functional groups are free tags.
-    user_role: {
-        'ADMIN':     { intent: 'primary', label: 'Admin' },
-        'MANAGER':   { intent: 'warning', label: 'Gerente' },
-        'OPERATOR':  { intent: 'info',    label: 'Operador' },
-        'READ_ONLY': { intent: 'neutral', label: 'Lectura' },
-    },
+    // User roles are now dynamic groups (kind=ROLE); unknown names fall through
+    // to the default neutral resolver, showing the group name as-is.
+    user_role: {} as Record<string, CategoryEntry>,
 }
 
 export function resolveCategory(domain: CategoryDomain, value: string): CategoryEntry {

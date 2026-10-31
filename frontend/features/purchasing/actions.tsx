@@ -47,7 +47,7 @@ export const purchaseOrderActions: ActionRegistry<ActionDoc> = {
                 id: 'complete-folio',
                 label: 'Registrar Folio',
                 icon: FileEdit,
-                requiredPermissions: ['billing.change_invoice'],
+                requiredPermissions: ['billing.confirm_invoice'],
                 checkAvailability: (activeDoc) => {
                     if (!activeDoc) return false
                     const isInvoiced = !!activeDoc.dte_type

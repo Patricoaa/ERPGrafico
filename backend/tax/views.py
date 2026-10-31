@@ -36,6 +36,10 @@ class TaxPeriodViewSet(viewsets.ModelViewSet):
     filterset_fields = ["year", "month", "status"]
     ordering_fields = ["year", "month", "status"]
     ordering = ["-year", "-month"]
+    action_permissions = {
+        "close": "tax.can_close_tax_period",
+        "reopen": "tax.can_reopen_tax_period",
+    }
 
     @idempotent_endpoint(scope="tax.period.close")
     @action(detail=True, methods=["post"])
@@ -85,6 +89,13 @@ class F29DeclarationViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     queryset = F29Declaration.objects.select_related("tax_period").all()
     serializer_class = F29DeclarationSerializer
     filterset_fields = ["tax_period__year", "tax_period__month", "tax_period__status"]
+    action_permissions = {
+        "register": "tax.post_f29declaration",
+        # Read-like POST → view_*
+        "calculate": "tax.view_f29declaration",
+        # Edit via POST → change_*
+        "attach_document": "tax.change_f29declaration",
+    }
     ordering_fields = ["tax_period__year", "tax_period__month", "declaration_date"]
     ordering = ["-tax_period__year", "-tax_period__month"]
 
@@ -169,6 +180,9 @@ class F29PaymentViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     filterset_fields = ["declaration", "payment_date", "payment_method"]
     ordering_fields = ["payment_date", "amount"]
     ordering = ["-payment_date"]
+    action_permissions = {
+        "annul": "tax.annul_f29payment",
+    }
 
     def create(self, request, *args, **kwargs):
         """Create a new tax payment"""
@@ -207,6 +221,10 @@ class AccountingPeriodViewSet(viewsets.ModelViewSet):
     filterset_fields = ["year", "month", "status"]
     ordering_fields = ["year", "month", "status"]
     ordering = ["-year", "-month"]
+    action_permissions = {
+        "close": "tax.can_close_accounting_period",
+        "reopen": "tax.can_reopen_accounting_period",
+    }
 
     @idempotent_endpoint(scope="tax.period.close")
     @action(detail=True, methods=["post"])
