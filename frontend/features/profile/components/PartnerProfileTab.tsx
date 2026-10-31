@@ -87,10 +87,9 @@ export function PartnerProfileTab({ contactId }: Props) {
                         <header className="mb-2 flex items-start justify-between gap-4 border-b border-border/70 pb-3">
                             <div>
                                 <h2 className="text-base font-semibold text-foreground">Distribución de capital</h2>
-                                <p className="mt-1 text-sm text-muted-foreground">Participación porcentual de los socios</p>
                             </div>
                         </header>
-                        <div className="min-h-[280px] flex-1 sm:min-h-[320px]">
+                        <div className="min-h-[200px] flex-1 sm:min-h-[200px]">
                             <PieChart
                                 data={pieData}
                                 activeId={contact.name}
@@ -104,18 +103,18 @@ export function PartnerProfileTab({ contactId }: Props) {
                                 enableArcLabels={false}
                                 enableArcLinkLabels={false}
                                 legends={[]}
-                                margin={{ top: 8, right: 16, bottom: 8, left: 16 }}
+                                margin={{ top: 12, right: 20, bottom: 12, left: 20 }}
                                 centerLabel={{ value: `${equityPct}%`, label: "Participación" }}
                                 renderTooltip={(datum) => (
                                     <div className="flex items-center gap-2">
                                         <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: datum.color }} />
                                         <span className="font-medium">{String(datum.label ?? datum.id)}</span>
-                                        <span className="font-bold">{datum.value.toFixed(1)}%</span>
+                                        <span className="font-normal text-sm">{datum.value.toFixed(1)}%</span>
                                     </div>
                                 )}
                             />
                         </div>
-                        <div className="flex min-h-10 items-center justify-center border-t border-border/60 pt-2">
+                        <div className="flex min-h-10 items-center justify-center border-border/60 pt-2">
                             <ChartLegend items={pieData.map((d) => ({ label: String(d.id), color: d.color }))} />
                         </div>
                     </section>

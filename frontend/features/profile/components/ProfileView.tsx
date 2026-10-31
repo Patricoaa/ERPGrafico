@@ -333,7 +333,7 @@ function PersonalTab({
             {activeSubTab === "employee" && (
                 <FadeIn yOffset={10}>
                     <section className="w-full min-w-0 space-y-6">
-                        <header className="flex items-start justify-between gap-4 border-b border-border/70 pb-4">
+                        <header className="flex items-start justify-between gap-4 border-border/70 pb-4">
                             <div>
                                 <h2 className="text-base font-semibold text-foreground">Ficha de Personal</h2>
                                 <p className="mt-1 text-sm text-muted-foreground">{employee.display_id}</p>
