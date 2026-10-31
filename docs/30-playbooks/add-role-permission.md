@@ -308,6 +308,58 @@ Warnings are persisted in `ActionLog`. They do not prevent the assignment but sh
 
 ---
 
+## Task D — Editar la composición de un puesto desde la UI (Fase 2)
+
+El editor de composición permite asignar bundles a un puesto sin tocar el backend directamente.
+
+### D1. Acceder al editor
+
+1. Navegar a **Ajustes → Usuarios → Puestos**.
+2. En la fila del puesto con `kind = ROLE`, abrir el menú de acciones (⋮) y seleccionar **Composición**.
+3. El drawer lateral muestra la matriz de bundles.
+
+Requisito: el actor debe tener el permiso `auth.change_group`. Si no lo tiene, el drawer se abre en modo solo lectura (sin botón Guardar y checkboxes desactivados).
+
+### D2. Entender la matriz
+
+```
+Módulo         │ Leer   │ Operar │ Gestionar
+───────────────┼────────┼────────┼──────────
+Ventas         │  ☑    │  ☑     │  ☐
+Compras        │  ☑    │  ☐     │  ☐
+...
+```
+
+- **Leer ⊂ Operar ⊂ Gestionar:** marcar "Operar" activa "Leer" automáticamente; desmarcar "Leer" desactiva también "Operar" y "Gestionar".
+- **No-escalación:** un checkbox aparece desactivado si el actor no posee todos los permisos del bundle. Los superusuarios no tienen esta restricción.
+- **Sensibles:** los bundles sensibles (`hr.payroll`, `treasury.payments`, etc.) aparecen en una sección separada abajo de la matriz de módulos.
+- **Rol del sistema (`is_system=True`):** todos los controles están desactivados y se muestra un aviso. El backend también rechaza el PUT con 400.
+
+### D3. Avisos de separación de funciones (SoD)
+
+El editor evalúa las reglas SoD en tiempo real. Si la selección activa una regla, aparece un aviso amarillo antes del botón Guardar. Esto no bloquea el guardado: la decisión final corresponde a un supervisor.
+
+### D4. Guardar
+
+El botón **Guardar** llama a `PUT /api/core/groups/{id}/composition/` con `{bundles, extra_permissions, excluded_permissions}`. La respuesta incluye `sod_warnings` que el backend registra en `ActionLog`.
+
+### D5. Verificar desde el backend
+
+```bash
+# Ver la composición efectiva del puesto
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8100/api/core/groups/{id}/composition/
+
+# Confirmar que los permisos materializados son correctos
+python manage.py shell -c "
+from django.contrib.auth.models import Group
+g = Group.objects.get(id={id})
+print(g.permissions.values_list('codename', flat=True))
+"
+```
+
+---
+
 ## Validation checklist
 
 ```bash
@@ -336,7 +388,7 @@ npm run lint
 - [ ] Three guarantee tests pass.
 - [ ] `python manage.py sync_permissions` runs without error.
 - [ ] Service-layer check added if business logic requires it.
-- [ ] Frontend `usePermission` / `<PermissionGuard>` updated.
+- [ ] Frontend: use `can(p)` from `AuthContext` or `<Can permission="…">` for UI guards; add `<ModuleGuard>` to layout if protecting a new module.
 - [ ] Tests: unauthorized → 403, authorized → 2xx.
 - [ ] If new role created: ADR filed.
 - [ ] No `is_staff` or hardcoded user ID checks added.

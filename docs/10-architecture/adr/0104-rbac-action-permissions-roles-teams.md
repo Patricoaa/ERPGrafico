@@ -142,6 +142,41 @@ Violations produce a `sod_warnings` list persisted in the audit log. They do not
 - The closed verb list requires a deliberate ADR update to extend, which adds a small coordination cost.
 - 11 seeded roles cover the initial customer scope; additional roles need bundle-composition work, not code.
 
+## Frontend (Fase 2 — 2026-10-31)
+
+### `can()` — única función de verificación de permisos
+
+`AuthContext` exporta una función `can(permission: string): boolean` como único punto de verdad para verificar permisos en el frontend:
+
+```typescript
+can = (p) => user.is_superuser || user.permissions.includes(p)
+```
+
+`hasPermission` es un alias de `can` (compatibilidad retroactiva). El componente declarativo `<Can permission="…">` envuelve `can()`. `PermissionGuard` es un alias deprecado que delega a `<Can>`.
+
+### `<ModuleGuard>` — protección de rutas por módulo
+
+Cada `layout.tsx` de módulo envuelve su contenido con `<ModuleGuard permission="módulo.view_dashboard_módulo">`. El componente llama a `can(permission)` y redirige a `/403` si falla; muestra `null` mientras `AuthContext` carga para evitar flash del contenido protegido. Módulos con `permission: null` en el registro (actualmente `contacts`) no tienen guard.
+
+El interceptor Axios en `lib/api.ts` escucha respuestas 403 de endpoints de datos (excluye `/auth/` y `/token/`) y despacha el evento `auth:forbidden`; `AuthContext` muestra un toast de error sin hacer logout.
+
+### Editor de composición de roles
+
+`RoleCompositionEditor` consume:
+- `GET /api/core/permissions/bundles/` para construir la matriz de casillas.
+- `GET /api/core/groups/{id}/composition/` para leer la composición actual.
+- `PUT /api/core/groups/{id}/composition/` para guardar cambios.
+
+La matriz presenta bundles regulares en filas y bundles sensibles en una sección separada. La lógica `read ⊂ operate ⊂ manage` se aplica localmente en el cambio de cada checkbox. Las 4 reglas SoD se evalúan localmente y se muestran como alertas no bloqueantes. El actor no puede otorgar bundles cuyos permisos no posee (no-escalation).
+
+El editor se abre desde la vista Ajustes → Usuarios → Puestos con la acción "Composición" (sólo visible para grupos con `kind=ROLE` y actor con `auth.change_group`).
+
+### Resolución de issues deferred de Fase 1
+
+- **I5 — grupos con `kind` en UserSerializer:** `UserSerializer.to_representation()` devuelve `groups` como lista de objetos `{id, name, kind}` en lugar de lista de nombres. `POST/PATCH /users/` sigue aceptando nombres (SlugRelatedField). `POST /groups/` acepta `kind` al crear un grupo.
+- **I4 — `sod_warnings` en respuesta de usuario:** `UserViewSet.create` y `update` añaden `sod_warnings` al cuerpo de la respuesta (lista de `{rule, label}`) sin romper el esquema serializer.
+- **I6 — protección de módulos sin permiso:** `<ModuleGuard>` cierra la brecha del lado del cliente.
+
 ## Alternatives considered
 
 - **Per-action `permission_classes` list** (the classic DRF pattern): verbose, error-prone, and still lacks the machine-readable catalog needed by the frontend assignment UI. Rejected.
