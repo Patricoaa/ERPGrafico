@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import {useRouter} from "next/navigation";
 import axios from "axios";
 import { toast } from "sonner";
-import { AUTH_UNAUTHORIZED_EVENT } from "@/lib/api";
+import { AUTH_UNAUTHORIZED_EVENT, AUTH_FORBIDDEN_EVENT } from "@/lib/api";
 import { authApi } from "@/features/auth/api/authApi";
 import { useTheme } from "next-themes";
 import { setClientToken, removeClientTokens, getClientToken } from "@/lib/client-token";
@@ -105,6 +105,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         window.addEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
         return () => window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
     }, [router]);
+
+    // Listen for 403 Forbidden responses from outside React. Unlike 401 (session
+    // expired), a 403 means the session is valid but the action is not allowed —
+    // show a toast and leave the user logged in.
+    useEffect(() => {
+        const handleForbidden = () => {
+            toast.error("No tienes permiso para realizar esta acción.");
+        };
+        window.addEventListener(AUTH_FORBIDDEN_EVENT, handleForbidden);
+        return () => window.removeEventListener(AUTH_FORBIDDEN_EVENT, handleForbidden);
+    }, []);
 
     const login = async (token: string) => {
         setClientToken(token);

@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import { PageContainer, Skeleton } from "@/components/shared"
 import { TreasuryHeader } from "./TreasuryHeader"
 import { createAutoMetadata } from "@/lib/auto-metadata"
+import { ModuleGuard } from "@/components/auth/ModuleGuard"
 
 export const generateMetadata = createAutoMetadata("treasury")
 
@@ -18,13 +19,15 @@ function TreasuryFallback() {
 
 export default function TreasuryLayout({ children }: { children: React.ReactNode }) {
     return (
-        <PageContainer className="flex flex-col">
-            <TreasuryHeader />
-            <div className="flex-1 min-h-0 flex flex-col">
-                <Suspense fallback={<TreasuryFallback />}>
-                    {children}
-                </Suspense>
-            </div>
-        </PageContainer>
+        <ModuleGuard permission="treasury.view_dashboard_treasury">
+            <PageContainer className="flex flex-col">
+                <TreasuryHeader />
+                <div className="flex-1 min-h-0 flex flex-col">
+                    <Suspense fallback={<TreasuryFallback />}>
+                        {children}
+                    </Suspense>
+                </div>
+            </PageContainer>
+        </ModuleGuard>
     )
 }

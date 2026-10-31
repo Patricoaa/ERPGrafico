@@ -15,6 +15,7 @@ const api = axios.create({
 
 /** Evento que cruza la barrera Axios (no-React) → AuthContext (React). */
 export const AUTH_UNAUTHORIZED_EVENT = 'auth:unauthorized' as const;
+export const AUTH_FORBIDDEN_EVENT = 'auth:forbidden' as const;
 
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: (token: string) => void; reject: (error: unknown) => void }> = [];
@@ -105,6 +106,16 @@ api.interceptors.response.use(
                 return Promise.reject(error);
             } finally {
                 isRefreshing = false;
+            }
+        }
+        if (error.response?.status === 403) {
+            const url = originalRequest?.url ?? ''
+            if (!url.includes('/auth/') && !url.includes('/token/')) {
+                if (typeof window !== 'undefined') {
+                    try {
+                        window.dispatchEvent(new CustomEvent(AUTH_FORBIDDEN_EVENT))
+                    } catch {}
+                }
             }
         }
         return Promise.reject(error);
