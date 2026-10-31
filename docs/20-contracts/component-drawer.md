@@ -149,6 +149,7 @@ Para las reglas de layout dentro del drawer (grid de 4 columnas, anchos de campo
 5. **Variante de pestañas estándar**: `underline` con acentos de color CMYK.
 6. **Padding por defecto**: `p-6` en cada tab, desactivable con `noPadding: true`.
 7. **Riel derecho colapsable** con persistencia en `localStorage`.
+8. **`forceMount` seguro**: una pestaña con `forceMount: true` permanece montada (conserva su estado local al cambiar de pestaña) pero `DrawerLayout` la oculta cuando está inactiva (`data-[state=inactive]:hidden`). Radix no aplica el atributo `hidden` a los paneles con `forceMount`, por lo que sin esa regla el contenido del panel inactivo se renderiza dentro del workspace de la pestaña activa.
 
 ```tsx
 import { DrawerLayout, type DrawerLayoutTab } from "@/components/shared"

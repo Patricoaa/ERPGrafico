@@ -203,6 +203,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
 
             <LabeledContainer
                 label={`Tipo de ${receiptLabel}`}
+                className="border-transparent group-focus-within:border-transparent group-focus-within:ring-0 group-focus-within:shadow-none"
             >
                 <ChoiceGroup
                     label={`Tipo de ${receiptLabel}`}

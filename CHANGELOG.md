@@ -2,6 +2,116 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.53](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.52...v0.3.53) (2026-10-31)
+
+
+### 🐛 Bug Fixes
+
+* **profile:** improve button styling in ProfileSettingsSidebar component ([49fe676](https://github.com/Patricoaa/ERPGrafico/commit/49fe676e44036c771a9900b3b5a3db2ac5effaed))
+* **profile:** update text and layout in PartnerProfileTab and ProfileView components ([74921fa](https://github.com/Patricoaa/ERPGrafico/commit/74921faf56a6ad59093c29ed38250a70012c26c2))
+
+### [0.3.52](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.51...v0.3.52) (2026-10-31)
+
+
+### ✨ Features
+
+* **profile:** open user settings as modal overlay ([85f123e](https://github.com/Patricoaa/ERPGrafico/commit/85f123e36763ac840b36918c5fdc33c4545710f6))
+
+### [0.3.51](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.50...v0.3.51) (2026-10-30)
+
+
+### 🐛 Bug Fixes
+
+* **tests:** resolve failing test suites in backend and frontend ([38afeb8](https://github.com/Patricoaa/ERPGrafico/commit/38afeb85a39fe38ef6ee928cb161aa58cd5b6de1))
+
+### [0.3.50](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.49...v0.3.50) (2026-10-30)
+
+
+### 🐛 Bug Fixes
+
+* **production:** clarify work order wizard transitions ([b5484c0](https://github.com/Patricoaa/ERPGrafico/commit/b5484c071b0a6bc1e906ac0eb504ace64535f0ec))
+
+### [0.3.49](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.48...v0.3.49) (2026-10-30)
+
+
+### 🐛 Bug Fixes
+
+* **inventory:** avoid duplicate create prompts ([af8b032](https://github.com/Patricoaa/ERPGrafico/commit/af8b03276ca38e329fa6e4c37118a55f03f41d4f))
+
+### [0.3.48](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.47...v0.3.48) (2026-10-30)
+
+
+### ✨ Features
+
+* **inventory:** continue product setup after creation ([4902ca4](https://github.com/Patricoaa/ERPGrafico/commit/4902ca4a43641d4fa3db3b6d3b034a768d60d83a))
+
+### [0.3.47](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.46...v0.3.47) (2026-10-30)
+
+
+### ✨ Features
+
+* **shared:** implement DrawerResizableRail for drawer sidebars with drag and hover UI feedback ([ab8795d](https://github.com/Patricoaa/ERPGrafico/commit/ab8795d3b8f216095f53b6af02445cbdfadc4285))
+
+### [0.3.46](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.45...v0.3.46) (2026-10-30)
+
+
+### ✨ Features
+
+* **inventory:** enhance ProductInventoryTab for service handling and update logistics checks ([2cd84bc](https://github.com/Patricoaa/ERPGrafico/commit/2cd84bcbb37b8a4c351d41e53f9bd94484f6408d))
+
+### [0.3.45](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.44...v0.3.45) (2026-10-30)
+
+
+### ✨ Features
+
+* **input:** implement notched field legends with opaque backing and layering adjustments ([a2b3cbb](https://github.com/Patricoaa/ERPGrafico/commit/a2b3cbb94780790ef1072da32987ee9a140d0089))
+
+### [0.3.44](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.43...v0.3.44) (2026-10-30)
+
+
+### ⚙️ Refactors
+
+* **shared, inventory, production, sales, users:** standardize color and class properties in various components ([845ae44](https://github.com/Patricoaa/ERPGrafico/commit/845ae444fcbacaf8d95c7c85fa2b07cf19396398))
+
+### [0.3.43](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.42...v0.3.43) (2026-10-30)
+
+
+### ✨ Features
+
+* **purchasing:** PurchaseCheckoutWizard DrawerLayout with top tabs and collapsible sidebar ([e343e04](https://github.com/Patricoaa/ERPGrafico/commit/e343e049c33603b8277dee4ea9efc06e16ee430b))
+* **shared:** ADR-0104 — LabeledSwitch transparent container presets and colored rings ([ff24531](https://github.com/Patricoaa/ERPGrafico/commit/ff245319a0d46e1d0a7aac085ac1fad18c5ab903))
+
+
+### ⚙️ Refactors
+
+* **inventory:** adopt LabeledSwitch color preset in ProductManufacturingTab ([1baf98c](https://github.com/Patricoaa/ERPGrafico/commit/1baf98cbf22618be91bf6007ce3bd1e90ee6c8d9))
+
+
+### 🐛 Bug Fixes
+
+* **shared:** correct info preset border color in LabeledSwitch ([d6cdef5](https://github.com/Patricoaa/ERPGrafico/commit/d6cdef5b920c8c1a6786d5a582307c9780902b6e))
+
+### [0.3.42](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.41...v0.3.42) (2026-10-30)
+
+
+### 🐛 Bug Fixes
+
+* **registry:** [#178](https://github.com/Patricoaa/ERPGrafico/issues/178) — corregir 6 listUrl rotas en searchableEntityRoutes + backend ([3fec6f4](https://github.com/Patricoaa/ERPGrafico/commit/3fec6f493a6fb62e67dc63a778ed2f00e2db211f))
+
+### [0.3.41](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.40...v0.3.41) (2026-10-30)
+
+
+### 🐛 Bug Fixes
+
+* **shared:** hide force-mounted drawer tabs when inactive ([373751b](https://github.com/Patricoaa/ERPGrafico/commit/373751b631a56817a7ded5ef863c85f8796654d9))
+
+### [0.3.40](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.39...v0.3.40) (2026-10-30)
+
+
+### 🐛 Bug Fixes
+
+* **selectors:** guard formatEntityDisplay against null records ([4725afe](https://github.com/Patricoaa/ERPGrafico/commit/4725afe7c96ca5b08c6cff0708c84f71e712ba80))
+
 ### [0.3.39](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.38...v0.3.39) (2026-10-30)
 
 

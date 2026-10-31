@@ -399,8 +399,11 @@ POST   /api/inventory/products/          create (multipart/form-data for image)
 GET    /api/inventory/products/{id}/     detail
 PATCH  /api/inventory/products/{id}/     update
 DELETE /api/inventory/products/{id}/     soft-delete (sets active=false)
+POST   /api/inventory/products/{id}/generate_variants/   generate variants for an existing template
 GET    /api/inventory/products/analytics/    agregación servidor (ProductAnalyticsService)
 ```
+
+`generate_variants/` request: `{ "selection": [{ "attribute": 12, "values": [31, 32] }] }`. Successful response: `{ "success": true, "created": 2, "skipped": 0 }`; invalid selection returns `400` with an `error` message.
 
 Request schema (create/update key fields — partial; see serializer for full schema):
 
@@ -420,9 +423,17 @@ Request schema (create/update key fields — partial; see serializer for full sc
   "can_be_sold": "boolean",
   "can_be_purchased": "boolean",
   "has_variants": "boolean",
-  "boms": "array (BOM objects with lines)"
+  "has_bom": "boolean",
+  "requires_advanced_manufacturing": "boolean",
+  "attribute_values": "array<number> (attribute value IDs)",
+  "variant_display_name": "string | null",
+  "variant_generation_selection": "array<{attribute: number, values: number[]}> (optional; only for initial template variant generation)",
+  "uom_prices": "array (UoM-specific prices)",
+  "boms": "created separately via /api/production/boms/ after the product exists"
 }
 ```
+
+Initial variant generation is part of the product create transaction: when `has_variants` is true and a selection is provided, all requested variants are created or the product creation is rolled back. Later variant generation uses `POST /api/inventory/products/{id}/generate_variants/`. Price rules and BOMs remain separate, optional resources created after the product has an ID.
 
 Response key fields:
 

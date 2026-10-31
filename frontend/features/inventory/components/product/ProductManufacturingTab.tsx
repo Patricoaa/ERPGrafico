@@ -49,6 +49,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                 <div className="space-y-6">
                     <LabeledContainer
                         label="Modo de Producción"
+                        className="border-transparent group-focus-within:border-transparent group-focus-within:ring-0 group-focus-within:shadow-none"
                     >
                         <ChoiceGroup
                             label="Modo de Producción"
@@ -133,7 +134,9 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                                         form.setValue("has_bom", val, { shouldDirty: true, shouldValidate: false })
                                     }}
                                     disabled={isExpress && !hasVariants}
+                                    color="info"
                                     icon={<Package className="h-4 w-4" />}
+                                    className="h-full"
                                 />
                             )}
                         />

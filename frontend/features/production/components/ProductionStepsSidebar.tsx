@@ -1,9 +1,8 @@
 "use client"
 
-import { ChevronLeft, ChevronRight } from "lucide-react"
 import type { ReactNode } from "react"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import { WizardStepsSidebar, type WizardSidebarStep } from "@/components/shared"
+import { DrawerResizableRail, WizardStepsSidebar, type WizardSidebarStep } from "@/components/shared"
 
 interface ProductionStepsSidebarProps {
     steps: WizardSidebarStep[]
@@ -20,33 +19,36 @@ interface ProductionStepsSidebarProps {
 /**
  * The left stage rail of a production flow: one look for the work-order wizard and the
  * POS manufacturing drawer (same width, folding, density and connector).
+ * Uses DrawerResizableRail for fluid dragging, hover UI feedback, and double-click toggle.
  */
 export function ProductionStepsSidebar({
-    steps, currentStep, onStepClick, collapsed, onToggleCollapsed, progressPercent, headerNote,
+    steps,
+    currentStep,
+    onStepClick,
+    collapsed,
+    onToggleCollapsed,
+    progressPercent,
+    headerNote,
 }: ProductionStepsSidebarProps) {
     return (
         <TooltipProvider delayDuration={300}>
-            <div className="relative hidden md:flex flex-col h-full bg-card">
-                {onToggleCollapsed && (
-                    <button
-                        type="button"
-                        onClick={onToggleCollapsed}
-                        className="absolute right-0 top-1/2 translate-x-full -translate-y-1/2 z-10 flex h-6 w-4 items-center justify-center rounded-r border border-l-0 border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                        title={collapsed ? "Expandir etapas" : "Colapsar etapas"}
-                        aria-label={collapsed ? "Expandir etapas" : "Colapsar etapas"}
-                        aria-expanded={!collapsed}
-                    >
-                        {collapsed
-                            ? <ChevronRight className="h-3 w-3" aria-hidden />
-                            : <ChevronLeft className="h-3 w-3" aria-hidden />
-                        }
-                    </button>
-                )}
+            <DrawerResizableRail
+                side="left"
+                collapsed={collapsed}
+                onToggleCollapsed={onToggleCollapsed}
+                storageKey="erpgrafico.production.railCollapsed"
+                defaultWidth={256}
+                minWidth={200}
+                maxWidth={420}
+                compactWidth={56}
+                ariaLabel="Redimensionar panel de etapas"
+                className="hidden md:flex"
+            >
                 <WizardStepsSidebar
                     title="Etapas"
                     currentStep={currentStep}
                     steps={steps}
-                    width="w-64"
+                    width="w-full"
                     className="bg-transparent flex-1 min-h-0"
                     onStepClick={onStepClick}
                     showNumbers={true}
@@ -58,7 +60,7 @@ export function ProductionStepsSidebar({
                     collapsed={collapsed}
                     headerNote={headerNote}
                 />
-            </div>
+            </DrawerResizableRail>
         </TooltipProvider>
     )
 }

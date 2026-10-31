@@ -1,4 +1,4 @@
-export { EmployeePayrollPreview, PartnerProfileTab, ProfileView, ProfileSidePanel } from './components'
+export { EmployeePayrollModal, PartnerProfileTab, ProfileView, ProfileSidePanel, PayrollPaymentsModal, ProfileSettingsModal, ProfileSettingsSidebar } from './components'
 
 export type { ProfileSidePanelProps } from './components'
 

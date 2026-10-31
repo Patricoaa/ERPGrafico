@@ -12,12 +12,13 @@ import { UserSidebarMenu } from "./UserSidebarMenu"
 interface ModuleRailProps {
     currentModuleId: string
     onNavigate?: () => void
+    onProfileOpen: () => void
 }
 
 /**
  * Riel de módulos (columna de íconos) — primera columna del sidebar ERPNext v16 (ADR-0079).
  */
-export function ModuleRail({ currentModuleId, onNavigate }: ModuleRailProps) {
+export function ModuleRail({ currentModuleId, onNavigate, onProfileOpen }: ModuleRailProps) {
     const { logo, company } = useBranding()
     const companyName = company?.trade_name || company?.name
     const initials = companyName?.substring(0, 2).toUpperCase() || "ERP"
@@ -71,7 +72,7 @@ export function ModuleRail({ currentModuleId, onNavigate }: ModuleRailProps) {
             </nav>
 
             <div className="shrink-0 py-3">
-                <UserSidebarMenu />
+                <UserSidebarMenu onProfileOpen={onProfileOpen} onNavigate={onNavigate} />
             </div>
         </div>
     )

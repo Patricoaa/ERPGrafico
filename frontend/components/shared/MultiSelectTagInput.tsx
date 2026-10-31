@@ -118,7 +118,7 @@ export function MultiSelectTagInput({
                     >
                         {label && (
                             <legend className={cn(
-                                "px-1.5 text-3xs font-bold uppercase tracking-loose transition-colors duration-200",
+                                "px-1.5 text-2xs font-bold uppercase tracking-loose transition-colors duration-200",
                                 hasError ? "text-destructive" : (open ? "text-primary" : "text-muted-foreground"),
                             )}>
                                 {label}
@@ -151,7 +151,7 @@ export function MultiSelectTagInput({
                                 <input
                                     ref={inputRef}
                                     type="text"
-                                    className="flex-1 bg-transparent border-none outline-none text-2xs uppercase font-bold placeholder:text-muted-foreground/40 placeholder:normal-case placeholder:font-medium min-w-[80px] h-7"
+                                    className="flex-1 bg-transparent border-none outline-none text-sm uppercase placeholder:text-muted-foreground/40 placeholder:normal-case font-noraml text-sm"
                                     placeholder={selectedOptions.length === 0 ? placeholder : ""}
                                     value={searchQuery}
                                     onChange={(e) => {

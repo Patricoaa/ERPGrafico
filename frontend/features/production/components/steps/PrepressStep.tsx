@@ -147,7 +147,7 @@ export function PrepressStep({ order, stageData, actionable, onRefresh, headerAc
             description="El cliente debe aprobar el diseño antes de avanzar."
             checked={designNeeded}
             onCheckedChange={setDesignNeeded}
-            color="warning"
+            color="info"
           />
 
           <LabeledSwitch
@@ -155,6 +155,7 @@ export function PrepressStep({ order, stageData, actionable, onRefresh, headerAc
             description="El trabajo lleva numeración correlativa."
             checked={folioEnabled}
             onCheckedChange={setFolioEnabled}
+            color="info"
           />
 
           {folioEnabled && (

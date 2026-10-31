@@ -63,7 +63,8 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
                                 form.setValue("is_dynamic_pricing", val, { shouldDirty: true, shouldValidate: false })
                             }}
                             icon={<Zap className="h-4 w-4" />}
-                            color="warning"
+                            color="info"
+                            className="h-full"
                         />
                     )}
                 />
@@ -104,7 +105,7 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
                             label={`IVA (${rate}%)`}
                             value={PricingUtils.formatCurrency(taxAmount)}
                             readOnly
-                            className="h-9 text-right bg-info/5 border-info/20 text-info/80 cursor-default font-bold"
+                            className="h-9 text-right bg-info/5 border-info/20 cursor-default font-bold"
                         />
 
                         <FormField

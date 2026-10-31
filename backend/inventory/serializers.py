@@ -1,5 +1,6 @@
 import logging
 
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from rest_framework.fields import empty
 
@@ -516,6 +517,8 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             "id", "internal_code", "code", "name", "category", "product_type", "image",
+            "has_bom", "requires_advanced_manufacturing", "has_variants",
+            "attribute_values", "variant_display_name",
             "mfg_auto_finalize", "mfg_enable_prepress", "mfg_enable_press", "mfg_enable_postpress",
             "mfg_prepress_design", "mfg_prepress_specs", "mfg_prepress_folio",
             "mfg_press_offset", "mfg_press_digital", "mfg_press_special",
@@ -548,10 +551,18 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             raise e
 
     def create(self, validated_data):
-        return ProductService.create_product(validated_data)
+        try:
+            return ProductService.create_product(validated_data)
+        except DjangoValidationError as exc:
+            detail = exc.message_dict if hasattr(exc, "message_dict") else exc.messages
+            raise serializers.ValidationError(detail) from exc
 
     def update(self, instance, validated_data):
-        return ProductService.update_product(instance, validated_data)
+        try:
+            return ProductService.update_product(instance, validated_data)
+        except DjangoValidationError as exc:
+            detail = exc.message_dict if hasattr(exc, "message_dict") else exc.messages
+            raise serializers.ValidationError(detail) from exc
 
 class WarehouseSerializer(serializers.ModelSerializer):
     stocked_product_count = serializers.IntegerField(read_only=True)

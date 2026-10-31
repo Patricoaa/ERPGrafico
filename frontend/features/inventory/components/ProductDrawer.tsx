@@ -1,9 +1,9 @@
 "use client"
 
-import {type UoM, type Product} from "@/types/entities"
+import {type UoM, type Product, type ProductType} from "@/types/entities"
 import { getDomainConceptTitle } from "@/lib/entity-registry"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm, type FieldErrors, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -14,12 +14,13 @@ import { useUoMs } from "../hooks/useUoMs"
 import { useWarehouses } from "../hooks/useWarehouses"
 import { useProductPricingRules } from "../hooks/usePricingRules"
 import { type ProductInitialData, type PricingRuleInitialData } from "@/types/forms"
-import {ShoppingCart, Package, Truck, Layers, Factory, DollarSign} from "lucide-react"
+import {ShoppingCart, Package, Truck, Layers, Factory, DollarSign, Info} from "lucide-react"
 import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
 
 import { useOptionalGlobalModalActions } from '@/components/providers/GlobalModalProvider'
-import {Drawer, DrawerLayout, SkeletonShell, type DrawerLayoutTab} from '@/components/shared'
+import {BaseModal, Drawer, DrawerLayout, SkeletonShell, type DrawerLayoutTab} from '@/components/shared'
+import { Button } from "@/components/ui/button"
 import { ActivitySidebar } from "@/features/audit"
 // Removed Badge import for governance compliance
 
@@ -43,6 +44,7 @@ import { ProductSubscriptionTab } from "./product/ProductSubscriptionTab"
 import { ProductPricingSection } from "./product/ProductPricingSection"
 import { ProductPricingTab } from "./product/ProductPricingTab"
 import { productSchema, type ProductFormValues } from "./product/schema"
+import type { Product as InventoryProduct } from "../types"
 
 interface ProductDrawerProps {
     sidebar?: React.ReactNode
@@ -57,14 +59,38 @@ interface ProductDrawerProps {
     mode?: DrawerMode
 }
 
+function toProductInitialData(product: InventoryProduct): ProductInitialData {
+    let productType: ProductType
+    switch (product.product_type) {
+        case "STORABLE":
+        case "CONSUMABLE":
+        case "SERVICE":
+        case "MANUFACTURABLE":
+        case "SUBSCRIPTION":
+            productType = product.product_type
+            break
+        default:
+            throw new Error(`Tipo de producto inesperado: ${product.product_type}`)
+    }
+    return {
+        ...product,
+        product_type: productType,
+        manufacturable_quantity: product.manufacturable_quantity ?? undefined,
+    }
+}
+
 export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false, inline = false, onLoadingChange, mode: modeProp }: ProductDrawerProps) {
     const modals = useOptionalGlobalModalActions()
-    const { saveProduct, products, isLoading: isLoadingProducts } = useProducts()
+    const [createdProduct, setCreatedProduct] = useState<ProductInitialData | undefined>()
+    const [postCreatePromptOpen, setPostCreatePromptOpen] = useState(false)
+    const effectiveInitialData = createdProduct ?? initialData
+
+    const { saveProduct, fetchProductById, products, isLoading: isLoadingProducts } = useProducts()
     const { uoms, isUoMsLoading: isLoadingUoMs } = useUoMs()
     const { warehouses, isLoading: isLoadingWarehouses } = useWarehouses()
-    const { rules: pricingRules, isLoading: isLoadingPricingRules, refetch: refetchPricingRules } = useProductPricingRules(initialData?.id ?? null)
+    const { rules: pricingRules, isLoading: isLoadingPricingRules, refetch: refetchPricingRules } = useProductPricingRules(effectiveInitialData?.id ?? null)
 
-    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData })
+    const { mode, isView } = useDrawerMode({ mode: createdProduct ? undefined : modeProp, initialData: effectiveInitialData })
     const { printRef, handlePrint } = usePrintableDrawer()
 
     const [loading, setLoading] = useState(false)
@@ -72,23 +98,32 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
     const [selectedPricingRule, setSelectedPricingRule] = useState<PricingRuleInitialData | null>(null)
     const [pricingRuleDialogOpen, setPricingRuleDialogOpen] = useState(false)
     const [variantsRefreshKey] = useState(0)
+    const [prevOpen, setPrevOpen] = useState(open)
+
+    if (open !== prevOpen) {
+        setPrevOpen(open)
+        if (!open) {
+            setCreatedProduct(undefined)
+            setPostCreatePromptOpen(false)
+        }
+    }
 
     // Compuesto desde los hooks de reads — el padre lo expone como prop para
     // que paneles internos (tabs) reaccionen al boot.
-    const isFetchingInitialData = open && (isLoadingUoMs || isLoadingWarehouses || isLoadingProducts || (initialData?.id ? isLoadingPricingRules : false))
+    const isFetchingInitialData = open && (isLoadingUoMs || isLoadingWarehouses || isLoadingProducts || (effectiveInitialData?.id ? isLoadingPricingRules : false))
 
     const [activeTab, setActiveTab] = useState("general")
     const [insightsOpen, setInsightsOpen] = useState(false)
 
-    const width = formDrawerWidth("master", !!initialData?.id)
+    const width = formDrawerWidth("master", !!effectiveInitialData?.id)
 
-    const productDefaultValues = useMemo(() => initialData ? {
-        code: initialData.code || "",
-        name: initialData.name || "————————————",
-        product_type: initialData.product_type || "STORABLE",
-        can_be_sold: initialData.can_be_sold ?? true,
-        has_bom: initialData.has_bom ?? false,
-        has_variants: initialData.has_variants ?? false,
+    const productDefaultValues = useMemo(() => effectiveInitialData ? {
+        code: effectiveInitialData.code || "",
+        name: effectiveInitialData.name || "————————————",
+        product_type: effectiveInitialData.product_type || "STORABLE",
+        can_be_sold: effectiveInitialData.can_be_sold ?? true,
+        has_bom: effectiveInitialData.has_bom ?? false,
+        has_variants: effectiveInitialData.has_variants ?? false,
     } : {
         code: "",
         internal_code: "",
@@ -123,7 +158,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
         parent_template: null,
         attribute_values: [],
         variant_display_name: "",
-    }, [initialData, lockedType])
+    }, [effectiveInitialData, lockedType])
 
     const form = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema) as unknown as Resolver<ProductFormValues>,
@@ -131,7 +166,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
     })
 
     // Helper function to map field errors to tabs
-    const getTabsWithErrors = () => {
+    const getTabsWithErrors = useCallback(() => {
         const errors = form.formState.errors
         const tabErrors: { [key: string]: number } = {}
 
@@ -163,7 +198,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
         const uomFields = ['uom', 'purchase_uom', 'allowed_sale_uoms']
         uomFields.forEach(field => {
             if (errors[field as keyof typeof errors]) {
-                tabErrors['uoms'] = (tabErrors['uoms'] || 0) + 1
+                tabErrors['logistics'] = (tabErrors['logistics'] || 0) + 1
             }
         })
 
@@ -180,10 +215,10 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
         })
 
         return tabErrors
-    }
+    }, [form.formState.errors])
 
     // Memoize tab errors to prevent redundant re-renders of the entire form
-    const tabErrors = useMemo(() => getTabsWithErrors(), [form.formState.errors])
+    const tabErrors = useMemo(() => getTabsWithErrors(), [getTabsWithErrors])
 
     const productType = form.watch("product_type")
     const watchedAdvancedMfg = form.watch("requires_advanced_manufacturing")
@@ -220,7 +255,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
             switch (tab) {
                 case "general": return true
                 case "manufacturing": return productType === 'MANUFACTURABLE' || hasBom || watchedAdvancedMfg
-                case "logistics": return ['STORABLE', 'MANUFACTURABLE'].includes(productType)
+                case "logistics": return ['STORABLE', 'MANUFACTURABLE', 'SERVICE'].includes(productType)
                 case "commercial": return productType === 'SUBSCRIPTION'
                 case "pricing": return canBeSold && productType !== 'SUBSCRIPTION'
                 case "variants": return hasVariants && !variantMode
@@ -275,7 +310,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
     useInitializeDrawerForm({
         form,
         open,
-        initialData,
+        initialData: effectiveInitialData,
         mapData: (data) => {
             setActiveTab("general")
             setImagePreview(resolveMediaUrl(data.image) || null)
@@ -502,6 +537,12 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
             if (data.attribute_values && data.attribute_values.length > 0) {
                 data.attribute_values.forEach(v => formData.append('attribute_values', v))
             }
+            if (data.variant_generation_selection?.length) {
+                formData.append('variant_generation_selection', JSON.stringify(data.variant_generation_selection.map((item) => ({
+                    attribute: item.attribute,
+                    values: item.values.map(Number),
+                }))))
+            }
 
             // BOMs - Always send if present (fixes persistence bug on PUT)
             if (data.boms && data.boms.length > 0) {
@@ -541,16 +582,35 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
 
             if (data.image instanceof File) {
                 formData.append('image', data.image)
-            } else if (imagePreview === null && initialData?.image) {
+            } else if (imagePreview === null && effectiveInitialData?.image) {
                 formData.append('image', '')
             }
 
             // saveProduct invalida PRODUCTS_KEYS.all (cubre listado, detalle, etc.)
             // y lanza markLocalMutation() para que el entity bus descarte el eco propio.
             // El toast de éxito lo emite el hook.
-            await saveProduct({ id: initialData?.id ?? null, payload: formData })
-            onSuccess()
-            onOpenChange(false)
+            const isCreating = !effectiveInitialData?.id
+            const savedProduct = await saveProduct({ id: effectiveInitialData?.id ?? null, payload: formData })
+            if (isCreating) {
+                // The create is persisted; establish the submitted values as the clean baseline
+                // before changing the drawer identity. Otherwise the global dirty guard can
+                // interpret the create submission itself as unsaved follow-up edits.
+                form.reset(data)
+                let productToContinue = toProductInitialData(savedProduct)
+                try {
+                    productToContinue = toProductInitialData(await fetchProductById(savedProduct.id))
+                } catch (error) {
+                    console.warn("Product created, but refreshing its detail failed", error)
+                    toast.warning("Producto creado", {
+                        description: "No se pudo recargar la ficha. Puedes continuar y volver a intentarlo más tarde.",
+                    })
+                }
+                setCreatedProduct(productToContinue)
+                setPostCreatePromptOpen(true)
+            } else {
+                onSuccess()
+                onOpenChange(false)
+            }
         } catch (error: unknown) {
             console.error("Error saving product", error)
             showApiError(error, "No se pudo guardar el producto.")
@@ -558,6 +618,12 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
             setLoading(false)
             if (onLoadingChange) onLoadingChange(false)
         }
+    }
+
+    const finalizeProductCreation = () => {
+        setPostCreatePromptOpen(false)
+        onSuccess()
+        onOpenChange(false)
     }
 
     const productTabs: DrawerLayoutTab[] = [
@@ -570,7 +636,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                 <div className="space-y-8 pr-2">
                     <ProductBasicInfo
                         form={form}
-                        isEditing={!!initialData}
+                        isEditing={!!effectiveInitialData}
                         imagePreview={imagePreview}
                         setImagePreview={setImagePreview}
                         lockedType={lockedType}
@@ -587,7 +653,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
             content: (
                 <ProductManufacturingTab
                     form={form}
-                    initialData={initialData}
+                    initialData={effectiveInitialData}
                     products={products as unknown as Product[]}
                     uoms={uoms as unknown as UoM[]}
                     variantMode={variantMode}
@@ -596,17 +662,17 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
         },
         {
             value: "logistics",
-            label: "Logística",
+            label: productType === 'SERVICE' ? "Unidades" : "Logística",
             icon: Truck,
-            hidden: !['STORABLE', 'MANUFACTURABLE'].includes(productType),
+            hidden: !['STORABLE', 'MANUFACTURABLE', 'SERVICE'].includes(productType),
             hasErrors: !!tabErrors['logistics'],
             content: (
                 <ProductInventoryTab
                     form={form}
-                    initialData={initialData}
+                    initialData={effectiveInitialData}
                     warehouses={warehouses}
                     uoms={uoms as unknown as UoM[]}
-                    isEditing={!!initialData}
+                    isEditing={!!effectiveInitialData}
                 />
             ),
         },
@@ -616,7 +682,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
             icon: ShoppingCart,
             hidden: productType !== 'SUBSCRIPTION',
             hasErrors: !!tabErrors['commercial'],
-            content: <ProductSubscriptionTab form={form} isEditing={!!initialData} />,
+            content: <ProductSubscriptionTab form={form} isEditing={!!effectiveInitialData} />,
         },
         {
             value: "pricing",
@@ -628,12 +694,12 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                 <div className="space-y-8 pr-2">
                     <ProductPricingSection
                         form={form}
-                        initialData={initialData}
+                        initialData={effectiveInitialData}
                         canBeSold={canBeSold}
                         uoms={uoms as unknown as UoM[]}
                     />
                     <ProductPricingTab
-                        initialData={initialData}
+                        initialData={effectiveInitialData}
                         pricingRules={pricingRules}
                         fetchPricingRules={refetchPricingRules}
                         onOpenRuleDialog={(rule) => {
@@ -641,7 +707,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                             setPricingRuleDialogOpen(true)
                         }}
                         isDynamicPricing={form.watch('is_dynamic_pricing')}
-                        isVariant={!!initialData?.parent_template}
+                        isVariant={!!effectiveInitialData?.parent_template}
                     />
                 </div>
             ),
@@ -657,7 +723,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                 <ProductVariantsTab
                     key={variantsRefreshKey}
                     form={form}
-                    initialData={initialData}
+                    initialData={effectiveInitialData}
                     onTabChange={(tab: string) => setActiveTab(tab)}
                     onEditVariant={(v) => {
                         window.open(`/inventory/products?selected=${v.id}`, '_blank');
@@ -667,8 +733,8 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
         },
     ]
 
-    const drawerIdentity = useDrawerIdentity('inventory.product', mode, initialData, {
-        overrideSubtitle: initialData ? form.watch("name") : "Maestro de Producto",
+    const drawerIdentity = useDrawerIdentity('inventory.product', mode, effectiveInitialData, {
+        overrideSubtitle: effectiveInitialData ? form.watch("name") : "",
         printable: false, // We'll handle print manually in custom headerActions
         onPrint: handlePrint,
     })
@@ -677,7 +743,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
     const customHeaderActions = (
         <>
             {drawerIdentity.headerActions}
-            {initialData?.id && (
+            {effectiveInitialData?.id && (
                 <DataCell.Action
                     action="detail"
                     onClick={() => setInsightsOpen(true)}
@@ -708,8 +774,8 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                                 onTabChange={setActiveTab}
                                 tabs={productTabs}
                                 rightRail={
-                                    initialData?.id ? (
-                                        <ActivitySidebar entityId={initialData.id.toString()} entityType="product" />
+                                    effectiveInitialData?.id ? (
+                                        <ActivitySidebar entityId={effectiveInitialData.id.toString()} entityType="product" />
                                     ) : undefined
                                 }
                                 rightRailCollapsible
@@ -730,9 +796,36 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                 }}
                 initialData={selectedPricingRule ?? undefined}
                 onSuccess={refetchPricingRules}
-                productId={initialData?.id}
-                productName={initialData?.name}
+                productId={effectiveInitialData?.id}
+                productName={effectiveInitialData?.name}
             />
+
+            <BaseModal
+                asDialog
+                open={postCreatePromptOpen}
+                onOpenChange={(nextOpen) => {
+                    if (nextOpen) setPostCreatePromptOpen(true)
+                    else setPostCreatePromptOpen(false)
+                }}
+                size="sm"
+                icon={Info}
+                title="Producto creado"
+                description="El producto ya está guardado."
+                footer={(
+                    <div className="flex w-full justify-end gap-2">
+                        <Button type="button" variant="outline" onClick={finalizeProductCreation}>
+                            Finalizar
+                        </Button>
+                        <Button type="button" onClick={() => setPostCreatePromptOpen(false)}>
+                            Seguir editando
+                        </Button>
+                    </div>
+                )}
+            >
+                <p className="px-1 py-4 text-sm leading-relaxed text-muted-foreground">
+                    Las reglas de precio y las LdM son opcionales. Puedes configurarlas ahora o más tarde.
+                </p>
+            </BaseModal>
         </>
     )
 
@@ -742,20 +835,20 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
 
     return (
         <>
-            {(mode === 'view' || mode === 'edit') && initialData?.id && (
+            {(mode === 'view' || mode === 'edit') && effectiveInitialData?.id && (
                 <PrintableLayout
                     ref={printRef}
                     title="Product"
-                    displayId={`#${initialData.id}`}
+                    displayId={`#${effectiveInitialData.id}`}
                 >
                     <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
-                            <span>{initialData?.name ?? '-'}</span>
+                            <span>{effectiveInitialData?.name ?? '-'}</span>
                         </div>
                         <div className="flex justify-between">
                             <span>Código:</span>
-                            <span>{initialData?.code ?? '-'}</span>
+                            <span>{effectiveInitialData?.code ?? '-'}</span>
                         </div>
                     </div>
                 </PrintableLayout>
@@ -782,8 +875,8 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
 
             {/* Product Insights Drawer (Kardex) */}
             <ProductInsightsDrawer
-                productId={initialData?.id ?? null}
-                productName={initialData?.name ?? null}
+                productId={effectiveInitialData?.id ?? null}
+                productName={effectiveInitialData?.name ?? null}
                 open={insightsOpen}
                 onOpenChange={setInsightsOpen}
             />

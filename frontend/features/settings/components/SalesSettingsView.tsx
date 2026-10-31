@@ -242,8 +242,9 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                                                                 description={field.value ? "Habilitado en carrito" : "Deshabilitado"}
                                                                 checked={field.value}
                                                                 onCheckedChange={field.onChange}
-                                                                icon={<Percent className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
-                                                                className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-card" : "border-dashed")}
+                                                                icon={<Percent className="h-4 w-4 transition-colors" />}
+                                                                className="h-full"
+                                                                color="info"
                                                             />
                                                         )}
                                                     />
@@ -272,8 +273,9 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                                                                 description={field.value ? "Habilitado al total" : "Deshabilitado"}
                                                                 checked={field.value}
                                                                 onCheckedChange={field.onChange}
-                                                                icon={<Percent className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
-                                                                className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-card" : "border-dashed")}
+                                                                icon={<Percent className="h-4 w-4 transition-colors"/>}
+                                                                className="h-full"
+                                                                color="info"
                                                             />
                                                         )}
                                                     />

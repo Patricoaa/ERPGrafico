@@ -21,6 +21,7 @@ interface ProductInventoryTabProps {
 
 export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }: ProductInventoryTabProps) {
     const productType = form.watch("product_type")
+    const isService = productType === 'SERVICE'
     const canBeSold = form.watch("can_be_sold")
     const stockUomId = form.watch("uom")
     const mfgAutoFinalize = form.watch("mfg_auto_finalize")
@@ -43,7 +44,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
         <div className="space-y-10 animate-in fade-in duration-500">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-x-8 gap-y-10 items-start">
                 {/* Units Section */}
-                <div className="col-span-2 space-y-4">
+                <div className={cn("col-span-1 space-y-4", isService ? "md:col-span-4" : "md:col-span-2")}>
                     <FormSection title="Unidades y Conversión" icon={Package} />
                     <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
@@ -52,7 +53,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
                                 name="uom"
                                 render={({ field, fieldState }) => (
                                     <UoMSelector
-                                        label="Unidad de Stock (Base)"
+                                        label={isService ? "Unidad Base" : "Unidad de Stock (Base)"}
                                         variant="standalone"
                                         required
                                         value={field.value || ""}
@@ -65,7 +66,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
                             />
                         </div>
 
-                        <div className="col-span-2">
+                        {!isService && <div className="col-span-2">
                             <FormField
                                 control={form.control}
                                 name="purchase_uom"
@@ -83,7 +84,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
                                     />
                                 )}
                             />
-                        </div>
+                        </div>}
 
                         <div className="col-span-2">
                             {canBeSold && (
@@ -110,7 +111,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
                                                 onChange={field.onChange}
                                                 error={fieldState.error?.message}
                                                 disabled={!stockCategoryId}
-                                                placeholder={stockCategoryId ? "Seleccionar unidades..." : "Defina primero la Unidad de Stock"}
+                                                placeholder={stockCategoryId ? "Seleccionar unidades..." : `Defina primero la ${isService ? "Unidad Base" : "Unidad de Stock"}`}
                                                 hint="* Solo unidades de la misma categoría para conversiones precisas."
                                             />
                                         );
@@ -121,8 +122,8 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
                     </div>
                 </div>
 
-                {/* Logistics Section */}
-                <div className="col-span-2 space-y-4">
+                {/* Inventory and supply controls are not applicable to one-off services. */}
+                {!isService && <div className="col-span-1 md:col-span-2 space-y-2">
                     <FormSection title="Control y Abastecimiento" icon={Warehouse} />
                     <FormField
                         control={form.control}
@@ -139,8 +140,9 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
                                         })
                                     }}
                                     disabled={isSwitchDisabled}
-                                    icon={<Warehouse className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
-                                    className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-card" : "border-dashed")}
+                                    color="info"
+                                    icon={<Warehouse className="h-4 w-4 transition-colors" />}
+                                    className="h-full"
                                 />
 
                                 {/* Kept mounted with CSS visibility — avoids unmount of Radix Popover-based selectors during production-mode commits, which would loop via usePresence/safelyDetachRef. */}
@@ -194,7 +196,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
                             </div>
                         )}
                     />
-                </div>
+                </div>}
             </div>
         </div>
     )

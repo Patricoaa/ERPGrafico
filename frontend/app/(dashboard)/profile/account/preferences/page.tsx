@@ -7,6 +7,6 @@ export default function AccountPreferencesPage() {
     const { profile } = useMyProfile()
     return (
         <>
-            <ProfileView activeTab="account" activeSubTab="preferences" initialProfile={profile} />
+            <ProfileView activeSection="preferences" initialProfile={profile} />
         </>)
 }

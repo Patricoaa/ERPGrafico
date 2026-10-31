@@ -202,6 +202,11 @@ const GroupDrawer = dynamic(
 // Obsolete drawers removed
 
 
+const PurchaseCheckoutWizard = dynamic(
+    () => import("@/features/purchasing").then((m) => m.PurchaseCheckoutWizard),
+    { ssr: false, loading: () => skeleton("orden de compra") }
+)
+
 const PurchaseReceiptDrawer = dynamic(
     () => import("@/features/purchasing/components/PurchaseReceiptDrawer").then((m) => m.PurchaseReceiptDrawer),
     { ssr: false, loading: () => skeleton("recepción") }
@@ -562,13 +567,24 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
         />
     ),
     // Fichas documentales (ADR-0083): sin onSuccess, las acciones no cierran la pila.
-    "purchasing.purchaseorder": ({ id, open, onOpenChange }) => (
-        <OrderSheet
-            id={id}
-            kind="purchase"
-            open={open}
-            onOpenChange={onOpenChange}
-        />
+    "purchasing.purchaseorder": ({ id, open, onOpenChange, onSuccess }) => (
+        id ? (
+            <OrderSheet
+                id={id}
+                kind="purchase"
+                open={open}
+                onOpenChange={onOpenChange}
+            />
+        ) : (
+            <PurchaseCheckoutWizard
+                open={open}
+                onOpenChange={onOpenChange}
+                order={null}
+                orderLines={[]}
+                total={0}
+                onComplete={() => onSuccess?.()}
+            />
+        )
     ),
     "billing.invoice": ({ id, open, onOpenChange }) => (
         <InvoiceSheet

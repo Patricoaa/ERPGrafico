@@ -219,25 +219,8 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def annul_impact(self, request, pk=None):
         """Read-only preview of what an annulment would affect."""
         work_order = self.get_object()
-        affected_pos = [
-            {"id": po.id, "display_id": po.display_id, "status": po.status}
-            for po in work_order.purchase_orders.exclude(
-                status=PurchaseOrder.Status.CANCELLED
-            )
-        ]
-        open_tasks_count = work_order.tasks.filter(
-            status__in=["PENDING", "IN_PROGRESS"]
-        ).count()
-        has_consumptions = work_order.consumptions.exists()
-        return Response(
-            {
-                "is_cancellable": work_order.is_cancellable,
-                "cancellation_limit_stage": work_order.cancellation_limit_stage,
-                "has_consumptions": has_consumptions,
-                "purchase_orders_affected": affected_pos,
-                "open_tasks_count": open_tasks_count,
-            }
-        )
+        impact = WorkOrderService.get_annul_impact(work_order)
+        return Response(impact)
 
     @action(detail=True, methods=["post"])
     def rectify(self, request, pk=None):

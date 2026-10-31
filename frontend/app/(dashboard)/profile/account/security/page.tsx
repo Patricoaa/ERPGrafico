@@ -7,6 +7,6 @@ export default function AccountSecurityPage() {
     const { profile } = useMyProfile()
     return (
         <>
-            <ProfileView activeTab="account" activeSubTab="security" initialProfile={profile} />
+            <ProfileView activeSection="security" initialProfile={profile} />
         </>)
 }

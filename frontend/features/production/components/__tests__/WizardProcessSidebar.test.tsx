@@ -141,7 +141,7 @@ describe("WizardProcessSidebar — status board", () => {
 
         expect(screen.queryByText("Origen")).not.toBeInTheDocument()
         expect(screen.getByTestId("step-0")).toBeInTheDocument()
-        expect(screen.getByRole("button", { name: "Expandir etapas" })).toBeInTheDocument()
+        expect(screen.getByRole("separator", { name: "Redimensionar panel de etapas" })).toBeInTheDocument()
     })
 
     it("shows a read-only terminal note and hides progress for cancelled orders", () => {

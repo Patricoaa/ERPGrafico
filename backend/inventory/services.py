@@ -1289,7 +1289,9 @@ class ProductService:
         for uom_price in uom_prices_data:
             ProductUoMPrice.objects.create(product=product, **uom_price)
 
-        if variant_generation_selection and product.has_variants:
+        if variant_generation_selection:
+            if not product.has_variants:
+                raise ValidationError("Active la opción de variantes antes de generarlas.")
             ProductService.generate_variants(product, variant_generation_selection)
 
         return product
@@ -1313,6 +1315,7 @@ class ProductService:
         boms_data = validated_data.pop("boms", None)
         allowed_sale_uoms = validated_data.pop("allowed_sale_uoms", None)
         attribute_values = validated_data.pop("attribute_values", None)
+        variant_generation_selection = validated_data.pop("variant_generation_selection", None)
         variant_updates = validated_data.pop("variant_updates", None)
         uom_prices_data = validated_data.pop("uom_prices", None)
 
@@ -1326,6 +1329,11 @@ class ProductService:
 
         if attribute_values is not None:
             instance.attribute_values.set(attribute_values)
+
+        if variant_generation_selection:
+            if not instance.has_variants:
+                raise ValidationError("Active la opción de variantes antes de generarlas.")
+            ProductService.generate_variants(instance, variant_generation_selection)
 
         # Propagate parent-level fields to child variants (only for template products)
         _VARIANT_SYNC_FIELDS = {
@@ -2006,23 +2014,45 @@ class ProductService:
         selection: List of {attribute: id, values: [ids]}
         """
         if not template.has_variants:
-            return {
-                "error": "El producto no tiene activada la opción de variantes.",
-                "success": False,
-            }
+            raise ValidationError("El producto no tiene activada la opción de variantes.")
+
+        if not isinstance(selection, list):
+            raise ValidationError("La selección de variantes no es válida.")
 
         # Prepare lists of values for each attribute
         attr_values_lists = []
+        selected_attributes = set()
         for item in selection:
-            attr_id = item.get("attribute")
+            if not isinstance(item, dict):
+                raise ValidationError("Cada selección debe especificar un atributo y sus valores.")
+            try:
+                attr_id = int(item.get("attribute"))
+            except (TypeError, ValueError):
+                raise ValidationError("El atributo seleccionado no es válido.") from None
+            if attr_id in selected_attributes:
+                raise ValidationError("No repita atributos en la selección de variantes.")
+            selected_attributes.add(attr_id)
             val_ids = item.get("values", [])
+            if not isinstance(val_ids, list):
+                raise ValidationError("Los valores seleccionados deben enviarse como una lista.")
             if val_ids:
-                attr_values_lists.append(
-                    list(ProductAttributeValue.objects.filter(id__in=val_ids, attribute_id=attr_id))
+                try:
+                    normalized_ids = {int(value_id) for value_id in val_ids}
+                except (TypeError, ValueError):
+                    raise ValidationError("Uno o más valores de atributo no son válidos.") from None
+                values = list(
+                    ProductAttributeValue.objects.filter(
+                        id__in=normalized_ids,
+                        attribute_id=attr_id,
+                    )
                 )
+                if len(values) != len(normalized_ids):
+                    raise ValidationError("Uno o más valores no pertenecen al atributo seleccionado.")
+                if values:
+                    attr_values_lists.append(values)
 
         if not attr_values_lists:
-            return {"error": "Debe seleccionar valores de atributos.", "success": False}
+            raise ValidationError("Debe seleccionar valores de atributos.")
 
         # Cartesian product of attribute values
         combinations = list(itertools.product(*attr_values_lists))

@@ -7,6 +7,6 @@ export default function PartnerPage() {
     const { profile } = useMyProfile()
     return (
         <>
-            <ProfileView activeTab="partner" initialProfile={profile} />
+            <ProfileView activeSection="partner" initialProfile={profile} />
         </>)
 }

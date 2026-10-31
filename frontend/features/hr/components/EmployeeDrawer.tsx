@@ -286,7 +286,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                 footer={footer}
                 side="left"
             >
-                <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando ficha de empleado" className="flex-1 flex flex-col h-full">
+                <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando Ficha de Personal" className="flex-1 flex flex-col h-full">
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="flex-1 w-full h-full flex flex-col overflow-visible min-h-0">
                             <fieldset disabled={isView || saving} className="contents">

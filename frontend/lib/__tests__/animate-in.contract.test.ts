@@ -58,7 +58,6 @@ const ANIMATE_ALLOWLIST = [
     "features/hr/components/EmployeeDrawer.tsx",
     "features/inventory/components/CategoryDrawer.tsx",
     "features/inventory/components/product/BulkVariantEditForm.tsx",
-    "features/inventory/components/ProductDrawer.tsx",
     "features/inventory/components/product/ProductInventoryTab.tsx",
     "features/inventory/components/product/ProductManufacturingTab.tsx",
     "features/inventory/components/product/ProductPricingSection.tsx",

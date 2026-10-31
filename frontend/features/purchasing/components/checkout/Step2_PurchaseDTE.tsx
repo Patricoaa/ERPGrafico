@@ -56,7 +56,10 @@ export function Step2_PurchaseDTE({
                 <StepHeader title="Registro de Documento" description="Ingrese la información relacionada al DTE y adjunte el respaldo legal." icon={FileText} />
             </div>
             <div className="space-y-4">
-                <LabeledContainer label="Tipo de Documento">
+                <LabeledContainer
+                    label="Tipo de Documento"
+                    className="border-transparent group-focus-within:border-transparent group-focus-within:ring-0 group-focus-within:shadow-none"
+                >
                     <ChoiceGroup
                         label="Tipo de Documento"
                         columns="grid-cols-1 md:grid-cols-3"
@@ -94,7 +97,8 @@ export function Step2_PurchaseDTE({
                         }
                     }}
                     icon={<FileText className={cn("h-4 w-4 transition-colors", dteData.isPending ? "text-warning" : "text-muted-foreground/30")} />}
-                    className={cn(dteData.isPending ? "bg-warning/5 border-warning/20 shadow-card" : "border-dashed")}
+                    className="h-full"
+                    color="info"
                 />
 
                 {!dteData.isPending && (

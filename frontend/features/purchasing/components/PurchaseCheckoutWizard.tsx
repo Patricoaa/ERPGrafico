@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 
 import { Step2_PurchaseDTE } from "./checkout/Step2_PurchaseDTE"
 import { Step3_PurchasePayment } from "./checkout/Step3_PurchasePayment"
@@ -26,11 +26,20 @@ function generateUUID(): string {
 }
 import { Step0_Supplier } from "./checkout/Step0_Supplier"
 import { Step1_ProductSelection } from "./checkout/Step1_ProductSelection"
-import { ChevronLeft, ShoppingCart } from "lucide-react"
+import { CheckCircle2, ChevronLeft, ChevronRight, Link2, ShoppingCart } from "lucide-react"
 import { useVatRate } from '@/hooks/useVatRate'
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { useServerDate } from "@/hooks/useServerDate"
-import { GenericWizard, CancelButton, type WizardStep } from "@/components/shared"
+import {
+    Drawer,
+    DrawerLayout,
+    type DrawerLayoutTab,
+    CancelButton,
+    SubmitButton,
+    StatusBadge,
+} from "@/components/shared"
+import { formatEntityDisplay } from '@/lib/entity-registry'
+import { DocumentRelationsTab, useDocumentRelations } from "@/features/documents"
 
 interface PurchaseCheckoutWizardProps {
     open: boolean
@@ -51,6 +60,13 @@ const PURCHASE_STEP_LABELS: Record<number, string> = {
     3: 'Factura (DTE)',
     4: 'Recepción',
     5: 'Pago',
+}
+
+const RAIL_COLLAPSED_STORAGE_KEY = 'erpgrafico.purchasing.railCollapsed'
+
+function getStepLabel(stepIndex: number, isSubscriptions: boolean): string {
+    if (isSubscriptions && stepIndex === 4) return 'Pago'
+    return PURCHASE_STEP_LABELS[stepIndex] ?? `Paso ${stepIndex}`
 }
 
 export function PurchaseCheckoutWizard({
@@ -78,6 +94,32 @@ export function PurchaseCheckoutWizard({
     const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string | null>(null)
     const [selectedWarehouseId, setSelectedWarehouseId] = useState(initialWarehouseId)
     const [selectedWarehouseName, setSelectedWarehouseName] = useState("")
+
+    const [wizardTab, setWizardTab] = useState('checkout')
+    const [railCollapsed, setRailCollapsed] = useState(false)
+
+    useEffect(() => {
+        try {
+            if (window.localStorage.getItem(RAIL_COLLAPSED_STORAGE_KEY) === '1') {
+                // eslint-disable-next-line react-hooks/set-state-in-effect -- restore a browser preference after mount to avoid an SSR/client hydration mismatch
+                setRailCollapsed(true)
+            }
+        } catch {
+            // Storage can be unavailable
+        }
+    }, [])
+
+    const toggleRail = useCallback(() => {
+        setRailCollapsed((prev) => {
+            const next = !prev
+            try {
+                window.localStorage.setItem(RAIL_COLLAPSED_STORAGE_KEY, next ? '1' : '0')
+            } catch {
+                // Ignore storage failures
+            }
+            return next
+        })
+    }, [])
 
     // Sync internal order if prop changes
     useEffect(() => {
@@ -122,6 +164,7 @@ export function PurchaseCheckoutWizard({
             }
             fetchOrder()
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- rate is stable, fetch only triggered on open/orderId
     }, [open, orderId, order])
 
     useEffect(() => {
@@ -130,11 +173,13 @@ export function PurchaseCheckoutWizard({
                 setCurrentOrderLines(orderLines)
                 setCurrentTotal(total)
                 setStep(1)
+                setWizardTab('checkout')
             })
         }
         // We ideally only want this to run once when the wizard opens.
         // If orderLines or total change from the parent while open, 
         // we might reset the user's progress in Step 1, which is what we are avoiding.
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally initialize once on opening
     }, [open])
 
     const [dteData, setDteData] = useState<DTEData>({
@@ -255,7 +300,8 @@ export function PurchaseCheckoutWizard({
             toast.error("Debe ingresar el número de folio de la boleta.")
             return false
         }
-        if (targetStep === 5 && paymentData.amount > 0) {
+        const isPaymentStep = isOnlySubscriptions ? targetStep === 4 : targetStep === 5
+        if (isPaymentStep && paymentData.amount > 0) {
             // Check if payment method is selected
             if (!paymentData.method) {
                 toast.error("Debe seleccionar un método de pago para continuar.")
@@ -451,6 +497,9 @@ export function PurchaseCheckoutWizard({
                     />
                 )
             case 4:
+                if (isOnlySubscriptions) {
+                    return <Step3_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />
+                }
                 return (
                     <Step4_Receipt
                         receiptData={receiptData}
@@ -470,61 +519,172 @@ export function PurchaseCheckoutWizard({
         }
     }
 
-    const wizardSteps: WizardStep[] = Array.from({ length: totalSteps }, (_, i) => ({
-        id: i + 1,
-        title: PURCHASE_STEP_LABELS[i + 1] ?? `Paso ${i + 1}`,
-        component: renderStepContent(i + 1),
-        isValid: !(step === 3 && !dteData.isPending && (!isFolioValid || !isPeriodValid)),
-        onNext: handleStepNext,
-    }))
+    const effectiveOrderId = internalOrder?.id ?? orderId ?? order?.id ?? null
+    const { data: relationsData } = useDocumentRelations('purchasing.purchaseorder', effectiveOrderId)
+
+    const handleStepClick = async (targetIndex0: number) => {
+        const targetStep = targetIndex0 + 1
+        if (targetStep === step) return
+        if (targetStep < step) {
+            setStep(targetStep)
+        } else if (targetStep === step + 1) {
+            await handleStepNext()
+        }
+    }
+
+    const checkoutContent = (
+        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto p-6">
+            {renderStepContent(step)}
+        </div>
+    )
+
+    const checkoutTabs: DrawerLayoutTab[] | undefined = effectiveOrderId ? [
+        {
+            value: 'checkout',
+            label: 'Compra',
+            icon: ShoppingCart,
+            noPadding: true,
+            className: 'overflow-hidden flex flex-col flex-1 min-h-0',
+            content: checkoutContent,
+        },
+        {
+            value: 'relations',
+            label: 'Relaciones',
+            icon: Link2,
+            badge: relationsData?.relations.length,
+            noPadding: true,
+            hideLeftRail: true,
+            hideRightRail: true,
+            className: 'mt-0 px-6 pt-4 pb-8',
+            content: <DocumentRelationsTab label="purchasing.purchaseorder" id={effectiveOrderId} />,
+        },
+    ] : undefined
 
     return (
-        <GenericWizard
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
-            onClose={() => onOpenChange(false)}
-            surface="drawer"
-            drawerSide="bottom"
-            drawerBoundary="embedded"
+            side="bottom"
+            boundary="embedded"
+            defaultSize="100%"
+            resizable={false}
+            fillContent
+            contentClassName="p-0 flex flex-col overflow-hidden bg-card"
             icon={ShoppingCart}
-            title="Procesar Compra"
-            subtitle="Asistente de compra rápida, facturación y recepción de inventario."
-            steps={wizardSteps}
-            initialStep={step - 1}
-            onComplete={handleFinish}
-            isCompleting={loading}
-            completeButtonLabel="Finalizar Compra"
-            footerLeft={
-                step > 1 ? (
-                    <CancelButton onClick={handleBack} disabled={loading}>
-                        <ChevronLeft className="mr-1.5 h-3.5 w-3.5" />
-                        Atrás
-                    </CancelButton>
+            title={
+                internalOrder
+                    ? formatEntityDisplay('purchasing.purchaseorder', internalOrder as unknown as Record<string, unknown>)
+                    : "Nueva Orden de Compra"
+            }
+            subtitle={
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="font-mono font-bold text-primary">
+                        {String(step).padStart(2, '0')} / {String(totalSteps).padStart(2, '0')}
+                    </span>
+                    <span>·</span>
+                    <span className="font-semibold text-foreground">
+                        {getStepLabel(step, isOnlySubscriptions)}
+                    </span>
+                    {selectedSupplierName && (
+                        <>
+                            <span>·</span>
+                            <span className="truncate">{selectedSupplierName}</span>
+                        </>
+                    )}
+                </div>
+            }
+            headerActions={
+                internalOrder ? (
+                    <div className="flex items-center gap-2">
+                        <StatusBadge status={internalOrder.status} variant="badge" />
+                    </div>
                 ) : undefined
             }
-            leftSidebar={
-                <PurchaseProcessSummarySidebar
-                    currentStep={step}
-                    totalSteps={totalSteps}
-                    supplierName={selectedSupplierName}
-                    warehouseName={selectedWarehouseName}
-                    dteType={step > 2 ? dteData.type : undefined}
-                    receiptData={step > 3 ? receiptData : undefined}
-                    paymentData={step > 4 ? {
-                        method: paymentData.method,
-                        amount: paymentData.amount,
-                        pendingDebt: currentTotal - paymentData.amount
-                    } : undefined}
-                />
+            footer={
+                wizardTab === 'checkout' ? (
+                    <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                            {step > 1 ? (
+                                <CancelButton onClick={handleBack} disabled={loading}>
+                                    <ChevronLeft className="mr-1.5 h-3.5 w-3.5" />
+                                    Atrás
+                                </CancelButton>
+                            ) : (
+                                <CancelButton onClick={() => onOpenChange(false)} disabled={loading}>
+                                    Cancelar
+                                </CancelButton>
+                            )}
+                        </div>
+                        <div>
+                            {step === totalSteps ? (
+                                <SubmitButton
+                                    onClick={handleFinish}
+                                    disabled={loading}
+                                    loading={loading}
+                                    icon={CheckCircle2}
+                                    className="bg-success hover:bg-success/90 text-success-foreground"
+                                >
+                                    Finalizar Compra
+                                </SubmitButton>
+                            ) : (
+                                <SubmitButton
+                                    onClick={handleStepNext}
+                                    disabled={loading || (step === 3 && !dteData.isPending && (!isFolioValid || !isPeriodValid))}
+                                    loading={loading}
+                                    icon={ChevronRight}
+                                >
+                                    Siguiente
+                                </SubmitButton>
+                            )}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex items-center justify-end w-full">
+                        <CancelButton onClick={() => onOpenChange(false)}>
+                            Cerrar
+                        </CancelButton>
+                    </div>
+                )
             }
-            rightSidebar={
-                <PurchaseOrderSummaryCard
-                    orderLines={currentOrderLines}
-                    total={currentTotal}
-                    dteType={dteData.type}
-                />
-            }
-            contentClassName="p-6"
-        />
+        >
+            <DrawerLayout
+                leftRail={
+                    <PurchaseProcessSummarySidebar
+                        currentStep={step}
+                        totalSteps={totalSteps}
+                        supplierName={selectedSupplierName}
+                        warehouseName={selectedWarehouseName}
+                        dteType={step > 2 ? dteData.type : undefined}
+                        receiptData={step > 3 ? receiptData : undefined}
+                        paymentData={step > (isOnlySubscriptions ? 3 : 4) ? {
+                            method: paymentData.method,
+                            amount: paymentData.amount,
+                            pendingDebt: currentTotal - paymentData.amount
+                        } : undefined}
+                        collapsed={railCollapsed}
+                        onToggleCollapsed={toggleRail}
+                        onStepClick={handleStepClick}
+                    />
+                }
+                leftRailRaw
+                leftRailWidth={railCollapsed ? "w-14" : "w-64"}
+                activeTab={wizardTab}
+                onTabChange={setWizardTab}
+                noPadding
+                tabs={checkoutTabs}
+                rightRail={
+                    <PurchaseOrderSummaryCard
+                        orderLines={currentOrderLines}
+                        total={currentTotal}
+                        dteType={dteData.type}
+                    />
+                }
+                rightRailCollapsible
+                rightRailStorageKey="erpgrafico.drawer.sidebar.purchase_checkout"
+                rightRailWidth="w-80"
+            >
+                {!checkoutTabs && checkoutContent}
+            </DrawerLayout>
+        </Drawer>
     )
 }

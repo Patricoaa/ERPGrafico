@@ -522,6 +522,26 @@ class WorkOrderService:
         return Warehouse.objects.order_by("pk").first()
 
     @staticmethod
+    def get_annul_impact(work_order):
+        affected_pos = [
+            {"id": po.id, "display_id": po.display_id, "status": po.status}
+            for po in work_order.purchase_orders.exclude(
+                status=PurchaseOrder.Status.CANCELLED
+            )
+        ]
+        open_tasks_count = work_order.tasks.filter(
+            status__in=["PENDING", "IN_PROGRESS"]
+        ).count()
+        has_consumptions = work_order.consumptions.exists()
+        return {
+            "is_cancellable": work_order.is_cancellable,
+            "cancellation_limit_stage": work_order.cancellation_limit_stage,
+            "has_consumptions": has_consumptions,
+            "purchase_orders_affected": affected_pos,
+            "open_tasks_count": open_tasks_count,
+        }
+
+    @staticmethod
     @transaction.atomic
     def annul_work_order(work_order, user=None, notes=""):
         """
@@ -625,7 +645,19 @@ class WorkOrderService:
             category=Task.Category.APPROVAL,
         ).first()
         if existing is None:
-            return WorkflowService.create_task(task_type=task_type, content_object=work_order, **kwargs)
+            ot_id = getattr(work_order, "display_id", None) or getattr(work_order, "number", None) or str(work_order.id)
+            title = kwargs.pop("title", f"Aprobación: {task_type}")
+            description = kwargs.pop(
+                "description",
+                f"Aprobación requerida para la OT {ot_id}.",
+            )
+            return WorkflowService.create_task(
+                task_type=task_type,
+                title=title,
+                description=description,
+                content_object=work_order,
+                **kwargs,
+            )
         if existing.status == Task.Status.COMPLETED:
             existing.status = Task.Status.PENDING
             existing.completed_at = None
@@ -791,6 +823,7 @@ class WorkOrderService:
             WorkOrderService._ensure_stage_task(
                 task_type="OT_PREPRESS_APPROVAL",
                 title=f"Aprobación Pre-Impresión: {EntityPrefix.WORK_ORDER}-{work_order.number}",
+                description=f"Valide los archivos de diseño y preparación para la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
                 content_object=work_order,
                 created_by=user,
             )
@@ -1546,6 +1579,7 @@ class WorkOrderService:
             )
 
     @staticmethod
+    @transaction.atomic
     def update_material(
         *,
         work_order: "WorkOrder",
@@ -1556,6 +1590,7 @@ class WorkOrderService:
         supplier_id: int | None = None,
         unit_price: "Decimal | None" = None,
         document_type: str | None = None,
+        user=None,
     ) -> "WorkOrderMaterial":
         """
         Actualiza los campos editables de un WorkOrderMaterial.
@@ -1583,6 +1618,17 @@ class WorkOrderService:
             material.document_type = document_type
 
         material.save()
+
+        if work_order.current_stage != WorkOrder.Stage.MATERIAL_ASSIGNMENT:
+            WorkOrderHistory.objects.create(
+                work_order=work_order,
+                stage=WorkOrder.Stage.MATERIAL_ASSIGNMENT,
+                status=work_order.status,
+                event=WorkOrderHistory.Event.EDITED,
+                notes=f"Material '{material.component.name if material.component else material.id}' modificado.",
+                user=user,
+            )
+
         return material
 
     @staticmethod
@@ -2121,6 +2167,51 @@ class WorkOrderService:
             work_order.save(update_fields=["stage_data"])
 
     @staticmethod
+    @transaction.atomic
+    def after_update(work_order, before, files, user=None):
+        """Post-update hook for WorkOrder. Handles files and audits stage_data edits."""
+        if files:
+            WorkOrderService.handle_update_attachments(work_order, files, user)
+        if before is not None and (work_order.stage_data or {}) != (before or {}):
+            WorkOrderService.record_config_edit(work_order, before, user=user)
+
+    @staticmethod
+    @transaction.atomic
+    def record_config_edit(work_order, before, user=None):
+        """Audits changes to stage_data under the MFG_CONFIG stage."""
+        changes = []
+        before_phases = (before or {}).get("phases") or {}
+        after_phases = (work_order.stage_data or {}).get("phases") or {}
+        phase_labels = [
+            ("prepress", "Pre-impresión"),
+            ("press", "Impresión"),
+            ("postpress", "Post-impresión"),
+        ]
+        for phase_key, label in phase_labels:
+            b_val = before_phases.get(phase_key, False)
+            a_val = after_phases.get(phase_key, False)
+            if not b_val and a_val:
+                changes.append(f"{label} habilitada")
+            elif b_val and not a_val:
+                changes.append(f"{label} deshabilitada")
+
+        for key, val in (work_order.stage_data or {}).items():
+            if key != "phases" and (before or {}).get(key) != val:
+                changes.append(f"{key}: {val}")
+
+        if not changes:
+            changes.append("Configuración técnica modificada")
+
+        WorkOrderHistory.objects.create(
+            work_order=work_order,
+            stage="MFG_CONFIG",
+            status=work_order.status,
+            event=WorkOrderHistory.Event.EDITED,
+            notes="; ".join(changes),
+            user=user,
+        )
+
+    @staticmethod
     def validate_transition_stock(work_order, next_stage, materials_data):
         """
         Validates stock availability when transitioning from MATERIAL_APPROVAL.
@@ -2396,12 +2487,23 @@ class WorkOrderService:
         )
 
     @staticmethod
-    def remove_material(work_order, material_id):
+    @transaction.atomic
+    def remove_material(work_order, material_id, user=None):
         material = WorkOrderMaterial.objects.get(pk=material_id, work_order=work_order)
         WorkOrderService._assert_material_not_ordered(material)
         if material.source != "MANUAL":
             raise ValidationError("Solo se pueden eliminar materiales agregados manualmente.")
+        comp_name = material.component.name if material.component else str(material.id)
         material.delete()
+        if work_order.current_stage != WorkOrder.Stage.MATERIAL_ASSIGNMENT:
+            WorkOrderHistory.objects.create(
+                work_order=work_order,
+                stage=WorkOrder.Stage.MATERIAL_ASSIGNMENT,
+                status=work_order.status,
+                event=WorkOrderHistory.Event.EDITED,
+                notes=f"Material '{comp_name}' eliminado.",
+                user=user,
+            )
 
     @staticmethod
     def bulk_transition(ids, next_stage, user=None):

@@ -703,7 +703,9 @@ def test_work_orders_are_annulled_not_deleted(api_client, work_order_factory):
     assert WorkOrder.objects.filter(pk=wo.pk).exists()
 
     response = api_client.post(
-        f"/api/production/orders/{wo.id}/annul/", {}, HTTP_IDEMPOTENCY_KEY=str(uuid.uuid4())
+        f"/api/production/orders/{wo.id}/annul/",
+        {"reason": "Anulación por test"},
+        HTTP_IDEMPOTENCY_KEY=str(uuid.uuid4()),
     )
     assert response.status_code == 200, response.data
     wo.refresh_from_db()

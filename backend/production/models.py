@@ -257,6 +257,8 @@ class WorkOrder(models.Model):
     @property
     def has_outsourced_materials(self) -> bool:
         """True when the OT has at least one outsourced material line."""
+        if hasattr(self, "_prefetched_objects_cache") and "materials" in self._prefetched_objects_cache:
+            return any(m.is_outsourced for m in self.materials.all())
         return self.materials.filter(is_outsourced=True).exists()
 
     @property

@@ -230,6 +230,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     requires_prepress = serializers.SerializerMethodField()
     requires_press = serializers.SerializerMethodField()
     requires_postpress = serializers.SerializerMethodField()
+    production_outcome = serializers.SerializerMethodField()
     checkout_files = serializers.SerializerMethodField()
     workflow_tasks = serializers.SerializerMethodField()
     production_discrepancy = serializers.SerializerMethodField()
@@ -247,6 +248,63 @@ class WorkOrderSerializer(serializers.ModelSerializer):
 
     def get_checkout_files(self, obj):
         return []
+
+    def get_production_outcome(self, obj):
+        if obj.status != WorkOrder.Status.FINISHED:
+            return None
+
+        warehouse_name = obj.warehouse.name if obj.warehouse else None
+
+        if obj.sale_order or obj.sale_line:
+            line = obj.sale_line
+            if line:
+                ordered = float(line.quantity)
+                delivered = float(line.quantity_delivered or 0)
+                if delivered >= ordered:
+                    delivery_status = "DELIVERED"
+                elif delivered > 0:
+                    delivery_status = "PARTIAL"
+                else:
+                    delivery_status = "PENDING"
+                delivery_info = {
+                    "status": delivery_status,
+                    "ordered": ordered,
+                    "delivered": delivered,
+                }
+                quantity = ordered
+            else:
+                delivery_info = None
+                quantity = float((obj.stage_data or {}).get("quantity") or 0)
+
+            sale_order_info = {
+                "id": obj.sale_order.id,
+                "number": obj.sale_order.number,
+            } if obj.sale_order else None
+
+            return {
+                "kind": "SALE_ORDER",
+                "sale_order": sale_order_info,
+                "delivery": delivery_info,
+                "warehouse_name": warehouse_name,
+                "quantity": quantity,
+            }
+
+        product = obj.product
+        stocked = bool(product and getattr(product, "track_inventory", False))
+        quantity = 0.0
+        if obj.stage_data and obj.stage_data.get("quantity") is not None:
+            try:
+                quantity = float(obj.stage_data["quantity"])
+            except (TypeError, ValueError):
+                quantity = 0.0
+
+        return {
+            "kind": "STOCK",
+            "stocked": stocked,
+            "warehouse_name": warehouse_name,
+            "quantity": quantity,
+            "delivery": None,
+        }
 
     def get_sale_order_document(self, obj):
         return _build_sale_order_document(self, obj)

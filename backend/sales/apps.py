@@ -64,7 +64,7 @@ class SalesConfig(AppConfig):
                     display_template=f"{EntityPrefix.SALE_DELIVERY}-{{number}}",
                     subtitle_template="{customer_name}",
                     extra_info_template="{status}",
-                    list_url="/sales/dtes/deliveries",
+                    list_url="/sales/dtes/fulfillment",  # ADR-0090
                     detail_url_pattern="/d/sales.saledelivery/{id}",
                     permission="sales.view_saledelivery",
                 )
@@ -81,7 +81,7 @@ class SalesConfig(AppConfig):
                     display_template=f"{EntityPrefix.SALE_RETURN}-{{number}}",
                     subtitle_template="{sale_order.customer.name} · {sale_order.customer.tax_id}",
                     extra_info_template="{status}",
-                    list_url="/sales/dtes/returns",
+                    list_url="/sales/dtes/fulfillment",  # ADR-0090
                     detail_url_pattern="/d/sales.salereturn/{id}",
                     permission="sales.view_salereturn",
                 )

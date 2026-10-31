@@ -205,16 +205,16 @@ def test_update_mfg_section_volume_not_allowed(draft_order):
 
 
 @pytest.mark.django_db
-def test_update_mfg_section_prepress_blocked_when_started(draft_order):
-    draft_order.current_stage = WorkOrder.Stage.PREPRESS
+def test_update_mfg_section_prepress_blocked_when_completed(draft_order):
+    draft_order.current_stage = WorkOrder.Stage.PRESS
     draft_order.save()
     with pytest.raises(ValidationError, match="Pre-Impresión"):
         WorkOrderService.update_mfg_section(draft_order, "prepress", {"prepress_specs": "x"})
 
 
 @pytest.mark.django_db
-def test_update_mfg_section_press_blocked_when_started(draft_order):
-    draft_order.current_stage = WorkOrder.Stage.PRESS
+def test_update_mfg_section_press_blocked_when_completed(draft_order):
+    draft_order.current_stage = WorkOrder.Stage.POSTPRESS
     draft_order.save()
     with pytest.raises(ValidationError, match="Impresión"):
         WorkOrderService.update_mfg_section(draft_order, "press", {"press_specs": "x"})
