@@ -7,9 +7,10 @@ from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
 
-from .models import NotificationRule, TaskAssignmentRule, WorkflowSettings
+from .models import ApprovalPolicy, NotificationRule, TaskAssignmentRule, WorkflowSettings
 from .selectors import NotificationSelector
 from .serializers import (
+    ApprovalPolicySerializer,
     NotificationRuleSerializer,
     NotificationSerializer,
     TaskAssignmentRuleSerializer,
@@ -169,3 +170,13 @@ class NotificationRuleViewSet(viewsets.ModelViewSet):
     queryset = NotificationRule.objects.all()
     serializer_class = NotificationRuleSerializer
     pagination_class = None  # Master data
+
+
+class ApprovalPolicyViewSet(viewsets.ModelViewSet):
+    """Manage approval policies for document types."""
+
+    queryset = ApprovalPolicy.objects.all()
+    serializer_class = ApprovalPolicySerializer
+    pagination_class = None
+
+    action_permissions: dict = {}

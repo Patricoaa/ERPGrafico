@@ -117,3 +117,31 @@ def test_approval_policy_model_creates():
     assert policy.pk is not None
     assert policy.document_type == "PURCHASE_ORDER"
     assert policy.forbid_self_approval is True
+
+
+# ---------------------------------------------------------------------------
+# Task 4 — ApprovalPolicy API endpoint
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+def test_approval_policy_api_crud():
+    from rest_framework.test import APIClient
+
+    superuser = User.objects.create_superuser(username="ap_admin", password="x")
+    client = APIClient()
+    client.force_authenticate(user=superuser)
+
+    url = "/api/workflow/approval-policies/"
+    res = client.post(url, {
+        "document_type": "PURCHASE_ORDER",
+        "min_amount": "50000.00",
+        "required_permission": "purchasing.approve_purchaseorder",
+        "forbid_self_approval": True,
+        "approvals_required": 2,
+    }, format="json")
+    assert res.status_code == 201, res.json()
+    assert res.json()["document_type"] == "PURCHASE_ORDER"
+
+    list_res = client.get(url)
+    assert list_res.status_code == 200
+    assert len(list_res.json()) == 1

@@ -3,6 +3,7 @@ from rest_framework import serializers
 from core.serializers import AttachmentSerializer, UserSerializer
 
 from .models import (
+    ApprovalPolicy,
     Comment,
     Notification,
     NotificationRule,
@@ -112,6 +113,13 @@ class NotificationRuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotificationRule
         fields = "__all__"
+
+
+class ApprovalPolicySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ApprovalPolicy
+        fields = "__all__"
+        read_only_fields = ["created_at", "updated_at"]
 
 
 class CommentSerializer(serializers.ModelSerializer):
