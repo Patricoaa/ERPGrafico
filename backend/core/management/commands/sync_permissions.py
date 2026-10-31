@@ -72,19 +72,18 @@ class Command(BaseCommand):
                             f"  Created missing profile for: {role_data['name']}"
                         )
                 else:
-                    if not profile.bundles and profile.kind == GroupProfile.TEAM:
-                        # Default auto-created profile — configure it
-                        profile.kind = GroupProfile.ROLE
-                        profile.is_system = role_data["is_system"]
-                        profile.description = role_data["description"]
-                        profile.bundles = list(role_data["bundles"])
-                        profile.save()
-                        if verbosity >= 2:
-                            self.stdout.write(
-                                f"  Configured existing group: {role_data['name']}"
+                    if profile.kind == GroupProfile.TEAM:
+                        # I3: a TEAM group shares the target name — never convert
+                        # it to a seeded ROLE (it has independent membership/purpose).
+                        self.stdout.write(
+                            self.style.WARNING(
+                                f"  WARNING: group '{role_data['name']}' exists as a TEAM "
+                                f"— skipping seeded-role creation to avoid overwriting it. "
+                                f"Rename the TEAM group if a seeded role is also needed."
                             )
+                        )
                     else:
-                        # Already configured — preserve admin customisations
+                        # Already a ROLE — preserve admin customisations
                         if verbosity >= 2:
                             self.stdout.write(
                                 f"  Preserved existing profile: {role_data['name']}"

@@ -10,6 +10,11 @@
 7. test_role_editor_cannot_add_bundles_they_lack
 8. test_sod_conflict_warns_and_audits
 9. test_composition_endpoint_query_count
+
+Bug-fix regression tests:
+C1. test_cannot_create_user_with_escalated_group
+C2. test_empty_composition_clears_permissions
+C3. test_cannot_demote_user_with_groups_actor_lacks
 """
 
 import pytest
@@ -324,3 +329,115 @@ def test_composition_endpoint_query_count(django_assert_num_queries):
     with django_assert_num_queries(4):
         resp = client.get(f"/api/core/groups/{group.pk}/composition/")
     assert resp.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# C1 — Privilege escalation on user create
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+def test_cannot_create_user_with_escalated_group():
+    """POST /users/ with a group containing perms actor lacks → 403, user not created."""
+    from contacts.models import Contact
+    from core.rbac.services import RoleService
+
+    # Create a high-privilege role that actor won't have
+    hr_role = _role_group("HR_Esc_Create", bundles=["hr.payroll"])
+    RoleService.materialize(hr_role)
+
+    # A contact is required by UserSerializer
+    victim_contact = Contact.objects.create(name="Victim Contact", tax_id="99.111.222-3")
+
+    # Actor has only core.change_user/view_user/add_user — no hr.payroll perms
+    actor = _make_user(
+        "esc_create_actor",
+        "core.add_user",
+        "core.change_user",
+        "core.view_user",
+        "auth.view_group",
+    )
+    client = _api(actor)
+
+    resp = client.post(
+        "/api/core/users/",
+        {
+            "username": "esc_victim",
+            "password": "strongpass123",
+            "contact": victim_contact.pk,
+            "groups": [hr_role.name],
+        },
+        format="json",
+    )
+    assert resp.status_code == 403, resp.json()
+
+    # User must NOT exist in the DB (escalation prevented before save)
+    from core.models import User
+    assert not User.objects.filter(username="esc_victim").exists(), (
+        "User was created in DB despite 403 — privilege escalation on create!"
+    )
+
+
+# ---------------------------------------------------------------------------
+# C2 — Empty composition must clear all permissions
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+def test_empty_composition_clears_permissions():
+    """PUT with empty bundles after having some must set group.permissions to empty."""
+    from core.rbac.services import RoleService
+
+    actor = _make_user("clear_comp_actor", superuser=True)
+    client = _api(actor)
+
+    group = _role_group("ClearCompGroup", bundles=["sales.read"])
+    RoleService.materialize(group)
+    assert group.permissions.count() > 0, "Group should have permissions after materializing"
+
+    # PUT with all-empty composition
+    resp = client.put(
+        f"/api/core/groups/{group.pk}/composition/",
+        {"bundles": [], "extra_permissions": [], "excluded_permissions": []},
+        format="json",
+    )
+    assert resp.status_code == 200, resp.json()
+
+    group.refresh_from_db()
+    assert group.permissions.count() == 0, (
+        f"Group still has {group.permissions.count()} permissions after empty PUT"
+    )
+
+
+# ---------------------------------------------------------------------------
+# C3 — Cannot demote user if actor lacks the group's perms
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+def test_cannot_demote_user_with_groups_actor_lacks():
+    """PATCH groups=[] for a user in a high-privilege group → 403 if actor lacks group perms."""
+    from core.rbac.services import RoleService
+
+    # High-privilege group with hr.payroll permissions
+    hr_group = _role_group("HR_Demote_Test", bundles=["hr.payroll"])
+    RoleService.materialize(hr_group)
+
+    # Target user already in the high-privilege group
+    target = _make_user("demote_target")
+    target.groups.add(hr_group)
+
+    # Actor has only core.change_user — no hr.payroll perms
+    actor = _make_user("demote_actor", "core.change_user", "core.view_user")
+    client = _api(actor)
+
+    # Attempt to strip the high-privilege group (PATCH groups=[])
+    resp = client.patch(
+        f"/api/core/users/{target.pk}/",
+        {"groups": []},
+        format="json",
+    )
+    assert resp.status_code == 403, resp.json()
+
+    # Target must still be in the hr group
+    target.refresh_from_db()
+    assert hr_group in target.groups.all(), (
+        "hr_group was removed from target despite 403 — demotion not guarded!"
+    )

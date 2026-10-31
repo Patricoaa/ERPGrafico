@@ -104,15 +104,11 @@ def sync_registered_permissions(sender, **kwargs):
     if getattr(sender, "name", None) != "core":
         return
 
-    from django.contrib.auth.models import Group, Permission
-
-    from .permissions import PermissionRegistry, Roles
+    from .permissions import PermissionRegistry
 
     PermissionRegistry.sync_to_db()
 
     from core.rbac.services import RoleService
+    # materialize_all() covers sysadmin via its ALL_MODULE_BUNDLES + ALL_SENSITIVE_BUNDLES,
+    # keeping post_migrate and sync_permissions consistent (I10).
     RoleService.materialize_all()
-
-    admin = Group.objects.filter(name=Roles.SYSTEM_ADMIN).first()
-    if admin is not None:
-        admin.permissions.add(*Permission.objects.all())

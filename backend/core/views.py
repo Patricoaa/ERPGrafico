@@ -186,13 +186,18 @@ class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         return super().get_queryset()
 
     def perform_create(self, serializer):
+        from django.db import transaction
+
         from core.rbac.services import RoleService
-        new_groups = serializer.validated_data.get("groups")
-        instance = serializer.save()
-        if new_groups is not None:
-            sod_warnings = RoleService.validate_role_assignment(self.request.user, instance, list(new_groups))
-            after = set(instance.groups.values_list("name", flat=True))
-            RoleService.log_user_roles_change(instance, set(), after, self.request.user, self.request, sod_warnings=sod_warnings)
+
+        actor = self.request.user
+        new_groups = list(serializer.validated_data.get("groups") or [])
+        # C1: raises PermissionDenied BEFORE save if any group exceeds actor's perms
+        RoleService.validate_new_user_groups(actor, new_groups)
+        with transaction.atomic():
+            instance = serializer.save()
+            if new_groups:
+                RoleService.audit_new_user_groups(instance, new_groups, actor, self.request)
 
     def perform_update(self, serializer):
         from core.rbac.services import RoleService

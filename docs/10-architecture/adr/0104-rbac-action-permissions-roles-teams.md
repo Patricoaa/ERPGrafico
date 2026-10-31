@@ -60,7 +60,7 @@ Permissions are grouped into 48 bundles:
 | Module × manage | 13 | `{app}.manage` | all non-sensitive perms for the app |
 | Sensitive capability | 9 | `{area}.{capability}` | specific high-risk perms, never in module levels |
 
-Module levels are **cumulative**: `read ⊂ operate ⊂ manage`. Sensitive bundles (`hr.payroll`, `treasury.payments`, `core.security`, `core.users`, `accounting.close`, `accounting.audit`, `sales.pricing`, `purchasing.pricing`, `core.export_any`) are **excluded** from module-level bundles; they must be granted explicitly. This invariant is enforced by `core/tests/test_rbac_bundles.py`.
+Module levels are **cumulative**: `read ⊂ operate ⊂ manage`. Sensitive bundles (`hr.payroll`, `hr.salary_advances`, `treasury.payments`, `treasury.credit_cards`, `treasury.bank_loans`, `contacts.profit_distribution`, `core.security`, `tax.declarations`, `accounting.fiscal_year`) are **excluded** from module-level bundles; they must be granted explicitly. This invariant is enforced by `core/tests/test_rbac_bundles.py`.
 
 `expand(bundle_keys) -> set[Permission]` materializes a list of bundle keys to Permission objects.
 
@@ -86,17 +86,17 @@ Effective permissions = `expand(bundles) ∪ extra_permissions − excluded_perm
 
 | Role | Bundles (representative) | Sensitive caps |
 |------|--------------------------|----------------|
-| Administrador del sistema | (is_system = True; all perms) | all |
-| Gerencia | all.manage | hr.payroll, treasury.payments, accounting.audit |
-| Ventas | sales.manage | — |
-| Compras | purchasing.manage | — |
-| Producción | production.read | — |
-| Jefatura de Producción | production.manage | — |
-| Bodega y Despacho | warehouse.operate | — |
-| Administración y Finanzas | accounting.manage, treasury.manage | treasury.payments, accounting.close |
-| Auditor | all.read | accounting.audit |
-| RR.HH. | hr.manage | hr.payroll |
-| Contabilidad | accounting.manage | accounting.close, accounting.audit |
+| Administrador del sistema | all module bundles (is_system = True) | all (core.security, hr.payroll, hr.salary_advances, treasury.payments, treasury.credit_cards, treasury.bank_loans, contacts.profit_distribution, tax.declarations, accounting.fiscal_year) |
+| Gerencia | all.read + all.operate + all.manage minus sensitive | tax.declarations, accounting.fiscal_year, contacts.profit_distribution |
+| Ventas | sales.read/operate, billing.read/operate, inventory.read, contacts.read | treasury.payments |
+| Producción | production.read/operate, inventory.read | workflow.operate |
+| Jefatura de Producción | production.read/operate/manage, inventory.read/operate, contacts.read | workflow.manage |
+| Bodega y Despacho | inventory.read/operate, sales.read/operate, production.read | — |
+| Administración y Finanzas | accounting.read/operate/manage, billing.manage, contacts.read, hr.read | treasury.payments, treasury.bank_loans, tax.declarations |
+| Auditor | all *.read bundles | — |
+| RRHH | hr.read/operate/manage | hr.payroll, hr.salary_advances |
+| Contabilidad | accounting.read/operate/manage | accounting.fiscal_year |
+| Tesorero | treasury.read/operate/manage | treasury.payments, treasury.credit_cards, treasury.bank_loans |
 
 ### 6. `RoleService` (`core.rbac.services`)
 

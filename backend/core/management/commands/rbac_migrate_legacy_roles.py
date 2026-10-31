@@ -188,6 +188,25 @@ class Command(BaseCommand):
             return
 
         # ------------------------------------------------------------------ #
+        # I12: verify all target seeded groups exist before applying          #
+        # ------------------------------------------------------------------ #
+        all_target_names: set[str] = set()
+        for entry in plan_entries:
+            for _, target_names in entry["users_and_targets"]:
+                all_target_names.update(target_names)
+
+        existing_names = set(
+            Group.objects.filter(name__in=all_target_names).values_list("name", flat=True)
+        )
+        missing_seeded = sorted(all_target_names - existing_names)
+        if missing_seeded:
+            raise CommandError(
+                f"Aborting: seeded group(s) missing from DB: "
+                f"{', '.join(missing_seeded)}. "
+                f"Run 'manage.py sync_permissions' first."
+            )
+
+        # ------------------------------------------------------------------ #
         # APPLY — wrapped in atomic so partial migrations never commit         #
         # ------------------------------------------------------------------ #
         from django.db import transaction

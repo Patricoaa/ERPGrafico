@@ -28,9 +28,6 @@ class RoleService:
             return
         if profile.kind != "ROLE":
             return
-        # Nothing configured → leave existing permissions untouched
-        if not profile.bundles and not profile.extra_permissions:
-            return
 
         target_codes = expand(profile.bundles)
         target_codes |= set(profile.extra_permissions)
@@ -93,9 +90,9 @@ class RoleService:
         if profile.is_system:
             raise ValidationError({"detail": "No se puede editar la composición de un rol del sistema."})
 
-        bundles = data.get("bundles", [])
-        extra = data.get("extra_permissions", [])
-        excluded = data.get("excluded_permissions", [])
+        bundles = list(data.get("bundles") or [])
+        extra = list(data.get("extra_permissions") or [])
+        excluded = list(data.get("excluded_permissions") or [])
 
         catalog = permission_catalog()
         invalid = [b for b in bundles if b not in BUNDLES] + [c for c in extra + excluded if c not in catalog]
@@ -207,6 +204,47 @@ class RoleService:
         return sod_warnings
 
     @staticmethod
+    def validate_new_user_groups(actor, new_groups: list) -> None:
+        """No-escalation pre-save check for user creation.
+
+        Called BEFORE serializer.save() so a PermissionDenied raised here
+        never commits the new user to the DB (C1 fix).
+
+        Raises PermissionDenied if actor tries to assign a group whose
+        permissions exceed the actor's own.  Superusers are exempt.
+        """
+        from rest_framework.exceptions import PermissionDenied
+
+        if actor.is_superuser or not new_groups:
+            return
+        actor_perms = actor.get_all_permissions()
+        for group in new_groups:
+            group_perms = set(
+                f"{p.content_type.app_label}.{p.codename}"
+                for p in group.permissions.select_related("content_type")
+            )
+            if group_perms - actor_perms:
+                raise PermissionDenied(
+                    f"No puede asignar el grupo '{group.name}': "
+                    f"contiene permisos que usted no posee."
+                )
+
+    @staticmethod
+    def audit_new_user_groups(instance, new_groups: list, actor, request) -> None:
+        """Compute SoD and write audit log after a new user is saved with groups."""
+        all_bundles: set[str] = set()
+        for group in new_groups:
+            try:
+                profile = group.profile
+                if profile.kind == "ROLE":
+                    all_bundles.update(profile.bundles)
+            except AttributeError:
+                pass
+        sod_warnings = RoleService.check_sod(all_bundles)
+        after = set(instance.groups.values_list("name", flat=True))
+        RoleService.log_user_roles_change(instance, set(), after, actor, request, sod_warnings=sod_warnings)
+
+    @staticmethod
     def validate_role_assignment(actor, target, new_groups: list) -> list[SodWarning]:
         """Check no-escalation and SoD for assigning new_groups to target user.
 
@@ -226,10 +264,17 @@ class RoleService:
             if current_group_ids != new_group_ids:
                 raise PermissionDenied("No puede modificar sus propios grupos.")
 
-        # No-escalation check (skip for superusers)
+        # No-escalation check (skip for superusers).
+        # Also enforces demotion guard: removing a group with perms the actor
+        # lacks is equally privileged — compute the diff (added + removed)
+        # and verify actor_perms covers every changed group.
         if not actor.is_superuser:
             actor_perms = actor.get_all_permissions()
-            for group in new_groups:
+            current_group_ids = set(target.groups.values_list("id", flat=True)) if target else set()
+            new_group_ids = {g.pk for g in new_groups}
+            changed_groups = [g for g in new_groups if g.pk not in current_group_ids]  # added
+            changed_groups += [g for g in target.groups.all() if g.pk not in new_group_ids]  # removed
+            for group in changed_groups:
                 group_perms = set(
                     f"{p.content_type.app_label}.{p.codename}"
                     for p in group.permissions.select_related("content_type")
@@ -237,7 +282,7 @@ class RoleService:
                 forbidden = group_perms - actor_perms
                 if forbidden:
                     raise PermissionDenied(
-                        f"No puede asignar el grupo '{group.name}': "
+                        f"No puede modificar el grupo '{group.name}': "
                         f"contiene permisos que usted no posee."
                     )
 

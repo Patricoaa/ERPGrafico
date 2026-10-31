@@ -108,7 +108,8 @@ SEEDED_ROLES: dict[str, SeededRole] = {
         name="Ventas",
         description=(
             "Operación completa del módulo de ventas y facturación. "
-            "Lectura de inventario."
+            "Lectura de inventario y contactos. "
+            "Movimientos de tesorería para operación POS."
         ),
         bundles=[
             "sales.read",
@@ -116,19 +117,23 @@ SEEDED_ROLES: dict[str, SeededRole] = {
             "billing.read",
             "billing.operate",
             "inventory.read",
+            "contacts.read",
+            "treasury.payments",
         ],
         is_system=False,
     ),
     "bodega": SeededRole(
         name="Bodega y Despacho",
         description=(
-            "Operación de inventario, lectura de ventas y producción. "
+            "Operación de inventario, operación de ventas (despacho), "
+            "lectura de producción. "
             "Ideal para encargados de bodega y despacho."
         ),
         bundles=[
             "inventory.read",
             "inventory.operate",
             "sales.read",
+            "sales.operate",
             "production.read",
         ],
         is_system=False,
@@ -136,20 +141,22 @@ SEEDED_ROLES: dict[str, SeededRole] = {
     "produccion": SeededRole(
         name="Producción",
         description=(
-            "Operación del módulo de producción y lectura de inventario. "
-            "Para operarios de planta."
+            "Operación del módulo de producción, operación de workflow (bandeja de tareas) "
+            "y lectura de inventario. Para operarios de planta."
         ),
         bundles=[
             "production.read",
             "production.operate",
             "inventory.read",
+            "workflow.operate",
         ],
         is_system=False,
     ),
     "jefatura_produccion": SeededRole(
         name="Jefatura de Producción",
         description=(
-            "Gestión completa del módulo de producción y operación de inventario. "
+            "Gestión completa del módulo de producción, gestión de workflow, "
+            "operación de inventario y lectura de contactos. "
             "Para supervisores y jefes de producción."
         ),
         bundles=[
@@ -158,21 +165,27 @@ SEEDED_ROLES: dict[str, SeededRole] = {
             "production.manage",
             "inventory.read",
             "inventory.operate",
+            "workflow.manage",
+            "contacts.read",
         ],
         is_system=False,
     ),
     "admin_finanzas": SeededRole(
         name="Administración y Finanzas",
         description=(
-            "Gestión completa del módulo contable, movimientos de tesorería, "
-            "créditos bancarios y lectura de recursos humanos."
+            "Gestión completa del módulo contable, facturación, movimientos de tesorería, "
+            "créditos bancarios, declaraciones tributarias, "
+            "lectura de contactos y recursos humanos."
         ),
         bundles=[
             "accounting.read",
             "accounting.operate",
             "accounting.manage",
+            "billing.manage",
             "treasury.payments",
             "treasury.bank_loans",
+            "tax.declarations",
+            "contacts.read",
             "hr.read",
         ],
         is_system=False,

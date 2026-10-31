@@ -69,10 +69,10 @@ def test_auditor_has_only_read_bundles():
     [
         (
             "ventas",
-            "sales.confirm_saleorder",    # sales.operate → should be IN
-            ["billing.annul_invoice",      # destructive → out of operate
-             "hr.view_payroll",            # sensitive → never in ventas
-             "treasury.view_treasurymovement"],  # not in ventas bundles
+            "contacts.view_contact",       # contacts.read → should be IN (I1 fix)
+            ["billing.annul_invoice",      # destructive → out of billing.operate
+             "hr.view_payroll"],           # sensitive → never in ventas
+            # treasury.view_treasurymovement IS now in ventas (treasury.payments bundle)
         ),
         (
             "auditor",
