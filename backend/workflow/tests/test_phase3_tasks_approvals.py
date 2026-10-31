@@ -157,3 +157,196 @@ def test_approval_policy_api_crud():
     list_res = client.get(url)
     assert list_res.status_code == 200
     assert len(list_res.json()) == 1
+
+
+# ---------------------------------------------------------------------------
+# Task 5 — ApprovalPolicy enforced in complete_task
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+def test_no_policy_for_document_type_allows_completion():
+    """When no ApprovalPolicy exists for the content_object type, task completes freely."""
+    from workflow.models import ApprovalPolicy, Task
+    from workflow.services import WorkflowService
+
+    superuser = User.objects.create_superuser(username="ap_super_1", password="x")
+    document = Task.objects.create(title="Document", task_type="DOC_NO_POLICY")
+    task = Task.objects.create(
+        title="Approval Task",
+        task_type="TEST_APPROVAL",
+        category=Task.Category.APPROVAL,
+        content_object=document,
+    )
+    assert ApprovalPolicy.objects.filter(document_type="Task").count() == 0
+
+    completed = WorkflowService.complete_task(task, superuser)
+    assert completed.status == Task.Status.COMPLETED
+
+
+@pytest.mark.django_db
+def test_policy_min_amount_not_met_skips_policy():
+    """When document has no 'total', min_amount cannot be satisfied so policy does not apply."""
+    from workflow.models import ApprovalPolicy, Task
+    from workflow.services import WorkflowService
+
+    user = User.objects.create_user(username="ap_noperm_amount", password="x")
+    document = Task.objects.create(title="Doc no total", task_type="DOC_NO_TOTAL")
+    task = Task.objects.create(
+        title="Approval amount",
+        task_type="TEST_APPROVAL",
+        category=Task.Category.APPROVAL,
+        content_object=document,
+    )
+    # Policy requires permission only when amount > 50000; document has no total → skipped
+    ApprovalPolicy.objects.create(
+        document_type="Task",
+        min_amount="50000.00",
+        required_permission="workflow.change_task",
+    )
+
+    completed = WorkflowService.complete_task(task, user)
+    assert completed.status == Task.Status.COMPLETED
+
+
+@pytest.mark.django_db
+def test_policy_required_permission_blocks_without_permission():
+    """ApprovalPolicy.required_permission raises PermissionDenied if user lacks it."""
+    from rest_framework.exceptions import PermissionDenied
+    from workflow.models import ApprovalPolicy, Task
+    from workflow.services import WorkflowService
+
+    user = User.objects.create_user(username="ap_noperm_perm", password="x")
+    document = Task.objects.create(title="Doc perm", task_type="DOC_PERM")
+    task = Task.objects.create(
+        title="Approval perm",
+        task_type="TEST_APPROVAL",
+        category=Task.Category.APPROVAL,
+        content_object=document,
+    )
+    ApprovalPolicy.objects.create(
+        document_type="Task",
+        required_permission="workflow.change_task",
+    )
+
+    with pytest.raises(PermissionDenied):
+        WorkflowService.complete_task(task, user)
+
+
+@pytest.mark.django_db
+def test_policy_required_permission_allows_with_permission():
+    """User holding the required ApprovalPolicy permission can complete the task."""
+    from django.contrib.auth.models import Permission
+    from workflow.models import ApprovalPolicy, Task
+    from workflow.services import WorkflowService
+
+    user = User.objects.create_user(username="ap_hasperm_perm", password="x")
+    perm = Permission.objects.get(codename="change_task", content_type__app_label="workflow")
+    user.user_permissions.add(perm)
+    user = User.objects.get(pk=user.pk)  # clear permission cache
+
+    document = Task.objects.create(title="Doc perm ok", task_type="DOC_PERM_OK")
+    task = Task.objects.create(
+        title="Approval perm ok",
+        task_type="TEST_APPROVAL",
+        category=Task.Category.APPROVAL,
+        content_object=document,
+    )
+    ApprovalPolicy.objects.create(
+        document_type="Task",
+        required_permission="workflow.change_task",
+    )
+
+    completed = WorkflowService.complete_task(task, user)
+    assert completed.status == Task.Status.COMPLETED
+
+
+@pytest.mark.django_db
+def test_policy_forbid_self_approval_blocks():
+    """ApprovalPolicy.forbid_self_approval=True raises PermissionDenied for the creator."""
+    from rest_framework.exceptions import PermissionDenied
+    from workflow.models import ApprovalPolicy, Task
+    from workflow.services import WorkflowService
+
+    user = User.objects.create_superuser(username="ap_selfblock", password="x")
+    document = Task.objects.create(title="Doc self", task_type="DOC_SELF")
+    task = Task.objects.create(
+        title="Approval self",
+        task_type="TEST_APPROVAL",
+        category=Task.Category.APPROVAL,
+        content_object=document,
+        created_by=user,
+    )
+    ApprovalPolicy.objects.create(document_type="Task", forbid_self_approval=True)
+
+    with pytest.raises(PermissionDenied):
+        WorkflowService.complete_task(task, user)
+
+
+@pytest.mark.django_db
+def test_policy_forbid_self_approval_allows_different_approver():
+    """ApprovalPolicy.forbid_self_approval=True does not block a different approver."""
+    from workflow.models import ApprovalPolicy, Task
+    from workflow.services import WorkflowService
+
+    creator = User.objects.create_user(username="ap_creator_diff", password="x")
+    approver = User.objects.create_superuser(username="ap_approver_diff", password="x")
+    document = Task.objects.create(title="Doc diff", task_type="DOC_DIFF")
+    task = Task.objects.create(
+        title="Approval diff",
+        task_type="TEST_APPROVAL",
+        category=Task.Category.APPROVAL,
+        content_object=document,
+        created_by=creator,
+    )
+    ApprovalPolicy.objects.create(document_type="Task", forbid_self_approval=True)
+
+    completed = WorkflowService.complete_task(task, approver)
+    assert completed.status == Task.Status.COMPLETED
+
+
+@pytest.mark.django_db
+def test_policy_approvals_required_raises_when_not_enough():
+    """approvals_required=2 raises ValueError when no prior approvals exist."""
+    from workflow.models import ApprovalPolicy, Task
+    from workflow.services import WorkflowService
+
+    superuser = User.objects.create_superuser(username="ap_multi_block", password="x")
+    document = Task.objects.create(title="Doc multi", task_type="DOC_MULTI")
+    task = Task.objects.create(
+        title="Approval multi",
+        task_type="TEST_APPROVAL",
+        category=Task.Category.APPROVAL,
+        content_object=document,
+    )
+    ApprovalPolicy.objects.create(document_type="Task", approvals_required=2)
+
+    with pytest.raises(ValueError, match="2"):
+        WorkflowService.complete_task(task, superuser)
+
+
+@pytest.mark.django_db
+def test_policy_approvals_required_completes_after_enough():
+    """approvals_required=2 completes the task once 1 prior COMPLETED event exists."""
+    from workflow.models import ApprovalPolicy, Task, TaskEvent
+    from workflow.services import WorkflowService
+
+    first_approver = User.objects.create_user(username="ap_first_ok", password="x")
+    second_approver = User.objects.create_superuser(username="ap_second_ok", password="x")
+    document = Task.objects.create(title="Doc multi ok", task_type="DOC_MULTI_OK")
+    task = Task.objects.create(
+        title="Approval multi ok",
+        task_type="TEST_APPROVAL",
+        category=Task.Category.APPROVAL,
+        content_object=document,
+    )
+    ApprovalPolicy.objects.create(document_type="Task", approvals_required=2)
+
+    # Simulate first approval recorded externally
+    TaskEvent.objects.create(
+        task=task,
+        action=TaskEvent.Action.COMPLETED,
+        user=first_approver,
+    )
+
+    completed = WorkflowService.complete_task(task, second_approver)
+    assert completed.status == Task.Status.COMPLETED

@@ -325,7 +325,8 @@ class WorkflowSettings(TimeStampedModel):
 class ApprovalPolicy(TimeStampedModel):
     """
     Regla de aprobación por tipo de documento y monto mínimo.
-    forbid_self_approval es warn-only (nunca bloquea).
+    forbid_self_approval bloquea (PermissionDenied) cuando está activo;
+    el warn-only de Fase 3 (task._sod_warnings) opera de forma independiente.
     """
 
     document_type = models.CharField(
@@ -351,7 +352,7 @@ class ApprovalPolicy(TimeStampedModel):
     forbid_self_approval = models.BooleanField(
         _("Prohibir Auto-aprobación"),
         default=False,
-        help_text="Si está activado, emite un aviso cuando el aprobador es el mismo que el creador (warn-only, no bloquea).",
+        help_text="Si está activado, bloquea (PermissionDenied) cuando el aprobador es el mismo que el creador del documento.",
     )
     approvals_required = models.PositiveIntegerField(
         _("Aprobaciones Requeridas"),

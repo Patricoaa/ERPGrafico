@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 
 from django.db import transaction
 from django.utils import timezone
@@ -6,6 +7,7 @@ from django.utils import timezone
 _sod_log = logging.getLogger("workflow.sod")
 
 from workflow.models import (
+    ApprovalPolicy,
     Notification,
     NotificationRule,
     Task,
@@ -154,6 +156,35 @@ class WorkflowService:
         if task.category == Task.Category.APPROVAL and task.created_by and task.created_by == user:
             task._sod_warnings.append("self_approval")
             _sod_log.warning("SoD: self-approval by user=%s on task=%s", user.pk, task.pk)
+
+        # ApprovalPolicy enforcement
+        content_obj = task.content_object
+        if task.category == Task.Category.APPROVAL and content_obj is not None:
+            policy = ApprovalPolicy.objects.filter(
+                document_type=type(content_obj).__name__
+            ).first()
+            if policy is not None and policy.min_amount is not None:
+                amount = getattr(content_obj, "total", None)
+                if amount is None or Decimal(str(amount)) <= policy.min_amount:
+                    policy = None
+            if policy is not None:
+                if policy.required_permission and not user.has_perm(policy.required_permission):
+                    raise PermissionDenied(
+                        f"Necesitas el permiso '{policy.required_permission}' para aprobar este documento."
+                    )
+                if policy.forbid_self_approval and task.created_by and task.created_by == user:
+                    raise PermissionDenied(
+                        "La política prohíbe la auto-aprobación para este tipo de documento."
+                    )
+                if policy.approvals_required > 1:
+                    existing_count = TaskEvent.objects.filter(
+                        task=task, action=TaskEvent.Action.COMPLETED
+                    ).count()
+                    if existing_count < policy.approvals_required - 1:
+                        raise ValueError(
+                            f"Se requieren {policy.approvals_required} aprobaciones para este documento. "
+                            f"Aprobaciones registradas: {existing_count}."
+                        )
 
         # The linked object may demand evidence / confirmations for this approval
         # (e.g. a work order whose design must be approved by the client).
