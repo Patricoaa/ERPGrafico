@@ -18,9 +18,8 @@ class RoleService:
     def materialize(group: Group) -> None:
         """Compute and set group permissions from bundles + extra - excluded.
 
-        Skips groups with no bundles and no extra_permissions configured —
-        those have not been given a permission composition yet and should not
-        have their permissions cleared.
+        Always calls group.permissions.set() — an empty composition clears all
+        permissions. Returns early only for non-ROLE groups or missing profiles.
         """
         try:
             profile = group.profile

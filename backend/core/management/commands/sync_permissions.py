@@ -75,13 +75,14 @@ class Command(BaseCommand):
                     if profile.kind == GroupProfile.TEAM:
                         # I3: a TEAM group shares the target name — never convert
                         # it to a seeded ROLE (it has independent membership/purpose).
-                        self.stdout.write(
-                            self.style.WARNING(
-                                f"  WARNING: group '{role_data['name']}' exists as a TEAM "
-                                f"— skipping seeded-role creation to avoid overwriting it. "
-                                f"Rename the TEAM group if a seeded role is also needed."
+                        if verbosity >= 1:
+                            self.stdout.write(
+                                self.style.WARNING(
+                                    f"  WARNING: group '{role_data['name']}' exists as a TEAM "
+                                    f"— skipping seeded-role creation to avoid overwriting it. "
+                                    f"Rename the TEAM group if a seeded role is also needed."
+                                )
                             )
-                        )
                     else:
                         # Already a ROLE — preserve admin customisations
                         if verbosity >= 2:

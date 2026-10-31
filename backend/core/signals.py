@@ -111,4 +111,13 @@ def sync_registered_permissions(sender, **kwargs):
     from core.rbac.services import RoleService
     # materialize_all() covers sysadmin via its ALL_MODULE_BUNDLES + ALL_SENSITIVE_BUNDLES,
     # keeping post_migrate and sync_permissions consistent (I10).
-    RoleService.materialize_all()
+    # NOTE: on a fresh DB, GroupProfile for seeded roles does not exist yet —
+    # run `manage.py sync_permissions` after the initial `migrate` to bootstrap roles.
+    count = RoleService.materialize_all()
+    if count == 0:
+        import warnings
+        warnings.warn(
+            "post_migrate: materialize_all() found no ROLE groups. "
+            "Run `manage.py sync_permissions` to create seeded roles.",
+            stacklevel=2,
+        )
