@@ -139,19 +139,19 @@ class GroupSerializer(serializers.ModelSerializer):
     def get_kind(self, obj):
         try:
             return obj.profile.kind
-        except Exception:
+        except AttributeError:
             return None
 
     def get_is_system(self, obj):
         try:
             return obj.profile.is_system
-        except Exception:
+        except AttributeError:
             return False
 
     def get_description(self, obj):
         try:
             return obj.profile.description
-        except Exception:
+        except AttributeError:
             return ""
 
 

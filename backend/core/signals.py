@@ -1,9 +1,31 @@
+from django.contrib.auth.models import Group
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from contacts.models import Contact
 
 from .models import CompanySettings
+
+
+_SYSTEM_ROLE_NAMES: frozenset[str] = frozenset({"ADMIN", "MANAGER", "OPERATOR", "READ_ONLY"})
+
+
+@receiver(post_save, sender=Group)
+def create_group_profile_on_group_create(sender, instance, created, **kwargs):
+    """Auto-create a GroupProfile whenever a Group is created outside the API.
+
+    System-role names get kind=ROLE + is_system=True; all others get kind=TEAM.
+    """
+    if created:
+        from core.models import GroupProfile
+        is_system_role = instance.name in _SYSTEM_ROLE_NAMES
+        GroupProfile.objects.get_or_create(
+            group=instance,
+            defaults={
+                "kind": GroupProfile.ROLE if is_system_role else GroupProfile.TEAM,
+                "is_system": is_system_role,
+            },
+        )
 
 
 @receiver(post_save, sender=Contact)

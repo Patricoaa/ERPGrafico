@@ -8,12 +8,20 @@ from core.rbac.bundles import expand
 class RoleService:
     @staticmethod
     def materialize(group: Group) -> None:
-        """Compute and set group permissions from bundles + extra - excluded."""
+        """Compute and set group permissions from bundles + extra - excluded.
+
+        Skips groups with no bundles and no extra_permissions configured —
+        those have not been given a permission composition yet and should not
+        have their permissions cleared.
+        """
         try:
             profile = group.profile
-        except Exception:
+        except AttributeError:
             return
         if profile.kind != "ROLE":
+            return
+        # Nothing configured → leave existing permissions untouched
+        if not profile.bundles and not profile.extra_permissions:
             return
 
         target_codes = expand(profile.bundles)

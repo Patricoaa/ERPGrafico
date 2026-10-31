@@ -214,7 +214,7 @@ class GroupService:
         """
         try:
             return group.profile.is_system
-        except Exception:
+        except AttributeError:
             return group.name in cls.SYSTEM_ROLES
 
     @classmethod
@@ -229,18 +229,32 @@ class GroupService:
 
     @classmethod
     def create(cls, name: str, kind: str = "TEAM", description: str = "") -> "Group":
-        """Create a Group and its GroupProfile atomically."""
+        """Create a Group and its GroupProfile atomically.
+
+        The post_save signal on Group auto-creates a TEAM GroupProfile.
+        We update that profile (or create one if missing) to the requested kind/description.
+        """
         from django.db import transaction
         from django.contrib.auth.models import Group
         from core.models import GroupProfile
 
         with transaction.atomic():
             group = Group.objects.create(name=name)
-            GroupProfile.objects.create(
-                group=group,
+            # The post_save signal may have already created a TEAM profile; update it.
+            updated = GroupProfile.objects.filter(group=group).update(
                 kind=kind,
                 description=description,
             )
+            # Ensure a profile exists even if the signal didn't fire (e.g. in migrations)
+            if not updated:
+                GroupProfile.objects.create(group=group, kind=kind, description=description)
+        # Refresh the group to clear the ORM-cached profile from the signal
+        group.refresh_from_db()
+        # Reload the profile from DB (clears related-object cache)
+        try:
+            del group.__dict__["profile"]
+        except KeyError:
+            pass
         return group
 
 
