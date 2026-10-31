@@ -10,9 +10,8 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { vi, describe, it, expect, beforeEach } from "vitest"
 import React from "react"
-import * as z from "zod"
-
 import { UserDrawer } from "../UserDrawer"
+import { userSchema } from "../../schema"
 
 // ── hoisted mocks ──────────────────────────────────────────────────────────
 const { getMock, postMock, patchMock } = vi.hoisted(() => ({
@@ -154,17 +153,6 @@ describe("UserDrawer — kind-based groups (Task 8 TDD)", () => {
     // test the Zod schema that backs the form directly — this is both faster and
     // more precise, since the contract is on the schema, not the rendering layer.
     it("user form schema requires at least one role (array min=1)", () => {
-        // Duplicate the schema shape from UserDrawer.tsx to verify the Task-8 invariant:
-        // roles must not be empty (array min=1).
-        const userSchema = z.object({
-            username: z.string().min(3),
-            roles: z.array(z.string()).min(1, "Debe seleccionar al menos un puesto"),
-            teams: z.array(z.string()),
-            contact: z.number().min(1),
-            password: z.string().optional(),
-            is_active: z.boolean(),
-        })
-
         // No roles → should fail
         const emptyRoles = userSchema.safeParse({
             username: "testuser",

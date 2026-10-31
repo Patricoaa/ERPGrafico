@@ -7,7 +7,6 @@ import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { type UserInitialData } from "@/types/forms"
-import * as z from "zod"
 import { toast } from "sonner"
 import { usersApi, type SodWarning } from "../api/usersApi"
 import { useSingleUser } from "../hooks/useUserSearch"
@@ -21,17 +20,7 @@ import { type AppGroup } from "@/types/entities"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { cn } from "@/lib/utils"
 import { formDrawerWidth } from "@/lib/form-widths"
-
-const userSchema = z.object({
-    username: z.string().min(3, "Mínimo 3 caracteres"),
-    roles: z.array(z.string()).min(1, "Debe seleccionar al menos un puesto"),
-    teams: z.array(z.string()),
-    contact: z.number().min(1, "Debe seleccionar un contacto"),
-    password: z.string().optional(),
-    is_active: z.boolean(),
-})
-
-type UserFormValues = z.infer<typeof userSchema>
+import { userSchema, type UserFormValues } from "../schema"
 
 interface UserDrawerProps {
     initialData?: UserInitialData
