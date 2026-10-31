@@ -65,3 +65,55 @@ def test_pool_task_visible_to_group_member():
 
     qs = TaskSelectorExt.get_queryset_for_user(user)
     assert task in qs
+
+
+# ---------------------------------------------------------------------------
+# Task 3 — Task.required_permission + ApprovalPolicy model + SoD warn
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+def test_complete_task_requires_permission():
+    from rest_framework.exceptions import PermissionDenied
+    from workflow.models import Task
+    from workflow.services import WorkflowService
+
+    user = User.objects.create_user(username="low_perm_user", password="x")
+    task = Task.objects.create(
+        title="Perm task",
+        task_type="PERM_TASK",
+        required_permission="sales.confirm_salesorder",
+    )
+    with pytest.raises(PermissionDenied):
+        WorkflowService.complete_task(task, user)
+
+
+@pytest.mark.django_db
+def test_complete_task_self_approval_warns_not_blocks():
+    from workflow.models import Task
+    from workflow.services import WorkflowService
+
+    user = User.objects.create_user(username="creator_user", password="x", is_superuser=True)
+    task = Task.objects.create(
+        title="Self approval task",
+        task_type="SELF_TASK",
+        created_by=user,
+    )
+    completed = WorkflowService.complete_task(task, user)
+    assert completed.status == Task.Status.COMPLETED
+    assert "self_approval" in getattr(completed, "_sod_warnings", [])
+
+
+@pytest.mark.django_db
+def test_approval_policy_model_creates():
+    from workflow.models import ApprovalPolicy
+
+    policy = ApprovalPolicy.objects.create(
+        document_type="PURCHASE_ORDER",
+        min_amount="50000.00",
+        required_permission="purchasing.approve_purchaseorder",
+        forbid_self_approval=True,
+        approvals_required=2,
+    )
+    assert policy.pk is not None
+    assert policy.document_type == "PURCHASE_ORDER"
+    assert policy.forbid_self_approval is True

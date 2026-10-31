@@ -153,6 +153,14 @@ class Task(models.Model):
         help_text="APPROVAL: Aprobación de flujo | TASK: Tarea operativa",
     )
 
+    required_permission = models.CharField(
+        _("Permiso Requerido"),
+        max_length=100,
+        blank=True,
+        default="",
+        help_text="codename app_label.action_model — si se especifica, solo usuarios con este permiso pueden completar la tarea.",
+    )
+
     # Generic Link to any object (OT, OC, Invoice, etc)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
@@ -312,6 +320,51 @@ class WorkflowSettings(TimeStampedModel):
         from core.cache import CACHE_KEY_WORKFLOW_SETTINGS, cached_singleton
 
         return cached_singleton(cls, CACHE_KEY_WORKFLOW_SETTINGS)
+
+
+class ApprovalPolicy(TimeStampedModel):
+    """
+    Regla de aprobación por tipo de documento y monto mínimo.
+    forbid_self_approval es warn-only (nunca bloquea).
+    """
+
+    document_type = models.CharField(
+        _("Tipo de Documento"),
+        max_length=100,
+        unique=True,
+        help_text="Ej: SALE_ORDER, PURCHASE_ORDER, WORK_ORDER",
+    )
+    min_amount = models.DecimalField(
+        _("Monto Mínimo"),
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Si se especifica, la política aplica solo cuando el documento supera este monto.",
+    )
+    required_permission = models.CharField(
+        _("Permiso Requerido"),
+        max_length=100,
+        blank=True,
+        help_text="codename app_label.action_model para aprobar este tipo de documento.",
+    )
+    forbid_self_approval = models.BooleanField(
+        _("Prohibir Auto-aprobación"),
+        default=False,
+        help_text="Si está activado, emite un aviso cuando el aprobador es el mismo que el creador (warn-only, no bloquea).",
+    )
+    approvals_required = models.PositiveIntegerField(
+        _("Aprobaciones Requeridas"),
+        default=1,
+    )
+
+    class Meta:
+        verbose_name = _("Política de Aprobación")
+        verbose_name_plural = _("Políticas de Aprobación")
+        ordering = ["document_type"]
+
+    def __str__(self):
+        return f"ApprovalPolicy({self.document_type})"
 
 
 class NotificationRule(models.Model):

@@ -141,6 +141,19 @@ class WorkflowService:
             if task.assigned_group and not user.groups.filter(id=task.assigned_group.id).exists():
                 raise PermissionDenied(f"No tienes permisos para completar esta tarea. Debes pertenecer al grupo '{task.assigned_group.name}'.")
 
+        if task.required_permission and not user.has_perm(task.required_permission):
+            raise PermissionDenied(
+                f"Necesitas el permiso '{task.required_permission}' para completar esta tarea."
+            )
+
+        task._sod_warnings = []
+        if task.created_by and task.created_by == user:
+            task._sod_warnings.append("self_approval")
+            import logging
+            logging.getLogger("workflow.sod").warning(
+                "SoD: self-approval by user=%s on task=%s", user.pk, task.pk
+            )
+
         # The linked object may demand evidence / confirmations for this approval
         # (e.g. a work order whose design must be approved by the client).
         confirmations = {k: bool(v) for k, v in (confirmations or {}).items()}
