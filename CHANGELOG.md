@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.57](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.56...v0.3.57) (2026-10-31)
+
+
+### ✨ Features
+
+* **workflow:** enforce ApprovalPolicy in complete_task ([dfc0fd4](https://github.com/Patricoaa/ERPGrafico/commit/dfc0fd45458196f94ea3e732639bc175d11b6ddf))
+
 ### [0.3.56](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.55...v0.3.56) (2026-10-31)
 
 
