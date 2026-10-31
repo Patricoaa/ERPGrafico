@@ -61,6 +61,18 @@ class UserSerializer(serializers.ModelSerializer):
     def get_permissions(self, obj):
         return list(obj.get_all_permissions())
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["groups"] = [
+            {
+                "id": g.id,
+                "name": g.name,
+                "kind": g.profile.kind if hasattr(g, "profile") else None,
+            }
+            for g in instance.groups.select_related("profile").all()
+        ]
+        return data
+
     def _sync_contact_data(self, validated_data):
         contact = validated_data.get("contact")
         if contact:

@@ -185,19 +185,36 @@ class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return User.objects.filter(is_active=True)
         return super().get_queryset()
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        data = dict(serializer.data)
+        data["sod_warnings"] = getattr(request, "_rbac_sod_warnings", [])
+        return Response(data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        data = dict(serializer.data)
+        data["sod_warnings"] = getattr(request, "_rbac_sod_warnings", [])
+        return Response(data)
+
     def perform_create(self, serializer):
         from django.db import transaction
-
         from core.rbac.services import RoleService
-
         actor = self.request.user
         new_groups = list(serializer.validated_data.get("groups") or [])
-        # C1: raises PermissionDenied BEFORE save if any group exceeds actor's perms
         RoleService.validate_new_user_groups(actor, new_groups)
+        sod_warnings: list = []
         with transaction.atomic():
             instance = serializer.save()
             if new_groups:
-                RoleService.audit_new_user_groups(instance, new_groups, actor, self.request)
+                sod_warnings = RoleService.audit_new_user_groups(instance, new_groups, actor, self.request)
+        self.request._rbac_sod_warnings = [{"rule": w["rule"], "label": w["label"]} for w in sod_warnings]
 
     def perform_update(self, serializer):
         from core.rbac.services import RoleService
@@ -207,6 +224,7 @@ class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if is_before and not is_after:
             from .services import UserService
             UserService.deactivate(user=instance, deactivated_by=self.request.user, request=self.request)
+            self.request._rbac_sod_warnings = []
             return
         new_groups = serializer.validated_data.get("groups")
         before = set(instance.groups.values_list("name", flat=True)) if new_groups is not None else None
@@ -217,6 +235,7 @@ class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if new_groups is not None:
             after = set(instance.groups.values_list("name", flat=True))
             RoleService.log_user_roles_change(instance, before, after, self.request.user, self.request, sod_warnings=sod_warnings)
+        self.request._rbac_sod_warnings = [{"rule": w["rule"], "label": w["label"]} for w in sod_warnings]
 
     def destroy(self, request, *args, **kwargs):
         # Archivo pattern: hard DELETE not allowed, use PATCH is_active=false to archive
@@ -250,6 +269,14 @@ class GroupViewSet(viewsets.ModelViewSet):
         if kind:
             qs = qs.filter(profile__kind=kind)
         return qs
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        kind = self.request.data.get("kind", "TEAM")
+        if kind == "ROLE":
+            profile = instance.profile
+            profile.kind = "ROLE"
+            profile.save(update_fields=["kind"])
 
     def perform_update(self, serializer):
         GroupService.validate_mutable(serializer.instance, serializer.validated_data.get("name"))

@@ -107,22 +107,26 @@ def test_new_permission_flows_to_roles_on_migrate():
     from core.rbac.services import RoleService
 
     # Register a new permission under 'sales' (view_* → lands in sales.read)
+    original_sales = list(PermissionRegistry._registry.get("sales", []))
     PermissionRegistry.register("sales", [("view_test_rbac_flow", "Ver test rbac flow")])
     PermissionRegistry.sync_to_db()
+    try:
 
-    g = Group.objects.create(name="SalesRoleForPermFlow")
-    g.profile.kind = "ROLE"
-    g.profile.bundles = ["sales.read"]
-    g.profile.save()
+        g = Group.objects.create(name="SalesRoleForPermFlow")
+        g.profile.kind = "ROLE"
+        g.profile.bundles = ["sales.read"]
+        g.profile.save()
 
-    RoleService.materialize(g)
+        RoleService.materialize(g)
 
-    group_perm_codes = {
-        f"{p.content_type.app_label}.{p.codename}"
-        for p in g.permissions.select_related("content_type")
-    }
+        group_perm_codes = {
+            f"{p.content_type.app_label}.{p.codename}"
+            for p in g.permissions.select_related("content_type")
+        }
 
-    assert "sales.view_test_rbac_flow" in group_perm_codes
+        assert "sales.view_test_rbac_flow" in group_perm_codes
+    finally:
+        PermissionRegistry._registry["sales"] = original_sales
 
 
 # ---------------------------------------------------------------------------

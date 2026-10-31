@@ -39,7 +39,7 @@ def test_me_patch_mixed_payload_only_applies_theme():
     user.refresh_from_db()
     assert r.status_code == 200
     assert (user.theme, user.username) == ("dark", "op")
-    assert r.data["groups"] == [_OPERATOR_GROUP]
+    assert [g["name"] for g in r.data["groups"]] == [_OPERATOR_GROUP]
 
 
 # --- Task 2: roles ---

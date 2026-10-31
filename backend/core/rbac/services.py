@@ -229,8 +229,8 @@ class RoleService:
                 )
 
     @staticmethod
-    def audit_new_user_groups(instance, new_groups: list, actor, request) -> None:
-        """Compute SoD and write audit log after a new user is saved with groups."""
+    def audit_new_user_groups(instance, new_groups: list, actor, request) -> list["SodWarning"]:
+        """Compute SoD and write audit log after a new user is saved with groups. Returns sod_warnings."""
         all_bundles: set[str] = set()
         for group in new_groups:
             try:
@@ -242,6 +242,7 @@ class RoleService:
         sod_warnings = RoleService.check_sod(all_bundles)
         after = set(instance.groups.values_list("name", flat=True))
         RoleService.log_user_roles_change(instance, set(), after, actor, request, sod_warnings=sod_warnings)
+        return sod_warnings
 
     @staticmethod
     def validate_role_assignment(actor, target, new_groups: list) -> list[SodWarning]:
