@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.56](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.55...v0.3.56) (2026-10-31)
+
+
+### ⚙️ Refactors
+
+* **rbac:** migrate hasPermission→can(), PermissionGuard→Can, rm usePermission ([db60ca7](https://github.com/Patricoaa/ERPGrafico/commit/db60ca7d78118f3a72072b359f900bf7592e86d9))
+* **workflow:** migrate candidate_group JSON→Task.assigned_group FK, fix notify_group_assignment ([82c081e](https://github.com/Patricoaa/ERPGrafico/commit/82c081e4a86b59be55f165c779f02db24150d7e7))
+
+
+### ✨ Features
+
+* **workflow:** ApprovalPoliciesView settings panel + /settings/workflow/policies route ([b905be4](https://github.com/Patricoaa/ERPGrafico/commit/b905be415fe9b897b543c0896f63ddd76d73461d))
+* **workflow:** ApprovalPolicy ViewSet + API endpoint /api/workflow/approval-policies/ ([d9b1b00](https://github.com/Patricoaa/ERPGrafico/commit/d9b1b0001e74842b7ea39b9904763da4b8887555))
+* **workflow:** migrate TaskAssignmentRule.assigned_group CharField→FK ([78a7605](https://github.com/Patricoaa/ERPGrafico/commit/78a76055535a5a88da9419e06fcc959c500e005f))
+* **workflow:** Task.required_permission, ApprovalPolicy model, SoD warn-only in complete_task ([ba863d6](https://github.com/Patricoaa/ERPGrafico/commit/ba863d6767860bfc5f8f2b70cb245ee5bea10ea3))
+
+
+### 🐛 Bug Fixes
+
+* **workflow:** review fixes — data migration, SoD guard, delete confirmation ([79bbd63](https://github.com/Patricoaa/ERPGrafico/commit/79bbd63458681cb52dca1fa341e5da8f175c9e2c))
+
 ### [0.3.55](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.54...v0.3.55) (2026-10-31)
 
 
