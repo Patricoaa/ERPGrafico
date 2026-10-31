@@ -58,7 +58,7 @@ class WorkflowService:
         """
         Creates a new task.
         If rule specifies a user, assigned_to is set.
-        If rule specifies a group, assigned_to is None, but data['candidate_group'] is set (Pool Assignment).
+        If rule specifies a group, assigned_group FK is set (Pool Assignment).
 
         category: APPROVAL (default) for workflow approvals, TASK for operational tasks
         """
@@ -68,11 +68,9 @@ class WorkflowService:
 
         if assignee_info:
             assigned_user = assignee_info.get("user")
-            candidate_group = assignee_info.get("group")
+            candidate_group = assignee_info.get("group")  # Group FK object or None
 
         task_data = data or {}
-        if candidate_group and not assigned_user:
-            task_data = {**task_data, "candidate_group": candidate_group}
 
         task = Task.objects.create(
             title=title,
@@ -81,6 +79,7 @@ class WorkflowService:
             priority=priority,
             created_by=created_by,
             assigned_to=assigned_user,
+            assigned_group=candidate_group if not assigned_user else None,
             content_object=content_object,
             data=task_data,
             category=category,
@@ -141,14 +140,6 @@ class WorkflowService:
                 raise PermissionDenied("No tienes permisos para completar esta tarea asignada a otro usuario.")
             if task.assigned_group and not user.groups.filter(id=task.assigned_group.id).exists():
                 raise PermissionDenied(f"No tienes permisos para completar esta tarea. Debes pertenecer al grupo '{task.assigned_group.name}'.")
-            # Pool tasks (create_task) carry the group by name in data, not in assigned_group
-            candidate_group = (task.data or {}).get("candidate_group")
-            if (
-                not task.assigned_to
-                and candidate_group
-                and not user.groups.filter(name=candidate_group).exists()
-            ):
-                raise PermissionDenied(f"No tienes permisos para completar esta tarea. Debes pertenecer al grupo '{candidate_group}'.")
 
         # The linked object may demand evidence / confirmations for this approval
         # (e.g. a work order whose design must be approved by the client).
@@ -582,24 +573,20 @@ class WorkflowService:
         return f"/workflow/tasks/{task.id}"
 
     @staticmethod
-    def notify_group_assignment(task, group_name):
-        """
-        Notify all users in the specific group about a new unassigned task (Pool).
-        """
-        from django.contrib.auth.models import Group
-
-        try:
-            WorkflowService.send_notification(
-                notification_type="TASK_GROUP_ASSIGNMENT",
+    def notify_group_assignment(task, group):
+        """Notify all members of the assigned group about a new pool task."""
+        link = WorkflowService._get_link_for_task(task)
+        for user in group.user_set.all():
+            Notification.objects.create(
+                user=user,
                 title=f"Nueva tarea grupal: {task.title}",
-                message=f"Se ha asignado una nueva tarea al grupo {group_name}: {task.description}",
-                link=WorkflowService._get_link_for_task(task),
+                message=f"Se ha asignado una nueva tarea al grupo {group.name}: {task.description}",
+                link=link,
+                type=Notification.Type.INFO,
                 content_object=task,
-                level=Notification.Type.INFO,
-                data={"task_id": task.id, "group_name": group_name},
+                data={"task_id": task.id},
+                notification_type="TASK_GROUP_ASSIGNMENT",
             )
-        except Group.DoesNotExist:
-            pass
 
     @staticmethod
     def notify_assignment(task):
