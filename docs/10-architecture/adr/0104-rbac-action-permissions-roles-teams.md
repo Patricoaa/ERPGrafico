@@ -1,7 +1,7 @@
 ---
 id: 0104
 title: RBAC — action_permissions dict, bundle taxonomy, GroupProfile (puestos y equipos)
-status: Proposed
+status: Accepted
 date: 2026-10-30
 author: core-team
 ---

@@ -113,7 +113,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
     const { dateString } = useServerDate()
     // Antes: "al cerrar el Hub". Ahora al cerrar la pila de fichas (pagos registrados en una OV)
     const { isSubModalActive: isHubOpen } = useGlobalModals()
-    const { hasPermission } = useAuth()
+    const { can } = useAuth()
     const { rate } = useVatRate()
     const { posCheckout, requestCredit } = useInvoices()
 
@@ -180,7 +180,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
     const [isPeriodValid, setIsPeriodValid] = useState(true)
     const [stepError, setStepError] = useState<string | null>(null)
 
-    const canDirectApprove = hasPermission('sales.approve_credit')
+    const canDirectApprove = can('sales.approve_credit')
     const didHydrateRef = useRef(false)
 
     // Sync order lines and hydrate step data

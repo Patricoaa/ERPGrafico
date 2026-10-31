@@ -11,20 +11,20 @@ import { Skeleton } from "@/components/shared"
  */
 export default function DashboardPage() {
     const router = useRouter()
-    const { user, hasPermission } = useAuth()
+    const { user, can } = useAuth()
 
     useEffect(() => {
         if (!user) return
 
         const firstAvailable = MODULE_ORDER.find((id) => {
             const permission = getModuleConfig(id)?.permission
-            return !permission || hasPermission(permission)
+            return !permission || can(permission)
         })
 
         if (firstAvailable) {
             router.replace(getModuleDefaultUrl(firstAvailable))
         }
-    }, [user, hasPermission, router])
+    }, [user, can, router])
 
     return (
         <div className="flex h-full items-center justify-center p-8">

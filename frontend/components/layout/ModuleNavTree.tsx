@@ -37,12 +37,12 @@ const stripQuery = (href: string) => href.split("?")[0]
  */
 export function ModuleNavTree({ navigation, onNavigate }: ModuleNavTreeProps) {
     const pathname = usePathname()
-    const { hasPermission } = useAuth()
+    const { can } = useAuth()
     const { tabs, activeValue, subActiveValue } = navigation
     const [manualOpen, setManualOpen] = useState<Record<string, boolean>>({})
 
     const visibleTabs = useMemo(() => {
-        const canSee = (n: NavNode) => !n.permission || hasPermission(n.permission)
+        const canSee = (n: NavNode) => !n.permission || can(n.permission)
         const prune = (nodes: NavNode[]): NavNode[] => nodes
             .filter(canSee)
             .map(n => (n.subTabs ? { ...n, subTabs: prune(n.subTabs) } : n))
@@ -51,14 +51,14 @@ export function ModuleNavTree({ navigation, onNavigate }: ModuleNavTreeProps) {
         // se oculta pero sus hijos visibles se promueven a la raíz.
         const result: NavNode[] = []
         for (const tab of tabs) {
-            if (tab.permission && !hasPermission(tab.permission)) {
+            if (tab.permission && !can(tab.permission)) {
                 result.push(...prune(tab.subTabs ?? []))
             } else {
                 result.push(tab.subTabs ? { ...tab, subTabs: prune(tab.subTabs) } : tab)
             }
         }
         return result
-    }, [tabs, hasPermission])
+    }, [tabs, can])
 
     const tree = useMemo(() => {
         const resolve = (node: NavNode, depth: number, parentActive: boolean, parentKey: string): ResolvedNode => {

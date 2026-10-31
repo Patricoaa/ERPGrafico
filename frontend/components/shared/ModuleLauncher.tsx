@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation"
 import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DynamicIcon } from "@/components/shared"
-import { PermissionGuard } from "@/components/auth/PermissionGuard"
+import { Can } from "@/components/auth"
 import { MODULE_REGISTRY, MODULE_ORDER, getModuleDefaultUrl, getModuleIconName } from "@/lib/module-registry"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -96,7 +96,7 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                                 const isActive = id === currentModuleId
 
                                 return (
-                                    <PermissionGuard permission={mod.permission ?? undefined} key={id}>
+                                    <Can permission={mod.permission ?? null} key={id}>
                                         <motion.div
                                             variants={cardVariants}
                                             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
@@ -128,7 +128,7 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                                                 </span>
                                             </Link>
                                         </motion.div>
-                                    </PermissionGuard>
+                                    </Can>
                                 )
                             })}
                         </div>

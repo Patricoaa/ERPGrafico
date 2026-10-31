@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/AuthContext"
-import { PermissionGuard } from "@/components/auth/PermissionGuard"
+import { Can } from "@/components/auth"
 import { EmptyState } from "@/components/shared"
 import { useNotifications, type NotificationPayload } from "@/features/notifications/hooks/useNotifications"
 import {
@@ -172,12 +172,12 @@ export function UserSidebarMenu({ onProfileOpen, onNavigate }: UserSidebarMenuPr
                             <User className="mr-3 h-4 w-4 text-primary" />
                             <span className="text-xs">Perfil</span>
                         </DropdownMenuItem>
-                        <PermissionGuard permission="core.change_companysettings">
+                        <Can permission="core.change_companysettings">
                             <DropdownMenuItem onClick={() => router.push("/settings")} className="cursor-pointer">
                                 <Settings className="mr-3 h-4 w-4 text-primary" />
                                 <span className="text-xs">Configuración</span>
                             </DropdownMenuItem>
-                        </PermissionGuard>
+                        </Can>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:text-destructive cursor-pointer">
                             <LogOut className="mr-3 h-4 w-4" />

@@ -15,7 +15,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { getTasks } from '@/features/workflow'
-import { PermissionGuard } from "@/components/auth/PermissionGuard"
+import { Can } from "@/components/auth"
 import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 const actions = [
@@ -100,7 +100,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                         const Icon = action.icon
 
                         return (
-                            <PermissionGuard permission={action.permission || undefined} key={action.url}>
+                            <Can permission={action.permission || null} key={action.url}>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <Link
@@ -123,7 +123,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                         {action.title}
                                     </TooltipContent>
                                 </Tooltip>
-                            </PermissionGuard>
+                            </Can>
                         )
                     })}
 
