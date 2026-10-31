@@ -63,14 +63,14 @@ export function ProfileSettingsSidebar({ profile, activeSection, onSectionChange
                                     title={label}
                                     onClick={() => onSectionChange(value)}
                                     className={cn(
-                                        "h-9 w-full justify-center rounded-none border-l-2 px-2 text-left text-xs font-normal sm:justify-start",
-                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-inset",
+                                        "h-8 w-full justify-start gap-2 rounded-sm px-2 text-left text-xs font-normal transition-colors",
+                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30",
                                         isActive
-                                            ? "border-primary bg-foreground/5 font-medium text-foreground"
-                                            : "border-transparent text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
+                                            ? "bg-card font-medium text-foreground shadow-card"
+                                            : "text-foreground/80 hover:bg-foreground/5 hover:text-foreground",
                                     )}
                                 >
-                                    <Icon className="h-4 w-4 shrink-0 sm:hidden" aria-hidden="true" />
+                                    <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                                     <span className="hidden truncate sm:inline">{label}</span>
                                 </Button>
                             )
