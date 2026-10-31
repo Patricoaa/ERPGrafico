@@ -66,10 +66,10 @@ Use this task when you need a new action (e.g. `confirm`, `annul`) on an existin
 
 ### A1. Register the permission in the app's migration or `AppConfig.ready()`
 
-Custom permissions must be declared as `Meta.permissions` on the model that they guard, **not** via a registry call:
+Custom permissions are declared as `Meta.permissions` on the model that they guard (preferred), or via a `PermissionRegistry` call in the app's `AppConfig.ready()` (legacy pattern used by `workflow` and `production`):
 
 ```python
-# backend/sales/models.py
+# backend/sales/models.py  ← preferred
 class SalesOrder(TimeStampedModel):
     class Meta:
         permissions = [
@@ -177,6 +177,8 @@ export function useCanConfirmOrder() {
 ```
 
 ```tsx
+import { PermissionGuard } from '@/components/shared'
+
 <PermissionGuard permission="sales.confirm_salesorder">
   <Button onClick={handleConfirm}>Confirmar</Button>
 </PermissionGuard>
@@ -271,7 +273,9 @@ warnings = RoleService.validate_role_assignment(
     target=target_user,
     new_groups=selected_groups,
 )
-# warnings is a list of SoD violations; raise PermissionDenied if escalation
+# Raises PermissionDenied automatically if escalation (actor lacks a group's permissions)
+# or if actor == target and groups change.
+# Returns list[SodWarning] — non-empty means a SoD conflict (warn-mode, not blocked).
 ```
 
 Log the change:

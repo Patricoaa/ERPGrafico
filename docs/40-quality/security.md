@@ -23,7 +23,7 @@ Single-tenant ERP, sensitive data: financial records, customer PII, invoices (fi
 - JWT access (15 min) + refresh (7 days) via `/api/token/`.
 - Refresh rotation on use; old refresh blacklisted.
 - Passwords: Django hasher (`PBKDF2` min, `argon2` preferred).
-- MFA: TOTP via `django-otp` (required for role `admin`, `finance`).
+- MFA: TOTP via `django-otp` (required for roles with `core.security` or `treasury.payments` bundles, e.g. *Administrador del sistema*, *Administración y Finanzas*).
 - Login throttle: 5 attempts / 15 min per IP + per username.
 
 ## Authorization (RBAC Fase 1)
@@ -32,7 +32,7 @@ Single-tenant ERP, sensitive data: financial records, customer PII, invoices (fi
 
 ### Invariants
 
-- Every ViewSet declares `permission_classes = [IsAuthenticated, StandardizedModelPermissions]`.
+- Most ViewSets declare `permission_classes = [IsAuthenticated, StandardizedModelPermissions]`; exceptions (public endpoints, custom auth flows) must document the deviation.
 - Every non-standard action is listed in the ViewSet's `action_permissions` class-level dict. An unlisted write action raises `PermissionDenied` by construction.
 - Object-level permission checks for detail/update/delete (never assume list filter is enough).
 - Frontend route guards are UX, never trust — always enforce server-side.
