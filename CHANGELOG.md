@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.55](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.54...v0.3.55) (2026-10-31)
+
+
+### ✨ Features
+
+* **rbac:** expose group kind in UserSerializer, sod_warnings in user response, kind on group create ([d332fd8](https://github.com/Patricoaa/ERPGrafico/commit/d332fd8b1c5e55b43e1826d8b1da8fd2b0f6f2d5))
+* **rbac:** module route guards, 403 page, forbidden interceptor ([1fb4a7c](https://github.com/Patricoaa/ERPGrafico/commit/1fb4a7c7e3205ed9b1463dffa3ce3822f7d3fe88))
+* **rbac:** RBAC types, hooks, can() + Can component ([0e37bc1](https://github.com/Patricoaa/ERPGrafico/commit/0e37bc18e4908ab5bc33907bcd0a940a844e1c7b))
+* **rbac:** role composition editor — bundle matrix, SoD display, no-escalation ([9b3a6d0](https://github.com/Patricoaa/ERPGrafico/commit/9b3a6d091d23a3279c3be28f2e3ca449d35b181d))
+
+
+### 📚 Documentation
+
+* **rbac:** update ADR-0104 with Phase 2 frontend decisions ([6ed451c](https://github.com/Patricoaa/ERPGrafico/commit/6ed451c9e83c79760a7627f72bb57fdcd8f491ab))
+
 ### [0.3.54](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.53...v0.3.54) (2026-10-31)
 
 
