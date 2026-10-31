@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.52](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.51...v0.3.52) (2026-10-31)
+
+
+### ✨ Features
+
+* **profile:** open user settings as modal overlay ([85f123e](https://github.com/Patricoaa/ERPGrafico/commit/85f123e36763ac840b36918c5fdc33c4545710f6))
+
 ### [0.3.51](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.50...v0.3.51) (2026-10-30)
 
 
