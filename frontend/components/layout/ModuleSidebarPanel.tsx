@@ -1,6 +1,7 @@
 "use client"
 
 import type { NavigationConfig } from "@/components/providers/HeaderProvider"
+import { Can } from "@/components/auth"
 import { Skeleton } from "@/components/ui/skeleton"
 import { MODULE_ORDER, getModuleConfig, getModuleIcon } from "@/lib/module-registry"
 import { ModuleNavTree } from "./ModuleNavTree"
@@ -61,14 +62,15 @@ export function ModuleSidebarPanel({ currentModuleId, navigation, isHeaderReady,
                             const mod = getModuleConfig(modId)
                             if (!mod) return null
                             return (
-                                <SidebarNavItem
-                                    key={modId}
-                                    label={mod.label}
-                                    href={mod.defaultUrl}
-                                    icon={getModuleIcon(modId)}
-                                    isActive={modId === currentModuleId}
-                                    onClick={onNavigate}
-                                />
+                                <Can key={modId} permission={mod.permission}>
+                                    <SidebarNavItem
+                                        label={mod.label}
+                                        href={mod.defaultUrl}
+                                        icon={getModuleIcon(modId)}
+                                        isActive={modId === currentModuleId}
+                                        onClick={onNavigate}
+                                    />
+                                </Can>
                             )
                         })}
                     </nav>

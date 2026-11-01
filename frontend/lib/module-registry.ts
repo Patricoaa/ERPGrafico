@@ -1,4 +1,4 @@
-import { Home, Package, Wallet, type LucideIcon } from "lucide-react"
+import { Home, Package, Settings, Wallet, type LucideIcon } from "lucide-react"
 import { getEntityIcon, getEntityIconName, getEntityMetadata } from "@/lib/entity-registry"
 
 export interface ModuleConfig {
@@ -25,6 +25,7 @@ export const MODULE_REGISTRY: Record<string, ModuleConfig> = {
   purchasing:  { id: "purchasing",  label: "Compras",       icon: Home,          iconName: "home",           primaryEntityLabel: 'purchasing.purchaseorder',             permission: "purchasing.view_dashboard_purchasing",      defaultUrl: "/purchasing/docs", headerTitle: "Compras", headerDescription: "Gestión integral de órdenes de compra, notas y configuración." },
   finances:    { id: "finances",    label: "Finanzas",      icon: Home,          iconName: "home",           primaryEntityLabel: 'finance.bankjournal',                  permission: "finances.view_dashboard_finances",          defaultUrl: "/finances/statements/bs", headerTitle: "Finanzas", headerDescription: "Análisis financiero, presupuestos y estados de resultados." },
   hr:          { id: "hr",          label: "RRHH",          icon: Home,          iconName: "home",           primaryEntityLabel: 'hr.employee',                          permission: "hr.view_dashboard_hr",                     defaultUrl: "/hr/employees?view=list", headerTitle: "Recursos Humanos", headerDescription: "Gestión centralizada de personal, inasistencias, anticipos y liquidaciones." },
+  settings:    { id: "settings",    label: "Configuración", icon: Settings,      iconName: "settings",      primaryEntityLabel: null,                                   permission: "core.change_companysettings",              defaultUrl: "/settings", headerTitle: "Configuración Global", headerDescription: "Panel de administración y parámetros transversales del sistema." },
 } as const
 
 export const MODULE_ORDER = ["accounting", "sales", "contacts", "inventory", "production", "treasury", "purchasing", "finances", "hr"] as const

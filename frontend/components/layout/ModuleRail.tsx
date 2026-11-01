@@ -2,8 +2,10 @@
 
 import Link from "next/link"
 import Image from "next/image"
+import { Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CMYK_ACCENT } from "@/components/shared"
+import { Can } from "@/components/auth"
 import { MODULE_ORDER, getModuleConfig, getModuleIcon } from "@/lib/module-registry"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useBranding } from "@/contexts/BrandingProvider"
@@ -71,7 +73,28 @@ export function ModuleRail({ currentModuleId, onNavigate, onProfileOpen }: Modul
                 </TooltipProvider>
             </nav>
 
-            <div className="shrink-0 py-3">
+            <div className="shrink-0 py-3 flex flex-col items-center gap-2">
+                <Can permission="core.change_companysettings">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Link
+                                href="/settings"
+                                onClick={onNavigate}
+                                aria-label="Configuración"
+                                aria-current={currentModuleId === "settings" ? "page" : undefined}
+                                className={cn(
+                                    "w-10 h-10 shrink-0 rounded-sm flex items-center justify-center transition-colors duration-200",
+                                    currentModuleId === "settings"
+                                        ? "bg-card shadow-card text-primary"
+                                        : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
+                                )}
+                            >
+                                <Settings className="w-5 h-5" />
+                            </Link>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="font-semibold text-xs border-border/50">Configuración</TooltipContent>
+                    </Tooltip>
+                </Can>
                 <UserSidebarMenu onProfileOpen={onProfileOpen} onNavigate={onNavigate} />
             </div>
         </div>
