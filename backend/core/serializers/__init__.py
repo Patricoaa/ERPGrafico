@@ -143,10 +143,11 @@ class GroupSerializer(serializers.ModelSerializer):
     kind = serializers.SerializerMethodField()
     is_system = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
+    bundles = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
-        fields = ["id", "name", "user_count", "kind", "is_system", "description"]
+        fields = ["id", "name", "user_count", "kind", "is_system", "description", "bundles"]
 
     def get_kind(self, obj):
         try:
@@ -165,6 +166,12 @@ class GroupSerializer(serializers.ModelSerializer):
             return obj.profile.description
         except AttributeError:
             return ""
+
+    def get_bundles(self, obj):
+        try:
+            return obj.profile.bundles or []
+        except AttributeError:
+            return []
 
 
 class AttachmentSerializer(serializers.ModelSerializer):

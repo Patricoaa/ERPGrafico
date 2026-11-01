@@ -312,6 +312,7 @@ export interface AppGroup {
     is_system?: boolean
     description?: string
     user_count?: number
+    bundles?: string[]
 }
 
 // ─── Treasury View Row Types ─────────────────────────────
