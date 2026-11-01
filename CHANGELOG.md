@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.60](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.59...v0.3.60) (2026-11-01)
+
+
+### 🐛 Bug Fixes
+
+* **auth:** handle group objects in user UI ([b4dfa87](https://github.com/Patricoaa/ERPGrafico/commit/b4dfa87035dc87c1d5e5a1fcf91119fe439bbee6))
+
 ### [0.3.59](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.58...v0.3.59) (2026-11-01)
 
 
