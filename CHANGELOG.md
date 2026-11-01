@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.58](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.57...v0.3.58) (2026-11-01)
+
+
+### ✨ Features
+
+* **users:** redesign UserDrawer — full-screen, roles/teams tabs, module-grouped bundles ([618993a](https://github.com/Patricoaa/ERPGrafico/commit/618993a55d0c8ca6b06080ba08418f9c7f3aeb4f))
+
 ### [0.3.57](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.56...v0.3.57) (2026-10-31)
 
 
