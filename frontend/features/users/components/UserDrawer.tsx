@@ -518,11 +518,9 @@ function RolesTab({ form, availableRoles, bundleMeta, isLoading }: RolesTabProps
     return (
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
             {/* Header */}
-            <div className="shrink-0 flex items-start justify-between gap-4 px-8 pt-6 pb-4 border-b border-border/50">
+            <div className="shrink-0 flex items-start justify-between gap-4 px-8 pt-6 pb-4">
                 <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                        <ShieldCheck className="h-4 w-4" />
-                    </div>
+
                     <div className="space-y-0.5">
                         <h2 className="text-sm font-semibold text-foreground leading-snug">Roles de acceso</h2>
                         <p className="text-xs text-muted-foreground leading-snug">
@@ -639,7 +637,7 @@ function RoleCard({ role, bundleMeta, checked, onChange }: RoleCardProps) {
             onClick={() => onChange(!checked)}
             onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); onChange(!checked) } }}
             className={cn(
-                "group relative flex flex-col gap-2 rounded-xl border p-4 cursor-pointer",
+                "group relative flex flex-col gap-2 rounded-sm border p-4 cursor-pointer",
                 "transition-all duration-150 select-none outline-none",
                 "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                 checked
@@ -726,11 +724,9 @@ function TeamsTab({ form, availableTeams, isLoading }: TeamsTabProps) {
     return (
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
             {/* Header */}
-            <div className="shrink-0 flex items-start justify-between gap-4 px-8 pt-6 pb-4 border-b border-border/50">
+            <div className="shrink-0 flex items-start justify-between gap-4 px-8 pt-6 pb-4">
                 <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                    </div>
+
                     <div className="space-y-0.5">
                         <h2 className="text-sm font-semibold text-foreground leading-snug">Equipos de trabajo</h2>
                         <p className="text-xs text-muted-foreground leading-snug">
@@ -804,7 +800,7 @@ function TeamCard({ team, checked, onChange }: TeamCardProps) {
             onClick={() => onChange(!checked)}
             onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); onChange(!checked) } }}
             className={cn(
-                "group relative flex items-start gap-2.5 rounded-xl border p-4 cursor-pointer",
+                "group relative flex items-start gap-2.5 rounded-sm border p-4 cursor-pointer",
                 "transition-all duration-150 select-none outline-none",
                 "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                 checked
