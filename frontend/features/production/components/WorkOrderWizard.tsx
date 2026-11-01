@@ -302,13 +302,13 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     if (user.is_superuser) return true
     if (task.assigned_to === user.id) return true
     const userGroups = user.groups ?? []
-    return userGroups.some((g: string) => {
-      const groupName = g.toLowerCase()
+    return userGroups.some((group) => {
+      const groupName = group.name.toLowerCase()
       const gName = (task.data as Record<string, unknown>)?.candidate_group
       return (
         (task.assigned_group_name && task.assigned_group_name.toLowerCase() === groupName) ||
         (gName && typeof gName === 'string' && gName.toLowerCase() === groupName) ||
-        g === task.assigned_group
+        String(group.id) === task.assigned_group
       )
     })
   }

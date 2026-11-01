@@ -42,6 +42,7 @@ vi.mock("sonner", () => ({
 vi.mock("@/lib/api", () => ({
     default: { get: vi.fn(), post: vi.fn(), patch: vi.fn() },
     AUTH_UNAUTHORIZED_EVENT: "auth:unauthorized",
+    AUTH_FORBIDDEN_EVENT: "auth:forbidden",
 }))
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -71,7 +72,7 @@ describe("AuthContext.hasPermission — group-name bypass removed", () => {
             last_name: "",
             email: "",
             is_superuser: false,
-            groups: ["ADMIN"],   // OLD system role — must NOT grant access after Task 8
+            groups: [{ id: 1, name: "ADMIN", kind: "ROLE" }],   // OLD system role — must NOT grant access after Task 8
             permissions: [],
             theme: "system",
         })
@@ -111,7 +112,7 @@ describe("AuthContext.hasPermission — group-name bypass removed", () => {
             last_name: "",
             email: "",
             is_superuser: false,
-            groups: ["Ventas"],
+            groups: [{ id: 2, name: "Ventas", kind: "ROLE" }],
             permissions: ["sales.add_saleorder"],
             theme: "system",
         })

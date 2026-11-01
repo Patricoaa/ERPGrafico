@@ -133,7 +133,7 @@ export function UserSidebarMenu({ onProfileOpen, onNavigate }: UserSidebarMenuPr
                                 <p className="text-xs font-bold text-foreground leading-tight">
                                     {[user?.first_name, user?.last_name].filter(Boolean).join(' ') || userLabel}
                                 </p>
-                                <p className="text-3xs uppercase text-muted-foreground leading-tight">{user?.groups?.[0] || 'Sin Rol'}</p>
+                                <p className="text-3xs uppercase text-muted-foreground leading-tight">{user?.groups?.[0]?.name || 'Sin Rol'}</p>
                             </div>
                         </div>
                     </DropdownMenuLabel>

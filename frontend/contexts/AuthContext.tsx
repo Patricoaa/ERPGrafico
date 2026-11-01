@@ -8,6 +8,7 @@ import { AUTH_UNAUTHORIZED_EVENT, AUTH_FORBIDDEN_EVENT } from "@/lib/api";
 import { authApi } from "@/features/auth/api/authApi";
 import { useTheme } from "next-themes";
 import { setClientToken, removeClientTokens, getClientToken } from "@/lib/client-token";
+import type { AppGroup } from "@/types/entities";
 
 interface User {
     id: number;
@@ -16,7 +17,7 @@ interface User {
     last_name: string;
     email: string;
     is_superuser: boolean;
-    groups: string[];
+    groups: AppGroup[];
     permissions: string[];
     theme: 'light' | 'dark' | 'system';
 }

@@ -550,7 +550,7 @@ export function POSClientView() {
                             <DropdownMenuLabel className="font-normal py-3">
                                 <div className="flex flex-col">
                                     <p className="text-sm font-bold text-foreground">{user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user?.username || 'Usuario')}</p>
-                                    <p className="text-3xs uppercase text-muted-foreground">{user?.groups?.[0] || ''}</p>
+                                    <p className="text-3xs uppercase text-muted-foreground">{user?.groups?.[0]?.name || ''}</p>
                                     {currentSession?.id && (
                                         <p className="text-3xs font-mono font-bold text-primary mt-1">Sesión #{currentSession.id}</p>
                                     )}

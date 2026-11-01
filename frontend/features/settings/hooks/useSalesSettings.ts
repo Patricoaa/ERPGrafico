@@ -56,7 +56,7 @@ export function useSalesSettings(): UseSalesSettingsReturn {
     if (canApplyLineDiscount && user && !user.is_superuser) {
         if (settings?.pos_line_discount_user || settings?.pos_line_discount_group) {
             const matchesUser = settings.pos_line_discount_user === user.id
-            const matchesGroup = settings.pos_line_discount_group && user.groups?.includes(settings.pos_line_discount_group)
+            const matchesGroup = settings.pos_line_discount_group && user.groups?.some(group => group.name === settings.pos_line_discount_group)
             if (!matchesUser && !matchesGroup) {
                 canApplyLineDiscount = false
             }
@@ -68,7 +68,7 @@ export function useSalesSettings(): UseSalesSettingsReturn {
     if (canApplyGlobalDiscount && user && !user.is_superuser) {
         if (settings?.pos_global_discount_user || settings?.pos_global_discount_group) {
             const matchesUser = settings.pos_global_discount_user === user.id
-            const matchesGroup = settings.pos_global_discount_group && user.groups?.includes(settings.pos_global_discount_group)
+            const matchesGroup = settings.pos_global_discount_group && user.groups?.some(group => group.name === settings.pos_global_discount_group)
             if (!matchesUser && !matchesGroup) {
                 canApplyGlobalDiscount = false
             }

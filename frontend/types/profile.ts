@@ -1,4 +1,5 @@
 import type { ContactMini, Employee, Payroll, SalaryAdvance, PayrollPayment } from "@/types/hr"
+import type { AppGroup } from "@/types/entities"
 
 export interface ProfileUser {
   id: number
@@ -8,7 +9,7 @@ export interface ProfileUser {
   last_name: string
   is_active: boolean
   is_superuser: boolean
-  groups: string[]
+  groups: AppGroup[]
   permissions: string[]
   contact: number | null
   theme: 'light' | 'dark' | 'system'

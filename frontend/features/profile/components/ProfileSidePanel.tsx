@@ -98,8 +98,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
     // Position/Department priority: employee -> direct info (if it existed)
     const position = employee?.position || "—"
 
-    // All groups are displayed uniformly — the new model uses kind (ROLE/TEAM)
-    // which is not available in the profile's string[] groups, so we show them all.
+    // Display both role and team memberships as group names.
     const allGroups = user.groups ?? []
 
     return (
@@ -151,7 +150,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                                     <span className="text-3xs text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1.5">Puestos y Equipos</span>
                                     <div className="flex flex-wrap justify-center gap-1.5">
                                         {allGroups.length > 0 ? allGroups.map(g => (
-                                            <Chip key={g} size="xs" intent="neutral">{g}</Chip>
+                                            <Chip key={g.id} size="xs" intent="neutral">{g.name}</Chip>
                                         )) : (
                                             <span className="text-xs text-muted-foreground italic leading-none">Sin grupos asignados</span>
                                         )}
