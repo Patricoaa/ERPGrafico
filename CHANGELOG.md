@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.59](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.58...v0.3.59) (2026-11-01)
+
+
+### ✨ Features
+
+* **workflow:** implement RBAC Phase 3 tasks and approvals ([aa81662](https://github.com/Patricoaa/ERPGrafico/commit/aa816626100686b78f893a8017daef0a84a88549))
+
 ### [0.3.58](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.57...v0.3.58) (2026-11-01)
 
 
