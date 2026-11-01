@@ -1527,38 +1527,42 @@ class SaleOrderService(DocumentService):
 
 
 class SalesSettingsService:
-    ACCOUNTING_SETTINGS_FIELDS = ["default_receivable_account", "default_revenue_account"]
+    ACCOUNTING_SETTINGS_FIELDS = [
+        "default_receivable_account",
+        "default_revenue_account",
+        "default_service_revenue_account",
+        "default_subscription_revenue_account",
+        "default_uncollectible_expense_account",
+        "pos_default_credit_percentage",
+        "credit_auto_block_days",
+    ]
 
     @staticmethod
     def get_accounting_settings_data():
         from accounting.models import AccountingSettings
 
         settings = AccountingSettings.get_solo()
-        return {
-            "default_receivable_account": settings.default_receivable_account_id,
-            "default_revenue_account": settings.default_revenue_account_id,
-        }
+        data = {}
+        for field in SalesSettingsService.ACCOUNTING_SETTINGS_FIELDS:
+            if field.endswith("_account"):
+                data[field] = getattr(settings, f"{field}_id")
+            else:
+                data[field] = getattr(settings, field)
+        return data
 
     @staticmethod
     def update_accounting_settings(fields_data):
-        from accounting.models import Account, AccountingSettings
+        from accounting.models import AccountingSettings
+        from accounting.serializers import AccountingSettingsSerializer
 
         settings = AccountingSettings.get_solo()
-        updated = False
-        if "default_receivable_account" in fields_data:
-            val = fields_data["default_receivable_account"]
-            settings.default_receivable_account = (
-                Account.objects.get(pk=int(val)) if val else None
-            )
-            updated = True
-        if "default_revenue_account" in fields_data:
-            val = fields_data["default_revenue_account"]
-            settings.default_revenue_account = (
-                Account.objects.get(pk=int(val)) if val else None
-            )
-            updated = True
-        if updated:
-            settings.save()
+        serializer = AccountingSettingsSerializer(
+            settings,
+            data=fields_data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
     @staticmethod
     def get_or_update_current_settings(obj, request_data, method, serializer_factory):

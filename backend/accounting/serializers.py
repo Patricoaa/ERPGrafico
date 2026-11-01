@@ -91,6 +91,18 @@ class AccountingSettingsSerializer(serializers.ModelSerializer):
         model = AccountingSettings
         fields = "__all__"
 
+    def validate_pos_default_credit_percentage(self, value):
+        if value < 0 or value > 100:
+            raise serializers.ValidationError("El porcentaje debe estar entre 0 y 100.")
+        return value
+
+    def validate_credit_auto_block_days(self, value):
+        if value is not None and value <= 0:
+            raise serializers.ValidationError(
+                "Los días de auto-bloqueo deben ser positivos o quedar vacíos para desactivarlo."
+            )
+        return value
+
 
 class JournalItemSerializer(serializers.ModelSerializer):
     account_code = serializers.CharField(source="account.code", read_only=True)

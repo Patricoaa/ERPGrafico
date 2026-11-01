@@ -132,7 +132,12 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
         await updateSettings(data as SalesSettingsUpdatePayload)
     }, [updateSettings])
 
-    const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({ form, onSave })
+    const validate = useCallback((values: SalesFormValues) => {
+        const result = salesSchema.safeParse(values)
+        return result.success ? true : result.error.issues[0]?.message ?? "Revise los valores ingresados."
+    }, [])
+
+    const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({ form, onSave, validate })
 
     useUnsavedChangesGuard(status)
 
@@ -155,7 +160,7 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                             <Card variant="default">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Crédito y Cartera</CardTitle>
-                                    <CardDescription>Configure políticas de crédito, bloqueos automáticos y cuentas de castigo</CardDescription>
+                                    <CardDescription>Configure el crédito preaprobado del POS y el umbral de mora para bloqueo automático. Deje los días vacíos para desactivar esta política.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-8">
                                     <div className="space-y-6">
@@ -173,9 +178,12 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                                                                     suffix={<span className="text-3xs text-muted-foreground font-bold font-mono">%</span>}
                                                                     type="number"
                                                                     {...field}
+                                                                    value={Number.isNaN(field.value) ? "" : field.value}
+                                                                    onChange={(event) => field.onChange(event.target.value === "" ? Number.NaN : Number(event.target.value))}
                                                                     className="font-bold text-center max-w-[150px]"
                                                                     min={0}
                                                                     max={100}
+                                                                    step={0.01}
                                                                     error={fieldState.error?.message}
                                                                 />
                                                             </div>
@@ -198,9 +206,11 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                                                                     type="number"
                                                                     {...field}
                                                                     value={field.value ?? ""}
-                                                                    onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                                                                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                                                                     className="font-bold text-center max-w-[150px]"
                                                                     placeholder="Desact."
+                                                                    min={1}
+                                                                    step={1}
                                                                     error={fieldState.error?.message}
                                                                 />
                                                             </div>
