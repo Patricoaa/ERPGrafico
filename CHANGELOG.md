@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.61](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.60...v0.3.61) (2026-11-01)
+
+
+### 🐛 Bug Fixes
+
+* **workflow:** secure and align approval decisions ([a251d39](https://github.com/Patricoaa/ERPGrafico/commit/a251d3976ce88551d6bb1d5b1f76bd2ce68404a0))
+
 ### [0.3.60](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.59...v0.3.60) (2026-11-01)
 
 
