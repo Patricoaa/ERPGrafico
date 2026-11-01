@@ -57,12 +57,46 @@ class TaskSerializer(serializers.ModelSerializer):
         model = Task
         fields = "__all__"
         read_only_fields = [
+            "task_type",
+            "assigned_to",
+            "assigned_group",
+            "category",
+            "required_permission",
+            "content_type",
+            "object_id",
+            "data",
             "created_by",
             "created_at",
             "updated_at",
+            "status",
             "completed_at",
             "completed_by",
         ]
+
+    def validate(self, attrs):
+        protected_fields = {
+            "task_type",
+            "status",
+            "assigned_to",
+            "assigned_group",
+            "category",
+            "required_permission",
+            "content_type",
+            "object_id",
+            "data",
+        }
+        attempted = protected_fields.intersection(self.initial_data)
+        if attempted:
+            raise serializers.ValidationError(
+                {field: "Este campo se administra mediante las reglas y acciones de workflow." for field in attempted}
+            )
+        assigned_to = attrs.get("assigned_to", getattr(self.instance, "assigned_to", None))
+        assigned_group = attrs.get("assigned_group", getattr(self.instance, "assigned_group", None))
+        if assigned_to and assigned_group:
+            raise serializers.ValidationError(
+                "Una tarea no puede asignarse simultáneamente a una persona y a un grupo."
+            )
+        return attrs
 
     def create(self, validated_data):
         # Auto-set created_by
@@ -92,6 +126,15 @@ class TaskAssignmentRuleSerializer(serializers.ModelSerializer):
         model = TaskAssignmentRule
         fields = "__all__"
 
+    def validate(self, attrs):
+        assigned_user = attrs.get("assigned_user", getattr(self.instance, "assigned_user", None))
+        assigned_group = attrs.get("assigned_group", getattr(self.instance, "assigned_group", None))
+        if assigned_user and assigned_group:
+            raise serializers.ValidationError(
+                "Una regla no puede asignar simultáneamente a una persona y a un grupo."
+            )
+        return attrs
+
 
 class WorkflowSettingsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -114,8 +157,30 @@ class NotificationRuleSerializer(serializers.ModelSerializer):
         model = NotificationRule
         fields = "__all__"
 
+    def validate(self, attrs):
+        assigned_user = attrs.get("assigned_user", getattr(self.instance, "assigned_user", None))
+        assigned_group = attrs.get("assigned_group", getattr(self.instance, "assigned_group", None))
+        if assigned_user and assigned_group:
+            raise serializers.ValidationError(
+                "Una regla no puede notificar simultáneamente a una persona y a un grupo."
+            )
+        return attrs
+
 
 class ApprovalPolicySerializer(serializers.ModelSerializer):
+    def validate_document_type(self, value):
+        from .approval_policies import CANONICAL_DOCUMENT_TYPES, canonicalize_document_type
+
+        canonical = canonicalize_document_type(value)
+        if canonical not in CANONICAL_DOCUMENT_TYPES:
+            raise serializers.ValidationError("Tipo de documento no soportado por el flujo de aprobaciones.")
+        return canonical
+
+    def validate_approvals_required(self, value):
+        if value < 1:
+            raise serializers.ValidationError("Se requiere al menos una aprobación.")
+        return value
+
     class Meta:
         model = ApprovalPolicy
         fields = "__all__"

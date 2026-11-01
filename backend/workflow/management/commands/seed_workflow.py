@@ -13,6 +13,10 @@ class Command(BaseCommand):
 
         rules = [
             {
+                "task_type": "OT_MATERIAL_APPROVAL",
+                "description": "Aprobación de disponibilidad de materiales",
+            },
+            {
                 "task_type": "OT_PREPRESS_APPROVAL",
                 "description": "Aprobación de diseño y pre-impresión",
             },
@@ -25,13 +29,25 @@ class Command(BaseCommand):
                 "description": "Supervisión de terminaciones y empaque",
             },
             {
-                "task_type": "OT_MATERIAL_REQUISITION",
-                "description": "Aprobación de compra/salida de materiales",
+                "task_type": "OT_OUTSOURCING_VERIFICATION_APPROVAL",
+                "description": "Verificación de recepción de servicios externos",
             },
             {
-                "task_type": "SALE_NOTE_VERIFICATION",
-                "description": "Verificación de ordenes de venta críticas",
+                "task_type": "OT_RECTIFICATION_APPROVAL",
+                "description": "Aprobación de rectificación y producción final",
             },
+            {
+                "task_type": "CREDIT_POS_REQUEST",
+                "description": "Aprobación de crédito en POS",
+            },
+            {"task_type": "HUB_ORIGIN", "description": "Tarea de origen de documento"},
+            {"task_type": "HUB_LOGISTICS", "description": "Tarea de logística"},
+            {"task_type": "HUB_BILLING", "description": "Tarea de facturación"},
+            {"task_type": "HUB_TREASURY", "description": "Tarea de tesorería"},
+            {"task_type": "OT_CREATION", "description": "Creación de orden de trabajo"},
+            {"task_type": "F29_CREATE", "description": "Creación de declaración F29"},
+            {"task_type": "F29_PAY", "description": "Pago de declaración F29"},
+            {"task_type": "PERIOD_CLOSE", "description": "Cierre contable mensual"},
         ]
 
         for rule_data in rules:

@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { formatEntityDisplay } from "@/lib/entity-registry"
-import { useUpdateTask } from "../hooks/useWorkflowMutations"
+import { useCompleteTask, useRejectTask } from "../hooks/useWorkflowMutations"
 import { useTasks } from "../hooks/useTasks"
 
 const HUB_STAGE_LABELS: Record<string, string> = {
@@ -20,6 +20,26 @@ const HUB_STAGE_LABELS: Record<string, string> = {
     logistics: 'Logística',
     billing: 'Facturación',
     treasury: 'Tesorería',
+}
+
+function hasApprovedInCurrentCycle(task: Task, userId: number | undefined): boolean {
+    if (!userId || !task.events_data) return false
+    const latestReopenId = task.events_data
+        .filter(event => event.action === 'REOPENED')
+        .reduce((latest, event) => Math.max(latest, event.id), 0)
+    return task.events_data.some(
+        event => event.action === 'COMPLETED' && event.user === userId && event.id > latestReopenId,
+    )
+}
+
+function approvalsInCurrentCycle(task: Task): number {
+    if (!task.events_data) return 0
+    const latestReopenId = task.events_data
+        .filter(event => event.action === 'REOPENED')
+        .reduce((latest, event) => Math.max(latest, event.id), 0)
+    return task.events_data.filter(
+        event => event.action === 'COMPLETED' && event.id > latestReopenId,
+    ).length
 }
 
 const CollapsibleSection = ({
@@ -69,6 +89,9 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
     const [activeTab, setActiveTab] = useState("tasks")
     const [approvalsExpanded, setApprovalsExpanded] = useState(true)
     const [completedExpanded, setCompletedExpanded] = useState(false)
+    const [rejectedExpanded, setRejectedExpanded] = useState(false)
+    const [cancelledExpanded, setCancelledExpanded] = useState(false)
+    const [inProgressExpanded, setInProgressExpanded] = useState(false)
     const { openEntity } = useGlobalModalActions()
     useOnEntityStackClose(() => { void refetch() })
     const { user } = useAuth()
@@ -77,15 +100,19 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
     const selectedId = searchParams.get('selected')
 
     const approvalsPending = approvalTasks.filter(t => t.status === 'PENDING')
-    const approvalsCompleted = approvalTasks.filter(t => t.status !== 'PENDING')
+    const approvalsInProgress = approvalTasks.filter(t => t.status === 'IN_PROGRESS')
+    const approvalsCompleted = approvalTasks.filter(t => t.status === 'COMPLETED')
+    const approvalsRejected = approvalTasks.filter(t => t.status === 'REJECTED')
+    const approvalsCancelled = approvalTasks.filter(t => t.status === 'CANCELLED')
+    const approvalsActiveCount = approvalsPending.length + approvalsInProgress.length
 
     useEffect(() => {
         onCountChange?.({
-            total: approvalsPending.length + operationalTasks.length,
-            approvals: approvalsPending.length,
+            total: approvalsActiveCount + operationalTasks.length,
+            approvals: approvalsActiveCount,
             tasks: operationalTasks.length,
         })
-    }, [approvalsPending.length, operationalTasks.length, onCountChange])
+    }, [approvalsActiveCount, operationalTasks.length, onCountChange])
 
     const navigateToTask = (task: Task) => {
         if (!task.object_id) {
@@ -126,27 +153,22 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
         }
     }, [selectedId, isLoading, approvalTasks, operationalTasks])
 
-    const { updateTask } = useUpdateTask()
+    const { completeTask } = useCompleteTask()
+    const { rejectTask } = useRejectTask()
 
     const handleCreditAction = async (e: React.MouseEvent, task: Task, action: 'APPROVE' | 'REJECT') => {
         e.stopPropagation()
         try {
             setActioningTask(task.id)
-            const status = action === 'APPROVE' ? 'COMPLETED' : 'REJECTED'
             const notes = action === 'APPROVE' ? 'Aprobado desde Inbox POS' : 'Rechazado desde Inbox POS'
-
-            await updateTask({
-                id: task.id,
-                payload: {
-                    status,
-                    notes: task.notes ? `${task.notes}\n${notes}` : notes
-                }
-            })
-
-            toast.success(`Crédito ${action === 'APPROVE' ? 'Aprobado' : 'Rechazado'}`)
-            refetch()
+            if (action === 'APPROVE') {
+                await completeTask({ id: task.id, notes })
+            } else {
+                await rejectTask({ id: task.id, notes })
+            }
+            void refetch()
         } catch {
-            toast.error("Error al procesar la solicitud")
+            // Mutation hooks display the API validation or permission error.
         } finally {
             setActioningTask(null)
         }
@@ -202,9 +224,19 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                     />
                 </div>
 
+                {task.task_type === 'CREDIT_POS_REQUEST' && approvalsInCurrentCycle(task) > 0 && task.status !== 'COMPLETED' && (
+                    <p className="text-xs text-muted-foreground">
+                        {hasApprovedInCurrentCycle(task, user?.id)
+                            ? 'Tu aprobación quedó registrada; espera a otro responsable del grupo.'
+                            : `${approvalsInCurrentCycle(task)} aprobación(es) ya registrada(s).`}
+                    </p>
+                )}
+
                 {/* Credit: approve/reject buttons only */}
-                {task.task_type === 'CREDIT_POS_REQUEST' && task.status !== 'REJECTED' &&
-                    (user?.is_superuser || task.assigned_to === user?.id || !task.assigned_to) && (
+                {task.task_type === 'CREDIT_POS_REQUEST' && ['PENDING', 'IN_PROGRESS'].includes(task.status) &&
+                    (user?.is_superuser || task.assigned_to === user?.id ||
+                        (task.assigned_group != null && user?.groups?.some(group => group.id === task.assigned_group))) &&
+                    !hasApprovedInCurrentCycle(task, user?.id) && (
                     <div className="flex gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
                         <Button
                             size="sm"
@@ -231,7 +263,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
 
     const tabItems: TabItem[] = [
         { value: 'tasks', label: 'Tareas', badge: operationalTasks.length },
-        { value: 'approvals', label: 'Aprobaciones', badge: approvalsPending.length },
+        { value: 'approvals', label: 'Aprobaciones', badge: approvalsActiveCount },
     ]
 
     return (
@@ -260,6 +292,17 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                                  </CollapsibleSection>
                              )}
 
+                            {approvalsInProgress.length > 0 && (
+                                <CollapsibleSection
+                                    title="En curso"
+                                    count={approvalsInProgress.length}
+                                    expanded={inProgressExpanded}
+                                    onToggle={() => setInProgressExpanded(!inProgressExpanded)}
+                                >
+                                    {approvalsInProgress.map(task => renderTaskCard(task))}
+                                </CollapsibleSection>
+                            )}
+
                             {approvalsCompleted.length > 0 && (
                                 <CollapsibleSection
                                     title="Completadas"
@@ -268,6 +311,28 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                                     onToggle={() => setCompletedExpanded(!completedExpanded)}
                                 >
                                     {approvalsCompleted.slice(0, 10).map(task => renderTaskCard(task))}
+                                </CollapsibleSection>
+                            )}
+
+                            {approvalsRejected.length > 0 && (
+                                <CollapsibleSection
+                                    title="Rechazadas"
+                                    count={approvalsRejected.length}
+                                    expanded={rejectedExpanded}
+                                    onToggle={() => setRejectedExpanded(!rejectedExpanded)}
+                                >
+                                    {approvalsRejected.slice(0, 10).map(task => renderTaskCard(task))}
+                                </CollapsibleSection>
+                            )}
+
+                            {approvalsCancelled.length > 0 && (
+                                <CollapsibleSection
+                                    title="Canceladas"
+                                    count={approvalsCancelled.length}
+                                    expanded={cancelledExpanded}
+                                    onToggle={() => setCancelledExpanded(!cancelledExpanded)}
+                                >
+                                    {approvalsCancelled.slice(0, 10).map(task => renderTaskCard(task))}
                                 </CollapsibleSection>
                             )}
 

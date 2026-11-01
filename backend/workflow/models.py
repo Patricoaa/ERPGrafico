@@ -187,7 +187,7 @@ class Task(models.Model):
 
 
 class TaskEvent(models.Model):
-    """Append-only log of what happened to a task (approved, reopened…).
+    """Append-only log of task decisions and lifecycle changes (approved, rejected, reopened…).
 
     ``Task`` keeps only its latest state — reopening a stage clears who approved it and the
     next approval overwrites the notes — so the step's approval history is read from here.
@@ -195,6 +195,7 @@ class TaskEvent(models.Model):
 
     class Action(models.TextChoices):
         COMPLETED = "COMPLETED", _("Aprobada")
+        REJECTED = "REJECTED", _("Rechazada")
         REOPENED = "REOPENED", _("Reabierta")
 
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="events")
@@ -333,7 +334,7 @@ class ApprovalPolicy(TimeStampedModel):
         _("Tipo de Documento"),
         max_length=100,
         unique=True,
-        help_text="Ej: SALE_ORDER, PURCHASE_ORDER, WORK_ORDER",
+        help_text="Etiqueta Django canónica, app_label.model (ej: production.workorder).",
     )
     min_amount = models.DecimalField(
         _("Monto Mínimo"),

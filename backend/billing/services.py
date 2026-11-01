@@ -328,6 +328,8 @@ class BillingService:
             created_by=requesting_user,
             data={
                 "request_data": clean_request_data,
+                "document_type": "sales.saleorder",
+                "document_total": str(total),
                 "customer_id": customer.id,
                 "customer_name": customer.name,
                 "customer_tax_id": customer.tax_id,
@@ -339,27 +341,6 @@ class BillingService:
             },
             category=Task.Category.APPROVAL,
         )
-
-        # Apply assignment rule if configured
-        try:
-            from workflow.models import TaskAssignmentRule
-
-            rule = TaskAssignmentRule.objects.filter(task_type="CREDIT_POS_REQUEST").first()
-            if rule:
-                task.assigned_to = rule.assigned_user
-
-                # Assign to group. task.assigned_group is a FK to Group, but rule.assigned_group is a CharField string in TaskAssignmentRule.
-                if rule.assigned_group:
-                    from django.contrib.auth.models import Group
-
-                    group = Group.objects.filter(name=rule.assigned_group).first()
-                    if group:
-                        task.assigned_group = group
-
-                task.save(update_fields=["assigned_to", "assigned_group"])
-        except Exception:
-            # Silently fail assignment and leave it unassigned if rule processing errors
-            pass
 
         return task
 
@@ -986,6 +967,14 @@ class BillingService:
             except Task.DoesNotExist:
                 raise ValidationError("Tarea de aprobación de crédito no encontrada.")
         elif direct_credit_approval and user and user.has_perm("sales.approve_credit"):
+            from workflow.services import WorkflowService
+
+            WorkflowService.enforce_direct_approval_policy(
+                document_type="sales.saleorder",
+                amount=order.total,
+                creator=getattr(order, "created_by", None),
+                user=user,
+            )
             bypass_credit_validation = True
             order.credit_assignment_origin = SaleOrder.CreditOrigin.MANUAL
 

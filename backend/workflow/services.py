@@ -4,8 +4,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
 
-_sod_log = logging.getLogger("workflow.sod")
-
+from workflow.approval_policies import document_type_candidates, document_type_label_candidates
 from workflow.models import (
     ApprovalPolicy,
     Notification,
@@ -15,6 +14,8 @@ from workflow.models import (
     TaskEvent,
     Transition,
 )
+
+_sod_log = logging.getLogger("workflow.sod")
 
 
 class WorkflowService:
@@ -48,6 +49,36 @@ class WorkflowService:
             return {"user": rule.assigned_user, "group": rule.assigned_group}
         except TaskAssignmentRule.DoesNotExist:
             return None
+
+    @staticmethod
+    def enforce_direct_approval_policy(*, document_type, amount, creator, user):
+        """Apply document policy to an explicitly authorized inline approval."""
+        from rest_framework.exceptions import PermissionDenied
+
+        candidates = document_type_label_candidates(document_type)
+        policies = {
+            policy.document_type: policy
+            for policy in ApprovalPolicy.objects.filter(document_type__in=candidates)
+        }
+        policy = next((policies[key] for key in candidates if key in policies), None)
+        if policy is None:
+            return
+        if policy.min_amount is not None and (
+            amount is None or Decimal(str(amount)) <= policy.min_amount
+        ):
+            return
+        if policy.required_permission and not user.has_perm(policy.required_permission):
+            raise PermissionDenied(
+                f"Necesitas el permiso '{policy.required_permission}' para aprobar este documento."
+            )
+        if policy.forbid_self_approval and creator and creator == user:
+            raise PermissionDenied(
+                "La política prohíbe la auto-aprobación para este tipo de documento."
+            )
+        if policy.approvals_required > 1:
+            raise PermissionDenied(
+                "La política requiere aprobaciones de varias personas; solicita una aprobación desde la bandeja."
+            )
 
     @staticmethod
     @transaction.atomic
@@ -135,22 +166,40 @@ class WorkflowService:
         task.save(update_fields=["completed_by", "completed_at"])
 
     @staticmethod
-    @transaction.atomic
-    def complete_task(task, user, notes=None, files=None, confirmations=None):
+    def _ensure_task_decision_permission(task, user):
         from rest_framework.exceptions import PermissionDenied
-        if task.category == Task.Category.TASK and task.task_type.startswith("HUB_"):
-            raise ValueError("Las tareas de etapa del HUB se completan automáticamente al finalizar la etapa correspondiente.")
 
         if not user.is_superuser:
             if task.assigned_to and task.assigned_to != user:
                 raise PermissionDenied("No tienes permisos para completar esta tarea asignada a otro usuario.")
-            if task.assigned_group and not user.groups.filter(id=task.assigned_group.id).exists():
-                raise PermissionDenied(f"No tienes permisos para completar esta tarea. Debes pertenecer al grupo '{task.assigned_group.name}'.")
-
+            if task.assigned_group and not user.groups.filter(id=task.assigned_group_id).exists():
+                raise PermissionDenied(
+                    f"No tienes permisos para completar esta tarea. Debes pertenecer al grupo '{task.assigned_group.name}'."
+                )
+            if (
+                task.category == Task.Category.APPROVAL
+                and not task.assigned_to
+                and not task.assigned_group
+            ):
+                raise PermissionDenied("La aprobación no tiene responsable asignado.")
         if task.required_permission and not user.has_perm(task.required_permission):
             raise PermissionDenied(
-                f"Necesitas el permiso '{task.required_permission}' para completar esta tarea."
+                f"Necesitas el permiso '{task.required_permission}' para completar la tarea."
             )
+
+    @staticmethod
+    @transaction.atomic
+    def complete_task(task, user, notes=None, files=None, confirmations=None):
+        from rest_framework.exceptions import PermissionDenied
+
+        task = Task.objects.select_for_update().select_related(
+            "assigned_to", "assigned_group", "created_by"
+        ).get(pk=task.pk)
+        if task.category == Task.Category.TASK and task.task_type.startswith("HUB_"):
+            raise ValueError("Las tareas de etapa del HUB se completan automáticamente al finalizar la etapa correspondiente.")
+        if task.status not in [Task.Status.PENDING, Task.Status.IN_PROGRESS]:
+            raise ValueError("Solo se pueden aprobar tareas pendientes o en curso.")
+        WorkflowService._ensure_task_decision_permission(task, user)
 
         task._sod_warnings = []
         if task.category == Task.Category.APPROVAL and task.created_by and task.created_by == user:
@@ -159,32 +208,55 @@ class WorkflowService:
 
         # ApprovalPolicy enforcement
         content_obj = task.content_object
-        if task.category == Task.Category.APPROVAL and content_obj is not None:
-            policy = ApprovalPolicy.objects.filter(
-                document_type=type(content_obj).__name__
-            ).first()
+        task_data = task.data or {}
+        approvals_required = 1
+        policy_candidates = (
+            document_type_candidates(content_obj)
+            if content_obj is not None
+            else document_type_label_candidates(task_data.get("document_type", ""))
+            if task_data.get("document_type")
+            else []
+        )
+        if task.category == Task.Category.APPROVAL and policy_candidates:
+            policies = ApprovalPolicy.objects.filter(document_type__in=policy_candidates)
+            policy_by_type = {item.document_type: item for item in policies}
+            policy = next(
+                (policy_by_type[key] for key in policy_candidates if key in policy_by_type),
+                None,
+            )
             if policy is not None and policy.min_amount is not None:
-                amount = getattr(content_obj, "total", None)
+                amount = (
+                    getattr(content_obj, "total", None)
+                    if content_obj is not None
+                    else task_data.get("document_total")
+                )
                 if amount is None or Decimal(str(amount)) <= policy.min_amount:
                     policy = None
             if policy is not None:
+                approvals_required = policy.approvals_required
                 if policy.required_permission and not user.has_perm(policy.required_permission):
                     raise PermissionDenied(
                         f"Necesitas el permiso '{policy.required_permission}' para aprobar este documento."
                     )
-                if policy.forbid_self_approval and task.created_by and task.created_by == user:
+                approval_creator = getattr(content_obj, "created_by", None) or task.created_by
+                if policy.forbid_self_approval and approval_creator and approval_creator == user:
                     raise PermissionDenied(
                         "La política prohíbe la auto-aprobación para este tipo de documento."
                     )
-                if policy.approvals_required > 1:
-                    existing_count = TaskEvent.objects.filter(
-                        task=task, action=TaskEvent.Action.COMPLETED
-                    ).count()
-                    if existing_count < policy.approvals_required - 1:
-                        raise ValueError(
-                            f"Se requieren {policy.approvals_required} aprobaciones para este documento. "
-                            f"Aprobaciones registradas: {existing_count}."
-                        )
+        latest_reopen_id = TaskEvent.objects.filter(
+            task=task, action=TaskEvent.Action.REOPENED
+        ).order_by("-id").values_list("id", flat=True).first()
+        approval_events = TaskEvent.objects.filter(
+            task=task, action=TaskEvent.Action.COMPLETED, user__isnull=False
+        )
+        if latest_reopen_id:
+            approval_events = approval_events.filter(id__gt=latest_reopen_id)
+        approved_user_ids = set(approval_events.values_list("user_id", flat=True))
+        if user.pk in approved_user_ids:
+            raise ValueError("Ya registraste una aprobación para esta tarea en el ciclo actual.")
+        if approvals_required > 1 and not task.assigned_group:
+            raise ValueError("La política requiere varias aprobaciones; asigna la tarea a un grupo.")
+        approvals_received = len(approved_user_ids) + 1
 
         # The linked object may demand evidence / confirmations for this approval
         # (e.g. a work order whose design must be approved by the client).
@@ -199,10 +271,12 @@ class WorkflowService:
             if not satisfied:
                 raise ValueError(message)
 
-        task.status = Task.Status.COMPLETED
-        task.completed_at = timezone.now()
-        task.completed_by = user
-        if notes:
+        old_status = task.status
+        is_complete = approvals_received >= approvals_required
+        task.status = Task.Status.COMPLETED if is_complete else Task.Status.PENDING
+        task.completed_at = timezone.now() if is_complete else None
+        task.completed_by = user if is_complete else None
+        if notes and is_complete:
             task.notes = notes
         if confirmations:
             task.data = {**(task.data or {}), "confirmations": confirmations}
@@ -233,17 +307,37 @@ class WorkflowService:
             confirmations=confirmations,
         )
 
-        if task.category == Task.Category.APPROVAL and task.created_by and task.task_type == "CREDIT_POS_REQUEST":
-            draft_id = task.data.get("request_data", {}).get("draft_id")
-            link = f"/sales/pos?draftId={draft_id}" if draft_id else "/sales/pos"
-            WorkflowService.send_notification(
-                notification_type="POS_CREDIT_APPROVAL",
-                user=task.created_by,
-                title=f"Aprobación de Crédito Completada: {task.title}",
-                message="La solicitud de crédito ha sido aprobada y está lista para ser procesada en el POS.",
-                level=Notification.Type.SUCCESS,
-                link=link,
-            )
+        if is_complete:
+            WorkflowService.handle_task_update(task, old_status)
+        task.approvals_received = approvals_received
+        task.approvals_required = approvals_required
+        return task
+
+    @staticmethod
+    @transaction.atomic
+    def reject_task(*, task: "Task", user, notes=None):
+        task = Task.objects.select_for_update().select_related(
+            "assigned_to", "assigned_group", "created_by"
+        ).get(pk=task.pk)
+        if task.category != Task.Category.APPROVAL:
+            raise ValueError("Solo se pueden rechazar tareas de aprobación.")
+        if task.status not in [Task.Status.PENDING, Task.Status.IN_PROGRESS]:
+            raise ValueError("Solo se pueden rechazar tareas pendientes o en curso.")
+        WorkflowService._ensure_task_decision_permission(task, user)
+        old_status = task.status
+        task.status = Task.Status.REJECTED
+        task.completed_at = timezone.now()
+        task.completed_by = user
+        if notes:
+            task.notes = notes
+        task.save()
+        TaskEvent.objects.create(
+            task=task,
+            action=TaskEvent.Action.REJECTED,
+            user=user,
+            notes=notes or "",
+        )
+        WorkflowService.handle_task_update(task, old_status)
         return task
 
     # --- HUB Stage Tasks ---
@@ -691,19 +785,28 @@ class WorkflowService:
     @staticmethod
     def reset_tasks_for_object(content_object, stage_ids=None, user=None):
         """
-        Resets completed approval tasks for a given object to PENDING.
+        Starts a new approval cycle for tasks that were completed or received a partial approval.
         If stage_ids is provided, only tasks matching those stages (via task_type) are reset.
         Each reset is logged as a REOPENED event so the approval history survives it.
         """
         from django.contrib.contenttypes.models import ContentType
+        from django.db.models import OuterRef, Q, Subquery
 
         content_type = ContentType.objects.get_for_model(content_object)
 
+        latest_event_action = (
+            TaskEvent.objects.filter(task_id=OuterRef("pk"))
+            .order_by("-id")
+            .values("action")[:1]
+        )
         query = Task.objects.filter(
             content_type=content_type,
             object_id=content_object.pk,
             category=Task.Category.APPROVAL,
-            status=Task.Status.COMPLETED,
+        ).annotate(latest_event_action=Subquery(latest_event_action)).filter(
+            Q(status=Task.Status.COMPLETED)
+            | Q(status=Task.Status.REJECTED)
+            | Q(latest_event_action__in=[TaskEvent.Action.COMPLETED, TaskEvent.Action.REJECTED])
         )
 
         # We assume OT_STAGE_ID_APPROVAL is the task type pattern
@@ -716,8 +819,12 @@ class WorkflowService:
         TaskEvent.objects.bulk_create(
             [TaskEvent(task_id=task_id, action=TaskEvent.Action.REOPENED, user=user) for task_id in task_ids]
         )
-        reset_count = query.update(status=Task.Status.PENDING, completed_at=None, completed_by=None)
-        return reset_count
+        Task.objects.filter(pk__in=task_ids).update(
+            status=Task.Status.PENDING,
+            completed_at=None,
+            completed_by=None,
+        )
+        return len(task_ids)
 
     @staticmethod
     def send_notification(

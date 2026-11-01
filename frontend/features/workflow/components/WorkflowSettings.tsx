@@ -49,6 +49,7 @@ const TASK_TYPES = [
     { id: "OT_PRESS_APPROVAL",                 name: "Prensa (Impresión)",           description: "Validación de salida de prensa." },
     { id: "OT_POSTPRESS_APPROVAL",             name: "Post-Prensa (Terminado)",      description: "Validación de acabados finales." },
     { id: "OT_OUTSOURCING_VERIFICATION_APPROVAL", name: "Verificación Tercerizados", description: "Recepción de trabajos externos." },
+    { id: "OT_RECTIFICATION_APPROVAL",          name: "Rectificación",                description: "Validación final de consumos y producción." },
     { id: "CREDIT_POS_REQUEST",               name: "Aprobación de Crédito (POS)",  description: "Autorización para sobregiros y ventas a crédito no habilitadas." },
 ]
 
@@ -77,7 +78,7 @@ const NOTIFICATION_TYPES = [
 const assignmentSchema = z.object({
     mode: z.enum(["user", "group"]),
     assigned_user: z.number().nullable(),
-    assigned_group: z.string().nullable(),
+    assigned_group: z.number().nullable(),
 })
 type AssignmentValues = z.infer<typeof assignmentSchema>
 
@@ -89,7 +90,7 @@ type DayValues = z.infer<typeof daySchema>
 const notificationSchema = z.object({
     mode: z.enum(["user", "group"]),
     assigned_user: z.number().nullable(),
-    assigned_group: z.string().nullable(),
+    assigned_group: z.number().nullable(),
     notify_creator: z.boolean(),
 })
 type NotificationValues = z.infer<typeof notificationSchema>
@@ -174,19 +175,22 @@ function AssignmentSelector({
     mode,
     userValue,
     groupValue,
+    groupValueMode = "name",
     onUserChange,
     onGroupChange,
 }: {
     mode: "user" | "group"
     userValue: number | null
-    groupValue: string | null
+    groupValue: string | number | null
+    groupValueMode?: "name" | "id"
     onUserChange: (v: number | null) => void
-    onGroupChange: (v: string | null) => void
+    onGroupChange: (v: string | number | null) => void
 }) {
     if (mode === "group") {
         return (
             <GroupSelector
                 value={groupValue ?? undefined}
+                valueMode={groupValueMode}
                 onChange={onGroupChange}
                 placeholder="Añadir grupo..."
             />
@@ -271,7 +275,7 @@ const AssignmentRuleRow = React.memo(function AssignmentRuleRow({ taskType, rule
         const payload = {
             task_type: taskType.id,
             assigned_user: data.mode === "user" ? data.assigned_user : null,
-            assigned_group: data.mode === "group" ? (data.assigned_group ?? "") : "",
+            assigned_group: data.mode === "group" ? data.assigned_group : null,
         }
         if (current?.id) {
             await updateAssignmentRule({ id: current.id, data: payload })
@@ -303,8 +307,9 @@ const AssignmentRuleRow = React.memo(function AssignmentRuleRow({ taskType, rule
                         mode={mode}
                         userValue={userVal}
                         groupValue={groupVal}
+                        groupValueMode="id"
                         onUserChange={(v) => form.setValue("assigned_user", v)}
-                        onGroupChange={(v) => form.setValue("assigned_group", v)}
+                        onGroupChange={(v) => form.setValue("assigned_group", typeof v === "number" ? v : null)}
                     />
                 </div>
                 <RowSaveIndicator status={status} />
@@ -346,7 +351,7 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
         const payload = {
             task_type: taskType.id,
             assigned_user: data.mode === "user" ? data.assigned_user : null,
-            assigned_group: data.mode === "group" ? (data.assigned_group ?? "") : "",
+            assigned_group: data.mode === "group" ? data.assigned_group : null,
         }
         if (current?.id) {
             await updateAssignmentRule({ id: current.id, data: payload })
@@ -427,8 +432,9 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
                         mode={mode}
                         userValue={userVal}
                         groupValue={groupVal}
+                        groupValueMode="id"
                         onUserChange={(v) => assignmentForm.setValue("assigned_user", v)}
-                        onGroupChange={(v) => assignmentForm.setValue("assigned_group", v)}
+                        onGroupChange={(v) => assignmentForm.setValue("assigned_group", typeof v === "number" ? v : null)}
                     />
                 </div>
                 <RowSaveIndicator status={combinedStatus} />
@@ -520,7 +526,7 @@ const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule
         const payload = {
             notification_type: type.id,
             assigned_user: data.mode === "user" ? data.assigned_user : null,
-            assigned_group: data.mode === "group" ? (data.assigned_group ?? null) : null,
+            assigned_group: data.mode === "group" ? data.assigned_group : null,
             notify_creator: data.notify_creator,
         }
         if (current?.id) {
@@ -590,8 +596,9 @@ const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule
                                     mode={mode}
                                     userValue={userVal}
                                     groupValue={groupVal}
+                                    groupValueMode="id"
                                     onUserChange={(v) => form.setValue("assigned_user", v)}
-                                    onGroupChange={(v) => form.setValue("assigned_group", v)}
+                                    onGroupChange={(v) => form.setValue("assigned_group", typeof v === "number" ? v : null)}
                                 />
                             </div>
                         </div>

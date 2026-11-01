@@ -1,4 +1,4 @@
-import { type LucideIcon, ArrowRightCircle, CheckCircle2, ClipboardCheck, Factory, History, Pencil, Plus, Printer, RotateCcw, StickyNote } from "lucide-react"
+import { type LucideIcon, ArrowRightCircle, CheckCircle2, ClipboardCheck, Factory, History, Pencil, Plus, Printer, RotateCcw, StickyNote, XCircle } from "lucide-react"
 import { STAGES_REGISTRY, type StageId } from "../constants/stages"
 import { TASK_TYPE_TO_STAGE } from "./stageEvidence"
 import type { WorkOrderHistoryEntry, WorkOrderTask } from "../types"
@@ -7,7 +7,7 @@ export interface HistoryItem {
     key: string
     stageId: string
     stageLabel: string
-    kind: "approved" | "reopened" | "entered" | "edited" | "note"
+    kind: "approved" | "rejected" | "reopened" | "entered" | "edited" | "note"
     confirmations?: Record<string, boolean>
     userName: string | null
     notes: string
@@ -17,6 +17,7 @@ export interface HistoryItem {
 
 export const HISTORY_KIND: Record<HistoryItem["kind"], { icon: LucideIcon; label: string; toneClasses: string; tone: string }> = {
     approved: { icon: CheckCircle2, label: "Aprobada", toneClasses: "border-success/40 bg-success/10 text-success", tone: "text-success" },
+    rejected: { icon: XCircle, label: "Rechazada", toneClasses: "border-destructive/40 bg-destructive/10 text-destructive", tone: "text-destructive" },
     reopened: { icon: RotateCcw, label: "Etapa reabierta", toneClasses: "border-warning/40 bg-warning/10 text-warning", tone: "text-warning" },
     entered: { icon: ArrowRightCircle, label: "Etapa iniciada", toneClasses: "border-border bg-muted text-muted-foreground", tone: "text-muted-foreground" },
     edited: { icon: Pencil, label: "Editada con la etapa cerrada", toneClasses: "border-info/40 bg-info/10 text-info", tone: "text-info" },
@@ -45,9 +46,7 @@ export function getStageMetadata(stageId: string): { label: string; icon: Lucide
 }
 
 export function assignee(t: WorkOrderTask): string | null {
-    return t.assigned_to_data?.username
-        ?? t.assigned_group_name
-        ?? (typeof t.data?.candidate_group === "string" ? t.data.candidate_group : null)
+    return t.assigned_to_data?.username ?? t.assigned_group_name ?? null
 }
 
 export function buildHistory(
@@ -65,7 +64,7 @@ export function buildHistory(
                 key: `event-${e.id}`,
                 stageId,
                 stageLabel: meta.label,
-                kind: e.action === "COMPLETED" ? "approved" : "reopened",
+                kind: e.action === "COMPLETED" ? "approved" : e.action === "REJECTED" ? "rejected" : "reopened",
                 userName: e.user_name,
                 notes: e.notes,
                 confirmations: e.confirmations,

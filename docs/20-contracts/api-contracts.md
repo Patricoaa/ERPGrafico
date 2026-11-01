@@ -1092,26 +1092,27 @@ Base: `/api/workflow/`
 
 ```
 GET    /api/workflow/tasks/          list, paginated (filtros: status, priority, task_type, assigned_to, category)
-POST   /api/workflow/tasks/          create
 GET    /api/workflow/tasks/{id}/     detail
 PATCH  /api/workflow/tasks/{id}/     update
-DELETE /api/workflow/tasks/{id}/     delete
 POST   /api/workflow/tasks/{id}/complete/   action — completar
+POST   /api/workflow/tasks/{id}/reject/     action — rechazar
 ```
 
-Request schema (create):
+Tasks are created by business workflows, not the generic API. Assignment, task type,
+category, and status are server-owned and cannot be set with `PATCH`; tasks and decision
+history cannot be deleted. Decision actions enforce assignment and approval-policy checks
+and append a `TaskEvent`.
+`complete/` returns `status`, `approvals_received`, and `approvals_required`; when the
+threshold is not met, the task remains `PENDING`. `reject/` accepts optional `notes`.
+Only `PENDING` and `IN_PROGRESS` tasks accept decisions. A task with multiple required
+approvals must be assigned to a group; each group member can approve once per cycle.
+
+Decision response examples:
 
 ```json
-{
-  "title": "string",
-  "description": "string | null",
-  "assigned_to": "number (user id) | null",
-  "assigned_group": "string (group name) | null",
-  "due_date": "YYYY-MM-DD | null",
-  "priority": "LOW|MEDIUM|HIGH|URGENT",
-  "related_model": "string | null",
-  "related_id": "number | null"
-}
+{"status":"pending","approvals_received":1,"approvals_required":2}
+{"status":"completed","approvals_received":2,"approvals_required":2}
+{"status":"rejected","approvals_received":0,"approvals_required":1}
 ```
 
 Response key fields:
@@ -1120,8 +1121,9 @@ Response key fields:
 {
   "id": "number",
   "title": "string",
-  "status": "OPEN|IN_PROGRESS|DONE|CANCELLED",
+  "status": "PENDING|IN_PROGRESS|COMPLETED|REJECTED|CANCELLED",
   "assigned_to": "number | null",
+  "assigned_group": "number | null",
   "assigned_to_data": "object (UserSerializer)",
   "assigned_group_name": "string | null",
   "due_date": "YYYY-MM-DD | null",
@@ -1145,7 +1147,13 @@ POST   /api/workflow/notifications/{id}/mark_read/   action — marcar leída
 GET/POST/PATCH/DELETE   /api/workflow/assignment-rules/    reglas de asignación
 GET/POST/PATCH/DELETE   /api/workflow/notification-rules/  reglas de notificación
 GET/PUT/PATCH           /api/workflow/settings/            settings
+GET/POST/PATCH/DELETE   /api/workflow/approval-policies/   políticas de aprobación
 ```
+
+For `assignment-rules` and `notification-rules`, `assigned_group` is a numeric group
+primary key and the read response includes `assigned_group_data` or `assigned_group_name`.
+`approval-policies.document_type` is a canonical Django label (`app_label.model`), such as
+`production.workorder`; legacy aliases are accepted on writes and normalized.
 
 ---
 

@@ -60,8 +60,6 @@ export function TaskActionCard({
                             <span><span className="text-foreground">{task.assigned_to_data.username}</span></span>
                         ) : task.assigned_group_name ? (
                             <span><span className="text-foreground">{task.assigned_group_name}</span></span>
-                        ) : task.data?.candidate_group ? (
-                            <span><span className="text-foreground">{task.data.candidate_group}</span></span>
                         ) : (
                             <span>Sin asignar</span>
                         )}
@@ -141,7 +139,7 @@ export function TaskActionCard({
                     ) : (
                         <div className="flex items-center gap-1.5 text-3xs bg-destructive/10 px-3 py-2 rounded text-destructive border border-destructive/20">
                             <AlertCircle className="h-3 w-3 shrink-0" />
-                            Requiere validación por: {task.assigned_to_data?.username || task.assigned_group_name || task.data?.candidate_group}
+                            Requiere validación por: {task.assigned_to_data?.username || task.assigned_group_name || "responsable asignado"}
                         </div>
                     )}
                 </div>
@@ -150,7 +148,7 @@ export function TaskActionCard({
             {/* Show permission warning even if not expanded if user can't complete */}
             {isPending && !canComplete && !isExpanded && (
                <Chip size="sm" intent="destructive" icon={AlertCircle} className="ml-7 mt-1 w-fit">
-                   Requiere validación por: {task.assigned_to_data?.username || task.assigned_group_name || task.data?.candidate_group}
+                   Requiere validación por: {task.assigned_to_data?.username || task.assigned_group_name || "responsable asignado"}
                </Chip>
             )}
         </div>

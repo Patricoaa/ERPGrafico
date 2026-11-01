@@ -20,6 +20,7 @@ def task(env):
         task_type="TEST",
         status=Task.Status.PENDING,
         created_by=env["user"],
+        assigned_to=env["user"],
     )
 
 

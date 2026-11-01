@@ -81,6 +81,7 @@ export function WizardStickyFooter({
     // The one place that says why "Siguiente" is off (the rail only marks the stage).
     const blockedReason = transitioning ? null
         : isMaterialApprovalIncomplete ? materialApprovalBlockedReason ?? 'Hay materiales sin stock suficiente'
+        : pendingTasks.some((task) => task.status === 'REJECTED') ? 'Una aprobación fue rechazada. Reabre la etapa para iniciar un nuevo ciclo de aprobación.'
         : pendingTasks.length > 0 && !canApproveAll ? 'Hay aprobaciones pendientes que tu usuario no puede completar. Solicita que las apruebe la persona o grupo responsable.'
         : approvalBlockedReason ?? null
 

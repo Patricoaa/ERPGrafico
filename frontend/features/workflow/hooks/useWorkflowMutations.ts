@@ -11,11 +11,15 @@ export function useCompleteTask() {
   const { markLocalMutation } = useRealtime()
 
   const completeTaskMutation = useMutation({
-    mutationFn: (id: number) => workflowApi.completeTask(id),
-    onSuccess: (_, id) => {
+    mutationFn: ({ id, notes }: { id: number; notes?: string }) => workflowApi.completeTask(id, notes),
+    onSuccess: (result, variables) => {
       markLocalMutation()
-      invalidateCrossFeature(queryClient, [WORKFLOW_KEYS.taskDetail(id), WORKFLOW_KEYS.tasks()])
-      toast.success('Tarea completada exitosamente')
+      invalidateCrossFeature(queryClient, [WORKFLOW_KEYS.taskDetail(variables.id), WORKFLOW_KEYS.tasks()])
+      if (result.status === 'pending') {
+        toast.info(`Aprobación registrada (${result.approvals_received}/${result.approvals_required}); falta otra persona del grupo.`)
+      } else {
+        toast.success('Aprobación completada')
+      }
     },
     onError: (error: Error) => {
       showApiError(error, 'Error al completar la tarea')
@@ -23,6 +27,25 @@ export function useCompleteTask() {
   })
 
   return { completeTask: completeTaskMutation.mutateAsync, isCompletingTask: completeTaskMutation.isPending }
+}
+
+export function useRejectTask() {
+  const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
+
+  const rejectTaskMutation = useMutation({
+    mutationFn: ({ id, notes }: { id: number; notes?: string }) => workflowApi.rejectTask(id, notes),
+    onSuccess: (_, variables) => {
+      markLocalMutation()
+      invalidateCrossFeature(queryClient, [WORKFLOW_KEYS.taskDetail(variables.id), WORKFLOW_KEYS.tasks()])
+      toast.success('Aprobación rechazada')
+    },
+    onError: (error: Error) => {
+      showApiError(error, 'Error al rechazar la aprobación')
+    },
+  })
+
+  return { rejectTask: rejectTaskMutation.mutateAsync, isRejectingTask: rejectTaskMutation.isPending }
 }
 
 export function useUpdateTask() {
@@ -144,9 +167,11 @@ export function useUpdateWorkflowSettings() {
 
 export function useSaveApprovalPolicy() {
   const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
   return useMutation({
     mutationFn: workflowApi.saveApprovalPolicy,
     onSuccess: () => {
+      markLocalMutation()
       queryClient.invalidateQueries({ queryKey: ["workflow-approval-policies"] })
       toast.success("Política de aprobación guardada")
     },
@@ -158,9 +183,11 @@ export function useSaveApprovalPolicy() {
 
 export function useDeleteApprovalPolicy() {
   const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
   return useMutation({
     mutationFn: workflowApi.deleteApprovalPolicy,
     onSuccess: () => {
+      markLocalMutation()
       queryClient.invalidateQueries({ queryKey: ["workflow-approval-policies"] })
       toast.success("Política eliminada")
     },

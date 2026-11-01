@@ -731,11 +731,11 @@ class WorkOrderService:
                 object_id=work_order.pk,
                 task_type=WorkflowService.stage_task_type(old_stage),
                 category=Task.Category.APPROVAL,
-                status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS],
+                status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS, Task.Status.REJECTED],
             )
             if pending_tasks.exists():
                 raise ValidationError(
-                    f"Existen aprobaciones pendientes para la etapa {work_order.get_current_stage_display()}. Por favor, complételas antes de continuar."
+                    f"Existen aprobaciones pendientes o rechazadas para la etapa {work_order.get_current_stage_display()}. Complételas o reabra la etapa antes de continuar."
                 )
 
         # Validate and merge stage data

@@ -299,18 +299,17 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
   const canUserCompleteTask = (task: WorkOrderTask): boolean => {
     if (!user) return false
+    if (task.status === 'REJECTED') return false
+    const latestReopenId = (task.events_data ?? [])
+      .filter((event) => event.action === 'REOPENED')
+      .reduce((latest, event) => Math.max(latest, event.id), 0)
+    if ((task.events_data ?? []).some(
+      (event) => event.action === 'COMPLETED' && event.user === user.id && event.id > latestReopenId
+    )) return false
     if (user.is_superuser) return true
     if (task.assigned_to === user.id) return true
     const userGroups = user.groups ?? []
-    return userGroups.some((group) => {
-      const groupName = group.name.toLowerCase()
-      const gName = (task.data as Record<string, unknown>)?.candidate_group
-      return (
-        (task.assigned_group_name && task.assigned_group_name.toLowerCase() === groupName) ||
-        (gName && typeof gName === 'string' && gName.toLowerCase() === groupName) ||
-        String(group.id) === task.assigned_group
-      )
-    })
+    return userGroups.some((group) => group.id === task.assigned_group)
   }
 
   const canApproveAll = pendingTasks.every(canUserCompleteTask)
@@ -514,7 +513,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
     setApproving(true)
     try {
-      await Promise.all(toApprove.map((t) => {
+      const results = await Promise.all(toApprove.map((t) => {
         const file = freshFiles[t.id]
         return completeTask(
           t.id as number,
@@ -523,6 +522,11 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
           freshConfs[t.id],
         )
       }))
+      if (results.some((result) => result.status === 'pending')) {
+        await fetchOrder()
+        toast.info('Aprobación registrada. Se requiere otra persona del grupo para avanzar.')
+        return false
+      }
       return true
     } catch (err) {
       showApiError(err, 'No se pudieron completar las aprobaciones de la etapa')

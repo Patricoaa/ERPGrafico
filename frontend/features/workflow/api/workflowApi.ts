@@ -53,7 +53,6 @@ export interface TaskContextData {
     is_invoice?: boolean
     prefix?: string
     action_name?: string
-    candidate_group?: string
     // Tax tasks
     year?: string | number
     month?: string | number
@@ -94,14 +93,20 @@ export interface Task {
     completed_at?: string
     notes?: string
     attachments_data?: TaskAttachment[]
-    /** Append-only history (approved, reopened…), oldest first. */
+    /** Append-only history (approved, rejected, reopened…), oldest first. */
     events_data?: TaskEvent[]
     data?: TaskContextData
 }
 
+export interface TaskDecisionResult {
+    status: 'pending' | 'completed' | 'rejected'
+    approvals_received: number
+    approvals_required: number
+}
+
 export interface TaskEvent {
     id: number
-    action: 'COMPLETED' | 'REOPENED'
+    action: 'COMPLETED' | 'REJECTED' | 'REOPENED'
     user: number | null
     user_name: string | null
     notes: string
@@ -127,6 +132,8 @@ export interface TaskAssignmentRule {
     description: string
     assigned_user: number | null
     assigned_user_data?: TaskUserData
+    assigned_group: number | null
+    assigned_group_data?: { id: number; name: string } | null
 }
 
 // ─── API Param & Payload types ────────────────────────────
@@ -143,13 +150,13 @@ export interface TaskQueryParams {
 export interface AssignmentRulePayload {
     task_type: string
     assigned_user: number | null
-    assigned_group: string | null
+    assigned_group: number | null
 }
 
 export interface NotificationRulePayload {
     notification_type: string
     assigned_user?: number | null
-    assigned_group?: string | null
+    assigned_group?: number | null
     notify_creator?: boolean
     [key: string]: unknown
 }
@@ -171,14 +178,19 @@ export const getTask = async <T = Task>(taskId: number | string): Promise<T> => 
     return response.data
 }
 
-export const completeTask = async (id: number, notes?: string, attachments?: File[], confirmations?: Record<string, boolean>) => {
+export const completeTask = async (id: number, notes?: string, attachments?: File[], confirmations?: Record<string, boolean>): Promise<TaskDecisionResult> => {
     const formData = new FormData()
     if (notes) formData.append('notes', notes)
     if (confirmations && Object.keys(confirmations).length > 0) formData.append('confirmations', JSON.stringify(confirmations))
     if (attachments) {
         attachments.forEach(file => formData.append('attachments', file))
     }
-    const response = await api.post(`workflow/tasks/${id}/complete/`, formData)
+    const response = await api.post<TaskDecisionResult>(`workflow/tasks/${id}/complete/`, formData)
+    return response.data
+}
+
+export const rejectTask = async (id: number, notes?: string): Promise<TaskDecisionResult> => {
+    const response = await api.post<TaskDecisionResult>(`workflow/tasks/${id}/reject/`, { notes })
     return response.data
 }
 
@@ -270,7 +282,8 @@ export interface ApprovalPolicyPayload {
 }
 
 export const getApprovalPolicies = async (): Promise<ApprovalPolicy[]> => {
-    const response = await api.get("/workflow/approval-policies/")
+    const response = await api.get<ApprovalPolicy[]>("/workflow/approval-policies/")
+    // eslint-disable-next-line pagination/no-raw-response-data -- ApprovalPolicyViewSet has pagination_class=None (master data).
     return response.data
 }
 

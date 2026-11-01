@@ -82,6 +82,7 @@ def test_complete_task_requires_permission():
         title="Perm task",
         task_type="PERM_TASK",
         required_permission="sales.confirm_salesorder",
+        assigned_to=user,
     )
     with pytest.raises(PermissionDenied):
         WorkflowService.complete_task(task, user)
@@ -120,14 +121,14 @@ def test_approval_policy_model_creates():
     from workflow.models import ApprovalPolicy
 
     policy = ApprovalPolicy.objects.create(
-        document_type="PURCHASE_ORDER",
+        document_type="purchasing.purchaseorder",
         min_amount="50000.00",
         required_permission="purchasing.approve_purchaseorder",
         forbid_self_approval=True,
         approvals_required=2,
     )
     assert policy.pk is not None
-    assert policy.document_type == "PURCHASE_ORDER"
+    assert policy.document_type == "purchasing.purchaseorder"
     assert policy.forbid_self_approval is True
 
 
@@ -152,7 +153,7 @@ def test_approval_policy_api_crud():
         "approvals_required": 2,
     }, format="json")
     assert res.status_code == 201, res.json()
-    assert res.json()["document_type"] == "PURCHASE_ORDER"
+    assert res.json()["document_type"] == "purchasing.purchaseorder"
 
     list_res = client.get(url)
     assert list_res.status_code == 200
@@ -196,6 +197,7 @@ def test_policy_min_amount_not_met_skips_policy():
         task_type="TEST_APPROVAL",
         category=Task.Category.APPROVAL,
         content_object=document,
+        assigned_to=user,
     )
     # Policy requires permission only when amount > 50000; document has no total → skipped
     ApprovalPolicy.objects.create(
@@ -222,6 +224,7 @@ def test_policy_required_permission_blocks_without_permission():
         task_type="TEST_APPROVAL",
         category=Task.Category.APPROVAL,
         content_object=document,
+        assigned_to=user,
     )
     ApprovalPolicy.objects.create(
         document_type="Task",
@@ -250,6 +253,7 @@ def test_policy_required_permission_allows_with_permission():
         task_type="TEST_APPROVAL",
         category=Task.Category.APPROVAL,
         content_object=document,
+        assigned_to=user,
     )
     ApprovalPolicy.objects.create(
         document_type="Task",
@@ -305,48 +309,28 @@ def test_policy_forbid_self_approval_allows_different_approver():
 
 
 @pytest.mark.django_db
-def test_policy_approvals_required_raises_when_not_enough():
-    """approvals_required=2 raises ValueError when no prior approvals exist."""
+def test_policy_approvals_required_completes_after_enough():
+    """A second, distinct group member completes a two-approval task."""
     from workflow.models import ApprovalPolicy, Task
     from workflow.services import WorkflowService
+    from django.contrib.auth.models import Group
 
-    superuser = User.objects.create_superuser(username="ap_multi_block", password="x")
-    document = Task.objects.create(title="Doc multi", task_type="DOC_MULTI")
-    task = Task.objects.create(
-        title="Approval multi",
-        task_type="TEST_APPROVAL",
-        category=Task.Category.APPROVAL,
-        content_object=document,
-    )
-    ApprovalPolicy.objects.create(document_type="Task", approvals_required=2)
-
-    with pytest.raises(ValueError, match="2"):
-        WorkflowService.complete_task(task, superuser)
-
-
-@pytest.mark.django_db
-def test_policy_approvals_required_completes_after_enough():
-    """approvals_required=2 completes the task once 1 prior COMPLETED event exists."""
-    from workflow.models import ApprovalPolicy, Task, TaskEvent
-    from workflow.services import WorkflowService
-
+    group = Group.objects.create(name="Two approvers")
     first_approver = User.objects.create_user(username="ap_first_ok", password="x")
-    second_approver = User.objects.create_superuser(username="ap_second_ok", password="x")
+    second_approver = User.objects.create_user(username="ap_second_ok", password="x")
+    first_approver.groups.add(group)
+    second_approver.groups.add(group)
     document = Task.objects.create(title="Doc multi ok", task_type="DOC_MULTI_OK")
     task = Task.objects.create(
         title="Approval multi ok",
         task_type="TEST_APPROVAL",
         category=Task.Category.APPROVAL,
         content_object=document,
+        assigned_group=group,
     )
     ApprovalPolicy.objects.create(document_type="Task", approvals_required=2)
 
-    # Simulate first approval recorded externally
-    TaskEvent.objects.create(
-        task=task,
-        action=TaskEvent.Action.COMPLETED,
-        user=first_approver,
-    )
-
-    completed = WorkflowService.complete_task(task, second_approver)
+    partial = WorkflowService.complete_task(task, first_approver)
+    assert partial.status == Task.Status.PENDING
+    completed = WorkflowService.complete_task(Task.objects.get(pk=task.pk), second_approver)
     assert completed.status == Task.Status.COMPLETED

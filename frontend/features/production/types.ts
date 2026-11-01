@@ -47,7 +47,8 @@ export interface ProductionAttachment {
 
 export interface WorkOrderTaskEvent {
     id: number
-    action: "COMPLETED" | "REOPENED" | string
+    action: "COMPLETED" | "REJECTED" | "REOPENED"
+    user: number | null
     user_name: string | null
     notes: string
     confirmations?: Record<string, boolean>
@@ -58,9 +59,9 @@ export interface WorkOrderTaskEvent {
 export interface WorkOrderTask {
     id: string | number
     task_type: string
-    status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"
-    assigned_to?: number
-    assigned_group?: string
+    status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "REJECTED" | "CANCELLED"
+    assigned_to?: number | null
+    assigned_group?: number | null
     assigned_group_name?: string
     assigned_to_data?: { username: string } | null
     data?: Record<string, unknown>

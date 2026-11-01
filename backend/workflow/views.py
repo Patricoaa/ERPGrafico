@@ -1,11 +1,12 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import MethodNotAllowed, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
+from core.api.permissions import StandardizedModelPermissions
 
 from .models import ApprovalPolicy, NotificationRule, TaskAssignmentRule, WorkflowSettings
 from .selectors import NotificationSelector
@@ -29,10 +30,10 @@ class TaskViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated]  # Personal inbox: row-level filtering in selector (ADR-0104)
+    permission_classes = [IsAuthenticated, StandardizedModelPermissions]
     action_permissions = {
-        # Personal action → None (row-level gate in WorkflowService.complete_task)
-        "complete": None,
+        "complete": "workflow.change_task",
+        "reject": "workflow.change_task",
     }
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ["status", "priority", "task_type", "assigned_to", "category"]
@@ -43,22 +44,48 @@ class TaskViewSet(viewsets.ModelViewSet):
         from .selectors import TaskSelectorExt
         return TaskSelectorExt.get_queryset_for_user(self.request.user)
 
+    def get_permissions(self):
+        if self.action in {"list", "retrieve"}:
+            return [IsAuthenticated()]
+        return super().get_permissions()
+
     def perform_update(self, serializer):
         instance = self.get_object()
         WorkflowService.finalize_task_update(instance, serializer, self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        raise MethodNotAllowed("POST", detail="Las tareas se crean desde los flujos de negocio.")
+
+    def destroy(self, request, *args, **kwargs):
+        raise MethodNotAllowed("DELETE", detail="Las tareas y su historial de aprobación no se pueden eliminar.")
 
     @action(detail=True, methods=["post"])
     def complete(self, request, pk=None):
         task = self.get_object()
         try:
-            WorkflowService.complete_task(
+            completed = WorkflowService.complete_task(
                 task=task,
                 user=request.user,
                 notes=request.data.get("notes"),
                 files=request.FILES.getlist("attachments"),
                 confirmations=_parse_confirmations(request.data.get("confirmations")),
             )
-            return Response({"status": "completed"})
+            return Response({
+                "status": completed.status.lower(),
+                "approvals_received": completed.approvals_received,
+                "approvals_required": completed.approvals_required,
+            })
+        except PermissionDenied as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["post"])
+    def reject(self, request, pk=None):
+        task = self.get_object()
+        try:
+            WorkflowService.reject_task(task=task, user=request.user, notes=request.data.get("notes"))
+            return Response({"status": "rejected", "approvals_received": 0, "approvals_required": 1})
         except PermissionDenied as e:
             return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
         except Exception as e:

@@ -200,6 +200,6 @@ export const selectPendingTasks = (order: WorkOrder | null): WorkOrderTask[] => 
   if (!order?.current_stage) return []
   const type = stageTaskType(order.current_stage)
   return order.workflow_tasks?.filter(
-    (t: WorkOrderTask) => t.task_type === type && (t.status === 'PENDING' || t.status === 'IN_PROGRESS')
+    (t: WorkOrderTask) => t.task_type === type && ['PENDING', 'IN_PROGRESS', 'REJECTED'].includes(t.status)
   ) ?? []
 }

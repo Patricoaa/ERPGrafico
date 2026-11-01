@@ -5,19 +5,20 @@ import { Check, Users } from "lucide-react"
 
 import { useDebounce } from "@/hooks/useDebounce"
 import { LabeledContainer, SearchablePopover, SelectorTrigger, SELECTOR_VALUE_CLASS } from '@/components/shared'
-import { useGroupSearch } from "@/features/users/hooks/useGroupSearch"
+import { useGroupSearch, useSingleGroup } from "@/features/users/hooks/useGroupSearch"
 import { type AppGroup as Group } from "@/types/entities"
 
 interface GroupSelectorProps {
-    value?: string | null // Group name
-    onChange: (value: string | null) => void
+    value?: string | number | null
+    onChange: (value: string | number | null) => void
+    valueMode?: "name" | "id"
     placeholder?: string
     disabled?: boolean
     label?: string
     error?: string
 }
 
-export function GroupSelector({ value, onChange, placeholder = "Seleccionar...", disabled = false, label, error }: GroupSelectorProps) {
+export function GroupSelector({ value, onChange, valueMode = "name", placeholder = "Seleccionar...", disabled = false, label, error }: GroupSelectorProps) {
     const [open, setOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 500)
@@ -26,6 +27,14 @@ export function GroupSelector({ value, onChange, placeholder = "Seleccionar...",
 
     const shouldFetch = open || (!!value && !selectedGroup)
     const { groups, loading: searchLoading } = useGroupSearch(debouncedSearch, shouldFetch)
+    const selectedGroupId = valueMode === "id" && typeof value === "number" ? value : null
+    const { group: fetchedSelectedGroup } = useSingleGroup(selectedGroupId)
+
+    useEffect(() => {
+        if (fetchedSelectedGroup) {
+            requestAnimationFrame(() => setSelectedGroup(fetchedSelectedGroup))
+        }
+    }, [fetchedSelectedGroup])
 
     useEffect(() => {
         if (!value) {
@@ -35,19 +44,19 @@ export function GroupSelector({ value, onChange, placeholder = "Seleccionar...",
 
     useEffect(() => {
         if (value && groups.length > 0) {
-            const found = groups.find(g => g.name === value)
+            const found = groups.find(g => valueMode === "id" ? g.id === value : g.name === value)
             if (found) {
                 requestAnimationFrame(() => setSelectedGroup(found))
             }
         }
-    }, [value, groups])
+    }, [value, valueMode, groups])
 
     const handleSelect = useCallback((group: Group) => {
         setSelectedGroup(group)
-        onChange(group.name)
+        onChange(valueMode === "id" ? group.id : group.name)
         setOpen(false)
         setSearchTerm("")
-    }, [onChange])
+    }, [onChange, valueMode])
 
     return (
         <LabeledContainer label={label} error={error} disabled={disabled}>

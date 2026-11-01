@@ -17,6 +17,24 @@ function makeEntry(overrides: Partial<WorkOrderHistoryEntry> = {}): WorkOrderHis
 }
 
 describe("buildHistory — stage entries kind mapping", () => {
+    it("maps a rejected task event to kind=rejected", () => {
+        const task: WorkOrderTask = {
+            id: 1,
+            task_type: "OT_PREPRESS_APPROVAL",
+            status: "REJECTED",
+            events_data: [{
+                id: 1,
+                action: "REJECTED",
+                user: 2,
+                user_name: "Revisor",
+                notes: "Falta evidencia",
+                attachments_data: [],
+                created_at: "2024-01-01T10:00:00Z",
+            }],
+        }
+        expect(buildHistory([task], [])[0].kind).toBe("rejected")
+    })
+
     it("maps event=REOPENED to kind=reopened", () => {
         const entry = makeEntry({ event: "REOPENED", stage: "PREPRESS" })
         const items = buildHistory([], [entry])

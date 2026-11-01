@@ -31,6 +31,13 @@ const policySchema = z.object({
 
 type PolicyFormValues = z.infer<typeof policySchema>
 
+const DOCUMENT_TYPES = [
+    { value: "production.workorder", label: "Orden de trabajo" },
+    { value: "sales.saleorder", label: "Orden de venta" },
+    { value: "purchasing.purchaseorder", label: "Orden de compra" },
+    { value: "billing.invoice", label: "Factura" },
+]
+
 // ─── PolicyForm ───────────────────────────────────────────────────────────────
 
 interface PolicyFormProps {
@@ -56,7 +63,19 @@ function PolicyForm({ defaultValues, onSubmit }: PolicyFormProps) {
         <form id="policy-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-1">
                 <Label htmlFor="document_type">Tipo de documento <span className="text-destructive">*</span></Label>
-                <Input id="document_type" {...register("document_type")} placeholder="ej. OV, OC, FACTURA" />
+                <select
+                    id="document_type"
+                    {...register("document_type")}
+                    className="h-9 w-full rounded-sm border border-input bg-background px-3 text-sm"
+                >
+                    <option value="" disabled>Seleccionar tipo de documento…</option>
+                    {defaultValues?.document_type && !DOCUMENT_TYPES.some((item) => item.value === defaultValues.document_type) && (
+                        <option value={defaultValues.document_type}>Legado: {defaultValues.document_type}</option>
+                    )}
+                    {DOCUMENT_TYPES.map((item) => (
+                        <option key={item.value} value={item.value}>{item.label} · {item.value}</option>
+                    ))}
+                </select>
                 {errors.document_type && <p className="text-xs text-destructive">{errors.document_type.message}</p>}
             </div>
 
@@ -159,7 +178,7 @@ export function ApprovalPoliciesView() {
                                 <p className="text-3xs text-muted-foreground truncate">
                                     {[
                                         policy.approvals_required > 1 ? `${policy.approvals_required} aprob.` : "1 aprob.",
-                                        policy.min_amount ? `≥ $${policy.min_amount}` : null,
+                                        policy.min_amount ? `> $${policy.min_amount}` : null,
                                         policy.required_permission ? `perm: ${policy.required_permission}` : null,
                                         policy.forbid_self_approval ? "no auto-aprob." : null,
                                     ].filter(Boolean).join(" · ")}
@@ -192,7 +211,8 @@ export function ApprovalPoliciesView() {
                     <CardDescription className="text-3xs space-y-1">
                         <p>Una política se activa cuando se aprueba un documento del tipo indicado.</p>
                         <p>Si se define un monto mínimo, la política solo aplica si el documento supera ese valor.</p>
-                        <p>La prohibición de auto-aprobación es un aviso de separación de funciones (SoD); no bloquea la operación.</p>
+                        <p>Si se activa, el creador no puede aprobar el documento; la regla bloquea la operación.</p>
+                        <p>Para exigir más de una aprobación, asigna las tareas a un grupo con varios miembros.</p>
                     </CardDescription>
                 </CardHeader>
             </Card>

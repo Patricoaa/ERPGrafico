@@ -474,8 +474,8 @@ def test_create_linked_ot_for_a_non_manufacturable_line_is_rejected(
 def test_group_pool_approval_requires_membership(work_order_factory):
     from workflow.models import TaskAssignmentRule
 
-    Group.objects.create(name="Supervisores")
-    TaskAssignmentRule.objects.create(task_type="OT_MATERIAL_APPROVAL", assigned_group="Supervisores")
+    group = Group.objects.create(name="Supervisores")
+    TaskAssignmentRule.objects.create(task_type="OT_MATERIAL_APPROVAL", assigned_group=group)
     wo = work_order_factory(current_stage=Stage.MATERIAL_ASSIGNMENT)
     WorkOrderService.transition_to(wo, Stage.MATERIAL_APPROVAL)
     task = Task.objects.get(object_id=wo.pk, task_type="OT_MATERIAL_APPROVAL")

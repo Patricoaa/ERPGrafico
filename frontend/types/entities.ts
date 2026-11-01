@@ -344,18 +344,19 @@ export interface WorkflowRule {
     id?: number
     task_type: string
     assigned_user?: number | null
-    assigned_group?: string | null
-    is_active: boolean
+    assigned_group?: number | null
+    assigned_group_data?: { id: number; name: string } | null
 }
 
 export interface NotificationRule {
     id?: number
     notification_type: string
+    description?: string
     assigned_user?: number | null
-    assigned_group?: string | null
+    assigned_group?: number | null
+    assigned_user_data?: { id: number; username: string; first_name?: string; last_name?: string } | null
+    assigned_group_name?: string | null
     notify_creator?: boolean
-    is_active: boolean
-    send_email?: boolean
 }
 
 // ─── Pricing Rule ────────────────────────────────────────
