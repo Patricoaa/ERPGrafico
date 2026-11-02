@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { showApiError } from "@/lib/errors"
@@ -103,6 +103,7 @@ interface ReceiptFormProps {
 
 function ReceiptForm({ order, warehouses, isRefund, filterType, onSubmittingChange, onDone }: ReceiptFormProps) {
     const { dateString } = useServerDate()
+    const idempotencyAttempt = useRef<{ fingerprint: string; key: string } | null>(null)
     const definition = isRefund ? returnLinesEditable : receiptLinesEditable
     const rows = useMemo(() => order.lines.filter((line) => matchesLineType(line, filterType)), [order.lines, filterType])
     const schema = useMemo(() => receiptFormSchema(isRefund, rows), [isRefund, rows])
@@ -143,7 +144,12 @@ function ReceiptForm({ order, warehouses, isRefund, filterType, onSubmittingChan
             if (isRefund) {
                 await purchasingApi.partialReturn(order.id, payload)
             } else {
-                await purchasingApi.partialReceive(order.id, payload)
+                const fingerprint = JSON.stringify(payload)
+                if (!idempotencyAttempt.current || idempotencyAttempt.current.fingerprint !== fingerprint) {
+                    idempotencyAttempt.current = { fingerprint, key: crypto.randomUUID() }
+                }
+                await purchasingApi.partialReceive(order.id, payload, idempotencyAttempt.current.key)
+                idempotencyAttempt.current = null
             }
             toast.success(isRefund ? "Devolución registrada correctamente" : "Recepción registrada correctamente")
             onDone()

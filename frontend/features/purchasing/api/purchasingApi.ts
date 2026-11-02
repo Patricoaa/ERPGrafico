@@ -139,8 +139,10 @@ export const purchasingApi = {
         await api.put(`/purchasing/orders/${id}/`, data)
     },
 
-    partialReceive: async (orderId: number, payload: PartialReceivePayload): Promise<void> => {
-        await api.post(`/purchasing/orders/${orderId}/partial_receive/`, payload)
+    partialReceive: async (orderId: number, payload: PartialReceivePayload, idempotencyKey: string): Promise<void> => {
+        await api.post(`/purchasing/orders/${orderId}/partial_receive/`, payload, {
+            headers: { 'Idempotency-Key': idempotencyKey },
+        })
     },
 
     partialReturn: async (orderId: number, payload: PartialReceivePayload): Promise<void> => {
