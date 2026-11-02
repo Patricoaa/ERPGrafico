@@ -150,7 +150,7 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
                         <FormSection title="Configuración de Lote" icon={Landmark} className="pt-0" />
 
                         <div className="space-y-4">
-                            <LabeledContainer label="Proveedor de Pago">
+                            <LabeledContainer label="Proveedor de terminal de cobro">
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <SelectorTrigger
@@ -169,7 +169,7 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
                                                 <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                                                 <input
                                                     className={cn("flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground")}
-                                                    placeholder="Buscar terminal..."
+                                                    placeholder="Buscar proveedor..."
                                                     onChange={(e) => {
                                                         const val = e.target.value.toLowerCase()
                                                         const items = document.querySelectorAll('.terminal-item')
@@ -259,7 +259,7 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
                                         title="Pendiente de Selección"
                                         description={(!providerId || !dateRange?.from)
                                             ? "Seleccione proveedor y rango de fechas para cargar ventas."
-                                            : "Vincule las ventas del terminal para calcular el lote automáticamente."
+                                            : "Vincule las ventas del terminal de cobro para calcular el lote automáticamente."
                                         }
                                         action={
                                             <SubmitButton

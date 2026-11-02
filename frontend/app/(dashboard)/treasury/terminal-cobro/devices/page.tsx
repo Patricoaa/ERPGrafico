@@ -5,7 +5,7 @@ import { getTerminalCobroSubTab } from "@/features/treasury/navigation"
 import { buildMetadataFromTab } from "@/lib/navigation-helpers"
 
 const tabConfig = getTerminalCobroSubTab("devices")
-export const metadata: Metadata = tabConfig ? buildMetadataFromTab(tabConfig) : { title: "Dispositivos de Pago | ERPGrafico" }
+export const metadata: Metadata = tabConfig ? buildMetadataFromTab(tabConfig) : { title: "Terminales de cobro | ERPGrafico" }
 
 interface PageProps {
   searchParams: Promise<{ modal?: string }>
@@ -13,7 +13,7 @@ interface PageProps {
 
 export default async function TerminalCobroDevicesPage({ searchParams }: PageProps) {
   const { modal } = await searchParams
-  const createAction = <ToolbarCreateButton label="Nuevo Dispositivo" href="/treasury/terminal-cobro/devices?modal=device" />
+  const createAction = <ToolbarCreateButton label="Nuevo terminal de cobro" href="/treasury/terminal-cobro/devices?modal=device" />
 
   return (
     <>

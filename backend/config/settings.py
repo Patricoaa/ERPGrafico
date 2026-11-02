@@ -146,6 +146,7 @@ MIDDLEWARE = [
     "simple_history.middleware.HistoryRequestMiddleware",
     "core.middleware.CurrentUserMiddleware",
     "core.middleware.AuditMiddleware",
+    "treasury.pos_external_guard.POSExternalReasonMiddleware",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
@@ -162,6 +163,12 @@ _CORS_EXTRA = os.environ.get("CORS_ALLOWED_ORIGINS", "")
 CORS_ALLOWED_ORIGINS = [o.strip() for o in _CORS_EXTRA.split(",") if o.strip()]
 
 CORS_ALLOW_CREDENTIALS = True
+
+# ADR-0109: motivo de uso externo de caja POS (request) y su desafío (response).
+from corsheaders.defaults import default_headers  # noqa: E402
+
+CORS_ALLOW_HEADERS = (*default_headers, "x-pos-external-reason")
+CORS_EXPOSE_HEADERS = ["X-POS-External-Reason-Required"]
 
 ROOT_URLCONF = "config.urls"
 

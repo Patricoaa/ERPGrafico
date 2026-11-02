@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { setClientToken, removeClientTokens } from './client-token';
+import { POS_EXTERNAL_REASON_CHALLENGE_HEADER, preparePosExternalReasonRetry } from './pos-external-reason';
 export { resolveMediaUrl } from './media-url';
 
 const rawBaseURL = process.env.NEXT_PUBLIC_API_URL || '';
@@ -106,6 +107,13 @@ api.interceptors.response.use(
                 return Promise.reject(error);
             } finally {
                 isRefreshing = false;
+            }
+        }
+        if (axios.isAxiosError(error)) {
+            const posReasonHeader: unknown = error.response?.headers?.[POS_EXTERNAL_REASON_CHALLENGE_HEADER];
+            if (posReasonHeader) {
+                const retryConfig = await preparePosExternalReasonRetry(error.config, posReasonHeader);
+                if (retryConfig) return api(retryConfig);
             }
         }
         if (error.response?.status === 403) {

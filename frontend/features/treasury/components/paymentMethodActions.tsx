@@ -14,7 +14,7 @@ export const paymentMethodActions = createEntityActions<
         return [
             {
                 action: "lock",
-                label: "Gestionado por terminal — modifique el dispositivo",
+                label: "Gestionado por el terminal de cobro — modifique el terminal",
                 className: "text-muted-foreground cursor-default opacity-50",
                 onClick: () => {},
             },

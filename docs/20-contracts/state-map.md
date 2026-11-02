@@ -261,6 +261,15 @@ Sequence: `MATERIAL_ASSIGNMENT` → `MATERIAL_APPROVAL` → `OUTSOURCING_ASSIGNM
 al abrir. La API expone `treasury_account_name` con fallback al default del terminal.
 Campos no editables: `treasury_account` (snapshot).
 
+**Libro de caja (ADR-0109):** `expected_cash` = `opening_balance` + neto de **todos** los
+movimientos de la cuenta de la caja desde `ledger_baseline_at` (con o sin `pos_session`),
+menos las anulaciones hechas en ese lapso (`TreasuryMovement.cancelled_at`). Al cerrar queda
+congelado en `POSSessionAudit.expected_amount`. Sesiones con `ledger_baseline_at` nulo
+(legacy) siguen con la fórmula de contadores, sin recalcular. Una sola sesión `OPEN` por
+cuenta de tesorería. Un movimiento que toca una caja con sesión abierta desde fuera de ella
+exige el header `X-POS-External-Reason` (desafío `X-POS-External-Reason-Required`) y guarda el
+motivo en `TreasuryMovement.pos_external_reason`.
+
 **Edit policy (ADR-0091):** `POSSessionAudit` (arqueo) es inmutable una vez contabilizado; sin escritura por API.
 
 ## TerminalBatch

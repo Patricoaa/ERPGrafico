@@ -120,7 +120,7 @@ export const SALES_CONFIG_SUB_TABS: NavTabConfig[] = [
     href: "/sales/settings/config-pos",
     iconName: "settings",
     headerTitle: "POS",
-    headerDescription: "Parámetros de puntos de venta, terminales y métodos de pago.",
+    headerDescription: "Parámetros de cajas POS y métodos de pago.",
     metadataTitle: "POS | ERPGrafico",
   },
   {

@@ -52,7 +52,7 @@ def cashier(db):
 
 @pytest.mark.django_db
 def test_open_session_requires_terminal(cashier):
-    with pytest.raises(ValidationError, match="Terminal"):
+    with pytest.raises(ValidationError, match="Caja POS"):
         POSService.open_session(
             user=cashier, terminal_id=None, opening_balance=Decimal("0")
         )
@@ -73,7 +73,7 @@ def test_open_session_rejects_legacy_treasury_account_id(cashier, cash_account_f
 def test_open_session_rejects_inactive_terminal(cashier, terminal):
     terminal.is_active = False
     terminal.save()
-    with pytest.raises(ValidationError, match="Terminal"):
+    with pytest.raises(ValidationError, match="Caja POS"):
         POSService.open_session(
             user=cashier, terminal_id=terminal.id, opening_balance=Decimal("0")
         )

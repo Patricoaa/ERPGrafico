@@ -1030,8 +1030,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                                     <Wand2 className="h-4 w-4" />
                                                                 </div>
                                                                 <div className="flex flex-col">
-                                                                    <span className="text-xs font-black uppercase tracking-widest text-primary">Lote Terminal</span>
-                                                                    <span className="text-3xs text-primary/70 font-bold">{b.terminal_name || 'Terminal'} - {b.display_id}</span>
+                                                                    <span className="text-xs font-black uppercase tracking-widest text-primary">Lote de terminal de cobro</span>
+                                                                    <span className="text-3xs text-primary/70 font-bold">{b.terminal_name || 'Terminal de cobro'} - {b.display_id}</span>
                                                                 </div>
                                                             </div>
                                                             <span className="text-sm font-mono font-bold text-primary">
@@ -1282,7 +1282,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                     id: s.batch_data.id,
                                                     amount: s.difference,
                                                     date: statement?.statement_date || "",
-                                                    contact_name: s.batch_data.name || "Lote Terminal",
+                                                    contact_name: s.batch_data.name || "Lote de terminal de cobro",
                                                     terminal_batch_id: s.batch_data.id,
                                                     display_id: s.batch_data.id.toString()
                                                 } as ReconciliationSystemItem])

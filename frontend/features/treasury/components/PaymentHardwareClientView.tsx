@@ -138,7 +138,7 @@ export function PaymentHardwareClientView({
         router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     }
     const providerCreateAction = createAction || <Button onClick={() => openCreate("new-provider")} className="h-9">Configurar proveedor</Button>
-    const deviceCreateAction = createAction || <Button onClick={() => openCreate("new-device")} className="h-9">Registrar dispositivo</Button>
+    const deviceCreateAction = createAction || <Button onClick={() => openCreate("new-device")} className="h-9">Registrar terminal de cobro</Button>
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -156,8 +156,8 @@ export function PaymentHardwareClientView({
                     <Collection.View
                         table={terminalProviderViews.table}
                         card={terminalProviderViews.card}
-                        emptyTitle="Aún no hay proveedores de terminal"
-                        emptyDescription="Configura un proveedor (Transbank, etc.) para registrar sus dispositivos."
+                        emptyTitle="Aún no hay proveedores de terminal de cobro"
+                        emptyDescription="Configura un proveedor (TUU, Transbank, etc.) para registrar sus terminales de cobro."
                         emptyAction={providerCreateAction}
                         onResetFilters={providerSearch.clearAll}
                     />
@@ -171,13 +171,13 @@ export function PaymentHardwareClientView({
                     actions={deviceActions.forCollection(deviceActionsCtx)}
                 >
                     <Collection.Toolbar action={deviceCreateAction}>
-                        <UnifiedSearchBar config={deviceConfig} {...bindUnifiedSearch(deviceSearch)} placeholder="Buscar dispositivo..." />
+                        <UnifiedSearchBar config={deviceConfig} {...bindUnifiedSearch(deviceSearch)} placeholder="Buscar terminal de cobro..." />
                     </Collection.Toolbar>
                     <Collection.View
                         table={terminalDeviceViews.table}
                         card={terminalDeviceViews.card}
-                        emptyTitle="Aún no hay dispositivos"
-                        emptyDescription="Registra terminales de pago (POS) para conciliar sus transacciones."
+                        emptyTitle="Aún no hay terminales de cobro"
+                        emptyDescription="Registra terminales de cobro para conciliar sus transacciones."
                         emptyAction={deviceCreateAction}
                         onResetFilters={deviceSearch.clearAll}
                     />
@@ -222,8 +222,8 @@ export function PaymentHardwareClientView({
                 open={deleteDeviceConfirm.isOpen}
                 onOpenChange={(v) => !v && deleteDeviceConfirm.cancel()}
                 onConfirm={deleteDeviceConfirm.confirm}
-                title="Eliminar Dispositivo"
-                description="¿Está seguro de eliminar este hardware? Se perderá el vínculo con las terminales POS."
+                title="Eliminar terminal de cobro"
+                description="¿Está seguro de eliminar este terminal de cobro? Se perderá el vínculo con las cajas POS."
                 variant="destructive"
             />
         </div>

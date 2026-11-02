@@ -30,7 +30,7 @@ const methodLabels: Record<string, string> = {
     'CREDIT': 'Crédito',
     'CHECK': 'Cheque',
     'CARD': 'Tarjeta',
-    'CARD_TERMINAL': 'Tarjeta (Terminal)',
+    'CARD_TERMINAL': 'Tarjeta (terminal de cobro)',
     'CREDIT_CARD': 'T. Crédito',
     'CREDIT_BALANCE': 'Saldo a Favor'
 }

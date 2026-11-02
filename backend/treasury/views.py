@@ -260,7 +260,7 @@ class TreasuryAccountViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistor
         if instance.account_type in TreasuryAccount._NON_CASH_EQUIVALENT_TYPES:
             return Response(
                 {
-                    "detail": f"Las cuentas de tipo {instance.get_account_type_display()} son gestionadas por el sistema (vinculadas a un proveedor de terminal). Modifique el proveedor en su lugar."
+                    "detail": f"Las cuentas de tipo {instance.get_account_type_display()} son gestionadas por el sistema (vinculadas a un proveedor de terminal de cobro). Modifique el proveedor en su lugar."
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -881,7 +881,10 @@ class POSSessionViewSet(viewsets.ModelViewSet):
     filterset_fields = ["status", "treasury_account", "user"]
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        from .pos_cash_ledger import annotate_ledger_cash_net
+
+        # ADR-0109: expected_cash sin consultas por fila (arqueo o neto anotado)
+        qs = annotate_ledger_cash_net(super().get_queryset().select_related("audit"))
         date_from = self.request.query_params.get("date_from")
         date_to = self.request.query_params.get("date_to")
         if date_from:

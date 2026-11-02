@@ -20,12 +20,7 @@ export function FinishedStep({ order, onPrintCopy, isDuplicating, headerActions 
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <StepHeader
-        title="Producción Finalizada"
-        description="Todos los materiales han sido consumidos y el producto está listo."
-        icon={CheckCircle2}
-        rightContent={headerActions}
-      />
+      
     <div className="flex flex-col items-center justify-center py-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
       <div className="relative">
         <div className="absolute inset-0 bg-success/20 blur-2xl rounded-full scale-150 animate-pulse" />
@@ -41,21 +36,21 @@ export function FinishedStep({ order, onPrintCopy, isDuplicating, headerActions 
       </div>
 
       {order.production_outcome && (
-        <CardSurface className="w-full max-w-md space-y-3 p-4 text-left">
+        <CardSurface className="w-full max-w-md space-y-3 p-4 text-center border-none">
           {order.production_outcome.warehouse_name && (
-            <p className="text-sm font-semibold text-foreground">
+            <p className="text-md font-bold text-foreground">
               Ingresó a {order.production_outcome.warehouse_name}
             </p>
           )}
           {order.production_outcome.kind === "STOCK" && order.production_outcome.stocked && (
-            <p className="text-xs text-muted-foreground">Disponible para la venta</p>
+            <p className="text-md font-bold text-foreground">Disponible para la venta</p>
           )}
           {order.production_outcome.stocked === false && (
-            <p className="text-xs text-muted-foreground">Sin ingreso a inventario</p>
+            <p className="text-md font-bold text-foreground">Sin ingreso a inventario</p>
           )}
           {order.production_outcome.delivery && (
             <div className="space-y-1.5">
-              <p className="text-xs font-medium text-foreground">
+              <p className="text-muted-foreground leading-relaxed">
                 {order.production_outcome.delivery.status === "DELIVERED"
                   ? "Entregado al cliente"
                   : "Esperando entrega al cliente"}

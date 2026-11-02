@@ -33,7 +33,6 @@ class POSService:
         user,
         terminal_id: int,
         opening_balance: Decimal,
-        fund_source_id: int | None = None,
         justify_reason: str | None = None,
         justify_target_id: int | None = None,
         notes: str = "",
@@ -43,9 +42,12 @@ class POSService:
 
         - Requires a terminal_id; the session treasury account is snapshotted
           from terminal.default_treasury_account at open time.
-        - If fund_source_id is provided, computes the diff between the declared
-          opening_balance and the fund source book balance and creates an
-          adjustment movement.
+        - The declared opening_balance is always compared against the book
+          balance of that same account; any difference creates an adjustment
+          movement (ADR-0109).
+        - Only one open session per treasury account (others must join it).
+        - Starts the session cash ledger (ledger_baseline_at) after the
+          adjustment, so expected cash = opening_balance + account movements.
 
         Raises ValidationError on any business rule violation.
         """
@@ -57,32 +59,42 @@ class POSService:
                 id=terminal_id, is_active=True
             )
         except POSTerminal.DoesNotExist:
-            raise ValidationError("Terminal no encontrado o inactivo.")
+            raise ValidationError("Caja POS no encontrada o inactiva.")
 
         if not terminal.default_treasury_account:
             raise ValidationError(
                 "El terminal no tiene una cuenta de tesorería por defecto; no se puede abrir la sesión."
             )
 
+        cash_account = TreasuryAccount.objects.select_for_update().get(
+            pk=terminal.default_treasury_account_id
+        )
+        busy = POSSession.objects.filter(status="OPEN", treasury_account=cash_account).first()
+        if busy:
+            raise ValidationError(
+                f"La caja «{cash_account.name}» ya tiene la sesión #{busy.id} abierta. "
+                "Únase a esa sesión en lugar de abrir otra."
+            )
+
         session = POSSession.objects.create(
             terminal=terminal,
-            treasury_account=terminal.default_treasury_account,
+            treasury_account=cash_account,
             user=user,
             opening_balance=opening_balance,
             status="OPEN",
         )
 
-        if fund_source_id:
-            _apply_opening_fund_adjustment(
-                session=session,
-                fund_source_id=fund_source_id,
-                opening_balance=opening_balance,
-                justify_reason=justify_reason or "UNKNOWN",
-                justify_target_id=justify_target_id,
-                notes=notes,
-                user=user,
-            )
+        _apply_opening_fund_adjustment(
+            session=session,
+            opening_balance=opening_balance,
+            justify_reason=justify_reason or "UNKNOWN",
+            justify_target_id=justify_target_id,
+            notes=notes,
+            user=user,
+        )
 
+        session.ledger_baseline_at = timezone.now()
+        session.save(update_fields=["ledger_baseline_at"])
         return session
 
     # ------------------------------------------------------------------ #
@@ -188,7 +200,6 @@ class POSService:
             user=request.user,
             terminal_id=request.data.get("terminal_id"),
             opening_balance=Decimal(str(request.data.get("opening_balance", "0"))),
-            fund_source_id=request.data.get("fund_source_id"),
             justify_reason=request.data.get("justify_reason"),
             justify_target_id=request.data.get("justify_target_id"),
             notes=request.data.get("notes", ""),
@@ -344,36 +355,32 @@ def _get_session_treasury(session: POSSession) -> TreasuryAccount | None:
 def _apply_opening_fund_adjustment(
     *,
     session: POSSession,
-    fund_source_id: int,
     opening_balance: Decimal,
     justify_reason: str,
     justify_target_id: int | None,
     notes: str,
     user,
 ) -> None:
-    """Creates a movement to justify the difference between declared opening balance and fund source."""
-    try:
-        fund_source = TreasuryAccount.objects.get(id=fund_source_id)
-    except TreasuryAccount.DoesNotExist:
-        return  # Non-fatal: warn in calling code if needed
-
-    book_balance = fund_source.account.balance
+    """Creates a movement to justify the difference between declared opening balance and the cash account book balance."""
+    pos_treasury = _get_session_treasury(session)
+    book_balance = pos_treasury.current_balance
     diff = opening_balance - book_balance
 
     if diff == 0:
         return
 
-    pos_treasury = _get_session_treasury(session)
     label = _LABEL_MAP.get(justify_reason, justify_reason)
 
     if justify_reason == "TRANSFER":
+        target = None
+        if justify_target_id:
+            target = TreasuryAccount.objects.filter(id=justify_target_id).first()
         if diff > 0:
-            from_account, to_account = fund_source, pos_treasury
+            # Excedente: el efectivo vino desde la cuenta indicada
+            from_account, to_account = target, pos_treasury
         else:
-            from_account = pos_treasury
-            to_account = None
-            if justify_target_id:
-                to_account = TreasuryAccount.objects.filter(id=justify_target_id).first()
+            # Faltante: el efectivo se fue hacia la cuenta indicada
+            from_account, to_account = pos_treasury, target
         movement_type = TreasuryMovement.Type.TRANSFER
     else:
         if diff > 0:

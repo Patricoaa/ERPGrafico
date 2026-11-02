@@ -28,6 +28,18 @@ Definitive vocabulary. When a term appears in code or docs, use this meaning —
 | **Reconciliation** | Match bank statement lines with internal transactions |
 | **Journal entry** | Double-entry accounting record (debit = credit) |
 
+## Payments & POS (UI terms — Spanish, canonical)
+
+| UI term | Definition | Backend entity |
+|---------|------------|----------------|
+| **Terminal de cobro** | Card-payment device (e.g. TUU) linked to a provider; captures card sales | `treasury.PaymentTerminalDevice` |
+| **Proveedor de terminal de cobro** | Company operating the terminals; owns the bridge/settlement account and commissions | `treasury.PaymentTerminalProvider` |
+| **Lote de terminal de cobro** | Daily settlement batch reported by the provider | `treasury.TerminalBatch` |
+| **Tarjeta (terminal de cobro)** | Payment method type for card sales through a terminal de cobro | `PaymentMethod.Type.CARD_TERMINAL` |
+| **Caja POS** | Point-of-sale register (cash drawer + allowed payment methods). NOT a terminal de cobro | `treasury.POSTerminal` |
+
+Inside the "Terminal de cobro" section, sub-tab labels may be shortened ("Proveedores", "Terminales", "Lotes") because the section header gives the context.
+
 ## Production
 
 | Term | Definition |
@@ -63,3 +75,7 @@ Terms NOT to use (use canonical left column instead):
 | "Job" | WorkOrder (if shop floor) or Celery task (if async code) |
 | "Status" (bare) | Entity-specific state, see [state-map](../20-contracts/state-map.md) |
 | "Client" | Customer (business) or frontend (code) — disambiguate |
+| "Dispositivo (de pago / integrado)", "hardware", "maquinita", "datáfono", "terminal de pago" | Terminal de cobro |
+| "Proveedor de pago", "proveedor de terminal" | Proveedor de terminal de cobro |
+| "Lote de pago", "lote terminal" | Lote de terminal de cobro |
+| "Terminal" (bare, for a POS register) | Caja POS |

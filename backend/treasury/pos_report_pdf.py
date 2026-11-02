@@ -58,6 +58,8 @@ def render_pos_report_pdf(session, request, report_type="X", audit=None):
         "total_manual_outflow": summary.get("total_manual_outflow", 0),
         "sale_order_count": summary.get("sale_order_count", 0),
         "dte_breakdown": summary.get("dte_breakdown", []),
+        "cash_breakdown": summary.get("cash_breakdown"),
+        "out_of_session_movements": summary.get("out_of_session_movements", []),
         "has_movements": bool(manual_movements),
         "manual_movements": manual_movements,
         "has_categories": bool(sales_by_category),

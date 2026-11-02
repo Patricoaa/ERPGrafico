@@ -30,7 +30,7 @@ export const posTerminalEntity = defineEntity<Terminal>()((f) => ({
         code: f.code("code", { label: "Código" }),
         name: f.text("name", { label: "Nombre" }),
         location: f.text("location", { label: "Ubicación", tone: "secondary" }),
-        device: f.text((t) => t.payment_terminal_device_name || (t.payment_terminal_device ? "Vinculado" : null), { label: "Dispositivo", header: "Terminal de cobro" }),
+        device: f.text((t) => t.payment_terminal_device_name || (t.payment_terminal_device ? "Vinculado" : null), { label: "Terminal de cobro" }),
         paymentMethods: f.tags(paymentChips, { label: "Métodos", domain: "payment_method", sortable: false }),
         isActive: f.status((t) => (t.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Inactivo" }), { label: "Estado", sortable: false }),
     },

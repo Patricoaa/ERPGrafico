@@ -254,7 +254,7 @@
     </div>
     {% if terminal_name %}
     <div class="info-row">
-        <span class="info-label">Terminal:</span>
+        <span class="info-label">Caja POS:</span>
         <span class="info-value">{{ terminal_name }}</span>
     </div>
     {% endif %}
@@ -277,10 +277,23 @@
             <td>Fondo inicial</td>
             <td class="amount">{{ opening_balance|floatformat:0 }}</td>
         </tr>
+        {% if cash_breakdown %}
+        <tr>
+            <td>(+) Efectivo de ventas</td>
+            <td class="amount-positive">+{{ cash_breakdown.cash_sales|floatformat:0 }}</td>
+        </tr>
+        {% if cash_breakdown.cash_refunds %}
+        <tr>
+            <td>(-) Devoluciones en efectivo</td>
+            <td class="amount-negative">-{{ cash_breakdown.cash_refunds|floatformat:0 }}</td>
+        </tr>
+        {% endif %}
+        {% else %}
         <tr>
             <td>(+) Efectivo de ventas</td>
             <td class="amount-positive">+{{ total_cash_sales|floatformat:0 }}</td>
         </tr>
+        {% endif %}
         {% if total_manual_inflow %}
         <tr>
             <td>(+) Depósitos manuales</td>
@@ -291,6 +304,24 @@
         <tr>
             <td>(-) Retiros / gastos</td>
             <td class="amount-negative">-{{ total_manual_outflow|floatformat:0 }}</td>
+        </tr>
+        {% endif %}
+        {% if cash_breakdown.external_inflow %}
+        <tr>
+            <td>(+) Ingresos fuera de la sesión</td>
+            <td class="amount-positive">+{{ cash_breakdown.external_inflow|floatformat:0 }}</td>
+        </tr>
+        {% endif %}
+        {% if cash_breakdown.external_outflow %}
+        <tr>
+            <td>(-) Egresos fuera de la sesión</td>
+            <td class="amount-negative">-{{ cash_breakdown.external_outflow|floatformat:0 }}</td>
+        </tr>
+        {% endif %}
+        {% if cash_breakdown.annulments %}
+        <tr>
+            <td>(&plusmn;) Anulaciones</td>
+            <td class="amount">{{ cash_breakdown.annulments|floatformat:0 }}</td>
         </tr>
         {% endif %}
         <tr class="total">
@@ -320,7 +351,7 @@
         {% endif %}
         {% if total_card_terminal_sales %}
         <tr>
-            <td>Tarjeta terminal</td>
+            <td>Tarjeta (terminal de cobro)</td>
             <td class="amount">{{ total_card_terminal_sales|floatformat:0 }}</td>
         </tr>
         {% elif total_card_sales and not total_card_terminal_sales %}
@@ -373,6 +404,30 @@
 </div>
 {% endif %}
 
+
+{% if out_of_session_movements %}
+<div class="section">
+    <div class="section-title">Fuera de la Sesión y Anulaciones</div>
+    <table class="data movement-table">
+        <thead>
+            <tr>
+                <th>Movimiento</th>
+                <th>Monto</th>
+                <th>Motivo</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mov in out_of_session_movements %}
+            <tr>
+                <td>{% if mov.event == "ANNULMENT" %}Anulación {% endif %}{{ mov.display_id }}{% if mov.document %} · {{ mov.document }}{% endif %}{% if mov.created_by_name %} · {{ mov.created_by_name }}{% endif %}</td>
+                <td class="{% if mov.direction == 'IN' %}amount-positive{% else %}amount-negative{% endif %}">{% if mov.direction == 'IN' %}+{% else %}-{% endif %}{{ mov.amount|floatformat:0 }}</td>
+                <td class="notes">{{ mov.reason|default:mov.notes|truncatechars:60 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
 
 {% if has_movements %}
 <div class="section">

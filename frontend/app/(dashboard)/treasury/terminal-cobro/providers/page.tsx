@@ -5,7 +5,7 @@ import { getTerminalCobroSubTab } from "@/features/treasury/navigation"
 import { buildMetadataFromTab } from "@/lib/navigation-helpers"
 
 const tabConfig = getTerminalCobroSubTab("providers")
-export const metadata: Metadata = tabConfig ? buildMetadataFromTab(tabConfig) : { title: "Proveedores de Pago | ERPGrafico" }
+export const metadata: Metadata = tabConfig ? buildMetadataFromTab(tabConfig) : { title: "Proveedores de terminal de cobro | ERPGrafico" }
 
 interface PageProps {
   searchParams: Promise<{ modal?: string }>

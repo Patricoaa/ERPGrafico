@@ -302,10 +302,10 @@ export function translateFieldName(field: string): string {
     // Sales
     'channel_display': 'Canal',
     'workflow': 'Resumen',
-    'payment_terminal_device_name': 'Dispositivo',
+    'payment_terminal_device_name': 'Terminal de cobro',
     'payment_methods': 'Métodos',
     'user_name': 'Cajero',
-    'terminal_name': 'Terminal',
+    'terminal_name': 'Caja POS',
     'opened_at': 'Apertura',
     'closed_at': 'Cierre',
     'total_sales': 'Ventas',
@@ -415,7 +415,7 @@ export function translatePaymentMethod(method: string | null | undefined): strin
   const map: Record<string, string> = {
     'CASH': 'Efectivo',
     'CARD': 'Tarjeta',
-    'CARD_TERMINAL': 'Tarjeta (TUU)',
+    'CARD_TERMINAL': 'Tarjeta (terminal de cobro)',
     'CREDIT_CARD': 'T. Crédito',
     'DEBIT_CARD': 'T. Débito',
     'TRANSFER': 'Transferencia',

@@ -2246,7 +2246,7 @@ class Command(BaseCommand):
                 "name": "Caja Central P1",
                 "location": "Planta 1 - Recepción",
                 "ip_address": "192.168.1.100",
-                "default_treasury_account": bco01,
+                "default_treasury_account": till1,
                 "payment_terminal_device": tuu_device,
             },
         )
@@ -2266,13 +2266,21 @@ class Command(BaseCommand):
                 "name": "Caja Taller P2",
                 "location": "Planta 2 - Taller",
                 "ip_address": "192.168.1.100",
-                "default_treasury_account": bco01,
+                "default_treasury_account": caja01,
             },
         )
         # Association per screenshot: Efectivo Taller + Webpay / Transbank
         t2.allowed_payment_methods.set([pm_efectivo_taller, pm_webpay])
         if check_pm:
             t2.allowed_payment_methods.add(check_pm)
+
+        # La cuenta por defecto de cada caja es la cuenta de su método de
+        # efectivo (misma regla que aplica PosTerminalDrawer al guardar): de
+        # ella salen el saldo base de apertura y el efectivo esperado del
+        # cuadre. Se fuerza también en re-ejecuciones sin --purge para sanear
+        # terminales sembrados antes con Banco Estado como default.
+        POSTerminal.objects.filter(pk=t1.pk).update(default_treasury_account=till1)
+        POSTerminal.objects.filter(pk=t2.pk).update(default_treasury_account=caja01)
 
         # Ensure cashier user is linked to sessions correctly (Optional but good for demo)
         self.stdout.write(

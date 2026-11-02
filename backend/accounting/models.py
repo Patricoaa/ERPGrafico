@@ -928,7 +928,7 @@ class AccountingSettings(TimeStampedModel):
         null=True,
         blank=True,
         related_name="settings_terminal_comm_bridge",
-        verbose_name=_("Cuenta Puente Comisión Terminales"),
+        verbose_name=_("Cuenta puente comisión terminal de cobro"),
         help_text=_("Cuenta de activo/puente para retenciones de comisión sin factura."),
     )
     terminal_iva_bridge_account = models.ForeignKey(
@@ -937,7 +937,7 @@ class AccountingSettings(TimeStampedModel):
         null=True,
         blank=True,
         related_name="settings_terminal_iva_bridge",
-        verbose_name=_("Cuenta Puente IVA Terminales"),
+        verbose_name=_("Cuenta puente IVA terminal de cobro"),
         help_text=_("Cuenta de activo/puente para el IVA de comisiones sin factura."),
     )
     error_adjustment_account = models.ForeignKey(

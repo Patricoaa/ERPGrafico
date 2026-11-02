@@ -4,7 +4,7 @@ import type { PaymentMethod } from "../types"
 
 const METHOD_TYPE_LABELS: Record<string, string> = {
     CASH: "Efectivo Directo",
-    CARD_TERMINAL: "Tarjeta (Dispositivo Integrado)",
+    CARD_TERMINAL: "Tarjeta (terminal de cobro)",
     TRANSFER: "Transferencia Bancaria",
     DEBIT_CARD: "Tarjeta Débito Empresa",
     CREDIT_CARD: "Tarjeta Crédito Empresa",

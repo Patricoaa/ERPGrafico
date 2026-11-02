@@ -85,9 +85,9 @@ export function useTerminalDevices(filters?: Record<string, string>) {
         onSuccess: () => {
             markLocalMutation()
             invalidate()
-            toast.success("Dispositivo registrado")
+            toast.success("Terminal de cobro registrado")
         },
-        onError: (err) => showApiError(err, "Error al registrar dispositivo")
+        onError: (err) => showApiError(err, "Error al registrar el terminal de cobro")
     })
 
     const updateDevice = useMutation({
@@ -96,9 +96,9 @@ export function useTerminalDevices(filters?: Record<string, string>) {
         onSuccess: () => {
             markLocalMutation()
             invalidate()
-            toast.success("Dispositivo actualizado")
+            toast.success("Terminal de cobro actualizado")
         },
-        onError: (err) => showApiError(err, "Error al actualizar dispositivo")
+        onError: (err) => showApiError(err, "Error al actualizar el terminal de cobro")
     })
 
     const deleteDevice = useMutation({
@@ -106,9 +106,9 @@ export function useTerminalDevices(filters?: Record<string, string>) {
         onSuccess: () => {
             markLocalMutation()
             invalidate()
-            toast.success("Dispositivo eliminado")
+            toast.success("Terminal de cobro eliminado")
         },
-        onError: (err) => showApiError(err, "No se pudo eliminar el dispositivo")
+        onError: (err) => showApiError(err, "No se pudo eliminar el terminal de cobro")
     })
 
     return {

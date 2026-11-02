@@ -173,5 +173,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0106](0106-notched-field-legends-over-rings.md) | Notched field legends stay above rings with an opaque surface-matched backing | Proposed |
 | [0107](0107-product-create-and-continue.md) | Product creation continues into optional setup | Proposed |
 | [0108](0108-workflow-approval-decisions.md) | Workflow approval decisions are server-owned | Proposed |
+| [0109](0109-pos-cash-ledger-expected-cash.md) | POS cash ledger — expected cash derived from treasury account movements | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

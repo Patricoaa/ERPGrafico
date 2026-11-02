@@ -38,11 +38,11 @@ export function usePosTerminals(): UsePosTerminalsReturn {
         },
         onSuccess: (_, terminal) => {
             markLocalMutation()
-            toast.success(terminal.is_active ? 'Terminal desactivado' : 'Terminal activado')
+            toast.success(terminal.is_active ? 'Caja POS desactivada' : 'Caja POS activada')
             invalidate()
         },
         onError: () => {
-            toast.error('Error al actualizar terminal')
+            toast.error('Error al actualizar la caja POS')
         }
     })
 
@@ -52,11 +52,11 @@ export function usePosTerminals(): UsePosTerminalsReturn {
         },
         onSuccess: () => {
             markLocalMutation()
-            toast.success('Terminal eliminado correctamente')
+            toast.success('Caja POS eliminada correctamente')
             invalidate()
         },
         onError: (err: Error & { response?: { data?: { error?: string } } }) => {
-            const errorMsg = err.response?.data?.error || 'Error al eliminar terminal'
+            const errorMsg = err.response?.data?.error || 'Error al eliminar la caja POS'
             toast.error(errorMsg)
         }
     })

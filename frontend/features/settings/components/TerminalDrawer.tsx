@@ -164,15 +164,15 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
             setLoading(true)
             if (terminal) {
                 await settingsApi.updatePosTerminal(terminal.id, payload)
-                toast.success("Terminal actualizado")
+                toast.success("Caja POS actualizada")
             } else {
                 await settingsApi.createPosTerminal(payload)
-                toast.success("Terminal creado")
+                toast.success("Caja POS creada")
             }
             onSuccess()
             onOpenChange(false)
         } catch (error: unknown) {
-            showApiError(error, "Error al guardar terminal")
+            showApiError(error, "Error al guardar la caja POS")
         } finally {
             setLoading(false)
         }
@@ -227,14 +227,14 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                             <>
                                 <CancelButton onClick={() => onOpenChange(false)} />
                                 <SubmitButton type="submit" form="terminal-form" loading={loading}>
-                                    {terminal ? "Guardar Cambios" : "Crear Terminal"}
+                                    {terminal ? "Guardar Cambios" : "Crear caja POS"}
                                 </SubmitButton>
                             </>
                         }
                     />
                 )}
             >
-                <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de terminal" className="flex-1 flex flex-col">
+                <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de caja POS" className="flex-1 flex flex-col">
                     <FormSplitLayout
                         collapsible
                         collapseStorageKey="erpgrafico.drawer.sidebar.terminal"
@@ -253,14 +253,14 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                                 <fieldset disabled={isView} className="contents">
                                     {/* Section 1: Device Identity */}
                                     <div className="space-y-4">
-                                        <FormSection title="Identificación del Dispositivo" icon={MonitorSmartphone} />
+                                        <FormSection title="Identificación de la caja POS" icon={MonitorSmartphone} />
                                         <div className="grid grid-cols-2 gap-4">
                                             <FormField
                                                 control={form.control}
                                                 name="name"
                                                 render={({ field, fieldState }) => (
                                                     <LabeledInput
-                                                        label="Nombre de Terminal"
+                                                        label="Nombre de la caja POS"
                                                         placeholder="Ej: Caja Principal"
                                                         error={fieldState.error?.message}
                                                         required
@@ -294,7 +294,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                                                 name="serial_number"
                                                 render={({ field, fieldState }) => (
                                                     <LabeledInput
-                                                        label="N° Serie / Hardware"
+                                                        label="N° de serie del equipo"
                                                         placeholder="SN-XXXX"
                                                         error={fieldState.error?.message}
                                                         {...field}
@@ -348,7 +348,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                                                                     treasuryAccounts.find(a => a.id === selectedId)?.allows_cash
                                                                 )
                                                                 if (hasCash) {
-                                                                    toast.warning("Solo se permite una cuenta de efectivo por terminal.")
+                                                                    toast.warning("Solo se permite una cuenta de efectivo por caja POS.")
                                                                     return
                                                                 }
                                                             }

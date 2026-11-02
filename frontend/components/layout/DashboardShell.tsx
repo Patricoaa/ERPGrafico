@@ -28,6 +28,12 @@ const ProfileSettingsModal = dynamic(
     { ssr: false },
 )
 
+// ADR-0109: pide el motivo si un movimiento toca una caja POS con sesión abierta
+const POSExternalReasonModal = dynamic(
+    () => import("@/features/treasury").then(m => ({ default: m.POSExternalReasonModal })),
+    { ssr: false },
+)
+
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
 
@@ -182,6 +188,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 <ProfileSettingsModal onOpenChange={setIsProfileSettingsOpen} />
             )}
 
+            <POSExternalReasonModal />
             <Toaster />
         </div>
     )

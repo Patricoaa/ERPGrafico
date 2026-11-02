@@ -213,7 +213,6 @@ export function SessionOpenModal({
             const sessionData = await posApi.openSession({
                 terminal_id: parseInt(selectedTerminalId),
                 opening_balance: parseFloat(openingBalance),
-                fund_source_id: fundSourceId ? parseInt(fundSourceId) : null,
                 justify_reason: openingJustifyReason,
                 justify_target_id: openingJustifyTargetId ? parseInt(openingJustifyTargetId) : null
             })

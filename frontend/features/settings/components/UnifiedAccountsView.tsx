@@ -522,8 +522,8 @@ function TesoreriasForm() {
                             </div>
                             <Card variant="default">
                                 <CardHeader>
-                                    <CardTitle className="text-lg text-primary">Cuentas Puente de Terminales</CardTitle>
-                                    <CardDescription>Cuentas para comisiones de terminales de pago sin factura</CardDescription>
+                                    <CardTitle className="text-lg text-primary">Cuentas puente de terminal de cobro</CardTitle>
+                                    <CardDescription>Cuentas para comisiones de terminal de cobro sin factura</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -254,7 +254,9 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
         }
     }, [watchedType, method, form])
 
-    const onSubmit = async (data: PaymentMethodFormValues) => {
+    const onSubmit = async (formData: PaymentMethodFormValues) => {
+        // La liquidación aparte solo existe en CARD_TERMINAL (la fija el backend desde el proveedor).
+        const data = { ...formData, settlement_account: null }
         try {
             if (method) {
                 await updateMethod({ id: method.id, payload: data as unknown as PaymentMethodUpdatePayload })
@@ -345,7 +347,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                                             error={fieldState.error?.message}
                                             options={[
                                                 { value: "CASH", label: "Efectivo Directo" },
-                                                { value: "CARD_TERMINAL", label: "Tarjeta (Dispositivo Integrado)" },
+                                                { value: "CARD_TERMINAL", label: "Tarjeta (terminal de cobro)" },
                                                 { value: "TRANSFER", label: "Transferencia Bancaria" },
                                                 { value: "DEBIT_CARD", label: "Tarjeta Débito Empresa" },
                                                 { value: "CREDIT_CARD", label: "Tarjeta Crédito Empresa" },
@@ -370,27 +372,24 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                                     )}
                                 />
                             </div>
-                            <div className="col-span-2">
-                                <FormField
-                                    control={form.control}
-                                    name="settlement_account"
-                                    render={({ field, fieldState }) => (
-                                        <TreasuryAccountSelector
-                                            label="Cuenta de liquidación (destino real)"
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            error={fieldState.error?.message}
-                                            disabled={watchedType === "CARD_TERMINAL"}
-                                        />
-                                    )}
-                                />
-                                {watchedType !== "CARD_TERMINAL" && (
-                                    <p className="text-4xs text-muted-foreground italic mt-1">Cuenta destino contable real. Para terminales integrados se auto-gestiona desde el proveedor.</p>
-                                )}
-                                {watchedType === "CARD_TERMINAL" && (
-                                    <p className="text-4xs text-muted-foreground italic mt-1">Gestionado automáticamente por el proveedor del terminal.</p>
-                                )}
-                            </div>
+                            {watchedType === "CARD_TERMINAL" && (
+                                <div className="col-span-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="settlement_account"
+                                        render={({ field, fieldState }) => (
+                                            <TreasuryAccountSelector
+                                                label="Cuenta de liquidación (destino real)"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                error={fieldState.error?.message}
+                                                disabled
+                                            />
+                                        )}
+                                    />
+                                    <p className="text-4xs text-muted-foreground italic mt-1">Gestionado automáticamente por el proveedor de terminal de cobro.</p>
+                                </div>
+                            )}
 
                             <div className="col-span-4">
                                 <Button

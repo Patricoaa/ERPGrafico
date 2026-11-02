@@ -5,7 +5,7 @@ import { getTerminalCobroSubTab } from "@/features/treasury/navigation"
 import { buildMetadataFromTab } from "@/lib/navigation-helpers"
 
 const tabConfig = getTerminalCobroSubTab("batches")
-export const metadata: Metadata = tabConfig ? buildMetadataFromTab(tabConfig) : { title: "Lotes de Pago | ERPGrafico" }
+export const metadata: Metadata = tabConfig ? buildMetadataFromTab(tabConfig) : { title: "Lotes de terminal de cobro | ERPGrafico" }
 
 export default async function TerminalCobroBatchesPage() {
   const createAction = <ToolbarCreateButton label="Registrar Liquidación" href="/treasury/terminal-cobro/batches?modal=batch" />

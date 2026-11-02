@@ -185,6 +185,16 @@ class TreasuryService:
 
             pos_session = POSSession.objects.filter(id=pos_session_id).first()
 
+        # 1.5b Caja POS con sesión abierta tocada desde fuera de ella (ADR-0109)
+        from .pos_external_guard import resolve_pos_external_reason
+
+        pos_external_reason = resolve_pos_external_reason(
+            from_account=from_account,
+            to_account=to_account,
+            pos_session=pos_session,
+            is_pending_registration=is_pending_registration,
+        )
+
         # 1.6 Resolve Terminal Fields from Payment Method
         terminal_device = None
         terminal_provider = None
@@ -218,6 +228,7 @@ class TreasuryService:
             notes=notes or "",
             justify_reason=justify_reason,
             pos_session=pos_session,
+            pos_external_reason=pos_external_reason,
             transaction_number=transaction_number,
             is_pending_registration=is_pending_registration,
             is_reconciled=is_reconciled,
@@ -976,6 +987,7 @@ class TreasuryService:
                 pass
 
         movement.status = TreasuryMovement.MovementStatus.CANCELLED
+        movement.cancelled_at = timezone.now()
         movement.save()
 
         from workflow.services import WorkflowService
@@ -1085,6 +1097,7 @@ class TreasuryService:
                     )
 
         movement.status = TreasuryMovement.MovementStatus.CANCELLED
+        movement.cancelled_at = timezone.now()
         movement.save()
 
         from workflow.services import WorkflowService

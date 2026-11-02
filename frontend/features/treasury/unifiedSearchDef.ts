@@ -40,7 +40,7 @@ export const paymentMethodUnifiedSearchDef: UnifiedSearchConfig = {
       serverParam: 'method_type',
       options: [
         { label: 'Efectivo Directo', value: 'CASH' },
-        { label: 'Tarjeta (Dispositivo)', value: 'CARD_TERMINAL' },
+        { label: 'Tarjeta (terminal de cobro)', value: 'CARD_TERMINAL' },
         { label: 'Transferencia Bancaria', value: 'TRANSFER' },
         { label: 'Tarjeta Débito Empresa', value: 'DEBIT_CARD' },
         { label: 'Tarjeta Crédito Empresa', value: 'CREDIT_CARD' },
@@ -180,7 +180,7 @@ export const treasuryMovementsUnifiedSearchDef: UnifiedSearchConfig = {
       serverParam: 'payment_method',
       options: [
         { label: 'Efectivo', value: 'CASH' },
-        { label: 'Tarjeta (Terminal)', value: 'CARD_TERMINAL' },
+        { label: 'Tarjeta (terminal de cobro)', value: 'CARD_TERMINAL' },
         { label: 'Tarjeta (Manual)', value: 'CARD' },
         { label: 'Transferencia', value: 'TRANSFER' },
         { label: 'Cheque', value: 'CHECK' },

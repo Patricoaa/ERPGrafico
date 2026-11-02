@@ -159,8 +159,8 @@ class TreasuryMovement(models.Model):
         null=True,
         blank=True,
         related_name="movements",
-        verbose_name=_("Dispositivo de Terminal"),
-        help_text=_("Hardware usado para el cobro (si corresponde)"),
+        verbose_name=_("Terminal de cobro"),
+        help_text=_("Terminal de cobro usado (si corresponde)"),
     )
 
     # Legacy/Convenience access to the "Main" financial account involved (Snapshot)
@@ -306,7 +306,7 @@ class TreasuryMovement(models.Model):
         null=True,
         blank=True,
         related_name="movements",
-        verbose_name=_("Proveedor Terminal"),
+        verbose_name=_("Proveedor de terminal de cobro"),
     )
 
     # Terminal batch linkage (for terminal payments)
@@ -316,8 +316,8 @@ class TreasuryMovement(models.Model):
         null=True,
         blank=True,
         related_name="payments",
-        verbose_name=_("Lote Terminal"),
-        help_text=_("Lote al que pertenece este pago (si es terminal)"),
+        verbose_name=_("Lote de terminal de cobro"),
+        help_text=_("Lote al que pertenece este pago (si se cobró con terminal de cobro)"),
     )
 
     # Card purchase installments (Onda 2, ADR-0043): agrupa N
@@ -415,6 +415,17 @@ class TreasuryMovement(models.Model):
         is_locked=lambda m: m.journal_entry_id is not None,
         mutable_when_locked=frozenset({"notes", "justify_reason"}),
         is_purgeable=lambda m: m.status == "CANCELLED" and m.journal_entry_id is None,
+    )
+
+    # ADR-0109: momento en que el movimiento pasó a CANCELLED. El libro de caja
+    # POS lo usa para restar, dentro de la ventana de la sesión, anulaciones de
+    # movimientos creados antes de abrirla.
+    cancelled_at = models.DateTimeField(_("Anulado el"), null=True, blank=True)
+
+    # ADR-0109: motivo declarado al mover una caja POS con sesión abierta desde
+    # fuera de esa sesión (pago de OC, cobro fuera del POS, traspaso, etc.).
+    pos_external_reason = models.TextField(
+        _("Motivo de uso externo de caja POS"), blank=True, default=""
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -1159,21 +1170,21 @@ class POSTerminal(models.Model):
     """
 
     name = models.CharField(
-        _("Nombre del Terminal"),
+        _("Nombre de la caja POS"),
         max_length=100,
-        help_text=_("Ej: 'Caja 1', 'Mostrador Principal', 'Terminal Móvil'"),
+        help_text=_("Ej: 'Caja 1', 'Mostrador Principal', 'Caja Móvil'"),
     )
     code = models.CharField(
-        _("Código"), max_length=20, unique=True, help_text=_("Identificador único del terminal")
+        _("Código"), max_length=20, unique=True, help_text=_("Identificador único de la caja POS")
     )
     location = models.CharField(
-        _("Ubicación"), max_length=200, blank=True, help_text=_("Ubicación física del terminal")
+        _("Ubicación"), max_length=200, blank=True, help_text=_("Ubicación física de la caja POS")
     )
     is_active = models.BooleanField(
         _("Activo"),
         default=True,
         db_index=True,
-        help_text=_("Desactivar para archivar el terminal POS; las sesiones históricas lo siguen referenciando."),
+        help_text=_("Desactivar para archivar la caja POS; las sesiones históricas lo siguen referenciando."),
     )
 
     # ManyToMany: Cuentas de tesorería permitidas para este terminal
@@ -1181,7 +1192,7 @@ class POSTerminal(models.Model):
         "PaymentMethod",
         related_name="pos_terminals",
         verbose_name=_("Métodos de Pago Permitidos"),
-        help_text=_("Métodos de pago específicos permitidos en este terminal"),
+        help_text=_("Métodos de pago específicos permitidos en esta caja POS"),
         blank=True,
     )
 
@@ -1211,8 +1222,8 @@ class POSTerminal(models.Model):
         null=True,
         blank=True,
         related_name="pos_terminals",
-        verbose_name=_("Dispositivo de Terminal"),
-        help_text=_("Dispositivo físico vinculado a esta caja para cobros integrados"),
+        verbose_name=_("Terminal de cobro"),
+        help_text=_("Terminal de cobro vinculado a esta caja POS"),
     )
 
     # Hardware information (optional)
@@ -1229,8 +1240,8 @@ class POSTerminal(models.Model):
     history = HistoricalRecords()
 
     class Meta:
-        verbose_name = _("Terminal POS")
-        verbose_name_plural = _("Terminales POS")
+        verbose_name = _("Caja POS")
+        verbose_name_plural = _("Cajas POS")
         ordering = ["code"]
 
     def __str__(self):
@@ -1673,7 +1684,7 @@ class PaymentTerminalProvider(models.Model):
         _("Activo"),
         default=True,
         db_index=True,
-        help_text=_("Desactivar para archivar el proveedor de terminal; los terminales históricos lo siguen referenciando."),
+        help_text=_("Desactivar para archivar el proveedor de terminal de cobro; los terminales de cobro históricos lo siguen referenciando."),
     )
     notes = models.TextField(_("Notas"), blank=True)
 
@@ -1682,7 +1693,7 @@ class PaymentTerminalProvider(models.Model):
         "accounting.Account",
         on_delete=models.PROTECT,
         related_name="terminal_provider_receivable",
-        verbose_name=_("Cuenta Por Cobrar Terminal"),
+        verbose_name=_("Cuenta por cobrar terminal de cobro"),
     )
     commission_expense_account = models.ForeignKey(
         "accounting.Account",
@@ -1728,8 +1739,8 @@ class PaymentTerminalProvider(models.Model):
     history = HistoricalRecords()
 
     class Meta:
-        verbose_name = _("Proveedor de Terminal")
-        verbose_name_plural = _("Proveedores de Terminal")
+        verbose_name = _("Proveedor de terminal de cobro")
+        verbose_name_plural = _("Proveedores de terminal de cobro")
         ordering = ["name"]
 
     def __str__(self):
@@ -1786,7 +1797,7 @@ class PaymentTerminalDevice(models.Model):
         MAINTENANCE = "MAINTENANCE", _("En Mantención")
 
     name = models.CharField(
-        _("Nombre / Alias"), max_length=100, help_text=_("Ej: Terminal Barra 1")
+        _("Nombre / Alias"), max_length=100, help_text=_("Ej: TUU Caja 01")
     )
     provider = models.ForeignKey(
         PaymentTerminalProvider,
@@ -1795,9 +1806,9 @@ class PaymentTerminalDevice(models.Model):
         verbose_name=_("Proveedor"),
     )
     serial_number = models.CharField(
-        _("Número de Serie Interno / ID Dispositivo"),
+        _("Número de serie / ID del terminal de cobro"),
         max_length=100,
-        help_text=_("ID único que el proveedor asigna a este dispositivo físico (ej: TU1245)"),
+        help_text=_("ID único que el proveedor asigna a este terminal de cobro (ej: TU1245)"),
     )
     status = models.CharField(
         _("Estado"), max_length=20, choices=Status.choices, default=Status.ACTIVE
@@ -1810,15 +1821,15 @@ class PaymentTerminalDevice(models.Model):
         blank=True,
         help_text=_("Lista de códigos soportados. 1: Crédito, 2: Débito. Ej: [1, 2]"),
     )
-    device_config = models.JSONField(_("Configuración del Dispositivo"), default=dict, blank=True)
+    device_config = models.JSONField(_("Configuración del terminal de cobro"), default=dict, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     history = HistoricalRecords()
 
     class Meta:
-        verbose_name = _("Dispositivo de Terminal")
-        verbose_name_plural = _("Dispositivos de Terminal")
+        verbose_name = _("Terminal de cobro")
+        verbose_name_plural = _("Terminales de cobro")
         ordering = ["name"]
 
     def __str__(self):
@@ -1880,8 +1891,8 @@ class PaymentMethod(models.Model):
         null=True,
         blank=True,
         related_name="card_terminal_methods",
-        verbose_name=_("Dispositivo Terminal Vinculado"),
-        help_text=_("Solo para CARD_TERMINAL — el device TUU que automatiza este método."),
+        verbose_name=_("Terminal de cobro vinculado"),
+        help_text=_("Solo para CARD_TERMINAL — el terminal de cobro que automatiza este método."),
     )
     allow_for_sales = models.BooleanField(_("Permitir en Ventas"), default=True)
     allow_for_purchases = models.BooleanField(_("Permitir en Compras"), default=True)
@@ -1965,7 +1976,7 @@ class PaymentMethod(models.Model):
                 raise ValidationError(
                     {
                         "linked_terminal_device": _(
-                            "CARD_TERMINAL requiere un dispositivo terminal vinculado."
+                            "El método Tarjeta (terminal de cobro) requiere un terminal de cobro vinculado."
                         )
                     }
                 )
@@ -1977,8 +1988,8 @@ class PaymentMethod(models.Model):
                 raise ValidationError(
                     {
                         "linked_terminal_device": _(
-                            "El proveedor del dispositivo no tiene cuenta destino de liquidación configurada. "
-                            "Configure 'Cuenta Destino Liquidación' en el Proveedor de Terminal antes de crear este método."
+                            "El proveedor del terminal de cobro no tiene cuenta destino de liquidación configurada. "
+                            "Configure 'Cuenta Destino Liquidación' en el proveedor de terminal de cobro antes de crear este método."
                         )
                     }
                 )
@@ -1986,14 +1997,19 @@ class PaymentMethod(models.Model):
                 raise ValidationError(
                     {
                         "settlement_account": _(
-                            "La cuenta de liquidación de métodos CARD_TERMINAL está gestionada por el sistema "
-                            "y se asigna automáticamente desde el proveedor del dispositivo. "
+                            "La cuenta de liquidación de métodos con terminal de cobro está gestionada por el sistema "
+                            "y se asigna automáticamente desde el proveedor del terminal de cobro. "
                             f"Cuenta asignada: {provider_bridge.name}."
                         )
                     }
                 )
             # Forzar siempre la cuenta del proveedor (auto-sync)
             self.settlement_account = provider_bridge
+        else:
+            # Solo CARD_TERMINAL liquida en una cuenta distinta (puente del proveedor).
+            # En el resto el dinero llega a treasury_account; una liquidación aparte
+            # desviaría el cobro (p. ej. efectivo POS a un banco) y descuadraría la caja.
+            self.settlement_account = None
 
         if not self.treasury_account_id:
             return
@@ -2052,14 +2068,14 @@ class TerminalBatch(models.Model):
         null=True,
         blank=True,
         related_name="batches",
-        verbose_name=_("Proveedor de Terminal"),
+        verbose_name=_("Proveedor de terminal de cobro"),
     )
 
     payment_method = models.ForeignKey(
         "PaymentMethod",
         on_delete=models.PROTECT,
         related_name="batches",
-        verbose_name=_("Método de Pago (Terminal)"),
+        verbose_name=_("Método de pago (terminal de cobro)"),
     )
 
     # Fechas
@@ -2074,7 +2090,7 @@ class TerminalBatch(models.Model):
         help_text=_("Fin del rango de ventas (si abarca varios días)"),
     )
     settlement_date = models.DateField(
-        _("Fecha de Liquidación"), help_text=_("Día en que el terminal informó la comisión")
+        _("Fecha de Liquidación"), help_text=_("Día en que el terminal de cobro informó la comisión")
     )
     deposit_date = models.DateField(
         _("Fecha de Depósito"),
@@ -2109,10 +2125,10 @@ class TerminalBatch(models.Model):
 
     # Referencia del terminal
     terminal_reference = models.CharField(
-        _("Referencia Terminal"),
+        _("Referencia del lote"),
         max_length=100,
         blank=True,
-        help_text=_("Número de lote o referencia del terminal"),
+        help_text=_("Número de lote o referencia del terminal de cobro"),
     )
 
     # Estado
@@ -2185,8 +2201,8 @@ class TerminalBatch(models.Model):
     history = HistoricalRecords()
 
     class Meta:
-        verbose_name = _("Lote Terminal")
-        verbose_name_plural = _("Lotes Terminal")
+        verbose_name = _("Lote de terminal de cobro")
+        verbose_name_plural = _("Lotes de terminal de cobro")
         ordering = ["-sales_date", "-id"]
         unique_together = [["provider", "sales_date", "terminal_reference"]]
         indexes = [
@@ -2252,8 +2268,8 @@ class POSSession(models.Model):
         null=True,  # Allow null during migration
         blank=True,
         related_name="sessions",
-        verbose_name=_("Terminal POS"),
-        help_text=_("Terminal donde se realizó esta sesión"),
+        verbose_name=_("Caja POS"),
+        help_text=_("Caja POS donde se realizó esta sesión"),
     )
 
     # Snapshot inmutable de la caja al abrir la sesión.
@@ -2331,6 +2347,13 @@ class POSSession(models.Model):
 
     notes = models.TextField(_("Notas"), blank=True)
 
+    # ADR-0109: inicio del libro de caja. Se fija al abrir (después del ajuste de
+    # apertura). Nulo = sesión legacy, cuyo efectivo esperado sigue saliendo de
+    # los contadores total_* (no se recalcula).
+    ledger_baseline_at = models.DateTimeField(
+        _("Inicio libro de caja"), null=True, blank=True, editable=False
+    )
+
     history = HistoricalRecords()
 
     class Meta:
@@ -2342,14 +2365,36 @@ class POSSession(models.Model):
         return f"Sesión #{self.id} - {self.user.get_full_name() or self.user.username} ({self.get_status_display()})"
 
     @property
+    def uses_cash_ledger(self) -> bool:
+        return self.ledger_baseline_at is not None
+
+    @property
     def expected_cash(self):
-        """Calculate expected cash: opening balance + cash sales + other inflows - outflows"""
-        return (
-            self.opening_balance
-            + self.total_cash_sales
-            + self.total_other_cash_inflow
-            - self.total_other_cash_outflow
-        )
+        """
+        Efectivo esperado en la caja.
+
+        - Sesión legacy: fondo + contadores de la sesión (comportamiento previo).
+        - Sesión con libro de caja (ADR-0109): fondo + neto de TODOS los
+          movimientos de la cuenta de la caja desde la apertura, tengan o no
+          pos_session. Una sesión cerrada devuelve el valor congelado del arqueo.
+        """
+        if not self.uses_cash_ledger:
+            return (
+                self.opening_balance
+                + self.total_cash_sales
+                + self.total_other_cash_inflow
+                - self.total_other_cash_outflow
+            )
+        try:
+            return self.audit.expected_amount
+        except POSSessionAudit.DoesNotExist:
+            pass
+        net = getattr(self, "ledger_cash_net", None)
+        if net is None:
+            from .pos_cash_ledger import ledger_net
+
+            net = ledger_net(self)
+        return self.opening_balance + net
 
 
 class POSSessionAudit(models.Model):

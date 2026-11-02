@@ -612,11 +612,12 @@ class POSSelector:
             user_name = session.user.get_full_name() or session.user.username
             terminal_name = session.terminal.name if session.terminal else ""
 
+            cash_ledger = POSSelector._cash_ledger_section(session)
+
             return {
                 **totals,
+                **cash_ledger,
                 "total_card_terminal_sales": card_terminal_sales,
-                "total_manual_inflow": session.total_other_cash_inflow,
-                "total_manual_outflow": session.total_other_cash_outflow,
                 "manual_movements": manual_movements_data,
                 "sales_by_category": category_data,
                 "sale_order_count": sale_order_count,
@@ -637,6 +638,40 @@ class POSSelector:
             timeout=60,
             generator=_generate,
         )
+
+    @staticmethod
+    def _cash_ledger_section(session) -> dict:
+        """
+        Control de caja del informe X/Z.
+
+        Sesión con libro de caja (ADR-0109): desglose derivado de los movimientos
+        de la cuenta de la caja, incluidos los externos a la sesión y las
+        anulaciones. Sesión legacy: contadores de la sesión, sin recalcular.
+        """
+        if not session.uses_cash_ledger:
+            return {
+                "cash_ledger_mode": False,
+                "total_manual_inflow": session.total_other_cash_inflow,
+                "total_manual_outflow": session.total_other_cash_outflow,
+                "cash_breakdown": None,
+                "out_of_session_movements": [],
+            }
+
+        from .pos_cash_ledger import (
+            ledger_breakdown,
+            ledger_entries,
+            serialize_out_of_session_entries,
+        )
+
+        entries = ledger_entries(session)
+        breakdown = ledger_breakdown(entries)
+        return {
+            "cash_ledger_mode": True,
+            "total_manual_inflow": breakdown["manual_inflow"],
+            "total_manual_outflow": breakdown["manual_outflow"],
+            "cash_breakdown": breakdown,
+            "out_of_session_movements": serialize_out_of_session_entries(entries),
+        }
 
 class CardSelector:
     @staticmethod

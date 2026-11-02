@@ -104,8 +104,8 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
     }
 
     const identity = useDrawerIdentity('treasury.terminaldevice', mode, device, {
-        overrideTitle: mode === 'create' ? "Registrar Nuevo Hardware" : undefined,
-        overrideSubtitle: "Vincule una terminal física con un proveedor de servicios.",
+        overrideTitle: mode === 'create' ? "Registrar terminal de cobro" : undefined,
+        overrideSubtitle: "Vincule el terminal de cobro con su proveedor.",
         printable: (mode === 'view' || mode === 'edit') && !!device?.id,
         onPrint: handlePrint,
     })
@@ -113,7 +113,7 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
     return (
         <>
             {(mode === 'view' || mode === 'edit') && device?.id && (
-                <PrintableLayout ref={printRef} title="Dispositivo" displayId={`#${device.id}`}>
+                <PrintableLayout ref={printRef} title="Terminal de cobro" displayId={`#${device.id}`}>
                     <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
@@ -160,7 +160,7 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                                                 label="Nombre descriptivo"
                                                 required
                                                 {...field}
-                                                placeholder="Ej: Maquinita TUU 01"
+                                                placeholder="Ej: TUU Caja 01"
                                             />
                                         )}
                                     />
@@ -209,7 +209,7 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                                         name="supported_payment_methods"
                                         render={({ field }) => (
                                             <MultiSelectTagInput
-                                                label="Capacidades del Hardware"
+                                                label="Capacidades del terminal de cobro"
                                                 options={[
                                                     { label: "DÉBITO", value: "2" },
                                                     { label: "CRÉDITO", value: "1" }
@@ -217,7 +217,7 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                                                 value={field.value || []}
                                                 onChange={field.onChange}
                                                 placeholder="Seleccione capacidades..."
-                                                hint="Marque solo los métodos que su terminal física permite procesar."
+                                                hint="Marque solo los métodos que su terminal de cobro permite procesar."
                                             />
                                         )}
                                     />

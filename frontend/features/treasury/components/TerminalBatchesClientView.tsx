@@ -68,7 +68,7 @@ export function TerminalBatchesClientView({
                     table={terminalBatchViews.table}
                     card={terminalBatchViews.card}
                     emptyTitle="Aún no hay liquidaciones"
-                    emptyDescription="Las liquidaciones de terminales de pago aparecerán aquí."
+                    emptyDescription="Los lotes de terminal de cobro aparecerán aquí."
                     emptyAction={createAction}
                     onResetFilters={search.clearAll}
                 />
@@ -76,7 +76,7 @@ export function TerminalBatchesClientView({
 
             <EntityPanelTab label="treasury.terminalbatch" {...batchPanel.tab}>
                 {(open) => (
-                    <SkeletonShell isLoading={isLoading} ariaLabel="Cargando modal de lote de terminal">
+                    <SkeletonShell isLoading={isLoading} ariaLabel="Cargando modal de lote de terminal de cobro">
                         <Suspense fallback={<div />}>
                             <TerminalBatchModal
                                 open={open}
@@ -118,7 +118,7 @@ function TerminalBatchModal({ open, onOpenChange, onSuccess }: { open: boolean, 
             title={
                 <div className="flex items-center gap-3">
                     <Plus className="h-5 w-5 text-muted-foreground" />
-                    <span>Registrar Liquidación de Terminal de Cobro</span>
+                    <span>Registrar lote de terminal de cobro</span>
                 </div>
             }
             description="Ingrese los datos de la liquidación diaria informada por el proveedor del terminal de cobro."
@@ -135,7 +135,7 @@ function TerminalBatchModal({ open, onOpenChange, onSuccess }: { open: boolean, 
                 />
             }
          >
-            <SkeletonShell isLoading={false} ariaLabel="Cargando formulario de lote de terminal">
+            <SkeletonShell isLoading={false} ariaLabel="Cargando formulario de lote de terminal de cobro">
                 <Suspense fallback={<div />}>
                     <LazyTerminalBatchSelectionModal onSuccess={onSuccess} onCancel={() => onOpenChange(false)} onFooterStateChange={setFooterState} />
                 </Suspense>

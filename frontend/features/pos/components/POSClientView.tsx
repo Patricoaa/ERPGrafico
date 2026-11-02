@@ -139,7 +139,7 @@ export function POSClientView() {
         onSessionStateChange: (status, closedBy) => {
             if (status === 'CLOSED') {
                 toast.error("Sesión Cerrada", {
-                    description: `La sesión ha sido cerrada por ${closedBy || 'otro terminal'}.`,
+                    description: `La sesión ha sido cerrada por ${closedBy || 'otra caja POS'}.`,
                     duration: 10000, // 10 seconds, enough to see it
                 })
                 // Update local session state to null to trigger clean UI reset

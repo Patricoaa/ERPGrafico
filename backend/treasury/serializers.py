@@ -423,7 +423,11 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
     class Meta:
         model = TreasuryMovement
         fields = "__all__"
-        read_only_fields = ["created_by", "created_at", "history", "is_pending_registration"]
+        read_only_fields = [
+            "created_by", "created_at", "history", "is_pending_registration",
+            # ADR-0109: los fija el servicio (anulación / guard de caja POS), nunca la API
+            "cancelled_at", "pos_external_reason",
+        ]
 
     def get_invoice_display_id(self, obj):
         return obj.invoice.display_id if obj.invoice else None

@@ -258,7 +258,7 @@ const CATEGORY_MAP: Record<CategoryDomain, Record<string, CategoryEntry>> = {
     payment_method: {
         'CASH':          { intent: 'cyan', label: 'Efectivo', icon: 'Banknote' },
         'CARD':          { intent: 'magenta', label: 'Tarjeta', icon: 'CreditCard' },
-        'CARD_TERMINAL': { intent: 'magenta', label: 'Terminal', icon: 'Smartphone' },
+        'CARD_TERMINAL': { intent: 'magenta', label: 'Terminal de cobro', icon: 'Smartphone' },
         'DEBIT_CARD':    { intent: 'magenta', label: 'Débito', icon: 'CreditCard' },
         'CREDIT_CARD':   { intent: 'magenta', label: 'Crédito', icon: 'CreditCard' },
         'TRANSFER':      { intent: 'yellow', label: 'Transferencia', icon: 'Landmark' },

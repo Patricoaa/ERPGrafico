@@ -302,17 +302,14 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                             />
                                         )}
                                     />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="col-span-2">
-                                        <FormField
+                                    
+                                    <FormField
                                             control={form.control}
                                             name="device_id"
                                             render={({ field }) => (
                                                 <LabeledSelect
-                                                    label="Dispositivo de Terminal"
-                                                    placeholder="Sin dispositivo integrado"
+                                                    label="Terminal de cobro"
+                                                    placeholder="Sin terminal de cobro"
                                                     value={field.value || ""}
                                                     onChange={field.onChange}
                                                     options={[
@@ -325,8 +322,8 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                                 />
                                             )}
                                         />
-                                    </div>
                                 </div>
+
 
                                 <div className="space-y-4">
                                     <FormSection title="Métodos de Pago Permitidos" icon={CreditCard} />

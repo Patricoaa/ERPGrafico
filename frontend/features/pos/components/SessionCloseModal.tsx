@@ -67,9 +67,8 @@ export function SessionCloseModal({
 
     // Derived values for validation and display
     const actual = parseFloat(actualCash) || 0
-    const expected = fullReportData
-        ? Number(fullReportData.opening_balance || 0) + Number(fullReportData.total_cash_sales || 0) + Number(fullReportData.total_manual_inflow || 0) - Number(fullReportData.total_manual_outflow || 0)
-        : session.expected_cash
+    // ADR-0109: el backend es la fuente del efectivo esperado (incluye movimientos fuera de la sesión)
+    const expected = Number(fullReportData ? fullReportData.expected_cash : session.expected_cash)
     const diff = actual - expected
     const hasDiff = diff !== 0
 

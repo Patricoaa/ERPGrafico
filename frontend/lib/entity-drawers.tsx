@@ -141,7 +141,7 @@ const AdvanceDrawer = dynamic(
 
 const DeviceDrawer = dynamic(
     () => import("@/features/treasury").then((m) => m.DeviceDrawer),
-    { ssr: false, loading: () => skeleton("dispositivo") }
+    { ssr: false, loading: () => skeleton("terminal de cobro") }
 )
 
 const BankJournalDrawer = dynamic(
@@ -176,7 +176,7 @@ const CashMovementDrawer = dynamic(
 
 const TerminalBatchDrawer = dynamic(
     () => import("@/features/treasury/components/TerminalBatchDrawer").then((m) => m.TerminalBatchDrawer),
-    { ssr: false, loading: () => skeleton("lote de terminal") }
+    { ssr: false, loading: () => skeleton("lote de terminal de cobro") }
 )
 
 const CheckDrawer = dynamic(

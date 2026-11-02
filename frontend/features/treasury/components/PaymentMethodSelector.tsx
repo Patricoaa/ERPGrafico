@@ -62,7 +62,7 @@ const METHOD_META: Record<string, { label: string; description: string; icon: Re
     CARD: { label: 'Tarjeta', description: 'Débito / Crédito', icon: CreditCard, color: 'text-primary' },
     CREDIT_CARD: { label: 'T. Crédito', description: 'Tarjeta de crédito', icon: CreditCard, color: 'text-primary' },
     DEBIT_CARD: { label: 'T. Débito', description: 'Tarjeta de débito', icon: CreditCard, color: 'text-primary' },
-    CARD_TERMINAL: { label: 'Tarjeta TUU', description: 'Con datáfono TUU', icon: CreditCard, color: 'text-primary' },
+    CARD_TERMINAL: { label: 'Tarjeta', description: 'Con terminal de cobro', icon: CreditCard, color: 'text-primary' },
     TRANSFER: { label: 'Transferencia', description: 'Transferencia bancaria', icon: Building2, color: 'text-primary' },
     CHECK: { label: 'Cheque', description: 'Cheque bancario', icon: ClipboardList, color: 'text-warning-foreground' },
     CREDIT_BALANCE: { label: 'Saldo a Favor', description: 'Crédito disponible', icon: Wallet, color: 'text-primary' },

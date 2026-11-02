@@ -4,7 +4,7 @@ import { useRef } from "react"
 import { useReactToPrint } from "react-to-print"
 import { formatCurrency } from "@/lib/money"
 import { cn } from "@/lib/utils"
-import { Printer, Download, Calculator, CreditCard } from "lucide-react"
+import { Printer, Download, Calculator, CreditCard, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useBranding } from "@/contexts/BrandingProvider"
 import { DataCell, SheetCloseButton } from "@/components/shared"
@@ -35,6 +35,10 @@ export interface POSReportData {
         to_account?: number
         from_account?: number
     }>
+    /** ADR-0109: true si el efectivo esperado sale del libro de caja (movimientos de la cuenta). */
+    cash_ledger_mode?: boolean
+    cash_breakdown?: POSCashBreakdown | null
+    out_of_session_movements?: POSOutOfSessionMovement[]
     total_card_terminal_sales?: number
     sales_by_category?: Array<{ name: string, value: number }>
     sale_order_count?: number
@@ -44,6 +48,34 @@ export interface POSReportData {
     terminal_name?: string
     opened_at?: string
     closed_at?: string
+}
+
+type Amount = number | string
+
+export interface POSCashBreakdown {
+    cash_sales: Amount
+    cash_refunds: Amount
+    manual_inflow: Amount
+    manual_outflow: Amount
+    external_inflow: Amount
+    external_outflow: Amount
+    /** Neto con signo de las anulaciones hechas durante la sesión. */
+    annulments: Amount
+    net: Amount
+}
+
+export interface POSOutOfSessionMovement {
+    id: number
+    display_id: string
+    event: "EXTERNAL" | "ANNULMENT"
+    direction: "IN" | "OUT"
+    amount: Amount
+    at: string
+    document: string
+    contact_name: string
+    notes: string
+    reason: string
+    created_by_name: string
 }
 
 interface POSReportProps {
@@ -88,9 +120,15 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
         }
     }
 
-    const totalInflows = data.total_manual_inflow || 0
-    const totalOutflows = data.total_manual_outflow || 0
-    const calculatedExpected = Number(data.opening_balance || 0) + Number(data.total_cash_sales || 0) + Number(totalInflows) - Number(totalOutflows)
+    const totalInflows = Number(data.total_manual_inflow || 0)
+    const totalOutflows = Number(data.total_manual_outflow || 0)
+    const breakdown = data.cash_breakdown ?? null
+    const cashSales = Number(breakdown ? breakdown.cash_sales : data.total_cash_sales || 0)
+    const cashRefunds = Number(breakdown?.cash_refunds || 0)
+    const externalInflow = Number(breakdown?.external_inflow || 0)
+    const externalOutflow = Number(breakdown?.external_outflow || 0)
+    const annulments = Number(breakdown?.annulments || 0)
+    const outOfSession = data.out_of_session_movements ?? []
 
     return (
         <div ref={reportRef} className={cn(
@@ -153,8 +191,15 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
 
                     <div className="flex justify-between">
                         <span className="font-bold text-muted-foreground">(+) Efectivo de ventas:</span>
-                        <DataCell.CurrencyFlow value={data.total_cash_sales} direction="inflow" showIcon={false} className="font-bold text-2xs font-mono" />
+                        <DataCell.CurrencyFlow value={cashSales} direction="inflow" showIcon={false} className="font-bold text-2xs font-mono" />
                     </div>
+
+                    {cashRefunds > 0 && (
+                        <div className="flex justify-between">
+                            <span className="font-bold text-muted-foreground">(-) Devoluciones en efectivo:</span>
+                            <DataCell.CurrencyFlow value={cashRefunds} direction="outflow" showIcon={false} className="font-black" />
+                        </div>
+                    )}
 
                     {totalInflows > 0 && (
                         <div className="flex justify-between">
@@ -170,12 +215,71 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
                         </div>
                     )}
 
+                    {externalInflow > 0 && (
+                        <div className="flex justify-between">
+                            <span className="font-bold text-muted-foreground">(+) Ingresos fuera de la sesión:</span>
+                            <DataCell.CurrencyFlow value={externalInflow} direction="inflow" showIcon={false} className="font-black" />
+                        </div>
+                    )}
+
+                    {externalOutflow > 0 && (
+                        <div className="flex justify-between">
+                            <span className="font-bold text-muted-foreground">(-) Egresos fuera de la sesión:</span>
+                            <DataCell.CurrencyFlow value={externalOutflow} direction="outflow" showIcon={false} className="font-black" />
+                        </div>
+                    )}
+
+                    {annulments !== 0 && (
+                        <div className="flex justify-between">
+                            <span className="font-bold text-muted-foreground">(±) Anulaciones:</span>
+                            <DataCell.CurrencyFlow
+                                value={Math.abs(annulments)}
+                                direction={annulments > 0 ? "inflow" : "outflow"}
+                                showIcon={false}
+                                className="font-black"
+                            />
+                        </div>
+                    )}
+
                     <div className="flex justify-between items-center pt-1 border-t border-dashed border-border/30 mt-1">
                         <span className="font-bold text-2xs uppercase tracking-tight">Efectivo Esperado:</span>
-                        <span className="font-bold text-sm font-mono tracking-tighter">{formatCurrency(calculatedExpected)}</span>
+                        <span className="font-bold text-sm font-mono tracking-tighter">{formatCurrency(Number(data.expected_cash || 0))}</span>
                     </div>
                 </div>
             </div>
+
+            {/* SECCIÓN A2: MOVIMIENTOS FUERA DE LA SESIÓN (ADR-0109) */}
+            {outOfSession.length > 0 && (
+                <div className="space-y-3 mb-6">
+                    <div className="flex items-center gap-2 pb-1.5 border-b border-border">
+                        <AlertTriangle className="h-3 w-3 text-warning" />
+                        <h4 className=" font-black text-xs uppercase tracking-widest text-foreground">Fuera de la Sesión</h4>
+                    </div>
+                    <ul className="space-y-2 text-2xs leading-tight">
+                        {outOfSession.map((mv) => (
+                            <li key={`${mv.event}-${mv.id}`} className="space-y-0.5">
+                                <div className="flex justify-between gap-2">
+                                    <span className="font-bold text-muted-foreground">
+                                        {mv.event === "ANNULMENT" ? "Anulación " : ""}{mv.display_id}
+                                        {mv.document ? ` · ${mv.document}` : ""}
+                                    </span>
+                                    <DataCell.CurrencyFlow
+                                        value={Number(mv.amount)}
+                                        direction={mv.direction === "IN" ? "inflow" : "outflow"}
+                                        showIcon={false}
+                                        className="font-black text-2xs font-mono"
+                                    />
+                                </div>
+                                {(mv.reason || mv.notes || mv.created_by_name) && (
+                                    <p className="text-muted-foreground">
+                                        {[mv.created_by_name, mv.reason || mv.notes].filter(Boolean).join(" — ")}
+                                    </p>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
 
             {/* SECCIÓN B: VENTAS */}
             {data.total_sales > 0 && (
@@ -203,7 +307,7 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
                                 )}
                                 {data.total_card_terminal_sales > 0 && (
                                     <div className="flex justify-between">
-                                        <span className="font-bold text-muted-foreground">Tarjeta terminal:</span>
+                                        <span className="font-bold text-muted-foreground">Tarjeta (terminal de cobro):</span>
                                         <span className="font-bold font-mono">{formatCurrency(data.total_card_terminal_sales)}</span>
                                     </div>
                                 )}

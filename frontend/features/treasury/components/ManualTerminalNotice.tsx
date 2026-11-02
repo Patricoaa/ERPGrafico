@@ -45,7 +45,7 @@ const BYPASS_COPY: Record<BypassVariant, BypassCopy> = {
     card_declined: {
         title: "Tarjeta rechazada por el emisor",
         lines: [
-            "El terminal rechazó la transacción de {amount}. No reintentes con la misma tarjeta.",
+            "El terminal de cobro rechazó la transacción de {amount}. No reintentes con la misma tarjeta.",
             "Ofrece al cliente otro medio de pago (efectivo, otra tarjeta, transferencia).",
         ],
         confirmLabel: "Registrar igual (cobré manualmente)",
@@ -54,16 +54,16 @@ const BYPASS_COPY: Record<BypassVariant, BypassCopy> = {
     timeout: {
         title: "Terminal de cobro no respondió a tiempo",
         lines: [
-            "El terminal TUU no respondió en 3 minutos. Cobra {amount} directamente en el dispositivo físico.",
+            "El terminal de cobro no respondió en 3 minutos. Cobra {amount} directamente en el terminal de cobro.",
             "Registrará el pago como tarjeta manual sin integración automática.",
         ],
         confirmLabel: "Cobré manualmente — Registrar",
         showSwitchMethod: false,
     },
     terminal_error: {
-        title: "Error en el terminal físico",
+        title: "Error en el terminal de cobro",
         lines: [
-            "El terminal reportó un error. Verifica conectividad o procesa el cobro de {amount} manualmente en el dispositivo.",
+            "El terminal de cobro reportó un error. Verifica conectividad o procesa el cobro de {amount} manualmente en el terminal de cobro.",
         ],
         confirmLabel: "Cobré manualmente — Registrar",
         showSwitchMethod: false,
@@ -71,7 +71,7 @@ const BYPASS_COPY: Record<BypassVariant, BypassCopy> = {
     no_connection: {
         title: "Sin conexión con TUU",
         lines: [
-            "No se pudo contactar al gateway TUU. Cobra {amount} directamente en el terminal físico y registra el pago.",
+            "No se pudo contactar al gateway TUU. Cobra {amount} directamente en el terminal de cobro y registra el pago.",
         ],
         confirmLabel: "Cobré manualmente — Registrar",
         showSwitchMethod: false,
@@ -79,7 +79,7 @@ const BYPASS_COPY: Record<BypassVariant, BypassCopy> = {
     generic: {
         title: "Terminal de cobro no disponible — registro manual",
         lines: [
-            "El terminal TUU no respondió. Cobra {amount} directamente en el dispositivo físico.",
+            "El terminal de cobro no respondió. Cobra {amount} directamente en el terminal de cobro.",
             "El sistema registrará el pago como tarjeta manual sin integración automática.",
         ],
         confirmLabel: "Cobré manualmente — Registrar",
@@ -98,7 +98,7 @@ interface NoticeConfig {
 const STATIC_NOTICE: Record<Exclude<ManualTerminalReason, "TERMINAL_BYPASS">, NoticeConfig> = {
     FACTURA_CARD: {
         icon: <CreditCard className="h-8 w-8 " />,
-        title: "Opera el terminal manualmente",
+        title: "Opera el terminal de cobro manualmente",
         lines: ["El cliente pagará con tarjeta por un monto de {amount}."],
         confirmLabel: "Ya cobré — Registrar Venta",
     },

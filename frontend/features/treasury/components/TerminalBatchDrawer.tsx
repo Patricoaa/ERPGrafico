@@ -32,7 +32,7 @@ export function TerminalBatchDrawer({ id, open, onOpenChange, batchId }: Termina
 
   return (
     <>
-      <PrintableLayout ref={printRef} title="Lote de Terminal" displayId={displayId}>
+      <PrintableLayout ref={printRef} title="Lote de terminal de cobro" displayId={displayId}>
         <div className="text-4xs space-y-1 mb-2">
           <div className="flex justify-between"><span>Bruto:</span><span>{formatCurrency(Number(batch?.gross_amount ?? 0))}</span></div>
           <div className="flex justify-between"><span>Comisiones:</span><span>-{formatCurrency(Number(batch?.commission_total ?? batch?.commission_tax ?? 0))}</span></div>
@@ -48,7 +48,7 @@ export function TerminalBatchDrawer({ id, open, onOpenChange, batchId }: Termina
         document={batch ?? null}
         isLoading={isLoading}
         error={isError ? new Error("No se pudo cargar el lote.") : undefined}
-        loadingLabel="Cargando lote de terminal"
+        loadingLabel="Cargando lote de terminal de cobro"
         status={batch?.status ?? null}
         onPrint={handlePrint}
         context={batch ? [

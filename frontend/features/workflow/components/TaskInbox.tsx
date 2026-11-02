@@ -14,6 +14,7 @@ import {
 import { useNotifications, type NotificationPayload } from "@/features/notifications/hooks/useNotifications"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Blobatar } from "@/components/ui/blobatar"
 import { TabBar, TabBarContent, type TabItem, SkeletonShell, EmptyState } from "@/components/shared"
 import {
     CheckCircle2, ListTodo, ChevronDown, ChevronRight, Package, FileText,
@@ -24,12 +25,14 @@ import { toast } from "sonner"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useOnEntityStackClose } from "@/hooks/useOnEntityStackClose"
 import { documentForTask } from "../utils/taskDocument"
+import { getTaskAssigneeStack } from "../utils/taskAssignees"
 import { cn } from "@/lib/utils"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { formatMoney } from "@/lib/money"
 import { useCompleteTask, useRejectTask } from "../hooks/useWorkflowMutations"
 import { useTasks } from "../hooks/useTasks"
+import { getEntityConfig } from "@/lib/api/entity-prefixes"
 
 const HUB_STAGE_LABELS: Record<string, string> = {
     origin: 'Origen',
@@ -94,31 +97,42 @@ function getCardTitle(task: Task): string {
         const stage = String(task.data?.stage ?? '')
         return HUB_STAGE_LABELS[stage] ? `Revisión — ${HUB_STAGE_LABELS[stage]}` : task.title
     }
-    // Strip any doc-number pattern from the title (e.g. " - OT #12", "OC #3 - ")
+    // Strip any doc-number pattern from the title (e.g. " - OT #12", "OCS #3 - ")
     return task.title
-        .replace(/\s*[-–]\s*(OT|OC|OV|NC|ND)\s*#\d+/gi, '')
-        .replace(/(OT|OC|OV|NC|ND)\s*#\d+\s*[-–]?\s*/gi, '')
+        .replace(/\s*[-–]\s*(OT|OCS|OV|NC|ND)\s*#\d+/gi, '')
+        .replace(/(OT|OCS|OV|NC|ND)\s*#\d+\s*[-–]?\s*/gi, '')
         .trim() || task.title
 }
 
 function getCardRef(task: Task): string | null {
     const data = task.data ?? {}
+
     // OT tasks: use the explicit work_order_number field added at task creation.
     // Fallback: parse "OT-000012" pattern from the title (legacy tasks without data).
     if (task.task_type.startsWith('OT_')) {
+        const prefix = getEntityConfig("production.workorder")?.prefix ?? "OT"
         const num = data.work_order_number
-        if (num) return `OT #${Number(num)}`
+        if (num) return `${prefix} #${Number(num)}`
         const match = /OT-0*(\d+)/i.exec(task.title)
-        if (match) return `OT #${match[1]}`
+        if (match) return `${prefix} #${match[1]}`
         return null
     }
+
     const num = data.order_number
     if (!num) return null
-    if (task.task_type.startsWith('OC_')) return `OC #${num}`
-    if (task.task_type.startsWith('OV_') || task.task_type.startsWith('NC_') || task.task_type.startsWith('ND_')) return `OV #${num}`
+
+    if (task.task_type.startsWith('OC_')) {
+        const prefix = getEntityConfig("purchasing.purchaseorder")?.prefix ?? "OCS"
+        return `${prefix} #${num}`
+    }
+    if (task.task_type.startsWith('OV_') || task.task_type.startsWith('NC_') || task.task_type.startsWith('ND_')) {
+        const prefix = getEntityConfig("sales.saleorder")?.prefix ?? "OV"
+        return `${prefix} #${num}`
+    }
     if (task.task_type.startsWith('HUB_')) {
-        const type = data.order_type === 'purchase' ? 'OC' : 'OV'
-        return `${type} #${num}`
+        const entityLabel = data.order_type === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder'
+        const prefix = getEntityConfig(entityLabel)?.prefix ?? (data.order_type === 'purchase' ? 'OCS' : 'OV')
+        return `${prefix} #${num}`
     }
     return null
 }
@@ -401,6 +415,11 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
         notifications.filter(n => notificationMatchesSearch(n, searchQuery)),
     [notifications, searchQuery])
 
+    const taskAssigneeStack = useMemo(
+        () => getTaskAssigneeStack(operationalTasks),
+        [operationalTasks],
+    )
+
     // ── Approval card ────────────────────────────────────────────────────────────
 
     const renderApprovalCard = (task: Task) => {
@@ -530,40 +549,39 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
     const renderOperationalCard = (task: Task) => {
         const Icon = getTaskIcon(task)
         const cardRef = getCardRef(task)
-        const assigneeName = task.assigned_to_data?.username ?? null
         const createdAt = task.created_at ? relativeTime(task.created_at) : null
         return (
-            <div key={task.id} className="surface-item flex flex-col rounded-sm select-none overflow-hidden">
-                <div className="flex items-start gap-2 p-3 pb-2">
+            <Button
+                key={task.id}
+                type="button"
+                variant="ghost"
+                onClick={() => navigateToTask(task)}
+                aria-label={`Abrir tarea: ${getCardTitle(task)}`}
+                className="surface-item group h-auto min-h-0 w-full flex flex-col items-stretch justify-start overflow-hidden rounded-sm p-0 text-left transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+                <div className="flex items-start gap-2 p-3">
                     <Icon className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0 mt-0.5" aria-hidden />
                     <div className="min-w-0 flex-1">
-                        <p className="text-xs font-semibold text-foreground leading-snug">{getCardTitle(task)}</p>
+                        <div className="flex items-start justify-between gap-2">
+                            <p className="text-xs font-semibold text-foreground leading-snug">{getCardTitle(task)}</p>
+                            <span className="flex shrink-0 items-center gap-1 text-2xs font-medium text-muted-foreground/55 transition-colors group-hover:text-foreground">
+                                <ExternalLink className="h-3 w-3" aria-hidden />
+                                Abrir
+                            </span>
+                        </div>
                         {cardRef && (
                             <span className="inline-block mt-0.5 text-3xs text-muted-foreground/55 font-mono bg-muted/50 px-1.5 py-px rounded-sm leading-none">
                                 {cardRef}
                             </span>
                         )}
-                        {(assigneeName || createdAt) && (
+                        {createdAt && (
                             <p className="flex items-center gap-1 text-2xs text-muted-foreground/45 mt-1">
-                                {assigneeName && <span>{assigneeName}</span>}
-                                {assigneeName && createdAt && <span aria-hidden>·</span>}
                                 {createdAt && <span>{createdAt}</span>}
                             </p>
                         )}
                     </div>
                 </div>
-                <CtaBar>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-5 px-2 text-2xs text-muted-foreground/50 hover:text-foreground gap-1 font-medium"
-                        onClick={() => navigateToTask(task)}
-                    >
-                        <ExternalLink className="h-3 w-3" />
-                        Abrir
-                    </Button>
-                </CtaBar>
-            </div>
+            </Button>
         )
     }
 
@@ -729,8 +747,8 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
 
                 {/* ── Tasks tab ─────────────────────────────────────────────── */}
                 <TabBarContent value="tasks" className="flex flex-col h-full mt-0 min-h-0">
-                    <SkeletonShell isLoading={isLoading} ariaLabel="Cargando tareas">
-                        <div className="flex-1 overflow-y-auto py-3">
+                    <SkeletonShell isLoading={isLoading} ariaLabel="Cargando tareas" className="flex-1 min-h-0 flex flex-col">
+                        <div className="flex-1 min-h-0 overflow-y-auto py-3">
                             {operationalTasks.length === 0 ? (
                                 <EmptyState variant="compact" icon={ListTodo} title="No tienes tareas pendientes" className="mx-3 bg-muted/10 rounded-md border border-dashed" />
                             ) : (
@@ -740,6 +758,32 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                             )}
                         </div>
                     </SkeletonShell>
+                    {taskAssigneeStack.users.length > 0 && (
+                        <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-border/30 bg-muted/10 px-4 py-2.5" aria-label="Usuarios asignados a las tareas">
+                            <span className="text-2xs font-medium text-muted-foreground">Asignados ({taskAssigneeStack.totalCount})</span>
+                            <div className="flex items-center -space-x-2" aria-label="Usuarios asignados">
+                                {taskAssigneeStack.users.map((assignee) => {
+                                    const name = [assignee.first_name, assignee.last_name].filter(Boolean).join(" ") || assignee.username
+                                    return (
+                                        <Blobatar
+                                            key={assignee.id}
+                                            name={name}
+                                            blobatar={{ title: name }}
+                                            className="size-7 border-2 border-background"
+                                        />
+                                    )
+                                })}
+                                {taskAssigneeStack.overflowCount > 0 && (
+                                    <span
+                                        className="relative z-10 inline-flex size-7 items-center justify-center rounded-full border-2 border-background bg-muted text-2xs font-medium text-muted-foreground"
+                                        aria-label={`${taskAssigneeStack.overflowCount} usuarios más`}
+                                    >
+                                        +{taskAssigneeStack.overflowCount}
+                                    </span>
+                                )}
+                            </div>
+                        </footer>
+                    )}
                 </TabBarContent>
 
                 {/* ── Notices tab ───────────────────────────────────────────── */}
