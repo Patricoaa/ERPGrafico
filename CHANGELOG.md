@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.63](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.62...v0.3.63) (2026-11-02)
+
+
+### ✨ Features
+
+* add ApprovalRequestBanner component for handling approval workflows ([37ba085](https://github.com/Patricoaa/ERPGrafico/commit/37ba085d99f892d95a2429f0150df6fb93dca417))
+* **billing:** idempotency + draft protection + snapshot hash in request_credit_approval ([46ed859](https://github.com/Patricoaa/ERPGrafico/commit/46ed859072b909cc4c9236234b2dfaf36eac03d1))
+* **pos:** protect DraftCart from deletion when has_pending_approval ([a6e3f60](https://github.com/Patricoaa/ERPGrafico/commit/a6e3f60547fe9fcd195524a750f484a1879d38a1))
+* **treasury:** implement external reason handling for POS sessions ([3ee2a18](https://github.com/Patricoaa/ERPGrafico/commit/3ee2a18e5f59604867b10a2fde80a172b62ba3c6))
+
+
+### 🐛 Bug Fixes
+
+* **billing:** atomic anti-replay, snapshot hash check, clear pending flag on done/reject ([6ab3fe8](https://github.com/Patricoaa/ERPGrafico/commit/6ab3fe8fa86f5a95459dbd3cade863b5f1652276))
+* **frontend:** generate secure UUIDs over HTTP ([1f765e5](https://github.com/Patricoaa/ERPGrafico/commit/1f765e573a09ea23305e73b17e3a918793b908a0))
+* **pos:** fix-pass — cross-session lock, wizard_state autosave, 409 destroy, stale flag cleanup ([15ee214](https://github.com/Patricoaa/ERPGrafico/commit/15ee2148455910d5e6f722aeaa3a1119db943d52))
+* **purchasing:** send idempotency key on partial receipts ([eb9a2e4](https://github.com/Patricoaa/ERPGrafico/commit/eb9a2e4b5c6cd272d306237c51912524583768cc))
+
 ### [0.3.62](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.61...v0.3.62) (2026-11-01)
 
 ### [0.3.61](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.60...v0.3.61) (2026-11-01)
