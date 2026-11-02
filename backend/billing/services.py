@@ -8,31 +8,6 @@ from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
 
-
-def _compute_cart_snapshot_hash(customer_id, lines) -> str:
-    """
-    Hash sha256 determinista del carrito para detectar modificaciones post-aprobación.
-    Normaliza las líneas ordenándolas por (product_id, qty, price) para que el orden
-    de inserción no afecte el resultado.
-    """
-    canonical = sorted(
-        [
-            {
-                "product_id": str(l.get("product") or l.get("product_id") or ""),
-                "qty": str(Decimal(str(l.get("quantity", l.get("qty", 0))))),
-                "price": str(
-                    Decimal(str(l.get("unit_price_gross", l.get("unit_price", 0))))
-                ),
-            }
-            for l in lines
-        ],
-        key=lambda x: (x["product_id"], x["qty"], x["price"]),
-    )
-    payload = _json.dumps(
-        {"customer_id": str(customer_id), "lines": canonical}, sort_keys=True
-    )
-    return hashlib.sha256(payload.encode()).hexdigest()
-
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, JournalEntry, JournalItem
 from accounting.services import AccountingMapper, JournalEntryService
@@ -43,6 +18,31 @@ from treasury.models import TreasuryAccount, TreasuryMovement
 
 from .invoicing import InvoicingService
 from .models import Invoice
+
+
+def _compute_cart_snapshot_hash(customer_id, lines) -> str:
+    """
+    Hash sha256 determinista del carrito para detectar modificaciones post-aprobación.
+    Normaliza las líneas ordenándolas por (product_id, qty, price) para que el orden
+    de inserción no afecte el resultado.
+    """
+    canonical = sorted(
+        [
+            {
+                "product_id": str(line.get("product") or line.get("product_id") or ""),
+                "qty": str(Decimal(str(line.get("quantity", line.get("qty", 0))))),
+                "price": str(
+                    Decimal(str(line.get("unit_price_gross", line.get("unit_price", 0))))
+                ),
+            }
+            for line in lines
+        ],
+        key=lambda x: (x["product_id"], x["qty"], x["price"]),
+    )
+    payload = _json.dumps(
+        {"customer_id": str(customer_id), "lines": canonical}, sort_keys=True
+    )
+    return hashlib.sha256(payload.encode()).hexdigest()
 
 
 class BillingService:
@@ -284,24 +284,13 @@ class BillingService:
             except (ValueError, TypeError):
                 draft_id = None
 
-        # Idempotencia: retornar tarea PENDING/IN_PROGRESS existente para el mismo draft
-        if draft_id is not None:
-            from workflow.models import Task as _TaskCheck
-
-            existing = _TaskCheck.objects.filter(
-                task_type="CREDIT_POS_REQUEST",
-                status__in=[_TaskCheck.Status.PENDING, _TaskCheck.Status.IN_PROGRESS],
-                data__draft_id=draft_id,
-            ).first()
-            if existing is not None:
-                return existing
-
         # Basic parsing to find the customer
         from contacts.models import Contact
-        from sales.models import SaleOrder
+        from sales.models import DraftCart, SaleOrder
+        from workflow.models import Task
+        from workflow.services import WorkflowService
 
         customer_id = None
-        # 1. Total calculation improvement
         if "id" in order_data:
             order = SaleOrder.objects.get(id=order_data["id"])
             customer = order.customer
@@ -332,11 +321,37 @@ class BillingService:
         )
         required_credit = total - paid_amount
 
-        # Calculate POS Fallback Credit
-        from accounting.models import AccountingSettings
-        from workflow.models import Task
-        from workflow.services import WorkflowService
+        # Hash canónico del carrito para detectar modificaciones post-aprobación
+        cart_snapshot_hash = _compute_cart_snapshot_hash(customer.id, lines_for_hash)
 
+        # Idempotencia: si ya existe una tarea PENDING/IN_PROGRESS con el mismo draft_id Y
+        # el mismo hash de carrito, devolverla sin crear una nueva.
+        # Protege contra doble-clic y también serializa solicitudes concurrentes mediante
+        # select_for_update en el borrador.
+        if draft_id is not None:
+            try:
+                # Lock en el borrador para serializar solicitudes concurrentes
+                _draft_lock = DraftCart.objects.select_for_update().get(id=draft_id)
+                existing = Task.objects.filter(
+                    task_type="CREDIT_POS_REQUEST",
+                    status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS],
+                    data__draft_id=draft_id,
+                ).first()
+                if existing is not None:
+                    existing_hash = (existing.data or {}).get("cart_snapshot_hash")
+                    if existing_hash == cart_snapshot_hash:
+                        # Mismo carrito: verdadera idempotencia
+                        return existing
+                    else:
+                        # Carrito cambió: cancelar tarea vieja y crear nueva
+                        existing.status = Task.Status.CANCELLED
+                        existing.save(update_fields=["status"])
+                        _draft_lock.has_pending_approval = False
+                        _draft_lock.save(update_fields=["has_pending_approval"])
+            except DraftCart.DoesNotExist:
+                pass  # draft_id inválido — se ignora y se crea tarea sin draft
+
+        # Calculate POS Fallback Credit
         acc_settings = AccountingSettings.get_solo()
         # Ensure we use a safe division and handle None/0
         fb_val = acc_settings.pos_default_credit_percentage if acc_settings else Decimal("0")
@@ -359,13 +374,8 @@ class BillingService:
             k: v for k, v in full_request_data.items() if not k.startswith("line_")
         }
 
-        # Hash canónico del carrito para detectar modificaciones post-aprobación
-        cart_snapshot_hash = _compute_cart_snapshot_hash(customer.id, lines_for_hash)
-
         # Marcar el borrador como protegido (no borrar hasta que se resuelva la aprobación)
         if draft_id is not None:
-            from sales.models import DraftCart
-
             DraftCart.objects.filter(id=draft_id).update(has_pending_approval=True)
 
         task = WorkflowService.create_task(

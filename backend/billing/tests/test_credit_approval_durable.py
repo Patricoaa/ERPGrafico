@@ -3,7 +3,7 @@
 import pytest
 from django.contrib.auth import get_user_model
 
-from billing.services import BillingService
+from billing.services import BillingService, _compute_cart_snapshot_hash
 from contacts.models import Contact
 from sales.models import DraftCart
 from treasury.models import POSSession, POSTerminal, TreasuryAccount
@@ -179,3 +179,48 @@ def test_stores_draft_id_in_task_data(env):
         full_request_data=req, requesting_user=env["user"],
     )
     assert task.data["draft_id"] == env["draft"].id
+
+
+# ─── Snapshot hash mismatch in checkout ───────────────────────────────────────
+
+@pytest.mark.django_db
+def test_changed_cart_cancels_old_task_on_new_approval_request(env):
+    """When approval exists but cart changed, old task is cancelled and new one created."""
+    original_lines = [{"product": 10, "quantity": 2, "unit_price_gross": "500.00"}]
+    changed_lines = [{"product": 10, "quantity": 5, "unit_price_gross": "500.00"}]
+
+    od1 = {"customer": env["customer"].id, "lines": original_lines}
+    req1 = {"draft_id": env["draft"].id, "order_data": od1}
+
+    task1 = BillingService.request_credit_approval(
+        order_data=od1, amount=0, payment_method="CREDIT",
+        full_request_data=req1, requesting_user=env["user"],
+    )
+    assert task1.status in [Task.Status.PENDING, Task.Status.IN_PROGRESS]
+
+    # Clear flag so a new request is accepted (simulates cashier changing quantity)
+    env["draft"].has_pending_approval = False
+    env["draft"].save(update_fields=["has_pending_approval"])
+
+    od2 = {"customer": env["customer"].id, "lines": changed_lines}
+    req2 = {"draft_id": env["draft"].id, "order_data": od2}
+
+    task2 = BillingService.request_credit_approval(
+        order_data=od2, amount=0, payment_method="CREDIT",
+        full_request_data=req2, requesting_user=env["user"],
+    )
+
+    task1.refresh_from_db()
+    assert task1.status == Task.Status.CANCELLED
+    assert task2.id != task1.id
+    assert task2.data["cart_snapshot_hash"] != task1.data.get("cart_snapshot_hash", "")
+
+
+@pytest.mark.django_db
+def test_snapshot_hash_different_customers_differ(env):
+    """Hashes for the same lines but different customers must be different."""
+    other_customer = Contact.objects.create(name="Otro Cliente", tax_id="99999999-9")
+    lines = [{"product": 10, "quantity": 2, "unit_price_gross": "500.00"}]
+    h1 = _compute_cart_snapshot_hash(env["customer"].id, lines)
+    h2 = _compute_cart_snapshot_hash(other_customer.id, lines)
+    assert h1 != h2

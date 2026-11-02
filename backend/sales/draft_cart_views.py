@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -56,6 +57,9 @@ class DraftCartViewSet(viewsets.ModelViewSet):
             draft = DraftCartService.save_draft_from_request({**request.data, "draft_id": int(pk)}, user=request.user)
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except DjangoValidationError as e:
+            msg = e.message if hasattr(e, "message") else ", ".join(e.messages)
+            return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
         except DraftCart.DoesNotExist:
             return Response({"error": "Borrador no encontrado"}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(draft)
@@ -73,6 +77,18 @@ class DraftCartViewSet(viewsets.ModelViewSet):
 
         if success:
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+        # Distinguish: protected draft (409) vs not found (404)
+        try:
+            draft = DraftCart.objects.get(id=int(pk), pos_session_id=int(pos_session_id))
+            if draft.has_pending_approval:
+                return Response(
+                    {"error": "No se puede eliminar: el borrador tiene una aprobación de crédito pendiente."},
+                    status=status.HTTP_409_CONFLICT,
+                )
+        except DraftCart.DoesNotExist:
+            pass
+
         return Response({"error": "Borrador no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=True, methods=["post"])

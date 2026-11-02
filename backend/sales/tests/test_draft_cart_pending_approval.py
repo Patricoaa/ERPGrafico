@@ -3,10 +3,10 @@
 import pytest
 from django.utils import timezone
 
-from sales.models import DraftCart
-from sales.draft_cart_service import DraftCartService
-from treasury.models import POSSession, POSTerminal, TreasuryAccount
 from core.models import User
+from sales.draft_cart_service import DraftCartService
+from sales.models import DraftCart
+from treasury.models import POSSession, POSTerminal, TreasuryAccount
 
 
 @pytest.mark.django_db
@@ -61,8 +61,20 @@ class TestDraftCartPendingApprovalProtection:
     # --- cleanup_old_drafts ---
 
     def test_cleanup_old_drafts_skips_pending(self):
+        from workflow.models import Task
+
         draft_pending = self._draft(has_pending_approval=True)
         draft_old = self._draft(has_pending_approval=False)
+
+        # Active task keeps draft_pending alive through cleanup_stale_pending_approvals
+        Task.objects.create(
+            title="Aprobación activa",
+            task_type="CREDIT_POS_REQUEST",
+            status=Task.Status.PENDING,
+            category=Task.Category.APPROVAL,
+            created_by=self.user,
+            data={"draft_id": draft_pending.id},
+        )
 
         # Backdate both drafts to 2 days ago
         DraftCart.objects.filter(id__in=[draft_pending.id, draft_old.id]).update(
@@ -132,8 +144,8 @@ class TestDraftCartPendingApprovalProtection:
 
     def test_save_draft_refuses_modification_when_pending(self):
         """Modifying a pending-approval draft raises ValidationError."""
-        from rest_framework.exceptions import ValidationError as DRFValidationError
         from django.core.exceptions import ValidationError as DjangoValidationError
+        from rest_framework.exceptions import ValidationError as DRFValidationError
 
         draft = self._draft(has_pending_approval=True)
 

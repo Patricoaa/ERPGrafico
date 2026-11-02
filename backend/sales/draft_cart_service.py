@@ -92,6 +92,7 @@ class DraftCartService:
         """
         Intenta adquirir el lock de un borrador.
         Si el lock existe pero ha expirado (sin heartbeat), lo toma.
+        Si el borrador tiene aprobación pendiente, permite acceso cross-session.
 
         Returns:
             dict: {acquired: bool, locked_by_name: str|None, locked_at: datetime|None}
@@ -99,7 +100,11 @@ class DraftCartService:
         try:
             draft = DraftCart.objects.get(id=draft_id, pos_session_id=pos_session_id)
         except DraftCart.DoesNotExist:
-            return {"acquired": False, "error": "Borrador no encontrado"}
+            # Borrador de otra sesión — permitir si tiene aprobación pendiente
+            try:
+                draft = DraftCart.objects.get(id=draft_id, has_pending_approval=True)
+            except DraftCart.DoesNotExist:
+                return {"acquired": False, "error": "Borrador no encontrado"}
 
         now = timezone.now()
         lock_expired = (
@@ -135,6 +140,7 @@ class DraftCartService:
         Libera el lock de un borrador.
         Solo el usuario+sesión que tiene el lock puede liberarlo.
         Si session_key es vacío, libera cualquier lock del usuario.
+        Permite acceso cross-session para borradores con aprobación pendiente.
 
         Returns:
             True si se liberó correctamente
@@ -142,7 +148,10 @@ class DraftCartService:
         try:
             draft = DraftCart.objects.get(id=draft_id, pos_session_id=pos_session_id)
         except DraftCart.DoesNotExist:
-            return False
+            try:
+                draft = DraftCart.objects.get(id=draft_id, has_pending_approval=True)
+            except DraftCart.DoesNotExist:
+                return False
 
         if not draft.locked_by:
             return True  # Already unlocked
@@ -165,6 +174,7 @@ class DraftCartService:
         """
         Renueva el heartbeat del lock.
         Solo el owner del lock puede renovarlo.
+        Permite acceso cross-session para borradores con aprobación pendiente.
 
         Returns:
             True si se renovó correctamente
@@ -180,7 +190,19 @@ class DraftCartService:
             draft.save(update_fields=["locked_at"])
             return True
         except DraftCart.DoesNotExist:
-            return False
+            # Borrador de otra sesión — permitir si tiene aprobación pendiente
+            try:
+                draft = DraftCart.objects.get(
+                    id=draft_id,
+                    has_pending_approval=True,
+                    locked_by=user,
+                    lock_session_key=session_key,
+                )
+                draft.locked_at = timezone.now()
+                draft.save(update_fields=["locked_at"])
+                return True
+            except DraftCart.DoesNotExist:
+                return False
 
     @staticmethod
     def cleanup_stale_locks():
@@ -317,14 +339,26 @@ class DraftCartService:
             # Actualizar borrador existente
             draft = DraftCart.objects.get(id=draft_id, pos_session_id=pos_session_id)
 
-            # No permitir modificar un borrador con aprobación pendiente
+            # Cuando hay aprobación pendiente, solo se permite actualizar wizard_state.
+            # Cambiar ítems o cliente después de solicitar crédito requiere cancelar la aprobación.
             if draft.has_pending_approval:
-                from django.core.exceptions import ValidationError
+                import json
 
-                raise ValidationError(
-                    "Este borrador tiene una aprobación de crédito en curso y no puede "
-                    "ser modificado. Espere la resolución de la solicitud."
-                )
+                new_items_str = json.dumps(items or [], sort_keys=True, default=str)
+                old_items_str = json.dumps(draft.items or [], sort_keys=True, default=str)
+                items_changed = new_items_str != old_items_str
+                customer_changed = customer_id != draft.customer_id
+                if items_changed or customer_changed:
+                    from django.core.exceptions import ValidationError
+
+                    raise ValidationError(
+                        "Este borrador tiene una aprobación de crédito en curso y no puede "
+                        "ser modificado. Espere la resolución de la solicitud."
+                    )
+                # Solo wizard_state cambió — aplicar y retornar sin tocar items ni totales
+                draft.wizard_state = wizard_state
+                draft.save(update_fields=["wizard_state", "updated_at"])
+                return draft
 
             # Validar lock ownership si está bloqueado por otro
             if draft.locked_by and draft.locked_by != user:
@@ -433,11 +467,35 @@ class DraftCartService:
         return deleted_count
 
     @staticmethod
+    def cleanup_stale_pending_approvals() -> int:
+        """
+        Limpia has_pending_approval para borradores cuya tarea CREDIT_POS_REQUEST ya no
+        está activa (PENDING/IN_PROGRESS). Previene que el flag quede pegado si
+        handle_task_update falló en algún momento.
+        """
+        from workflow.models import Task
+
+        stale_ids = [
+            d.id
+            for d in DraftCart.objects.filter(has_pending_approval=True)
+            if not Task.objects.filter(
+                task_type="CREDIT_POS_REQUEST",
+                status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS],
+                data__draft_id=d.id,
+            ).exists()
+        ]
+        if stale_ids:
+            return DraftCart.objects.filter(id__in=stale_ids).update(has_pending_approval=False)
+        return 0
+
+    @staticmethod
     def cleanup_old_drafts(days: int = 1) -> int:
         """
         Elimina borradores más antiguos que X días. Los borradores con una
         aprobación de crédito pendiente se omiten aunque hayan expirado.
+        Primero repara cualquier flag has_pending_approval huérfano.
         """
+        DraftCartService.cleanup_stale_pending_approvals()
         cutoff_date = timezone.now() - timedelta(days=days)
         deleted_count, _ = DraftCart.objects.filter(
             updated_at__lt=cutoff_date, has_pending_approval=False
