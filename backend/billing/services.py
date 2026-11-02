@@ -1,3 +1,5 @@
+import hashlib
+import json as _json
 from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
@@ -16,6 +18,31 @@ from treasury.models import TreasuryAccount, TreasuryMovement
 
 from .invoicing import InvoicingService
 from .models import Invoice
+
+
+def _compute_cart_snapshot_hash(customer_id, lines) -> str:
+    """
+    Hash sha256 determinista del carrito para detectar modificaciones post-aprobación.
+    Normaliza las líneas ordenándolas por (product_id, qty, price) para que el orden
+    de inserción no afecte el resultado.
+    """
+    canonical = sorted(
+        [
+            {
+                "product_id": str(line.get("product") or line.get("product_id") or ""),
+                "qty": str(Decimal(str(line.get("quantity", line.get("qty", 0))))),
+                "price": str(
+                    Decimal(str(line.get("unit_price_gross", line.get("unit_price", 0))))
+                ),
+            }
+            for line in lines
+        ],
+        key=lambda x: (x["product_id"], x["qty"], x["price"]),
+    )
+    payload = _json.dumps(
+        {"customer_id": str(customer_id), "lines": canonical}, sort_keys=True
+    )
+    return hashlib.sha256(payload.encode()).hexdigest()
 
 
 class BillingService:
@@ -248,18 +275,27 @@ class BillingService:
 
             order_data = json.loads(order_data)
 
-        # Basic parsing to find the customer
-        from decimal import Decimal
+        # Extraer draft_id de la request (para idempotencia y protección del borrador)
+        raw_draft_id = full_request_data.get("draft_id")
+        draft_id: int | None = None
+        if raw_draft_id is not None:
+            try:
+                draft_id = int(raw_draft_id)
+            except (ValueError, TypeError):
+                draft_id = None
 
+        # Basic parsing to find the customer
         from contacts.models import Contact
-        from sales.models import SaleOrder
+        from sales.models import DraftCart, SaleOrder
+        from workflow.models import Task
+        from workflow.services import WorkflowService
 
         customer_id = None
-        # 1. Total calculation improvement
         if "id" in order_data:
             order = SaleOrder.objects.get(id=order_data["id"])
             customer = order.customer
             total = order.total
+            lines_for_hash = []
         else:
             customer_id = order_data.get("customer")
             if not customer_id:
@@ -268,8 +304,9 @@ class BillingService:
 
             # Robust total calculation for POS:
             # We must account for gross prices and total discounts
+            lines_for_hash = order_data.get("lines", [])
             lines_total = Decimal("0")
-            for item in order_data.get("lines", []):
+            for item in lines_for_hash:
                 qty = Decimal(str(item.get("quantity", item.get("qty", 0))))
                 price = Decimal(str(item.get("unit_price_gross", item.get("unit_price", 0))))
                 lines_total += qty * price
@@ -284,11 +321,37 @@ class BillingService:
         )
         required_credit = total - paid_amount
 
-        # Calculate POS Fallback Credit
-        from accounting.models import AccountingSettings
-        from workflow.models import Task
-        from workflow.services import WorkflowService
+        # Hash canónico del carrito para detectar modificaciones post-aprobación
+        cart_snapshot_hash = _compute_cart_snapshot_hash(customer.id, lines_for_hash)
 
+        # Idempotencia: si ya existe una tarea PENDING/IN_PROGRESS con el mismo draft_id Y
+        # el mismo hash de carrito, devolverla sin crear una nueva.
+        # Protege contra doble-clic y también serializa solicitudes concurrentes mediante
+        # select_for_update en el borrador.
+        if draft_id is not None:
+            try:
+                # Lock en el borrador para serializar solicitudes concurrentes
+                _draft_lock = DraftCart.objects.select_for_update().get(id=draft_id)
+                existing = Task.objects.filter(
+                    task_type="CREDIT_POS_REQUEST",
+                    status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS],
+                    data__draft_id=draft_id,
+                ).first()
+                if existing is not None:
+                    existing_hash = (existing.data or {}).get("cart_snapshot_hash")
+                    if existing_hash == cart_snapshot_hash:
+                        # Mismo carrito: verdadera idempotencia
+                        return existing
+                    else:
+                        # Carrito cambió: cancelar tarea vieja y crear nueva
+                        existing.status = Task.Status.CANCELLED
+                        existing.save(update_fields=["status"])
+                        _draft_lock.has_pending_approval = False
+                        _draft_lock.save(update_fields=["has_pending_approval"])
+            except DraftCart.DoesNotExist:
+                pass  # draft_id inválido — se ignora y se crea tarea sin draft
+
+        # Calculate POS Fallback Credit
         acc_settings = AccountingSettings.get_solo()
         # Ensure we use a safe division and handle None/0
         fb_val = acc_settings.pos_default_credit_percentage if acc_settings else Decimal("0")
@@ -311,14 +374,9 @@ class BillingService:
             k: v for k, v in full_request_data.items() if not k.startswith("line_")
         }
 
-        # Calculate POS Fallback Credit
-        from accounting.models import AccountingSettings
-
-        acc_settings = AccountingSettings.get_solo()
-        fallback_percentage = (
-            acc_settings.pos_default_credit_percentage if acc_settings else Decimal("0")
-        ) / Decimal("100.0")
-        pos_credit = total * fallback_percentage
+        # Marcar el borrador como protegido (no borrar hasta que se resuelva la aprobación)
+        if draft_id is not None:
+            DraftCart.objects.filter(id=draft_id).update(has_pending_approval=True)
 
         task = WorkflowService.create_task(
             task_type="CREDIT_POS_REQUEST",
@@ -338,6 +396,8 @@ class BillingService:
                 "required_credit": str(required_credit),
                 "explicit_credit": str(customer.credit_available),
                 "pos_credit": str(pos_credit),
+                "cart_snapshot_hash": cart_snapshot_hash,
+                "draft_id": draft_id,
             },
             category=Task.Category.APPROVAL,
         )
@@ -936,7 +996,11 @@ class BillingService:
             from workflow.models import Task
 
             try:
-                task = Task.objects.get(id=credit_approval_task_id, task_type="CREDIT_POS_REQUEST")
+                # select_for_update previene que dos checkouts concurrentes consuman
+                # la misma aprobación (race condition en anti-replay).
+                task = Task.objects.select_for_update().get(
+                    id=credit_approval_task_id, task_type="CREDIT_POS_REQUEST"
+                )
                 if task.status == Task.Status.COMPLETED:
                     # SECURE VALIDATION: Verify task data matches current checkout
                     task_data = task.data or {}
@@ -964,6 +1028,20 @@ class BillingService:
                             f"El crédito requerido (${required_credit:,.0f}) excede el monto "
                             f"que fue aprobado previamente (${approved_credit:,.0f})."
                         )
+
+                    # 3. Verify cart snapshot (anti-modification post-approval)
+                    approved_hash = task_data.get("cart_snapshot_hash")
+                    if approved_hash and isinstance(order_data, dict) and "id" not in order_data:
+                        current_lines = order_data.get("lines", [])
+                        current_hash = _compute_cart_snapshot_hash(
+                            order.customer_id, current_lines
+                        )
+                        if current_hash != approved_hash:
+                            raise ValidationError(
+                                "El carrito ha cambiado desde que se solicitó la aprobación de crédito. "
+                                "Solicite una nueva aprobación."
+                            )
+
                     bypass_credit_validation = True
                     resolved_approval_task = task
                     order.credit_assignment_origin = SaleOrder.CreditOrigin.MANUAL
@@ -1425,6 +1503,8 @@ class BillingService:
                             draft_id = None
 
                 if draft_id:
+                    # Limpiar la protección antes de borrar para que el queryset .delete() proceda
+                    DraftCart.objects.filter(id=draft_id).update(has_pending_approval=False)
                     DraftCart.objects.filter(id=draft_id).delete()
             except Exception as e:
                 # Log but don't fail the whole checkout if draft deletion fails

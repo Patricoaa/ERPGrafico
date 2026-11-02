@@ -950,6 +950,17 @@ class DraftCart(models.Model):
         help_text=_("Número secuencial del borrador dentro de la sesión POS"),
     )
 
+    # Aprobación de crédito POS
+    has_pending_approval = models.BooleanField(
+        _("Tiene Aprobación Pendiente"),
+        default=False,
+        help_text=_(
+            "Protege el borrador de ser eliminado mientras una aprobación "
+            "de crédito POS esté en curso. Se limpia automáticamente al "
+            "completar o rechazar la aprobación."
+        ),
+    )
+
     # Auditoría temporal
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

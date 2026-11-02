@@ -131,22 +131,44 @@ class WorkflowService:
 
     @staticmethod
     def handle_task_update(task, old_status):
-        if old_status != task.status and task.status in [Task.Status.COMPLETED, Task.Status.REJECTED]:
-            if task.status == Task.Status.COMPLETED and task.category == Task.Category.APPROVAL and task.created_by and task.task_type == "CREDIT_POS_REQUEST":
-                draft_id = task.data.get("request_data", {}).get("draft_id")
-                link = f"/sales/pos?draftId={draft_id}" if draft_id else "/sales/pos"
+        if old_status == task.status:
+            return
+
+        is_credit_pos = (
+            task.category == Task.Category.APPROVAL
+            and task.task_type == "CREDIT_POS_REQUEST"
+        )
+
+        if task.status == Task.Status.COMPLETED and is_credit_pos and task.created_by:
+            # Preferir draft_id de nivel superior (Task 2+); fallback al path legacy
+            draft_id = (task.data or {}).get("draft_id") or (
+                task.data or {}
+            ).get("request_data", {}).get("draft_id")
+            link = f"/sales/pos?draftId={draft_id}" if draft_id else "/sales/pos"
+            WorkflowService.send_notification(
+                notification_type="POS_CREDIT_APPROVAL",
+                creator=task.created_by,
+                title=f"Aprobación de Crédito Completada: {task.title}",
+                message="La solicitud de crédito ha sido aprobada y está lista para ser procesada en el POS.",
+                link=link,
+                level=Notification.Type.SUCCESS,
+            )
+
+        elif task.status in [Task.Status.REJECTED, Task.Status.CANCELLED] and is_credit_pos:
+            # Limpiar protección del borrador para que sea elegible a eliminación
+            draft_id = (task.data or {}).get("draft_id")
+            if draft_id:
+                try:
+                    from sales.models import DraftCart
+
+                    DraftCart.objects.filter(id=draft_id).update(has_pending_approval=False)
+                except Exception:
+                    pass  # No crítico: el borrador quedará protegido hasta limpieza manual
+
+            if task.created_by:
                 WorkflowService.send_notification(
                     notification_type="POS_CREDIT_APPROVAL",
-                    user=task.created_by,
-                    title=f"Aprobación de Crédito Completada: {task.title}",
-                    message="La solicitud de crédito ha sido aprobada y está lista para ser procesada en el POS.",
-                    link=link,
-                    level=Notification.Type.SUCCESS,
-                )
-            elif task.status == Task.Status.REJECTED and task.category == Task.Category.APPROVAL and task.created_by and task.task_type == "CREDIT_POS_REQUEST":
-                WorkflowService.send_notification(
-                    notification_type="POS_CREDIT_APPROVAL",
-                    user=task.created_by,
+                    creator=task.created_by,
                     title=f"Aprobación de Crédito Rechazada: {task.title}",
                     message="La solicitud de crédito para el POS ha sido rechazada.",
                     link="/sales/pos",
