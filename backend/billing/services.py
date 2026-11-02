@@ -1,3 +1,5 @@
+import hashlib
+import json as _json
 from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
@@ -5,6 +7,31 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
+
+
+def _compute_cart_snapshot_hash(customer_id, lines) -> str:
+    """
+    Hash sha256 determinista del carrito para detectar modificaciones post-aprobación.
+    Normaliza las líneas ordenándolas por (product_id, qty, price) para que el orden
+    de inserción no afecte el resultado.
+    """
+    canonical = sorted(
+        [
+            {
+                "product_id": str(l.get("product") or l.get("product_id") or ""),
+                "qty": str(Decimal(str(l.get("quantity", l.get("qty", 0))))),
+                "price": str(
+                    Decimal(str(l.get("unit_price_gross", l.get("unit_price", 0))))
+                ),
+            }
+            for l in lines
+        ],
+        key=lambda x: (x["product_id"], x["qty"], x["price"]),
+    )
+    payload = _json.dumps(
+        {"customer_id": str(customer_id), "lines": canonical}, sort_keys=True
+    )
+    return hashlib.sha256(payload.encode()).hexdigest()
 
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, JournalEntry, JournalItem
@@ -248,9 +275,28 @@ class BillingService:
 
             order_data = json.loads(order_data)
 
-        # Basic parsing to find the customer
-        from decimal import Decimal
+        # Extraer draft_id de la request (para idempotencia y protección del borrador)
+        raw_draft_id = full_request_data.get("draft_id")
+        draft_id: int | None = None
+        if raw_draft_id is not None:
+            try:
+                draft_id = int(raw_draft_id)
+            except (ValueError, TypeError):
+                draft_id = None
 
+        # Idempotencia: retornar tarea PENDING/IN_PROGRESS existente para el mismo draft
+        if draft_id is not None:
+            from workflow.models import Task as _TaskCheck
+
+            existing = _TaskCheck.objects.filter(
+                task_type="CREDIT_POS_REQUEST",
+                status__in=[_TaskCheck.Status.PENDING, _TaskCheck.Status.IN_PROGRESS],
+                data__draft_id=draft_id,
+            ).first()
+            if existing is not None:
+                return existing
+
+        # Basic parsing to find the customer
         from contacts.models import Contact
         from sales.models import SaleOrder
 
@@ -260,6 +306,7 @@ class BillingService:
             order = SaleOrder.objects.get(id=order_data["id"])
             customer = order.customer
             total = order.total
+            lines_for_hash = []
         else:
             customer_id = order_data.get("customer")
             if not customer_id:
@@ -268,8 +315,9 @@ class BillingService:
 
             # Robust total calculation for POS:
             # We must account for gross prices and total discounts
+            lines_for_hash = order_data.get("lines", [])
             lines_total = Decimal("0")
-            for item in order_data.get("lines", []):
+            for item in lines_for_hash:
                 qty = Decimal(str(item.get("quantity", item.get("qty", 0))))
                 price = Decimal(str(item.get("unit_price_gross", item.get("unit_price", 0))))
                 lines_total += qty * price
@@ -311,14 +359,14 @@ class BillingService:
             k: v for k, v in full_request_data.items() if not k.startswith("line_")
         }
 
-        # Calculate POS Fallback Credit
-        from accounting.models import AccountingSettings
+        # Hash canónico del carrito para detectar modificaciones post-aprobación
+        cart_snapshot_hash = _compute_cart_snapshot_hash(customer.id, lines_for_hash)
 
-        acc_settings = AccountingSettings.get_solo()
-        fallback_percentage = (
-            acc_settings.pos_default_credit_percentage if acc_settings else Decimal("0")
-        ) / Decimal("100.0")
-        pos_credit = total * fallback_percentage
+        # Marcar el borrador como protegido (no borrar hasta que se resuelva la aprobación)
+        if draft_id is not None:
+            from sales.models import DraftCart
+
+            DraftCart.objects.filter(id=draft_id).update(has_pending_approval=True)
 
         task = WorkflowService.create_task(
             task_type="CREDIT_POS_REQUEST",
@@ -338,6 +386,8 @@ class BillingService:
                 "required_credit": str(required_credit),
                 "explicit_credit": str(customer.credit_available),
                 "pos_credit": str(pos_credit),
+                "cart_snapshot_hash": cart_snapshot_hash,
+                "draft_id": draft_id,
             },
             category=Task.Category.APPROVAL,
         )
