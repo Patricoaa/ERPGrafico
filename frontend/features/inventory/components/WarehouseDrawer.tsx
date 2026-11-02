@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { useWarehouseMutations } from "../hooks/useWarehouseMutations"
 import { SubmitButton } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
@@ -96,7 +96,7 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
             collapsible
             collapseStorageKey="erpgrafico.drawer.sidebar.warehouse"
             sidebar={initialData?.id ? (
-                <ActivitySidebar
+                <EntitySidebar
                     entityId={initialData.id}
                     entityType="warehouse"
                 />

@@ -77,6 +77,30 @@ def _broadcast(*, app: str, model: str, instance_id: int, op: str) -> None:
         async_to_sync(channel_layer.group_send)(group, message)
 
 
+def broadcast_comments_changed(*, label: str, instance_id: int) -> None:
+    """Comentarios de una entidad cambiaron (ADR-0111).
+
+    Va a un subtópico propio `<app>.<model>.<id>.comments` para no invalidar el detalle
+    de la entidad: solo los paneles de comentarios abiertos sobre ese registro refrescan.
+    """
+    channel_layer = get_channel_layer()
+    if channel_layer is None:
+        return
+    app, model = label.split(".", 1)
+    payload = {
+        "event": "comments.changed",
+        "app": app,
+        "model": model,
+        "id": instance_id,
+        "actor_id": get_current_user_id(),
+        "ts": timezone.now().isoformat(),
+    }
+    async_to_sync(channel_layer.group_send)(
+        f"entity.{label}.{instance_id}.comments",
+        {"type": "entity.changed", "payload": payload},
+    )
+
+
 def _broadcast_parent_for_child(instance) -> None:
     """Child create/update/delete all surface as `updated` on the parent — the line
     change is observable via the parent's serializer (totals, line count)."""

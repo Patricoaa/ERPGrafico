@@ -13,7 +13,7 @@ import { treasuryApi } from "@/features/treasury"
 import { Form, FormField } from "@/components/ui/form"
 import { Drawer, CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, FormSelectionGroup, SubmitButton } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 const terminalSchema = z.object({
@@ -239,7 +239,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                     collapseStorageKey="erpgrafico.drawer.sidebar.terminal_pos"
                     showSidebar={!!terminal?.id}
                     sidebar={terminal?.id ? (
-                        <ActivitySidebar
+                        <EntitySidebar
                             entityType="terminal"
                             entityId={terminal.id}
                             className="h-full border-none"

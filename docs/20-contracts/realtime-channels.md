@@ -126,6 +126,7 @@ useEntitySubscription(`sales.saleorder.${id}`, [['sales', id]])
    - Listado: `<app>.<model>` (todo en minúscula, `model_name` no `ModelName`)
    - Detalle: `<app>.<model>.<id>`
    - Usuario: `user.<id>` (gestionado por el provider, no por features)
+   - Comentarios de un registro: `<app>.<model>.<id>.comments` ([ADR-0111](../10-architecture/adr/0111-entity-comments.md)). Cualquier entidad comentable, **sin** pasar por `ALLOWLIST`: lo emite `core.entity_bus.broadcast_comments_changed` desde `CommentService` (on_commit) con `{"event": "comments.changed", app, model, id, actor_id, ts}`. La suscripción exige `DocumentTypeRegistry.view_permission("<app>.<model>")`. Lo consume `useEntityComments`; no invalida el detalle de la entidad.
 
 ### Alcance vigente (2026-08-04)
 

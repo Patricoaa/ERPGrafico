@@ -5,7 +5,7 @@ import { useQueryClient, type QueryKey } from '@tanstack/react-query'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRealtime } from './RealtimeProvider'
-import type { EntityChangedEvent, EntitySubscriptionOptions } from './types'
+import type { EntitySubscriptionOptions, RealtimeEvent } from './types'
 
 /**
  * Subscribes to entity-bus events for `topic` and invalidates `queryKeys`
@@ -14,6 +14,7 @@ import type { EntityChangedEvent, EntitySubscriptionOptions } from './types'
  * topic forms:
  *   `<app>.<model>`          — list-level events
  *   `<app>.<model>.<id>`     — detail/modal events for a single instance
+ *   `<app>.<model>.<id>.comments` — comment threads of one record (ADR-0111)
  *
  * The local `invalidateQueries` in mutation `onSuccess` remains the primary
  * source of freshness for the author. This hook covers remote changes and
@@ -33,7 +34,7 @@ export function useEntitySubscription(
     useEffect(() => {
         if (!enabled || !topic) return
 
-        const handler = (event: EntityChangedEvent) => {
+        const handler = (event: RealtimeEvent) => {
             if (
                 ignoreOwnActor &&
                 user &&

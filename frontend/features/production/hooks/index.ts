@@ -19,8 +19,6 @@ export type {
   UpdateMaterialPayload,
 } from './useWorkOrderMutations'
 export { useWorkOrderListActions } from './useWorkOrderListActions'
-export { useWorkOrderComments } from './useWorkOrderComments'
-export type { WorkOrderComment } from './useWorkOrderComments'
 export { useWorkOrderIdentityActions } from './useWorkOrderIdentityActions'
 export type { RestartResult, CorrectionResult } from './useWorkOrderIdentityActions'
 export { useProductionMetrics, useAllowedDteTypes, useCoreAllowedDteTypes } from './useProductionQueries'

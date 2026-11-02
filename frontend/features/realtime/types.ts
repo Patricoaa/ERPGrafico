@@ -12,6 +12,18 @@ export interface EntityChangedEvent {
     ts: string
 }
 
+/** Comentarios de un registro cambiaron — tópico `<app>.<model>.<id>.comments` (ADR-0111). */
+export interface CommentsChangedEvent {
+    event: 'comments.changed'
+    app: string
+    model: string
+    id: number
+    actor_id: number | null
+    ts: string
+}
+
+export type RealtimeEvent = EntityChangedEvent | CommentsChangedEvent
+
 export interface SubscriptionAck {
     event: 'subscribed' | 'unsubscribed'
     topic: string
@@ -23,7 +35,7 @@ export interface BusError {
     detail: string
 }
 
-export type BusMessage = EntityChangedEvent | SubscriptionAck | BusError
+export type BusMessage = RealtimeEvent | SubscriptionAck | BusError
 
 export interface EntitySubscriptionOptions {
     /**

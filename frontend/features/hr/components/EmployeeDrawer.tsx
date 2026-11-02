@@ -12,7 +12,7 @@ import { useEmployeeMutations } from '../hooks/useEmployeeMutations'
 import type { Employee, EmployeeConceptAmount } from "@/types/hr"
 import { SubmitButton, CancelButton, DrawerLayout } from "@/components/shared"
 import { UserCog, CalendarCheck2, Plus, ShieldCheck } from "lucide-react"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 
 import {
     Form, FormField
@@ -289,12 +289,12 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                 <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando Ficha de Personal" className="flex-1 flex flex-col h-full">
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="flex-1 w-full h-full flex flex-col overflow-visible min-h-0">
-                            <fieldset disabled={isView || saving} className="contents">
                                 <DrawerLayout
+                                    contentDisabled={isView || saving}
                                     activeTab={activeTab}
                                     onTabChange={setActiveTab}
                                     rightRail={employee?.id ? (
-                                        <ActivitySidebar entityId={employee.id} entityType="employee" />
+                                        <EntitySidebar entityId={employee.id} entityType="employee" />
                                     ) : undefined}
                                     rightRailCollapsible
                                     rightRailStorageKey="erpgrafico.drawer.sidebar.employee"
@@ -611,7 +611,6 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                         },
                                     ]}
                                 />
-                            </fieldset>
                         </form>
                     </Form>
                 </SkeletonShell>

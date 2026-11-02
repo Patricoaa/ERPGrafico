@@ -11,6 +11,8 @@ vi.mock("@/lib/api", () => ({
     default: { get: getMock },
 }))
 
+vi.mock("@/features/comments", () => ({ EntitySidebar: () => null }))
+
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }))
 
 vi.mock("@/components/providers/GlobalModalProvider", async (importOriginal) => ({

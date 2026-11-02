@@ -3,9 +3,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import type { BusMessage, EntityChangedEvent } from './types'
+import type { BusMessage, RealtimeEvent } from './types'
 
-type Listener = (event: EntityChangedEvent) => void
+type Listener = (event: RealtimeEvent) => void
 
 interface RealtimeContextValue {
     /** Subscribe to a topic. Returns an unsubscribe fn. Refcounts internally — N components → 1 WS subscribe. */
@@ -82,11 +82,13 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
         } catch {
             return
         }
-        if (msg.event !== 'entity.changed') return
+        if (msg.event !== 'entity.changed' && msg.event !== 'comments.changed') return
 
         const topicExact = `${msg.app}.${msg.model}.${msg.id}`
-        const topicList = `${msg.app}.${msg.model}`
-        for (const topic of [topicExact, topicList]) {
+        const topics = msg.event === 'comments.changed'
+            ? [`${topicExact}.comments`]
+            : [topicExact, `${msg.app}.${msg.model}`]
+        for (const topic of topics) {
             const set = listenersRef.current.get(topic)
             if (!set) continue
             for (const listener of set) {

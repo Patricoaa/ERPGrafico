@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 import { ChevronDown, Search, Check, Plus } from "lucide-react"
 import { SubmitButton } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
 import { UoMCategoryDrawer, type UoMCategory } from "./UoMCategoryDrawer"
 import { cn } from "@/lib/utils"
@@ -182,7 +182,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                     collapsible
                     collapseStorageKey="erpgrafico.drawer.sidebar.uom"
                     sidebar={initialData?.id ? (
-                        <ActivitySidebar
+                        <EntitySidebar
                             entityId={initialData.id}
                             entityType="uom"
                         />

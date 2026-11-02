@@ -15,7 +15,7 @@ import {
     type DocumentSheetTab,
     type LifecycleStep,
 } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout } from "@/features/_shared"
 import { useDocumentRelations } from "@/features/documents/hooks/useDocumentRelations"
 import type { DocumentDomain, DocumentLink } from "@/features/documents/types"
@@ -34,7 +34,7 @@ const AUDIT_TYPE = "f29_declaration" as const
 /**
  * Ficha documental de Declaración F29 (ADR-0083, component-document-sheet.md).
  * Modo VISTA: usa DocumentDrawerShell con tabs Resumen · Relaciones,
- * ciclo de vida, actions menu e ActivitySidebar.
+ * ciclo de vida, actions menu y EntitySidebar (comentarios + actividad).
  */
 export interface F29DeclarationSheetProps {
     id: number | null
@@ -152,7 +152,7 @@ export function F29DeclarationSheet({ id, open, onOpenChange, embedded = false, 
                 tabs={tabs}
                 tab={tab}
                 onTabChange={setTab}
-                sidebar={declaration && !embedded ? <ActivitySidebar entityType={AUDIT_TYPE} entityId={declaration.id} /> : undefined}
+                sidebar={declaration && !embedded ? <EntitySidebar entityType={AUDIT_TYPE} entityId={declaration.id} /> : undefined}
             />
         </>
     )

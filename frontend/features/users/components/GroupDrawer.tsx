@@ -7,7 +7,7 @@ import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { usersApi } from "../api/usersApi"
 
 import { Drawer, SubmitButton, LabeledInput, CancelButton, FormFooter, FormSplitLayout } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { Form, FormField } from "@/components/ui/form"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
@@ -166,7 +166,7 @@ export function GroupDrawer({
                     collapsible
                     collapseStorageKey="erpgrafico.drawer.sidebar.group"
                     sidebar={initialData?.id ? (
-                        <ActivitySidebar entityType="group" entityId={initialData.id} />
+                        <EntitySidebar entityType="group" entityId={initialData.id} />
                     ) : undefined}
                     showSidebar={!!initialData?.id}
                 >

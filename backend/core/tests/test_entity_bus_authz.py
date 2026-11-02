@@ -156,3 +156,44 @@ def test_subscribe_forbidden_with_id_topic():
         await comm.disconnect()
 
     asyncio.run(go())
+
+
+# ─── Comment threads subtopic (ADR-0111) ───────────────────────────────────────
+
+
+def test_comments_subtopic_requires_view_of_commented_entity():
+    """`<app>.<model>.<id>.comments` is gated by the entity's view permission and
+    delivers `comments.changed` events broadcast for that record."""
+
+    async def go():
+        from channels.layers import get_channel_layer
+
+        user = _make_user(has_perm_result=True)
+        comm = await _open(user)
+        await comm.connect()
+
+        topic = "contacts.contact.7.comments"
+        await comm.send_json_to({"op": "subscribe", "topic": topic})
+        assert await comm.receive_json_from(timeout=2) == {"event": "subscribed", "topic": topic}
+        user.has_perm.assert_called_with("contacts.view_contact")
+
+        payload = {"event": "comments.changed", "app": "contacts", "model": "contact", "id": 7}
+        await get_channel_layer().group_send(
+            f"entity.{topic}", {"type": "entity.changed", "payload": payload}
+        )
+        assert await comm.receive_json_from(timeout=2) == payload
+        await comm.disconnect()
+
+    asyncio.run(go())
+
+
+def test_comments_suffix_without_id_is_malformed():
+    async def go():
+        comm = await _open(_make_user(has_perm_result=True))
+        await comm.connect()
+        await comm.send_json_to({"op": "subscribe", "topic": "contacts.contact.comments"})
+        msg = await comm.receive_json_from(timeout=2)
+        assert msg["code"] == "invalid_topic"
+        await comm.disconnect()
+
+    asyncio.run(go())

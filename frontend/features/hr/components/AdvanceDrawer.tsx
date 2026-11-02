@@ -8,7 +8,7 @@ import * as z from "zod"
 import { useAdvanceMutations } from '../hooks/useAdvanceMutations'
 import { useEmployees } from '@/features/hr/hooks/useEmployees'
 import type { SalaryAdvance, Employee } from "@/types/hr"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { CancelButton, SubmitButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
@@ -146,7 +146,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                         collapsible
                         collapseStorageKey="erpgrafico.drawer.sidebar.salaryadvance"
                         showSidebar={true}
-                        sidebar={<ActivitySidebar entityId={advance.id} entityType="salaryadvance" title="Historial" />}
+                        sidebar={<EntitySidebar entityId={advance.id} entityType="salaryadvance" title="Historial" />}
                     >
                         <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2 scrollbar-thin">
                             <Form {...form}>

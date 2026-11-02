@@ -22,7 +22,7 @@ import { Check, type LucideIcon } from "lucide-react"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
@@ -278,7 +278,7 @@ export function CategoryDrawer({
             collapsible
             collapseStorageKey="erpgrafico.drawer.sidebar.category"
             showSidebar={!!initialData?.id}
-            sidebar={initialData?.id ? <ActivitySidebar entityId={initialData.id} entityType="category" /> : sidebar}
+            sidebar={initialData?.id ? <EntitySidebar entityId={initialData.id} entityType="category" /> : sidebar}
         >
             <Form {...form}>
                 <form id="category-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">

@@ -20,7 +20,7 @@ import { formatRUT, validateRUT } from "@/lib/utils/format"
 import { useContactMutations, useContactInsights } from "@/features/contacts"
 import { useDefaultCustomer, useDefaultVendor } from "../hooks/useContactDefaults"
 
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 
 import {ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, Mail, MapPin} from "lucide-react"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, useDrawerMode, type DrawerMode } from "@/features/_shared"
@@ -234,12 +234,12 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                 <Form {...form}>
 
                     <form id="contact-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 w-full h-full flex flex-col min-h-0 overflow-visible">
-                        <fieldset disabled={isView} className="contents">
                         <DrawerLayout
+                            contentDisabled={isView}
                             activeTab={activeTab}
                             onTabChange={setActiveTab}
                             rightRail={contact?.id ? (
-                                <ActivitySidebar entityId={contact.id.toString()} entityType="contact" />
+                                <EntitySidebar entityId={contact.id} entityType="contact" />
                             ) : undefined}
                             rightRailCollapsible
                             rightRailStorageKey="erpgrafico.drawer.sidebar.contact"
@@ -483,7 +483,6 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                 },
                             ]}
                         />
-                    </fieldset>
                     </form>
                 </Form>
             </SkeletonShell>

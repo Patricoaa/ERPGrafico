@@ -69,7 +69,6 @@ export * from './AutoSaveStatusBadge';
 export * from './ReportTable';
 
 export * from './DataManagement';
-export * from './CommentSystem';
 export * from './AttachmentList';
 export * from './DocumentAttachmentDropzone';
 export * from './DocumentCompletionModal';

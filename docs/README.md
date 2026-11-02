@@ -85,6 +85,7 @@ last_review: 2026-06-19
 | “idempotency”, “Idempotency-Key”, “double-click”, “duplicate request”, “retry safe” | [idempotency.md](20-contracts/idempotency.md) | 20 |
 | “document relations”, “related documents”, “DocumentRef”, “relation provider”, “canonical document URL”, “/d/{label}/{id}” | [document-relations.md](20-contracts/document-relations.md) | 20 |
 | “document sheet”, “ficha documental”, “relations tab”, “Order Hub replacement”, “lifecycle strip”, “document actions” | [component-document-sheet.md](20-contracts/component-document-sheet.md) | 20 |
+| “comments”, “comentarios”, “mentions”, “menciones”, “threads”, “collaboration”, “EntitySidebar” | [component-entity-comments.md](20-contracts/component-entity-comments.md) | 20 |
 | “export PDF”, “export Excel”, “export CSV”, “WeasyPrint”, “openpyxl”, “generar reporte descargable”, “libro de ventas xlsx” | [export-formats.md](20-contracts/export-formats.md) | 20 |
 | “import CSV”, “import Excel”, “bulk upload”, “importar contactos/productos”, “column mapping”, “preview import”, “DataManagement” | [import-csv-xlsx.md](20-contracts/import-csv-xlsx.md) | 20 |
 | “agregar realtime”, “nuevo consumer WS”, “nuevo endpoint SSE”, “implementar notificación live” | [add-realtime-channel.md](30-playbooks/add-realtime-channel.md) | 30 |

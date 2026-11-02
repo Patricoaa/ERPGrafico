@@ -5,7 +5,7 @@ import { Banknote } from 'lucide-react'
 import {
     Drawer, FormSection, SkeletonShell, StaleDataBanner, FormSplitLayout,
 } from '@/components/shared'
-import { ActivitySidebar } from '@/features/audit'
+import { EntitySidebar } from "@/features/comments"
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useLoan } from '../hooks/useLoans'
@@ -54,7 +54,7 @@ export function LoanViewDrawer({ loanId, open, onOpenChange }: Props) {
                 showSidebar={!!loan?.id}
                 sidebar={
                     loan?.id ? (
-                        <ActivitySidebar
+                        <EntitySidebar
                             entityType="bank_loan"
                             entityId={loan.id}
                         />

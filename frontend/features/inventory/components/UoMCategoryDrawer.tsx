@@ -12,7 +12,7 @@ import {
     Form,
     FormField,
 } from "@/components/ui/form"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { useUoMMutations } from "../hooks/useUoMMutations"
 import { FormSplitLayout } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -165,7 +165,7 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
                         collapsible
                         collapseStorageKey="erpgrafico.drawer.sidebar.uom_category"
                         sidebar={
-                            <ActivitySidebar
+                            <EntitySidebar
                                 entityId={initialData.id}
                                 entityType="uom_category"
                             />

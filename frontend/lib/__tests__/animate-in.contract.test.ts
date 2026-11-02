@@ -28,7 +28,6 @@ const ANIMATE_ALLOWLIST = [
     "components/shared/ActionDock.tsx",
     "components/shared/CardSkeleton.tsx",
     "components/shared/CollapsibleSheet.tsx",
-    "components/shared/CommentSystem.tsx",
     "components/shared/DataTableCells.tsx",
     "components/shared/DocumentAttachmentDropzone.tsx",
     "components/shared/EmptyState.tsx",

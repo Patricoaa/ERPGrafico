@@ -403,13 +403,9 @@ Props: `isVisible: boolean` (✅). Sub-components: `ActionDock.Stats`, `ActionDo
 | `variant` | `'full' \| 'compact' \| 'minimal'` | ❌ | `'full'` |
 | `title` / `description` / `icon` / `action` / `secondaryAction` | various | ❌ | — |
 
-### CommentSystem 🟢
+### CommentSystem ⛔ (eliminado)
 
-Thread de comentarios con feed scrollable. `Enter` = submit, `Shift+Enter` = newline.
-
-Props: `comments: Comment[]` (✅), `onAddComment` (✅), `placeholder?`, `maxHeight?` (default `'400px'`).
-
-`Comment`: `{ user: string, text: string, timestamp: string }`.
+Reemplazado por `CommentsPanel` / `EntitySidebar` de `@/features/comments` (hilos, @menciones, notificaciones). Ver [component-entity-comments.md](component-entity-comments.md) y [ADR-0111](../10-architecture/adr/0111-entity-comments.md).
 
 ### AttachmentList 🟢
 

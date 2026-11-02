@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { Landmark } from "lucide-react"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { bankActions, type BankActionsCtx } from './bankActions'
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -258,7 +258,7 @@ function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
                 showSidebar={!!bank?.id}
                 sidebar={
                     bank?.id && (
-                        <ActivitySidebar
+                        <EntitySidebar
                             entityType="bank"
                             entityId={bank.id}
                             title="Historial"

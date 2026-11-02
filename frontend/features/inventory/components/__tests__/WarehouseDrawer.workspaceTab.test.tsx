@@ -28,7 +28,7 @@ vi.mock("@/hooks/useSelectedEntity", () => ({
 }))
 const save = vi.hoisted(() => vi.fn(async () => { await new Promise(r => setTimeout(r, 30)) }))
 vi.mock("../../hooks/useWarehouseMutations", () => ({ useWarehouseMutations: () => ({ saveWarehouse: save }) }))
-vi.mock("@/features/audit", () => ({ ActivitySidebar: () => null }))
+vi.mock("@/features/comments", () => ({ EntitySidebar: () => null }))
 const holder = vi.hoisted(() => ({ Drawer: null as null | ((p: Record<string, unknown>) => React.ReactNode) }))
 vi.mock("@/lib/entity-drawers", () => {
     const drawers = {

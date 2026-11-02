@@ -26,7 +26,7 @@ import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode
 import { formatCurrency } from "@/lib/money"
 import { Chip, Drawer, LabeledInput, LabeledContainer, CancelButton, IconButton, PeriodValidationDateInput, SubmitButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell, StatusBadge } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths";
-import { ActivitySidebar } from "@/features/audit";
+import { EntitySidebar } from "@/features/comments";
 import { DocumentRefLink, DocumentRelationsButton, type DocumentRef } from "@/features/documents"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 
@@ -315,7 +315,7 @@ export function JournalEntryFormDrawer({
                 collapsible
                 collapseStorageKey="erpgrafico.drawer.sidebar.journal_entry"
                 sidebar={entityId ? (
-                    <ActivitySidebar entityType="journal_entry" entityId={entityId} />
+                    <EntitySidebar entityType="journal_entry" entityId={entityId} />
                 ) : undefined}
                 showSidebar={!!entityId}
             >
