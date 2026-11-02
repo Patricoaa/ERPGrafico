@@ -317,6 +317,15 @@ class DraftCartService:
             # Actualizar borrador existente
             draft = DraftCart.objects.get(id=draft_id, pos_session_id=pos_session_id)
 
+            # No permitir modificar un borrador con aprobación pendiente
+            if draft.has_pending_approval:
+                from django.core.exceptions import ValidationError
+
+                raise ValidationError(
+                    "Este borrador tiene una aprobación de crédito en curso y no puede "
+                    "ser modificado. Espere la resolución de la solicitud."
+                )
+
             # Validar lock ownership si está bloqueado por otro
             if draft.locked_by and draft.locked_by != user:
                 now = timezone.now()
@@ -374,12 +383,16 @@ class DraftCartService:
     @staticmethod
     def load_draft(draft_id: int, pos_session_id: int) -> Optional[DraftCart]:
         """
-        Carga un borrador de la sesión actual.
+        Carga un borrador. Si tiene una aprobación pendiente, permite la carga
+        desde cualquier sesión (el borrador sobrevive al cierre de su sesión original).
         """
         try:
-            return DraftCart.objects.get(id=draft_id, pos_session_id=pos_session_id)
+            draft = DraftCart.objects.get(id=draft_id)
         except DraftCart.DoesNotExist:
             return None
+        if draft.has_pending_approval or draft.pos_session_id == pos_session_id:
+            return draft
+        return None
 
     @staticmethod
     def list_drafts(pos_session_id: int) -> List[DraftCart]:
@@ -395,30 +408,40 @@ class DraftCartService:
     @staticmethod
     def delete_draft(draft_id: int, pos_session_id: int) -> bool:
         """
-        Elimina un borrador de la sesión.
+        Elimina un borrador de la sesión. Si tiene una aprobación de crédito
+        pendiente, rechaza la eliminación y retorna False.
         """
         try:
             draft = DraftCart.objects.get(id=draft_id, pos_session_id=pos_session_id)
-            draft.delete()
-            return True
         except DraftCart.DoesNotExist:
             return False
+        if draft.has_pending_approval:
+            return False
+        draft.delete()
+        return True
 
     @staticmethod
     def cleanup_on_session_close(session_id: int) -> int:
         """
-        Elimina TODOS los borradores al cerrar la sesión.
+        Elimina los borradores al cerrar la sesión, EXCEPTO los que tienen una
+        aprobación de crédito pendiente (has_pending_approval=True). Esos sobreviven
+        para que el cajero pueda retomarlos desde otra sesión.
         """
-        deleted_count, _ = DraftCart.objects.filter(pos_session_id=session_id).delete()
+        deleted_count, _ = DraftCart.objects.filter(
+            pos_session_id=session_id, has_pending_approval=False
+        ).delete()
         return deleted_count
 
     @staticmethod
     def cleanup_old_drafts(days: int = 1) -> int:
         """
-        Elimina borradores más antiguos que X días.
+        Elimina borradores más antiguos que X días. Los borradores con una
+        aprobación de crédito pendiente se omiten aunque hayan expirado.
         """
         cutoff_date = timezone.now() - timedelta(days=days)
-        deleted_count, _ = DraftCart.objects.filter(updated_at__lt=cutoff_date).delete()
+        deleted_count, _ = DraftCart.objects.filter(
+            updated_at__lt=cutoff_date, has_pending_approval=False
+        ).delete()
         return deleted_count
 
     @staticmethod
