@@ -810,6 +810,8 @@ class WorkOrderService:
         # Entering a stage (re)opens its approval task. Approvals of the stage being left
         # were checked above; nothing else is auto-approved on the user's behalf.
         # 2. Automation: Create tasks upon ENTERING a new stage
+        _ot_data = {"work_order_number": work_order.number}
+
         if next_stage == WorkOrder.Stage.MATERIAL_APPROVAL:
             WorkOrderService._ensure_stage_task(
                 task_type="OT_MATERIAL_APPROVAL",
@@ -817,6 +819,7 @@ class WorkOrderService:
                 description=f"Valide la disponibilidad de stock para procesar la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
                 content_object=work_order,
                 created_by=user,
+                data=_ot_data,
             )
 
         if next_stage == WorkOrder.Stage.PREPRESS:
@@ -826,6 +829,7 @@ class WorkOrderService:
                 description=f"Valide los archivos de diseño y preparación para la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
                 content_object=work_order,
                 created_by=user,
+                data=_ot_data,
             )
 
         if next_stage == WorkOrder.Stage.PRESS:
@@ -835,6 +839,7 @@ class WorkOrderService:
                 description=f"Supervise el inicio de tiraje de la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
                 content_object=work_order,
                 created_by=user,
+                data=_ot_data,
             )
 
         if next_stage == WorkOrder.Stage.POSTPRESS:
@@ -844,6 +849,7 @@ class WorkOrderService:
                 description=f"Valide terminaciones y empaque de la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
                 content_object=work_order,
                 created_by=user,
+                data=_ot_data,
             )
 
         if next_stage == WorkOrder.Stage.OUTSOURCING_VERIFICATION:
@@ -853,6 +859,7 @@ class WorkOrderService:
                 description=f"Valide la recepción de servicios externos para la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
                 content_object=work_order,
                 created_by=user,
+                data=_ot_data,
             )
 
         if next_stage == WorkOrder.Stage.RECTIFICATION:
@@ -862,6 +869,7 @@ class WorkOrderService:
                 description=f"Revise y confirme las cantidades reales de materiales consumidos y producción para la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
                 content_object=work_order,
                 created_by=user,
+                data=_ot_data,
             )
         # --- END WORKFLOW INTEGRATION ---
 
@@ -924,12 +932,27 @@ class WorkOrderService:
         old_idx = sequence.index(old_stage)
         next_idx = sequence.index(next_stage)
 
-        # Moving Backward: Reset tasks for the stages being "un-done"
+        # Moving Backward: Reset the target stage and cancel any tasks for stages that
+        # are now "in the future" relative to the new position. Without cancellation
+        # those tasks remain PENDING/IN_PROGRESS in the inbox even though the OT has
+        # rewound past them, confusing operators who see approvals for stages not active.
         if next_idx < old_idx:
-            # The reopened stage must be approved again. Later stages keep their completed
-            # task, which _ensure_stage_task reopens when the OT enters them again — so no
-            # stale "pending" approval sits in the inbox for a stage the OT is not in.
             WorkflowService.reset_tasks_for_object(work_order, [next_stage])
+            # Cancel tasks for all stages between next_stage (exclusive) and old_stage
+            # (inclusive) that are still active — they are now unreachable until the OT
+            # advances through those stages again, at which point _ensure_stage_task will
+            # reopen the existing task instead of creating a duplicate.
+            skipped_stages = sequence[next_idx + 1 : old_idx + 1]
+            if skipped_stages:
+                skipped_types = [WorkflowService.stage_task_type(s) for s in skipped_stages]
+                content_type = ContentType.objects.get_for_model(work_order)
+                Task.objects.filter(
+                    content_type=content_type,
+                    object_id=work_order.pk,
+                    task_type__in=skipped_types,
+                    category=Task.Category.APPROVAL,
+                    status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS],
+                ).update(status=Task.Status.CANCELLED, completed_at=timezone.now(), completed_by=user)
             if old_stage == WorkOrder.Stage.RECTIFICATION:
                 WorkOrderService._restore_planned_quantities(work_order)
 
@@ -1783,7 +1806,7 @@ class WorkOrderService:
                 ),
                 content_object=work_order,
                 category=Task.Category.TASK,
-                data=task_meta,
+                data={**task_meta, "work_order_number": work_order.number},
             )
 
     @staticmethod

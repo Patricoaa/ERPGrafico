@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from core.serializers import AttachmentSerializer
@@ -147,6 +148,35 @@ class InvoiceWriteSerializer(serializers.ModelSerializer):
             "journal_entry",
             "tax_period_closed",
         ]
+
+    def validate(self, attrs):
+        if self.instance and not any(
+            field in attrs for field in ("dte_type", "sale_order", "purchase_order")
+        ):
+            return attrs
+
+        dte_type = attrs.get("dte_type", getattr(self.instance, "dte_type", None))
+        sale_order = attrs.get("sale_order", getattr(self.instance, "sale_order_id", None))
+        purchase_order = attrs.get(
+            "purchase_order", getattr(self.instance, "purchase_order_id", None)
+        )
+        if not dte_type:
+            return attrs
+
+        if sale_order and purchase_order:
+            raise serializers.ValidationError(
+                "Una DTE no puede pertenecer simultáneamente a una orden de venta y compra."
+            )
+
+        from billing.dte_policy import validate_configured_dte_type
+
+        # Invoice.is_sale_document classifies standalone DTEs as sales documents.
+        side = "emit" if sale_order or not purchase_order else "receive"
+        try:
+            validate_configured_dte_type(side=side, dte_type=dte_type)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"dte_type": exc.messages}) from exc
+        return attrs
 
 class InvoiceSerializer(serializers.ModelSerializer):
     attachments = AttachmentSerializer(many=True, read_only=True)

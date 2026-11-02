@@ -21,13 +21,13 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
             tabLabel="Bandeja de Entrada"
             tabIcon={Inbox}
             variant="global"
-            fullWidth={320}
+            fullWidth={360}
             priority={0}
             badge={taskCount}
-            className="w-[320px] max-w-[320px]"
+            className="w-[360px] max-w-[360px] bg-muted/30"
         >
-            {/* Header */}
-            <div className="border-b border-border shrink-0 px-4 pt-4 pb-3">
+            {/* Header — same height as entity drawers (h-14 = 56 px) */}
+            <div className="border-b border-border shrink-0 h-14 flex items-center px-4">
                 <PanelHeader
                     title="Bandeja de Entrada"
                     icon={Inbox}
@@ -37,7 +37,7 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
             </div>
 
             {/* Task Inbox Content */}
-            <div className="flex-1 overflow-y-auto py-4">
+            <div className="flex-1 overflow-hidden min-h-0">
                 {isOpen && <TaskInbox onCountChange={(c) => setTaskCount(c.total)} />}
             </div>
         </CollapsibleSheet>

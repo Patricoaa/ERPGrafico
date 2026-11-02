@@ -10,6 +10,7 @@ import { staleTime } from '@/lib/query-config'
 interface UseBillingSettingsReturn {
     settings: BillingSettings
     isLoading: boolean
+    isError: boolean
     saving: boolean
     updateSettings: (payload: BillingSettingsUpdatePayload) => Promise<AccountingSettings>
     refetch: () => Promise<unknown>
@@ -32,7 +33,7 @@ export function useBillingSettings(): UseBillingSettingsReturn {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: settings, isLoading, refetch } = useQuery({
+    const { data: settings, isLoading, isError, refetch } = useQuery({
         queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getBillingSettings,
         staleTime: staleTime.slow,
@@ -57,6 +58,7 @@ export function useBillingSettings(): UseBillingSettingsReturn {
     return {
         settings: settings as BillingSettings,
         isLoading,
+        isError,
         saving: updateMutation.isPending,
         updateSettings,
         refetch,

@@ -11,8 +11,8 @@ export function documentForTask(task: Task): { label: string; id: number } | nul
     const data = (task.data ?? {}) as Record<string, unknown>
 
     if (type === "OT_CREATION") {
-        const saleOrderId = Number(data.sale_order_id) || (data.order_type === "sale" ? id : null)
-        return saleOrderId ? { label: "sales.saleorder", id: saleOrderId } : { label: "production.workorder", id }
+        // OT_CREATION is the material-assignment task: the operator works inside the work order.
+        return { label: "production.workorder", id }
     }
     if (type.includes("OT_")) return { label: "production.workorder", id }
     if (type.includes("OC_")) return { label: "purchasing.purchaseorder", id }

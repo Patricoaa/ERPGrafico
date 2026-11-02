@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from billing.dte_policy import CONFIGURABLE_DTE_TYPES
 from core.serializers.mixins import FrozenFieldsField
 
 from .models import (
@@ -101,6 +102,28 @@ class AccountingSettingsSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Los días de auto-bloqueo deben ser positivos o quedar vacíos para desactivarlo."
             )
+        return value
+
+    def validate_allowed_dte_types_emit(self, value):
+        return self._validate_allowed_dte_types(value)
+
+    def validate_allowed_dte_types_receive(self, value):
+        return self._validate_allowed_dte_types(value)
+
+    @staticmethod
+    def _validate_allowed_dte_types(value):
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Debe enviar una lista de tipos DTE.")
+        invalid_types = [
+            item for item in value
+            if not isinstance(item, str) or item not in CONFIGURABLE_DTE_TYPES
+        ]
+        if invalid_types:
+            raise serializers.ValidationError(
+                f"Tipos DTE no permitidos: {', '.join(map(str, invalid_types))}."
+            )
+        if len(set(value)) != len(value):
+            raise serializers.ValidationError("La lista no puede contener tipos repetidos.")
         return value
 
 

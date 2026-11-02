@@ -137,6 +137,7 @@ export * from './SelectableCard';
 export * from './ChoiceCard';
 export * from './CardSurface';
 export * from './InfoBlock';
+export * from './ApprovalRequestBanner';
 export * from './CardRow';
 export * from './card-anatomy';
 export * from './FolioValidationInput';

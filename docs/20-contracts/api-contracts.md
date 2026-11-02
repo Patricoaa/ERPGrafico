@@ -233,8 +233,17 @@ DELETE /api/accounting/budgets/{id}/     delete
 GET    /api/accounting/budgets/{id}/versus/   comparativo vs real (action)
 
 GET    /api/accounting/settings/          configuración contable (get/put/patch)
+GET    /api/accounting/settings/current/   configuración vigente (autenticado)
+PATCH  /api/accounting/settings/current/  actualización parcial (requiere accounting.change_accountingsettings)
 GET    /api/accounting/budget-items/      ítems de presupuesto
 ```
+
+`allowed_dte_types_emit` y `allowed_dte_types_receive` aceptan listas de `FACTURA`,
+`FACTURA_EXENTA`, `BOLETA` y `BOLETA_EXENTA`. El backend valida los valores y aplica la lista
+correspondiente al crear o confirmar DTE de venta/compra, incluso cuando la petición omite el
+frontend (las DTE independientes se clasifican como emisión). Una lista histórica vacía (`[]`) se interpreta como los cuatro tipos habilitados; la UI
+la presenta como tal y evita dejar el flujo sin tipos seleccionados. Los documentos especiales
+(notas, `PURCHASE_INV` y comprobantes de pago) no pertenecen a estos dos selectores.
 
 ---
 

@@ -22,7 +22,7 @@ function WorkOrderMaterialStockCell({ value }: ValueRenderProps<"workOrderMateri
     // `available` already comes in the material's planned UoM (server converts it).
     return (
         <span className={cn("tabular-nums font-medium", sufficient ? "text-success" : "text-destructive")}>
-            <QuantityDisplay value={value.available} uom={value.uomName} decimals={2} className="font-sans" />
+            <QuantityDisplay value={value.available} uom={value.uomName} decimals={2} className="text-xs font-sans font-medium" />
         </span>
     )
 }

@@ -43,6 +43,8 @@ export interface TabBarProps {
     headerClassName?: string
     containerClassName?: string
     dense?: boolean
+    /** Underline variant only: make each trigger fill equal width (flex-1) */
+    stretchTabs?: boolean
     children: React.ReactNode
 }
 
@@ -60,6 +62,7 @@ export function TabBar({
     headerClassName,
     containerClassName,
     dense,
+    stretchTabs,
     children
 }: TabBarProps) {
     const visible = items.filter((i) => !i.hidden)
@@ -78,7 +81,8 @@ export function TabBar({
         )
         : isUnderline
             ? cn(
-                "group relative w-auto transition-all duration-200 bg-transparent rounded-none",
+                "group relative transition-all duration-200 bg-transparent rounded-none",
+                stretchTabs ? "flex-1" : "w-auto",
                 dense ? "h-7" : "h-9",
                 "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
                 "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-40 disabled:pointer-events-none flex items-center justify-center gap-2"
@@ -109,7 +113,7 @@ export function TabBar({
                         : isToolbar
                             ? "h-auto p-0 gap-0 bg-transparent items-center"
                             : isUnderline
-                                ? "h-full w-auto flex-row items-end justify-start gap-0 px-0 pb-0"
+                                ? cn("h-full flex-row items-end gap-0 px-0 pb-0", stretchTabs ? "w-full justify-stretch" : "w-auto justify-start")
                                 : "h-auto w-auto flex-row items-end justify-center gap-1 px-1 pb-0",
                     listClassName
                 )}
@@ -182,7 +186,7 @@ export function TabBar({
                             {(isUnderline || isToolbar) && accent && (
                                 <div className={cn(
                                     isUnderline
-                                        ? "absolute bottom-[-1px] w-full h-[5px] rounded-t-sm transition-opacity duration-200"
+                                        ? "absolute bottom-[-1px] w-full h-[2px] transition-opacity duration-200"
                                         : "absolute bottom-0 left-0 w-full h-[4px] rounded-t-sm transition-opacity duration-200",
                                     accent.bar,
                                     isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
@@ -211,8 +215,13 @@ export function TabBar({
             return (
                 // The rule is the container's own border-b (in flow, never covered by the content below);
                 // the active bar overlaps it with bottom-[-1px].
-                <div className={cn("relative flex shrink-0 items-end justify-start w-full bg-transparent border-b border-border", dense ? "px-2 h-7" : "px-4 h-10", headerClassName)}>
-                    <div className="w-fit">
+                <div className={cn(
+                    "relative flex shrink-0 items-end w-full bg-transparent border-b border-border",
+                    dense ? "h-7" : "h-10",
+                    stretchTabs ? "px-0" : (dense ? "px-2" : "px-4"),
+                    headerClassName,
+                )}>
+                    <div className={stretchTabs ? "w-full" : "w-fit"}>
                         {list}
                     </div>
                 </div>

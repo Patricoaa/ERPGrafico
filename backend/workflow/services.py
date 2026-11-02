@@ -192,7 +192,7 @@ class WorkflowService:
     def complete_task(task, user, notes=None, files=None, confirmations=None):
         from rest_framework.exceptions import PermissionDenied
 
-        task = Task.objects.select_for_update().select_related(
+        task = Task.objects.select_for_update(of=("self",)).select_related(
             "assigned_to", "assigned_group", "created_by"
         ).get(pk=task.pk)
         if task.category == Task.Category.TASK and task.task_type.startswith("HUB_"):
@@ -316,7 +316,7 @@ class WorkflowService:
     @staticmethod
     @transaction.atomic
     def reject_task(*, task: "Task", user, notes=None):
-        task = Task.objects.select_for_update().select_related(
+        task = Task.objects.select_for_update(of=("self",)).select_related(
             "assigned_to", "assigned_group", "created_by"
         ).get(pk=task.pk)
         if task.category != Task.Category.APPROVAL:

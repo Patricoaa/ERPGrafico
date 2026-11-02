@@ -1,9 +1,25 @@
 "use client"
-import { useState, useEffect } from "react"
+
+import { useState, useEffect, useCallback, useMemo } from "react"
+import { formatDistanceToNow } from "date-fns"
+import { es } from "date-fns/locale"
 import { type Task } from '@/features/workflow/api/workflowApi'
+import {
+    getNotifications,
+    getUnreadNotificationCount,
+    markNotificationRead,
+    markAllNotificationsRead,
+    type Notification,
+} from "@/features/workflow"
+import { useNotifications, type NotificationPayload } from "@/features/notifications/hooks/useNotifications"
 import { Button } from "@/components/ui/button"
-import { CardSurface, DataCell, TabBar, TabBarContent, type TabItem, SkeletonShell, EmptyState } from "@/components/shared"
-import { CheckCircle2, ListTodo, ChevronDown, ChevronRight, Package, FileText, Wallet, TrendingUp, CreditCard, Wrench, ShoppingCart, Receipt, CalendarX2, ClipboardList } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { TabBar, TabBarContent, type TabItem, SkeletonShell, EmptyState } from "@/components/shared"
+import {
+    CheckCircle2, ListTodo, ChevronDown, ChevronRight, Package, FileText,
+    Wallet, TrendingUp, CreditCard, Wrench, ShoppingCart, Receipt,
+    CalendarX2, ClipboardList, ExternalLink, Bell, BellOff, Search, User,
+} from "lucide-react"
 import { toast } from "sonner"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useOnEntityStackClose } from "@/hooks/useOnEntityStackClose"
@@ -11,7 +27,7 @@ import { documentForTask } from "../utils/taskDocument"
 import { cn } from "@/lib/utils"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
-import { formatEntityDisplay } from "@/lib/entity-registry"
+import { formatMoney } from "@/lib/money"
 import { useCompleteTask, useRejectTask } from "../hooks/useWorkflowMutations"
 import { useTasks } from "../hooks/useTasks"
 
@@ -22,76 +38,233 @@ const HUB_STAGE_LABELS: Record<string, string> = {
     treasury: 'Tesorería',
 }
 
+// Human-readable action labels per task type
+const TASK_TYPE_LABELS: Record<string, string> = {
+    CREDIT_POS_REQUEST: 'Solicitud de Crédito',
+    OT_MATERIAL_APPROVAL: 'Aprobación de Materiales',
+    OT_PREPRESS_APPROVAL: 'Aprobación de Pre-impresión',
+    OT_PRESS_APPROVAL: 'Aprobación de Impresión',
+    OT_POSTPRESS_APPROVAL: 'Aprobación de Post-impresión',
+    OT_OUTSOURCING_VERIFICATION_APPROVAL: 'Verificación de Tercerización',
+    OT_RECTIFICATION_APPROVAL: 'Rectificación y Cierre',
+    OT_CREATION: 'Asignación de Materiales',
+    F29_CREATE: 'F-29 — Crear declaración',
+    F29_PAY: 'F-29 — Registrar pago',
+    PERIOD_CLOSE: 'Cierre de Período',
+}
+
+// Rectification requires entering actual production quantities inside the OT wizard
+const REQUIRES_DOC_OPEN = new Set(['OT_RECTIFICATION_APPROVAL'])
+
+function requiresDocumentOpen(task: Task): boolean {
+    return REQUIRES_DOC_OPEN.has(task.task_type)
+}
+
 function hasApprovedInCurrentCycle(task: Task, userId: number | undefined): boolean {
     if (!userId || !task.events_data) return false
     const latestReopenId = task.events_data
-        .filter(event => event.action === 'REOPENED')
-        .reduce((latest, event) => Math.max(latest, event.id), 0)
+        .filter(e => e.action === 'REOPENED')
+        .reduce((max, e) => Math.max(max, e.id), 0)
     return task.events_data.some(
-        event => event.action === 'COMPLETED' && event.user === userId && event.id > latestReopenId,
+        e => e.action === 'COMPLETED' && e.user === userId && e.id > latestReopenId,
     )
 }
 
 function approvalsInCurrentCycle(task: Task): number {
     if (!task.events_data) return 0
     const latestReopenId = task.events_data
-        .filter(event => event.action === 'REOPENED')
-        .reduce((latest, event) => Math.max(latest, event.id), 0)
-    return task.events_data.filter(
-        event => event.action === 'COMPLETED' && event.id > latestReopenId,
-    ).length
+        .filter(e => e.action === 'REOPENED')
+        .reduce((max, e) => Math.max(max, e.id), 0)
+    return task.events_data.filter(e => e.action === 'COMPLETED' && e.id > latestReopenId).length
 }
 
-const CollapsibleSection = ({
-    title,
-    count,
-    expanded,
-    onToggle,
-    children
-}: {
+function relativeTime(dateStr: string): string {
+    try {
+        return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: es })
+    } catch {
+        return ''
+    }
+}
+
+// ── Card data helpers ──────────────────────────────────────────────────────────
+
+function getCardTitle(task: Task): string {
+    if (TASK_TYPE_LABELS[task.task_type]) return TASK_TYPE_LABELS[task.task_type]
+    if (task.task_type.startsWith('HUB_')) {
+        const stage = String(task.data?.stage ?? '')
+        return HUB_STAGE_LABELS[stage] ? `Revisión — ${HUB_STAGE_LABELS[stage]}` : task.title
+    }
+    // Strip any doc-number pattern from the title (e.g. " - OT #12", "OC #3 - ")
+    return task.title
+        .replace(/\s*[-–]\s*(OT|OC|OV|NC|ND)\s*#\d+/gi, '')
+        .replace(/(OT|OC|OV|NC|ND)\s*#\d+\s*[-–]?\s*/gi, '')
+        .trim() || task.title
+}
+
+function getCardRef(task: Task): string | null {
+    const data = task.data ?? {}
+    // OT tasks: use the explicit work_order_number field added at task creation.
+    // Fallback: parse "OT-000012" pattern from the title (legacy tasks without data).
+    if (task.task_type.startsWith('OT_')) {
+        const num = data.work_order_number
+        if (num) return `OT #${Number(num)}`
+        const match = /OT-0*(\d+)/i.exec(task.title)
+        if (match) return `OT #${match[1]}`
+        return null
+    }
+    const num = data.order_number
+    if (!num) return null
+    if (task.task_type.startsWith('OC_')) return `OC #${num}`
+    if (task.task_type.startsWith('OV_') || task.task_type.startsWith('NC_') || task.task_type.startsWith('ND_')) return `OV #${num}`
+    if (task.task_type.startsWith('HUB_')) {
+        const type = data.order_type === 'purchase' ? 'OC' : 'OV'
+        return `${type} #${num}`
+    }
+    return null
+}
+
+function getPrimaryAmount(task: Task): string | null {
+    const data = task.data ?? {}
+    if (data.required_credit) return formatMoney(Number(data.required_credit))
+    if (data.order_total) return formatMoney(Number(data.order_total))
+    return null
+}
+
+function getContextItems(task: Task): Array<{ label: string; value: string }> {
+    const items: Array<{ label: string; value: string }> = []
+    const data = task.data ?? {}
+    if (data.customer_name) items.push({ label: 'Cliente', value: String(data.customer_name) })
+    else if (data.contact_name) items.push({ label: 'Contacto', value: String(data.contact_name) })
+    if (data.required_credit && data.credit_available !== undefined && data.credit_available !== null) {
+        items.push({ label: 'Disponible', value: formatMoney(Number(data.credit_available)) })
+    }
+    return items
+}
+
+function getTaskIcon(task: Task) {
+    if (task.task_type.startsWith('HUB_')) {
+        if (task.data?.stage === 'origin') return TrendingUp
+        if (task.data?.stage === 'logistics') return Package
+        if (task.data?.stage === 'billing') return FileText
+        if (task.data?.stage === 'treasury') return Wallet
+    }
+    if (task.task_type === 'CREDIT_POS_REQUEST') return CreditCard
+    if (task.task_type.startsWith('OT_')) return Wrench
+    if (task.task_type.startsWith('OC_')) return ShoppingCart
+    if (task.task_type.startsWith('OV_') || task.task_type.startsWith('NC_') || task.task_type.startsWith('ND_')) return FileText
+    if (task.task_type === 'F29_CREATE' || task.task_type === 'F29_PAY') return Receipt
+    if (task.task_type === 'PERIOD_CLOSE') return CalendarX2
+    return ClipboardList
+}
+
+function canActOnTask(task: Task, user: { id?: number; is_superuser?: boolean; groups?: Array<{ id: number }> } | null): boolean {
+    if (!user) return false
+    if (task.status !== 'PENDING' && task.status !== 'IN_PROGRESS') return false
+    return (
+        !!user.is_superuser ||
+        task.assigned_to === user.id ||
+        (task.assigned_group != null && (user.groups?.some(g => g.id === task.assigned_group) ?? false))
+    )
+}
+
+function taskMatchesSearch(task: Task, q: string): boolean {
+    if (!q) return true
+    const low = q.toLowerCase()
+    return [
+        task.title, task.data?.customer_name, task.data?.contact_name,
+        task.data?.order_number, getCardTitle(task), getCardRef(task),
+    ].some(f => f && String(f).toLowerCase().includes(low))
+}
+
+function notificationMatchesSearch(n: Notification, q: string): boolean {
+    if (!q) return true
+    const low = q.toLowerCase()
+    return [n.title, n.message].some(f => f && f.toLowerCase().includes(low))
+}
+
+// ── Section divider ────────────────────────────────────────────────────────────
+
+interface SectionGroupProps {
     title: string
     count: number
+    hint?: string
     expanded: boolean
     onToggle: () => void
     children: React.ReactNode
-}) => (
-    <div className="mb-4">
-        <Button
-            variant="ghost"
-            onClick={onToggle}
-            className="flex items-center justify-between w-full p-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors rounded-sm hover:bg-muted/50"
-        >
-            <span>{title} ({count})</span>
-            {expanded ? (
-                <ChevronDown className="h-4 w-4 transition-transform duration-200" />
-            ) : (
-                <ChevronRight className="h-4 w-4 transition-transform duration-200" />
+    alwaysOpen?: boolean
+    action?: React.ReactNode
+}
+
+function SectionGroup({ title, count, hint, expanded, onToggle, children, alwaysOpen, action }: SectionGroupProps) {
+    if (alwaysOpen) {
+        return (
+            <div className="mb-3">
+                <div className="flex items-center gap-2 px-4 py-1.5 mb-1">
+                    <span className="text-3xs font-medium text-muted-foreground/55 uppercase tracking-wider">{title}</span>
+                    {count > 0 && <span className="text-3xs text-muted-foreground/35 tabular-nums">({count})</span>}
+                    <div className="flex-1 h-px bg-border/40" />
+                    {hint && <span className="text-3xs text-muted-foreground/35 shrink-0">{hint}</span>}
+                    {action}
+                </div>
+                <div className="space-y-1 px-3">{children}</div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="mb-2">
+            <Button
+                variant="ghost"
+                onClick={onToggle}
+                className="flex items-center justify-between w-full h-auto px-4 py-1.5 text-3xs font-medium text-muted-foreground/55 uppercase tracking-wider hover:text-muted-foreground hover:bg-transparent transition-colors"
+            >
+                <div className="flex items-center gap-2">
+                    <span>{title}</span>
+                    {count > 0 && <span className="tabular-nums text-muted-foreground/35">({count})</span>}
+                    <div className="w-10 h-px bg-border/40" />
+                </div>
+                <div className="flex items-center gap-1.5">
+                    {action}
+                    {expanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
+                </div>
+            </Button>
+            {expanded && (
+                <div className="mt-1 space-y-1 px-3 animate-in fade-in slide-in-from-top-1 duration-150">
+                    {children}
+                </div>
             )}
-        </Button>
-        <div
-            className={cn(
-                "mt-2 space-y-2 overflow-hidden transition-all duration-200 ease-out",
-                expanded ? "animate-in fade-in slide-in-from-top-1" : "max-h-0 opacity-0"
-            )}
-        >
-            {expanded && children}
         </div>
-    </div>
-)
+    )
+}
+
+// ── Shared CTA bar ─────────────────────────────────────────────────────────────
+
+function CtaBar({ children }: { children: React.ReactNode }) {
+    return (
+        <div className="flex items-center gap-1 px-3 py-1.5 border-t border-border/20 bg-muted/15">
+            {children}
+        </div>
+    )
+}
+
+// ── Main inbox ─────────────────────────────────────────────────────────────────
 
 interface TaskInboxProps {
-    onCountChange?: (counts: { total: number; approvals: number; tasks: number }) => void
+    onCountChange?: (counts: { total: number; approvals: number; tasks: number; notifications: number }) => void
 }
 
 export function TaskInbox({ onCountChange }: TaskInboxProps) {
     const { approvalTasks, operationalTasks, isLoading, refetch } = useTasks()
     const [actioningTask, setActioningTask] = useState<number | null>(null)
-    const [activeTab, setActiveTab] = useState("tasks")
+    const [activeTab, setActiveTab] = useState("all")
+    const [searchQuery, setSearchQuery] = useState("")
     const [approvalsExpanded, setApprovalsExpanded] = useState(true)
+    const [inProgressExpanded, setInProgressExpanded] = useState(true)
     const [completedExpanded, setCompletedExpanded] = useState(false)
     const [rejectedExpanded, setRejectedExpanded] = useState(false)
     const [cancelledExpanded, setCancelledExpanded] = useState(false)
-    const [inProgressExpanded, setInProgressExpanded] = useState(false)
+    const [notifications, setNotifications] = useState<Notification[]>([])
+    const [unreadCount, setUnreadCount] = useState(0)
     const { openEntity } = useGlobalModalActions()
     useOnEntityStackClose(() => { void refetch() })
     const { user } = useAuth()
@@ -106,40 +279,82 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
     const approvalsCancelled = approvalTasks.filter(t => t.status === 'CANCELLED')
     const approvalsActiveCount = approvalsPending.length + approvalsInProgress.length
 
+    // ── Notifications ────────────────────────────────────────────────────────────
+
+    const fetchNotifications = useCallback(async () => {
+        try {
+            const [data, count] = await Promise.all([getNotifications(), getUnreadNotificationCount()])
+            setNotifications(data)
+            setUnreadCount(count)
+        } catch { /* silently skip */ }
+    }, [])
+
+    useNotifications((payload: NotificationPayload) => {
+        setNotifications(prev => [payload as Notification, ...prev].slice(0, 20))
+        setUnreadCount(prev => prev + 1)
+    })
+
+    useEffect(() => {
+        if (!user) return
+        let cancelled = false
+        ;(async () => { await fetchNotifications() })()
+        const interval = setInterval(() => { if (!cancelled) void fetchNotifications() }, 120000)
+        return () => { cancelled = true; clearInterval(interval) }
+    }, [user, fetchNotifications])
+
+    const handleNotificationClick = useCallback(async (n: Notification) => {
+        if (!n.read) {
+            try {
+                await markNotificationRead(n.id)
+                setUnreadCount(prev => Math.max(0, prev - 1))
+                setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))
+            } catch { /* ignore */ }
+        }
+        if (n.link) router.push(n.link)
+    }, [router])
+
+    const handleMarkAllRead = useCallback(async () => {
+        try {
+            await markAllNotificationsRead()
+            setUnreadCount(0)
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+            toast.success("Notificaciones marcadas como leídas")
+        } catch { /* ignore */ }
+    }, [])
+
+    // ── Counts ───────────────────────────────────────────────────────────────────
+
     useEffect(() => {
         onCountChange?.({
             total: approvalsActiveCount + operationalTasks.length,
             approvals: approvalsActiveCount,
             tasks: operationalTasks.length,
+            notifications: unreadCount,
         })
-    }, [approvalsActiveCount, operationalTasks.length, onCountChange])
+    }, [approvalsActiveCount, operationalTasks.length, unreadCount, onCountChange])
 
-    const navigateToTask = (task: Task) => {
-        if (!task.object_id) {
-            toast.error("No se encontró el documento asociado")
+    // ── Navigation ────────────────────────────────────────────────────────────────
+
+    const navigateToTask = useCallback((task: Task) => {
+        // Credit POS: open customer sheet as entity drawer
+        if (task.task_type === 'CREDIT_POS_REQUEST') {
+            const customerId = task.data?.customer_id
+            if (customerId) openEntity('contacts.contact', Number(customerId))
             return
         }
-
-        // Ficha documental de la tarea (ADR-0083); al cerrar la pila se refrescan las tareas
         const target = documentForTask(task)
-        if (target) {
-            openEntity(target.label, target.id)
-        } else if (task.task_type === 'CREDIT_POS_REQUEST') {
-            toast.info("Usando vista rápida de aprobación (Click en el botón, no en la tarjeta)");
+        if (target) { openEntity(target.label, target.id); return }
+        if (task.task_type === 'F29_CREATE' || task.task_type === 'F29_PAY') {
+            const year = task.data?.year ?? ''; const month = task.data?.month ?? ''
+            window.location.href = `/accounting?view=tax&year=${year}&month=${month}&action=${task.task_type === 'F29_PAY' ? 'pay' : 'create'}`
             return
-        } else if (task.task_type === 'F29_CREATE' || task.task_type === 'F29_PAY') {
-            const year = task.data?.year || ''
-            const month = task.data?.month || ''
-            const action = task.task_type === 'F29_PAY' ? 'pay' : 'create'
-            window.location.href = `/accounting?view=tax&year=${year}&month=${month}&action=${action}`
-        } else if (task.task_type === 'PERIOD_CLOSE') {
-            const year = task.data?.year || ''
-            const month = task.data?.month || ''
-            window.location.href = `/accounting/periods?year=${year}&month=${month}`
-        } else {
-            toast.info("Navegación específica no configurada para este tipo de tarea")
         }
-    }
+        if (task.task_type === 'PERIOD_CLOSE') {
+            window.location.href = `/accounting/periods?year=${task.data?.year ?? ''}&month=${task.data?.month ?? ''}`
+            return
+        }
+        toast.info("Navegación específica no configurada para este tipo de tarea")
+    }, [openEntity])
 
     useEffect(() => {
         if (selectedId && !isLoading) {
@@ -151,123 +366,272 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                 router.replace(`?${params.toString()}`, { scroll: false })
             }
         }
-    }, [selectedId, isLoading, approvalTasks, operationalTasks])
+    }, [selectedId, isLoading, approvalTasks, operationalTasks, navigateToTask, searchParams, router])
 
     const { completeTask } = useCompleteTask()
     const { rejectTask } = useRejectTask()
 
-    const handleCreditAction = async (e: React.MouseEvent, task: Task, action: 'APPROVE' | 'REJECT') => {
+    const handleApprovalAction = async (e: React.MouseEvent, task: Task, action: 'APPROVE' | 'REJECT') => {
         e.stopPropagation()
         try {
             setActioningTask(task.id)
-            const notes = action === 'APPROVE' ? 'Aprobado desde Inbox POS' : 'Rechazado desde Inbox POS'
-            if (action === 'APPROVE') {
-                await completeTask({ id: task.id, notes })
-            } else {
-                await rejectTask({ id: task.id, notes })
-            }
+            const notes = action === 'APPROVE' ? 'Aprobado desde Bandeja' : 'Rechazado desde Bandeja'
+            if (action === 'APPROVE') await completeTask({ id: task.id, notes })
+            else await rejectTask({ id: task.id, notes })
             void refetch()
         } catch {
-            // Mutation hooks display the API validation or permission error.
+            // Mutation hooks display the error toast.
         } finally {
             setActioningTask(null)
         }
     }
 
+    // ── Filtered lists ────────────────────────────────────────────────────────────
 
-    const getTaskIcon = (task: Task) => {
-        if (task.task_type?.startsWith('HUB_')) {
-            if (task.data?.stage === 'origin') return TrendingUp
-            if (task.data?.stage === 'logistics') return Package
-            if (task.data?.stage === 'billing') return FileText
-            if (task.data?.stage === 'treasury') return Wallet
-        }
-        if (task.task_type === 'CREDIT_POS_REQUEST') return CreditCard
-        if (task.task_type?.includes('OT_')) return Wrench
-        if (task.task_type?.includes('OC_')) return ShoppingCart
-        if (task.task_type?.includes('OV_') || task.task_type?.includes('NC_') || task.task_type?.includes('ND_')) return FileText
-        if (task.task_type === 'F29_CREATE' || task.task_type === 'F29_PAY') return Receipt
-        if (task.task_type === 'PERIOD_CLOSE') return CalendarX2
-        return ClipboardList
-    }
+    const filteredApprovalTasks = useMemo(() => approvalTasks.filter(t => {
+        if (!taskMatchesSearch(t, searchQuery)) return false
+        return t.status === 'PENDING' || t.status === 'IN_PROGRESS'
+    }), [approvalTasks, searchQuery])
 
-    const renderTaskCard = (task: Task) => {
-        const isRejected = task.status === 'REJECTED'
+    const filteredOperationalTasks = useMemo(() =>
+        operationalTasks.filter(t => taskMatchesSearch(t, searchQuery)),
+    [operationalTasks, searchQuery])
+
+    const filteredNotifications = useMemo(() =>
+        notifications.filter(n => notificationMatchesSearch(n, searchQuery)),
+    [notifications, searchQuery])
+
+    // ── Approval card ────────────────────────────────────────────────────────────
+
+    const renderApprovalCard = (task: Task) => {
+        const isActive = task.status === 'PENDING' || task.status === 'IN_PROGRESS'
+        const isCompleted = task.status === 'COMPLETED'
+        const userCanAct = canActOnTask(task, user)
+        const alreadyApproved = hasApprovedInCurrentCycle(task, user?.id)
+        const forceOpenDoc = requiresDocumentOpen(task)
+        const showInline = isActive && userCanAct && !alreadyApproved && !forceOpenDoc
+        const contextItems = getContextItems(task)
+        const cardTitle = getCardTitle(task)
+        const cardRef = getCardRef(task)
+        const primaryAmount = getPrimaryAmount(task)
+        const Icon = getTaskIcon(task)
+        const hasDocument = !!documentForTask(task)
+        const canOpenCustomer = task.task_type === 'CREDIT_POS_REQUEST' && !!task.data?.customer_id
+        const assigneeName = task.assigned_group_name ?? task.assigned_to_data?.username ?? null
+        const createdAt = task.created_at ? relativeTime(task.created_at) : null
+
+        const iconColor = isActive ? "text-warning" : isCompleted ? "text-success" : "text-muted-foreground/40"
 
         return (
-            <CardSurface
+            <div
                 key={task.id}
-                kind="item"
                 className={cn(
-                    "w-full gap-2 px-3 py-2.5",
-                    isRejected && "opacity-40 grayscale-[0.5]"
+                    "surface-item flex flex-col rounded-sm select-none overflow-hidden",
+                    !isActive && "opacity-50",
                 )}
-                onClick={() => navigateToTask(task)}
             >
-                {/* Title + arrow */}
-                <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-sm font-semibold tracking-tight text-foreground line-clamp-2 flex-1 group-hover:text-primary transition-colors flex items-center gap-1.5">
-                        {(() => { const Icon = getTaskIcon(task); return <Icon className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" /> })()}
-                        {task.task_type === 'CREDIT_POS_REQUEST' ? (
-                            `Aprobación Crédito: ${task.data?.customer_name || task.title.replace('Aprobación Crédito: ', '') || 'Cliente'}`
-                        ) : task.task_type?.startsWith('HUB_') ? (
-                            <span>{HUB_STAGE_LABELS[task.data?.stage as keyof typeof HUB_STAGE_LABELS] || task.data?.stage}:{' '}
-                                {formatEntityDisplay(task.data?.order_type === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder', { number: task.data?.order_number })}
+                <div className="flex items-start gap-2 p-3 pb-2">
+                    <Icon className={cn("h-3.5 w-3.5 shrink-0 mt-0.5", iconColor)} aria-hidden />
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-1.5">
+                            <p className="text-xs font-semibold tracking-tight text-foreground leading-snug">
+                                {cardTitle}
+                            </p>
+                            {primaryAmount && (
+                                <span className="text-xs font-bold tabular-nums shrink-0 text-foreground/80 leading-snug">
+                                    {primaryAmount}
+                                </span>
+                            )}
+                        </div>
+
+                        {cardRef && (
+                            <span className="inline-block mt-0.5 text-3xs text-muted-foreground/55 font-mono bg-muted/50 px-1.5 py-px rounded-sm leading-none">
+                                {cardRef}
                             </span>
-                        ) : (
-                            task.title
                         )}
-                    </h3>
-                    <DataCell.ActionSingle
-                        title="Abrir"
-                        onClick={() => navigateToTask(task)}
-                    />
+
+                        {(assigneeName || createdAt) && (
+                            <p className="flex items-center gap-1 text-2xs text-muted-foreground/45 mt-1">
+                                {assigneeName && <><User className="h-2.5 w-2.5 shrink-0" aria-hidden /><span>{assigneeName}</span></>}
+                                {assigneeName && createdAt && <span aria-hidden>·</span>}
+                                {createdAt && <span>{createdAt}</span>}
+                            </p>
+                        )}
+
+                        {contextItems.length > 0 && (
+                            <dl className="flex flex-wrap gap-x-3 gap-y-0 mt-1.5">
+                                {contextItems.map(({ label, value }) => (
+                                    <div key={label} className="flex items-baseline gap-1">
+                                        <dt className="text-2xs text-muted-foreground/40 font-medium">{label}:</dt>
+                                        <dd className="text-2xs text-foreground/65 tabular-nums">{value}</dd>
+                                    </div>
+                                ))}
+                            </dl>
+                        )}
+
+                        {approvalsInCurrentCycle(task) > 0 && isActive && (
+                            <p className="text-2xs text-muted-foreground/55 mt-1">
+                                {alreadyApproved
+                                    ? 'Tu aprobación fue registrada; falta otra.'
+                                    : `${approvalsInCurrentCycle(task)} aprobación(es) registrada(s).`}
+                            </p>
+                        )}
+                    </div>
                 </div>
 
-                {task.task_type === 'CREDIT_POS_REQUEST' && approvalsInCurrentCycle(task) > 0 && task.status !== 'COMPLETED' && (
-                    <p className="text-xs text-muted-foreground">
-                        {hasApprovedInCurrentCycle(task, user?.id)
-                            ? 'Tu aprobación quedó registrada; espera a otro responsable del grupo.'
-                            : `${approvalsInCurrentCycle(task)} aprobación(es) ya registrada(s).`}
-                    </p>
+                {(showInline || forceOpenDoc || hasDocument || canOpenCustomer) && (
+                    <CtaBar>
+                        {showInline && (
+                            <>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="flex-1 text-3xs h-7 px-2 border-destructive/30 text-destructive hover:bg-destructive/10 rounded-sm font-semibold uppercase tracking-wide"
+                                    onClick={(e) => handleApprovalAction(e, task, 'REJECT')}
+                                    disabled={actioningTask === task.id}
+                                >
+                                    Rechazar
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    className="flex-1 text-3xs h-7 px-2 bg-success/90 hover:bg-success text-success-foreground font-semibold rounded-sm uppercase tracking-wide"
+                                    onClick={(e) => handleApprovalAction(e, task, 'APPROVE')}
+                                    disabled={actioningTask === task.id}
+                                >
+                                    Aprobar
+                                </Button>
+                            </>
+                        )}
+                        {forceOpenDoc && isActive && (
+                            <p className="text-2xs text-muted-foreground/55 flex-1 italic">
+                                Abre la OT para completar la rectificación.
+                            </p>
+                        )}
+                        {(hasDocument || canOpenCustomer) && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-5 px-2 text-2xs text-muted-foreground/50 hover:text-foreground gap-1 shrink-0 font-medium ml-auto"
+                                onClick={() => navigateToTask(task)}
+                                aria-label={canOpenCustomer ? "Ver ficha de cliente" : "Ver documento"}
+                            >
+                                <ExternalLink className="h-3 w-3" />
+                                {canOpenCustomer ? 'Ver cliente' : 'Ver doc.'}
+                            </Button>
+                        )}
+                    </CtaBar>
                 )}
-
-                {/* Credit: approve/reject buttons only */}
-                {task.task_type === 'CREDIT_POS_REQUEST' && ['PENDING', 'IN_PROGRESS'].includes(task.status) &&
-                    (user?.is_superuser || task.assigned_to === user?.id ||
-                        (task.assigned_group != null && user?.groups?.some(group => group.id === task.assigned_group))) &&
-                    !hasApprovedInCurrentCycle(task, user?.id) && (
-                    <div className="flex gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1 text-xs h-8 border-destructive/50 text-destructive hover:bg-destructive/10"
-                            onClick={(e) => handleCreditAction(e, task, 'REJECT')}
-                            disabled={actioningTask === task.id}
-                        >
-                            Rechazar
-                        </Button>
-                        <Button
-                            size="sm"
-                            className="flex-1 text-xs h-8 bg-success/90 hover:bg-success text-success-foreground font-medium"
-                            onClick={(e) => handleCreditAction(e, task, 'APPROVE')}
-                            disabled={actioningTask === task.id}
-                        >
-                            Aprobar
-                        </Button>
-                    </div>
-                )}
-            </CardSurface>
+            </div>
         )
     }
 
+    // ── Task card ─────────────────────────────────────────────────────────────────
+
+    const renderOperationalCard = (task: Task) => {
+        const Icon = getTaskIcon(task)
+        const cardRef = getCardRef(task)
+        const assigneeName = task.assigned_to_data?.username ?? null
+        const createdAt = task.created_at ? relativeTime(task.created_at) : null
+        return (
+            <div key={task.id} className="surface-item flex flex-col rounded-sm select-none overflow-hidden">
+                <div className="flex items-start gap-2 p-3 pb-2">
+                    <Icon className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0 mt-0.5" aria-hidden />
+                    <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-foreground leading-snug">{getCardTitle(task)}</p>
+                        {cardRef && (
+                            <span className="inline-block mt-0.5 text-3xs text-muted-foreground/55 font-mono bg-muted/50 px-1.5 py-px rounded-sm leading-none">
+                                {cardRef}
+                            </span>
+                        )}
+                        {(assigneeName || createdAt) && (
+                            <p className="flex items-center gap-1 text-2xs text-muted-foreground/45 mt-1">
+                                {assigneeName && <span>{assigneeName}</span>}
+                                {assigneeName && createdAt && <span aria-hidden>·</span>}
+                                {createdAt && <span>{createdAt}</span>}
+                            </p>
+                        )}
+                    </div>
+                </div>
+                <CtaBar>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 px-2 text-2xs text-muted-foreground/50 hover:text-foreground gap-1 font-medium"
+                        onClick={() => navigateToTask(task)}
+                    >
+                        <ExternalLink className="h-3 w-3" />
+                        Abrir
+                    </Button>
+                </CtaBar>
+            </div>
+        )
+    }
+
+    // ── Notification card ─────────────────────────────────────────────────────────
+
+    const renderNotificationCard = (n: Notification) => (
+        <div
+            key={n.id}
+            className={cn("surface-item flex flex-col rounded-sm select-none overflow-hidden", !n.read && "bg-primary/[0.03]")}
+        >
+            <div className="flex items-start gap-2 p-3 pb-2">
+                <span className={cn("mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 flex-none", n.read ? "opacity-0" : "bg-primary")} aria-hidden />
+                <div className="min-w-0 flex-1">
+                    <p className={cn("text-xs leading-snug", n.read ? "font-medium text-foreground/60" : "font-semibold text-foreground")}>
+                        {n.title}
+                    </p>
+                    {n.message && (
+                        <p className="text-2xs text-muted-foreground/60 mt-0.5 line-clamp-2">{n.message}</p>
+                    )}
+                    <p className="text-3xs text-muted-foreground/40 mt-1">{relativeTime(n.created_at)}</p>
+                </div>
+            </div>
+            {n.link && (
+                <CtaBar>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 px-2 text-2xs text-muted-foreground/50 hover:text-foreground gap-1 font-medium"
+                        onClick={() => handleNotificationClick(n)}
+                    >
+                        <ExternalLink className="h-3 w-3" />
+                        Ver
+                    </Button>
+                </CtaBar>
+            )}
+        </div>
+    )
+
+    // ── Search + filter bar ───────────────────────────────────────────────────────
+
+    const renderSearchBar = () => (
+        <div className="flex items-center px-3 py-1.5 border-b border-border/30 shrink-0">
+            <div className="relative flex-1 min-w-0">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/45 pointer-events-none" />
+                <Input
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Buscar…"
+                    className="h-6 pl-6 text-xs bg-transparent border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+            </div>
+        </div>
+    )
+
+    // ── Filtered groups for Todo tab ──────────────────────────────────────────────
+
+    const allPending  = filteredApprovalTasks.filter(t => t.status === 'PENDING')
+    const allProgress = filteredApprovalTasks.filter(t => t.status === 'IN_PROGRESS')
+
     const tabItems: TabItem[] = [
-        { value: 'tasks', label: 'Tareas', badge: operationalTasks.length },
-        { value: 'approvals', label: 'Aprobaciones', badge: approvalsActiveCount },
+        { value: 'all',      label: 'Todo' },
+        { value: 'approvals', label: 'Aprob.',  badge: approvalsActiveCount || undefined },
+        { value: 'tasks',     label: 'Tareas',  badge: operationalTasks.length || undefined },
+        { value: 'notices',   label: 'Avisos',  badge: unreadCount || undefined },
     ]
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full min-h-0">
             <TabBar
                 items={tabItems}
                 value={activeTab}
@@ -275,96 +639,134 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                 orientation="horizontal"
                 variant="underline"
                 dense
-                className="w-full px-4"
-                contentClassName="mt-3 bg-transparent flex flex-col"
+                stretchTabs
+                className="w-full"
+                contentClassName="flex-1 min-h-0 bg-transparent flex flex-col overflow-hidden"
             >
-                <TabBarContent value="approvals" className="h-full flex flex-col mt-0">
-                     <SkeletonShell isLoading={isLoading} ariaLabel="Cargando aprobaciones">
-                         <div className="flex flex-col flex-1">
-                             {approvalsPending.length > 0 && (
-                                 <CollapsibleSection
-                                     title="Pendientes"
-                                     count={approvalsPending.length}
-                                     expanded={approvalsExpanded}
-                                     onToggle={() => setApprovalsExpanded(!approvalsExpanded)}
-                                 >
-                                     {approvalsPending.map(task => renderTaskCard(task))}
-                                 </CollapsibleSection>
-                             )}
+                {/* ── Todo tab ──────────────────────────────────────────────── */}
+                <TabBarContent value="all" className="flex flex-col h-full mt-0 min-h-0">
+                    {renderSearchBar()}
+                    <SkeletonShell isLoading={isLoading} ariaLabel="Cargando bandeja">
+                        <div className="flex-1 overflow-y-auto py-3">
+                            {allPending.length > 0 && (
+                                <SectionGroup title="Aprobaciones pendientes" count={allPending.length} hint="Prioridad" expanded={approvalsExpanded} onToggle={() => setApprovalsExpanded(v => !v)} alwaysOpen>
+                                    {allPending.map(renderApprovalCard)}
+                                </SectionGroup>
+                            )}
+                            {allProgress.length > 0 && (
+                                <SectionGroup title="Aprobaciones en curso" count={allProgress.length} expanded={inProgressExpanded} onToggle={() => setInProgressExpanded(v => !v)} alwaysOpen>
+                                    {allProgress.map(renderApprovalCard)}
+                                </SectionGroup>
+                            )}
+                            {filteredOperationalTasks.length > 0 && (
+                                <SectionGroup title="Tareas" count={filteredOperationalTasks.length} hint="Asignadas a ti" expanded={true} onToggle={() => {}} alwaysOpen>
+                                    {filteredOperationalTasks.map(renderOperationalCard)}
+                                </SectionGroup>
+                            )}
+                            {filteredNotifications.length > 0 && (
+                                <SectionGroup
+                                    title="Avisos"
+                                    count={filteredNotifications.length}
+                                    expanded={true}
+                                    onToggle={() => {}}
+                                    alwaysOpen
+                                    action={unreadCount > 0 ? (
+                                        <Button variant="ghost" size="sm" className="h-5 px-1.5 text-3xs text-muted-foreground/45 hover:text-foreground hover:bg-transparent font-medium" onClick={handleMarkAllRead}>
+                                            Leer todo
+                                        </Button>
+                                    ) : undefined}
+                                >
+                                    {filteredNotifications.slice(0, 5).map(renderNotificationCard)}
+                                </SectionGroup>
+                            )}
+                            {filteredApprovalTasks.length === 0 && filteredOperationalTasks.length === 0 && filteredNotifications.length === 0 && (
+                                <EmptyState
+                                    variant="compact"
+                                    icon={CheckCircle2}
+                                    title={searchQuery ? "Sin resultados" : "Bandeja al día"}
+                                    className="mx-3 bg-muted/10 rounded-md border border-dashed"
+                                />
+                            )}
+                        </div>
+                    </SkeletonShell>
+                </TabBarContent>
 
+                {/* ── Approvals tab ──────────────────────────────────────────── */}
+                <TabBarContent value="approvals" className="flex flex-col h-full mt-0 min-h-0">
+                    <SkeletonShell isLoading={isLoading} ariaLabel="Cargando aprobaciones">
+                        <div className="flex-1 overflow-y-auto py-3">
+                            {approvalsPending.length > 0 && (
+                                <SectionGroup title="Pendientes" count={approvalsPending.length} hint="Prioridad para ti" expanded={approvalsExpanded} onToggle={() => setApprovalsExpanded(v => !v)} alwaysOpen>
+                                    {approvalsPending.map(renderApprovalCard)}
+                                </SectionGroup>
+                            )}
                             {approvalsInProgress.length > 0 && (
-                                <CollapsibleSection
-                                    title="En curso"
-                                    count={approvalsInProgress.length}
-                                    expanded={inProgressExpanded}
-                                    onToggle={() => setInProgressExpanded(!inProgressExpanded)}
-                                >
-                                    {approvalsInProgress.map(task => renderTaskCard(task))}
-                                </CollapsibleSection>
+                                <SectionGroup title="En curso" count={approvalsInProgress.length} expanded={inProgressExpanded} onToggle={() => setInProgressExpanded(v => !v)} alwaysOpen>
+                                    {approvalsInProgress.map(renderApprovalCard)}
+                                </SectionGroup>
                             )}
-
                             {approvalsCompleted.length > 0 && (
-                                <CollapsibleSection
-                                    title="Completadas"
-                                    count={approvalsCompleted.length}
-                                    expanded={completedExpanded}
-                                    onToggle={() => setCompletedExpanded(!completedExpanded)}
-                                >
-                                    {approvalsCompleted.slice(0, 10).map(task => renderTaskCard(task))}
-                                </CollapsibleSection>
+                                <SectionGroup title="Completadas" count={approvalsCompleted.length} expanded={completedExpanded} onToggle={() => setCompletedExpanded(v => !v)}>
+                                    {approvalsCompleted.slice(0, 10).map(renderApprovalCard)}
+                                </SectionGroup>
                             )}
-
                             {approvalsRejected.length > 0 && (
-                                <CollapsibleSection
-                                    title="Rechazadas"
-                                    count={approvalsRejected.length}
-                                    expanded={rejectedExpanded}
-                                    onToggle={() => setRejectedExpanded(!rejectedExpanded)}
-                                >
-                                    {approvalsRejected.slice(0, 10).map(task => renderTaskCard(task))}
-                                </CollapsibleSection>
+                                <SectionGroup title="Rechazadas" count={approvalsRejected.length} expanded={rejectedExpanded} onToggle={() => setRejectedExpanded(v => !v)}>
+                                    {approvalsRejected.slice(0, 10).map(renderApprovalCard)}
+                                </SectionGroup>
                             )}
-
                             {approvalsCancelled.length > 0 && (
-                                <CollapsibleSection
-                                    title="Canceladas"
-                                    count={approvalsCancelled.length}
-                                    expanded={cancelledExpanded}
-                                    onToggle={() => setCancelledExpanded(!cancelledExpanded)}
-                                >
-                                    {approvalsCancelled.slice(0, 10).map(task => renderTaskCard(task))}
-                                </CollapsibleSection>
+                                <SectionGroup title="Canceladas" count={approvalsCancelled.length} expanded={cancelledExpanded} onToggle={() => setCancelledExpanded(v => !v)}>
+                                    {approvalsCancelled.slice(0, 10).map(renderApprovalCard)}
+                                </SectionGroup>
                             )}
+                            {approvalTasks.length === 0 && (
+                                <EmptyState variant="compact" icon={CheckCircle2} title="No tienes aprobaciones" className="mx-3 bg-muted/20 rounded-md border border-dashed" />
+                            )}
+                        </div>
+                    </SkeletonShell>
+                </TabBarContent>
 
-                             {approvalTasks.length === 0 && (
-                                 <EmptyState
-                                     variant="compact"
-                                     icon={CheckCircle2}
-                                     title="No tienes aprobaciones"
-                                     className="flex-1 bg-muted/30 rounded-md border border-dashed"
-                                 />
-                             )}
-                         </div>
-                     </SkeletonShell>
-                 </TabBarContent>
+                {/* ── Tasks tab ─────────────────────────────────────────────── */}
+                <TabBarContent value="tasks" className="flex flex-col h-full mt-0 min-h-0">
+                    <SkeletonShell isLoading={isLoading} ariaLabel="Cargando tareas">
+                        <div className="flex-1 overflow-y-auto py-3">
+                            {operationalTasks.length === 0 ? (
+                                <EmptyState variant="compact" icon={ListTodo} title="No tienes tareas pendientes" className="mx-3 bg-muted/10 rounded-md border border-dashed" />
+                            ) : (
+                                <SectionGroup title="Asignadas a ti" count={operationalTasks.length} expanded={true} onToggle={() => {}} alwaysOpen>
+                                    {operationalTasks.map(renderOperationalCard)}
+                                </SectionGroup>
+                            )}
+                        </div>
+                    </SkeletonShell>
+                </TabBarContent>
 
-                 <TabBarContent value="tasks" className="h-full flex flex-col mt-0">
-                     <SkeletonShell isLoading={isLoading} ariaLabel="Cargando tareas">
-                         {operationalTasks.length === 0 ? (
-                             <EmptyState
-                                 variant="compact"
-                                 icon={ListTodo}
-                                 title="No tienes tareas pendientes"
-                                 className="flex-1 bg-muted/10 rounded-md border border-dashed"
-                             />
-                          ) : (
-                              <div className="space-y-2">
-                                  {operationalTasks.map(task => renderTaskCard(task))}
-                              </div>
-                          )}
-                     </SkeletonShell>
-                 </TabBarContent>
-             </TabBar>
-         </div>
+                {/* ── Notices tab ───────────────────────────────────────────── */}
+                <TabBarContent value="notices" className="flex flex-col h-full mt-0 min-h-0">
+                    <div className="flex-1 overflow-y-auto py-3">
+                        {notifications.length === 0 ? (
+                            <EmptyState variant="compact" icon={BellOff} title="Sin notificaciones" description="Aparecerán aquí cuando recibas avisos del sistema." className="mx-3 bg-muted/10 rounded-md border border-dashed" />
+                        ) : (
+                            <SectionGroup
+                                title="Para tu información"
+                                count={notifications.length}
+                                expanded={true}
+                                onToggle={() => {}}
+                                alwaysOpen
+                                action={unreadCount > 0 ? (
+                                    <Button variant="ghost" size="sm" className="h-5 px-1.5 text-3xs text-muted-foreground/45 hover:text-foreground hover:bg-transparent font-medium" onClick={handleMarkAllRead}>
+                                        <Bell className="h-2.5 w-2.5 mr-0.5" />
+                                        Leer todo
+                                    </Button>
+                                ) : undefined}
+                            >
+                                {notifications.map(renderNotificationCard)}
+                            </SectionGroup>
+                        )}
+                    </div>
+                </TabBarContent>
+            </TabBar>
+        </div>
     )
 }

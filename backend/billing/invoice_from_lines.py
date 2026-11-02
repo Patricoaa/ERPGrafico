@@ -86,6 +86,12 @@ class InvoiceFromLinesService:
         s = _Side(is_sale=(side == "sale"))
         if side not in ("sale", "purchase"):
             raise ValidationError("side debe ser 'sale' o 'purchase'.")
+        from billing.dte_policy import validate_configured_dte_type
+
+        validate_configured_dte_type(
+            side="emit" if s.is_sale else "receive",
+            dte_type=dte_type,
+        )
         if dte_type not in PRIMARY_DTE_TYPES:
             raise ValidationError(f"Tipo de documento no facturable por líneas: {dte_type}.")
         if not items:

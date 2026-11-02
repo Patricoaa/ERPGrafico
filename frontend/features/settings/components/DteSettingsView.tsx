@@ -4,14 +4,22 @@ import React from "react"
 import { useForm, type UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useBillingSettings } from "@/features/settings"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField, FormItem } from "@/components/ui/form"
-import { Check } from "lucide-react"
 import { AutoSaveStatusBadge, SkeletonShell } from "@/components/shared"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
-import { dteSideSchema, type DteSideFormValues } from "./DteSettingsView.schema"
+import {
+    DTE_TYPE_IDS,
+    DTE_TYPE_OPTIONS,
+    dteSideSchema,
+    type ConfigurableDteType,
+    type DteSideFormValues,
+} from "./DteSettingsView.schema"
 
 /** Lado del flujo DTE. Ventas emite; Compras recibe (ADR-0089). */
 export type DteSide = "emit" | "receive"
@@ -43,7 +51,7 @@ interface DteSettingsViewProps {
  * Mismo endpoint de PATCH parcial sobre `AccountingSettings` — sin migración.
  */
 export function DteSettingsView({ side }: DteSettingsViewProps) {
-    const { settings, isLoading, updateSettings } = useBillingSettings()
+    const { settings, isLoading, isError, refetch, updateSettings } = useBillingSettings()
     const field = FIELD_BY_SIDE[side]
     const card = CARD_BY_SIDE[side]
 
@@ -54,7 +62,12 @@ export function DteSettingsView({ side }: DteSettingsViewProps) {
 
     React.useEffect(() => {
         if (settings) {
-            form.reset({ allowed_dte_types: settings[field] || [] })
+            const configuredTypes = settings[field] || []
+            form.reset({
+                allowed_dte_types: configuredTypes.length > 0
+                    ? configuredTypes as ConfigurableDteType[]
+                    : [...DTE_TYPE_IDS],
+            })
         }
     }, [settings, field, form])
 
@@ -62,9 +75,28 @@ export function DteSettingsView({ side }: DteSettingsViewProps) {
         await updateSettings({ [field]: data.allowed_dte_types })
     }, [updateSettings, field])
 
-    const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({ form, onSave })
+    const validate = React.useCallback((values: DteSideFormValues) => {
+        const result = dteSideSchema.safeParse(values)
+        return result.success ? true : result.error.issues[0]?.message ?? "Revise los tipos seleccionados."
+    }, [])
+
+    const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({ form, onSave, validate })
 
     useUnsavedChangesGuard(status)
+
+    if (isError) {
+        return (
+            <Alert variant="destructive" className="max-w-3xl mx-auto">
+                <div className="space-y-3">
+                    <AlertTitle>No se pudo cargar la configuración DTE</AlertTitle>
+                    <AlertDescription>Los cambios están deshabilitados para evitar sobrescribir una configuración que no se pudo leer.</AlertDescription>
+                    <Button type="button" variant="outline" onClick={() => void refetch()}>
+                        Reintentar
+                    </Button>
+                </div>
+            </Alert>
+        )
+    }
 
     return (
         <SkeletonShell isLoading={isLoading && !settings} ariaLabel="Cargando configuración...">
@@ -102,18 +134,11 @@ interface DTEConfigCardProps {
 }
 
 function DTEConfigCard({ form, name, title, description }: DTEConfigCardProps) {
-    const dteTypes = [
-        { id: 'FACTURA', label: 'Factura Electrónica', code: '33' },
-        { id: 'FACTURA_EXENTA', label: 'Factura Exenta', code: '34' },
-        { id: 'BOLETA', label: 'Boleta Electrónica', code: '39' },
-        { id: 'BOLETA_EXENTA', label: 'Boleta Exenta', code: '41' },
-    ]
-
     return (
         <Card variant="default">
             <CardHeader>
                 <CardTitle className="text-lg">{title}</CardTitle>
-                <CardDescription>{description}</CardDescription>
+                <CardDescription>{description} Mantenga al menos un tipo habilitado.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <FormField
@@ -122,23 +147,37 @@ function DTEConfigCard({ form, name, title, description }: DTEConfigCardProps) {
                     render={({ field }) => (
                         <FormItem>
                             <div className="grid grid-cols-1 gap-4">
-                                {dteTypes.map((type) => (
-                                    <div key={type.id} className="surface-item flex items-center space-x-3 space-y-0 p-3 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => {
-                                        const current = (field.value as string[]) || [];
-                                        const next = current.includes(type.id)
-                                            ? current.filter((v) => v !== type.id)
-                                            : [...current, type.id];
-                                        field.onChange(next);
-                                    }}>
-                                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${((field.value as string[]) || []).includes(type.id) ? 'bg-primary border-primary' : 'border-muted-foreground'}`}>
-                                            {((field.value as string[]) || []).includes(type.id) && <Check className="h-3.5 w-3.5 text-primary-foreground stroke-[4]" />}
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="text-sm font-bold leading-none">{type.label}</div>
-                                            <div className="text-3xs text-muted-foreground mt-1">Código SII: {type.code}</div>
-                                        </div>
-                                    </div>
-                                ))}
+                                {DTE_TYPE_OPTIONS.map((type) => {
+                                    const selectedTypes = field.value ?? []
+                                    const checked = selectedTypes.includes(type.id)
+                                    const checkboxId = `dte-type-${type.id}`
+
+                                    return (
+                                        <label
+                                            key={type.id}
+                                            htmlFor={checkboxId}
+                                            className="surface-item flex items-center gap-3 p-3 hover:bg-accent/50 transition-colors cursor-pointer"
+                                        >
+                                            <Checkbox
+                                                id={checkboxId}
+                                                checked={checked}
+                                                disabled={checked && selectedTypes.length === 1}
+                                                aria-label={`${type.label}, código SII ${type.code}`}
+                                                onCheckedChange={(nextChecked) => {
+                                                    if (nextChecked) {
+                                                        field.onChange([...selectedTypes, type.id])
+                                                    } else if (selectedTypes.length > 1) {
+                                                        field.onChange(selectedTypes.filter((value) => value !== type.id))
+                                                    }
+                                                }}
+                                            />
+                                            <span className="flex-1">
+                                                <span className="block text-sm font-bold leading-none">{type.label}</span>
+                                                <span className="block text-3xs text-muted-foreground mt-1">Código SII: {type.code}</span>
+                                            </span>
+                                        </label>
+                                        )
+                                    })}
                             </div>
                         </FormItem>
                     )}

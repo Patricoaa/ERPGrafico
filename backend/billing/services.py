@@ -439,6 +439,10 @@ class BillingService:
         """
         Creates a Sale Invoice (Factura/Boleta) from a SaleOrder.
         """
+        from billing.dte_policy import validate_configured_dte_type
+
+        validate_configured_dte_type(side="emit", dte_type=dte_type)
+
         if order.status not in [
             SaleOrder.Status.CONFIRMED,
             SaleOrder.Status.DRAFT,
@@ -595,6 +599,10 @@ class BillingService:
         Creates a Purchase Bill from a PurchaseOrder.
         If status is DRAFT, it allows empty folio and deferred VAT separation.
         """
+        from billing.dte_policy import validate_configured_dte_type
+
+        validate_configured_dte_type(side="receive", dte_type=dte_type)
+
         if status == Invoice.Status.POSTED and not supplier_invoice_number:
             raise ValidationError("El número de folio es obligatorio para publicar la factura.")
 
@@ -1441,6 +1449,8 @@ class BillingService:
         """
         from django.utils.dateparse import parse_date
 
+        from billing.dte_policy import validate_configured_dte_type
+
         from tax.services import AccountingPeriodService
 
         target_date = date
@@ -1449,6 +1459,13 @@ class BillingService:
 
         if not target_date:
             target_date = invoice.date
+
+        if invoice.sale_order_id:
+            validate_configured_dte_type(side="emit", dte_type=invoice.dte_type)
+        elif invoice.purchase_order_id or invoice.is_sale_document() is False:
+            validate_configured_dte_type(side="receive", dte_type=invoice.dte_type)
+        else:
+            validate_configured_dte_type(side="emit", dte_type=invoice.dte_type)
 
         # 1. Tax Period Validation
         if TaxPeriodService.is_period_closed(target_date):
