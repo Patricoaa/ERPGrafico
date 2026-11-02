@@ -13,7 +13,7 @@ import {
 import { financeApi } from "../../api/financeApi"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, SubmitButton, FormSplitLayout } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -160,7 +160,7 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                     sidebar={
                         initialData?.id ? (
                             auditSidebar ?? (
-                                <ActivitySidebar
+                                <EntitySidebar
                                     entityType="bank_journal"
                                     entityId={initialData.id as number | string}
                                 />

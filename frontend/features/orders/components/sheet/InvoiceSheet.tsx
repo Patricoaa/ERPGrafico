@@ -11,7 +11,7 @@ import {
     type DocumentSheetTab,
 } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { PrintableLayout, useDrawerIdentity, usePrintableDrawer } from "@/features/_shared"
 import {
     DocumentRelationsTab,
@@ -203,7 +203,7 @@ export function InvoiceSheet({ id, open, onOpenChange, embedded = false, posSess
                 tabs={tabs}
                 tab={tab}
                 onTabChange={setTab}
-                sidebar={invoice && !embedded ? <ActivitySidebar entityType="invoice" entityId={invoice.id} /> : undefined}
+                sidebar={invoice && !embedded ? <EntitySidebar entityType="invoice" entityId={invoice.id} /> : undefined}
             />
 
             {engine.host}

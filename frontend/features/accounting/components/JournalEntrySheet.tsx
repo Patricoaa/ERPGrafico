@@ -15,7 +15,7 @@ import {
     type DocumentSheetTab,
     type LifecycleStep,
 } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout } from "@/features/_shared"
 import { useDocumentRelations } from "@/features/documents/hooks/useDocumentRelations"
 import type { DocumentDomain, DocumentLink } from "@/features/documents/types"
@@ -39,7 +39,7 @@ const AUDIT_TYPE = "journal_entry"
 /**
  * Ficha documental de Asiento Contable (ADR-0083, component-document-sheet.md).
  * Modo VISTA: usa DocumentDrawerShell con tabs Resumen · Relaciones,
- * ciclo de vida, actions menu e ActivitySidebar.
+ * ciclo de vida, actions menu y EntitySidebar (comentarios + actividad).
  */
 export interface JournalEntrySheetProps {
     id: number | null
@@ -197,7 +197,7 @@ export function JournalEntrySheet({ id, open, onOpenChange, embedded = false, on
                 tabs={tabs}
                 tab={tab}
                 onTabChange={setTab}
-                sidebar={journalEntry && !embedded ? <ActivitySidebar entityType={AUDIT_TYPE} entityId={journalEntry.id} /> : undefined}
+                sidebar={journalEntry && !embedded ? <EntitySidebar entityType={AUDIT_TYPE} entityId={journalEntry.id} /> : undefined}
             />
         </>
     )

@@ -21,7 +21,7 @@ import { Form } from "@/components/ui/form"
 import { useOptionalGlobalModalActions } from '@/components/providers/GlobalModalProvider'
 import {BaseModal, Drawer, DrawerLayout, SkeletonShell, type DrawerLayoutTab} from '@/components/shared'
 import { Button } from "@/components/ui/button"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 // Removed Badge import for governance compliance
 
 // Import dialogs
@@ -768,15 +768,15 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
         <>
             <Form {...form}>
                 <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="flex-1 w-full h-full flex flex-col min-h-0 overflow-visible">
-                    <fieldset disabled={isView || loading} className="contents h-full">
                         <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando ficha de producto" className="flex-1 flex flex-col h-full">
                             <DrawerLayout
+                                contentDisabled={isView || loading}
                                 activeTab={activeTab}
                                 onTabChange={setActiveTab}
                                 tabs={productTabs}
                                 rightRail={
                                     effectiveInitialData?.id ? (
-                                        <ActivitySidebar entityId={effectiveInitialData.id.toString()} entityType="product" />
+                                        <EntitySidebar entityId={effectiveInitialData.id} entityType="product" />
                                     ) : undefined
                                 }
                                 rightRailCollapsible
@@ -784,7 +784,6 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                                 className="min-w-0 h-full overflow-hidden"
                             />
                         </SkeletonShell>
-                    </fieldset>
                 </form>
             </Form>
 

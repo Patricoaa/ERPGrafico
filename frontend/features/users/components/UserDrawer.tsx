@@ -14,7 +14,7 @@ import { useBundles } from "../hooks/useRbac"
 import { Button } from "@/components/ui/button"
 import { Form, FormField } from "@/components/ui/form"
 import { Plus, User, ShieldCheck, Users, AlertTriangle } from "lucide-react"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import {
     Drawer, CancelButton, SubmitButton, LabeledInput,
     DrawerLayout, FormFooter, LabeledSwitch, SkeletonShell, FormSection, FormSelectionGroup,
@@ -344,13 +344,13 @@ export function UserDrawer({
                             onSubmit={form.handleSubmit(onSubmit)}
                             className="flex-1 w-full h-full flex flex-col overflow-visible min-h-0"
                         >
-                            <fieldset disabled={isView || loading} className="contents">
                                 <DrawerLayout
+                                    contentDisabled={isView || loading}
                                     activeTab={activeTab}
                                     onTabChange={setActiveTab}
                                     rightRail={
                                         initialData?.id ? (
-                                            <ActivitySidebar
+                                            <EntitySidebar
                                                 entityId={initialData.id.toString()}
                                                 entityType="user"
                                             />
@@ -491,7 +491,6 @@ export function UserDrawer({
                                         },
                                     ]}
                                 />
-                            </fieldset>
                         </form>
                     </Form>
                 </SkeletonShell>

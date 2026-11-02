@@ -22,6 +22,8 @@ interface ActivitySidebarProps {
     entityType: 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'sale_return' | 'purchase_receipt' | 'purchase_return' | 'inventory_document' | 'check' | 'terminal_batch' | 'profit_distribution' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'pricing_rule' | 'reordering_rule' | 'treasuryaccount' | 'bank' | 'paymentmethod' | 'terminal' | 'category' | 'warehouse' | 'uom' | 'uom_category' | 'attribute' | 'account' | 'bank_journal' | 'employee' | 'salaryadvance' | 'absence' | 'fiscal_year' | 'tax_period' | 'f29_declaration' | 'task' | 'attachment' | 'group' | 'inventory_count' | 'bank_loan'
     className?: string
     title?: string
+    /** Estado inicial de la sección. En rails de drawer (EntitySidebar) arranca cerrada. */
+    defaultOpen?: boolean
 }
 
 const ENTITY_TYPE_LABELS: Record<string, string> = {
@@ -76,9 +78,9 @@ const PLACEHOLDER_RECORDS: HistoricalRecord[] = [
     { history_id: -3, history_date: '2024-01-01T14:00:00.000Z', history_change_reason: null, history_type: '~', history_user_id: null, history_user_username: 'Operador' },
 ]
 
-export function ActivitySidebar({ entityId, entityType, className, title = "Actividad" }: ActivitySidebarProps) {
+export function ActivitySidebar({ entityId, entityType, className, title = "Actividad", defaultOpen = true }: ActivitySidebarProps) {
     const { history, loading, error } = useEntityHistory(entityType, entityId)
-    const [open, setOpen] = React.useState(true)
+    const [open, setOpen] = React.useState(defaultOpen)
     const [expandedRecords, setExpandedRecords] = React.useState<Record<string | number, boolean>>({})
 
     const records = loading ? PLACEHOLDER_RECORDS : history

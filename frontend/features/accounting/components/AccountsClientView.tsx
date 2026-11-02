@@ -11,7 +11,7 @@ import { AccountDrawer } from "@/features/finance"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { showApiError } from "@/lib/errors"
 import { type Account } from "@/features/accounting/types"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { accountActions, type AccountActionsCtx } from "./accountActions"
 import { buildAccountTree } from "../utils/accountTree"
 import { accountUnifiedSearchDef } from "../unifiedSearchDef"
@@ -104,7 +104,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                         parentId={formParentId || undefined}
                         auditSidebar={
                             editingAccount ? (
-                                <ActivitySidebar entityId={editingAccount.id} entityType="account" />
+                                <EntitySidebar entityId={editingAccount.id} entityType="account" />
                             ) : undefined
                         }
                         mode={editingAccount ? 'edit' : 'create'}

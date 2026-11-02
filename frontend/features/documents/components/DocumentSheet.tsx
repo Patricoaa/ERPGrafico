@@ -15,13 +15,13 @@ import {
     type DocumentSheetTab,
     type LifecycleStep,
 } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { useDrawerIdentity } from "@/features/_shared"
 import { useDocumentRelations } from "../hooks/useDocumentRelations"
 import type { DocumentDomain, DocumentLink } from "../types"
 import { DocumentRelationsTab } from "./DocumentRelationsTab"
 
-type AuditEntityType = Parameters<typeof ActivitySidebar>[0]["entityType"]
+type AuditEntityType = Parameters<typeof EntitySidebar>[0]["entityType"]
 
 export interface DocumentSheetSection {
     title: string
@@ -56,7 +56,7 @@ export interface DocumentSheetProps {
     rowActions?: (link: DocumentLink) => DocumentActionItem[]
     /** Tabs propios del tipo, después de Resumen y antes de Relaciones. */
     extraTabs?: DocumentSheetTab[]
-    /** Tipo del historial de auditoría (ActivitySidebar); sin él no hay sidebar. */
+    /** Tipo del historial de auditoría (EntitySidebar: comentarios + actividad); sin él no hay sidebar. */
     auditType?: AuditEntityType
     embedded?: boolean
 }
@@ -144,7 +144,7 @@ export function DocumentSheet({
             tabs={tabs}
             tab={tab}
             onTabChange={setTab}
-            sidebar={document && auditType && !embedded ? <ActivitySidebar entityType={auditType} entityId={document.id} /> : undefined}
+            sidebar={document && auditType && !embedded ? <EntitySidebar entityType={auditType} entityId={document.id} /> : undefined}
         />
     )
 }

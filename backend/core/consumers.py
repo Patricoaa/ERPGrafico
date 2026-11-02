@@ -5,7 +5,7 @@ See docs/20-contracts/realtime-channels.md §"Entity Bus" and
 docs/10-architecture/adr/0026-entity-bus-realtime-invalidation.md.
 
 Wire protocol (client → server):
-    {"op": "subscribe",   "topic": "<app>.<model>" | "<app>.<model>.<id>"}
+    {"op": "subscribe",   "topic": "<app>.<model>" | "<app>.<model>.<id>" | "<app>.<model>.<id>.comments"}
     {"op": "unsubscribe", "topic": "..."}
 
 Wire protocol (server → client):
@@ -14,6 +14,7 @@ Wire protocol (server → client):
       "app": "...", "model": "...", "id": ..., "op": "created|updated|deleted",
       "actor_id": ... | null, "ts": "..."
     }
+    {"event": "comments.changed", "app", "model", "id", "actor_id", "ts"}  (ADR-0111)
 
 The user-scoped group `entity.user.<id>` is joined automatically on connect,
 so a feature does NOT need to subscribe to it explicitly to get cross-tab sync.
@@ -25,8 +26,20 @@ import re
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
-# Matches `<app>.<model>` or `<app>.<model>.<int_id>` with lowercase identifiers.
-_TOPIC_RE = re.compile(r"^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*(\.[0-9]+)?$")
+# Matches `<app>.<model>`, `<app>.<model>.<int_id>` or `<app>.<model>.<int_id>.comments`
+# (comment threads of one record, ADR-0111) with lowercase identifiers.
+_TOPIC_RE = re.compile(r"^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*(\.[0-9]+(\.comments)?)?$")
+_COMMENTS_SUFFIX = ".comments"
+
+
+def _view_permission(topic: str) -> str:
+    app, model = topic.split(".")[:2]
+    if topic.endswith(_COMMENTS_SUFFIX):
+        # Comment visibility is inherited from the commented entity (ADR-0111).
+        from core.documents.types import DocumentTypeRegistry
+
+        return DocumentTypeRegistry.view_permission(f"{app}.{model}")
+    return f"{app}.view_{model}"
 
 
 class EntityBusConsumer(AsyncJsonWebsocketConsumer):
@@ -64,12 +77,8 @@ class EntityBusConsumer(AsyncJsonWebsocketConsumer):
         group = f"entity.{topic}"
         if op == "subscribe":
             # Require view permission for the subscribed model.
-            # Topic format: <app>.<model> or <app>.<model>.<id>
-            parts = topic.split(".")
-            app, model = parts[0], parts[1]
-            has_perm = await sync_to_async(self.scope["user"].has_perm)(
-                f"{app}.view_{model}"
-            )
+            # Topic format: <app>.<model>, <app>.<model>.<id> or <app>.<model>.<id>.comments
+            has_perm = await sync_to_async(self.scope["user"].has_perm)(_view_permission(topic))
             if not has_perm:
                 await self.send_json(
                     {"event": "error", "code": "forbidden", "topic": topic}

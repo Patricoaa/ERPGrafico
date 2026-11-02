@@ -12,7 +12,7 @@ import { Landmark, CreditCard, Lock, ScrollText, Plus, Pencil, Archive } from "l
 import { Button } from "@/components/ui/button"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { useTreasuryAccounts, treasuryApi, useCreditLineMutations, CreditLineDrawer } from "@/features/treasury"
 import type { Bank, TreasuryAccount, TreasuryAccountCreatePayload, TreasuryAccountUpdatePayload } from "../types"
 import type { CreditLine } from "../credit-lines/types"
@@ -251,7 +251,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                     showSidebar={!!accountId}
                     sidebar={
                         accountId && (
-                            <ActivitySidebar
+                            <EntitySidebar
                                 entityType="treasuryaccount"
                                 entityId={accountId}
                                 title="Historial de Cambios"

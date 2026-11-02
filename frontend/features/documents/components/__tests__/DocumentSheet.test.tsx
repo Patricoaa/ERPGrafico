@@ -14,7 +14,7 @@ vi.mock("@/components/providers/GlobalModalProvider", () => ({
     useGlobalModals: () => ({ openEntity: vi.fn(), setEntityDisplay: setEntityDisplayMock }),
 }))
 vi.mock("@/lib/entity-drawers", () => ({ hasEntityDrawer: () => true }))
-vi.mock("@/features/audit", () => ({ ActivitySidebar: () => <aside>actividad</aside> }))
+vi.mock("@/features/comments", () => ({ EntitySidebar: () => <aside>actividad</aside> }))
 
 const wrap = (ui: React.ReactElement) =>
     render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{ui}</QueryClientProvider>)

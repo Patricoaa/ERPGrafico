@@ -62,6 +62,7 @@ Task routing — common intents:
 | Entity drawer / `openEntity` / source-document drill-down / drawer registry / drawer modes | [component-entity-drawers.md](docs/20-contracts/component-entity-drawers.md) |
 | Related documents / DocumentRef / relation provider / canonical document URL / `/d/{label}/{id}` | [document-relations.md](docs/20-contracts/document-relations.md) |
 | Document sheet / ficha documental / relations tab / lifecycle / document action bar (Order Hub replacement) | [component-document-sheet.md](docs/20-contracts/component-document-sheet.md) |
+| Comments / threads / @mentions / collaboration on any entity / `EntitySidebar` | [component-entity-comments.md](docs/20-contracts/component-entity-comments.md) |
 | Dev server / remote tests / SSH / Mutagen | [remote-dev-server.md](docs/30-playbooks/remote-dev-server.md) |
 
 Full routing table in [docs/README.md](docs/README.md).

@@ -35,6 +35,11 @@ def _display_id(label: str, obj: models.Model) -> str:
     return f"{obj._meta.verbose_name} #{obj.pk}"
 
 
+def display_id_for(label: str, obj: models.Model) -> str:
+    """Identificador visible del registro ("OV-000123", "Contacto #4"), sin consultas extra."""
+    return _display_id(label, obj)
+
+
 def _date(doc_type, obj) -> str | None:
     fields = (doc_type.date_field,) if doc_type.date_field else DEFAULT_DATE_FIELDS
     for name in fields:

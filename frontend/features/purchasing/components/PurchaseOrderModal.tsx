@@ -9,7 +9,7 @@ import { type ProductMinimal, type UoM } from "@/types/entities"
 import * as z from "zod"
 import { Plus, DollarSign, ShoppingCart } from "lucide-react"
 import { BaseModal, SubmitButton, DataCell, MoneyDisplay, LabeledInput, FormSection, FormFooter, CancelButton, SkeletonShell, FormSplitLayout } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { Button } from "@/components/ui/button"
 import {
     Form,
@@ -231,7 +231,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                     collapsible
                     collapseStorageKey="erpgrafico.drawer.sidebar.purchase_order"
                     showSidebar={true}
-                    sidebar={<ActivitySidebar entityType="purchase_order" entityId={initialData.id ?? 0} />}
+                    sidebar={<EntitySidebar entityType="purchase_order" entityId={initialData.id ?? 0} />}
                 >
                     <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de orden de compra" className="flex-1 flex flex-col">
                         <Form {...form}>

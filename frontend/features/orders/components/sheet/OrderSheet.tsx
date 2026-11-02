@@ -14,7 +14,7 @@ import {
 } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
 import { getDomainConceptTitle } from "@/lib/entity-registry"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { PrintableLayout, useDrawerIdentity, usePrintableDrawer } from "@/features/_shared"
 import {
     DocumentRelationsTab,
@@ -222,7 +222,7 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
                 tabs={tabs}
                 tab={tab}
                 onTabChange={setTab}
-                sidebar={order && !embedded ? <ActivitySidebar entityType={AUDIT_TYPE[kind]} entityId={order.id} /> : undefined}
+                sidebar={order && !embedded ? <EntitySidebar entityType={AUDIT_TYPE[kind]} entityId={order.id} /> : undefined}
             />
 
             {engine.host}

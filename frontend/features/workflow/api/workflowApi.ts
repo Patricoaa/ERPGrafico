@@ -123,6 +123,9 @@ export interface Notification {
     type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR'
     read: boolean
     link?: string
+    notification_type?: string
+    /** Contexto libre; los comentarios (ADR-0111) envían `{ label, id, comment_id, thread_id }`. */
+    data?: Record<string, unknown>
     created_at: string
 }
 

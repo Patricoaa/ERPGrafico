@@ -1,0 +1,5 @@
+export { CommentsPanel, EntitySidebar, MentionTextView } from "./components"
+export { COMMENT_KEYS } from "./hooks/queryKeys"
+export { useEntityComments } from "./hooks/useEntityComments"
+export { useCommentMutations } from "./hooks/useCommentMutations"
+export type { Comment, CommentMention, CommentTarget, CommentThread } from "./types"

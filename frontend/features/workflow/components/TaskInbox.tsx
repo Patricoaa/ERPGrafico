@@ -20,6 +20,7 @@ import {
     CheckCircle2, ListTodo, ChevronDown, ChevronRight, Package, FileText,
     Wallet, TrendingUp, CreditCard, Wrench, ShoppingCart, Receipt,
     CalendarX2, ClipboardList, ExternalLink, Bell, BellOff, Search, User,
+    AtSign, MessageSquareReply, type LucideIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
@@ -253,6 +254,16 @@ function SectionGroup({ title, count, hint, expanded, onToggle, children, always
 
 // ── Shared CTA bar ─────────────────────────────────────────────────────────────
 
+/** Ícono por tipo de aviso: los de comentarios (ADR-0111) se distinguen del resto. */
+const NOTIFICATION_ICONS: Record<string, LucideIcon> = {
+    comment_mention: AtSign,
+    comment_reply: MessageSquareReply,
+}
+
+function isNavigableNotification(n: Notification): boolean {
+    return !!n.link || (typeof n.data?.label === 'string' && typeof n.data?.id === 'number')
+}
+
 function CtaBar({ children }: { children: React.ReactNode }) {
     return (
         <div className="flex items-center gap-1 px-3 py-1.5 border-t border-border/20 bg-muted/15">
@@ -324,8 +335,12 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                 setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))
             } catch { /* ignore */ }
         }
+        // Notificaciones con entidad (comentarios, ADR-0111) se abren en su drawer.
+        const label = n.data?.label
+        const id = n.data?.id
+        if (typeof label === 'string' && typeof id === 'number') { openEntity(label, id); return }
         if (n.link) router.push(n.link)
-    }, [router])
+    }, [router, openEntity])
 
     const handleMarkAllRead = useCallback(async () => {
         try {
@@ -587,38 +602,43 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
 
     // ── Notification card ─────────────────────────────────────────────────────────
 
-    const renderNotificationCard = (n: Notification) => (
-        <div
-            key={n.id}
-            className={cn("surface-item flex flex-col rounded-sm select-none overflow-hidden", !n.read && "bg-primary/[0.03]")}
-        >
-            <div className="flex items-start gap-2 p-3 pb-2">
-                <span className={cn("mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 flex-none", n.read ? "opacity-0" : "bg-primary")} aria-hidden />
+    const renderNotificationCard = (n: Notification) => {
+        const Icon = NOTIFICATION_ICONS[n.notification_type ?? ''] ?? Bell
+        const navigable = isNavigableNotification(n)
+        return (
+            <Button
+                key={n.id}
+                type="button"
+                variant="ghost"
+                onClick={() => handleNotificationClick(n)}
+                aria-label={`${navigable ? 'Abrir' : 'Marcar como leído'}: ${n.title}`}
+                className={cn(
+                    "surface-item group h-auto min-h-0 w-full flex items-start justify-start gap-2 overflow-hidden rounded-sm p-3 text-left transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                    !n.read && "bg-primary/[0.03]",
+                )}
+            >
+                <Icon className={cn("h-3.5 w-3.5 shrink-0 mt-0.5", n.read ? "text-muted-foreground/40" : "text-primary")} aria-hidden />
                 <div className="min-w-0 flex-1">
-                    <p className={cn("text-xs leading-snug", n.read ? "font-medium text-foreground/60" : "font-semibold text-foreground")}>
-                        {n.title}
-                    </p>
+                    <div className="flex items-baseline gap-1.5">
+                        <p className={cn("truncate text-xs leading-snug", n.read ? "font-medium text-foreground/60" : "font-semibold text-foreground")}>
+                            {n.title}
+                        </p>
+                        <span className="shrink-0 text-3xs text-muted-foreground/40">{relativeTime(n.created_at)}</span>
+                        {!n.read && <span className="h-1.5 w-1.5 shrink-0 self-center rounded-full bg-primary" aria-label="No leído" />}
+                    </div>
                     {n.message && (
-                        <p className="text-2xs text-muted-foreground/60 mt-0.5 line-clamp-2">{n.message}</p>
+                        <p className="mt-0.5 line-clamp-2 whitespace-normal text-2xs text-muted-foreground/60">{n.message}</p>
                     )}
-                    <p className="text-3xs text-muted-foreground/40 mt-1">{relativeTime(n.created_at)}</p>
                 </div>
-            </div>
-            {n.link && (
-                <CtaBar>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-5 px-2 text-2xs text-muted-foreground/50 hover:text-foreground gap-1 font-medium"
-                        onClick={() => handleNotificationClick(n)}
-                    >
-                        <ExternalLink className="h-3 w-3" />
-                        Ver
-                    </Button>
-                </CtaBar>
-            )}
-        </div>
-    )
+                {navigable && (
+                    <ExternalLink
+                        className="h-3 w-3 shrink-0 self-center text-muted-foreground/45 transition-colors group-hover:text-foreground"
+                        aria-hidden
+                    />
+                )}
+            </Button>
+        )
+    }
 
     // ── Search + filter bar ───────────────────────────────────────────────────────
 

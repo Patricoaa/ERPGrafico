@@ -48,7 +48,7 @@ export interface DocumentDrawerShellProps {
     tab?: string
     onTabChange?: (tab: string) => void
     defaultTab?: string
-    /** Normalmente <ActivitySidebar /> de @/features/audit. */
+    /** Normalmente <EntitySidebar /> de @/features/comments (comentarios + actividad). */
     sidebar?: ReactNode
     /** Sin Drawer: solo el cuerpo (vista incrustada). */
     embedded?: boolean

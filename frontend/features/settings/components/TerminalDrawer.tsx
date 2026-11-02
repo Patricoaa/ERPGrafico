@@ -18,7 +18,7 @@ import * as LucideIcons from "lucide-react"
 import { CancelButton, LabeledInput, LabeledSelect, FormSelectionGroup, FormSection, FormFooter, FormSplitLayout, SkeletonShell } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 export interface Terminal {
@@ -241,7 +241,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                         showSidebar={!!terminal?.id}
                         sidebar={
                             terminal?.id && (
-                                <ActivitySidebar
+                                <EntitySidebar
                                     entityId={terminal.id}
                                     entityType="terminal"
                                 />

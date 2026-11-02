@@ -150,6 +150,7 @@ Para las reglas de layout dentro del drawer (grid de 4 columnas, anchos de campo
 6. **Padding por defecto**: `p-6` en cada tab, desactivable con `noPadding: true`.
 7. **Riel derecho colapsable** con persistencia en `localStorage`.
 8. **`forceMount` seguro**: una pestaña con `forceMount: true` permanece montada (conserva su estado local al cambiar de pestaña) pero `DrawerLayout` la oculta cuando está inactiva (`data-[state=inactive]:hidden`). Radix no aplica el atributo `hidden` a los paneles con `forceMount`, por lo que sin esa regla el contenido del panel inactivo se renderiza dentro del workspace de la pestaña activa.
+9. **Modo vista con `contentDisabled`**: para deshabilitar los campos en modo vista, pasa `contentDisabled={isView}`. `DrawerLayout` envuelve **solo el workspace central** en un `<fieldset disabled>`. **No** envuelvas el `DrawerLayout` en un `<fieldset disabled>` propio, porque deshabilitaría también las tabs y los rieles, y el riel derecho aloja componentes que deben seguir activos en modo vista, como los comentarios de `EntitySidebar` ([ADR-0111](../10-architecture/adr/0111-entity-comments.md)).
 
 ```tsx
 import { DrawerLayout, type DrawerLayoutTab } from "@/components/shared"

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { paymentMethodActions, type PaymentMethodActionsCtx } from './paymentMethodActions'
 import { paymentMethodEntity, paymentMethodViews } from "../entity-view/paymentMethod.entity"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -308,7 +308,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                 showSidebar={!!method?.id}
                 sidebar={
                     method?.id && (
-                        <ActivitySidebar
+                        <EntitySidebar
                             entityType="paymentmethod"
                             entityId={method.id}
                             title="Historial"

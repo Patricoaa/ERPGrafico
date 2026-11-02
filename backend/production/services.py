@@ -2563,7 +2563,7 @@ class WorkOrderService:
             qs = (qs | so_qs).order_by("created_at")
         else:
             qs = qs.order_by("created_at")
-        return qs
+        return qs.filter(deleted_at__isnull=True)
 
     @staticmethod
     def add_comment_from_request(work_order, request):

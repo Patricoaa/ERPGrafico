@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react"
 import { describe, it, expect } from "vitest"
 
+import { Button } from "@/components/ui/button"
 import { DrawerLayout, type DrawerLayoutTab } from "../DrawerLayout"
 
 const tabs: DrawerLayoutTab[] = [
@@ -35,5 +36,31 @@ describe("DrawerLayout + forceMount", () => {
         expect(getPanel("Variantes").getAttribute("data-state")).toBe("active")
         // Los paneles sin `forceMount` se desmontan al quedar inactivos.
         expect(screen.queryByRole("tabpanel", { name: "General" })).toBeNull()
+    })
+})
+
+describe("DrawerLayout + contentDisabled", () => {
+    const formTabs: DrawerLayoutTab[] = [
+        { value: "general", label: "General", content: <input aria-label="Nombre" /> },
+    ]
+
+    it("disables workspace controls but keeps the right rail interactive (ADR-0111)", () => {
+        render(
+            <DrawerLayout
+                tabs={formTabs}
+                activeTab="general"
+                onTabChange={() => {}}
+                contentDisabled
+                rightRail={<Button type="button">Comentar</Button>}
+            />,
+        )
+        expect(screen.getByLabelText("Nombre")).toBeDisabled()
+        expect(screen.getByRole("button", { name: "Comentar" })).toBeEnabled()
+        expect(screen.getByRole("tab", { name: "General" })).toBeEnabled()
+    })
+
+    it("leaves the workspace enabled when contentDisabled is false", () => {
+        render(<DrawerLayout tabs={formTabs} activeTab="general" onTabChange={() => {}} contentDisabled={false} />)
+        expect(screen.getByLabelText("Nombre")).toBeEnabled()
     })
 })

@@ -8,7 +8,7 @@ import * as z from "zod"
 import { Drawer, CancelButton, FormFooter, FormSplitLayout } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 import { SubmitButton } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { useAttributes, type Attribute } from "@/features/inventory/hooks/useAttributes"
 import { useSuggestions } from "@/hooks/useSuggestions"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -131,7 +131,7 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
                 collapsible
                 collapseStorageKey="erpgrafico.drawer.sidebar.attribute"
                 sidebar={initialData?.id ? (
-                    <ActivitySidebar
+                    <EntitySidebar
                         entityId={initialData.id}
                         entityType="attribute"
                     />

@@ -436,6 +436,17 @@ class Comment(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="comments")
     text = models.TextField()
+    # Hilo de un nivel (ADR-0111): las respuestas cuelgan siempre del comentario raíz.
+    parent = models.ForeignKey(
+        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="replies"
+    )
+    edited_at = models.DateTimeField(null=True, blank=True)
+    # Soft delete: el comentario se conserva para no romper el hilo (deletion-policy.md).
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    deleted_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    attachments = GenericRelation("core.Attachment")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -445,7 +456,50 @@ class Comment(models.Model):
         verbose_name_plural = _("Comentarios")
         indexes = [
             models.Index(fields=["content_type", "object_id"]),
+            models.Index(fields=["content_type", "object_id", "parent"]),
         ]
 
     def __str__(self):
         return f"{self.user} @ {self.created_at:%Y-%m-%d}: {self.text[:50]}"
+
+    @property
+    def is_deleted(self) -> bool:
+        return self.deleted_at is not None
+
+
+class CommentMention(models.Model):
+    """Mención @usuario o @equipo dentro de un Comment (ADR-0111)."""
+
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name="mentions")
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, null=True, blank=True, related_name="comment_mentions"
+    )
+    group = models.ForeignKey(
+        Group, on_delete=models.CASCADE, null=True, blank=True, related_name="comment_mentions"
+    )
+
+    class Meta:
+        verbose_name = _("Mención")
+        verbose_name_plural = _("Menciones")
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(user__isnull=False, group__isnull=True)
+                    | models.Q(user__isnull=True, group__isnull=False)
+                ),
+                name="commentmention_user_xor_group",
+            ),
+            models.UniqueConstraint(
+                fields=["comment", "user"],
+                condition=models.Q(user__isnull=False),
+                name="commentmention_unique_user",
+            ),
+            models.UniqueConstraint(
+                fields=["comment", "group"],
+                condition=models.Q(group__isnull=False),
+                name="commentmention_unique_group",
+            ),
+        ]
+
+    def __str__(self):
+        return f"@{self.user or self.group} in comment {self.comment_id}"

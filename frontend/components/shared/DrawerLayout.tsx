@@ -64,6 +64,12 @@ export interface DrawerLayoutProps {
     /** If true, renders rightRail directly without wrapping it in an aside */
     rightRailRaw?: boolean
 
+    /**
+     * Deshabilita los controles del workspace central (contenido de las tabs) — modo vista.
+     * Usar esto y no un `<fieldset disabled>` que envuelva el layout: los rails alojan
+     * componentes que deben seguir activos en modo vista (comentarios, ADR-0111).
+     */
+    contentDisabled?: boolean
     /** If true, removes the default padding (p-6) from the workspace/content area */
     noPadding?: boolean
     /** Additional classes for the workspace content container */
@@ -87,6 +93,12 @@ function getRailPaddingLeft(width?: string): string {
     return "pl-48"
 }
 
+/** `<fieldset>` sin caja propia (display: contents) solo cuando se pide deshabilitar. */
+function WorkspaceFieldset({ disabled, children }: { disabled?: boolean; children: ReactNode }) {
+    if (disabled === undefined) return <>{children}</>
+    return <fieldset disabled={disabled} className="contents">{children}</fieldset>
+}
+
 export function DrawerLayout({
     tabs,
     activeTab: activeTabProp,
@@ -103,6 +115,7 @@ export function DrawerLayout({
     rightRailStorageKey,
     rightRailDefaultCollapsed = false,
     rightRailRaw = false,
+    contentDisabled,
     noPadding = false,
     contentClassName,
     className,
@@ -149,6 +162,7 @@ export function DrawerLayout({
 
             {/* ── 2. Workspace Central ─────── */}
             <main className="flex-1 min-w-0 h-full flex flex-col min-h-0 overflow-hidden bg-card">
+                <WorkspaceFieldset disabled={contentDisabled}>
                 {tabs && tabs.length > 0 ? (
                     tabs.map((t) => (
                         <TabBarContent
@@ -180,6 +194,7 @@ export function DrawerLayout({
                         {children}
                     </div>
                 )}
+                </WorkspaceFieldset>
             </main>
 
             {/* ── 3. Right Rail (bajo las pestañas) ────────────── */}

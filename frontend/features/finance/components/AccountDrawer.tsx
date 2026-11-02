@@ -18,7 +18,7 @@ import { useAccountMutations } from "@/features/accounting"
 import { type AccountPayload } from "@/features/accounting"
 import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, SubmitButton, DrawerLayout, UnifiedSearchBar, DateRangeFilter, SkeletonShell, useUnifiedSearch, type UnifiedSearchConfig } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { useLedger } from "@/features/accounting/hooks/useLedger"
@@ -448,7 +448,7 @@ export function AccountDrawer({
                     activeTab={activeTab}
                     onTabChange={handleTabChange}
                     rightRail={initialData?.id ? (
-                        <ActivitySidebar entityType="account" entityId={initialData.id as number} />
+                        <EntitySidebar entityType="account" entityId={initialData.id as number} />
                     ) : undefined}
                     rightRailCollapsible
                     rightRailStorageKey="erpgrafico.drawer.sidebar.account"

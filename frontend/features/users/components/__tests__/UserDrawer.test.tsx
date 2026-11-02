@@ -47,7 +47,7 @@ vi.mock("@/features/_shared", () => ({
     PrintableLayout: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
-vi.mock("@/features/audit", () => ({ ActivitySidebar: () => null }))
+vi.mock("@/features/comments", () => ({ EntitySidebar: () => null }))
 
 vi.mock("@/hooks/useInitializeDrawerForm", () => ({
     useInitializeDrawerForm: () => undefined,

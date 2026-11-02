@@ -29,7 +29,6 @@ export {
   WORK_ORDER_QUERY_KEY,
   WORK_ORDERS_LIST_KEY,
   useWorkOrderListActions,
-  useWorkOrderComments,
   useWorkOrderIdentityActions,
   useProductionMetrics,
   useAllowedDteTypes,
@@ -48,7 +47,6 @@ export type {
   RectifyPayload,
   AddMaterialPayload,
   UpdateMaterialPayload,
-  WorkOrderComment,
   RestartResult,
   CorrectionResult,
 } from './hooks'

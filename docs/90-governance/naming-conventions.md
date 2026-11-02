@@ -33,7 +33,7 @@ Este documento es la fuente de verdad sobre **cómo nombrar** todos los artefact
 | `View` | Sin surface — ocupa su contenedor padre (página o tab) | Stateful, vista que NO es listado de entidad (reporte, dashboard, detalle) | `TrialBalanceView`, `StatementsView` |
 | `Form` | **Sin surface** — solo el formulario, el padre decide la surface | Reutilizable dentro de Drawer o Modal | `UoMForm` *(si se reutiliza en dos contextos)* |
 | `Step` | Sin surface — slide de un wizard | Siempre hijo de un `Wizard` | `Step1_Items`, `ManufacturingConfigStep` |
-| `Sidebar` | Panel lateral fijo / persistente (no slide-over) | Sección de layout | `ActivitySidebar`, `SaleOrderSidebar` |
+| `Sidebar` | Panel lateral fijo / persistente (no slide-over) | Sección de layout | `ActivitySidebar`, `EntitySidebar` |
 | `Panel` | Área de contenido destacada, no modal | Sub-sección de pantalla | `ReconciliationPanel`, `OrderHubPanel` |
 | `Card` | Tarjeta visual de datos | Presentacional | `PayrollCard`, `DomainCard` |
 | `Selector` | Input de selección de entidad | Input especializado | `AccountSelector`, `ProductSelector` |

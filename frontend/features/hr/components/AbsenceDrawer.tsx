@@ -12,7 +12,7 @@ import { CancelButton, SubmitButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 export const absenceSchema = z.object({
@@ -148,7 +148,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                         collapsible
                         collapseStorageKey="erpgrafico.drawer.sidebar.absence"
                         showSidebar={true}
-                        sidebar={<ActivitySidebar entityType="absence" entityId={absence.id} />}
+                        sidebar={<EntitySidebar entityType="absence" entityId={absence.id} />}
                     >
                         
                             <Form {...form}>

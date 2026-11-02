@@ -1,6 +1,7 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
+from .comments.views import CommentViewSet
 from .views import (
     ApprovalPolicyViewSet,
     NotificationRuleViewSet,
@@ -11,6 +12,7 @@ from .views import (
 )
 
 router = DefaultRouter()
+router.register(r"comments", CommentViewSet, basename="comment")
 router.register(r"tasks", TaskViewSet, basename="task")
 router.register(r"notifications", NotificationViewSet, basename="notification")
 router.register(r"assignment-rules", TaskAssignmentRuleViewSet, basename="assignment-rule")

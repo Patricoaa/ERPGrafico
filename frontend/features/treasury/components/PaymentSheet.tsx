@@ -16,7 +16,7 @@ import {
     type LifecycleStep,
     ActionConfirmModal,
 } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout } from "@/features/_shared"
 import { useDocumentRelations } from "@/features/documents/hooks/useDocumentRelations"
 import type { DocumentDomain, DocumentLink } from "@/features/documents/types"
@@ -42,7 +42,7 @@ const AUDIT_TYPE = "payment"
 /**
  * Ficha documental de Pago/Movimiento de Tesorería (ADR-0083, component-document-sheet.md).
  * Modo VISTA: usa DocumentDrawerShell con tabs Resumen · Relaciones,
- * ciclo de vida, actions menu e ActivitySidebar.
+ * ciclo de vida, actions menu y EntitySidebar (comentarios + actividad).
  */
 export interface PaymentSheetProps {
     id: number | null
@@ -212,7 +212,7 @@ export function PaymentSheet({ id, open, onOpenChange, embedded = false, onActio
                 tabs={tabs}
                 tab={tab}
                 onTabChange={setTab}
-                sidebar={payment && !embedded ? <ActivitySidebar entityType={AUDIT_TYPE} entityId={payment.id} /> : undefined}
+                sidebar={payment && !embedded ? <EntitySidebar entityType={AUDIT_TYPE} entityId={payment.id} /> : undefined}
             />
 
             {annulState && (
