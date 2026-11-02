@@ -986,7 +986,11 @@ class BillingService:
             from workflow.models import Task
 
             try:
-                task = Task.objects.get(id=credit_approval_task_id, task_type="CREDIT_POS_REQUEST")
+                # select_for_update previene que dos checkouts concurrentes consuman
+                # la misma aprobación (race condition en anti-replay).
+                task = Task.objects.select_for_update().get(
+                    id=credit_approval_task_id, task_type="CREDIT_POS_REQUEST"
+                )
                 if task.status == Task.Status.COMPLETED:
                     # SECURE VALIDATION: Verify task data matches current checkout
                     task_data = task.data or {}
@@ -1014,6 +1018,20 @@ class BillingService:
                             f"El crédito requerido (${required_credit:,.0f}) excede el monto "
                             f"que fue aprobado previamente (${approved_credit:,.0f})."
                         )
+
+                    # 3. Verify cart snapshot (anti-modification post-approval)
+                    approved_hash = task_data.get("cart_snapshot_hash")
+                    if approved_hash and isinstance(order_data, dict) and "id" not in order_data:
+                        current_lines = order_data.get("lines", [])
+                        current_hash = _compute_cart_snapshot_hash(
+                            order.customer_id, current_lines
+                        )
+                        if current_hash != approved_hash:
+                            raise ValidationError(
+                                "El carrito ha cambiado desde que se solicitó la aprobación de crédito. "
+                                "Solicite una nueva aprobación."
+                            )
+
                     bypass_credit_validation = True
                     resolved_approval_task = task
                     order.credit_assignment_origin = SaleOrder.CreditOrigin.MANUAL
@@ -1475,6 +1493,8 @@ class BillingService:
                             draft_id = None
 
                 if draft_id:
+                    # Limpiar la protección antes de borrar para que el queryset .delete() proceda
+                    DraftCart.objects.filter(id=draft_id).update(has_pending_approval=False)
                     DraftCart.objects.filter(id=draft_id).delete()
             except Exception as e:
                 # Log but don't fail the whole checkout if draft deletion fails
