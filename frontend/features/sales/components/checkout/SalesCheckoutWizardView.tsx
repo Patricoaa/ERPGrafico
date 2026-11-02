@@ -24,6 +24,7 @@ import {BaseModal, StepHeader} from '@/components/shared'
 import { useAuth } from "@/contexts/AuthContext"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useServerDate } from "@/hooks/useServerDate"
+import { generateUuidV4 } from "@/lib/uuid"
 
 import { PINPadModal, POSApprovalCard } from "@/features/pos"
 import {type SaleOrder, type SaleOrderLine, type CheckoutDTEData, type CheckoutPaymentData, type CheckoutDeliveryData, type CheckoutResponse} from "../../types"
@@ -121,17 +122,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
     const [step, setStep] = useState(initialStep || 1)
     const [loading, setLoading] = useState(false)
 
-    function generateUUID(): string {
-        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-            return crypto.randomUUID()
-        }
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-            const r = (Math.random() * 16) | 0
-            const v = c === 'x' ? r : (r & 0x3) | 0x8
-            return v.toString(16)
-        })
-    }
-    const idempotencyKeyRef = useRef<string>(generateUUID())
+    const idempotencyKeyRef = useRef<string>(generateUuidV4())
 
     const hasManufacturing = useMemo(() => currentOrderLines.some((line: SaleOrderLine) =>
         line.requires_advanced_manufacturing
@@ -630,7 +621,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
             while (true) {
                 try {
                     const response = await posCheckout({ payload: formData, idempotencyKey }) as CheckoutResponse
-                    idempotencyKeyRef.current = generateUUID()
+                    idempotencyKeyRef.current = generateUuidV4()
                     toast.success("Venta procesada correctamente")
                     onComplete(response)
                     return

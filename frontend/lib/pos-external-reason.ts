@@ -8,6 +8,7 @@
  * request con `X-POS-External-Reason`.
  */
 import type { InternalAxiosRequestConfig } from 'axios';
+import { generateUuidV4 } from './uuid'
 
 export const POS_EXTERNAL_REASON_HEADER = 'X-POS-External-Reason';
 export const POS_EXTERNAL_REASON_CHALLENGE_HEADER = 'x-pos-external-reason-required';
@@ -49,15 +50,6 @@ export function parsePosExternalReasonChallenge(raw: unknown): PosExternalReason
     }
 }
 
-/** UUID v4; `crypto.randomUUID` no existe fuera de contextos seguros (dev server por http). */
-function newIdempotencyKey(): string {
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-        const r = (Math.random() * 16) | 0;
-        return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
-    });
-}
-
 type RetriableConfig = InternalAxiosRequestConfig & { _posExternalReasonRetry?: boolean };
 
 /**
@@ -80,7 +72,7 @@ export async function preparePosExternalReasonRetry(
     // El intento rechazado no tuvo efectos, pero el backend cachea su 400 bajo
     // la misma clave de idempotencia: el reintento necesita una clave nueva.
     if (config.headers.has('Idempotency-Key')) {
-        config.headers.set('Idempotency-Key', newIdempotencyKey());
+        config.headers.set('Idempotency-Key', generateUuidV4());
     }
     return config;
 }

@@ -14,16 +14,7 @@ import { type PurchaseOrderAPI, type PurchaseOrderLineAPI, type CheckoutLine, ty
 import { type PaymentData } from "@/features/treasury"
 
 import { PricingUtils } from '@/lib/pricing-utils'
-
-function generateUUID(): string {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-        return crypto.randomUUID()
-    }
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-        const r = (Math.random() * 16) | 0
-        return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16)
-    })
-}
+import { generateUuidV4 } from '@/lib/uuid'
 import { Step0_Supplier } from "./checkout/Step0_Supplier"
 import { Step1_ProductSelection } from "./checkout/Step1_ProductSelection"
 import { CheckCircle2, ChevronLeft, ChevronRight, Link2, ShoppingCart } from "lucide-react"
@@ -83,7 +74,7 @@ export function PurchaseCheckoutWizard({
     const [internalOrder, setInternalOrder] = useState<PurchaseOrderAPI | null>(order)
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
-    const idempotencyKeyRef = useRef<string>(generateUUID())
+    const idempotencyKeyRef = useRef<string>(generateUuidV4())
     const [currentOrderLines, setCurrentOrderLines] = useState<CheckoutLine[]>(orderLines)
     const [currentTotal, setCurrentTotal] = useState(total)
     const { dateString } = useServerDate()
@@ -447,7 +438,7 @@ export function PurchaseCheckoutWizard({
             }
 
             await purchasingApi.createOrder(formData, idempotencyKeyRef.current)
-            idempotencyKeyRef.current = generateUUID()
+            idempotencyKeyRef.current = generateUuidV4()
 
             toast.success("Compra procesada correctamente")
             onComplete()

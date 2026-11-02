@@ -1,4 +1,5 @@
 import api from "@/lib/api"
+import { generateUuidV4 } from "@/lib/uuid"
 import type { 
   Employee, 
   Payroll, 
@@ -151,14 +152,7 @@ export async function generateProformaPayroll(data: { employee: number; period_y
 }
 
 export async function triggerDraftPayrolls(): Promise<{ detail: string; task_id: string }> {
-  const idempotencyKey =
-    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-      ? crypto.randomUUID()
-      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-          const r = (Math.random() * 16) | 0
-          const v = c === 'x' ? r : (r & 0x3) | 0x8
-          return v.toString(16)
-        })
+  const idempotencyKey = generateUuidV4()
   const res = await api.post('/hr/payrolls/create_draft_payrolls/', undefined, {
     headers: { 'Idempotency-Key': idempotencyKey },
   })

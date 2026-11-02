@@ -17,6 +17,7 @@ import { Package, AlertTriangle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { useServerDate } from "@/hooks/useServerDate"
+import { generateUuidV4 } from "@/lib/uuid"
 
 interface PurchaseOrder {
     id: number
@@ -146,7 +147,7 @@ function ReceiptForm({ order, warehouses, isRefund, filterType, onSubmittingChan
             } else {
                 const fingerprint = JSON.stringify(payload)
                 if (!idempotencyAttempt.current || idempotencyAttempt.current.fingerprint !== fingerprint) {
-                    idempotencyAttempt.current = { fingerprint, key: crypto.randomUUID() }
+                    idempotencyAttempt.current = { fingerprint, key: generateUuidV4() }
                 }
                 await purchasingApi.partialReceive(order.id, payload, idempotencyAttempt.current.key)
                 idempotencyAttempt.current = null

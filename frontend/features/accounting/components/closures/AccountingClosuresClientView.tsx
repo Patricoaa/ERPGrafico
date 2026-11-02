@@ -22,6 +22,7 @@ import { useReopenConfirm } from '../../hooks/useReopenConfirm';
 import { closureActions, type ClosureActionsCtx } from './closureActions';
 import { fiscalYearUnifiedSearchDef } from '../../unifiedSearchDef';
 import { toast } from 'sonner';
+import { generateUuidV4 } from '@/lib/uuid'
 
 interface AccountingClosuresClientViewProps {
     externalOpen?: boolean;
@@ -190,13 +191,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
 
     const handleConfirmCloseTaxPeriod = useCallback(async () => {
         if (!closeF29PeriodId) return
-        const key = typeof crypto !== 'undefined' && crypto.randomUUID
-            ? crypto.randomUUID()
-            : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-                const r = (Math.random() * 16) | 0
-                const v = c === 'x' ? r : (r & 0x3) | 0x8
-                return v.toString(16)
-            })
+        const key = generateUuidV4()
         await closeTaxPeriod({ id: closeF29PeriodId, idempotencyKey: key });
         refetchTaxPeriods();
         fetchPeriods();

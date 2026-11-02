@@ -4,6 +4,7 @@ import { Suspense, useState, type ReactNode } from "react"
 import dynamic from "next/dynamic"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
+import { generateUuidV4 } from "@/lib/uuid"
 import { SkeletonShell } from "@/components/shared"
 import {
     useConfirmInvoice,
@@ -138,7 +139,7 @@ export function useOrderActionEngine({ order, posSessionId = null, onActionSucce
 
     const handlePaymentConfirm = async (data: Record<string, unknown>) => {
         if (!order) return
-        const idempotencyKey = newIdempotencyKey()
+        const idempotencyKey = generateUuidV4()
         try {
             // ── Devolución (register-payment-return) ──────────────────────
             if (activeModal === 'register-payment-return') {
@@ -374,13 +375,4 @@ export function useOrderActionEngine({ order, posSessionId = null, onActionSucce
     ) : null
 
     return { run, host, isModalOpen: activeModal !== null }
-}
-
-/** UUID v4; `crypto.randomUUID` no existe fuera de contextos seguros (dev server por http). */
-function newIdempotencyKey(): string {
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID()
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-        const r = (Math.random() * 16) | 0
-        return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16)
-    })
 }

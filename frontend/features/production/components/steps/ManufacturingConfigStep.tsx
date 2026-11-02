@@ -28,6 +28,7 @@ import {
 import { UoMSelector } from "@/components/selectors/UoMSelector";
 import { workOrderSchema } from "@/types/forms";
 import { productionApi } from "../../api/productionApi";
+import { generateUuidV4 } from "@/lib/uuid";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVatRate } from "@/hooks/useVatRate";
 import { useUoMs } from "../../hooks";
@@ -78,18 +79,7 @@ export function ManufacturingConfigStep({
   );
   const [isCreateConfirmOpen, setIsCreateConfirmOpen] = useState(false);
   const pendingDataRef = useRef<WorkOrderFormValues | null>(null);
-  const [idempotencyKey] = useState(() => {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-      return crypto.randomUUID();
-    }
-    let result = '';
-    for (let i = 0; i < 36; i++) {
-      if (i === 8 || i === 13 || i === 18 || i === 23) { result += '-'; continue; }
-      const r = Math.random() * 16 | 0;
-      result += (i === 19 ? '4' : i === 14 ? '8' : r.toString(16));
-    }
-    return result;
-  });
+  const [idempotencyKey] = useState(() => generateUuidV4());
 
   useAuth();
   const formIdValue = formId;

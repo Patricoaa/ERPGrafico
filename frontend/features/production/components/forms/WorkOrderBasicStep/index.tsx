@@ -27,17 +27,7 @@ import {
     productionApi,
 } from "../../../hooks"
 import type { WorkOrderBasicStepProps } from "./types"
-
-function generateUUID(): string {
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-        return crypto.randomUUID();
-    }
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = (Math.random() * 16) | 0;
-        const v = c === 'x' ? r : (r & 0x3) | 0x8;
-        return v.toString(16);
-    });
-}
+import { generateUuidV4 } from '@/lib/uuid'
 
 const FORM_DEFAULT_ID = "work-order-basic-form"
 
@@ -61,11 +51,11 @@ export function WorkOrderBasicStep({
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
     const [selectedManualProduct, setSelectedManualProduct] = useState<ProductMinimal | null>(null)
 
-    const idempotencyKeyRef = useRef<string>(generateUUID())
+    const idempotencyKeyRef = useRef<string>(generateUuidV4())
 
     useEffect(() => {
         if (mode === 'create') {
-            idempotencyKeyRef.current = generateUUID()
+            idempotencyKeyRef.current = generateUuidV4()
         }
     }, [mode])
 

@@ -23,6 +23,7 @@ import { type TaxPeriod, type TaxCalculationData } from "../types"
 import { taxApi } from "../api/taxApi"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { generateUuidV4 } from "@/lib/uuid"
 
 interface DeclarationWizardProps {
     isOpen: boolean
@@ -132,13 +133,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
     const handleSaveAndClose = async () => {
         setIsLoading(true)
         if (!idempotencyKeyRef.current) {
-            idempotencyKeyRef.current = typeof crypto !== 'undefined' && crypto.randomUUID
-                ? crypto.randomUUID()
-                : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-                    const r = (Math.random() * 16) | 0
-                    const v = c === 'x' ? r : (r & 0x3) | 0x8
-                    return v.toString(16)
-                })
+            idempotencyKeyRef.current = generateUuidV4()
         }
         try {
             const declarationData = await createDeclaration({

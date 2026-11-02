@@ -1,6 +1,7 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
+import { generateUuidV4 } from "@/lib/uuid"
 import { useState, useMemo } from "react"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm, useWatch } from "react-hook-form"
@@ -153,7 +154,7 @@ export function PaymentFormDrawer({
                 await financeApi.updatePayment(initialData.id, payload)
                 toast.success("Pago actualizado")
             } else {
-                const idempotencyKey = crypto.randomUUID?.() ?? 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => { const r = (Math.random() * 16) | 0; const v = c === 'x' ? r : (r & 0x3) | 0x8; return v.toString(16) })
+                const idempotencyKey = generateUuidV4()
                 await financeApi.registerPayment(payload, idempotencyKey)
                 toast.success("Movimiento registrado")
             }

@@ -9,6 +9,7 @@ import {
     BaseModal, DataCell, EmptyState, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell,
 } from "@/components/shared"
 import { useServerDate } from "@/hooks/useServerDate"
+import { generateUuidV4 } from "@/lib/uuid"
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useCreateInvoiceFromLines, useInvoiceableLines } from "../hooks/useInvoiceFromLines"
 import { invoiceFromLinesSchema, quantityKey, type InvoiceFromLinesFormValues } from "../schema"
@@ -48,7 +49,7 @@ interface InvoiceFromLinesModalProps {
 export function InvoiceFromLinesModal({ open, onOpenChange, side, orderId, partnerId, onSuccess }: InvoiceFromLinesModalProps) {
     const { dateString } = useServerDate()
     const [includeOthers, setIncludeOthers] = useState(false)
-    const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID())
+    const [idempotencyKey, setIdempotencyKey] = useState(() => generateUuidV4())
     const params = includeOthers && partnerId ? { side, partner: partnerId } : { side, orders: [orderId] }
     const { data: orders, isLoading, error } = useInvoiceableLines(params, open)
     const createInvoice = useCreateInvoiceFromLines()
@@ -104,7 +105,7 @@ export function InvoiceFromLinesModal({ open, onOpenChange, side, orderId, partn
                 },
                 idempotencyKey,
             })
-            setIdempotencyKey(crypto.randomUUID())
+            setIdempotencyKey(generateUuidV4())
             onOpenChange(false)
             onSuccess?.()
         } catch (err: unknown) {

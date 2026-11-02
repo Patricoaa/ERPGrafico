@@ -9,6 +9,7 @@ import { accountingApi } from '../api/accountingApi';
 
 import { ACCOUNTING_PERIODS_QUERY_KEY } from './queryKeys'
 import { staleTime } from '@/lib/query-config'
+import { generateUuidV4 } from '@/lib/uuid'
 
 export { ACCOUNTING_PERIODS_QUERY_KEY }
 
@@ -24,13 +25,7 @@ export function useAccountingPeriods() {
 
     const closeMutation = useMutation({
         mutationFn: (periodId: number) => {
-            const key = typeof crypto !== 'undefined' && crypto.randomUUID
-                ? crypto.randomUUID()
-                : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-                    const r = (Math.random() * 16) | 0
-                    const v = c === 'x' ? r : (r & 0x3) | 0x8
-                    return v.toString(16)
-                })
+            const key = generateUuidV4()
             return api.post(`/tax/accounting-periods/${periodId}/close/`, undefined, {
                 headers: { 'Idempotency-Key': key },
             })

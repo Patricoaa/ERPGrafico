@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
+import { generateUuidV4 } from "@/lib/uuid"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { showApiError } from "@/lib/errors"
@@ -80,7 +81,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
     }, [serverDate, form])
 
     // Un Idempotency-Key por intención de traspaso: se reutiliza en reintentos y se renueva al completar
-    const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID())
+    const [idempotencyKey, setIdempotencyKey] = useState(() => generateUuidV4())
 
     const onSubmit = async (values: TransferFormValues) => {
         try {
@@ -94,7 +95,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                 },
                 idempotencyKey,
             })
-            setIdempotencyKey(crypto.randomUUID())
+            setIdempotencyKey(generateUuidV4())
             onOpenChange(false)
             onSuccess?.()
             form.reset()
