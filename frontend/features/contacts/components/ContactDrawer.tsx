@@ -34,7 +34,7 @@ import { contactCreditDocumentEntity, contactCreditDocumentViews, type ContactCr
 import { type LucideIcon } from "lucide-react"
 
 import { getHubStatuses } from '@/features/orders'
-import { LabeledInput, LabeledContainer, ChoiceCard, ChoiceGroup, DrawerLayout, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
+import { LabeledInput, LabeledContainer, FormSelectionGroup, DrawerLayout, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
 import { getDomainConceptTitle, getDomainConceptCode } from "@/lib/entity-registry"
 
@@ -259,47 +259,36 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                 const isDefaultVendor = form.watch('is_default_vendor')
                                                 const commercialValue = isDefaultCustomer ? "customer" : isDefaultVendor ? "vendor" : "none"
                                                 return (
-                                                    <LabeledContainer
+                                                    <FormSelectionGroup
+                                                        mode="single"
                                                         label="Preferencias Comerciales"
-                                                        className="border-transparent group-focus-within:border-transparent group-focus-within:ring-0 group-focus-within:shadow-none"
-                                                    >
-                                                        <ChoiceGroup
-                                                            label="Preferencias Comerciales"
-                                                            columns="grid-cols-2"
-                                                            activation="select"
-                                                        >
-                                                            <ChoiceCard
-                                                                variant="light"
-                                                                selected={commercialValue === 'customer'}
-                                                                onSelect={() => {
-                                                                    form.setValue('is_default_customer', true, { shouldDirty: true })
-                                                                    form.setValue('is_default_vendor', false, { shouldDirty: true })
-                                                                }}
-                                                                title="Cliente por defecto"
-                                                                description={
-                                                                    defaultCustomer && defaultCustomer.id !== c?.id
-                                                                        ? `Actual: ${defaultCustomer.name}`
-                                                                        : `Se selecciona automáticamente en nuevas ${getDomainConceptCode('ov')}`
-                                                                }
-                                                                icon={ShoppingCart}
-                                                            />
-                                                            <ChoiceCard
-                                                                variant="light"
-                                                                selected={commercialValue === 'vendor'}
-                                                                onSelect={() => {
-                                                                    form.setValue('is_default_customer', false, { shouldDirty: true })
-                                                                    form.setValue('is_default_vendor', true, { shouldDirty: true })
-                                                                }}
-                                                                title="Proveedor por defecto"
-                                                                description={
-                                                                    defaultVendor && defaultVendor.id !== c?.id
-                                                                        ? `Actual: ${defaultVendor.name}`
-                                                                        : "Se selecciona automáticamente en nuevas OC"
-                                                                }
-                                                                icon={Package}
-                                                            />
-                                                        </ChoiceGroup>
-                                                    </LabeledContainer>
+                                                        icon={<Scale className="h-4 w-4" />}
+                                                        columns={2}
+                                                        disabled={isView}
+                                                        value={commercialValue === "none" ? null : commercialValue}
+                                                        onChange={(value) => {
+                                                            form.setValue('is_default_customer', value === 'customer', { shouldDirty: true })
+                                                            form.setValue('is_default_vendor', value === 'vendor', { shouldDirty: true })
+                                                        }}
+                                                        items={[
+                                                            {
+                                                                value: "customer",
+                                                                label: "Cliente por defecto",
+                                                                description: defaultCustomer && defaultCustomer.id !== c?.id
+                                                                    ? `Actual: ${defaultCustomer.name}`
+                                                                    : `Se selecciona automáticamente en nuevas ${getDomainConceptCode('ov')}`,
+                                                                icon: <ShoppingCart className="h-5 w-5" aria-hidden />,
+                                                            },
+                                                            {
+                                                                value: "vendor",
+                                                                label: "Proveedor por defecto",
+                                                                description: defaultVendor && defaultVendor.id !== c?.id
+                                                                    ? `Actual: ${defaultVendor.name}`
+                                                                    : "Se selecciona automáticamente en nuevas OC",
+                                                                icon: <Package className="h-5 w-5" aria-hidden />,
+                                                            },
+                                                        ]}
+                                                    />
                                                 )
                                             })()}
 

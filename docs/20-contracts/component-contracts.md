@@ -231,6 +231,7 @@ Props: `value` (✅), `uom?`, `decimals?` (default 4), `showSign?`.
 
 > 📄 **LabeledInput / MultiTagInput / MultiSelectTagInput** → [component-input.md](./component-input.md)
 > 📄 **DatePicker / DateRangeFilter** → [component-datepicker.md](./component-datepicker.md)
+> 📄 **CRUD radio/checkbox option cards** → [component-form-selection-group.md](./component-form-selection-group.md)
 
 ### Dropdown & Popover Layout Invariants
 

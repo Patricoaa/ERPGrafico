@@ -22,7 +22,9 @@ export interface CardSurfaceProps
      * ARIA role — "radio" for choices, "button" for object actions.
      * Only emitted when `selected` is explicitly passed (true or false).
      */
-    role?: "radio" | "button"
+    role?: "radio" | "checkbox" | "button"
+    /** Tab stop for grouped radio-card navigation. */
+    tabIndex?: number
     /** Click handler (only when not unavailable). */
     onClick?: () => void
     /** Keyboard handler — Enter/Space triggers onClick. */
@@ -69,6 +71,7 @@ export function CardSurface({
     interactive,
     pressable = false,
     kind,
+    tabIndex,
     ...props
 }: CardSurfaceProps) {
     const isInteractive = interactive ?? (onClick !== undefined)
@@ -89,10 +92,10 @@ export function CardSurface({
     return (
         <Card
             role={isInteractive ? role : undefined}
-            tabIndex={unavailable ? -1 : isInteractive ? 0 : undefined}
+            tabIndex={unavailable ? -1 : isInteractive ? (tabIndex ?? 0) : undefined}
             aria-disabled={unavailable || undefined}
             aria-pressed={isInteractive && hasExplicitSelected && role === "button" ? selected : undefined}
-            aria-checked={isInteractive && hasExplicitSelected && role === "radio" ? selected : undefined}
+            aria-checked={isInteractive && hasExplicitSelected && (role === "radio" || role === "checkbox") ? selected : undefined}
             className={cn(
                 selectableCardClass({ selected: selected === true, unavailable, interactive: isInteractive || pressable, kind }),
                 "shadow-none",

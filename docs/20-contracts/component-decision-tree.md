@@ -117,6 +117,7 @@ graph TD
     A -->|"Input en celda de tabla editable"| H(["Table Cell Input \n raw shadcn — ver contrato"])
     A -->|"Búsqueda/filtro en toolbar"| I(["Toolbar Filter Input \n raw shadcn — ver contrato"])
     A -->|"Elegir 1 opción visual (documento, entrega, pago, contacto)"| J(ChoiceCard + ChoiceGroup)
+    A -->|"Seleccionar opciones como cards en un formulario CRUD (radio/checkbox)"| K(FormSelectionGroup)
 ```
 
 - **`LabeledInput`**: Primitivo estándar. Renderiza `fieldset + legend` (patrón Notched). Soporta `as="textarea"`. Compatible con `react-hook-form` via `{...field}`. Ver [component-input.md](./component-input.md).
@@ -124,6 +125,7 @@ graph TD
 - **`FolioValidationInput`**: Úsalo para prevenir folios duplicados por proveedor asíncronamente mientras el usuario tipea.
 - **Table Cell Input**: `<Input>` de shadcn sin notched, dentro de `<TableCell>` en una tabla editable (spreadsheet). Ver [component-table-cell-input.md](./component-table-cell-input.md). Usar el shell `FormLineItemsTable` o `AccountingLinesTable`.
 - **`ChoiceCard` + `ChoiceGroup`**: "Elige una de estas cartas" en pasos de checkout (documento tributario, entrega, método de pago, contacto) y wizards/selectores ligeros (modo de producción, tipo de recurso, preferencias comerciales). Ver [component-choice-card.md](./component-choice-card.md) — variantes `stacked` (media strip) y `light` (lead + texto + rail).
+- **`FormSelectionGroup`**: grupo de cards para selección única (`mode="single"`, radio) o múltiple (`mode="multiple"`, checkbox) dentro de formularios CRUD. Renderiza un encabezado suelto arriba (icono requerido + label + suffix opcional), eyebrow/descripción e indicador CMYK; no usa `LabeledContainer`. No reemplaza `ChoiceCard`/`ChoiceGroup` en wizards/checkout ni `MultiSelectTagInput` en campos compactos. Ver [component-form-selection-group.md](./component-form-selection-group.md).
 - **Toolbar Filter Input**: `<Input>` de shadcn para filtros/búsqueda en toolbars compactos. Ver sección de excepciones en [component-input.md](./component-input.md#toolbar-filter-input).
 
 ## 4. Layout de Página

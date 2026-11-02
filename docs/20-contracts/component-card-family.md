@@ -25,6 +25,8 @@ Import: `import { CardSurface, CardLead, CardRail, cardAnatomy } from '@/compone
 
 **Regla del ribbon CMYK:** se previsualiza al hover y queda fijo cuando la card está elegida (`choice`, y las cards de entity-view, que comparten el lenguaje del product grid: ribbon + anillo + marca CMYK en el checkbox). En `item` de otras superficies (bandeja, kanban) y en `nav` solo aparece seleccionada. Nunca en `panel`/`metric`.
 
+En formularios CRUD, `FormSelectionGroup` compone `CardSurface` en modo radio o checkbox y usa el disco `CmykRing` como indicador común; su encabezado suelto siempre tiene icono y no muestra el ribbon. `ChoiceCard`/`ChoiceGroup` conservan su propio lenguaje para wizards y checkout.
+
 **Selección por lote en entity-view:** el clic en la card **siempre** ejecuta la acción principal de la entidad (abrir, por enlace extendido del título); solo el checkbox selecciona. La marca de selección es el *check* (círculo primario con check, como `SelectionCheck`), no `CmykRing`: lo usan `SelectionRing` (filas, cabeceras, cards) y el indicador de `SelectionDock`.
 
 ## 2. Superficies (CSS)
@@ -38,7 +40,7 @@ Elevación: no sumar `shadow-*` a un `surface-item`. Las utilidades de Tailwind 
 
 ## 3. Semántica de selección y teclado
 
-`CardSurface` solo emite `aria-pressed` / `aria-checked` cuando se le pasa `selected` (`true` o `false`). Una card de acción o enlace **no** pasa `selected`; así no se anuncia como alternancia. Con `role="radio"` usa `aria-checked`. Enter/Space activan la card **solo** cuando el foco está en la card misma: un botón anidado (acciones de fila, aprobar/rechazar) conserva su propio comportamiento.
+`CardSurface` solo emite `aria-pressed` / `aria-checked` cuando se le pasa `selected` (`true` o `false`). Una card de acción o enlace **no** pasa `selected`; así no se anuncia como alternancia. Con `role="radio"` o `role="checkbox"` usa `aria-checked`. Enter/Space activan la card **solo** cuando el foco está en la card misma: un botón anidado (acciones de fila, aprobar/rechazar) conserva su propio comportamiento. `tabIndex` permite navegación roving en grupos de radio.
 
 ## 4. Piezas compartidas
 

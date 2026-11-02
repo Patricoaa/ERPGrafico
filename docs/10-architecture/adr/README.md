@@ -174,5 +174,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0107](0107-product-create-and-continue.md) | Product creation continues into optional setup | Proposed |
 | [0108](0108-workflow-approval-decisions.md) | Workflow approval decisions are server-owned | Proposed |
 | [0109](0109-pos-cash-ledger-expected-cash.md) | POS cash ledger — expected cash derived from treasury account movements | Proposed |
+| [0110](0110-crud-form-selection-group.md) | Unified card selection for CRUD forms | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

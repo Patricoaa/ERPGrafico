@@ -46,6 +46,7 @@ Cada decisión de diseño se evalúa contra este criterio: ¿este píxel ayuda a
 | Espaciado y densidad (compact/comfortable) | [density-system.md](docs/20-contracts/density-system.md) |
 | Animación y transiciones | [component-animation.md](docs/20-contracts/component-animation.md) |
 | Componentes compartidos (qué usar en cada caso) | [component-decision-tree.md](docs/20-contracts/component-decision-tree.md) |
+| Selección radio/checkbox tipo card en formularios CRUD | [component-form-selection-group.md](docs/20-contracts/component-form-selection-group.md) · [ADR-0110](docs/10-architecture/adr/0110-crud-form-selection-group.md) |
 | Shell, sidebar de módulos y navegación (patrón ERPNext v16) | [module-layout-navigation.md](docs/20-contracts/module-layout-navigation.md) · [ADR-0079](docs/10-architecture/adr/0079-module-navigation-sidebar-erpnext-v16.md) |
 | Cards: roles, superficies, `CardLead`/`CardRail`/`cardAnatomy`, ratchet | [component-card-family.md](docs/20-contracts/component-card-family.md) · [ADR-0097](docs/10-architecture/adr/0097-card-family-roles-and-surface-tokens.md) |
 | Arquitectura del design system, radios | [design-system.md](docs/10-architecture/design-system.md) |

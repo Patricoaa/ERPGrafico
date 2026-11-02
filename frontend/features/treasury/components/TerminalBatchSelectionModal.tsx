@@ -20,7 +20,7 @@ import { useVatRate } from '@/hooks/useVatRate'
 import { useTerminalProviders, usePaymentMethods, useTerminalMovements, useTerminalBatchMutations } from "@/features/treasury"
 import type { TreasuryMovement } from "@/features/treasury/types"
 
-import { BaseModal, SubmitButton, CancelButton, LabeledContainer, LabeledInput, LabeledCheckboxGroup, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
+import { BaseModal, SubmitButton, CancelButton, LabeledContainer, LabeledInput, FormSelectionGroup, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
 
 const terminalBatchSchema = z.object({
     providerId: z.string().min(1, "Seleccione un proveedor"),
@@ -440,8 +440,10 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
             )}
         >
             <SkeletonShell isLoading={loading} ariaLabel="Cargando ventas del proveedor">
-                <LabeledCheckboxGroup
+                <FormSelectionGroup
+                    mode="multiple"
                     label="Movimientos Pendientes"
+                    icon={<Landmark className="h-4 w-4" />}
                     items={movements.map((m: TreasuryMovement) => ({
                         value: m.id,
                         label: m.reference || 'Sin referencia',
@@ -452,13 +454,13 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
                     onChange={(newValue) => setSelectedIds(new Set(newValue.map(Number)))}
                     selectAll
                     selectAllLabel={`Seleccionar Todas (${movements.length})`}
+                    maxHeight="300px"
                     footer={
                         <div className="flex items-center justify-between">
                             <span className="text-sm font-bold">Total Seleccionado</span>
                             <span className="text-sm font-black text-income">{formatCurrency(totalSelected)}</span>
                         </div>
                     }
-                    maxHeight="300px"
                 />
             </SkeletonShell>
         </BaseModal>

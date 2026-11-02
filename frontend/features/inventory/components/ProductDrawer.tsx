@@ -657,6 +657,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                     products={products as unknown as Product[]}
                     uoms={uoms as unknown as UoM[]}
                     variantMode={variantMode}
+                    disabled={isView}
                 />
             ),
         },

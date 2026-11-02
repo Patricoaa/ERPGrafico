@@ -7,13 +7,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
-import {Banknote, CreditCard, Landmark, Smartphone, FileCheck} from "lucide-react"
+import {Banknote, CreditCard, Landmark, Smartphone, FileCheck, CircleHelp, type LucideIcon} from "lucide-react"
 import { usePaymentMethods, useTerminalDevices, type Terminal, type TerminalCreatePayload, type TerminalUpdatePayload } from "@/features/treasury"
 import { treasuryApi } from "@/features/treasury"
-import { cn } from "@/lib/utils"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Form, FormField } from "@/components/ui/form"
-import { Drawer, CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, SubmitButton } from "@/components/shared"
+import { Drawer, CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, FormSelectionGroup, SubmitButton } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { ActivitySidebar } from "@/features/audit"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
@@ -93,26 +91,16 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
         },
     })
 
-    const toggleMethod = (methodId: number) => {
-        if (isView) return
-        setSelectedMethodIds(prev => {
-            const isSelected = prev.includes(methodId)
-            if (isSelected) {
-                return prev.filter(id => id !== methodId)
-            } else {
-                const methodToAdd = allMethods.find(m => m.id === methodId)
-                if (methodToAdd?.method_type === 'CASH') {
-                    const existingCash = allMethods.find(m =>
-                        prev.includes(m.id) && m.method_type === 'CASH'
-                    )
-                    if (existingCash) {
-                        toast.warning("Solo se puede seleccionar 1 método de EFECTIVO (Caja) por punto de venta.")
-                        return prev
-                    }
-                }
-                return [...prev, methodId]
-            }
-        })
+    const handlePaymentMethodsChange = (methodIds: Array<string | number>) => {
+        const nextIds = methodIds.map(Number)
+        const selectedCashMethods = allMethods.filter(method =>
+            nextIds.includes(method.id) && method.method_type === 'CASH'
+        )
+        if (selectedCashMethods.length > 1) {
+            toast.warning("Solo se puede seleccionar 1 método de EFECTIVO (Caja) por punto de venta.")
+            return
+        }
+        setSelectedMethodIds(nextIds)
     }
 
     const onSubmit = async (values: TerminalFormValues) => {
@@ -151,6 +139,14 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
     }
 
     const typeOrder = ['CASH', 'CARD', 'TRANSFER', 'CHECK', 'OTHER']
+    const typeIcons: Record<string, LucideIcon> = {
+        CASH: Banknote,
+        TERMINAL: Smartphone,
+        CARD: CreditCard,
+        TRANSFER: Landmark,
+        CHECK: FileCheck,
+        OTHER: CircleHelp,
+    }
 
     const getTypeLabel = (type: string) => {
         const labels: Record<string, string> = {
@@ -328,61 +324,28 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                 <div className="space-y-4">
                                     <FormSection title="Métodos de Pago Permitidos" icon={CreditCard} />
 
-                                    <div className="px-2 lg:px-6 space-y-4">
+                                    <div className="space-y-6">
                                         {typeOrder.map(type => {
                                             const groupMethods = methodsGrouped[type] || []
                                             if (groupMethods.length === 0) return null
 
+                                            const TypeIcon = typeIcons[type]
                                             return (
-                                                <div key={type} className="space-y-4">
-                                                    <div className="flex items-center gap-3 text-muted-foreground/70 pl-1">
-                                                        {type === 'CASH' && <Banknote className="h-4 w-4" />}
-                                                        {type === 'TERMINAL' && <Smartphone className="h-4 w-4" />}
-                                                        {type === 'CARD' && <CreditCard className="h-4 w-4" />}
-                                                        {type === 'TRANSFER' && <Landmark className="h-4 w-4" />}
-                                                        {type === 'CHECK' && <FileCheck className="h-4 w-4" />}
-                                                        <h4 className="text-2xs font-bold uppercase tracking-looser">
-                                                            {getTypeLabel(type)}
-                                                        </h4>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                        {groupMethods.map((method) => {
-                                                            const isSelected = selectedMethodIds.includes(method.id)
-                                                            return (
-                                                                <div
-                                                                    key={method.id}
-                                                                    onClick={() => toggleMethod(method.id)}
-                                                                    className={cn(
-                                                                        "flex items-center space-x-3 p-3 rounded-md border transition-all group",
-                                                                        isView ? "cursor-default opacity-70" : "cursor-pointer",
-                                                                        isSelected
-                                                                            ? "bg-primary/5 border-primary/40 shadow-card ring-1 ring-primary/20"
-                                                                            : "bg-background hover:bg-muted/30 border-border/60 hover:border-border"
-                                                                    )}
-                                                                >
-                                                                    <Checkbox
-                                                                        checked={isSelected}
-                                                                        disabled={isView}
-                                                                        onCheckedChange={() => toggleMethod(method.id)}
-                                                                        variant="circle"
-                                                                    />
-                                                                    <div className="flex flex-col">
-                                                                        <span className={cn(
-                                                                            "text-sm font-semibold transition-colors",
-                                                                            isSelected ? "text-foreground" : "text-muted-foreground"
-                                                                        )}>
-                                                                            {method.name}
-                                                                        </span>
-                                                                        <span className="text-3xs text-muted-foreground/70 font-medium">
-                                                                            {`Cta: ${method.treasury_account_name}`}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            )
-                                                        })}
-                                                    </div>
-                                                </div>
+                                                <FormSelectionGroup
+                                                    key={type}
+                                                    mode="multiple"
+                                                    label={getTypeLabel(type)}
+                                                    icon={TypeIcon ? <TypeIcon className="h-4 w-4" /> : undefined}
+                                                    columns={2}
+                                                    value={selectedMethodIds}
+                                                    onChange={handlePaymentMethodsChange}
+                                                    disabled={isView}
+                                                    items={groupMethods.map((method) => ({
+                                                        value: method.id,
+                                                        label: method.name,
+                                                        eyebrow: `Cta: ${method.treasury_account_name}`,
+                                                    }))}
+                                                />
                                             )
                                         })}
                                     </div>

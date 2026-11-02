@@ -30,6 +30,7 @@ last_review: 2026-05-28
 5.  **Selection Language (cards vs controls):**
     -   **Interactive/selectable cards** (ProductCard, ChoiceCard stacked/light, ContactCard, MfgLineCard, EntityCard, PaymentMethodSelector chosen surface): **cinta CMYK (`ribbon-cmyk`) + `SelectionCheck` + anillo K100 (`border-primary ring-1`)**. La cinta previsualiza en hover/foco; `SelectionCheck` aparece al elegir. `CmykRing` **no** se usa en cards.
     -   **Selección múltiple (bulk)**: `SelectionRing` (filas, cabeceras, cards) y el indicador de `SelectionDock` usan el **check** (círculo primario con check; minus en parcial), no `CmykRing`. `Checkbox variant="circle"` conserva `CmykRing`.
+    -   **Formularios CRUD**: `FormSelectionGroup` unifica selección radio/checkbox en cards con encabezado suelto (icono + label), eyebrow y el indicador `CmykRing`; `ChoiceCard`/`ChoiceGroup` se mantienen para wizards y checkout.
     -   Ver ADR-0094, ADR-0095, ADR-0096.
 6.  **Semantic Styling:** Never use hardcoded colors or spacing if a semantic token exists.
 

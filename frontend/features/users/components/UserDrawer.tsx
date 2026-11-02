@@ -12,20 +12,18 @@ import { usersApi, type SodWarning } from "../api/usersApi"
 import { useSingleUser } from "../hooks/useUserSearch"
 import { useBundles } from "../hooks/useRbac"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Form, FormField } from "@/components/ui/form"
-import { Plus, User, ShieldCheck, Users, Info, AlertTriangle } from "lucide-react"
+import { Plus, User, ShieldCheck, Users, AlertTriangle } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit"
 import {
     Drawer, CancelButton, SubmitButton, LabeledInput,
-    DrawerLayout, FormFooter, LabeledSwitch, SkeletonShell, FormSection,
+    DrawerLayout, FormFooter, LabeledSwitch, SkeletonShell, FormSection, FormSelectionGroup,
+    type FormSelectionOption,
 } from "@/components/shared"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { type AppGroup } from "@/types/entities"
 import { type RbacBundle } from "../api/rbacApi"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
-import { cn } from "@/lib/utils"
 import { userSchema, type UserFormValues } from "../schema"
 
 // ---------------------------------------------------------------------------
@@ -472,6 +470,7 @@ export function UserDrawer({
                                                     availableRoles={availableRoles}
                                                     bundleMeta={bundleMeta}
                                                     isLoading={isFetchingDeps}
+                                                    disabled={isView}
                                                 />
                                             ),
                                         },
@@ -486,6 +485,7 @@ export function UserDrawer({
                                                     form={form}
                                                     availableTeams={availableTeams}
                                                     isLoading={isFetchingDeps}
+                                                    disabled={isView}
                                                 />
                                             ),
                                         },
@@ -509,11 +509,16 @@ interface RolesTabProps {
     availableRoles: AppGroup[]
     bundleMeta: RbacBundle[]
     isLoading: boolean
+    disabled: boolean
 }
 
-function RolesTab({ form, availableRoles, bundleMeta, isLoading }: RolesTabProps) {
+function RolesTab({ form, availableRoles, bundleMeta, isLoading, disabled }: RolesTabProps) {
     const watchedRoles = form.watch("roles") ?? []
     const roleError = form.formState.errors.roles?.message
+    const roleItems = useMemo(
+        () => availableRoles.map((role) => roleSelectionOption(role, bundleMeta)),
+        [availableRoles, bundleMeta],
+    )
 
     return (
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
@@ -561,22 +566,16 @@ function RolesTab({ form, availableRoles, bundleMeta, isLoading }: RolesTabProps
                             )
                         }
                         return (
-                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                                {availableRoles.map((role) => (
-                                    <RoleCard
-                                        key={role.id}
-                                        role={role}
-                                        bundleMeta={bundleMeta}
-                                        checked={(field.value ?? []).includes(role.name)}
-                                        onChange={(checked) => {
-                                            const next = checked
-                                                ? [...(field.value ?? []), role.name]
-                                                : (field.value ?? []).filter((n) => n !== role.name)
-                                            field.onChange(next)
-                                        }}
-                                    />
-                                ))}
-                            </div>
+                            <FormSelectionGroup
+                                mode="multiple"
+                                label="Roles disponibles"
+                                icon={<ShieldCheck className="h-4 w-4" />}
+                                columns={3}
+                                disabled={disabled}
+                                value={field.value ?? []}
+                                onChange={(values) => field.onChange(values.map(String))}
+                                items={roleItems}
+                            />
                         )
                     }}
                 />
@@ -585,127 +584,35 @@ function RolesTab({ form, availableRoles, bundleMeta, isLoading }: RolesTabProps
     )
 }
 
-// ---------------------------------------------------------------------------
-// Role card
-// ---------------------------------------------------------------------------
-
-interface RoleCardProps {
-    role: AppGroup
-    bundleMeta: RbacBundle[]
-    checked: boolean
-    onChange: (checked: boolean) => void
-}
-
-function RoleCard({ role, bundleMeta, checked, onChange }: RoleCardProps) {
-    const access = useMemo(
-        () => parseRoleAccess(role.bundles ?? [], bundleMeta),
-        [role.bundles, bundleMeta]
-    )
-
+function roleSelectionOption(role: AppGroup, bundleMeta: RbacBundle[]): FormSelectionOption {
+    const access = parseRoleAccess(role.bundles ?? [], bundleMeta)
     const hasDetail = access.modules.length > 0 || !!role.description
+    const tooltipLines = [role.description, ...access.modules.map((module) => {
+        const levels = module.levels.join(" · ")
+        const capabilities = module.capabilities.join(", ")
+        const detail = [levels, capabilities].filter(Boolean).join("  +  ")
+        return `${module.label}: ${detail}`
+    })].filter(Boolean).join("\n\n")
+    const moduleSummary = access.modules.map((module) => {
+        const highestLevel = module.levels.at(-1)
+        const capabilityCount = module.capabilities.length > 0 ? ` +${module.capabilities.length}` : ""
+        return highestLevel ? `${module.label} (${highestLevel}${capabilityCount})` : module.label
+    }).join(" · ")
 
-    // Tooltip: grouped by module. Each module shows levels + capabilities.
-    const tooltipContent = useMemo(() => {
-        const lines: string[] = []
-        if (role.description) lines.push(role.description)
-        if (access.modules.length > 0) {
-            if (lines.length) lines.push("")
-            access.modules.forEach((m) => {
-                const levelPart = m.levels.length > 0 ? m.levels.join(" · ") : ""
-                const capPart = m.capabilities.length > 0 ? m.capabilities.join(", ") : ""
-                const detail = [levelPart, capPart].filter(Boolean).join("  +  ")
-                lines.push(`${m.label}: ${detail}`)
-            })
-        }
-        return lines.join("\n")
-    }, [role.description, access])
-
-    // Plain-text module summary shown on the card (no chips)
-    const moduleSummary = useMemo(() => {
-        if (access.modules.length === 0) return ""
-        return access.modules.map((m) => {
-            const top = m.levels.at(-1) // highest level (Lectura < Operador < Gestor)
-            const caps = m.capabilities.length > 0 ? ` +${m.capabilities.length}` : ""
-            return top ? `${m.label} (${top}${caps})` : m.label
-        }).join(" · ")
-    }, [access])
-
-    return (
-        <div
-            role="button"
-            tabIndex={0}
-            onClick={() => onChange(!checked)}
-            onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); onChange(!checked) } }}
-            className={cn(
-                "group relative flex flex-col gap-2 rounded-sm border p-4 cursor-pointer",
-                "transition-all duration-150 select-none outline-none",
-                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-                checked
-                    ? "border-primary/40 bg-primary/5 shadow-sm"
-                    : "border-border bg-card hover:border-border/80 hover:bg-muted/40"
-            )}
-        >
-            {/* Top row: checkbox + name + info */}
-            <div className="flex items-start gap-2.5">
-                <Checkbox
-                    checked={checked}
-                    onCheckedChange={onChange}
-                    onClick={(e) => e.stopPropagation()}
-                    className="mt-0.5 shrink-0"
-                    aria-label={`Seleccionar rol ${role.name}`}
-                />
-                <span className={cn(
-                    "flex-1 text-sm font-medium leading-snug",
-                    checked ? "text-foreground" : "text-foreground/80"
-                )}>
-                    {role.name}
+    return {
+        value: role.name,
+        label: role.name,
+        title: tooltipLines || undefined,
+        eyebrow: "Rol de acceso",
+        description: (
+            <>
+                <span className={moduleSummary ? "line-clamp-2" : "italic opacity-60"}>
+                    {moduleSummary || role.description || "Sin módulos configurados"}
                 </span>
-                {hasDetail && (
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={(e) => e.stopPropagation()}
-                                className="shrink-0 mt-0.5 h-5 w-5 rounded-full text-muted-foreground/60 hover:text-muted-foreground hover:bg-transparent transition-colors"
-                                aria-label={`Ver detalle del rol ${role.name}`}
-                            >
-                                <Info className="h-3.5 w-3.5" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent
-                            side="top"
-                            className="max-w-sm whitespace-pre-line text-left text-xs leading-relaxed"
-                        >
-                            {tooltipContent}
-                        </TooltipContent>
-                    </Tooltip>
-                )}
-            </div>
-
-            {/* Module summary — plain text, no chips */}
-            {moduleSummary && (
-                <p className="pl-[1.625rem] text-2xs text-muted-foreground leading-relaxed line-clamp-2">
-                    {moduleSummary}
-                </p>
-            )}
-
-            {/* Fallback: description when no modules configured */}
-            {!moduleSummary && role.description && (
-                <p className="pl-[1.625rem] text-2xs text-muted-foreground leading-relaxed line-clamp-2">
-                    {role.description}
-                </p>
-            )}
-
-            {/* Empty state */}
-            {!moduleSummary && !role.description && (
-                <p className="pl-[1.625rem] text-2xs text-muted-foreground/50 italic">
-                    Sin módulos configurados
-                </p>
-            )}
-        </div>
-    )
+                {hasDetail && <span className="sr-only">{tooltipLines}</span>}
+            </>
+        ),
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -716,10 +623,15 @@ interface TeamsTabProps {
     form: ReturnType<typeof useForm<UserFormValues>>
     availableTeams: AppGroup[]
     isLoading: boolean
+    disabled: boolean
 }
 
-function TeamsTab({ form, availableTeams, isLoading }: TeamsTabProps) {
+function TeamsTab({ form, availableTeams, isLoading, disabled }: TeamsTabProps) {
     const watchedTeams = form.watch("teams") ?? []
+    const teamItems = useMemo(
+        () => availableTeams.map(teamSelectionOption),
+        [availableTeams],
+    )
 
     return (
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
@@ -759,21 +671,16 @@ function TeamsTab({ form, availableTeams, isLoading }: TeamsTabProps) {
                             )
                         }
                         return (
-                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                                {availableTeams.map((team) => (
-                                    <TeamCard
-                                        key={team.id}
-                                        team={team}
-                                        checked={(field.value ?? []).includes(team.name)}
-                                        onChange={(checked) => {
-                                            const next = checked
-                                                ? [...(field.value ?? []), team.name]
-                                                : (field.value ?? []).filter((n) => n !== team.name)
-                                            field.onChange(next)
-                                        }}
-                                    />
-                                ))}
-                            </div>
+                            <FormSelectionGroup
+                                mode="multiple"
+                                label="Equipos disponibles"
+                                icon={<Users className="h-4 w-4" />}
+                                columns={3}
+                                disabled={disabled}
+                                value={field.value ?? []}
+                                onChange={(values) => field.onChange(values.map(String))}
+                                items={teamItems}
+                            />
                         )
                     }}
                 />
@@ -783,77 +690,18 @@ function TeamsTab({ form, availableTeams, isLoading }: TeamsTabProps) {
 }
 
 // ---------------------------------------------------------------------------
-// Team card
-// ---------------------------------------------------------------------------
-
-interface TeamCardProps {
-    team: AppGroup
-    checked: boolean
-    onChange: (checked: boolean) => void
-}
-
-function TeamCard({ team, checked, onChange }: TeamCardProps) {
-    return (
-        <div
-            role="button"
-            tabIndex={0}
-            onClick={() => onChange(!checked)}
-            onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); onChange(!checked) } }}
-            className={cn(
-                "group relative flex items-start gap-2.5 rounded-sm border p-4 cursor-pointer",
-                "transition-all duration-150 select-none outline-none",
-                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-                checked
-                    ? "border-border/70 bg-secondary/60 shadow-sm"
-                    : "border-border bg-card hover:border-border/80 hover:bg-muted/40"
-            )}
-        >
-            <Checkbox
-                checked={checked}
-                onCheckedChange={onChange}
-                onClick={(e) => e.stopPropagation()}
-                className="mt-0.5 shrink-0"
-                aria-label={`Seleccionar equipo ${team.name}`}
-            />
-            <div className="flex-1 min-w-0">
-                <p className={cn(
-                    "text-sm font-medium leading-snug",
-                    checked ? "text-foreground" : "text-foreground/80"
-                )}>
-                    {team.name}
-                </p>
-                {team.description && (
-                    <p className="mt-0.5 text-2xs text-muted-foreground leading-relaxed line-clamp-2">
-                        {team.description}
-                    </p>
-                )}
-            </div>
-            {team.description && (
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => e.stopPropagation()}
-                            className="shrink-0 mt-0.5 h-5 w-5 rounded-full text-muted-foreground/60 hover:text-muted-foreground hover:bg-transparent transition-colors"
-                            aria-label={`Ver detalle del equipo ${team.name}`}
-                        >
-                            <Info className="h-3.5 w-3.5" />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs text-xs">
-                        {team.description}
-                    </TooltipContent>
-                </Tooltip>
-            )}
-        </div>
-    )
-}
-
-// ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
+
+function teamSelectionOption(team: AppGroup): FormSelectionOption {
+    return {
+        value: team.name,
+        label: team.name,
+        title: team.description,
+        eyebrow: "Equipo de trabajo",
+        description: team.description ? <span className="line-clamp-2">{team.description}</span> : undefined,
+    }
+}
 
 function RoleListSkeleton({ count = 6 }: { count?: number }) {
     return (

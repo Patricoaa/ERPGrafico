@@ -13,9 +13,9 @@ import {
 import { settingsApi } from "../hooks"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
-import { MonitorSmartphone } from "lucide-react"
+import { MonitorSmartphone, Landmark } from "lucide-react"
 import * as LucideIcons from "lucide-react"
-import { CancelButton, LabeledInput, LabeledSelect, LabeledCheckboxGroup, FormSection, FormFooter, FormSplitLayout, SkeletonShell } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, FormSelectionGroup, FormSection, FormFooter, FormSplitLayout, SkeletonShell } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 import { ActivitySidebar } from "@/features/audit"
@@ -363,12 +363,16 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                                                     field.onChange(newValue)
                                                 }
                                                 return (
-                                                    <LabeledCheckboxGroup
+                                                    <FormSelectionGroup
+                                                        mode="multiple"
                                                         label="Cuentas Permitidas"
+                                                        icon={<Landmark className="h-4 w-4" />}
+                                                        disabled={isView}
                                                         items={treasuryAccounts.map((acc) => ({
                                                             value: acc.id,
                                                             label: acc.name,
-                                                            suffix: (
+                                                            eyebrow: "Cuenta de tesorería",
+                                                            description: (
                                                                 <div className="flex gap-1.5">
                                                                     {acc.allows_cash && <span className="text-3xs font-bold text-success uppercase tracking-widest">Efectivo</span>}
                                                                     {acc.allows_card && <span className="text-3xs font-bold text-primary uppercase tracking-tighter">Tarjeta</span>}

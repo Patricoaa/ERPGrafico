@@ -2,12 +2,12 @@
 "use client"
 
 import { type UoM, type Product } from "@/types/entities"
-import {ActionConfirmModal, FormLineItemsTable, FormSection, LabeledContainer, LabeledSeparator, LabeledSwitch, ChoiceCard, ChoiceGroup, Badge} from '@/components/shared'
+import {ActionConfirmModal, FormLineItemsTable, FormSection, LabeledContainer, LabeledSeparator, LabeledSwitch, FormSelectionGroup, Badge} from '@/components/shared'
 import { FormField } from "@/components/ui/form"
 
 import { Button } from "@/components/ui/button"
 import {TableRow, TableBody, TableCell} from "@/components/ui/table"
-import {Package, Layers, Clock, Settings2, Info, Monitor, Printer, Scissors, Trash2} from "lucide-react"
+import {Package, Layers, Clock, Settings2, Info, Monitor, Printer, Scissors, Trash2, Factory} from "lucide-react"
 import { type UseFormReturn } from "react-hook-form"
 import { type ProductFormValues } from "./schema"
 import { type ProductInitialData } from "@/types/forms"
@@ -27,9 +27,10 @@ interface ProductManufacturingTabProps {
     products: Product[]
     uoms: UoM[]
     variantMode?: boolean
+    disabled?: boolean
 }
 
-export function ProductManufacturingTab({ form, initialData }: ProductManufacturingTabProps) {
+export function ProductManufacturingTab({ form, initialData, disabled = false }: ProductManufacturingTabProps) {
     const { boms, isBOMsLoading, refetch, deleteBom, toggleActive } = useBOMs({ product_id: initialData?.id })
     const [isBomModalOpen, setIsBomModalOpen] = useState(false)
     const [bomToEdit, setBomToEdit] = useState<BOM | undefined>(undefined)
@@ -51,15 +52,15 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                         label="Modo de Producción"
                         className="border-transparent group-focus-within:border-transparent group-focus-within:ring-0 group-focus-within:shadow-none"
                     >
-                        <ChoiceGroup
+                        <FormSelectionGroup
+                            mode="single"
                             label="Modo de Producción"
-                            columns="grid-cols-3"
-                            activation="select"
-                        >
-                            <ChoiceCard
-                                variant="light"
-                                selected={productionMode === "simple"}
-                                onSelect={() => {
+                            icon={<Factory className="h-4 w-4" />}
+                            columns={3}
+                            disabled={disabled}
+                            value={productionMode}
+                            onChange={(value) => {
+                                if (value === "simple") {
                                     const patch = {
                                         requires_advanced_manufacturing: false,
                                         mfg_auto_finalize: false,
@@ -71,15 +72,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                                             form.setValue(key, v, { shouldDirty: true });
                                         }
                                     });
-                                }}
-                                title="Simple"
-                                description="Manual / Lote"
-                                icon={Package}
-                            />
-                            <ChoiceCard
-                                variant="light"
-                                selected={productionMode === "express"}
-                                onSelect={() => {
+                                } else if (value === "express") {
                                     const patch = {
                                         has_bom: true,
                                         requires_advanced_manufacturing: false,
@@ -92,15 +85,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                                             form.setValue(key, v, { shouldDirty: true });
                                         }
                                     });
-                                }}
-                                title="Express"
-                                description="Auto-cierre"
-                                icon={Clock}
-                            />
-                            <ChoiceCard
-                                variant="light"
-                                selected={productionMode === "advanced"}
-                                onSelect={() => {
+                                } else if (value === "advanced") {
                                     const patch = {
                                         has_bom: true,
                                         requires_advanced_manufacturing: true,
@@ -113,12 +98,14 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                                             form.setValue(key, v, { shouldDirty: true });
                                         }
                                     });
-                                }}
-                                title="Avanzado"
-                                description="Wizard Etapas"
-                                icon={Layers}
-                            />
-                        </ChoiceGroup>
+                                }
+                            }}
+                            items={[
+                                { value: "simple", label: "Simple", description: "Manual / Lote", icon: <Package className="h-5 w-5" aria-hidden /> },
+                                { value: "express", label: "Express", description: "Auto-cierre", icon: <Clock className="h-5 w-5" aria-hidden /> },
+                                { value: "advanced", label: "Avanzado", description: "Wizard Etapas", icon: <Layers className="h-5 w-5" aria-hidden /> },
+                            ]}
+                        />
                     </LabeledContainer>
 
                     <div className="space-y-4">
