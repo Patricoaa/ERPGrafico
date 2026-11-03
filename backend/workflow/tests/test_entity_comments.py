@@ -307,3 +307,51 @@ def test_notification_title_is_entity_display_id(alice, bob, target, contact):
     note = Notification.objects.get(notification_type=MENTION_TYPE)
     assert note.title == display_id_for("contacts.contact", contact)
     assert note.message.startswith("Alice te mencionó: ")
+
+
+# ─── Herencia de permiso: tarea → entidad a la que pertenece (ADR-0111) ────────
+
+
+@pytest.mark.django_db(transaction=True)
+class TestTaskCommentsInheritParentPermission:
+    @pytest.fixture
+    def approval(self, contact, alice):
+        from workflow.models import Task
+
+        return Task.objects.create(
+            title="Aprobación de prueba",
+            description="",
+            task_type="TEST_APPROVAL",
+            category=Task.Category.APPROVAL,
+            status=Task.Status.PENDING,
+            created_by=alice,
+            content_object=contact,
+        )
+
+    @pytest.fixture
+    def task_target(self, approval):
+        return f"workflow.task:{approval.pk}"
+
+    def test_parent_viewer_comments_without_task_permission(self, alice, task_target):
+        # alice ve el contacto (view_contact) pero no tiene workflow.view_task.
+        resp = _client(alice).post(URL, {"target": task_target, "text": "conversación"}, format="json")
+        assert resp.status_code == 201
+        assert _client(alice).get(URL, {"target": task_target}).status_code == 200
+
+    def test_task_permission_alone_is_not_enough(self, approval, task_target):
+        # Tiene workflow.view_task pero no ve la entidad dueña: el permiso heredado manda.
+        from workflow.models import Task
+
+        viewer = _user("task_only", "workflow.view_task")
+        assert viewer.has_perm(Task.objects.get(pk=approval.pk) and "workflow.view_task")
+        assert _client(viewer).get(URL, {"target": task_target}).status_code == 403
+
+    def test_task_without_source_falls_back_to_task_permission(self, alice):
+        from workflow.models import Task
+
+        plain = Task.objects.create(
+            title="Sin entidad", description="", task_type="TEST_PLAIN",
+            status=Task.Status.PENDING, created_by=alice,
+        )
+        viewer = _user("task_viewer", "workflow.view_task")
+        assert _client(viewer).get(URL, {"target": f"workflow.task:{plain.pk}"}).status_code == 200

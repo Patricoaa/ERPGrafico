@@ -197,3 +197,33 @@ def test_comments_suffix_without_id_is_malformed():
         await comm.disconnect()
 
     asyncio.run(go())
+
+
+# ─── Comentarios de tarea: permiso heredado de la entidad dueña (ADR-0111) ─────
+
+
+@pytest.mark.django_db(transaction=True)
+def test_task_comments_subtopic_uses_parent_permission():
+    from contacts.models import Contact
+    from workflow.models import Task
+
+    contact = Contact.objects.create(name="Dueña", tax_id="76888888-8")
+    user = _make_user(has_perm_result=False)
+    task = Task.objects.create(
+        title="t", description="", task_type="TEST_BUS", status=Task.Status.PENDING,
+        created_by=None, content_object=contact,
+    )
+    seen = []
+    user.has_perm.side_effect = lambda perm: seen.append(perm) or False
+
+    async def go():
+        comm = await _open(user)
+        await comm.connect()
+        await comm.send_json_to({"op": "subscribe", "topic": f"workflow.task.{task.pk}.comments"})
+        msg = await comm.receive_json_from(timeout=2)
+        assert msg["code"] == "forbidden"
+        await comm.disconnect()
+
+    asyncio.run(go())
+    # Se exige el permiso de la entidad dueña, no workflow.view_task.
+    assert seen == ["contacts.view_contact"]

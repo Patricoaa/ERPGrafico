@@ -185,6 +185,12 @@ class Task(models.Model):
     def __str__(self):
         return f"[{self.status}] {self.title}"
 
+    def comment_permission_source(self):
+        """Los comentarios de una tarea heredan el permiso de la entidad a la que pertenece:
+        la conversación de una aprobación de OT se ve con `production.view_workorder` (ADR-0111).
+        """
+        return self.content_object
+
 
 class TaskEvent(models.Model):
     """Append-only log of task decisions and lifecycle changes (approved, rejected, reopened…).
