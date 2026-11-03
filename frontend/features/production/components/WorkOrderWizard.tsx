@@ -561,8 +561,8 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     if (transitioning) return
     if (isMovingForward && !(await approvePendingTasks())) return
     try {
-      const res = await mutations.transition({ nextStageId, data, notes })
       initialTargetUsedRef.current = true
+      const res = await mutations.transition({ nextStageId, data, notes })
       const targetStage = (res as { current_stage?: string })?.current_stage || nextStageId
       const targetIdx = STAGES.findIndex((s) => s.id === targetStage)
       if (targetIdx >= 0) {
