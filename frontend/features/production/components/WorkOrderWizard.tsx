@@ -954,6 +954,11 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       stageData={stageData}
                       actionable={isViewingCurrentStage && !isTerminalOrder}
                       onRefresh={fetchOrder}
+                      canComplete={canUserCompleteTask}
+                      taskNotes={taskNotes}
+                      taskFiles={taskFiles}
+                      onNoteChange={setTaskNote}
+                      onFileChange={setTaskFile}
                     />
                   )}
                   {currentStageId === 'PRESS' && (
