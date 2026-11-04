@@ -28,6 +28,7 @@ import {
     CancelButton,
     SubmitButton,
     StatusBadge,
+    SkeletonShell,
 } from "@/components/shared"
 import { formatEntityDisplay } from '@/lib/entity-registry'
 import { DocumentRelationsTab, useDocumentRelations } from "@/features/documents"
@@ -145,7 +146,21 @@ export function PurchaseCheckoutWizard({
                     setCurrentOrderLines(mappedLines)
                     setCurrentTotal(parseFloat(data.total as string))
                     setSelectedSupplierId(typeof data.supplier === 'object' ? String((data.supplier as unknown as Record<string, unknown>).id) : String(data.supplier ?? ""))
+                    if (data.supplier_name) setSelectedSupplierName(data.supplier_name)
                     setSelectedWarehouseId(data.warehouse ? (typeof data.warehouse === 'object' ? String((data.warehouse as unknown as Record<string, unknown>).id) : String(data.warehouse)) : "")
+                    if (data.warehouse_name) setSelectedWarehouseName(data.warehouse_name)
+                    if (data.work_order) setSelectedWorkOrderId(String(data.work_order))
+                    // Pre-populate DTE step if invoice already exists on this order
+                    if (data.invoice_details) {
+                        const inv = data.invoice_details
+                        const isDraft = !inv.number || inv.number === 'Draft'
+                        setDteData(prev => ({
+                            ...prev,
+                            type: inv.dte_type ?? prev.type,
+                            number: isDraft ? '' : (inv.number ?? ''),
+                            isPending: isDraft,
+                        }))
+                    }
                 } catch (error) {
                     console.error("Error fetching order in wizard:", error)
                     toast.error("Error al cargar la orden")
@@ -525,7 +540,13 @@ export function PurchaseCheckoutWizard({
 
     const checkoutContent = (
         <div className="flex-1 flex flex-col min-h-0 overflow-y-auto p-6">
-            {renderStepContent(step)}
+            {loading ? (
+                <SkeletonShell isLoading ariaLabel="Cargando orden" className="space-y-4">
+                    <div className="h-10 w-1/3 rounded-md bg-muted" />
+                    <div className="h-32 rounded-md bg-muted" />
+                    <div className="h-20 rounded-md bg-muted" />
+                </SkeletonShell>
+            ) : renderStepContent(step)}
         </div>
     )
 

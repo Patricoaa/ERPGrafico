@@ -102,6 +102,20 @@ export function useCancelOrder(orderType: 'sale' | 'purchase') {
     return { cancelOrder: cancelOrderMutation.mutateAsync, isCancellingOrder: cancelOrderMutation.isPending }
 }
 
+export function useConfirmPurchaseOrder() {
+    const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+    const confirmMutation = useMutation({
+        mutationFn: (id: number) => ordersApi.confirmPurchaseOrder(id),
+        onSuccess: () => {
+            markLocalMutation()
+            toast.success('Orden de compra confirmada')
+            invalidateCrossFeature(queryClient, [PURCHASING_KEYS.all])
+        },
+    })
+    return { confirmPurchaseOrder: confirmMutation.mutateAsync, isConfirmingPurchaseOrder: confirmMutation.isPending }
+}
+
 // ─── Logistics mutations ──────────────────────────────────────────────────────
 
 export function useAnnulLogistics() {

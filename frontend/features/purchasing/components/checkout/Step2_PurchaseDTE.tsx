@@ -51,14 +51,14 @@ export function Step2_PurchaseDTE({
         return dteOptions.filter(opt => allowedDteTypes.includes(opt.id));
     }, [allowedDteTypes])
     return (
-        <div className="space-y-8">
+        <div className="space-y-2">
             <div className="flex flex-col gap-1 mb-2">
                 <StepHeader title="Registro de Documento" description="Ingrese la información relacionada al DTE y adjunte el respaldo legal." icon={FileText} />
             </div>
-            <div className="space-y-4">
+            <div className="space-y-2">
                 <LabeledContainer
                     label="Tipo de Documento"
-                    className="border-transparent group-focus-within:border-transparent group-focus-within:ring-0 group-focus-within:shadow-none"
+                    className="border-none group-focus-within:border-transparent group-focus-within:ring-0 group-focus-within:shadow-none"
                 >
                     <ChoiceGroup
                         label="Tipo de Documento"

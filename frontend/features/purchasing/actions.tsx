@@ -92,7 +92,7 @@ export const purchaseOrderActions: ActionRegistry<ActionDoc> = {
                 label: 'Registrar Recepción',
                 icon: Package,
                 requiredPermissions: ['inventory.add_stockmove'],
-                excludedStatus: ['CANCELLED'],
+                excludedStatus: ['DRAFT', 'CANCELLED'],
                 checkAvailability: (activeDoc) => {
                     if (!activeDoc) return false
 
@@ -127,7 +127,7 @@ export const purchaseOrderActions: ActionRegistry<ActionDoc> = {
                 label: 'Confirmar Entrega de Servicio',
                 icon: FileBadge,
                 requiredPermissions: ['inventory.add_stockmove'],
-                excludedStatus: ['CANCELLED'],
+                excludedStatus: ['DRAFT', 'CANCELLED'],
                  checkAvailability: (order) => {
                     // Show ONLY if it has services and is not fully received
                     const lines = order.lines || order.items || []
@@ -204,7 +204,7 @@ export const purchaseOrderActions: ActionRegistry<ActionDoc> = {
                 label: 'Registrar Pago',
                 icon: Banknote,
                 requiredPermissions: ['treasury.add_treasurymovement'],
-                // Removed specific requiredStatus to rely on financial state
+                excludedStatus: ['DRAFT', 'CANCELLED'],
                 checkAvailability: (activeDoc) => {
                     if (!activeDoc) return false
                     const isInvoiced = !!activeDoc.dte_type
@@ -217,10 +217,9 @@ export const purchaseOrderActions: ActionRegistry<ActionDoc> = {
 
                     // Show if there's a pending amount
                     const hasPendingAmount = (Number(activeDoc.pending_amount ?? 0) || 0) > 0
-                    return hasPendingAmount && activeDoc.status !== 'CANCELLED'
+                    return hasPendingAmount
                 },
                 badge: { type: 'pending' },
-                excludedStatus: ['CANCELLED']
             },
             {
                 id: 'register-payment-return',

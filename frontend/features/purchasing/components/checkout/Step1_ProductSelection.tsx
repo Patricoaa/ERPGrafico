@@ -32,12 +32,12 @@ interface Step1_ProductSelectionProps {
 }
 
 const COLUMNS = [
-    { header: "Producto", width: "w-[50%]", align: "left" as const },
-    { header: "Cantidad", width: "w-[8%]", align: "center" as const },
-    { header: "Unidad", width: "w-[16%]", align: "left" as const },
-    { header: "Costo Unit.", width: "w-[10%]", align: "left" as const },
+    { header: "Producto", width: "w-[30%]", align: "left" as const },
+    { header: "Cantidad", width: "w-[10%]", align: "center" as const },
+    { header: "Unidad", width: "w-[15%]", align: "left" as const },
+    { header: "Costo Unit.", width: "w-[15%]", align: "left" as const },
     { header: "Subtotal", width: "w-[10%]", align: "right" as const },
-    { header: "", width: "w-[6%]" },
+    { header: "", width: "w-[5%]" },
 ]
 
 function GrossToNetCalculator({ rate, multiplier }: { rate: number; multiplier: number }) {
@@ -50,7 +50,8 @@ function GrossToNetCalculator({ rate, multiplier }: { rate: number; multiplier: 
             <PopoverTrigger asChild>
                 <Button
                     type="button"
-                    className="flex items-center gap-1 text-3xs font-medium uppercase tracking-widest text-muted-foreground/60 hover:text-primary transition-colors"
+                    variant="ghost"
+                    className="flex items-center gap-1 text-3xs font-medium uppercase tracking-widest transition-colors"
                     title="Calculadora bruto a neto"
                 >
                     <Calculator className="h-3 w-3" />
@@ -277,7 +278,7 @@ export function Step1_ProductSelection({
                                     showConversionHint={true}
                                     quantity={Number(lineQty) || 1}
                                     variant="inline"
-                                    className="h-8"
+                                    className="h-8 border border-input"
                                 />
                             </TableCell>
                             <TableCell className="py-2 px-3">
