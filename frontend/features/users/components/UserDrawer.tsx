@@ -470,60 +470,7 @@ export function UserDrawer({
                                                                     )}
                                                                 />
                                                             </div>
-                                                            {canGrantSuperuser && (
-                                                                <div className="col-span-4">
-                                                                    <FormField
-                                                                        control={form.control}
-                                                                        name="is_superuser"
-                                                                        render={({ field }) => (
-                                                                            <LabeledSwitch
-                                                                                label="Superusuario"
-                                                                                description={
-                                                                                    superuserToggleDisabled && isSelf
-                                                                                        ? "No puede concederse este nivel a sí mismo"
-                                                                                        : field.value
-                                                                                        ? "Acceso total — omite todos los permisos"
-                                                                                        : "Sin acceso total"
-                                                                                }
-                                                                                checked={field.value}
-                                                                                onCheckedChange={field.onChange}
-                                                                                disabled={superuserToggleDisabled}
-                                                                                icon={<Crown className="h-4 w-4 transition-colors" />}
-                                                                                color="warning"
-                                                                            />
-                                                                        )}
-                                                                    />
-                                                                </div>
-                                                            )}
                                                         </div>
-                                                        {/* Confirm banner: shown when superuser is being granted */}
-                                                        {pendingSuperuserGrant && (
-                                                            <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/8 px-4 py-3">
-                                                                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-                                                                <div className="flex-1 space-y-2">
-                                                                    <p className="text-sm font-medium text-foreground">¿Confirmar acceso total?</p>
-                                                                    <p className="text-xs text-muted-foreground">
-                                                                        El usuario obtendrá acceso completo al sistema, omitiendo todos los controles de permisos. Esta acción queda registrada en el log de auditoría.
-                                                                    </p>
-                                                                    <div className="flex gap-2 pt-1">
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => form.handleSubmit(onSubmit)()}
-                                                                            className="rounded-sm bg-warning px-3 py-1 text-xs font-semibold text-warning-foreground hover:bg-warning/90"
-                                                                        >
-                                                                            Confirmar
-                                                                        </button>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => { setPendingSuperuserGrant(false); form.setValue("is_superuser", false) }}
-                                                                            className="rounded-sm px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-                                                                        >
-                                                                            Cancelar
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        )}
                                                     </div>
                                                 </div>
                                             ),
@@ -543,6 +490,12 @@ export function UserDrawer({
                                                     isLoading={isFetchingDeps}
                                                     disabled={isView || watchedIsSuperuser}
                                                     isSuperuser={watchedIsSuperuser}
+                                                    canGrantSuperuser={canGrantSuperuser}
+                                                    superuserToggleDisabled={superuserToggleDisabled}
+                                                    isSelf={isSelf}
+                                                    pendingSuperuserGrant={pendingSuperuserGrant}
+                                                    onConfirmSuperuser={() => form.handleSubmit(onSubmit)()}
+                                                    onCancelSuperuser={() => { setPendingSuperuserGrant(false); form.setValue("is_superuser", false) }}
                                                 />
                                             ),
                                         },
@@ -582,9 +535,15 @@ interface RolesTabProps {
     isLoading: boolean
     disabled: boolean
     isSuperuser?: boolean
+    canGrantSuperuser?: boolean
+    superuserToggleDisabled?: boolean
+    isSelf?: boolean
+    pendingSuperuserGrant?: boolean
+    onConfirmSuperuser?: () => void
+    onCancelSuperuser?: () => void
 }
 
-function RolesTab({ form, availableRoles, bundleMeta, isLoading, disabled, isSuperuser }: RolesTabProps) {
+function RolesTab({ form, availableRoles, bundleMeta, isLoading, disabled, isSuperuser, canGrantSuperuser, superuserToggleDisabled, isSelf, pendingSuperuserGrant, onConfirmSuperuser, onCancelSuperuser }: RolesTabProps) {
     const watchedRoles = form.watch("roles") ?? []
     const roleError = form.formState.errors.roles?.message
     const roleItems = useMemo(
@@ -594,20 +553,66 @@ function RolesTab({ form, availableRoles, bundleMeta, isLoading, disabled, isSup
 
     return (
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-            {/* Header */}
-            <div className="shrink-0 flex items-start justify-between gap-4 px-8 pt-6 pb-4">
-                <div className="flex items-start gap-3">
-
-                    <div className="space-y-0.5">
-                        <h2 className="text-sm font-semibold text-foreground leading-snug">Roles de acceso</h2>
-                        <p className="text-xs text-muted-foreground leading-snug">
-                            Los roles definen qué puede ver, crear, modificar y aprobar el usuario en el sistema.
-                            Cada rol agrupa permisos de uno o varios módulos.{" "}
-                            <strong className="font-medium text-foreground/70">Obligatorio — mínimo uno.</strong>
-                        </p>
-                    </div>
+            {/* Superuser toggle — top of tab, visible only to privileged editors */}
+            {canGrantSuperuser && (
+                <div className="shrink-0 px-8 pt-6 pb-4 border-b border-border/60">
+                    <FormField
+                        control={form.control}
+                        name="is_superuser"
+                        render={({ field }) => (
+                            <LabeledSwitch
+                                label="Superusuario"
+                                description={
+                                    superuserToggleDisabled && isSelf
+                                        ? "No puede concederse este nivel a sí mismo"
+                                        : field.value
+                                        ? "Acceso total — omite todos los permisos"
+                                        : "Sin acceso total"
+                                }
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                disabled={superuserToggleDisabled}
+                                icon={<Crown className="h-4 w-4 transition-colors" />}
+                                color="warning"
+                            />
+                        )}
+                    />
+                    {/* Confirm banner */}
+                    {pendingSuperuserGrant && (
+                        <div className="flex items-start gap-3 mt-3 rounded-md border border-warning/40 bg-warning/8 px-4 py-3">
+                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                            <div className="flex-1 space-y-2">
+                                <p className="text-sm font-medium text-foreground">¿Confirmar acceso total?</p>
+                                <p className="text-xs text-muted-foreground">
+                                    El usuario obtendrá acceso completo al sistema, omitiendo todos los controles de permisos. Esta acción queda registrada en el log de auditoría.
+                                </p>
+                                <div className="flex gap-2 pt-1">
+                                    <button type="button" onClick={onConfirmSuperuser}
+                                        className="rounded-sm bg-warning px-3 py-1 text-xs font-semibold text-warning-foreground hover:bg-warning/90">
+                                        Confirmar
+                                    </button>
+                                    <button type="button" onClick={onCancelSuperuser}
+                                        className="rounded-sm px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
-                {watchedRoles.length > 0 && (
+            )}
+
+            {/* Header */}
+            <div className="shrink-0 flex items-start justify-between gap-4 px-8 pt-5 pb-4">
+                <div className="space-y-0.5">
+                    <h2 className="text-sm font-semibold text-foreground leading-snug">Roles de acceso</h2>
+                    <p className="text-xs text-muted-foreground leading-snug">
+                        Los roles definen qué puede ver, crear, modificar y aprobar el usuario en el sistema.
+                        Cada rol agrupa permisos de uno o varios módulos.{" "}
+                        {!isSuperuser && <strong className="font-medium text-foreground/70">Obligatorio — mínimo uno.</strong>}
+                    </p>
+                </div>
+                {watchedRoles.length > 0 && !isSuperuser && (
                     <span className="shrink-0 mt-0.5 inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-2xs font-semibold text-primary tabular-nums">
                         {watchedRoles.length} activo{watchedRoles.length !== 1 ? "s" : ""}
                     </span>
@@ -616,7 +621,7 @@ function RolesTab({ form, availableRoles, bundleMeta, isLoading, disabled, isSup
 
             {/* Superuser notice */}
             {isSuperuser && (
-                <div className="shrink-0 flex items-center gap-2 mx-8 mt-2 rounded-md border border-warning/30 bg-warning/8 px-3 py-2.5">
+                <div className="shrink-0 flex items-center gap-2 mx-8 mb-2 rounded-md border border-warning/30 bg-warning/8 px-3 py-2.5">
                     <Crown className="h-3.5 w-3.5 shrink-0 text-warning" />
                     <p className="text-xs text-warning/90">Este usuario tiene acceso total. Los roles no aplican y no pueden modificarse.</p>
                 </div>
@@ -624,7 +629,7 @@ function RolesTab({ form, availableRoles, bundleMeta, isLoading, disabled, isSup
 
             {/* Error banner */}
             {roleError && !isSuperuser && (
-                <div className="shrink-0 flex items-center gap-2 mx-8 mt-4 rounded-md border border-destructive/30 bg-destructive/8 px-3 py-2.5">
+                <div className="shrink-0 flex items-center gap-2 mx-8 mt-2 rounded-md border border-destructive/30 bg-destructive/8 px-3 py-2.5">
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-destructive" />
                     <p className="text-xs text-destructive">{roleError}</p>
                 </div>
