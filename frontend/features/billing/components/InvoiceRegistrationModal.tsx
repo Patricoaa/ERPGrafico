@@ -240,6 +240,7 @@ export function InvoiceRegistrationModal({
             open={open}
             onOpenChange={onOpenChange}
             size="md"
+            asDialog
             icon={FileText}
             title="Registrar Documento"
             description="Ingrese los datos del documento tributario."
