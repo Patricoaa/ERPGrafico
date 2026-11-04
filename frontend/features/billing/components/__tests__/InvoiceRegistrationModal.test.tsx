@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor, fireEvent } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { vi, describe, it, expect, beforeEach } from "vitest"
@@ -109,5 +109,50 @@ describe("InvoiceRegistrationModal", () => {
         expect(screen.queryByText(/obligatorio/i)).not.toBeInTheDocument()
         // Submit button should be enabled
         expect(screen.getByRole("button", { name: /registrar documento/i })).not.toBeDisabled()
+    })
+
+    it("calls from-lines then confirm on submit with folio and attachment", async () => {
+        getMock.mockResolvedValue({ data: ORDERS })
+        postMock
+            .mockResolvedValueOnce({ data: { id: 55, display_id: "OC-FACV-55" } })   // from-lines
+            .mockResolvedValueOnce({ data: { id: 55, display_id: "OC-FACV-55" } })   // confirm
+        const onSuccess = vi.fn()
+        wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} onSuccess={onSuccess} />)
+        await waitFor(() => expect(screen.getByText(/tipo de documento/i)).toBeInTheDocument())
+
+        // Type folio via fireEvent to avoid triggering Radix validation popover
+        const folioInput = screen.getByPlaceholderText(/ej: 45223/i)
+        fireEvent.change(folioInput, { target: { value: "12345" } })
+
+        // Upload attachment via fireEvent (userEvent pointer simulation fails in JSDOM)
+        const file = new File(["pdf"], "factura.pdf", { type: "application/pdf" })
+        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+        if (fileInput) fireEvent.change(fileInput, { target: { files: [file] } })
+
+        await userEvent.click(screen.getByRole("button", { name: /registrar documento/i }))
+
+        await waitFor(() => {
+            expect(postMock).toHaveBeenCalledTimes(2)
+            expect(postMock.mock.calls[0][0]).toBe("/billing/invoices/from-lines/")
+            expect(postMock.mock.calls[1][0]).toBe("/billing/invoices/55/confirm/")
+            expect(onSuccess).toHaveBeenCalled()
+        })
+    })
+
+    it("calls only from-lines in pending mode", async () => {
+        getMock.mockResolvedValue({ data: ORDERS })
+        postMock.mockResolvedValue({ data: { id: 56, display_id: "OC-FACV-56" } })
+        const onSuccess = vi.fn()
+        wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} onSuccess={onSuccess} />)
+        await waitFor(() => expect(screen.getByText(/tipo de documento/i)).toBeInTheDocument())
+
+        await userEvent.click(screen.getByLabelText(/aún no tengo/i))
+        await userEvent.click(screen.getByRole("button", { name: /registrar documento/i }))
+
+        await waitFor(() => {
+            expect(postMock).toHaveBeenCalledTimes(1)
+            expect(postMock.mock.calls[0][0]).toBe("/billing/invoices/from-lines/")
+            expect(onSuccess).toHaveBeenCalled()
+        })
     })
 })

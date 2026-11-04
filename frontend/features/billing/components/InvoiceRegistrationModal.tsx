@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { FileText, List } from "lucide-react"
@@ -16,10 +16,14 @@ import {
     SubmitButton,
 } from "@/components/shared"
 import { Label } from "@/components/ui/label"
+import { toast } from "sonner"
+import { showApiError } from "@/lib/errors"
+import { generateUuidV4 } from "@/lib/uuid"
 import { useServerDate } from "@/hooks/useServerDate"
+import { useConfirmInvoice } from "@/features/orders"
 import { ATTACHMENT_REQUIRED_DTE, invoiceRegistrationSchema, type InvoiceRegistrationFormValues, quantityKey } from "../schema"
-import { useInvoiceableLines } from "../hooks/useInvoiceFromLines"
-import type { InvoiceSide, InvoiceableLine, InvoiceableOrder } from "../types"
+import { useInvoiceableLines, useCreateInvoiceFromLines } from "../hooks/useInvoiceFromLines"
+import type { InvoiceSide, InvoiceableLine, InvoiceableOrder, InvoiceFromLinesPayload } from "../types"
 
 const DTE_OPTIONS: Record<InvoiceSide, { value: string; label: string }[]> = {
     sale: [
@@ -117,10 +121,70 @@ export function InvoiceRegistrationModal({
 
     const lineCount = orders?.reduce((acc, o) => acc + o.lines.length, 0) ?? 0
 
+    const idempotencyKeyRef = useRef(generateUuidV4())
+    const createInvoice = useCreateInvoiceFromLines()
+    const { confirmInvoice } = useConfirmInvoice()
+
     const handleSubmit = async () => {
-        // stub — implemented in Task 3
-        void setSubmitting
-        void onSuccess
+        const folio = form.getValues("folio")
+        const issueDate = form.getValues("issueDate")
+        const att = form.getValues("attachment")
+        const quantities = form.getValues("quantities")
+
+        if (!isPending) {
+            if (!folio) {
+                toast.error("El folio es obligatorio")
+                return
+            }
+            if (requiresAttachment && !att) {
+                toast.error("El adjunto es obligatorio para este tipo de documento")
+                return
+            }
+            if (!isFolioValid) {
+                toast.error("El número de folio ya ha sido utilizado. Ingrese uno válido para continuar.")
+                return
+            }
+            if (!isPeriodValid) {
+                toast.error("El periodo seleccionado está cerrado.")
+                return
+            }
+        }
+
+        const items: InvoiceFromLinesPayload["items"] = Object.entries(quantities)
+            .filter(([, qty]) => qty > 0)
+            .map(([key, qty]) => {
+                const [lineId, fulfillment] = key.split(":")
+                return {
+                    order_line_id: Number(lineId),
+                    quantity: qty,
+                    fulfillment_line_id: fulfillment === "none" ? null : Number(fulfillment),
+                }
+            })
+
+        setSubmitting(true)
+        try {
+            const invoice = await createInvoice.mutateAsync({
+                payload: { side, dte_type: dteType, status: "DRAFT", items },
+                idempotencyKey: idempotencyKeyRef.current,
+            })
+            idempotencyKeyRef.current = generateUuidV4()
+
+            if (!isPending) {
+                const fd = new FormData()
+                fd.append("number", folio)
+                fd.append("date", issueDate)
+                if (att) fd.append("document_attachment", att)
+                await confirmInvoice({ id: (invoice as { id: number }).id, formData: fd as unknown as Record<string, unknown> })
+            }
+
+            toast.success(isPending ? "Documento registrado como pendiente" : "Documento registrado correctamente")
+            onOpenChange(false)
+            onSuccess?.()
+        } catch (error: unknown) {
+            showApiError(error, "Error al registrar el documento")
+        } finally {
+            setSubmitting(false)
+        }
     }
 
     return (
