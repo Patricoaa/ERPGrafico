@@ -72,6 +72,33 @@ describe("InvoiceRegistrationModal", () => {
         expect(ATTACHMENT_REQUIRED_DTE.has("BOLETA_EXENTA")).toBe(false)
     })
 
+    it("auto-fills all pending quantities on load", async () => {
+        getMock.mockResolvedValue({ data: ORDERS })
+        wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} />)
+        // Open the lines section first
+        await waitFor(() => expect(screen.getByText(/tipo de documento/i)).toBeInTheDocument())
+        // Click to expand the lines section
+        const toggleBtn = await waitFor(() => screen.getByRole("button", { name: /cantidades a facturar/i }))
+        await userEvent.click(toggleBtn)
+        // Producto A with pending=10 should be pre-filled
+        await waitFor(() => expect(screen.getByDisplayValue("10")).toBeInTheDocument())
+    })
+
+    it("shows and hides the lines section with the toggle", async () => {
+        getMock.mockResolvedValue({ data: ORDERS })
+        wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} />)
+        await waitFor(() => expect(screen.getByText(/tipo de documento/i)).toBeInTheDocument())
+        // Lines section starts collapsed — product name not visible
+        expect(screen.queryByText(/producto a/i)).not.toBeInTheDocument()
+        // Click toggle to expand
+        const toggleBtn = await waitFor(() => screen.getByRole("button", { name: /cantidades a facturar/i }))
+        await userEvent.click(toggleBtn)
+        await waitFor(() => expect(screen.getByText(/producto a/i)).toBeInTheDocument())
+        // Click again to collapse
+        await userEvent.click(toggleBtn)
+        await waitFor(() => expect(screen.queryByText(/producto a/i)).not.toBeInTheDocument())
+    })
+
     it("hides attachment requirement in pending mode", async () => {
         getMock.mockResolvedValue({ data: ORDERS })
         wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} />)
