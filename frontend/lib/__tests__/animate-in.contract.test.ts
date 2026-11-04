@@ -91,7 +91,6 @@ const ANIMATE_ALLOWLIST = [
     "features/purchasing/components/checkout/Step0_Supplier.tsx",
     "features/purchasing/components/checkout/Step2_PurchaseDTE.tsx",
     "features/purchasing/components/checkout/Step4_Receipt.tsx",
-    "features/purchasing/components/DocumentRegistrationModal.tsx",
     "features/sales/components/checkout/OrderSummaryCard.tsx",
     "features/sales/components/checkout/Step2_DTE.tsx",
     "features/sales/components/checkout/Step3_Delivery.tsx",
