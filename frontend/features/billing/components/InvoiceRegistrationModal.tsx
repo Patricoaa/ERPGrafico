@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { FileText, List } from "lucide-react"
+import { useQueryClient } from "@tanstack/react-query"
 import {
     BaseModal,
     CancelButton,
@@ -18,11 +19,16 @@ import {
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
+import { invalidateCrossFeature } from "@/lib/invalidation"
 import { generateUuidV4 } from "@/lib/uuid"
 import { useServerDate } from "@/hooks/useServerDate"
 import { useConfirmInvoice } from "@/features/orders"
+import { SALES_KEYS } from "@/features/sales"
+import { PURCHASING_KEYS } from "@/features/purchasing"
+import { DOCUMENTS_KEYS } from "@/features/documents"
 import { ATTACHMENT_REQUIRED_DTE, invoiceRegistrationSchema, type InvoiceRegistrationFormValues, quantityKey } from "../schema"
 import { useInvoiceableLines, useCreateInvoiceFromLines } from "../hooks/useInvoiceFromLines"
+import { INVOICES_KEYS } from "../hooks/queryKeys"
 import type { InvoiceSide, InvoiceableLine, InvoiceableOrder, InvoiceFromLinesPayload } from "../types"
 
 const DTE_OPTIONS: Record<InvoiceSide, { value: string; label: string }[]> = {
@@ -80,6 +86,7 @@ export function InvoiceRegistrationModal({
     const dteType = form.watch("dteType")
     const isPending = form.watch("isPending")
     const attachment = form.watch("attachment")
+    const issueDateVal = form.watch("issueDate")
 
     // Sync server date
     useEffect(() => {
@@ -95,6 +102,8 @@ export function InvoiceRegistrationModal({
             setLinesOpen(false)
             setIsFolioValid(true)
             setIsPeriodValid(true)
+            draftIdRef.current = null
+            idempotencyKeyRef.current = generateUuidV4()
         }
     }, [open, form, dateString])
 
@@ -122,6 +131,8 @@ export function InvoiceRegistrationModal({
     const lineCount = orders?.reduce((acc, o) => acc + o.lines.length, 0) ?? 0
 
     const idempotencyKeyRef = useRef(generateUuidV4())
+    const draftIdRef = useRef<number | null>(null)
+    const queryClient = useQueryClient()
     const createInvoice = useCreateInvoiceFromLines()
     const { confirmInvoice } = useConfirmInvoice()
 
@@ -134,6 +145,10 @@ export function InvoiceRegistrationModal({
         if (!isPending) {
             if (!folio) {
                 toast.error("El folio es obligatorio")
+                return
+            }
+            if (!issueDate) {
+                toast.error("La fecha de emisión es requerida")
                 return
             }
             if (requiresAttachment && !att) {
@@ -161,27 +176,44 @@ export function InvoiceRegistrationModal({
                 }
             })
 
+        if (items.length === 0) {
+            toast.error("Indique al menos una cantidad a facturar")
+            return
+        }
+
         setSubmitting(true)
         try {
-            const invoice = await createInvoice.mutateAsync({
-                payload: { side, dte_type: dteType, status: "DRAFT", items },
-                idempotencyKey: idempotencyKeyRef.current,
-            })
-            idempotencyKeyRef.current = generateUuidV4()
+            // On retry after a failed confirm, reuse the existing DRAFT (draftIdRef set).
+            let invoiceId = draftIdRef.current
+            if (invoiceId === null) {
+                const invoice = await createInvoice.mutateAsync({
+                    payload: { side, dte_type: dteType, status: "DRAFT", items },
+                    idempotencyKey: idempotencyKeyRef.current,
+                })
+                invoiceId = (invoice as { id: number }).id
+                draftIdRef.current = invoiceId
+            }
 
             if (!isPending) {
                 const fd = new FormData()
                 fd.append("number", folio)
                 fd.append("date", issueDate)
                 if (att) fd.append("document_attachment", att)
-                await confirmInvoice({ id: (invoice as { id: number }).id, formData: fd as unknown as Record<string, unknown> })
+                // useConfirmInvoice.onSuccess handles cache invalidation for the POSTED path
+                await confirmInvoice({ id: invoiceId, formData: fd })
+            } else {
+                // Pending path: no confirm call, invalidate manually
+                invalidateCrossFeature(queryClient, [INVOICES_KEYS.all, SALES_KEYS.all, PURCHASING_KEYS.all, DOCUMENTS_KEYS.all])
             }
 
+            draftIdRef.current = null
+            idempotencyKeyRef.current = generateUuidV4()
             toast.success(isPending ? "Documento registrado como pendiente" : "Documento registrado correctamente")
             onOpenChange(false)
             onSuccess?.()
         } catch (error: unknown) {
             showApiError(error, "Error al registrar el documento")
+            // draftIdRef preserved on error so retry goes directly to confirmInvoice
         } finally {
             setSubmitting(false)
         }
@@ -259,7 +291,7 @@ export function InvoiceRegistrationModal({
                         />
                         <PeriodValidationDateInput
                             label="Fecha de Emisión"
-                            date={form.watch("issueDate") ? new Date(form.watch("issueDate") + "T12:00:00") : undefined}
+                            date={issueDateVal ? new Date(issueDateVal + "T12:00:00") : undefined}
                             onDateChange={(d) => form.setValue("issueDate", d ? d.toISOString().split("T")[0] : "")}
                             validationType="both"
                             onValidityChange={setIsPeriodValid}
