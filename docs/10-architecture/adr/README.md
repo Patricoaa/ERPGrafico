@@ -176,5 +176,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0109](0109-pos-cash-ledger-expected-cash.md) | POS cash ledger — expected cash derived from treasury account movements | Proposed |
 | [0110](0110-crud-form-selection-group.md) | Unified card selection for CRUD forms | Proposed |
 | [0111](0111-entity-comments.md) | Entity comments — threads, mentions and notifications on any entity | Proposed |
+| [0112](0112-config-catalog-manage-only.md) | Taxonomía de acceso a entidades de configuración y datos maestros — settings singleton y datos maestros requieren `{app}.manage` para escritura y `{app}.read` para lectura | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

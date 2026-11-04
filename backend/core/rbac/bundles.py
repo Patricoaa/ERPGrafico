@@ -177,6 +177,66 @@ OVERRIDES: dict[str, list[str]] = {
     # view_actionlog is sensitive; we want it listed only under core.security,
     # not also under core.read (which the systematic view_* rule would include).
     "core.view_actionlog": ["core.security"],
+
+    # ---------------------------------------------------------------------------
+    # Settings singletons (ADR-0112, Clase A) — write requires {app}.manage
+    # GET uses view_* which stays in {app}.read by the base rule.
+    # ---------------------------------------------------------------------------
+    "sales.add_salessettings":                  ["sales.manage"],
+    "sales.change_salessettings":               ["sales.manage"],
+    "accounting.add_accountingsettings":        ["accounting.manage"],
+    "accounting.change_accountingsettings":     ["accounting.manage"],
+    "hr.add_globalhrsettings":                  ["hr.manage"],
+    "hr.change_globalhrsettings":               ["hr.manage"],
+    "workflow.add_workflowsettings":            ["workflow.manage"],
+    "workflow.change_workflowsettings":         ["workflow.manage"],
+    "treasury.add_reconciliationsettings":      ["treasury.manage"],
+    "treasury.change_reconciliationsettings":   ["treasury.manage"],
+    "core.add_companysettings":                 ["core.manage"],
+    "core.change_companysettings":              ["core.manage"],
+
+    # ---------------------------------------------------------------------------
+    # Datos maestros (ADR-0112, Clase B) — write requires {app}.manage
+    # view_* stays in {app}.read by the base rule.
+    # ---------------------------------------------------------------------------
+
+    # Inventario
+    "inventory.add_productcategory":        ["inventory.manage"],
+    "inventory.change_productcategory":     ["inventory.manage"],
+    "inventory.add_uomcategory":            ["inventory.manage"],
+    "inventory.change_uomcategory":         ["inventory.manage"],
+    "inventory.add_uom":                    ["inventory.manage"],
+    "inventory.change_uom":                 ["inventory.manage"],
+    "inventory.add_warehouse":              ["inventory.manage"],
+    "inventory.change_warehouse":           ["inventory.manage"],
+    "inventory.add_pricingrule":            ["inventory.manage"],
+    "inventory.change_pricingrule":         ["inventory.manage"],
+    "inventory.add_productuomprice":        ["inventory.manage"],
+    "inventory.change_productuomprice":     ["inventory.manage"],
+
+    # Tesorería
+    "treasury.add_bank":                        ["treasury.manage"],
+    "treasury.change_bank":                     ["treasury.manage"],
+    "treasury.add_paymentmethod":               ["treasury.manage"],
+    "treasury.change_paymentmethod":            ["treasury.manage"],
+    "treasury.add_paymentterminalprovider":     ["treasury.manage"],
+    "treasury.change_paymentterminalprovider":  ["treasury.manage"],
+    "treasury.add_paymentterminaldevice":       ["treasury.manage"],
+    "treasury.change_paymentterminaldevice":    ["treasury.manage"],
+    "treasury.add_posterminal":                 ["treasury.manage"],
+    "treasury.change_posterminal":              ["treasury.manage"],
+
+    # RRHH
+    "hr.add_afp":               ["hr.manage"],
+    "hr.change_afp":            ["hr.manage"],
+    "hr.add_payrollconcept":    ["hr.manage"],
+    "hr.change_payrollconcept": ["hr.manage"],
+
+    # Producción
+    "production.add_billofmaterials":        ["production.manage"],
+    "production.change_billofmaterials":     ["production.manage"],
+    "production.add_billofmaterialsline":    ["production.manage"],
+    "production.change_billofmaterialsline": ["production.manage"],
 }
 
 # ---------------------------------------------------------------------------
@@ -318,8 +378,24 @@ def _is_destructive(codename: str) -> bool:
     return any(codename.startswith(d) for d in _DESTRUCTIVE_PREFIXES)
 
 
+def _is_overridden_away(perm: str, bundle_key: str) -> bool:
+    """Return True if OVERRIDES explicitly excludes *perm* from *bundle_key*.
+
+    A perm in OVERRIDES belongs ONLY to the bundles listed there.  Any bundle
+    not in that list is excluded, even if the mechanical rule would include it.
+    """
+    if perm not in OVERRIDES:
+        return False
+    return bundle_key not in OVERRIDES[perm]
+
+
 def _expand_one(bundle_key: str, catalog: set[str]) -> set[str]:
-    """Expand a single bundle key against the given permission catalog."""
+    """Expand a single bundle key against the given permission catalog.
+
+    OVERRIDES takes precedence: if a permission appears in OVERRIDES its
+    effective bundle membership is exactly the list in OVERRIDES, regardless
+    of what the mechanical read/operate/manage rules would compute.
+    """
     # Sensitive capability bundle: return intersection with catalog
     if bundle_key in _SENSITIVE_PERM_SETS:
         return _SENSITIVE_PERM_SETS[bundle_key] & catalog
@@ -336,22 +412,37 @@ def _expand_one(bundle_key: str, catalog: set[str]) -> set[str]:
     app_perms = {p for p in catalog if _app_label(p) == app}
 
     if level == "read":
-        # All view_* for the app, minus sensitive perms (those belong to their own bundle only).
-        return {p for p in app_perms if _codename(p).startswith("view_") and p not in _ALL_SENSITIVE}
+        # All view_* for the app, minus sensitive perms and minus any perm
+        # that OVERRIDES reassigns to a different bundle.
+        return {
+            p for p in app_perms
+            if _codename(p).startswith("view_")
+            and p not in _ALL_SENSITIVE
+            and not _is_overridden_away(p, bundle_key)
+        }
 
     if level == "operate":
-        # All non-destructive, non-sensitive perms for the app
+        # All non-destructive, non-sensitive perms for the app, minus any perm
+        # that OVERRIDES elevates to manage-only.
         result: set[str] = set()
         for p in app_perms:
             if p in _ALL_SENSITIVE:
                 continue
-            if not _is_destructive(_codename(p)):
-                result.add(p)
+            if _is_destructive(_codename(p)):
+                continue
+            if _is_overridden_away(p, bundle_key):
+                continue
+            result.add(p)
         return result
 
     if level == "manage":
-        # All perms for the app minus sensitive
-        return app_perms - _ALL_SENSITIVE
+        # All perms for the app minus sensitive, minus any perm that OVERRIDES
+        # restricts to a bundle other than manage (e.g. core.security-only perms).
+        return {
+            p for p in app_perms
+            if p not in _ALL_SENSITIVE
+            and not _is_overridden_away(p, bundle_key)
+        }
 
     return set()
 

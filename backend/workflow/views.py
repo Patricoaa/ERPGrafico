@@ -161,13 +161,15 @@ class WorkflowSettingsViewSet(viewsets.ModelViewSet):
     queryset = WorkflowSettings.objects.all()
     serializer_class = WorkflowSettingsSerializer
     action_permissions = {
-        # current: PUT/PATCH → change_* by method; GET has custom permission check
+        # current: explicit per-verb — view_* (read) / change_* (manage, via OVERRIDES ADR-0112)
         "current": None,
     }
 
     def get_permissions(self):
-        if self.action == "current" and self.request.method == "GET":
-            return [IsAuthenticated()]
+        if self.action == "current":
+            from core.api.permissions import require_perms
+            verb = "view" if self.request.method in ("GET", "HEAD", "OPTIONS") else "change"
+            return [require_perms(f"workflow.{verb}_workflowsettings")()]
         return super().get_permissions()
 
     def get_object(self):
