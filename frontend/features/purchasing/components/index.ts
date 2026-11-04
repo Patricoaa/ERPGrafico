@@ -1,4 +1,3 @@
-export * from './DocumentRegistrationModal';
 export * from './PurchaseCheckoutWizard';
 
 export * from './ReceiptModal';
