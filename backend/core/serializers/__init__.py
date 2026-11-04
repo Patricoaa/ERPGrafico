@@ -45,7 +45,7 @@ class UserSerializer(serializers.ModelSerializer):
             "contact",
             "theme",
         ]
-        read_only_fields = ["id", "is_superuser"]
+        read_only_fields = ["id"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

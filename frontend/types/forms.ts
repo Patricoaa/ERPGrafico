@@ -269,6 +269,7 @@ export interface UserInitialData {
     contact?: number
     password?: string
     is_active?: boolean
+    is_superuser?: boolean
 }
 
 // ─── Pricing Rule Form ───────────────────────────────────

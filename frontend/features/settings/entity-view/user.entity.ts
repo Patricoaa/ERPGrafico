@@ -16,9 +16,9 @@ export const userEntity = defineEntity<AppUser>()((f) => ({
         email: f.text("email", { label: "Email" }),
         fullName: f.text((u) => fullName(u) || null, { label: "Nombre" }),
         role: f.tags((u) => {
-            // Prefer kind-based filtering; fall back to all groups if kind info is absent
-            const roles = roleNames(u).length > 0 ? roleNames(u) : groupNames(u).slice(0, 1)
-            return u.is_superuser ? ["Superusuario", ...roles] : roles
+            if (u.is_superuser) return ["Superusuario"]
+            const roles = roleNames(u)
+            return roles.length > 0 ? roles : groupNames(u).slice(0, 1)
         }, { label: "Rol", domain: "user_role" }),
         groups: f.tags((u) => {
             // Prefer kind-based team filtering; fall back to all groups if kind info is absent

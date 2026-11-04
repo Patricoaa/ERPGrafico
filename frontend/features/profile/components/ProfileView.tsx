@@ -189,13 +189,12 @@ function RolesSection() {
                         Roles
                     </dt>
                     <dd className="min-w-0">
-                        {(user?.is_superuser || roles.length > 0) ? (
+                        {user?.is_superuser ? (
+                            <span className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-foreground/10 text-foreground">
+                                Superusuario
+                            </span>
+                        ) : roles.length > 0 ? (
                             <div className="flex flex-wrap gap-1.5">
-                                {user?.is_superuser && (
-                                    <span className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-foreground/10 text-foreground">
-                                        Superusuario
-                                    </span>
-                                )}
                                 {roles.map(r => (
                                     <span key={r.id} className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-foreground/8 text-foreground">
                                         {r.name}

@@ -13,7 +13,7 @@ import { useSingleUser } from "../hooks/useUserSearch"
 import { useBundles } from "../hooks/useRbac"
 import { Button } from "@/components/ui/button"
 import { Form, FormField } from "@/components/ui/form"
-import { Plus, User, ShieldCheck, Users, AlertTriangle } from "lucide-react"
+import { Plus, User, ShieldCheck, Users, AlertTriangle, Crown } from "lucide-react"
 import { EntitySidebar } from "@/features/comments"
 import {
     Drawer, CancelButton, SubmitButton, LabeledInput,
@@ -24,6 +24,7 @@ import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactS
 import { type AppGroup } from "@/types/entities"
 import { type RbacBundle } from "../api/rbacApi"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useAuth } from "@/contexts/AuthContext"
 import { userSchema, type UserFormValues } from "../schema"
 
 // ---------------------------------------------------------------------------
@@ -145,6 +146,8 @@ export function UserDrawer({
     const [availableRoles, setAvailableRoles] = useState<AppGroup[]>([])
     const [availableTeams, setAvailableTeams] = useState<AppGroup[]>([])
     const [activeTab, setActiveTab] = useState("general")
+    const [pendingSuperuserGrant, setPendingSuperuserGrant] = useState(false)
+    const { user: currentUser } = useAuth()
     const mode: DrawerMode = modeProp ?? (initialData ? "edit" : "create")
     const isView = mode === "view"
     const { printRef, handlePrint } = usePrintableDrawer()
@@ -175,6 +178,7 @@ export function UserDrawer({
             contact: Number((source as { contact?: number }).contact || 0),
             password: "",
             is_active: (source as { is_active?: boolean }).is_active ?? true,
+            is_superuser: (source as { is_superuser?: boolean }).is_superuser ?? false,
         }
     }, [apiUser, initialData])
 
@@ -215,6 +219,12 @@ export function UserDrawer({
     })
 
     async function onSubmit(data: UserFormValues) {
+        // Require explicit confirmation before granting superuser
+        if (data.is_superuser && !parsedInitialValues.is_superuser && !pendingSuperuserGrant) {
+            setPendingSuperuserGrant(true)
+            return
+        }
+        setPendingSuperuserGrant(false)
         setLoading(true)
         try {
             const groups = [...data.roles, ...data.teams]
@@ -222,6 +232,7 @@ export function UserDrawer({
                 username: data.username,
                 contact: data.contact,
                 is_active: data.is_active,
+                is_superuser: data.is_superuser,
                 groups,
             }
             if (data.password) payload.password = data.password
@@ -266,6 +277,13 @@ export function UserDrawer({
 
     const watchedRoles = form.watch("roles")
     const watchedTeams = form.watch("teams")
+    const watchedIsSuperuser = form.watch("is_superuser")
+
+    // Who can grant/revoke superuser: current superuser, or sysadmin (core.change_user)
+    const canGrantSuperuser = currentUser?.is_superuser || currentUser?.permissions?.includes("core.change_user")
+    // Self-escalation blocked for non-superusers
+    const isSelf = currentUser?.id !== undefined && initialData?.id !== undefined && currentUser.id === initialData.id
+    const superuserToggleDisabled = isView || !canGrantSuperuser || (!currentUser?.is_superuser && isSelf)
 
     return (
         <>
@@ -452,7 +470,60 @@ export function UserDrawer({
                                                                     )}
                                                                 />
                                                             </div>
+                                                            {canGrantSuperuser && (
+                                                                <div className="col-span-4">
+                                                                    <FormField
+                                                                        control={form.control}
+                                                                        name="is_superuser"
+                                                                        render={({ field }) => (
+                                                                            <LabeledSwitch
+                                                                                label="Superusuario"
+                                                                                description={
+                                                                                    superuserToggleDisabled && isSelf
+                                                                                        ? "No puede concederse este nivel a sí mismo"
+                                                                                        : field.value
+                                                                                        ? "Acceso total — omite todos los permisos"
+                                                                                        : "Sin acceso total"
+                                                                                }
+                                                                                checked={field.value}
+                                                                                onCheckedChange={field.onChange}
+                                                                                disabled={superuserToggleDisabled}
+                                                                                icon={<Crown className="h-4 w-4 transition-colors" />}
+                                                                                color="warning"
+                                                                            />
+                                                                        )}
+                                                                    />
+                                                                </div>
+                                                            )}
                                                         </div>
+                                                        {/* Confirm banner: shown when superuser is being granted */}
+                                                        {pendingSuperuserGrant && (
+                                                            <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/8 px-4 py-3">
+                                                                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                                                                <div className="flex-1 space-y-2">
+                                                                    <p className="text-sm font-medium text-foreground">¿Confirmar acceso total?</p>
+                                                                    <p className="text-xs text-muted-foreground">
+                                                                        El usuario obtendrá acceso completo al sistema, omitiendo todos los controles de permisos. Esta acción queda registrada en el log de auditoría.
+                                                                    </p>
+                                                                    <div className="flex gap-2 pt-1">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => form.handleSubmit(onSubmit)()}
+                                                                            className="rounded-sm bg-warning px-3 py-1 text-xs font-semibold text-warning-foreground hover:bg-warning/90"
+                                                                        >
+                                                                            Confirmar
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => { setPendingSuperuserGrant(false); form.setValue("is_superuser", false) }}
+                                                                            className="rounded-sm px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                                                                        >
+                                                                            Cancelar
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ),
@@ -470,7 +541,8 @@ export function UserDrawer({
                                                     availableRoles={availableRoles}
                                                     bundleMeta={bundleMeta}
                                                     isLoading={isFetchingDeps}
-                                                    disabled={isView}
+                                                    disabled={isView || watchedIsSuperuser}
+                                                    isSuperuser={watchedIsSuperuser}
                                                 />
                                             ),
                                         },
@@ -509,9 +581,10 @@ interface RolesTabProps {
     bundleMeta: RbacBundle[]
     isLoading: boolean
     disabled: boolean
+    isSuperuser?: boolean
 }
 
-function RolesTab({ form, availableRoles, bundleMeta, isLoading, disabled }: RolesTabProps) {
+function RolesTab({ form, availableRoles, bundleMeta, isLoading, disabled, isSuperuser }: RolesTabProps) {
     const watchedRoles = form.watch("roles") ?? []
     const roleError = form.formState.errors.roles?.message
     const roleItems = useMemo(
@@ -541,8 +614,16 @@ function RolesTab({ form, availableRoles, bundleMeta, isLoading, disabled }: Rol
                 )}
             </div>
 
+            {/* Superuser notice */}
+            {isSuperuser && (
+                <div className="shrink-0 flex items-center gap-2 mx-8 mt-2 rounded-md border border-warning/30 bg-warning/8 px-3 py-2.5">
+                    <Crown className="h-3.5 w-3.5 shrink-0 text-warning" />
+                    <p className="text-xs text-warning/90">Este usuario tiene acceso total. Los roles no aplican y no pueden modificarse.</p>
+                </div>
+            )}
+
             {/* Error banner */}
-            {roleError && (
+            {roleError && !isSuperuser && (
                 <div className="shrink-0 flex items-center gap-2 mx-8 mt-4 rounded-md border border-destructive/30 bg-destructive/8 px-3 py-2.5">
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-destructive" />
                     <p className="text-xs text-destructive">{roleError}</p>
