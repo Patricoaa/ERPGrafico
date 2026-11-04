@@ -53,6 +53,10 @@ export interface InvoiceRegistrationModalProps {
     orderId: number
     partnerId?: number | null
     onSuccess?: () => void
+    /** Pre-existing DRAFT invoice id — skips createInvoiceFromLines, goes straight to confirm. */
+    initialDraftId?: number
+    /** DTE type already set on the existing draft — pre-selects and disables the selector. */
+    initialDteType?: string
 }
 
 export function InvoiceRegistrationModal({
@@ -62,6 +66,8 @@ export function InvoiceRegistrationModal({
     orderId,
     partnerId,
     onSuccess,
+    initialDraftId,
+    initialDteType,
 }: InvoiceRegistrationModalProps) {
     const { dateString } = useServerDate()
     const [linesOpen, setLinesOpen] = useState(false)
@@ -69,12 +75,15 @@ export function InvoiceRegistrationModal({
     const [isPeriodValid, setIsPeriodValid] = useState(true)
     const [submitting, setSubmitting] = useState(false)
 
-    const { data: orders } = useInvoiceableLines({ side, orders: [orderId] }, open)
+    const isCompletingDraft = initialDraftId !== undefined
+
+    // Only fetch invoiceable lines when creating a new invoice (not completing a draft)
+    const { data: orders } = useInvoiceableLines({ side, orders: [orderId] }, open && !isCompletingDraft)
 
     const form = useForm<InvoiceRegistrationFormValues>({
         resolver: zodResolver(invoiceRegistrationSchema),
         defaultValues: {
-            dteType: "FACTURA",
+            dteType: initialDteType ?? "FACTURA",
             folio: "",
             issueDate: dateString ?? "",
             attachment: null,
@@ -95,17 +104,24 @@ export function InvoiceRegistrationModal({
         }
     }, [dateString, form])
 
+    // Seed draftIdRef when modal opens with a pre-existing draft
+    useEffect(() => {
+        if (open && initialDraftId !== undefined) {
+            draftIdRef.current = initialDraftId
+        }
+    }, [open, initialDraftId])
+
     // Reset form when modal closes
     useEffect(() => {
         if (!open) {
-            form.reset({ dteType: "FACTURA", folio: "", issueDate: dateString ?? "", attachment: null, isPending: false, quantities: {} })
+            form.reset({ dteType: initialDteType ?? "FACTURA", folio: "", issueDate: dateString ?? "", attachment: null, isPending: false, quantities: {} })
             setLinesOpen(false)
             setIsFolioValid(true)
             setIsPeriodValid(true)
             draftIdRef.current = null
             idempotencyKeyRef.current = generateUuidV4()
         }
-    }, [open, form, dateString])
+    }, [open, form, dateString, initialDteType])
 
     // Auto-fill all pending quantities when orders load
     useEffect(() => {
@@ -176,7 +192,7 @@ export function InvoiceRegistrationModal({
                 }
             })
 
-        if (items.length === 0) {
+        if (items.length === 0 && !isCompletingDraft) {
             toast.error("Indique al menos una cantidad a facturar")
             return
         }
@@ -245,12 +261,13 @@ export function InvoiceRegistrationModal({
             }
         >
             <div className="space-y-6 py-4">
-                {/* DTE type */}
+                {/* DTE type — read-only when completing an existing draft */}
                 <LabeledSelect
                     label="Tipo de Documento"
                     value={dteType}
-                    onChange={(v) => form.setValue("dteType", v)}
+                    onChange={(v) => { if (!isCompletingDraft) form.setValue("dteType", v) }}
                     options={DTE_OPTIONS[side]}
+                    disabled={isCompletingDraft}
                 />
 
                 {/* Pending toggle */}
@@ -314,8 +331,8 @@ export function InvoiceRegistrationModal({
                     </div>
                 )}
 
-                {/* Collapsible line quantities */}
-                {lineCount > 0 && (
+                {/* Collapsible line quantities — only shown when creating a new invoice */}
+                {!isCompletingDraft && lineCount > 0 && (
                     <CollapsibleSection
                         title={`Cantidades a facturar (${lineCount} línea${lineCount !== 1 ? "s" : ""})`}
                         icon={List}

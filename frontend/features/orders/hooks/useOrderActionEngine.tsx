@@ -242,6 +242,8 @@ export function useOrderActionEngine({ order, posSessionId = null, onActionSucce
                         orderId={Number(order.id)}
                         partnerId={Number(partnerId) || null}
                         onSuccess={done}
+                        initialDraftId={draftInvoice ? Number(draftInvoice.id) : undefined}
+                        initialDteType={draftInvoice?.dte_type as string | undefined}
                     />
                 )}
 
