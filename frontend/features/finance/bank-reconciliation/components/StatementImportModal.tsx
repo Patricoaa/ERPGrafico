@@ -676,7 +676,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                         >
                             <WizardStepsSidebar
                                 title="Importación"
-                                currentStep={currentStep}
+                                currentStep={currentStep + 1}
                                 steps={sidebarSteps}
                                 density="compact"
                                 showCounter={false}
