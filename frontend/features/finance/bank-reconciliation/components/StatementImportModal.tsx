@@ -85,7 +85,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    const [wizardSize, setWizardSize] = useState<"xl" | "full">("xl")
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
     const currentYear = String(new Date().getFullYear())
     const currentMonth = String(new Date().getMonth() + 1)
@@ -143,7 +143,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
         setSkipRows(0)
         setSkipFooterRows(0)
         setError(null)
-        setWizardSize("xl")
+        setSidebarCollapsed(false)
     }, [form, defaultAccountId])
 
     const fetchBankFormats = useCallback(async () => {
@@ -598,12 +598,8 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
             title="Importar Cartola Bancaria"
             steps={steps}
             onComplete={async () => { }} // Handled in onNext of last step
-            size={wizardSize}
-            onStepChange={(index) => {
-                // MAPPING step (index 1) needs full width for the data table
-                const isMappingStep = isGenericFormat() && index === 1
-                setWizardSize(isMappingStep ? "full" : "xl")
-            }}
+            size="xl"
+            className="h-[88vh]"
             contentClassName="p-0"
             isLoading={loading}
             isCompleting={loading}
@@ -614,9 +610,13 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                     steps={sidebarSteps}
                     density="compact"
                     showCounter={false}
+                    width="w-full"
+                    collapsedWidth="w-full"
+                    collapsed={sidebarCollapsed}
+                    onToggleCollapsed={() => setSidebarCollapsed((prev) => !prev)}
                 />
             )}
-            leftSidebarWidth="w-52"
+            leftSidebarWidth={sidebarCollapsed ? "w-14" : "w-52"}
             successContent={
                 <div className="flex flex-col items-center justify-center py-10 space-y-4">
                     <CheckCircle2 className="h-16 w-16 text-success animate-bounce motion-reduce:animate-none" />
