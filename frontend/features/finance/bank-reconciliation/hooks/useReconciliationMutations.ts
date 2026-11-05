@@ -307,6 +307,7 @@ export function useUnmatchMutation(statementId: number, treasuryAccountId: numbe
             invalidateCrossFeature(queryClient, [
                 [...reconciliationKeys.all, 'unreconciled-lines', statementId],
                 [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId],
+                [...reconciliationKeys.all, 'reconciled-lines', statementId],
                 reconciliationKeys.statement(statementId),
             ])
         }

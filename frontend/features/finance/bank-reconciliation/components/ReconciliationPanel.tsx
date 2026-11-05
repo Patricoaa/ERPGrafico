@@ -18,7 +18,7 @@ import { reconciliationUnifiedSearchDef } from "../unifiedSearchDef"
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
 import {
     Ban, CheckCircle2, ChevronRight, ChevronLeft, FileText, RotateCcw,
-    Sparkles, X, Wand2, Calculator, Brain, Plus
+    Sparkles, X, Wand2, Calculator, Brain, Plus, Undo2
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -50,7 +50,8 @@ import {
     useCreateAndMatchMutation,
     useRestoreMutation,
     useBulkRestoreMutation,
-    useCreateMovementMutation
+    useCreateMovementMutation,
+    useUnmatchMutation,
 } from "../hooks/useReconciliationMutations"
 
 import { useServerDate } from '@/hooks/useServerDate'
@@ -216,6 +217,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const { exclude } = useExcludeMutation(statementId)
     const { bulkExclude } = useBulkExcludeMutation(statementId)
     const { restore } = useRestoreMutation(statementId)
+    const { unmatch: unmatchGroup, isUnmatching: isUnmatchingGroup } = useUnmatchMutation(statementId, treasuryAccountId)
+    const [unmatchGroupDialog, setUnmatchGroupDialog] = useState<{ open: boolean; lineId: number | null }>({ open: false, lineId: null })
     // El dock de acciones flota solo con selección: el espacio inferior se reserva únicamente entonces.
     const dockVisible = selectedLines.length > 0 || selectedPayments.length > 0
     const { mutateAsync: bulkRestore, isPending: restoringLines } = useBulkRestoreMutation(statementId)
@@ -1106,6 +1109,22 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                             </div>
                                         </div>
                                     </div>
+                                    {/* Footer: acción revertir (solo en DRAFT) */}
+                                    {statement?.state !== "CONFIRMED" && (
+                                        <div className="border-t border-border/40 px-6 py-2.5 flex justify-end bg-muted/10">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                disabled={isUnmatchingGroup}
+                                                onClick={() => setUnmatchGroupDialog({ open: true, lineId: lines[0].id })}
+                                                className="h-7 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/5 gap-1.5"
+                                            >
+                                                <Undo2 className="h-3 w-3" />
+                                                Revertir conciliación
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
@@ -1113,6 +1132,20 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 </TabsContent>
 
                 {/* ─── Modals ─── */}
+                <ActionConfirmModal
+                    open={unmatchGroupDialog.open}
+                    onOpenChange={(open) => !open && setUnmatchGroupDialog((prev) => ({ ...prev, open: false }))}
+                    onConfirm={async () => {
+                        if (!unmatchGroupDialog.lineId) return
+                        await unmatchGroup(unmatchGroupDialog.lineId)
+                        setUnmatchGroupDialog({ open: false, lineId: null })
+                    }}
+                    title="¿Revertir conciliación?"
+                    description='Se deshará la conciliación de este grupo, devolviendo todas las líneas bancarias y movimientos de tesorería al estado "No Conciliado".'
+                    variant="destructive"
+                    confirmText="Revertir"
+                />
+
                 <ExclusionModal
                     open={actionDialog.open && (actionDialog.type === 'exclude' || actionDialog.type === 'bulk_exclude')}
                     onOpenChange={(open) => !open && setActionDialog({ open: false, type: null })}

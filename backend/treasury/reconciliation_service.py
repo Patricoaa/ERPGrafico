@@ -5,7 +5,9 @@ Reconciliation Service
 Servicio de negocio para conciliación bancaria.
 """
 
+import calendar
 import hashlib
+from datetime import date as date_type
 from decimal import Decimal
 from typing import Any, Dict, Optional
 
@@ -42,27 +44,44 @@ class ReconciliationService:
         if not treasury_account_id:
             raise ValueError("Cuenta de tesorería es requerida")
 
-        return file, treasury_account_id, bank_format, custom_config
+        # Período manual: mes y año opcionales
+        statement_month_raw = request.data.get("statement_month")
+        statement_year_raw = request.data.get("statement_year")
+        statement_month: Optional[int] = None
+        statement_year: Optional[int] = None
+        try:
+            if statement_month_raw:
+                statement_month = int(statement_month_raw)
+            if statement_year_raw:
+                statement_year = int(statement_year_raw)
+        except (ValueError, TypeError):
+            pass
+
+        return file, treasury_account_id, bank_format, custom_config, statement_month, statement_year
 
     @staticmethod
     def import_statement_from_request(request):
-        file, treasury_account_id, bank_format, custom_config = ReconciliationService._parse_import_request(request)
+        file, treasury_account_id, bank_format, custom_config, statement_month, statement_year = ReconciliationService._parse_import_request(request)
         return ReconciliationService.import_statement(
             file=file,
             treasury_account_id=treasury_account_id,
             bank_format=bank_format,
             user=request.user,
             custom_config=custom_config,
+            statement_month=statement_month,
+            statement_year=statement_year,
         )
 
     @staticmethod
     def dry_run_from_request(request):
-        file, treasury_account_id, bank_format, custom_config = ReconciliationService._parse_import_request(request)
+        file, treasury_account_id, bank_format, custom_config, statement_month, statement_year = ReconciliationService._parse_import_request(request)
         return ReconciliationService.dry_run_import(
             file=file,
             treasury_account_id=treasury_account_id,
             bank_format=bank_format,
             custom_config=custom_config,
+            statement_month=statement_month,
+            statement_year=statement_year,
         )
 
     @staticmethod
@@ -73,6 +92,8 @@ class ReconciliationService:
         bank_format: str,
         user,
         custom_config: Optional[Dict[str, Any]] = None,
+        statement_month: Optional[int] = None,
+        statement_year: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Importa una cartola bancaria desde archivo.
@@ -124,6 +145,11 @@ class ReconciliationService:
             parsed_data = ReconciliationService.parse_file(file, parser_config)
         except Exception as e:
             raise ValueError(f"Error al parsear archivo: {e}")
+
+        # Sobrescribir statement_date si el operador indicó mes/año explícitamente
+        if statement_month and statement_year:
+            last_day = calendar.monthrange(statement_year, statement_month)[1]
+            parsed_data["statement_date"] = date_type(statement_year, statement_month, last_day)
 
         # Validar datos parseados
         validation_result = ReconciliationService.validate_statement(parsed_data, treasury_account)
@@ -225,6 +251,8 @@ class ReconciliationService:
         treasury_account_id: int,
         bank_format: str,
         custom_config: Optional[Dict[str, Any]] = None,
+        statement_month: Optional[int] = None,
+        statement_year: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Parsea y valida una cartola sin persistirla.
@@ -264,6 +292,11 @@ class ReconciliationService:
             parsed_data = ReconciliationService.parse_file(file, parser_config)
         except Exception as e:
             raise ValueError(f"Error al parsear archivo: {e}")
+
+        # Sobrescribir statement_date si el operador indicó mes/año explícitamente
+        if statement_month and statement_year:
+            last_day = calendar.monthrange(statement_year, statement_month)[1]
+            parsed_data["statement_date"] = date_type(statement_year, statement_month, last_day)
 
         # Validar datos parseados
         validation_result = ReconciliationService.validate_statement(parsed_data, treasury_account)

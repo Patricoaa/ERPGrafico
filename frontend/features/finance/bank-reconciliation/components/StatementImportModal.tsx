@@ -8,9 +8,9 @@ import { getErrorMessage } from "@/lib/errors"
 import type { ColumnDef } from "@tanstack/react-table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { DataCell, DataTable, LabeledSelect, GenericWizard, FadeIn, type WizardStep, FormSection, DocumentAttachmentDropzone, LabeledInput } from "@/components/shared"
+import { DataCell, DataTable, LabeledSelect, GenericWizard, FadeIn, type WizardStep, FormSection, DocumentAttachmentDropzone, LabeledInput, WizardStepsSidebar, type WizardSidebarStep } from "@/components/shared"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
-import {FileUp, Columns, Table as TableIcon, CheckCircle2, FileSearch, Landmark, SlidersHorizontal} from "lucide-react"
+import {FileUp, Columns, Table as TableIcon, CheckCircle2, FileSearch, Landmark, SlidersHorizontal, Calendar} from "lucide-react"
 import { financeApi } from "../../api/financeApi"
 import { cn } from "@/lib/utils"
 import { Chip } from "@/components/shared"
@@ -19,9 +19,34 @@ import ImportPreviewStep, { type DryRunResult } from "./ImportPreviewStep"
 const importSchema = z.object({
     treasury_account_id: z.string().min(1, "Debes seleccionar una cuenta"),
     bank_format: z.string().min(1, "Debes seleccionar un formato"),
+    statement_month: z.string().min(1, "Debes seleccionar un mes"),
+    statement_year: z.string().min(1, "Debes seleccionar un año"),
     file: z.unknown().optional(),
     mapping: z.record(z.string(), z.unknown()).optional()
 })
+
+const MONTH_OPTIONS = [
+    { value: "1", label: "Enero" },
+    { value: "2", label: "Febrero" },
+    { value: "3", label: "Marzo" },
+    { value: "4", label: "Abril" },
+    { value: "5", label: "Mayo" },
+    { value: "6", label: "Junio" },
+    { value: "7", label: "Julio" },
+    { value: "8", label: "Agosto" },
+    { value: "9", label: "Septiembre" },
+    { value: "10", label: "Octubre" },
+    { value: "11", label: "Noviembre" },
+    { value: "12", label: "Diciembre" },
+]
+
+function buildYearOptions(): Array<{ value: string; label: string }> {
+    const current = new Date().getFullYear()
+    return Array.from({ length: 5 }, (_, i) => {
+        const y = String(current - i)
+        return { value: y, label: y }
+    })
+}
 
 type ImportFormValues = z.infer<typeof importSchema>
 
@@ -60,11 +85,18 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
+    const [wizardSize, setWizardSize] = useState<"xl" | "full">("xl")
+
+    const currentYear = String(new Date().getFullYear())
+    const currentMonth = String(new Date().getMonth() + 1)
+
     const form = useForm<ImportFormValues>({
         resolver: zodResolver(importSchema) as unknown as Resolver<ImportFormValues>,
         defaultValues: {
             treasury_account_id: "",
             bank_format: "GENERIC_CSV",
+            statement_month: currentMonth,
+            statement_year: currentYear,
             file: undefined,
             mapping: {
                 date: null,
@@ -82,13 +114,18 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
     const bankFormat = form.watch("bank_format")
     const file = form.watch("file")
     const mapping = form.watch("mapping") || {}
+    const statementMonth = form.watch("statement_month")
+    const statementYear = form.watch("statement_year")
 
     const REQUIRED_FIELDS = ['date', 'description', 'debit', 'credit', 'balance']
 
     const resetForm = useCallback(() => {
+        const now = new Date()
         form.reset({
             treasury_account_id: defaultAccountId ? String(defaultAccountId) : "",
             bank_format: "GENERIC_CSV",
+            statement_month: String(now.getMonth() + 1),
+            statement_year: String(now.getFullYear()),
             file: undefined,
             mapping: {
                 date: null,
@@ -106,6 +143,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
         setSkipRows(0)
         setSkipFooterRows(0)
         setError(null)
+        setWizardSize("xl")
     }, [form, defaultAccountId])
 
     const fetchBankFormats = useCallback(async () => {
@@ -209,12 +247,14 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
             dryRunData.append('file', file as Blob)
             dryRunData.append('treasury_account_id', treasuryAccountId)
             dryRunData.append('bank_format', bankFormat)
-            
+            if (statementMonth) dryRunData.append('statement_month', statementMonth)
+            if (statementYear) dryRunData.append('statement_year', statementYear)
+
             if (isGenericFormat()) {
                 const config = buildCustomConfig()
                 dryRunData.append('custom_config', JSON.stringify(config))
             }
-            
+
             const dryRunResultData = await financeApi.dryRunStatement(dryRunData) as DryRunResult
             setDryRunResult(dryRunResultData)
             return true
@@ -253,6 +293,8 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
             importData.append('file', file as Blob)
             importData.append('treasury_account_id', treasuryAccountId)
             importData.append('bank_format', bankFormat)
+            if (statementMonth) importData.append('statement_month', statementMonth)
+            if (statementYear) importData.append('statement_year', statementYear)
 
             if (isGenericFormat()) {
                 const config = buildCustomConfig()
@@ -318,6 +360,22 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                         </div>
                     </div>
 
+                    <FormSection title="Período de la Cartola" icon={Calendar} />
+                    <div className="grid grid-cols-2 gap-4">
+                        <LabeledSelect
+                            label="Mes *"
+                            value={statementMonth}
+                            onChange={(val) => form.setValue("statement_month", val)}
+                            options={MONTH_OPTIONS}
+                        />
+                        <LabeledSelect
+                            label="Año *"
+                            value={statementYear}
+                            onChange={(val) => form.setValue("statement_year", val)}
+                            options={buildYearOptions()}
+                        />
+                    </div>
+
                     <FormSection title="Archivo de Cartola" icon={FileUp} />
                     <div className="space-y-6">
                         <DocumentAttachmentDropzone
@@ -339,7 +397,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                     </div>
                 </FadeIn>
             ),
-            isValid: !!treasuryAccountId && !!bankFormat && !!file,
+            isValid: !!treasuryAccountId && !!bankFormat && !!statementMonth && !!statementYear && !!file,
             onNext: async () => {
                 if (isGenericFormat()) {
                     return await handlePreview()
@@ -508,6 +566,30 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
         }
     ]
 
+    const sidebarSteps: WizardSidebarStep[] = [
+        {
+            id: 'UPLOAD',
+            label: 'Configuración',
+            icon: Landmark,
+            detail: treasuryAccountId && statementMonth && statementYear
+                ? <p className="text-3xs font-semibold">{MONTH_OPTIONS.find(m => m.value === statementMonth)?.label} {statementYear}</p>
+                : undefined,
+        },
+        ...(isGenericFormat() ? [{
+            id: 'MAPPING',
+            label: 'Mapeo de Columnas',
+            icon: Columns,
+            detail: validateMapping()
+                ? <p className="text-3xs font-semibold">Columnas mapeadas ✓</p>
+                : undefined,
+        } as WizardSidebarStep] : []),
+        {
+            id: 'PREVIEW',
+            label: 'Validación',
+            icon: FileSearch,
+        },
+    ]
+
     return (
         <GenericWizard
             open={open}
@@ -516,10 +598,25 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
             title="Importar Cartola Bancaria"
             steps={steps}
             onComplete={async () => { }} // Handled in onNext of last step
-            size={previewData && isGenericFormat() ? "full" : "lg"}
+            size={wizardSize}
+            onStepChange={(index) => {
+                // MAPPING step (index 1) needs full width for the data table
+                const isMappingStep = isGenericFormat() && index === 1
+                setWizardSize(isMappingStep ? "full" : "xl")
+            }}
             contentClassName="p-0"
             isLoading={loading}
             isCompleting={loading}
+            leftSidebar={(ctx) => (
+                <WizardStepsSidebar
+                    title="Importación"
+                    currentStep={ctx.step}
+                    steps={sidebarSteps}
+                    density="compact"
+                    showCounter={false}
+                />
+            )}
+            leftSidebarWidth="w-52"
             successContent={
                 <div className="flex flex-col items-center justify-center py-10 space-y-4">
                     <CheckCircle2 className="h-16 w-16 text-success animate-bounce motion-reduce:animate-none" />
