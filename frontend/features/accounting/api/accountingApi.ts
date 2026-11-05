@@ -1,19 +1,17 @@
 import api from '@/lib/api'
 import type { Account, AccountFilters, AccountPayload, AccountingPeriod, FiscalYear, LedgerData } from '../types'
 import { toPage, type Page } from '@/lib/pagination'
+import { fetchBoundedList } from '@/lib/bounded-list'
 
 export const accountingApi = {
-    getAccounts: async (filters?: AccountFilters): Promise<Account[]> => {
-        const params = new URLSearchParams()
-        if (filters?.code) params.append('code', filters.code)
-        if (filters?.name) params.append('name', filters.name)
-        if (filters?.account_type) params.append('account_type', filters.account_type)
-        if (filters?.is_leaf) params.append('is_leaf', 'true')
-        if (filters?.search) params.append('search', filters.search)
-
-        const { data } = await api.get<Account[]>('/accounting/accounts/', { params })
-        return data
-    },
+    getAccounts: async (filters?: AccountFilters): Promise<Account[]> =>
+        fetchBoundedList<Account>('/accounting/accounts/', {
+            code: filters?.code || undefined,
+            name: filters?.name || undefined,
+            account_type: filters?.account_type || undefined,
+            is_leaf: filters?.is_leaf ? 'true' : undefined,
+            search: filters?.search || undefined,
+        }),
 
     getLedger: async (accountId: number, startDate: string, endDate: string): Promise<LedgerData> => {
         const { data } = await api.get<LedgerData>(

@@ -39,3 +39,7 @@ Cambiar la respuesta por defecto a `{count, next, previous, results}` rompería 
 
 - `backend/core/tests/test_master_data_optional_pagination.py`: forma plana por defecto, envoltorio con `page_size`, y que la página 2 coincide con el slice de la lista completa.
 - `backend/core/tests/test_pagination_contract.py`: los tres viewsets ya no están en la whitelist y pasan la regla.
+
+## Migración de consumidores (2026-11-05)
+
+Los consumidores frontend de `accounts`, `treasury/accounts` y `hr/employees` pasan por `fetchBoundedList` (`frontend/lib/bounded-list.ts`). Piden `page_size=200`. Si el catálogo tiene más filas, la petición falla con `BoundedListError` que indica filtrar; no se trunca en silencio. El backend sigue devolviendo lista plana sin parámetros.

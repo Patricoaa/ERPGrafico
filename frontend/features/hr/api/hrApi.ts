@@ -1,5 +1,6 @@
 import api from "@/lib/api"
 import { generateUuidV4 } from "@/lib/uuid"
+import { fetchBoundedList } from "@/lib/bounded-list"
 import type { 
   Employee, 
   Payroll, 
@@ -67,9 +68,7 @@ export async function deletePayrollConcept(id: number): Promise<void> {
 
 // ---- Employees ----
 export async function getEmployees(params?: Record<string, string>): Promise<Employee[]> {
-  const res = await api.get<Employee[]>('/hr/employees/', { params })
-  // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
-  return res.data
+  return fetchBoundedList<Employee>('/hr/employees/', params)
 }
 
 export async function getEmployee(id: number): Promise<Employee> {
