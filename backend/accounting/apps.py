@@ -6,6 +6,8 @@ class AccountingConfig(AppConfig):
     name = "accounting"
 
     def ready(self):
+        from . import balances  # noqa: F401  (registers materialized-balance receivers)
+
         try:
             from core.permissions import PermissionRegistry
 

@@ -179,5 +179,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0112](0112-master-data-optional-pagination.md) | Master data lists — opt-in pagination for unbounded catalogs | Proposed |
 | [0113](0113-server-side-group-counts.md) | Server-side group counts for collections above the grouping cap | Rejected (limitation accepted) |
 | [0114](0114-remove-contacts-customers-suppliers-endpoints.md) | Remove unbounded contacts customers and suppliers endpoints | Accepted |
+| [0115](0115-materialized-account-posted-totals.md) | Materialized posted totals on accounting accounts | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.
