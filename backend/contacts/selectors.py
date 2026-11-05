@@ -73,9 +73,17 @@ def list_contacts(*, params: dict) -> QuerySet:
     if params.get("has_terminal_payment_method") == "true":
         queryset = queryset.filter(terminal_providers__is_active=True).distinct()
 
-    queryset = queryset.annotate(
-        last_sale_date=models.Max("sale_orders__date"),
+    # Correlated subquery instead of Max("sale_orders__date"): an aggregate over the
+    # join forces GROUP BY over every contact before pagination (and wraps COUNT).
+    # NULL dates sort last so the result equals Max() (which ignores NULLs).
+    from sales.models import SaleOrder as _SaleOrder
+
+    last_sale_sq = (
+        _SaleOrder.objects.filter(customer_id=OuterRef("pk"))
+        .order_by(models.F("date").desc(nulls_last=True))
+        .values("date")[:1]
     )
+    queryset = queryset.annotate(last_sale_date=Subquery(last_sale_sq, output_field=models.DateField()))
 
     from core.models import User
     from hr.models import Employee
@@ -573,14 +581,6 @@ class ContactSelector:
             .order_by("name")[:10]
         )
         return list(names)
-
-    @staticmethod
-    def list_customers():
-        return Contact.objects.filter(sale_orders__isnull=False).distinct()
-
-    @staticmethod
-    def list_suppliers():
-        return Contact.objects.filter(purchase_orders__isnull=False).distinct()
 
     @staticmethod
     def list_partners():

@@ -23,23 +23,9 @@ def list_accounts(*, params: dict) -> QuerySet:
     else:
         queryset = Account.objects.filter(is_active=True)
 
-    # Annotate with posted totals to avoid N+1 queries during serialization
-    queryset = queryset.annotate(
-        annotated_debit_total=Sum(
-            "journal_items__debit",
-            filter=Q(journal_items__entry__status__in=balance_affecting_statuses()),
-        ),
-        annotated_credit_total=Sum(
-            "journal_items__credit",
-            filter=Q(journal_items__entry__status__in=balance_affecting_statuses()),
-        ),
-        annotated_children_count=Count("children"),
-        annotated_posted_items_count=Count(
-            "journal_items",
-            filter=Q(journal_items__entry__status__in=balance_affecting_statuses()),
-            distinct=True,
-        ),
-    )
+    # Posted totals are materialized on Account (ADR-0115): no join over journal items here.
+    # A join with journal items AND children would multiply each sum by the children count.
+    queryset = queryset.annotate(annotated_children_count=Count("children"))
 
     if params.get("is_leaf", "").lower() == "true":
         queryset = queryset.filter(children__isnull=True)

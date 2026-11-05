@@ -1,7 +1,10 @@
 import logging
+from functools import reduce
+from operator import or_
 
 from celery import shared_task
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from inventory.models import Subscription
@@ -10,6 +13,9 @@ from purchasing.serializers import WritePurchaseOrderSerializer
 from workflow.models import Notification
 
 logger = logging.getLogger(__name__)
+
+# Cota por ejecución (Big O: sin tope, una corrida procesaba todas las suscripciones vencidas).
+MAX_SUBSCRIPTIONS_PER_RUN = 500
 
 
 @shared_task(
@@ -21,30 +27,46 @@ def generate_subscription_orders(self):
     Runs daily.
     """
     today = timezone.now().date()
-    # Look for subscriptions due in the next 7 days or past due
-    upcoming_subscriptions = Subscription.objects.filter(
-        status=Subscription.Status.ACTIVE, next_payment_date__lte=today + timezone.timedelta(days=7)
+    # Look for subscriptions due in the next 7 days or past due. Bounded per run: the rest is
+    # picked up by the next run (next_payment_date stays due until its order is paid).
+    upcoming_subscriptions = list(
+        Subscription.objects.filter(
+            status=Subscription.Status.ACTIVE,
+            next_payment_date__lte=today + timezone.timedelta(days=7),
+        )
+        .select_related("product", "product__receiving_warehouse", "supplier")
+        .order_by("next_payment_date", "id")[:MAX_SUBSCRIPTIONS_PER_RUN]
     )
+    if len(upcoming_subscriptions) == MAX_SUBSCRIPTIONS_PER_RUN:
+        logger.warning(
+            f"generate_subscription_orders: run capped at {MAX_SUBSCRIPTIONS_PER_RUN} subscriptions."
+        )
+
+    # DUPLICATE/SAFETY CHECK, batched: one query for the period markers of this run instead of
+    # one LIKE scan per subscription. An order with the marker already exists (unless cancelled),
+    # so the subscription is skipped for that period.
+    markers = {
+        sub.id: f"subscription_id={sub.id}, period_date={sub.next_payment_date.isoformat()}"
+        for sub in upcoming_subscriptions
+    }
+    existing_notes = []
+    if markers:
+        marker_filter = reduce(or_, (Q(notes__contains=m) for m in markers.values()))
+        existing_notes = list(
+            PurchaseOrder.objects.filter(marker_filter)
+            .exclude(status=PurchaseOrder.Status.CANCELLED)
+            .values_list("notes", flat=True)
+        )
+    already_ordered = {
+        sub_id for sub_id, marker in markers.items() if any(marker in notes for notes in existing_notes)
+    }
 
     generated_count = 0
 
     for sub in upcoming_subscriptions:
         try:
             with transaction.atomic():
-                # 1. DUPLICATE/SAFETY CHECK
-                # We check if there's any PO that already contains the subscription metadata for this specific period.
-                # This prevents creating multiple orders if the current one is still unpaid or in draft.
-                period_marker = (
-                    f"subscription_id={sub.id}, period_date={sub.next_payment_date.isoformat()}"
-                )
-
-                duplicate_exists = (
-                    PurchaseOrder.objects.filter(notes__contains=period_marker)
-                    .exclude(status=PurchaseOrder.Status.CANCELLED)
-                    .exists()
-                )
-
-                if duplicate_exists:
+                if sub.id in already_ordered:
                     logger.info(
                         f"Skipping Subscription {sub.id}: Order for period {sub.next_payment_date} already exists."
                     )

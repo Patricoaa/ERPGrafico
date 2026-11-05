@@ -108,9 +108,7 @@ class Account(TimeStampedModel):
     @property
     def has_posted_items(self):
         """Whether this account has any posted journal items."""
-        if hasattr(self, "annotated_posted_items_count"):
-            return self.annotated_posted_items_count > 0
-        return self.journal_items.filter(entry__status="POSTED").exists()
+        return self.posted_items_count > 0
 
     # Reporting Mapping
     is_category = models.CharField(
@@ -183,25 +181,25 @@ class Account(TimeStampedModel):
     def __str__(self):
         return f"{self.code} - {self.name}"
 
+    # Saldos materializados (ADR-0115): mantenidos por accounting/balances.py al publicar,
+    # anular o revertir un asiento. Leerlos es O(1) por cuenta; no hay joins en la lista.
+    posted_debit_total = models.DecimalField(
+        _("Debe contabilizado"), max_digits=20, decimal_places=0, default=Decimal("0"), editable=False
+    )
+    posted_credit_total = models.DecimalField(
+        _("Haber contabilizado"), max_digits=20, decimal_places=0, default=Decimal("0"), editable=False
+    )
+    posted_items_count = models.PositiveIntegerField(
+        _("Movimientos contabilizados"), default=0, editable=False
+    )
+
     @property
     def debit_total(self):
-        # The list annotates this; Sum() over no rows is None, which means zero.
-        if hasattr(self, "annotated_debit_total"):
-            return self.annotated_debit_total or Decimal("0")
-        total = self.journal_items.filter(
-            entry__status__in=JournalEntry.balance_affecting_statuses()
-        ).aggregate(total=models.Sum("debit"))["total"]
-        return total or Decimal("0")
+        return self.posted_debit_total or Decimal("0")
 
     @property
     def credit_total(self):
-        # The list annotates this; Sum() over no rows is None, which means zero.
-        if hasattr(self, "annotated_credit_total"):
-            return self.annotated_credit_total or Decimal("0")
-        total = self.journal_items.filter(
-            entry__status__in=JournalEntry.balance_affecting_statuses()
-        ).aggregate(total=models.Sum("credit"))["total"]
-        return total or Decimal("0")
+        return self.posted_credit_total or Decimal("0")
 
     @property
     def balance(self):

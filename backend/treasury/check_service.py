@@ -474,7 +474,7 @@ class CheckService:
             filters["bank_id"] = bank_id
         qs = Check.objects.filter(
             **filters,
-        ).select_related("bank", "counterparty", "portfolio_account")
+        ).select_related("bank", "counterparty", "portfolio_account", "sale_order")
         total = qs.aggregate(total=Sum("amount"))["total"] or Decimal("0")
         return {"checks": list(qs), "total": total}
 
@@ -491,7 +491,7 @@ class CheckService:
             filters["bank_id"] = bank_id
         qs = Check.objects.filter(
             **filters,
-        ).select_related("bank", "counterparty", "deposit_account")
+        ).select_related("bank", "counterparty", "deposit_account", "sale_order")
         total = qs.aggregate(total=Sum("amount"))["total"] or Decimal("0")
         return {"checks": list(qs), "total": total}
 

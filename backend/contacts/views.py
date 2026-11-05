@@ -77,18 +77,6 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         q = request.query_params.get("q", "").strip()
         return Response(ContactSelector.filter_suggestions(q))
 
-    @action(detail=False, methods=["get"])
-    def customers(self, request):
-        contacts = ContactSelector.list_customers()
-        serializer = self.get_serializer(contacts, many=True)
-        return Response(serializer.data)
-
-    @action(detail=False, methods=["get"])
-    def suppliers(self, request):
-        contacts = ContactSelector.list_suppliers()
-        serializer = self.get_serializer(contacts, many=True)
-        return Response(serializer.data)
-
     @action(detail=True, methods=['get'])
     def insights(self, request, pk=None):
         from .selectors import ContactSelectorExt
