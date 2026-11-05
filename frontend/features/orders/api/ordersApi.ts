@@ -8,7 +8,7 @@ export const ordersApi = {
         api.post('/billing/invoices/create_from_order/', data).then(r => r.data),
     cancelInvoice: (id: number, reason: string = '') =>
         api.post(`/billing/invoices/${id}/cancel/`, { reason }).then(r => r.data),
-    confirmInvoice: (id: number, formData: Record<string, unknown>) =>
+    confirmInvoice: (id: number, formData: FormData | Record<string, unknown>) =>
         api.post(`/billing/invoices/${id}/confirm/`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         }).then(r => r.data),

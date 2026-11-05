@@ -64,7 +64,7 @@ Task routing — common intents:
 | Document sheet / ficha documental / relations tab / lifecycle / document action bar (Order Hub replacement) | [component-document-sheet.md](docs/20-contracts/component-document-sheet.md) |
 | Comments / threads / @mentions / collaboration on any entity / `EntitySidebar` | [component-entity-comments.md](docs/20-contracts/component-entity-comments.md) |
 | Dev server / remote tests / SSH / Mutagen | [remote-dev-server.md](docs/30-playbooks/remote-dev-server.md) |
-| Config entity / settings singleton / datos maestros / catalog permission / classify model / manage-only | [permission-config-entities.md](docs/20-contracts/permission-config-entities.md) + [ADR-0112](docs/10-architecture/adr/0112-config-catalog-manage-only.md) |
+| Config entity / settings singleton / datos maestros / catalog permission / classify model / manage-only | [permission-config-entities.md](docs/20-contracts/permission-config-entities.md) + [ADR-0116](docs/10-architecture/adr/0116-config-catalog-manage-only.md) |
 
 Full routing table in [docs/README.md](docs/README.md).
 

@@ -41,7 +41,6 @@ export {
 
 
 export {
-  DocumentRegistrationModal,
   PurchaseCheckoutWizard,
   ReceiptModal,
   PurchaseOrderSummaryCard,

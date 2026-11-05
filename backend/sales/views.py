@@ -28,7 +28,7 @@ class SalesSettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = SalesSettings.objects.all()
     serializer_class = SalesSettingsSerializer
     action_permissions = {
-        # current: explicit per-verb — view_* (read) / change_* (manage, via OVERRIDES ADR-0112)
+        # current: explicit per-verb — view_* (read) / change_* (manage, via OVERRIDES ADR-0116)
         "current": None,
     }
 

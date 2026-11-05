@@ -128,7 +128,7 @@ export const inventoryApi = {
      * Fetch product categories
      */
     getCategories: async (): Promise<Array<{ id: number; name: string; icon?: string | null }>> => {
-        const { data } = await api.get<Array<{ id: number; name: string; icon?: string | null }>>('inventory/categories/', { params: { page_size: 9999 } })
+        const { data } = await api.get<Array<{ id: number; name: string; icon?: string | null }>>('inventory/categories/')
         return data
     },
 

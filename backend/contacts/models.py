@@ -32,7 +32,12 @@ class Contact(models.Model):
     """
 
     name = models.CharField(_("Nombre / Razón Social"), max_length=255)
-    tax_id = models.CharField(_("RUT/Tax ID"), max_length=20, unique=True)
+    tax_id = models.CharField(
+        _("RUT/Tax ID"),
+        max_length=20,
+        unique=True,
+        error_messages={"unique": _("Ya existe un contacto con este RUT.")},
+    )
     contact_name = models.CharField(_("Nombre Contacto"), max_length=100, blank=True)
     email = models.EmailField(_("Email"), blank=True)
     phone = models.CharField(_("Teléfono"), max_length=20, blank=True)

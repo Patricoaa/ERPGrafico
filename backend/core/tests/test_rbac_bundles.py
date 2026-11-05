@@ -173,12 +173,12 @@ def test_every_curated_permission_belongs_to_a_bundle():
 
 
 # ---------------------------------------------------------------------------
-# ADR-0112 — Settings singletons: write perms must be in manage, not operate
+# ADR-0116 — Settings singletons: write perms must be in manage, not operate
 # ---------------------------------------------------------------------------
 @pytest.mark.django_db
 def test_settings_singleton_write_perms_require_manage():
     """
-    ADR-0112 Clase A: change_* for settings singletons must be in {app}.manage,
+    ADR-0116 Clase A: change_* for settings singletons must be in {app}.manage,
     NOT in {app}.operate.
     """
     cases = [
@@ -193,17 +193,17 @@ def test_settings_singleton_write_perms_require_manage():
         operate = expand([operate_bundle])
         manage = expand([manage_bundle])
         assert perm not in operate, (
-            f"{perm} must NOT be in {operate_bundle} (ADR-0112)"
+            f"{perm} must NOT be in {operate_bundle} (ADR-0116)"
         )
         assert perm in manage, (
-            f"{perm} must be in {manage_bundle} (ADR-0112)"
+            f"{perm} must be in {manage_bundle} (ADR-0116)"
         )
 
 
 @pytest.mark.django_db
 def test_settings_singleton_read_perms_in_read_bundle():
     """
-    ADR-0112 Clase A: view_* for settings singletons must be in {app}.read.
+    ADR-0116 Clase A: view_* for settings singletons must be in {app}.read.
     """
     cases = [
         ("sales.view_salessettings",           "sales.read"),
@@ -216,17 +216,17 @@ def test_settings_singleton_read_perms_in_read_bundle():
     for perm, read_bundle in cases:
         read = expand([read_bundle])
         assert perm in read, (
-            f"{perm} must be in {read_bundle} (ADR-0112)"
+            f"{perm} must be in {read_bundle} (ADR-0116)"
         )
 
 
 # ---------------------------------------------------------------------------
-# ADR-0112 — Datos maestros: write perms must be in manage, not operate
+# ADR-0116 — Datos maestros: write perms must be in manage, not operate
 # ---------------------------------------------------------------------------
 @pytest.mark.django_db
 def test_master_data_write_perms_require_manage():
     """
-    ADR-0112 Clase B: add_* / change_* for master data models must be in
+    ADR-0116 Clase B: add_* / change_* for master data models must be in
     {app}.manage, NOT in {app}.operate.
     """
     cases = [
@@ -259,17 +259,17 @@ def test_master_data_write_perms_require_manage():
         operate = expand([operate_bundle])
         manage = expand([manage_bundle])
         assert perm not in operate, (
-            f"{perm} must NOT be in {operate_bundle} (ADR-0112 Clase B)"
+            f"{perm} must NOT be in {operate_bundle} (ADR-0116 Clase B)"
         )
         assert perm in manage, (
-            f"{perm} must be in {manage_bundle} (ADR-0112 Clase B)"
+            f"{perm} must be in {manage_bundle} (ADR-0116 Clase B)"
         )
 
 
 @pytest.mark.django_db
 def test_master_data_read_perms_in_read_bundle():
     """
-    ADR-0112 Clase B: view_* for master data models must remain in {app}.read —
+    ADR-0116 Clase B: view_* for master data models must remain in {app}.read —
     operational roles can still consult catalogs.
     """
     cases = [
@@ -285,7 +285,7 @@ def test_master_data_read_perms_in_read_bundle():
     for perm, read_bundle in cases:
         read = expand([read_bundle])
         assert perm in read, (
-            f"{perm} must be in {read_bundle} (ADR-0112 Clase B — lectura libre)"
+            f"{perm} must be in {read_bundle} (ADR-0116 Clase B — lectura libre)"
         )
 
 

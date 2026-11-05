@@ -379,12 +379,20 @@ class ActionLogViewSet(viewsets.ReadOnlyModelViewSet):
     filterset_fields = ["user", "action_type"]
 
 
+# Acotado: el selector consulta hasta `limit` filas por cada modelo con historial.
+GLOBAL_AUDIT_LOG_MAX_LIMIT = 200
+
+
 class GlobalAuditLogView(APIView):
     permission_classes = [require_perms("core.view_actionlog")]
 
     def get(self, request):
         from .services import CoreSelector
-        limit = int(request.query_params.get('limit', 50))
+        try:
+            limit = int(request.query_params.get('limit', 50))
+        except (TypeError, ValueError):
+            limit = 50
+        limit = min(max(limit, 1), GLOBAL_AUDIT_LOG_MAX_LIMIT)
         return Response(CoreSelector.get_global_audit_log(limit))
 
 

@@ -20,3 +20,23 @@ class StandardResultsSetPagination(PageNumberPagination):
     page_size = 50
     page_size_query_param = "page_size"
     max_page_size = 200
+
+
+class OptionalPaginationMixin:
+    """
+    Master data con paginación opt-in (ADR-0112).
+
+    Sin `page` ni `page_size` en la query la respuesta es la lista plana `T[]`
+    de siempre (compatibilidad). Con cualquiera de los dos se pagina con
+    `pagination_class`, de modo que un cliente puede acotar catálogos que
+    crezcan más allá del supuesto "< 200 filas".
+
+    Uso: `class X(OptionalPaginationMixin, viewsets.ModelViewSet)` con
+    `pagination_class = StandardResultsSetPagination`.
+    """
+
+    def paginate_queryset(self, queryset):
+        params = self.request.query_params
+        if "page" not in params and "page_size" not in params:
+            return None
+        return super().paginate_queryset(queryset)

@@ -6,7 +6,7 @@ date: 2026-11-04
 author: core-team
 ---
 
-# ADR-0112 — Taxonomía de acceso a entidades de configuración y datos maestros
+# ADR-0116 — Taxonomía de acceso a entidades de configuración y datos maestros
 
 **Relacionado:** ADR-0104 (RBAC — bundle taxonomy, GroupProfile), contrato [`permission-config-entities.md`](../../20-contracts/permission-config-entities.md).
 

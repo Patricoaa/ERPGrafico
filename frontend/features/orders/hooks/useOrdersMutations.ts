@@ -47,7 +47,7 @@ export function useConfirmInvoice() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
     const confirmInvoiceMutation = useMutation({
-        mutationFn: ({ id, formData }: { id: number; formData: Record<string, unknown> }) =>
+        mutationFn: ({ id, formData }: { id: number; formData: FormData | Record<string, unknown> }) =>
             ordersApi.confirmInvoice(id, formData),
         onSuccess: () => {
             markLocalMutation()

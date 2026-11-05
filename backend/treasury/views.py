@@ -15,7 +15,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from core.api.pagination import StandardResultsSetPagination
+from core.api.pagination import OptionalPaginationMixin, StandardResultsSetPagination
 from core.api.permissions import require_perms
 from core.idempotency import idempotent_endpoint
 from core.edit_policy import annotate_edit_usage
@@ -222,10 +222,10 @@ class TreasuryAccountFilterSet(FilterSet):
         fields = ["name", "account_type", "bank_id"]
 
 
-class TreasuryAccountViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class TreasuryAccountViewSet(OptionalPaginationMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = TreasuryAccount.objects.all().order_by("account_type", "name")
     serializer_class = TreasuryAccountSerializer
-    pagination_class = None  # Master data
+    pagination_class = StandardResultsSetPagination  # Master data, opt-in (ADR-0112)
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
     filterset_class = TreasuryAccountFilterSet
     search_fields = ["name"]

@@ -32,7 +32,7 @@ def test_seeded_roles_have_required_fields():
 
 
 def test_sysadmin_is_system_and_has_only_core_security():
-    """sysadmin role must be is_system=True and have ONLY core.read + core.security (ADR-0112)."""
+    """sysadmin role must be is_system=True and have ONLY core.read + core.security (ADR-0116)."""
     from core.rbac.seed import SEEDED_ROLES, _ALL_MODULE_APPS
 
     role = SEEDED_ROLES["sysadmin"]

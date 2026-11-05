@@ -15,7 +15,7 @@ last_review: 2026-11-04
 
 # Contrato — Clasificación de entidades y niveles de acceso
 
-> **Decisión:** ADR-0112 — leer antes de crear cualquier ViewSet de configuración o datos maestros.
+> **Decisión:** ADR-0116 — leer antes de crear cualquier ViewSet de configuración o datos maestros.
 
 ## Las tres clases
 

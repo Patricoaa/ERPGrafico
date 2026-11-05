@@ -179,7 +179,7 @@ OVERRIDES: dict[str, list[str]] = {
     "core.view_actionlog": ["core.security"],
 
     # ---------------------------------------------------------------------------
-    # Settings singletons (ADR-0112, Clase A) — write requires {app}.manage
+    # Settings singletons (ADR-0116, Clase A) — write requires {app}.manage
     # GET uses view_* which stays in {app}.read by the base rule.
     # ---------------------------------------------------------------------------
     "sales.add_salessettings":                  ["sales.manage"],
@@ -196,7 +196,7 @@ OVERRIDES: dict[str, list[str]] = {
     "core.change_companysettings":              ["core.manage"],
 
     # ---------------------------------------------------------------------------
-    # Datos maestros (ADR-0112, Clase B) — write requires {app}.manage
+    # Datos maestros (ADR-0116, Clase B) — write requires {app}.manage
     # view_* stays in {app}.read by the base rule.
     # ---------------------------------------------------------------------------
 

@@ -7,7 +7,7 @@ from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from core.api.pagination import StandardResultsSetPagination
+from core.api.pagination import OptionalPaginationMixin, StandardResultsSetPagination
 from core.api.permissions import require_perms
 from core.edit_policy import annotate_edit_usage, assert_editable
 from core.idempotency import idempotent_endpoint
@@ -163,12 +163,12 @@ class EmployeeFilter(django_filters.FilterSet):
         fields = ["status", "contact"]
 
 
-class EmployeeViewSet(AuditHistory, viewsets.ModelViewSet):
+class EmployeeViewSet(OptionalPaginationMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = Employee.objects.select_related("contact", "afp").prefetch_related(
         "concept_amounts__concept"
     ).all()
     serializer_class = EmployeeSerializer
-    pagination_class = None  # Master data
+    pagination_class = StandardResultsSetPagination  # Master data, opt-in (ADR-0112)
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
 
     def get_serializer_class(self):

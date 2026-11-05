@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.67](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.66...v0.3.67) (2026-11-05)
+
+### [0.3.66](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.65...v0.3.66) (2026-11-05)
+
+### [0.3.65](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.64...v0.3.65) (2026-11-02)
+
+
+### ✨ Features
+
+* comentarios transversales con hilos, menciones y adjuntos (ADR-0111) ([#204](https://github.com/Patricoaa/ERPGrafico/issues/204)) ([ebcc131](https://github.com/Patricoaa/ERPGrafico/commit/ebcc131d84705f2211427239c71f76744759d214))
+
+### [0.3.64](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.63...v0.3.64) (2026-11-02)
+
+
+### ⚙️ Refactors
+
+* **frontend:** replace LabeledCheckboxGroup with FormSelectionGroup ([9c79d59](https://github.com/Patricoaa/ERPGrafico/commit/9c79d59aad48bb6e49cd7e01a50b4a9db7e74719))
+
 ### [0.3.63](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.62...v0.3.63) (2026-11-02)
 
 
