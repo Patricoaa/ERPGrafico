@@ -8,7 +8,7 @@ import { getErrorMessage } from "@/lib/errors"
 import type { ColumnDef } from "@tanstack/react-table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { DataCell, DataTable, LabeledSelect, BaseModal, DrawerLayout, FadeIn, FormSection, DocumentAttachmentDropzone, LabeledInput, WizardStepsSidebar, type WizardSidebarStep } from "@/components/shared"
+import { DataCell, DataTable, LabeledSelect, BaseModal, DrawerLayout, DrawerResizableRail, FadeIn, FormSection, DocumentAttachmentDropzone, LabeledInput, WizardStepsSidebar, type WizardSidebarStep } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { FileUp, Columns, Table as TableIcon, CheckCircle2, FileSearch, Landmark, SlidersHorizontal, Calendar } from "lucide-react"
@@ -599,7 +599,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
             onOpenChange={handleClose}
             icon={FileSearch}
             title="Importar Cartola Bancaria"
-            size="xl"
+            size="2xl"
             className="h-[88vh]"
             hideScrollArea
             footer={
@@ -663,18 +663,32 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                 <DrawerLayout
                     leftRailRaw
                     leftRail={
-                        <WizardStepsSidebar
-                            title="Importación"
-                            currentStep={currentStep}
-                            steps={sidebarSteps}
-                            density="compact"
-                            showCounter={false}
-                            width="w-52"
-                            collapsedWidth="w-14"
+                        <DrawerResizableRail
+                            side="left"
                             collapsed={sidebarCollapsed}
                             onToggleCollapsed={() => setSidebarCollapsed((prev) => !prev)}
-                            className="shrink-0 border-r border-border/60"
-                        />
+                            storageKey="erpgrafico.bankstatement.importRailCollapsed"
+                            defaultWidth={208}
+                            minWidth={160}
+                            maxWidth={320}
+                            compactWidth={56}
+                            className="hidden md:flex"
+                        >
+                            <WizardStepsSidebar
+                                title="Importación"
+                                currentStep={currentStep}
+                                steps={sidebarSteps}
+                                density="compact"
+                                showCounter={false}
+                                width="w-full"
+                                collapsedWidth="w-full"
+                                showConnector={false}
+                                listClassName="px-2 pt-1 space-y-1.5"
+                                className="bg-transparent flex-1 min-h-0"
+                                collapsed={sidebarCollapsed}
+                                onToggleCollapsed={() => setSidebarCollapsed((prev) => !prev)}
+                            />
+                        </DrawerResizableRail>
                     }
                     noPadding
                 >
