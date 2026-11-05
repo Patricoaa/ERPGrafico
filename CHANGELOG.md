@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.68](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.67...v0.3.68) (2026-11-05)
+
+
+### ✨ Features
+
+* comentarios transversales — seguimiento tras PR [#204](https://github.com/Patricoaa/ERPGrafico/issues/204) (RBAC, auditoría, OC borrador) ([#208](https://github.com/Patricoaa/ERPGrafico/issues/208)) ([e9c9590](https://github.com/Patricoaa/ERPGrafico/commit/e9c95901789e9e2d9f64b3ed836f2f8225df5c90))
+
 ### [0.3.67](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.66...v0.3.67) (2026-11-05)
 
 ### [0.3.66](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.65...v0.3.66) (2026-11-05)
