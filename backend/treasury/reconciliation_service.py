@@ -137,8 +137,17 @@ class ReconciliationService:
         file_hash = hashlib.sha256(file_content).hexdigest()
         file.seek(0)  # Reset para que el parser pueda leerlo
 
-        if BankStatement.objects.filter(file_hash=file_hash).exists():
-            raise ValueError("Este archivo de cartola ya ha sido importado anteriormente.")
+        existing = BankStatement.objects.filter(file_hash=file_hash).exclude(status="CANCELLED").first()
+        if existing:
+            if existing.status == "DRAFT":
+                raise ValueError(
+                    f"Este archivo ya fue importado (cartola #{existing.pk} en borrador). "
+                    "Elimínela primero si desea reimportar el mismo archivo."
+                )
+            raise ValueError(
+                f"Este archivo ya fue importado (cartola #{existing.pk}). "
+                "No es posible reimportar un archivo ya procesado."
+            )
 
         # Parsear archivo
         try:
@@ -281,7 +290,7 @@ class ReconciliationService:
         is_duplicate = False
         warnings = []
 
-        if BankStatement.objects.filter(file_hash=file_hash).exists():
+        if BankStatement.objects.filter(file_hash=file_hash).exclude(status="CANCELLED").exists():
             is_duplicate = True
             warnings.append(
                 {"line": None, "message": "Este archivo ya ha sido importado anteriormente."}
