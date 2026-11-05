@@ -993,7 +993,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                     <div className="w-full pt-4">
                         <Button
                             variant="default"
-                            className="w-full h-12 font-bold uppercase tracking-widest text-xs rounded-sm "
+                            className="w-full h-12 font-black uppercase tracking-widest text-xs rounded-sm "
                             onClick={() => {
                                 setShowInvoiceReminder(false)
                                 if (isSessionHost) {
