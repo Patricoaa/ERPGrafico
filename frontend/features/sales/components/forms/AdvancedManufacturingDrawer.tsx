@@ -199,8 +199,8 @@ export function AdvancedManufacturingDrawer({ open, onOpenChange, product, onCon
                         <>
                             {stepIndex === 0
                                 ? <CancelButton onClick={() => onOpenChange(false)} />
-                                : <Button type="button" variant="outline" onClick={() => setStep(STEPS[stepIndex - 1].id)}>Atrás</Button>}
-                            {!isLast && <Button type="button" variant="outline" onClick={goNext}>Siguiente</Button>}
+                                : <Button type="button" variant="outline" className="text-3xs font-black tracking-widest uppercase"  onClick={() => setStep(STEPS[stepIndex - 1].id)}>Paso Atrás</Button>}
+                            {!isLast && <Button type="button" variant="outline" className="text-3xs font-black tracking-widest uppercase" onClick={goNext}>Siguiente Paso</Button>}
                             <SubmitButton onClick={handleConfirm}>Validar Producción</SubmitButton>
                         </>
                     }

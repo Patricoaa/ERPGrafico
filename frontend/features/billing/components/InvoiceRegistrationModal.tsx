@@ -142,7 +142,6 @@ export function InvoiceRegistrationModal({
     }, [orders, form])
 
     const requiresAttachment = ATTACHMENT_REQUIRED_DTE.has(dteType)
-    const attachmentLabel = requiresAttachment && !isPending ? "Adjunto (obligatorio)" : "Adjunto (opcional)"
 
     const lineCount = orders?.reduce((acc, o) => acc + o.lines.length, 0) ?? 0
 
@@ -321,7 +320,7 @@ export function InvoiceRegistrationModal({
                 {/* Attachment */}
                 {!isPending && (
                     <div className="space-y-2">
-                        <Label>{attachmentLabel}</Label>
+                        
                         <DocumentAttachmentDropzone
                             file={attachment}
                             onFileChange={(f) => form.setValue("attachment", f)}
