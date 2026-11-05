@@ -10,6 +10,21 @@ from core.exceptions import ERPGraficoError
 logger = logging.getLogger(__name__)
 
 
+def _flatten_messages(data):
+    """Turn DRF error payloads (nested dicts/lists of ErrorDetail) into readable text."""
+    if isinstance(data, dict):
+        parts = []
+        for field, value in data.items():
+            text = _flatten_messages(value)
+            if not text:
+                continue
+            parts.append(text if field == "non_field_errors" else f"{field}: {text}")
+        return "; ".join(parts)
+    if isinstance(data, (list, tuple)):
+        return "; ".join(text for text in (_flatten_messages(item) for item in data) if text)
+    return str(data) if data is not None else ""
+
+
 def erpgrafico_exception_handler(exc, context):
     """
     Custom exception handler for Django REST Framework.
@@ -37,9 +52,9 @@ def erpgrafico_exception_handler(exc, context):
         # raised with a plain string/list) or a bare ErrorDetail.
         data = response.data
         if isinstance(data, dict):
-            message = data.get("detail") or str(data)
+            message = data.get("detail") or _flatten_messages(data) or str(data)
         elif isinstance(data, (list, tuple)):
-            message = "; ".join(str(item) for item in data) or str(data)
+            message = _flatten_messages(data) or str(data)
         else:
             message = str(data)
         code = "API_ERROR"

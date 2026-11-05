@@ -17,6 +17,7 @@ import { SubmitButton, CancelButton } from "@/components/shared"
 import { useContact, useContactCreditLedger } from "../hooks/useContacts"
 import { type Contact, type ContactPayload } from "../types"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
+import { getFieldErrorMessage } from "@/lib/errors"
 import { useContactMutations, useContactInsights } from "@/features/contacts"
 import { useDefaultCustomer, useDefaultVendor } from "../hooks/useContactDefaults"
 
@@ -34,7 +35,7 @@ import { contactCreditDocumentEntity, contactCreditDocumentViews, type ContactCr
 import { type LucideIcon } from "lucide-react"
 
 import { getHubStatuses } from '@/features/orders'
-import { LabeledInput, LabeledContainer, FormSelectionGroup, DrawerLayout, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
+import { LabeledInput, FormSelectionGroup, DrawerLayout, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
 import { getDomainConceptTitle, getDomainConceptCode } from "@/lib/entity-registry"
 
@@ -57,9 +58,12 @@ interface ContactDrawerProps {
     contact?: Contact | null
     onSuccess: (contact?: Contact) => void
     mode?: DrawerMode
+    /** "screen" covers the whole viewport (use from inside another panel); default keeps the embedded layout. */
+    boundary?: "screen" | "embedded"
+    showOverlay?: boolean
 }
 
-export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, mode: modeProp }: ContactDrawerProps) {
+export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, mode: modeProp, boundary, showOverlay }: ContactDrawerProps) {
     const [confirmReplacement, setConfirmReplacement] = useState<{ type: 'customer' | 'vendor' | null, name: string }>({ type: null, name: "" })
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
 
@@ -149,8 +153,12 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
             }
             onSuccess(savedContact)
             onOpenChange(false)
-        } catch {
-            // Error handled by hook
+        } catch (error: unknown) {
+            // Toast is shown by the hook; also surface duplicate RUT under the field.
+            const taxIdMessage = getFieldErrorMessage(error, "tax_id")
+            if (taxIdMessage) {
+                form.setError("tax_id", { type: "server", message: taxIdMessage })
+            }
         }
     }
 
@@ -216,6 +224,8 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                 className="h-[90vh]"
                 contentClassName="p-0"
                 mode={mode}
+                boundary={boundary}
+                showOverlay={showOverlay}
                 side="left"
                 footer={isView ? undefined : (
                     <FormFooter
@@ -292,8 +302,8 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                 )
                                             })()}
 
-                                            <LabeledContainer label="Roles del Contacto">
-                                                <div className="flex flex-wrap gap-1.5">
+                                            <h4 className="text-2xs font-bold uppercase tracking-looser gap-3 pl-1 text-muted-foreground/70">Roles del Contacto </h4>
+                                                <div className="flex flex-wrap gap-1">
                                                     {c?.id && (c.active_roles ?? []).length > 0 ? (
                                                         (c.active_roles ?? []).map(value => (
                                                             <Chip.Category key={value} domain="contact_type" value={value} size="sm" />
@@ -302,7 +312,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                         <span className="text-xs text-muted-foreground">Sin roles asignados</span>
                                                     )}
                                                 </div>
-                                            </LabeledContainer>
+                                            
                                         </div>
 
                                         <div className="space-y-4">
