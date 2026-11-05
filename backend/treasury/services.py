@@ -16,7 +16,7 @@ from accounting.services import JournalEntryService
 from core.prefix_registry import EntityPrefix
 
 from .check_service import CheckService
-from .models import CreditLine, PaymentMethod, TerminalBatch, TreasuryAccount, TreasuryMovement
+from .models import BankStatement, CreditLine, PaymentMethod, TerminalBatch, TreasuryAccount, TreasuryMovement
 
 logger = logging.getLogger(__name__)
 
@@ -1652,6 +1652,62 @@ class BankStatementService:
         statement.status = "CONFIRMED"
         statement.save(update_fields=["status"])
         return statement
+
+    @staticmethod
+    def delete_block_reason(statement: "BankStatement") -> str | None:
+        """Motivo por el que la cartola no puede eliminarse, o None si puede.
+
+        Solo un borrador sin ningún trabajo de conciliación (todas las líneas
+        UNRECONCILED): una línea excluida o conciliada ya representa decisiones
+        del operador y su eliminación las borraría en silencio.
+        """
+        if statement.status != "DRAFT":
+            return "Solo se puede eliminar una cartola en borrador."
+        if statement.lines.exclude(reconciliation_status="UNRECONCILED").exists():
+            return "La cartola tiene líneas conciliadas o excluidas. Deshaz esos cambios antes de eliminarla."
+        return None
+
+    @staticmethod
+    @transaction.atomic
+    def delete_draft(*, statement: "BankStatement") -> None:
+        """Elimina un borrador sin trabajo de conciliación (líneas en cascada).
+
+        El archivo original se borra del almacenamiento solo tras el commit, para
+        que un rollback no deje la cartola sin su adjunto.
+        """
+        reason = BankStatementService.delete_block_reason(statement)
+        if reason:
+            raise ValueError(reason)
+        file_name = statement.file.name if statement.file else None
+        storage = statement.file.storage if statement.file else None
+        statement.delete()
+        if file_name and storage is not None:
+            transaction.on_commit(lambda: storage.delete(file_name))
+
+    @staticmethod
+    def bulk_restore_from_request(request) -> int:
+        """Vuelve a incluir (UNRECONCILED) las líneas EXCLUDED de la selección.
+
+        Las líneas que no están excluidas no se tocan: una línea conciliada o en match
+        se deshace con su propia acción (unmatch), no con esta.
+        """
+        from .models import BankStatementLine
+
+        line_ids = request.data.get("line_ids", [])
+        if not line_ids:
+            raise ValueError("line_ids requerido")
+
+        excluded = BankStatementLine.objects.filter(id__in=line_ids, reconciliation_status="EXCLUDED")
+        if not excluded.exists():
+            raise ValueError("Ninguna línea excluida en la selección")
+        if excluded.filter(statement__status="CONFIRMED").exists():
+            raise ValueError("No se pueden incluir movimientos de una cartola confirmada")
+
+        return excluded.update(
+            reconciliation_status="UNRECONCILED",
+            exclusion_reason=None,
+            exclusion_notes=None,
+        )
 
     @staticmethod
     def bulk_exclude_from_request(request) -> int:

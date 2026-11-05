@@ -1,7 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, type ReactNode, useCallback, useMemo, useEffect } from "react"
-import { Calculator, type LucideIcon } from "lucide-react"
+import { ArrowLeftRight, Calculator, type LucideIcon } from "lucide-react"
 import dynamic from "next/dynamic"
 import { ENTITY_DRAWERS, hasEntityDrawer } from "@/lib/entity-drawers"
 import { formatEntityDisplay, getEntityMetadata } from "@/lib/entity-registry"
@@ -41,18 +41,25 @@ export interface PanelTabState {
     display?: string
 }
 
-/** Pestaña efímera del espacio de trabajo: un documento (`entity`), una herramienta (`tool`) o un drawer de la página (`panel`). */
+/** Pestaña efímera del espacio de trabajo: un documento (`entity`), una herramienta (`tool`), un drawer de la página (`panel`) o una mesa de conciliación (`workbench`). */
 type WorkspaceTab =
     | ({ type: "entity" } & OpenEntityState)
     | { type: "tool"; tool: ToolTabId }
     | ({ type: "panel" } & PanelTabState)
+    | { type: "workbench"; statementId: number; display?: string }
 
 const entityKey = (label: string, id: number) => `${label}:${id}`
 const toolKey = (tool: ToolTabId) => `tool:${tool}`
+const workbenchKey = (statementId: number) => `workbench:${statementId}`
 /** Clave de la pestaña de un drawer de la página (la usa `useEntityPanelTab` para saber si está activa). */
 export const panelTabKey = ({ label, id, variant }: Pick<PanelTabState, "label" | "id" | "variant">) => `panel:${label}${variant ? `:${variant}` : ""}:${id ?? "new"}`
 const panelKey = panelTabKey
-const tabKey = (tab: WorkspaceTab) => (tab.type === "entity" ? entityKey(tab.label, tab.id) : tab.type === "tool" ? toolKey(tab.tool) : panelKey(tab))
+const tabKey = (tab: WorkspaceTab) => {
+    if (tab.type === "entity") return entityKey(tab.label, tab.id)
+    if (tab.type === "tool") return toolKey(tab.tool)
+    if (tab.type === "workbench") return workbenchKey(tab.statementId)
+    return panelKey(tab)
+}
 
 /** Vista de una pestaña para la barra (ADR-0101). */
 export interface WorkspaceTabView {
@@ -98,6 +105,12 @@ class LiveMirror {
     }
 }
 
+/** Mesa de conciliación de una cartola (pestaña propia, ver `openWorkbench`). */
+const ReconciliationWorkbenchTab = dynamic(
+    () => import("@/features/finance").then(m => ({ default: m.ReconciliationWorkbenchTab })),
+    { ssr: false },
+)
+
 const CostCalculatorDrawer = dynamic(
     () => import("@/components/tools/CostCalculatorDrawer").then(m => ({ default: m.CostCalculatorDrawer })),
     { ssr: false },
@@ -111,6 +124,10 @@ function entityTabLabel(entity: OpenEntityState): string {
 }
 
 function tabView(tab: WorkspaceTab, active: boolean, pageModuleId: string | undefined): WorkspaceTabView {
+    if (tab.type === "workbench") {
+        const title = tab.display ?? "Mesa de conciliación"
+        return { key: workbenchKey(tab.statementId), kind: "tool", title, description: `Mesa de conciliación ${title}`, icon: ArrowLeftRight, active }
+    }
     if (tab.type === "tool") {
         return { key: toolKey(tab.tool), kind: "tool", title: TOOL_TABS[tab.tool].title, description: TOOL_TABS[tab.tool].title, icon: TOOL_TABS[tab.tool].icon, active }
     }
@@ -148,6 +165,11 @@ interface GlobalModalActionsContextType {
     closeEntityByRef: (label: string, id: number) => void
     /** Abre una herramienta (p. ej. la calculadora) como pestaña. */
     openTool: (tool: ToolTabId) => void
+    /**
+     * Abre la mesa de conciliación de una cartola como pestaña propia del espacio de trabajo (o activa
+     * la existente). Es la vía canónica: nunca un drawer ni una página nueva.
+     */
+    openWorkbench: (statementId: number, display?: string) => void
     /**
      * Registra un drawer montado por la página como pestaña activa (`useEntityPanelTab`). `onClose` se
      * invoca cuando el usuario cierra la pestaña (×, Delete): la página debe cerrar su drawer. Devuelve
@@ -444,6 +466,11 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         runGuarded(() => addTab({ type: "tool", tool }))
     }, [runGuarded, live, addTab])
 
+    const openWorkbench = useCallback((statementId: number, display?: string) => {
+        if (live.activeKey === workbenchKey(statementId)) return
+        runGuarded(() => addTab({ type: "workbench", statementId, display }))
+    }, [runGuarded, live, addTab])
+
     const registerSheet = useCallback((id: string, fullWidth: number, priority: number, forced: boolean = false) => {
         setSheetStack(prev => {
             const existingIndex = prev.findIndex(s => s.id === id)
@@ -523,6 +550,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         openRootEntity,
         closeEntityByRef,
         openTool,
+        openWorkbench,
         registerPanelTab,
         activateTab,
         showPage,
@@ -533,7 +561,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         requestLeave,
         registerSheet,
         unregisterSheet,
-    }), [openEntity, closeEntity, openRootEntity, closeEntityByRef, openTool, registerPanelTab, activateTab, showPage, closeTab, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
+    }), [openEntity, closeEntity, openRootEntity, closeEntityByRef, openTool, openWorkbench, registerPanelTab, activateTab, showPage, closeTab, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
 
     const tabViews = useMemo(
         () => tabs.map(tab => tabView(tab, tabKey(tab) === activeKey, pageModuleId)),
@@ -581,6 +609,16 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
 
     const renderActiveTab = () => {
         if (!activeTab) return null
+        if (activeTab.type === "workbench") {
+            return (
+                <ReconciliationWorkbenchTab
+                    key={workbenchKey(activeTab.statementId)}
+                    statementId={activeTab.statementId}
+                    onClose={() => handleDrawerOpenChange(false)}
+                    onConfirmed={closeActiveTab}
+                />
+            )
+        }
         if (activeTab.type === "entity") {
             const render = ENTITY_DRAWERS[activeTab.label]
             if (!render) return null

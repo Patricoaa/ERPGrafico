@@ -16,7 +16,7 @@ import { OriginSelectionStep } from "../../steps/OriginSelectionStep"
 import { ManufacturingSpecsEditor, emptyManufacturingData, type ManufacturingData } from '@/components/shared'
 import {workOrderSchema, type WorkOrderFormValues } from "@/types/forms"
 import { LabeledInput, SkeletonShell } from "@/components/shared"
-import type { Contact } from "@/features/contacts"
+import type { ManufacturingContact } from "@/components/shared"
 import type { ProductMinimal } from "../../../types"
 import type { SaleOrder } from "@/features/sales"
 import {
@@ -48,7 +48,7 @@ export function WorkOrderBasicStep({
     )
     const [, setLoading] = useState(false)
     const [mfgData, setMfgData] = useState<ManufacturingData>(emptyManufacturingData())
-    const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
+    const [selectedContact, setSelectedContact] = useState<ManufacturingContact | null>(null)
     const [selectedManualProduct, setSelectedManualProduct] = useState<ProductMinimal | null>(null)
 
     const idempotencyKeyRef = useRef<string>(generateUuidV4())
@@ -168,7 +168,7 @@ export function WorkOrderBasicStep({
                     id: Number(stageData.contact_id),
                     name: stageData.contact_name || "Contacto",
                     tax_id: stageData.contact_tax_id || ""
-                } as Contact)
+                })
             } else {
                 setSelectedContact(null)
             }

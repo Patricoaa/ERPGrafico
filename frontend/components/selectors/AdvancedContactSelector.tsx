@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
     Popover,
+    PopoverAnchor,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
@@ -15,7 +16,6 @@ import { formatRUT } from "@/lib/utils/format"
 import { useContactSearch, useSingleContact } from "@/features/contacts/hooks/useContactSearch"
 
 import { type Contact } from "@/types/entities"
-import { type Contact as ContactInitialData } from "@/features/contacts/types"
 import { CardSkeleton, EmptyState, LabeledContainer, SelectorTrigger } from '@/components/shared'
 import { SearchBar } from '@/components/selectors/ProductGridPicker'
 import React, { Suspense } from "react"
@@ -98,14 +98,8 @@ export function AdvancedContactSelector({
         setIsCreateModalOpen(false)
     }
 
-    const initialContactTemplate = contactType === 'CUSTOMER'
-        ? { is_default_customer: true, is_default_vendor: false }
-        : contactType === 'SUPPLIER'
-            ? { is_default_customer: false, is_default_vendor: true }
-            : null;
 
-    const selectTrigger = (
-        <Popover open={open} onOpenChange={setOpen}>
+    const trigger = (
             <PopoverTrigger asChild>
                 <SelectorTrigger
                     hasValue={!!selectedContact}
@@ -128,9 +122,15 @@ export function AdvancedContactSelector({
                     </span>
                 </SelectorTrigger>
             </PopoverTrigger>
-            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+    )
+
+    const content = (
+            <PopoverContent
+                className="w-[var(--radix-popper-anchor-width)] p-0"
+                align="start"
+            >
                 <div className="p-2">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex w-full items-center gap-2 mb-2">
                         <SearchBar
                             value={searchTerm}
                             onChange={setSearchTerm}
@@ -193,7 +193,6 @@ export function AdvancedContactSelector({
                                             <span className="truncate font-medium">{contact.name}</span>
                                             <span className="text-xs text-muted-foreground truncate">
                                                 {contact.tax_id ? formatRUT(contact.tax_id) : 'S/Rut'}
-                                                {contact.code && ` • ${contact.code}`}
                                             </span>
                                         </div>
                                         {selectedContact?.id === contact.id && (
@@ -206,25 +205,32 @@ export function AdvancedContactSelector({
                     </div>
                 </div>
             </PopoverContent>
-        </Popover>
     )
 
     return (
         <>
-            {variant === 'standalone' ? (
-                <LabeledContainer
-                    label={label}
-                    required={required}
-                    error={error}
-                    disabled={disabled}
-                    className={className}
-                    icon={icon}
-                >
-                    {selectTrigger}
-                </LabeledContainer>
-            ) : (
-                selectTrigger
-            )}
+            <Popover open={open} onOpenChange={setOpen}>
+                {variant === 'standalone' ? (
+                    <PopoverAnchor asChild>
+                        <div className="w-full">
+                            <LabeledContainer
+                                label={label}
+                                required={required}
+                                error={error}
+                                disabled={disabled}
+                                className={className}
+                                icon={icon}
+                            >
+                                {trigger}
+                            </LabeledContainer>
+                        </div>
+                    </PopoverAnchor>
+                ) : (
+                    trigger
+                )}
+                {content}
+            </Popover>
+
 
             {isCreateModalOpen && (
                 <Suspense fallback={<div />}>
@@ -232,7 +238,8 @@ export function AdvancedContactSelector({
                         open={isCreateModalOpen}
                         onOpenChange={setIsCreateModalOpen}
                         onSuccess={handleCreateSuccess}
-                        contact={initialContactTemplate as unknown as ContactInitialData | null}
+                        contact={null}
+                        mode="create"
                     />
                 </Suspense>
             )}

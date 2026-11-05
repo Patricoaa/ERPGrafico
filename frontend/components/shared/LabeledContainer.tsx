@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode } from "react"
+import { type MouseEvent, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import { FieldLegend, fieldLegendClasses } from "./FieldLegend"
 
@@ -27,6 +27,8 @@ interface LabeledContainerProps {
     disabled?: boolean
     /** Tooltip text shown on hover of a small ℹ icon inline in the legend. */
     tooltip?: string
+    /** Click handler for the whole fieldset, including the legend. */
+    onClick?: (event: MouseEvent<HTMLFieldSetElement>) => void
     /** The actual interactive content (e.g. DatePicker, Dropzone, etc). */
     children: ReactNode
 }
@@ -49,6 +51,7 @@ export function LabeledContainer({
     labelClassName,
     disabled,
     tooltip,
+    onClick,
     children
 }: LabeledContainerProps) {
     const hasError = !!error
@@ -58,10 +61,12 @@ export function LabeledContainer({
             <fieldset
                 data-error={hasError ? "true" : undefined}
                 data-disabled={disabled ? "true" : undefined}
+                onClick={onClick}
                 className={cn(
                     "notched-field",
                     "group-focus-within:border-primary group-focus-within:ring-1 group-focus-within:ring-primary/20",
                     hasError && "border-destructive group-focus-within:border-destructive group-focus-within:ring-destructive/20",
+                    onClick && (disabled ? "cursor-not-allowed" : "cursor-pointer"),
                     className
                 )}
             >

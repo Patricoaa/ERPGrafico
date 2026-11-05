@@ -19,7 +19,7 @@ import {
 
 interface ActivitySidebarProps {
     entityId: number | string
-    entityType: 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'sale_return' | 'purchase_receipt' | 'purchase_return' | 'inventory_document' | 'check' | 'terminal_batch' | 'profit_distribution' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'pricing_rule' | 'reordering_rule' | 'treasuryaccount' | 'bank' | 'paymentmethod' | 'terminal' | 'category' | 'warehouse' | 'uom' | 'uom_category' | 'attribute' | 'account' | 'bank_journal' | 'employee' | 'salaryadvance' | 'absence' | 'fiscal_year' | 'tax_period' | 'f29_declaration' | 'task' | 'attachment' | 'group' | 'inventory_count' | 'bank_loan'
+    entityType: 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'sale_return' | 'purchase_receipt' | 'purchase_return' | 'inventory_document' | 'check' | 'terminal_batch' | 'profit_distribution' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'pricing_rule' | 'reordering_rule' | 'treasuryaccount' | 'bankstatement' | 'bank' | 'paymentmethod' | 'terminal' | 'category' | 'warehouse' | 'uom' | 'uom_category' | 'attribute' | 'account' | 'bank_journal' | 'employee' | 'salaryadvance' | 'absence' | 'fiscal_year' | 'tax_period' | 'f29_declaration' | 'task' | 'attachment' | 'group' | 'inventory_count' | 'bank_loan'
     className?: string
     title?: string
     /** Estado inicial de la sección. En rails de drawer (EntitySidebar) arranca cerrada. */
@@ -69,6 +69,7 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
     group: 'el grupo',
     inventory_count: 'el recuento de inventario',
     bank_loan: 'el préstamo bancario',
+    bankstatement: 'la cartola bancaria',
     absence: 'la ausencia',
 }
 

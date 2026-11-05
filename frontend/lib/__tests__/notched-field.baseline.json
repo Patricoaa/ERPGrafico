@@ -18,12 +18,6 @@
     "snippet": "flex items-center justify-between w-full px-3 py-1.5 min-h-[1.5rem] cursor-pointer"
   },
   {
-    "file": "components/shared/LabeledSwitch.tsx",
-    "line": 98,
-    "rule": "R2",
-    "snippet": "flex items-center justify-between w-full px-3 h-full min-h-[1.5rem] cursor-pointer gap-3"
-  },
-  {
     "file": "features/inventory/components/CategoryDrawer.tsx",
     "line": 118,
     "rule": "R2",
@@ -40,12 +34,6 @@
     "line": 379,
     "rule": "R2",
     "snippet": "max-h-[200px] overflow-y-auto space-y-1"
-  },
-  {
-    "file": "features/production/components/forms/WorkOrderBasicStep/WorkOrderBasicInfo.tsx",
-    "line": 319,
-    "rule": "R4",
-    "snippet": "h-5 w-5 text-muted-foreground hover:text-destructive shrink-0"
   },
   {
     "file": "features/treasury/components/TerminalBatchSelectionModal.tsx",

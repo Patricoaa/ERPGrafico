@@ -726,11 +726,10 @@ export function POSClientView() {
                         <span className="text-xl font-black tracking-tight text-center text-foreground">¡Venta Exitosa!</span>
                     </div>
                 }
-                description="La venta se ha procesado correctamente. ¿Desea imprimir el comprobante térmico?"
                 footer={
                     <div className="flex flex-col sm:flex-row gap-3 w-full mt-4">
                         <Button
-                            className="flex-1 h-14 rounded-sm text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-card group"
+                            className="flex-1 h-10 rounded-sm text-sm font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-card group"
                             onClick={() => {
                                 handlePrint();
                                 setCompletedSaleData(null);
@@ -741,7 +740,7 @@ export function POSClientView() {
                         </Button>
                         <Button
                             variant="outline"
-                            className="flex-1 h-14 border-primary/20 text-primary hover:bg-primary/5 rounded-sm text-lg font-medium"
+                            className="flex-1 h-10 border-primary/20 text-sm font-black hover:bg-primary/5 rounded-sm text-lg font-black"
                             onClick={() => setCompletedSaleData(null)}
                         >
                             Cerrar
@@ -749,6 +748,10 @@ export function POSClientView() {
                     </div>
                 }
             >
+                <p className="mb-4 text-center text-sm text-muted-foreground">
+                    ¿Desea imprimir el comprobante?
+                </p>
+
                 {/* Hidden Receipt for Printing */}
                 {completedSaleData && (
                     <PrintableReceipt

@@ -152,7 +152,8 @@ export function useReconciledLinesQuery(statementId: number, params: QueryPagina
         queryFn: async () => {
             const data = await financeApi.getStatementLines({
                 statement: statementId,
-                reconciliation_state: 'RECONCILED',
+                // MATCHED = agrupada, pendiente de confirmar: también es "conciliada" para el operador.
+                reconciliation_state: 'MATCHED,RECONCILED',
                 page: params.page || 1,
                 page_size: params.pageSize || 50,
                 search: params.search,

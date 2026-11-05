@@ -98,7 +98,7 @@ export function registerCoreValueKinds(): void {
         render: ({ value, options, align }) => {
             const n = toNumber(value)
             if (n === null) return <DataCell.Empty align={align} />
-            return <DataCell.CurrencyFlow value={n} direction={options.direction} currency={options.currency} align={align} />
+            return <DataCell.CurrencyFlow value={n} direction={options.direction} currency={options.currency} showIcon={options.showIcon} align={align} />
         },
     })
 

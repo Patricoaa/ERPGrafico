@@ -45,7 +45,7 @@ export interface ValueKinds {
     number: { value: Numeric; options: { suffix?: string; decimals?: number } }
     quantity: { value: Numeric; options: { uom?: string | null; decimals?: number } }
     money: { value: Numeric; options: { currency?: CurrencyCode; sign?: "auto" | "always" | "never" } }
-    flow: { value: Numeric; options: { direction: FlowDirection; currency?: CurrencyCode } }
+    flow: { value: Numeric; options: { direction: FlowDirection; currency?: CurrencyCode; showIcon?: boolean } }
     date: { value: ISODate | null | undefined; options: { time?: boolean } }
     dateRange: { value: { from: ISODate; to: ISODate | null } | null; options: Record<never, never> }
     status: { value: StatusValue | null; options: Record<never, never> }

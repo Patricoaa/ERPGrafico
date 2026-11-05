@@ -13,6 +13,13 @@ export interface BankStatement {
     reconciliation_progress: number
     state: 'DRAFT' | 'CONFIRMED' | 'CANCELLED'
     state_display: string
+    /** Líneas con trabajo del operador (MATCHED, RECONCILED, EXCLUDED o DISPUTED). */
+    touched_lines?: number
+    /** El original importado existe y se descarga por /download/ (nunca por URL directa). */
+    has_file?: boolean
+    /** Nombre del archivo original importado (sin ruta). */
+    file_name?: string | null
+    notes?: string
     imported_by_name: string
     imported_at: string
     lines?: BankStatementLine[]

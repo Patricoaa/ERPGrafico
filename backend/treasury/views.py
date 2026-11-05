@@ -1,17 +1,19 @@
 import logging
+import os
 from decimal import Decimal
 
 import django_filters
 from django.core.exceptions import ValidationError
 from django.db.models import Count
-from django.http import HttpResponse
+from django.http import FileResponse, HttpResponse
 
 logger = logging.getLogger(__name__)
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework import filters as drf_filters
 from rest_framework import serializers as drf_serializers
-from rest_framework import status, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -69,7 +71,7 @@ from .serializers import (
     TreasuryMovementSerializer,
     TreasuryMovementWriteSerializer,
 )
-from .services import TerminalBatchService, TreasuryService
+from .services import BankStatementService, TerminalBatchService, TreasuryService
 
 
 def apply_archivo_is_active_filter(qs, request, action):
@@ -558,9 +560,18 @@ class TreasuryMovementViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHisto
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class BankStatementViewSet(viewsets.ModelViewSet):
+class BankStatementViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+    AuditHistoryMixin,
+):
+    """Cartolas bancarias. Sin edición (PUT/PATCH): el archivo y sus saldos vienen del import.
+    Borrado solo de borradores sin trabajo de conciliación (ADR-0112)."""
+
     pagination_class = StandardResultsSetPagination
-    """ViewSet for managing bank statements"""
 
     queryset = BankStatement.objects.all().select_related("treasury_account", "imported_by")
     filterset_fields = ["status", "treasury_account"]
@@ -581,6 +592,22 @@ class BankStatementViewSet(viewsets.ModelViewSet):
         if self.action == "list":
             return BankStatementListSerializer
         return BankStatementSerializer
+
+    def perform_destroy(self, instance):
+        try:
+            BankStatementService.delete_draft(statement=instance)
+        except ValueError as exc:
+            raise drf_serializers.ValidationError({"detail": str(exc)})
+
+    @action(detail=True, methods=["get"])
+    def download(self, request, pk=None):
+        """Archivo original importado. El permiso de ver la cartola se aplica vía get_object."""
+        statement = self.get_object()
+        if not statement.file:
+            raise NotFound("La cartola no tiene archivo original.")
+        return FileResponse(
+            statement.file.open("rb"), as_attachment=True, filename=os.path.basename(statement.file.name)
+        )
 
     @action(detail=False, methods=["post"])
     def import_statement(self, request):
@@ -696,6 +723,7 @@ class BankStatementLineViewSet(EditPolicyMixin, viewsets.ModelViewSet):
         "match_group": "treasury.change_bankstatementline",
         "unmatch": "treasury.change_bankstatementline",
         "bulk_exclude": "treasury.change_bankstatementline",
+        "bulk_restore": "treasury.change_bankstatementline",
     }
 
     queryset = BankStatementLine.objects.all().select_related(
@@ -752,6 +780,16 @@ class BankStatementLineViewSet(EditPolicyMixin, viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=400)
         except Exception as e:
             return Response({'error': str(e)}, status=500)
+
+    @action(detail=False, methods=["post"])
+    def bulk_restore(self, request):
+        """Vuelve a incluir en la conciliación las líneas excluidas de la selección."""
+        try:
+            from treasury.services import BankStatementService
+            count = BankStatementService.bulk_restore_from_request(request)
+            return Response({"message": f"{count} movimientos incluidos"})
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=["post"])
     def bulk_exclude(self, request):

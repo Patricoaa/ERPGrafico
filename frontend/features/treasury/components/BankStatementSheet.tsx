@@ -1,47 +1,53 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { FileText, Link2, type LucideIcon } from "lucide-react"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { Activity, Download, FileText, Link2, ListChecks, Trash2 } from "lucide-react"
+import { useGlobalModalActions, useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import {
+    ActionConfirmModal,
     DocumentDrawerShell,
     DocumentActionsMenu,
     DocumentLifecycle,
     DocumentFieldGrid,
-    FormSection,
     StatusBadge,
     type DocumentActionItem,
     type DocumentField,
     type DocumentSheetTab,
     type LifecycleStep,
 } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit"
+import { EntitySidebar } from "@/features/comments"
+import {
+    StatementDetailPanel,
+    canDeleteStatement,
+    canReconcileStatement,
+    deleteBlockedReason,
+    useDeleteStatementMutation,
+    useDownloadStatementFile,
+} from "@/features/finance"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout } from "@/features/_shared"
 import { useDocumentRelations } from "@/features/documents/hooks/useDocumentRelations"
-import type { DocumentDomain, DocumentLink } from "@/features/documents/types"
+import type { DocumentDomain } from "@/features/documents/types"
 import { DocumentRelationsTab } from "@/features/documents/components/DocumentRelationsTab"
 import { formatCurrency } from "@/lib/money"
 import { format } from "date-fns"
 import { toDate } from "@/lib/utils"
 import { useBankStatement, type BankStatementData } from "@/features/treasury/hooks/useBankStatement"
 import { useInvalidateDocuments } from "@/features/documents/hooks/useInvalidateDocuments"
-import { resolveRegistryActions, type ResolvedDocumentAction } from "@/features/documents/utils/actions"
-import { useAuth } from "@/contexts/AuthContext"
-import { showApiError } from "@/lib/errors"
 
 const LABEL = "treasury.bankstatement"
 const AUDIT_TYPE = "bankstatement" as const
 
 /**
- * Ficha documental de Cartola Bancaria (ADR-0083, component-document-sheet.md).
- * Modo VISTA: usa DocumentDrawerShell con tabs Resumen · Relaciones,
- * ciclo de vida, actions menu e ActivitySidebar.
+ * Ficha documental de la cartola bancaria (ADR-0083, component-document-sheet.md), abierta como pestaña
+ * del espacio de trabajo (`openEntity`). Tabs: Resumen · Líneas · Relaciones. Rail: comentarios y actividad.
+ * Acciones: reconciliar (mesa en otra pestaña), eliminar un borrador sin trabajo y descarga del original.
  */
 export interface BankStatementSheetProps {
     id: number | null
     open: boolean
     onOpenChange: (open: boolean) => void
     embedded?: boolean
+    /** Tras eliminar la cartola: la pestaña que la muestra se cierra. */
     onActionSuccess?: () => void
 }
 
@@ -49,17 +55,13 @@ export function BankStatementSheet({ id, open, onOpenChange, embedded = false, o
     const { statement, isLoading: loading, isError, refetch } = useBankStatement(id ?? null)
     const { data: relations } = useDocumentRelations(LABEL, id ?? null)
     const invalidateDocuments = useInvalidateDocuments()
-    const { user } = useAuth()
-    const permissions: string[] = user?.permissions ?? []
+    const { openWorkbench } = useGlobalModalActions()
+    const deleteMutation = useDeleteStatementMutation()
+    const { mutate: downloadFile } = useDownloadStatementFile()
 
     const [tab, setTab] = useState("summary")
     const [domain, setDomain] = useState<DocumentDomain | null>(null)
-
-    const handleSuccess = () => {
-        void refetch()
-        void invalidateDocuments()
-        onActionSuccess?.()
-    }
+    const [deleteOpen, setDeleteOpen] = useState(false)
 
     const { printRef, handlePrint } = usePrintableDrawer()
     const displayId = statement?.display_id ?? `#${id}`
@@ -70,38 +72,59 @@ export function BankStatementSheet({ id, open, onOpenChange, embedded = false, o
         if (statement?.id && displayId) setEntityDisplay(LABEL, statement.id, String(displayId))
     }, [statement?.id, displayId, setEntityDisplay])
 
-    // No actions registry for bank statement yet
-    const resolved: ResolvedDocumentAction<BankStatementData>[] = []
+    const canReconcile = !!statement && canReconcileStatement({ state: statement.status, reconciliation_progress: statement.reconciliation_progress })
+    const canDelete = !!statement && canDeleteStatement({ state: statement.status, touched_lines: statement.touched_lines ?? 0 })
+    const deniedDelete = statement ? deleteBlockedReason({ state: statement.status, touched_lines: statement.touched_lines ?? 0 }) : null
 
-    const toItem = ({ action, disabled, disabledReason }: ResolvedDocumentAction<BankStatementData>): DocumentActionItem => ({
-        id: action.id,
-        label: action.label,
-        icon: action.icon,
-        disabled,
-        disabledReason,
-        onClick: () => {},
-    })
-
-    const primary = null
-    const secondary = resolved
-
-    const lifecycleSteps = statement ? getBankStatementLifecycle(statement) : null
+    const actions: DocumentActionItem[] = statement ? [
+        {
+            id: "reconcile",
+            label: "Reconciliar",
+            icon: Activity,
+            onClick: () => openWorkbench(statement.id, statement.display_id),
+            disabled: !canReconcile,
+            disabledReason: canReconcile ? undefined : "La cartola ya está confirmada o conciliada al 100 %.",
+        },
+        {
+            id: "download",
+            label: "Descargar original",
+            icon: Download,
+            onClick: () => downloadFile({ statementId: statement.id, fileName: statement.file_name ?? statement.display_id }),
+            disabled: !statement.has_file,
+            disabledReason: statement.has_file ? undefined : "La cartola no tiene archivo original.",
+        },
+        {
+            id: "delete",
+            label: "Eliminar",
+            icon: Trash2,
+            onClick: () => setDeleteOpen(true),
+            disabled: !canDelete,
+            disabledReason: deniedDelete ?? undefined,
+            destructive: true,
+        },
+    ] : []
 
     const openRelationsAt = (stepId: string) => {
         setDomain(["origin", "treasury", "accounting"].includes(stepId) ? (stepId as DocumentDomain) : null)
         setTab("relations")
     }
 
+    const lifecycleSteps = statement ? getBankStatementLifecycle(statement) : null
+
     const tabs: DocumentSheetTab[] = statement ? [
         { value: "summary", label: "Resumen", icon: FileText, content: <BankStatementSummaryTab statement={statement} /> },
+        {
+            value: "lines", label: "Líneas", icon: ListChecks, badge: statement.total_lines,
+            content: <StatementDetailPanel statementId={statement.id} detailOnly />,
+        },
         {
             value: "relations", label: "Relaciones", icon: Link2, badge: relations?.relations.length,
             content: (
                 <DocumentRelationsTab
                     label={LABEL}
                     id={statement.id}
-                    sectionActions={getSectionActions(resolved)}
-                    rowActions={getRowActions()}
+                    sectionActions={{}}
+                    rowActions={() => []}
                     domain={domain}
                     onDomainChange={setDomain}
                 />
@@ -122,7 +145,7 @@ export function BankStatementSheet({ id, open, onOpenChange, embedded = false, o
                         <div className="flex justify-between"><span>Cuenta:</span><span>{statement.treasury_account_name}</span></div>
                         <div className="flex justify-between"><span>Saldo Inicial:</span><span className="font-bold">{formatCurrency(Number(statement.opening_balance || 0))}</span></div>
                         <div className="flex justify-between"><span>Saldo Final:</span><span className="font-bold">{formatCurrency(Number(statement.closing_balance || 0))}</span></div>
-                        <div className="flex justify-between"><span>Fecha:</span><span>{statement.date ? format(toDate(statement.date), "dd/MM/yyyy") : "-"}</span></div>
+                        <div className="flex justify-between"><span>Fecha:</span><span>{statement.statement_date ? format(toDate(statement.statement_date), "dd/MM/yyyy") : "-"}</span></div>
                     </div>
                 </PrintableLayout>
             )}
@@ -136,8 +159,8 @@ export function BankStatementSheet({ id, open, onOpenChange, embedded = false, o
                 icon={identity.icon}
                 headerActions={statement && (
                     <DocumentActionsMenu
-                        primary={primary ? toItem(primary) : null}
-                        actions={secondary.map(toItem)}
+                        primary={null}
+                        actions={actions}
                         onPrint={handlePrint}
                     />
                 )}
@@ -154,8 +177,22 @@ export function BankStatementSheet({ id, open, onOpenChange, embedded = false, o
                 tabs={tabs}
                 tab={tab}
                 onTabChange={setTab}
-                // No ActivitySidebar for bank statements yet - entity type not in ActivitySidebar union
-                sidebar={undefined}
+                sidebar={statement ? <EntitySidebar entityType={AUDIT_TYPE} entityId={statement.id} /> : undefined}
+            />
+
+            <ActionConfirmModal
+                open={deleteOpen}
+                onOpenChange={(next) => { if (!next) setDeleteOpen(false) }}
+                onConfirm={async () => {
+                    if (!statement) return
+                    await deleteMutation.mutateAsync(statement.id)
+                    setDeleteOpen(false)
+                    onActionSuccess?.()
+                }}
+                title={`Eliminar ${displayId}`}
+                description="Se eliminará el borrador, sus líneas y el archivo original importado. No se puede deshacer."
+                variant="destructive"
+                confirmText="Eliminar"
             />
         </>
     )
@@ -179,7 +216,7 @@ function BankStatementSummaryTab({ statement }: { statement: BankStatementData }
             label: "Saldo Final",
             value: <span className="font-bold tabular-nums">{formatCurrency(Number(statement.closing_balance || 0))}</span>,
         },
-        ...(statement.reconciliation_progress != null ? [{
+        {
             label: "Progreso Conciliación",
             value: (
                 <div className="flex items-center gap-2">
@@ -192,10 +229,18 @@ function BankStatementSummaryTab({ statement }: { statement: BankStatementData }
                     <span className="text-xs font-medium tabular-nums">{statement.reconciliation_progress}%</span>
                 </div>
             ),
-        }] : []),
+        },
         {
             label: "Fecha",
-            value: statement.date ? format(toDate(statement.date), "dd/MM/yyyy") : "—",
+            value: statement.statement_date ? format(toDate(statement.statement_date), "dd/MM/yyyy") : "—",
+        },
+        {
+            label: "Importada",
+            value: `${format(new Date(statement.imported_at), "dd/MM/yyyy HH:mm")} · ${statement.imported_by_name}`,
+        },
+        {
+            label: "Archivo original",
+            value: statement.has_file ? (statement.file_name ?? "Disponible") : "Sin archivo",
         },
     ]
 
@@ -204,6 +249,12 @@ function BankStatementSummaryTab({ statement }: { statement: BankStatementData }
             <section aria-label="Contexto">
                 <DocumentFieldGrid fields={contextFields} className="w-auto justify-start text-left" />
             </section>
+            {statement.notes ? (
+                <section aria-label="Notas" className="space-y-1">
+                    <h3 className="text-3xs font-bold uppercase tracking-wider text-muted-foreground">Notas</h3>
+                    <p className="whitespace-pre-line text-xs text-foreground">{statement.notes}</p>
+                </section>
+            ) : null}
         </div>
     )
 }
@@ -213,7 +264,7 @@ function getBankStatementLifecycle(statement: BankStatementData): LifecycleStep[
         { id: "origin", label: "Origen", icon: FileText, status: "success" },
     ]
 
-    if (statement.status === "CONFIRMED" || statement.status === "RECONCILED") {
+    if (statement.status === "CONFIRMED") {
         steps.push({ id: "confirmed", label: "Confirmada", icon: FileText, status: "success" })
     } else {
         steps.push({ id: "confirmed", label: "Confirmar", icon: FileText, status: "neutral" })
@@ -228,26 +279,4 @@ function getBankStatementLifecycle(statement: BankStatementData): LifecycleStep[
     }
 
     return steps
-}
-
-function getSectionActions(resolved: ResolvedDocumentAction<BankStatementData>[]): Partial<Record<DocumentDomain, DocumentActionItem[]>> {
-    const result: Partial<Record<DocumentDomain, DocumentActionItem[]>> = {}
-    for (const r of resolved) {
-        const domain = r.category as DocumentDomain
-        if (domain) {
-            (result[domain] ??= []).push({
-                id: r.action.id,
-                label: r.action.label,
-                icon: r.action.icon,
-                disabled: r.disabled,
-                disabledReason: r.disabledReason,
-                onClick: () => {},
-            })
-        }
-    }
-    return result
-}
-
-function getRowActions(): (link: DocumentLink) => DocumentActionItem[] {
-    return function(_link: DocumentLink): DocumentActionItem[] { return [] }
 }

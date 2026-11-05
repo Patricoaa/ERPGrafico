@@ -40,7 +40,6 @@ export function Step1_Customer({
     // Show grid in POS inline mode (touch-optimised), fall back to prop or device detection
     const showContactGrid = isInline ? true : (touchMode ?? isTouchPOS)
 
-
     const handleSelect = (contact: Contact) => {
         setSelectedCustomerId(contact.id.toString())
         setSelectedCustomerName(contact.name)
@@ -102,6 +101,7 @@ export function Step1_Customer({
                     selectedId={selectedCustomerId}
                     onSelect={handleSelect}
                     placeholder="Buscar por Nombre, RUT o Email..."
+                    creatable
                 />
             ) : (
                 <div className="space-y-4">

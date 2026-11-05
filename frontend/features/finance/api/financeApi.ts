@@ -120,6 +120,20 @@ export const financeApi = {
     },
     getStatement: (id: number) =>
         api.get<unknown>(`/treasury/statements/${id}/`).then(r => r.data),
+    deleteStatement: (id: number) =>
+        api.delete(`/treasury/statements/${id}/`).then(() => undefined),
+    /** Descarga el archivo original importado (permiso de ver la cartola en backend). */
+    downloadStatementFile: async (id: number, fileName: string) => {
+        const res = await api.get<Blob>(`/treasury/statements/${id}/download/`, { responseType: 'blob' })
+        const url = window.URL.createObjectURL(res.data)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = fileName
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+    },
     getStatementFormats: () =>
         api.get<unknown>('/treasury/statements/formats/').then(r => r.data),
     previewStatement: (formData: FormData) =>
@@ -177,6 +191,8 @@ export const financeApi = {
         api.patch<unknown>(`/treasury/statement-lines/${lineId}/`, payload).then(r => r.data),
     bulkExcludeLines: (payload: Record<string, unknown>) =>
         api.post<unknown>('/treasury/statement-lines/bulk_exclude/', payload).then(r => r.data),
+    bulkRestoreLines: (lineIds: number[]) =>
+        api.post<unknown>('/treasury/statement-lines/bulk_restore/', { line_ids: lineIds }).then(r => r.data),
     allocateMovement: (movementId: number, payload: Record<string, unknown>) =>
         api.post<unknown>(`/treasury/movements/${movementId}/allocate/`, payload).then(r => r.data),
     createMovement: (payload: Record<string, unknown>) =>

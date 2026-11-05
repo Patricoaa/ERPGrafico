@@ -873,12 +873,9 @@ class Product(models.Model):
             if self.pk is None and self.track_inventory is None:
                 self.track_inventory = self.product_type == self.Type.STORABLE
 
-            # Express manufacturables (mfg_auto_finalize) do not track inventory
-            # The profile has no requires_advanced_manufacturing: that flag lives on Product.
+            # Express manufacturables never track finished-good inventory.
             if self.is_express:
                 self.track_inventory = False
-            elif self.product_type == self.Type.MANUFACTURABLE and not self.requires_advanced_manufacturing:
-                self.track_inventory = True
         # Fallback for base UoM if missing but others are present
         if not self.uom:
             if self.sale_uom:

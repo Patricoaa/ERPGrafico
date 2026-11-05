@@ -366,3 +366,53 @@ export function useCreateMovementMutation(treasuryAccountId: number) {
     })
     return { createMovement: createMovementMutation.mutateAsync, isCreatingMovement: createMovementMutation.isPending }
 }
+
+function invalidateStatementViews(queryClient: ReturnType<typeof useQueryClient>, statementId?: number) {
+    const keys: (readonly unknown[])[] = [reconciliationKeys.statements()]
+    if (statementId) keys.push(reconciliationKeys.statement(statementId))
+    invalidateCrossFeature(queryClient, keys)
+}
+
+/** Elimina un borrador sin trabajo de conciliación. */
+export function useDeleteStatementMutation() {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (statementId: number) => financeApi.deleteStatement(statementId),
+        onSuccess: (_data, statementId) => {
+            toast.success('Cartola eliminada')
+            queryClient.removeQueries({ queryKey: reconciliationKeys.statement(statementId) })
+            invalidateStatementViews(queryClient)
+        },
+        onError: (err: Error) => showApiError(err, 'No se pudo eliminar la cartola'),
+    })
+}
+
+/** Descarga el archivo original de la cartola (adjunto importado). */
+export function useDownloadStatementFile() {
+    return useMutation({
+        mutationFn: ({ statementId, fileName }: { statementId: number; fileName: string }) =>
+            financeApi.downloadStatementFile(statementId, fileName),
+        onError: (err: Error) => showApiError(err, 'No se pudo descargar el archivo original'),
+    })
+}
+
+/** Vuelve a incluir en la conciliación varias líneas excluidas en una sola operación. */
+export function useBulkRestoreMutation(statementId: number) {
+    const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+    return useMutation({
+        mutationFn: (lineIds: number[]) => financeApi.bulkRestoreLines(lineIds),
+        onSuccess: (data) => {
+            markLocalMutation()
+            const message = (data as { message?: string } | undefined)?.message
+            toast.success(message ?? "Movimientos incluidos")
+        },
+        onError: (err: Error) => showApiError(err, 'Error al incluir los movimientos'),
+        onSettled: () => {
+            invalidateCrossFeature(queryClient, [
+                [...reconciliationKeys.all, 'unreconciled-lines', statementId],
+                reconciliationKeys.statement(statementId),
+            ])
+        },
+    })
+}

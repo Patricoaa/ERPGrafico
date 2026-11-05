@@ -3,6 +3,7 @@
 import { formatCurrency } from "@/lib/money"
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -40,6 +41,7 @@ export function StatementDetailPanel({
     detailBasePath,
 }: StatementDetailPanelProps) {
     const router = useRouter()
+    const { openWorkbench } = useGlobalModalActions()
     const basePath = detailBasePath ?? reconciliationBase ?? (bankId ? `/treasury/bank-center/${bankId}/reconciliation` : `/treasury/reconciliation`)
 
     const [unmatchDialog, setUnmatchDialog] = useState<{ open: boolean; lineId: number | null }>({ open: false, lineId: null })
@@ -215,7 +217,7 @@ export function StatementDetailPanel({
                         <Collection.Toolbar
                             action={
                                 !hideCreateAction && statement.state !== "CONFIRMED" && statement.reconciliation_progress < 100 ? (
-                                    <Button onClick={() => router.push(`${basePath}/${statement.id}/workbench`)}>
+                                    <Button onClick={() => openWorkbench(statement.id, statement.display_id)}>
                                         <Activity className="mr-2 h-4 w-4" />
                                         Reconciliar
                                     </Button>
