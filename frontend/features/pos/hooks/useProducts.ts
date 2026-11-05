@@ -79,7 +79,7 @@ export function useProducts() {
     const { data: uoms = [], isLoading: loadingUoms } = useQuery({
         queryKey: ['uoms'],
         queryFn: async () => {
-            const data = await posApi.getUoms({ is_active: true, page_size: 500 })
+            const data = await posApi.getUoms({ is_active: true })
             return Array.isArray(data) ? data : ((data as { results?: unknown[] })?.results ?? [])
         },
         staleTime: staleTime.session,

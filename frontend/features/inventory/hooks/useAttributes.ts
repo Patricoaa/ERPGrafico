@@ -45,9 +45,16 @@ export function useAttributes({ filters }: { filters?: AttributeFilters } = {}) 
             const attrs = attrRes.data
             const vals = valRes.data
 
+            // Agrupa los valores por atributo una sola vez: O(a + v), no O(a·v).
+            const valuesByAttribute = new Map<number, AttributeValue[]>()
+            for (const value of vals) {
+                const bucket = valuesByAttribute.get(value.attribute)
+                if (bucket) bucket.push(value)
+                else valuesByAttribute.set(value.attribute, [value])
+            }
             return attrs.map((attr: Attribute) => ({
                 ...attr,
-                values: vals.filter((v: AttributeValue) => v.attribute === attr.id)
+                values: valuesByAttribute.get(attr.id) ?? []
             }))
         },
         staleTime: staleTime.reference, // 15 min — datos de configuración
