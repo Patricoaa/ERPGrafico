@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import BooleanField, Case, Count, Sum, Value, When
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
@@ -70,50 +71,66 @@ class F29CalculationService:
             store[dte_type]["total"] += total_net
             store[dte_type]["count"] += 1
 
-        # Process each invoice
-        for invoice in invoices:
-            is_sale = invoice.sale_order_id is not None
-            is_exempt = invoice.is_tax_exempt
+        # Aggregate in SQL by (is_sale, dte_type): one row per combination instead of
+        # loading every invoice of the month. Same branches as before; exempt = the
+        # exempt DTE types (Invoice.is_tax_exempt is derived from dte_type).
+        exempt_types = {Invoice.DTEType.FACTURA_EXENTA, Invoice.DTEType.BOLETA_EXENTA}
+        buckets = (
+            invoices.annotate(
+                is_sale=Case(
+                    When(sale_order__isnull=False, then=Value(True)),
+                    default=Value(False),
+                    output_field=BooleanField(),
+                )
+            )
+            .values("is_sale", "dte_type")
+            .annotate(total=Sum("total_net"), count=Count("id"))
+            .order_by("is_sale", "dte_type")
+        )
+
+        for row in buckets:
+            dte_type = row["dte_type"]
+            is_sale = row["is_sale"]
+            is_exempt = dte_type in exempt_types
+            total_net = row["total"] or Decimal("0")
+            count = row["count"]
+            dte_display = str(Invoice(dte_type=dte_type).get_dte_type_display())
+
+            def _add(store: dict[str, dict]) -> None:
+                if dte_type not in store:
+                    store[dte_type] = {"dte_type": dte_type, "dte_type_display": dte_display, "total": Decimal("0"), "count": 0}
+                store[dte_type]["total"] += total_net
+                store[dte_type]["count"] += count
 
             if is_sale:
-                # Sales documents
-                if invoice.dte_type == Invoice.DTEType.NOTA_CREDITO:
-                    # Credit notes reduce sales
+                if dte_type == Invoice.DTEType.NOTA_CREDITO:
                     if not is_exempt:
-                        credit_notes_taxed += invoice.total_net
-                elif invoice.dte_type == Invoice.DTEType.NOTA_DEBITO:
-                    # Debit notes increase sales
+                        credit_notes_taxed += total_net
+                elif dte_type == Invoice.DTEType.NOTA_DEBITO:
                     if not is_exempt:
-                        debit_notes_taxed += invoice.total_net
+                        debit_notes_taxed += total_net
+                elif is_exempt:
+                    sales_exempt += total_net
+                    _add(sales_exempt_by_dte)
                 else:
-                    # Regular invoices/boletas
-                    if is_exempt:
-                        sales_exempt += invoice.total_net
-                        _accumulate(sales_exempt_by_dte, invoice.dte_type, invoice.get_dte_type_display(), invoice.total_net)
-                    else:
-                        sales_taxed += invoice.total_net
-                        _accumulate(sales_taxed_by_dte, invoice.dte_type, invoice.get_dte_type_display(), invoice.total_net)
+                    sales_taxed += total_net
+                    _add(sales_taxed_by_dte)
             else:
-                # Purchase documents
-                if invoice.dte_type == Invoice.DTEType.NOTA_CREDITO:
-                    # Credit notes reduce purchases
+                if dte_type == Invoice.DTEType.NOTA_CREDITO:
                     if not is_exempt:
-                        purchase_credit_notes += invoice.total_net
-                elif invoice.dte_type == Invoice.DTEType.NOTA_DEBITO:
-                    # Debit notes increase purchases
+                        purchase_credit_notes += total_net
+                elif dte_type == Invoice.DTEType.NOTA_DEBITO:
                     if not is_exempt:
-                        purchase_debit_notes += invoice.total_net
+                        purchase_debit_notes += total_net
+                elif dte_type in [Invoice.DTEType.BOLETA, Invoice.DTEType.BOLETA_EXENTA]:
+                    # Boletas do not generate VAT credit for purchases
+                    pass
+                elif is_exempt:
+                    purchases_exempt += total_net
+                    _add(purchases_exempt_by_dte)
                 else:
-                    # Regular purchase invoices
-                    if invoice.dte_type in [Invoice.DTEType.BOLETA, Invoice.DTEType.BOLETA_EXENTA]:
-                        # Boletas do not generate VAT credit for purchases
-                        pass
-                    elif is_exempt:
-                        purchases_exempt += invoice.total_net
-                        _accumulate(purchases_exempt_by_dte, invoice.dte_type, invoice.get_dte_type_display(), invoice.total_net)
-                    else:
-                        purchases_taxed += invoice.total_net
-                        _accumulate(purchases_taxed_by_dte, invoice.dte_type, invoice.get_dte_type_display(), invoice.total_net)
+                    purchases_taxed += total_net
+                    _add(purchases_taxed_by_dte)
 
         # Calculate net amounts
         net_taxed_sales = sales_taxed + debit_notes_taxed - credit_notes_taxed
@@ -137,18 +154,15 @@ class F29CalculationService:
         # Get Remanente (Carryforward) from Accounting Account Balance
         vat_credit_carryforward = Decimal("0")
         if settings and settings.vat_carryforward_account:
-            from django.db.models import Sum
-
             # Balance up to (but not including) start_date
             carryforward_items = JournalItem.objects.filter(
                 account=settings.vat_carryforward_account,
                 entry__status=JournalEntry.State.POSTED,
                 entry__date__lt=start_date,
             )
-            total_debit = carryforward_items.aggregate(Sum("debit"))["debit__sum"] or Decimal("0")
-            total_credit = carryforward_items.aggregate(Sum("credit"))["credit__sum"] or Decimal(
-                "0"
-            )
+            totals = carryforward_items.aggregate(debit=Sum("debit"), credit=Sum("credit"))
+            total_debit = totals["debit"] or Decimal("0")
+            total_credit = totals["credit"] or Decimal("0")
             # Remanente is an asset, so Debit - Credit
             vat_credit_carryforward = total_debit - total_credit
 
