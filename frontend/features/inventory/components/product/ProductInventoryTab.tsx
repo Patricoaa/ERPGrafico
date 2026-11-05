@@ -24,9 +24,6 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
     const isService = productType === 'SERVICE'
     const canBeSold = form.watch("can_be_sold")
     const stockUomId = form.watch("uom")
-    const mfgAutoFinalize = form.watch("mfg_auto_finalize")
-    const requiresAdvancedmfg = form.watch("requires_advanced_manufacturing")
-
     const purchaseUomProduct = useMemo(() => ({
         id: 0,
         name: "",
@@ -34,11 +31,10 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
         allowed_sale_uoms: []
     }), [stockUomId])
 
-    const isSimpleMfg = productType === 'MANUFACTURABLE' && !mfgAutoFinalize && !requiresAdvancedmfg
-    const isAdvancedMfg = productType === 'MANUFACTURABLE' && requiresAdvancedmfg
+    const isMfg = productType === 'MANUFACTURABLE'
 
     // Determine if switch is disabled based on requirements
-    const isSwitchDisabled = productType === 'STORABLE' || productType === 'CONSUMABLE' || productType === 'SERVICE' || mfgAutoFinalize || isSimpleMfg || isAdvancedMfg || frozenFieldsOf(initialData).has('track_inventory')
+    const isSwitchDisabled = productType === 'STORABLE' || productType === 'CONSUMABLE' || productType === 'SERVICE' || frozenFieldsOf(initialData).has('track_inventory')
 
     return (
         <div className="space-y-10 animate-in fade-in duration-500">
@@ -130,20 +126,22 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
                         name="track_inventory"
                         render={({ field }) => (
                             <div className="space-y-6">
-                                <LabeledSwitch
-                                    label="Seguimiento de Inventario"
-                                    description={mfgAutoFinalize ? "Desactivado: Los productos de fabricación express no requieren seguimiento." : isAdvancedMfg ? "Desactivado: Los productos de fabricación avanzada no requieren seguimiento." : isSimpleMfg ? "Requerido: Los productos de fabricación simple siempre controlan stock." : "Habilita el control de existencias y movimientos para este producto."}
-                                    checked={field.value}
-                                    onCheckedChange={(val) => {
-                                        requestAnimationFrame(() => {
-                                            form.setValue("track_inventory", val, { shouldDirty: true, shouldValidate: false })
-                                        })
-                                    }}
-                                    disabled={isSwitchDisabled}
-                                    color="info"
-                                    icon={<Warehouse className="h-4 w-4 transition-colors" />}
-                                    className="h-full"
-                                />
+                                {!isMfg && (
+                                    <LabeledSwitch
+                                        label="Seguimiento de Inventario"
+                                        description="Habilita el control de existencias y movimientos para este producto."
+                                        checked={field.value}
+                                        onCheckedChange={(val) => {
+                                            requestAnimationFrame(() => {
+                                                form.setValue("track_inventory", val, { shouldDirty: true, shouldValidate: false })
+                                            })
+                                        }}
+                                        disabled={isSwitchDisabled}
+                                        color="info"
+                                        icon={<Warehouse className="h-4 w-4 transition-colors" />}
+                                        className="h-full"
+                                    />
+                                )}
 
                                 {/* Kept mounted with CSS visibility — avoids unmount of Radix Popover-based selectors during production-mode commits, which would loop via usePresence/safelyDetachRef. */}
                                 <div className={cn("space-y-4 animate-in fade-in slide-in-from-top-2 duration-400", !field.value && "hidden")}>
@@ -156,7 +154,6 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
                                                 value={whField.value}
                                                 onChange={whField.onChange}
                                                 error={fieldState.error?.message}
-                                                disabled={isEditing}
                                             />
                                         )}
                                     />

@@ -987,15 +987,13 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                             Emitir Factura
                         </h4>
                         <p className="text-sm text-muted-foreground leading-relaxed">
-                            Al finalizar el cobro, ten presente que marcaste la <b>Factura</b> para ser emitida posteriormente.
-                            <br /><br />
-                            No olvides emitirla externamente e ingresarle los folios al sistema una vez concluido el servicio.
+                            Al finalizar el cobro, ten presente que marcaste que la Factura será emitida posteriormente. Emite la factura externamente (SII Gratuito) e ingresa los folios al sistema.                            
                         </p>
                     </div>
                     <div className="w-full pt-4">
                         <Button
                             variant="default"
-                            className="w-full h-12 font-medium uppercase tracking-widest text-xs rounded-sm "
+                            className="w-full h-12 font-bold uppercase tracking-widest text-xs rounded-sm "
                             onClick={() => {
                                 setShowInvoiceReminder(false)
                                 if (isSessionHost) {

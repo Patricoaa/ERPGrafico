@@ -2284,7 +2284,7 @@ class WorkOrderService:
         manufacturable_ids = list(
             material_qs.filter(
                 component__product_type=Product.Type.MANUFACTURABLE,
-                component__requires_advanced_manufacturing=False,
+                component__track_inventory=False,
             ).values_list("component_id", flat=True)
         )
         products_by_id = {}

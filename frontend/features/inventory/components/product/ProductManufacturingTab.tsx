@@ -7,7 +7,7 @@ import { FormField } from "@/components/ui/form"
 
 import { Button } from "@/components/ui/button"
 import {TableRow, TableBody, TableCell} from "@/components/ui/table"
-import {Package, Layers, Clock, Settings2, Info, Monitor, Printer, Scissors, Trash2, Factory} from "lucide-react"
+import {Package, Layers, Clock, Settings2, Info, Monitor, Printer, Scissors, Trash2, Factory, Warehouse} from "lucide-react"
 import { type UseFormReturn } from "react-hook-form"
 import { type ProductFormValues } from "./schema"
 import { type ProductInitialData } from "@/types/forms"
@@ -40,7 +40,7 @@ export function ProductManufacturingTab({ form, initialData, disabled = false }:
     const requiresAdvancedmfg = form.watch("requires_advanced_manufacturing")
     const isExpress = form.watch("mfg_auto_finalize")
     const hasVariants = form.watch("has_variants")
-    const productionMode = requiresAdvancedmfg ? "advanced" : (isExpress ? "express" : "simple")
+    const productionMode = isExpress ? "express" : "advanced"
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -53,23 +53,11 @@ export function ProductManufacturingTab({ form, initialData, disabled = false }:
                             mode="single"
                             label="Modo de Producción"
                             icon={<Factory className="h-4 w-4" />}
-                            columns={3}
+                            columns={2}
                             disabled={disabled}
                             value={productionMode}
                             onChange={(value) => {
-                                if (value === "simple") {
-                                    const patch = {
-                                        requires_advanced_manufacturing: false,
-                                        mfg_auto_finalize: false,
-                                        track_inventory: true,
-                                    };
-                                    Object.entries(patch).forEach(([k, v]) => {
-                                        const key = k as keyof ProductFormValues;
-                                        if (form.getValues(key) !== v) {
-                                            form.setValue(key, v, { shouldDirty: true });
-                                        }
-                                    });
-                                } else if (value === "express") {
+                                if (value === "express") {
                                     const patch = {
                                         has_bom: true,
                                         requires_advanced_manufacturing: false,
@@ -87,7 +75,6 @@ export function ProductManufacturingTab({ form, initialData, disabled = false }:
                                         has_bom: true,
                                         requires_advanced_manufacturing: true,
                                         mfg_auto_finalize: false,
-                                        track_inventory: false,
                                     };
                                     Object.entries(patch).forEach(([k, v]) => {
                                         const key = k as keyof ProductFormValues;
@@ -98,12 +85,31 @@ export function ProductManufacturingTab({ form, initialData, disabled = false }:
                                 }
                             }}
                             items={[
-                                { value: "simple", label: "Simple", description: "Manual / Lote", icon: <Package className="h-5 w-5" aria-hidden /> },
                                 { value: "express", label: "Express", description: "Auto-cierre", icon: <Clock className="h-5 w-5" aria-hidden /> },
                                 { value: "advanced", label: "Avanzado", description: "Wizard Etapas", icon: <Layers className="h-5 w-5" aria-hidden /> },
                             ]}
                         />
                    
+
+                    {!isExpress && (
+                        <FormField
+                            control={form.control}
+                            name="track_inventory"
+                            render={({ field }) => (
+                                <LabeledSwitch
+                                    label="Seguimiento de Inventario"
+                                    description="El producto terminado acumula stock al finalizar cada OT."
+                                    checked={field.value}
+                                    onCheckedChange={(val) => {
+                                        form.setValue("track_inventory", val, { shouldDirty: true, shouldValidate: false })
+                                    }}
+                                    disabled={disabled}
+                                    color="info"
+                                    icon={<Warehouse className="h-4 w-4" />}
+                                />
+                            )}
+                        />
+                    )}
 
                     <div className="space-y-4">
                         <FormField

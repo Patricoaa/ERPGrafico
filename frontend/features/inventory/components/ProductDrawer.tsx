@@ -229,7 +229,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
     // Effect 1: Product-type-driven business rules.
     // Fires only when product_type changes. Each branch is idempotent — setValue
     // is guarded by getValues comparison to avoid spurious notifications.
-    // Production-mode rules (advanced/express/simple) live in ProductManufacturingTab's
+    // Production-mode rules (advanced/express) live in ProductManufacturingTab's
     // Tabs onValueChange handler — not here — to avoid cross-component cascade.
     useEffect(() => {
         const opts = { shouldDirty: false, shouldValidate: false, shouldTouch: false }
@@ -238,6 +238,8 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
             if (!form.getValues("track_inventory") && !form.getValues("requires_advanced_manufacturing") && !form.getValues("mfg_auto_finalize")) {
                 form.setValue("track_inventory", true, opts)
             }
+        } else if (productType === "MANUFACTURABLE") {
+            if (form.getValues("can_be_purchased")) form.setValue("can_be_purchased", false, opts)
         } else if (productType === "CONSUMABLE") {
             if (form.getValues("track_inventory")) form.setValue("track_inventory", false, opts)
         } else if (productType === "SERVICE") {
@@ -338,7 +340,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                 receiving_warehouse: getId(data.receiving_warehouse),
                 track_inventory: data.track_inventory ?? true,
                 can_be_sold: data.can_be_sold ?? true,
-                can_be_purchased: data.can_be_purchased ?? true,
+                can_be_purchased: data.product_type === 'MANUFACTURABLE' ? false : (data.can_be_purchased ?? true),
                 has_bom: data.has_bom ?? false,
                 requires_advanced_manufacturing: data.requires_advanced_manufacturing ?? false,
                 mfg_enable_prepress: data.mfg_enable_prepress ?? false,

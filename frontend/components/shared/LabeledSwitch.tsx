@@ -96,6 +96,12 @@ export function LabeledSwitch({
             error={error}
             hint={hint}
             disabled={disabled}
+            onClick={(e) => {
+                if (disabled) return
+                const target = e.target as HTMLElement
+                if (target.closest('button, input, [role="switch"]')) return
+                onCheckedChange(!checked)
+            }}
             className={cn(
                 "transition-all duration-300",
                 checked ? colorStyles.container.checked : colorStyles.container.unchecked,
@@ -103,15 +109,8 @@ export function LabeledSwitch({
             )}
         >
             {/* typography-allow: meta - primitive internal height */}
-            <div
-                className="flex items-center justify-between w-full px-3 h-full min-h-[1.5rem] cursor-pointer gap-3"
-                onClick={(e) => {
-                    if (disabled) return
-                    const target = e.target as HTMLElement
-                    if (target.closest('button, input, [role="switch"]')) return
-                    onCheckedChange(!checked)
-                }}
-            >
+            <div className="flex items-center justify-between w-full px-3 h-full min-h-[1.5rem] gap-3">
+
                 {icon && (
                     <span className={cn("shrink-0 flex items-center transition-colors", checked ? colorStyles.icon : "text-muted-foreground/30")}>
                         {icon}
