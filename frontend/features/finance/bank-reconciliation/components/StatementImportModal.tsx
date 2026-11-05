@@ -8,9 +8,10 @@ import { getErrorMessage } from "@/lib/errors"
 import type { ColumnDef } from "@tanstack/react-table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { DataCell, DataTable, LabeledSelect, GenericWizard, FadeIn, type WizardStep, FormSection, DocumentAttachmentDropzone, LabeledInput, WizardStepsSidebar, type WizardSidebarStep } from "@/components/shared"
+import { DataCell, DataTable, LabeledSelect, BaseModal, DrawerLayout, FadeIn, FormSection, DocumentAttachmentDropzone, LabeledInput, WizardStepsSidebar, type WizardSidebarStep } from "@/components/shared"
+import { Button } from "@/components/ui/button"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
-import {FileUp, Columns, Table as TableIcon, CheckCircle2, FileSearch, Landmark, SlidersHorizontal, Calendar} from "lucide-react"
+import { FileUp, Columns, Table as TableIcon, CheckCircle2, FileSearch, Landmark, SlidersHorizontal, Calendar } from "lucide-react"
 import { financeApi } from "../../api/financeApi"
 import { cn } from "@/lib/utils"
 import { Chip } from "@/components/shared"
@@ -69,8 +70,6 @@ interface StatementImportModalProps {
     allowedAccountIds?: number[]
 }
 
-// Removed Step type as it's handled by GenericWizard
-
 // No longer needed here as it's handled by Zod
 
 export default function StatementImportModal({ open, onOpenChange, onSuccess, defaultAccountId, allowedAccountIds }: StatementImportModalProps) {
@@ -86,6 +85,8 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
     const [error, setError] = useState<string | null>(null)
 
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+    const [currentStep, setCurrentStep] = useState(0)
+    const [succeeded, setSucceeded] = useState(false)
 
     const currentYear = String(new Date().getFullYear())
     const currentMonth = String(new Date().getMonth() + 1)
@@ -144,6 +145,8 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
         setSkipFooterRows(0)
         setError(null)
         setSidebarCollapsed(false)
+        setCurrentStep(0)
+        setSucceeded(false)
     }, [form, defaultAccountId])
 
     const fetchBankFormats = useCallback(async () => {
@@ -330,7 +333,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
         setTimeout(resetForm, 300)
     }
 
-    const steps: WizardStep[] = [
+    const steps = [
         {
             id: 'UPLOAD',
             title: 'Carga de Archivo',
@@ -591,39 +594,93 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
     ]
 
     return (
-        <GenericWizard
+        <BaseModal
             open={open}
             onOpenChange={handleClose}
             icon={FileSearch}
             title="Importar Cartola Bancaria"
-            steps={steps}
-            onComplete={async () => { }} // Handled in onNext of last step
             size="xl"
             className="h-[88vh]"
-            contentClassName="p-0"
-            isLoading={loading}
-            isCompleting={loading}
-            leftSidebar={(ctx) => (
-                <WizardStepsSidebar
-                    title="Importación"
-                    currentStep={ctx.step}
-                    steps={sidebarSteps}
-                    density="compact"
-                    showCounter={false}
-                    width="w-full"
-                    collapsedWidth="w-full"
-                    collapsed={sidebarCollapsed}
-                    onToggleCollapsed={() => setSidebarCollapsed((prev) => !prev)}
-                />
-            )}
-            leftSidebarWidth={sidebarCollapsed ? "w-14" : "w-52"}
-            successContent={
-                <div className="flex flex-col items-center justify-center py-10 space-y-4">
+            hideScrollArea
+            footer={
+                succeeded ? (
+                    <div className="flex justify-end px-6 py-3">
+                        <Button size="sm" onClick={handleClose}>Cerrar</Button>
+                    </div>
+                ) : (
+                    <div className="flex items-center justify-between px-6 py-3">
+                        <div>
+                            {currentStep > 0 && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentStep((c) => c - 1)}
+                                    disabled={loading}
+                                >
+                                    ← Atrás
+                                </Button>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {currentStep < steps.length - 1 ? (
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={async () => {
+                                        const ok = await steps[currentStep].onNext()
+                                        if (ok) setCurrentStep((c) => c + 1)
+                                    }}
+                                    disabled={!steps[currentStep].isValid || loading}
+                                >
+                                    {loading ? 'Procesando…' : 'Siguiente →'}
+                                </Button>
+                            ) : (
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={async () => {
+                                        const ok = await steps[currentStep].onNext()
+                                        if (ok) setSucceeded(true)
+                                    }}
+                                    disabled={!steps[currentStep].isValid || loading}
+                                >
+                                    {loading ? 'Importando…' : 'Importar Cartola'}
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                )
+            }
+        >
+            {succeeded ? (
+                <div className="flex flex-1 flex-col items-center justify-center gap-4 h-full">
                     <CheckCircle2 className="h-16 w-16 text-success animate-bounce motion-reduce:animate-none" />
                     <h3 className="text-xl font-black uppercase tracking-widest text-foreground">Importación Exitosa</h3>
                     <p className="text-muted-foreground text-sm font-medium">La cartola ha sido procesada correctamente.</p>
                 </div>
-            }
-        />
+            ) : (
+                <DrawerLayout
+                    leftRailRaw
+                    leftRail={
+                        <WizardStepsSidebar
+                            title="Importación"
+                            currentStep={currentStep}
+                            steps={sidebarSteps}
+                            density="compact"
+                            showCounter={false}
+                            width="w-52"
+                            collapsedWidth="w-14"
+                            collapsed={sidebarCollapsed}
+                            onToggleCollapsed={() => setSidebarCollapsed((prev) => !prev)}
+                            className="shrink-0 border-r border-border/60"
+                        />
+                    }
+                    noPadding
+                >
+                    {steps[currentStep]?.component}
+                </DrawerLayout>
+            )}
+        </BaseModal>
     )
 }
