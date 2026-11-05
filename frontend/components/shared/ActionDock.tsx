@@ -45,7 +45,7 @@ export function ActionDock({ isVisible, children, className }: ActionDockProps) 
     return isVisible && (
         <div
             className={cn(
-                "surface-panel fixed bottom-6 z-[100] shadow-elevated px-6 py-2 flex items-center gap-8 transition-all duration-500 ease-[var(--ease-premium)]",
+                "surface-panel fixed bottom-6 z-[100] px-6 py-2 flex items-center gap-8 transition-all duration-500 ease-[var(--ease-premium)]",
                 "animate-in fade-in slide-in-from-bottom-4 ease-[cubic-bezier(0.34,1.56,0.64,1)] duration-500 fill-mode-both",
                 getPositionClass(),
                 className
@@ -67,7 +67,7 @@ ActionDock.Section = function ActionDockSection({ children, className }: { child
  */
 ActionDock.Stats = function ActionDockStats({ children, className }: { children: React.ReactNode, className?: string }) {
     return (
-        <div className={cn("flex items-center gap-8 bg-muted/40 px-8 py-2.5 rounded-full border border-border/40 shadow-inner", className)}>
+        <div className={cn("flex items-center gap-8 px-8 py-2.5", className)}>
             {children}
         </div>
     )
@@ -85,7 +85,7 @@ ActionDock.Stat = function ActionDockStat({
     return (
         <div className="flex flex-col border-r border-border/40 pr-8 last:border-0 justify-center">
             <div className="text-xs font-bold uppercase text-muted-foreground tracking-widest leading-none mb-1.5 whitespace-nowrap">{label}</div>
-            <div className={cn("text-xs font-mono font-bold leading-none", colorClass)}>
+            <div className={cn("text-xs font-bold leading-none", colorClass)}>
                 {value}
             </div>
         </div>

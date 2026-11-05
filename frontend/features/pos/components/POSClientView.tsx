@@ -726,12 +726,6 @@ export function POSClientView() {
                         <span className="text-xl font-black tracking-tight text-center text-foreground">¡Venta Exitosa!</span>
                     </div>
                 }
-
-                description={
-                    <>
-                        <p className="mb-4">
-                            La venta se ha procesado correctamente. ¿Desea imprimir el comprobante térmico?     
-                        </p></>}
                 footer={
                     <div className="flex flex-col sm:flex-row gap-3 w-full mt-4">
                         <Button
@@ -754,6 +748,10 @@ export function POSClientView() {
                     </div>
                 }
             >
+                <p className="mb-4 text-center text-sm text-muted-foreground">
+                    ¿Desea imprimir el comprobante?
+                </p>
+
                 {/* Hidden Receipt for Printing */}
                 {completedSaleData && (
                     <PrintableReceipt

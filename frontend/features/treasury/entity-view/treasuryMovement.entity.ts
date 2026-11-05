@@ -1,5 +1,7 @@
 import { defineEntity } from "@/components/entity-view"
 import { resolveTreasuryMovementIcon } from "@/lib/movement-icons"
+import { movementEndpoints } from "../lib/movementPath"
+import "./movementPath"
 import type { TreasuryMovement } from "../types"
 
 /** Cash/bank movements (ADR-0087 oleada C1). One entity for TreasuryMovementsClientView and the
@@ -17,19 +19,14 @@ export const treasuryMovementEntity = defineEntity<TreasuryMovement>()((f) => ({
         }, { label: "Tipo" }),
         date: f.date("date", { label: "Fecha" }),
         paymentMethod: f.text((m) => m.payment_method_display ?? m.payment_method ?? "", { label: "Método", tone: "secondary" }),
-        accounts: f.text((m) => {
-            let source = m.from_account_name || "Origen"
-            let dest = m.to_account_name || "Destino"
-            if (m.movement_type === "INBOUND") {
-                source = m.partner_name || "Particular"
-                dest = m.to_account_name || "Caja"
-            } else if (m.movement_type === "OUTBOUND") {
-                source = m.from_account_name || "Caja"
-                dest = m.partner_name || "Particular"
-            }
-            return `${source} → ${dest}`
-        }, { label: "Cuentas" }),
-        amount: f.flow("amount", { label: "Monto", direction: (m) => (m.movement_type === "OUTBOUND" ? "outflow" : "inflow") }),
+        accounts: f.value("movementPath", (m) => movementEndpoints(m), { label: "Cuentas" }),
+        // No icon in the flow badge: the card rail already carries the entry/exit arrow, and the
+        // shared CurrencyFlow glyph (↗/↙ trend) points the opposite way. Sign + color keep the meaning.
+        amount: f.flow("amount", {
+            label: "Monto",
+            direction: (m) => (m.movement_type === "OUTBOUND" ? "outflow" : "inflow"),
+            showIcon: false,
+        }),
     },
 }))
 

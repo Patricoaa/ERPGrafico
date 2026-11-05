@@ -173,7 +173,10 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
             // Omitted (not `undefined`) without pagination, so TanStack keeps its default pagination state.
             ...(pagination.mode === "none" ? {} : { pagination: pagination.mode === "server" ? pagination.state : clientPage }),
         },
-        getRowId: (row) => rowIdOf(entity, row),
+        // Derived lists (dry-run warnings, simulation previews) are not table records: they carry neither
+        // `id` nor `rowId`. Fall back to the row index, TanStack's default, so they keep unique keys
+        // instead of sharing `""` (which duplicates keys and collapses row selection into one row).
+        getRowId: (row, index) => rowIdOf(entity, row) || `row-${index}`,
         ...(tree
             ? {
                 getSubRows: (row: T) => (tree.children(row) ?? undefined) as T[] | undefined,

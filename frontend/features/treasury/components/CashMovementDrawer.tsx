@@ -8,6 +8,8 @@ import { DocumentSheet, SHEET_LEFT } from '@/features/documents'
 import { useGlobalModalActions } from '@/components/providers/GlobalModalProvider'
 import { useTreasuryMovement } from '@/features/treasury/hooks/useTreasuryMovement'
 import { useCashMovementActions } from '@/features/treasury/hooks/useCashMovementActions'
+import { movementEndpoints, formatMovementEndpoint } from '@/features/treasury/lib/movementPath'
+import { MovementEndpointValue } from '@/features/treasury/entity-view/movementPath'
 
 interface CashMovementDrawerProps extends TransactionDrawerProps {
   movementId?: number
@@ -25,8 +27,9 @@ export function CashMovementDrawer({ id, open, onOpenChange, movementId }: CashM
   const { setEntityDisplay } = useGlobalModalActions()
   const displayId = movement?.display_id ?? `#${entityId}`
   const movementType = movement?.movement_type_display ?? movement?.movement_type ?? ''
-  const from = movement?.from_container_name ?? movement?.from_account_name ?? null
-  const to = movement?.to_container_name ?? movement?.to_account_name ?? null
+  const path = movement ? movementEndpoints(movement) : null
+  const from = path ? formatMovementEndpoint(path.from) : null
+  const to = path ? formatMovementEndpoint(path.to) : null
   const isOutbound = movement?.movement_type === 'OUTBOUND'
 
   useEffect(() => {
@@ -72,7 +75,8 @@ export function CashMovementDrawer({ id, open, onOpenChange, movementId }: CashM
             ),
           },
           { label: "Medio de pago", value: [movementType, movement.payment_method_display ?? movement.payment_method].filter(Boolean).join(' · ') || null },
-          { label: "Origen → destino", value: from || to ? `${from ?? '—'} → ${to ?? '—'}` : null },
+          { label: "Origen", value: path ? <MovementEndpointValue endpoint={path.from} /> : null, span: 2 },
+          { label: "Destino", value: path ? <MovementEndpointValue endpoint={path.to} /> : null, span: 2 },
           { label: "Fecha", value: movement.date ? <DataCell.Date value={String(movement.date)} size="xs" className={SHEET_LEFT} /> : null },
           { label: "Referencia", value: movement.reference || null },
           { label: "Notas", value: movement.notes || movement.justify_reason || null, span: 3 },

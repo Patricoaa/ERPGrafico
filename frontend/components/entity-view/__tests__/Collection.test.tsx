@@ -123,3 +123,43 @@ describe("Collection table surface", () => {
         expect(within(list).getByRole("button", { name: "Kilogramo" })).toBeInTheDocument()
     })
 })
+
+// Dry-run warnings and simulation previews are built from API results, not table records: they have
+// neither `id` nor `rowId`, so before the index fallback every row shared the "" key.
+interface PreviewRow { label: string }
+
+const previewEntity = defineEntity<PreviewRow>()((f) => ({
+    title: "Advertencias de importación",
+    fields: { label: f.text("label", { label: "Mensaje" }) },
+}))
+const previewViews = previewEntity.views({ table: { columns: ["label"] } })
+
+function DerivedRowsHarness() {
+    const collection = useEntityCollection(
+        previewEntity,
+        { rows: [{ label: "Uno" }, { label: "Dos" }] },
+        { pagination: { mode: "none" } },
+    )
+    return (
+        <>
+            <output data-testid="ids">{collection.table.getRowModel().rows.map((r) => r.id).join(",")}</output>
+            <Collection.Root collection={collection} label="Advertencias de importación">
+                <Collection.View table={previewViews.table} />
+            </Collection.Root>
+        </>
+    )
+}
+
+describe("Derived rows without identity", () => {
+    it("falls back to the row index so keys stay unique", () => {
+        const error = vi.spyOn(console, "error").mockImplementation(() => {})
+        try {
+            render(<DerivedRowsHarness />)
+            expect(screen.getByTestId("ids").textContent).toBe("row-0,row-1")
+            expect(screen.getByText("Dos")).toBeInTheDocument()
+            expect(error.mock.calls.flat().join(" ")).not.toMatch(/same key/i)
+        } finally {
+            error.mockRestore()
+        }
+    })
+})

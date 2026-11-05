@@ -282,15 +282,60 @@ class PaymentAllocationSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_at", "created_by"]
 
 
+def _movement_partner(obj):
+    """Counterparty of a movement: explicit contact, else the related document's contact."""
+    if obj.contact:
+        return obj.contact
+    if obj.invoice:
+        if obj.invoice.contact:
+            return obj.invoice.contact
+        if obj.invoice.sale_order_id and obj.invoice.sale_order.customer:
+            return obj.invoice.sale_order.customer
+        if obj.invoice.purchase_order_id and obj.invoice.purchase_order.supplier:
+            return obj.invoice.purchase_order.supplier
+    if obj.sale_order_id and obj.sale_order.customer:
+        return obj.sale_order.customer
+    if obj.purchase_order_id and obj.purchase_order.supplier:
+        return obj.purchase_order.supplier
+    return None
+
+
+def _movement_partner_name(obj) -> str:
+    if obj.terminal_batch:
+        contact_prefix = obj.contact.name if obj.contact else "Liquidación"
+        return f"{contact_prefix} (Lote: {obj.terminal_batch.display_id})"
+    partner = _movement_partner(obj)
+    return partner.name if partner else "Particular"
+
+
+def _movement_partner_id(obj):
+    if obj.terminal_batch:
+        return obj.contact_id
+    partner = _movement_partner(obj)
+    return partner.id if partner else None
+
+
 class TreasuryMovementListSerializer(serializers.ModelSerializer):
-    """Optimized serializer for Treasury Movement list views."""
+    """Optimized serializer for Treasury Movement list views.
+
+    Includes the treasury-account path and counterparty because the list card/table render
+    origin → destination (ADR-0087); without them the UI fell back to generic labels.
+    """
     account_name = serializers.CharField(source="account.name", read_only=True)
+    from_account_name = serializers.CharField(
+        source="from_account.name", read_only=True, allow_null=True
+    )
+    to_account_name = serializers.CharField(
+        source="to_account.name", read_only=True, allow_null=True
+    )
     payment_method_display = serializers.CharField(
         source="get_payment_method_display", read_only=True
     )
     movement_type_display = serializers.CharField(
         source="get_movement_type_display", read_only=True
     )
+    partner_name = serializers.SerializerMethodField()
+    partner_id = serializers.SerializerMethodField()
     display_id = serializers.CharField(read_only=True)
     status = serializers.SerializerMethodField()
 
@@ -301,12 +346,20 @@ class TreasuryMovementListSerializer(serializers.ModelSerializer):
             return "PENDING"
         return "POSTED"
 
+    def get_partner_name(self, obj):
+        return _movement_partner_name(obj)
+
+    def get_partner_id(self, obj):
+        return _movement_partner_id(obj)
+
     class Meta:
         model = TreasuryMovement
         fields = [
             "id", "display_id", "account", "account_name", "amount", "date",
             "movement_type", "movement_type_display", "payment_method", "payment_method_display",
-            "status", "is_reconciled", "is_pending_registration", "created_at"
+            "status", "is_reconciled", "is_pending_registration", "created_at",
+            "from_account", "from_account_name", "to_account", "to_account_name",
+            "partner_name", "partner_id",
         ]
 
 class TreasuryMovementWriteSerializer(serializers.ModelSerializer):
@@ -468,39 +521,10 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
         return None
 
     def get_partner_name(self, obj):
-        if obj.terminal_batch:
-            contact_prefix = obj.contact.name if obj.contact else "Liquidación"
-            return f"{contact_prefix} (Lote: {obj.terminal_batch.display_id})"
-        if obj.contact:
-            return obj.contact.name
-        if obj.invoice:
-            if obj.invoice.contact:
-                return obj.invoice.contact.name
-            if obj.invoice.sale_order and obj.invoice.sale_order.customer:
-                return obj.invoice.sale_order.customer.name
-            if obj.invoice.purchase_order and obj.invoice.purchase_order.supplier:
-                return obj.invoice.purchase_order.supplier.name
-        if obj.sale_order and obj.sale_order.customer:
-            return obj.sale_order.customer.name
-        if obj.purchase_order and obj.purchase_order.supplier:
-            return obj.purchase_order.supplier.name
-        return "Particular"
+        return _movement_partner_name(obj)
 
     def get_partner_id(self, obj):
-        if obj.contact:
-            return obj.contact.id
-        if obj.invoice:
-            if obj.invoice.contact:
-                return obj.invoice.contact.id
-            if obj.invoice.sale_order and obj.invoice.sale_order.customer:
-                return obj.invoice.sale_order.customer.id
-            if obj.invoice.purchase_order and obj.invoice.purchase_order.supplier:
-                return obj.invoice.purchase_order.supplier.id
-        if obj.sale_order and obj.sale_order.customer:
-            return obj.sale_order.customer.id
-        if obj.purchase_order and obj.purchase_order.supplier:
-            return obj.purchase_order.supplier.id
-        return None
+        return _movement_partner_id(obj)
 
     def get_journal_entry(self, obj):
         if obj.journal_entry:

@@ -345,6 +345,10 @@ export function orderingParam<T, F extends FieldMap<T>>(entity: Entity<T, F>, sp
     return key === "id" ? `${sign}id` : `${sign}${key},${sign}id`
 }
 
+/**
+ * Row identity: `entity.rowId` when declared, else the record `id`. Derived, id-less lists get `""`;
+ * `useEntityCollection` then falls back to the row index so every row keeps a unique key.
+ */
 export function rowIdOf<T, F extends FieldMap<T>>(entity: Entity<T, F>, row: T): string {
     if (entity.rowId) return String(entity.rowId(row))
     const id = (row as { id?: unknown }).id
