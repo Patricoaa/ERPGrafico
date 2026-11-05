@@ -104,6 +104,23 @@ export function getErrorMessage(error: unknown): string {
 }
 
 /**
+ * Extract the first validation message for a specific field from a Django/DRF
+ * error response (`error.details.<field>: string[]`). Returns null when absent.
+ */
+export function getFieldErrorMessage(error: unknown, field: string): string | null {
+    if (!isAxiosLikeError(error)) return null
+    const data = error.response?.data
+    const errObj = data?.error
+    if (typeof errObj !== "object" || errObj === null) return null
+    const details = (errObj as Record<string, unknown>).details
+    if (typeof details !== "object" || details === null) return null
+    const fieldValue = (details as Record<string, unknown>)[field]
+    if (Array.isArray(fieldValue) && typeof fieldValue[0] === "string") return fieldValue[0]
+    if (typeof fieldValue === "string") return fieldValue
+    return null
+}
+
+/**
  * Unified API error handler for toast notifications.
  * Replaces scattered `catch (error: unknown) { toast.error(...) }` patterns.
  *

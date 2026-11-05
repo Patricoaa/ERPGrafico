@@ -46,33 +46,27 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
         icon: FileText,
         actions: [
             {
-                id: 'complete-folio',
-                label: 'Registrar Folio',
+                // Unified: creates new invoice OR completes existing DRAFT (ADR-0081)
+                id: 'invoice-by-lines',
+                label: 'Registrar DTE',
                 icon: FileEdit,
-                requiredPermissions: ['billing.confirm_invoice'],
-                checkAvailability: (activeDoc) => {
-                    if (!activeDoc) return false
-                    const isInvoiced = !!activeDoc.dte_type
-                    if (isInvoiced) {
-                        return activeDoc.status === 'DRAFT' || activeDoc.number === 'Draft' || !activeDoc.number
+                requiredPermissions: ['billing.add_invoice'],
+                checkAvailability: (order) => {
+                    if (!order) return false
+                    if (['CANCELLED'].includes(String(order.status))) return false
+                    // Completing an existing DRAFT invoice
+                    if (order.dte_type) {
+                        return order.status === 'DRAFT' || order.number === 'Draft' || !order.number
                     }
-                    const invoices = activeDoc.invoices || []
-                    return invoices.some((inv) => inv.status === 'DRAFT' || inv.number === 'Draft')
+                    const invoices = order.invoices || []
+                    const hasDraft = invoices.some((inv) => inv.status === 'DRAFT' || inv.number === 'Draft')
+                    if (hasDraft) return true
+                    // Creating a new invoice
+                    if (String(order.status) === 'DRAFT') return false
+                    return order.invoicing_status !== 'INVOICED'
                 },
                 badge: { type: 'warning', label: 'Pendiente' },
                 excludedStatus: ['CANCELLED']
-            },
-            {
-                // ADR-0081: facturación parcial por entregas / multi-orden
-                id: 'invoice-by-lines',
-                label: 'Facturar por entregas',
-                icon: FileText,
-                requiredPermissions: ['billing.add_invoice'],
-                checkAvailability: (order) => {
-                    if (!order || order.dte_type) return false
-                    if (['DRAFT', 'CANCELLED'].includes(String(order.status))) return false
-                    return order.invoicing_status !== 'INVOICED'
-                }
             },
             {
                 id: 'view-documents',

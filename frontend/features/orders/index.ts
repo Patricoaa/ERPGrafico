@@ -26,5 +26,5 @@ export {
   hasPartialLines,
 } from './entity-view/lineEditables'
 export { useSaleOrderSearch } from './hooks/useSaleOrderSearch'
-export { useAnnulPayment, useCancelPayment, useRegisterPaymentReturn, useCancelInvoice } from './hooks'
+export { useAnnulPayment, useCancelPayment, useRegisterPaymentReturn, useCancelInvoice, useConfirmInvoice } from './hooks'
 export { AnnulPaymentModal } from './components/AnnulPaymentModal'

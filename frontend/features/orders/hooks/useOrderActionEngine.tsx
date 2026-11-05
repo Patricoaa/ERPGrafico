@@ -36,7 +36,7 @@ function SalesManufacturingStep({ lines, setLines }: { lines: unknown[]; setLine
 }
 const NoteLogisticsModal = dynamic(() => import("../components/NoteLogisticsModal").then(m => m.NoteLogisticsModal))
 const WorkOrderWizard = dynamic(() => import("@/features/production").then(m => m.WorkOrderWizard))
-const InvoiceFromLinesModal = dynamic(() => import("@/features/billing").then(m => m.InvoiceFromLinesModal))
+const InvoiceRegistrationModal = dynamic(() => import("@/features/billing").then(m => m.InvoiceRegistrationModal))
 
 /** Acciones que abren un modal propio del motor. */
 export const ENGINE_MODAL_ACTIONS = [
@@ -235,13 +235,15 @@ export function useOrderActionEngine({ order, posSessionId = null, onActionSucce
                 )}
 
                 {activeModal === 'invoice-by-lines' && (
-                    <InvoiceFromLinesModal
+                    <InvoiceRegistrationModal
                         open
                         onOpenChange={(open) => { if (!open) closeModal() }}
                         side={isSale ? 'sale' : 'purchase'}
                         orderId={Number(order.id)}
                         partnerId={Number(partnerId) || null}
                         onSuccess={done}
+                        initialDraftId={draftInvoice ? Number(draftInvoice.id) : undefined}
+                        initialDteType={draftInvoice?.dte_type as string | undefined}
                     />
                 )}
 
