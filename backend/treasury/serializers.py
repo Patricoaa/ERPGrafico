@@ -691,6 +691,7 @@ class BankStatementSerializer(serializers.ModelSerializer):
     state_display = serializers.CharField(source="get_status_display", read_only=True)
     has_file = serializers.SerializerMethodField()
     file_name = serializers.SerializerMethodField()
+    reconciled_lines = serializers.IntegerField(read_only=True)
     lines = BankStatementLineSerializer(many=True, read_only=True)
 
     def get_has_file(self, obj: BankStatement) -> bool:

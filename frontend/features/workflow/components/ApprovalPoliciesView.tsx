@@ -14,7 +14,7 @@ import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { BaseModal, CardSkeleton } from "@/components/shared"
+import { BaseModal, CardSkeleton, CardSurface } from "@/components/shared"
 import { useApprovalPolicies } from "../hooks/useWorkflowQueries"
 import { useSaveApprovalPolicy, useDeleteApprovalPolicy } from "../hooks/useWorkflowMutations"
 import type { ApprovalPolicy } from "../api/workflowApi"
@@ -168,10 +168,7 @@ export function ApprovalPoliciesView() {
             ) : (
                 <div className="grid gap-2">
                     {policies.map((policy) => (
-                        <div
-                            key={policy.id}
-                            className="flex items-center gap-3 rounded-md border bg-card px-3 py-2.5"
-                        >
+                        <CardSurface key={policy.id} layout="inline" kind="item" className="flex items-center gap-3 px-3 py-2.5">
                             <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium">{policy.document_type}</p>
@@ -197,7 +194,7 @@ export function ApprovalPoliciesView() {
                                     <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
                             </div>
-                        </div>
+                        </CardSurface>
                     ))}
                 </div>
             )}

@@ -60,7 +60,7 @@ import { ReconciliationIntelligencePanel } from "./ReconciliationIntelligencePan
 
 import { DataTable } from '@/components/shared'
 import { LazyDrawer } from "@/features/_shared"
-import { type ColumnDef, type RowSelectionState, type PaginationState, type Updater } from "@tanstack/react-table"
+import { type CellContext, type ColumnDef, type RowSelectionState, type PaginationState, type Updater } from "@tanstack/react-table"
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { statementLineActions, type StatementLineActionsCtx } from './statementLineActions'
@@ -229,6 +229,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const { exclude } = useExcludeMutation(statementId)
     const { bulkExclude } = useBulkExcludeMutation(statementId)
     const { restore } = useRestoreMutation(statementId)
+    // El dock de acciones flota solo con selección: el espacio inferior se reserva únicamente entonces.
+    const dockVisible = selectedLines.length > 0 || selectedPayments.length > 0
     const { mutateAsync: bulkRestore, isPending: restoringLines } = useBulkRestoreMutation(statementId)
     // Solo las líneas excluidas de la selección se pueden volver a incluir.
     const excludedSelected = useMemo(
@@ -504,6 +506,26 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     // ─── Column Definitions ───────────────────────────────────────────────────
 
+    // Las líneas excluidas muestran "Restaurar" con texto; el resto conserva las acciones de fila.
+    const bankActionsColumn = useMemo<ColumnDef<BankStatementLine>>(() => {
+        const base = statementLineActions.auto(statementLineActionsCtx)
+        return {
+            ...base,
+            size: 104,
+            cell: (info: CellContext<BankStatementLine, unknown>) => info.row.original.reconciliation_status === "EXCLUDED" ? (
+                <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-6 px-2 text-3xs font-semibold text-success border-success/40 hover:bg-success/10 hover:text-success"
+                    disabled={restoringLines}
+                    onClick={(e) => { e.stopPropagation(); void restore(info.row.original.id) }}
+                >
+                    Restaurar
+                </Button>
+            ) : (typeof base.cell === "function" ? (base.cell(info) as React.ReactNode) : null),
+        }
+    }, [statementLineActionsCtx, restore, restoringLines])
+
     const bankColumns = useMemo<ColumnDef<BankStatementLine>[]>(() => [
         {
             id: "select",
@@ -599,8 +621,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             },
             size: 100,
         },
-        statementLineActions.auto(statementLineActionsCtx)
-    ], [lineSuggestions, setActionDialog, setCreateMatchDialog])
+        bankActionsColumn
+    ], [lineSuggestions, setActionDialog, setCreateMatchDialog, bankActionsColumn])
 
     const paymentColumns = useMemo<ColumnDef<ReconciliationSystemItem>[]>(() => [
         {
@@ -721,7 +743,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     return (
         <SkeletonShell isLoading={loading} ariaLabel="Cargando conciliación">
-            {isError && <StaleDataBanner className="mx-4 mt-2" />}
+            {isError && <StaleDataBanner className="px-4 py-2" />}
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
             <Tabs defaultValue="unreconciled" className="h-full flex flex-col w-full min-h-0">
                 {/* ─── Unified Workbench Toolbar ─── */}
@@ -804,7 +826,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             Excluida
                         </span>
                     </div>
-                    <div className="flex-1 min-h-0 flex gap-6 relative items-start pb-24">
+                    <div className={cn("flex-1 min-h-0 flex gap-6 relative items-stretch", dockVisible ? "pb-24" : "pb-2")}>
                         {/* Tables Container */}
                         <div className="flex-1 h-full min-h-0 transition-all duration-500 ease-[var(--ease-premium)] min-w-0">
                             {/* ─── Grid with Section Headers ─── */}
@@ -875,12 +897,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                             <div className="h-2 w-2 rounded-full bg-primary" />
                                             <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Movimientos del Sistema</span>
                                             <span
-                                                
-                                                size="sm"
-                                                className="h-6 gap-1 px-2 text-3xs font-semibold text-primary hover:bg-primary/10"
+                                                className="h-4 gap-1 px-2 text-3xs font-semibold text-primary hover:bg-primary/10"
                                                 onClick={() => setIsCreateMovementOpen(true)}
-                                            >
-                                                <Plus className="h-3 w-3" />
+                                            >                                            
                                                 +Nuevo movimiento
                                             </span>
                                         </div>
@@ -1493,7 +1512,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     tabIcon={Brain}
                     fullWidth={400}
                 >
-                    <div className="flex flex-col h-full bg-background rounded-md overflow-hidden text-foreground">
+                    <div className="flex flex-col h-full overflow-hidden text-foreground">
                         <div className="p-4 border-b border-border bg-muted/30 flex justify-between items-center shrink-0">
                             <div className="flex items-center gap-2">
                                 <div className="bg-primary/10 p-1.5 rounded-sm">
@@ -1501,7 +1520,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                 </div>
                                 <div className="flex flex-col">
                                     <h2 className="text-xs font-bold uppercase tracking-wider text-foreground/90 leading-tight">Inteligencia</h2>
-                                    <span className="text-3xs text-muted-foreground font-medium uppercase tracking-tighter">Configuración de Matching</span>
                                 </div>
                             </div>
                             <Button

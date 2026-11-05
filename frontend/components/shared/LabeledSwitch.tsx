@@ -109,7 +109,7 @@ export function LabeledSwitch({
             )}
         >
             {/* typography-allow: meta - primitive internal height */}
-            <div className="flex items-center justify-between w-full px-3 h-full min-h-[1.5rem] gap-3">
+            <div className="flex items-center justify-between w-full px-3 h-full min-h-6 gap-3">
 
                 {icon && (
                     <span className={cn("shrink-0 flex items-center transition-colors", checked ? colorStyles.icon : "text-muted-foreground/30")}>

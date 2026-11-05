@@ -45,7 +45,12 @@ export function ReconciliationWorkbenchTab({ statementId, onClose, onConfirmed }
         }
     })
 
-    const canConfirm = !!statement && statement.state === "DRAFT" && statement.reconciliation_progress === 100
+    // Pendiente = sin conciliar o con match sin confirmar. Las excluidas ya están resueltas.
+    // Mismo criterio que el backend (confirm) más MATCHED, que debe confirmarse antes.
+    const pending = statement?.lines
+        ? statement.lines.filter((line) => line.reconciliation_status === "UNRECONCILED" || line.reconciliation_status === "MATCHED").length
+        : null
+    const canConfirm = !!statement && statement.state === "DRAFT" && pending === 0
 
     // Como las fichas de entidad: la pestaña ocupa el área de trabajo mediante `Drawer` (en modo
     // persistente se expande al 100 %). Un `div` suelto en la página quedaba fuera de la vista.
@@ -62,13 +67,7 @@ export function ReconciliationWorkbenchTab({ statementId, onClose, onConfirmed }
             contentClassName="p-0"
         >
         <div className="flex h-full min-h-0 flex-col">
-            <WorkbenchHeader
-                statement={statement}
-                loading={statementQuery.isLoading}
-                canConfirm={canConfirm}
-                confirming={confirmAction.isConfirming}
-                onConfirm={() => confirmAction.requestConfirm()}
-            />
+            <WorkbenchHeader statement={statement} loading={statementQuery.isLoading} />
 
             <div className="min-h-0 flex-1 overflow-hidden p-4">
                 <SkeletonShell isLoading={statementQuery.isLoading} ariaLabel="Cargando mesa de conciliación">
@@ -81,6 +80,14 @@ export function ReconciliationWorkbenchTab({ statementId, onClose, onConfirmed }
                     )}
                 </SkeletonShell>
             </div>
+
+            <WorkbenchFooter
+                statement={statement}
+                pending={pending}
+                canConfirm={canConfirm}
+                confirming={confirmAction.isConfirming}
+                onConfirm={() => confirmAction.requestConfirm()}
+            />
 
             <ActionConfirmModal
                 open={confirmAction.isOpen}
@@ -99,21 +106,8 @@ function statementTitle(statement: BankStatement | undefined): string {
     return statement ? `Mesa de conciliación · ${statement.display_id}` : "Mesa de conciliación"
 }
 
-function WorkbenchHeader({
-    statement,
-    loading,
-    canConfirm,
-    confirming,
-    onConfirm,
-}: {
-    statement: BankStatement | undefined
-    loading: boolean
-    canConfirm: boolean
-    confirming: boolean
-    onConfirm: () => void
-}) {
+function WorkbenchHeader({ statement, loading }: { statement: BankStatement | undefined; loading: boolean }) {
     const progress = statement?.reconciliation_progress ?? 0
-    const pending = statement ? Math.max(statement.total_lines - statement.reconciled_lines, 0) : 0
     const period = statement?.statement_date
         ? format(parseDateOnly(statement.statement_date), "dd MMM yyyy", { locale: es })
         : null
@@ -165,24 +159,46 @@ function WorkbenchHeader({
                 </div>
             )}
 
-            {statement && (
-                <div className="flex flex-col items-end gap-1">
-                    <SubmitButton
-                        onClick={onConfirm}
-                        loading={confirming}
-                        disabled={!canConfirm}
-                        icon={CheckCircle2}
-                        className="bg-success px-5 font-bold text-sm hover:bg-success/90"
-                    >
-                        {confirming ? "Finalizando…" : "Confirmar cartola"}
-                    </SubmitButton>
-                    {!canConfirm && statement.state === "DRAFT" && (
-                        <p className="text-3xs text-muted-foreground">
-                            {pending > 0 ? `Faltan ${pending} líneas por conciliar o excluir` : "Sin líneas pendientes"}
-                        </p>
-                    )}
-                </div>
-            )}
         </header>
+    )
+}
+
+/** Pie de la mesa: lo que falta para confirmar y la confirmación de la cartola. */
+function WorkbenchFooter({
+    statement,
+    pending,
+    canConfirm,
+    confirming,
+    onConfirm,
+}: {
+    statement: BankStatement | undefined
+    pending: number | null
+    canConfirm: boolean
+    confirming: boolean
+    onConfirm: () => void
+}) {
+    if (!statement) return null
+    const isDraft = statement.state === "DRAFT"
+    return (
+        <footer className="flex shrink-0 items-center justify-between gap-4 border-t border-border bg-card px-4 py-2.5">
+            <p className="text-xs text-muted-foreground">
+                {!isDraft
+                    ? "Cartola confirmada"
+                    : canConfirm
+                        ? "Todas las líneas están conciliadas o excluidas"
+                        : pending === null ? "Cargando líneas…" : `Faltan ${pending} líneas por conciliar o excluir`}
+            </p>
+            {isDraft && (
+                <SubmitButton
+                    onClick={onConfirm}
+                    loading={confirming}
+                    disabled={!canConfirm}
+                    icon={CheckCircle2}
+                    className="bg-success px-5 font-bold text-sm hover:bg-success/90"
+                >
+                    {confirming ? "Finalizando…" : "Confirmar cartola"}
+                </SubmitButton>
+            )}
+        </footer>
     )
 }
