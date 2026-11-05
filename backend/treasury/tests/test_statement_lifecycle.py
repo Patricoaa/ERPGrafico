@@ -51,10 +51,10 @@ def _statement(user, account, status="DRAFT", file_name=None):
     return stmt
 
 
-def _line(stmt, status):
+def _line(stmt, status, line_number=1):
     return BankStatementLine.objects.create(
         statement=stmt,
-        line_number=1,
+        line_number=line_number,
         transaction_date=date(2026, 3, 2),
         description="Transferencia",
         debit=Decimal("0.00"),
@@ -147,3 +147,40 @@ def test_list_exposes_state_and_touched_lines(api, user, account):
     assert rows[untouched.id]["touched_lines"] == 0
     assert rows[worked.id]["touched_lines"] == 1
     assert rows[worked.id]["state_display"]
+
+
+# ── Incluir de nuevo líneas excluidas ────────────────────────────────────────
+
+@pytest.mark.django_db
+def test_bulk_restore_includes_only_excluded_lines(api, user, account):
+    stmt = _statement(user, account)
+    excluded = _line(stmt, "EXCLUDED")
+    unreconciled = _line(stmt, "UNRECONCILED", line_number=2)
+    res = api.post(
+        "/api/treasury/statement-lines/bulk_restore/",
+        {"line_ids": [excluded.id, unreconciled.id]},
+        format="json",
+    )
+    assert res.status_code == 200, res.content
+    assert res.json()["message"] == "1 movimientos incluidos"
+    excluded.refresh_from_db()
+    assert excluded.reconciliation_status == "UNRECONCILED"
+    assert excluded.exclusion_reason is None
+
+
+@pytest.mark.django_db
+def test_bulk_restore_without_excluded_lines_is_400(api, user, account):
+    stmt = _statement(user, account)
+    line = _line(stmt, "UNRECONCILED")
+    res = api.post("/api/treasury/statement-lines/bulk_restore/", {"line_ids": [line.id]}, format="json")
+    assert res.status_code == 400
+
+
+@pytest.mark.django_db
+def test_bulk_restore_rejects_confirmed_statement(api, user, account):
+    stmt = _statement(user, account, status="CONFIRMED")
+    line = _line(stmt, "EXCLUDED")
+    res = api.post("/api/treasury/statement-lines/bulk_restore/", {"line_ids": [line.id]}, format="json")
+    assert res.status_code == 400
+    line.refresh_from_db()
+    assert line.reconciliation_status == "EXCLUDED"

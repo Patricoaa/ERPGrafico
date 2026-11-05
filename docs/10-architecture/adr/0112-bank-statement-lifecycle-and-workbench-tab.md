@@ -24,6 +24,7 @@ Two backend facts shaped the decision:
 3. **The original file is downloaded through the API.** `GET /treasury/statements/{id}/download/` checks view permission through `get_object` and returns an attachment. The detail and list expose `has_file` and `file_name`, never the storage URL.
 4. **The statement detail is an entity drawer.** `treasury.bankstatement` opens as a workspace tab through `openEntity`. Its sheet has the tabs Resumen · Líneas · Relaciones and a rail with `EntitySidebar` (comments and activity). The model has history, so `AuditHistoryMixin` is enabled.
 5. **The reconciliation workbench is a workspace tab.** `openWorkbench(statementId)` adds a `workbench` tab (ADR-0101). The old bottom drawer and the `?workbench=` drawer are retired. Deep links (`?workbench=`, `?selected=`) open their tab once per value.
+6b. **Excluded lines can be included again in bulk.** `POST /treasury/statement-lines/bulk_restore/` with `line_ids` moves the `EXCLUDED` lines of the selection back to `UNRECONCILED`. Other statuses are not touched, and confirmed statements are rejected (400). The workbench dock exposes it as "Volver a incluir (N)".
 6. **Row actions follow the rules above.** "Reconciliar" shows while the statement is open and below 100 %. "Eliminar" shows for `DRAFT` and is disabled when it has worked lines. "Descargar original" shows when the file exists. The rules live in `lib/statementRules.ts`, which mirrors `BankStatementService`. The UI hides or disables, and the backend validates.
 
 ## Consequences

@@ -723,6 +723,7 @@ class BankStatementLineViewSet(EditPolicyMixin, viewsets.ModelViewSet):
         "match_group": "treasury.change_bankstatementline",
         "unmatch": "treasury.change_bankstatementline",
         "bulk_exclude": "treasury.change_bankstatementline",
+        "bulk_restore": "treasury.change_bankstatementline",
     }
 
     queryset = BankStatementLine.objects.all().select_related(
@@ -779,6 +780,16 @@ class BankStatementLineViewSet(EditPolicyMixin, viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=400)
         except Exception as e:
             return Response({'error': str(e)}, status=500)
+
+    @action(detail=False, methods=["post"])
+    def bulk_restore(self, request):
+        """Vuelve a incluir en la conciliación las líneas excluidas de la selección."""
+        try:
+            from treasury.services import BankStatementService
+            count = BankStatementService.bulk_restore_from_request(request)
+            return Response({"message": f"{count} movimientos incluidos"})
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=["post"])
     def bulk_exclude(self, request):

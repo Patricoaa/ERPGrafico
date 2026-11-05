@@ -395,3 +395,24 @@ export function useDownloadStatementFile() {
         onError: (err: Error) => showApiError(err, 'No se pudo descargar el archivo original'),
     })
 }
+
+/** Vuelve a incluir en la conciliación varias líneas excluidas en una sola operación. */
+export function useBulkRestoreMutation(statementId: number) {
+    const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+    return useMutation({
+        mutationFn: (lineIds: number[]) => financeApi.bulkRestoreLines(lineIds),
+        onSuccess: (data) => {
+            markLocalMutation()
+            const message = (data as { message?: string } | undefined)?.message
+            toast.success(message ?? "Movimientos incluidos")
+        },
+        onError: (err: Error) => showApiError(err, 'Error al incluir los movimientos'),
+        onSettled: () => {
+            invalidateCrossFeature(queryClient, [
+                [...reconciliationKeys.all, 'unreconciled-lines', statementId],
+                reconciliationKeys.statement(statementId),
+            ])
+        },
+    })
+}

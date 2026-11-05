@@ -1685,6 +1685,31 @@ class BankStatementService:
             transaction.on_commit(lambda: storage.delete(file_name))
 
     @staticmethod
+    def bulk_restore_from_request(request) -> int:
+        """Vuelve a incluir (UNRECONCILED) las líneas EXCLUDED de la selección.
+
+        Las líneas que no están excluidas no se tocan: una línea conciliada o en match
+        se deshace con su propia acción (unmatch), no con esta.
+        """
+        from .models import BankStatementLine
+
+        line_ids = request.data.get("line_ids", [])
+        if not line_ids:
+            raise ValueError("line_ids requerido")
+
+        excluded = BankStatementLine.objects.filter(id__in=line_ids, reconciliation_status="EXCLUDED")
+        if not excluded.exists():
+            raise ValueError("Ninguna línea excluida en la selección")
+        if excluded.filter(statement__status="CONFIRMED").exists():
+            raise ValueError("No se pueden incluir movimientos de una cartola confirmada")
+
+        return excluded.update(
+            reconciliation_status="UNRECONCILED",
+            exclusion_reason=None,
+            exclusion_notes=None,
+        )
+
+    @staticmethod
     def bulk_exclude_from_request(request) -> int:
         """
         Exclude multiple lines from reconciliation, processing the request payload.

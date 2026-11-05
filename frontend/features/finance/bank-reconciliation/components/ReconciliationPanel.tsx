@@ -17,7 +17,7 @@ import { reconciliationUnifiedSearchDef } from "../unifiedSearchDef"
 
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
 import {
-    Ban, CheckCircle2, ChevronRight, ChevronLeft, FileText,
+    Ban, CheckCircle2, ChevronRight, ChevronLeft, FileText, RotateCcw,
     Sparkles, X, Wand2, Calculator, Brain, Plus
 } from "lucide-react"
 import { format } from "date-fns"
@@ -49,6 +49,7 @@ import {
     useBulkExcludeMutation,
     useCreateAndMatchMutation,
     useRestoreMutation,
+    useBulkRestoreMutation,
     useCreateMovementMutation
 } from "../hooks/useReconciliationMutations"
 
@@ -228,6 +229,22 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const { exclude } = useExcludeMutation(statementId)
     const { bulkExclude } = useBulkExcludeMutation(statementId)
     const { restore } = useRestoreMutation(statementId)
+    const { mutateAsync: bulkRestore, isPending: restoringLines } = useBulkRestoreMutation(statementId)
+    // Solo las líneas excluidas de la selección se pueden volver a incluir.
+    const excludedSelected = useMemo(
+        () => selectedLines.filter((line) => line.reconciliation_status === "EXCLUDED"),
+        [selectedLines],
+    )
+    const handleRestoreExcluded = useCallback(async () => {
+        const ids = excludedSelected.map((line) => line.id)
+        if (ids.length === 0) return
+        try {
+            await bulkRestore(ids)
+            setSelectedLines((prev) => prev.filter((line) => !ids.includes(line.id)))
+        } catch {
+            // El hook ya muestra el error.
+        }
+    }, [excludedSelected, bulkRestore])
 
     const loading = loadingLines || loadingPayments || loadingReconciled
     const isError = isErrorStmt || isErrorBank || isErrorSystem || isErrorReconciled
@@ -786,9 +803,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             <span className="h-2.5 w-4 rounded-sm bg-muted ring-1 ring-border" aria-hidden />
                             Excluida
                         </span>
-                        <span className="ml-auto">
-                            Arrastra un pago o movimiento de tesorería sobre una línea de la cartola para conciliarlos.
-                        </span>
                     </div>
                     <div className="flex-1 min-h-0 flex gap-6 relative items-start pb-24">
                         {/* Tables Container */}
@@ -860,15 +874,15 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         <div className="flex items-center gap-2">
                                             <div className="h-2 w-2 rounded-full bg-primary" />
                                             <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Movimientos del Sistema</span>
-                                            <Button
-                                                variant="ghost"
+                                            <span
+                                                
                                                 size="sm"
                                                 className="h-6 gap-1 px-2 text-3xs font-semibold text-primary hover:bg-primary/10"
                                                 onClick={() => setIsCreateMovementOpen(true)}
                                             >
                                                 <Plus className="h-3 w-3" />
-                                                Nuevo movimiento
-                                            </Button>
+                                                +Nuevo movimiento
+                                            </span>
                                         </div>
                                         <span className="text-3xs font-mono tabular-nums text-muted-foreground">{systemData?.count || 0} disponibles</span>
                                     </div>
@@ -1390,7 +1404,19 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     </ActionDock.Stats>
 
                     <ActionDock.Actions>
-                        {selectedLines.length > 0 && selectedPayments.length === 0 && (
+                        {excludedSelected.length > 0 && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-9 rounded-full px-4 text-xs font-semibold text-success hover:bg-success/10 hover:text-success"
+                                disabled={restoringLines}
+                                onClick={() => { void handleRestoreExcluded() }}
+                            >
+                                <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                                Volver a incluir ({excludedSelected.length})
+                            </Button>
+                        )}
+                        {selectedLines.length > 0 && selectedPayments.length === 0 && excludedSelected.length < selectedLines.length && (
                             <Button
                                 variant="ghost"
                                 size="sm"
