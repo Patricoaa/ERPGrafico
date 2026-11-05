@@ -583,14 +583,6 @@ class ContactSelector:
         return list(names)
 
     @staticmethod
-    def list_customers():
-        return Contact.objects.filter(sale_orders__isnull=False).distinct()
-
-    @staticmethod
-    def list_suppliers():
-        return Contact.objects.filter(purchase_orders__isnull=False).distinct()
-
-    @staticmethod
     def list_partners():
         return Contact.objects.filter(is_partner=True).distinct().prefetch_related(
             "partner_transactions",
