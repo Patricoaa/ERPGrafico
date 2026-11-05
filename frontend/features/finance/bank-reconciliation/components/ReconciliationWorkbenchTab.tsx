@@ -1,10 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { CheckCircle2 } from "lucide-react"
+import { CheckCircle2, Download, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useConfirmStatement } from "@/features/treasury"
-import { ActionConfirmModal, Drawer, SkeletonShell, SubmitButton } from "@/components/shared"
+import { ActionConfirmModal, DocumentActionsMenu, Drawer, SkeletonShell, SubmitButton, type DocumentActionItem } from "@/components/shared"
+import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { showApiError } from "@/lib/errors"
 import { formatCurrency } from "@/lib/money"
@@ -13,6 +16,8 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { useStatementQuery } from "../hooks/useReconciliationQueries"
 import { reconciliationKeys } from "../hooks/queryKeys"
+import { useDeleteStatementMutation, useDownloadStatementFile } from "../hooks/useReconciliationMutations"
+import { canDeleteStatement, deleteBlockedReason } from "../lib/statementRules"
 import type { BankStatement } from "../types"
 import { ReconciliationPanel } from "./ReconciliationPanel"
 
@@ -26,13 +31,18 @@ interface ReconciliationWorkbenchTabProps {
 
 /**
  * Mesa de conciliación como pestaña del espacio de trabajo (`openWorkbench`).
- * Encabezado con el estado de la cartola y la confirmación final; el trabajo lo hace `ReconciliationPanel`.
+ * Anatomía de la ficha documental (`DocumentDrawerShell`): título y subtítulo en el encabezado,
+ * acciones secundarias en el menú del encabezado, franja de avance y pie con la acción principal.
+ * El trabajo lo hace `ReconciliationPanel`.
  */
 export function ReconciliationWorkbenchTab({ statementId, onClose, onConfirmed }: ReconciliationWorkbenchTabProps) {
     const queryClient = useQueryClient()
     const statementQuery = useStatementQuery(statementId)
     const statement = statementQuery.data as BankStatement | undefined
     const confirmMutation = useConfirmStatement()
+    const deleteMutation = useDeleteStatementMutation()
+    const { mutate: downloadFile } = useDownloadStatementFile()
+    const [deleteOpen, setDeleteOpen] = useState(false)
 
     const confirmAction = useConfirmAction(async () => {
         try {
@@ -45,16 +55,40 @@ export function ReconciliationWorkbenchTab({ statementId, onClose, onConfirmed }
         }
     })
 
+    const handleDelete = async () => {
+        try {
+            await deleteMutation.mutateAsync(statementId)
+            setDeleteOpen(false)
+            onClose()
+        } catch {
+            // El hook de eliminación ya muestra el error.
+        }
+    }
+
     // Pendiente = sin conciliar o con match sin confirmar. Las excluidas ya están resueltas.
     // Mismo criterio que el backend (confirm) más MATCHED, que debe confirmarse antes.
     const pending = statement?.lines
         ? statement.lines.filter((line) => line.reconciliation_status === "UNRECONCILED" || line.reconciliation_status === "MATCHED").length
         : null
     const canConfirm = !!statement && statement.state === "DRAFT" && pending === 0
+    const canDelete = !!statement && canDeleteStatement(statement)
+    const deniedDelete = statement ? deleteBlockedReason(statement) : null
 
-    // Como las fichas de entidad: la pestaña ocupa el área de trabajo mediante `Drawer` (en modo
-    // persistente se expande al 100 %). Un `div` suelto en la página quedaba fuera de la vista.
+    const headerActions: DocumentActionItem[] = statement ? [
+        {
+            id: "download",
+            label: "Descargar original",
+            icon: Download,
+            onClick: () => downloadFile({ statementId: statement.id, fileName: statement.file_name ?? statement.display_id }),
+            disabled: !statement.has_file,
+            disabledReason: statement.has_file ? undefined : "La cartola no tiene archivo original.",
+        },
+    ] : []
+
     return (
+        <>
+        {/* Como las fichas documentales: la pestaña ocupa el área de trabajo mediante `Drawer` (en modo
+            persistente se expande al 100 %). Un `div` suelto en la página quedaba fuera de la vista. */}
         <Drawer
             open
             onOpenChange={(open) => { if (!open) onClose() }}
@@ -62,43 +96,60 @@ export function ReconciliationWorkbenchTab({ statementId, onClose, onConfirmed }
             boundary="embedded"
             defaultSize="100%"
             resizable={false}
-            title={statementTitle(statementQuery.data as BankStatement | undefined)}
+            title={statementTitle(statement)}
+            subtitle={statement?.treasury_account_name}
+            headerActions={statement && <DocumentActionsMenu primary={null} actions={headerActions} />}
+            footer={statement && (
+                <WorkbenchFooter
+                    statement={statement}
+                    pending={pending}
+                    canConfirm={canConfirm}
+                    confirming={confirmAction.isConfirming}
+                    onConfirm={() => confirmAction.requestConfirm()}
+                    canDelete={canDelete}
+                    deniedDelete={deniedDelete}
+                    onDelete={() => setDeleteOpen(true)}
+                />
+            )}
             fillContent
             contentClassName="p-0"
         >
-        <div className="flex h-full min-h-0 flex-col">
-            <WorkbenchHeader statement={statement} loading={statementQuery.isLoading} />
+            <div className="flex h-full min-h-0 flex-col">
+                <WorkbenchHeader statement={statement} loading={statementQuery.isLoading} />
 
-            <div className="min-h-0 flex-1 overflow-hidden p-4">
-                <SkeletonShell isLoading={statementQuery.isLoading} ariaLabel="Cargando mesa de conciliación">
-                    {statement && (
-                        <ReconciliationPanel
-                            statementId={statementId}
-                            treasuryAccountId={statement.treasury_account}
-                            onComplete={() => { void statementQuery.refetch() }}
-                        />
-                    )}
-                </SkeletonShell>
+                <div className="min-h-0 flex-1 overflow-hidden p-4">
+                    <SkeletonShell isLoading={statementQuery.isLoading} ariaLabel="Cargando mesa de conciliación">
+                        {statement && (
+                            <ReconciliationPanel
+                                statementId={statementId}
+                                treasuryAccountId={statement.treasury_account}
+                                onComplete={() => { void statementQuery.refetch() }}
+                            />
+                        )}
+                    </SkeletonShell>
+                </div>
             </div>
-
-            <WorkbenchFooter
-                statement={statement}
-                pending={pending}
-                canConfirm={canConfirm}
-                confirming={confirmAction.isConfirming}
-                onConfirm={() => confirmAction.requestConfirm()}
-            />
-
-            <ActionConfirmModal
-                open={confirmAction.isOpen}
-                onOpenChange={(open) => { if (!open) confirmAction.cancel() }}
-                onConfirm={confirmAction.confirm}
-                title="Confirmar Cartola"
-                description="¿Está seguro de confirmar esta cartola? Esto validará todas las conciliaciones, actualizará los saldos de la cuenta y bloqueará la cartola para futuras modificaciones."
-                confirmText="Confirmar"
-            />
-        </div>
         </Drawer>
+
+        <ActionConfirmModal
+            open={confirmAction.isOpen}
+            onOpenChange={(open) => { if (!open) confirmAction.cancel() }}
+            onConfirm={confirmAction.confirm}
+            title="Confirmar Cartola"
+            description="¿Está seguro de confirmar esta cartola? Esto validará todas las conciliaciones, actualizará los saldos de la cuenta y bloqueará la cartola para futuras modificaciones."
+            confirmText="Confirmar"
+        />
+
+        <ActionConfirmModal
+            open={deleteOpen}
+            onOpenChange={(open) => { if (!open) setDeleteOpen(false) }}
+            onConfirm={handleDelete}
+            title={`Eliminar ${statement?.display_id ?? "cartola"}`}
+            description="Se eliminará el borrador, sus líneas y el archivo original importado. No se puede deshacer."
+            variant="destructive"
+            confirmText="Eliminar"
+        />
+        </>
     )
 }
 
@@ -106,6 +157,7 @@ function statementTitle(statement: BankStatement | undefined): string {
     return statement ? `Mesa de conciliación · ${statement.display_id}` : "Mesa de conciliación"
 }
 
+/** Franja de avance de la cartola: periodo, saldos y progreso de conciliación. */
 function WorkbenchHeader({ statement, loading }: { statement: BankStatement | undefined; loading: boolean }) {
     const progress = statement?.reconciliation_progress ?? 0
     const period = statement?.statement_date
@@ -114,14 +166,9 @@ function WorkbenchHeader({ statement, loading }: { statement: BankStatement | un
 
     return (
         <header className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-border bg-card px-4 py-3">
-            <div className="min-w-0 flex-1 space-y-0.5">
-                <p className="truncate text-sm font-semibold text-foreground">
-                    {loading ? "Cargando cartola…" : statement?.treasury_account_name ?? "Cartola no disponible"}
-                </p>
-                <p className="font-mono text-3xs tabular-nums text-muted-foreground">
-                    {statement?.display_id ?? ""}{period ? `${statement ? " · " : ""}${period}` : ""}
-                </p>
-            </div>
+            <p className="font-mono text-3xs tabular-nums text-muted-foreground">
+                {loading ? "Cargando cartola…" : period ?? "Cartola no disponible"}
+            </p>
 
             {statement && (
                 <dl className="flex items-center gap-5 text-xs">
@@ -137,7 +184,7 @@ function WorkbenchHeader({ statement, loading }: { statement: BankStatement | un
             )}
 
             {statement && (
-                <div className="flex w-56 flex-col gap-1.5" aria-label="Avance de la conciliación">
+                <div className="ml-auto flex w-56 flex-col gap-1.5" aria-label="Avance de la conciliación">
                     <div className="flex items-baseline justify-between text-3xs">
                         <span className="text-muted-foreground">
                             {statement.reconciled_lines} de {statement.total_lines} líneas
@@ -158,29 +205,49 @@ function WorkbenchHeader({ statement, loading }: { statement: BankStatement | un
                     </div>
                 </div>
             )}
-
         </header>
     )
 }
 
-/** Pie de la mesa: lo que falta para confirmar y la confirmación de la cartola. */
+/**
+ * Pie de la mesa (`footer` del Drawer): lo que falta para confirmar, el borrado y la confirmación.
+ * "Eliminar" siempre está presente; cuando no aplica queda deshabilitado con el motivo al pasar el cursor.
+ */
 function WorkbenchFooter({
     statement,
     pending,
     canConfirm,
     confirming,
     onConfirm,
+    canDelete,
+    deniedDelete,
+    onDelete,
 }: {
-    statement: BankStatement | undefined
+    statement: BankStatement
     pending: number | null
     canConfirm: boolean
     confirming: boolean
     onConfirm: () => void
+    canDelete: boolean
+    deniedDelete: string | null
+    onDelete: () => void
 }) {
-    if (!statement) return null
     const isDraft = statement.state === "DRAFT"
+    const deleteButton = (
+        <Button
+            type="button"
+            variant="outline"
+            disabled={!canDelete}
+            onClick={onDelete}
+            className="gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive disabled:text-muted-foreground disabled:border-border"
+        >
+            <Trash2 className="h-3.5 w-3.5" />
+            Eliminar
+        </Button>
+    )
+
     return (
-        <footer className="flex shrink-0 items-center justify-between gap-4 border-t border-border bg-card px-4 py-2.5">
+        <div className="flex w-full items-center justify-between gap-4">
             <p className="text-xs text-muted-foreground">
                 {!isDraft
                     ? "Cartola confirmada"
@@ -188,17 +255,28 @@ function WorkbenchFooter({
                         ? "Todas las líneas están conciliadas o excluidas"
                         : pending === null ? "Cargando líneas…" : `Faltan ${pending} líneas por conciliar o excluir`}
             </p>
-            {isDraft && (
-                <SubmitButton
-                    onClick={onConfirm}
-                    loading={confirming}
-                    disabled={!canConfirm}
-                    icon={CheckCircle2}
-                    className="bg-success px-5 font-bold text-sm hover:bg-success/90"
-                >
-                    {confirming ? "Finalizando…" : "Confirmar cartola"}
-                </SubmitButton>
-            )}
-        </footer>
+            <div className="flex items-center gap-2">
+                {canDelete ? deleteButton : (
+                    <Tooltip>
+                        {/* Envoltorio: un botón deshabilitado no recibe eventos y no mostraría el motivo. */}
+                        <TooltipTrigger asChild>
+                            <span tabIndex={0} className="inline-flex">{deleteButton}</span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">{deniedDelete ?? "No se puede eliminar esta cartola."}</TooltipContent>
+                    </Tooltip>
+                )}
+                {isDraft && (
+                    <SubmitButton
+                        onClick={onConfirm}
+                        loading={confirming}
+                        disabled={!canConfirm}
+                        icon={CheckCircle2}
+                        className="bg-success px-5 font-bold text-sm hover:bg-success/90"
+                    >
+                        {confirming ? "Finalizando…" : "Confirmar cartola"}
+                    </SubmitButton>
+                )}
+            </div>
+        </div>
     )
 }

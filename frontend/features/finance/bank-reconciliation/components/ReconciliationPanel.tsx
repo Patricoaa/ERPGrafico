@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
-import { ActionConfirmModal, ActionDock, SubmitButton, BaseModal, CancelButton, Chip, CollapsibleSheet, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, UnifiedSearchBar, useUnifiedSearch, SEG_TRIGGER, SEG_WRAPPER, StaleDataBanner } from "@/components/shared"
+import { ActionConfirmModal, ActionDock, SubmitButton, BaseModal, CancelButton, Chip, Drawer, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, UnifiedSearchBar, useUnifiedSearch, SEG_TRIGGER, SEG_WRAPPER, StaleDataBanner } from "@/components/shared"
 import { reconciliationUnifiedSearchDef } from "../unifiedSearchDef"
 
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
@@ -60,11 +60,13 @@ import { ReconciliationIntelligencePanel } from "./ReconciliationIntelligencePan
 
 import { DataTable } from '@/components/shared'
 import { LazyDrawer } from "@/features/_shared"
-import { type CellContext, type ColumnDef, type RowSelectionState, type PaginationState, type Updater } from "@tanstack/react-table"
+import { type ColumnDef, type RowSelectionState, type PaginationState, type Updater } from "@tanstack/react-table"
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
-import { statementLineActions, type StatementLineActionsCtx } from './statementLineActions'
-import { systemItemActions, type SystemItemActionsCtx } from './systemItemActions'
+import { statementLineActionItems, type StatementLineActionsCtx } from './statementLineActions'
+import { systemItemActionItems, type SystemItemActionsCtx } from './systemItemActions'
+import { RowActionsCell } from './RowActionsCell'
+import { buildReconciledGroups } from '../lib/reconciledGroups'
 
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
@@ -79,16 +81,6 @@ import type {
     PaymentSuggestion,
     LineSuggestion
 } from "../types"
-
-interface ReconGroupData {
-    id: number
-    movements: ReconciliationMovement[]
-    batches: ReconciliationBatch[]
-    difference_amount: number
-    difference_type: string
-    difference_type_display: string
-    difference_journal_entry?: number
-}
 
 interface ReconciliationPanelProps {
     statementId: number
@@ -199,24 +191,19 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const { data: statement, isError: isErrorStmt } = useStatementQuery(statementId)
     const { data: bankData, isLoading: loadingLines, isError: isErrorBank } = useUnreconciledLinesQuery(statementId, bankParams)
     const { data: systemData, isLoading: loadingPayments, isError: isErrorSystem } = useUnreconciledPaymentsQuery(treasuryAccountId, systemParams)
-    const { data: reconciledData, isLoading: loadingReconciled, isError: isErrorReconciled } = useReconciledLinesQuery(statementId, { page: 1, pageSize: 200 })
+    // Conciliados respeta el mismo buscador y rango de fechas que la pestaña de pendientes.
+    const reconciledParams: QueryPaginationParams = {
+        page: 1,
+        pageSize: 200,
+        search: search.filters.search || "",
+        date_from: search.filters.date_from || "",
+        date_to: search.filters.date_to || "",
+    }
+    const { data: reconciledData, isLoading: loadingReconciled, isError: isErrorReconciled } = useReconciledLinesQuery(statementId, reconciledParams)
 
-    const reconciledGroups = useMemo(() => {
-        if (!reconciledData?.results) return []
-        const groups: Record<number, { id: number; group: ReconGroupData; lines: BankStatementLine[] }> = {} as Record<number, { id: number; group: ReconGroupData; lines: BankStatementLine[] }>
-
-        reconciledData.results.forEach(line => {
-            const groupData = line.reconciliation_group_data
-            if (groupData) {
-                if (!groups[groupData.id]) {
-                    groups[groupData.id] = { id: groupData.id, group: groupData, lines: [] }
-                }
-                groups[groupData.id].lines.push(line)
-            }
-        })
-
-        return Object.values(groups)
-    }, [reconciledData])
+    const reconciledGroups = useMemo(() => buildReconciledGroups(reconciledData?.results ?? []), [reconciledData])
+    const reconciledCount = reconciledData?.count ?? 0
+    const reconciledTruncated = reconciledCount > (reconciledData?.results?.length ?? 0)
     const unreconciledLines: BankStatementLine[] = bankData?.results || []
     const unreconciledPayments: ReconciliationSystemItem[] = systemData?.results || []
 
@@ -269,14 +256,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         open: false, payment: null
     })
 
-    const statementLineActionsCtx: StatementLineActionsCtx = {
+    const statementLineActionsCtx = useMemo<StatementLineActionsCtx>(() => ({
         onExclude: (lineId) => setActionDialog({ open: true, type: 'exclude', lineId }),
         onRestore: (lineId) => restore(lineId),
-    }
+    }), [restore])
 
-    const systemItemActionsCtx: SystemItemActionsCtx = {
+    const systemItemActionsCtx = useMemo<SystemItemActionsCtx>(() => ({
         onSplit: (payment) => setSplitDialog({ open: true, payment }),
-    }
+    }), [])
 
     const [confidenceThreshold, setConfidenceThreshold] = useState<number>(90)
 
@@ -506,25 +493,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     // ─── Column Definitions ───────────────────────────────────────────────────
 
-    // Las líneas excluidas muestran "Restaurar" con texto; el resto conserva las acciones de fila.
-    const bankActionsColumn = useMemo<ColumnDef<BankStatementLine>>(() => {
-        const base = statementLineActions.auto(statementLineActionsCtx)
-        return {
-            ...base,
-            size: 104,
-            cell: (info: CellContext<BankStatementLine, unknown>) => info.row.original.reconciliation_status === "EXCLUDED" ? (
-                <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-6 px-2 text-3xs font-semibold text-success border-success/40 hover:bg-success/10 hover:text-success"
-                    disabled={restoringLines}
-                    onClick={(e) => { e.stopPropagation(); void restore(info.row.original.id) }}
-                >
-                    Restaurar
-                </Button>
-            ) : (typeof base.cell === "function" ? (base.cell(info) as React.ReactNode) : null),
-        }
-    }, [statementLineActionsCtx, restore, restoringLines])
+    // Acción de fila: una sola → su icono; varias → kebab (RowActionsCell).
+    const bankActionsColumn = useMemo<ColumnDef<BankStatementLine>>(() => ({
+        id: "actions",
+        header: "",
+        size: 56,
+        enableSorting: false,
+        cell: ({ row }) => <RowActionsCell actions={statementLineActionItems(row.original, statementLineActionsCtx)} />,
+    }), [statementLineActionsCtx])
 
     const bankColumns = useMemo<ColumnDef<BankStatementLine>[]>(() => [
         {
@@ -600,9 +576,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             cell: ({ row }) => {
                 const isCredit = parseFloat(row.original.credit) > parseFloat(row.original.debit)
                 return (
-                    <DataCell.Chip intent={isCredit ? "success" : "destructive"}>
+                    <span className={cn("text-xs font-semibold", isCredit ? "text-success" : "text-destructive")}>
                         {isCredit ? "Abono" : "Cargo"}
-                    </DataCell.Chip>
+                    </span>
                 )
             },
             size: 70,
@@ -622,7 +598,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             size: 100,
         },
         bankActionsColumn
-    ], [lineSuggestions, setActionDialog, setCreateMatchDialog, bankActionsColumn])
+    ], [lineSuggestions, bankActionsColumn])
 
     const paymentColumns = useMemo<ColumnDef<ReconciliationSystemItem>[]>(() => [
         {
@@ -707,9 +683,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 if (item.movement_type === 'ADJUSTMENT') label = "Ajuste"
 
                 return (
-                    <DataCell.Chip intent={isDeposit ? "success" : "destructive"}>
+                    <span className={cn("text-xs font-semibold", isDeposit ? "text-success" : "text-destructive")}>
                         {label}
-                    </DataCell.Chip>
+                    </span>
                 )
             },
             size: 90,
@@ -736,8 +712,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             },
             size: 100,
         },
-        systemItemActions.auto(systemItemActionsCtx)
-    ], [suggestions])
+        {
+            id: "actions",
+            header: "",
+            size: 56,
+            enableSorting: false,
+            cell: ({ row }) => <RowActionsCell actions={systemItemActionItems(row.original, systemItemActionsCtx)} />,
+        },
+    ], [suggestions, systemItemActionsCtx, treasuryAccountId])
 
     // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -782,7 +764,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     value="reconciled"
                                     className={SEG_TRIGGER + " data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm hover:bg-accent/30 transition-all duration-150"}
                                 >
-                                    Conciliados
+                                    Conciliados · <span className="font-mono tabular-nums">{reconciledCount}</span>
                                 </TabsTrigger>
                             </TabsList>
                         </div>
@@ -890,18 +872,22 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     </div>
                                 </div>
 
-                                {/* Right: Treasury (Renamed from System) */}
+                                {/* Right: Movimientos de tesorería */}
                                 <div className="h-full flex flex-col min-h-0 space-y-2">
                                     <div className="flex items-center justify-between px-1">
                                         <div className="flex items-center gap-2">
                                             <div className="h-2 w-2 rounded-full bg-primary" />
-                                            <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Movimientos del Sistema</span>
-                                            <span
-                                                className="h-4 gap-1 px-2 text-3xs font-semibold text-primary hover:bg-primary/10"
+                                            <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Movimientos de Tesorería</span>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-6 gap-1 px-2 text-3xs font-semibold text-primary hover:bg-primary/10 hover:text-primary"
                                                 onClick={() => setIsCreateMovementOpen(true)}
-                                            >                                            
-                                                +Nuevo movimiento
-                                            </span>
+                                            >
+                                                <Plus className="h-3 w-3" />
+                                                Nuevo movimiento
+                                            </Button>
                                         </div>
                                         <span className="text-3xs font-mono tabular-nums text-muted-foreground">{systemData?.count || 0} disponibles</span>
                                     </div>
@@ -962,6 +948,16 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 </TabsContent>
 
                 <TabsContent value="reconciled" className="flex-1 min-h-0 overflow-y-auto mt-0 data-[state=inactive]:hidden custom-scrollbar">
+                    {reconciledTruncated && (
+                        <p className="px-1 pb-2 text-3xs text-muted-foreground">
+                            Mostrando las primeras {reconciledData?.results?.length ?? 0} de {reconciledCount} líneas conciliadas. Filtra por fecha o texto para acotar.
+                        </p>
+                    )}
+                    {!loadingReconciled && reconciledGroups.length === 0 && (
+                        <p className="px-1 py-10 text-center text-xs text-muted-foreground">
+                            Aún no hay líneas conciliadas{search.isFiltered ? " con este filtro" : ""}.
+                        </p>
+                    )}
                     <div className="grid grid-cols-1 gap-4 pb-24">
                         {reconciledGroups.map((groupItem) => {
                             const { group, lines } = groupItem;
@@ -981,7 +977,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             const diffType = translationMap[diffTypeRaw] || group?.difference_type_display || "Ajuste de Diferencia";
 
                             return (
-                                <div key={groupItem.id} className="group/card bg-transparent border border-border/40 hover:border-primary/20 rounded-md overflow-hidden transition-all duration-300">
+                                <div key={groupItem.key} className="group/card bg-transparent border border-border/40 hover:border-primary/20 rounded-md overflow-hidden transition-all duration-300">
                                     <div className="flex">
                                         {/* Left Column: Bank Side (Can have multiple lines) */}
                                         <div className="w-[40%] p-6 flex flex-col justify-start border-r border-border/40 relative">
@@ -1035,7 +1031,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         <div className="flex-1 p-6">
                                             <div className="space-y-2">
                                                 <div className="flex items-center justify-between px-1">
-                                                    <span className="text-4xs font-bold uppercase text-muted-foreground tracking-widest">Movimientos del Sistema ({movements.length + batches.length})</span>
+                                                    <span className="text-4xs font-bold uppercase text-muted-foreground tracking-widest">
+                                                        Movimientos de Tesorería ({movements.length + batches.length})
+                                                    </span>
                                                 </div>
 
                                                 <div className="space-y-1.5">
@@ -1503,39 +1501,23 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     />
                 )}
 
-                {/* Intelligence Panel (DRY CollapsibleSheet Pattern) */}
-                <CollapsibleSheet
-                    sheetId="reconciliation-intel"
+                {/* Inteligencia: panel desde la izquierda con overlay, sobre el contenido principal de la mesa */}
+                <Drawer
                     open={intelOpen}
                     onOpenChange={setIntelOpen}
-                    tabLabel="Inteligencia"
-                    tabIcon={Brain}
-                    fullWidth={400}
+                    side="left"
+                    boundary="embedded"
+                    showOverlay
+                    defaultSize={400}
+                    title="Inteligencia"
+                    icon={Brain}
+                    fillContent
+                    contentClassName="p-0"
                 >
-                    <div className="flex flex-col h-full overflow-hidden text-foreground">
-                        <div className="p-4 border-b border-border bg-muted/30 flex justify-between items-center shrink-0">
-                            <div className="flex items-center gap-2">
-                                <div className="bg-primary/10 p-1.5 rounded-sm">
-                                    <Brain className="h-4 w-4 text-primary" />
-                                </div>
-                                <div className="flex flex-col">
-                                    <h2 className="text-xs font-bold uppercase tracking-wider text-foreground/90 leading-tight">Inteligencia</h2>
-                                </div>
-                            </div>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
-                                onClick={() => setIntelOpen(false)}
-                            >
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                            <ReconciliationIntelligencePanel />
-                        </div>
+                    <div className="h-full overflow-y-auto p-4 custom-scrollbar">
+                        <ReconciliationIntelligencePanel />
                     </div>
-                </CollapsibleSheet>
+                </Drawer>
             </Tabs>
         </DndContext>
         </SkeletonShell>
