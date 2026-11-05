@@ -31,21 +31,20 @@ def test_seeded_roles_have_required_fields():
             assert bundle in BUNDLES, f"{key}: unknown bundle '{bundle}'"
 
 
-def test_sysadmin_is_system_and_has_all_bundles():
-    """sysadmin role must be is_system=True and include core.security + all module manage."""
-    from core.rbac.seed import SEEDED_ROLES, _ALL_MODULE_BUNDLES, _ALL_SENSITIVE_BUNDLES
+def test_sysadmin_is_system_and_has_only_core_security():
+    """sysadmin role must be is_system=True and have ONLY core.read + core.security (ADR-0116)."""
+    from core.rbac.seed import SEEDED_ROLES, _ALL_MODULE_APPS
 
     role = SEEDED_ROLES["sysadmin"]
     assert role["is_system"] is True
     bundles = set(role["bundles"])
-    # Must include core.security (sensitive)
-    assert "core.security" in bundles
-    # Must include all module manage bundles
-    for b in _ALL_MODULE_BUNDLES:
-        assert b in bundles, f"sysadmin missing bundle: {b}"
-    # Must include all sensitive bundles
-    for b in _ALL_SENSITIVE_BUNDLES:
-        assert b in bundles, f"sysadmin missing sensitive bundle: {b}"
+    # Must include the two core bundles
+    assert "core.read" in bundles, "sysadmin must have core.read"
+    assert "core.security" in bundles, "sysadmin must have core.security"
+    # Must NOT include any business-module bundles (outside core)
+    business_bundles = {f"{app}.{level}" for app in _ALL_MODULE_APPS if app != "core" for level in ("read", "operate", "manage")}
+    overlap = bundles & business_bundles
+    assert not overlap, f"sysadmin must not have business-module bundles: {sorted(overlap)}"
 
 
 def test_auditor_has_only_read_bundles():

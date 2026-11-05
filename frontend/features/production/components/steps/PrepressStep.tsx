@@ -5,14 +5,15 @@ import type { ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { ExternalLink, FileText, Hash, Layers, Package, Pencil, Sparkles, X, type LucideIcon } from 'lucide-react'
+import { ExternalLink, FileText, Hash, Layers, Lock, Package, Pencil, Sparkles, X, type LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LabeledInput, LabeledSwitch, DocumentAttachmentDropzone, StepHeader } from '@/components/shared'
 import { cn, formatBytes } from '@/lib/utils'
 import { productionApi } from '../../api/productionApi'
 import { useWizardStore } from '../WorkOrderWizardStore'
 import { toast } from 'sonner'
-import type { WorkOrder, ProductionAttachment } from '../../types'
+import type { WorkOrder, ProductionAttachment, WorkOrderTask } from '../../types'
+import { ApprovalTaskListPanel } from './ApprovalTaskListPanel'
 
 const schema = z.object({})
 
@@ -22,6 +23,11 @@ interface PrepressStepProps {
   actionable?: boolean
   onRefresh?: () => void
   headerActions?: ReactNode
+  canComplete?: (task: WorkOrderTask) => boolean
+  taskNotes?: Record<string | number, string>
+  taskFiles?: Record<string | number, File | null>
+  onNoteChange?: (taskId: string | number, note: string) => void
+  onFileChange?: (taskId: string | number, file: File | null) => void
 }
 
 function FileGroup({ icon: Icon, title, files }: { icon: LucideIcon; title: string; files: ProductionAttachment[] }) {
@@ -54,7 +60,7 @@ function FileGroup({ icon: Icon, title, files }: { icon: LucideIcon; title: stri
 }
 
 /** The approval lives in the step's bottom panel; the body shows the design files and instructions. */
-export function PrepressStep({ order, stageData, actionable, onRefresh, headerActions }: PrepressStepProps) {
+export function PrepressStep({ order, stageData, actionable, onRefresh, headerActions, canComplete, taskNotes, taskFiles, onNoteChange, onFileChange }: PrepressStepProps) {
   const { stepMode, setStepMode } = useWizardStore()
   const editing = stepMode === 'edit-in-place'
   const form = useForm({ resolver: zodResolver(schema) })
@@ -129,7 +135,7 @@ export function PrepressStep({ order, stageData, actionable, onRefresh, headerAc
       <Pencil className="h-3.5 w-3.5" /> Editar
     </Button>
   ) : (
-    headerActions ?? null
+    headerActions ?? <Lock className="h-4 w-4 text-muted-foreground" />
   )
 
   if (editing) {
@@ -266,6 +272,16 @@ export function PrepressStep({ order, stageData, actionable, onRefresh, headerAc
 
       <FileGroup icon={Package} title="Archivos del checkout (compra)" files={checkoutFiles} />
       <FileGroup icon={Layers} title="Archivos de diseño y adjuntos de la OT" files={(order.attachments ?? [])} />
+
+      <ApprovalTaskListPanel
+        tasks={order.workflow_tasks ?? []}
+        taskType="OT_PREPRESS_APPROVAL"
+        canComplete={canComplete ?? (() => false)}
+        taskNotes={taskNotes ?? {}}
+        taskFiles={taskFiles ?? {}}
+        onNoteChange={onNoteChange ?? (() => {})}
+        onFileChange={onFileChange ?? (() => {})}
+      />
     </div>
   )
 }

@@ -1,9 +1,9 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Ban, Edit, FileText, Link2, Trash2 } from "lucide-react"
+import { Ban, CheckCircle2, Edit, FileText, Link2, Trash2 } from "lucide-react"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { Button } from "@/components/ui/button"
 import {
     ActionConfirmModal,
     DocumentActionsMenu,
@@ -25,12 +25,13 @@ import {
     type ResolvedDocumentAction,
 } from "@/features/documents"
 import { saleOrderActions } from "@/features/sales"
-import { purchaseOrderActions } from "@/features/purchasing"
+import { purchaseOrderActions, PurchaseCheckoutWizard } from "@/features/purchasing"
 import { WorkOrderWizard } from "@/features/production"
 import { useOrderDocument } from "../../hooks/useCommercialDocument"
 import { useCancelOrderFlow } from "../../hooks/useCancelOrderFlow"
 import { useOrderActionEngine } from "../../hooks/useOrderActionEngine"
 import { useOrderRelatedActions } from "../../hooks/useOrderRelatedActions"
+import { useConfirmPurchaseOrder } from "../../hooks/useOrdersMutations"
 import { getOrderLifecycle } from "../../utils/lifecycle"
 import { planOrderSheetActions, SHEET_EXCLUDED_ACTIONS } from "../../utils/orderSheetActions"
 import type { Order, OrderLine } from "../../types"
@@ -58,7 +59,6 @@ const LIFECYCLE_DOMAINS = new Set<string>(["origin", "billing", "production", "l
  * ciclo y tabs Resumen (contexto + productos) · Relaciones. Referencia para las demás fichas.
  */
 export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, posSessionId = null, onActionSuccess }: OrderSheetProps) {
-    const router = useRouter()
     const label = LABEL[kind]
     const isSale = kind === "sale"
 
@@ -69,6 +69,7 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
     const [tab, setTab] = useState("summary")
     const [domain, setDomain] = useState<DocumentDomain | null>(null)
     const [creatingWorkOrderLine, setCreatingWorkOrderLine] = useState<OrderLine | null>(null)
+    const [editingPurchaseOrder, setEditingPurchaseOrder] = useState(false)
 
     const handleSuccess = () => {
         void fetchOrderDetails()
@@ -81,6 +82,8 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
     const { requestCancel, modalProps: cancelModalProps, isAnnulBlocked, annulBlockedReason } = useCancelOrderFlow(
         kind, { onSuccess: handleSuccess, orderId: order?.id },
     )
+
+    const { confirmPurchaseOrder, isConfirmingPurchaseOrder } = useConfirmPurchaseOrder()
 
     const { printRef, handlePrint } = usePrintableDrawer()
     const displayId = order?.display_id ?? order?.number
@@ -123,8 +126,31 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
         }
     }
     if (order?.status === "DRAFT" && !isSale) {
-        managementActions.unshift({ id: "edit-order", label: "Editar orden", icon: Edit, onClick: () => router.push(`/purchasing/checkout?orderId=${order.id}`) })
+        managementActions.unshift({ id: "edit-order", label: "Editar orden", icon: Edit, onClick: () => setEditingPurchaseOrder(true) })
     }
+
+    const draftPurchaseFooter = order?.status === "DRAFT" && !isSale ? (
+        <div className="flex gap-2 justify-end">
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditingPurchaseOrder(true)}
+            >
+                <Edit className="mr-2 h-4 w-4" />
+                Editar orden
+            </Button>
+            {permissions.includes("purchasing.confirm_purchaseorder") && (
+                <Button
+                    size="sm"
+                    disabled={isConfirmingPurchaseOrder}
+                    onClick={() => void confirmPurchaseOrder(order.id).then(handleSuccess)}
+                >
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Confirmar Orden
+                </Button>
+            )}
+        </div>
+    ) : undefined
 
     const sectionActions = useMemo(() => {
         const result: Partial<Record<DocumentDomain, DocumentActionItem[]>> = {}
@@ -209,6 +235,7 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
                         onPrint={handlePrint}
                     />
                 )}
+                footer={draftPurchaseFooter}
                 isLoading={loading || (!order && !isError)}
                 error={isError ? new Error("No se pudo cargar la orden") : undefined}
                 loadingLabel={isSale ? `Cargando ${getDomainConceptTitle('ov').toLowerCase()}` : "Cargando orden de compra"}
@@ -228,6 +255,21 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
             {engine.host}
             {related.host}
             <ActionConfirmModal {...cancelModalProps} />
+
+            {editingPurchaseOrder && order && (
+                <PurchaseCheckoutWizard
+                    open={editingPurchaseOrder}
+                    onOpenChange={(isOpen) => { if (!isOpen) setEditingPurchaseOrder(false) }}
+                    orderId={order.id}
+                    order={null}
+                    orderLines={[]}
+                    total={0}
+                    onComplete={() => {
+                        setEditingPurchaseOrder(false)
+                        handleSuccess()
+                    }}
+                />
+            )}
 
             {creatingWorkOrderLine && order && (
                 <WorkOrderWizard

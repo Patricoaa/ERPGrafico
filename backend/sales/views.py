@@ -28,13 +28,15 @@ class SalesSettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = SalesSettings.objects.all()
     serializer_class = SalesSettingsSerializer
     action_permissions = {
-        # current: PUT/PATCH → change_* by method; GET has custom permission check
+        # current: explicit per-verb — view_* (read) / change_* (manage, via OVERRIDES ADR-0116)
         "current": None,
     }
 
     def get_permissions(self):
-        if self.action == "current" and self.request.method == "GET":
-            return [IsAuthenticated()]
+        if self.action == "current":
+            from core.api.permissions import require_perms
+            verb = "view" if self.request.method in ("GET", "HEAD", "OPTIONS") else "change"
+            return [require_perms(f"sales.{verb}_salessettings")()]
         return super().get_permissions()
 
     @action(detail=False, methods=["get", "put", "patch"])

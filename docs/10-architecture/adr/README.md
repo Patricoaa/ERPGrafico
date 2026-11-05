@@ -180,5 +180,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0113](0113-server-side-group-counts.md) | Server-side group counts for collections above the grouping cap | Rejected (limitation accepted) |
 | [0114](0114-remove-contacts-customers-suppliers-endpoints.md) | Remove unbounded contacts customers and suppliers endpoints | Accepted |
 | [0115](0115-materialized-account-posted-totals.md) | Materialized posted totals on accounting accounts | Accepted |
+| [0116](0116-config-catalog-manage-only.md) | Taxonomía de acceso a entidades de configuración y datos maestros — settings singleton y datos maestros requieren `{app}.manage` para escritura y `{app}.read` para lectura | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

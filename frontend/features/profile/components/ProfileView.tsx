@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { changePassword, changePin, downloadPayrollPdf, downloadMultiplePayrollPdfs } from '@/features/profile/api/profileApi'
+import { useMyProfile } from '../context/ProfileProvider'
 import type { MyProfile } from "@/types/profile"
 import type { Payroll } from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
@@ -16,7 +17,8 @@ import { cn } from "@/lib/utils"
 import {
     User, KeyRound, Wallet,
     Download,
-    Check, Sun, Moon, Monitor
+    Check, Sun, Moon, Monitor,
+    ShieldCheck, Users,
 } from "lucide-react"
 import { EmptyState, LabeledInput, StatusBadge } from "@/components/shared"
 import { EmployeePayrollModal } from "./EmployeePayrollModal"
@@ -91,10 +93,14 @@ function AccountTab({ activeSubTab }: { activeSubTab?: string }) {
             {activeSubTab === "security" && (
                 <>
                     <FadeIn delay={0.1} yOffset={10}>
-                        <PasswordChangeSection />
+                        <RolesSection />
                     </FadeIn>
 
                     <FadeIn delay={0.2} yOffset={10}>
+                        <PasswordChangeSection />
+                    </FadeIn>
+
+                    <FadeIn delay={0.3} yOffset={10}>
                         <PinChangeSection />
                     </FadeIn>
                 </>
@@ -161,6 +167,66 @@ function InfoField({ label, value }: { label: string; value: React.ReactNode }) 
             <dt className="w-48 shrink-0 text-xs text-muted-foreground">{label}</dt>
             <dd className="min-w-0 break-words text-sm font-medium text-foreground">{value}</dd>
         </div>
+    )
+}
+
+function RolesSection() {
+    const { profile } = useMyProfile()
+    const user = profile?.user
+    const roles = user?.groups?.filter(g => g.kind === "ROLE") ?? []
+    const teams = user?.groups?.filter(g => g.kind === "TEAM") ?? []
+
+    return (
+        <section className="w-full max-w-none">
+            <header className="border-b border-border/70 pb-4">
+                <h2 className="text-base font-semibold text-foreground">Roles y equipos</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Accesos y grupos asignados a su cuenta.</p>
+            </header>
+            <dl className="divide-y divide-border/60">
+                <div className="flex min-w-0 flex-col gap-1 py-2 sm:flex-row sm:items-start sm:gap-8">
+                    <dt className="flex items-center gap-1.5 w-48 shrink-0 text-xs text-muted-foreground pt-0.5">
+                        <ShieldCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                        Roles
+                    </dt>
+                    <dd className="min-w-0">
+                        {user?.is_superuser ? (
+                            <span className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-foreground/10 text-foreground">
+                                Superusuario
+                            </span>
+                        ) : roles.length > 0 ? (
+                            <div className="flex flex-wrap gap-1.5">
+                                {roles.map(r => (
+                                    <span key={r.id} className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-foreground/8 text-foreground">
+                                        {r.name}
+                                    </span>
+                                ))}
+                            </div>
+                        ) : (
+                            <span className="text-xs text-muted-foreground">Sin roles asignados</span>
+                        )}
+                    </dd>
+                </div>
+                <div className="flex min-w-0 flex-col gap-1 py-2 sm:flex-row sm:items-start sm:gap-8">
+                    <dt className="flex items-center gap-1.5 w-48 shrink-0 text-xs text-muted-foreground pt-0.5">
+                        <Users className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                        Equipos
+                    </dt>
+                    <dd className="min-w-0">
+                        {teams.length > 0 ? (
+                            <div className="flex flex-wrap gap-1.5">
+                                {teams.map(t => (
+                                    <span key={t.id} className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-foreground/8 text-foreground">
+                                        {t.name}
+                                    </span>
+                                ))}
+                            </div>
+                        ) : (
+                            <span className="text-xs text-muted-foreground">Sin equipos asignados</span>
+                        )}
+                    </dd>
+                </div>
+            </dl>
+        </section>
     )
 }
 

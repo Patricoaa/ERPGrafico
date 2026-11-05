@@ -32,14 +32,20 @@ _TOPIC_RE = re.compile(r"^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*(\.[0-9]+(\.comments)?
 _COMMENTS_SUFFIX = ".comments"
 
 
-def _view_permission(topic: str) -> str:
+def _required_permission(topic: str) -> str:
+    """Permiso exigido para suscribirse. Bloqueante: consulta la entidad comentada."""
     app, model = topic.split(".")[:2]
-    if topic.endswith(_COMMENTS_SUFFIX):
-        # Comment visibility is inherited from the commented entity (ADR-0111).
-        from core.documents.types import DocumentTypeRegistry
+    if not topic.endswith(_COMMENTS_SUFFIX):
+        return f"{app}.view_{model}"
+    # Comment visibility is inherited from the commented entity (ADR-0111), which may
+    # itself inherit from a parent (see DocumentTypeRegistry.comment_view_permission).
+    from core.documents.types import DocumentTypeRegistry
 
-        return DocumentTypeRegistry.view_permission(f"{app}.{model}")
-    return f"{app}.view_{model}"
+    label = f"{app}.{model}"
+    pk = int(topic.split(".")[2])
+    target_model = DocumentTypeRegistry.model_for(label)
+    obj = target_model._default_manager.filter(pk=pk).first() if target_model else None
+    return DocumentTypeRegistry.comment_view_permission(label, obj)
 
 
 class EntityBusConsumer(AsyncJsonWebsocketConsumer):
@@ -78,7 +84,8 @@ class EntityBusConsumer(AsyncJsonWebsocketConsumer):
         if op == "subscribe":
             # Require view permission for the subscribed model.
             # Topic format: <app>.<model>, <app>.<model>.<id> or <app>.<model>.<id>.comments
-            has_perm = await sync_to_async(self.scope["user"].has_perm)(_view_permission(topic))
+            required = await sync_to_async(_required_permission)(topic)
+            has_perm = await sync_to_async(self.scope["user"].has_perm)(required)
             if not has_perm:
                 await self.send_json(
                     {"event": "error", "code": "forbidden", "topic": topic}

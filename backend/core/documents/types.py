@@ -127,3 +127,17 @@ class DocumentTypeRegistry:
             return entity.permission
         app_label, model_name = label.split(".", 1)
         return f"{app_label}.view_{model_name}"
+
+    @classmethod
+    def comment_view_permission(cls, label: str, obj: models.Model | None = None) -> str:
+        """Permiso que gobierna los comentarios de `obj` (ADR-0111).
+
+        Por defecto es el de visualización de la entidad. Un modelo que pertenece a otra
+        entidad (p. ej. una tarea de aprobación de una OT) define `comment_permission_source()`
+        y hereda el permiso de su padre.
+        """
+        source = getattr(obj, "comment_permission_source", None)
+        parent = source() if callable(source) else None
+        if parent is not None:
+            return cls.view_permission(cls.label_for(parent.__class__))
+        return cls.view_permission(label)

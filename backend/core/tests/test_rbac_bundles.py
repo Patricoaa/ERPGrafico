@@ -170,3 +170,144 @@ def test_every_curated_permission_belongs_to_a_bundle():
     assert not orphans, (
         f"{len(orphans)} orphaned permissions (belong to no bundle): {sorted(orphans)}"
     )
+
+
+# ---------------------------------------------------------------------------
+# ADR-0116 — Settings singletons: write perms must be in manage, not operate
+# ---------------------------------------------------------------------------
+@pytest.mark.django_db
+def test_settings_singleton_write_perms_require_manage():
+    """
+    ADR-0116 Clase A: change_* for settings singletons must be in {app}.manage,
+    NOT in {app}.operate.
+    """
+    cases = [
+        ("sales.change_salessettings",           "sales.operate",      "sales.manage"),
+        ("accounting.change_accountingsettings", "accounting.operate", "accounting.manage"),
+        ("hr.change_globalhrsettings",           "hr.operate",         "hr.manage"),
+        ("workflow.change_workflowsettings",     "workflow.operate",   "workflow.manage"),
+        ("treasury.change_reconciliationsettings", "treasury.operate", "treasury.manage"),
+        ("core.change_companysettings",          "core.operate",       "core.manage"),
+    ]
+    for perm, operate_bundle, manage_bundle in cases:
+        operate = expand([operate_bundle])
+        manage = expand([manage_bundle])
+        assert perm not in operate, (
+            f"{perm} must NOT be in {operate_bundle} (ADR-0116)"
+        )
+        assert perm in manage, (
+            f"{perm} must be in {manage_bundle} (ADR-0116)"
+        )
+
+
+@pytest.mark.django_db
+def test_settings_singleton_read_perms_in_read_bundle():
+    """
+    ADR-0116 Clase A: view_* for settings singletons must be in {app}.read.
+    """
+    cases = [
+        ("sales.view_salessettings",           "sales.read"),
+        ("accounting.view_accountingsettings", "accounting.read"),
+        ("hr.view_globalhrsettings",           "hr.read"),
+        ("workflow.view_workflowsettings",     "workflow.read"),
+        ("treasury.view_reconciliationsettings", "treasury.read"),
+        ("core.view_companysettings",          "core.read"),
+    ]
+    for perm, read_bundle in cases:
+        read = expand([read_bundle])
+        assert perm in read, (
+            f"{perm} must be in {read_bundle} (ADR-0116)"
+        )
+
+
+# ---------------------------------------------------------------------------
+# ADR-0116 — Datos maestros: write perms must be in manage, not operate
+# ---------------------------------------------------------------------------
+@pytest.mark.django_db
+def test_master_data_write_perms_require_manage():
+    """
+    ADR-0116 Clase B: add_* / change_* for master data models must be in
+    {app}.manage, NOT in {app}.operate.
+    """
+    cases = [
+        # Inventario
+        ("inventory.add_productcategory",    "inventory.operate", "inventory.manage"),
+        ("inventory.change_productcategory", "inventory.operate", "inventory.manage"),
+        ("inventory.add_uom",                "inventory.operate", "inventory.manage"),
+        ("inventory.change_uom",             "inventory.operate", "inventory.manage"),
+        ("inventory.add_warehouse",          "inventory.operate", "inventory.manage"),
+        ("inventory.change_warehouse",       "inventory.operate", "inventory.manage"),
+        ("inventory.add_pricingrule",        "inventory.operate", "inventory.manage"),
+        ("inventory.change_pricingrule",     "inventory.operate", "inventory.manage"),
+        # Tesorería
+        ("treasury.add_bank",                "treasury.operate", "treasury.manage"),
+        ("treasury.change_bank",             "treasury.operate", "treasury.manage"),
+        ("treasury.add_paymentmethod",       "treasury.operate", "treasury.manage"),
+        ("treasury.change_paymentmethod",    "treasury.operate", "treasury.manage"),
+        ("treasury.add_posterminal",         "treasury.operate", "treasury.manage"),
+        ("treasury.change_posterminal",      "treasury.operate", "treasury.manage"),
+        # RRHH
+        ("hr.add_afp",               "hr.operate", "hr.manage"),
+        ("hr.change_afp",            "hr.operate", "hr.manage"),
+        ("hr.add_payrollconcept",    "hr.operate", "hr.manage"),
+        ("hr.change_payrollconcept", "hr.operate", "hr.manage"),
+        # Producción
+        ("production.add_billofmaterials",    "production.operate", "production.manage"),
+        ("production.change_billofmaterials", "production.operate", "production.manage"),
+    ]
+    for perm, operate_bundle, manage_bundle in cases:
+        operate = expand([operate_bundle])
+        manage = expand([manage_bundle])
+        assert perm not in operate, (
+            f"{perm} must NOT be in {operate_bundle} (ADR-0116 Clase B)"
+        )
+        assert perm in manage, (
+            f"{perm} must be in {manage_bundle} (ADR-0116 Clase B)"
+        )
+
+
+@pytest.mark.django_db
+def test_master_data_read_perms_in_read_bundle():
+    """
+    ADR-0116 Clase B: view_* for master data models must remain in {app}.read —
+    operational roles can still consult catalogs.
+    """
+    cases = [
+        ("inventory.view_productcategory", "inventory.read"),
+        ("inventory.view_uom",             "inventory.read"),
+        ("inventory.view_warehouse",       "inventory.read"),
+        ("treasury.view_bank",             "treasury.read"),
+        ("treasury.view_paymentmethod",    "treasury.read"),
+        ("hr.view_afp",                    "hr.read"),
+        ("hr.view_payrollconcept",         "hr.read"),
+        ("production.view_billofmaterials","production.read"),
+    ]
+    for perm, read_bundle in cases:
+        read = expand([read_bundle])
+        assert perm in read, (
+            f"{perm} must be in {read_bundle} (ADR-0116 Clase B — lectura libre)"
+        )
+
+
+@pytest.mark.django_db
+def test_operate_cumulative_subset_of_manage_still_holds_after_overrides():
+    """
+    After OVERRIDES, the cumulative rule (read ⊆ operate ⊆ manage) must still hold
+    for all 13 module apps. OVERRIDES only move some perms UP into manage; they
+    must not break the ⊆ relationship.
+    """
+    apps = [
+        "billing", "sales", "purchasing", "accounting", "treasury",
+        "hr", "production", "inventory", "contacts", "tax",
+        "workflow", "core", "finances",
+    ]
+    for app in apps:
+        read    = expand([f"{app}.read"])
+        operate = expand([f"{app}.operate"])
+        manage  = expand([f"{app}.manage"])
+        assert read <= operate, (
+            f"{app}: read ⊄ operate after OVERRIDES; diff: {sorted(read - operate)}"
+        )
+        assert operate <= manage, (
+            f"{app}: operate ⊄ manage after OVERRIDES; diff: {sorted(operate - manage)}"
+        )

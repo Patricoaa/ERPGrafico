@@ -87,11 +87,11 @@ SEEDED_ROLES: dict[str, SeededRole] = {
     "sysadmin": SeededRole(
         name="Administrador del sistema",
         description=(
-            "Acceso completo al sistema incluyendo gestión de usuarios, grupos, "
-            "permisos y todas las capacidades sensibles. No puede ser eliminado ni "
-            "renombrado."
+            "Acceso exclusivo al módulo de configuración del sistema: gestión de "
+            "usuarios, grupos, permisos y logs de auditoría. Sin acceso a módulos "
+            "de negocio. No puede ser eliminado ni renombrado."
         ),
-        bundles=_ALL_MODULE_BUNDLES + _ALL_SENSITIVE_BUNDLES,
+        bundles=["core.read", "core.security"],
         is_system=True,
     ),
     "gerencia": SeededRole(

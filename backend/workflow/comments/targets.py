@@ -22,7 +22,7 @@ class CommentTarget:
 
     @property
     def view_permission(self) -> str:
-        return DocumentTypeRegistry.view_permission(self.label)
+        return DocumentTypeRegistry.comment_view_permission(self.label, self.obj)
 
     @property
     def url(self) -> str:
