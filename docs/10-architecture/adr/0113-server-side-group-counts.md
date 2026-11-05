@@ -1,7 +1,7 @@
 ---
 id: 0113
 title: Server-side group counts for collections above the grouping cap
-status: Proposed
+status: Accepted
 date: 2026-11-05
 author: fullstack-team
 ---
