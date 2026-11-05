@@ -1,5 +1,6 @@
 import api from '@/lib/api'
 import { toPage, type Page } from '@/lib/pagination'
+import { fetchBoundedList } from '@/lib/bounded-list'
 import type {
     Terminal,
     TerminalCreatePayload,
@@ -126,10 +127,8 @@ export const treasuryApi = {
 
     // ========== Treasury Accounts ==========
 
-    getAccounts: async (filters?: { name?: string; account_type?: string; bank_id?: number }): Promise<TreasuryAccount[]> => {
-        const { data } = await api.get<TreasuryAccount[]>('/treasury/accounts/', { params: filters })
-        return data
-    },
+    getAccounts: async (filters?: { name?: string; account_type?: string; bank_id?: number }): Promise<TreasuryAccount[]> =>
+        fetchBoundedList<TreasuryAccount>('/treasury/accounts/', filters),
 
     getAccount: async (id: number): Promise<TreasuryAccount> => {
         const { data } = await api.get<TreasuryAccount>(`/treasury/accounts/${id}/`)

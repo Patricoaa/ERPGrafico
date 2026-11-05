@@ -1252,6 +1252,21 @@ class UoMService:
             return ""
 
 
+
+# Límite de variantes por operación de generate_variants (Big O: producto cartesiano).
+MAX_VARIANT_COMBINATIONS = 500
+
+
+def _variant_value_signatures(template):
+    """Por cada variante del template, la lista de ids de sus valores de atributo (1 query)."""
+    from django.db.models import Prefetch
+
+    variants = Product.objects.filter(parent_template=template).prefetch_related(
+        Prefetch("attribute_values", queryset=ProductAttributeValue.objects.only("id"))
+    )
+    return [[av.pk for av in v.attribute_values.all()] for v in variants]
+
+
 class ProductService:
     @staticmethod
     @transaction.atomic
@@ -2056,23 +2071,31 @@ class ProductService:
 
         # Cartesian product of attribute values
         combinations = list(itertools.product(*attr_values_lists))
+        if len(combinations) > MAX_VARIANT_COMBINATIONS:
+            raise ValidationError(
+                f"La selección genera {len(combinations)} variantes; el máximo por operación es "
+                f"{MAX_VARIANT_COMBINATIONS}. Reduzca los valores seleccionados."
+            )
+
+        # One query for the template's existing variants, compared in memory. The previous
+        # per-combination lookup was Θ(combinations × variants) round-trips.
+        existing_signatures = {
+            frozenset(variant_value_ids)
+            for variant_value_ids in _variant_value_signatures(template)
+        }
+        profile = None
+        if getattr(template, "manufacturing_profile", None):
+            from inventory.models import ProductManufacturingProfile
+
+            profile = ProductManufacturingProfile.objects.get(product=template)
 
         created_count = 0
         skipped_count = 0
 
         with transaction.atomic():
             for combo in combinations:
-                # Check if variant already exists
-                existing_variants = Product.objects.filter(parent_template=template)
-                for val in combo:
-                    existing_variants = existing_variants.filter(attribute_values=val)
-
-                # Ensure it has exactly the same number of attributes to avoid partial matches
-                existing_variants = [
-                    v for v in existing_variants if v.attribute_values.count() == len(combo)
-                ]
-
-                if existing_variants:
+                signature = frozenset(val.pk for val in combo)
+                if signature in existing_signatures:
                     skipped_count += 1
                     continue
 
@@ -2100,11 +2123,9 @@ class ProductService:
                 )
                 variant.attribute_values.set(combo)
                 variant.save()  # Triggers display name generation
+                existing_signatures.add(signature)
 
-                if getattr(template, "manufacturing_profile", None):
-                    from inventory.models import ProductManufacturingProfile
-
-                    profile = ProductManufacturingProfile.objects.get(product=template)
+                if profile is not None:
                     profile.pk = None
                     profile.product = variant
                     profile.save()

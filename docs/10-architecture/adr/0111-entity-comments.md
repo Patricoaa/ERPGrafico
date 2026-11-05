@@ -18,7 +18,8 @@ The ERP needs contextual collaboration attached to any record: comments, replies
 2. **Identity = `"app.model"` label + id** (ADR-0080). It is resolved with `DocumentTypeRegistry.model_for` / `label_for`. Any model resolvable that way can be commented.
 3. **One-level threads (Slack style).** A reply to a reply is attached to the thread root by the service.
 4. **Mentions are tokens in plain text.** `@[u:<id>]` is a user and `@[g:<id>]` is a group. Only active users and `GroupProfile.kind == TEAM` groups are mentionable. ROLE groups are for permissions, not communication. Invalid tokens are rejected with 400.
-5. **Visibility is inherited from the entity.** There are no object-level permissions. Whoever has `DocumentTypeRegistry.view_permission(label)` can list and create comments on the entity. Only the author can edit. The author or a moderator (`workflow.delete_comment`, included in `workflow.manage`) can delete.
+5. **Visibility is inherited from the entity, through the parent chain.** A model may declare `comment_permission_source()`; `workflow.Task` returns its `content_object`, so approval threads follow the work order's permission. The entity bus applies the same rule to `<app>.<model>.<id>.comments` subscriptions.
+   - There are no object-level permissions. Whoever has the comment permission of the entity (`DocumentTypeRegistry.comment_view_permission`) can list and create comments on it. Only the author can edit. The author or a moderator (`workflow.delete_comment`, included in `workflow.manage`) can delete.
 6. **Soft delete.** Deleted comments disappear from the list. A deleted root with live replies is kept as a "Comentario eliminado" placeholder so the thread does not break (deletion-policy.md).
 7. **Notifications reuse `workflow.Notification`** and its WebSocket push.
    - `comment_mention` goes to mentioned users and to active members of mentioned teams. `comment_reply` goes to thread participants (root author + repliers).

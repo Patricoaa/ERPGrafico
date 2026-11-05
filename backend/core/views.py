@@ -217,24 +217,56 @@ class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         self.request._rbac_sod_warnings = [{"rule": w["rule"], "label": w["label"]} for w in sod_warnings]
 
     def perform_update(self, serializer):
+        from rest_framework.exceptions import PermissionDenied
         from core.rbac.services import RoleService
+        actor = self.request.user
         instance = self.get_object()
+
+        # Guard: is_superuser may only be changed by an existing superuser
+        # or a user with core.security (sysadmin), and never on oneself
+        # unless already a superuser.
+        new_superuser = serializer.validated_data.get("is_superuser")
+        if new_superuser is not None and new_superuser != instance.is_superuser:
+            can_grant = actor.is_superuser or actor.has_perm("core.change_user")
+            if not can_grant:
+                raise PermissionDenied("No tiene permiso para modificar el flag de superusuario.")
+            if not actor.is_superuser and actor == instance:
+                raise PermissionDenied("No puede concederse el flag de superusuario a sí mismo.")
+
         is_before = instance.is_active
         is_after = serializer.validated_data.get("is_active", is_before)
         if is_before and not is_after:
             from .services import UserService
-            UserService.deactivate(user=instance, deactivated_by=self.request.user, request=self.request)
+            UserService.deactivate(user=instance, deactivated_by=actor, request=self.request)
             self.request._rbac_sod_warnings = []
             return
+
         new_groups = serializer.validated_data.get("groups")
-        before = set(instance.groups.values_list("name", flat=True)) if new_groups is not None else None
+        before_groups = set(instance.groups.values_list("name", flat=True)) if new_groups is not None else None
         sod_warnings: list = []
         if new_groups is not None:
-            sod_warnings = RoleService.validate_role_assignment(self.request.user, instance, list(new_groups))
+            sod_warnings = RoleService.validate_role_assignment(actor, instance, list(new_groups))
+
+        super_before = instance.is_superuser
         super().perform_update(serializer)
+
         if new_groups is not None:
-            after = set(instance.groups.values_list("name", flat=True))
-            RoleService.log_user_roles_change(instance, before, after, self.request.user, self.request, sod_warnings=sod_warnings)
+            after_groups = set(instance.groups.values_list("name", flat=True))
+            RoleService.log_user_roles_change(instance, before_groups, after_groups, actor, self.request, sod_warnings=sod_warnings)
+
+        # Log superuser flag changes
+        if new_superuser is not None and new_superuser != super_before:
+            from .models import ActionLog
+            from .services import ActionLoggingService
+            verb = "concedido" if new_superuser else "revocado"
+            ActionLoggingService.log_action(
+                user=actor,
+                action_type=ActionLog.Type.SECURITY,
+                description=f"Flag superusuario {verb} al usuario '{instance.username}' por '{actor.username}'.",
+                request=self.request,
+                metadata={"target_user_id": instance.pk, "granted": new_superuser},
+            )
+
         self.request._rbac_sod_warnings = [{"rule": w["rule"], "label": w["label"]} for w in sod_warnings]
 
     def destroy(self, request, *args, **kwargs):
@@ -347,12 +379,20 @@ class ActionLogViewSet(viewsets.ReadOnlyModelViewSet):
     filterset_fields = ["user", "action_type"]
 
 
+# Acotado: el selector consulta hasta `limit` filas por cada modelo con historial.
+GLOBAL_AUDIT_LOG_MAX_LIMIT = 200
+
+
 class GlobalAuditLogView(APIView):
     permission_classes = [require_perms("core.view_actionlog")]
 
     def get(self, request):
         from .services import CoreSelector
-        limit = int(request.query_params.get('limit', 50))
+        try:
+            limit = int(request.query_params.get('limit', 50))
+        except (TypeError, ValueError):
+            limit = 50
+        limit = min(max(limit, 1), GLOBAL_AUDIT_LOG_MAX_LIMIT)
         return Response(CoreSelector.get_global_audit_log(limit))
 
 

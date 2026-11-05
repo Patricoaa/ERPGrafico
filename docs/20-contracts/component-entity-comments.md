@@ -62,7 +62,7 @@ Attachments:
 - A comment may have attachments and no text. Attachments are added only on creation; editing changes the text only.
 
 Permissions:
-- Every action requires `view_permission(label)` of the target. Without it the response is 403.
+- Every action requires the target's comment permission: `DocumentTypeRegistry.comment_view_permission(label, obj)`. By default it is `view_<model>`. A model that belongs to another entity defines `comment_permission_source()` and inherits its parent's permission. `workflow.Task` does this with `content_object`, so an OT approval thread is visible to whoever can see the work order, not only to users with `workflow.view_task`. Without it the response is 403.
 - `PATCH` is for the author only.
 - `DELETE` is for the author, or a user with `workflow.delete_comment`.
 - `parent_id` must belong to the same target. A reply to a reply is stored under the thread root.

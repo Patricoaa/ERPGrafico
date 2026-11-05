@@ -130,7 +130,7 @@ export function PaymentModal({
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
                             <Button
-                                className="bg-success hover:bg-success/90 h-10 text-sm font-medium"
+                                className="bg-success hover:bg-success/90 text-3xs font-black uppercase tracking-widest"
                                 onClick={() => onConfirm({
                                     paymentMethod: paymentData.amount === 0 ? 'CREDIT' : paymentData.method || 'CASH',
                                     amount: paymentData.amount,

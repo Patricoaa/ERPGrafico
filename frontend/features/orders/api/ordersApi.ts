@@ -36,6 +36,8 @@ export const ordersApi = {
     // ── Purchasing ──
     getPurchaseOrder: (id: string | number) =>
         api.get(`/purchasing/orders/${id}/`).then(r => r.data),
+    confirmPurchaseOrder: (id: number) =>
+        api.post(`/purchasing/orders/${id}/confirm/`).then(r => r.data),
     annulPurchaseOrder: (id: number, reason: string = '', force: boolean = false) =>
         api.post(`/purchasing/orders/${id}/annul/`, { force, reason }).then(r => r.data),
     cancelPurchaseOrder: (id: number, reason: string = '') =>

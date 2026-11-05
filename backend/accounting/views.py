@@ -5,7 +5,7 @@ from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from core.api.pagination import StandardResultsSetPagination
+from core.api.pagination import OptionalPaginationMixin, StandardResultsSetPagination
 
 from .models import (
     Account,
@@ -59,13 +59,15 @@ class AccountingSettingsViewSet(viewsets.ModelViewSet):
     queryset = AccountingSettings.objects.all()
     serializer_class = AccountingSettingsSerializer
     action_permissions = {
-        # current: PUT/PATCH → change_* by method; GET has custom permission check
+        # current: explicit per-verb — view_* (read) / change_* (manage, via OVERRIDES ADR-0116)
         "current": None,
     }
 
     def get_permissions(self):
-        if self.action == "current" and self.request.method == "GET":
-            return [IsAuthenticated()]
+        if self.action == "current":
+            from core.api.permissions import require_perms
+            verb = "view" if self.request.method in ("GET", "HEAD", "OPTIONS") else "change"
+            return [require_perms(f"accounting.{verb}_accountingsettings")()]
         return super().get_permissions()
 
     @action(detail=False, methods=["get", "put", "patch"])
@@ -92,10 +94,10 @@ class AccountingSettingsViewSet(viewsets.ModelViewSet):
         return Response({"rate": rate_float, "multiplier": round(1 + rate_float / 100, 10)})
 
 
-class AccountViewSet(EditPolicyMixin, BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
+class AccountViewSet(OptionalPaginationMixin, EditPolicyMixin, BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = Account.objects.all()  # Base queryset includes archived for detail/update
     serializer_class = AccountSerializer
-    pagination_class = None  # Master data
+    pagination_class = StandardResultsSetPagination  # Master data, opt-in (ADR-0112)
     action_permissions = {
         "populate_ifrs": "accounting.override_account",
         # Edit via POST → change_*

@@ -55,10 +55,12 @@ export interface DocumentDrawerShellProps {
     /** Lado del drawer: "left" | "right". Default: "left". */
     side?: "left" | "right"
     className?: string
+    /** Área fija al pie del drawer (acciones primarias visibles sin scroll). */
+    footer?: ReactNode
 }
 
 export function DocumentDrawerShell(props: DocumentDrawerShellProps) {
-    const { open, onOpenChange, title, subtitle, icon, headerActions, embedded, tabs, side } = props
+    const { open, onOpenChange, title, subtitle, icon, headerActions, embedded, tabs, side, footer } = props
 
     if (embedded) {
         return (
@@ -87,6 +89,7 @@ export function DocumentDrawerShell(props: DocumentDrawerShellProps) {
             subtitle={subtitle}
             icon={icon}
             headerActions={headerActions}
+            footer={footer}
             mode="view"
             fillContent
             contentClassName="p-0"

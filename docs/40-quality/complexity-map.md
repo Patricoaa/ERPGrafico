@@ -241,3 +241,30 @@ Prioridad = riesgo × radio de impacto (riesgo {bajo,medio,alto} = clase × boun
 ## Nota de mantenimiento
 
 El mapa envejece con el código. Cada cambio a un entry point listado debe actualizar su fila (enfoque "toca un archivo listado → actualiza la fila", a reforzar en el checklist de PR). Próxima verificación: baseline empírico con `assertNumQueries` (deuda de `zero-n-plus-one-policy.md:173`) o EXPLAIN ANALYZE sobre la top-10 de §3.
+
+## Cierre de remediación (2026-11-05)
+
+Estado final de los residuales del §4 y de la lista §5 (epic #170):
+
+| Ítem | Resolución |
+|------|-----------|
+| Punto 2 (agrupado >200 filas) | Limitación aceptada. ADR-0113 rechazado. |
+| Punto 3 (benchmark p95) | Cerrado sin medición nueva, por decisión del equipo. |
+| `contacts/customers`, `suppliers` | Eliminados (ADR-0114). |
+| `accounting/accounts` totales | Materializados (ADR-0115). |
+| `treasury/accounts`, `hr/employees` sin paginar | Consumidores acotados con `fetchBoundedList`; backend opt-in (ADR-0112). |
+| `list_accounts` materializar totales | Hecho (ADR-0115). |
+| `purchasing.generate_subscription_orders` | Duplicados en una consulta por corrida; tope de 500 por ejecución. |
+| `production.notify_overdue_work_orders` | Lecturas agrupadas; `create()` por notificación (push en tiempo real). |
+| `inventory.generate_variants` | Firmas en memoria, perfil una vez, tope de 500 combinaciones. |
+| `tax.calculate_f29_for_period` | Agregación SQL por `(es_venta, dte_type)`; carry-forward en una consulta. |
+| `treasury` portfolio / in_transit | `sale_order` precargado (era N+1). |
+| `treasury` unbilled_charges | Ya tenía `select_related`; sin cambio. |
+| `finances.generate_report_task` | Despachador; costo = el de cada reporte (O(1) round-trips, P1-6). Sin chunking. |
+| `accounting` previous_year_actuals / export_csv | Ya agrupado / sobre `get_execution_report`; sin cambio. |
+| `inventory.list_products` (BOMs) | Prefetch sobre el slice de la página: acotado por página. |
+| `useAttributes` O(a·v) | Agrupación en una pasada. |
+| `page_size` obsoletos | Eliminados en categorías y UoM (endpoints sin paginar). |
+| `sales` lista de ventas (Θ página×L×B) | **Aceptado**: acotado por página (cap 200). Un serializer ligero exige mover la derivación de `hub` al backend; queda como trabajo aparte si se decide. |
+| `sales/billing` checkout | Acotado por documento; sin cambio. |
+| `core` audit log | Limit acotado a 200 (commit 33be96842). |

@@ -299,6 +299,7 @@ export interface AppUser {
     first_name?: string
     last_name?: string
     is_active?: boolean
+    is_superuser?: boolean
     groups?: AppGroup[]
     contact?: number
 }

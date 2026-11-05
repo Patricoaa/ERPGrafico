@@ -43,6 +43,7 @@ last_review: 2026-06-19
 | “deprecate”, “remove feature”, “sunset” | [deprecate-feature.md](30-playbooks/deprecate-feature.md) | 30 |
 | “file upload”, “attachment”, “FileField”, “MinIO”, “document” | [add-file-upload.md](30-playbooks/add-file-upload.md) | 30 |
 | “permission”, “role”, “access control”, “RBAC”, “guard” | [add-role-permission.md](30-playbooks/add-role-permission.md) | 30 |
+| “config entity”, “settings singleton”, “datos maestros”, “master data”, “catalog permission”, “manage-only”, “clasificar modelo” | [permission-config-entities.md](20-contracts/permission-config-entities.md) + [ADR-0116](10-architecture/adr/0116-config-catalog-manage-only.md) | 20 |
 | “selector”, “N+1”, “select_related”, “prefetch_related”, “slow query” | [add-selector.md](30-playbooks/add-selector.md) | 30 |
 | “dev server”, “servidor de desarrollo/remoto”, “ssh development”, “mutagen”, “correr tests en el servidor”, “QA local”, “levantar entorno”, “logs del servidor” | [remote-dev-server.md](30-playbooks/remote-dev-server.md) | 30 |
 | “what is X”, “domain term”, “glossary” | [domain-glossary.md](00-context/domain-glossary.md) | 00 |
