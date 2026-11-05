@@ -402,6 +402,8 @@ Cualquier resultado distinto del baseline anterior = desviación, clasificar con
 
 Lista completa de viewsets clasificados durante la auditoría 2026-06-25. Los master data endpoints devuelven `T[]` sin envoltorio (§1.5). Los transactional endpoints mantienen paginación con `StandardResultsSetPagination`.
 
+> **ADR-0112:** `AccountViewSet`, `TreasuryAccountViewSet` y `EmployeeViewSet` tienen paginación opt-in (`OptionalPaginationMixin`). Devuelven `T[]` por defecto y paginan solo con `page` o `page_size`.
+
 ### Master data (22 viewsets — sin paginación)
 
 | App | ViewSet | Endpoint |
