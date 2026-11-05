@@ -1,22 +1,20 @@
 import { useFormContext } from "react-hook-form"
-import { FileText, User, X } from "lucide-react"
+import { FileText } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
 
 import { FormField } from "@/components/ui/form"
-import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { AdvancedSaleOrderSelector } from "@/components/selectors/AdvancedSaleOrderSelector"
-import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { LabeledInput, LabeledContainer, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput, ManufacturingContactField } from "@/components/shared"
+import type { ManufacturingContact } from "@/components/shared"
 
 import { cn, formatPlainDate } from "@/lib/utils"
 import { formatEntityDisplay, getDomainConceptTitle } from "@/lib/entity-registry"
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms"
 import type { SaleOrder, SaleOrderLine } from "@/features/sales"
-import type { Contact } from "@/features/contacts"
-import type { Contact as ContactEntity, Product } from "@/types/entities"
+import type { Product } from "@/types/entities"
 import type { UoM, ProductMinimal } from "../../../types"
 
 interface WorkOrderBasicInfoProps {
@@ -26,8 +24,8 @@ interface WorkOrderBasicInfoProps {
     saleLines: SaleOrderLine[]
     loadingLines: boolean
     uoms: UoM[]
-    selectedContact: Contact | null
-    setSelectedContact: (c: Contact | null) => void
+    selectedContact: ManufacturingContact | null
+    setSelectedContact: (c: ManufacturingContact | null) => void
     selectedManualProduct: ProductMinimal | null
     handleManualProductSelect: (p: ProductMinimal) => void
     watchedSaleOrder: string | undefined
@@ -299,45 +297,13 @@ export function WorkOrderBasicInfo({
                             />
                         )}
                     />
-                    <LabeledContainer label="Contacto Relacionado">
-                        {selectedContact ? (
-                            <div className="flex items-center justify-between w-full h-6">
-                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                    <User className="h-3.5 w-3.5 text-primary shrink-0" />
-                                    <span className="text-sm text-foreground truncate">{selectedContact.name}</span>
-                                    {selectedContact.tax_id && (
-                                        <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">
-                                            [{selectedContact.tax_id}]
-                                        </span>
-                                    )}
-                                </div>
-                                {/* typography-allow: meta - clear button */}
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-5 w-5 text-muted-foreground hover:text-destructive shrink-0"
-                                    onClick={() => {
-                                        setSelectedContact(null)
-                                        form.setValue('contact_id' as never, "" as never)
-                                    }}
-                                >
-                                    <X className="h-3.5 w-3.5" />
-                                </Button>
-                            </div>
-                        ) : (
-                            <AdvancedContactSelector
-                                onSelectContact={(c: ContactEntity) => {
-                                    setSelectedContact(c as unknown as Contact)
-                                    form.setValue('contact_id' as never, String(c.id) as never)
-                                }}
-                                onChange={() => { }}
-                                placeholder="Buscar contacto..."
-                                variant="standalone"
-                                className="h-6 px-0 border-none bg-transparent hover:bg-transparent shadow-none text-sm text-muted-foreground font-normal"
-                            />
-                        )}
-                    </LabeledContainer>
+                    <ManufacturingContactField
+                        value={selectedContact}
+                        onChange={(c) => {
+                            setSelectedContact(c)
+                            form.setValue('contact_id', c ? String(c.id) : '')
+                        }}
+                    />
                 </div>
             )}
         </div>
