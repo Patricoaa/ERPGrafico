@@ -20,7 +20,7 @@ registerValueKind("statementLines", {
         value ? (
             <div className="flex flex-col items-center justify-center w-full">
                 <span className="font-semibold text-xs">{value.total_lines} total</span>
-                <span className="text-xs text-muted-foreground">{value.reconciled_lines} rec.</span>
+                
             </div>
         ) : (
             <DataCell.Empty />

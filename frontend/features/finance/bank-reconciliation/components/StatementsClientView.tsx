@@ -7,7 +7,7 @@ import { Upload } from "lucide-react"
 import { useStatementsQuery } from "../hooks/useReconciliationQueries"
 import type { BankStatement } from "../types"
 import { StatementImportModal } from "@/features/finance"
-import { useBanks } from "@/features/treasury"
+import { useBanks, useTreasuryAccounts } from "@/features/treasury"
 import { UnifiedSearchBar, useUnifiedSearch, ActionConfirmModal } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { statementEntity, statementViews } from "@/features/finance"
@@ -20,12 +20,11 @@ import { Button } from "@/components/ui/button"
 interface StatementsClientViewProps {
     externalOpen?: boolean
     createAction?: React.ReactNode
+    /** Sin banco: vista de todos los bancos. Con banco: sus cuentas corrientes (mismo componente). */
     bankId?: number
-    accounts?: Array<{ id: number; name: string; bank?: number | null }>
-    detailBasePath?: string
 }
 
-export function StatementsClientView({ externalOpen = false, createAction, bankId, accounts }: StatementsClientViewProps) {
+export function StatementsClientView({ externalOpen = false, createAction, bankId }: StatementsClientViewProps) {
     const router = useRouter()
     const searchParams = useSearchParams()
     const pathname = usePathname()
@@ -37,14 +36,23 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
     const { mutate: downloadFile } = useDownloadStatementFile()
 
     const bankParam = searchParams.get("bank")
-    const showBankFilter = accounts !== undefined && !bankId
+    // Cuentas corrientes en alcance: todas, o solo las del banco. Las cartolas se acotan a estas cuentas.
+    const { accounts: checkingAccounts } = useTreasuryAccounts({ filters: { account_type: "CHECKING" } })
+    const accounts = useMemo(
+        () => checkingAccounts
+            .filter((account) => !bankId || account.bank === bankId)
+            .map((account) => ({ id: account.id, name: account.name, bank: account.bank ?? null })),
+        [checkingAccounts, bankId],
+    )
+    const accountIds = useMemo(() => new Set(accounts.map((account) => account.id)), [accounts])
+    const showBankFilter = !bankId
     const selectedBankId = showBankFilter && bankParam && !isNaN(Number(bankParam)) ? Number(bankParam) : undefined
     const { banks } = useBanks()
 
     const visibleAccounts = useMemo(
-        () => selectedBankId && accounts
+        () => selectedBankId
             ? accounts.filter((account) => account.bank === selectedBankId)
-            : (accounts ?? []),
+            : accounts,
         [accounts, selectedBankId],
     )
 
@@ -113,12 +121,12 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
     const { data: statements = [], isLoading, refetch } = useStatementsQuery(statementParams)
 
     const filteredStatements = useMemo(() => {
-        let result = search.filterFn(statements)
+        let result = search.filterFn(statements).filter((s) => accountIds.has(s.treasury_account))
         if (search.filters.state) {
             result = result.filter((s) => s.state === search.filters.state)
         }
         return result
-    }, [statements, search.filterFn, search.filters])
+    }, [statements, search.filterFn, search.filters, accountIds])
 
     useEffect(() => {
         if (externalOpen) {
@@ -146,14 +154,10 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
         refetch()
         setImportModalOpen(false)
         setModalKey((k) => k + 1)
-        if (accounts) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            const query = params.toString()
-            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-        } else {
-            router.replace("/treasury/reconciliation")
-        }
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete("modal")
+        const query = params.toString()
+        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
 
     const handleModalChange = (open: boolean) => {
@@ -163,11 +167,7 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
             const query = params.toString()
-            if (accounts) {
-                router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-            } else {
-                router.replace("/treasury/reconciliation")
-            }
+            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
         }
     }
 
@@ -177,7 +177,7 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
         { pagination: { mode: "client", pageSize: 10 } },
     )
 
-    const importButton = accounts !== undefined ? (
+    const importButton = (
         <Button
             size="sm"
             onClick={() => {
@@ -190,7 +190,7 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
             <Upload className="h-3.5 w-3.5 mr-1" />
             Importar Cartola
         </Button>
-    ) : undefined
+    )
 
     const actionsCtx = useMemo<StatementActionsCtx>(() => ({
         onView: (stmt) => openEntity("treasury.bankstatement", stmt.id, undefined, undefined, { display: stmt.display_id }),
@@ -242,7 +242,7 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                         onOpenChange={handleModalChange}
                         onSuccess={handleImportSuccess}
                         defaultAccountId={search.filters.bank_account_id && search.filters.bank_account_id !== "all" ? Number(search.filters.bank_account_id) : undefined}
-                        allowedAccountIds={accounts?.map((a) => a.id)}
+                        allowedAccountIds={accounts.map((a) => a.id)}
                     />
                 )}
             </EntityPanelTab>

@@ -23,7 +23,7 @@ import { useStatementsAnalyticsData } from '../hooks/useStatementsAnalyticsData'
 import { today, thisWeek, thisMonth, thisQuarter, thisYear } from '@/lib/date-presets'
 import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
 
-interface StatementsClientViewProps {
+interface CardStatementsClientViewProps {
     /** Banco específico. Si se omite, agrega las tarjetas de todos los bancos. */
     bankId?: number
 }
@@ -33,7 +33,7 @@ const STATEMENT_GROUPS: Record<string, FieldId<typeof creditCardStatementEntity.
     period_month: "period",
 }
 
-export function StatementsClientView({ bankId }: StatementsClientViewProps) {
+export function CardStatementsClientView({ bankId }: CardStatementsClientViewProps) {
     const searchParams = useSearchParams()
     const bankParam = searchParams.get("bank")
     const selectedBankId = bankParam && !isNaN(Number(bankParam)) ? Number(bankParam) : undefined

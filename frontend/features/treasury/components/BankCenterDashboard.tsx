@@ -34,9 +34,6 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
 
     const overviewData = (data && !isError ? data : null) as BankOverviewData | null
     const bankName = overviewData?.bank?.name ?? "Cargando..."
-    const checkingAccounts = overviewData
-        ? overviewData.accounts.filter((a: { account_type: string }) => a.account_type === "CHECKING").map((a: { id: number; name: string }) => ({ id: a.id, name: a.name }))
-        : []
 
     const cardSubTabs = activeTab === "cards" ? [
         { value: "unbilled", label: "Cargos No Facturados", href: `/treasury/bank-center/${bankId}/cards/unbilled` },
@@ -109,12 +106,8 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
                 </div>
             )}
             {activeTab === "reconciliation" && (
-                <div className="flex-1 min-h-0">
-                    <StatementsClientView
-                        bankId={bankId}
-                        detailBasePath={`/treasury/bank-center/${bankId}/reconciliation`}
-                        accounts={checkingAccounts}
-                    />
+                <div className="flex-1 min-h-0 flex flex-col">
+                    <StatementsClientView bankId={bankId} />
                 </div>
             )}
         </div>
