@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.69](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.68...v0.3.69) (2026-11-05)
+
+
+### 🐛 Bug Fixes
+
+* mensaje de RUT duplicado, conciliación agrupada y acciones por fila ([#207](https://github.com/Patricoaa/ERPGrafico/issues/207)) ([0ac336e](https://github.com/Patricoaa/ERPGrafico/commit/0ac336e8742b303f94da8eaa3d4cfb8907b5dd4b))
+
 ### [0.3.68](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.67...v0.3.68) (2026-11-05)
 
 
