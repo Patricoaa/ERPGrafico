@@ -1,5 +1,4 @@
 import random
-import uuid
 
 from django.core.management.base import BaseCommand
 
@@ -19,12 +18,14 @@ class Command(BaseCommand):
         contacts_to_create = []
         for i in range(50000):
             # Generate realistic-looking data to make search realistic
+            # tax_id is unique: derive it from the index, not from random draws.
+            # Random RUTs collide (birthday problem) and abort the batch with IntegrityError.
             if i % 100 == 0:
                 name = f"Carlos Empresa {i}"
-                tax_id = f"76.{random.randint(100, 999)}.{random.randint(100, 999)}-K"
+                tax_id = f"BENCH-C{i:08d}"
             else:
-                name = f"Test Contact {uuid.uuid4().hex[:8]}"
-                tax_id = f"1{random.randint(1000000, 9999999)}-{random.randint(0, 9)}"
+                name = f"Test Contact {i}"
+                tax_id = f"BENCH-{i:08d}"
 
             contacts_to_create.append(Contact(name=name, tax_id=tax_id, contact_name=f"Admin {i}"))
 
@@ -47,10 +48,8 @@ class Command(BaseCommand):
         self.stdout.write("Seeding 100,000 Sale Orders...")
         orders_to_create = []
         for i in range(100000):
-            if i % 500 == 0:
-                number = f"{EntityPrefix.SALE_ORDER}-001{i}"
-            else:
-                number = f"{EntityPrefix.SALE_ORDER}-{random.randint(100000, 999999)}"
+            # Sequential numbers: random 6-digit numbers collide under the unique constraint.
+            number = f"{EntityPrefix.SALE_ORDER}-BENCH{i:07d}"
 
             orders_to_create.append(
                 SaleOrder(
