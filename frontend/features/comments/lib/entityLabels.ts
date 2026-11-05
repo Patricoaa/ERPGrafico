@@ -49,4 +49,5 @@ export const COMMENT_LABEL_BY_AUDIT_TYPE: Partial<Record<AuditEntityType, string
     group: "auth.group",
     inventory_count: "inventory.inventorycount",
     bank_loan: "treasury.bankloan",
+    bankstatement: "treasury.bankstatement",
 }

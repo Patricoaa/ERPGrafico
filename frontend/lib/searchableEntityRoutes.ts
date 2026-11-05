@@ -72,8 +72,8 @@ export const searchableEntityRoutes: Record<string, string> = {
     'treasury.check':            '/treasury/operaciones/checks',
     // possession: vive en /sales/sessions (POSSessionsView) — T-99
     'treasury.possession':       '/sales/sessions',
-    // bankstatement: la lista vive en /treasury/bank-center/reconciliation (ADR-0090); el detalle
-    // re-navega al workbench — T-99
+    // bankstatement: la lista vive en /treasury/bank-center/reconciliation (ADR-0090); la ficha
+    // abre como pestaña del espacio de trabajo y la mesa es otra pestaña (openWorkbench)
     'treasury.bankstatement':    '/treasury/bank-center/reconciliation',
     // loans/cards/credit lines: tabs del hub /treasury/bank-center (ADR-0022 DRAWER_ENTITIES)
 

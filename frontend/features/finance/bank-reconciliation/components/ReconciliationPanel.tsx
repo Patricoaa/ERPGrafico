@@ -737,7 +737,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     value="unreconciled"
                                     className={SEG_TRIGGER + " data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm hover:bg-accent/30 transition-all duration-150"}
                                 >
-                                    Pendientes
+                                    Pendientes · <span className="font-mono tabular-nums">{bankData?.count ?? 0}</span>
                                 </TabsTrigger>
                                 <TabsTrigger
                                     value="reconciled"
@@ -748,36 +748,48 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             </TabsList>
                         </div>
 
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <SubmitButton
-                                    onClick={() => setActionDialog({ open: true, type: 'automatch' })}
-                                    loading={isAutoMatching}
-                                    icon={<Wand2 className="h-4 w-4 group-hover:rotate-12 transition-transform" />}
-                                    className="h-9 w-9 p-0 bg-success/5 hover:bg-success/10 text-success group transition-all"
-                                >{null}</SubmitButton>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">Auto-Match</TooltipContent>
-                        </Tooltip>
+                        <SubmitButton
+                            onClick={() => setActionDialog({ open: true, type: 'automatch' })}
+                            loading={isAutoMatching}
+                            icon={<Wand2 className="h-3.5 w-3.5" />}
+                            className="h-9 gap-1.5 px-3 text-xs font-semibold text-success bg-success/10 hover:bg-success/15"
+                        >
+                            Auto-match
+                        </SubmitButton>
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button
                                     onClick={() => setIntelOpen(prev => !prev)}
                                     variant="ghost"
+                                    aria-label="Configurar inteligencia de conciliación"
+                                    aria-pressed={intelOpen}
                                     className={cn(
                                         "h-9 w-9 p-0 transition-all",
-                                        intelOpen && "bg-primary text-primary-foreground"
+                                        intelOpen && "bg-primary text-primary-foreground hover:bg-primary/90"
                                     )}
                                 >
                                     <Brain className="h-4 w-4" />
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent side="top">Configurar Inteligencia</TooltipContent>
+                            <TooltipContent side="top">Inteligencia de conciliación</TooltipContent>
                         </Tooltip>
                     </div>
                 </div>
 
                 <TabsContent value="unreconciled" className="flex-1 min-h-0 flex flex-col mt-0 data-[state=inactive]:hidden">
+                    <div className="flex flex-wrap items-center gap-x-5 gap-y-1 px-1 pb-2 text-3xs text-muted-foreground">
+                        <span className="flex items-center gap-1.5">
+                            <span className="h-2.5 w-4 rounded-sm bg-warning/20 ring-1 ring-warning/50" aria-hidden />
+                            Sugerencia de conciliación
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                            <span className="h-2.5 w-4 rounded-sm bg-muted ring-1 ring-border" aria-hidden />
+                            Excluida
+                        </span>
+                        <span className="ml-auto">
+                            Arrastra un pago o movimiento de tesorería sobre una línea de la cartola para conciliarlos.
+                        </span>
+                    </div>
                     <div className="flex-1 min-h-0 flex gap-6 relative items-start pb-24">
                         {/* Tables Container */}
                         <div className="flex-1 h-full min-h-0 transition-all duration-500 ease-[var(--ease-premium)] min-w-0">
@@ -789,22 +801,18 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         <div className="flex items-center gap-2">
                                             <div className="h-2 w-2 rounded-full bg-info" />
                                             <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Cartola Bancaria</span>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-6 w-6 text-primary hover:bg-primary/0 rounded-full"
-
-                                            >
-
-                                            </Button>
                                         </div>
-                                        <span className="text-3xs font-mono text-muted-foreground">{bankData?.count || 0} pendientes</span>
+                                        <span className="text-3xs font-mono tabular-nums text-muted-foreground">{bankData?.count || 0} pendientes</span>
                                     </div>
                                     <div className="flex-1 min-h-0">
                                         <DataTable
                                             columns={bankColumns}
                                             data={unreconciledLines}
                                             variant="embedded"
+                                            emptyState={{
+                                                title: "Sin líneas pendientes",
+                                                description: "Todas las líneas de esta cartola están conciliadas o excluidas. Confírmala para cerrarla.",
+                                            }}
                                             rowSelection={bankRowSelection}
                                             onRowSelectionChange={handleLineSelectionChange}
                                             skeletonRows={10}
@@ -854,21 +862,25 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                             <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Movimientos del Sistema</span>
                                             <Button
                                                 variant="ghost"
-                                                size="icon"
-                                                className="h-6 w-6 text-primary hover:bg-primary/10 rounded-full"
+                                                size="sm"
+                                                className="h-6 gap-1 px-2 text-3xs font-semibold text-primary hover:bg-primary/10"
                                                 onClick={() => setIsCreateMovementOpen(true)}
-                                                title="Crear Movimiento de Tesorería"
                                             >
-                                                <Plus className="h-4 w-4" />
+                                                <Plus className="h-3 w-3" />
+                                                Nuevo movimiento
                                             </Button>
                                         </div>
-                                        <span className="text-3xs font-mono text-muted-foreground">{systemData?.count || 0} disponibles</span>
+                                        <span className="text-3xs font-mono tabular-nums text-muted-foreground">{systemData?.count || 0} disponibles</span>
                                     </div>
                                     <div className="flex-1 min-h-0">
                                         <DataTable
                                             columns={paymentColumns}
                                             data={unreconciledPayments}
                                             variant="embedded"
+                                            emptyState={{
+                                                title: "Sin movimientos disponibles",
+                                                description: "No hay pagos ni movimientos de tesorería sin conciliar en esta cuenta. Crea uno si falta.",
+                                            }}
                                             rowSelection={systemRowSelection}
                                             onRowSelectionChange={handlePaymentSelectionChange}
                                             skeletonRows={10}

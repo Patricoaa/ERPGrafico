@@ -675,16 +675,34 @@ class BankStatementLineSerializer(serializers.ModelSerializer):
         return value
 
 
+def _statement_file_name(obj: "BankStatement") -> str | None:
+    """Nombre del archivo original (sin ruta). Nunca la URL firmada del storage privado."""
+    import os
+
+    return os.path.basename(obj.file.name) if obj.file else None
+
+
 class BankStatementSerializer(serializers.ModelSerializer):
     treasury_account_name = serializers.CharField(source="treasury_account.name", read_only=True)
     imported_by_name = serializers.CharField(source="imported_by.username", read_only=True)
     reconciliation_progress = serializers.FloatField(read_only=True)
     display_id = serializers.CharField(read_only=True)
+    state = serializers.CharField(read_only=True)
+    state_display = serializers.CharField(source="get_status_display", read_only=True)
+    has_file = serializers.SerializerMethodField()
+    file_name = serializers.SerializerMethodField()
     lines = BankStatementLineSerializer(many=True, read_only=True)
+
+    def get_has_file(self, obj: BankStatement) -> bool:
+        # Nunca la URL firmada del storage privado: el original se descarga por /download/.
+        return bool(obj.file)
+
+    def get_file_name(self, obj: BankStatement) -> str | None:
+        return _statement_file_name(obj)
 
     class Meta:
         model = BankStatement
-        fields = "__all__"
+        exclude = ["file"]
         read_only_fields = ["id", "status"]
 
 
@@ -694,6 +712,25 @@ class BankStatementListSerializer(serializers.ModelSerializer):
     reconciliation_progress = serializers.FloatField(read_only=True)
     display_id = serializers.CharField(read_only=True)
     reconciled_lines = serializers.IntegerField(read_only=True)
+    touched_lines = serializers.SerializerMethodField()
+    has_file = serializers.SerializerMethodField()
+    file_name = serializers.SerializerMethodField()
+    state = serializers.CharField(read_only=True)
+    state_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    def get_has_file(self, obj: BankStatement) -> bool:
+        return bool(obj.file)
+
+    def get_file_name(self, obj: BankStatement) -> str | None:
+        return _statement_file_name(obj)
+
+    def get_touched_lines(self, obj: BankStatement) -> int:
+        # El listado anota touched_lines_count (selectors.list_bank_statements); el fallback
+        # solo corre para instancias sueltas, nunca dentro de una lista.
+        count = getattr(obj, "touched_lines_count", None)
+        if count is None:
+            count = obj.lines.exclude(reconciliation_status="UNRECONCILED").count()
+        return count
 
     class Meta:
         model = BankStatement
@@ -706,6 +743,11 @@ class BankStatementListSerializer(serializers.ModelSerializer):
             "opening_balance",
             "closing_balance",
             "status",
+            "state",
+            "state_display",
+            "touched_lines",
+            "has_file",
+            "file_name",
             "total_lines",
             "reconciled_lines",
             "reconciliation_progress",

@@ -1,7 +1,7 @@
 from datetime import timedelta
 from decimal import Decimal
 
-from django.db.models import Q, Sum
+from django.db.models import Count, Q, Sum
 from django.utils import timezone
 
 from core.prefix_registry import EntityPrefix
@@ -1143,6 +1143,10 @@ class BankStatementSelector:
         # Match exact month/year
         if m := params.get("month"): qs = qs.filter(statement_date__month=m)
         if y := params.get("year"): qs = qs.filter(statement_date__year=y)
+
+        # Líneas ya trabajadas (conciliadas, en match o excluidas): decide si la cartola
+        # puede eliminarse. Anotado aquí para no consultar por fila (zero N+1).
+        qs = qs.annotate(touched_lines_count=Count("lines", filter=~Q(lines__reconciliation_status="UNRECONCILED")))
 
         # Ordering
         if order := params.get("ordering"):

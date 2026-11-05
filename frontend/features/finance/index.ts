@@ -27,10 +27,13 @@ export {
   ReconciliationBreadcrumbs,
   BankJournalDrawer,
   StatementDetailPanel,
+  ReconciliationWorkbenchTab,
 } from './bank-reconciliation/components'
 export { financeApi } from './api/financeApi'
 export { useBillingInvoices } from './hooks'
 export { useStatementQuery } from './bank-reconciliation/hooks/useReconciliationQueries'
+export { useDeleteStatementMutation, useDownloadStatementFile } from './bank-reconciliation/hooks/useReconciliationMutations'
+export { canDeleteStatement, canReconcileStatement, deleteBlockedReason } from './bank-reconciliation/lib/statementRules'
 export { useUnmatchMutation, useMatchMutation, useGroupMatchMutation, useExcludeMutation, useBulkExcludeMutation, useRestoreMutation, useAutoMatchMutation, useCreateAndMatchMutation, useAllocateMutation, useCreateMovementMutation, useUpdateReconciliationSettingsMutation } from './bank-reconciliation/hooks/useReconciliationMutations'
 export { statementEntity, statementViews } from './bank-reconciliation/entity-view/statement.entity'
 export { statementLineEntity, statementLineViews } from './bank-reconciliation/entity-view/statementLine.entity'

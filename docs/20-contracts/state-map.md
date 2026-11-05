@@ -223,7 +223,7 @@ Sequence: `MATERIAL_ASSIGNMENT` → `MATERIAL_APPROVAL` → `OUTSOURCING_ASSIGNM
 | `CONFIRMED` | `success` | `CANCELLED` |
 | `CANCELLED` | `destructive` | — |
 
-**Edit restrictions:** Campos inmutables: `id`, `status`. Lines locked when CONFIRMED.
+**Edit restrictions (ADR-0112):** sin edición: `PUT`/`PATCH` no existen; cuenta, archivo, saldos y `status` son inmutables tras el import. Lines locked when CONFIRMED. **Delete:** solo `DRAFT` sin líneas `EXCLUDED`/`MATCHED`/`RECONCILED`/`DISPUTED`.
 
 ## BankStatementLine
 
