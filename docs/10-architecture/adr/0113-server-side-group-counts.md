@@ -1,12 +1,16 @@
 ---
 id: 0113
 title: Server-side group counts for collections above the grouping cap
-status: Accepted
+status: Rejected
 date: 2026-11-05
 author: fullstack-team
 ---
 
 # 0113 — Conteos de agrupado en servidor
+
+## Decision status
+
+Rechazado el 2026-11-05: se acepta la limitación (agrupado desactivado por encima de 200 filas). El costo de mapear cada campo de agrupado a SQL y etiqueta, y de cambiar el render de las seis vistas, no compensa. Este ADR queda como registro de la alternativa evaluada.
 
 ## Context
 
