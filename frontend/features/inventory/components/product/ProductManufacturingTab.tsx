@@ -48,10 +48,7 @@ export function ProductManufacturingTab({ form, initialData, disabled = false }:
                 <FormSection title="Ajustes de Producción" icon={Settings2} />
 
                 <div className="space-y-6">
-                    <LabeledContainer
-                        label="Modo de Producción"
-                        className="border-transparent group-focus-within:border-transparent group-focus-within:ring-0 group-focus-within:shadow-none"
-                    >
+
                         <FormSelectionGroup
                             mode="single"
                             label="Modo de Producción"
@@ -106,7 +103,7 @@ export function ProductManufacturingTab({ form, initialData, disabled = false }:
                                 { value: "advanced", label: "Avanzado", description: "Wizard Etapas", icon: <Layers className="h-5 w-5" aria-hidden /> },
                             ]}
                         />
-                    </LabeledContainer>
+                   
 
                     <div className="space-y-4">
                         <FormField
