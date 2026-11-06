@@ -1011,6 +1011,17 @@ class PaymentSelector:
         return total
 
 
+# Everything TreasuryMovementSerializer reads beyond the movement itself.
+MOVEMENT_SERIALIZER_RELATIONS = (
+    "account", "from_account__account", "to_account__account",
+    "payment_method_new", "reconciled_by", "created_by", "terminal_batch",
+    "contact", "invoice__contact", "invoice__sale_order__customer",
+    "invoice__purchase_order__supplier", "sale_order__customer",
+    "purchase_order__supplier", "journal_entry", "card_purchase_group__partner",
+    "bank_statement_line__statement",
+)
+
+
 class TreasuryMovementSelector:
     @staticmethod
     def get_cancel_impact(movement) -> dict:
@@ -1032,14 +1043,7 @@ class TreasuryMovementSelector:
 
         from .models import PaymentMethod, TreasuryAccount
 
-        qs = qs.select_related(
-            "account", "from_account__account", "to_account__account",
-            "payment_method_new", "reconciled_by", "created_by", "terminal_batch",
-            "contact", "invoice__contact", "invoice__sale_order__customer",
-            "invoice__purchase_order__supplier", "sale_order__customer",
-            "purchase_order__supplier", "journal_entry", "card_purchase_group__partner",
-            "bank_statement_line__statement",
-        )
+        qs = qs.select_related(*MOVEMENT_SERIALIZER_RELATIONS)
 
         bank_id = params.get("bank")
         if bank_id:

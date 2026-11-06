@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from django.utils import timezone
 
 from tax.services import AccountingPeriodService, TaxPeriodService
@@ -6,15 +7,18 @@ from tax.services import AccountingPeriodService, TaxPeriodService
 class PurchaseOrderSelector:
     @staticmethod
     def get_base_queryset():
+        from treasury.models import TreasuryMovement
+        from treasury.selectors import MOVEMENT_SERIALIZER_RELATIONS
+
         from .models import PurchaseOrder
 
         return PurchaseOrder.objects.select_related(
             "supplier", "warehouse", "work_order", "payment_method_ref"
         ).prefetch_related(
-            "payments__invoice",
+            Prefetch("payments", queryset=TreasuryMovement.objects.select_related(*MOVEMENT_SERIALIZER_RELATIONS)),
             "payment_allocations__treasury_movement",
             "invoices",
-            "lines__product",
+            "lines__product__category",
             "lines__uom",
             "receipts__lines__stock_move__product",
             "receipts__lines__product",
