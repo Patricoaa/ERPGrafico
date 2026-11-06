@@ -3,6 +3,17 @@
 from core.documents import DocumentType, DocumentTypeRegistry, Link, relation_provider
 from core.documents.details import display, join
 
+
+def _line_detail(line):
+    desc = (line.description or "").strip()
+    desc = desc[:40] + "…" if len(desc) > 40 else desc
+    return join(f"Línea {line.line_number}", line.transaction_date.strftime("%d-%m-%Y"), desc)
+
+
+def _installment_detail(installment):
+    return join(f"Cuota {installment.number}/{installment.loan.term_months}", f"vence {installment.due_date.strftime('%d-%m-%Y')}")
+
+
 DocumentTypeRegistry.register(DocumentType(
     label="treasury.treasurymovement", canonical_url="/treasury/operaciones/movements?selected={id}",
     amount_field="amount",
@@ -47,13 +58,14 @@ def treasury_movement_extra_relations(movement):
     # Préstamos bancarios: cuotas, desembolsos y prepagos.
     installment = related_or_none(movement, "installment_payment")
     if installment is not None:
-        yield Link("settlement", "incoming", "bank_loan", installment.loan, amount=movement.amount)
+        yield Link("settlement", "incoming", "bank_loan", installment.loan, amount=movement.amount,
+                   detail=_installment_detail(installment))
     loan_disb = related_or_none(movement, "loan_disbursement")
     if loan_disb is not None:
-        yield Link("association", "incoming", "bank_loan", loan_disb, is_dependency=False)
+        yield Link("association", "incoming", "bank_loan", loan_disb, is_dependency=False, detail="Desembolso")
     loan_prepay = related_or_none(movement, "loan_prepayment")
     if loan_prepay is not None:
-        yield Link("settlement", "incoming", "bank_loan", loan_prepay, amount=movement.amount)
+        yield Link("settlement", "incoming", "bank_loan", loan_prepay, amount=movement.amount, detail="Prepago total")
 
     # Tarjeta de crédito — compras en cuotas.
     if movement.card_purchase_group_id:
@@ -71,9 +83,15 @@ def treasury_movement_extra_relations(movement):
     if movement.credit_line_id:
         yield Link("association", "incoming", "credit_line", movement.credit_line, is_dependency=False)
 
-    # Conciliación bancaria — cartola conciliada.
-    if movement.bank_statement_line_id and movement.bank_statement_line.statement_id:
-        yield Link("association", "incoming", "bank_statement", movement.bank_statement_line.statement, is_dependency=False)
+    # Conciliación bancaria — cartola y líneas asociadas (todas las del grupo si hay match).
+    if movement.bank_statement_line_id:
+        line = movement.bank_statement_line
+        lines = list(line.reconciliation_match.lines.all()) if line.reconciliation_match_id else [line]
+        same_statement = sorted(
+            (item for item in lines if item.statement_id == line.statement_id), key=lambda item: item.line_number
+        )
+        detail = "; ".join(_line_detail(item) for item in same_statement)
+        yield Link("association", "incoming", "bank_statement", line.statement, is_dependency=False, detail=detail)
 
 
 @relation_provider("treasury.check")
@@ -114,20 +132,23 @@ def bank_loan_relations(loan):
             loan.disbursement_movement,
             amount=loan.disbursement_movement.amount,
             is_dependency=False,
+            detail="Desembolso",
         )
-    for installment in loan.installments.select_related("payment_movement").filter(
+    for installment in loan.installments.select_related("payment_movement", "loan").filter(
         payment_movement__isnull=False
     ):
         yield Link(
             "settlement", "outgoing", "installment_payment",
             installment.payment_movement,
             amount=installment.payment_movement.amount,
+            detail=_installment_detail(installment),
         )
     if loan.prepay_movement_id:
         yield Link(
             "settlement", "outgoing", "prepay",
             loan.prepay_movement,
             amount=loan.prepay_movement.amount,
+            detail="Prepago total",
         )
 
 
@@ -180,6 +201,15 @@ DocumentTypeRegistry.register(DocumentType(
     canonical_url="/treasury/bank-center/reconciliation?selected={id}",
     status_field="status",
 ))
+
+
+@relation_provider("treasury.bankstatement")
+def bank_statement_relations(statement):
+    lines = statement.lines.prefetch_related("matched_movements").order_by("line_number")
+    for line in lines:
+        for movement in line.matched_movements.all():
+            yield Link("association", "outgoing", "reconciled_movement", movement,
+                       amount=movement.amount, is_dependency=False, detail=_line_detail(line))
 
 # Tipos del centro bancario sin ficha propia: se abren en su vista (lista)
 for _label in (

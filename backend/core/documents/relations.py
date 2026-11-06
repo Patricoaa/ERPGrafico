@@ -30,6 +30,8 @@ class Link:
     amount: Decimal | None = None
     quantity: Decimal | None = None
     is_dependency: bool = True
+    # Texto que reemplaza el detalle del destino en este vínculo (p. ej. "Cuota 3/12").
+    detail: str | None = None
 
     def __post_init__(self):
         if self.semantic not in SEMANTICS:
@@ -71,6 +73,8 @@ class DocumentRelationService:
             if (semantic and link.semantic != semantic) or (direction and link.direction != direction):
                 return
             target_label, target_obj, target_ref = cls._resolve(link.target, user)
+            if link.detail and target_ref.get("accessible"):
+                target_ref = {**target_ref, "detail": link.detail}
             key = (link.role, target_ref["label"], target_ref["id"])
             if key in seen:
                 return

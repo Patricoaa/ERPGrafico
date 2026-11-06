@@ -118,3 +118,28 @@ def test_transfer_traceability_on_confirm_match(setup_data):
 
     assert dr_item.debit == Decimal("100.00")
     assert cr_item.credit == Decimal("100.00")
+
+
+@pytest.mark.django_db
+def test_statement_relations_detail_lines(setup_data):
+    from core.documents import DocumentRelationService
+
+    user = setup_data["user"]
+    su = User.objects.create_superuser(username="relsu", password="x")
+    line = BankStatementLine.objects.create(
+        statement=setup_data["statement"], line_number=7, transaction_date="2026-01-01",
+        description="Abono cliente", credit=Decimal("100.00"), debit=0, balance=Decimal("100.00"),
+    )
+    movement = TreasuryMovement.objects.create(
+        movement_type="INBOUND", to_account=setup_data["bank_treasury"], amount=Decimal("100.00"),
+        date="2026-01-01", created_by=user, bank_statement_line=line,
+    )
+    stmt_id = setup_data["statement"].pk
+
+    from_mov = DocumentRelationService.relations("treasury.treasurymovement", movement.pk, su)["relations"]
+    link = next(r for r in from_mov if r["role"] == "bank_statement")
+    assert "Línea 7" in link["target"]["detail"] and "Abono cliente" in link["target"]["detail"]
+
+    from_stmt = DocumentRelationService.relations("treasury.bankstatement", stmt_id, su)["relations"]
+    link = next(r for r in from_stmt if r["role"] == "reconciled_movement")
+    assert link["target"]["id"] == movement.pk and "Línea 7" in link["target"]["detail"]

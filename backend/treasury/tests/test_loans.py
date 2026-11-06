@@ -430,3 +430,28 @@ def test_prepay_cancels_remaining_and_marks_paid(base):
     assert loan.status == BankLoan.Status.PAID
     canceled = loan.installments.filter(status=LoanInstallment.Status.CANCELED).count()
     assert canceled == 2  # cuotas 2 y 3
+
+
+@pytest.mark.django_db
+def test_loan_relations_detail_installment_both_directions(base):
+    from core.documents import DocumentRelationService
+
+    loan = _make_loan(base, term_months=6)
+    LoanService.disburse(loan, created_by=base["user"])
+    inst = loan.installments.first()
+    LoanService.pay_installment(
+        loan, inst, payment_account=base["bank_ta"],
+        interest_expense_account=base["interest_acc"],
+        insurance_expense_account=base["insurance_acc"], created_by=base["user"],
+    )
+    inst.refresh_from_db()
+    user = User.objects.create_superuser(username="rel", password="x")
+
+    loan_rels = DocumentRelationService.relations("treasury.bankloan", loan.pk, user)["relations"]
+    details = {r["role"]: r["target"]["detail"] for r in loan_rels if r["role"] in ("disbursement", "installment_payment")}
+    assert details["disbursement"] == "Desembolso"
+    assert details["installment_payment"].startswith("Cuota 1/6")
+
+    mov_rels = DocumentRelationService.relations("treasury.treasurymovement", inst.payment_movement_id, user)["relations"]
+    loan_link = next(r for r in mov_rels if r["role"] == "bank_loan")
+    assert loan_link["target"]["detail"].startswith("Cuota 1/6")
