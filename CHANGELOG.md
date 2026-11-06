@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.74](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.73...v0.3.74) (2026-11-06)
+
+
+### ✨ Features
+
+* **lint:** reglas de fechas (no-date-only-ctor, no-adhoc-date-format) y remediación ([4243496](https://github.com/Patricoaa/ERPGrafico/commit/424349678fec48b16db317bd1541d35e7eb74f54))
+
+
+### 🐛 Bug Fixes
+
+* **rendimiento:** elimina N+1 en el listado de órdenes de compra ([ac659bb](https://github.com/Patricoaa/ERPGrafico/commit/ac659bbd6ffe53ea9596a2d24c4fa585e78a1287))
+* **rendimiento:** elimina N+1 en listados de tareas y órdenes de venta ([cfd4835](https://github.com/Patricoaa/ERPGrafico/commit/cfd4835df595101d045523933f87f71aa857cb94))
+* **rendimiento:** reduce joins del listado de productos ([09f759e](https://github.com/Patricoaa/ERPGrafico/commit/09f759e00befd46cce1da849d3dee8ef0f4d0fbb))
+* **rendimiento:** reutiliza serializers anidados en órdenes de venta ([07aceaf](https://github.com/Patricoaa/ERPGrafico/commit/07aceafe6b9563f5bb08064f57b4367ffc54c3d3))
+
 ### [0.3.73](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.72...v0.3.73) (2026-11-06)
 
 
