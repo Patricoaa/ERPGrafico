@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.70](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.69...v0.3.70) (2026-11-06)
+
+
+### ⚙️ Refactors
+
+* **reconciliacion:** patrón canónico DrawerLayout+leftRailRaw en modal de importación ([4ec8d92](https://github.com/Patricoaa/ERPGrafico/commit/4ec8d922e2e3f843f1d5207310f428f4ded9e775))
+
+
+### 🐛 Bug Fixes
+
+* **reconciliacion:** currentStep 1-based en WizardStepsSidebar + borrar línea verde ([e3d92b4](https://github.com/Patricoaa/ERPGrafico/commit/e3d92b43364fc9572e20a8ab37f89a53650f4b53))
+* **reconciliacion:** idempotency key en match_group + UX de la mesa ([f3b378a](https://github.com/Patricoaa/ERPGrafico/commit/f3b378a25f641affbff6dbd11420381167719e1f))
+* **reconciliacion:** mejorar check duplicado de cartola y mensaje de error ([c1c97f1](https://github.com/Patricoaa/ERPGrafico/commit/c1c97f1bb141d38344ad18d57c7aed8ea9fae6b6))
+* **reconciliacion:** modal 2xl + sidebar con DrawerResizableRail canónico ([e78f10f](https://github.com/Patricoaa/ERPGrafico/commit/e78f10f5218d88cf2a15b38117cc64853f9b78f0))
+
+
+### ✨ Features
+
+* **reconciliacion:** diferencia en grupo, ajustes contables y progreso ([daf80d0](https://github.com/Patricoaa/ERPGrafico/commit/daf80d0d35577c956ce4f8a94c0a33d6286cf5ab))
+* **reconciliacion:** icono en drawer, delete deshabilitado y tab conciliados reactivo ([e440d00](https://github.com/Patricoaa/ERPGrafico/commit/e440d00682beb7f76aa48c33dd43ee4d2c02611a))
+* **reconciliacion:** sidebar colapsable + modal flotante sin pestaña ([ec5fe00](https://github.com/Patricoaa/ERPGrafico/commit/ec5fe006508a7eda64e72e853d0ed3ec438226d7))
+* **reconciliacion:** wizard con sidebar + selección período + botón revertir conciliación ([5822a2e](https://github.com/Patricoaa/ERPGrafico/commit/5822a2e391736a2526cb8aebe2b0e37b35482de8))
+
 ### [0.3.69](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.68...v0.3.69) (2026-11-05)
 
 
